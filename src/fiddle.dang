@@ -1,0 +1,22 @@
+
+
+-- Dang
+
+Currency: ETH | BTC
+
+EodPriced:
+	currency: <Currency>
+	EOD: -> Number #currency
+
+Contract:
+	currency: <Currency>
+	underlying: <EodPriced> =currency
+	strike: currency
+	maturity: date
+	size: Integer
+	settlement: -> Settlement =currency
+
+Contract settlement:
+	p <- underlying EOD | date == maturity 
+	= Settlement amount = p * size - strike * size
+	
