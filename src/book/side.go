@@ -1,29 +1,33 @@
-package mbook
+package book
 
 import (
 	"container/list"
 	"fmt"
 
+	"proto"
+
 	"github.com/google/btree"
 )
 
+const initialTradeListSize = 10
+
 type Side struct {
-	side   BuySell
+	side   pb.Order_Side
 	other  *Side
 	levels *btree.BTree
 	top    *PriceLevel
 }
 
-func (s *Side) addOrder(o *Order) *list.List {
+func (s *Side) addOrder(o *wrappedOrder) *[]Trade {
 	trades := s.other.uncross(o)
-	if o.remaining > 0 {
-		s.getPriceLevel(o.side, o.price).addOrder(o)
+	if o.persist && o.order.Remaining > 0 {
+		s.getPriceLevel(o.order.Side, o.order.Price).addOrder(o)
 		fmt.Printf("Added: %v\n", o)
 	}
 	return trades
 }
 
-func (s *Side) getPriceLevel(side BuySell, price uint64) *PriceLevel {
+func (s *Side) getPriceLevel(side pb.Order_Side, price uint64) *PriceLevel {
 	var priceLevel *PriceLevel
 	item := s.levels.Get(&PriceLevel{side: side, price: price})
 	if item == nil {
@@ -50,16 +54,16 @@ func (s *Side) bestPrice() uint64 {
 	}
 }
 
-func (s *Side) uncross(agg *Order) *list.List {
+func (s *Side) uncross(agg *wrappedOrder) *[]Trade {
 	if s.top == nil || !agg.crossedWith(s.side, s.top.price) {
 		return nil
 	}
-	var trades = list.New()
+	trades := make([]Trade, initialTradeListSize)
 	s.levels.DescendGreaterThan(
-		&PriceLevel{side: s.side, price: agg.price},
+		&PriceLevel{side: s.side, price: agg.order.Price},
 		func(i btree.Item) bool {
 			priceLevel := i.(*PriceLevel)
-			filled := priceLevel.uncross(agg, trades)
+			filled := priceLevel.uncross(agg, &trades)
 			if priceLevel.volume == 0 {
 				s.levels.Delete(priceLevel)
 				s.top = s.levels.Max().(*PriceLevel)
@@ -68,5 +72,5 @@ func (s *Side) uncross(agg *Order) *list.List {
 			}
 			return !filled
 		})
-	return trades
+	return &trades
 }

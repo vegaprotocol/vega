@@ -1,13 +1,17 @@
-package mbook
+package book
 
-import "fmt"
+import (
+	"fmt"
+
+	"proto"
+)
 
 type Trade struct {
 	price     uint64
 	size      uint64
-	buy       *Order
-	sell      *Order
-	aggressor *Order
+	buy       *pb.Order
+	sell      *pb.Order
+	aggressor *pb.Order
 }
 
 func min(x, y uint64) uint64 {
@@ -17,13 +21,13 @@ func min(x, y uint64) uint64 {
 	return x
 }
 
-func trade(agg, pass *Order) *Trade {
+func trade(agg, pass *wrappedOrder) *Trade {
 	trade := &Trade{
-		price:     pass.price,
-		size:      min(agg.remaining, pass.remaining),
-		buy:       Buy.getOrder(agg, pass),
-		sell:      Sell.getOrder(agg, pass),
-		aggressor: agg,
+		price:     pass.order.Price,
+		size:      min(agg.order.Remaining, pass.order.Remaining),
+		buy:       getOrderForSide(pb.Order_Buy, agg, pass).order,
+		sell:      getOrderForSide(pb.Order_Sell, agg, pass).order,
+		aggressor: agg.order,
 	}
 	pass.update(trade)
 	agg.update(trade)
@@ -39,9 +43,9 @@ func (t Trade) String() string {
 	}
 	return fmt.Sprintf(
 		"%v%v -> %v%v %v @%v",
-		t.sell.party,
+		t.sell.Party,
 		sellAgg,
-		t.buy.party,
+		t.buy.Party,
 		buyAgg,
 		t.size,
 		t.price)

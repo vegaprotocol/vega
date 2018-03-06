@@ -1,6 +1,6 @@
 
 
--- Dang
+-- Dang fiddle
 
 Currency: ETH | BTC
 
@@ -11,12 +11,13 @@ EodPriced:
 Contract:
 	currency: <Currency>
 	underlying: <EodPriced> =currency
-	strike: currency
 	maturity: date
 	size: Integer
-	settlement: -> Settlement =currency
+	settlement: -> Number #currency
 
-Contract settlement:
+EuroOption <Contract>:
+	strike: currency
+
+EuroOption settlement:
 	p <- underlying EOD | date == maturity 
 	= Settlement amount = p * size - strike * size
-	
