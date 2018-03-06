@@ -1,18 +1,17 @@
 package main
 
 import (
-	"book"
+	"exchange"
 	"proto"
 )
 
 func main() {
-	vega := book.NewBook("test vega")
-	A := &book.Party{Name: "A"}
-	B := &book.Party{Name: "B"}
-	C := &book.Party{Name: "C"}
+	vega := exchange.New()
+	vega.NewMarket("BTC/DEC18")
+
 	vega.AddOrder(&pb.Order{
-		Market:    vega.GetId(),
-		Party:     A.GetId(),
+		Market:    "BTC/DEC18",
+		Party:     "A",
 		Side:      pb.Order_Buy,
 		Price:     100,
 		Size:      50,
@@ -20,18 +19,20 @@ func main() {
 		Type:      pb.Order_GTC,
 		Sequence:  0,
 	})
+
 	vega.AddOrder(&pb.Order{
-		Market:    vega.GetId(),
-		Party:     B.GetId(),
+		Market:    "BTC/DEC18",
+		Party:     "B",
 		Side:      pb.Order_Buy,
 		Price:     102,
 		Size:      125,
 		Remaining: 125,
 		Type:      pb.Order_GTC,
 	})
+
 	vega.AddOrder(&pb.Order{
-		Market:    vega.GetId(),
-		Party:     C.GetId(),
+		Market:    "BTC/DEC18",
+		Party:     "C",
 		Side:      pb.Order_Sell,
 		Price:     100,
 		Size:      700,

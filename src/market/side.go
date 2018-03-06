@@ -1,4 +1,4 @@
-package book
+package market
 
 import (
 	"container/list"
@@ -55,12 +55,21 @@ func (s *Side) bestPrice() uint64 {
 }
 
 func (s *Side) uncross(agg *wrappedOrder) *[]Trade {
-	if s.top == nil || !agg.crossedWith(s.side, s.top.price) {
-		return nil
-	}
 	trades := make([]Trade, initialTradeListSize)
+	if s.top == nil || !agg.crossedWith(s.side, s.top.price) {
+		return &trades
+	}
+
+	// We want s.levels.DescendGreaterThanOrEqual so modify the price accordingly
+	var cutoffPriceLevel *PriceLevel
+	if s.side == pb.Order_Buy {
+		cutoffPriceLevel = &PriceLevel{side: s.side, price: agg.order.Price - 1}
+	} else {
+		cutoffPriceLevel = &PriceLevel{side: s.side, price: agg.order.Price + 1}
+	}
+
 	s.levels.DescendGreaterThan(
-		&PriceLevel{side: s.side, price: agg.order.Price},
+		cutoffPriceLevel,
 		func(i btree.Item) bool {
 			priceLevel := i.(*PriceLevel)
 			filled := priceLevel.uncross(agg, &trades)
