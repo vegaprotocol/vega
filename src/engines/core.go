@@ -1,19 +1,19 @@
-package vega
+package engines
 
 import (
-	"matching"
-	"proto"
+	"vega/src/matching"
+	"vega/src/proto"
 )
 
 type Vega struct {
 	markets map[string]*matching.OrderBook
-	orders map[string]*matching.OrderEntry
+	orders  map[string]*matching.OrderEntry
 }
 
 func New() *Vega {
 	return &Vega{
 		markets: make(map[string]*matching.OrderBook),
-		orders: make(map[string]*matching.OrderEntry),
+		orders:  make(map[string]*matching.OrderEntry),
 	}
 }
 

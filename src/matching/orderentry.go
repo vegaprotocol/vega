@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"fmt"
 
-	"proto"
+	"vega/src/proto"
 
 	"github.com/gogo/protobuf/proto"
 	"golang.org/x/crypto/sha3"

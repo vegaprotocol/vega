@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 
-	"proto"
+	"vega/src/proto"
 
 	"github.com/google/btree"
 )

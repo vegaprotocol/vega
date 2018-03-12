@@ -3,15 +3,15 @@ package main
 import (
 	"fmt"
 
-	"proto"
-	"vega"
+	"vega/src/engines"
+	"vega/src/proto"
 )
 
 func main() {
-	app := vega.New()
-	app.CreateMarket("BTC/DEC18")
+	vega := engines.New()
+	vega.CreateMarket("BTC/DEC18")
 
-	app.SubmitOrder(msg.Order{
+	vega.SubmitOrder(msg.Order{
 		Market:    "BTC/DEC18",
 		Party:     "A",
 		Side:      msg.Side_Buy,
@@ -22,7 +22,7 @@ func main() {
 		Timestamp: 0,
 	})
 
-	app.SubmitOrder(msg.Order{
+	vega.SubmitOrder(msg.Order{
 		Market:    "BTC/DEC18",
 		Party:     "B",
 		Side:      msg.Side_Buy,
@@ -33,7 +33,7 @@ func main() {
 		Timestamp: 0,
 	})
 
-	app.SubmitOrder(msg.Order{
+	vega.SubmitOrder(msg.Order{
 		Market:    "BTC/DEC18",
 		Party:     "B",
 		Side:      msg.Side_Buy,
@@ -45,18 +45,18 @@ func main() {
 	})
 
 	res, _ :=
-		app.SubmitOrder(msg.Order{
-		Market:    "BTC/DEC18",
-		Party:     "D",
-		Side:      msg.Side_Sell,
-		Price:     110,
-		Size:      100,
-		Remaining: 100,
-		Type:      msg.Order_GTC,
-		Timestamp: 0,
-	})
+		vega.SubmitOrder(msg.Order{
+			Market:    "BTC/DEC18",
+			Party:     "D",
+			Side:      msg.Side_Sell,
+			Price:     110,
+			Size:      100,
+			Remaining: 100,
+			Type:      msg.Order_GTC,
+			Timestamp: 0,
+		})
 
-	app.SubmitOrder(msg.Order{
+	vega.SubmitOrder(msg.Order{
 		Market:    "BTC/DEC18",
 		Party:     "C",
 		Side:      msg.Side_Sell,
@@ -67,7 +67,7 @@ func main() {
 		Timestamp: 0,
 	})
 
-	app.DeleteOrder(res.Order.Id)
+	vega.DeleteOrder(res.Order.Id)
 
-	fmt.Println(app.GetMarketData("BTC/DEC18"))
+	fmt.Println(vega.GetMarketData("BTC/DEC18"))
 }

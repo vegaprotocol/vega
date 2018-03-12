@@ -1,6 +1,6 @@
 package engines
 
-import "proto"
+import "vega/src/proto"
 
 type MatchingEngine interface {
 	CreateMarket(id string)

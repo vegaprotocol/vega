@@ -1,7 +1,7 @@
 package matching
 
 import (
-	"proto"
+	"vega/src/proto"
 )
 
 func MakeResponse(order *msg.Order, trades *[]Trade) *msg.OrderConfirmation {

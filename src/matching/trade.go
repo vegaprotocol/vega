@@ -3,7 +3,7 @@ package matching
 import (
 	"fmt"
 
-	"proto"
+	"vega/src/proto"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/crypto/sha3"
