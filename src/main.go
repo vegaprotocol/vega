@@ -35,7 +35,7 @@ func main() {
 
 	vega.SubmitOrder(msg.Order{
 		Market:    "BTC/DEC18",
-		Party:     "B",
+		Party:     "C",
 		Side:      msg.Side_Buy,
 		Price:     99,
 		Size:      42,
@@ -58,7 +58,7 @@ func main() {
 
 	vega.SubmitOrder(msg.Order{
 		Market:    "BTC/DEC18",
-		Party:     "C",
+		Party:     "E",
 		Side:      msg.Side_Sell,
 		Price:     98,
 		Size:      120,
