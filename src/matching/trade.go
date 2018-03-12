@@ -1,4 +1,4 @@
-package market
+package matching
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ type Trade struct {
 	pass  *OrderEntry
 	buy   *OrderEntry
 	sell  *OrderEntry
-	msg   *pb.Trade
+	msg   *msg.Trade
 }
 
 // Returns the min of 2 uint64s
@@ -35,8 +35,8 @@ func newTrade(agg, pass *OrderEntry, size uint64) *Trade {
 		size:  size,
 		agg:   agg,
 		pass:  pass,
-		buy:   getOrderForSide(pb.Side_Buy, agg, pass),
-		sell:  getOrderForSide(pb.Side_Sell, agg, pass),
+		buy:   getOrderForSide(msg.Side_Buy, agg, pass),
+		sell:  getOrderForSide(msg.Side_Sell, agg, pass),
 	}
 	pass.update(trade)
 	agg.update(trade)
@@ -47,7 +47,7 @@ func newTrade(agg, pass *OrderEntry, size uint64) *Trade {
 // Returns a string representation of a trade
 func (t Trade) String() string {
 	var aggressiveAction string
-	if t.agg.order.Side == pb.Side_Buy {
+	if t.agg.order.Side == msg.Side_Buy {
 		aggressiveAction = "buys from"
 	} else {
 		aggressiveAction = "sells to"
@@ -63,13 +63,13 @@ func (t Trade) String() string {
 }
 
 // Returns the protobufs message object for a trade
-func (t *Trade) toMessage() *pb.Trade {
+func (t *Trade) toMessage() *msg.Trade {
 	if t.msg == nil {
-		t.msg = &pb.Trade{
+		t.msg = &msg.Trade{
 			Price:     t.price,
 			Size:      t.size,
-			Buy:       t.buy.id,
-			Sell:      t.sell.id,
+			Buyer:     t.buy.order.Party,
+			Seller:    t.sell.order.Party,
 			Aggressor: t.agg.order.Side,
 		}
 	}

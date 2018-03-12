@@ -1,30 +1,48 @@
 package vega
 
-type Side uint8
-
-const (
-	Buy Side = iota
-	Sell
+import (
+	"matching"
+	"proto"
 )
 
-type OrderType int8
+type Vega struct {
+	markets map[string]*matching.OrderBook
+	orders map[string]*matching.OrderEntry
+}
 
-const (
-	GTC OrderType = iota
-	GTT
-	ENE
-	FOK
-)
+func New() *Vega {
+	return &Vega{
+		markets: make(map[string]*matching.OrderBook),
+		orders: make(map[string]*matching.OrderEntry),
+	}
+}
 
+func (v Vega) CreateMarket(id string) {
+	if _, exists := v.markets[id]; !exists {
+		v.markets[id] = matching.NewBook(id, v.orders)
+	}
+}
 
-type Order interface {
-	GetMarket() string
-	GetParty() string
-	GetSide() Side
-	GetPrice() uint64
-	GetSize() uint64
-	GetRemainingSize() uint64
-	GetType() OrderType
-	GetTimestamp()
+func (v Vega) SubmitOrder(order msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+	if market, exists := v.markets[order.Market]; exists {
+		return market.AddOrder(&order)
+	} else {
+		return nil, msg.OrderError_INVALID_MARKET_ID
+	}
+}
 
+func (v Vega) DeleteOrder(id string) *msg.Order {
+	if orderEntry, exists := v.orders[id]; exists {
+		return orderEntry.GetBook().RemoveOrder(id)
+	} else {
+		return nil
+	}
+}
+
+func (v Vega) GetMarketData(marketId string) *msg.MarketData {
+	if market, exists := v.markets[marketId]; exists {
+		return market.GetMarketData()
+	} else {
+		return nil
+	}
 }

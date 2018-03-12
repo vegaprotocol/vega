@@ -1,4 +1,4 @@
-package market
+package matching
 
 import (
 	"container/list"
@@ -12,31 +12,36 @@ import (
 
 // Wraps the protobuf Order message for inclusion in the order book
 type OrderEntry struct {
-	order      *pb.Order
+	order      *msg.Order
 	book       *OrderBook
+	side       *OrderBookSide
 	priceLevel *PriceLevel
 	elem       *list.Element
 	persist    bool
 	id         string
 }
 
+func (o *OrderEntry) GetBook() *OrderBook {
+	return o.book
+}
+
 // Creates an order entry from an order protobufs message
-func (b *OrderBook) fromMessage(order *pb.Order) *OrderEntry {
+func orderFromMessage(order *msg.Order) *OrderEntry {
 	o := &OrderEntry{
 		order:   order,
-		persist: order.Type == pb.Order_GTC || order.Type == pb.Order_GTT,
+		persist: order.Type == msg.Order_GTC || order.Type == msg.Order_GTT,
 	}
 	o.id = o.Digest()
 	return o
 }
 
 // Returns true if the order is crossed (can newTrade) with the supplied side and price
-func (o *OrderEntry) crossedWith(side pb.Side, price uint64) bool {
+func (o *OrderEntry) crossedWith(side msg.Side, price uint64) bool {
 	return o.order.GetSide() != side &&
 		price > 0 &&
 		o.order.Price > 0 &&
-		((side == pb.Side_Buy && price >= o.order.Price) ||
-			(side == pb.Side_Sell && price <= o.order.Price))
+		((side == msg.Side_Buy && price >= o.order.Price) ||
+			(side == msg.Side_Sell && price <= o.order.Price))
 }
 
 // Update (remaining size, etc.) for an order that has traded
@@ -49,18 +54,18 @@ func (o *OrderEntry) update(trade *Trade) {
 }
 
 // Remove an order from the book and update the book metrics
-func (o *OrderEntry) remove() bool {
+func (o *OrderEntry) remove() *OrderEntry {
 	if o.priceLevel == nil {
-		return false
+		return nil
 	}
-	o.book.priceLevel.removeOrder(o)
+	o.priceLevel.removeOrder(o)
 	delete(o.book.orders, o.id)
 	fmt.Printf("Removed: %v\n", o)
-	return true
+	return o
 }
 
 // Returns the string representation of an order's details
-func OrderString(o *pb.Order) string {
+func OrderString(o *msg.Order) string {
 	return fmt.Sprintf(
 		"%v %v/%v @%v (%v)",
 		o.Side,
@@ -84,7 +89,7 @@ func (o *OrderEntry) Digest() string {
 }
 
 // Work out which of the aggressive & passive orders is the buyer/seller
-func getOrderForSide(side pb.Side, agg, pass *OrderEntry) *OrderEntry {
+func getOrderForSide(side msg.Side, agg, pass *OrderEntry) *OrderEntry {
 	if agg.order.Side == pass.order.Side {
 		panic(fmt.Sprintf("agg.side == pass.side (agg: %v, pass: %v)", agg, pass))
 	} else if agg.order.Side == side {

@@ -1,4 +1,4 @@
-package market
+package matching
 
 import (
 	"container/list"
@@ -11,7 +11,7 @@ import (
 )
 
 type PriceLevel struct {
-	side           pb.Side
+	side           msg.Side
 	price          uint64
 	volume         uint64
 	volumeAtTop    uint64
@@ -41,17 +41,18 @@ func (l *PriceLevel) addOrder(o *OrderEntry) {
 	}
 }
 
-func (l *PriceLevel) removeOrder(o *OrderEntry) bool {
+func (l *PriceLevel) removeOrder(o *OrderEntry) *OrderEntry {
 	if l != o.priceLevel || l.price != o.order.Price {
 		panic("removeOrder called on wrong price level for order/price")
 	}
 	o.priceLevel.volume -= o.order.Remaining
 	o.priceLevel.orders.Remove(o.elem)
 	o.elem = nil
-	o.priceLevel = nil
 	if o.priceLevel.volume == 0 {
-
+		o.side.removePriceLevel(o.priceLevel.price)
 	}
+	o.priceLevel = nil
+	return o
 }
 
 func (l *PriceLevel) recalculateVolumeAtTop() {
@@ -68,7 +69,7 @@ func (l *PriceLevel) recalculateVolumeAtTop() {
 }
 
 func (l *PriceLevel) Less(other btree.Item) bool {
-	return (l.side == pb.Side_Buy) == (l.price < other.(*PriceLevel).price)
+	return (l.side == msg.Side_Buy) == (l.price < other.(*PriceLevel).price)
 }
 
 func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {

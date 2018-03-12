@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "pb";
+option go_package = "msg";
 
 enum Side { Buy = 0; Sell = 1; }
 
@@ -17,11 +17,21 @@ message Order {
     uint64 timestamp = 8;
 }
 
+message OrderConfirmation {
+    string orderId = 1;
+    repeated Trade trades = 2;
+}
+
+enum OrderError {
+    NONE = 0;
+    INVALID_MARKET_ID = 1;
+}
+
 message Trade {
     uint64 price = 1;
     uint64 size = 2;
-    string buy = 3;
-    string sell = 4;
+    string buyer = 3;
+    string seller = 4;
     Side aggressor = 5;
 }
 
