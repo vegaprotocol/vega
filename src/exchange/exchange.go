@@ -27,10 +27,29 @@ func (e *Exchange) NewMarket(name string) (*market.OrderBook, error) {
 	}
 }
 
-func (e *Exchange) AddOrder(order *pb.Order) (*[]market.Trade, error) {
+func (e *Exchange) AddOrder(order *pb.Order) (*market.AddOrderResult, error) {
 	if book, exists := e.markets[order.Market]; exists {
-		return book.AddOrder(order)
+		result, err := book.AddOrder(order)
+		if err != nil {
+			panic(fmt.Sprintf("Error adding order: %v", err))
+		}
+		return result, nil
 	} else {
 		return nil, errors.New(fmt.Sprintf("Market not found: %v", order.Market))
 	}
+}
+
+func (e *Exchange) GetMarketData(marketId string) *pb.MarketData {
+	if book, exists := e.markets[marketId]; exists {
+		return book.GetMarketData()
+	} else {
+		return nil
+	}
+}
+
+func (e *Exchange) RemoveOrder(marketId, orderId string) bool {
+	if book, exists := e.markets[marketId]; exists {
+		return book.RemoveOrder(orderId)
+	}
+	return false
 }

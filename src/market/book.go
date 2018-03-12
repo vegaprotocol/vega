@@ -5,72 +5,86 @@ import (
 	"fmt"
 
 	"proto"
-
-	"github.com/google/btree"
 )
-
-const priceLevelsBTreeDegree = 32
 
 type OrderBook struct {
 	name            string
 	buy             *Side
 	sell            *Side
 	lastTradedPrice uint64
+	orders          map[string]*OrderEntry
 }
 
-func NewBook(name string) *OrderBook {
-	b := &OrderBook{
-		name: name,
-		buy: &Side{
-			side:   pb.Order_Buy,
-			levels: btree.New(priceLevelsBTreeDegree),
-		},
-		sell: &Side{
-			side:   pb.Order_Sell,
-			levels: btree.New(priceLevelsBTreeDegree),
-		},
+type AddOrderResult struct {
+	OrderId string
+	Trades *pb.TradeSet
+}
+
+func NewAddOrderResult(orderId string, trades *[]Trade) *AddOrderResult {
+	tradeSet := make([]*pb.Trade, len(*trades))
+	for _, t := range *trades {
+		tradeSet = append(tradeSet, t.toMessage())
 	}
-	b.buy.other = b.sell
-	b.sell.other = b.buy
-	return b
+	return &AddOrderResult{
+		OrderId: orderId,
+		Trades: &pb.TradeSet{Trades: tradeSet},
+	}
 }
 
-func (b *OrderBook) AddOrder(order *pb.Order) (*[]Trade, error) {
-	if order.Market != b.GetId() {
+// Create an order book with a given name
+func NewBook(name string) *OrderBook {
+	book := &OrderBook{name: name, orders: make(map[string]*OrderEntry)}
+	buy, sell := makeSide(pb.Side_Buy, book), makeSide(pb.Side_Sell, book)
+	book.buy = buy
+	book.buy.other = sell
+	book.sell = sell
+	book.sell.other = buy
+	return book
+}
+
+// Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
+func (b *OrderBook) AddOrder(order *pb.Order) (*AddOrderResult, error) {
+
+	// Check order is for the correct market
+	if order.Market != b.name {
 		return nil, errors.New(fmt.Sprintf(
 			"Market ID mismatch\norder.Market: %v\nbook.ID: %v",
 			order.Market,
-			b.GetId()))
+			b.name))
 	}
-	wrappedOrder := b.WrapOrder(order)
+
+	orderEntry := b.fromMessage(order)
 	var trades *[]Trade
-	if order.Side == pb.Order_Buy {
-		trades = b.buy.addOrder(wrappedOrder)
+	if order.Side == pb.Side_Buy {
+		trades = b.buy.addOrder(orderEntry)
 	} else { // side == Sell
-		trades = b.sell.addOrder(wrappedOrder)
+		trades = b.sell.addOrder(orderEntry)
 	}
-	if trades != nil && len(*trades) > 0 {
-		b.lastTradedPrice = (*trades)[len(*trades)-1].price
-	}
-	return trades, nil
+
+	return NewAddOrderResult(orderEntry.id, trades), nil
 }
 
 func (b *OrderBook) GetName() string {
 	return b.name
 }
 
-func (b *OrderBook) GetId() string {
-	return b.name
+func (b *OrderBook) GetMarketData() *pb.MarketData {
+	return &pb.MarketData{
+		BestBid:         b.buy.bestPrice(),
+		BestOffer:       b.sell.bestPrice(),
+		LastTradedPrice: b.lastTradedPrice,
+	}
 }
 
-func (b *OrderBook) GetBBO() (bestBid, bestOffer uint64) {
-	return b.buy.bestPrice(), b.sell.bestPrice()
+func (b *OrderBook) RemoveOrder(id string) bool {
+	if order, exists := b.orders[id]; exists {
+		return order.remove()
+	} else {
+		return false
+	}
 }
 
-//func (b *OrderBook) RemoveOrder(order *Order) bool {
 //
-//}
-//
-//func (b *OrderBook) GetBook() (buy, sell []*Order) {
+//func (b *OrderBook) GetBook() (buy, sell []*OrderEntry) {
 //
 //}
