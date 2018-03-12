@@ -15,10 +15,11 @@ message Order {
     uint64 remaining = 6;
     Type type = 7;
     uint64 timestamp = 8;
+    string id = 9;
 }
 
 message OrderConfirmation {
-    string orderId = 1;
+    Order order = 1;
     repeated Trade trades = 2;
 }
 
@@ -28,11 +29,12 @@ enum OrderError {
 }
 
 message Trade {
-    uint64 price = 1;
-    uint64 size = 2;
-    string buyer = 3;
-    string seller = 4;
-    Side aggressor = 5;
+    string market = 1;
+    uint64 price = 2;
+    uint64 size = 3;
+    string buyer = 4;
+    string seller = 5;
+    Side aggressor = 6;
 }
 
 message TradeSet {

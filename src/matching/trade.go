@@ -45,7 +45,7 @@ func newTrade(agg, pass *OrderEntry, size uint64) *Trade {
 }
 
 // Returns a string representation of a trade
-func (t Trade) String() string {
+func (t *Trade) String() string {
 	var aggressiveAction string
 	if t.agg.order.Side == msg.Side_Buy {
 		aggressiveAction = "buys from"

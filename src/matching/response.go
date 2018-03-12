@@ -4,13 +4,13 @@ import (
 	"proto"
 )
 
-func MakeResponse(orderId string, trades *[]Trade) *msg.OrderConfirmation {
+func MakeResponse(order *msg.Order, trades *[]Trade) *msg.OrderConfirmation {
 	tradeSet := make([]*msg.Trade, len(*trades))
 	for _, t := range *trades {
 		tradeSet = append(tradeSet, t.toMessage())
 	}
 	return &msg.OrderConfirmation{
-		OrderId: orderId,
+		Order: order,
 		Trades:  tradeSet,
 	}
 }
