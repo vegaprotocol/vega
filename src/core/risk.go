@@ -1,4 +1,4 @@
-package engines
+package core
 
 type RiskEngine interface {
 

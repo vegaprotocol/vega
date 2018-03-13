@@ -1,4 +1,4 @@
-package engines
+package core
 
 import (
 	"vega/src/matching"
@@ -14,7 +14,7 @@ type MatchingEngine interface {
 
 func (v Vega) CreateMarket(id string) {
 	if _, exists := v.markets[id]; !exists {
-		v.markets[id] = matching.NewBook(id, v.orders)
+		v.markets[id] = matching.NewBook(id, v.orders, v.config.Matching)
 	}
 }
 

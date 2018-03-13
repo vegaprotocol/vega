@@ -1,7 +1,6 @@
 package matching
 
 import (
-	"container/list"
 	"fmt"
 
 	"vega/src/proto"
@@ -26,24 +25,11 @@ func makeSide(side msg.Side, book *OrderBook) *OrderBookSide {
 	}
 }
 
-func (s *OrderBookSide) addOrder(o *OrderEntry) *[]Trade {
-	trades := s.other.uncross(o)
-	if o.persist && o.order.Remaining > 0 {
-		s.book.orders[o.id] = o
-		o.book = s.book
-		o.side = s
-		o.priceLevel = s.getPriceLevel(o.order.Price)
-		o.priceLevel.addOrder(o)
-		fmt.Printf("Added: %v\n", o)
-	}
-	return trades
-}
-
 func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
 	var priceLevel *PriceLevel
 	item := s.levels.Get(&PriceLevel{side: s.side, price: price})
 	if item == nil {
-		priceLevel = &PriceLevel{side: s.side, price: price, orders: list.New()}
+		priceLevel = NewPriceLevel(s, price)
 		s.levels.ReplaceOrInsert(priceLevel)
 	} else {
 		priceLevel = item.(*PriceLevel)
@@ -55,11 +41,19 @@ func (s *OrderBookSide) removePriceLevel(price uint64) {
 	s.levels.Delete(&PriceLevel{side: s.side, price: price})
 }
 
-func (s *OrderBookSide) topPriceLevel() *PriceLevel  {
+func (s *OrderBookSide) topPriceLevel() *PriceLevel {
 	if s.levels.Len() > 0 {
 		return s.levels.Max().(*PriceLevel)
 	} else {
 		return nil
+	}
+}
+
+func (s *OrderBookSide) pivotPriceLevel(agg *OrderEntry) *PriceLevel {
+	if s.side == msg.Side_Buy {
+		return &PriceLevel{side: s.side, price: agg.order.Price - 1}
+	} else {
+		return &PriceLevel{side: s.side, price: agg.order.Price + 1}
 	}
 }
 
@@ -71,32 +65,36 @@ func (s *OrderBookSide) bestPrice() uint64 {
 	}
 }
 
+func (s *OrderBookSide) addOrder(o *OrderEntry) *[]Trade {
+	trades := s.other.uncross(o)
+	if o.persist && o.order.Remaining > 0 {
+		s.book.orders[o.id] = o
+		o.book = s.book
+		o.side = s
+		o.priceLevel = s.getPriceLevel(o.order.Price)
+		o.priceLevel.addOrder(o)
+		if !s.book.config.Quiet {
+			fmt.Printf("Added: %v\n", o)
+		}
+	}
+	return trades
+}
+
+// Go through the price levels from best to worst uncrossing each in turn
 func (s *OrderBookSide) uncross(agg *OrderEntry) *[]Trade {
 	trades := make([]Trade, 0)
-
-	// No trades if the book isn't crossed
-	if s.topPriceLevel() == nil || !agg.crossedWith(s.side, s.bestPrice()) {
-		return &trades
-	}
-
-	// We want s.levels.DescendGreaterThanOrEqual so modify the price accordingly
-	var cutoffPriceLevel *PriceLevel
-	if s.side == msg.Side_Buy {
-		cutoffPriceLevel = &PriceLevel{side: s.side, price: agg.order.Price - 1}
-	} else {
-		cutoffPriceLevel = &PriceLevel{side: s.side, price: agg.order.Price + 1}
-	}
-
-	// Go through the price levels from best to worst uncrossing each in turn
-	s.levels.DescendGreaterThan(
-		cutoffPriceLevel,
-		func(i btree.Item) bool {
-			priceLevel := i.(*PriceLevel)
-			filled := priceLevel.uncross(agg, &trades)
-			return !filled
-		})
+	s.levels.DescendGreaterThan(s.pivotPriceLevel(agg), uncrossPriceLevel(agg, &trades))
 	if len(trades) > 0 {
 		s.book.lastTradedPrice = trades[len(trades)-1].price
 	}
 	return &trades
+}
+
+// Returns closure over the aggressor and trades slice that calls priceLevel.uncross(...)
+func uncrossPriceLevel(agg *OrderEntry, trades *[]Trade) func(i btree.Item) bool {
+	return func(i btree.Item) bool {
+		priceLevel := i.(*PriceLevel)
+		filled := priceLevel.uncross(agg, trades)
+		return !filled
+	}
 }

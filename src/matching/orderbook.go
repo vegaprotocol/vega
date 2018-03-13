@@ -10,12 +10,12 @@ type OrderBook struct {
 	sell            *OrderBookSide
 	lastTradedPrice uint64
 	orders          map[string]*OrderEntry
+	config          Config
 }
 
-
 // Create an order book with a given name
-func NewBook(name string, orderLookup map[string]*OrderEntry) *OrderBook {
-	book := &OrderBook{name: name, orders: orderLookup}
+func NewBook(name string, orderLookup map[string]*OrderEntry, config Config) *OrderBook {
+	book := &OrderBook{name: name, orders: orderLookup, config: config}
 	buy, sell := makeSide(msg.Side_Buy, book), makeSide(msg.Side_Sell, book)
 	book.buy = buy
 	book.buy.other = sell
@@ -34,7 +34,7 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	return MakeResponse(orderMessage, trades), msg.OrderError_NONE
 }
 
-func (b * OrderBook) sideFor(orderMessage *msg.Order) *OrderBookSide {
+func (b *OrderBook) sideFor(orderMessage *msg.Order) *OrderBookSide {
 	if orderMessage.Side == msg.Side_Buy {
 		return b.buy
 	} else { // side == Sell

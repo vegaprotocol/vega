@@ -25,7 +25,7 @@ func (o *OrderEntry) GetBook() *OrderBook {
 	return o.book
 }
 
-// Creates an order entry from an order protobufs message
+// Creates an order entry from an order message
 func orderFromMessage(order *msg.Order) *OrderEntry {
 	o := &OrderEntry{
 		order:   order,
@@ -35,7 +35,7 @@ func orderFromMessage(order *msg.Order) *OrderEntry {
 	return o
 }
 
-// Returns true if the order is crossed (can newTrade) with the supplied side and price
+// Returns true if the order is crossed (can trade) with the supplied side and price
 func (o *OrderEntry) crossedWith(side msg.Side, price uint64) bool {
 	return o.order.GetSide() != side &&
 		price > 0 &&
@@ -59,8 +59,9 @@ func (o *OrderEntry) remove() *OrderEntry {
 		return nil
 	}
 	o.priceLevel.removeOrder(o)
-	delete(o.book.orders, o.id)
-	fmt.Printf("Removed: %v\n", o)
+	if !o.book.config.Quiet {
+		fmt.Printf("Removed: %v\n", o)
+	}
 	return o
 }
 
