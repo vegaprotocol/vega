@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"time"
 
+	"vega/src/api"
 	"vega/src/core"
 	"vega/src/proto"
 	"vega/src/tests"
 )
 
 func main() {
-
 	benchmark := flag.Bool("bench", false, "Run benchmarks")
-	numberOfOrders := flag.Int("orders", 50000, "Number of orders to benchmark")
 	blockSize := flag.Int("block", 1, "Block size for timestamp increment")
+	server := flag.Bool("server", true, "Run a REST/JSON HTTP API")
+	numberOfOrders := flag.Int("orders", 50000, "Number of orders to benchmark")
 	uniform := flag.Bool("uniform", false, "Use the same size for all orders")
 	flag.Parse()
 
@@ -23,6 +24,9 @@ func main() {
 		return
 	}
 
+	if *server {
+		api.NewServer()
+	}
 
 	vega := core.New(core.DefaultConfig())
 	vega.CreateMarket("BTC/DEC18")
