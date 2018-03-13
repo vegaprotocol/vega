@@ -54,7 +54,7 @@ func BenchmarkMatching(numberOfOrders int, b *testing.B, quiet bool, blockSize i
 			totalTrades += len(result.Trades)
 		}
 		if !quiet {
-			fmt.Printf("(n=%v) Elapsed = %v, average = %v; matched %v trades, average %v per order.",
+			fmt.Printf("(n=%v) Elapsed = %v, average = %v; matched %v trades, average %v trades per order.",
 				numberOfOrders,
 				totalElapsed,
 				totalElapsed/time.Duration(numberOfOrders),

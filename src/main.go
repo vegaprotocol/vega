@@ -15,10 +15,11 @@ func main() {
 	benchmark := flag.Bool("bench", false, "Run benchmarks")
 	numberOfOrders := flag.Int("orders", 50000, "Number of orders to benchmark")
 	blockSize := flag.Int("block", 1, "Block size for timestamp increment")
+	uniform := flag.Bool("uniform", false, "Use the same size for all orders")
 	flag.Parse()
 
 	if *benchmark {
-		tests.BenchmarkMatching(*numberOfOrders, nil, false, *blockSize)
+		tests.BenchmarkMatching(*numberOfOrders, nil, false, *blockSize, *uniform)
 		return
 	}
 
