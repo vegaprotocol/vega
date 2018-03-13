@@ -1,0 +1,14 @@
+package: vega/src
+import:
+- package: github.com/gogo/protobuf
+  version: ^1.0.0
+  subpackages:
+  - proto
+- package: github.com/golang/protobuf
+  version: ^1.0.0
+  subpackages:
+  - proto
+- package: github.com/google/btree
+- package: golang.org/x/crypto
+  subpackages:
+  - sha3
