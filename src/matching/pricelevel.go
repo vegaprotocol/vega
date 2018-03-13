@@ -21,10 +21,10 @@ type PriceLevel struct {
 
 func NewPriceLevel(s *OrderBookSide, price uint64) *PriceLevel {
 	return &PriceLevel{
-		book: s.book,
-		side: s.side,
-		price: price,
-		orders: list.New(),
+		book:              s.book,
+		side:              s.side,
+		price:             price,
+		orders:            list.New(),
 		volumeByTimestamp: make(map[uint64]uint64),
 	}
 }
@@ -52,7 +52,6 @@ func (l *PriceLevel) topTimestamp() uint64 {
 		return 0
 	}
 }
-
 
 func (l *PriceLevel) addOrder(o *OrderEntry) {
 	if o.order.Remaining > 0 {
@@ -91,6 +90,7 @@ func (l *PriceLevel) Less(other btree.Item) bool {
 func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 	volumeToShare := agg.order.Remaining
 	currentTimestamp := l.topTimestamp()
+	initialVolumeAtTimestamp := l.volumeByTimestamp[currentTimestamp]
 	el := l.orders.Front()
 	for el != nil && agg.order.Remaining > 0 {
 
@@ -100,20 +100,24 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 		// See if we are at a new top time
 		if currentTimestamp != pass.order.Timestamp {
 			currentTimestamp = pass.order.Timestamp
+			initialVolumeAtTimestamp = l.volumeByTimestamp[currentTimestamp]
 			volumeToShare = agg.order.Remaining
 		}
 
 		// Get size and make newTrade
-		size := l.getVolumeAllocation(agg, pass, volumeToShare)
+		size := l.getVolumeAllocation(agg, pass, volumeToShare, initialVolumeAtTimestamp)
 		trade := newTrade(agg, pass, size)
 
 		// Update book state
 		if trade != nil {
+			*trades = append(*trades, *trade)
 			l.volume -= trade.size
+			if vbt, exists := l.volumeByTimestamp[currentTimestamp]; exists {
+				l.volumeByTimestamp[currentTimestamp] = vbt - trade.size
+			}
 			if pass.order.Remaining == 0 {
 				pass.remove()
 			}
-			*trades = append(*trades, *trade)
 			if !l.book.config.Quiet {
 				fmt.Printf("Matched: %v\n", trade)
 			}
@@ -123,10 +127,12 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 	return agg.order.Remaining == 0
 }
 
-func (l *PriceLevel) getVolumeAllocation(agg, pass *OrderEntry, volumeToShare uint64) uint64 {
-	volumeAtPassiveTimestamp := l.volumeByTimestamp[pass.order.Timestamp]
-	weight := float64(pass.order.Remaining) / float64(volumeAtPassiveTimestamp)
-	size := weight * float64(min(volumeToShare, volumeAtPassiveTimestamp))
+func (l *PriceLevel) getVolumeAllocation(
+	agg, pass *OrderEntry,
+	volumeToShare, initialVolumeAtTimestamp uint64) uint64 {
+
+	weight := float64(pass.order.Remaining) / float64(initialVolumeAtTimestamp)
+	size := weight * float64(min(volumeToShare, initialVolumeAtTimestamp))
 	if size-math.Trunc(size) > 0 {
 		size++ // Otherwise we can end up allocating 1 short because of integer division rounding
 	}
