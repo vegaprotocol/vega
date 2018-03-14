@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"time"
 
+	"vega/src/blockchain"
 	"vega/src/core"
 	"vega/src/proto"
 	"vega/src/tests"
 )
 
 func main() {
-
 	benchmark := flag.Bool("bench", false, "Run benchmarks")
+	chain := flag.Bool("chain", false, "Start a Tendermint blockchain socket")
 	numberOfOrders := flag.Int("orders", 50000, "Number of orders to benchmark")
 	blockSize := flag.Int("block", 1, "Block size for timestamp increment")
 	uniform := flag.Bool("uniform", false, "Use the same size for all orders")
@@ -23,6 +24,10 @@ func main() {
 		return
 	}
 
+	if *chain {
+		blockchain.Start()
+		return
+	}
 
 	vega := core.New(core.DefaultConfig())
 	vega.CreateMarket("BTC/DEC18")
