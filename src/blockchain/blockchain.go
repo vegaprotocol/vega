@@ -1,6 +1,8 @@
 package blockchain
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 
@@ -115,25 +117,30 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	fmt.Println("DeliverTx (ALL NODES): ", string(tx))
 
-	var order = msg.Order{
-		Market:    "BTC/DEC18",
-		Party:     "A",
-		Side:      msg.Side_Buy,
-		Price:     100,
-		Size:      50,
-		Remaining: 50,
-		Type:      msg.Order_GTC,
-		Timestamp: 0,
+	// split the transaction
+	var key, value []byte
+	parts := bytes.Split(tx, []byte("="))
+	if len(parts) == 2 {
+		key, value = parts[0], parts[1]
+	} else {
+		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
-
-	orderJson, err := json.Marshal(order)
+	fmt.Println("Got key: ", string(key))
+	fmt.Println("About to try and decode: ", string(value))
+	// decode base64
+	var jsonBlob, err = base64.URLEncoding.DecodeString(string(value))
 	if err != nil {
-		fmt.Println("Error: ", err)
+		fmt.Println("Error decoding: " + err.Error())
 	}
-	fmt.Println("Order: ", string(orderJson))
+	fmt.Println("Decoded: ", string(jsonBlob))
+	// deserialize JSON to struct
+	var order msg.Order
+	e := json.Unmarshal(jsonBlob, &order)
+	if e != nil {
+		fmt.Println("Error: ", e.Error())
+	}
 
 	res, _ := app.vega.SubmitOrder(order)
-
 	fmt.Println("DeliverTx response: ", res)
 
 	app.state.Size += 1
