@@ -28,7 +28,7 @@ func main() {
 	vega.CreateMarket("BTC/DEC18")
 
 	if *chain {
-		blockchain.Start()
+		blockchain.Start(*vega)
 		return
 	}
 

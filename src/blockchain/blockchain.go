@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"encoding/binary"
+	"encoding/json"
 
 	cmn "github.com/tendermint/tmlibs/common"
 
@@ -11,7 +12,8 @@ import (
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/abci/types"
 
-	_ "vega/src/core"
+	"vega/src/core"
+	"vega/src/proto"
 )
 
 type State struct {
@@ -23,14 +25,15 @@ type State struct {
 type Blockchain struct {
 	types.BaseApplication
 
+	vega  core.Vega
 	state State
 }
 
 // Starts up a Vega blockchain server.
-func Start() error {
+func Start(vega core.Vega) error {
 	fmt.Println("Starting vega server...")
-	vega := NewBlockchain()
-	srv, err := server.NewServer("127.0.0.1:46658", "socket", vega)
+	blockchain := NewBlockchain(vega)
+	srv, err := server.NewServer("127.0.0.1:46658", "socket", blockchain)
 	if err != nil {
 		return err
 	}
@@ -39,7 +42,7 @@ func Start() error {
 		return err
 	}
 
-	fmt.Println("server started")
+	fmt.Println("...server started!")
 
 	// Wait forever
 	cmn.TrapSignal(func() {
@@ -50,17 +53,17 @@ func Start() error {
 
 }
 
-func NewBlockchain() *Blockchain {
+func NewBlockchain(vegaApp core.Vega) *Blockchain {
 	state := State{}
-	return &Blockchain{state: state}
+	return &Blockchain{state: state, vega: vegaApp}
 }
 
 // Stage 1: Mempool Connection
 //
-// A transaction is received by a validator from a client into
-// *one* node's mempool or transaction pool. We need to check whether we consider it
+// A transaction is received by a validator from a client into its own
+// (*one node*) mempool. We need to check whether we consider it
 // "legal" (validly formatted, containing non-crazy data from a business
-// perspective). If so, send it through.
+// perspective). If so, send it through to the consensus round.
 //
 // From the Tendermint docs:
 //
@@ -111,6 +114,28 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	fmt.Println("DeliverTx (ALL NODES): ", string(tx))
+
+	var order = msg.Order{
+		Market:    "BTC/DEC18",
+		Party:     "A",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Size:      50,
+		Remaining: 50,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+	}
+
+	orderJson, err := json.Marshal(order)
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+	fmt.Println("Order: ", string(orderJson))
+
+	res, _ := app.vega.SubmitOrder(order)
+
+	fmt.Println("DeliverTx response: ", res)
+
 	app.state.Size += 1
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
