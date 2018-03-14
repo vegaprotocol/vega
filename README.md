@@ -14,7 +14,7 @@ Once you've got it, do a `glide install`. The proper version of each dependency 
 
 We're using Tendermint for distributing transactions across multiple nodes.
 
-Install: `go get github.com/tendermint/tendermint/cmd/tendermint`.
+Install: `go get github.com/tendermint/tendermint/cmd/tendermint`
 
 That will build the `tendermint` binary. Assuming your `$GOBIN` works, initialize it like this:
 
