@@ -1,0 +1,18 @@
+hash: 751fe1e31a2817204d17300e7a9178b4cdc1b064788fb8caa1af92630d4a111d
+updated: 2018-03-13T10:19:38.851908036Z
+imports:
+- name: github.com/gogo/protobuf
+  version: 1adfc126b41513cc696b209667c8656ea7aac67c
+  subpackages:
+  - proto
+- name: github.com/golang/protobuf
+  version: 925541529c1fa6821df4e44ce2723319eb2be768
+  subpackages:
+  - proto
+- name: github.com/google/btree
+  version: e89373fe6b4a7413d7acd6da1725b83ef713e6e4
+- name: golang.org/x/crypto
+  version: 182114d582623c1caa54f73de9c7224e23a48487
+  subpackages:
+  - sha3
+testImports: []
