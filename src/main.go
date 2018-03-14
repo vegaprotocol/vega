@@ -16,10 +16,11 @@ func main() {
 	numberOfOrders := flag.Int("orders", 50000, "Number of orders to benchmark")
 	blockSize := flag.Int("block", 1, "Block size for timestamp increment")
 	uniform := flag.Bool("uniform", false, "Use the same size for all orders")
+	reportInterval := flag.Int("reportEvery", 0, "Report stats every n orders")
 	flag.Parse()
 
 	if *benchmark {
-		tests.BenchmarkMatching(*numberOfOrders, nil, false, *blockSize, *uniform)
+		tests.BenchmarkMatching(*numberOfOrders, nil, false, *blockSize, *uniform, *reportInterval)
 		return
 	}
 

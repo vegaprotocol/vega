@@ -26,6 +26,7 @@ message OrderConfirmation {
 enum OrderError {
     NONE = 0;
     INVALID_MARKET_ID = 1;
+    ORDER_OUT_OF_SEQUENCE = 2;
 }
 
 message Trade {
@@ -45,4 +46,13 @@ message MarketData {
     uint64 bestBid = 1;
     uint64 bestOffer = 2;
     uint64 lastTradedPrice = 3;
+}
+
+message MarketDepth {
+    uint64 buyOrderCount = 1;
+    uint64 sellOrderCount = 2;
+    uint64 buyOrderVolume = 3;
+    uint64 sellOrderVolume = 4;
+    uint64 buyPriceLevels = 5;
+    uint64 sellPriceLevels = 6;
 }
