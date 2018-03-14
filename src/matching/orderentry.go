@@ -58,9 +58,10 @@ func (o *OrderEntry) remove() *OrderEntry {
 	if o.priceLevel == nil {
 		return nil
 	}
+	book := o.book
+	delete(book.orders, o.id)
 	o.priceLevel.removeOrder(o)
-	delete(o.book.orders, o.id)
-	if !o.book.config.Quiet {
+	if !book.config.Quiet {
 		fmt.Printf("Removed: %v\n", o)
 	}
 	return o

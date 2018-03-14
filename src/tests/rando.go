@@ -38,7 +38,9 @@ func BenchmarkMatching(
 		vega := core.New(config)
 		vega.CreateMarket(marketId)
 		totalElapsed := time.Duration(0)
+		periodElapsed := totalElapsed
 		totalTrades := 0
+		periodTrades := totalTrades
 		timestamp := uint64(0)
 		for i := 1; i <= numberOfOrders; i++ {
 			if blockSize == 0 || (i%blockSize) == 0 {
@@ -64,24 +66,44 @@ func BenchmarkMatching(
 			})
 			end := time.Now()
 			totalElapsed += end.Sub(start)
+			periodElapsed += end.Sub(start)
 			totalTrades += len(result.Trades)
+			periodTrades += len(result.Trades)
 
-			if !quiet && i % reportInterval == 0 {
+
+			if !quiet && reportInterval != numberOfOrders && i % reportInterval == 0 {
 				fmt.Printf(
 					"(n=%v/%v) Elapsed = %v, average = %v; matched %v trades, average %v trades per order\n",
 					i,
 					numberOfOrders,
 					totalElapsed,
-					totalElapsed/time.Duration(numberOfOrders),
-					totalTrades,
-					float64(totalTrades)/float64(numberOfOrders))
+					periodElapsed/time.Duration(reportInterval),
+					periodTrades,
+					float64(periodTrades)/float64(reportInterval))
 				fmt.Printf(
 					"(n=%v/%v) %v %v\n",
 					i,
 					numberOfOrders,
 					vega.GetMarketData(marketId),
 					vega.GetMarketDepth(marketId))
+				periodTrades = 0
+				periodElapsed = 0
 			}
+		}
+
+		if !quiet {
+			fmt.Printf(
+				"(n=%v) Elapsed = %v, average = %v; matched %v trades, average %v trades per order\n",
+				numberOfOrders,
+				totalElapsed,
+				totalElapsed/time.Duration(numberOfOrders),
+				totalTrades,
+				float64(totalTrades)/float64(reportInterval))
+			fmt.Printf(
+				"(n=%v) %v %v\n",
+				numberOfOrders,
+				vega.GetMarketData(marketId),
+				vega.GetMarketDepth(marketId))
 		}
 	}
 

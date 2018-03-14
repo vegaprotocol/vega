@@ -74,8 +74,6 @@ func (l *PriceLevel) removeOrder(o *OrderEntry) *OrderEntry {
 	}
 	l.volume -= o.order.Remaining
 	l.orders.Remove(o.elem)
-	o.elem = nil
-	o.priceLevel = nil
 	o.side.totalVolume -= o.order.Remaining
 	o.side.orderCount--
 	if vbt, exists := l.volumeByTimestamp[o.order.Timestamp]; exists {
@@ -86,9 +84,13 @@ func (l *PriceLevel) removeOrder(o *OrderEntry) *OrderEntry {
 		}
 
 	}
-	if l.volume == 0 {
+	if l.orders.Len() == 0 {
 		o.side.removePriceLevel(l.price)
 	}
+	o.elem = nil
+	o.priceLevel = nil
+	o.side = nil
+	o.book = nil
 	return o
 }
 
