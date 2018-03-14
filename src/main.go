@@ -24,13 +24,13 @@ func main() {
 		return
 	}
 
+	vega := core.New(core.DefaultConfig())
+	vega.CreateMarket("BTC/DEC18")
+
 	if *chain {
 		blockchain.Start()
 		return
 	}
-
-	vega := core.New(core.DefaultConfig())
-	vega.CreateMarket("BTC/DEC18")
 
 	vega.SubmitOrder(msg.Order{
 		Market:    "BTC/DEC18",

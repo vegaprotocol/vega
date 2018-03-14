@@ -10,6 +10,8 @@ import (
 	"github.com/tendermint/abci/example/code"
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/abci/types"
+
+	_ "vega/src/core"
 )
 
 type State struct {
@@ -18,7 +20,7 @@ type State struct {
 	AppHash []byte `json:"app_hash"`
 }
 
-type VegaApplication struct {
+type Blockchain struct {
 	types.BaseApplication
 
 	state State
@@ -27,7 +29,7 @@ type VegaApplication struct {
 // Starts up a Vega blockchain server.
 func Start() error {
 	fmt.Println("Starting vega server...")
-	vega := NewVegaApplication()
+	vega := NewBlockchain()
 	srv, err := server.NewServer("127.0.0.1:46658", "socket", vega)
 	if err != nil {
 		return err
@@ -48,9 +50,9 @@ func Start() error {
 
 }
 
-func NewVegaApplication() *VegaApplication {
+func NewBlockchain() *Blockchain {
 	state := State{}
-	return &VegaApplication{state: state}
+	return &Blockchain{state: state}
 }
 
 // Stage 1: Mempool Connection
@@ -77,7 +79,7 @@ func NewVegaApplication() *VegaApplication {
 // the rest using CheckTx against the post-Commit mempool state]
 //
 // FIXME: For the moment, just let everything through.
-func (app *VegaApplication) CheckTx(tx []byte) types.ResponseCheckTx {
+func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 	fmt.Println("Checking transaction (LOCAL): ", string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
@@ -107,7 +109,7 @@ func (app *VegaApplication) CheckTx(tx []byte) types.ResponseCheckTx {
 // The block header will be updated (TODO) to include some commitment to the
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
-func (app *VegaApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
+func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	fmt.Println("DeliverTx (ALL NODES): ", string(tx))
 	app.state.Size += 1
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
@@ -135,7 +137,7 @@ func (app *VegaApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
 // The option to have all transactions replayed from some previous block is
 // the job of the Handshake.
 //
-func (app *VegaApplication) Commit() types.ResponseCommit {
+func (app *Blockchain) Commit() types.ResponseCommit {
 	fmt.Println("committing")
 	// Using a memdb - just return the big endian size of the db
 	appHash := make([]byte, 8)
