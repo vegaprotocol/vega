@@ -6,8 +6,8 @@ import (
 )
 
 func NewServer() {
-	println("Starting HTTP server on port 8080...")
+	println("Starting HTTP server on port 6666...")
 	router := NewRouter()
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":6666", router))
 }
