@@ -54,10 +54,9 @@ func BenchmarkMatching(
 			}
 			start := time.Now()
 			result, _ := vega.SubmitOrder(msg.Order{
-				Market:    marketId,
-				Party:     fmt.Sprintf("P%v", timestamp),
-				Side:      msg.Side(rand.Intn(2)),
-				//Price:     50,
+				Market: marketId,
+				Party:  fmt.Sprintf("P%v", timestamp),
+				Side:   msg.Side(rand.Intn(2)),
 				Price:     uint64(rand.Intn(100) + 50),
 				Size:      size,
 				Remaining: size,
@@ -70,8 +69,7 @@ func BenchmarkMatching(
 			totalTrades += len(result.Trades)
 			periodTrades += len(result.Trades)
 
-
-			if !quiet && reportInterval != numberOfOrders && i % reportInterval == 0 {
+			if !quiet && reportInterval != numberOfOrders && i%reportInterval == 0 {
 				fmt.Printf(
 					"(n=%v/%v) Elapsed = %v, average = %v; matched %v trades, average %v trades per order\n",
 					i,

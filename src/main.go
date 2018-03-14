@@ -24,7 +24,6 @@ func main() {
 		return
 	}
 
-
 	vega := core.New(core.DefaultConfig())
 	vega.CreateMarket("BTC/DEC18")
 
@@ -90,4 +89,5 @@ func main() {
 	vega.DeleteOrder(res.Order.Id)
 
 	fmt.Println(vega.GetMarketData("BTC/DEC18"))
+	fmt.Println(vega.GetMarketDepth("BTC/DEC18"))
 }
