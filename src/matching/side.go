@@ -8,13 +8,15 @@ import (
 	"github.com/google/btree"
 )
 
-const priceLevelsBTreeDegree = 32
+const priceLevelsBTreeDegree = 128
 
 type OrderBookSide struct {
-	book   *OrderBook
-	side   msg.Side
-	other  *OrderBookSide
-	levels *btree.BTree
+	book        *OrderBook
+	side        msg.Side
+	other       *OrderBookSide
+	levels      *btree.BTree
+	orderCount  uint64
+	totalVolume uint64
 }
 
 func makeSide(side msg.Side, book *OrderBook) *OrderBookSide {
@@ -35,6 +37,18 @@ func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
 		priceLevel = item.(*PriceLevel)
 	}
 	return priceLevel
+}
+
+func (s *OrderBookSide) getNumberOfPriceLevels() int {
+	return s.levels.Len()
+}
+
+func (s *OrderBookSide) getOrderCount() uint64 {
+	return s.orderCount
+}
+
+func (s *OrderBookSide) getTotalVolume() uint64 {
+	return s.totalVolume
 }
 
 func (s *OrderBookSide) removePriceLevel(price uint64) {

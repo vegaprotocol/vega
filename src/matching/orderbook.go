@@ -11,6 +11,7 @@ type OrderBook struct {
 	lastTradedPrice uint64
 	orders          map[string]*OrderEntry
 	config          Config
+	latestTimestamp uint64
 }
 
 // Create an order book with a given name
@@ -28,6 +29,9 @@ func NewBook(name string, orderLookup map[string]*OrderEntry, config Config) *Or
 func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	if err := b.validateOrder(orderMessage); err != msg.OrderError_NONE {
 		return nil, err
+	}
+	if orderMessage.Timestamp > b.latestTimestamp {
+		b.latestTimestamp = orderMessage.Timestamp
 	}
 	orderEntry := orderFromMessage(orderMessage)
 	trades := b.sideFor(orderMessage).addOrder(orderEntry)
@@ -51,6 +55,17 @@ func (b *OrderBook) GetMarketData() *msg.MarketData {
 		BestBid:         b.buy.bestPrice(),
 		BestOffer:       b.sell.bestPrice(),
 		LastTradedPrice: b.lastTradedPrice,
+	}
+}
+
+func (b *OrderBook) GetMarketDepth() *msg.MarketDepth {
+	return &msg.MarketDepth{
+		BuyOrderCount: b.buy.getOrderCount(),
+		SellOrderCount: b.sell.getOrderCount(),
+		BuyOrderVolume: b.buy.getTotalVolume(),
+		SellOrderVolume: b.sell.getTotalVolume(),
+		BuyPriceLevels: uint64(b.buy.getNumberOfPriceLevels()),
+		SellPriceLevels: uint64(b.sell.getNumberOfPriceLevels()),
 	}
 }
 

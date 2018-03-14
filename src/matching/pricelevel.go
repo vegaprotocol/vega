@@ -61,8 +61,10 @@ func (l *PriceLevel) addOrder(o *OrderEntry) {
 		} else {
 			l.volumeByTimestamp[o.order.Timestamp] = o.order.Remaining
 		}
-		o.elem = l.orders.PushBack(o)
 		l.volume += o.order.Remaining
+		o.side.totalVolume += o.order.Remaining
+		o.side.orderCount++
+		o.elem = l.orders.PushBack(o)
 	}
 }
 
@@ -70,21 +72,34 @@ func (l *PriceLevel) removeOrder(o *OrderEntry) *OrderEntry {
 	if l != o.priceLevel || l.price != o.order.Price {
 		panic("removeOrder called on wrong price level for order/price")
 	}
-	o.priceLevel.volume -= o.order.Remaining
-	o.priceLevel.orders.Remove(o.elem)
+	l.volume -= o.order.Remaining
+	l.orders.Remove(o.elem)
+	o.side.totalVolume -= o.order.Remaining
+	o.side.orderCount--
+	if vbt, exists := l.volumeByTimestamp[o.order.Timestamp]; exists {
+		if vbt <= o.order.Remaining {
+			delete(l.volumeByTimestamp, o.order.Timestamp)
+		} else {
+			l.volumeByTimestamp[o.order.Timestamp] = vbt - o.order.Remaining
+		}
+
+	}
+	if l.orders.Len() == 0 {
+		o.side.removePriceLevel(l.price)
+	}
 	o.elem = nil
-	if vbt, exists := o.priceLevel.volumeByTimestamp[o.order.Timestamp]; exists {
-		o.priceLevel.volumeByTimestamp[o.order.Timestamp] = vbt - o.order.Remaining
-	}
-	if o.priceLevel.volume == 0 {
-		o.side.removePriceLevel(o.priceLevel.price)
-	}
 	o.priceLevel = nil
+	o.side = nil
+	o.book = nil
 	return o
 }
 
 func (l *PriceLevel) Less(other btree.Item) bool {
-	return (l.side == msg.Side_Buy) == (l.price < other.(*PriceLevel).price)
+	if l.side == msg.Side_Buy {
+		return l.price < other.(*PriceLevel).price
+	} else {
+		return l.price > other.(*PriceLevel).price
+	}
 }
 
 func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
@@ -99,6 +114,7 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 
 		// See if we are at a new top time
 		if currentTimestamp != pass.order.Timestamp {
+			delete(l.volumeByTimestamp, currentTimestamp)
 			currentTimestamp = pass.order.Timestamp
 			initialVolumeAtTimestamp = l.volumeByTimestamp[currentTimestamp]
 			volumeToShare = agg.order.Remaining
@@ -112,6 +128,7 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 		if trade != nil {
 			*trades = append(*trades, *trade)
 			l.volume -= trade.size
+			pass.side.totalVolume -= trade.size
 			if vbt, exists := l.volumeByTimestamp[currentTimestamp]; exists {
 				l.volumeByTimestamp[currentTimestamp] = vbt - trade.size
 			}
@@ -127,6 +144,9 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 	return agg.order.Remaining == 0
 }
 
+// Get size for a specific trade assuming remaining aggressive volume is allocated pro-rata among all passive trades
+// with the same timestamp by their share of the total volume with the same price and timestamp. (NB: "normal"
+// trading would thus *always* increment the logical timestamp between trades.)
 func (l *PriceLevel) getVolumeAllocation(
 	agg, pass *OrderEntry,
 	volumeToShare, initialVolumeAtTimestamp uint64) uint64 {

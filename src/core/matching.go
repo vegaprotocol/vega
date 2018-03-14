@@ -41,3 +41,11 @@ func (v Vega) GetMarketData(marketId string) *msg.MarketData {
 		return nil
 	}
 }
+
+func (v Vega) GetMarketDepth(marketId string) *msg.MarketDepth {
+	if market, exists := v.markets[marketId]; exists {
+		return market.GetMarketDepth()
+	} else {
+		return nil
+	}
+}

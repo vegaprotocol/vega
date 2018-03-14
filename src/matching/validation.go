@@ -13,5 +13,8 @@ func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {
 			orderMessage.Market,
 			b.name))
 	}
+	if orderMessage.Timestamp < b.latestTimestamp {
+		return msg.OrderError_ORDER_OUT_OF_SEQUENCE
+	}
 	return msg.OrderError_NONE
 }
