@@ -20,12 +20,8 @@ func Start(vega core.Vega) error {
 	if err := srv.Start(); err != nil {
 		return err
 	}
-
-	fmt.Println("done")
-
 	// Wait forever
 	cmn.TrapSignal(func() {
-		// Cleanup
 		srv.Stop()
 	})
 	return nil
