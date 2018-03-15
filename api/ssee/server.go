@@ -24,19 +24,9 @@ func (s *SseServer) Start() {
 	var port = 3002
 	var addr = fmt.Sprintf(":%d", port)
 	fmt.Printf("Start SSE server on port %d", port)
-	// defer s.server.Shutdown()
+	defer s.server.Shutdown()
 
-	// Register with /events endpoint.
-	// var srv =
 	http.Handle("/events/", &s.server)
-
-	// Dispatch heartbeat messages
-	// go func() {
-	// 	for {
-	// 		s.server.SendMessage("/events/heartbeat", sse.SimpleMessage(time.Now().String()))
-	// 		time.Sleep(5 * time.Second)
-	// 	}
-	// }()
 
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
