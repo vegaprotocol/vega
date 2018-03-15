@@ -29,6 +29,12 @@ vega --chain
 tendermint node
 ```
 
+At this point, you've got:
+
+* a Vega blockchain TCP socket open on port 46658, connected to Tendermint
+* a stub REST API running on [http://localhost:3001](http://localhost:3001)
+* a stub Server Sent Events (SSE) API pushing events out at http://localhost:3002/events/orders
+
 Tips:
 
 * if you need to reset the chain, run `tendermint reset_unsafe_all`
