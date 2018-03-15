@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"vega/api/rest"
-	"vega/api/ssee"
+	"vega/api/sse"
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"
@@ -27,7 +27,7 @@ func main() {
 		return
 	}
 
-	sseServer := ssee.NewSseServer()
+	sseServer := sse.NewSseServer()
 	vega := core.New(core.DefaultConfig(), sseServer)
 	vega.CreateMarket("BTC/DEC18")
 	restServer := rest.NewRestServer()

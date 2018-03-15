@@ -1,7 +1,7 @@
 package core
 
 import (
-	"vega/api/ssee"
+	"vega/api/sse"
 	"vega/matching"
 )
 
@@ -9,14 +9,14 @@ type Vega struct {
 	config  Config
 	markets map[string]*matching.OrderBook
 	orders  map[string]*matching.OrderEntry
-	sse     ssee.SseServer // heheheh there's totally a better way to do this.
+	sse     sse.SseServer // heheheh there's totally a better way to do this.
 }
 
 type Config struct {
 	Matching matching.Config
 }
 
-func New(config Config, sseServer ssee.SseServer) *Vega {
+func New(config Config, sseServer sse.SseServer) *Vega {
 	return &Vega{
 		config:  config,
 		markets: make(map[string]*matching.OrderBook),
