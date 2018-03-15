@@ -1,6 +1,8 @@
-hash: a7fdbddbfa114866f3562908630b4a22455ac59d43f5f06e2cab40a1cdd1ac9c
-updated: 2018-03-14T16:48:00.629532963Z
+hash: 29ad24d837c7837f388176da362a14331cc1023efc5653031f8f11d36437e999
+updated: 2018-03-15T13:36:36.602667922Z
 imports:
+- name: github.com/alexandrevicenzi/go-sse
+  version: 2f89af9fd5aaddbffde9c2b139fe218769c4a0eb
 - name: github.com/go-kit/kit
   version: 4dc7be5d2d12881735283bcab7352178e190fc71
   subpackages:
@@ -35,7 +37,7 @@ imports:
 - name: github.com/gorilla/mux
   version: 53c1911da2b537f792e7cafcb446b05ffe33b996
 - name: github.com/graph-gophers/graphql-go
-  version: 5b9b1c1ce87825f1539ab0e52ad56eef655ab46f
+  version: 5fa468a9b2ff7de5fc0cb6b4b941221aa9de9a0b
   subpackages:
   - errors
   - internal/common

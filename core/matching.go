@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"vega/matching"
 	"vega/proto"
 )
@@ -20,6 +21,8 @@ func (v Vega) CreateMarket(id string) {
 
 func (v Vega) SubmitOrder(order msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	if market, exists := v.markets[order.Market]; exists {
+		fmt.Println("SSSEEE TIME")
+		v.sse.SendOrder(order) // FIXME this is just a test of initial wiring!
 		return market.AddOrder(&order)
 	} else {
 		return nil, msg.OrderError_INVALID_MARKET_ID

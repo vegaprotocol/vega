@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"vega/api"
+	"vega/api/rest"
+	"vega/api/sse"
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"
@@ -17,7 +18,6 @@ func main() {
 	blockSize := flag.Int("block", 1, "Block size for timestamp increment")
 	chain := flag.Bool("chain", false, "Start a Tendermint blockchain socket")
 	numberOfOrders := flag.Int("orders", 50000, "Number of orders to benchmark")
-	// restapi := flag.Bool("restapi", false, "Run a REST/JSON HTTP API")
 	uniform := flag.Bool("uniform", false, "Use the same size for all orders")
 	reportInterval := flag.Int("reportEvery", 0, "Report stats every n orders")
 	flag.Parse()
@@ -27,12 +27,14 @@ func main() {
 		return
 	}
 
-	vega := core.New(core.DefaultConfig())
+	sseServer := sse.NewSseServer()
+	vega := core.New(core.DefaultConfig(), sseServer)
 	vega.CreateMarket("BTC/DEC18")
-
-	go api.NewServer()
+	restServer := rest.NewRestServer()
 
 	if *chain {
+		go restServer.Start()
+		go sseServer.Start()
 		blockchain.Start(*vega)
 		return
 	}

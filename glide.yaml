@@ -1,4 +1,4 @@
-package: vega/src
+package: vega
 import:
 - package: github.com/gogo/protobuf
   version: ^1.0.0
@@ -14,3 +14,4 @@ import:
   - sha3
 - package: github.com/gorilla/mux
   version: ^1.6.1
+- package: github.com/alexandrevicenzi/go-sse

@@ -35,7 +35,9 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	}
 	orderEntry := orderFromMessage(orderMessage)
 	trades := b.sideFor(orderMessage).addOrder(orderEntry)
-	return MakeResponse(orderMessage, trades), msg.OrderError_NONE
+	orderConfirmation := MakeResponse(orderMessage, trades)
+	// sse.SendTrade()
+	return orderConfirmation, msg.OrderError_NONE
 }
 
 func (b *OrderBook) sideFor(orderMessage *msg.Order) *OrderBookSide {
@@ -60,11 +62,11 @@ func (b *OrderBook) GetMarketData() *msg.MarketData {
 
 func (b *OrderBook) GetMarketDepth() *msg.MarketDepth {
 	return &msg.MarketDepth{
-		BuyOrderCount: b.buy.getOrderCount(),
-		SellOrderCount: b.sell.getOrderCount(),
-		BuyOrderVolume: b.buy.getTotalVolume(),
+		BuyOrderCount:   b.buy.getOrderCount(),
+		SellOrderCount:  b.sell.getOrderCount(),
+		BuyOrderVolume:  b.buy.getTotalVolume(),
 		SellOrderVolume: b.sell.getTotalVolume(),
-		BuyPriceLevels: uint64(b.buy.getNumberOfPriceLevels()),
+		BuyPriceLevels:  uint64(b.buy.getNumberOfPriceLevels()),
 		SellPriceLevels: uint64(b.sell.getNumberOfPriceLevels()),
 	}
 }
