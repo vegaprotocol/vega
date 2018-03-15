@@ -1,5 +1,5 @@
-hash: bedac0c98d35ad6a384acbc7b0d98c16def165bf46c1470ba8fc5a410a8b1388
-updated: 2018-03-15T13:33:19.349652751Z
+hash: 29ad24d837c7837f388176da362a14331cc1023efc5653031f8f11d36437e999
+updated: 2018-03-15T13:36:36.602667922Z
 imports:
 - name: github.com/alexandrevicenzi/go-sse
   version: 2f89af9fd5aaddbffde9c2b139fe218769c4a0eb

@@ -1,4 +1,4 @@
-package: vega/src
+package: vega
 import:
 - package: github.com/gogo/protobuf
   version: ^1.0.0
