@@ -2,6 +2,7 @@ package sse
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -38,5 +39,5 @@ func NewSseServer() {
 		}
 	}()
 
-	http.ListenAndServe(addr, nil)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
