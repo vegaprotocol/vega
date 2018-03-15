@@ -33,7 +33,7 @@ func NewBlockchain(vegaApp core.Vega) *Blockchain {
 	return &Blockchain{state: state, vega: vegaApp}
 }
 
-// Stage 1: Mempool Connection
+// Mempool Connection
 //
 // A transaction is received by a validator from a client into its own
 // (*one node*) mempool. We need to check whether we consider it
@@ -61,7 +61,7 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
-// Stage 2: Consensus Connection
+// Consensus Connection
 // Step 1: DeliverTx
 //
 // A transaction has been accepted by more than 2/3 of
@@ -115,7 +115,8 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
-// Commit the block and persist to disk.
+// Consensus Connection
+// Step 2: Commit the block and persist to disk.
 //
 // From the Tendermint docs:
 //
