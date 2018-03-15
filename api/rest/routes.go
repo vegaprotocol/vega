@@ -20,22 +20,4 @@ var routes = Routes{
 		"/",
 		Index,
 	},
-	// Route{
-	// 	"TodoCreate",
-	// 	"POST",
-	// 	"/todos",
-	// 	TodoCreate,
-	// },
-	// Route{
-	// 	"TodoIndex",
-	// 	"GET",
-	// 	"/todos",
-	// 	TodoIndex,
-	// },
-	// Route{
-	// 	"TodoShow",
-	// 	"GET",
-	// 	"/todos/{todoId}",
-	// 	TodoShow,
-	// },
 }
