@@ -32,3 +32,7 @@ tendermint node
 Tips:
 
 * if you need to reset the chain, run `tendermint reset_unsafe_all`
+
+### Adding new dependencies
+
+Do a `glide install github.com/foo/bar`. We'll be moving to the new `godep` dependency manager soon, but for the moment Glide's working fine.
