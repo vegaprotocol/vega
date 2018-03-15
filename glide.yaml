@@ -14,3 +14,4 @@ import:
   - sha3
 - package: github.com/gorilla/mux
   version: ^1.6.1
+- package: github.com/alexandrevicenzi/go-sse
