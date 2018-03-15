@@ -29,5 +29,4 @@ func Start(vega core.Vega) error {
 		srv.Stop()
 	})
 	return nil
-
 }
