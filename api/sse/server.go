@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	sse "github.com/alexandrevicenzi/go-sse"
 )
 
-func NewSseServer() {
+func NewSseServer() SseBroker {
 	var port = 3002
 	var addr = fmt.Sprintf(":%d", port)
 	fmt.Printf("Start SSE server on port %d", port)
@@ -18,26 +17,20 @@ func NewSseServer() {
 	s := sse.NewServer(nil)
 	defer s.Shutdown()
 
+	sseStreamer := NewSseStreamer(*s)
+
 	// Register with /events endpoint.
 	http.Handle("/events/", s)
 
-	// Dispatch messages to channel-1.
+	// Dispatch heartbeat messages
 	go func() {
 		for {
-			s.SendMessage("/events/channel-1", sse.SimpleMessage(time.Now().String()))
-			time.Sleep(5 * time.Second)
-		}
-	}()
-
-	// Dispatch messages to channel-2
-	go func() {
-		i := 0
-		for {
-			i++
-			s.SendMessage("/events/channel-2", sse.SimpleMessage(strconv.Itoa(i)))
+			s.SendMessage("/events/heartbeat", sse.SimpleMessage(time.Now().String()))
 			time.Sleep(5 * time.Second)
 		}
 	}()
 
 	log.Fatal(http.ListenAndServe(addr, nil))
+
+	return *sseStreamer
 }
