@@ -6,7 +6,13 @@ import (
 	"net/http"
 )
 
-func NewRestServer() {
+type restServer struct{}
+
+func NewRestServer() *restServer {
+	return &restServer{}
+}
+
+func (s *restServer) Start() {
 	var port = 3001
 	var addr = fmt.Sprintf(":%d", port)
 

@@ -35,7 +35,9 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	}
 	orderEntry := orderFromMessage(orderMessage)
 	trades := b.sideFor(orderMessage).addOrder(orderEntry)
-	return MakeResponse(orderMessage, trades), msg.OrderError_NONE
+	orderConfirmation := MakeResponse(orderMessage, trades)
+	// sse.SendTrade()
+	return orderConfirmation, msg.OrderError_NONE
 }
 
 func (b *OrderBook) sideFor(orderMessage *msg.Order) *OrderBookSide {

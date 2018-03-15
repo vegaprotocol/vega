@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"vega/api/ssee"
 	"vega/core"
 	"vega/proto"
 )
@@ -35,7 +36,7 @@ func BenchmarkMatching(
 	config.Matching.Quiet = true
 
 	for k := 0; k < times; k++ {
-		vega := core.New(config)
+		vega := core.New(config, ssee.NewSseServer())
 		vega.CreateMarket(marketId)
 		totalElapsed := time.Duration(0)
 		periodElapsed := totalElapsed
@@ -54,9 +55,9 @@ func BenchmarkMatching(
 			}
 			start := time.Now()
 			result, _ := vega.SubmitOrder(msg.Order{
-				Market: marketId,
-				Party:  fmt.Sprintf("P%v", timestamp),
-				Side:   msg.Side(rand.Intn(2)),
+				Market:    marketId,
+				Party:     fmt.Sprintf("P%v", timestamp),
+				Side:      msg.Side(rand.Intn(2)),
 				Price:     uint64(rand.Intn(100) + 50),
 				Size:      size,
 				Remaining: size,
