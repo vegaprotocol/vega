@@ -29,7 +29,7 @@ func main() {
 	vega := core.New(core.DefaultConfig())
 	vega.CreateMarket("BTC/DEC18")
 
-	go rest.NewServer()
+	go rest.NewRestServer()
 
 	if *chain {
 		blockchain.Start(*vega)

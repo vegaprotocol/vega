@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func NewServer() {
+func NewRestServer() {
 	var port = 3001
 	var addr = fmt.Sprintf(":%d", port)
 
