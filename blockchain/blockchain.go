@@ -58,7 +58,6 @@ func NewBlockchain(vegaApp core.Vega) *Blockchain {
 //
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
-	fmt.Println("Checking transaction (LOCAL): ", string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -88,24 +87,21 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	fmt.Println("DeliverTx (ALL NODES): ", string(tx))
-
 	// split the transaction
-	var key, value []byte
+	var _, value []byte
 	parts := bytes.Split(tx, []byte("="))
 	if len(parts) == 2 {
-		key, value = parts[0], parts[1]
+		_, value = parts[0], parts[1]
 	} else {
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
-	fmt.Println("Got key: ", string(key))
-	fmt.Println("About to try and decode: ", string(value))
+
 	// decode base64
 	var jsonBlob, err = base64.URLEncoding.DecodeString(string(value))
 	if err != nil {
 		fmt.Println("Error decoding: " + err.Error())
 	}
-	fmt.Println("Decoded: ", string(jsonBlob))
+
 	// deserialize JSON to struct
 	var order msg.Order
 	e := json.Unmarshal(jsonBlob, &order)
@@ -113,8 +109,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 		fmt.Println("Error: ", e.Error())
 	}
 
-	res, _ := app.vega.SubmitOrder(order)
-	fmt.Println("DeliverTx response: ", res)
+	app.vega.SubmitOrder(order)
 
 	app.state.Size += 1
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
@@ -143,13 +138,11 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 // the job of the Handshake.
 //
 func (app *Blockchain) Commit() types.ResponseCommit {
-	fmt.Println("committing")
 	// Using a memdb - just return the big endian size of the db
 	appHash := make([]byte, 8)
 	binary.PutVarint(appHash, app.state.Size)
 	app.state.AppHash = appHash
 	app.state.Height += 1
-	fmt.Println("state: ", app.state)
 	// saveState(app.state)
 	return types.ResponseCommit{Data: appHash}
 }
