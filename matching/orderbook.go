@@ -1,6 +1,8 @@
 package matching
 
 import (
+	"fmt"
+	"vega/api/sse"
 	"vega/proto"
 )
 
@@ -12,11 +14,17 @@ type OrderBook struct {
 	orders          map[string]*OrderEntry
 	config          Config
 	latestTimestamp uint64
+	sse             sse.SseServer
 }
 
 // Create an order book with a given name
-func NewBook(name string, orderLookup map[string]*OrderEntry, config Config) *OrderBook {
-	book := &OrderBook{name: name, orders: orderLookup, config: config}
+func NewBook(name string, orderLookup map[string]*OrderEntry, config Config, sseServer sse.SseServer) *OrderBook {
+	book := &OrderBook{
+		name:   name,
+		orders: orderLookup,
+		config: config,
+		sse:    sseServer,
+	}
 	buy, sell := makeSide(msg.Side_Buy, book), makeSide(msg.Side_Sell, book)
 	book.buy = buy
 	book.buy.other = sell
@@ -36,8 +44,16 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	orderEntry := orderFromMessage(orderMessage)
 	trades := b.sideFor(orderMessage).addOrder(orderEntry)
 	orderConfirmation := MakeResponse(orderMessage, trades)
-	// sse.SendTrade()
+	printSlice(*trades)
+	for _, trade := range *trades {
+		var t = trade.toMessage()
+		b.sse.SendTrade(*t)
+	}
 	return orderConfirmation, msg.OrderError_NONE
+}
+
+func printSlice(s []Trade) {
+	fmt.Printf("len=%d cap=%d %v\n", len(s), cap(s), s)
 }
 
 func (b *OrderBook) sideFor(orderMessage *msg.Order) *OrderBookSide {

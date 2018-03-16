@@ -10,7 +10,7 @@ func MakeResponse(order *msg.Order, trades *[]Trade) *msg.OrderConfirmation {
 		tradeSet = append(tradeSet, t.toMessage())
 	}
 	return &msg.OrderConfirmation{
-		Order: order,
-		Trades:  tradeSet,
+		Order:  order,
+		Trades: tradeSet,
 	}
 }

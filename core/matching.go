@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"vega/matching"
 	"vega/proto"
 )
@@ -15,13 +14,12 @@ type MatchingEngine interface {
 
 func (v Vega) CreateMarket(id string) {
 	if _, exists := v.markets[id]; !exists {
-		v.markets[id] = matching.NewBook(id, v.orders, v.config.Matching)
+		v.markets[id] = matching.NewBook(id, v.orders, v.config.Matching, v.sse)
 	}
 }
 
 func (v Vega) SubmitOrder(order msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	if market, exists := v.markets[order.Market]; exists {
-		fmt.Println("SSSEEE TIME")
 		v.sse.SendOrder(order) // FIXME this is just a test of initial wiring!
 		return market.AddOrder(&order)
 	} else {
