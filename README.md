@@ -16,6 +16,14 @@ We're using Tendermint for distributing transactions across multiple nodes.
 
 Install: `go get github.com/tendermint/tendermint/cmd/tendermint`
 
+Sometimes this fails. In this case, you need to do:
+
+```
+cd $GOPATH/src/github.com/tendermint/tendermint
+glide install
+go install ./cmd/tendermint
+```
+
 That will build the `tendermint` binary. Assuming your `$GOBIN` works, initialize it like this:
 
 ```
