@@ -16,7 +16,14 @@ type SseServer struct {
 }
 
 func NewSseServer() SseServer {
-	s := sse.NewServer(nil)
+	s := sse.NewServer(&sse.Options{
+		// CORS headers
+		Headers: map[string]string{
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Methods": "GET, OPTIONS",
+			"Access-Control-Allow-Headers": "Keep-Alive,X-Requested-With,Cache-Control,Content-Type,Last-Event-ID",
+		},
+	})
 	return SseServer{server: *s}
 }
 
