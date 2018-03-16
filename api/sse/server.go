@@ -42,3 +42,8 @@ func (s *SseServer) SendOrder(order msg.Order) {
 	var json, _ = json.Marshal(order)
 	s.server.SendMessage("/events/orders", sse.SimpleMessage(string(json)))
 }
+
+func (s *SseServer) SendTrade(trade msg.Trade) {
+	var json, _ = json.Marshal(trade)
+	s.server.SendMessage("/events/trades", sse.SimpleMessage(string(json)))
+}
