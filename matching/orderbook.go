@@ -53,7 +53,7 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 }
 
 func printSlice(s []Trade) {
-	fmt.Printf("len=%d cap=%d %v\n", len(s), cap(s), s)
+	fmt.Printf("len=%d cap=%d\n", len(s), cap(s))
 }
 
 func (b *OrderBook) sideFor(orderMessage *msg.Order) *OrderBookSide {
