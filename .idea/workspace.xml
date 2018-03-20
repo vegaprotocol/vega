@@ -1,23 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0c9963d8-525f-4217-9e13-14cc3332b16b" name="Default" comment="Use channels to notify of changes to orders on the book and new trades">
+    <list default="true" id="0c9963d8-525f-4217-9e13-14cc3332b16b" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/dictionaries/bm.xml" afterPath="$PROJECT_DIR$/.idea/dictionaries/bm.xml" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/api/sse/server.go" afterPath="$PROJECT_DIR$/api/sse/server.go" />
-      <change beforePath="$PROJECT_DIR$/core/core.go" afterPath="$PROJECT_DIR$/core/core.go" />
-      <change beforePath="$PROJECT_DIR$/core/matching.go" afterPath="$PROJECT_DIR$/core/matching.go" />
-      <change beforePath="$PROJECT_DIR$/main.go" afterPath="$PROJECT_DIR$/main.go" />
-      <change beforePath="$PROJECT_DIR$/matching/config.go" afterPath="$PROJECT_DIR$/matching/config.go" />
-      <change beforePath="$PROJECT_DIR$/matching/orderbook.go" afterPath="$PROJECT_DIR$/matching/orderbook.go" />
-      <change beforePath="$PROJECT_DIR$/matching/orderentry.go" afterPath="$PROJECT_DIR$/matching/orderentry.go" />
-      <change beforePath="$PROJECT_DIR$/matching/pricelevel.go" afterPath="$PROJECT_DIR$/matching/pricelevel.go" />
-      <change beforePath="$PROJECT_DIR$/matching/side.go" afterPath="$PROJECT_DIR$/matching/side.go" />
-      <change beforePath="$PROJECT_DIR$/matching/trade.go" afterPath="$PROJECT_DIR$/matching/trade.go" />
-      <change beforePath="$PROJECT_DIR$/matching/validation.go" afterPath="$PROJECT_DIR$/matching/validation.go" />
-      <change beforePath="$PROJECT_DIR$/proto/vega.pb.go" afterPath="$PROJECT_DIR$/proto/vega.pb.go" />
-      <change beforePath="$PROJECT_DIR$/proto/vega.proto" afterPath="$PROJECT_DIR$/proto/vega.proto" />
-      <change beforePath="$PROJECT_DIR$/tests/rando.go" afterPath="$PROJECT_DIR$/tests/rando.go" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -33,40 +20,8 @@
           <file leaf-file-name="main.go" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/main.go">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="41">
-                  <caret line="55" column="22" lean-forward="false" selection-start-line="55" selection-start-column="22" selection-end-line="55" selection-end-column="22" />
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="matching.go" pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/core/matching.go">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="169">
-                  <caret line="16" column="35" lean-forward="false" selection-start-line="16" selection-start-column="35" selection-end-line="16" selection-end-column="35" />
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="config.go" pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/matching/config.go">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="143">
-                  <caret line="11" column="18" lean-forward="false" selection-start-line="11" selection-start-column="18" selection-end-line="11" selection-end-column="18" />
-                  <folding>
-                    <element signature="e#18#37#0" expanded="true" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="trade.go" pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/matching/trade.go">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="353">
-                  <caret line="53" column="38" lean-forward="false" selection-start-line="53" selection-start-column="38" selection-end-line="53" selection-end-column="38" />
+                <state relative-caret-position="234">
+                  <caret line="30" column="14" lean-forward="false" selection-start-line="30" selection-start-column="14" selection-end-line="30" selection-end-column="14" />
                   <folding />
                 </state>
               </provider>
@@ -75,31 +30,23 @@
           <file leaf-file-name="server.go" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/api/sse/server.go">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="572">
-                  <caret line="53" column="17" lean-forward="false" selection-start-line="53" selection-start-column="17" selection-end-line="53" selection-end-column="17" />
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="rando.go" pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/tests/rando.go">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="494">
-                  <caret line="38" column="35" lean-forward="false" selection-start-line="38" selection-start-column="35" selection-end-line="38" selection-end-column="35" />
+                <state relative-caret-position="806">
+                  <caret line="62" column="0" lean-forward="false" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
                   <folding>
-                    <element signature="e#15#92#0" expanded="true" />
+                    <element signature="e#13#144#0" expanded="true" />
                   </folding>
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="orderbook.go" pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/matching/orderbook.go">
+          <file leaf-file-name="vega.pb.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/proto/vega.pb.go">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="558">
-                  <caret line="72" column="43" lean-forward="true" selection-start-line="72" selection-start-column="43" selection-end-line="72" selection-end-column="43" />
-                  <folding />
+                <state relative-caret-position="0">
+                  <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+                  <folding>
+                    <element signature="e#304#387#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -291,12 +238,12 @@
         <option value="$PROJECT_DIR$/core/core.go" />
         <option value="$PROJECT_DIR$/tests/rando.go" />
         <option value="$PROJECT_DIR$/matching/config.go" />
-        <option value="$PROJECT_DIR$/main.go" />
         <option value="$PROJECT_DIR$/matching/pricelevel.go" />
         <option value="$PROJECT_DIR$/matching/side.go" />
         <option value="$PROJECT_DIR$/matching/orderentry.go" />
         <option value="$PROJECT_DIR$/matching/trade.go" />
         <option value="$PROJECT_DIR$/matching/orderbook.go" />
+        <option value="$PROJECT_DIR$/main.go" />
         <option value="$PROJECT_DIR$/api/sse/server.go" />
       </list>
     </option>
@@ -453,7 +400,7 @@
     <property name="configurable.Project.GOPATH.is.expanded" value="true" />
     <property name="configurable.Module.GOPATH.is.expanded" value="false" />
     <property name="DefaultGoTemplateProperty" value="Go File" />
-    <property name="SearchEverywhereHistoryKey" value="comm&#9;ACTION&#9;CheckinProject&#10;commi&#9;ACTION&#9;CheckinProject&#10;tra&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/trade.go&#10;matc&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/core/matching.go&#10;trade&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/trade.go&#10;rando&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/tests/rando.go&#10;config&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/config.go&#10;orbo&#9;null&#9;null&#10;ve&#9;ACTION&#9;ActivateVersionControlToolWindow&#10;commit&#9;ACTION&#9;CheckinProject&#10;push&#9;ACTION&#9;Vcs.Push&#10;main&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/main.go&#10;term&#9;ACTION&#9;ActivateTerminalToolWindow&#10;pull&#9;ACTION&#9;Vcs.UpdateProject&#10;valid&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/validation.go&#10;read&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/README.md&#10;matching&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/core/matching.go&#10;core&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/core/core.go&#10;pric&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/pricelevel.go&#10;side&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/side.go&#10;trad&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/matching/trade.go&#10;rand&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/tests/rando.go&#10;.pro&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/proto/vega.proto&#10;test&#9;ACTION&#9;RerunTests&#10;oe&#9;null&#9;null&#10;settings&#9;ACTION&#9;Database.Settings&#10;ter&#9;ACTION&#9;ActivateTerminalToolWindow&#10;term,&#9;null&#9;null&#10;getorder&#9;null&#9;null&#10;pro&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/proto/orderbook.proto&#10;run&#9;ACTION&#9;ActivateRunToolWindow&#10;exch&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/exchange/exchange.go&#10;replin&#9;ACTION&#9;ReplaceInPath&#10;replace&#9;ACTION&#9;Replace&#10;expo&#9;ACTION&#9;null&#10;rena&#9;ACTION&#9;RenameElement&#10;ren&#9;ACTION&#9;RenameElement&#10;book&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/mbook/mbook.go&#10;te&#9;ACTION&#9;ActivateTerminalToolWindow&#10;termo&#9;null&#9;null&#10;rename&#9;ACTION&#9;RenameElement&#10;renam&#9;ACTION&#9;RenameElement&#10;proj&#9;ACTION&#9;ActivateProjectToolWindow&#10;reform&#9;ACTION&#9;ReformatCode&#10;termin&#9;ACTION&#9;ActivateTerminalToolWindow&#10;format&#9;ACTION&#9;ReformatCode" />
+    <property name="SearchEverywhereHistoryKey" value="commit&#9;ACTION&#9;CheckinProject&#10;serv&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/api/sse/server.go&#10;push&#9;ACTION&#9;Vcs.Push&#10;comm&#9;ACTION&#9;CheckinProject&#10;commi&#9;ACTION&#9;CheckinProject&#10;tra&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/trade.go&#10;matc&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/core/matching.go&#10;trade&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/trade.go&#10;rando&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/tests/rando.go&#10;config&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/config.go&#10;orbo&#9;null&#9;null&#10;ve&#9;ACTION&#9;ActivateVersionControlToolWindow&#10;main&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/main.go&#10;term&#9;ACTION&#9;ActivateTerminalToolWindow&#10;pull&#9;ACTION&#9;Vcs.UpdateProject&#10;valid&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/validation.go&#10;read&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/README.md&#10;matching&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/core/matching.go&#10;core&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/core/core.go&#10;pric&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/pricelevel.go&#10;side&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/side.go&#10;trad&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/matching/trade.go&#10;rand&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/tests/rando.go&#10;.pro&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/proto/vega.proto&#10;test&#9;ACTION&#9;RerunTests&#10;oe&#9;null&#9;null&#10;settings&#9;ACTION&#9;Database.Settings&#10;ter&#9;ACTION&#9;ActivateTerminalToolWindow&#10;term,&#9;null&#9;null&#10;getorder&#9;null&#9;null&#10;pro&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/proto/orderbook.proto&#10;run&#9;ACTION&#9;ActivateRunToolWindow&#10;exch&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/exchange/exchange.go&#10;replin&#9;ACTION&#9;ReplaceInPath&#10;replace&#9;ACTION&#9;Replace&#10;expo&#9;ACTION&#9;null&#10;rena&#9;ACTION&#9;RenameElement&#10;ren&#9;ACTION&#9;RenameElement&#10;book&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/mbook/mbook.go&#10;te&#9;ACTION&#9;ActivateTerminalToolWindow&#10;termo&#9;null&#9;null&#10;rename&#9;ACTION&#9;RenameElement&#10;renam&#9;ACTION&#9;RenameElement&#10;proj&#9;ACTION&#9;ActivateProjectToolWindow&#10;reform&#9;ACTION&#9;ReformatCode&#10;termin&#9;ACTION&#9;ActivateTerminalToolWindow&#10;format&#9;ACTION&#9;ReformatCode" />
     <property name="GO_FMT" value="false" />
     <property name="ChangesBrowser.SHOW_FLATTEN" value="true" />
   </component>
@@ -571,16 +518,16 @@
     <frame x="0" y="0" width="1920" height="1200" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18072917" sideWeight="0.5682575" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18072917" sideWeight="0.56869566" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2" sideWeight="0.49583334" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21652174" sideWeight="0.49583334" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.19043478" sideWeight="0.49583334" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20608696" sideWeight="0.50208336" order="9" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24434783" sideWeight="0.45416668" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20608696" sideWeight="0.5203125" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.19217391" sideWeight="0.49322918" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18072917" sideWeight="0.43174252" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21652174" sideWeight="0.50416666" order="8" side_tool="true" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18072917" sideWeight="0.43130434" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.19043478" sideWeight="0.50416666" order="8" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2878261" sideWeight="0.56614584" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -665,21 +612,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/../golang.org/x/net/http2/server.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="304">
-          <caret line="2605" column="5" lean-forward="false" selection-start-line="2605" selection-start-column="5" selection-end-line="2605" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="650">
-          <caret line="50" column="28" lean-forward="true" selection-start-line="50" selection-start-column="28" selection-end-line="50" selection-end-column="28" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/engines/engines.go" />
     <entry file="file://$PROJECT_DIR$/src/matching/response.go" />
     <entry file="file://$PROJECT_DIR$/src/matching/config.go" />
     <entry file="file://$PROJECT_DIR$/src/core/config.go" />
@@ -740,14 +672,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/api/rest/server.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="21" column="0" lean-forward="false" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/api/rest/routes.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -787,7 +711,7 @@
         <state relative-caret-position="494">
           <caret line="38" column="35" lean-forward="false" selection-start-line="38" selection-start-column="35" selection-end-line="38" selection-end-column="35" />
           <folding>
-            <element signature="e#15#92#0" expanded="true" />
+            <element signature="e#15#92#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -797,16 +721,6 @@
         <state relative-caret-position="169">
           <caret line="16" column="35" lean-forward="false" selection-start-line="16" selection-start-column="35" selection-end-line="16" selection-end-column="35" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/matching/config.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="143">
-          <caret line="11" column="18" lean-forward="false" selection-start-line="11" selection-start-column="18" selection-end-line="11" selection-end-column="18" />
-          <folding>
-            <element signature="e#18#37#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -822,14 +736,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="260">
           <caret line="24" column="11" lean-forward="false" selection-start-line="24" selection-start-column="11" selection-end-line="24" selection-end-column="11" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/main.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="41">
-          <caret line="55" column="22" lean-forward="false" selection-start-line="55" selection-start-column="22" selection-end-line="55" selection-end-column="22" />
           <folding />
         </state>
       </provider>
@@ -852,19 +758,53 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/matching/trade.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="353">
-          <caret line="53" column="38" lean-forward="false" selection-start-line="53" selection-start-column="38" selection-end-line="53" selection-end-column="38" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/matching/pricelevel.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="52">
           <caret line="4" column="0" lean-forward="false" selection-start-line="4" selection-start-column="0" selection-end-line="4" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/api/rest/router.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="52">
+          <caret line="8" column="5" lean-forward="false" selection-start-line="8" selection-start-column="5" selection-end-line="8" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blockchain/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="65">
+          <caret line="11" column="5" lean-forward="false" selection-start-line="11" selection-start-column="5" selection-end-line="11" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/api/rest/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="182">
+          <caret line="18" column="17" lean-forward="false" selection-start-line="18" selection-start-column="17" selection-end-line="18" selection-end-column="17" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/matching/trade.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="355">
+          <caret line="53" column="38" lean-forward="false" selection-start-line="53" selection-start-column="38" selection-end-line="53" selection-end-column="38" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/matching/config.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="143">
+          <caret line="11" column="18" lean-forward="false" selection-start-line="11" selection-start-column="18" selection-end-line="11" selection-end-column="18" />
+          <folding>
+            <element signature="e#18#37#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -876,11 +816,31 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/main.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="30" column="14" lean-forward="false" selection-start-line="30" selection-start-column="14" selection-end-line="30" selection-end-column="14" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/proto/vega.pb.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#304#387#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/api/sse/server.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="572">
-          <caret line="53" column="17" lean-forward="false" selection-start-line="53" selection-start-column="17" selection-end-line="53" selection-end-column="17" />
-          <folding />
+        <state relative-caret-position="806">
+          <caret line="62" column="0" lean-forward="false" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
+          <folding>
+            <element signature="e#13#144#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
