@@ -58,6 +58,7 @@ func NewBlockchain(vegaApp core.Vega) *Blockchain {
 //
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
+	fmt.Println("Foo: " + string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -93,6 +94,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	if len(parts) == 2 {
 		_, value = parts[0], parts[1]
 	} else {
+		fmt.Println("Invalid tx: " + string(tx))
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
