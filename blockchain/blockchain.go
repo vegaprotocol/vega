@@ -91,7 +91,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	// split the transaction
 	var _, value []byte
 	parts := bytes.Split(tx, []byte("="))
-	if len(parts) == 2 {
+	if len(parts) >= 2 {
 		_, value = parts[0], parts[1]
 	} else {
 		fmt.Println("Invalid tx: " + string(tx))
