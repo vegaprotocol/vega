@@ -27,6 +27,8 @@ enum OrderError {
     NONE = 0;
     INVALID_MARKET_ID = 1;
     ORDER_OUT_OF_SEQUENCE = 2;
+    INVALID_REMAINING_SIZE = 3;
+    NON_EMPTY_NEW_ORDER_ID = 4;
 }
 
 message Trade {

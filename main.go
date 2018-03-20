@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"time"
 
 	"vega/api/rest"
@@ -27,10 +28,18 @@ func main() {
 		return
 	}
 
-	sseServer := sse.NewSseServer()
-	vega := core.New(core.DefaultConfig(), sseServer)
-	vega.CreateMarket("BTC/DEC18")
+	orderSseChan := make(chan msg.Order)
+	tradeSseChan := make(chan msg.Trade)
+	sseServer := sse.NewServer(orderSseChan, tradeSseChan)
 	restServer := rest.NewRestServer()
+
+	config := core.DefaultConfig()
+	config.Matching.OrderChans = append(config.Matching.OrderChans, orderSseChan)
+	config.Matching.TradeChans = append(config.Matching.TradeChans, tradeSseChan)
+
+	vega := core.New(config)
+	vega.CreateMarket("BTC/DEC18")
+
 
 	if *chain {
 		go restServer.Start()
@@ -96,7 +105,7 @@ func main() {
 		Timestamp: 0,
 	})
 	end := time.Now()
-	fmt.Printf("Elapsed (add order E and match %v trades): %v\n", len(res2.Trades), end.Sub(start))
+	log.Printf("Elapsed (add order E and match %v trades): %v\n", len(res2.Trades), end.Sub(start))
 
 	vega.DeleteOrder(res.Order.Id)
 

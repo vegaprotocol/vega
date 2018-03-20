@@ -1,7 +1,7 @@
 package matching
 
 import (
-	"fmt"
+	"log"
 
 	"vega/proto"
 
@@ -88,7 +88,7 @@ func (s *OrderBookSide) addOrder(o *OrderEntry) *[]Trade {
 		o.priceLevel = s.getPriceLevel(o.order.Price)
 		o.priceLevel.addOrder(o)
 		if !s.book.config.Quiet {
-			fmt.Printf("Added: %v\n", o)
+			log.Printf("Added: %v\n", o)
 		}
 	}
 	return trades
@@ -104,7 +104,7 @@ func (s *OrderBookSide) uncross(agg *OrderEntry) *[]Trade {
 	return &trades
 }
 
-// Returns closure over the aggressor and trades slice that calls priceLevel.uncross(...)
+// Returns closure over the aggressor and trade slice that calls priceLevel.uncross(...)
 func uncrossPriceLevel(agg *OrderEntry, trades *[]Trade) func(i btree.Item) bool {
 	return func(i btree.Item) bool {
 		priceLevel := i.(*PriceLevel)

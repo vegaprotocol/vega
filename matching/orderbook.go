@@ -14,16 +14,15 @@ type OrderBook struct {
 	orders          map[string]*OrderEntry
 	config          Config
 	latestTimestamp uint64
-	sse             sse.SseServer
+	sse             sse.Server
 }
 
 // Create an order book with a given name
-func NewBook(name string, orderLookup map[string]*OrderEntry, config Config, sseServer sse.SseServer) *OrderBook {
+func NewBook(name string, orderLookup map[string]*OrderEntry, config Config) *OrderBook {
 	book := &OrderBook{
 		name:   name,
 		orders: orderLookup,
 		config: config,
-		sse:    sseServer,
 	}
 	buy, sell := makeSide(msg.Side_Buy, book), makeSide(msg.Side_Sell, book)
 	book.buy = buy
@@ -41,13 +40,14 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	if orderMessage.Timestamp > b.latestTimestamp {
 		b.latestTimestamp = orderMessage.Timestamp
 	}
-	orderEntry := orderFromMessage(orderMessage)
+	orderEntry := orderEntryFromMessage(orderMessage)
 	trades := b.sideFor(orderMessage).addOrder(orderEntry)
 	orderConfirmation := MakeResponse(orderMessage, trades)
 	printSlice(*trades)
-	for _, trade := range *trades {
-		var t = trade.toMessage()
-		b.sse.SendTrade(*t)
+	if len(*trades) == 0 {
+		for _, c := range b.config.OrderChans {
+			c <- *orderMessage
+		}
 	}
 	return orderConfirmation, msg.OrderError_NONE
 }
