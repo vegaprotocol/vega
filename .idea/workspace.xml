@@ -1,0 +1,969 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="0c9963d8-525f-4217-9e13-14cc3332b16b" name="Default" comment="">
+      <change beforePath="" afterPath="$PROJECT_DIR$/.idea/dictionaries/bm.xml" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change beforePath="$PROJECT_DIR$/matching/orderentry.go" afterPath="$PROJECT_DIR$/matching/orderentry.go" />
+      <change beforePath="$PROJECT_DIR$/matching/side.go" afterPath="$PROJECT_DIR$/matching/side.go" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <splitter split-orientation="horizontal" split-proportion="0.5">
+      <split-first>
+        <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+          <file leaf-file-name="core.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/core/core.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="364">
+                  <caret line="31" column="1" lean-forward="false" selection-start-line="31" selection-start-column="1" selection-end-line="31" selection-end-column="1" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="main.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/main.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="598">
+                  <caret line="57" column="22" lean-forward="false" selection-start-line="57" selection-start-column="22" selection-end-line="57" selection-end-column="22" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="side.go" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/matching/side.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="360">
+                  <caret line="78" column="5" lean-forward="true" selection-start-line="78" selection-start-column="5" selection-end-line="78" selection-end-column="5" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="rando.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/tests/rando.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="319">
+                  <caret line="36" column="0" lean-forward="true" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="server.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/api/rest/server.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="221">
+                  <caret line="21" column="0" lean-forward="false" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="routes.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/api/rest/routes.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="0">
+                  <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="logger.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/api/rest/logger.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="299">
+                  <caret line="23" column="0" lean-forward="false" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
+                  <folding>
+                    <element signature="e#14#51#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-first>
+      <split-second>
+        <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+          <file leaf-file-name="vega.proto" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/proto/vega.proto">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="221">
+                  <caret line="17" column="13" lean-forward="false" selection-start-line="17" selection-start-column="11" selection-end-line="17" selection-end-column="13" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="party.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/matching/party.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="0">
+                  <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="orderentry.go" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/matching/orderentry.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="793">
+                  <caret line="69" column="16" lean-forward="false" selection-start-line="69" selection-start-column="16" selection-end-line="69" selection-end-column="16" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="pricelevel.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/matching/pricelevel.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="470">
+                  <caret line="117" column="4" lean-forward="false" selection-start-line="117" selection-start-column="4" selection-end-line="117" selection-end-column="4" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-second>
+    </splitter>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>PArty</find>
+      <find>fmt</find>
+      <find>min</find>
+      <find>updateTop</find>
+      <find>asd</find>
+      <find>Price</find>
+      <find>TradeList</find>
+      <find>Order_Buy</find>
+      <find>Order_Sell</find>
+      <find>.other</find>
+      <find>persi</find>
+      <find>persist</find>
+      <find>hash</find>
+      <find>updateTyo</find>
+      <find>.top</find>
+      <find>.pricelevel</find>
+      <find>pb.</find>
+      <find>.</find>
+      <find>toMessage</find>
+      <find>.orders</find>
+      <find>.volume</find>
+      <find>getPrice</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>[]Trade</replace>
+      <replace>Side_Buy</replace>
+      <replace>Side_Sell</replace>
+      <replace>msg.</replace>
+    </replaceStrings>
+  </component>
+  <component name="GOROOT" path="/usr/local/Cellar/go/1.10/libexec" />
+  <component name="Git.Settings">
+    <option name="PUSH_AUTO_UPDATE" value="true" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
+    <favorite-branches>
+      <branch-storage>
+        <map>
+          <entry type="REMOTE">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="origin/develop" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </favorite-branches>
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/src/book/order.go" />
+        <option value="$PROJECT_DIR$/src/book/book.go" />
+        <option value="$PROJECT_DIR$/src/book/side.go" />
+        <option value="$PROJECT_DIR$/src/book/pricelevel.go" />
+        <option value="$PROJECT_DIR$/src/book/trade.go" />
+        <option value="$PROJECT_DIR$/src/market/party.go" />
+        <option value="$PROJECT_DIR$/proto/orderbook.proto" />
+        <option value="$PROJECT_DIR$/src/market/book.go" />
+        <option value="$PROJECT_DIR$/src/exchange/exchange.go" />
+        <option value="$PROJECT_DIR$/src/market/pricelevel.go" />
+        <option value="$PROJECT_DIR$/src/market/side.go" />
+        <option value="$PROJECT_DIR$/src/market/order.go" />
+        <option value="$PROJECT_DIR$/src/market/trade.go" />
+        <option value="$PROJECT_DIR$/src/orderbook/orderentry.go" />
+        <option value="$PROJECT_DIR$/src/orderbook/orderbook.go" />
+        <option value="$PROJECT_DIR$/src/vega/vega.go" />
+        <option value="$PROJECT_DIR$/src/matching/trade.go" />
+        <option value="$PROJECT_DIR$/src/engines/matching.go" />
+        <option value="$PROJECT_DIR$/src/engines/core.go" />
+        <option value="$PROJECT_DIR$/src/engines/risk.go" />
+        <option value="$PROJECT_DIR$/src/engines/engines.go" />
+        <option value="$PROJECT_DIR$/src/engines/settlement.go" />
+        <option value="$PROJECT_DIR$/src/matching/response.go" />
+        <option value="$PROJECT_DIR$/src/rando.go" />
+        <option value="$PROJECT_DIR$/src/matching/config.go" />
+        <option value="$PROJECT_DIR$/src/rando_test.go" />
+        <option value="$PROJECT_DIR$/src/core/config.go" />
+        <option value="$PROJECT_DIR$/src/core/core.go" />
+        <option value="$PROJECT_DIR$/graphql.go" />
+        <option value="$PROJECT_DIR$/graphql/schema.graphql" />
+        <option value="$PROJECT_DIR$/src/graphql/schema.go" />
+        <option value="$PROJECT_DIR$/src/graphql/queries.go" />
+        <option value="$PROJECT_DIR$/src/matching/validation.go" />
+        <option value="$PROJECT_DIR$/src/tests/rando_test.go" />
+        <option value="$PROJECT_DIR$/src/matching/side.go" />
+        <option value="$PROJECT_DIR$/src/core/matching.go" />
+        <option value="$PROJECT_DIR$/src/matching/orderbook.go" />
+        <option value="$PROJECT_DIR$/src/matching/pricelevel.go" />
+        <option value="$PROJECT_DIR$/src/matching/orderentry.go" />
+        <option value="$PROJECT_DIR$/src/tests/rando.go" />
+        <option value="$PROJECT_DIR$/src/api/router.go" />
+        <option value="$PROJECT_DIR$/src/blockchain/blockchain.go" />
+        <option value="$PROJECT_DIR$/src/main.go" />
+        <option value="$PROJECT_DIR$/blockchain/blockchain.go" />
+        <option value="$PROJECT_DIR$/core/matching.go" />
+        <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/proto/vega.proto" />
+        <option value="$PROJECT_DIR$/matching/validation.go" />
+        <option value="$PROJECT_DIR$/api/rest/logger.go" />
+        <option value="$PROJECT_DIR$/matching/orderentry.go" />
+        <option value="$PROJECT_DIR$/matching/side.go" />
+      </list>
+    </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
+  </component>
+  <component name="ProjectFrameBounds" fullScreen="true">
+    <option name="width" value="1920" />
+    <option name="height" value="1200" />
+  </component>
+  <component name="ProjectInspectionProfilesVisibleTreeState">
+    <entry key="Project Default">
+      <profile-state>
+        <expanded-state>
+          <State>
+            <id />
+          </State>
+          <State>
+            <id>Code style issuesGo</id>
+          </State>
+          <State>
+            <id>Code style issuesJavaScript</id>
+          </State>
+          <State>
+            <id>Go</id>
+          </State>
+          <State>
+            <id>JavaScript</id>
+          </State>
+        </expanded-state>
+        <selected-state>
+          <State>
+            <id>CSS</id>
+          </State>
+        </selected-state>
+      </profile-state>
+    </entry>
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <OptionsSetting value="false" id="Update" />
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectView">
+    <navigator currentView="ProjectPane" proportions="" version="1">
+      <flattenPackages />
+      <showMembers />
+      <showModules />
+      <showLibraryContents />
+      <hideEmptyPackages />
+      <abbreviatePackageNames />
+      <autoscrollToSource />
+      <autoscrollFromSource />
+      <sortByType />
+      <manualOrder />
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scratches" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="vega" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vega" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="vega" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vega" type="462c0819:PsiDirectoryNode" />
+              <item name="api" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="vega" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vega" type="462c0819:PsiDirectoryNode" />
+              <item name="api" type="462c0819:PsiDirectoryNode" />
+              <item name="rest" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="vega" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vega" type="462c0819:PsiDirectoryNode" />
+              <item name="api" type="462c0819:PsiDirectoryNode" />
+              <item name="sse" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="vega" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vega" type="462c0819:PsiDirectoryNode" />
+              <item name="core" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="vega" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vega" type="462c0819:PsiDirectoryNode" />
+              <item name="matching" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="vega" type="b2602c69:ProjectViewProjectNode" />
+              <item name="vega" type="462c0819:PsiDirectoryNode" />
+              <item name="proto" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+        <option name="show-excluded-files" value="false" />
+      </pane>
+      <pane id="Scope">
+        <subPane subId="Changed Files">
+          <expand>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="vega" type="cbb8eebc:String" user="vega" />
+            </path>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="vega" type="cbb8eebc:String" user="vega" />
+              <item name="proto" type="cbb8eebc:String" user="proto" />
+            </path>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="vega" type="cbb8eebc:String" user="vega" />
+              <item name="src" type="cbb8eebc:String" user="src" />
+            </path>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="vega" type="cbb8eebc:String" user="vega" />
+              <item name="src" type="cbb8eebc:String" user="src" />
+              <item name="matching" type="cbb8eebc:String" user="matching" />
+            </path>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="vega" type="cbb8eebc:String" user="vega" />
+              <item name="src" type="cbb8eebc:String" user="src" />
+              <item name="proto" type="cbb8eebc:String" user="proto" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+        <subPane subId="Project Files">
+          <expand>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="vega" type="cbb8eebc:String" user="vega" />
+            </path>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="vega" type="cbb8eebc:String" user="vega" />
+              <item name="src" type="cbb8eebc:String" user="src" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="last_opened_file_path" value="$USER_HOME$" />
+    <property name="configurable.Global.GOPATH.is.expanded" value="true" />
+    <property name="configurable.Project.GOPATH.is.expanded" value="true" />
+    <property name="configurable.Module.GOPATH.is.expanded" value="false" />
+    <property name="DefaultGoTemplateProperty" value="Go File" />
+    <property name="SearchEverywhereHistoryKey" value="commit&#9;ACTION&#9;CheckinProject&#10;rando&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/tests/rando.go&#10;main&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/main.go&#10;term&#9;ACTION&#9;ActivateTerminalToolWindow&#10;pull&#9;ACTION&#9;Vcs.UpdateProject&#10;valid&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/validation.go&#10;read&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/README.md&#10;matching&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/core/matching.go&#10;core&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/core/core.go&#10;pric&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/pricelevel.go&#10;side&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/matching/side.go&#10;commi&#9;ACTION&#9;CheckinProject&#10;comm&#9;ACTION&#9;CheckinProject&#10;trad&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/matching/trade.go&#10;push&#9;ACTION&#9;Vcs.Push&#10;rand&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/tests/rando.go&#10;.pro&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/proto/vega.proto&#10;test&#9;ACTION&#9;RerunTests&#10;oe&#9;null&#9;null&#10;tra&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/matching/trade.go&#10;settings&#9;ACTION&#9;Database.Settings&#10;ter&#9;ACTION&#9;ActivateTerminalToolWindow&#10;term,&#9;null&#9;null&#10;getorder&#9;null&#9;null&#10;pro&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/proto/orderbook.proto&#10;run&#9;ACTION&#9;ActivateRunToolWindow&#10;exch&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/exchange/exchange.go&#10;replin&#9;ACTION&#9;ReplaceInPath&#10;replace&#9;ACTION&#9;Replace&#10;expo&#9;ACTION&#9;null&#10;rena&#9;ACTION&#9;RenameElement&#10;ren&#9;ACTION&#9;RenameElement&#10;book&#9;FILE&#9;file:///Users/bm/Documents/go/src/vega/src/mbook/mbook.go&#10;te&#9;ACTION&#9;ActivateTerminalToolWindow&#10;termo&#9;null&#9;null&#10;rename&#9;ACTION&#9;RenameElement&#10;renam&#9;ACTION&#9;RenameElement&#10;proj&#9;ACTION&#9;ActivateProjectToolWindow&#10;reform&#9;ACTION&#9;ReformatCode&#10;termin&#9;ACTION&#9;ActivateTerminalToolWindow&#10;format&#9;ACTION&#9;ReformatCode" />
+    <property name="GO_FMT" value="false" />
+    <property name="ChangesBrowser.SHOW_FLATTEN" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/tests" />
+      <recent name="$PROJECT_DIR$/src/engines" />
+      <recent name="$PROJECT_DIR$/src/mbook" />
+      <recent name="$PROJECT_DIR$/src" />
+    </key>
+  </component>
+  <component name="RestoreUpdateTree" date="Moments ago" ActionInfo="_Update">
+    <UpdatedFiles>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Updated from server" />
+        <option name="myStatusName" value="Changed on server" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="CHANGED_ON_SERVER" />
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Updated" />
+          <option name="myStatusName" value="Changed" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="UPDATED" />
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/.gitignore</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/README.md</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/blockchain/blockchain.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/core/core.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/core/matching.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/glide.lock</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/glide.yaml</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/main.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/matching/orderbook.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/matching/response.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/tests/rando.go</PATH>
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Created" />
+          <option name="myStatusName" value="Created" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="CREATED" />
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/graphql/queries.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/graphql/schema.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/graphql/schema.graphql</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/protobufs/server.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/rest/handlers.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/rest/logger.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/rest/router.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/rest/routes.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/rest/server.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/sse/server.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/blockchain/blockchain_test.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/blockchain/server.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/cover.out</PATH>
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Deleted" />
+          <option name="myStatusName" value="Deleted" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="true" />
+          <option name="myId" value="REMOVED_FROM_REPOSITORY" />
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/handlers.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/logger.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/router.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/routes.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/api/server.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/graphql/queries.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/graphql/schema.go</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/graphql/schema.graphql</PATH>
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/vega</PATH>
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Restored" />
+          <option name="myStatusName" value="Will be restored" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="RESTORED" />
+        </FILE-GROUP>
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Modified" />
+        <option name="myStatusName" value="Modified" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="MODIFIED" />
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Skipped" />
+        <option name="myStatusName" value="Skipped" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="SKIPPED" />
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Merged with conflicts" />
+        <option name="myStatusName" value="Will be merged with conflicts" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="MERGED_WITH_CONFLICTS" />
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Merged with tree conflicts" />
+        <option name="myStatusName" value="Merged with tree conflicts" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="MERGED_WITH_TREE_CONFLICT" />
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Merged with property conflicts" />
+        <option name="myStatusName" value="Will be merged with property conflicts" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="MERGED_WITH_PROPERTY_CONFLICT" />
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Merged" />
+        <option name="myStatusName" value="Will be merged" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="MERGED" />
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Not in repository" />
+        <option name="myStatusName" value="Not in repository" />
+        <option name="mySupportsDeletion" value="true" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="UNKNOWN" />
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Locally added" />
+        <option name="myStatusName" value="Locally added" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="LOCALLY_ADDED" />
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Locally removed" />
+        <option name="myStatusName" value="Locally removed" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="LOCALLY_REMOVED" />
+      </FILE-GROUP>
+      <FILE-GROUP>
+        <option name="myUpdateName" value="Switched" />
+        <option name="myStatusName" value="Switched" />
+        <option name="mySupportsDeletion" value="false" />
+        <option name="myCanBeAbsent" value="false" />
+        <option name="myId" value="SWITCHED" />
+      </FILE-GROUP>
+    </UpdatedFiles>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Go Build.go build main.go (1)">
+    <configuration name="go build main.go (1)" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true">
+      <module name="vega" />
+      <working_directory value="$PROJECT_DIR$/" />
+      <go_parameters value="-i" />
+      <kind value="FILE" />
+      <filePath value="$PROJECT_DIR$/main.go" />
+      <directory value="$PROJECT_DIR$/" />
+    </configuration>
+    <configuration name="go build main.go" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true">
+      <module name="vega" />
+      <working_directory value="$PROJECT_DIR$/" />
+      <go_parameters value="-i" />
+      <kind value="FILE" />
+      <filePath value="$PROJECT_DIR$/src/main.go" />
+      <package value="vega" />
+      <directory value="$PROJECT_DIR$/" />
+    </configuration>
+    <configuration name="go build rando.go" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true">
+      <module name="vega" />
+      <working_directory value="$PROJECT_DIR$/" />
+      <go_parameters value="-i" />
+      <kind value="FILE" />
+      <filePath value="$PROJECT_DIR$/src/rando.go" />
+      <directory value="$PROJECT_DIR$/" />
+    </configuration>
+    <configuration name="BenchmarkMatching1000 in rando_test.go" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true">
+      <module name="vega" />
+      <working_directory value="$PROJECT_DIR$/src" />
+      <go_parameters value="-i" />
+      <framework value="gobench" />
+      <kind value="PACKAGE" />
+      <package value="vega/src" />
+      <pattern value="^BenchmarkMatching1000$" />
+    </configuration>
+    <configuration name="gobench rando_test.go" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true">
+      <module name="vega" />
+      <working_directory value="$PROJECT_DIR$/src" />
+      <go_parameters value="-i" />
+      <framework value="gobench" />
+      <kind value="FILE" />
+      <package value="vega" />
+      <filePath value="$PROJECT_DIR$/src/rando_test.go" />
+    </configuration>
+    <list size="5">
+      <item index="0" class="java.lang.String" itemvalue="Go Build.go build main.go" />
+      <item index="1" class="java.lang.String" itemvalue="Go Build.go build rando.go" />
+      <item index="2" class="java.lang.String" itemvalue="Go Test.gobench rando_test.go" />
+      <item index="3" class="java.lang.String" itemvalue="Go Test.BenchmarkMatching1000 in rando_test.go" />
+      <item index="4" class="java.lang.String" itemvalue="Go Build.go build main.go (1)" />
+    </list>
+    <recent_temporary>
+      <list size="5">
+        <item index="0" class="java.lang.String" itemvalue="Go Build.go build main.go (1)" />
+        <item index="1" class="java.lang.String" itemvalue="Go Build.go build main.go" />
+        <item index="2" class="java.lang.String" itemvalue="Go Test.BenchmarkMatching1000 in rando_test.go" />
+        <item index="3" class="java.lang.String" itemvalue="Go Test.gobench rando_test.go" />
+        <item index="4" class="java.lang.String" itemvalue="Go Build.go build rando.go" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="ShelveChangesManager" show_recycled="false">
+    <option name="remove_strategy" value="false" />
+  </component>
+  <component name="StructureViewFactory">
+    <option name="AUTOSCROLL_MODE" value="false" />
+  </component>
+  <component name="TestHistory">
+    <history-entry file="BenchmarkMatching1000_in_rando_test_go - 2018.03.13 at 07h 56m 33s.xml">
+      <configuration name="BenchmarkMatching1000 in rando_test.go" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="BenchmarkMatching1000_in_rando_test_go - 2018.03.13 at 08h 40m 02s.xml">
+      <configuration name="BenchmarkMatching1000 in rando_test.go" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="gobench_rando_test_go - 2018.03.13 at 07h 55m 39s.xml">
+      <configuration name="gobench rando_test.go" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="gobench_rando_test_go - 2018.03.13 at 07h 56m 08s.xml">
+      <configuration name="gobench rando_test.go" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+  </component>
+  <component name="TodoView">
+    <todo-panel id="selected-file">
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+    <todo-panel id="all">
+      <are-packages-shown value="true" />
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="0" y="0" width="1920" height="1200" extended-state="0" />
+    <editor active="true" />
+    <layout>
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18072917" sideWeight="0.5737352" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2" sideWeight="0.49583334" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20608696" sideWeight="0.50208336" order="9" side_tool="true" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19217391" sideWeight="0.49739584" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20608696" sideWeight="0.5265625" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18072917" sideWeight="0.4262648" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19217391" sideWeight="0.5026042" order="8" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.26347825" sideWeight="0.5703125" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2173913" sideWeight="0.49791667" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24434783" sideWeight="0.45833334" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="SHOW_DETAILS_IN_CHANGES" value="false" />
+              <option name="RECENTLY_FILTERED_USER_GROUPS">
+                <collection />
+              </option>
+              <option name="RECENTLY_FILTERED_BRANCH_GROUPS">
+                <collection />
+              </option>
+              <option name="FILTERS">
+                <map>
+                  <entry key="structure">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$/matching" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="COLUMN_ORDER">
+                <list>
+                  <option value="0" />
+                  <option value="1" />
+                  <option value="2" />
+                  <option value="3" />
+                </list>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="First commit" />
+    <MESSAGE value="Fix DescendGreaterThan bug and add exchange wrapper" />
+    <MESSAGE value="Delete unused protobuf file" />
+    <MESSAGE value="WIP next version" />
+    <MESSAGE value="It works and you can remove orders!!" />
+    <MESSAGE value="Add interfaces" />
+    <MESSAGE value="Protobuf update" />
+    <MESSAGE value="Missed update (OrderId -&gt; order.Id)" />
+    <MESSAGE value="Fix wanring" />
+    <MESSAGE value="Remove dependency on custom GOPATH" />
+    <MESSAGE value="Separate engines" />
+    <MESSAGE value="Use different counterparties in demo" />
+    <MESSAGE value="Tidy up, improve allocation algo and add some benchmarking stuff" />
+    <MESSAGE value="Small updates" />
+    <MESSAGE value="Put config wrapper in core.go" />
+    <MESSAGE value="Fix allocation bug" />
+    <MESSAGE value="There were some bugs, now there are fewer and everything is faster" />
+    <MESSAGE value="Updates" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updates" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <option name="time" value="17" />
+    </breakpoint-manager>
+    <watches-manager />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/src/matching/party.go" />
+    <entry file="file://$PROJECT_DIR$/src/fiddle.dang" />
+    <entry file="file://$PROJECT_DIR$/src/exchange/exchange.go" />
+    <entry file="file://$PROJECT_DIR$/../golang.org/x/net/http2/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="304">
+          <caret line="2605" column="5" lean-forward="false" selection-start-line="2605" selection-start-column="5" selection-end-line="2605" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="650">
+          <caret line="50" column="28" lean-forward="true" selection-start-line="50" selection-start-column="28" selection-end-line="50" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/engines/engines.go" />
+    <entry file="file://$PROJECT_DIR$/src/matching/response.go" />
+    <entry file="file://$PROJECT_DIR$/src/matching/config.go" />
+    <entry file="file://$PROJECT_DIR$/src/core/config.go" />
+    <entry file="file://$PROJECT_DIR$/graphql.go" />
+    <entry file="file://$PROJECT_DIR$/src/graphql/queries.go" />
+    <entry file="file://$PROJECT_DIR$/src/core/settlement.go" />
+    <entry file="file://$PROJECT_DIR$/src/core/risk.go" />
+    <entry file="file://$PROJECT_DIR$/graphql/schema.graphql">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="104">
+          <caret line="8" column="5" lean-forward="true" selection-start-line="8" selection-start-column="5" selection-end-line="8" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/graphql/schema.go" />
+    <entry file="file://$PROJECT_DIR$/src/tests/rando_test.go" />
+    <entry file="file:///usr/local/Cellar/go/1.10/libexec/src/container/list/list.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="304">
+          <caret line="122" column="0" lean-forward="false" selection-start-line="122" selection-start-column="0" selection-end-line="122" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/proto/vega.pb.go" />
+    <entry file="file://$PROJECT_DIR$/src/core/core.go" />
+    <entry file="file://$PROJECT_DIR$/src/matching/orderbook.go" />
+    <entry file="file://$PROJECT_DIR$/src/matching/validation.go" />
+    <entry file="file://$PROJECT_DIR$/src/core/matching.go" />
+    <entry file="file://$PROJECT_DIR$/src/matching/side.go" />
+    <entry file="file://$PROJECT_DIR$/src/matching/trade.go" />
+    <entry file="file://$PROJECT_DIR$/src/tests/rando.go" />
+    <entry file="file://$PROJECT_DIR$/src/matching/orderentry.go" />
+    <entry file="file://$PROJECT_DIR$/src/api/server.go" />
+    <entry file="file://$PROJECT_DIR$/src/glide.yaml" />
+    <entry file="file://$PROJECT_DIR$/src/glide.lock" />
+    <entry file="file://$PROJECT_DIR$/src/api/router.go" />
+    <entry file="file://$PROJECT_DIR$/src/api/handlers.go" />
+    <entry file="file://$PROJECT_DIR$/src/api/routes.go" />
+    <entry file="file://$PROJECT_DIR$/src/matching/pricelevel.go" />
+    <entry file="file://$PROJECT_DIR$/src/blockchain/blockchain.go" />
+    <entry file="file://$PROJECT_DIR$/src/main.go" />
+    <entry file="file://$PROJECT_DIR$/core/matching.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="286">
+          <caret line="23" column="25" lean-forward="false" selection-start-line="23" selection-start-column="25" selection-end-line="23" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="468">
+            <caret line="34" column="0" lean-forward="false" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
+            <folding />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+      <provider editor-type-id="text-editor">
+        <state relative-caret-position="468">
+          <caret line="34" column="0" lean-forward="true" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/matching/validation.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="208">
+          <caret line="20" column="0" lean-forward="true" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blockchain/blockchain.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1209">
+          <caret line="108" column="41" lean-forward="false" selection-start-line="108" selection-start-column="41" selection-end-line="108" selection-end-column="41" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/api/rest/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="221">
+          <caret line="21" column="0" lean-forward="false" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/api/rest/routes.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/api/sse/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="312">
+          <caret line="33" column="29" lean-forward="true" selection-start-line="33" selection-start-column="29" selection-end-line="33" selection-end-column="29" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/api/rest/logger.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="299">
+          <caret line="23" column="0" lean-forward="false" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
+          <folding>
+            <element signature="e#14#51#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tests/rando.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="319">
+          <caret line="36" column="0" lean-forward="true" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/core/core.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="364">
+          <caret line="31" column="1" lean-forward="false" selection-start-line="31" selection-start-column="1" selection-end-line="31" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/matching/pricelevel.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="470">
+          <caret line="117" column="4" lean-forward="false" selection-start-line="117" selection-start-column="4" selection-end-line="117" selection-end-column="4" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/proto/vega.proto">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="221">
+          <caret line="17" column="13" lean-forward="false" selection-start-line="17" selection-start-column="11" selection-end-line="17" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/matching/party.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/matching/orderentry.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="793">
+          <caret line="69" column="16" lean-forward="false" selection-start-line="69" selection-start-column="16" selection-end-line="69" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="598">
+          <caret line="57" column="22" lean-forward="false" selection-start-line="57" selection-start-column="22" selection-end-line="57" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/matching/side.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="78" column="5" lean-forward="true" selection-start-line="78" selection-start-column="5" selection-end-line="78" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

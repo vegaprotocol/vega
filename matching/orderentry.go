@@ -18,7 +18,6 @@ type OrderEntry struct {
 	priceLevel *PriceLevel
 	elem       *list.Element
 	persist    bool
-	id         string
 }
 
 func (o *OrderEntry) GetBook() *OrderBook {
@@ -31,7 +30,8 @@ func orderFromMessage(order *msg.Order) *OrderEntry {
 		order:   order,
 		persist: order.Type == msg.Order_GTC || order.Type == msg.Order_GTT,
 	}
-	o.id = o.Digest()
+	order.Id = ""
+	order.Id = o.Digest()
 	return o
 }
 
@@ -59,7 +59,7 @@ func (o *OrderEntry) remove() *OrderEntry {
 		return nil
 	}
 	book := o.book
-	delete(book.orders, o.id)
+	delete(book.orders, o.order.Id)
 	o.priceLevel.removeOrder(o)
 	if !book.config.Quiet {
 		fmt.Printf("Removed: %v\n", o)
@@ -80,7 +80,7 @@ func OrderString(o *msg.Order) string {
 
 // Returns the string representation of an order including its ID
 func (o *OrderEntry) String() string {
-	return "[order/" + o.id[-0:5] + "] " + OrderString(o.order)
+	return "[order/" + o.order.Id[-0:5] + "] " + OrderString(o.order)
 }
 
 // Calculate the hash (ID) of the order details (as serialised by protobufs)
