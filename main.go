@@ -14,6 +14,8 @@ import (
 	"vega/tests"
 )
 
+const sseChannelSize = 32
+
 func main() {
 	benchmark := flag.Bool("bench", false, "Run benchmarks")
 	blockSize := flag.Int("block", 1, "Block size for timestamp increment")
@@ -28,8 +30,8 @@ func main() {
 		return
 	}
 
-	orderSseChan := make(chan msg.Order)
-	tradeSseChan := make(chan msg.Trade)
+	orderSseChan := make(chan msg.Order, sseChannelSize)
+	tradeSseChan := make(chan msg.Trade, sseChannelSize)
 	sseServer := sse.NewServer(orderSseChan, tradeSseChan)
 	restServer := rest.NewRestServer()
 

@@ -16,7 +16,7 @@ type Server struct {
 	jsonConfig jsonpb.Marshaler
 }
 
-func NewServer(orderChan chan msg.Order, tradeChan chan msg.Trade) Server {
+func NewServer(orderChan <-chan msg.Order, tradeChan <-chan msg.Trade) Server {
 	s := Server{
 		server: *sse.NewServer(&sse.Options{
 			// CORS headers
@@ -47,14 +47,14 @@ func (s *Server) Start() {
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
-func (s *Server) handleOrders(orders chan msg.Order) {
+func (s *Server) handleOrders(orders <-chan msg.Order) {
 	for order := range orders {
 		orderJson, _ := s.jsonConfig.MarshalToString(&order)
 		s.server.SendMessage("/events/orders", sse.SimpleMessage(string(orderJson)))
 	}
 }
 
-func (s *Server) handleTrades(trades chan msg.Trade) {
+func (s *Server) handleTrades(trades <-chan msg.Trade) {
 	for trade := range trades {
 		tradeJson, _ := s.jsonConfig.MarshalToString(&trade)
 		s.server.SendMessage("/events/trades", sse.SimpleMessage(string(tradeJson)))
