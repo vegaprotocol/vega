@@ -7,7 +7,7 @@ import (
 
 	"vega/proto"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/crypto/sha3"
 )
 
