@@ -1,3 +1,5 @@
-vendor
-vega
+cover.out
 coverage.html
+log
+vega
+vendor
