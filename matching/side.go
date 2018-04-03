@@ -82,7 +82,7 @@ func (s *OrderBookSide) bestPrice() uint64 {
 func (s *OrderBookSide) addOrder(o *OrderEntry) *[]Trade {
 	trades := s.other.uncross(o)
 	if o.persist && o.order.Remaining > 0 {
-		s.book.orders[o.id] = o
+		s.book.orders[o.order.Id] = o
 		o.book = s.book
 		o.side = s
 		o.priceLevel = s.getPriceLevel(o.order.Price)
