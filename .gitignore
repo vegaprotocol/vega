@@ -1,8 +1,10 @@
 # Vega specific entries
+cover.out
+coverage.html
+log/
 pkg/
 vendor
 vega
-coverage.html
 
 
 # Without the below we commit lots of nonsense from IntelliJ
