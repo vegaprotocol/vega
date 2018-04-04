@@ -50,3 +50,13 @@ Tips:
 ### Adding new dependencies
 
 Do a `glide install github.com/foo/bar`. We'll be moving to the new `godep` dependency manager soon, but for the moment Glide's working fine.
+
+### Deploying
+
+Currently the `staging` environment points at Dave's `x.constructiveproof.com` servers. Deployments are automated using Capistrano. A few commands to note:
+
+* `cap staging vega:full_reset` will build the `vega` binary locally, stop tendermint and vega, upload the binary, blow away all previous chain data, and restart vega and tendermint on all staging servers.
+
+* `cap staging:reset_app_servers` resets everything but does not build and upload the latest binary.
+
+TODO: A better deploy process wouldn't be tied to Dave's account on those servers.
