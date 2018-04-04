@@ -59,7 +59,7 @@ namespace :vega do
   task :stop do
     on roles(:app) do
       begin
-        execute "killall vega"
+        execute "killall vega; exit 0"
       rescue => ex
         puts ex.message.red
       end
@@ -70,7 +70,7 @@ namespace :vega do
   task :stop_tendermint do
     on roles(:app) do
       begin
-        execute "killall tendermint"
+        execute "killall tendermint; exit 0"
       rescue => ex
         puts ex.message.red
       end
