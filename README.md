@@ -53,7 +53,7 @@ Do a `glide install github.com/foo/bar`. We'll be moving to the new `godep` depe
 
 ### Deploying
 
-Currently the `staging` environment points at Dave's `x.constructiveproof.com` servers. Deployments are automated using Capistrano. A few commands to note:
+Deployments are automated using Capistrano. Currently the `staging` environment points at Dave's `x.constructiveproof.com` servers. A few commands to note:
 
 * `cap staging vega:full_reset` will build the `vega` binary locally, stop tendermint and vega, upload the binary, blow away all previous chain data, and restart vega and tendermint on all staging servers.
 
