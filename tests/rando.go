@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"vega/api/sse"
 	"vega/core"
 	"vega/proto"
 )
@@ -36,7 +35,7 @@ func BenchmarkMatching(
 	config.Matching.Quiet = true
 
 	for k := 0; k < times; k++ {
-		vega := core.New(config, sse.NewSseServer())
+		vega := core.New(config)
 		vega.CreateMarket(marketId)
 		totalElapsed := time.Duration(0)
 		periodElapsed := totalElapsed

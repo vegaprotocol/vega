@@ -3,10 +3,11 @@ package matching
 import (
 	"container/list"
 	"fmt"
+	"log"
 
 	"vega/proto"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -25,7 +26,7 @@ func (o *OrderEntry) GetBook() *OrderBook {
 }
 
 // Creates an order entry from an order message
-func orderFromMessage(order *msg.Order) *OrderEntry {
+func orderEntryFromMessage(order *msg.Order) *OrderEntry {
 	o := &OrderEntry{
 		order:   order,
 		persist: order.Type == msg.Order_GTC || order.Type == msg.Order_GTT,
@@ -45,11 +46,14 @@ func (o *OrderEntry) crossedWith(side msg.Side, price uint64) bool {
 }
 
 // Update (remaining size, etc.) for an order that has traded
-func (o *OrderEntry) update(trade *Trade) {
+func (o *OrderEntry) update(trade *Trade, book *OrderBook) {
 	if trade.size > o.order.Remaining {
 		panic(fmt.Sprintf("Trade.size > order.remaining (o: %v, newTrade: %v)", o, trade))
 	} else {
 		o.order.Remaining -= trade.size
+		for _, c := range book.config.OrderChans {
+			c <- *o.order
+		}
 	}
 }
 
@@ -62,7 +66,7 @@ func (o *OrderEntry) remove() *OrderEntry {
 	delete(book.orders, o.order.Id)
 	o.priceLevel.removeOrder(o)
 	if !book.config.Quiet {
-		fmt.Printf("Removed: %v\n", o)
+		log.Printf("Removed: %v\n", o)
 	}
 	return o
 }

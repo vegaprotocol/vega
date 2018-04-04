@@ -2,7 +2,7 @@ package matching
 
 import (
 	"container/list"
-	"fmt"
+	"log"
 	"math"
 
 	"vega/proto"
@@ -90,7 +90,7 @@ func (l *PriceLevel) removeOrder(o *OrderEntry) *OrderEntry {
 	o.elem = nil
 	o.priceLevel = nil
 	o.side = nil
-	o.book = nil
+	//o.book = nil
 	return o
 }
 
@@ -122,7 +122,7 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 
 		// Get size and make newTrade
 		size := l.getVolumeAllocation(agg, pass, volumeToShare, initialVolumeAtTimestamp)
-		trade := newTrade(agg, pass, size)
+		trade := l.book.newTrade(agg, pass, size)
 
 		// Update book state
 		if trade != nil {
@@ -136,7 +136,7 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 				pass.remove()
 			}
 			if !l.book.config.Quiet {
-				fmt.Printf("Matched: %v\n", trade)
+				log.Printf("Matched: %v\n", trade)
 			}
 		}
 		el = next

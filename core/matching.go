@@ -14,13 +14,12 @@ type MatchingEngine interface {
 
 func (v Vega) CreateMarket(id string) {
 	if _, exists := v.markets[id]; !exists {
-		v.markets[id] = matching.NewBook(id, v.orders, v.config.Matching, v.sse)
+		v.markets[id] = matching.NewBook(id, v.orders, v.config.Matching)
 	}
 }
 
 func (v Vega) SubmitOrder(order msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	if market, exists := v.markets[order.Market]; exists {
-		v.sse.SendOrder(order) // FIXME this is just a test of initial wiring!
 		return market.AddOrder(&order)
 	} else {
 		return nil, msg.OrderError_INVALID_MARKET_ID
