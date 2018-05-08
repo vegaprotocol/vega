@@ -37,7 +37,7 @@ At this point, you've got:
 
 Tips:
 
-* if you need to reset the chain, run `tendermint reset_unsafe_all`
+* if you need to reset the chain, run `tendermint unsafe_reset_all`
 
 ### Adding new dependencies
 
