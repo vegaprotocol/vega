@@ -111,6 +111,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 		fmt.Println("Error: ", e.Error())
 	}
 
+	// deliver to the Vega trading core
 	app.vega.SubmitOrder(order)
 
 	app.state.Size += 1
