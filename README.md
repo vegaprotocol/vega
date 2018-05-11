@@ -8,6 +8,13 @@ First, install the Glide dependency manager, see: https://glide.sh/
 
 Once you've got it, do a `glide install`. The proper version of each dependency will be downloaded into your local filesystem.
 
+Then, assuming a default $GO_PATH, clone the source code into `~/go/src/vega`
+
+```
+mkdir -p ~/go/src/vega
+git clone git@gitlab.com:vega-protocol/trading-core.git ~/go/src/vega
+```
+
 `go build` will create an executable called `vega` which you can run. Alternately, `go run main.go` will run the checked-out code, just as you'd expect.
 
 ### Installing and Running Tendermint
