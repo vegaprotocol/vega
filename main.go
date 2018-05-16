@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"vega/api/sse"
+	"vega/api/gin"
+	"vega/api/rest"
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"
 	"vega/tests"
-	"vega/api/gin"
 )
 
 const sseChannelSize = 32
@@ -33,7 +34,7 @@ func main() {
 	orderSseChan := make(chan msg.Order, sseChannelSize)
 	tradeSseChan := make(chan msg.Trade, sseChannelSize)
 	sseServer := sse.NewServer(orderSseChan, tradeSseChan)
-//	restServer := rest.NewRestServer()
+	restServer := rest.NewRestServer()
 	ginServer := gin.NewRestServer()
 
 	config := core.DefaultConfig()
@@ -45,7 +46,7 @@ func main() {
 
 
 	if *chain {
-	//	go restServer.Start()
+		go restServer.Start()
 		go ginServer.Start()
 		go sseServer.Start()
 		blockchain.Start(*vega)

@@ -16,7 +16,7 @@ func NewRestServer() *restServer {
 }
 
 func (s *restServer) Start() {
-	var port= 3001
+	var port= 3003
 	var addr= fmt.Sprintf(":%d", port)
 	fmt.Printf("Starting based REST/JSON HTTP server on port %d...\n", port)
 
