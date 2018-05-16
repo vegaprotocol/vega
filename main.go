@@ -6,12 +6,12 @@ import (
 	"log"
 	"time"
 
-	"vega/api/rest"
 	"vega/api/sse"
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"
 	"vega/tests"
+	"vega/api/gin"
 )
 
 const sseChannelSize = 32
@@ -33,7 +33,8 @@ func main() {
 	orderSseChan := make(chan msg.Order, sseChannelSize)
 	tradeSseChan := make(chan msg.Trade, sseChannelSize)
 	sseServer := sse.NewServer(orderSseChan, tradeSseChan)
-	restServer := rest.NewRestServer()
+//	restServer := rest.NewRestServer()
+	ginServer := gin.NewRestServer()
 
 	config := core.DefaultConfig()
 	config.Matching.OrderChans = append(config.Matching.OrderChans, orderSseChan)
@@ -44,7 +45,8 @@ func main() {
 
 
 	if *chain {
-		go restServer.Start()
+	//	go restServer.Start()
+		go ginServer.Start()
 		go sseServer.Start()
 		blockchain.Start(*vega)
 		return

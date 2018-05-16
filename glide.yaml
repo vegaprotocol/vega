@@ -11,3 +11,9 @@ import:
 - package: github.com/gorilla/mux
   version: ^1.6.1
 - package: github.com/alexandrevicenzi/go-sse
+- package: github.com/stretchr/testify
+  version: ^1.2.1
+  subpackages:
+  - assert
+- package: github.com/gin-gonic/gin
+  version: ^1.2.0
