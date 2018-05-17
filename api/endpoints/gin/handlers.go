@@ -3,9 +3,11 @@ package gin
 import (
 	"net/http"
 	"github.com/gin-gonic/gin"
+	"vega/api/services"
 )
 
 type Handlers struct {
+	TradingService services.TradingService
 }
 
 const indexRoute       = "/"
@@ -25,7 +27,7 @@ func (handlers *Handlers) CreateOrderRoute() string {
 }
 
 func (handlers *Handlers) CreateOrder(c *gin.Context) {
-	message := "ORDER created"
+	message :=  handlers.TradingService.CreateOrder("TEST1")
 	c.String(http.StatusOK, message)
 }
 

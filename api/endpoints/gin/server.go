@@ -3,6 +3,7 @@ package gin
 import (
 	"fmt"
 	"net/http"
+	"vega/api/services"
 )
 
 type restServer struct{}
@@ -12,10 +13,13 @@ func NewRestServer() *restServer {
 }
 
 func (s *restServer) Start() {
+
 	var port= 3003
 	var addr= fmt.Sprintf(":%d", port)
 	fmt.Printf("Starting based REST/JSON HTTP server on port %d...\n", port)
 
-	router := NewRouter()
+	// Create dependencies
+	tradingService := services.NewRpcTradingService()
+	router := NewRouter(&tradingService)
 	http.ListenAndServe(addr, router)
 }

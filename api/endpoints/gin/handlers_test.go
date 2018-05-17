@@ -41,11 +41,14 @@ func TestCreateOrderHandler_ReturnsExpectedContent(t *testing.T) {
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
 
-	handlers := Handlers {}
+	tradingService := &MockTradingService{}
+	handlers := Handlers {
+		TradingService: tradingService,
+	}
 	handlers.CreateOrder(context)
 
-	context.Request, _ = http.NewRequest(http.MethodPost, handlers.CreateOrderRoute(), nil)
+	context.Request, _ = http.NewRequest(http.MethodGet, handlers.CreateOrderRoute(), nil)
 
 	assert.Equal(t, w.Code, http.StatusOK)
-	assert.Equal(t, "ORDER created", w.Body.String())
+	assert.Equal(t, "SUCCESS", w.Body.String())
 }
