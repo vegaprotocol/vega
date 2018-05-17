@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"vega/api/sse"
-	"vega/api/gin"
-	"vega/api/rest"
+	"vega/api/endpoints/sse"
+	"vega/api/endpoints/gin"
+	"vega/api/endpoints/rest"
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"
