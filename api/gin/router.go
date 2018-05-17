@@ -1,20 +1,18 @@
 package gin
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
 func NewRouter() *gin.Engine  {
+	gin.SetMode(gin.TestMode)
 
-	// Set up HTTP handlers
-	router := gin.New()
-	router.GET("/", func(c *gin.Context) {
+	// Set up HTTP router and route handlers
+	httpRouter := gin.New()
+	httpHandlers := Handlers{}
 
-		message := "V E G A"
-		c.String(http.StatusOK, message)
-	})
+	httpRouter.GET(httpHandlers.IndexRoute(), httpHandlers.Index)
+	httpRouter.POST(httpHandlers.CreateOrderRoute(), httpHandlers.CreateOrder)
 
-	return router
+	return httpRouter
 }

@@ -7,10 +7,6 @@ import (
 
 type restServer struct{}
 
-type RestServer interface {
-	Start()
-}
-
 func NewRestServer() *restServer {
 	return &restServer{}
 }
