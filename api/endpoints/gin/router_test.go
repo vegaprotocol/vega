@@ -7,16 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type MockTradingService struct {}
+type MockOrderService struct {}
 
-func (p *MockTradingService) CreateOrder(s string) string {
+func (p *MockOrderService) CreateOrder(s string) string {
 	return "SUCCESS"
 }
 
 func TestNewRouter_ExistsAndServesHttp(t *testing.T) {
 
-	tradingService := &MockTradingService{}
-	router := NewRouter(tradingService)
+	orderService := &MockOrderService{}
+	router := NewRouter(orderService)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/", nil)

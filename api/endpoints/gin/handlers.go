@@ -7,7 +7,7 @@ import (
 )
 
 type Handlers struct {
-	TradingService services.TradingService
+	OrderService services.OrderService
 }
 
 const indexRoute       = "/"
@@ -27,7 +27,7 @@ func (handlers *Handlers) CreateOrderRoute() string {
 }
 
 func (handlers *Handlers) CreateOrder(c *gin.Context) {
-	message :=  handlers.TradingService.CreateOrder("TEST1")
+	message :=  handlers.OrderService.CreateOrder("BTC/DEC18", "test", 0, 10, 10)
 	c.String(http.StatusOK, message)
 }
 

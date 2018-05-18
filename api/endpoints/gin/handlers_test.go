@@ -41,9 +41,9 @@ func TestCreateOrderHandler_ReturnsExpectedContent(t *testing.T) {
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
 
-	tradingService := &MockTradingService{}
+	orderService := &MockOrderService{}
 	handlers := Handlers {
-		TradingService: tradingService,
+		OrderService: orderService,
 	}
 	handlers.CreateOrder(context)
 

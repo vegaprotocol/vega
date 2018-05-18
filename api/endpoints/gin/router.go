@@ -5,13 +5,13 @@ import (
 	"vega/api/services"
 )
 
-func NewRouter(tradingService services.TradingService) *gin.Engine  {
+func NewRouter(orderService services.OrderService) *gin.Engine  {
 	gin.SetMode(gin.TestMode)
 
 	// Set up HTTP router and route handlers
 	httpRouter := gin.New()
 	httpHandlers := Handlers{
-		TradingService: tradingService,
+		OrderService: orderService,
 	}
 
 	httpRouter.GET(httpHandlers.IndexRoute(), httpHandlers.Index)

@@ -19,7 +19,7 @@ func (s *restServer) Start() {
 	fmt.Printf("Starting based REST/JSON HTTP server on port %d...\n", port)
 
 	// Create dependencies
-	tradingService := services.NewRpcTradingService()
-	router := NewRouter(&tradingService)
+	orderService := services.NewRpcOrderService()
+	router := NewRouter(&orderService)
 	http.ListenAndServe(addr, router)
 }
