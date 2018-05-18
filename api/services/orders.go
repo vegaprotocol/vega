@@ -7,37 +7,36 @@ import (
 "time"
 "io/ioutil"
 "fmt"
+"github.com/satori/go.uuid"
 )
 
 type OrderService interface {
-	CreateOrder(market string, party string, side int32, price uint64, size uint64) string
+	CreateOrder(market string, party string, side int32, price uint64, size uint64) (success bool, err error)
 }
 
-
 type Order struct {
-	Market string
-	Party string
-	Side int32
-	Price uint64
-	Size uint64
+	Market    string
+	Party     string
+	Side      int32
+	Price     uint64
+	Size      uint64
 	Remaining uint64
-	Type int
-	Timestamps string
+	Timestamp uint64
+	Type      int
 }
 
 func NewOrder(
-	market		string,
-	party		string,
-	side		int32,
-	price		uint64,
-	size		uint64,
-	remaining	uint64,
-	tradeType	int,
-	timestamps	string,
+	market    string,
+	party     string,
+	side      int32,
+	price     uint64,
+	size      uint64,
+	remaining uint64,
+	timestamp uint64,
+	tradeType int,
 ) Order {
 	return Order{}
 }
-
 
 type RpcOrderService struct {
 }
@@ -46,52 +45,25 @@ func NewRpcOrderService() RpcOrderService {
 	return RpcOrderService{}
 }
 
-func (p *RpcOrderService) CreateOrder(market string, party string, side int32, price uint64, size uint64) string {
+func (p *RpcOrderService) CreateOrder(market string, party string, side int32, price uint64, size uint64) (success bool, err error) {
 
-	tradeOrder := NewOrder(market, party, side, price, size, size,0, time.Now().String())
-	json, _ := json.Marshal(tradeOrder)
-	payload := base64.StdEncoding.EncodeToString(json)
-
-	resp, err := http.NewRequest(http.MethodGet, "http://localhost:46657/broadcast_tx_commit?tx=" + payload, nil)
-
+	tradeOrder := NewOrder(market, party, side, price, size, size, unixTimestamp(time.Now().UTC()), 0)
+	
+	json, err := json.Marshal(tradeOrder)
 	if err != nil {
-		return "RPC::CREATE::ORDER::FAILURE"
+		return false, err
+	}
+
+	payload := base64.StdEncoding.EncodeToString(json)
+	seed := uuid.NewV4().String()
+	resp, err := http.NewRequest(http.MethodGet, "http://localhost:46657/broadcast_tx_commit?tx=" + seed + "|" + payload, nil)
+	if err != nil {
+		return false, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 
 	fmt.Println(body)
 
-	return "RPC::CREATE::ORDER::SUCCESS"
+	return true, nil
 }
-
-
-
-/*
-
-export function placeOrder (order: CurrentOrder, market: string) {
-  const mutation = {
-    Market: market,
-    Party: guid,
-    Side: order.side === 'BUY' ? 0 : 1,
-    Price: order.price,
-    Size: order.size,
-    Remaining: order.size,
-    Type: 0,
-    Timestamps: Date.now()
-  }
-
-  const encodedMutation = btoa(JSON.stringify(mutation))
-  // @ts-ignore
-  let host = window.host
-  let baseUrl = globalStore.getState().currentServer
-  let req = `http://${baseUrl}:46657/broadcast_tx_commit?tx="${Math.random()}|${encodedMutation}"`
-
-  fetch(req)
-    .then(() => {
-      globalStore.dispatch(actions.completeCurrentOrder())
-    })
-    .catch(console.error)
-}
-
- */

@@ -27,8 +27,14 @@ func (handlers *Handlers) CreateOrderRoute() string {
 }
 
 func (handlers *Handlers) CreateOrder(c *gin.Context) {
-	message :=  handlers.OrderService.CreateOrder("BTC/DEC18", "test", 0, 10, 10)
-	c.String(http.StatusOK, message)
+
+	success, err :=  handlers.OrderService.CreateOrder("BTC/DEC18", "test", 0, 10, 10)
+
+	if success {
+		c.JSON(http.StatusOK, nil)
+	} else {
+		c.AbortWithError(http.StatusInternalServerError, err)
+	}
 }
 
 
