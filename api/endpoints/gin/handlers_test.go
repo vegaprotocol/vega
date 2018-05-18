@@ -50,5 +50,5 @@ func TestCreateOrderHandler_ReturnsExpectedContent(t *testing.T) {
 	context.Request, _ = http.NewRequest(http.MethodGet, handlers.CreateOrderRoute(), nil)
 
 	assert.Equal(t, w.Code, http.StatusOK)
-	assert.Equal(t, "SUCCESS", w.Body.String())
+	assert.Equal(t, "null", w.Body.String())
 }

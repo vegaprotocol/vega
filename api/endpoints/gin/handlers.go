@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"vega/api/services"
+//	"fmt"
 )
 
 type Handlers struct {
@@ -27,6 +28,14 @@ func (handlers *Handlers) CreateOrderRoute() string {
 }
 
 func (handlers *Handlers) CreateOrder(c *gin.Context) {
+
+	//market := c.PostForm("market")
+	//party := c.PostForm("party")
+	//side := c.PostForm("side")
+	//price := c.PostForm("price")
+	//size := c.PostForm("size")
+
+	//fmt.Printf("market: %s; party: %s; side: %s; price: %s size: %s", market, party, side, price, size)
 
 	success, err :=  handlers.OrderService.CreateOrder("BTC/DEC18", "test", 0, 10, 10)
 

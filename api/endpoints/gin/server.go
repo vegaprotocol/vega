@@ -20,6 +20,6 @@ func (s *restServer) Start() {
 
 	// Create dependencies
 	orderService := services.NewRpcOrderService()
-	router := NewRouter(&orderService)
+	router := NewRouter(orderService)
 	http.ListenAndServe(addr, router)
 }

@@ -1,13 +1,10 @@
 package services
 
 import (
-"encoding/json"
-"encoding/base64"
-"net/http"
-"time"
-"io/ioutil"
-"fmt"
-"github.com/satori/go.uuid"
+	"encoding/base64"
+	"encoding/json"
+	"net/http"
+	"time"
 )
 
 type OrderService interface {
@@ -26,44 +23,67 @@ type Order struct {
 }
 
 func NewOrder(
-	market    string,
-	party     string,
-	side      int32,
-	price     uint64,
-	size      uint64,
+	market string,
+	party string,
+	side int32,
+	price uint64,
+	size uint64,
 	remaining uint64,
 	timestamp uint64,
 	tradeType int,
 ) Order {
-	return Order{}
+	return Order {
+		market,
+		party,
+		side,
+		price,
+		size,
+		remaining,
+		timestamp,
+		tradeType,
+	}
 }
 
-type RpcOrderService struct {
+func (o *Order) Json() ([]byte, error) {
+	return json.Marshal(o)
 }
 
-func NewRpcOrderService() RpcOrderService {
-	return RpcOrderService{}
+func (o *Order) JsonWithEncoding() (string, error) {
+	json, err := o.Json()
+	if err != nil {
+		return "", err
+	}
+	encoded := base64.StdEncoding.EncodeToString(json)
+	return encoded, err
 }
 
-func (p *RpcOrderService) CreateOrder(market string, party string, side int32, price uint64, size uint64) (success bool, err error) {
+type rpcOrderService struct {
+}
 
-	tradeOrder := NewOrder(market, party, side, price, size, size, unixTimestamp(time.Now().UTC()), 0)
-	
-	json, err := json.Marshal(tradeOrder)
+func NewRpcOrderService() OrderService {
+	return &rpcOrderService{}
+}
+
+func (p *rpcOrderService) CreateOrder(market string, party string, side int32, price uint64, size uint64) (success bool, err error) {
+
+	order := NewOrder(market, party, side, price, size, size, unixTimestamp(time.Now().UTC()), 0)
+	payload, err := order.JsonWithEncoding()
 	if err != nil {
 		return false, err
 	}
 
-	payload := base64.StdEncoding.EncodeToString(json)
-	seed := uuid.NewV4().String()
-	resp, err := http.NewRequest(http.MethodGet, "http://localhost:46657/broadcast_tx_commit?tx=" + seed + "|" + payload, nil)
+	var reqUrl = "http://localhost:46657/broadcast_tx_commit?tx=%22" + newGuid() + "|" + payload + "%22"
+	resp, err := http.Get(reqUrl)
 	if err != nil {
 		return false, err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
 
-	fmt.Println(body)
+	// For debugging only
+	// body, err := ioutil.ReadAll(resp.Body)
+	//if err == nil {
+	//	fmt.Println(string(body))
+	//}
 
-	return true, nil
+	return true, err
 }
