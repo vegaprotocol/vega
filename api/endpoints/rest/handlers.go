@@ -15,6 +15,13 @@ func (handlers *Handlers) Index(c *gin.Context) {
 	c.String(http.StatusOK, "V E G A")
 }
 
+func (handlers *Handlers) CreateOrder(c *gin.Context) {
+	var o orders.Order
+
+	if err := c.BindJSON(&o); err == nil {
+		handlers.CreateOrderWithModel(c, o)
+	}
+}
 
 func (handlers *Handlers) CreateOrderWithModel(c *gin.Context, o orders.Order) {
 	fmt.Printf("HandleCreateOrder, got %+v\n", o)
@@ -29,11 +36,4 @@ func (handlers *Handlers) CreateOrderWithModel(c *gin.Context, o orders.Order) {
 	}
 }
 
-func (handlers *Handlers) CreateOrder(c *gin.Context) {
-	var o orders.Order
-
-	if err := c.BindJSON(&o); err == nil {
-		handlers.CreateOrderWithModel(c, o)
-	}
-}
 

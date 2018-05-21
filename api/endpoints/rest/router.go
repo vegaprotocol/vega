@@ -5,10 +5,6 @@ import (
 	"vega/api/trading/orders"
 )
 
-const indexRoute       = "/"
-const ordersRoute      = "/orders"
-const createOrderRoute = ordersRoute + "/create"
-
 func NewRouter(orderService orders.OrderService) *gin.Engine  {
 	gin.SetMode(gin.TestMode)
 
@@ -19,8 +15,8 @@ func NewRouter(orderService orders.OrderService) *gin.Engine  {
 
 	// Set up HTTP router
 	httpRouter := gin.New()
-	httpRouter.GET(indexRoute, httpHandlers.Index)
-	httpRouter.POST(createOrderRoute, httpHandlers.CreateOrder)
+	httpRouter.GET("/", httpHandlers.Index)
+	httpRouter.POST("/orders/create", httpHandlers.CreateOrder)
 
 	return httpRouter
 }
