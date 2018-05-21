@@ -1,4 +1,4 @@
-package clients
+package blockchain
 
 type HttpClient struct {
 }

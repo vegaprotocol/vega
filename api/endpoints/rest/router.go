@@ -1,27 +1,26 @@
 package rest
 
 import (
-	"net/http"
-
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
+	"vega/api/trading/orders"
 )
 
-func NewRouter() *mux.Router {
+const indexRoute       = "/"
+const ordersRoute      = "/orders"
+const createOrderRoute = ordersRoute + "/create"
 
-	router := mux.NewRouter().StrictSlash(true)
-	for _, route := range routes {
+func NewRouter(orderService orders.OrderService) *gin.Engine  {
+	gin.SetMode(gin.TestMode)
 
-		var handler http.Handler
-
-		handler = route.HandlerFunc
-		handler = Logger(handler, route.Name)
-
-		router.
-			Methods(route.Method).
-			Path(route.Pattern).
-			Name(route.Name).
-			Handler(handler)
+	// Set up HTTP request handlers
+	httpHandlers := Handlers{
+		OrderService: orderService,
 	}
 
-	return router
+	// Set up HTTP router
+	httpRouter := gin.New()
+	httpRouter.GET(indexRoute, httpHandlers.Index)
+	httpRouter.POST(createOrderRoute, httpHandlers.CreateOrder)
+
+	return httpRouter
 }

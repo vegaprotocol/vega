@@ -1,9 +1,8 @@
-package services
+package orders
 
 import (
 	"net/http"
 	"time"
-	"vega/api/models"
 )
 
 type OrderService interface {
@@ -20,7 +19,7 @@ func NewRpcOrderService() OrderService {
 func (p *rpcOrderService) CreateOrder(market string, party string, side int32, price uint64, size uint64) (success bool, err error) {
 
 	// todo bind json / Gin
-	order := models.NewOrder(market, party, side, price, size, size, unixTimestamp(time.Now().UTC()), 0)
+	order := NewOrder(market, party, side, price, size, size, unixTimestamp(time.Now().UTC()), 0)
 	payload, err := order.JsonWithEncoding()
 	if err != nil {
 		return false, err

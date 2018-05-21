@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"vega/api/endpoints/sse"
-	"vega/api/endpoints/gin"
 	"vega/api/endpoints/rest"
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"
-	"vega/tests"
+	"gitlab.com/vega-protocol/vega/tests"
 )
 
 const sseChannelSize = 32
@@ -27,7 +26,7 @@ func main() {
 	flag.Parse()
 
 	if *benchmark {
-		tests.BenchmarkMatching(*numberOfOrders, nil, false, *blockSize, *uniform, *reportInterval)
+		core.BenchmarkMatching(*numberOfOrders, nil, false, *blockSize, *uniform, *reportInterval)
 		return
 	}
 
@@ -35,7 +34,7 @@ func main() {
 	tradeSseChan := make(chan msg.Trade, sseChannelSize)
 	sseServer := sse.NewServer(orderSseChan, tradeSseChan)
 	restServer := rest.NewRestServer()
-	ginServer := gin.NewRestServer()
+	ginServer := rest.NewRestServer()
 
 	config := core.DefaultConfig()
 	config.Matching.OrderChans = append(config.Matching.OrderChans, orderSseChan)

@@ -1,4 +1,4 @@
-package gin
+package rest
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/gin-gonic/gin"
 	"vega/api/mocks"
-	"vega/api/models"
+	"vega/api/trading/orders"
 )
 
 func TestIndexHandler_ReturnsExpectedContent(t *testing.T) {
@@ -36,7 +36,7 @@ func TestCreateOrderHandler_ReturnsExpectedContent(t *testing.T) {
 		OrderService: orderService,
 	}
 
-	var o models.Order
+	var o orders.Order
 	o = buildNewOrder()
 	handlers.CreateOrderWithModel(context, o)
 
@@ -45,6 +45,6 @@ func TestCreateOrderHandler_ReturnsExpectedContent(t *testing.T) {
 }
 
 // Helpers
-func buildNewOrder() models.Order  {
-	return models.NewOrder("market", "party", 0, 1,1, 1, 1234567890, 1)
+func buildNewOrder() orders.Order  {
+	return orders.NewOrder("market", "party", 0, 1,1, 1, 1234567890, 1)
 }
