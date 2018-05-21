@@ -1,66 +1,17 @@
-package core
+package vegabench
 
 import (
-	"testing"
 	"fmt"
 	"time"
+	"testing"
 	"math/rand"
 	"vega/proto"
+	"vega/core"
 )
-
-func BenchmarkMatching100(b *testing.B) {
-	benchmarkMatching(100, b, true, 1, true, 0)
-}
-
-func BenchmarkMatching1000(b *testing.B) {
-	benchmarkMatching(1000, b, true, 1, true, 0)
-}
-
-func BenchmarkMatching10000(b *testing.B) {
-	benchmarkMatching(10000, b, true, 1, true, 0)
-}
-
-func BenchmarkMatching100000(b *testing.B) {
-	benchmarkMatching(100000, b, true, 1, true, 0)
-}
-
-
-func BenchmarkMatching100Allocated(b *testing.B) {
-	benchmarkMatching(100, b, true, 0, true, 0)
-}
-
-func BenchmarkMatching1000Allocated(b *testing.B) {
-	benchmarkMatching(1000, b, true, 0, true, 0)
-}
-
-func BenchmarkMatching10000Allocated(b *testing.B) {
-	benchmarkMatching(10000, b, true, 0, true, 0)
-}
-
-func BenchmarkMatching100000Allocated(b *testing.B) {
-	benchmarkMatching(100000, b, true, 0, true, 0)
-}
-
-func BenchmarkMatching100Uniform(b *testing.B) {
-	benchmarkMatching(100, b, true, 1, false, 0)
-}
-
-func BenchmarkMatching1000Uniform(b *testing.B) {
-	benchmarkMatching(1000, b, true, 1, false, 0)
-}
-
-func BenchmarkMatching10000Uniform(b *testing.B) {
-	benchmarkMatching(10000, b, true, 1, false, 0)
-}
-
-func BenchmarkMatching100000Uniform(b *testing.B) {
-	benchmarkMatching(100000, b, true, 1, false, 0)
-}
-
 
 const marketId = "TEST"
 
-func benchmarkMatching(
+func BenchmarkMatching(
 	numberOfOrders int,
 	b *testing.B,
 	quiet bool,
@@ -79,11 +30,11 @@ func benchmarkMatching(
 		reportInterval = numberOfOrders
 	}
 
-	config := DefaultConfig()
+	config := core.DefaultConfig()
 	config.Matching.Quiet = true
 
 	for k := 0; k < times; k++ {
-		vega := New(config)
+		vega := core.New(config)
 		vega.CreateMarket(marketId)
 		totalElapsed := time.Duration(0)
 		periodElapsed := totalElapsed

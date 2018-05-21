@@ -17,13 +17,22 @@ import (
 const sseChannelSize = 32
 
 func main() {
-	benchmark := flag.Bool("bench", false, "Run benchmarks")
-	blockSize := flag.Int("block", 1, "Block size for timestamp increment")
 	chain := flag.Bool("chain", false, "Start a Tendermint blockchain socket")
+
+
+	blockSize := flag.Int("block", 1, "Block size for timestamp increment")
 	numberOfOrders := flag.Int("orders", 50000, "Number of orders to benchmark")
 	uniform := flag.Bool("uniform", false, "Use the same size for all orders")
 	reportInterval := flag.Int("reportEvery", 0, "Report stats every n orders")
+
+	benchmark := flag.Bool("bench", false, "Run benchmarks")
+
+
+
 	flag.Parse()
+
+
+
 
 	if *benchmark {
 		core.BenchmarkMatching(*numberOfOrders, nil, false, *blockSize, *uniform, *reportInterval)
