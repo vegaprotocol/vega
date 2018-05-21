@@ -10,9 +10,5 @@ func unixTimestamp(datetime time.Time) uint64 {
 }
 
 func newGuid() string {
-	guidRaw := uuid.NewV4().String()
-	//if !withDashes {
-	//	return strings.Replace(guidRaw, "-", "", -1)
-	//}
-	return guidRaw
+	return uuid.NewV4().String()
 }

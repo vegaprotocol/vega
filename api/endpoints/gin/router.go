@@ -3,22 +3,24 @@ package gin
 import (
 	"github.com/gin-gonic/gin"
 	"vega/api/services"
-	"fmt"
 )
+
+const indexRoute       = "/"
+const ordersRoute      = "/orders"
+const createOrderRoute = ordersRoute + "/create"
 
 func NewRouter(orderService services.OrderService) *gin.Engine  {
 	gin.SetMode(gin.TestMode)
 
-	fmt.Println(orderService)
-
-	// Set up HTTP router and route handlers
-	httpRouter := gin.New()
+	// Set up HTTP request handlers
 	httpHandlers := Handlers{
 		OrderService: orderService,
 	}
 
-	httpRouter.GET(httpHandlers.IndexRoute(), httpHandlers.Index)
-	httpRouter.GET(httpHandlers.CreateOrderRoute(), httpHandlers.CreateOrder)
+	// Set up HTTP router
+	httpRouter := gin.New()
+	httpRouter.GET(indexRoute, httpHandlers.Index)
+	httpRouter.POST(createOrderRoute, httpHandlers.CreateOrder)
 
 	return httpRouter
 }

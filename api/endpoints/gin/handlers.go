@@ -4,46 +4,37 @@ import (
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"vega/api/services"
-//	"fmt"
+	"vega/api/models"
+	"fmt"
 )
 
 type Handlers struct {
 	OrderService services.OrderService
 }
 
-const indexRoute       = "/"
-const ordersRoute      = "/orders"
-const createOrderRoute = ordersRoute + "/create"
-
-func (handlers *Handlers) IndexRoute() string {
-	return indexRoute
-}
-
 func (handlers *Handlers) Index(c *gin.Context) {
 	c.String(http.StatusOK, "V E G A")
 }
 
-func (handlers *Handlers) CreateOrderRoute() string {
-	return createOrderRoute
-}
 
-func (handlers *Handlers) CreateOrder(c *gin.Context) {
+func (handlers *Handlers) CreateOrderWithModel(c *gin.Context, o models.Order) {
+	fmt.Printf("HandleCreateOrder, got %+v\n", o)
 
-	//market := c.PostForm("market")
-	//party := c.PostForm("party")
-	//side := c.PostForm("side")
-	//price := c.PostForm("price")
-	//size := c.PostForm("size")
-
-	//fmt.Printf("market: %s; party: %s; side: %s; price: %s size: %s", market, party, side, price, size)
-
-	success, err :=  handlers.OrderService.CreateOrder("BTC/DEC18", "test", 0, 10, 10)
-
+	success, err :=  handlers.OrderService.CreateOrder(o.Market, o.Party, o.Side, o.Price, o.Size)
 	if success {
-		c.JSON(http.StatusOK, nil)
+		c.JSON(http.StatusOK, gin.H{
+			"result" : "success",
+		})
 	} else {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.JSON(http.StatusInternalServerError, err)
 	}
 }
 
+func (handlers *Handlers) CreateOrder(c *gin.Context) {
+	var o models.Order
+
+	if err := c.BindJSON(&o); err == nil {
+		handlers.CreateOrderWithModel(c, o)
+	}
+}
 
