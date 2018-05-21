@@ -1,4 +1,5 @@
-package main
+package foo
+/*package main
 
 import (
 	"flag"
@@ -11,33 +12,13 @@ import (
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"
-	"gitlab.com/vega-protocol/vega/tests"
 )
 
 const sseChannelSize = 32
 
 func main() {
 	chain := flag.Bool("chain", false, "Start a Tendermint blockchain socket")
-
-
-	blockSize := flag.Int("block", 1, "Block size for timestamp increment")
-	numberOfOrders := flag.Int("orders", 50000, "Number of orders to benchmark")
-	uniform := flag.Bool("uniform", false, "Use the same size for all orders")
-	reportInterval := flag.Int("reportEvery", 0, "Report stats every n orders")
-
-	benchmark := flag.Bool("bench", false, "Run benchmarks")
-
-
-
 	flag.Parse()
-
-
-
-
-	if *benchmark {
-		core.BenchmarkMatching(*numberOfOrders, nil, false, *blockSize, *uniform, *reportInterval)
-		return
-	}
 
 	orderSseChan := make(chan msg.Order, sseChannelSize)
 	tradeSseChan := make(chan msg.Trade, sseChannelSize)
@@ -125,3 +106,4 @@ func main() {
 	fmt.Println(vega.GetMarketData("BTC/DEC18"))
 	fmt.Println(vega.GetMarketDepth("BTC/DEC18"))
 }
+  */

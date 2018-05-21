@@ -1,4 +1,5 @@
-package vegabench
+// cmd/vegabench/main.go
+package main
 
 import "flag"
 

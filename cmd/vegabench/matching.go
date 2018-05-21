@@ -1,4 +1,4 @@
-package vegabench
+package main
 
 import (
 	"fmt"
