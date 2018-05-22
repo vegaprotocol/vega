@@ -6,7 +6,7 @@ import (
 )
 
 type OrderService interface {
-	CreateOrder(market string, party string, side int32, price uint64, size uint64) (success bool, err error)
+	CreateOrder(order Order) (success bool, err error)
 }
 
 type rpcOrderService struct {
@@ -16,10 +16,13 @@ func NewRpcOrderService() OrderService {
 	return &rpcOrderService{}
 }
 
-func (p *rpcOrderService) CreateOrder(market string, party string, side int32, price uint64, size uint64) (success bool, err error) {
+func (p *rpcOrderService) CreateOrder(order Order) (success bool, err error) {
+	
+	// todo additional validation?
+	utcNow := time.Now().UTC()
+	order.Timestamp = unixTimestamp(utcNow)
+	order.Remaining = order.Size
 
-	// todo bind json / Gin
-	order := NewOrder(market, party, side, price, size, size, unixTimestamp(time.Now().UTC()), 0)
 	payload, err := order.JsonWithEncoding()
 	if err != nil {
 		return false, err

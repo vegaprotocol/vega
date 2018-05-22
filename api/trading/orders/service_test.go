@@ -9,8 +9,8 @@ import (
 func TestRpcOrderService_CreateOrder(t *testing.T) {
 
 	var orderService mocks.MockOrderService
-
-	success, err := orderService.CreateOrder("BTC/DEC18", "US", 0, 1000, 10)
+	order := NewOrder("BTC/DEC18", "PARTY", 1, 1000, 25, 0, 1234567890, 1)
+	success, err := orderService.CreateOrder(order)
 
 	assert.True(t, success)
 	assert.Nil(t, err)
