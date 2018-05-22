@@ -3,20 +3,34 @@ package rest
 import (
 	"github.com/gin-gonic/gin"
 	"vega/api/trading/orders"
+	"github.com/satori/go.uuid"
 )
 
 func NewRouter(orderService orders.OrderService) *gin.Engine  {
-	gin.SetMode(gin.TestMode)
-
+	
 	// Set up HTTP request handlers
 	httpHandlers := Handlers{
 		OrderService: orderService,
 	}
 
 	// Set up HTTP router
-	httpRouter := gin.New()
-	httpRouter.GET("/", httpHandlers.Index)
-	httpRouter.POST("/orders/create", httpHandlers.CreateOrder)
+	router := gin.New()
 
-	return httpRouter
+	// Inject middleware (must be before route handler binding)
+	router.Use(RequestIdMiddleware())
+	
+	router.GET("/", httpHandlers.Index)
+	router.POST("/orders/create", httpHandlers.CreateOrder)
+
+	// Perhaps we'll do this in the future:
+	// https://stackoverflow.com/a/42968011
+
+	return router
+}
+
+func RequestIdMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("X-Request-Id", uuid.NewV4().String())
+		c.Next()
+	}
 }
