@@ -6,14 +6,14 @@ import (
 )
 
 type Order struct {
-	Market    string
-	Party     string
-	Side      int32
-	Price     uint64
-	Size      uint64
-	Remaining uint64
-	Timestamp uint64
-	Type      int
+	Market    string   `xml:"market" json:"market" binding:"required"`
+	Party     string   `xml:"party" json:"party"`
+	Side      int32    `xml:"side" json:"side"`
+	Price     uint64   `xml:"price" json:"price"`
+	Size      uint64   `xml:"size" json:"size" `
+	Remaining uint64   `xml:"remaining" json:"remaining"`
+	Timestamp uint64   `xml:"timestamp" json:"timestamp"`
+	Type      int      `xml:"type" json:"type"`
 }
 
 func NewOrder(

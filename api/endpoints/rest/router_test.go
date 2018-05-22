@@ -29,6 +29,7 @@ func TestRequestIdMiddleware(t *testing.T) {
 	assert.NotEmpty(t, w.Header().Get("X-Request-Id"))
 }
 
+// Helpers
 func buildRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	orderService := &mocks.MockOrderService{}
