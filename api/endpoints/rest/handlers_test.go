@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/gin-gonic/gin"
-	"vega/api/mocks"
-	"vega/api/trading/orders"
 	"github.com/pkg/errors"
+	"vega/api/trading/orders/mocks"
+	"vega/api/trading/orders/models"
 )
 
 func TestHandlers_Index(t *testing.T) {
@@ -39,7 +39,7 @@ func TestHandlers_CreateOrderWithModel_ValidReturnsSuccess(t *testing.T) {
 		OrderService: orderService,
 	}
 
-	var o orders.Order
+	var o models.Order
 	o = buildNewOrder()
 	handlers.CreateOrderWithModel(context, o)
 
@@ -62,7 +62,7 @@ func TestHandlers_CreateOrderWithModel_ErrorReturnsFailure(t *testing.T) {
 		OrderService: orderService,
 	}
 
-	var o orders.Order
+	var o models.Order
 	o = buildNewOrder()
 	handlers.CreateOrderWithModel(context, o)
 
@@ -71,6 +71,6 @@ func TestHandlers_CreateOrderWithModel_ErrorReturnsFailure(t *testing.T) {
 }
 
 // Helpers
-func buildNewOrder() orders.Order  {
-	return orders.NewOrder("market", "party", 0, 1,1, 1, 1234567890, 1)
+func buildNewOrder() models.Order  {
+	return models.NewOrder("market", "party", 0, 1,1, 1, 1234567890, 1)
 }

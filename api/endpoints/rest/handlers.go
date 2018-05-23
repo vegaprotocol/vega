@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"vega/api/trading/orders"
+	"vega/api/trading/orders/models"
 )
 
 const ResultSuccess           = "success"
@@ -19,7 +20,7 @@ func (handlers *Handlers) Index(c *gin.Context) {
 }
 
 func (handlers *Handlers) CreateOrder(c *gin.Context) {
-	var o orders.Order
+	var o models.Order
 
 	if err := bind(c, &o); err == nil {
 		handlers.CreateOrderWithModel(c, o)
@@ -28,7 +29,7 @@ func (handlers *Handlers) CreateOrder(c *gin.Context) {
 	}
 }
 
-func (handlers *Handlers) CreateOrderWithModel(c *gin.Context, o orders.Order) {
+func (handlers *Handlers) CreateOrderWithModel(c *gin.Context, o models.Order) {
 	//fmt.Printf("HandleCreateOrderWithModel, got %+v\n", o)
 	success, err :=  handlers.OrderService.CreateOrder(o)
 

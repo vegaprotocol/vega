@@ -1,4 +1,4 @@
-package orders
+package models
 
 import (
 	"encoding/json"

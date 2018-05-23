@@ -3,10 +3,11 @@ package orders
 import (
 	"net/http"
 	"time"
+	"vega/api/trading/orders/models"
 )
 
 type OrderService interface {
-	CreateOrder(order Order) (success bool, err error)
+	CreateOrder(order models.Order) (success bool, err error)
 }
 
 type rpcOrderService struct {
@@ -16,7 +17,7 @@ func NewRpcOrderService() OrderService {
 	return &rpcOrderService{}
 }
 
-func (p *rpcOrderService) CreateOrder(order Order) (success bool, err error) {
+func (p *rpcOrderService) CreateOrder(order models.Order) (success bool, err error) {
 	
 	// todo additional validation?
 	utcNow := time.Now().UTC()

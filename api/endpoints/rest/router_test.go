@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"net/http"
 	"github.com/stretchr/testify/assert"
-	"vega/api/mocks"
+	"vega/api/trading/orders/mocks"
 	"github.com/gin-gonic/gin"
 )
 

@@ -2,11 +2,12 @@ package orders
 
 import (
 	"testing"
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
+	"vega/api/trading/orders/models"
 )
 
 func TestNewOrder(t *testing.T) {
-	var o Order
+	var o models.Order
 
 	o = buildNewOrder()
 
@@ -21,7 +22,7 @@ func TestNewOrder(t *testing.T) {
 }
 
 func TestOrder_Json_ReturnsValidJson(t *testing.T) {
-	var o Order
+	var o models.Order
 
 	o = buildNewOrder()
 
@@ -29,14 +30,14 @@ func TestOrder_Json_ReturnsValidJson(t *testing.T) {
 
 	assert.Equal(
 		t,
+		"{\"market\":\"market\",\"party\":\"party\",\"side\":0,\"price\":1,\"size\":1,\"remaining\":1,\"timestamp\":1234567890,\"type\":1}",
 		string(jsonO),
-		"{\"Market\":\"market\",\"Party\":\"party\",\"Side\":0,\"Price\":1,\"Size\":1,\"Remaining\":1,\"Timestamp\":1234567890,\"Type\":1}",
 	)
 
 }
 
 func TestOrder_JsonWithEncoding_ReturnsValidAndEncodedJson(t *testing.T) {
-	var o Order
+	var o models.Order
 
 	o = buildNewOrder()
 
@@ -44,12 +45,12 @@ func TestOrder_JsonWithEncoding_ReturnsValidAndEncodedJson(t *testing.T) {
 
 	assert.Equal(
 		t,
+		"eyJtYXJrZXQiOiJtYXJrZXQiLCJwYXJ0eSI6InBhcnR5Iiwic2lkZSI6MCwicHJpY2UiOjEsInNpemUiOjEsInJlbWFpbmluZyI6MSwidGltZXN0YW1wIjoxMjM0NTY3ODkwLCJ0eXBlIjoxfQ==",
 		string(jsonEnc),
-		"eyJNYXJrZXQiOiJtYXJrZXQiLCJQYXJ0eSI6InBhcnR5IiwiU2lkZSI6MCwiUHJpY2UiOjEsIlNpemUiOjEsIlJlbWFpbmluZyI6MSwiVGltZXN0YW1wIjoxMjM0NTY3ODkwLCJUeXBlIjoxfQ==",
 	)
 }
 
 // Helpers
-func buildNewOrder() Order  {
- 	return NewOrder("market", "party", 0, 1,1, 1, 1234567890, 1)
+func buildNewOrder() models.Order  {
+ 	return models.NewOrder("market", "party", 0, 1,1, 1, 1234567890, 1)
 }
