@@ -19,8 +19,8 @@ before_script:
 build-my-project:
   stage: build
   script:
-    - godep restore
-    - godep go build -o ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/${BIN_NAME}
+    - dep ensure
+    - go build -o ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/${BIN_NAME}
   artifacts:
     paths:
       - ${ARTIFACTS_DIR}
@@ -28,5 +28,5 @@ build-my-project:
 test-my-project:
   stage: test
   script:
-    - godep restore
-    - godep go test -v -cover ./...
+    - dep ensure
+    - go test -v -cover ./...
