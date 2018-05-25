@@ -7,3 +7,4 @@ vendor
 vega
 .idea/
 *.iws
+.testCoverage.txt
