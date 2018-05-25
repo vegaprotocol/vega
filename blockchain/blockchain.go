@@ -29,7 +29,7 @@ type Blockchain struct {
 }
 
 func NewBlockchain(vegaApp core.Vega) *Blockchain {
-	state := State{}
+	state := State{} ...
 	return &Blockchain{state: state, vega: vegaApp}
 }
 
