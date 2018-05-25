@@ -8,3 +8,4 @@ vega
 vegabench
 .idea/
 *.iws
+.testCoverage.txt

@@ -12,7 +12,7 @@ stages:
 before_script:
   - mkdir -p ${GOPATH}/src/${GO_PROJECT}
   - mkdir -p ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}
-  - go get github.com/tools/godep
+  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
   - cd ${GOPATH}/src/${GO_PROJECT}
 
@@ -29,4 +29,4 @@ test-my-project:
   stage: test
   script:
     - dep ensure
-    - go test -v -cover ./...
+    - go test -race -v -cover ./... -coverprofile .testCoverage.txt
