@@ -4,9 +4,7 @@ The core trading application logic, Tendermint blockchain, and communications mo
 
 ### Building it
 
-First, install the Glide dependency manager, see: https://glide.sh/
-
-Once you've got it, do a `glide install`. The proper version of each dependency will be downloaded into your local filesystem.
+First, install the Dep dependency manager, see https://golang.github.io/dep/
 
 Then, assuming a default $GO_PATH, clone the source code into `~/go/src/vega`
 
@@ -14,6 +12,8 @@ Then, assuming a default $GO_PATH, clone the source code into `~/go/src/vega`
 mkdir -p ~/go/src/vega
 git clone git@gitlab.com:vega-protocol/trading-core.git ~/go/src/vega
 ```
+
+Once you've got it, do a `dep ensure`. The proper version of each dependency will be downloaded.
 
 `build.sh` will create an executable called `vega` which you can run. Alternately, `go run cmd/vega/main.go` will run the checked-out code, just as you'd expect.
 
@@ -48,7 +48,7 @@ Tips:
 
 ### Adding new dependencies
 
-Do a `glide install github.com/foo/bar`. We'll be moving to the new `godep` dependency manager soon, but for the moment Glide's working fine.
+Do a `dep ensure -add github.com/foo/bar` to add to the manifest.
 
 ### Deploying
 
@@ -58,4 +58,4 @@ Deployments are automated using Capistrano. Currently the `staging` environment 
 
 * `cap staging:reset_app_servers` resets everything but does not build and upload the latest binary.
 
-TODO: A better deploy process wouldn't be tied to Dave's account on those servers.
+TODO: A better deploy process wouldn't be tied to Dave's account on those servers. This is currently in progress.
