@@ -1,7 +1,16 @@
 package blockchain
 
-import "testing"
+import (
+	"testing"
+	"vega/core"
 
-func TestDeliverTx(t *testing.T) {
-	t.Log("passed!") // heheh. 100%! Go Go Go!
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewBlockchain(t *testing.T) {
+	config := core.Config{}
+	vegaApp := core.New(config)
+	chain := NewBlockchain(*vegaApp)
+
+	assert.Equal(t, chain.state.Height, int64(0))
 }
