@@ -6,7 +6,7 @@ The core trading application logic, Tendermint blockchain, and communications mo
 
 First, install the Dep dependency manager, see https://golang.github.io/dep/
 
-Then, assuming a default $GO_PATH, clone the source code into `~/go/src/vega`
+Then, assuming a default `$GOPATH`, clone the source code into `~/go/src/vega`
 
 ```
 mkdir -p ~/go/src/vega
