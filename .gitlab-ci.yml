@@ -29,4 +29,4 @@ test-my-project:
   stage: test
   script:
     - dep ensure
-    - go test $(go list ./... | grep -v /vendor/) -v -coverprofile .testCoverage.txt
+    - go test -v -coverprofile .testCoverage.txt ./api/endpoints/rest
