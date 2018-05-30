@@ -32,7 +32,6 @@ func main() {
 	vega := core.New(config)
 	vega.CreateMarket("BTC/DEC18")
 
-
 	if *chain {
 		go restServer.Start()
 		go sseServer.Start()
