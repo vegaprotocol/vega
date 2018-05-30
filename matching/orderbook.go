@@ -2,7 +2,7 @@ package matching
 
 import (
 	"fmt"
-	"vega/api/sse"
+	"vega/api/endpoints/sse"
 	"vega/proto"
 )
 

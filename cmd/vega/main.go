@@ -1,3 +1,4 @@
+// cmd/vega/main.go
 package main
 
 import (
@@ -6,29 +7,18 @@ import (
 	"log"
 	"time"
 
-	"vega/api/rest"
-	"vega/api/sse"
+	"vega/api/endpoints/sse"
+	"vega/api/endpoints/rest"
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"
-	// "vega/tests"
 )
 
 const sseChannelSize = 32
 
 func main() {
-	// benchmark := flag.Bool("bench", false, "Run benchmarks")
-	// blockSize := flag.Int("block", 1, "Block size for timestamp increment")
 	chain := flag.Bool("chain", false, "Start a Tendermint blockchain socket")
-	// numberOfOrders := flag.Int("orders", 50000, "Number of orders to benchmark")
-	// uniform := flag.Bool("uniform", false, "Use the same size for all orders")
-	// reportInterval := flag.Int("reportEvery", 0, "Report stats every n orders")
 	flag.Parse()
-
-	// if *benchmark {
-	// 	tests.BenchmarkMatching(*numberOfOrders, nil, false, *blockSize, *uniform, *reportInterval)
-	// 	return
-	// }
 
 	orderSseChan := make(chan msg.Order, sseChannelSize)
 	tradeSseChan := make(chan msg.Trade, sseChannelSize)

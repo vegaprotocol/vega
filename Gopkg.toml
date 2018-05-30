@@ -38,10 +38,6 @@
   name = "github.com/google/btree"
 
 [[constraint]]
-  name = "github.com/gorilla/mux"
-  version = "1.6.2"
-
-[[constraint]]
   branch = "master"
   name = "github.com/graph-gophers/graphql-go"
 

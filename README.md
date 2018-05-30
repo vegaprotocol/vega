@@ -15,7 +15,7 @@ git clone git@gitlab.com:vega-protocol/trading-core.git ~/go/src/vega
 
 Once you've got it, do a `dep ensure`. The proper version of each dependency will be downloaded.
 
-`go build` will create an executable called `vega` which you can run. Alternately, `go run main.go` will run the checked-out code, just as you'd expect.
+`build.sh` will create an executable called `vega` which you can run. Alternately, `go run cmd/vega/main.go` will run the checked-out code, just as you'd expect.
 
 ### Installing and Running Tendermint
 

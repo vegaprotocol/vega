@@ -20,7 +20,7 @@ build-my-project:
   stage: build
   script:
     - dep ensure
-    - go build -o ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/${BIN_NAME}
+    - go build -o ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/cmd/${GO_PROJECT}/${BIN_NAME}
   artifacts:
     paths:
       - ${ARTIFACTS_DIR}
