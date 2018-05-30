@@ -1,5 +1,7 @@
 ## Vega Core
 
+[![coverage report](https://gitlab.com/vega-protocol/trading-core/badges/develop/coverage.svg)](https://gitlab.com/vega-protocol/trading-core/commits/develop)
+
 The core trading application logic, Tendermint blockchain, and communications modules.
 
 ### Building it
