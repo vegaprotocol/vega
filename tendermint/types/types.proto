@@ -1,0 +1,262 @@
+// This file is sourced from the official Tendermint protobuf schema files at:
+//
+// * https://github.com/tendermint/tmlibs/blob/master/common/types.proto
+// * https://github.com/tendermint/abci/blob/master/types/types.proto
+//
+// Along with some minor, stylistic changes:
+//
+// * The Request and Response messages have been renamed to have
+//   Request/Response as a suffix instead of as a prefix.
+//
+// * ExceptionResponse -> ErrorResponse
+//
+syntax = "proto3";
+package types;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+//----------------------------------------
+// Abstract types
+
+message KVPair {
+  bytes key = 1;
+  bytes value = 2;
+}
+
+message KI64Pair {
+  bytes key = 1;
+  int64 value = 2;
+}
+
+//----------------------------------------
+// Request types
+
+message Request {
+  oneof value {
+    EchoRequest echo = 2;
+    FlushRequest flush = 3;
+    InfoRequest info = 4;
+    SetOptionRequest set_option = 5;
+    InitChainRequest init_chain = 6;
+    QueryRequest query = 7;
+    BeginBlockRequest begin_block = 8;
+    CheckTxRequest check_tx = 9;
+    DeliverTxRequest deliver_tx = 19;
+    EndBlockRequest end_block = 11;
+    CommitRequest commit = 12;
+  }
+}
+
+message EchoRequest {
+  string message = 1;
+}
+
+message FlushRequest {
+}
+
+message InfoRequest {
+  string version = 1;
+}
+
+// nondeterministic
+message SetOptionRequest {
+  string key = 1;
+  string value = 2;
+}
+
+message InitChainRequest {
+  repeated Validator validators = 1 [(gogoproto.nullable)=false];
+  bytes app_state_bytes = 2;
+}
+
+message QueryRequest {
+  bytes data = 1;
+  string path = 2;
+  int64 height = 3;
+  bool prove = 4;
+}
+
+message BeginBlockRequest {
+  bytes hash = 1;
+  Header header = 2 [(gogoproto.nullable)=false];
+  repeated int32 absent_validators = 3;
+  repeated Evidence byzantine_validators = 4 [(gogoproto.nullable)=false];
+}
+
+message CheckTxRequest {
+  bytes tx = 1;
+}
+
+message DeliverTxRequest {
+  bytes tx = 1;
+}
+
+message EndBlockRequest {
+  int64 height = 1;
+}
+
+message CommitRequest {
+}
+
+//----------------------------------------
+// Response types
+
+message Response {
+  oneof value {
+    ErrorResponse error = 1;
+    EchoResponse echo = 2;
+    FlushResponse flush = 3;
+    InfoResponse info = 4;
+    SetOptionResponse set_option = 5;
+    InitChainResponse init_chain = 6;
+    QueryResponse query = 7;
+    BeginBlockResponse begin_block = 8;
+    CheckTxResponse check_tx = 9;
+    DeliverTxResponse deliver_tx = 10;
+    EndBlockResponse end_block = 11;
+    CommitResponse commit = 12;
+  }
+}
+
+// nondeterministic
+message ErrorResponse {
+  string message = 1;
+}
+
+message EchoResponse {
+  string message = 1;
+}
+
+message FlushResponse {
+}
+
+message InfoResponse {
+  string data = 1;
+  string version = 2;
+  int64 last_block_height = 3;
+  bytes last_block_app_hash = 4;
+}
+
+// nondeterministic
+message SetOptionResponse {
+  uint32 code = 1;
+  // bytes data = 2;
+  string log = 3;
+  string info = 4;
+}
+
+message InitChainResponse {
+}
+
+message QueryResponse {
+  uint32 code = 1;
+  // bytes data = 2; // use "value" instead.
+  string log = 3; // nondeterministic
+  string info = 4; // nondeterministic
+  int64 index = 5;
+  bytes key = 6;
+  bytes value = 7;
+  bytes proof = 8;
+  int64 height = 9;
+}
+
+message BeginBlockResponse {
+}
+
+message CheckTxResponse {
+  uint32 code = 1;
+  bytes data = 2;
+  string log = 3; // nondeterministic
+  string info = 4; // nondeterministic
+  int64 gas_wanted  = 5;
+  int64 gas_used = 6;
+  repeated KVPair tags = 7 [(gogoproto.nullable)=false, (gogoproto.jsontag)="tags,omitempty"];
+  KI64Pair fee = 8 [(gogoproto.nullable)=false];
+}
+
+message DeliverTxResponse {
+  uint32 code = 1;
+  bytes data = 2;
+  string log = 3; // nondeterministic
+  string info = 4; // nondeterministic
+  int64 gas_wanted = 5;
+  int64 gas_used = 6;
+  repeated KVPair tags = 7 [(gogoproto.nullable)=false, (gogoproto.jsontag)="tags,omitempty"];
+  KI64Pair fee = 8 [(gogoproto.nullable)=false];
+}
+
+message EndBlockResponse {
+  repeated Validator validator_updates = 1 [(gogoproto.nullable)=false];
+  ConsensusParams consensus_param_updates = 2;
+}
+
+message CommitResponse {
+  // reserve 1
+  bytes data = 2;
+}
+
+//----------------------------------------
+// Misc.
+
+// ConsensusParams contains all consensus-relevant parameters
+// that can be adjusted by the abci app
+message ConsensusParams {
+  BlockSize block_size = 1;
+  TxSize tx_size = 2;
+  BlockGossip block_gossip = 3;
+}
+
+// BlockSize contain limits on the block size.
+message BlockSize {
+  int32 max_bytes = 1;
+  int32 max_txs = 2;
+  int64 max_gas = 3;
+}
+
+// TxSize contain limits on the tx size.
+message TxSize {
+  int32 max_bytes = 1;
+  int64 max_gas = 2;
+}
+
+// BlockGossip determine consensus critical
+// elements of how blocks are gossiped
+message BlockGossip {
+  // Note: must not be 0
+  int32 block_part_size_bytes = 1;
+}
+
+//----------------------------------------
+// Blockchain Types
+
+message Header {
+  string chain_id = 1 [(gogoproto.customname)="ChainID"];
+  int64 height = 2;
+  int64 time = 3;
+  int32 num_txs = 4;
+  BlockID last_block_id = 5 [(gogoproto.customname)="LastBlockID", (gogoproto.nullable)=false];
+  bytes last_commit_hash = 6;
+  bytes data_hash = 7;
+  bytes validators_hash = 8;
+  bytes app_hash = 9;
+}
+
+message BlockID {
+  bytes hash = 1;
+  PartSetHeader parts = 2 [(gogoproto.nullable)=false];
+}
+
+message PartSetHeader {
+  int32 total = 1;
+  bytes hash = 2;
+}
+
+message Validator {
+  bytes pub_key = 1;
+  int64 power = 2;
+}
+
+message Evidence {
+  bytes pub_key = 1;
+  int64 height = 2;
+}
