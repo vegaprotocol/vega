@@ -52,9 +52,11 @@ stages:
 
 before_script:
   - mkdir -p ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds
+  - mkdir -p ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}
+  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
   - ln -s ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds/${GO_PROJECT}
-  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+  - cd ${GOPATH}/src/${GO_PROJECT}
   - make dep
 
 #unit_tests:
