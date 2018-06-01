@@ -39,16 +39,17 @@ variables:
   ARTIFACTS_DIR: artifacts
   GO_PROJECT: vega
 
-cache:
-  paths:
-    - /apt-cache
-    - /go/src/github.com
-    - /go/src/golang.org
-    - /go/src/google.golang.org
-    - /go/src/gopkg.in
+#cache:
+#  paths:
+#    - /apt-cache
+#    - /go/src/github.com
+#    - /go/src/golang.org
+#    - /go/src/google.golang.org
+#    - /go/src/gopkg.in
 
 stages:
   - build
+  - test
 
 before_script:
   - mkdir -p ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds
@@ -59,39 +60,39 @@ before_script:
   - cd ${GOPATH}/src/${GO_PROJECT}
   - make dep
 
-#unit_tests:
-#  stage: test
-#  script:
-#    - make test
-#
-#race_detector:
-#  stage: test
-#  script:
-#    - make race
-#
-#memory_sanitizer:
-#  stage: test
-#  script:
-#    - make msan
-#
-#code_coverage:
-#  stage: test
-#  script:
-#    - make coverage
-#
-#code_coverage_report:
-#  stage: test
-#  script:
-#    - make coverhtml
-#  only:
-#  - master
-#
-#lint_code:
-#  stage: test
-#  script:
-#    - make lint
+unit_tests:
+  stage: test
+  script:
+    - make test
+
+race_detector:
+  stage: test
+  script:
+    - make race
+
+memory_sanitizer:
+  stage: test
+  script:
+    - make msan
+
+code_coverage:
+  stage: test
+  script:
+    - make coverage
+
+code_coverage_report:
+  stage: test
+  script:
+    - make coverhtml
+  only:
+  - master
+
+lint_code:
+  stage: test
+  script:
+    - make lint
 
 build:
   stage: build
   script:
-    - make build
+    - make
