@@ -26,7 +26,7 @@ coverhtml: ## Generate global code coverage report in HTML
 	./coverage.sh html;
 
 dep: ## Get the dependencies
-	@go dep ensure
+	@dep ensure
 
 build: dep ## Build the binary file
 	@go build -i -v $(PKG)
