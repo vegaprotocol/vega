@@ -91,4 +91,4 @@ before_script:
 build:
   stage: build
   script:
-    - make
+    - make build
