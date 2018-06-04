@@ -33,6 +33,8 @@ test-my-project:
     - go test -v -coverprofile .testCoverage.txt ./api/endpoints/rest
 
 publish-docker:
+  before-script:
+    - apk add --update --no-cache curl
   image: docker:stable
   services:
      - docker:dind
