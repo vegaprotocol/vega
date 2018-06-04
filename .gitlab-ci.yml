@@ -1,37 +1,3 @@
-#image: golang:1.10.1
-#
-#variables:
-#  BIN_NAME: vega
-#  ARTIFACTS_DIR: artifacts
-#  GO_PROJECT: vega
-#
-#stages:
-#  - build
-#  - test
-#
-#before_script:
-#  - mkdir -p ${GOPATH}/src/${GO_PROJECT}
-#  - mkdir -p ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}
-#  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-#  - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
-#  - cd ${GOPATH}/src/${GO_PROJECT}
-#
-#build-my-project:
-#  stage: build
-#  script:
-#    - dep ensure
-#    - go build -o ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/cmd/${GO_PROJECT}/${BIN_NAME} ./cmd/vega
-#  artifacts:
-#    paths:
-#      - ${ARTIFACTS_DIR}
-#
-#test-my-project:
-#  stage: test
-#  script:
-#    - dep ensure
-#    - go test -v -coverprofile .testCoverage.txt ./api/endpoints/rest
-
-
 image: golang:1.10.1
 
 variables:
@@ -48,8 +14,8 @@ cache:
     - /go/src/gopkg.in
 
 stages:
-  - build
   - test
+  - build
 
 before_script:
   - mkdir -p ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds
