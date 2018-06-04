@@ -34,7 +34,7 @@ test-my-project:
 
 publish-docker:
   before-script:
-    - apk add --update --no-cache curl
+    - apk add --update curl
   image: docker:stable
   services:
      - docker:dind
