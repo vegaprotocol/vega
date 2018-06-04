@@ -13,8 +13,7 @@ stages:
 before_script:
   - mkdir -p ${GOPATH}/src/${GO_PROJECT}
   - mkdir -p ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}
-  - go get -u github.com/golang/dep/cmd/dep
-#  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
   - cd ${GOPATH}/src/${GO_PROJECT}
 
@@ -34,13 +33,13 @@ test-my-project:
     - go test -v -coverprofile .testCoverage.txt ./api/endpoints/rest
 
 publish-docker:
-  before-script:
-    - apk add --update curl
   image: docker:stable
+  before_script:
+    - docker version
   services:
      - docker:dind
   stage: deploy
   script:
-    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} registry.gitlab.com
+    - docker login -u chris@vegaprotocol.io -p gPjbwdnKsdoB917BoaTb registry.gitlab.com
     - docker build -t registry.gitlab.com/vega-protocol/trading-core .
     - docker push registry.gitlab.com/vega-protocol/trading-core
