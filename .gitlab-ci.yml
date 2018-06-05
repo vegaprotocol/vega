@@ -37,7 +37,7 @@ publish-docker:
   before_script:
     - docker version
   dependencies:
-    - build
+    - build-my-project
   services:
     - docker:dind
   stage: deploy
