@@ -25,6 +25,7 @@ build-my-project:
   artifacts:
     paths:
       - ${ARTIFACTS_DIR}
+    expire_in: 2 weeks
 
 test-my-project:
   stage: test
