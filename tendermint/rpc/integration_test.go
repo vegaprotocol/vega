@@ -5,20 +5,29 @@ package rpc
 import (
 	"os"
 	"testing"
-	"time"
+
+	"github.com/tendermint/tendermint/blob/master/rpc/lib/server"
+	"github.com/tendermint/tmlibs/log"
 )
 
 var client *Client
+
+func initClient() {
+	client = &Client{}
+}
+
+func initServer() {
+	s := server.NewRPCFunc()
+	// NewWSRPCFunc
+	// RegisterRPCFuncs
+}
 
 func TestHealth(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	client = &Client{
-		Address:          DefaultAddress,
-		HandshakeTimeout: 5 * time.Second,
-		WriteTimeout:     5 * time.Second,
-	}
+	_ = log.NewNopLogger()
+	client = &Client{}
 	client.Connect()
 	retval := m.Run()
 	os.Exit(retval)
