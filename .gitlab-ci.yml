@@ -8,7 +8,6 @@ variables:
 stages:
   - build
   - test
-  - deploy
 
 before_script:
   - mkdir -p ${GOPATH}/src/${GO_PROJECT}
@@ -38,8 +37,9 @@ publish-docker:
     - docker version
   services:
      - docker:dind
-  stage: deploy
+  stage: build
   script:
+    - ls -al
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
-    - docker build -t registry.gitlab.com/vega-protocol/trading-core .
-    - docker push registry.gitlab.com/vega-protocol/trading-core
+    - docker build -t registry.gitlab.com/vega-protocol/trading-core:latest .
+    - docker push registry.gitlab.com/vega-protocol/trading-core:latest
