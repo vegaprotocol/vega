@@ -8,6 +8,7 @@ GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 all: build
 
 lint: ## Lint the files
+	@go get -u golang.org/x/lint/golint
 	@golint -set_exit_status ${PKG_LIST}
 
 test: ## Run unittests
