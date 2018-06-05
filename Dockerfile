@@ -1,10 +1,10 @@
 FROM alpine:latest
 
 # VEGA working folder
-WORKDIR /app
+WORKDIR /bin
 
 # Copy the VEGA binary
-COPY vega /app/
+COPY vega /bin/
 
 # Run the VEGA blockchain
 ENTRYPOINT ./vega --chain
