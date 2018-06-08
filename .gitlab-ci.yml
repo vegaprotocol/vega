@@ -21,7 +21,8 @@ build-my-project:
   stage: build
   script:
     - dep ensure
-    - CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/cmd/${GO_PROJECT}/${BIN_NAME} ./cmd/vega
+    #- go build -ldflags "-linkmode external -extldflags -static" -a -o ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/cmd/${GO_PROJECT}/${BIN_NAME} ./cmd/vega
+    - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/cmd/${GO_PROJECT}/${BIN_NAME} ./cmd/vega
   artifacts:
     paths:
       - ${ARTIFACTS_DIR}
