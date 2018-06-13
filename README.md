@@ -8,7 +8,7 @@ The core trading application logic, Tendermint blockchain, and communications mo
 
 First, install the Dep dependency manager, see https://golang.github.io/dep/
 
-Then, assuming a default `$GOPATH`, clone the source code into `~/go/src/vega`. If your `$GOPATH` is somewhere else, that's fine too. 
+Then, assuming a default `$GOPATH`, clone the source code into `~/go/src/vega`. If your `$GOPATH` is somewhere else, that's fine too.
 
 ```
 mkdir -p ~/go/src/vega
@@ -61,3 +61,29 @@ Deployments are automated using Capistrano. Currently the `staging` environment 
 * `cap staging:reset_app_servers` resets everything but does not build and upload the latest binary.
 
 TODO: A better deploy process wouldn't be tied to Dave's account on those servers. This is currently in progress.
+
+### Documentation
+
+* API Documentation is expressed in [Swagger YAML 2.0](https://swagger.io/docs/specification/2-0/basic-structure/) format, hosted in the [trading-api-docs repo](https://gitlab.com/vega-protocol/trading-api-docs).
+* It can be used to generate models and REST endpoints using [Go-Swagger](https://github.com/go-swagger/go-swagger) (which itself has some [documenation](https://goswagger.io/).
+* Note that currently validation isn't working for some reason.
+
+#### Workflow
+
+1) Discuss some changes with your team and update [swagger.yaml](https://gitlab.com/vega-protocol/trading-api-docs/blob/master/swagger.yaml) in the [trading-api-docs repo](https://gitlab.com/vega-protocol/trading-api-docs).
+
+2) Regenerate stuff
+
+```
+sh code_gen.sh
+```
+
+3) Serve docs locally
+
+```
+// ReDoc
+swagger serve
+
+// Swagger
+swagger server -F swagger
+```
