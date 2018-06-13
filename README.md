@@ -54,10 +54,10 @@ Do a `dep ensure -add github.com/foo/bar` to add to the manifest.
 
 ### Deploying
 
-Deployments are automated using Capistrano. Currently the `staging` environment points at Dave's `x.constructiveproof.com` servers. A few commands to note:
+Deployments are automated using Capistrano. Currently the `staging` environment points at the Digital Ocean testnet servers. A few commands to note:
 
-* `cap staging vega:full_reset` will build the `vega` binary locally, stop tendermint and vega, upload the binary, blow away all previous chain data, and restart vega and tendermint on all staging servers.
+* `cap staging vega:full_reset` will stop tendermint and vega, fetch the new Docker image from Gitlab, blow away all previous chain data, and restart vega and tendermint on all staging servers.
 
-* `cap staging:reset_app_servers` resets everything but does not build and upload the latest binary.
+* `cap staging vega:update` pulls the latest docker image and resets all the servers. 
 
-TODO: A better deploy process wouldn't be tied to Dave's account on those servers. This is currently in progress.
+* `cap staging vega:restart` restarts vega & tendermint.

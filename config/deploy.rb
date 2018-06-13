@@ -63,7 +63,7 @@ namespace :vega do
   end
 
   desc "Update vega & tendermint"
-  task :stop do
+  task :update do
     on roles(:app) do
       begin
         execute "/root/vega/message.sh 'Updating vega & tendermint'"
