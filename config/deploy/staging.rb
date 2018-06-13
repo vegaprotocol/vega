@@ -17,7 +17,7 @@
 # property set. Specify the username and a domain or IP for the server.
 # Don't use `:all`, it's a meta role.
 
-role :app, %w{dave@constructiveproof.com dave@dallas.constructiveproof.com dave@singapore.constructiveproof.com}
+role :app, %w{root@ldn.testnet.vegaprotocol.io root@sfo.testnet.vegaprotocol.io root@sgp.testnet.vegaprotocol.io}
 # role :web, %w{user1@primary.com user2@additional.com}, other_property: :other_value
 # role :db,  %w{deploy@example.com}
 
