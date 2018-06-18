@@ -62,3 +62,22 @@ build:
   stage: build
   script:
     - make
+  artifacts:
+    paths:
+      - ${ARTIFACTS_DIR}
+    expire_in: 2 weeks
+
+publish_docker:
+  image: docker:stable
+  before_script:
+    - docker version
+  dependencies:
+    - build
+  services:
+    - docker:dind
+  stage: deploy
+  script:
+    - cp ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/cmd/${GO_PROJECT}/${BIN_NAME} .
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker build -t registry.gitlab.com/vega-protocol/trading-core:latest .
+    - docker push registry.gitlab.com/vega-protocol/trading-core:latest

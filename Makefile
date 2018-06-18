@@ -30,7 +30,7 @@ dep: ## Get the dependencies
 	@dep ensure
 
 build: dep ## Build the binary file
-	@go build -i -v $(PKG)
+	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -i -v $(PKG)
 
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
