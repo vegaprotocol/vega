@@ -16,6 +16,7 @@ cache:
 stages:
   - test
   - build
+  - deploy
 
 before_script:
   - mkdir -p ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds
@@ -58,7 +59,7 @@ lint_code:
   script:
     - make lint
 
-build:
+build_vega:
   stage: build
   script:
     - make
@@ -72,7 +73,7 @@ publish_docker:
   before_script:
     - docker version
   dependencies:
-    - build
+    - build_vega
   services:
     - docker:dind
   stage: deploy
