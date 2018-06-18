@@ -85,6 +85,12 @@
   revision = "e89373fe6b4a7413d7acd6da1725b83ef713e6e4"
 
 [[projects]]
+  name = "github.com/gorilla/websocket"
+  packages = ["."]
+  revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/graph-gophers/graphql-go"
   packages = [
@@ -279,6 +285,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "88f930d8bfa717518307db4bff278c2b4a34fd96d17c479a201ad5c1dfcff72b"
+  inputs-digest = "aa4ee7b90551b152594a3808e9a080db251d8802b23e6a35969fc732716f9ce2"
   solver-name = "gps-cdcl"
   solver-version = 1

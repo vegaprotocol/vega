@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/tendermint/tendermint/blob/master/rpc/lib/server"
 	"github.com/tendermint/tmlibs/log"
 )
 
@@ -17,7 +16,7 @@ func initClient() {
 }
 
 func initServer() {
-	s := server.NewRPCFunc()
+	//s := server.NewRPCFunc()
 	// NewWSRPCFunc
 	// RegisterRPCFuncs
 }
