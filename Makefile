@@ -12,7 +12,7 @@ lint: ## Lint the files
 	@golint -set_exit_status ${PKG_LIST}
 
 test: ## Run unittests
-	@go test -short ${PKG_LIST}
+	@go test -short ${PKG_LIST} -v -coverprofile .testCoverage.txt
 
 race: dep ## Run data race detector
 	@go test -race -short ${PKG_LIST}

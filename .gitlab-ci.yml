@@ -25,7 +25,6 @@ before_script:
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
   - ln -s ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds/${GO_PROJECT}
   - cd ${GOPATH}/src/${GO_PROJECT}
-  - make dep
 
 unit_tests:
   stage: test
