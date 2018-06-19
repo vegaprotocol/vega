@@ -26,6 +26,7 @@ before_script:
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
   - ln -s ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds/${GO_PROJECT}
   - cd ${GOPATH}/src/${GO_PROJECT}
+  - export ARTIFACTS_BIN=${ARTIFACTS_BIN}
 
 unit_tests:
   stage: test
