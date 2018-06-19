@@ -16,8 +16,8 @@ lint: ## Lint the files
 	@go get -u golang.org/x/lint/golint
 	@golint -set_exit_status ${PKG_LIST}
 
-test: dep ## Run unittests
-	@go test -short ${PKG_LIST} -v -coverprofile .testCoverage.txt
+test: dep ## Run unit tests
+	@go test -short ${PKG_LIST} -v
 
 race: dep ## Run data race detector
 	@go test -race -short ${PKG_LIST}
