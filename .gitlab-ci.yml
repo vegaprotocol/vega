@@ -4,6 +4,7 @@ variables:
   BIN_NAME: vega
   ARTIFACTS_DIR: artifacts
   GO_PROJECT: vega
+  ARTIFACTS_BIN: ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/cmd/${GO_PROJECT}/${BIN_NAME}
 
 cache:
   paths:

@@ -3,6 +3,11 @@ PKG := "./cmd/$(PROJECT_NAME)"
 PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 
+ifndef ARTIFACTS_BIN ## environment variable override from gitlab-ci
+$(info $$ARTIFACTS_BIN is [${ARTIFACTS_BIN}])
+ARTIFACTS_BIN := "./$(PROJECT_NAME)"
+endif
+
 .PHONY: all dep build clean test coverage coverhtml lint
 
 all: build
@@ -30,7 +35,7 @@ dep: ## Get the dependencies
 	@dep ensure
 
 build: dep ## Build the binary file
-	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -i -v $(PKG)
+	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
 
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
