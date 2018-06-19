@@ -20,10 +20,13 @@ tail -q -n +2 "${COVERAGE_DIR}"/*.cov >> "${COVERAGE_DIR}"/coverage.cov ;
 # Display the global code coverage
 go tool cover -func="${COVERAGE_DIR}"/coverage.cov ;
 
+# Emit gitlab-ci testCoverage.txt file
+cp "${COVERAGE_DIR}"/coverage.cov .testCoverage.txt ;
+
 # If needed, generate HTML report
 if [ "$1" == "html" ]; then
-    go tool cover -html="${COVERAGE_DIR}"/coverage.cov -o coverage.html ;
+    go tool cover -html="${COVERAGE_DIR}"/coverage.cov -o .testCoverage.html ;
 fi
 
-# Remove the coverage files directory
-rm -rf "$COVERAGE_DIR";
+# Remove the temp coverage files directory
+rm -rf "$COVERAGE_DIR" ;
