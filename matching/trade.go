@@ -40,7 +40,11 @@ func (b *OrderBook) newTrade(agg, pass *OrderEntry, size uint64) *Trade {
 	}
 	trade.id = trade.Digest()
 	for _, c := range b.config.TradeChans {
-		c <- *trade.toMessage()
+		go func(c chan<- msg.Trade, trade *Trade) {
+			fmt.Println("TRADE: SENDING...")
+			c <- *trade.toMessage()
+			fmt.Println("TRADE: SENT...")
+		}(c, trade)
 	}
 	pass.update(trade, b)
 	agg.update(trade, b)
