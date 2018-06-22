@@ -21,6 +21,69 @@ import (
 
 /*
 	Given test price level
+	I add 2 orders waiting at the test price level with different timestamps
+	I expect 2 price level on the price list
+	I remove orders from the price list
+	I expect 0 price level on the price list
+*/
+
+
+func TestPriceLevelAddAndRemoveOrders(t *testing.T) {
+
+	const testPrice = 100
+	book := initOrderBook()
+	orderBookSide := makeSide(msg.Side_Sell, book)
+	priceLevel := NewPriceLevel(orderBookSide, testPrice)
+	orderBookSide.levels.ReplaceOrInsert(priceLevel)
+
+	ordersSitingAtPriceLevel := []OrderEntry{
+		{
+			order: &msg.Order{
+				Market:    "testOrderBook",
+				Party:     "A",
+				Side:      msg.Side_Sell,
+				Price:     testPrice,
+				Size:      100,
+				Remaining: 100,
+				Type:      msg.Order_GTC,
+				Timestamp: 0,
+				Id:        "id-number-one",
+			},
+			book: book,
+			side: orderBookSide,
+		},
+		{
+			order: &msg.Order{
+				Market:    "testOrderBook",
+				Party:     "B",
+				Side:      msg.Side_Sell,
+				Price:     testPrice,
+				Size:      200,
+				Remaining: 200,
+				Type:      msg.Order_GTC,
+				Timestamp: 0,
+				Id:        "id-number-one",
+			},
+			book: book,
+			side: orderBookSide,
+		},
+	}
+
+	testPriceLevel := orderBookSide.getPriceLevel(testPrice)
+	testPriceLevel.addOrder(&ordersSitingAtPriceLevel[0])
+	testPriceLevel.addOrder(&ordersSitingAtPriceLevel[1])
+
+	assert.Equal(t, 2, testPriceLevel.orders.Len())
+
+	testPriceLevel.removeOrder(&ordersSitingAtPriceLevel[0])
+	testPriceLevel.removeOrder(&ordersSitingAtPriceLevel[1])
+
+	assert.Equal(t, 0, testPriceLevel.orders.Len())
+}
+
+
+/*
+	Given test price level
 	I have 2 orders waiting at the test price level with different timestamps
 	I fetch orders from order side book at the test price level
 	I expect exactly  2 orders at the test price level with total volume to be correct and protocol messages of those orders to be exact

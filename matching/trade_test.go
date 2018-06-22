@@ -17,7 +17,7 @@ func initOrderBook() *OrderBook {
 	matchingConfig.TradeChans = append(matchingConfig.TradeChans, tradeSseChan)
 	matchingConfig.OrderChans = append(matchingConfig.OrderChans, orderSseChan)
 
-	return &OrderBook{name: "testOrderBook", config: matchingConfig}
+	return &OrderBook{name: "testOrderBook", config: matchingConfig, orders: make(map[string]*OrderEntry)}
 }
 
 func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {
