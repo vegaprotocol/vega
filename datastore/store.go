@@ -1,5 +1,7 @@
 package datastore
 
+import "vega/proto"
+
 // Trade
 type Trade struct {
 	ID        string
@@ -8,23 +10,50 @@ type Trade struct {
 	Size      uint64
 	Buyer     string
 	Seller    string
-	Side      int32
-	Timestamp uint64
+	Side      int32      // to add from message?
+	Timestamp uint64     // to add from message?
 
-	OrderID   string
-	//Order     *Order
+	OrderID   string     // to add from message?
+}
+
+func (tr *Trade) fromProtoMessage(m msg.Trade) *Trade {
+	return &Trade{
+		ID:        "",
+		Market:    m.Market,
+		Price:     m.Price,
+		Size:      m.Size,
+		Buyer:     m.Buyer,
+		Seller:    m.Seller,
+		Side:      int32(m.Aggressor),
+		Timestamp: 1,
+		OrderID:   "",
+	}
 }
 
 type Order struct {
 	ID        string
 	Market    string
-	Party     uint64
+	Party     string
 	Side      int32
 	Price     uint64
 	Size      uint64
 	Type      int32
 	Timestamp uint64
 }
+
+func (or *Order) fromProtoMessage(m msg.Order) *Order {
+	return &Order{
+		ID:        "",
+		Market:    m.Market,
+		Party:     m.Party,
+		Side:      int32(m.Side),
+		Price:     m.Price,
+		Size:      m.Size,
+		Type:      int32(m.Type),
+		Timestamp: m.Timestamp,
+	}
+}
+
 
 type TradeStore interface {
 	// Get retrieves a trade for a given id.
