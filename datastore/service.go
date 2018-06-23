@@ -1,30 +1,29 @@
 package datastore
 
-import "vega/datastore/inmemory"
 import (
-	"vega/proto"
 	"fmt"
+	"vega/proto"
 )
 
 type StorageService interface {
 	TradeStore() TradeStore
 	OrderStore() OrderStore
 
-	Init (chan<- msg.Order, chan<- msg.Trade)
+	Init (<-chan msg.Order, <-chan msg.Trade)
 }
 
 type MemoryStorageService struct {
-	memStore inmemory.MemStore
+	memStore MemStore
 	tradeStore TradeStore
 	orderStore OrderStore
-	tradeChan chan<- msg.Trade
-	orderChan chan<- msg.Order
+	tradeChan <-chan msg.Trade
+	orderChan <-chan msg.Order
 }
 
-func (m *MemoryStorageService) Init (orderChan chan<- msg.Order, tradeChan chan<- msg.Trade) {
-	m.memStore = inmemory.NewMemStore()
-	m.tradeStore = inmemory.NewTradeStore(&m.memStore)
-	m.orderStore = inmemory.NewOrderStore(&m.memStore)
+func (m *MemoryStorageService) Init (orderChan <-chan msg.Order, tradeChan <-chan msg.Trade) {
+	m.memStore = NewMemStore()
+	m.tradeStore = NewTradeStore(&m.memStore)
+	m.orderStore = NewOrderStore(&m.memStore)
 	m.tradeChan = tradeChan
 	m.orderChan = orderChan
 }
