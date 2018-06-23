@@ -18,14 +18,14 @@ func main() {
 	chain := flag.Bool("chain", false, "Start a Tendermint blockchain socket")
 	flag.Parse()
 
-	orderSseChan := make(chan msg.Order, sseChannelSize)
-	tradeSseChan := make(chan msg.Trade, sseChannelSize)
-	sseServer := sse.NewServer(orderSseChan, tradeSseChan)
+	config := core.DefaultConfig()
 	restServer := rest.NewRestServer()
 
-	config := core.DefaultConfig()
-	config.Matching.OrderChans = append(config.Matching.OrderChans, orderSseChan)
-	config.Matching.TradeChans = append(config.Matching.TradeChans, tradeSseChan)
+	sseOrderChan := make(chan msg.Order, sseChannelSize)
+	sseTradeChan := make(chan msg.Trade, sseChannelSize)
+	sseServer := sse.NewServer(sseOrderChan, sseTradeChan)
+	config.Matching.OrderChans = append(config.Matching.OrderChans, sseOrderChan)
+	config.Matching.TradeChans = append(config.Matching.TradeChans, sseTradeChan)
 
 	// Storage Service provides read stores for consumer VEGA API
 	// Uses in memory storage (maps/slices etc), configurable in future
@@ -33,7 +33,9 @@ func main() {
 	storeTradeChan := make(chan msg.Trade, storeChannelSize)
 	storage := &datastore.MemoryStorageService{}
 	storage.Init(storeOrderChan, storeTradeChan)
-	
+	config.Matching.OrderChans = append(config.Matching.OrderChans, storeOrderChan)
+	config.Matching.TradeChans = append(config.Matching.TradeChans, storeTradeChan)
+
 	vega := core.New(config)
 	vega.CreateMarket("BTC/DEC18")
 

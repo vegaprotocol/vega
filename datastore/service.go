@@ -26,6 +26,9 @@ func (m *MemoryStorageService) Init (orderChan <-chan msg.Order, tradeChan <-cha
 	m.orderStore = NewOrderStore(&m.memStore)
 	m.tradeChan = tradeChan
 	m.orderChan = orderChan
+
+	go m.listenForOrders()
+	go m.listenForTrades()
 }
 
 func (m *MemoryStorageService) TradeStore() TradeStore {
@@ -45,7 +48,8 @@ func (m *MemoryStorageService) listenForOrders() {
 		
 		m.orderStore.Put(o)
 
-		fmt.Println("Added order of size %s, price %s", o.Size, o.Price)
+		fmt.Printf("Added order of size %d, price %d", o.Size, o.Price)
+		fmt.Println("---")
 	}
 }
 
@@ -57,7 +61,8 @@ func (m *MemoryStorageService) listenForTrades() {
 
 		m.tradeStore.Put(t)
 
-		fmt.Println("Added trade of size %s, price %s", t.Size, t.Price)
+		fmt.Printf("Added trade of size %d, price %d", t.Size, t.Price)
+		fmt.Println("---")
 
 	}
 
