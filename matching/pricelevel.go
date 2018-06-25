@@ -5,14 +5,11 @@ import (
 	"log"
 	"math"
 
-	"vega/proto"
-
 	"github.com/google/btree"
 )
 
 type PriceLevel struct {
-	book              *OrderBook
-	side              msg.Side
+	//side              msg.Side
 	price             uint64
 	volume            uint64
 	volumeByTimestamp map[uint64]uint64
@@ -21,8 +18,7 @@ type PriceLevel struct {
 
 func NewPriceLevel(s *OrderBookSide, price uint64) *PriceLevel {
 	return &PriceLevel{
-		book:              s.book,
-		side:              s.side,
+		//side:              s.side,
 		price:             price,
 		orders:            list.New(),
 		volumeByTimestamp: make(map[uint64]uint64),
@@ -54,63 +50,46 @@ func (l *PriceLevel) topTimestamp() uint64 {
 }
 
 func (l *PriceLevel) addOrder(o *OrderEntry) {
-	if o.order.Remaining > 0 {
-		o.priceLevel = l
-		if vbt, exists := l.volumeByTimestamp[o.order.Timestamp]; exists {
-			l.volumeByTimestamp[o.order.Timestamp] = vbt + o.order.Remaining
-		} else {
-			l.volumeByTimestamp[o.order.Timestamp] = o.order.Remaining
-		}
-		l.volume += o.order.Remaining
-		o.side.totalVolume += o.order.Remaining
-		o.side.orderCount++
-		o.elem = l.orders.PushBack(o)
+	if vbt, exists := l.volumeByTimestamp[o.order.Timestamp]; exists {
+		l.volumeByTimestamp[o.order.Timestamp] = vbt + o.order.Remaining
+	} else {
+		l.volumeByTimestamp[o.order.Timestamp] = o.order.Remaining
 	}
+	l.volume += o.order.Remaining
+	l.orders.PushBack(o)
+	o.elem = l.orders.Back()
+
 }
 
-func (l *PriceLevel) removeOrder(o *OrderEntry) *OrderEntry {
-	if l != o.priceLevel || l.price != o.order.Price {
-		panic("removeOrder called on wrong price level for order/price")
-	}
-	l.volume -= o.order.Remaining
-	l.orders.Remove(o.elem)
-	o.side.totalVolume -= o.order.Remaining
-	o.side.orderCount--
+func (l *PriceLevel) removeOrder(o *OrderEntry) {
 	if vbt, exists := l.volumeByTimestamp[o.order.Timestamp]; exists {
 		if vbt <= o.order.Remaining {
 			delete(l.volumeByTimestamp, o.order.Timestamp)
 		} else {
 			l.volumeByTimestamp[o.order.Timestamp] = vbt - o.order.Remaining
 		}
-
 	}
-	if l.orders.Len() == 0 {
-		o.side.removePriceLevel(l.price)
-	}
+	l.volume -= o.order.Remaining
+	l.orders.Remove(o.elem)
+	l.orders.Remove(o.elem)
 	o.elem = nil
-	o.priceLevel = nil
-	o.side = nil
-	//o.book = nil
-	return o
 }
 
 func (l *PriceLevel) Less(other btree.Item) bool {
-	if l.side == msg.Side_Buy {
-		return l.price < other.(*PriceLevel).price
-	} else {
-		return l.price > other.(*PriceLevel).price
-	}
+	return l.price > other.(*PriceLevel).price
 }
 
 func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 	volumeToShare := agg.order.Remaining
 	currentTimestamp := l.topTimestamp()
 	initialVolumeAtTimestamp := l.volumeByTimestamp[currentTimestamp]
+
 	el := l.orders.Front()
 	for el != nil && agg.order.Remaining > 0 {
 
 		pass := el.Value.(*OrderEntry)
 		log.Println("Passing through: ", pass)
+
 		next := el.Next()
 
 		// See if we are at a new top time
@@ -123,22 +102,22 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 
 		// Get size and make newTrade
 		size := l.getVolumeAllocation(agg, pass, volumeToShare, initialVolumeAtTimestamp)
-		trade := l.book.newTrade(agg, pass, size)
+		if size <= 0 {
+			panic("Trade.size > order.remaining")
+		}
+		trade := newTrade(agg, pass, size)
 
 		// Update book state
 		if trade != nil {
 			*trades = append(*trades, *trade)
 			l.volume -= trade.size
-			pass.side.totalVolume -= trade.size
 			if vbt, exists := l.volumeByTimestamp[currentTimestamp]; exists {
 				l.volumeByTimestamp[currentTimestamp] = vbt - trade.size
 			}
 			if pass.order.Remaining == 0 {
-				pass.remove()
+				l.removeOrder(pass)
 			}
-			if !l.book.config.Quiet {
-				log.Printf("Matched: %v\n", trade)
-			}
+			log.Printf("Matched: %v\n", trade)
 		}
 		el = next
 	}

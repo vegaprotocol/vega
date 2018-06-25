@@ -14,7 +14,7 @@ type MatchingEngine interface {
 
 func (v Vega) CreateMarket(id string) {
 	if _, exists := v.markets[id]; !exists {
-		v.markets[id] = matching.NewBook(id, v.orders, v.config.Matching)
+		v.markets[id] = matching.NewBook(id, v.config.Matching)
 	}
 }
 
@@ -26,11 +26,11 @@ func (v Vega) SubmitOrder(order msg.Order) (*msg.OrderConfirmation, msg.OrderErr
 	}
 }
 
-func (v Vega) DeleteOrder(id string) *msg.Order {
+func (v Vega) DeleteOrder(id, marketName string) {
 	if orderEntry, exists := v.orders[id]; exists {
-		return orderEntry.GetBook().RemoveOrder(id)
-	} else {
-		return nil
+		if market, exists := v.markets[marketName]; exists {
+			market.RemoveOrder(orderEntry)
+		}
 	}
 }
 
@@ -49,3 +49,5 @@ func (v Vega) GetMarketDepth(marketId string) *msg.MarketDepth {
 		return nil
 	}
 }
+
+// run a separate go routine that will read on channel and update orders map

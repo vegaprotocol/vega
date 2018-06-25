@@ -29,7 +29,7 @@ func min(x, y uint64) uint64 {
 }
 
 // Creates a trade of a given size between two orders and updates the order details
-func (b *OrderBook) newTrade(agg, pass *OrderEntry, size uint64) *Trade {
+func newTrade(agg, pass *OrderEntry, size uint64) *Trade {
 	trade := &Trade{
 		price: pass.order.Price,
 		size:  size,
@@ -39,11 +39,9 @@ func (b *OrderBook) newTrade(agg, pass *OrderEntry, size uint64) *Trade {
 		sell:  getOrderForSide(msg.Side_Sell, agg, pass),
 	}
 	trade.id = trade.Digest()
-	for _, c := range b.config.TradeChans {
-		c <- *trade.toMessage()
-	}
-	pass.update(trade, b)
-	agg.update(trade, b)
+
+	pass.updateRemaining(trade.size)
+	agg.updateRemaining(trade.size)
  	return trade
 }
 

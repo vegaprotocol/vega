@@ -2,7 +2,6 @@ package matching
 
 import (
 	"fmt"
-	"vega/api/endpoints/sse"
 	"vega/proto"
 )
 
@@ -11,24 +10,18 @@ type OrderBook struct {
 	buy             *OrderBookSide
 	sell            *OrderBookSide
 	lastTradedPrice uint64
-	orders          map[string]*OrderEntry
 	config          Config
 	latestTimestamp uint64
-	sse             sse.Server
 }
 
 // Create an order book with a given name
-func NewBook(name string, orderLookup map[string]*OrderEntry, config Config) *OrderBook {
+func NewBook(name string, config Config) *OrderBook {
 	book := &OrderBook{
 		name:   name,
-		orders: orderLookup,
 		config: config,
 	}
-	buy, sell := makeSide(msg.Side_Buy, book), makeSide(msg.Side_Sell, book)
-	book.buy = buy
-	book.buy.other = sell
-	book.sell = sell
-	book.sell.other = buy
+	book.buy = newSide(msg.Side_Buy)
+	book.sell = newSide(msg.Side_Sell)
 	return book
 }
 
@@ -40,8 +33,32 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	if orderMessage.Timestamp > b.latestTimestamp {
 		b.latestTimestamp = orderMessage.Timestamp
 	}
-	orderEntry := orderEntryFromMessage(orderMessage)
-	trades := b.sideFor(orderMessage).addOrder(orderEntry)
+
+	o := &OrderEntry{
+		Side: orderMessage.Side,
+		order:   orderMessage,
+		persist: orderMessage.Type == msg.Order_GTC || orderMessage.Type == msg.Order_GTT,
+		dispatchChannels: b.config.OrderChans,
+	}
+	o.order.Id = o.Digest()
+
+	// uncross with opposite
+	trades, lastTradedPrice := b.getOppositeSide(orderMessage.Side).cross(o)
+	if lastTradedPrice != 0 {
+		b.lastTradedPrice = lastTradedPrice
+	}
+
+	for _, t := range *trades {
+		for _, c := range b.config.TradeChans {
+			c <- *t.toMessage()
+		}
+	}
+
+	// if persist add to tradebook to the right side
+	if o.persist && o.order.Remaining > 0 {
+		b.getSide(orderMessage.Side).addOrder(o)
+	}
+
 	orderConfirmation := MakeResponse(orderMessage, trades)
 	printSlice(*trades)
 	if len(*trades) == 0 {
@@ -56,11 +73,19 @@ func printSlice(s []Trade) {
 	fmt.Printf("len=%d cap=%d\n", len(s), cap(s))
 }
 
-func (b *OrderBook) sideFor(orderMessage *msg.Order) *OrderBookSide {
-	if orderMessage.Side == msg.Side_Buy {
+func (b *OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
+	if orderSide == msg.Side_Buy {
 		return b.buy
 	} else { // side == Sell
 		return b.sell
+	}
+}
+
+func (b *OrderBook) getOppositeSide(orderSide msg.Side) *OrderBookSide {
+	if orderSide == msg.Side_Buy {
+		return b.sell
+	} else { // side == Sell
+		return b.buy
 	}
 }
 
@@ -87,15 +112,6 @@ func (b *OrderBook) GetMarketDepth() *msg.MarketDepth {
 	}
 }
 
-func (b *OrderBook) RemoveOrder(id string) *msg.Order {
-	if order, exists := b.orders[id]; exists {
-		return order.remove().order
-	} else {
-		return nil
-	}
+func (b *OrderBook) RemoveOrder(orderEntry *OrderEntry) {
+	b.getSide(orderEntry.Side).RemoveOrder(orderEntry)
 }
-
-//
-//func (b *OrderBook) GetBook() (buy, sell []*OrderEntry) {
-//
-//}

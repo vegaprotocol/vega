@@ -17,7 +17,7 @@ func initOrderBook() *OrderBook {
 	matchingConfig.TradeChans = append(matchingConfig.TradeChans, tradeSseChan)
 	matchingConfig.OrderChans = append(matchingConfig.OrderChans, orderSseChan)
 
-	return &OrderBook{name: "testOrderBook", config: matchingConfig, orders: make(map[string]*OrderEntry)}
+	return &OrderBook{name: "testOrderBook", config: matchingConfig}
 }
 
 func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {
@@ -43,9 +43,9 @@ func expectOrder(t *testing.T, expectedOrder, order *msg.Order) {
 }
 
 /*  SUMMARY OF TESTS:
-	- TestNewTradeNoRemaining
-	- TestNewTradeWithRemainingOnAggressive
-	- TestNewTradeWithRemainingOnPassive
+- TestNewTradeNoRemaining
+- TestNewTradeWithRemainingOnAggressive
+- TestNewTradeWithRemainingOnPassive
 */
 
 /*
@@ -117,19 +117,24 @@ func TestNewTradeNoRemaining(t *testing.T) {
 		Id:        "id-number-one",
 	}
 
-	aggressiveOE := &OrderEntry{order: aggressiveOrderMsg, book: book}
-	passiveOE := &OrderEntry{order: passiveOrderMsg, book: book}
+	aggressiveOE := &OrderEntry{
+		order:            aggressiveOrderMsg,
+		Side:             msg.Side_Buy,
+		persist:          true,
+		dispatchChannels: book.config.OrderChans,
+	}
+	passiveOE := &OrderEntry{
+		order:            passiveOrderMsg,
+		Side:             msg.Side_Sell,
+		persist:          true,
+		dispatchChannels: book.config.OrderChans,
+	}
 
 	// execute newTrade for those crossing OrderEntries
-	trade := book.newTrade(aggressiveOE, passiveOE, 100)
+	trade := newTrade(aggressiveOE, passiveOE, 100)
 
 	// trade is both returned from newTrade function and pushed onto TradeChans - check for both
 	expectTrade(t, trade.msg, expectedTrade)
-
-	for _, tradeCh := range book.config.TradeChans {
-		trade := <-tradeCh
-		expectTrade(t, &trade, expectedTrade)
-	}
 
 	// We read from channels to obtain two updated orders
 	// newTrade method updates passive order first and than aggressive
@@ -215,18 +220,24 @@ func TestNewTradeWithRemainingOnAggressive(t *testing.T) {
 		Id:        "id-number-one",
 	}
 
-	aggressiveOE := &OrderEntry{order: aggressiveOrderMsg, book: book}
-	passiveOE := &OrderEntry{order: passiveOrderMsg, book: book}
+	aggressiveOE := &OrderEntry{
+		order: aggressiveOrderMsg,
+		Side:             msg.Side_Buy,
+		persist:          true,
+		dispatchChannels: book.config.OrderChans,
+	}
+	passiveOE := &OrderEntry{
+		order: passiveOrderMsg,
+		Side:             msg.Side_Sell,
+		persist:          true,
+		dispatchChannels: book.config.OrderChans,
+	}
 
 	// execute newTrade for those crossing OrderEntries
-	trade := book.newTrade(aggressiveOE, passiveOE, 100)
+	trade := newTrade(aggressiveOE, passiveOE, 100)
 
 	// trade is both returned from newTrade function and pushed onto TradeChans - test for both
 	expectTrade(t, trade.msg, expectedTrade)
-	for _, tradeCh := range book.config.TradeChans {
-		tradeMsg := <-tradeCh
-		expectTrade(t, &tradeMsg, expectedTrade)
-	}
 
 	expectOrder(t, aggressiveOE.order, expectedAggressiveRemainingOrder)
 	expectOrder(t, passiveOE.order, expectedPassiveClearedOrder)
@@ -311,18 +322,25 @@ func TestNewTradeWithRemainingOnPassive(t *testing.T) {
 		Id:        "id-number-one",
 	}
 
-	aggressiveOE := &OrderEntry{order: aggressiveOrderMsg, book: book}
-	passiveOE := &OrderEntry{order: passiveOrderMsg, book: book}
+	aggressiveOE := &OrderEntry{
+		order: aggressiveOrderMsg,
+		Side:             msg.Side_Buy,
+		persist:          true,
+		dispatchChannels: book.config.OrderChans,
+	}
+
+	passiveOE := &OrderEntry{
+		order: passiveOrderMsg,
+		Side:             msg.Side_Sell,
+		persist:          true,
+		dispatchChannels: book.config.OrderChans,
+	}
 
 	// execute newTrade for those crossing OrderEntries
-	trade := book.newTrade(aggressiveOE, passiveOE, 100)
+	trade := newTrade(aggressiveOE, passiveOE, 100)
 
 	// trade is both returned from newTrade functiona and pushed onto TradeChans - check for both
 	expectTrade(t, trade.msg, expectedTrade)
-	for _, tradeCh := range book.config.TradeChans {
-		tradeMsg := <-tradeCh
-		expectTrade(t, &tradeMsg, expectedTrade)
-	}
 
 	expectOrder(t, passiveOE.order, expectedPassiveRemainingOrder)
 	expectOrder(t, aggressiveOE.order, expectedAggressiveClearedOrder)

@@ -98,7 +98,7 @@ func main() {
 	end := time.Now()
 	log.Printf("Elapsed (add order E and match %v trades): %v\n", len(res2.Trades), end.Sub(start))
 
-	vega.DeleteOrder(res.Order.Id)
+	vega.DeleteOrder(res.Order.Id, "BTC/DEC18")
 
 	fmt.Println(vega.GetMarketData("BTC/DEC18"))
 	fmt.Println(vega.GetMarketDepth("BTC/DEC18"))

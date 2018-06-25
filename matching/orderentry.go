@@ -3,8 +3,6 @@ package matching
 import (
 	"container/list"
 	"fmt"
-	"log"
-
 	"vega/proto"
 
 	"github.com/golang/protobuf/proto"
@@ -14,62 +12,74 @@ import (
 // Wraps the protobuf Order message for inclusion in the order book
 type OrderEntry struct {
 	order      *msg.Order
-	book       *OrderBook
-	side       *OrderBookSide
-	priceLevel *PriceLevel
+	Side msg.Side
+	//book       *OrderBook
+	//side       *OrderBookSide
+	//priceLevel *PriceLevel
 	elem       *list.Element
 	persist    bool
+	dispatchChannels []chan msg.Order
 }
 
-func (o *OrderEntry) GetBook() *OrderBook {
-	return o.book
-}
-
-// Creates an order entry from an order message
-func orderEntryFromMessage(order *msg.Order) *OrderEntry {
+func newOrderEntry(orderMessage *msg.Order, dispatchChannels []chan msg.Order) *OrderEntry {
 	o := &OrderEntry{
-		order:   order,
-		persist: order.Type == msg.Order_GTC || order.Type == msg.Order_GTT,
+		Side: orderMessage.Side,
+		order:   orderMessage,
+		persist: orderMessage.Type == msg.Order_GTC || orderMessage.Type == msg.Order_GTT,
+		dispatchChannels: dispatchChannels,
 	}
-	order.Id = ""
-	order.Id = o.Digest()
+	o.order.Id = o.Digest()
 	return o
 }
 
+//func (o *OrderEntry) GetBook() *OrderBook {
+//	return o.book
+//}
+
+// Creates an order entry from an order message
+//func orderEntryFromMessage(order *msg.Order) *OrderEntry {
+//	o := &OrderEntry{
+//		order:   order,
+//		persist: order.Type == msg.Order_GTC || order.Type == msg.Order_GTT,
+//	}
+//	order.Id = ""
+//	order.Id = o.Digest()
+//	return o
+//}
+
 // Returns true if the order is crossed (can trade) with the supplied side and price
-func (o *OrderEntry) crossedWith(side msg.Side, price uint64) bool {
-	return o.order.GetSide() != side &&
-		price > 0 &&
-		o.order.Price > 0 &&
-		((side == msg.Side_Buy && price >= o.order.Price) ||
-			(side == msg.Side_Sell && price <= o.order.Price))
-}
+//func (o *OrderEntry) crossedWith(side msg.Side, price uint64) bool {
+//	return o.order.GetSide() != side &&
+//		price > 0 &&
+//		o.order.Price > 0 &&
+//		((side == msg.Side_Buy && price >= o.order.Price) ||
+//			(side == msg.Side_Sell && price <= o.order.Price))
+//}
 
 // Update (remaining size, etc.) for an order that has traded
-func (o *OrderEntry) update(trade *Trade, book *OrderBook) {
-	if trade.size > o.order.Remaining {
-		panic(fmt.Sprintf("Trade.size > order.remaining (o: %v, newTrade: %v)", o, trade))
-	} else {
-		o.order.Remaining -= trade.size
-		for _, c := range book.config.OrderChans {
-			c <- *o.order
-		}
+func (o *OrderEntry) updateRemaining(tradeSize uint64) {
+
+	o.order.Remaining -= tradeSize
+
+	for _, c := range o.dispatchChannels {
+		c <- *o.order
 	}
 }
 
 // Remove an order from the book and update the book metrics
-func (o *OrderEntry) remove() *OrderEntry {
-	if o.priceLevel == nil {
-		return nil
-	}
-	book := o.book
-	delete(book.orders, o.order.Id)
-	o.priceLevel.removeOrder(o)
-	if !book.config.Quiet {
-		log.Printf("Removed: %v\n", o)
-	}
-	return o
-}
+//func (o *OrderEntry) remove() *OrderEntry {
+//	if o.priceLevel == nil {
+//		return nil
+//	}
+//	//book := o.book
+//	//delete(book.orders, o.order.Id)
+//	removeOrder
+//	o.priceLevel.removeOrder(o)
+//	if !book.config.Quiet {
+//		log.Printf("Removed: %v\n", o)
+//	}
+//	return o
+//}
 
 // Returns the string representation of an order's details
 func OrderString(o *msg.Order) string {
