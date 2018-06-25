@@ -4,17 +4,25 @@ import (
 	"net/http"
 	"time"
 	"vega/api/trading/orders/models"
+	"vega/datastore"
 )
 
 type OrderService interface {
+	Init(orderStore datastore.OrderStore)
 	CreateOrder(order models.Order) (success bool, err error)
+	GetOrders(market string) (orders []models.Order, err error)
 }
 
 type rpcOrderService struct {
+	orderStore datastore.OrderStore
 }
 
 func NewRpcOrderService() OrderService {
 	return &rpcOrderService{}
+}
+
+func (p *rpcOrderService) Init(orderStore datastore.OrderStore) {
+	p.orderStore = orderStore
 }
 
 func (p *rpcOrderService) CreateOrder(order models.Order) (success bool, err error) {
@@ -44,4 +52,9 @@ func (p *rpcOrderService) CreateOrder(order models.Order) (success bool, err err
 	//}
 
 	return true, err
+}
+
+func (p *rpcOrderService) GetOrders(market string) (orders []models.Order, err error)  {
+
+	return nil, nil
 }

@@ -6,19 +6,20 @@ import (
 	"vega/api/trading/orders"
 )
 
-type restServer struct{}
+type restServer struct{
+	orderService orders.OrderService
+}
 
-func NewRestServer() *restServer {
-	return &restServer{}
+func NewRestServer(orderService orders.OrderService) *restServer {
+	return &restServer{
+		orderService: orderService,
+	}
 }
 
 func (s *restServer) Start() {
 	var port= 3003
 	var addr= fmt.Sprintf(":%d", port)
 	fmt.Printf("Starting REST based HTTP server on port %d...\n", port)
-
-	// Create dependencies
-	orderService := orders.NewRpcOrderService()
-	router := NewRouter(orderService)
+	router := NewRouter(s.orderService)
 	http.ListenAndServe(addr, router)
 }

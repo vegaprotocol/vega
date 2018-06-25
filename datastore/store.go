@@ -58,8 +58,8 @@ func (or *Order) fromProtoMessage(m msg.Order) *Order {
 type TradeStore interface {
 	// Get retrieves a trade for a given id.
 	Get(id string) (*Trade, error)
-	// FindByOrderId retrieves all trades for a given order id.
-	FindByOrderId(orderId string) ([]*Trade, error)
+	// FindByOrderID retrieves all trades for a given order id.
+	FindByOrderID(orderID string) ([]*Trade, error)
 	// Put stores a trade.
 	Put(r *Trade) error
 	// Removes a trade from the store.

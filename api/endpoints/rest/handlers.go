@@ -39,3 +39,7 @@ func (handlers *Handlers) CreateOrderWithModel(c *gin.Context, o models.Order) {
 		wasFailure(c, gin.H { "result" : ResultFailure, "error" : err.Error() })
 	}
 }
+
+func (handlers *Handlers) GetOrders(c *gin.Context) {
+//	handlers.OrderService.CreateOrder(	)
+}

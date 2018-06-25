@@ -9,6 +9,7 @@ import (
 	"vega/core"
 	"vega/proto"
 	"vega/datastore"
+	"vega/api/trading/orders"
 )
 
 const sseChannelSize = 2 << 16
@@ -19,7 +20,10 @@ func main() {
 	flag.Parse()
 
 	config := core.DefaultConfig()
-	restServer := rest.NewRestServer()
+
+	// Create dependencies
+	orderService := orders.NewRpcOrderService()
+	restServer := rest.NewRestServer(orderService)
 
 	sseOrderChan := make(chan msg.Order, sseChannelSize)
 	sseTradeChan := make(chan msg.Trade, sseChannelSize)

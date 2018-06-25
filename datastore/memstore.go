@@ -7,7 +7,7 @@ import (
 // In memory order struct keeps an internal map of pointers to trades for an order.
 type memOrder struct {
 	order *Order
-	trades map[string]*memTrade
+	trades []*memTrade
 }
 
 // OrderStore implements storage.OrderStore.
@@ -67,7 +67,7 @@ func (t *memOrderStore) Put(or *Order) error {
 		t.store.orders[or.ID].order = or
 	} else {
 		order := &memOrder {
-			trades: make(map[string]*memTrade, 0),
+			trades: make([]*memTrade, 0),
 			order: or,
 		}
 		t.store.orders[or.ID] = order
@@ -92,16 +92,27 @@ func (t *memTradeStore) Get(id string) (*Trade, error) {
 }
 
 // FindByOrderId retrieves all trades for a given order id.
-func (t *memTradeStore) FindByOrderId(orderId string) ([]*Trade, error) {
-	trades := make([]*Trade, 0)
+func (t *memTradeStore) FindByOrderID(orderID string) ([]*Trade, error) {
 
-	for k, v := range t.store.trades {
-		fmt.Printf("key[%s] value[%v]\n", k, v)
-		if v.trade.OrderID == orderId {
+	order := t.store.orders[orderID]
+	if order == nil {
+		return nil, fmt.Errorf("order not found in memstore: %s", orderID)
+	} else {
+		trades := make([]*Trade, 0)
+		for _, v := range order.trades {
 			trades = append(trades, v.trade)
 		}
+		return trades, nil
 	}
-	return trades, nil
+
+	//trades := make([]*Trade, 0)
+	//for k, v := range t.store.trades {
+	//	fmt.Printf("key[%s] value[%v]\n", k, v)
+	//	if v.trade.OrderID == orderID {
+	//		trades = append(trades, v.trade)
+	//	}
+	//}
+	//return trades, nil
 }
 
 // Put implements storage.TradeStore.Put().
@@ -117,6 +128,7 @@ func (t *memTradeStore) Put(tr *Trade) error {
 		}
 		// todo check if trade with ID already exists
 		t.store.trades[tr.ID] = trade
+		o.trades = append(o.trades, trade)
 		return nil
 	} else {
 		return fmt.Errorf("trade order not found in memstore: %s", tr.OrderID)
