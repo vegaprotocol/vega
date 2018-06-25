@@ -110,6 +110,7 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 	for el != nil && agg.order.Remaining > 0 {
 
 		pass := el.Value.(*OrderEntry)
+		log.Println("Passing through: ", pass)
 		next := el.Next()
 
 		// See if we are at a new top time
@@ -144,7 +145,7 @@ func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
 	return agg.order.Remaining == 0
 }
 
-// Get size for a specific trade assuming remaining aggressive volume is allocated pro-rata among all passive trades
+// Get size for a specific trade assuming aggressive order volume is allocated pro-rata among all passive trades
 // with the same timestamp by their share of the total volume with the same price and timestamp. (NB: "normal"
 // trading would thus *always* increment the logical timestamp between trades.)
 func (l *PriceLevel) getVolumeAllocation(

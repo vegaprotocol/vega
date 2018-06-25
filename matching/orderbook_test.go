@@ -89,7 +89,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 		{
 			Market:    "testOrderBook",
-			Party:     "D",
+			Party:     "C",
 			Side:      msg.Side_Sell,
 			Price:     102,
 			Size:      100,
@@ -99,7 +99,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 		{
 			Market:    "testOrderBook",
-			Party:     "E",
+			Party:     "D",
 			Side:      msg.Side_Sell,
 			Price:     103,
 			Size:      100,
@@ -110,7 +110,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		// Side Buy
  		{
 			Market:    "testOrderBook",
-			Party:     "M",
+			Party:     "E",
 			Side:      msg.Side_Buy,
 			Price:     99,
 			Size:      100,
@@ -120,7 +120,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 		{
 			Market:    "testOrderBook",
-			Party:     "N",
+			Party:     "F",
 			Side:      msg.Side_Buy,
 			Price:     99,
 			Size:      100,
@@ -130,7 +130,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 		{
 			Market:    "testOrderBook",
-			Party:     "P",
+			Party:     "G",
 			Side:      msg.Side_Buy,
 			Price:     98,
 			Size:      100,
@@ -145,7 +145,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		// Side Sell
 		{
 			Market:    "testOrderBook",
-			Party:     "C",
+			Party:     "M",
 			Side:      msg.Side_Sell,
 			Price:     101,
 			Size:      100,
@@ -156,7 +156,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		// Side Buy
 		{
 			Market:    "testOrderBook",
-			Party:     "O",
+			Party:     "N",
 			Side:      msg.Side_Buy,
 			Price:     99,
 			Size:      100,
@@ -171,7 +171,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		// Side Sell
 		{
 			Market:    "testOrderBook",
-			Party:     "C",
+			Party:     "R",
 			Side:      msg.Side_Sell,
 			Price:     101,
 			Size:      100,
@@ -182,7 +182,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		// Side Buy
 		{
 			Market:    "testOrderBook",
-			Party:     "O",
+			Party:     "S",
 			Side:      msg.Side_Buy,
 			Price:     99,
 			Size:      100,
@@ -194,6 +194,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 
 	for _, v := range m {
 		for _, order := range v {
+			log.Println("adding: ", order)
 			confirmationMsg, err := book.AddOrder(&order)
 			// this should not return any errors
 			assert.Equal(t, msg.OrderError_NONE, err)
@@ -202,18 +203,20 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		}
 	}
 
+	printStateOfBook(book)
+
 	// make sure order book contains all the orders
 	assert.Equal(t, 11, len(book.orders))
 
-	// launch aggressive orders from both sides to fully clear the order book
+	// launch aggressiveOrder orders from both sides to fully clear the order book
 	type aggressiveOrderScenario struct {
-		order msg.Order
-		expectedNumberOfTrades int64
+		aggressiveOrder msg.Order
+		expectedTrades  []msg.Trade
 	}
 
-	aggressiveOrders := []aggressiveOrderScenario{
+	scenario := []aggressiveOrderScenario{
 		{
-			order: msg.Order{
+			aggressiveOrder: msg.Order{
 				Market:    "testOrderBook",
 				Party:     "X",
 				Side:      msg.Side_Buy,
@@ -223,35 +226,127 @@ func TestOrderBook_AddOrder(t *testing.T) {
 				Type:      msg.Order_GTC,
 				Timestamp: 3,
 			},
-			expectedNumberOfTrades: 1,
+			expectedTrades: []msg.Trade{
+				{
+					Market:    "testOrderBook",
+					Price:     101,
+					Size:      50,
+					Buyer:     "X",
+					Seller:    "A",
+					Aggressor: msg.Side_Buy,
+				},
+				{
+					Market:    "testOrderBook",
+					Price:     101,
+					Size:      50,
+					Buyer:     "X",
+					Seller:    "B",
+					Aggressor: msg.Side_Buy,
+				},
+			},
 		},
 		{
-			order: msg.Order{
+			aggressiveOrder: msg.Order{
 				Market:    "testOrderBook",
 				Party:     "Y",
 				Side:      msg.Side_Buy,
-				Price:     101,
-				Size:      100,
-				Remaining: 100,
+				Price:     102,
+				Size:      150,
+				Remaining: 150,
 				Type:      msg.Order_GTC,
 				Timestamp: 3,
 			},
-			expectedNumberOfTrades: 1,
+			expectedTrades: []msg.Trade{
+				{
+					Market:    "testOrderBook",
+					Price:     101,
+					Size:      50,
+					Buyer:     "Y",
+					Seller:    "B",
+					Aggressor: msg.Side_Buy,
+				},
+				{
+					Market:    "testOrderBook",
+					Price:     101,
+					Size:      100,
+					Buyer:     "Y",
+					Seller:    "B",
+					Aggressor: msg.Side_Buy,
+				},
+				{
+					Market:    "testOrderBook",
+					Price:     101,
+					Size:      50,
+					Buyer:     "Y",
+					Seller:    "M",
+					Aggressor: msg.Side_Buy,
+				},
+			},
 		},
 	}
 
-	log.Println(aggressiveOrders)
+	//log.Println(scenario)
 
-	//for _, order := range aggressiveOrders {
-	//	confirmationMsg, err := book.AddOrder(&order.order)
-	//	// this should not return any errors
-	//	assert.Equal(t, msg.OrderError_NONE, err)
-	//	// this should not generate any trades
-	//	//assert.Equal(t, order.expectedNumberOfTrades, len(confirmationMsg.Trades))
-	//
-	//	log.Println("confirmationMsg :", confirmationMsg)
-	//}
+	for _, s := range scenario {
+		log.Println("aggressor: ", s.aggressiveOrder)
+		log.Println("expectedTrades: ", s.expectedTrades)
 
+		//printStateOfBook(book)
+
+		//confirmationMsg, err := book.AddOrder(&s.aggressiveOrder)
+		// this should not return any errors
+		//assert.Equal(t, msg.OrderError_NONE, err)
+		// this should not generate any trades
+		//assert.Equal(t, len(s.expectedTrades), len(confirmationMsg.Trades))
+
+		//log.Println("confirmationMsg :", confirmationMsg)
+
+		// trades should match expected trades
+		// assert.
+	}
+
+}
+
+func printStateOfBook(book *OrderBook) {
+	log.Println("current orders for buy side: ")
+
+	for price := 97; price < 103; price++ {
+		log.Println("price: ", price)
+		item := book.buy.levels.Get(&PriceLevel{side: msg.Side_Buy, price: uint64(price)})
+		if item == nil {
+			continue
+		}
+		priceLevel := item.(*PriceLevel)
+		element := priceLevel.orders.Front()
+		for element != nil {
+			orderEntry := element.Value.(*OrderEntry)
+
+			log.Println(orderEntry)
+			log.Println("@ timestamp :", orderEntry.order.Timestamp)
+
+			element = element.Next()
+		}
+	}
+
+	log.Println("current orders for sell side: ")
+
+	for price := 97; price < 103; price++ {
+		log.Println("price: ", price)
+		item := book.buy.levels.Get(&PriceLevel{side: msg.Side_Sell, price: uint64(price)})
+		if item == nil {
+			continue
+		}
+		priceLevel := item.(*PriceLevel)
+		element := priceLevel.orders.Front()
+		for element != nil {
+			orderEntry := element.Value.(*OrderEntry)
+
+			log.Println(orderEntry)
+			log.Println("@ timestamp :", orderEntry.order.Timestamp)
+
+			element = element.Next()
+		}
+	}
 }
 
 

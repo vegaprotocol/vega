@@ -32,9 +32,12 @@ func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
 	item := s.levels.Get(&PriceLevel{side: s.side, price: price})
 	if item == nil {
 		priceLevel = NewPriceLevel(s, price)
+		log.Println("creating new price level :", priceLevel.price)
 		s.levels.ReplaceOrInsert(priceLevel)
 	} else {
 		priceLevel = item.(*PriceLevel)
+		log.Println("fetched price level :", priceLevel.price)
+		log.Println("number of orders :", priceLevel.orders.Len())
 	}
 	return priceLevel
 }
@@ -80,6 +83,7 @@ func (s *OrderBookSide) bestPrice() uint64 {
 }
 
 func (s *OrderBookSide) addOrder(o *OrderEntry) *[]Trade {
+	log.Printf("%d of levels on side %s", s.other.levels.Len(), s.other.side)
 	trades := s.other.uncross(o)
 	if o.persist && o.order.Remaining > 0 {
 		s.book.orders[o.order.Id] = o
@@ -87,6 +91,7 @@ func (s *OrderBookSide) addOrder(o *OrderEntry) *[]Trade {
 		o.side = s
 		o.priceLevel = s.getPriceLevel(o.order.Price)
 		o.priceLevel.addOrder(o)
+		s.getPriceLevel(o.order.Price).addOrder(o)
 		if !s.book.config.Quiet {
 			log.Printf("Added: %v\n", o)
 		}
