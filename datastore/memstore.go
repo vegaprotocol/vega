@@ -4,6 +4,12 @@ import (
 	"fmt"
 )
 
+type memMarket struct {
+	name string
+	orders map[string]*memOrder
+	trades map[string]*memTrade
+}
+
 // In memory order struct keeps an internal map of pointers to trades for an order.
 type memOrder struct {
 	order *Order
@@ -27,16 +33,24 @@ type memTradeStore struct {
 }                                                   
 
 type MemStore struct {
-	orders map[string]*memOrder
-	trades map[string]*memTrade
+	// markets is the top level structure holding trades and orders.
+	markets map[string]*memMarket
 }
 
 // NewMemStore creates an instance of the ram based data store.
 // This store is simply backed by maps/slices for trades and orders.
-func NewMemStore() MemStore {
+func NewMemStore(markets []string) MemStore {
+	memMarkets := make(map[string]*memMarket, len(markets))
+	for _, name := range markets {
+		memMarket := memMarket{
+			name: name,
+			orders: map[string]*memOrder{},
+			trades: map[string]*memTrade{},
+		}
+		memMarkets[name] = &memMarket
+	}
 	return MemStore{
-		orders: map[string]*memOrder{},
-		trades: map[string]*memTrade{},
+		markets: memMarkets,
 	}
 }
 
@@ -48,9 +62,16 @@ func NewOrderStore(ms *MemStore) OrderStore {
 	return &memOrderStore{store: ms}
 }
 
+func MarketExists(ms *MemStore, market string) bool {
+	if _, exists := ms.markets[market]; exists {
+		return true
+	}
+	return false
+}
+
 // Get implements datastore.OrderStore.Get().
-func (t *memOrderStore) Get(id string) (*Order, error) {
-	v, ok := t.store.orders[id]
+func (t *memOrderStore) Get(market string, id string) (*Order, error) {
+	v, ok := t.store.markets[market].orders[id]
 	if !ok {
 		return nil, NotFoundError{fmt.Errorf("could not find id %s", id)}
 	}
@@ -63,28 +84,28 @@ func (t *memOrderStore) Put(or *Order) error {
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
 	//	}
-	if _, exists := t.store.orders[or.ID]; exists {
-		t.store.orders[or.ID].order = or
+	if _, exists := t.store.markets[or.Market].orders[or.ID]; exists {
+		t.store.markets[or.Market].orders[or.ID].order = or
 	} else {
 		order := &memOrder {
 			trades: make([]*memTrade, 0),
 			order: or,
 		}
-		t.store.orders[or.ID] = order
+		t.store.markets[or.Market].orders[or.ID] = order
 	}
 	return nil
 }
 
 // Delete implements storage.TradeStore.Delete().
 func (t *memOrderStore) Delete(or *Order) error {
-	delete(t.store.orders, or.ID)
+	delete(t.store.markets[or.Market].orders, or.ID)
 	return nil
 }
 
 
 // Get implements datastore.TradeStore.Get().
-func (t *memTradeStore) Get(id string) (*Trade, error) {
-	v, ok := t.store.trades[id]
+func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
+	v, ok := t.store.markets[market].trades[id]
 	if !ok {
 		return nil, NotFoundError{fmt.Errorf("could not find id %s", id)}
 	}
@@ -92,9 +113,9 @@ func (t *memTradeStore) Get(id string) (*Trade, error) {
 }
 
 // FindByOrderId retrieves all trades for a given order id.
-func (t *memTradeStore) FindByOrderID(orderID string) ([]*Trade, error) {
+func (t *memTradeStore) FindByOrderID(market string, orderID string) ([]*Trade, error) {
 
-	order := t.store.orders[orderID]
+	order := t.store.markets[market].orders[orderID]
 	if order == nil {
 		return nil, fmt.Errorf("order not found in memstore: %s", orderID)
 	} else {
@@ -121,13 +142,13 @@ func (t *memTradeStore) Put(tr *Trade) error {
 	// if err := tr.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
 	//	}
-	if o, exists := t.store.orders[tr.OrderID]; exists {
+	if o, exists := t.store.markets[tr.Market].orders[tr.OrderID]; exists {
 		trade := &memTrade {
 			trade: tr,
 			order: o,
 		}
 		// todo check if trade with ID already exists
-		t.store.trades[tr.ID] = trade
+		t.store.markets[tr.Market].trades[tr.ID] = trade
 		o.trades = append(o.trades, trade)
 		return nil
 	} else {
@@ -137,6 +158,6 @@ func (t *memTradeStore) Put(tr *Trade) error {
 
 // Delete implements storage.TradeStore.Delete().
 func (t *memTradeStore) Delete(tr *Trade) error {
-	delete(t.store.trades, tr.ID)
+	delete(t.store.markets[tr.Market].trades, tr.ID)
 	return nil
 }

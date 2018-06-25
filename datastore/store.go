@@ -2,7 +2,6 @@ package datastore
 
 import "vega/proto"
 
-// Trade
 type Trade struct {
 	ID        string
 	Market    string
@@ -10,10 +9,9 @@ type Trade struct {
 	Size      uint64
 	Buyer     string
 	Seller    string
-	Side      int32      // to add from message?
-	Timestamp uint64     // to add from message?
-
-	OrderID   string     // to add from message?
+	Side      int32  // to add from message?
+	Timestamp uint64 // to add from message?
+	OrderID   string // to add from message?
 }
 
 func (tr *Trade) fromProtoMessage(m msg.Trade) *Trade {
@@ -54,12 +52,11 @@ func (or *Order) fromProtoMessage(m msg.Order) *Order {
 	}
 }
 
-
 type TradeStore interface {
 	// Get retrieves a trade for a given id.
-	Get(id string) (*Trade, error)
+	Get(market string, id string) (*Trade, error)
 	// FindByOrderID retrieves all trades for a given order id.
-	FindByOrderID(orderID string) ([]*Trade, error)
+	FindByOrderID(market string, orderID string) ([]*Trade, error)
 	// Put stores a trade.
 	Put(r *Trade) error
 	// Removes a trade from the store.
@@ -68,7 +65,7 @@ type TradeStore interface {
 
 type OrderStore interface {
 	// Get retrieves an order for a given id.
-	Get(id string) (*Order, error)
+	Get(market string, id string) (*Order, error)
 	// FindByParty retrieves all order for a given party name.
 	//FindByParty(party string) ([]*Order, error)
 	// Put stores a trade.
@@ -76,7 +73,6 @@ type OrderStore interface {
 	// Removes a trade from the store.
 	Delete(r *Order) error
 }
-
 
 // We could have one large store interface
 //type Store interface {
@@ -99,5 +95,3 @@ type OrderStore interface {
 //	// Removes a trade from the store.
 //	DeleteOrder(r *Order) error
 //}
-
-

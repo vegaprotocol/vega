@@ -20,8 +20,8 @@ type MemoryStorageService struct {
 	orderChan <-chan msg.Order
 }
 
-func (m *MemoryStorageService) Init (orderChan <-chan msg.Order, tradeChan <-chan msg.Trade) {
-	m.memStore = NewMemStore()
+func (m *MemoryStorageService) Init (markets []string, orderChan <-chan msg.Order, tradeChan <-chan msg.Trade) {
+	m.memStore = NewMemStore(markets)
 	m.tradeStore = NewTradeStore(&m.memStore)
 	m.orderStore = NewOrderStore(&m.memStore)
 	m.tradeChan = tradeChan

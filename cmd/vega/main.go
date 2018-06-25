@@ -14,6 +14,7 @@ import (
 
 const sseChannelSize = 2 << 16
 const storeChannelSize = 2 << 16
+const marketName = "BTC/DEC18"
 
 func main() {
 	chain := flag.Bool("chain", false, "Start a Tendermint blockchain socket")
@@ -36,12 +37,12 @@ func main() {
 	storeOrderChan := make(chan msg.Order, storeChannelSize)
 	storeTradeChan := make(chan msg.Trade, storeChannelSize)
 	storage := &datastore.MemoryStorageService{}
-	storage.Init(storeOrderChan, storeTradeChan)
+	storage.Init([]string { marketName }, storeOrderChan, storeTradeChan)
 	config.Matching.OrderChans = append(config.Matching.OrderChans, storeOrderChan)
 	config.Matching.TradeChans = append(config.Matching.TradeChans, storeTradeChan)
 
 	vega := core.New(config)
-	vega.CreateMarket("BTC/DEC18")
+	vega.CreateMarket(marketName)
 
 	if *chain {
 		go restServer.Start()
