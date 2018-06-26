@@ -5,14 +5,14 @@ import (
 )
 
 type memMarket struct {
-	name string
+	name   string
 	orders map[string]*memOrder
 	trades map[string]*memTrade
 }
 
 // In memory order struct keeps an internal map of pointers to trades for an order.
 type memOrder struct {
-	order *Order
+	order  *Order
 	trades []*memTrade
 }
 
@@ -30,7 +30,7 @@ type memTrade struct {
 // tradeStore implements datastore.TradeStore.
 type memTradeStore struct {
 	store *MemStore
-}                                                   
+}
 
 type MemStore struct {
 	// markets is the top level structure holding trades and orders.
@@ -43,7 +43,7 @@ func NewMemStore(markets []string) MemStore {
 	memMarkets := make(map[string]*memMarket, len(markets))
 	for _, name := range markets {
 		memMarket := memMarket{
-			name: name,
+			name:   name,
 			orders: map[string]*memOrder{},
 			trades: map[string]*memTrade{},
 		}
@@ -62,15 +62,29 @@ func NewOrderStore(ms *MemStore) OrderStore {
 	return &memOrderStore{store: ms}
 }
 
-func MarketExists(ms *MemStore, market string) bool {
+func (ms *MemStore) marketExists(market string) bool {
 	if _, exists := ms.markets[market]; exists {
 		return true
 	}
 	return false
 }
 
+func (t *memOrderStore) All(market string) ([]*Order, error) {
+	if !t.store.marketExists(market) {
+		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
+	}
+	orders := make([]*Order, 0)
+	for _, value := range t.store.markets[market].orders {
+		orders = append(orders, value.order)
+	}
+	return orders, nil
+}
+
 // Get implements datastore.OrderStore.Get().
 func (t *memOrderStore) Get(market string, id string) (*Order, error) {
+	if !t.store.marketExists(market) {
+		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
+	}
 	v, ok := t.store.markets[market].orders[id]
 	if !ok {
 		return nil, NotFoundError{fmt.Errorf("could not find id %s", id)}
@@ -84,12 +98,15 @@ func (t *memOrderStore) Put(or *Order) error {
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
 	//	}
+	if !t.store.marketExists(or.Market) {
+		return NotFoundError{fmt.Errorf("could not find market %s", or.Market)}
+	}
 	if _, exists := t.store.markets[or.Market].orders[or.ID]; exists {
 		t.store.markets[or.Market].orders[or.ID].order = or
 	} else {
-		order := &memOrder {
+		order := &memOrder{
 			trades: make([]*memTrade, 0),
-			order: or,
+			order:  or,
 		}
 		t.store.markets[or.Market].orders[or.ID] = order
 	}
@@ -101,7 +118,6 @@ func (t *memOrderStore) Delete(or *Order) error {
 	delete(t.store.markets[or.Market].orders, or.ID)
 	return nil
 }
-
 
 // Get implements datastore.TradeStore.Get().
 func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
@@ -138,12 +154,12 @@ func (t *memTradeStore) FindByOrderID(market string, orderID string) ([]*Trade, 
 
 // Put implements storage.TradeStore.Put().
 func (t *memTradeStore) Put(tr *Trade) error {
-	//todo validation of incoming trade 
+	//todo validation of incoming trade
 	// if err := tr.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
 	//	}
 	if o, exists := t.store.markets[tr.Market].orders[tr.OrderID]; exists {
-		trade := &memTrade {
+		trade := &memTrade{
 			trade: tr,
 			order: o,
 		}

@@ -1,22 +1,24 @@
 package models
 
 import (
-	"encoding/json"
 	"encoding/base64"
+	"encoding/json"
 )
 
 type Order struct {
-	Market    string   `xml:"market" json:"market" binding:"required"`
-	Party     string   `xml:"party" json:"party"`
-	Side      int32    `xml:"side" json:"side"`
-	Price     uint64   `xml:"price" json:"price"`
-	Size      uint64   `xml:"size" json:"size" `
-	Remaining uint64   `xml:"remaining" json:"remaining"`
-	Timestamp uint64   `xml:"timestamp" json:"timestamp"`
-	Type      int      `xml:"type" json:"type"`
+	ID        string `xml:"id" json:"id"`
+	Market    string `xml:"market" json:"market" binding:"required"`
+	Party     string `xml:"party" json:"party"`
+	Side      int32  `xml:"side" json:"side"`
+	Price     uint64 `xml:"price" json:"price"`
+	Size      uint64 `xml:"size" json:"size" `
+	Remaining uint64 `xml:"remaining" json:"remaining"`
+	Timestamp uint64 `xml:"timestamp" json:"timestamp"`
+	Type      int    `xml:"type" json:"type"`
 }
 
 func NewOrder(
+	id string,
 	market string,
 	party string,
 	side int32,
@@ -26,7 +28,8 @@ func NewOrder(
 	timestamp uint64,
 	tradeType int,
 ) Order {
-	return Order {
+	return Order{
+		id,
 		market,
 		party,
 		side,
@@ -50,4 +53,3 @@ func (o *Order) JsonWithEncoding() (string, error) {
 	encoded := base64.StdEncoding.EncodeToString(json)
 	return encoded, err
 }
-

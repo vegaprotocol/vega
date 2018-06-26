@@ -26,7 +26,7 @@ func (p *rpcOrderService) Init(orderStore datastore.OrderStore) {
 }
 
 func (p *rpcOrderService) CreateOrder(order models.Order) (success bool, err error) {
-	
+
 	// todo additional validation?
 	utcNow := time.Now().UTC()
 	order.Timestamp = unixTimestamp(utcNow)
@@ -38,7 +38,7 @@ func (p *rpcOrderService) CreateOrder(order models.Order) (success bool, err err
 	}
 
 	reqUrl := "http://localhost:46657/broadcast_tx_async?tx=%22" + newGuid() + "|" + payload + "%22"
-	client := &http.Client{Timeout:5 * time.Second}
+	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get(reqUrl)
 	if err != nil {
 		return false, err
@@ -54,7 +54,27 @@ func (p *rpcOrderService) CreateOrder(order models.Order) (success bool, err err
 	return true, err
 }
 
-func (p *rpcOrderService) GetOrders(market string) (orders []models.Order, err error)  {
+func (p *rpcOrderService) GetOrders(market string) (orders []models.Order, err error) {
+	o, err := p.orderStore.All(market)
+	if err != nil {
+		return nil, err
+	}
+	orderModels := make([]models.Order, 0)
 
-	return nil, nil
+	for _, order := range o {
+
+		orderModels = append(orderModels, models.Order{
+			ID:        order.ID,
+			Market:    order.Market,
+			Party:     order.Party,
+			Side:      order.Side,
+			Price:     order.Price,
+			Size:      order.Timestamp,
+			Remaining: 0,        // TODO how to get remaining?
+			Timestamp: order.Timestamp,
+			Type:      int(order.Type),
+		})
+	}
+
+	return orderModels, err
 }

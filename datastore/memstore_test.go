@@ -201,3 +201,38 @@ func TestMemOrderStore_PutAndFindByOrderId(t *testing.T) {
 	assert.Equal(t, "one", trades[0].ID)
 	assert.Equal(t, "two", trades[1].ID)
 }
+
+
+
+func TestMemOrderStore_GetAllOrdersForMarket(t *testing.T) {
+	otherMarket := "another"
+	var memStore = NewMemStore([]string{testMarket, otherMarket})
+	var newOrderStore = NewOrderStore(&memStore)
+
+	order1 := Order{
+		ID:     "d41d8cd98f00b204e9800998ecf8427e",
+		Market: testMarket,
+	}
+
+	order2 := Order{
+		ID:     "ad2dc275947362c45893bbeb30fc3098",
+		Market: otherMarket,
+	}
+	
+	order3 := Order{
+		ID:     "4e8e41367997cfe705d62ea80592cbcc",
+		Market: testMarket,
+	}
+
+	err := newOrderStore.Put(&order1)
+	assert.Nil(t, err)
+	err = newOrderStore.Put(&order2)
+	assert.Nil(t, err)
+	err = newOrderStore.Put(&order3)
+	assert.Nil(t, err)
+
+	orders, err := newOrderStore.All(testMarket)
+	assert.Equal(t, 2, len(orders) )
+	orders, err = newOrderStore.All(otherMarket)
+	assert.Equal(t, 1, len(orders) )
+}

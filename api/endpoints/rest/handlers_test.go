@@ -72,5 +72,5 @@ func TestHandlers_CreateOrderWithModel_ErrorReturnsFailure(t *testing.T) {
 
 // Helpers
 func buildNewOrder() models.Order  {
-	return models.NewOrder("market", "party", 0, 1,1, 1, 1234567890, 1)
+	return models.NewOrder("20931asdsadas14321341", "market", "party", 0, 1,1, 1, 1234567890, 1)
 }

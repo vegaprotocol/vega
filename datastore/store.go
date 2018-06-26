@@ -64,7 +64,9 @@ type TradeStore interface {
 }
 
 type OrderStore interface {
-	// Get retrieves an order for a given id.
+	// All retreives all orders for a given market
+	All(market string) ([]*Order, error)
+	// Get retrieves an order for a given market and id.
 	Get(market string, id string) (*Order, error)
 	// FindByParty retrieves all order for a given party name.
 	//FindByParty(party string) ([]*Order, error)

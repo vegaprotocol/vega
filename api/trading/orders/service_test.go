@@ -15,7 +15,7 @@ func TestRpcOrderService_CreateOrder(t *testing.T) {
 		ResultSuccess: true,
 	}
 	
-	order := models.NewOrder("BTC/DEC18", "PARTY", 1, 1000, 25, 0, 1234567890, 1)
+	order := models.NewOrder("d41d8cd98f00b204e9800998ecf8427e", "BTC/DEC18", "PARTY", 1, 1000, 25, 0, 1234567890, 1)
 	success, err := orderService.CreateOrder(order)
 
 	assert.True(t, success)

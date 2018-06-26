@@ -21,7 +21,7 @@ func TestNewOrder(t *testing.T) {
 	assert.Equal(t, o.Size, uint64(1))
 }
 
-func TestOrder_Json_ReturnsValidJson(t *testing.T) {
+func TestOrder_JsonReturnsValidJson(t *testing.T) {
 	var o models.Order
 
 	o = buildNewOrder()
@@ -30,13 +30,13 @@ func TestOrder_Json_ReturnsValidJson(t *testing.T) {
 
 	assert.Equal(
 		t,
-		"{\"market\":\"market\",\"party\":\"party\",\"side\":0,\"price\":1,\"size\":1,\"remaining\":1,\"timestamp\":1234567890,\"type\":1}",
+		"{\"id\":\"d41d8cd98f00b204e9800998ecf8427e\",\"market\":\"market\",\"party\":\"party\",\"side\":0,\"price\":1,\"size\":1,\"remaining\":1,\"timestamp\":1234567890,\"type\":1}",
 		string(jsonO),
 	)
 
 }
 
-func TestOrder_JsonWithEncoding_ReturnsValidAndEncodedJson(t *testing.T) {
+func TestOrder_JsonWithEncodingReturnsValidAndEncodedJson(t *testing.T) {
 	var o models.Order
 
 	o = buildNewOrder()
@@ -45,12 +45,12 @@ func TestOrder_JsonWithEncoding_ReturnsValidAndEncodedJson(t *testing.T) {
 
 	assert.Equal(
 		t,
-		"eyJtYXJrZXQiOiJtYXJrZXQiLCJwYXJ0eSI6InBhcnR5Iiwic2lkZSI6MCwicHJpY2UiOjEsInNpemUiOjEsInJlbWFpbmluZyI6MSwidGltZXN0YW1wIjoxMjM0NTY3ODkwLCJ0eXBlIjoxfQ==",
+		"eyJpZCI6ImQ0MWQ4Y2Q5OGYwMGIyMDRlOTgwMDk5OGVjZjg0MjdlIiwibWFya2V0IjoibWFya2V0IiwicGFydHkiOiJwYXJ0eSIsInNpZGUiOjAsInByaWNlIjoxLCJzaXplIjoxLCJyZW1haW5pbmciOjEsInRpbWVzdGFtcCI6MTIzNDU2Nzg5MCwidHlwZSI6MX0=",
 		string(jsonEnc),
 	)
 }
 
 // Helpers
 func buildNewOrder() models.Order  {
- 	return models.NewOrder("market", "party", 0, 1,1, 1, 1234567890, 1)
+ 	return models.NewOrder("d41d8cd98f00b204e9800998ecf8427e","market", "party", 0, 1,1, 1, 1234567890, 1)
 }
