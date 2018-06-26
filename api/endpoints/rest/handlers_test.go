@@ -24,7 +24,7 @@ func TestHandlers_Index(t *testing.T) {
 	assert.Equal(t, "V E G A", w.Body.String())
 }
 
-func TestHandlers_CreateOrderWithModel_ValidReturnsSuccess(t *testing.T) {
+func TestHandlers_CreateOrderWithModelWhenValidReturnsSuccess(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
@@ -47,7 +47,7 @@ func TestHandlers_CreateOrderWithModel_ValidReturnsSuccess(t *testing.T) {
 	assert.Equal(t,"{\"result\":\"success\"}", w.Body.String())
 }
 
-func TestHandlers_CreateOrderWithModel_ErrorReturnsFailure(t *testing.T) {
+func TestHandlers_CreateOrderWithModelWhenErrorReturnsFailure(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
@@ -70,7 +70,31 @@ func TestHandlers_CreateOrderWithModel_ErrorReturnsFailure(t *testing.T) {
 	assert.Equal(t,"{\"error\":\"An expected error\",\"result\":\"failure\"}", w.Body.String())
 }
 
+func TestHandlers_GetOrders(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	w := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(w)
+
+	orderService := &mocks.MockOrderService{
+		ResultSuccess: true,
+		ResultOrders: []models.Order{
+			{ID: "1"},
+			{ID: "2"},
+		},
+	}
+
+	handlers := Handlers{
+		OrderService: orderService,
+	}
+
+	handlers.GetOrders(context)
+
+	assert.Equal(t, w.Code, http.StatusOK)
+	assert.Equal(t, "{\"orders\":[{\"id\":\"1\",\"market\":\"\",\"party\":\"\",\"side\":0,\"price\":0,\"size\":0,\"remaining\":0,\"timestamp\":0,\"type\":0},{\"id\":\"2\",\"market\":\"\",\"party\":\"\",\"side\":0,\"price\":0,\"size\":0,\"remaining\":0,\"timestamp\":0,\"type\":0}],\"result\":\"success\"}", w.Body.String())
+}
+
 // Helpers
 func buildNewOrder() models.Order  {
-	return models.NewOrder("20931asdsadas14321341", "market", "party", 0, 1,1, 1, 1234567890, 1)
+	return models.NewOrder("0f2fa7d374415c11054fe7d8dcf04412", "market", "party", 0, 1,1, 1, 1234567890, 1)
 }

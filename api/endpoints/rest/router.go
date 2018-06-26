@@ -21,6 +21,7 @@ func NewRouter(orderService orders.OrderService) *gin.Engine  {
 	
 	router.GET("/", httpHandlers.Index)
 	router.POST("/orders", httpHandlers.CreateOrder)
+	router.GET("/orders", httpHandlers.GetOrders)
 
 	// Perhaps we'll do this in the future:
 	// https://stackoverflow.com/a/42968011

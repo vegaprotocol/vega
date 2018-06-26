@@ -22,8 +22,15 @@ func main() {
 
 	config := core.DefaultConfig()
 
-	// Create dependencies
+	// Storage Service provides read stores for consumer VEGA API
+	// Uses in memory storage (maps/slices etc), configurable in future
+	storeOrderChan := make(chan msg.Order, storeChannelSize)
+	storeTradeChan := make(chan msg.Trade, storeChannelSize)
+	storage := &datastore.MemoryStorageService{}
+	storage.Init([]string { marketName }, storeOrderChan, storeTradeChan)
+
 	orderService := orders.NewRpcOrderService()
+	orderService.Init(storage.OrderStore())
 	restServer := rest.NewRestServer(orderService)
 
 	sseOrderChan := make(chan msg.Order, sseChannelSize)
@@ -32,12 +39,7 @@ func main() {
 	config.Matching.OrderChans = append(config.Matching.OrderChans, sseOrderChan)
 	config.Matching.TradeChans = append(config.Matching.TradeChans, sseTradeChan)
 
-	// Storage Service provides read stores for consumer VEGA API
-	// Uses in memory storage (maps/slices etc), configurable in future
-	storeOrderChan := make(chan msg.Order, storeChannelSize)
-	storeTradeChan := make(chan msg.Trade, storeChannelSize)
-	storage := &datastore.MemoryStorageService{}
-	storage.Init([]string { marketName }, storeOrderChan, storeTradeChan)
+
 	config.Matching.OrderChans = append(config.Matching.OrderChans, storeOrderChan)
 	config.Matching.TradeChans = append(config.Matching.TradeChans, storeTradeChan)
 

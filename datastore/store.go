@@ -41,7 +41,7 @@ type Order struct {
 
 func (or *Order) fromProtoMessage(m msg.Order) *Order {
 	return &Order{
-		ID:        "",
+		ID:        m.Id,
 		Market:    m.Market,
 		Party:     m.Party,
 		Side:      int32(m.Side),

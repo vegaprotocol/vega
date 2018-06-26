@@ -8,6 +8,8 @@ import (
 type MockOrderService struct {
 	ResultSuccess bool
 	ResultError error
+	ResultOrders []models.Order
+	MockOrderStore datastore.OrderStore
 }
 
 func (p *MockOrderService) CreateOrder(order models.Order) (success bool, err error) {
@@ -15,9 +17,9 @@ func (p *MockOrderService) CreateOrder(order models.Order) (success bool, err er
 }
 
 func (p *MockOrderService) Init(orderStore datastore.OrderStore) {
-
+	p.MockOrderStore = orderStore
 }
 
 func (p *MockOrderService) GetOrders(market string) (orders []models.Order, err error) {
-	 return nil, nil
+	 return p.ResultOrders, p.ResultError
 }

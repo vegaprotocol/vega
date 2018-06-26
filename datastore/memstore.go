@@ -94,6 +94,7 @@ func (t *memOrderStore) Get(market string, id string) (*Order, error) {
 
 // Put implements storage.OrderStore.Put().
 func (t *memOrderStore) Put(or *Order) error {
+
 	// todo validation of incoming order
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -102,8 +103,12 @@ func (t *memOrderStore) Put(or *Order) error {
 		return NotFoundError{fmt.Errorf("could not find market %s", or.Market)}
 	}
 	if _, exists := t.store.markets[or.Market].orders[or.ID]; exists {
+		fmt.Println("Updating order with ID ", or.ID)
+
 		t.store.markets[or.Market].orders[or.ID].order = or
 	} else {
+		fmt.Println("Adding new order with ID ", or.ID)
+
 		order := &memOrder{
 			trades: make([]*memTrade, 0),
 			order:  or,

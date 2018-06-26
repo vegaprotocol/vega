@@ -41,5 +41,10 @@ func (handlers *Handlers) CreateOrderWithModel(c *gin.Context, o models.Order) {
 }
 
 func (handlers *Handlers) GetOrders(c *gin.Context) {
-//	handlers.OrderService.CreateOrder(	)
+	orders, err := handlers.OrderService.GetOrders("BTC/DEC18")
+	if err == nil {
+	 	wasSuccess(c, gin.H { "result" : ResultSuccess, "orders" : orders })
+	} else {
+		wasFailure(c, gin.H { "result" : ResultFailure, "error" : err.Error() })
+	}
 }
