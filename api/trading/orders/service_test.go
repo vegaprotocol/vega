@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRpcOrderService_CreateOrder(t *testing.T) {
+func TestOrderService_CreateOrder(t *testing.T) {
 
 	var orderService mocks.MockOrderService
 

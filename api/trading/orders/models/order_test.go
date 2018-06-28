@@ -1,13 +1,12 @@
-package orders
+package models
 
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
-	"vega/api/trading/orders/models"
 )
 
 func TestNewOrder(t *testing.T) {
-	var o models.Order
+	var o Order
 
 	o = buildNewOrder()
 
@@ -22,7 +21,7 @@ func TestNewOrder(t *testing.T) {
 }
 
 func TestOrder_JsonReturnsValidJson(t *testing.T) {
-	var o models.Order
+	var o Order
 
 	o = buildNewOrder()
 
@@ -37,7 +36,7 @@ func TestOrder_JsonReturnsValidJson(t *testing.T) {
 }
 
 func TestOrder_JsonWithEncodingReturnsValidAndEncodedJson(t *testing.T) {
-	var o models.Order
+	var o Order
 
 	o = buildNewOrder()
 
@@ -51,6 +50,6 @@ func TestOrder_JsonWithEncodingReturnsValidAndEncodedJson(t *testing.T) {
 }
 
 // Helpers
-func buildNewOrder() models.Order  {
- 	return models.NewOrder("d41d8cd98f00b204e9800998ecf8427e","market", "party", 0, 1,1, 1, 1234567890, 1)
+func buildNewOrder() Order  {
+ 	return NewOrder("d41d8cd98f00b204e9800998ecf8427e","market", "party", 0, 1,1, 1, 1234567890, 1)
 }

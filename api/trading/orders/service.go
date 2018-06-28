@@ -13,19 +13,19 @@ type OrderService interface {
 	GetOrders(market string) (orders []models.Order, err error)
 }
 
-type rpcOrderService struct {
+type orderService struct {
 	orderStore datastore.OrderStore
 }
 
-func NewRpcOrderService() OrderService {
-	return &rpcOrderService{}
+func NewOrderService() OrderService {
+	return &orderService{}
 }
 
-func (p *rpcOrderService) Init(orderStore datastore.OrderStore) {
+func (p *orderService) Init(orderStore datastore.OrderStore) {
 	p.orderStore = orderStore
 }
 
-func (p *rpcOrderService) CreateOrder(order models.Order) (success bool, err error) {
+func (p *orderService) CreateOrder(order models.Order) (success bool, err error) {
 
 	// todo additional validation?
 	utcNow := time.Now().UTC()
@@ -54,7 +54,7 @@ func (p *rpcOrderService) CreateOrder(order models.Order) (success bool, err err
 	return true, err
 }
 
-func (p *rpcOrderService) GetOrders(market string) (orders []models.Order, err error) {
+func (p *orderService) GetOrders(market string) (orders []models.Order, err error) {
 	o, err := p.orderStore.All(market)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (p *rpcOrderService) GetOrders(market string) (orders []models.Order, err e
 			Side:      order.Side,
 			Price:     order.Price,
 			Size:      order.Timestamp,
-			Remaining: 0,        // TODO how to get remaining?
+			Remaining: order.Remaining,
 			Timestamp: order.Timestamp,
 			Type:      int(order.Type),
 		})

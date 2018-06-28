@@ -5,7 +5,8 @@ import (
 	"net/http/httptest"
 	"net/http"
 	"github.com/stretchr/testify/assert"
-	"vega/api/trading/orders/mocks"
+	orderMocks "vega/api/trading/orders/mocks"
+	tradeMocks "vega/api/trading/trades/mocks"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,7 +33,8 @@ func TestRequestIdMiddleware(t *testing.T) {
 // Helpers
 func buildRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
-	orderService := &mocks.MockOrderService{}
-	router := NewRouter(orderService)
+	orderService := &orderMocks.MockOrderService{}
+	tradeService := &tradeMocks.TradeService{}
+	router := NewRouter(orderService, tradeService)
 	return router
 }

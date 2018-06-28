@@ -10,6 +10,7 @@ import (
 	"vega/proto"
 	"vega/datastore"
 	"vega/api/trading/orders"
+	"vega/api/trading/trades"
 )
 
 const sseChannelSize = 2 << 16
@@ -26,19 +27,23 @@ func main() {
 	// Uses in memory storage (maps/slices etc), configurable in future
 	storeOrderChan := make(chan msg.Order, storeChannelSize)
 	storeTradeChan := make(chan msg.Trade, storeChannelSize)
-	storage := &datastore.MemoryStorageService{}
+	storage := &datastore.MemoryStorageProvider{}
 	storage.Init([]string { marketName }, storeOrderChan, storeTradeChan)
 
-	orderService := orders.NewRpcOrderService()
+	// Initialise concrete consumer services
+	orderService := orders.NewOrderService()
+	tradeService := trades.NewTradeService()
 	orderService.Init(storage.OrderStore())
-	restServer := rest.NewRestServer(orderService)
+	tradeService.Init(storage.TradeStore())
+	// REST server
+	restServer := rest.NewRestServer(orderService, tradeService)
 
 	sseOrderChan := make(chan msg.Order, sseChannelSize)
 	sseTradeChan := make(chan msg.Trade, sseChannelSize)
 	sseServer := sse.NewServer(sseOrderChan, sseTradeChan)
+
 	config.Matching.OrderChans = append(config.Matching.OrderChans, sseOrderChan)
 	config.Matching.TradeChans = append(config.Matching.TradeChans, sseTradeChan)
-
 
 	config.Matching.OrderChans = append(config.Matching.OrderChans, storeOrderChan)
 	config.Matching.TradeChans = append(config.Matching.TradeChans, storeTradeChan)

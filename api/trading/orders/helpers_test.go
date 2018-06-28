@@ -2,12 +2,12 @@ package orders
 
 import (
 	"testing"
-	"github.com/magiconair/properties/assert"
 	"time"
+	"regexp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUnixTimestamp(t *testing.T) {
-
 	cases := []struct {
 		expected uint64
 		datetime string
@@ -22,7 +22,17 @@ func TestUnixTimestamp(t *testing.T) {
 		layout := "2006-01-02T15:04:05.000Z"
 		parsed, _ := time.Parse(layout , c.datetime)
 		res := unixTimestamp(parsed)
-
 		assert.Equal(t, res, c.expected)
 	}
+}
+
+func TestNewGuid(t *testing.T) {
+	guidAsString := newGuid()
+	assert.NotEmpty(t, guidAsString)
+	assert.True(t, isValidUUID(guidAsString))
+}
+
+func isValidUUID(uuid string) bool {
+	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
+	return r.MatchString(uuid)
 }

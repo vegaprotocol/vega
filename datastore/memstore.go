@@ -124,6 +124,18 @@ func (t *memOrderStore) Delete(or *Order) error {
 	return nil
 }
 
+// All implements datastore.TradeStore.All().
+func (t *memTradeStore) All(market string) ([]*Trade, error) {
+	if !t.store.marketExists(market) {
+		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
+	}
+	trades := make([]*Trade, 0)
+	for _, value := range t.store.markets[market].trades {
+		trades = append(trades, value.trade)
+	}
+	return trades, nil
+}
+
 // Get implements datastore.TradeStore.Get().
 func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
 	v, ok := t.store.markets[market].trades[id]
@@ -146,15 +158,6 @@ func (t *memTradeStore) FindByOrderID(market string, orderID string) ([]*Trade, 
 		}
 		return trades, nil
 	}
-
-	//trades := make([]*Trade, 0)
-	//for k, v := range t.store.trades {
-	//	fmt.Printf("key[%s] value[%v]\n", k, v)
-	//	if v.trade.OrderID == orderID {
-	//		trades = append(trades, v.trade)
-	//	}
-	//}
-	//return trades, nil
 }
 
 // Put implements storage.TradeStore.Put().

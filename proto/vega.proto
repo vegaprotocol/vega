@@ -5,20 +5,30 @@ option go_package = "msg";
 
 enum Side { Buy = 0; Sell = 1; }
 
+
+// NEW = order received not processed
+// ACTIVE = on order book but staying on for at least one transaction
+// FILLED = traded completely (remaining = 0)
+// CANCELLED = order cancelled because it was may have been killed (FOK),
+//             eliminate (ENE), did not fully execute. external client request.
+//             time limit reached (GTT) or removed by market action suspended/closed.
+
 message Order {
     enum Type { GTC = 0; GTT = 1; ENE = 2; FOK = 3; }
-    string market = 1;
-    string party = 2;
-    Side side = 3;
-    uint64 price = 4;
-    uint64 size = 5;
-    uint64 remaining = 6;
-    Type type = 7;
-    uint64 timestamp = 8;
-    string id = 9;
+    enum Status { NEW = 0; ACTIVE = 1; FILLED = 2; CANCELLED = 3; }
+    string id = 1;
+    string market = 2;
+    string party = 3;
+    Side side = 4;
+    uint64 price = 5;
+    uint64 size = 6;
+    uint64 remaining = 7;
+    Type type = 8;
+    Status status = 9;
+    uint64 timestamp = 10;
 }
 
-message OrderConfirmation {
+message TradeConfirmation {
     Order order = 1;
     repeated Trade trades = 2;
 }
@@ -32,12 +42,14 @@ enum OrderError {
 }
 
 message Trade {
-    string market = 1;
-    uint64 price = 2;
-    uint64 size = 3;
-    string buyer = 4;
-    string seller = 5;
-    Side aggressor = 6;
+    string id = 1;
+    string market = 2;
+    uint64 price = 3;
+    uint64 size = 4;
+    string buyer = 5;
+    string seller = 6;
+    Side aggressor = 7;
+    uint64 timestamp = 8;
 }
 
 message TradeSet {

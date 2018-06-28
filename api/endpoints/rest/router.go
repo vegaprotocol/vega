@@ -4,13 +4,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"vega/api/trading/orders"
 	"github.com/satori/go.uuid"
+	"vega/api/trading/trades"
 )
 
-func NewRouter(orderService orders.OrderService) *gin.Engine  {
+func NewRouter(orderService orders.OrderService, tradeService trades.TradeService) *gin.Engine  {
 	
 	// Set up HTTP request handlers
 	httpHandlers := Handlers{
 		OrderService: orderService,
+		TradeService: tradeService,
 	}
 
 	// Set up HTTP router
@@ -18,14 +20,13 @@ func NewRouter(orderService orders.OrderService) *gin.Engine  {
 
 	// Inject middleware (must be before route handler binding)
 	router.Use(RequestIdMiddleware())
-	
+
+	// Routing mapping
 	router.GET("/", httpHandlers.Index)
 	router.POST("/orders", httpHandlers.CreateOrder)
 	router.GET("/orders", httpHandlers.GetOrders)
-
-	// Perhaps we'll do this in the future:
-	// https://stackoverflow.com/a/42968011
-
+	router.GET("/trades", httpHandlers.GetTrades)
+	
 	return router
 }
 

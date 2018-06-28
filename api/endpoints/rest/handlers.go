@@ -5,14 +5,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"vega/api/trading/orders"
 	"vega/api/trading/orders/models"
+	"vega/api/trading/trades"
 )
 
 const ResultSuccess           = "success"
 const ResultFailure           = "failure"
 const ResultFailureValidation = "invalid"
 
+const DefaultMarket           = "BTC/DEC18"
+
 type Handlers struct {
 	OrderService orders.OrderService
+	TradeService trades.TradeService
 }
 
 func (handlers *Handlers) Index(c *gin.Context) {
@@ -30,9 +34,7 @@ func (handlers *Handlers) CreateOrder(c *gin.Context) {
 }
 
 func (handlers *Handlers) CreateOrderWithModel(c *gin.Context, o models.Order) {
-	//fmt.Printf("HandleCreateOrderWithModel, got %+v\n", o)
 	success, err :=  handlers.OrderService.CreateOrder(o)
-
 	if success {
 		wasSuccess(c, gin.H { "result" : ResultSuccess } )
 	} else {
@@ -41,9 +43,28 @@ func (handlers *Handlers) CreateOrderWithModel(c *gin.Context, o models.Order) {
 }
 
 func (handlers *Handlers) GetOrders(c *gin.Context) {
-	orders, err := handlers.OrderService.GetOrders("BTC/DEC18")
+	market := c.DefaultQuery("market", DefaultMarket)
+	handlers.GetOrdersWithParams(c, market)
+}
+
+func (handlers *Handlers) GetOrdersWithParams(c *gin.Context, market string) {
+	orders, err := handlers.OrderService.GetOrders(market)
 	if err == nil {
-	 	wasSuccess(c, gin.H { "result" : ResultSuccess, "orders" : orders })
+		wasSuccess(c, gin.H { "result" : ResultSuccess, "orders" : orders })
+	} else {
+		wasFailure(c, gin.H { "result" : ResultFailure, "error" : err.Error() })
+	}
+}
+
+func (handlers *Handlers) GetTrades(c *gin.Context) {
+	market := c.DefaultQuery("market", DefaultMarket)
+	handlers.GetTradesWithParams(c, market)
+}
+
+func (handlers *Handlers) GetTradesWithParams(c *gin.Context, market string) {
+	trades, err := handlers.TradeService.GetTrades(market)
+	if err == nil {
+		wasSuccess(c, gin.H { "result" : ResultSuccess, "trades" : trades })
 	} else {
 		wasFailure(c, gin.H { "result" : ResultFailure, "error" : err.Error() })
 	}
