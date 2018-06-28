@@ -3,12 +3,13 @@ package trades
 import (
 	"vega/datastore"
 	"vega/proto"
+	"context"
 )
 
 type TradeService interface {
 	Init(tradeStore datastore.TradeStore)
-	GetTrades(market string) (trades []msg.Trade, err error)
-	GetTradesForOrder(market string, orderID string) (trades []msg.Trade, err error)
+	GetTrades(c context.Context, market string) (trades []msg.Trade, err error)
+	GetTradesForOrder(c context.Context, market string, orderID string) (trades []msg.Trade, err error)
 }
 
 type tradeService struct {
@@ -23,7 +24,7 @@ func (t *tradeService) Init(tradeStore datastore.TradeStore) {
 	t.tradeStore = tradeStore
 }
 
-func(t *tradeService) GetTrades(market string) (trades []msg.Trade, err error) {
+func(t *tradeService) GetTrades(ctx context.Context, market string) (trades []msg.Trade, err error) {
 	tr, err := t.tradeStore.All(market)
 	if err != nil {
 		return nil, err
@@ -35,7 +36,7 @@ func(t *tradeService) GetTrades(market string) (trades []msg.Trade, err error) {
 	return tradeMsgs, err
 }
 
-func(t *tradeService) GetTradesForOrder(market string, orderID string) (trades []msg.Trade, err error) {
+func(t *tradeService) GetTradesForOrder(ctx context.Context, market string, orderID string) (trades []msg.Trade, err error) {
 	tr, err := t.tradeStore.FindByOrderID(market, orderID)
 	if err != nil {
 		return nil, err

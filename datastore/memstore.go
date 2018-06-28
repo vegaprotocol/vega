@@ -94,7 +94,6 @@ func (t *memOrderStore) Get(market string, id string) (*Order, error) {
 
 // Put implements storage.OrderStore.Put().
 func (t *memOrderStore) Put(or *Order) error {
-
 	// todo validation of incoming order
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -102,25 +101,25 @@ func (t *memOrderStore) Put(or *Order) error {
 	if !t.store.marketExists(or.Market) {
 		return NotFoundError{fmt.Errorf("could not find market %s", or.Market)}
 	}
-	if _, exists := t.store.markets[or.Market].orders[or.ID]; exists {
-		fmt.Println("Updating order with ID ", or.ID)
+	if _, exists := t.store.markets[or.Market].orders[or.Id]; exists {
+		fmt.Println("Updating order with ID ", or.Id)
 
-		t.store.markets[or.Market].orders[or.ID].order = or
+		t.store.markets[or.Market].orders[or.Id].order = or
 	} else {
-		fmt.Println("Adding new order with ID ", or.ID)
+		fmt.Println("Adding new order with ID ", or.Id)
 
 		order := &memOrder{
 			trades: make([]*memTrade, 0),
 			order:  or,
 		}
-		t.store.markets[or.Market].orders[or.ID] = order
+		t.store.markets[or.Market].orders[or.Id] = order
 	}
 	return nil
 }
 
 // Delete implements storage.TradeStore.Delete().
 func (t *memOrderStore) Delete(or *Order) error {
-	delete(t.store.markets[or.Market].orders, or.ID)
+	delete(t.store.markets[or.Market].orders, or.Id)
 	return nil
 }
 
@@ -172,7 +171,7 @@ func (t *memTradeStore) Put(tr *Trade) error {
 			order: o,
 		}
 		// todo check if trade with ID already exists
-		t.store.markets[tr.Market].trades[tr.ID] = trade
+		t.store.markets[tr.Market].trades[tr.Id] = trade
 		o.trades = append(o.trades, trade)
 		return nil
 	} else {
@@ -182,6 +181,6 @@ func (t *memTradeStore) Put(tr *Trade) error {
 
 // Delete implements storage.TradeStore.Delete().
 func (t *memTradeStore) Delete(tr *Trade) error {
-	delete(t.store.markets[tr.Market].trades, tr.ID)
+	delete(t.store.markets[tr.Market].trades, tr.Id)
 	return nil
 }

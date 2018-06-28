@@ -23,10 +23,11 @@ func NewRouter(orderService orders.OrderService, tradeService trades.TradeServic
 
 	// Routing mapping
 	router.GET("/", httpHandlers.Index)
-	router.POST("/orders", httpHandlers.CreateOrder)
-	router.GET("/orders", httpHandlers.GetOrders)
 	router.GET("/trades", httpHandlers.GetTrades)
-	
+	router.GET("/orders/:orderID/trades", httpHandlers.GetTradesForOrder)
+	router.GET("/orders", httpHandlers.GetOrders)
+	router.POST("/orders", httpHandlers.CreateOrder)
+
 	return router
 }
 

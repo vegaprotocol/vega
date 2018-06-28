@@ -13,7 +13,6 @@ func bind(c *gin.Context, obj interface{}) error {
 	return c.ShouldBindWith(obj, b)
 }
 
-
 func wasSuccess(c *gin.Context, data gin.H) {
 	sendResponse(c, data, http.StatusOK)
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"vega/proto"
 )
 
 const testMarket = "market"
@@ -29,15 +30,17 @@ func TestMemOrderStore_PutAndGetNewOrder(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newOrderStore = NewOrderStore(&memStore)
 
-	var order = Order{
-		ID:     "45305210ff7a9bb9450b1833cc10368a",
-		Market: testMarket,
+	var order = &Order{
+		Order: msg.Order{
+			Id:     "45305210ff7a9bb9450b1833cc10368a",
+			Market: testMarket,
+		},
 	}
 
-	err := newOrderStore.Put(&order)
+	err := newOrderStore.Put(order)
 	assert.Nil(t, err)
 
-	o, err := newOrderStore.Get(testMarket, order.ID)
+	o, err := newOrderStore.Get(testMarket, order.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, &order, o)
 }
@@ -46,18 +49,20 @@ func TestMemOrderStore_PutAndGetExistingOrder(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newOrderStore = NewOrderStore(&memStore)
 
-	var order = Order{
-		ID:     "c471bdd5f381aa3654d98f4591eaa968",
-		Market: testMarket,
-		Party:  "tester",
-		Price:  100,
-		Size:   1,
+	var order = &Order{
+		Order: msg.Order{
+			Id:     "c471bdd5f381aa3654d98f4591eaa968",
+			Market: testMarket,
+			Party:  "tester",
+			Price:  100,
+			Size:   1,
+		},
 	}
 
-	err := newOrderStore.Put(&order)
+	err := newOrderStore.Put(order)
 	assert.Nil(t, err)
 
-	o, err := newOrderStore.Get(testMarket, order.ID)
+	o, err := newOrderStore.Get(testMarket, order.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, uint64(100), o.Price)
 	assert.Equal(t, uint64(1), o.Size)
@@ -65,10 +70,10 @@ func TestMemOrderStore_PutAndGetExistingOrder(t *testing.T) {
 	order.Price = 1000
 	order.Size = 5
 
-	err = newOrderStore.Put(&order)
+	err = newOrderStore.Put(order)
 	assert.Nil(t, err)
 
-	o, err = newOrderStore.Get(testMarket, order.ID)
+	o, err = newOrderStore.Get(testMarket, order.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, &order, o)
 	assert.Equal(t, uint64(1000), o.Price)
@@ -79,22 +84,25 @@ func TestMemOrderStore_PutAndDeleteOrder(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newOrderStore = NewOrderStore(&memStore)
 
-	var order = Order{
-		ID:     "45305210ff7a9bb9450b1833cc10368a",
-		Market: testMarket,
+	var order = &Order{
+		Order: msg.Order{
+			Id:     "45305210ff7a9bb9450b1833cc10368a",
+			Market: testMarket,
+		},
+
 	}
 
-	err := newOrderStore.Put(&order)
+	err := newOrderStore.Put(order)
 	assert.Nil(t, err)
 
-	o, err := newOrderStore.Get(testMarket, order.ID)
+	o, err := newOrderStore.Get(testMarket, order.Id)
 	assert.Nil(t, err)
-	assert.Equal(t, &order, o)
+	assert.Equal(t, order, o)
 
 	err = newOrderStore.Delete(o)
 	assert.Nil(t, err)
 
-	o, err = newOrderStore.Get(testMarket, order.ID)
+	o, err = newOrderStore.Get(testMarket, order.Id)
 	assert.Nil(t, o)
 }
 
@@ -103,24 +111,26 @@ func TestMemOrderStore_PutAndGetTrade(t *testing.T) {
 	var newOrderStore = NewOrderStore(&memStore)
 	var newTradeStore = NewTradeStore(&memStore)
 
-	var trade = Trade{
+	var trade = &Trade{
+		Trade: msg.Trade{Market:  testMarket, },
 		OrderID: "d41d8cd98f00b204e9800998ecf8427e",
-		Market:  testMarket,
 	}
 
-	var order = Order{
-		ID:     "d41d8cd98f00b204e9800998ecf8427e",
-		Market: testMarket,
+	var order = &Order{
+		Order: msg.Order{
+			Id:     "d41d8cd98f00b204e9800998ecf8427e",
+			Market: testMarket,
+		},
 	}
 
-	err := newOrderStore.Put(&order)
+	err := newOrderStore.Put(order)
 	assert.Nil(t, err)
 
-	err = newTradeStore.Put(&trade)
+	err = newTradeStore.Put(trade)
 	assert.Nil(t, err)
 
-	tr, err := newTradeStore.Get(testMarket, trade.ID)
-	assert.Equal(t, &trade, tr)
+	tr, err := newTradeStore.Get(testMarket, trade.Id)
+	assert.Equal(t, trade, tr)
 }
 
 func TestMemOrderStore_PutAndDeleteTrade(t *testing.T) {
@@ -128,28 +138,27 @@ func TestMemOrderStore_PutAndDeleteTrade(t *testing.T) {
 	var newOrderStore = NewOrderStore(&memStore)
 	var newTradeStore = NewTradeStore(&memStore)
 
-	var order = Order{
-		ID:     "d41d8cd98f00b204e9800998ecf8427e",
-		Market: testMarket,
+	var order = &Order{
+		Order: msg.Order{ Id: "d41d8cd98f00b204e9800998ecf8427e", Market: testMarket },
 	}
-	var trade = Trade{
+	var trade = &Trade{
 		OrderID: "d41d8cd98f00b204e9800998ecf8427e",
-		Market:  testMarket,
+		Trade: msg.Trade{ Market:  testMarket, },
 	}
 
-	err := newOrderStore.Put(&order)
+	err := newOrderStore.Put(order)
 	assert.Nil(t, err)
 
-	err = newTradeStore.Put(&trade)
+	err = newTradeStore.Put(trade)
 	assert.Nil(t, err)
 
-	tr, err := newTradeStore.Get(testMarket, trade.ID)
-	assert.Equal(t, &trade, tr)
+	tr, err := newTradeStore.Get(testMarket, trade.Id)
+	assert.Equal(t, trade, tr)
 
 	err = newTradeStore.Delete(tr)
 	assert.Nil(t, err)
 
-	tr, err = newTradeStore.Get(testMarket, trade.ID)
+	tr, err = newTradeStore.Get(testMarket, trade.Id)
 	assert.Nil(t, tr)
 }
 
@@ -157,9 +166,11 @@ func TestMemOrderStore_PutTradeOrderNotFound(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newTradeStore = NewTradeStore(&memStore)
 	trade := Trade{
-		ID:      "one",
+		Trade: msg.Trade{
+			Id:      "one",
+			Market:  testMarket,
+		},
 		OrderID: "mystery",
-		Market:  testMarket,
 	}
 	err := newTradeStore.Put(&trade)
 	assert.Error(t, err)
@@ -170,36 +181,42 @@ func TestMemOrderStore_PutAndFindByOrderId(t *testing.T) {
 	var newOrderStore = NewOrderStore(&memStore)
 	var newTradeStore = NewTradeStore(&memStore)
 
-	trade1 := Trade{
-		ID:      "one",
+	trade1 := &Trade{
+		Trade: msg.Trade{
+			Id:      "one",
+			Market:  testMarket,
+		},
 		OrderID: "d41d8cd98f00b204e9800998ecf8427e",
-		Market:  testMarket,
 	}
-	trade2 := Trade{
-		ID:      "two",
+	trade2 := &Trade{
+		Trade: msg.Trade{
+			Id:      "two",
+			Market:  testMarket,
+		},
 		OrderID: "d41d8cd98f00b204e9800998ecf8427e",
-		Market:  testMarket,
 	}
-	order := Order{
-		ID:     "d41d8cd98f00b204e9800998ecf8427e",
-		Market: testMarket,
+	order := &Order{
+		Order: msg.Order{
+			Id:     "d41d8cd98f00b204e9800998ecf8427e",
+			Market: testMarket,
+		},
 	}
 
-	err := newOrderStore.Put(&order)
+	err := newOrderStore.Put(order)
 	assert.Nil(t, err)
 
-	err = newTradeStore.Put(&trade1)
+	err = newTradeStore.Put(trade1)
 	assert.Nil(t, err)
 
-	err = newTradeStore.Put(&trade2)
+	err = newTradeStore.Put(trade2)
 	assert.Nil(t, err)
 
-	trades, err := newTradeStore.FindByOrderID(testMarket, order.ID)
+	trades, err := newTradeStore.FindByOrderID(testMarket, order.Id)
 	assert.Nil(t, err)
 
 	assert.Equal(t, 2, len(trades))
-	assert.Equal(t, "one", trades[0].ID)
-	assert.Equal(t, "two", trades[1].ID)
+	assert.Equal(t, "one", trades[0].Id)
+	assert.Equal(t, "two", trades[1].Id)
 }
 
 
@@ -209,26 +226,32 @@ func TestMemOrderStore_GetAllOrdersForMarket(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket, otherMarket})
 	var newOrderStore = NewOrderStore(&memStore)
 
-	order1 := Order{
-		ID:     "d41d8cd98f00b204e9800998ecf8427e",
-		Market: testMarket,
+	order1 := &Order{
+		Order: msg.Order{
+			Id:     "d41d8cd98f00b204e9800998ecf8427e",
+			Market: testMarket,
+		},
 	}
 
-	order2 := Order{
-		ID:     "ad2dc275947362c45893bbeb30fc3098",
-		Market: otherMarket,
+	order2 := &Order{
+		Order: msg.Order{
+			Id:     "ad2dc275947362c45893bbeb30fc3098",
+			Market: otherMarket,
+		},
 	}
 	
-	order3 := Order{
-		ID:     "4e8e41367997cfe705d62ea80592cbcc",
-		Market: testMarket,
+	order3 := &Order{
+		Order: msg.Order{
+			Id:     "4e8e41367997cfe705d62ea80592cbcc",
+			Market: testMarket,
+		},
 	}
 
-	err := newOrderStore.Put(&order1)
+	err := newOrderStore.Put(order1)
 	assert.Nil(t, err)
-	err = newOrderStore.Put(&order2)
+	err = newOrderStore.Put(order2)
 	assert.Nil(t, err)
-	err = newOrderStore.Put(&order3)
+	err = newOrderStore.Put(order3)
 	assert.Nil(t, err)
 
 	orders, err := newOrderStore.All(testMarket)

@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"net/http"
 	"github.com/stretchr/testify/assert"
+	"github.com/gin-gonic/gin"
 	orderMocks "vega/api/trading/orders/mocks"
 	tradeMocks "vega/api/trading/trades/mocks"
-	"github.com/gin-gonic/gin"
 )
 
 func TestNewRouter_ExistsAndServesHttp(t *testing.T) {
