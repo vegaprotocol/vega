@@ -19,11 +19,23 @@ func (v Vega) CreateMarket(id string) {
 }
 
 func (v Vega) SubmitOrder(order msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
-	if market, exists := v.markets[order.Market]; exists {
-		return market.AddOrder(&order)
-	} else {
+
+	market, exists := v.markets[order.Market]
+	if !exists {
 		return nil, msg.OrderError_INVALID_MARKET_ID
 	}
+
+	confirmationMessage, err := market.AddOrder(&order)
+	if err != msg.OrderError_NONE {
+		return nil, err
+	}
+
+	// update trades on the channels
+	for _, ch := range market.GetOrderConfirmationChannel() {
+		ch <- *confirmationMessage
+	}
+
+	return confirmationMessage, msg.OrderError_NONE
 }
 
 func (v Vega) DeleteOrder(id, marketName string) {

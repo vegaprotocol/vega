@@ -2,7 +2,11 @@ package matching
 
 import (
 	"fmt"
+	"log"
+
 	"vega/proto"
+
+	"github.com/google/btree"
 )
 
 type OrderBook struct {
@@ -20,9 +24,22 @@ func NewBook(name string, config Config) *OrderBook {
 		name:   name,
 		config: config,
 	}
-	book.buy = newSide(msg.Side_Buy)
-	book.sell = newSide(msg.Side_Sell)
+
+	book.buy = &OrderBookSide{
+		side:   msg.Side_Buy,
+		levels: btree.New(priceLevelsBTreeDegree),
+	}
+
+	book.sell = &OrderBookSide{
+		side:   msg.Side_Sell,
+		levels: btree.New(priceLevelsBTreeDegree),
+	}
+
 	return book
+}
+
+func (b *OrderBook) GetOrderConfirmationChannel() []chan msg.OrderConfirmation {
+	return b.config.OrderConfirmationChans
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
@@ -34,46 +51,79 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 		b.latestTimestamp = orderMessage.Timestamp
 	}
 
-	o := &OrderEntry{
-		Side: orderMessage.Side,
-		order:   orderMessage,
-		persist: orderMessage.Type == msg.Order_GTC || orderMessage.Type == msg.Order_GTT,
-		dispatchChannels: b.config.OrderChans,
-	}
-	o.order.Id = o.Digest()
+	orderMessage.Id = DigestOrderMessage(orderMessage)[:10]
+	oppositeSide := b.getOppositeSide(orderMessage.Side)
+
+	log.Println("Entry state:")
+	b.printState()
 
 	// uncross with opposite
-	trades, lastTradedPrice := b.getOppositeSide(orderMessage.Side).cross(o)
+	trades, lastTradedPrice := oppositeSide.cross(orderMessage)
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
 	}
 
-	for _, t := range *trades {
-		for _, c := range b.config.TradeChans {
-			c <- *t.toMessage()
-		}
+	if len(*trades) != 0 {
+		log.Println()
+		log.Println("After cross state:")
+		b.printState()
 	}
 
 	// if persist add to tradebook to the right side
-	if o.persist && o.order.Remaining > 0 {
-		b.getSide(orderMessage.Side).addOrder(o)
+	if (orderMessage.Type == msg.Order_GTC || orderMessage.Type == msg.Order_GTT) && orderMessage.Remaining > 0 {
+		b.getSide(orderMessage.Side).addOrder(orderMessage)
+		log.Println("After addOrder state:")
+		b.printState()
 	}
 
 	orderConfirmation := MakeResponse(orderMessage, trades)
-	printSlice(*trades)
-	if len(*trades) == 0 {
-		for _, c := range b.config.OrderChans {
-			c <- *orderMessage
-		}
-	}
 	return orderConfirmation, msg.OrderError_NONE
+}
+
+func (b *OrderBook) printState() {
+	log.Println("------------------------------------------------------------")
+	log.Println("                        BUY SIDE                            ")
+	b.buy.levels.Descend(printOrders())
+	log.Println("------------------------------------------------------------")
+	log.Println("                        SELL SIDE                           ")
+	b.sell.levels.Ascend(printOrders())
+	log.Println("------------------------------------------------------------")
+
+}
+
+func printOrders() func(i btree.Item) bool {
+	return func(i btree.Item) bool {
+		priceLevel := i.(*PriceLevel)
+		const lineLength = 64
+		if len(priceLevel.orders) > 0 {
+
+			log.Printf("priceLevel: %d", priceLevel.price)
+
+			for _, o := range priceLevel.orders {
+				var side string
+				if o.Side == msg.Side_Buy {
+					side = "BUY"
+				} else {
+					side = "SELL"
+				}
+
+				line := fmt.Sprintf("      %s %s @%d size=%d R=%d Type=%d T=%d %s",
+					o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id)
+
+				log.Println(line)
+			}
+
+			log.Println()
+		}
+		return true
+	}
 }
 
 func printSlice(s []Trade) {
 	fmt.Printf("len=%d cap=%d\n", len(s), cap(s))
 }
 
-func (b *OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
+func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
 	if orderSide == msg.Side_Buy {
 		return b.buy
 	} else { // side == Sell
@@ -112,6 +162,6 @@ func (b *OrderBook) GetMarketDepth() *msg.MarketDepth {
 	}
 }
 
-func (b *OrderBook) RemoveOrder(orderEntry *OrderEntry) {
-	b.getSide(orderEntry.Side).RemoveOrder(orderEntry)
+func (b *OrderBook) RemoveOrder(o *msg.Order) {
+	b.getSide(o.Side).RemoveOrder(o)
 }

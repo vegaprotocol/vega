@@ -13,10 +13,10 @@ type Trade struct {
 	id    string
 	price uint64
 	size  uint64
-	agg   *OrderEntry
-	pass  *OrderEntry
-	buy   *OrderEntry
-	sell  *OrderEntry
+	agg   *msg.Order
+	pass  *msg.Order
+	buy   *msg.Order
+	sell  *msg.Order
 	msg   *msg.Trade
 }
 
@@ -29,9 +29,9 @@ func min(x, y uint64) uint64 {
 }
 
 // Creates a trade of a given size between two orders and updates the order details
-func newTrade(agg, pass *OrderEntry, size uint64) *Trade {
+func newTrade(agg, pass *msg.Order, size uint64) *Trade {
 	trade := &Trade{
-		price: pass.order.Price,
+		price: pass.Price,
 		size:  size,
 		agg:   agg,
 		pass:  pass,
@@ -40,15 +40,13 @@ func newTrade(agg, pass *OrderEntry, size uint64) *Trade {
 	}
 	trade.id = trade.Digest()
 
-	pass.updateRemaining(trade.size)
-	agg.updateRemaining(trade.size)
  	return trade
 }
 
 // Returns a string representation of a trade
 func (t *Trade) String() string {
 	var aggressiveAction string
-	if t.agg.order.Side == msg.Side_Buy {
+	if t.agg.Side == msg.Side_Buy {
 		aggressiveAction = "buys from"
 	} else {
 		aggressiveAction = "sells to"
@@ -56,9 +54,9 @@ func (t *Trade) String() string {
 	return fmt.Sprintf(
 		"[trade/%v] %v %v %v: %v at %v",
 		t.id[0:5],
-		t.agg.order.Party,
+		t.agg.Party,
 		aggressiveAction,
-		t.pass.order.Party,
+		t.pass.Party,
 		t.size,
 		t.price)
 }
@@ -69,9 +67,9 @@ func (t *Trade) toMessage() *msg.Trade {
 		t.msg = &msg.Trade{
 			Price:     t.price,
 			Size:      t.size,
-			Buyer:     t.buy.order.Party,
-			Seller:    t.sell.order.Party,
-			Aggressor: t.agg.order.Side,
+			Buyer:     t.buy.Party,
+			Seller:    t.sell.Party,
+			Aggressor: t.agg.Side,
 		}
 	}
 	return t.msg

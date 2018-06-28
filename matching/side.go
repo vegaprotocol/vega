@@ -17,25 +17,17 @@ type OrderBookSide struct {
 	totalVolume uint64
 }
 
-func newSide(side msg.Side) *OrderBookSide {
-	return &OrderBookSide{
-		side:   side,
-		levels: btree.New(priceLevelsBTreeDegree),
-	}
-}
-
 func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
-	var priceLevel *PriceLevel
 	item := s.levels.Get(&PriceLevel{price: price})
 	if item == nil {
-		priceLevel = NewPriceLevel(s, price)
-		log.Println("creating new price level :", priceLevel.price)
+		priceLevel := NewPriceLevel(price)
+		log.Printf("creating new price level price=%d", priceLevel.price)
 		s.levels.ReplaceOrInsert(priceLevel)
-	} else {
-		priceLevel = item.(*PriceLevel)
-		log.Println("fetched price level :", priceLevel.price)
-		log.Println("number of orders :", priceLevel.orders.Len())
+		return priceLevel
 	}
+	priceLevel := item.(*PriceLevel)
+	log.Printf("fetched price level price=%d with %d orders", priceLevel.price, len(priceLevel.orders))
+
 	return priceLevel
 }
 
@@ -63,14 +55,6 @@ func (s *OrderBookSide) topPriceLevel() *PriceLevel {
 	}
 }
 
-func (s *OrderBookSide) pivotPriceLevel(agg *OrderEntry) *PriceLevel {
-	if s.side == msg.Side_Buy {
-		return &PriceLevel{price: agg.order.Price - 1}
-	} else {
-		return &PriceLevel{price: agg.order.Price + 1}
-	}
-}
-
 func (s *OrderBookSide) bestPrice() uint64 {
 	if s.topPriceLevel() == nil {
 		return 0
@@ -79,46 +63,49 @@ func (s *OrderBookSide) bestPrice() uint64 {
 	}
 }
 
-//func (s *OrderBookSide) addOrder(o *OrderEntry) *[]Trade {
-//	log.Printf("%d of levels on side %s", s.other.levels.Len(), s.other.side)
-//	trades := s.other.uncross(o)
-//	if o.persist && o.order.Remaining > 0 {
-//		s.book.orders[o.order.Id] = o
-//		o.book = s.book
-//		o.side = s
-//		o.priceLevel = s.getPriceLevel(o.order.Price)
-//		o.priceLevel.addOrder(o)
-//		s.getPriceLevel(o.order.Price).addOrder(o)
-//		if !s.book.config.Quiet {
-//			log.Printf("Added: %v\n", o)
-//		}
-//	}
-//	return trades
-//}
-
-// Go through the price levels from best to worst uncrossing each in turn
-//func (s *OrderBookSide) uncross(agg *OrderEntry) *[]Trade {
-//	trades := make([]Trade, 0)
-//	s.levels.DescendGreaterThan(s.pivotPriceLevel(agg), uncrossPriceLevel(agg, &trades))
-//	if len(trades) > 0 {
-//		s.book.lastTradedPrice = trades[len(trades)-1].price
-//	}
-//	return &trades
-//}
-
-// Returns closure over the aggressor and trade slice that calls priceLevel.uncross(...)
-func uncrossPriceLevel(agg *OrderEntry, trades *[]Trade) func(i btree.Item) bool {
+func uncrossPriceLevel(agg *msg.Order, trades *[]Trade) func(i btree.Item) bool {
 	return func(i btree.Item) bool {
 		priceLevel := i.(*PriceLevel)
+		log.Println("dupa price level ", priceLevel.price)
 		filled := priceLevel.uncross(agg, trades)
 		return !filled
 	}
 }
 
-func (s *OrderBookSide) cross(agg *OrderEntry) (*[]Trade, uint64) {
+//func (s *OrderBookSide) pivotPriceLevel(agg *msg.Order) *PriceLevel {
+//	if s.side == msg.Side_Buy {
+//		return &PriceLevel{price: agg.Price - 1}
+//	} else {
+//		return &PriceLevel{price: agg.Price + 1}
+//	}
+//}
+
+
+func (s *OrderBookSide) cross(agg *msg.Order) (*[]Trade, uint64) {
 	trades := make([]Trade, 0)
 	var lastTradedPrice uint64
-	s.levels.DescendGreaterThan(s.pivotPriceLevel(agg), uncrossPriceLevel(agg, &trades))
+
+	log.Println("order side: ", agg.Side)
+	log.Println("book side:", s.side)
+
+	if agg.Side == msg.Side_Sell {
+
+		min := &PriceLevel{price: agg.Price-1}
+		log.Printf("uncross initiated | DescendRange from 1000 to min=%d ", min.price)
+		log.Println()
+
+		s.levels.DescendGreaterThan(min, uncrossPriceLevel(agg, &trades))
+	}
+
+	if agg.Side == msg.Side_Buy {
+
+		max := &PriceLevel{price: agg.Price+1}
+		log.Printf("uncross initiated | AscendRange 0 to max=%d", max.price)
+		log.Println()
+		s.levels.AscendLessThan(max, uncrossPriceLevel(agg, &trades))
+	}
+
+
 	if len(trades) > 0 {
 		lastTradedPrice = trades[len(trades)-1].price
 	}
@@ -126,22 +113,28 @@ func (s *OrderBookSide) cross(agg *OrderEntry) (*[]Trade, uint64) {
 	for _, trade := range trades {
 		s.totalVolume += trade.size
 	}
+
 	return &trades, lastTradedPrice
 }
 
-func (s *OrderBookSide) addOrder(o *OrderEntry) {
-	s.getPriceLevel(o.order.Price).addOrder(o)
-	s.totalVolume += o.order.Remaining
+func (s *OrderBookSide) addOrder(o *msg.Order) {
+	fetchedPriceLevel := s.getPriceLevel(o.Price)
+	log.Println("blabla1 ", fetchedPriceLevel.orders)
+	fetchedPriceLevel.addOrder(o)
+
+	s.totalVolume += o.Remaining
 	s.orderCount++
+	log.Println("level ", fetchedPriceLevel.price)
+	log.Println("blabla2 ", fetchedPriceLevel.orders)
 }
 
-func (s *OrderBookSide) RemoveOrder(o *OrderEntry) {
-	priceLevel := s.getPriceLevel(o.order.Price)
+func (s *OrderBookSide) RemoveOrder(o *msg.Order) {
+	priceLevel := s.getPriceLevel(o.Price)
 	priceLevel.removeOrder(o)
-	s.totalVolume -= o.order.Remaining
+	s.totalVolume -= o.Remaining
 	s.orderCount--
-	// if number of orders on level is == 0
-	if priceLevel.orders.Len() == 0 {
+
+	if len(priceLevel.orders) == 0 {
 		s.removePriceLevel(priceLevel.price)
 	}
 }
