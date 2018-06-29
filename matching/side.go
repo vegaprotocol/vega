@@ -66,27 +66,14 @@ func (s *OrderBookSide) bestPrice() uint64 {
 func uncrossPriceLevel(agg *msg.Order, trades *[]Trade) func(i btree.Item) bool {
 	return func(i btree.Item) bool {
 		priceLevel := i.(*PriceLevel)
-		log.Println("dupa price level ", priceLevel.price)
 		filled := priceLevel.uncross(agg, trades)
 		return !filled
 	}
 }
 
-//func (s *OrderBookSide) pivotPriceLevel(agg *msg.Order) *PriceLevel {
-//	if s.side == msg.Side_Buy {
-//		return &PriceLevel{price: agg.Price - 1}
-//	} else {
-//		return &PriceLevel{price: agg.Price + 1}
-//	}
-//}
-
-
 func (s *OrderBookSide) cross(agg *msg.Order) (*[]Trade, uint64) {
 	trades := make([]Trade, 0)
 	var lastTradedPrice uint64
-
-	log.Println("order side: ", agg.Side)
-	log.Println("book side:", s.side)
 
 	if agg.Side == msg.Side_Sell {
 

@@ -374,6 +374,127 @@ func TestOrderBook_AddOrder(t *testing.T) {
 				},
 			},
 		},
+		{
+			// Sell is agressive, aggressive at exact price, all orders at this price level should be hitted plus order should remain on the sell side of the book at 99 level
+			aggressiveOrder: msg.Order{
+				Market:    "testOrderBook",
+				Party:     "Z",
+				Side:      msg.Side_Sell,
+				Price:     99,
+				Size:      350,
+				Remaining: 350,
+				Type:      msg.Order_GTC,
+				Timestamp: 4,
+			},
+			expectedTrades: []msg.Trade{
+				{
+					Market:    "testOrderBook",
+					Price:     99,
+					Size:      50,
+					Buyer:     "E",
+					Seller:    "Z",
+					Aggressor: msg.Side_Sell,
+				},
+				{
+					Market:    "testOrderBook",
+					Price:     99,
+					Size:      50,
+					Buyer:     "F",
+					Seller:    "Z",
+					Aggressor: msg.Side_Sell,
+				},
+				{
+					Market:    "testOrderBook",
+					Price:     99,
+					Size:      100,
+					Buyer:     "N",
+					Seller:    "Z",
+					Aggressor: msg.Side_Sell,
+				},
+				{
+					Market:    "testOrderBook",
+					Price:     99,
+					Size:      100,
+					Buyer:     "S",
+					Seller:    "Z",
+					Aggressor: msg.Side_Sell,
+				},
+			},
+		},
+		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
+			aggressiveOrder: msg.Order{
+				Market:    "testOrderBook",
+				Party:     "XX",
+				Side:      msg.Side_Buy,
+				Price:     102,
+				Size:      200,
+				Remaining: 200,
+				Type:      msg.Order_FOK, // nonpersistent
+				Timestamp: 4,
+			},
+			expectedTrades: []msg.Trade{
+				{
+					Market:    "testOrderBook",
+					Price:     99,
+					Size:      50,
+					Buyer:     "XX",
+					Seller:    "Z",
+					Aggressor: msg.Side_Buy,
+				},
+				{
+					Market:    "testOrderBook",
+					Price:     102,
+					Size:      80,
+					Buyer:     "XX",
+					Seller:    "C",
+					Aggressor: msg.Side_Buy,
+				},
+			},
+		},
+		{ // aggressive nonpersistent buy order, hits one price levels and is not added to order book
+			aggressiveOrder: msg.Order{
+				Market:    "testOrderBook",
+				Party:     "YY",
+				Side:      msg.Side_Buy,
+				Price:     103,
+				Size:      200,
+				Remaining: 200,
+				Type:      msg.Order_ENE, // nonpersistent
+				Timestamp: 5,
+			},
+			expectedTrades: []msg.Trade{
+				{
+					Market:    "testOrderBook",
+					Price:     103,
+					Size:      100,
+					Buyer:     "YY",
+					Seller:    "D",
+					Aggressor: msg.Side_Buy,
+				},
+			},
+		},
+		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
+			aggressiveOrder: msg.Order{
+				Market:    "testOrderBook",
+				Party:     "ZZ",
+				Side:      msg.Side_Sell,
+				Price:     95,
+				Size:      200,
+				Remaining: 200,
+				Type:      msg.Order_ENE, // nonpersistent
+				Timestamp: 5,
+			},
+			expectedTrades: []msg.Trade{
+				{
+					Market:    "testOrderBook",
+					Price:     98,
+					Size:      100,
+					Buyer:     "G",
+					Seller:    "ZZ",
+					Aggressor: msg.Side_Sell,
+				},
+			},
+		},
 	}
 
 	//log.Println(scenario)
@@ -405,51 +526,6 @@ func TestOrderBook_AddOrder(t *testing.T) {
 	}
 
 }
-
-func printStateOfBook(book *OrderBook) {
-	log.Println("current orders for buy side: ")
-}
-
-//
-//	for price := 97; price < 103; price++ {
-//		log.Println("price: ", price)
-//		item := book.buy.levels.Get(&PriceLevel{price: uint64(price)})
-//		if item == nil {
-//			continue
-//		}
-//		priceLevel := item.(*PriceLevel)
-//		element := priceLevel.orders.Front()
-//		for element != nil {
-//			orderEntry := element.Value.(*OrderEntry)
-//
-//			log.Println(orderEntry)
-//			log.Println("@ timestamp :", orderEntry.order.Timestamp)
-//
-//			element = element.Next()
-//		}
-//	}
-//
-//	log.Println("current orders for sell side: ")
-//
-//	for price := 97; price < 103; price++ {
-//		log.Println("price: ", price)
-//		item := book.buy.levels.Get(&PriceLevel{price: uint64(price)})
-//		if item == nil {
-//			continue
-//		}
-//		priceLevel := item.(*PriceLevel)
-//		element := priceLevel.orders.Front()
-//		for element != nil {
-//			orderEntry := element.Value.(*OrderEntry)
-//
-//			log.Println(orderEntry)
-//			log.Println("@ timestamp :", orderEntry.order.Timestamp)
-//
-//			element = element.Next()
-//		}
-//	}
-//}
-
 
 //Remarks
 // can you cross your own order ?? is there a counter party check?

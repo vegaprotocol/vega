@@ -80,8 +80,6 @@ func (l *PriceLevel) getIndexForDelition(orderId string) (int, error) {
 
 func (l PriceLevel) Less(other btree.Item) bool {
 	otherPrice := other.(*PriceLevel).price
-	//return l.price > other.(*PriceLevel).price
-	log.Printf("comparing %d with %d \n", l.price, otherPrice)
 	return l.price < otherPrice
 }
 
