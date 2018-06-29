@@ -8,8 +8,8 @@ import (
 
 type TradeService interface {
 	Init(tradeStore datastore.TradeStore)
-	GetTrades(c context.Context, market string) (trades []msg.Trade, err error)
-	GetTradesForOrder(c context.Context, market string, orderID string) (trades []msg.Trade, err error)
+	GetTrades(ctx context.Context, market string) (trades []msg.Trade, err error)
+	GetTradesForOrder(ctx context.Context, market string, orderID string) (trades []msg.Trade, err error)
 }
 
 type tradeService struct {
@@ -25,7 +25,7 @@ func (t *tradeService) Init(tradeStore datastore.TradeStore) {
 }
 
 func(t *tradeService) GetTrades(ctx context.Context, market string) (trades []msg.Trade, err error) {
-	tr, err := t.tradeStore.All(market)
+	tr, err := t.tradeStore.All(ctx, market)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func(t *tradeService) GetTrades(ctx context.Context, market string) (trades []ms
 }
 
 func(t *tradeService) GetTradesForOrder(ctx context.Context, market string, orderID string) (trades []msg.Trade, err error) {
-	tr, err := t.tradeStore.FindByOrderID(market, orderID)
+	tr, err := t.tradeStore.GetByOrderID(ctx, market, orderID)
 	if err != nil {
 		return nil, err
 	}

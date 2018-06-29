@@ -2,39 +2,40 @@ package datastore
 
 import (
 	"fmt"
+	"context"
 	"vega/proto"
 )
 
 type TradeStore interface {
 	// Get retrieves a trades for a given market.
-	All(market string) ([]*Trade, error)
+	All(ctx context.Context, market string) ([]*Trade, error)
 	// Get retrieves a trade for a given id.
-	Get(market string, id string) (*Trade, error)
-	// FindByOrderID retrieves all trades for a given order id.
-	FindByOrderID(market string, orderID string) ([]*Trade, error)
+	Get(ctx context.Context, market string, id string) (*Trade, error)
+	// GetByOrderID retrieves all trades for a given order id.
+	GetByOrderID(ctx context.Context, market string, orderID string) ([]*Trade, error)
 	// Put stores a trade.
-	Put(r *Trade) error
+	Put(ctx context.Context, r *Trade) error
 	// Removes a trade from the store.
-	Delete(r *Trade) error
+	Delete(ctx context.Context, r *Trade) error
 }
 
 type OrderStore interface {
 	// All retrieves all orders for a given market
-	All(market string) ([]*Order, error)
+	All(ctx context.Context, market string) ([]*Order, error)
 	// Get retrieves an order for a given market and id.
-	Get(market string, id string) (*Order, error)
+	Get(ctx context.Context, market string, id string) (*Order, error)
 	// FindByParty retrieves all order for a given party name.
 	//FindByParty(party string) ([]*Order, error)
 	// Put stores a trade.
-	Put(r *Order) error
+	Put(ctx context.Context, r *Order) error
 	// Removes a trade from the store.
-	Delete(r *Order) error
+	Delete(ctx context.Context, r *Order) error
 }
 
 type StorageProvider interface {
+	Init (markets []string, orderChan <-chan msg.Order, tradeChan <-chan msg.Trade)
 	TradeStore() TradeStore
 	OrderStore() OrderStore
-	Init (markets []string, orderChan <-chan msg.Order, tradeChan <-chan msg.Trade)
 }
 
 type MemoryStorageProvider struct {
@@ -86,7 +87,9 @@ func (m *MemoryStorageProvider) processOrderMessage(orderMsg msg.Order) {
 			// Audit new order cancelled ^
 	}
 
-	m.orderStore.Put(o)
+	// todo how to pass context in order chans?
+	ctx := context.Background()
+	m.orderStore.Put(ctx, o)
 
 	fmt.Printf("Added order of size %d, price %d", o.Size, o.Price)
 	fmt.Println("---")
@@ -100,7 +103,9 @@ func (m *MemoryStorageProvider) listenForTrades() {
 		t := &Trade{}
 		t = t.FromProtoMessage(tradeMsg, "")
 
-		m.tradeStore.Put(t)
+		// todo how to pass context in order chans?
+		ctx := context.Background()
+		m.tradeStore.Put(ctx, t)
 
 		fmt.Printf("Added trade of size %d, price %d", t.Size, t.Price)
 		fmt.Println("---")

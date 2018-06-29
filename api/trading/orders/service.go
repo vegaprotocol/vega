@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"context"
 	"net/http"
 	"time"
 	"vega/api/trading/orders/models"
@@ -9,8 +10,8 @@ import (
 
 type OrderService interface {
 	Init(orderStore datastore.OrderStore)
-	CreateOrder(order models.Order) (success bool, err error)
-	GetOrders(market string) (orders []models.Order, err error)
+	CreateOrder(ctx context.Context, order models.Order) (success bool, err error)
+	GetOrders(ctx context.Context, market string) (orders []models.Order, err error)
 }
 
 type orderService struct {
@@ -25,7 +26,7 @@ func (p *orderService) Init(orderStore datastore.OrderStore) {
 	p.orderStore = orderStore
 }
 
-func (p *orderService) CreateOrder(order models.Order) (success bool, err error) {
+func (p *orderService) CreateOrder(ctx context.Context, order models.Order) (success bool, err error) {
 
 	// todo additional validation?
 	utcNow := time.Now().UTC()
@@ -54,8 +55,8 @@ func (p *orderService) CreateOrder(order models.Order) (success bool, err error)
 	return true, err
 }
 
-func (p *orderService) GetOrders(market string) (orders []models.Order, err error) {
-	o, err := p.orderStore.All(market)
+func (p *orderService) GetOrders(ctx context.Context, market string) (orders []models.Order, err error) {
+	o, err := p.orderStore.All(ctx, market)
 	if err != nil {
 		return nil, err
 	}
@@ -64,10 +65,10 @@ func (p *orderService) GetOrders(market string) (orders []models.Order, err erro
 	for _, order := range o {
 
 		orderModels = append(orderModels, models.Order{
-			ID:        order.ID,
+			ID:        order.Id,
 			Market:    order.Market,
 			Party:     order.Party,
-			Side:      order.Side,
+			Side:      int32(order.Side),
 			Price:     order.Price,
 			Size:      order.Timestamp,
 			Remaining: order.Remaining,

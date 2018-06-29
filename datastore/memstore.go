@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -69,7 +70,7 @@ func (ms *MemStore) marketExists(market string) bool {
 	return false
 }
 
-func (t *memOrderStore) All(market string) ([]*Order, error) {
+func (t *memOrderStore) All(ctx context.Context, market string) ([]*Order, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
@@ -81,7 +82,7 @@ func (t *memOrderStore) All(market string) ([]*Order, error) {
 }
 
 // Get implements datastore.OrderStore.Get().
-func (t *memOrderStore) Get(market string, id string) (*Order, error) {
+func (t *memOrderStore) Get(ctx context.Context, market string, id string) (*Order, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
@@ -93,7 +94,7 @@ func (t *memOrderStore) Get(market string, id string) (*Order, error) {
 }
 
 // Put implements storage.OrderStore.Put().
-func (t *memOrderStore) Put(or *Order) error {
+func (t *memOrderStore) Put(ctx context.Context, or *Order) error {
 	// todo validation of incoming order
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -118,13 +119,13 @@ func (t *memOrderStore) Put(or *Order) error {
 }
 
 // Delete implements storage.TradeStore.Delete().
-func (t *memOrderStore) Delete(or *Order) error {
+func (t *memOrderStore) Delete(ctx context.Context, or *Order) error {
 	delete(t.store.markets[or.Market].orders, or.Id)
 	return nil
 }
 
 // All implements datastore.TradeStore.All().
-func (t *memTradeStore) All(market string) ([]*Trade, error) {
+func (t *memTradeStore) All(ctx context.Context, market string) ([]*Trade, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
@@ -136,7 +137,7 @@ func (t *memTradeStore) All(market string) ([]*Trade, error) {
 }
 
 // Get implements datastore.TradeStore.Get().
-func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
+func (t *memTradeStore) Get(ctx context.Context, market string, id string) (*Trade, error) {
 	v, ok := t.store.markets[market].trades[id]
 	if !ok {
 		return nil, NotFoundError{fmt.Errorf("could not find id %s", id)}
@@ -144,8 +145,8 @@ func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
 	return v.trade, nil
 }
 
-// FindByOrderId retrieves all trades for a given order id.
-func (t *memTradeStore) FindByOrderID(market string, orderID string) ([]*Trade, error) {
+// GetByOrderId retrieves all trades for a given order id.
+func (t *memTradeStore) GetByOrderID(ctx context.Context, market string, orderID string) ([]*Trade, error) {
 
 	order := t.store.markets[market].orders[orderID]
 	if order == nil {
@@ -160,7 +161,7 @@ func (t *memTradeStore) FindByOrderID(market string, orderID string) ([]*Trade, 
 }
 
 // Put implements storage.TradeStore.Put().
-func (t *memTradeStore) Put(tr *Trade) error {
+func (t *memTradeStore) Put(ctx context.Context, tr *Trade) error {
 	//todo validation of incoming trade
 	// if err := tr.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -180,7 +181,7 @@ func (t *memTradeStore) Put(tr *Trade) error {
 }
 
 // Delete implements storage.TradeStore.Delete().
-func (t *memTradeStore) Delete(tr *Trade) error {
+func (t *memTradeStore) Delete(ctx context.Context, tr *Trade) error {
 	delete(t.store.markets[tr.Market].trades, tr.Id)
 	return nil
 }

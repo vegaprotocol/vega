@@ -38,7 +38,7 @@ func (handlers *Handlers) CreateOrder(ctx *gin.Context) {
 }
 
 func (handlers *Handlers) CreateOrderWithModel(ctx *gin.Context, o models.Order) {
-	success, err :=  handlers.OrderService.CreateOrder(o)
+	success, err :=  handlers.OrderService.CreateOrder(ctx, o)
 	if success {
 		wasSuccess(ctx, gin.H { ResponseKeyResult : ResponseResultSuccess} )
 	} else {
@@ -52,7 +52,7 @@ func (handlers *Handlers) GetOrders(ctx *gin.Context) {
 }
 
 func (handlers *Handlers) GetOrdersWithParams(ctx *gin.Context, market string) {
-	orders, err := handlers.OrderService.GetOrders(market)
+	orders, err := handlers.OrderService.GetOrders(ctx, market)
 	if err == nil {
 		wasSuccess(ctx, gin.H { ResponseKeyResult : ResponseResultSuccess, ResponseKeyOrders : orders })
 	} else {
@@ -76,7 +76,7 @@ func (handlers *Handlers) GetTradesWithParams(ctx *gin.Context, market string) {
 
 func (handlers *Handlers) GetTradesForOrder(ctx *gin.Context) {
 	market := ctx.DefaultQuery("market", DefaultMarket)
-	orderID := ctx.Param("orderID")
+	orderID := ctx.Param("orderId")
 	handlers.GetTradesForOrderWithParams(ctx, market, orderID)
 }
 
