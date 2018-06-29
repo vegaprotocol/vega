@@ -63,16 +63,17 @@ func (s *OrderBookSide) bestPrice() uint64 {
 	}
 }
 
-func uncrossPriceLevel(agg *msg.Order, trades *[]Trade) func(i btree.Item) bool {
+func uncrossPriceLevel(agg *msg.Order, trades *[]Trade, impactedOrders *[]msg.Order) func(i btree.Item) bool {
 	return func(i btree.Item) bool {
 		priceLevel := i.(*PriceLevel)
-		filled := priceLevel.uncross(agg, trades)
+		filled := priceLevel.uncross(agg, trades, impactedOrders)
 		return !filled
 	}
 }
 
-func (s *OrderBookSide) cross(agg *msg.Order) (*[]Trade, uint64) {
+func (s *OrderBookSide) cross(agg *msg.Order) ([]Trade, []msg.Order, uint64) {
 	trades := make([]Trade, 0)
+	impactedOrders := make([]msg.Order, 0)
 	var lastTradedPrice uint64
 
 	if agg.Side == msg.Side_Sell {
@@ -81,7 +82,7 @@ func (s *OrderBookSide) cross(agg *msg.Order) (*[]Trade, uint64) {
 		log.Printf("uncross initiated | DescendRange from 1000 to min=%d ", min.price)
 		log.Println()
 
-		s.levels.DescendGreaterThan(min, uncrossPriceLevel(agg, &trades))
+		s.levels.DescendGreaterThan(min, uncrossPriceLevel(agg, &trades, &impactedOrders))
 	}
 
 	if agg.Side == msg.Side_Buy {
@@ -89,7 +90,7 @@ func (s *OrderBookSide) cross(agg *msg.Order) (*[]Trade, uint64) {
 		max := &PriceLevel{price: agg.Price+1}
 		log.Printf("uncross initiated | AscendRange 0 to max=%d", max.price)
 		log.Println()
-		s.levels.AscendLessThan(max, uncrossPriceLevel(agg, &trades))
+		s.levels.AscendLessThan(max, uncrossPriceLevel(agg, &trades, &impactedOrders))
 	}
 
 
@@ -101,18 +102,15 @@ func (s *OrderBookSide) cross(agg *msg.Order) (*[]Trade, uint64) {
 		s.totalVolume += trade.size
 	}
 
-	return &trades, lastTradedPrice
+	return trades, impactedOrders, lastTradedPrice
 }
 
 func (s *OrderBookSide) addOrder(o *msg.Order) {
 	fetchedPriceLevel := s.getPriceLevel(o.Price)
-	log.Println("blabla1 ", fetchedPriceLevel.orders)
 	fetchedPriceLevel.addOrder(o)
 
 	s.totalVolume += o.Remaining
 	s.orderCount++
-	log.Println("level ", fetchedPriceLevel.price)
-	log.Println("blabla2 ", fetchedPriceLevel.orders)
 }
 
 func (s *OrderBookSide) RemoveOrder(o *msg.Order) {

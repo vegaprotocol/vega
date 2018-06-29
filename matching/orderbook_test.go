@@ -192,8 +192,9 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 	}
 
-	for _, v := range m {
-		for _, order := range v {
+	timestamps := []int64{0, 1, 2}
+	for _, timestamp := range timestamps {
+		for _, order := range m[timestamp] {
 			log.Println("tests calling book.AddOrder: ", order)
 			confirmationMsg, err := book.AddOrder(&order)
 			// this should not return any errors
@@ -205,8 +206,9 @@ func TestOrderBook_AddOrder(t *testing.T) {
 
 	// launch aggressiveOrder orders from both sides to fully clear the order book
 	type aggressiveOrderScenario struct {
-		aggressiveOrder msg.Order
-		expectedTrades  []msg.Trade
+		aggressiveOrder               msg.Order
+		expectedPassiveOrdersAffected []msg.Order
+		expectedTrades                []msg.Trade
 	}
 
 	scenario := []aggressiveOrderScenario{
@@ -238,6 +240,28 @@ func TestOrderBook_AddOrder(t *testing.T) {
 					Buyer:     "X",
 					Seller:    "B",
 					Aggressor: msg.Side_Buy,
+				},
+			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "A",
+					Side:      msg.Side_Sell,
+					Price:     101,
+					Size:      100,
+					Remaining: 50,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "B",
+					Side:      msg.Side_Sell,
+					Price:     101,
+					Size:      100,
+					Remaining: 50,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
 				},
 			},
 		},
@@ -279,6 +303,38 @@ func TestOrderBook_AddOrder(t *testing.T) {
 					Aggressor: msg.Side_Buy,
 				},
 			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "A",
+					Side:      msg.Side_Sell,
+					Price:     101,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "B",
+					Side:      msg.Side_Sell,
+					Price:     101,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "M",
+					Side:      msg.Side_Sell,
+					Price:     101,
+					Size:      100,
+					Remaining: 50,
+					Type:      msg.Order_GTC,
+					Timestamp: 1,
+				},
+			},
 		},
 		{
 			// lower price is available on the passive side, 1 order removed, 1 passive remaining
@@ -308,6 +364,28 @@ func TestOrderBook_AddOrder(t *testing.T) {
 					Buyer:     "Z",
 					Seller:    "R",
 					Aggressor: msg.Side_Buy,
+				},
+			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "M",
+					Side:      msg.Side_Sell,
+					Price:     101,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 1,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "R",
+					Side:      msg.Side_Sell,
+					Price:     101,
+					Size:      100,
+					Remaining: 80,
+					Type:      msg.Order_GTC,
+					Timestamp: 2,
 				},
 			},
 		},
@@ -342,6 +420,28 @@ func TestOrderBook_AddOrder(t *testing.T) {
 					Aggressor: msg.Side_Buy,
 				},
 			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "R",
+					Side:      msg.Side_Sell,
+					Price:     101,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 2,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "C",
+					Side:      msg.Side_Sell,
+					Price:     102,
+					Size:      100,
+					Remaining: 80,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
+				},
+			},
 		},
 		{
 			// Sell is agressive, aggressive at lower price than on the book, pro rata at 99, aggressive is removed
@@ -371,6 +471,28 @@ func TestOrderBook_AddOrder(t *testing.T) {
 					Buyer:     "F",
 					Seller:    "Y",
 					Aggressor: msg.Side_Sell,
+				},
+			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "E",
+					Side:      msg.Side_Buy,
+					Price:     99,
+					Size:      100,
+					Remaining: 50,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "F",
+					Side:      msg.Side_Buy,
+					Price:     99,
+					Size:      100,
+					Remaining: 50,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
 				},
 			},
 		},
@@ -420,6 +542,48 @@ func TestOrderBook_AddOrder(t *testing.T) {
 					Aggressor: msg.Side_Sell,
 				},
 			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "E",
+					Side:      msg.Side_Buy,
+					Price:     99,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "F",
+					Side:      msg.Side_Buy,
+					Price:     99,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "N",
+					Side:      msg.Side_Buy,
+					Price:     99,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 1,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "S",
+					Side:      msg.Side_Buy,
+					Price:     99,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 2,
+				},
+			},
 		},
 		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: msg.Order{
@@ -450,6 +614,28 @@ func TestOrderBook_AddOrder(t *testing.T) {
 					Aggressor: msg.Side_Buy,
 				},
 			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "Z",
+					Side:      msg.Side_Sell,
+					Price:     99,
+					Size:      350,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 4,
+				},
+				{
+					Market:    "testOrderBook",
+					Party:     "C",
+					Side:      msg.Side_Sell,
+					Price:     102,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
+				},
+			},
 		},
 		{ // aggressive nonpersistent buy order, hits one price levels and is not added to order book
 			aggressiveOrder: msg.Order{
@@ -470,6 +656,18 @@ func TestOrderBook_AddOrder(t *testing.T) {
 					Buyer:     "YY",
 					Seller:    "D",
 					Aggressor: msg.Side_Buy,
+				},
+			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "D",
+					Side:      msg.Side_Sell,
+					Price:     103,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
 				},
 			},
 		},
@@ -494,10 +692,20 @@ func TestOrderBook_AddOrder(t *testing.T) {
 					Aggressor: msg.Side_Sell,
 				},
 			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "G",
+					Side:      msg.Side_Buy,
+					Price:     98,
+					Size:      100,
+					Remaining: 0,
+					Type:      msg.Order_GTC,
+					Timestamp: 0,
+				},
+			},
 		},
 	}
-
-	//log.Println(scenario)
 
 	for i, s := range scenario {
 		log.Println()
@@ -505,10 +713,9 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		log.Printf("SCENARIO %d / %d ------------------------------------------------------------------", i+1, len(scenario))
 		log.Println()
 		log.Println("aggressor: ", s.aggressiveOrder)
+		log.Println("expectedPassiveOrdersAffected: ", s.expectedPassiveOrdersAffected)
 		log.Println("expectedTrades: ", s.expectedTrades)
 		log.Println()
-
-		//printStateOfBook(book)
 
 		confirmationMsg, err := book.AddOrder(&s.aggressiveOrder)
 		//this should not return any errors
@@ -516,12 +723,19 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		//this should not generate any trades
 		assert.Equal(t, len(s.expectedTrades), len(confirmationMsg.Trades))
 
-		log.Println("confirmationMsg :", confirmationMsg)
+		log.Println("CONFIRMATION MSG:")
+		log.Println("-> Aggresive:", confirmationMsg.Order)
+		log.Println("-> Trades :", confirmationMsg.Trades)
+		log.Println("-> PassiveOrdersAffected:", confirmationMsg.PassiveOrdersAffected)
 
 		// trades should match expected trades
-		// assert.
 		for i, trade := range confirmationMsg.Trades {
 			expectTrade(t, &s.expectedTrades[i], trade)
+		}
+
+		//
+		for i, orderAffected := range confirmationMsg.PassiveOrdersAffected {
+			expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
 		}
 	}
 

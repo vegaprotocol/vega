@@ -31,17 +31,17 @@ func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {
 	assert.Equal(t, expectedTrade.Aggressor, trade.Aggressor)
 }
 
-//func expectOrder(t *testing.T, expectedOrder, order *msg.Order) {
-//	// run asserts for order
-//	assert.Equal(t, expectedOrder.Market, order.Market)
-//	assert.Equal(t, expectedOrder.Party, order.Party)
-//	assert.Equal(t, expectedOrder.Side, order.Side)
-//	assert.Equal(t, expectedOrder.Price, order.Price)
-//	assert.Equal(t, expectedOrder.Size, order.Size)
-//	assert.Equal(t, expectedOrder.Remaining, order.Remaining)
-//	assert.Equal(t, expectedOrder.Type, order.Type)
-//	assert.Equal(t, expectedOrder.Timestamp, order.Timestamp)
-//}
+func expectOrder(t *testing.T, expectedOrder, order *msg.Order) {
+	// run asserts for order
+	assert.Equal(t, expectedOrder.Market, order.Market)
+	assert.Equal(t, expectedOrder.Party, order.Party)
+	assert.Equal(t, expectedOrder.Side, order.Side)
+	assert.Equal(t, expectedOrder.Price, order.Price)
+	assert.Equal(t, expectedOrder.Size, order.Size)
+	assert.Equal(t, expectedOrder.Remaining, order.Remaining)
+	assert.Equal(t, expectedOrder.Type, order.Type)
+	assert.Equal(t, expectedOrder.Timestamp, order.Timestamp)
+}
 //
 ///*  SUMMARY OF TESTS:
 //- TestNewTradeNoRemaining

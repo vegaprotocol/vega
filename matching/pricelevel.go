@@ -83,7 +83,7 @@ func (l PriceLevel) Less(other btree.Item) bool {
 	return l.price < otherPrice
 }
 
-func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade) bool {
+func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]msg.Order) bool {
 	log.Printf("                UNCOROSSING ATTEMPT at price = %d", l.price)
 	log.Println("-> aggressive order: ", agg)
 	log.Println()
@@ -133,7 +133,7 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade) bool {
 
 		// Update trades
 		*trades = append(*trades, *trade)
-
+		*impactedOrders = append(*impactedOrders, l.orders[i])
 
 		// Exit when done
 		if agg.Remaining == 0 {

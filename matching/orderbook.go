@@ -38,10 +38,6 @@ func NewBook(name string, config Config) *OrderBook {
 	return book
 }
 
-func (b *OrderBook) GetOrderConfirmationChannel() []chan msg.OrderConfirmation {
-	return b.config.OrderConfirmationChans
-}
-
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
 func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	if err := b.validateOrder(orderMessage); err != msg.OrderError_NONE {
@@ -55,32 +51,33 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	oppositeSide := b.getOppositeSide(orderMessage.Side)
 
 	log.Println("Entry state:")
-	b.printState()
+	b.PrintState()
 
 	// uncross with opposite
-	trades, lastTradedPrice := oppositeSide.cross(orderMessage)
+	trades, impactedOrders, lastTradedPrice := oppositeSide.cross(orderMessage)
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
 	}
 
-	if len(*trades) != 0 {
+	if len(trades) != 0 {
 		log.Println()
 		log.Println("After cross state:")
-		b.printState()
+		b.PrintState()
 	}
 
 	// if persist add to tradebook to the right side
 	if (orderMessage.Type == msg.Order_GTC || orderMessage.Type == msg.Order_GTT) && orderMessage.Remaining > 0 {
 		b.getSide(orderMessage.Side).addOrder(orderMessage)
 		log.Println("After addOrder state:")
-		b.printState()
+		b.PrintState()
 	}
 
-	orderConfirmation := MakeResponse(orderMessage, trades)
+
+	orderConfirmation := makeResponse(orderMessage, trades, impactedOrders)
 	return orderConfirmation, msg.OrderError_NONE
 }
 
-func (b *OrderBook) printState() {
+func (b *OrderBook) PrintState() {
 	log.Println("------------------------------------------------------------")
 	log.Println("                        BUY SIDE                            ")
 	b.buy.levels.Descend(printOrders())
@@ -164,4 +161,20 @@ func (b *OrderBook) GetMarketDepth() *msg.MarketDepth {
 
 func (b *OrderBook) RemoveOrder(o *msg.Order) {
 	b.getSide(o.Side).RemoveOrder(o)
+}
+
+func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) *msg.OrderConfirmation {
+	tradeSet := make([]*msg.Trade, 0)
+	for _, t := range trades {
+		tradeSet = append(tradeSet, t.toMessage())
+	}
+	passiveOrdersAffected := make([]*msg.Order, 0)
+	for i := range impactedOrders {
+		passiveOrdersAffected = append(passiveOrdersAffected, &impactedOrders[i])
+	}
+	return &msg.OrderConfirmation{
+		Order:  order,
+		PassiveOrdersAffected: passiveOrdersAffected,
+		Trades: tradeSet,
+	}
 }
