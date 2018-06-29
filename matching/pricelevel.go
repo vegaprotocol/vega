@@ -1,7 +1,6 @@
 package matching
 
 import (
-	"errors"
 	"log"
 	"math"
 
@@ -15,7 +14,7 @@ type PriceLevel struct {
 	volume            uint64
 	volumeByTimestamp map[uint64]uint64
 	orders            []msg.Order
-	lookupTable     map[string]int
+	lookupTable       map[string]int
 }
 
 func NewPriceLevel(price uint64) *PriceLevel {
@@ -23,15 +22,13 @@ func NewPriceLevel(price uint64) *PriceLevel {
 		price:             price,
 		orders:            make([]msg.Order, 0),
 		volumeByTimestamp: make(map[uint64]uint64),
-		lookupTable: make(map[string]int),
+		lookupTable:       make(map[string]int),
 	}
 }
 
-func (l *PriceLevel) topTimestamp() uint64 {
-	if len(l.orders) != 0 {
-		return l.orders[0].Timestamp
-	}
-	return 0
+func (l PriceLevel) Less(other btree.Item) bool {
+	otherPrice := other.(*PriceLevel).price
+	return l.price < otherPrice
 }
 
 func (l *PriceLevel) addOrder(o *msg.Order) {
@@ -43,12 +40,9 @@ func (l *PriceLevel) addOrder(o *msg.Order) {
 	l.volume += o.Remaining
 
 	l.orders = append(l.orders, *o)
-	log.Println("adding order to the order book: ", o)
-	log.Println("state of slice ", l.orders)
 
 	// add index to lookup table for faster removal
 	l.lookupTable[o.Id] = len(l.orders) - 1
-	log.Println("lookup table", l.lookupTable)
 }
 
 func (l *PriceLevel) removeOrder(o *msg.Order, index int) error {
@@ -77,20 +71,6 @@ func (l *PriceLevel) removeOrder(o *msg.Order, index int) error {
 	}
 
 	return nil
-}
-
-func (l *PriceLevel) getIndexForDelition(orderId string) (int, error) {
-	for index, orderForDeletion := range l.orders {
-		if orderForDeletion.Id == orderId {
-			return index, nil
-		}
-	}
-	return 0, errors.New("NOT_FOUND")
-}
-
-func (l PriceLevel) Less(other btree.Item) bool {
-	otherPrice := other.(*PriceLevel).price
-	return l.price < otherPrice
 }
 
 func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]msg.Order) bool {
@@ -170,6 +150,13 @@ func (l *PriceLevel) removeOrderFromPriceLevel(orderForDeletion *msg.Order) erro
 	return l.removeOrder(orderForDeletion, index)
 }
 
+func (l *PriceLevel) topTimestamp() uint64 {
+	if len(l.orders) != 0 {
+		return l.orders[0].Timestamp
+	}
+	return 0
+}
+
 // Get size for a specific trade assuming aggressive order volume is allocated pro-rata among all passive trades
 // with the same timestamp by their share of the total volume with the same price and timestamp. (NB: "normal"
 // trading would thus *always* increment the logical timestamp between trades.)
@@ -183,4 +170,12 @@ func (l *PriceLevel) getVolumeAllocation(
 		size++ // Otherwise we can end up allocating 1 short because of integer division rounding
 	}
 	return min(min(uint64(size), agg.Remaining), pass.Remaining)
+}
+
+// Returns the min of 2 uint64s
+func min(x, y uint64) uint64 {
+	if y < x {
+		return y
+	}
+	return x
 }

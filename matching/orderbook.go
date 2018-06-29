@@ -39,14 +39,6 @@ func NewBook(name string, config Config) *OrderBook {
 	return book
 }
 
-func (b *OrderBook) GetName() string {
-	return b.name
-}
-
-func (b *OrderBook) RemoveOrder(order *msg.Order) error {
-	return b.getSide(order.Side).RemoveOrder(order)
-}
-
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
 func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	if err := b.validateOrder(orderMessage); err != msg.OrderError_NONE {
@@ -56,37 +48,39 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 		b.latestTimestamp = orderMessage.Timestamp
 	}
 
-	orderMessage.Id = DigestOrderMessage(orderMessage)[:10]
+	orderMessage.Id = digestOrderMessage(orderMessage)[:10]
 	oppositeSide := b.getOppositeSide(orderMessage.Side)
 
-	log.Println("Entry state:")
-	b.PrintState()
+	b.PrintState("Entry state:")
 
 	// uncross with opposite
-	trades, impactedOrders, lastTradedPrice := oppositeSide.cross(orderMessage)
+	trades, impactedOrders, lastTradedPrice := oppositeSide.uncross(orderMessage)
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
 	}
 
 	if len(trades) != 0 {
-		log.Println()
-		log.Println("After cross state:")
-		b.PrintState()
+		b.PrintState("After uncross state:")
 	}
 
 	// if persist add to tradebook to the right side
 	if (orderMessage.Type == msg.Order_GTC || orderMessage.Type == msg.Order_GTT) && orderMessage.Remaining > 0 {
 		b.getSide(orderMessage.Side).addOrder(orderMessage)
 
-		log.Println("After addOrder state:")
-		b.PrintState()
+		b.PrintState("After addOrder state:")
 	}
 
 	orderConfirmation := makeResponse(orderMessage, trades, impactedOrders)
 	return orderConfirmation, msg.OrderError_NONE
 }
 
-func (b *OrderBook) PrintState() {
+func (b *OrderBook) RemoveOrder(order *msg.Order) error {
+	return b.getSide(order.Side).RemoveOrder(order)
+}
+
+func (b *OrderBook) PrintState(msg string) {
+	log.Println()
+	log.Println(msg)
 	log.Println("------------------------------------------------------------")
 	log.Println("                        BUY SIDE                            ")
 	b.buy.levels.Descend(printOrders())
@@ -158,7 +152,7 @@ func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) 
 }
 
 // Calculate the hash (ID) of the order details (as serialised by protobufs)
-func DigestOrderMessage(order *msg.Order) string {
+func digestOrderMessage(order *msg.Order) string {
 	bytes, _ := proto.Marshal(order)
 	hash := make([]byte, 64)
 	sha3.ShakeSum256(hash, bytes)

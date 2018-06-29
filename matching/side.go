@@ -12,8 +12,22 @@ const priceLevelsBTreeDegree = 128
 type OrderBookSide struct {
 	side        msg.Side
 	levels      *btree.BTree
-	orderCount  uint64
-	totalVolume uint64
+}
+
+func (s *OrderBookSide) addOrder(o *msg.Order) {
+	fetchedPriceLevel := s.getPriceLevel(o.Price)
+	fetchedPriceLevel.addOrder(o)
+}
+
+func (s *OrderBookSide) RemoveOrder(o *msg.Order) error  {
+	priceLevel := s.levels.Get(&PriceLevel{price: o.Price}).(*PriceLevel)
+	err := priceLevel.removeOrderFromPriceLevel(o)
+
+	if len(priceLevel.orders) == 0 {
+		s.removePriceLevel(priceLevel.price)
+	}
+
+	return err
 }
 
 func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
@@ -26,28 +40,11 @@ func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
 	}
 	priceLevel := item.(*PriceLevel)
 	log.Printf("fetched price level price=%d with %d orders", priceLevel.price, len(priceLevel.orders))
-
 	return priceLevel
 }
 
 func (s *OrderBookSide) removePriceLevel(price uint64) {
 	s.levels.Delete(&PriceLevel{price: price})
-}
-
-func (s *OrderBookSide) topPriceLevel() *PriceLevel {
-	if s.levels.Len() > 0 {
-		return s.levels.Max().(*PriceLevel)
-	} else {
-		return nil
-	}
-}
-
-func (s *OrderBookSide) bestPrice() uint64 {
-	if s.topPriceLevel() == nil {
-		return 0
-	} else {
-		return s.topPriceLevel().price
-	}
 }
 
 func uncrossPriceLevel(agg *msg.Order, trades *[]Trade, impactedOrders *[]msg.Order) func(i btree.Item) bool {
@@ -58,7 +55,7 @@ func uncrossPriceLevel(agg *msg.Order, trades *[]Trade, impactedOrders *[]msg.Or
 	}
 }
 
-func (s *OrderBookSide) cross(agg *msg.Order) ([]Trade, []msg.Order, uint64) {
+func (s *OrderBookSide) uncross(agg *msg.Order) ([]Trade, []msg.Order, uint64) {
 	trades := make([]Trade, 0)
 	impactedOrders := make([]msg.Order, 0)
 	var lastTradedPrice uint64
@@ -85,42 +82,5 @@ func (s *OrderBookSide) cross(agg *msg.Order) ([]Trade, []msg.Order, uint64) {
 		lastTradedPrice = trades[len(trades)-1].price
 	}
 
-	for _, trade := range trades {
-		s.totalVolume += trade.size
-	}
-
 	return trades, impactedOrders, lastTradedPrice
-}
-
-func (s *OrderBookSide) addOrder(o *msg.Order) {
-	fetchedPriceLevel := s.getPriceLevel(o.Price)
-	fetchedPriceLevel.addOrder(o)
-
-	s.totalVolume += o.Remaining
-	s.orderCount++
-}
-
-func (s *OrderBookSide) RemoveOrder(o *msg.Order) error  {
-	priceLevel := s.levels.Get(&PriceLevel{price: o.Price}).(*PriceLevel)
-	err := priceLevel.removeOrderFromPriceLevel(o)
-	s.totalVolume -= o.Remaining
-	s.orderCount--
-
-	if len(priceLevel.orders) == 0 {
-		s.removePriceLevel(priceLevel.price)
-	}
-
-	return err
-}
-
-func (s *OrderBookSide) getNumberOfPriceLevels() int {
-	return s.levels.Len()
-}
-
-func (s *OrderBookSide) getOrderCount() uint64 {
-	return s.orderCount
-}
-
-func (s *OrderBookSide) getTotalVolume() uint64 {
-	return s.totalVolume
 }

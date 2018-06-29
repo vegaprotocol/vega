@@ -80,7 +80,7 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 		log.Println("sth bad happened")
 	}
 
-	book.PrintState()
+	book.PrintState("after remove order")
 }
 
 func TestOrderBook_AddOrder(t *testing.T) {
@@ -763,8 +763,26 @@ func TestOrderBook_AddOrder(t *testing.T) {
 			expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
 		}
 	}
-
 }
 
-//Remarks
-// can you cross your own order ?? is there a counter party check?
+func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {
+	// run asserts for protocol trade data
+	//assert.Equal(t, trade.Market, expectedTrade.Market)
+	assert.Equal(t, expectedTrade.Price, trade.Price)
+	assert.Equal(t, expectedTrade.Size, trade.Size)
+	assert.Equal(t, expectedTrade.Buyer, trade.Buyer)
+	assert.Equal(t, expectedTrade.Seller, trade.Seller)
+	assert.Equal(t, expectedTrade.Aggressor, trade.Aggressor)
+}
+
+func expectOrder(t *testing.T, expectedOrder, order *msg.Order) {
+	// run asserts for order
+	assert.Equal(t, expectedOrder.Market, order.Market)
+	assert.Equal(t, expectedOrder.Party, order.Party)
+	assert.Equal(t, expectedOrder.Side, order.Side)
+	assert.Equal(t, expectedOrder.Price, order.Price)
+	assert.Equal(t, expectedOrder.Size, order.Size)
+	assert.Equal(t, expectedOrder.Remaining, order.Remaining)
+	assert.Equal(t, expectedOrder.Type, order.Type)
+	assert.Equal(t, expectedOrder.Timestamp, order.Timestamp)
+}

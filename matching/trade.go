@@ -20,14 +20,6 @@ type Trade struct {
 	msg   *msg.Trade
 }
 
-// Returns the min of 2 uint64s
-func min(x, y uint64) uint64 {
-	if y < x {
-		return y
-	}
-	return x
-}
-
 // Creates a trade of a given size between two orders and updates the order details
 func newTrade(agg, pass *msg.Order, size uint64) *Trade {
 	trade := &Trade{
@@ -40,7 +32,7 @@ func newTrade(agg, pass *msg.Order, size uint64) *Trade {
 	}
 	trade.id = trade.Digest()
 
- 	return trade
+	return trade
 }
 
 // Returns a string representation of a trade
