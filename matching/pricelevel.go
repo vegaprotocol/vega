@@ -15,6 +15,7 @@ type PriceLevel struct {
 	volume            uint64
 	volumeByTimestamp map[uint64]uint64
 	orders            []msg.Order
+	lookupTable     map[string]int
 }
 
 func NewPriceLevel(price uint64) *PriceLevel {
@@ -22,11 +23,8 @@ func NewPriceLevel(price uint64) *PriceLevel {
 		price:             price,
 		orders:            make([]msg.Order, 0),
 		volumeByTimestamp: make(map[uint64]uint64),
+		lookupTable: make(map[string]int),
 	}
-}
-
-func (l *PriceLevel) firstOrder() *msg.Order {
-	return &l.orders[0]
 }
 
 func (l *PriceLevel) topTimestamp() uint64 {
@@ -47,9 +45,13 @@ func (l *PriceLevel) addOrder(o *msg.Order) {
 	l.orders = append(l.orders, *o)
 	log.Println("adding order to the order book: ", o)
 	log.Println("state of slice ", l.orders)
+
+	// add index to lookup table for faster removal
+	l.lookupTable[o.Id] = len(l.orders) - 1
+	log.Println("lookup table", l.lookupTable)
 }
 
-func (l *PriceLevel) removeOrder(o *msg.Order) {
+func (l *PriceLevel) removeOrder(o *msg.Order, index int) error {
 	log.Println("removeOrder called on ", o)
 	if vbt, exists := l.volumeByTimestamp[o.Timestamp]; exists {
 		if vbt <= o.Remaining {
@@ -59,14 +61,22 @@ func (l *PriceLevel) removeOrder(o *msg.Order) {
 		}
 	}
 	l.volume -= o.Remaining
-	i, err := l.getIndexForDelition(o.Id)
-	if err != nil {
-		return
+
+	// memcopy orders
+	copy(l.orders[index:], l.orders[index+1:])
+	l.orders = l.orders[:len(l.orders)-1]
+
+	// delete index from lookupTable
+	delete(l.lookupTable, o.Id)
+
+	// reindex lookup table
+	for k, val := range l.lookupTable {
+		if val > index {
+			l.lookupTable[k] = val - 1
+		}
 	}
-	//log.Println("index for delition ", i)
-	//log.Println("orders before deletion: ", l.orders)
-	l.orders = append(l.orders[:i], l.orders[i+1:]...)
-	//log.Println("orders after deletion: ", l.orders)
+
+	return nil
 }
 
 func (l *PriceLevel) getIndexForDelition(orderId string) (int, error) {
@@ -142,12 +152,22 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 	}
 
 	// Clean passive orders with zero remaining
-	for _, ordersScheduledForDeletion := range ordersScheduledForDeletion {
-		l.removeOrder(&ordersScheduledForDeletion)
-	}
+	l.clearOrders(ordersScheduledForDeletion)
+
 	log.Println("                    UNCOROSSING FINISHED                ")
 	log.Println()
 	return agg.Remaining == 0
+}
+
+func (l *PriceLevel) clearOrders(ordersScheduledForDeletion []msg.Order) {
+	for _, ordersScheduledForDeletion := range ordersScheduledForDeletion {
+		l.removeOrderFromPriceLevel(&ordersScheduledForDeletion)
+	}
+}
+
+func (l *PriceLevel) removeOrderFromPriceLevel(orderForDeletion *msg.Order) error {
+	index := l.lookupTable[orderForDeletion.Id]
+	return l.removeOrder(orderForDeletion, index)
 }
 
 // Get size for a specific trade assuming aggressive order volume is allocated pro-rata among all passive trades

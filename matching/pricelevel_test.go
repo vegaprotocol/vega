@@ -36,9 +36,8 @@ package matching
 //	priceLevel := NewPriceLevel(orderBookSide, testPrice)
 //	orderBookSide.levels.ReplaceOrInsert(priceLevel)
 //
-//	ordersSitingAtPriceLevel := []OrderEntry{
+//	ordersSitingAtPriceLevel := []msg.Order{
 //		{
-//			order:	&msg.Order{
 //				Market:    "testOrderBook",
 //				Party:     "A",
 //				Side:      msg.Side_Sell,
@@ -48,13 +47,8 @@ package matching
 //				Type:      msg.Order_GTC,
 //				Timestamp: 0,
 //				Id:        "id-number-one",
-//			},
-//			Side: msg.Side_Sell,
-//			persist: true,
-//			dispatchChannels:	book.config.OrderChans,
 //		},
 //		{
-//			order: &msg.Order{
 //				Market:    "testOrderBook",
 //				Party:     "B",
 //				Side:      msg.Side_Sell,
@@ -64,13 +58,8 @@ package matching
 //				Type:      msg.Order_GTC,
 //				Timestamp: 0,
 //				Id:        "id-number-one",
-//			},
-//			Side: msg.Side_Sell,
-//			persist: true,
-//			dispatchChannels:	book.config.OrderChans,
 //		},
 //		{
-//			order: &msg.Order{
 //				Market:    "testOrderBook",
 //				Party:     "C",
 //				Side:      msg.Side_Sell,
@@ -80,10 +69,6 @@ package matching
 //				Type:      msg.Order_GTC,
 //				Timestamp: 0,
 //				Id:        "id-number-one",
-//			},
-//			Side: msg.Side_Sell,
-//			persist: true,
-//			dispatchChannels:	book.config.OrderChans,
 //		},
 //	}
 //

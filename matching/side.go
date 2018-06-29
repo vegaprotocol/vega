@@ -2,7 +2,6 @@ package matching
 
 import (
 	"log"
-
 	"vega/proto"
 
 	"github.com/google/btree"
@@ -29,18 +28,6 @@ func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
 	log.Printf("fetched price level price=%d with %d orders", priceLevel.price, len(priceLevel.orders))
 
 	return priceLevel
-}
-
-func (s *OrderBookSide) getNumberOfPriceLevels() int {
-	return s.levels.Len()
-}
-
-func (s *OrderBookSide) getOrderCount() uint64 {
-	return s.orderCount
-}
-
-func (s *OrderBookSide) getTotalVolume() uint64 {
-	return s.totalVolume
 }
 
 func (s *OrderBookSide) removePriceLevel(price uint64) {
@@ -113,13 +100,27 @@ func (s *OrderBookSide) addOrder(o *msg.Order) {
 	s.orderCount++
 }
 
-func (s *OrderBookSide) RemoveOrder(o *msg.Order) {
-	priceLevel := s.getPriceLevel(o.Price)
-	priceLevel.removeOrder(o)
+func (s *OrderBookSide) RemoveOrder(o *msg.Order) error  {
+	priceLevel := s.levels.Get(&PriceLevel{price: o.Price}).(*PriceLevel)
+	err := priceLevel.removeOrderFromPriceLevel(o)
 	s.totalVolume -= o.Remaining
 	s.orderCount--
 
 	if len(priceLevel.orders) == 0 {
 		s.removePriceLevel(priceLevel.price)
 	}
+
+	return err
+}
+
+func (s *OrderBookSide) getNumberOfPriceLevels() int {
+	return s.levels.Len()
+}
+
+func (s *OrderBookSide) getOrderCount() uint64 {
+	return s.orderCount
+}
+
+func (s *OrderBookSide) getTotalVolume() uint64 {
+	return s.totalVolume
 }

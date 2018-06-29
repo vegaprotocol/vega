@@ -7,6 +7,8 @@ import (
 	"vega/proto"
 
 	"github.com/google/btree"
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/crypto/sha3"
 )
 
 type OrderBook struct {
@@ -34,8 +36,15 @@ func NewBook(name string, config Config) *OrderBook {
 		side:   msg.Side_Sell,
 		levels: btree.New(priceLevelsBTreeDegree),
 	}
-
 	return book
+}
+
+func (b *OrderBook) GetName() string {
+	return b.name
+}
+
+func (b *OrderBook) RemoveOrder(order *msg.Order) error {
+	return b.getSide(order.Side).RemoveOrder(order)
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
@@ -68,10 +77,10 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	// if persist add to tradebook to the right side
 	if (orderMessage.Type == msg.Order_GTC || orderMessage.Type == msg.Order_GTT) && orderMessage.Remaining > 0 {
 		b.getSide(orderMessage.Side).addOrder(orderMessage)
+
 		log.Println("After addOrder state:")
 		b.PrintState()
 	}
-
 
 	orderConfirmation := makeResponse(orderMessage, trades, impactedOrders)
 	return orderConfirmation, msg.OrderError_NONE
@@ -116,10 +125,6 @@ func printOrders() func(i btree.Item) bool {
 	}
 }
 
-func printSlice(s []Trade) {
-	fmt.Printf("len=%d cap=%d\n", len(s), cap(s))
-}
-
 func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
 	if orderSide == msg.Side_Buy {
 		return b.buy
@@ -136,33 +141,6 @@ func (b *OrderBook) getOppositeSide(orderSide msg.Side) *OrderBookSide {
 	}
 }
 
-func (b *OrderBook) GetName() string {
-	return b.name
-}
-
-func (b *OrderBook) GetMarketData() *msg.MarketData {
-	return &msg.MarketData{
-		BestBid:         b.buy.bestPrice(),
-		BestOffer:       b.sell.bestPrice(),
-		LastTradedPrice: b.lastTradedPrice,
-	}
-}
-
-func (b *OrderBook) GetMarketDepth() *msg.MarketDepth {
-	return &msg.MarketDepth{
-		BuyOrderCount:   b.buy.getOrderCount(),
-		SellOrderCount:  b.sell.getOrderCount(),
-		BuyOrderVolume:  b.buy.getTotalVolume(),
-		SellOrderVolume: b.sell.getTotalVolume(),
-		BuyPriceLevels:  uint64(b.buy.getNumberOfPriceLevels()),
-		SellPriceLevels: uint64(b.sell.getNumberOfPriceLevels()),
-	}
-}
-
-func (b *OrderBook) RemoveOrder(o *msg.Order) {
-	b.getSide(o.Side).RemoveOrder(o)
-}
-
 func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) *msg.OrderConfirmation {
 	tradeSet := make([]*msg.Trade, 0)
 	for _, t := range trades {
@@ -177,4 +155,12 @@ func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) 
 		PassiveOrdersAffected: passiveOrdersAffected,
 		Trades: tradeSet,
 	}
+}
+
+// Calculate the hash (ID) of the order details (as serialised by protobufs)
+func DigestOrderMessage(order *msg.Order) string {
+	bytes, _ := proto.Marshal(order)
+	hash := make([]byte, 64)
+	sha3.ShakeSum256(hash, bytes)
+	return fmt.Sprintf("%x", hash)
 }

@@ -58,6 +58,31 @@ func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
 	assert.Equal(t, msg.OrderError_NON_EMPTY_NEW_ORDER_ID, err)
 }
 
+func TestOrderBook_RemoveOrder(t *testing.T) {
+	book := NewBook("testOrderBook", DefaultConfig())
+
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Party:     "A",
+		Side:      msg.Side_Sell,
+		Price:     101,
+		Size:      100,
+		Remaining: 100,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+	}
+
+	book.AddOrder(newOrder)
+
+	log.Println("calling remove order")
+	err := book.RemoveOrder(newOrder)
+	if err != nil {
+		log.Println("sth bad happened")
+	}
+
+	book.PrintState()
+}
+
 func TestOrderBook_AddOrder(t *testing.T) {
 	book := NewBook("testOrderBook", DefaultConfig())
 
@@ -733,7 +758,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 			expectTrade(t, &s.expectedTrades[i], trade)
 		}
 
-		//
+		// orders affected should match expected values
 		for i, orderAffected := range confirmationMsg.PassiveOrdersAffected {
 			expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
 		}
