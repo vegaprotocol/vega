@@ -10,8 +10,8 @@ import (
 const priceLevelsBTreeDegree = 128
 
 type OrderBookSide struct {
-	side        msg.Side
-	levels      *btree.BTree
+	side   msg.Side
+	levels *btree.BTree
 }
 
 func (s *OrderBookSide) addOrder(o *msg.Order) {
@@ -19,7 +19,7 @@ func (s *OrderBookSide) addOrder(o *msg.Order) {
 	fetchedPriceLevel.addOrder(o)
 }
 
-func (s *OrderBookSide) RemoveOrder(o *msg.Order) error  {
+func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 	priceLevel := s.levels.Get(&PriceLevel{price: o.Price}).(*PriceLevel)
 	err := priceLevel.removeOrderFromPriceLevel(o)
 
@@ -62,7 +62,7 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]Trade, []msg.Order, uint64) {
 
 	if agg.Side == msg.Side_Sell {
 
-		min := &PriceLevel{price: agg.Price-1}
+		min := &PriceLevel{price: agg.Price - 1}
 		log.Printf("uncross initiated | DescendRange from 1000 to min=%d ", min.price)
 		log.Println()
 
@@ -71,12 +71,11 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]Trade, []msg.Order, uint64) {
 
 	if agg.Side == msg.Side_Buy {
 
-		max := &PriceLevel{price: agg.Price+1}
+		max := &PriceLevel{price: agg.Price + 1}
 		log.Printf("uncross initiated | AscendRange 0 to max=%d", max.price)
 		log.Println()
 		s.levels.AscendLessThan(max, uncrossPriceLevel(agg, &trades, &impactedOrders))
 	}
-
 
 	if len(trades) > 0 {
 		lastTradedPrice = trades[len(trades)-1].price

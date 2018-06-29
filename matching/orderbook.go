@@ -6,8 +6,8 @@ import (
 
 	"vega/proto"
 
-	"github.com/google/btree"
 	"github.com/golang/protobuf/proto"
+	"github.com/google/btree"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -145,9 +145,9 @@ func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) 
 		passiveOrdersAffected = append(passiveOrdersAffected, &impactedOrders[i])
 	}
 	return &msg.OrderConfirmation{
-		Order:  order,
+		Order: order,
 		PassiveOrdersAffected: passiveOrdersAffected,
-		Trades: tradeSet,
+		Trades:                tradeSet,
 	}
 }
 
