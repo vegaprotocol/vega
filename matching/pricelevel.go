@@ -1,7 +1,6 @@
 package matching
 
 import (
-	"log"
 	"math"
 
 	"vega/proto"
@@ -86,9 +85,9 @@ func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp uint64, trade *Tra
 }
 
 func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]msg.Order) bool {
-	log.Printf("                UNCOROSSING ATTEMPT at price = %d", l.price)
-	log.Println("-> aggressive order: ", agg)
-	log.Println()
+	//log.Printf("                UNCOROSSING ATTEMPT at price = %d", l.price)
+	//log.Println("-> aggressive order: ", agg)
+	//log.Println()
 
 	volumeToShare := agg.Remaining
 
@@ -100,7 +99,7 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 
 	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
 	for i := 0; i < len(l.orders); i++ {
-		log.Println("Passive order: ", l.orders[i])
+		//log.Println("Passive order: ", l.orders[i])
 
 		// See if we are at a new top timestamp
 		if currentTimestamp != l.orders[i].Timestamp {
@@ -147,8 +146,8 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 	// Clean passive orders with zero remaining
 	l.clearOrders(ordersScheduledForDeletion)
 
-	log.Println("                    UNCOROSSING FINISHED                   ")
-	log.Println()
+	//log.Println("                    UNCOROSSING FINISHED                   ")
+	//log.Println()
 	return agg.Remaining == 0
 }
 

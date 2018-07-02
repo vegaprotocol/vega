@@ -2,7 +2,7 @@ package matching
 
 import (
 	"fmt"
-	"log"
+	//"log"
 
 	"vega/proto"
 
@@ -46,7 +46,7 @@ func newTrade(agg, pass *msg.Order, size uint64) *Trade {
 	}
 	trade.id = trade.Digest()
 
-	log.Printf("Matched: %v\n", trade)
+	//log.Printf("Matched: %v\n", trade)
 	return trade
 }
 

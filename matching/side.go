@@ -1,7 +1,6 @@
 package matching
 
 import (
-	"log"
 	"vega/proto"
 
 	"github.com/google/btree"
@@ -32,12 +31,12 @@ func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
 	item := s.levels.Get(&PriceLevel{price: price})
 	if item == nil {
 		priceLevel := NewPriceLevel(price)
-		log.Printf("creating new price level price=%d", priceLevel.price)
+		//log.Printf("creating new price level price=%d", priceLevel.price)
 		s.levels.ReplaceOrInsert(priceLevel)
 		return priceLevel
 	}
 	priceLevel := item.(*PriceLevel)
-	log.Printf("fetched price level price=%d with %d orders", priceLevel.price, len(priceLevel.orders))
+	//log.Printf("fetched price level price=%d with %d orders", priceLevel.price, len(priceLevel.orders))
 	return priceLevel
 }
 
@@ -52,13 +51,13 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]Trade, []msg.Order, uint64) {
 
 	if agg.Side == msg.Side_Sell {
 		min := &PriceLevel{price: agg.Price - 1}
-		log.Printf("uncross initiated | DescendRange from 1000 to min=%d ", min.price)
+		//log.Printf("uncross initiated | DescendRange from 1000 to min=%d ", min.price)
 		s.levels.DescendGreaterThan(min, uncrossPriceLevel(agg, &trades, &impactedOrders))
 	}
 
 	if agg.Side == msg.Side_Buy {
 		max := &PriceLevel{price: agg.Price + 1}
-		log.Printf("uncross initiated | AscendRange 0 to max=%d", max.price)
+		//log.Printf("uncross initiated | AscendRange 0 to max=%d", max.price)
 		s.levels.AscendLessThan(max, uncrossPriceLevel(agg, &trades, &impactedOrders))
 	}
 

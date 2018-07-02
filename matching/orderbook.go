@@ -51,7 +51,7 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		b.latestTimestamp = order.Timestamp
 	}
 
-	b.PrintState("Entry state:")
+	//b.PrintState("Entry state:")
 
 	// uncross with opposite
 	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
@@ -61,14 +61,14 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// if state of the book changed show state
 	if len(trades) != 0 {
-		b.PrintState("After uncross state:")
+		//b.PrintState("After uncross state:")
 	}
 
 	// if order is persistent type add to order book to the correct side
 	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
 		b.getSide(order.Side).addOrder(order)
 
-		b.PrintState("After addOrder state:")
+		//b.PrintState("After addOrder state:")
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
