@@ -31,7 +31,7 @@ func BenchmarkMatching(
 	}
 
 	config := core.DefaultConfig()
-	config.Matching.Quiet = true
+	//config.Matching.Quiet = true
 
 	for k := 0; k < times; k++ {
 		vega := core.New(config)
@@ -78,11 +78,13 @@ func BenchmarkMatching(
 					periodTrades,
 					float64(periodTrades)/float64(reportInterval))
 				fmt.Printf(
-					"(n=%v/%v) %v %v\n",
+					"(n=%v/%v) \n",
+					//"(n=%v/%v) %v %v\n",
 					i,
 					numberOfOrders,
-					vega.GetMarketData(marketId),
-					vega.GetMarketDepth(marketId))
+					//vega.GetMarketData(marketId),
+					//vega.GetMarketDepth(marketId))
+					)
 				periodTrades = 0
 				periodElapsed = 0
 			}
@@ -97,10 +99,12 @@ func BenchmarkMatching(
 				totalTrades,
 				float64(totalTrades)/float64(reportInterval))
 			fmt.Printf(
-				"(n=%v) %v %v\n",
+				"(n=%v) \n",
+				//"(n=%v) %v %v\n",
 				numberOfOrders,
-				vega.GetMarketData(marketId),
-				vega.GetMarketDepth(marketId))
+				//vega.GetMarketData(marketId),
+				//vega.GetMarketDepth(marketId)
+				)
 		}
 	}
 
