@@ -45,6 +45,7 @@ func (s *OrderBookSide) removePriceLevel(price uint64) {
 }
 
 func (s *OrderBookSide) uncross(agg *msg.Order) ([]Trade, []msg.Order, uint64) {
+
 	trades := make([]Trade, 0)
 	impactedOrders := make([]msg.Order, 0)
 	var lastTradedPrice uint64

@@ -2,8 +2,6 @@ package matching
 
 import (
 	"fmt"
-	//"log"
-
 	"vega/proto"
 
 	"github.com/golang/protobuf/proto"

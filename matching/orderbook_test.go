@@ -10,87 +10,87 @@ import (
 )
 
 // test for order validation
-func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
-	book := NewBook("testOrderBook", DefaultConfig())
-	book.latestTimestamp = 10
-
-	invalidTimestampOrderMsg := &msg.Order{
-		Market:    "testOrderBook",
-		Party:     "A",
-		Side:      msg.Side_Sell,
-		Price:     100,
-		Size:      100,
-		Remaining: 100,
-		Type:      msg.Order_GTC,
-		Timestamp: 0,
-		Id:        "id-number-one",
-	}
-	_, err := book.AddOrder(invalidTimestampOrderMsg)
-	assert.Equal(t, msg.OrderError_ORDER_OUT_OF_SEQUENCE, err)
-
-	book.latestTimestamp = 0
-	invalidRemainginSizeOrderMsg := &msg.Order{
-		Market:    "testOrderBook",
-		Party:     "A",
-		Side:      msg.Side_Sell,
-		Price:     100,
-		Size:      100,
-		Remaining: 300,
-		Type:      msg.Order_GTC,
-		Timestamp: 0,
-		Id:        "id-number-one",
-	}
-	_, err = book.AddOrder(invalidRemainginSizeOrderMsg)
-	assert.Equal(t, msg.OrderError_INVALID_REMAINING_SIZE, err)
-
-	invalidIdOrderMsg := &msg.Order{
-		Market:    "testOrderBook",
-		Party:     "A",
-		Side:      msg.Side_Sell,
-		Price:     100,
-		Size:      100,
-		Remaining: 100,
-		Type:      msg.Order_GTC,
-		Timestamp: 0,
-		Id:        "foobar",
-	}
-	_, err = book.AddOrder(invalidIdOrderMsg)
-	assert.Equal(t, msg.OrderError_NON_EMPTY_NEW_ORDER_ID, err)
-}
-
-func TestOrderBook_RemoveOrder(t *testing.T) {
-	book := NewBook("testOrderBook", DefaultConfig())
-
-	newOrder := &msg.Order{
-		Market:    "testOrderBook",
-		Party:     "A",
-		Side:      msg.Side_Sell,
-		Price:     101,
-		Size:      100,
-		Remaining: 100,
-		Type:      msg.Order_GTC,
-		Timestamp: 0,
-	}
-
-	book.AddOrder(newOrder)
-
-	log.Println("calling remove order")
-	err := book.RemoveOrder(newOrder)
-	if err != nil {
-		log.Println("sth bad happened")
-	}
-
-	book.PrintState("after remove order")
-}
+//func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
+//	book := NewBook("testOrderBook", DefaultConfig())
+//	book.latestTimestamp = 10
+//
+//	invalidTimestampOrderMsg := &msg.Order{
+//		Market:    "testOrderBook",
+//		Party:     "A",
+//		Side:      msg.Side_Sell,
+//		Price:     100,
+//		Size:      100,
+//		Remaining: 100,
+//		Type:      msg.Order_GTC,
+//		Timestamp: 0,
+//		Id:        "id-number-one",
+//	}
+//	_, err := book.AddOrder(invalidTimestampOrderMsg)
+//	assert.Equal(t, msg.OrderError_ORDER_OUT_OF_SEQUENCE, err)
+//
+//	book.latestTimestamp = 0
+//	invalidRemainginSizeOrderMsg := &msg.Order{
+//		Market:    "testOrderBook",
+//		Party:     "A",
+//		Side:      msg.Side_Sell,
+//		Price:     100,
+//		Size:      100,
+//		Remaining: 300,
+//		Type:      msg.Order_GTC,
+//		Timestamp: 0,
+//		Id:        "id-number-one",
+//	}
+//	_, err = book.AddOrder(invalidRemainginSizeOrderMsg)
+//	assert.Equal(t, msg.OrderError_INVALID_REMAINING_SIZE, err)
+//
+//	invalidIdOrderMsg := &msg.Order{
+//		Market:    "testOrderBook",
+//		Party:     "A",
+//		Side:      msg.Side_Sell,
+//		Price:     100,
+//		Size:      100,
+//		Remaining: 100,
+//		Type:      msg.Order_GTC,
+//		Timestamp: 0,
+//		Id:        "foobar",
+//	}
+//	_, err = book.AddOrder(invalidIdOrderMsg)
+//	assert.Equal(t, msg.OrderError_NON_EMPTY_NEW_ORDER_ID, err)
+//}
+//
+//func TestOrderBook_RemoveOrder(t *testing.T) {
+//	book := NewBook("testOrderBook", DefaultConfig())
+//
+//	newOrder := &msg.Order{
+//		Market:    "testOrderBook",
+//		Party:     "A",
+//		Side:      msg.Side_Sell,
+//		Price:     101,
+//		Size:      100,
+//		Remaining: 100,
+//		Type:      msg.Order_GTC,
+//		Timestamp: 0,
+//	}
+//
+//	book.AddOrder(newOrder)
+//
+//	log.Println("calling remove order")
+//	err := book.RemoveOrder(newOrder)
+//	if err != nil {
+//		log.Println("sth bad happened")
+//	}
+//
+//	book.PrintState("after remove order")
+//}
 
 func TestOrderBook_AddOrder(t *testing.T) {
 	book := NewBook("testOrderBook", DefaultConfig())
 
 	const numberOfTimestamps = 3
-	m := make(map[int64][]msg.Order, numberOfTimestamps)
+	m := make(map[int64][]*msg.Order, numberOfTimestamps)
 
 	// sell and buy side orders at timestamp 0
-	m[0] = []msg.Order{
+	m[0] = []*msg.Order{
 		// Side Sell
 		{
 			Market:    "testOrderBook",
@@ -166,7 +166,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 	}
 
 	// sell and buy orders at timestamp 1
-	m[1] = []msg.Order{
+	m[1] = []*msg.Order{
 		// Side Sell
 		{
 			Market:    "testOrderBook",
@@ -192,7 +192,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 	}
 
 	// sell and buy orders at timestamp 2
-	m[2] = []msg.Order{
+	m[2] = []*msg.Order{
 		// Side Sell
 		{
 			Market:    "testOrderBook",
@@ -219,9 +219,9 @@ func TestOrderBook_AddOrder(t *testing.T) {
 
 	timestamps := []int64{0, 1, 2}
 	for _, timestamp := range timestamps {
-		for _, order := range m[timestamp] {
-			log.Println("tests calling book.AddOrder: ", order)
-			confirmationMsg, err := book.AddOrder(&order)
+		for index, _ := range m[timestamp] {
+			log.Println("tests calling book.AddOrder: ", m[timestamp][index])
+			confirmationMsg, err := book.AddOrder(m[timestamp][index])
 			// this should not return any errors
 			assert.Equal(t, msg.OrderError_NONE, err)
 			// this should not generate any trades
@@ -231,7 +231,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 
 	// launch aggressiveOrder orders from both sides to fully clear the order book
 	type aggressiveOrderScenario struct {
-		aggressiveOrder               msg.Order
+		aggressiveOrder               *msg.Order
 		expectedPassiveOrdersAffected []msg.Order
 		expectedTrades                []msg.Trade
 	}
@@ -239,7 +239,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 	scenario := []aggressiveOrderScenario{
 		{
 			// same price level, remaining on the passive
-			aggressiveOrder: msg.Order{
+			aggressiveOrder: &msg.Order{
 				Market:    "testOrderBook",
 				Party:     "X",
 				Side:      msg.Side_Buy,
@@ -292,7 +292,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 		{
 			// lower price is available on the passive side, 2 orders removed, 1 passive remaining
-			aggressiveOrder: msg.Order{
+			aggressiveOrder: &msg.Order{
 				Market:    "testOrderBook",
 				Party:     "Y",
 				Side:      msg.Side_Buy,
@@ -363,7 +363,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 		{
 			// lower price is available on the passive side, 1 order removed, 1 passive remaining
-			aggressiveOrder: msg.Order{
+			aggressiveOrder: &msg.Order{
 				Market:    "testOrderBook",
 				Party:     "Z",
 				Side:      msg.Side_Buy,
@@ -417,7 +417,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		{
 			// price level jump, lower price is available on the passive side but its entirely consumed,
 			// 1 order removed, 1 passive remaining at higher price level
-			aggressiveOrder: msg.Order{
+			aggressiveOrder: &msg.Order{
 				Market:    "testOrderBook",
 				Party:     "X",
 				Side:      msg.Side_Buy,
@@ -470,7 +470,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 		{
 			// Sell is agressive, aggressive at lower price than on the book, pro rata at 99, aggressive is removed
-			aggressiveOrder: msg.Order{
+			aggressiveOrder: &msg.Order{
 				Market:    "testOrderBook",
 				Party:     "Y",
 				Side:      msg.Side_Sell,
@@ -523,7 +523,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 		{
 			// Sell is agressive, aggressive at exact price, all orders at this price level should be hitted plus order should remain on the sell side of the book at 99 level
-			aggressiveOrder: msg.Order{
+			aggressiveOrder: &msg.Order{
 				Market:    "testOrderBook",
 				Party:     "Z",
 				Side:      msg.Side_Sell,
@@ -611,7 +611,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 			},
 		},
 		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
-			aggressiveOrder: msg.Order{
+			aggressiveOrder: &msg.Order{
 				Market:    "testOrderBook",
 				Party:     "XX",
 				Side:      msg.Side_Buy,
@@ -663,7 +663,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 			},
 		},
 		{ // aggressive nonpersistent buy order, hits one price levels and is not added to order book
-			aggressiveOrder: msg.Order{
+			aggressiveOrder: &msg.Order{
 				Market:    "testOrderBook",
 				Party:     "YY",
 				Side:      msg.Side_Buy,
@@ -697,7 +697,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 			},
 		},
 		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
-			aggressiveOrder: msg.Order{
+			aggressiveOrder: &msg.Order{
 				Market:    "testOrderBook",
 				Party:     "ZZ",
 				Side:      msg.Side_Sell,
@@ -742,7 +742,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		log.Println("expectedTrades: ", s.expectedTrades)
 		log.Println()
 
-		confirmationMsg, err := book.AddOrder(&s.aggressiveOrder)
+		confirmationMsg, err := book.AddOrder(s.aggressiveOrder)
 		//this should not return any errors
 		assert.Equal(t, msg.OrderError_NONE, err)
 		//this should not generate any trades
@@ -763,6 +763,8 @@ func TestOrderBook_AddOrder(t *testing.T) {
 			expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
 		}
 	}
+
+	book.Stop()
 }
 
 func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {

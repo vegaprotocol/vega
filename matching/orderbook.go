@@ -3,6 +3,7 @@ package matching
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"vega/proto"
 
@@ -18,6 +19,10 @@ type OrderBook struct {
 	lastTradedPrice uint64
 	config          Config
 	latestTimestamp uint64
+
+	ReqNumber int64
+	mutex     sync.Mutex
+	quit chan bool
 }
 
 // Create an order book with a given name
@@ -25,6 +30,7 @@ func NewBook(name string, config Config) *OrderBook {
 	book := &OrderBook{
 		name:   name,
 		config: config,
+		quit: make(chan bool),
 	}
 
 	book.buy = &OrderBookSide{
@@ -36,7 +42,13 @@ func NewBook(name string, config Config) *OrderBook {
 		side:   msg.Side_Sell,
 		levels: btree.New(priceLevelsBTreeDegree),
 	}
+
+	go book.scheduleCleanup()
 	return book
+}
+
+func (b *OrderBook) Stop() {
+	b.quit <- true
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
@@ -44,6 +56,9 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	if err := b.validateOrder(order); err != msg.OrderError_NONE {
 		return nil, err
 	}
+
+	b.mutex.Lock()
+	b.ReqNumber++
 
 	order.Id = calculateHash(order)[:10]
 
@@ -72,11 +87,16 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
+	b.mutex.Unlock()
 	return orderConfirmation, msg.OrderError_NONE
 }
 
 func (b *OrderBook) RemoveOrder(order *msg.Order) error {
-	return b.getSide(order.Side).RemoveOrder(order)
+	b.mutex.Lock()
+	b.ReqNumber++
+	err := b.getSide(order.Side).RemoveOrder(order)
+	b.mutex.Unlock()
+	return err
 }
 
 func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
@@ -120,6 +140,33 @@ func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) 
 	}
 }
 
+func (b *OrderBook) scheduleCleanup() {
+	var operatingAt int64
+	for {
+		select {
+		case <-b.quit:
+			return
+		default:
+			if b.ReqNumber != 0 && operatingAt != b.ReqNumber && b.ReqNumber%1000 == 0 {
+				b.mutex.Lock()
+				b.buy.levels.Descend(collectGarbage())
+				b.sell.levels.Descend(collectGarbage())
+				//log.Println("FINISHED")
+				operatingAt = b.ReqNumber
+				b.mutex.Unlock()
+			}
+		}
+	}
+}
+
+func collectGarbage() func(i btree.Item) bool {
+	return func(i btree.Item) bool {
+		priceLevel := i.(*PriceLevel)
+		priceLevel.collectGarbage()
+		return true
+	}
+}
+
 func (b *OrderBook) PrintState(msg string) {
 	log.Println()
 	log.Println(msg)
@@ -136,21 +183,20 @@ func (b *OrderBook) PrintState(msg string) {
 func printOrders() func(i btree.Item) bool {
 	return func(i btree.Item) bool {
 		priceLevel := i.(*PriceLevel)
-		const lineLength = 64
 		if len(priceLevel.orders) > 0 {
 
 			log.Printf("priceLevel: %d", priceLevel.price)
 
 			for _, o := range priceLevel.orders {
 				var side string
-				if o.Side == msg.Side_Buy {
+				if o.order.Side == msg.Side_Buy {
 					side = "BUY"
 				} else {
 					side = "SELL"
 				}
 
 				line := fmt.Sprintf("      %s %s @%d size=%d R=%d Type=%d T=%d %s",
-					o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id)
+					o.order.Party, side, o.order.Price, o.order.Size, o.order.Remaining, o.order.Type, o.order.Timestamp, o.order.Id)
 
 				log.Println(line)
 			}

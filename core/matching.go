@@ -14,7 +14,8 @@ type MatchingEngine interface {
 
 func (v Vega) CreateMarket(id string) {
 	if _, exists := v.markets[id]; !exists {
-		v.markets[id] = matching.NewBook(id, v.config.Matching)
+		book := matching.NewBook(id, v.config.Matching)
+		v.markets[id] = book
 	}
 }
 
