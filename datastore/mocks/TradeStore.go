@@ -46,13 +46,13 @@ func (_m *TradeStore) Get(market string, id string) (*datastore.Trade, error) {
 	return r0, r1
 }
 
-// GetAll provides a mock function with given fields: market, limit
-func (_m *TradeStore) GetAll(market string, limit datastore.Limit) ([]*datastore.Trade, error) {
-	ret := _m.Called(market, limit)
+// GetAll provides a mock function with given fields: market, params
+func (_m *TradeStore) GetAll(market string, params datastore.GetParams) ([]*datastore.Trade, error) {
+	ret := _m.Called(market, params)
 
 	var r0 []*datastore.Trade
-	if rf, ok := ret.Get(0).(func(string, datastore.Limit) []*datastore.Trade); ok {
-		r0 = rf(market, limit)
+	if rf, ok := ret.Get(0).(func(string, datastore.GetParams) []*datastore.Trade); ok {
+		r0 = rf(market, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*datastore.Trade)
@@ -60,8 +60,8 @@ func (_m *TradeStore) GetAll(market string, limit datastore.Limit) ([]*datastore
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, datastore.Limit) error); ok {
-		r1 = rf(market, limit)
+	if rf, ok := ret.Get(1).(func(string, datastore.GetParams) error); ok {
+		r1 = rf(market, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -69,13 +69,13 @@ func (_m *TradeStore) GetAll(market string, limit datastore.Limit) ([]*datastore
 	return r0, r1
 }
 
-// GetByOrderId provides a mock function with given fields: market, orderId, limit
-func (_m *TradeStore) GetByOrderId(market string, orderId string, limit datastore.Limit) ([]*datastore.Trade, error) {
-	ret := _m.Called(market, orderId, limit)
+// GetByOrderId provides a mock function with given fields: market, orderId, params
+func (_m *TradeStore) GetByOrderId(market string, orderId string, params datastore.GetParams) ([]*datastore.Trade, error) {
+	ret := _m.Called(market, orderId, params)
 
 	var r0 []*datastore.Trade
-	if rf, ok := ret.Get(0).(func(string, string, datastore.Limit) []*datastore.Trade); ok {
-		r0 = rf(market, orderId, limit)
+	if rf, ok := ret.Get(0).(func(string, string, datastore.GetParams) []*datastore.Trade); ok {
+		r0 = rf(market, orderId, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*datastore.Trade)
@@ -83,8 +83,8 @@ func (_m *TradeStore) GetByOrderId(market string, orderId string, limit datastor
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string, datastore.Limit) error); ok {
-		r1 = rf(market, orderId, limit)
+	if rf, ok := ret.Get(1).(func(string, string, datastore.GetParams) error); ok {
+		r1 = rf(market, orderId, params)
 	} else {
 		r1 = ret.Error(1)
 	}

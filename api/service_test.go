@@ -1,11 +1,12 @@
-package trades
+package api
 
 import (
-	"context"
 	"testing"
+	"context"
+
 	"vega/datastore"
-	"vega/datastore/mocks"
 	"vega/proto"
+	"vega/datastore/mocks"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +23,7 @@ func TestGetTradesOnAllMarkets(t *testing.T) {
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("GetAll", market, datastore.NewLimitMax()).Return([]*datastore.Trade{
+	tradeStore.On("GetAll", market, datastore.GetParams{Limit: 12345}).Return([]*datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}},
@@ -44,7 +45,7 @@ func TestGetTradesForOrderOnMarket(t *testing.T) {
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("GetByOrderId", market, orderId, datastore.NewLimitMax()).Return([]*datastore.Trade{
+	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: 12345}).Return([]*datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}, OrderId: orderId},
@@ -60,3 +61,4 @@ func TestGetTradesForOrderOnMarket(t *testing.T) {
 	assert.Equal(t, 6, len(tradeSet))
 	tradeStore.AssertExpectations(t)
 }
+

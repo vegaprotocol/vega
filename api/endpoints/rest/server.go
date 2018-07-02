@@ -3,16 +3,15 @@ package rest
 import (
 	"fmt"
 	"net/http"
-	"vega/api/trading/orders"
-	"vega/api/trading/trades"
+	"vega/api"
 )
 
 type restServer struct{
-	orderService orders.OrderService
-	tradeService trades.TradeService
+	orderService api.OrderService
+	tradeService api.TradeService
 }
 
-func NewRestServer(orderService orders.OrderService, tradeService trades.TradeService) *restServer {
+func NewRestServer(orderService api.OrderService, tradeService api.TradeService) *restServer {
 	return &restServer{
 		orderService: orderService,
 		tradeService: tradeService,

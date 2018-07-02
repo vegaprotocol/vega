@@ -7,11 +7,11 @@ import (
 
 type TradeStore interface {
 	// Get retrieves a trades for a given market.
-	GetAll(market string, limit Limit) ([]*Trade, error)
+	GetAll(market string, params GetParams) ([]*Trade, error)
 	// Get retrieves a trade for a given id.
 	Get(market string, id string) (*Trade, error)
 	// GetByOrderId retrieves all trades for a given order id.
-	GetByOrderId(market string, orderId string, limit Limit) ([]*Trade, error)
+	GetByOrderId(market string, orderId string, params GetParams) ([]*Trade, error)
 	// Post creates a new trade in the store.
 	Post(r *Trade) error
 	// Put updates an existing trade in the store
@@ -22,11 +22,11 @@ type TradeStore interface {
 
 type OrderStore interface {
 	// All retrieves all orders for a given market.
-	GetAll(market string, limit Limit) ([]*Order, error)
+	GetAll(market string, params GetParams) ([]*Order, error)
 	// Get retrieves an order for a given market and id.
 	Get(market string, id string) (*Order, error)
 	// GetByParty retrieves all orders for a given party name.
-	//GetByParty(party string) ([]*Order, error)
+	//GetByParty(party string, params GetParams) ([]*Order, error)
 	// Post creates a new order in the store.
 	Post(r *Order) error
 	// Put updates an existing order in the store.

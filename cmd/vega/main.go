@@ -5,12 +5,11 @@ import (
 	"flag"
 	"vega/api/endpoints/rest"
 	"vega/api/endpoints/sse"
-	"vega/api/trading/orders"
-	"vega/api/trading/trades"
 	"vega/blockchain"
 	"vega/core"
 	"vega/datastore"
 	"vega/proto"
+	"vega/api"
 )
 
 const sseChannelSize = 2 << 16
@@ -31,8 +30,8 @@ func main() {
 	storage.Init([]string{marketName}, storeOrderChan, storeTradeChan)
 
 	// Initialise concrete consumer services
-	orderService := orders.NewOrderService()
-	tradeService := trades.NewTradeService()
+	orderService := api.NewOrderService()
+	tradeService := api.NewTradeService()
 	orderService.Init(storage.OrderStore())
 	tradeService.Init(storage.TradeStore())
 	// REST server

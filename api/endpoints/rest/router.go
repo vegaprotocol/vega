@@ -2,12 +2,11 @@ package rest
 
 import (
 	"github.com/gin-gonic/gin"
-	"vega/api/trading/orders"
 	"github.com/satori/go.uuid"
-	"vega/api/trading/trades"
+	"vega/api"
 )
 
-func NewRouter(orderService orders.OrderService, tradeService trades.TradeService) *gin.Engine  {
+func NewRouter(orderService api.OrderService, tradeService api.TradeService) *gin.Engine  {
 	
 	// Set up HTTP request handlers
 	httpHandlers := Handlers{

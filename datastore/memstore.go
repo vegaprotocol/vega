@@ -69,16 +69,15 @@ func (ms *MemStore) marketExists(market string) bool {
 	return false
 }
 
-func (t *memOrderStore) GetAll(market string, limit Limit) ([]*Order, error) {
+func (t *memOrderStore) GetAll(market string, params GetParams) ([]*Order, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
-
 	pos := uint64(0)
 	orders := make([]*Order, 0)
 	for _, value := range t.store.markets[market].orders {
 		orders = append(orders, value.order)
-		if pos == limit.Max {
+		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
 		pos++
@@ -140,7 +139,7 @@ func (t *memOrderStore) Delete(or *Order) error {
 	return nil
 }
 
-func (t *memTradeStore) GetAll(market string, limit Limit) ([]*Trade, error) {
+func (t *memTradeStore) GetAll(market string, params GetParams) ([]*Trade, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
@@ -148,7 +147,7 @@ func (t *memTradeStore) GetAll(market string, limit Limit) ([]*Trade, error) {
 	trades := make([]*Trade, 0)
 	for _, value := range t.store.markets[market].trades {
 		trades = append(trades, value.trade)
-		if pos == limit.Max {
+		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
 		pos++
@@ -165,7 +164,7 @@ func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
 }
 
 // GetByOrderId retrieves all trades for a given order id.
-func (t *memTradeStore) GetByOrderId(market string, orderId string, limit Limit) ([]*Trade, error) {
+func (t *memTradeStore) GetByOrderId(market string, orderId string, params GetParams) ([]*Trade, error) {
 
 	order := t.store.markets[market].orders[orderId]
 	if order == nil {
@@ -175,7 +174,7 @@ func (t *memTradeStore) GetByOrderId(market string, orderId string, limit Limit)
 		trades := make([]*Trade, 0)
 		for _, v := range order.trades {
 			trades = append(trades, v.trade)
-			if pos == limit.Max {
+			if params.Limit > 0 && pos == params.Limit {
 				break
 			}
 			pos++

@@ -210,7 +210,7 @@ func TestMemOrderStore_PostAndFindByOrderId(t *testing.T) {
 	err = newTradeStore.Post(trade2)
 	assert.Nil(t, err)
 
-	trades, err := newTradeStore.GetByOrderId(testMarket, order.Id, NewLimitMax())
+	trades, err := newTradeStore.GetByOrderId(testMarket, order.Id, GetParams{Limit: 12345} )
 	assert.Nil(t, err)
 
 	assert.Equal(t, 2, len(trades))
@@ -251,8 +251,8 @@ func TestMemOrderStore_GetAllOrdersForMarket(t *testing.T) {
 	err = newOrderStore.Post(order3)
 	assert.Nil(t, err)
 
-	limit := NewLimitMax()
-	orders, err := newOrderStore.GetAll(testMarket, limit)
+	params := GetParams{Limit: 12345}
+	orders, err := newOrderStore.GetAll(testMarket, params)
 	assert.Equal(t, 2, len(orders))
-	orders, err = newOrderStore.GetAll(otherMarket, limit)
+	orders, err = newOrderStore.GetAll(otherMarket, params)
 }

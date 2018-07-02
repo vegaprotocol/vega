@@ -5,12 +5,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-	"vega/api/trading/orders/mocks"
-	"vega/api/trading/orders/models"
-
+	"vega/api/mocks"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"vega/proto"
+	"errors"
 )
 
 func TestHandlers_Index(t *testing.T) {
@@ -28,31 +27,35 @@ func TestHandlers_CreateOrderWithModelWhenValidReturnsSuccess(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
-	orderService := &mocks.MockOrderService{
-		ResultSuccess: true,
-		ResultError:   nil,
-	}
+
+	order := buildNewOrder()
+	orderService := &mocks.OrderService{}
+	orderService.On("CreateOrder", context, order).Return(
+		true, nil,
+	).Once()
+
 	handlers := Handlers{
 		OrderService: orderService,
 	}
 
-	var o models.Order
-	o = buildNewOrder()
-	handlers.CreateOrderWithModel(context, o)
+	handlers.CreateOrderWithModel(context, order)
 
 	assert.Equal(t, w.Code, http.StatusOK)
 	assert.Equal(t, "{\"result\":\"success\"}", w.Body.String())
+	orderService.AssertExpectations(t)
 }
 
 func TestHandlers_CreateOrderWithModelWhenErrorReturnsFailure(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
-	orderService := &mocks.MockOrderService{
-		ResultSuccess: false,
-		ResultError:   errors.New("An expected error"),
-	}
+
 	order := buildNewOrder()
+	orderService := &mocks.OrderService{}
+	orderService.On("CreateOrder", context, order).Return(
+		false, errors.New("An expected error"),
+	).Once()
+
 	handlers := Handlers{
 		OrderService: orderService,
 	}
@@ -61,6 +64,7 @@ func TestHandlers_CreateOrderWithModelWhenErrorReturnsFailure(t *testing.T) {
 
 	assert.Equal(t, w.Code, http.StatusInternalServerError)
 	assert.Equal(t, "{\"error\":\"An expected error\",\"result\":\"failure\"}", w.Body.String())
+	orderService.AssertExpectations(t)
 }
 
 func TestHandlers_GetOrdersReturnsSuccessWithModels(t *testing.T) {
@@ -68,13 +72,17 @@ func TestHandlers_GetOrdersReturnsSuccessWithModels(t *testing.T) {
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
 	context.Request = &http.Request{Method: "GET", URL: &url.URL{Path: "/orders?market=test"}}
-	orderService := &mocks.MockOrderService{
-		ResultSuccess: true,
-		ResultOrders: []models.Order{
-			{ID: "1"},
-			{ID: "2"},
-		},
-	}
+
+	market := "BTC/DEC18"
+	limit := uint64(18446744073709551615)
+	orderService := &mocks.OrderService{}
+	orderService.On("GetOrders", context, market, limit).Return(
+		[]msg.Order{
+			{Id: "1"},
+			{Id: "2"},
+		}, nil,
+	).Once()
+
 	handlers := Handlers{
 		OrderService: orderService,
 	}
@@ -82,7 +90,8 @@ func TestHandlers_GetOrdersReturnsSuccessWithModels(t *testing.T) {
 	handlers.GetOrders(context)
 
 	assert.Equal(t, w.Code, http.StatusOK)
-	assert.Equal(t, "{\"orders\":[{\"id\":\"1\",\"market\":\"\",\"party\":\"\",\"side\":0,\"price\":0,\"size\":0,\"remaining\":0,\"timestamp\":0,\"type\":0},{\"id\":\"2\",\"market\":\"\",\"party\":\"\",\"side\":0,\"price\":0,\"size\":0,\"remaining\":0,\"timestamp\":0,\"type\":0}],\"result\":\"success\"}", w.Body.String())
+	assert.Equal(t, "{\"orders\":[{\"id\":\"1\"},{\"id\":\"2\"}],\"result\":\"success\"}", w.Body.String())
+	orderService.AssertExpectations(t)
 }
 
 func TestHandlers_GetOrdersReturnsFailureWhenError(t *testing.T) {
@@ -90,11 +99,15 @@ func TestHandlers_GetOrdersReturnsFailureWhenError(t *testing.T) {
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
 	context.Request = &http.Request{Method: "GET", URL: &url.URL{Path: "/orders?market=test"}}
-	orderService := &mocks.MockOrderService{
-		ResultSuccess: false,
-		ResultError:   errors.New("An expected error"),
-		ResultOrders:  []models.Order{},
-	}
+
+	market := "BTC/DEC18"
+	limit := uint64(18446744073709551615)
+
+	orderService := &mocks.OrderService{}
+	orderService.On("GetOrders", context, market, limit).Return(
+		[]msg.Order{}, errors.New("An expected error"),
+	).Once()
+
 	handlers := Handlers{
 		OrderService: orderService,
 	}
@@ -103,49 +116,71 @@ func TestHandlers_GetOrdersReturnsFailureWhenError(t *testing.T) {
 
 	assert.Equal(t, w.Code, http.StatusInternalServerError)
 	assert.Equal(t, "{\"error\":\"An expected error\",\"result\":\"failure\"}", w.Body.String())
+	orderService.AssertExpectations(t)
 }
 
 func TestHandlers_GetOrdersWithParamsReturnsSuccessWithModels(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
-	orderService := &mocks.MockOrderService{
-		ResultSuccess: true,
-		ResultOrders: []models.Order{
-			{ID: "1"},
-			{ID: "2"},
-		},
-	}
+
+	market := "BTC/TEST"
+	limit := uint64(18446744073709551615)
+
+	orderService := &mocks.OrderService{}
+	orderService.On("GetOrders", context, market, limit).Return(
+		[]msg.Order{
+			{Id: "1"},
+			{Id: "2"},
+		}, nil,
+	).Once()
+
 	handlers := Handlers{
 		OrderService: orderService,
 	}
 
-	handlers.GetOrdersWithParams(context, "BTC/TEST", 12345)
+	handlers.GetOrdersWithParams(context, market, limit)
 
 	assert.Equal(t, w.Code, http.StatusOK)
-	assert.Equal(t, "{\"orders\":[{\"id\":\"1\",\"market\":\"\",\"party\":\"\",\"side\":0,\"price\":0,\"size\":0,\"remaining\":0,\"timestamp\":0,\"type\":0},{\"id\":\"2\",\"market\":\"\",\"party\":\"\",\"side\":0,\"price\":0,\"size\":0,\"remaining\":0,\"timestamp\":0,\"type\":0}],\"result\":\"success\"}", w.Body.String())
+	assert.Equal(t, "{\"orders\":[{\"id\":\"1\"},{\"id\":\"2\"}],\"result\":\"success\"}", w.Body.String())
+	orderService.AssertExpectations(t)
 }
 
 func TestHandlers_GetOrdersWithParamsReturnsFailureWhenError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
-	orderService := &mocks.MockOrderService{
-		ResultSuccess: false,
-		ResultError:   errors.New("An expected error"),
-		ResultOrders:  []models.Order{},
-	}
+
+	market := "BTC/TEST"
+	limit := uint64(18446744073709551615)
+
+	orderService := &mocks.OrderService{}
+	orderService.On("GetOrders", context, market, limit).Return(
+		nil, errors.New("An expected error"),
+	).Once()
+
 	handlers := Handlers{
 		OrderService: orderService,
 	}
 
-	handlers.GetOrdersWithParams(context, "BTC/TEST", 12345)
+	handlers.GetOrdersWithParams(context, market, limit)
 
 	assert.Equal(t, w.Code, http.StatusInternalServerError)
 	assert.Equal(t, "{\"error\":\"An expected error\",\"result\":\"failure\"}", w.Body.String())
+	orderService.AssertExpectations(t)
 }
 
 // Helpers
-func buildNewOrder() models.Order {
-	return models.NewOrder("0f2fa7d374415c11054fe7d8dcf04412", "market", "party", 0, 1, 1, 1, 1234567890, 1)
+func buildNewOrder() msg.Order {
+	return msg.Order{
+		Id:        "0f2fa7d374415c11054fe7d8dcf04412",
+		Market:    "market",
+		Party:     "party",
+		Side:      0,
+		Price:     1,
+		Size:      1,
+		Remaining: 1,
+		Timestamp: 1234567890,
+		Type: 1,
+	}
 }

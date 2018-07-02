@@ -46,13 +46,13 @@ func (_m *OrderStore) Get(market string, id string) (*datastore.Order, error) {
 	return r0, r1
 }
 
-// GetAll provides a mock function with given fields: market, limit
-func (_m *OrderStore) GetAll(market string, limit datastore.Limit) ([]*datastore.Order, error) {
-	ret := _m.Called(market, limit)
+// GetAll provides a mock function with given fields: market, params
+func (_m *OrderStore) GetAll(market string, params datastore.GetParams) ([]*datastore.Order, error) {
+	ret := _m.Called(market, params)
 
 	var r0 []*datastore.Order
-	if rf, ok := ret.Get(0).(func(string, datastore.Limit) []*datastore.Order); ok {
-		r0 = rf(market, limit)
+	if rf, ok := ret.Get(0).(func(string, datastore.GetParams) []*datastore.Order); ok {
+		r0 = rf(market, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*datastore.Order)
@@ -60,8 +60,8 @@ func (_m *OrderStore) GetAll(market string, limit datastore.Limit) ([]*datastore
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, datastore.Limit) error); ok {
-		r1 = rf(market, limit)
+	if rf, ok := ret.Get(1).(func(string, datastore.GetParams) error); ok {
+		r1 = rf(market, params)
 	} else {
 		r1 = ret.Error(1)
 	}

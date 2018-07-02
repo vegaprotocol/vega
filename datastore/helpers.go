@@ -9,7 +9,7 @@ type NotFoundError struct {
 
 func (n *NotFoundError) isNotFound() {}
 
-// NotFound indicates if the error is that the ID could
+// NotFound indicates if the error is that the record could
 // not be found.
 func NotFound(e error) bool {
 	if _, ok := e.(NotFoundError); ok {
@@ -18,14 +18,10 @@ func NotFound(e error) bool {
 	return false
 }
 
-type Limit struct {
-	Max uint64
+type GetParams struct {
+	Limit uint64
 }
 
-func NewLimitValue(limit uint64) Limit {
-	return Limit{Max: limit}
-}
-
-func NewLimitMax() Limit {
-	return Limit{Max: uint64(9223372036854775807)}
-}
+//func (p *GetParams) DefaultLimit() uint64 {
+//	return 18446744073709551615
+//}

@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/gin-gonic/gin"
-	orderMocks "vega/api/trading/orders/mocks"
-	tradeMocks "vega/api/trading/trades/mocks"
+	"vega/api/mocks"
 )
 
 func TestNewRouter_ExistsAndServesHttp(t *testing.T) {
@@ -33,8 +32,8 @@ func TestRequestIdMiddleware(t *testing.T) {
 // Helpers
 func buildRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
-	orderService := &orderMocks.MockOrderService{}
-	tradeService := &tradeMocks.TradeService{}
+	orderService := &mocks.OrderService{}
+	tradeService := &mocks.TradeService{}
 	router := NewRouter(orderService, tradeService)
 	return router
 }

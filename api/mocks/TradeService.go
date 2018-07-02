@@ -34,13 +34,13 @@ func (_m *TradeService) GetTrades(ctx context.Context, market string, limit uint
 	return r0, r1
 }
 
-// GetTradesForOrder provides a mock function with given fields: ctx, market, orderID, limit
-func (_m *TradeService) GetTradesForOrder(ctx context.Context, market string, orderID string, limit uint64) ([]msg.Trade, error) {
-	ret := _m.Called(ctx, market, orderID, limit)
+// GetTradesForOrder provides a mock function with given fields: ctx, market, orderId, limit
+func (_m *TradeService) GetTradesForOrder(ctx context.Context, market string, orderId string, limit uint64) ([]msg.Trade, error) {
+	ret := _m.Called(ctx, market, orderId, limit)
 
 	var r0 []msg.Trade
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint64) []msg.Trade); ok {
-		r0 = rf(ctx, market, orderID, limit)
+		r0 = rf(ctx, market, orderId, limit)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]msg.Trade)
@@ -49,7 +49,7 @@ func (_m *TradeService) GetTradesForOrder(ctx context.Context, market string, or
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, uint64) error); ok {
-		r1 = rf(ctx, market, orderID, limit)
+		r1 = rf(ctx, market, orderId, limit)
 	} else {
 		r1 = ret.Error(1)
 	}

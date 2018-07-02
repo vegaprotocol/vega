@@ -2,11 +2,10 @@ package rest
 
 import (
 	"net/http"
-	"vega/api/trading/orders"
-	"vega/api/trading/orders/models"
-	"vega/api/trading/trades"
-
 	"github.com/gin-gonic/gin"
+	"vega/api"
+	"vega/proto"
+	"strconv"
 )
 
 const ResponseKeyResult = "result"
@@ -18,11 +17,11 @@ const ResponseResultFailure = "failure"
 const ResponseResultFailureValidation = "invalid"
 
 const DefaultMarket = "BTC/DEC18"
-const LimitMax = uint64(9223372036854775807)
+const LimitMax = uint64(18446744073709551615)
 
 type Handlers struct {
-	OrderService orders.OrderService
-	TradeService trades.TradeService
+	OrderService api.OrderService
+	TradeService api.TradeService
 }
 
 func (handlers *Handlers) Index(c *gin.Context) {
@@ -30,7 +29,7 @@ func (handlers *Handlers) Index(c *gin.Context) {
 }
 
 func (handlers *Handlers) CreateOrder(ctx *gin.Context) {
-	var o models.Order
+	var o msg.Order
 
 	if err := bind(ctx, &o); err == nil {
 		handlers.CreateOrderWithModel(ctx, o)
@@ -39,7 +38,7 @@ func (handlers *Handlers) CreateOrder(ctx *gin.Context) {
 	}
 }
 
-func (handlers *Handlers) CreateOrderWithModel(ctx *gin.Context, o models.Order) {
+func (handlers *Handlers) CreateOrderWithModel(ctx *gin.Context, o msg.Order) {
 	success, err := handlers.OrderService.CreateOrder(ctx, o)
 	if success {
 		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess})
@@ -50,8 +49,8 @@ func (handlers *Handlers) CreateOrderWithModel(ctx *gin.Context, o models.Order)
 
 func (handlers *Handlers) GetOrders(ctx *gin.Context) {
 	market := ctx.DefaultQuery("market", DefaultMarket)
-	//limit := ctx.DefaultQuery("limit", LimitMax)
-	handlers.GetOrdersWithParams(ctx, market, LimitMax)
+	limit := ctx.DefaultQuery("limit", "")
+	handlers.GetOrdersWithParams(ctx, market,  handlers.stringToUint64(limit, LimitMax))
 }
 
 func (handlers *Handlers) GetOrdersWithParams(ctx *gin.Context, market string, limit uint64) {
@@ -65,8 +64,8 @@ func (handlers *Handlers) GetOrdersWithParams(ctx *gin.Context, market string, l
 
 func (handlers *Handlers) GetTrades(ctx *gin.Context) {
 	market := ctx.DefaultQuery("market", DefaultMarket)
-	//limit := ctx.DefaultQuery("limit", LimitMax)
-	handlers.GetTradesWithParams(ctx, market, LimitMax)
+	limit := ctx.DefaultQuery("limit", "")
+	handlers.GetTradesWithParams(ctx, market, handlers.stringToUint64(limit, LimitMax))
 }
 
 func (handlers *Handlers) GetTradesWithParams(ctx *gin.Context, market string, limit uint64) {
@@ -81,8 +80,8 @@ func (handlers *Handlers) GetTradesWithParams(ctx *gin.Context, market string, l
 func (handlers *Handlers) GetTradesForOrder(ctx *gin.Context) {
 	market := ctx.DefaultQuery("market", DefaultMarket)
 	orderId := ctx.Param("orderId")
-	//limit := ctx.DefaultQuery("limit", LimitMax)
-	handlers.GetTradesForOrderWithParams(ctx, market, orderId, LimitMax)
+	limit := ctx.DefaultQuery("limit", "")
+	handlers.GetTradesForOrderWithParams(ctx, market, orderId, handlers.stringToUint64(limit, LimitMax))
 }
 
 func (handlers *Handlers) GetTradesForOrderWithParams(ctx *gin.Context, market string, orderId string, limit uint64) {
@@ -92,4 +91,13 @@ func (handlers *Handlers) GetTradesForOrderWithParams(ctx *gin.Context, market s
 	} else {
 		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
 	}
+}
+
+func (handlers *Handlers) stringToUint64(str string, defaultValue uint64) uint64 {
+	i, err := strconv.Atoi(str)
+	if i < 0 || err != nil {
+		// todo log error when we have structured logging
+		return defaultValue
+	}
+	return uint64(i)
 }
