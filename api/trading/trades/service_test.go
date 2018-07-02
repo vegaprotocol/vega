@@ -22,7 +22,7 @@ func TestGetTradesOnAllMarkets(t *testing.T) {
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("GetAll", ctx, market, datastore.NewLimitMax()).Return([]*datastore.Trade{
+	tradeStore.On("GetAll", market, datastore.NewLimitMax()).Return([]*datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}},
@@ -44,7 +44,7 @@ func TestGetTradesForOrderOnMarket(t *testing.T) {
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("GetByOrderId", ctx, market, orderId, datastore.NewLimitMax()).Return([]*datastore.Trade{
+	tradeStore.On("GetByOrderId", market, orderId, datastore.NewLimitMax()).Return([]*datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}, OrderId: orderId},

@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"context"
 	"fmt"
 )
 
@@ -70,7 +69,7 @@ func (ms *MemStore) marketExists(market string) bool {
 	return false
 }
 
-func (t *memOrderStore) GetAll(ctx context.Context, market string, limit Limit) ([]*Order, error) {
+func (t *memOrderStore) GetAll(market string, limit Limit) ([]*Order, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
@@ -87,7 +86,7 @@ func (t *memOrderStore) GetAll(ctx context.Context, market string, limit Limit) 
 	return orders, nil
 }
 
-func (t *memOrderStore) Get(ctx context.Context, market string, id string) (*Order, error) {
+func (t *memOrderStore) Get(market string, id string) (*Order, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
@@ -98,7 +97,7 @@ func (t *memOrderStore) Get(ctx context.Context, market string, id string) (*Ord
 	return v.order, nil
 }
 
-func (t *memOrderStore) Put(ctx context.Context, or *Order) error {
+func (t *memOrderStore) Put(or *Order) error {
 	// todo validation of incoming order
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -115,7 +114,7 @@ func (t *memOrderStore) Put(ctx context.Context, or *Order) error {
 	return nil
 }
 
-func (t *memOrderStore) Post(ctx context.Context, or *Order) error {
+func (t *memOrderStore) Post(or *Order) error {
 	// todo validation of incoming order
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -136,12 +135,12 @@ func (t *memOrderStore) Post(ctx context.Context, or *Order) error {
 	return nil
 }
 
-func (t *memOrderStore) Delete(ctx context.Context, or *Order) error {
+func (t *memOrderStore) Delete(or *Order) error {
 	delete(t.store.markets[or.Market].orders, or.Id)
 	return nil
 }
 
-func (t *memTradeStore) GetAll(ctx context.Context, market string, limit Limit) ([]*Trade, error) {
+func (t *memTradeStore) GetAll(market string, limit Limit) ([]*Trade, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
@@ -157,7 +156,7 @@ func (t *memTradeStore) GetAll(ctx context.Context, market string, limit Limit) 
 	return trades, nil
 }
 
-func (t *memTradeStore) Get(ctx context.Context, market string, id string) (*Trade, error) {
+func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
 	v, ok := t.store.markets[market].trades[id]
 	if !ok {
 		return nil, NotFoundError{fmt.Errorf("could not find id %s", id)}
@@ -166,7 +165,7 @@ func (t *memTradeStore) Get(ctx context.Context, market string, id string) (*Tra
 }
 
 // GetByOrderId retrieves all trades for a given order id.
-func (t *memTradeStore) GetByOrderId(ctx context.Context, market string, orderId string, limit Limit) ([]*Trade, error) {
+func (t *memTradeStore) GetByOrderId(market string, orderId string, limit Limit) ([]*Trade, error) {
 
 	order := t.store.markets[market].orders[orderId]
 	if order == nil {
@@ -185,7 +184,7 @@ func (t *memTradeStore) GetByOrderId(ctx context.Context, market string, orderId
 	}
 }
 
-func (t *memTradeStore) Post(ctx context.Context, tr *Trade) error {
+func (t *memTradeStore) Post(tr *Trade) error {
 	//todo validation of incoming trade
 	// if err := tr.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -208,7 +207,7 @@ func (t *memTradeStore) Post(ctx context.Context, tr *Trade) error {
 	}
 }
 
-func (t *memTradeStore) Put(ctx context.Context, tr *Trade) error {
+func (t *memTradeStore) Put(tr *Trade) error {
 	//todo validation of incoming trade
 	// if err := tr.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -231,7 +230,7 @@ func (t *memTradeStore) Put(ctx context.Context, tr *Trade) error {
 	}
 }
 
-func (t *memTradeStore) Delete(ctx context.Context, tr *Trade) error {
+func (t *memTradeStore) Delete(tr *Trade) error {
 	delete(t.store.markets[tr.Market].trades, tr.Id)
 	return nil
 }

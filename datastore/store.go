@@ -1,39 +1,38 @@
 package datastore
 
 import (
-	"context"
 	"fmt"
 	"vega/proto"
 )
 
 type TradeStore interface {
 	// Get retrieves a trades for a given market.
-	GetAll(ctx context.Context, market string, limit Limit) ([]*Trade, error)
+	GetAll(market string, limit Limit) ([]*Trade, error)
 	// Get retrieves a trade for a given id.
-	Get(ctx context.Context, market string, id string) (*Trade, error)
+	Get(market string, id string) (*Trade, error)
 	// GetByOrderId retrieves all trades for a given order id.
-	GetByOrderId(ctx context.Context, market string, orderId string, limit Limit) ([]*Trade, error)
+	GetByOrderId(market string, orderId string, limit Limit) ([]*Trade, error)
 	// Post creates a new trade in the store.
-	Post(ctx context.Context, r *Trade) error
+	Post(r *Trade) error
 	// Put updates an existing trade in the store
-	Put(ctx context.Context, r *Trade) error
+	Put(r *Trade) error
 	// Removes a trade from the store.
-	Delete(ctx context.Context, r *Trade) error
+	Delete(r *Trade) error
 }
 
 type OrderStore interface {
 	// All retrieves all orders for a given market.
-	GetAll(ctx context.Context, market string, limit Limit) ([]*Order, error)
+	GetAll(market string, limit Limit) ([]*Order, error)
 	// Get retrieves an order for a given market and id.
-	Get(ctx context.Context, market string, id string) (*Order, error)
+	Get(market string, id string) (*Order, error)
 	// GetByParty retrieves all orders for a given party name.
 	//GetByParty(party string) ([]*Order, error)
 	// Post creates a new order in the store.
-	Post(ctx context.Context, r *Order) error
+	Post(r *Order) error
 	// Put updates an existing order in the store.
-	Put(ctx context.Context, r *Order) error
+	Put(r *Order) error
 	// Removes an order from the store.
-	Delete(ctx context.Context, r *Order) error
+	Delete(r *Order) error
 }
 
 type StoreProvider interface {
@@ -91,8 +90,7 @@ func (m *MemoryStoreProvider) processOrderMessage(orderMsg msg.Order) {
 		// Audit new order cancelled ^
 	}
 
-	ctx := context.Background()
-	m.orderStore.Put(ctx, o)
+	m.orderStore.Put(o)
 
 	fmt.Printf("Added order of size %d, price %d", o.Size, o.Price)
 	fmt.Println("---")
@@ -104,8 +102,7 @@ func (m *MemoryStoreProvider) listenForTrades() {
 		t := &Trade{}
 		t = t.FromProtoMessage(tradeMsg, "")
 
-		ctx := context.Background()
-		m.tradeStore.Put(ctx, t)
+		m.tradeStore.Put(t)
 
 		fmt.Printf("Added trade of size %d, price %d", t.Size, t.Price)
 		fmt.Println("---")

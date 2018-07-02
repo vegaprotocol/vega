@@ -56,7 +56,7 @@ func (p *orderService) CreateOrder(ctx context.Context, order models.Order) (suc
 }
 
 func (p *orderService) GetOrders(ctx context.Context, market string, limit uint64) (orders []models.Order, err error) {
-	o, err := p.orderStore.GetAll(ctx, market, datastore.NewLimitMax())
+	o, err := p.orderStore.GetAll(market, datastore.NewLimitMax())
 	if err != nil {
 		return nil, err
 	}
