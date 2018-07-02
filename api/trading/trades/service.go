@@ -1,15 +1,15 @@
 package trades
 
 import (
+	"context"
 	"vega/datastore"
 	"vega/proto"
-	"context"
 )
 
 type TradeService interface {
 	Init(tradeStore datastore.TradeStore)
-	GetTrades(ctx context.Context, market string) (trades []msg.Trade, err error)
-	GetTradesForOrder(ctx context.Context, market string, orderID string) (trades []msg.Trade, err error)
+	GetTrades(ctx context.Context, market string, limit uint64) (trades []msg.Trade, err error)
+	GetTradesForOrder(ctx context.Context, market string, orderID string, limit uint64) (trades []msg.Trade, err error)
 }
 
 type tradeService struct {
@@ -24,8 +24,8 @@ func (t *tradeService) Init(tradeStore datastore.TradeStore) {
 	t.tradeStore = tradeStore
 }
 
-func(t *tradeService) GetTrades(ctx context.Context, market string) (trades []msg.Trade, err error) {
-	tr, err := t.tradeStore.All(ctx, market)
+func (t *tradeService) GetTrades(ctx context.Context, market string, limit uint64) (trades []msg.Trade, err error) {
+	tr, err := t.tradeStore.GetAll(ctx, market, datastore.NewLimitMax())
 	if err != nil {
 		return nil, err
 	}
@@ -36,8 +36,8 @@ func(t *tradeService) GetTrades(ctx context.Context, market string) (trades []ms
 	return tradeMsgs, err
 }
 
-func(t *tradeService) GetTradesForOrder(ctx context.Context, market string, orderID string) (trades []msg.Trade, err error) {
-	tr, err := t.tradeStore.GetByOrderID(ctx, market, orderID)
+func (t *tradeService) GetTradesForOrder(ctx context.Context, market string, orderId string, limit uint64) (trades []msg.Trade, err error) {
+	tr, err := t.tradeStore.GetByOrderId(ctx, market, orderId, datastore.NewLimitMax())
 	if err != nil {
 		return nil, err
 	}

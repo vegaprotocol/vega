@@ -11,7 +11,7 @@ import (
 type OrderService interface {
 	Init(orderStore datastore.OrderStore)
 	CreateOrder(ctx context.Context, order models.Order) (success bool, err error)
-	GetOrders(ctx context.Context, market string) (orders []models.Order, err error)
+	GetOrders(ctx context.Context, market string, limit uint64) (orders []models.Order, err error)
 }
 
 type orderService struct {
@@ -55,15 +55,14 @@ func (p *orderService) CreateOrder(ctx context.Context, order models.Order) (suc
 	return true, err
 }
 
-func (p *orderService) GetOrders(ctx context.Context, market string) (orders []models.Order, err error) {
-	o, err := p.orderStore.All(ctx, market)
+func (p *orderService) GetOrders(ctx context.Context, market string, limit uint64) (orders []models.Order, err error) {
+	o, err := p.orderStore.GetAll(ctx, market, datastore.NewLimitMax())
 	if err != nil {
 		return nil, err
 	}
 	orderModels := make([]models.Order, 0)
 
 	for _, order := range o {
-
 		orderModels = append(orderModels, models.Order{
 			ID:        order.Id,
 			Market:    order.Market,

@@ -4,13 +4,13 @@ import "vega/proto"
 
 type Trade struct {
 	msg.Trade
-	OrderID   string
+	OrderId string
 }
 
-func (tr *Trade) FromProtoMessage(m msg.Trade, orderID string) *Trade {
+func (tr *Trade) FromProtoMessage(m msg.Trade, orderId string) *Trade {
 	return &Trade{
-		Trade: m,
-		OrderID: orderID,
+		Trade:   m,
+		OrderId: orderId,
 	}
 }
 

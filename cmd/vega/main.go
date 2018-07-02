@@ -3,14 +3,14 @@ package main
 
 import (
 	"flag"
-	"vega/api/endpoints/sse"
 	"vega/api/endpoints/rest"
-	"vega/blockchain"
-	"vega/core"
-	"vega/proto"
-	"vega/datastore"
+	"vega/api/endpoints/sse"
 	"vega/api/trading/orders"
 	"vega/api/trading/trades"
+	"vega/blockchain"
+	"vega/core"
+	"vega/datastore"
+	"vega/proto"
 )
 
 const sseChannelSize = 2 << 16
@@ -27,8 +27,8 @@ func main() {
 	// Uses in memory storage (maps/slices etc), configurable in future
 	storeOrderChan := make(chan msg.Order, storeChannelSize)
 	storeTradeChan := make(chan msg.Trade, storeChannelSize)
-	storage := &datastore.MemoryStorageProvider{}
-	storage.Init([]string { marketName }, storeOrderChan, storeTradeChan)
+	storage := &datastore.MemoryStoreProvider{}
+	storage.Init([]string{marketName}, storeOrderChan, storeTradeChan)
 
 	// Initialise concrete consumer services
 	orderService := orders.NewOrderService()

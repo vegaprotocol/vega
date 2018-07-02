@@ -1,12 +1,13 @@
 package trades
 
 import (
-	"testing"
 	"context"
-	"github.com/stretchr/testify/assert"
+	"testing"
 	"vega/datastore"
 	"vega/datastore/mocks"
 	"vega/proto"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewTradeService(t *testing.T) {
@@ -21,13 +22,13 @@ func TestGetTradesOnAllMarkets(t *testing.T) {
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("All", ctx, market).Return([]*datastore.Trade{
-		{ Trade: msg.Trade { Id: "A", Market: market, Price:1, } },
-		{ Trade: msg.Trade { Id: "B", Market: market, Price:2, } },
-		{ Trade: msg.Trade { Id: "C", Market: market, Price:3, } },
+	tradeStore.On("GetAll", ctx, market, datastore.NewLimitMax()).Return([]*datastore.Trade{
+		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}},
+		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}},
+		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}},
 	}, nil).Once()
 
-	var tradeSet, err = tradeService.GetTrades(ctx, market)
+	var tradeSet, err = tradeService.GetTrades(ctx, market, 12345)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeSet)
@@ -37,27 +38,25 @@ func TestGetTradesOnAllMarkets(t *testing.T) {
 
 func TestGetTradesForOrderOnMarket(t *testing.T) {
 	var market = "MKT/A"
-	var orderID = "Z"
+	var orderId = "Z"
 
 	var ctx = context.Background()
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("GetByOrderID", ctx, market, orderID).Return([]*datastore.Trade{
-		{ Trade: msg.Trade { Id: "A", Market: market, Price:1 }, OrderID: orderID },
-		{ Trade: msg.Trade { Id: "B", Market: market, Price:2 }, OrderID: orderID },
-		{ Trade: msg.Trade { Id: "C", Market: market, Price:3 }, OrderID: orderID },
-		{ Trade: msg.Trade { Id: "D", Market: market, Price:4 }, OrderID: orderID },
-		{ Trade: msg.Trade { Id: "E", Market: market, Price:5 }, OrderID: orderID },
-		{ Trade: msg.Trade { Id: "F", Market: market, Price:6 }, OrderID: orderID },
+	tradeStore.On("GetByOrderId", ctx, market, orderId, datastore.NewLimitMax()).Return([]*datastore.Trade{
+		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
+		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
+		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}, OrderId: orderId},
+		{Trade: msg.Trade{Id: "D", Market: market, Price: 4}, OrderId: orderId},
+		{Trade: msg.Trade{Id: "E", Market: market, Price: 5}, OrderId: orderId},
+		{Trade: msg.Trade{Id: "F", Market: market, Price: 6}, OrderId: orderId},
 	}, nil).Once()
 
-	var tradeSet, err = tradeService.GetTradesForOrder(ctx, market, orderID)
+	var tradeSet, err = tradeService.GetTradesForOrder(ctx, market, orderId, 12345)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeSet)
 	assert.Equal(t, 6, len(tradeSet))
 	tradeStore.AssertExpectations(t)
 }
-
-

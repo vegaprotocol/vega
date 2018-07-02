@@ -70,18 +70,23 @@ func (ms *MemStore) marketExists(market string) bool {
 	return false
 }
 
-func (t *memOrderStore) All(ctx context.Context, market string) ([]*Order, error) {
+func (t *memOrderStore) GetAll(ctx context.Context, market string, limit Limit) ([]*Order, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
+
+	pos := uint64(0)
 	orders := make([]*Order, 0)
 	for _, value := range t.store.markets[market].orders {
 		orders = append(orders, value.order)
+		if pos == limit.Max {
+			break
+		}
+		pos++
 	}
 	return orders, nil
 }
 
-// Get implements datastore.OrderStore.Get().
 func (t *memOrderStore) Get(ctx context.Context, market string, id string) (*Order, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
@@ -93,7 +98,6 @@ func (t *memOrderStore) Get(ctx context.Context, market string, id string) (*Ord
 	return v.order, nil
 }
 
-// Put implements storage.OrderStore.Put().
 func (t *memOrderStore) Put(ctx context.Context, or *Order) error {
 	// todo validation of incoming order
 	//	if err := or.Validate(); err != nil {
@@ -104,11 +108,25 @@ func (t *memOrderStore) Put(ctx context.Context, or *Order) error {
 	}
 	if _, exists := t.store.markets[or.Market].orders[or.Id]; exists {
 		fmt.Println("Updating order with ID ", or.Id)
-
 		t.store.markets[or.Market].orders[or.Id].order = or
 	} else {
-		fmt.Println("Adding new order with ID ", or.Id)
+		return fmt.Errorf("order not found in memstore: %s", or.Id)
+	}
+	return nil
+}
 
+func (t *memOrderStore) Post(ctx context.Context, or *Order) error {
+	// todo validation of incoming order
+	//	if err := or.Validate(); err != nil {
+	//		return fmt.Errorf("cannot store record: %s", err)
+	//	}
+	if !t.store.marketExists(or.Market) {
+		return NotFoundError{fmt.Errorf("could not find market %s", or.Market)}
+	}
+	if _, exists := t.store.markets[or.Market].orders[or.Id]; exists {
+		return fmt.Errorf("order exists in memstore: %s", or.Id)
+	} else {
+		fmt.Println("Adding new order with ID ", or.Id)
 		order := &memOrder{
 			trades: make([]*memTrade, 0),
 			order:  or,
@@ -118,25 +136,27 @@ func (t *memOrderStore) Put(ctx context.Context, or *Order) error {
 	return nil
 }
 
-// Delete implements storage.TradeStore.Delete().
 func (t *memOrderStore) Delete(ctx context.Context, or *Order) error {
 	delete(t.store.markets[or.Market].orders, or.Id)
 	return nil
 }
 
-// All implements datastore.TradeStore.All().
-func (t *memTradeStore) All(ctx context.Context, market string) ([]*Trade, error) {
+func (t *memTradeStore) GetAll(ctx context.Context, market string, limit Limit) ([]*Trade, error) {
 	if !t.store.marketExists(market) {
 		return nil, NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
+	pos := uint64(0)
 	trades := make([]*Trade, 0)
 	for _, value := range t.store.markets[market].trades {
 		trades = append(trades, value.trade)
+		if pos == limit.Max {
+			break
+		}
+		pos++
 	}
 	return trades, nil
 }
 
-// Get implements datastore.TradeStore.Get().
 func (t *memTradeStore) Get(ctx context.Context, market string, id string) (*Trade, error) {
 	v, ok := t.store.markets[market].trades[id]
 	if !ok {
@@ -146,41 +166,71 @@ func (t *memTradeStore) Get(ctx context.Context, market string, id string) (*Tra
 }
 
 // GetByOrderId retrieves all trades for a given order id.
-func (t *memTradeStore) GetByOrderID(ctx context.Context, market string, orderID string) ([]*Trade, error) {
+func (t *memTradeStore) GetByOrderId(ctx context.Context, market string, orderId string, limit Limit) ([]*Trade, error) {
 
-	order := t.store.markets[market].orders[orderID]
+	order := t.store.markets[market].orders[orderId]
 	if order == nil {
-		return nil, fmt.Errorf("order not found in memstore: %s", orderID)
+		return nil, fmt.Errorf("order not found in memstore: %s", orderId)
 	} else {
+		pos := uint64(0)
 		trades := make([]*Trade, 0)
 		for _, v := range order.trades {
 			trades = append(trades, v.trade)
+			if pos == limit.Max {
+				break
+			}
+			pos++
 		}
 		return trades, nil
 	}
 }
 
-// Put implements storage.TradeStore.Put().
+func (t *memTradeStore) Post(ctx context.Context, tr *Trade) error {
+	//todo validation of incoming trade
+	// if err := tr.Validate(); err != nil {
+	//		return fmt.Errorf("cannot store record: %s", err)
+	//	}
+	if o, exists := t.store.markets[tr.Market].orders[tr.OrderId]; exists {
+		trade := &memTrade{
+			trade: tr,
+			order: o,
+		}
+		if _, exists := t.store.markets[tr.Market].trades[tr.Id]; exists {
+			return fmt.Errorf("trade exists in memstore: %s", tr.Id)
+		} else {
+			// Map new trade to memstore and append trade to order
+			t.store.markets[tr.Market].trades[tr.Id] = trade
+			o.trades = append(o.trades, trade)
+		}
+		return nil
+	} else {
+		return fmt.Errorf("related order for trade not found in memstore: %s", tr.OrderId)
+	}
+}
+
 func (t *memTradeStore) Put(ctx context.Context, tr *Trade) error {
 	//todo validation of incoming trade
 	// if err := tr.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
 	//	}
-	if o, exists := t.store.markets[tr.Market].orders[tr.OrderID]; exists {
+	if o, exists := t.store.markets[tr.Market].orders[tr.OrderId]; exists {
 		trade := &memTrade{
 			trade: tr,
 			order: o,
 		}
-		// todo check if trade with ID already exists
-		t.store.markets[tr.Market].trades[tr.Id] = trade
-		o.trades = append(o.trades, trade)
+		if _, exists := t.store.markets[tr.Market].trades[tr.Id]; exists {
+			// Perform the update
+			t.store.markets[tr.Market].trades[tr.Id] = trade
+		} else {
+			return fmt.Errorf("trade not found in memstore: %s", tr.Id)
+		}
+		//o.trades = append(o.trades, trade)
 		return nil
 	} else {
-		return fmt.Errorf("trade order not found in memstore: %s", tr.OrderID)
+		return fmt.Errorf("related order for trade not found in memstore: %s", tr.OrderId)
 	}
 }
 
-// Delete implements storage.TradeStore.Delete().
 func (t *memTradeStore) Delete(ctx context.Context, tr *Trade) error {
 	delete(t.store.markets[tr.Market].trades, tr.Id)
 	return nil

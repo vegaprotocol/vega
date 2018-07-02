@@ -10,29 +10,6 @@ type OrderStore struct {
 	mock.Mock
 }
 
-// All provides a mock function with given fields: ctx, market
-func (_m *OrderStore) All(ctx context.Context, market string) ([]*datastore.Order, error) {
-	ret := _m.Called(ctx, market)
-
-	var r0 []*datastore.Order
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*datastore.Order); ok {
-		r0 = rf(ctx, market)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*datastore.Order)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, market)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Delete provides a mock function with given fields: ctx, r
 func (_m *OrderStore) Delete(ctx context.Context, r *datastore.Order) error {
 	ret := _m.Called(ctx, r)
@@ -68,6 +45,43 @@ func (_m *OrderStore) Get(ctx context.Context, market string, id string) (*datas
 	}
 
 	return r0, r1
+}
+
+// GetAll provides a mock function with given fields: ctx, market, limit
+func (_m *OrderStore) GetAll(ctx context.Context, market string, limit datastore.Limit) ([]*datastore.Order, error) {
+	ret := _m.Called(ctx, market, limit)
+
+	var r0 []*datastore.Order
+	if rf, ok := ret.Get(0).(func(context.Context, string, datastore.Limit) []*datastore.Order); ok {
+		r0 = rf(ctx, market, limit)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*datastore.Order)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, datastore.Limit) error); ok {
+		r1 = rf(ctx, market, limit)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Post provides a mock function with given fields: ctx, r
+func (_m *OrderStore) Post(ctx context.Context, r *datastore.Order) error {
+	ret := _m.Called(ctx, r)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *datastore.Order) error); ok {
+		r0 = rf(ctx, r)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Put provides a mock function with given fields: ctx, r

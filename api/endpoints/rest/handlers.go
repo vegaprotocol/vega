@@ -2,21 +2,23 @@ package rest
 
 import (
 	"net/http"
-	"github.com/gin-gonic/gin"
 	"vega/api/trading/orders"
 	"vega/api/trading/orders/models"
 	"vega/api/trading/trades"
+
+	"github.com/gin-gonic/gin"
 )
 
 const ResponseKeyResult = "result"
-const ResponseKeyError  = "error"
+const ResponseKeyError = "error"
 const ResponseKeyOrders = "orders"
 const ResponseKeyTrades = "trades"
 const ResponseResultSuccess = "success"
 const ResponseResultFailure = "failure"
 const ResponseResultFailureValidation = "invalid"
 
-const DefaultMarket           = "BTC/DEC18"
+const DefaultMarket = "BTC/DEC18"
+const LimitMax = uint64(9223372036854775807)
 
 type Handlers struct {
 	OrderService orders.OrderService
@@ -33,58 +35,61 @@ func (handlers *Handlers) CreateOrder(ctx *gin.Context) {
 	if err := bind(ctx, &o); err == nil {
 		handlers.CreateOrderWithModel(ctx, o)
 	} else {
-		wasFailureWithCode(ctx, gin.H { ResponseKeyResult : ResponseResultFailureValidation, "error" : err.Error() }, http.StatusBadRequest)
+		wasFailureWithCode(ctx, gin.H{ResponseKeyResult: ResponseResultFailureValidation, "error": err.Error()}, http.StatusBadRequest)
 	}
 }
 
 func (handlers *Handlers) CreateOrderWithModel(ctx *gin.Context, o models.Order) {
-	success, err :=  handlers.OrderService.CreateOrder(ctx, o)
+	success, err := handlers.OrderService.CreateOrder(ctx, o)
 	if success {
-		wasSuccess(ctx, gin.H { ResponseKeyResult : ResponseResultSuccess} )
+		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess})
 	} else {
-		wasFailure(ctx, gin.H { ResponseKeyResult : ResponseResultFailure, ResponseKeyError : err.Error() })
+		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
 	}
 }
 
 func (handlers *Handlers) GetOrders(ctx *gin.Context) {
 	market := ctx.DefaultQuery("market", DefaultMarket)
-	handlers.GetOrdersWithParams(ctx, market)
+	//limit := ctx.DefaultQuery("limit", LimitMax)
+	handlers.GetOrdersWithParams(ctx, market, LimitMax)
 }
 
-func (handlers *Handlers) GetOrdersWithParams(ctx *gin.Context, market string) {
-	orders, err := handlers.OrderService.GetOrders(ctx, market)
+func (handlers *Handlers) GetOrdersWithParams(ctx *gin.Context, market string, limit uint64) {
+	orders, err := handlers.OrderService.GetOrders(ctx, market, limit)
 	if err == nil {
-		wasSuccess(ctx, gin.H { ResponseKeyResult : ResponseResultSuccess, ResponseKeyOrders : orders })
+		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess, ResponseKeyOrders: orders})
 	} else {
-		wasFailure(ctx, gin.H { ResponseKeyResult : ResponseResultFailure, ResponseKeyError : err.Error() })
+		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
 	}
 }
 
 func (handlers *Handlers) GetTrades(ctx *gin.Context) {
 	market := ctx.DefaultQuery("market", DefaultMarket)
-	handlers.GetTradesWithParams(ctx, market)
+	//limit := ctx.DefaultQuery("limit", LimitMax)
+	handlers.GetTradesWithParams(ctx, market, LimitMax)
 }
 
-func (handlers *Handlers) GetTradesWithParams(ctx *gin.Context, market string) {
-	trades, err := handlers.TradeService.GetTrades(ctx, market)
+func (handlers *Handlers) GetTradesWithParams(ctx *gin.Context, market string, limit uint64) {
+	trades, err := handlers.TradeService.GetTrades(ctx, market, limit)
 	if err == nil {
-		wasSuccess(ctx, gin.H { ResponseKeyResult : ResponseResultSuccess, ResponseKeyTrades : trades })
+		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess, ResponseKeyTrades: trades})
 	} else {
-		wasFailure(ctx, gin.H { ResponseKeyResult : ResponseResultFailure, ResponseKeyError : err.Error() })
+		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
 	}
 }
 
 func (handlers *Handlers) GetTradesForOrder(ctx *gin.Context) {
 	market := ctx.DefaultQuery("market", DefaultMarket)
-	orderID := ctx.Param("orderId")
-	handlers.GetTradesForOrderWithParams(ctx, market, orderID)
+	orderId := ctx.Param("orderId")
+	//limit := ctx.DefaultQuery("limit", LimitMax)
+	handlers.GetTradesForOrderWithParams(ctx, market, orderId, LimitMax)
 }
 
-func (handlers *Handlers) GetTradesForOrderWithParams(ctx *gin.Context, market string, orderID string) {
-	trades, err := handlers.TradeService.GetTradesForOrder(ctx, market, orderID)
+func (handlers *Handlers) GetTradesForOrderWithParams(ctx *gin.Context, market string, orderId string, limit uint64) {
+	trades, err := handlers.TradeService.GetTradesForOrder(ctx, market, orderId, limit)
 	if err == nil {
-		wasSuccess(ctx, gin.H { ResponseKeyResult : ResponseResultSuccess, ResponseKeyTrades : trades })
+		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess, ResponseKeyTrades: trades})
 	} else {
-		wasFailure(ctx, gin.H { ResponseKeyResult : ResponseResultFailure, ResponseKeyError : err.Error() })
+		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
 	}
 }

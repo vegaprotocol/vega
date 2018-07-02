@@ -1,9 +1,10 @@
 package rest
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"net/http"
 )
 
 // Change c.MustBindWith() -> c.ShouldBindWith().
@@ -47,4 +48,3 @@ func sendResponse(c *gin.Context, data gin.H, httpStatusCode int) {
 		c.JSON(httpStatusCode, data)
 	}
 }
-
