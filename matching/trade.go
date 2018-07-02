@@ -2,6 +2,7 @@ package matching
 
 import (
 	"fmt"
+	"log"
 
 	"vega/proto"
 
@@ -22,18 +23,41 @@ type Trade struct {
 
 // Creates a trade of a given size between two orders and updates the order details
 func newTrade(agg, pass *msg.Order, size uint64) *Trade {
+	var buyer, seller *msg.Order
+	if agg.Side == msg.Side_Buy {
+		buyer = agg
+		seller = pass
+ 	} else {
+ 		buyer = pass
+ 		seller = agg
+	}
+
+	if agg.Side == pass.Side {
+		panic(fmt.Sprintf("agg.side == pass.side (agg: %v, pass: %v)", agg, pass))
+	}
+
 	trade := &Trade{
 		price: pass.Price,
 		size:  size,
 		agg:   agg,
 		pass:  pass,
-		buy:   getOrderForSide(msg.Side_Buy, agg, pass),
-		sell:  getOrderForSide(msg.Side_Sell, agg, pass),
+		buy:   buyer,
+		sell:  seller,
 	}
 	trade.id = trade.Digest()
 
+	log.Printf("Matched: %v\n", trade)
 	return trade
 }
+
+// Calculate the hash (ID) of the trade details (as serialised by protobufs)
+func (t *Trade) Digest() string {
+	bytes, _ := proto.Marshal(t.toMessage())
+	hash := make([]byte, 64)
+	sha3.ShakeSum256(hash, bytes)
+	return fmt.Sprintf("%x", hash)
+}
+
 
 // Returns a string representation of a trade
 func (t *Trade) String() string {
@@ -65,23 +89,4 @@ func (t *Trade) toMessage() *msg.Trade {
 		}
 	}
 	return t.msg
-}
-
-// Calculate the hash (ID) of the trade details (as serialised by protobufs)
-func (t *Trade) Digest() string {
-	bytes, _ := proto.Marshal(t.toMessage())
-	hash := make([]byte, 64)
-	sha3.ShakeSum256(hash, bytes)
-	return fmt.Sprintf("%x", hash)
-}
-
-// Work out which of the aggressive & passive orders is the buyer/seller
-func getOrderForSide(side msg.Side, agg, pass *msg.Order) *msg.Order {
-	if agg.Side == pass.Side {
-		panic(fmt.Sprintf("agg.side == pass.side (agg: %v, pass: %v)", agg, pass))
-	} else if agg.Side == side {
-		return agg
-	} else { // pass.side == side
-		return pass
-	}
 }

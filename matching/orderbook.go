@@ -40,42 +40,84 @@ func NewBook(name string, config Config) *OrderBook {
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
-func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
-	if err := b.validateOrder(orderMessage); err != msg.OrderError_NONE {
+func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+	if err := b.validateOrder(order); err != msg.OrderError_NONE {
 		return nil, err
 	}
-	if orderMessage.Timestamp > b.latestTimestamp {
-		b.latestTimestamp = orderMessage.Timestamp
-	}
 
-	orderMessage.Id = digestOrderMessage(orderMessage)[:10]
-	oppositeSide := b.getOppositeSide(orderMessage.Side)
+	order.Id = calculateHash(order)[:10]
+
+	if order.Timestamp > b.latestTimestamp {
+		b.latestTimestamp = order.Timestamp
+	}
 
 	b.PrintState("Entry state:")
 
 	// uncross with opposite
-	trades, impactedOrders, lastTradedPrice := oppositeSide.uncross(orderMessage)
+	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
 	}
 
+	// if state of the book changed show state
 	if len(trades) != 0 {
 		b.PrintState("After uncross state:")
 	}
 
-	// if persist add to tradebook to the right side
-	if (orderMessage.Type == msg.Order_GTC || orderMessage.Type == msg.Order_GTT) && orderMessage.Remaining > 0 {
-		b.getSide(orderMessage.Side).addOrder(orderMessage)
+	// if order is persistent type add to order book to the correct side
+	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
+		b.getSide(order.Side).addOrder(order)
 
 		b.PrintState("After addOrder state:")
 	}
 
-	orderConfirmation := makeResponse(orderMessage, trades, impactedOrders)
+	orderConfirmation := makeResponse(order, trades, impactedOrders)
 	return orderConfirmation, msg.OrderError_NONE
 }
 
 func (b *OrderBook) RemoveOrder(order *msg.Order) error {
 	return b.getSide(order.Side).RemoveOrder(order)
+}
+
+func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
+	if orderSide == msg.Side_Buy {
+		return b.buy
+	} else {
+		return b.sell
+	}
+}
+
+func (b *OrderBook) getOppositeSide(orderSide msg.Side) *OrderBookSide {
+	if orderSide == msg.Side_Buy {
+		return b.sell
+	} else {
+		return b.buy
+	}
+}
+
+// Calculate the hash (ID) of the order details (as serialised by protobufs)
+func calculateHash(order *msg.Order) string {
+	bytes, _ := proto.Marshal(order)
+	hash := make([]byte, 64)
+	sha3.ShakeSum256(hash, bytes)
+	return fmt.Sprintf("%x", hash)
+}
+
+
+func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) *msg.OrderConfirmation {
+	tradeSet := make([]*msg.Trade, 0)
+	for _, t := range trades {
+		tradeSet = append(tradeSet, t.toMessage())
+	}
+	passiveOrdersAffected := make([]*msg.Order, 0)
+	for i := range impactedOrders {
+		passiveOrdersAffected = append(passiveOrdersAffected, &impactedOrders[i])
+	}
+	return &msg.OrderConfirmation{
+		Order: order,
+		PassiveOrdersAffected: passiveOrdersAffected,
+		Trades:                tradeSet,
+	}
 }
 
 func (b *OrderBook) PrintState(msg string) {
@@ -117,44 +159,4 @@ func printOrders() func(i btree.Item) bool {
 		}
 		return true
 	}
-}
-
-func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
-	if orderSide == msg.Side_Buy {
-		return b.buy
-	} else { // side == Sell
-		return b.sell
-	}
-}
-
-func (b *OrderBook) getOppositeSide(orderSide msg.Side) *OrderBookSide {
-	if orderSide == msg.Side_Buy {
-		return b.sell
-	} else { // side == Sell
-		return b.buy
-	}
-}
-
-func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) *msg.OrderConfirmation {
-	tradeSet := make([]*msg.Trade, 0)
-	for _, t := range trades {
-		tradeSet = append(tradeSet, t.toMessage())
-	}
-	passiveOrdersAffected := make([]*msg.Order, 0)
-	for i := range impactedOrders {
-		passiveOrdersAffected = append(passiveOrdersAffected, &impactedOrders[i])
-	}
-	return &msg.OrderConfirmation{
-		Order: order,
-		PassiveOrdersAffected: passiveOrdersAffected,
-		Trades:                tradeSet,
-	}
-}
-
-// Calculate the hash (ID) of the order details (as serialised by protobufs)
-func digestOrderMessage(order *msg.Order) string {
-	bytes, _ := proto.Marshal(order)
-	hash := make([]byte, 64)
-	sha3.ShakeSum256(hash, bytes)
-	return fmt.Sprintf("%x", hash)
 }

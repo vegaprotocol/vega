@@ -11,34 +11,29 @@ import (
 
 type PriceLevel struct {
 	price             uint64
-	volume            uint64
-	volumeByTimestamp map[uint64]uint64
 	orders            []msg.Order
 	lookupTable       map[string]int
+	volumeAtTimestamp map[uint64]uint64
 }
 
 func NewPriceLevel(price uint64) *PriceLevel {
 	return &PriceLevel{
 		price:             price,
 		orders:            make([]msg.Order, 0),
-		volumeByTimestamp: make(map[uint64]uint64),
+		volumeAtTimestamp: make(map[uint64]uint64),
 		lookupTable:       make(map[string]int),
 	}
 }
 
 func (l PriceLevel) Less(other btree.Item) bool {
-	otherPrice := other.(*PriceLevel).price
-	return l.price < otherPrice
+	return l.price < other.(*PriceLevel).price
 }
 
 func (l *PriceLevel) addOrder(o *msg.Order) {
-	if vbt, exists := l.volumeByTimestamp[o.Timestamp]; exists {
-		l.volumeByTimestamp[o.Timestamp] = vbt + o.Remaining
-	} else {
-		l.volumeByTimestamp[o.Timestamp] = o.Remaining
-	}
-	l.volume += o.Remaining
+	// adjust volume by timestamp map for correct pro-rata calculation
+	l.increaseVolumeByTimestamp(o)
 
+	// add orders to slice of orders on this price level
 	l.orders = append(l.orders, *o)
 
 	// add index to lookup table for faster removal
@@ -46,17 +41,10 @@ func (l *PriceLevel) addOrder(o *msg.Order) {
 }
 
 func (l *PriceLevel) removeOrder(o *msg.Order, index int) error {
-	log.Println("removeOrder called on ", o)
-	if vbt, exists := l.volumeByTimestamp[o.Timestamp]; exists {
-		if vbt <= o.Remaining {
-			delete(l.volumeByTimestamp, o.Timestamp)
-		} else {
-			l.volumeByTimestamp[o.Timestamp] = vbt - o.Remaining
-		}
-	}
-	l.volume -= o.Remaining
+	// adjust volume by timestamp map for correct pro-rata calculation
+	l.decreaseVolumeByTimestamp(o)
 
-	// memcopy orders
+	// memcopy orders sliced at the index
 	copy(l.orders[index:], l.orders[index+1:])
 	l.orders = l.orders[:len(l.orders)-1]
 
@@ -73,14 +61,40 @@ func (l *PriceLevel) removeOrder(o *msg.Order, index int) error {
 	return nil
 }
 
+func (l *PriceLevel) increaseVolumeByTimestamp(o *msg.Order) {
+	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
+		l.volumeAtTimestamp[o.Timestamp] = vbt + o.Remaining
+	} else {
+		l.volumeAtTimestamp[o.Timestamp] = o.Remaining
+	}
+}
+
+func (l *PriceLevel) decreaseVolumeByTimestamp(o *msg.Order) {
+	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
+		if vbt <= o.Remaining {
+			delete(l.volumeAtTimestamp, o.Timestamp)
+		} else {
+			l.volumeAtTimestamp[o.Timestamp] = vbt - o.Remaining
+		}
+	}
+}
+
+func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp uint64, trade *Trade) {
+	if vbt, exists := l.volumeAtTimestamp[currentTimestamp]; exists {
+		l.volumeAtTimestamp[currentTimestamp] = vbt - trade.size
+	}
+}
+
 func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]msg.Order) bool {
 	log.Printf("                UNCOROSSING ATTEMPT at price = %d", l.price)
 	log.Println("-> aggressive order: ", agg)
 	log.Println()
 
 	volumeToShare := agg.Remaining
-	currentTimestamp := l.topTimestamp()
-	initialVolumeAtTimestamp := l.volumeByTimestamp[currentTimestamp]
+
+	// start from earliest timestamp
+	currentTimestamp := l.earliestTimestamp()
+	totalVolumeAtTimestamp := l.volumeAtTimestamp[currentTimestamp]
 
 	var ordersScheduledForDeletion []msg.Order
 
@@ -88,23 +102,25 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 	for i := 0; i < len(l.orders); i++ {
 		log.Println("Passive order: ", l.orders[i])
 
-		// See if we are at a new top time
+		// See if we are at a new top timestamp
 		if currentTimestamp != l.orders[i].Timestamp {
-			delete(l.volumeByTimestamp, currentTimestamp)
+			// if consumed all orders on the current timestamp, delete exhausted timestamp and proceed to the next one
+			delete(l.volumeAtTimestamp, currentTimestamp)
+			// assign new timestamp
 			currentTimestamp = l.orders[i].Timestamp
-			initialVolumeAtTimestamp = l.volumeByTimestamp[currentTimestamp]
+			// assign new volume at timestamp
+			totalVolumeAtTimestamp = l.volumeAtTimestamp[currentTimestamp]
 			volumeToShare = agg.Remaining
 		}
 
 		// Get size and make newTrade
-		size := l.getVolumeAllocation(agg, &l.orders[i], volumeToShare, initialVolumeAtTimestamp)
+		size := l.getVolumeAllocation(agg, &l.orders[i], volumeToShare, totalVolumeAtTimestamp)
 		if size <= 0 {
 			panic("Trade.size > order.remaining")
 		}
 
 		// New Trade
 		trade := newTrade(agg, &l.orders[i], size)
-		log.Printf("Matched: %v\n", trade)
 
 		// Update Remaining for both aggressive and passive
 		agg.Remaining -= trade.size
@@ -116,10 +132,7 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 		}
 
 		// Update Volumes for the price level
-		l.volume -= trade.size
-		if vbt, exists := l.volumeByTimestamp[currentTimestamp]; exists {
-			l.volumeByTimestamp[currentTimestamp] = vbt - trade.size
-		}
+		l.adjustVolumeByTimestamp(currentTimestamp, trade)
 
 		// Update trades
 		*trades = append(*trades, *trade)
@@ -134,7 +147,7 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 	// Clean passive orders with zero remaining
 	l.clearOrders(ordersScheduledForDeletion)
 
-	log.Println("                    UNCOROSSING FINISHED                ")
+	log.Println("                    UNCOROSSING FINISHED                   ")
 	log.Println()
 	return agg.Remaining == 0
 }
@@ -150,7 +163,7 @@ func (l *PriceLevel) removeOrderFromPriceLevel(orderForDeletion *msg.Order) erro
 	return l.removeOrder(orderForDeletion, index)
 }
 
-func (l *PriceLevel) topTimestamp() uint64 {
+func (l *PriceLevel) earliestTimestamp() uint64 {
 	if len(l.orders) != 0 {
 		return l.orders[0].Timestamp
 	}
