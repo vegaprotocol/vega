@@ -148,7 +148,7 @@ func (b *OrderBook) scheduleCleanup() {
 		case <-b.quit:
 			return
 		default:
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
 			//if b.ReqNumber != 0 && operatingAt != b.ReqNumber && b.ReqNumber%1000 == 0 {
 			b.mutex.Lock()
 			b.buy.levels.Descend(collectGarbage())
