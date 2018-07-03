@@ -2,7 +2,6 @@ package matching
 
 import (
 	"fmt"
-	"time"
 	"vega/proto"
 
 	"github.com/golang/protobuf/proto"
@@ -21,30 +20,29 @@ type Trade struct {
 }
 
 // Creates a trade of a given size between two orders and updates the order details
-func newTrade(agg, pass *msg.Order, size uint64) *Trade {
+func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
 	var buyer, seller *msg.Order
 	if agg.Side == msg.Side_Buy {
 		buyer = agg
 		seller = pass
- 	} else {
- 		buyer = pass
- 		seller = agg
+	} else {
+		buyer = pass
+		seller = agg
 	}
 
 	if agg.Side == pass.Side {
 		panic(fmt.Sprintf("agg.side == pass.side (agg: %v, pass: %v)", agg, pass))
 	}
 
-	trade := &Trade{
-		price: pass.Price,
-		size:  size,
-		agg:   agg,
-		pass:  pass,
-		buy:   buyer,
-		sell:  seller,
-	}
+	trade := msg.TradePool.Get().(*msg.Trade)
+	trade.Price = pass.Price
+	trade.Size = size
+	trade.Aggressor = agg.Side
+	trade.Buyer = buyer.Party
+	trade.Seller = seller.Party
+
 	//trade.id = trade.Digest()
-	trade.id = fmt.Sprintf("%d", time.Now().UnixNano())
+	//trade.id = fmt.Sprintf("%d", time.Now().UnixNano())
 
 	//log.Printf("Matched: %v\n", trade)
 	return trade
@@ -57,7 +55,6 @@ func (t *Trade) Digest() string {
 	sha3.ShakeSum256(hash, bytes)
 	return fmt.Sprintf("%x", hash)
 }
-
 
 // Returns a string representation of a trade
 func (t *Trade) String() string {

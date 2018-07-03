@@ -2,18 +2,18 @@ package matching
 
 import (
 	"fmt"
-	"log"
 	//"sync"
 	"vega/proto"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/google/btree"
-	"golang.org/x/crypto/sha3"
 	"github.com/golang/go/src/pkg/strconv"
-	"sync"
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/crypto/sha3"
 )
 
-var Pool = &sync.Pool{}
+type Orders struct {
+	price  uint64
+	orders []*msg.Order
+}
 
 type OrderBook struct {
 	name            string
@@ -22,36 +22,18 @@ type OrderBook struct {
 	lastTradedPrice uint64
 	config          Config
 	latestTimestamp uint64
-
 	ReqNumber int64
-	//mutex     sync.Mutex
-	//quit chan bool
 }
 
 // Create an order book with a given name
 func NewBook(name string, config Config) *OrderBook {
-	book := &OrderBook{
+	return &OrderBook{
 		name:   name,
+		buy:    &OrderBookSide{},
+		sell:   &OrderBookSide{},
 		config: config,
-		//quit: make(chan bool),
 	}
-
-	book.buy = &OrderBookSide{
-		side:   msg.Side_Buy,
-		levels: btree.New(priceLevelsBTreeDegree),
-	}
-
-	book.sell = &OrderBookSide{
-		side:   msg.Side_Sell,
-		levels: btree.New(priceLevelsBTreeDegree),
-	}
-	//go book.scheduleCleanup()
-	return book
 }
-
-//func (b *OrderBook) Stop() {
-//	b.quit <- true
-//}
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
 func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
@@ -59,17 +41,13 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		return nil, err
 	}
 
-	//b.mutex.Lock()
 	b.ReqNumber++
 	//if b.ReqNumber % 100 == 0 {
 	//	b.buy.levels.Descend(collectGarbage)
 	//	b.sell.levels.Descend(collectGarbage)
 	//}
 
-	//order.Id = calculateHash(order)[:10]
-	//order.Id = fmt.Sprintf("%d", time.Now().UnixNano())
 	order.Id = strconv.FormatInt(b.ReqNumber, 10)
-
 	if order.Timestamp > b.latestTimestamp {
 		b.latestTimestamp = order.Timestamp
 	}
@@ -77,7 +55,8 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	//b.PrintState("Entry state:")
 
 	// uncross with opposite
-	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
+		trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
+
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
 	}
@@ -89,7 +68,7 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// if order is persistent type add to order book to the correct side
 	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
-		b.getSide(order.Side).addOrder(order)
+		b.getSide(order.Side).addOrder(order, order.Side)
 
 		//b.PrintState("After addOrder state:")
 	}
@@ -131,21 +110,20 @@ func calculateHash(order *msg.Order) string {
 	return fmt.Sprintf("%x", hash)
 }
 
-
-func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) *msg.OrderConfirmation {
-	tradeSet := make([]*msg.Trade, 0)
-	for _, t := range trades {
-		tradeSet = append(tradeSet, t.toMessage())
-	}
-	passiveOrdersAffected := make([]*msg.Order, 0)
-	for i := range impactedOrders {
-		passiveOrdersAffected = append(passiveOrdersAffected, &impactedOrders[i])
-	}
-	return &msg.OrderConfirmation{
-		Order: order,
-		PassiveOrdersAffected: passiveOrdersAffected,
-		Trades:                tradeSet,
-	}
+func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.Order) *msg.OrderConfirmation {
+	//tradeSet := make([]*msg.Trade, 0)
+	//for _, t := range trades {
+	//	tradeSet = append(tradeSet, t.toMessage())
+	//}
+	//passiveOrdersAffected := make([]*msg.Order, 0)
+	//for i := range impactedOrders {
+	//	passiveOrdersAffected = append(passiveOrdersAffected, impactedOrders[i])
+	//}
+	confirm := msg.OrderConfirmationPool.Get().(*msg.OrderConfirmation)
+	confirm.Order = order
+	confirm.PassiveOrdersAffected = impactedOrders
+	confirm.Trades =                trades
+	return confirm
 }
 
 //func (b *OrderBook) scheduleCleanup() {
@@ -174,43 +152,42 @@ func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) 
 //		return true
 //}
 
-
-func (b *OrderBook) PrintState(msg string) {
-	log.Println()
-	log.Println(msg)
-	log.Println("------------------------------------------------------------")
-	log.Println("                        BUY SIDE                            ")
-	b.buy.levels.Descend(printOrders())
-	log.Println("------------------------------------------------------------")
-	log.Println("                        SELL SIDE                           ")
-	b.sell.levels.Ascend(printOrders())
-	log.Println("------------------------------------------------------------")
-
-}
-
-func printOrders() func(i btree.Item) bool {
-	return func(i btree.Item) bool {
-		priceLevel := i.(*PriceLevel)
-		if len(priceLevel.orders) > 0 {
-
-			log.Printf("priceLevel: %d", priceLevel.price)
-
-			for _, o := range priceLevel.orders {
-				var side string
-				if o.order.Side == msg.Side_Buy {
-					side = "BUY"
-				} else {
-					side = "SELL"
-				}
-
-				line := fmt.Sprintf("      %s %s @%d size=%d R=%d Type=%d T=%d %s",
-					o.order.Party, side, o.order.Price, o.order.Size, o.order.Remaining, o.order.Type, o.order.Timestamp, o.order.Id)
-
-				log.Println(line)
-			}
-
-			log.Println()
-		}
-		return true
-	}
-}
+//func (b *OrderBook) PrintState(msg string) {
+//	log.Println()
+//	log.Println(msg)
+//	log.Println("------------------------------------------------------------")
+//	log.Println("                        BUY SIDE                            ")
+//	b.buy.levels.Descend(printOrders())
+//	log.Println("------------------------------------------------------------")
+//	log.Println("                        SELL SIDE                           ")
+//	b.sell.levels.Ascend(printOrders())
+//	log.Println("------------------------------------------------------------")
+//
+//}
+//
+//func printOrders() func(i btree.Item) bool {
+//	return func(i btree.Item) bool {
+//		priceLevel := i.(*PriceLevel)
+//		if len(priceLevel.orders) > 0 {
+//
+//			log.Printf("priceLevel: %d", priceLevel.price)
+//
+//			for _, o := range priceLevel.orders {
+//				var side string
+//				if o.order.Side == msg.Side_Buy {
+//					side = "BUY"
+//				} else {
+//					side = "SELL"
+//				}
+//
+//				line := fmt.Sprintf("      %s %s @%d size=%d R=%d Type=%d T=%d %s",
+//					o.order.Party, side, o.order.Price, o.order.Size, o.order.Remaining, o.order.Type, o.order.Timestamp, o.order.Id)
+//
+//				log.Println(line)
+//			}
+//
+//			log.Println()
+//		}
+//		return true
+//	}
+//}
