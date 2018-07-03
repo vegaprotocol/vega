@@ -9,3 +9,13 @@ vegabench
 .idea/
 *.iws
 .testCoverage.txt
+
+# emacs 
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
