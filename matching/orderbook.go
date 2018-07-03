@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"vega/proto"
 
@@ -141,20 +142,21 @@ func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) 
 }
 
 func (b *OrderBook) scheduleCleanup() {
-	var operatingAt int64
+	//var operatingAt int64
 	for {
 		select {
 		case <-b.quit:
 			return
 		default:
-			if b.ReqNumber != 0 && operatingAt != b.ReqNumber && b.ReqNumber%1000 == 0 {
-				b.mutex.Lock()
-				b.buy.levels.Descend(collectGarbage())
-				b.sell.levels.Descend(collectGarbage())
-				//log.Println("FINISHED")
-				operatingAt = b.ReqNumber
-				b.mutex.Unlock()
-			}
+			time.Sleep(500 * time.Millisecond)
+			//if b.ReqNumber != 0 && operatingAt != b.ReqNumber && b.ReqNumber%1000 == 0 {
+			b.mutex.Lock()
+			b.buy.levels.Descend(collectGarbage())
+			b.sell.levels.Descend(collectGarbage())
+			//log.Println("FINISHED")
+			//operatingAt = b.ReqNumber
+			b.mutex.Unlock()
+			//}
 		}
 	}
 }
