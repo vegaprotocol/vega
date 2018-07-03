@@ -43,7 +43,7 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	orderEntry := orderEntryFromMessage(orderMessage)
 	trades := b.sideFor(orderMessage).addOrder(orderEntry)
 	orderConfirmation := MakeResponse(orderMessage, trades)
-	printSlice(*trades)
+	//printSlice(*trades)
 	if len(*trades) == 0 {
 		for _, c := range b.config.OrderChans {
 			c <- *orderMessage
