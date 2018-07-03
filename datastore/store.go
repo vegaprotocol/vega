@@ -76,8 +76,7 @@ func (m *MemoryStoreProvider) listenForOrders() {
 
 // processOrderMessage takes an incoming order msg protobuf and logs/updates the stores.
 func (m *MemoryStoreProvider) processOrderMessage(orderMsg msg.Order) {
-	o := &Order{}
-	o = o.FromProtoMessage(orderMsg)
+	o := NewOrderFromProtoMessage(orderMsg)
 
 	switch msg.Order_Status(o.Status) {
 	case msg.Order_NEW:
@@ -99,8 +98,7 @@ func (m *MemoryStoreProvider) processOrderMessage(orderMsg msg.Order) {
 func (m *MemoryStoreProvider) listenForTrades() {
 	for tradeMsg := range m.tradeChan {
 
-		t := &Trade{}
-		t = t.FromProtoMessage(tradeMsg, "")
+		t := NewTradeFromProtoMessage(tradeMsg, "")
 
 		m.tradeStore.Put(t)
 
