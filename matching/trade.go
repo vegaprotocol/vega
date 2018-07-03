@@ -2,6 +2,7 @@ package matching
 
 import (
 	"fmt"
+	"time"
 	"vega/proto"
 
 	"github.com/golang/protobuf/proto"
@@ -42,7 +43,8 @@ func newTrade(agg, pass *msg.Order, size uint64) *Trade {
 		buy:   buyer,
 		sell:  seller,
 	}
-	trade.id = trade.Digest()
+	//trade.id = trade.Digest()
+	trade.id = fmt.Sprintf("%d", time.Now().UnixNano())
 
 	//log.Printf("Matched: %v\n", trade)
 	return trade

@@ -2,8 +2,6 @@ package matching
 
 import (
 	"math"
-	"sync"
-
 	"vega/proto"
 
 
@@ -15,9 +13,9 @@ type PriceLevel struct {
 	orders            []*OrderEntry
 	lookupTable       map[string]int
 	volumeAtTimestamp map[uint64]uint64
-	reqNumber         uint64
+	//reqNumber         uint64
 
-	mutex 			  sync.Mutex
+	//mutex 			  sync.Mutex
 }
 
 func NewPriceLevel(price uint64) *PriceLevel {
@@ -53,49 +51,41 @@ func (l *PriceLevel) addOrder(o *msg.Order) {
 	l.lookupTable[o.Id] = len(l.orders) - 1
 }
 
-func (l *PriceLevel) collectGarbage() {
-	//log.Println("collecting garbage")
-	l.mutex.Lock()
-	newOrders := make([]*OrderEntry, 0)
-	for i, _ := range l.orders {
-		if l.orders[i].valid {
-			newOrders = append(newOrders, newOrderEntry(l.orders[i].order))
+//func (l *PriceLevel) collectGarbage() {
+//	//log.Println("collecting garbage")
+//	newOrders := make([]*OrderEntry, 0)
+//	for i, _ := range l.orders {
+//		if l.orders[i].valid {
+//			newOrders = append(newOrders, newOrderEntry(l.orders[i].order))
+//		}
+//	}
+//	l.orders = newOrders
+//}
+
+func (l *PriceLevel) removeOrder(o *msg.Order, index int) error {
+	// adjust volume by timestamp map for correct pro-rata calculation
+	l.decreaseVolumeByTimestamp(o)
+
+	//l.orders[index].valid = false
+
+	// memcopy orders sliced at the index
+	copy(l.orders[index:], l.orders[index+1:])
+	l.orders = l.orders[:len(l.orders)-1]
+
+	// delete index from lookupTable
+	delete(l.lookupTable, o.Id)
+
+	// reindex lookup table
+	for k, val := range l.lookupTable {
+		if val > index {
+			l.lookupTable[k] = val - 1
 		}
 	}
-	l.orders = newOrders
-	l.mutex.Unlock()
-}
+	//}
 
-//func (l *PriceLevel) removeOrder(o *msg.Order, index int) error {
-//	// adjust volume by timestamp map for correct pro-rata calculation
-//	l.decreaseVolumeByTimestamp(o)
-//
-//	l.orders[index].valid = false
-//
-//	log.Println("l.ReqNumber: ", l.ReqNumber)
-//
-//	//if math.Mod(float64(l.ReqNumber),100) == 0 {
-//	//	log.Println("collecting garbage")
-//	//	l.collectGarbage()
-//
-//
-//		// memcopy orders sliced at the index
-//		//copy(l.orders[index:], l.orders[index+1:])
-//		//l.orders = l.orders[:len(l.orders)-1]
-//		//
-//		//// delete index from lookupTable
-//		//delete(l.lookupTable, o.Id)
-//		//
-//		//// reindex lookup table
-//		//for k, val := range l.lookupTable {
-//		//	if val > index {
-//		//		l.lookupTable[k] = val - 1
-//		//	}
-//		//}
-//	//}
-//
-//	return nil
-//}
+	Pool.Put(o)
+	return nil
+}
 
 func (l *PriceLevel) increaseVolumeByTimestamp(o *msg.Order) {
 	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
@@ -132,7 +122,7 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 	currentTimestamp := l.earliestTimestamp()
 	totalVolumeAtTimestamp := l.volumeAtTimestamp[currentTimestamp]
 
-	//var ordersScheduledForDeletion []msg.Order
+	var ordersScheduledForDeletion []*msg.Order
 
 	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
 	for i := 0; i < len(l.orders); i++ {
@@ -167,7 +157,7 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 
 		// Schedule order for deletion
 		if l.orders[i].order.Remaining == 0 {
-			//ordersScheduledForDeletion = append(ordersScheduledForDeletion, *l.orders[i].order)
+			ordersScheduledForDeletion = append(ordersScheduledForDeletion, l.orders[i].order)
 			l.decreaseVolumeByTimestamp(l.orders[i].order)
 			l.orders[i].valid = false
 			//log.Println("setting valid to false")
@@ -187,7 +177,7 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 	}
 
 	// Clean passive orders with zero remaining
-	//l.clearOrders(ordersScheduledForDeletion)
+	l.clearOrders(ordersScheduledForDeletion)
 
 	//log.Println("                    UNCOROSSING FINISHED                   ")
 	//log.Println()
@@ -195,27 +185,27 @@ func (l *PriceLevel) uncross(agg *msg.Order, trades *[]Trade, impactedOrders *[]
 	return agg.Remaining == 0
 }
 
-func (l *PriceLevel) clearOrders(ordersScheduledForDeletion []msg.Order) {
+func (l *PriceLevel) clearOrders(ordersScheduledForDeletion []*msg.Order) {
 	for _, ordersScheduledForDeletion := range ordersScheduledForDeletion {
-		l.removeOrderFromPriceLevel(&ordersScheduledForDeletion)
+		l.removeOrderFromPriceLevel(ordersScheduledForDeletion)
 	}
 }
 
 func (l *PriceLevel) removeOrderFromPriceLevel(orderForDeletion *msg.Order) error {
-	//index := l.lookupTable[orderForDeletion.Id]
-	for i, _ := range l.orders {
-		if l.orders[i].order.Id == orderForDeletion.Id {
-			l.decreaseVolumeByTimestamp(l.orders[i].order)
-			l.orders[i].valid = false
-			//log.Println("removed")
-		}
-	}
-	return nil
+	index := l.lookupTable[orderForDeletion.Id]
+	//for i, _ := range l.orders {
+	//	if l.orders[i].order.Id == orderForDeletion.Id {
+	//		l.decreaseVolumeByTimestamp(l.orders[i].order)
+	//		l.orders[i].valid = false
+	//		//log.Println("removed")
+	//	}
+	//}
+	//return nil
 
 	//l.decreaseVolumeByTimestamp(l.orders[i].order)
 	//
 	//l.orders[i].valid = false
-	//return l.removeOrder(orderForDeletion, index)
+	return l.removeOrder(orderForDeletion, index)
 }
 
 func (l *PriceLevel) earliestTimestamp() uint64 {

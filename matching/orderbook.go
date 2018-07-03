@@ -3,15 +3,17 @@ package matching
 import (
 	"fmt"
 	"log"
-	"sync"
-	"time"
-
+	//"sync"
 	"vega/proto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/google/btree"
 	"golang.org/x/crypto/sha3"
+	"github.com/golang/go/src/pkg/strconv"
+	"sync"
 )
+
+var Pool = &sync.Pool{}
 
 type OrderBook struct {
 	name            string
@@ -22,8 +24,8 @@ type OrderBook struct {
 	latestTimestamp uint64
 
 	ReqNumber int64
-	mutex     sync.Mutex
-	quit chan bool
+	//mutex     sync.Mutex
+	//quit chan bool
 }
 
 // Create an order book with a given name
@@ -31,7 +33,7 @@ func NewBook(name string, config Config) *OrderBook {
 	book := &OrderBook{
 		name:   name,
 		config: config,
-		quit: make(chan bool),
+		//quit: make(chan bool),
 	}
 
 	book.buy = &OrderBookSide{
@@ -43,14 +45,13 @@ func NewBook(name string, config Config) *OrderBook {
 		side:   msg.Side_Sell,
 		levels: btree.New(priceLevelsBTreeDegree),
 	}
-
-	go book.scheduleCleanup()
+	//go book.scheduleCleanup()
 	return book
 }
 
-func (b *OrderBook) Stop() {
-	b.quit <- true
-}
+//func (b *OrderBook) Stop() {
+//	b.quit <- true
+//}
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
 func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
@@ -58,10 +59,16 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		return nil, err
 	}
 
-	b.mutex.Lock()
+	//b.mutex.Lock()
 	b.ReqNumber++
+	//if b.ReqNumber % 100 == 0 {
+	//	b.buy.levels.Descend(collectGarbage)
+	//	b.sell.levels.Descend(collectGarbage)
+	//}
 
-	order.Id = calculateHash(order)[:10]
+	//order.Id = calculateHash(order)[:10]
+	//order.Id = fmt.Sprintf("%d", time.Now().UnixNano())
+	order.Id = strconv.FormatInt(b.ReqNumber, 10)
 
 	if order.Timestamp > b.latestTimestamp {
 		b.latestTimestamp = order.Timestamp
@@ -88,15 +95,15 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
-	b.mutex.Unlock()
+	//b.mutex.Unlock()
 	return orderConfirmation, msg.OrderError_NONE
 }
 
 func (b *OrderBook) RemoveOrder(order *msg.Order) error {
-	b.mutex.Lock()
+	//b.mutex.Lock()
 	b.ReqNumber++
 	err := b.getSide(order.Side).RemoveOrder(order)
-	b.mutex.Unlock()
+	//b.mutex.Unlock()
 	return err
 }
 
@@ -141,33 +148,32 @@ func makeResponse(order *msg.Order, trades []Trade, impactedOrders []msg.Order) 
 	}
 }
 
-func (b *OrderBook) scheduleCleanup() {
-	//var operatingAt int64
-	for {
-		select {
-		case <-b.quit:
-			return
-		default:
-			time.Sleep(1000 * time.Millisecond)
-			//if b.ReqNumber != 0 && operatingAt != b.ReqNumber && b.ReqNumber%1000 == 0 {
-			b.mutex.Lock()
-			b.buy.levels.Descend(collectGarbage())
-			b.sell.levels.Descend(collectGarbage())
-			//log.Println("FINISHED")
-			//operatingAt = b.ReqNumber
-			b.mutex.Unlock()
-			//}
-		}
-	}
-}
+//func (b *OrderBook) scheduleCleanup() {
+//	//var operatingAt int64
+//	for {
+//		select {
+//		case <-b.quit:
+//			return
+//		default:
+//			time.Sleep(1000 * time.Millisecond)
+//			//if b.ReqNumber != 0 && operatingAt != b.ReqNumber && b.ReqNumber%1000 == 0 {
+//			b.mutex.Lock()
+//			b.buy.levels.Descend(collectGarbage)
+//			b.sell.levels.Descend(collectGarbage)
+//			//log.Println("FINISHED")
+//			//operatingAt = b.ReqNumber
+//			b.mutex.Unlock()
+//			//}
+//		}
+//	}
+//}
 
-func collectGarbage() func(i btree.Item) bool {
-	return func(i btree.Item) bool {
-		priceLevel := i.(*PriceLevel)
-		priceLevel.collectGarbage()
-		return true
-	}
-}
+//func collectGarbage(i btree.Item) bool {
+//		priceLevel := i.(*PriceLevel)
+//		priceLevel.collectGarbage()
+//		return true
+//}
+
 
 func (b *OrderBook) PrintState(msg string) {
 	log.Println()
