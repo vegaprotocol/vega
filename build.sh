@@ -11,4 +11,7 @@ echo -e "Building vega"
 go build ./cmd/vega
 echo -e "Building vegabench"
 go build ./cmd/vegabench
+echo -e "Building vega API and client"
+go build ./cmd/api
+go build ./cmd/client
 echo -e "Done."

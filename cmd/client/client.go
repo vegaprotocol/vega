@@ -1,0 +1,46 @@
+package main
+
+import (
+	"context"
+	"flag"
+	"fmt"
+	"google.golang.org/grpc"
+	"time"
+	pb "vega/services/trading"
+)
+
+var (
+	tls                = flag.Bool("tls", false, "Connection uses TLS if true, else plain TCP")
+	caFile             = flag.String("ca_file", "", "The file containning the CA root cert file")
+	serverAddr         = flag.String("server_addr", "127.0.0.1:5678", "The server address in the format of host:port")
+	serverHostOverride = flag.String("server_host_override", "x.test.youtube.com", "The server name use to verify the hostname returned by TLS handshake")
+)
+
+func main() {
+	flag.Parse()
+
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithInsecure())
+	conn, err := grpc.Dial(*serverAddr, opts...)
+	if err != nil {
+		fmt.Println("fail to dial: %v", err)
+	}
+
+	defer conn.Close()
+
+	client := pb.NewTradingClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	order := &pb.Order{
+		Market: "My Amazing Market",
+	}
+
+	response, err := client.CreateOrder(ctx, order)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(response.Works)
+	}
+}

@@ -52,6 +52,26 @@ Tips:
 
 Do a `dep ensure -add github.com/foo/bar` to add to the manifest.
 
+### API
+
+Vega provides a gRPC API for communicating with the core application, as well as a thin REST API that exposes gRPC endpoints via a HTTP / JSON API.
+
+The API specification is defined as a [https://developers.google.com/protocol-buffers](protobuf definition) .proto file that lives within the services folder.
+
+#### Development Workflow
+
+To edit the API:
+
+1) Discuss some changes with your colleages
+2) Modify `services/trading/trading.proto` with new stuff
+3) If adding / changing service endpoints, modify the `services/trading/rest-bindings.yml` to define REST/HTTP specific information
+4) Run `sh scripts/gen_api.sh` to regenerate gRPC stubs, reverse proxy and swagger docs
+5) Build with `sh build.sh`
+
+Documentation can be parsed by any swagger software, if using go-swagger:
+
+`swagger serve services/trading/trading.swagger.json`
+
 ### Deploying
 
 Deployments are automated using Capistrano. Currently the `staging` environment points at Dave's `x.constructiveproof.com` servers. A few commands to note:

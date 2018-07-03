@@ -81,14 +81,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "release-branch.go1"
-  digest = "1:e5601438c0e9cf61794796a090e5d54a021c6c2cbfb36411b8f0a1cef2b0022e"
-  name = "github.com/golang/go"
-  packages = ["src/pkg/strconv"]
-  pruneopts = "UT"
-  revision = "08b97d4061dd75ceec1d44e4335183cd791c9306"
-
-[[projects]]
   digest = "1:f0c33a0df13686296c494935c2b253770c18b2ff7d13d19207c869b414d98c94"
   name = "github.com/golang/protobuf"
   packages = [
@@ -133,6 +125,18 @@
   ]
   pruneopts = "UT"
   revision = "bb9738501bd42a6536227b96068349b814379d6e"
+
+[[projects]]
+  digest = "1:4df19d38aa8efc5648954a56630305d0c4ad9bd22531c31f9617b110bc12d00e"
+  name = "github.com/grpc-ecosystem/grpc-gateway"
+  packages = [
+    "runtime",
+    "runtime/internal",
+    "utilities",
+  ]
+  pruneopts = "UT"
+  revision = "92583770e3f01b09a0d3e9bdf64321d8bebd48f2"
+  version = "v1.4.1"
 
 [[projects]]
   branch = "master"
@@ -351,11 +355,12 @@
     "github.com/gin-gonic/gin/binding",
     "github.com/gogo/protobuf/gogoproto",
     "github.com/gogo/protobuf/proto",
-    "github.com/golang/go/src/pkg/strconv",
     "github.com/golang/protobuf/jsonpb",
     "github.com/golang/protobuf/proto",
     "github.com/gorilla/websocket",
     "github.com/graph-gophers/graphql-go",
+    "github.com/grpc-ecosystem/grpc-gateway/runtime",
+    "github.com/grpc-ecosystem/grpc-gateway/utilities",
     "github.com/satori/go.uuid",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
@@ -363,6 +368,11 @@
     "github.com/tendermint/tendermint/abci/server",
     "github.com/tendermint/tendermint/abci/types",
     "github.com/tendermint/tmlibs/common",
+    "golang.org/x/net/context",
+    "google.golang.org/grpc",
+    "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/grpclog",
+    "google.golang.org/grpc/status",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
