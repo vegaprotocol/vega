@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	//"time"
 	"math/rand"
 	"testing"
+
 	"vega/core"
 	"vega/proto"
 )

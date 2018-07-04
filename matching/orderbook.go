@@ -5,8 +5,6 @@ import (
 	"vega/proto"
 
 	"github.com/golang/go/src/pkg/strconv"
-	"github.com/golang/protobuf/proto"
-	"golang.org/x/crypto/sha3"
 )
 
 type Orders struct {
@@ -46,7 +44,7 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		b.latestTimestamp = order.Timestamp
 	}
 
-	b.PrintState("Entry state:")
+	//b.PrintState("Entry state:")
 
 	// uncross with opposite
 	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
@@ -57,14 +55,14 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// if state of the book changed show state
 	if len(trades) != 0 {
-		b.PrintState("After uncross state:")
+		//b.PrintState("After uncross state:")
 	}
 
 	// if order is persistent type add to order book to the correct side
 	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
 		b.getSide(order.Side).addOrder(order, order.Side)
 
-		b.PrintState("After addOrder state:")
+		//b.PrintState("After addOrder state:")
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
@@ -91,14 +89,6 @@ func (b *OrderBook) getOppositeSide(orderSide msg.Side) *OrderBookSide {
 	} else {
 		return b.buy
 	}
-}
-
-// Calculate the hash (ID) of the order details (as serialised by protobufs)
-func calculateHash(order *msg.Order) string {
-	bytes, _ := proto.Marshal(order)
-	hash := make([]byte, 64)
-	sha3.ShakeSum256(hash, bytes)
-	return fmt.Sprintf("%x", hash)
 }
 
 func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.Order) *msg.OrderConfirmation {

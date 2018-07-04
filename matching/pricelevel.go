@@ -24,7 +24,6 @@ func NewPriceLevel(price uint64) *PriceLevel {
 func (l *PriceLevel) addOrder(o *msg.Order) {
 	// adjust volume by timestamp map for correct pro-rata calculation
 	l.increaseVolumeByTimestamp(o)
-
 	// add orders to slice of orders on this price level
 	l.orders = append(l.orders, o)
 }
@@ -59,19 +58,15 @@ func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp uint64, trade *msg
 }
 
 func (l *PriceLevel) uncross(agg *msg.Order) (filled bool, trades []*msg.Trade, impactedOrders []*msg.Order) {
-	//fmt.Printf("                UNCOROSSING ATTEMPT at price = %d", l.price)
-	//fmt.Println("-> aggressive order: ", agg)
-	//fmt.Println()
-
-	// start from earliest timestamp
-	currentTimestamp := l.earliestTimestamp()
-	totalVolumeAtTimestamp := l.volumeAtTimestamp[currentTimestamp]
-	//fmt.Println(totalVolumeAtTimestamp)
 
 	var (
 		toRemove []int
 		removed  int
 	)
+
+	// start from earliest timestamp
+	currentTimestamp := l.earliestTimestamp()
+	totalVolumeAtTimestamp := l.volumeAtTimestamp[currentTimestamp]
 	volumeToShare := agg.Remaining
 
 	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
@@ -93,8 +88,6 @@ func (l *PriceLevel) uncross(agg *msg.Order) (filled bool, trades []*msg.Trade, 
 		if size <= 0 {
 			panic("Trade.size > order.remaining")
 		}
-		//log.Printf("SIZE %+v, AGG.REMAINING %+v, ORDER.REMAINING %+v, TOTAL.VOL %+v, CURRENT %d",
-		//	size, agg.Remaining, order.Remaining, totalVolumeAtTimestamp, currentTimestamp)
 
 		// New Trade
 		trade := newTrade(agg, order, size)
@@ -107,7 +100,6 @@ func (l *PriceLevel) uncross(agg *msg.Order) (filled bool, trades []*msg.Trade, 
 		if order.Remaining == 0 {
 			toRemove = append(toRemove, i)
 			l.decreaseVolumeByTimestamp(order)
-			//log.Println("setting valid to false")
 		}
 
 		// Update Volumes for the price level
@@ -131,10 +123,6 @@ func (l *PriceLevel) uncross(agg *msg.Order) (filled bool, trades []*msg.Trade, 
 		l.orders = l.orders[:len(l.orders)-removed]
 	}
 
-	//fmt.Println("                    UNCOROSSING FINISHED                   ")
-	//fmt.Println()
-
-	//return agg.Remaining == 0
 	return agg.Remaining == 0, trades, impactedOrders
 }
 

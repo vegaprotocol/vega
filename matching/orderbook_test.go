@@ -74,13 +74,12 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 
 	book.AddOrder(newOrder)
 
-	log.Println("calling remove order")
 	err := book.RemoveOrder(newOrder)
 	if err != nil {
-		log.Println("sth bad happened")
+		log.Println(err, "ORDER_NOT_FOUND")
 	}
 
-	book.PrintState("after remove order")
+	book.PrintState("AFTER REMOVE ORDER")
 }
 
 func TestOrderBook_AddOrder(t *testing.T) {
@@ -743,8 +742,10 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		log.Println()
 
 		confirmationMsg, err := book.AddOrder(s.aggressiveOrder)
+
 		//this should not return any errors
 		assert.Equal(t, msg.OrderError_NONE, err)
+
 		//this should not generate any trades
 		assert.Equal(t, len(s.expectedTrades), len(confirmationMsg.Trades))
 
@@ -768,7 +769,6 @@ func TestOrderBook_AddOrder(t *testing.T) {
 
 func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {
 	// run asserts for protocol trade data
-	//assert.Equal(t, trade.Market, expectedTrade.Market)
 	assert.Equal(t, expectedTrade.Price, trade.Price)
 	assert.Equal(t, expectedTrade.Size, trade.Size)
 	assert.Equal(t, expectedTrade.Buyer, trade.Buyer)

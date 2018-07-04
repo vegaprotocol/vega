@@ -13,13 +13,7 @@ func (s *OrderBookSide) addOrder(o *msg.Order, side msg.Side) {
 }
 
 func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
-	//for {
-	//	// binary search `s`
-	//	// idx = index in s
-	//	idx := 0
-	//	priceLevel := s[idx]
-	//	if len()
-	//}
+	// TODO: implement binary search on the slice
 	toDelete := -1
 	for idx, priceLevel := range s.levels {
 		if priceLevel.price == o.Price {
@@ -44,10 +38,15 @@ func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 		s.levels = s.levels[:len(s.levels)-1]
 
 	}
+	if toDelete == -1 {
+		// TODO: implement ORDER_NOT_FOUND_ERROR and add to protobufs
+		return nil
+	}
 	return nil
 }
 
 func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
+	// TODO: implement binary search on the slice
 	at := -1
 	if side == msg.Side_Buy {
 		// buy side levels should be ordered in descending
@@ -93,7 +92,7 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 
 	if agg.Side == msg.Side_Sell {
 		for _, level := range s.levels {
-			// buy side levels should be ordered in descending
+			// buy side levels are ordered descending
 			if level.price >= agg.Price {
 				filled, nTrades, nImpact := level.uncross(agg)
 				trades = append(trades, nTrades...)
@@ -109,7 +108,7 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 
 	if agg.Side == msg.Side_Buy {
 		for _, level := range s.levels {
-			// sell side levels should be ordered in ascending
+			// sell side levels are ordered ascending
 			if level.price <= agg.Price {
 				filled, nTrades, nImpact := level.uncross(agg)
 				trades = append(trades, nTrades...)
