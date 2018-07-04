@@ -40,12 +40,7 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	if err := b.validateOrder(order); err != msg.OrderError_NONE {
 		return nil, err
 	}
-
 	b.ReqNumber++
-	//if b.ReqNumber % 100 == 0 {
-	//	b.buy.levels.Descend(collectGarbage)
-	//	b.sell.levels.Descend(collectGarbage)
-	//}
 
 	order.Id = strconv.FormatInt(b.ReqNumber, 10)
 	if order.Timestamp > b.latestTimestamp {
@@ -79,10 +74,8 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 }
 
 func (b *OrderBook) RemoveOrder(order *msg.Order) error {
-	//b.mutex.Lock()
 	b.ReqNumber++
 	err := b.getSide(order.Side).RemoveOrder(order)
-	//b.mutex.Unlock()
 	return err
 }
 
@@ -111,14 +104,6 @@ func calculateHash(order *msg.Order) string {
 }
 
 func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.Order) *msg.OrderConfirmation {
-	//tradeSet := make([]*msg.Trade, 0)
-	//for _, t := range trades {
-	//	tradeSet = append(tradeSet, t.toMessage())
-	//}
-	//passiveOrdersAffected := make([]*msg.Order, 0)
-	//for i := range impactedOrders {
-	//	passiveOrdersAffected = append(passiveOrdersAffected, impactedOrders[i])
-	//}
 	confirm := msg.OrderConfirmationPool.Get().(*msg.OrderConfirmation)
 	confirm.Order = order
 	confirm.PassiveOrdersAffected = impactedOrders
@@ -126,25 +111,6 @@ func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.O
 	return confirm
 }
 
-//func (b *OrderBook) scheduleCleanup() {
-//	//var operatingAt int64
-//	for {
-//		select {
-//		case <-b.quit:
-//			return
-//		default:
-//			time.Sleep(1000 * time.Millisecond)
-//			//if b.ReqNumber != 0 && operatingAt != b.ReqNumber && b.ReqNumber%1000 == 0 {
-//			b.mutex.Lock()
-//			b.buy.levels.Descend(collectGarbage)
-//			b.sell.levels.Descend(collectGarbage)
-//			//log.Println("FINISHED")
-//			//operatingAt = b.ReqNumber
-//			b.mutex.Unlock()
-//			//}
-//		}
-//	}
-//}
 
 //func collectGarbage(i btree.Item) bool {
 //		priceLevel := i.(*PriceLevel)

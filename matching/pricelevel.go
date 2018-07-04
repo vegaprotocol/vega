@@ -1,7 +1,9 @@
 package matching
 
 import (
+	"fmt"
 	"math"
+
 	"vega/proto"
 )
 
@@ -26,20 +28,7 @@ func (l *PriceLevel) addOrder(o *msg.Order) {
 	// add orders to slice of orders on this price level
 	l.orders = append(l.orders, o)
 
-	// add index to lookup table for faster removal
-	//lookup[o.Id] = len(l.orders) - 1
 }
-
-//func (l *PriceLevel) collectGarbage() {
-//	//log.Println("collecting garbage")
-//	newOrders := make([]*OrderEntry, 0)
-//	for i, _ := range l.orders {
-//		if l.orders[i].valid {
-//			newOrders = append(newOrders, newOrderEntry(l.orders[i].order))
-//		}
-//	}
-//	l.orders = newOrders
-//}
 
 func (l *PriceLevel) increaseVolumeByTimestamp(o *msg.Order) {
 	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
@@ -65,10 +54,10 @@ func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp uint64, trade *msg
 	}
 }
 
-func (l *PriceLevel) uncross(agg *msg.Order) (trades []*msg.Trade, impactedOrders []*msg.Order) {
-	//log.Printf("                UNCOROSSING ATTEMPT at price = %d", l.price)
-	//log.Println("-> aggressive order: ", agg)
-	//log.Println()
+func (l *PriceLevel) uncross(agg *msg.Order) (filled bool, trades []*msg.Trade, impactedOrders []*msg.Order) {
+	//fmt.Printf("                UNCOROSSING ATTEMPT at price = %d", l.price)
+	//fmt.Println("-> aggressive order: ", agg)
+	//fmt.Println()
 
 	// start from earliest timestamp
 	currentTimestamp := l.earliestTimestamp()
@@ -79,6 +68,7 @@ func (l *PriceLevel) uncross(agg *msg.Order) (trades []*msg.Trade, impactedOrder
 		toRemove []int
 		removed  int
 	)
+	volumeToShare := agg.Remaining
 
 	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
 	for i, order := range l.orders {
@@ -91,13 +81,16 @@ func (l *PriceLevel) uncross(agg *msg.Order) (trades []*msg.Trade, impactedOrder
 			currentTimestamp = order.Timestamp
 			// assign new volume at timestamp
 			totalVolumeAtTimestamp = l.volumeAtTimestamp[currentTimestamp]
+			volumeToShare = agg.Remaining
 		}
 
 		// Get size and make newTrade
-		size := l.getVolumeAllocation(agg, order, totalVolumeAtTimestamp)
+		size := l.getVolumeAllocation(agg, order, volumeToShare, totalVolumeAtTimestamp)
 		if size <= 0 {
 			panic("Trade.size > order.remaining")
 		}
+		//log.Printf("SIZE %+v, AGG.REMAINING %+v, ORDER.REMAINING %+v, TOTAL.VOL %+v, CURRENT %d",
+		//	size, agg.Remaining, order.Remaining, totalVolumeAtTimestamp, currentTimestamp)
 
 		// New Trade
 		trade := newTrade(agg, order, size)
@@ -120,7 +113,6 @@ func (l *PriceLevel) uncross(agg *msg.Order) (trades []*msg.Trade, impactedOrder
 		trades = append(trades, trade)
 		impactedOrders = append(impactedOrders, order)
 
-
 		// Exit when done
 		if agg.Remaining == 0 {
 			break
@@ -129,28 +121,19 @@ func (l *PriceLevel) uncross(agg *msg.Order) (trades []*msg.Trade, impactedOrder
 
 	if len(toRemove) > 0 {
 		for _, idx := range toRemove {
-			l.decreaseVolumeByTimestamp(l.orders[idx-removed])
+			//l.decreaseVolumeByTimestamp(l.orders[idx-removed])
 			copy(l.orders[idx-removed:], l.orders[idx-removed+1:])
 			removed++
 		}
 		l.orders = l.orders[:len(l.orders)-removed]
 	}
 
-	// Clean passive orders with zero remaining
-	//l.clearOrders(ordersScheduledForDeletion)
-
-	//log.Println("                    UNCOROSSING FINISHED                   ")
-	//log.Println()
+	//fmt.Println("                    UNCOROSSING FINISHED                   ")
+	//fmt.Println()
 
 	//return agg.Remaining == 0
-	return trades, impactedOrders
+	return agg.Remaining == 0, trades, impactedOrders
 }
-
-//func (l *PriceLevel)  removeOrder(o *msg.Order, index int) error {
-//	copy(l.orders[idx-removed:], l.orders[idx-removed+1:])
-//
-//}
-
 
 func (l *PriceLevel) earliestTimestamp() uint64 {
 	if len(l.orders) != 0 {
@@ -164,10 +147,10 @@ func (l *PriceLevel) earliestTimestamp() uint64 {
 // trading would thus *always* increment the logical timestamp between trades.)
 func (l *PriceLevel) getVolumeAllocation(
 	agg, pass *msg.Order,
-	initialVolumeAtTimestamp uint64) uint64 {
+	volumeToShare, initialVolumeAtTimestamp uint64) uint64 {
 
 	weight := float64(pass.Remaining) / float64(initialVolumeAtTimestamp)
-	size := weight * float64(min(agg.Remaining, initialVolumeAtTimestamp))
+	size := weight * float64(min(volumeToShare, initialVolumeAtTimestamp))
 	if size-math.Trunc(size) > 0 {
 		size++ // Otherwise we can end up allocating 1 short because of integer division rounding
 	}
@@ -180,4 +163,33 @@ func min(x, y uint64) uint64 {
 		return y
 	}
 	return x
+}
+
+// Creates a trade of a given size between two orders and updates the order details
+func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
+	var buyer, seller *msg.Order
+	if agg.Side == msg.Side_Buy {
+		buyer = agg
+		seller = pass
+	} else {
+		buyer = pass
+		seller = agg
+	}
+
+	if agg.Side == pass.Side {
+		panic(fmt.Sprintf("agg.side == pass.side (agg: %v, pass: %v)", agg, pass))
+	}
+
+	trade := msg.TradePool.Get().(*msg.Trade)
+	trade.Price = pass.Price
+	trade.Size = size
+	trade.Aggressor = agg.Side
+	trade.Buyer = buyer.Party
+	trade.Seller = seller.Party
+
+	//trade.id = trade.Digest()
+	//trade.id = fmt.Sprintf("%d", time.Now().UnixNano())
+
+	//log.Printf("Matched: %v\n", trade)
+	return trade
 }

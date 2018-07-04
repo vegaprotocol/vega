@@ -51,8 +51,9 @@ func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
 	at := -1
 	if side == msg.Side_Buy {
+		// buy side levels should be ordered in descending
 		for i, level := range s.levels {
-			if level.price < price {
+			if level.price > price {
 				continue
 			}
 			if level.price == price {
@@ -62,8 +63,9 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
 			break
 		}
 	} else {
+		// sell side levels should be ordered in ascending
 		for i, level := range s.levels {
-			if level.price > price {
+			if level.price < price {
 				continue
 			}
 			if level.price == price {
@@ -80,21 +82,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
 	}
 	s.levels = append(s.levels[:at], append([]*PriceLevel{level}, s.levels[at:]...)...)
 	return level
-	//item := s.levels.Get(&PriceLevel{price: price})
-	//if item == nil {
-	//	priceLevel := NewPriceLevel(price)
-	//	//log.Printf("creating new price level price=%d", priceLevel.price)
-	//	s.levels.ReplaceOrInsert(priceLevel)
-	//	return priceLevel
-	//}
-	//priceLevel := item.(*PriceLevel)
-	////log.Printf("fetched price level price=%d with %d orders", priceLevel.price, len(priceLevel.orders))
-	//return priceLevel
 }
-
-//func (s OrderBookSide) removePriceLevel(price uint64) {
-//	s.levels.Delete(&PriceLevel{price: price})
-//}
 
 func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uint64) {
 
@@ -105,12 +93,15 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 	)
 
 	if agg.Side == msg.Side_Sell {
-		for _, order := range s.levels {
-			if order.price >= agg.Price {
-				ntrades, nimpact := order.uncross(agg)
-				trades = append(trades, ntrades...)
-				impactedOrders = append(impactedOrders, nimpact...)
-				break
+		for _, level := range s.levels {
+			// buy side levels should be ordered in descending
+			if level.price >= agg.Price {
+				filled, nTrades, nImpact := level.uncross(agg)
+				trades = append(trades, nTrades...)
+				impactedOrders = append(impactedOrders, nImpact...)
+				if filled {
+					break
+				}
 			} else {
 				break
 			}
@@ -118,12 +109,15 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 	}
 
 	if agg.Side == msg.Side_Buy {
-		for _, order := range s.levels {
-			if order.price <= agg.Price {
-				ntrades, nimpact := order.uncross(agg)
-				trades = append(trades, ntrades...)
-				impactedOrders = append(impactedOrders, nimpact...)
-				break
+		for _, level := range s.levels {
+			// sell side levels should be ordered in ascending
+			if level.price <= agg.Price {
+				filled, nTrades, nImpact := level.uncross(agg)
+				trades = append(trades, nTrades...)
+				impactedOrders = append(impactedOrders, nImpact...)
+				if filled {
+					break
+				}
 			} else {
 				break
 			}

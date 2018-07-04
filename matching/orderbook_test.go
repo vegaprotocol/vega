@@ -764,7 +764,6 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		}
 	}
 
-	book.Stop()
 }
 
 func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {

@@ -30,12 +30,6 @@ func (v Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderEr
 		return nil, err
 	}
 
-	// update trades on the channels
-	//for _, ch := range v.OrderConfirmationChans {
-	//	ch <- *confirmationMessage
-	//}
-
-	//log.Println("foo")
 	return confirmationMessage, msg.OrderError_NONE
 }
 
@@ -47,5 +41,3 @@ func (v Vega) DeleteOrder(order *msg.Order) {
 	// update orderCancellation channel
 
 }
-
-// run a separate go routine that will read on channel and update orders map
