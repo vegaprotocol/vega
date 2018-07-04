@@ -6,6 +6,9 @@ pkg/
 vendor
 vega
 vegabench
+server
+client
+
 .idea/
 *.iws
 .testCoverage.txt
