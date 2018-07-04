@@ -62,7 +62,7 @@ The API specification is defined as a [https://developers.google.com/protocol-bu
 
 To edit the API:
 
-1) Discuss some changes with your colleages
+1) Discuss some changes with your colleagues
 2) Modify `services/trading/trading.proto` with new stuff
 3) If adding / changing service endpoints, modify the `services/trading/rest-bindings.yml` to define REST/HTTP specific information
 4) Run `sh scripts/gen_api.sh` to regenerate gRPC stubs, reverse proxy and swagger docs
