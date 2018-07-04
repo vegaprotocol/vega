@@ -45,6 +45,19 @@ func TestMemStore_PostAndGetNewOrder(t *testing.T) {
 	assert.Equal(t, order, o)
 }
 
+func TestMemStore_PostOrderToNoneExistentMarket(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newOrderStore = NewOrderStore(&memStore)
+	var order = &Order{
+		Order: msg.Order{
+			Id:     "45305210ff7a9bb9450b1833cc10368a",
+			Market: "GBP/EUR19",
+		},
+	}
+	err := newOrderStore.Post(order)
+	assert.Error(t, err, "market does not exist")
+}
+
 func TestMemStore_PostPutAndGetExistingOrder(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newOrderStore = NewOrderStore(&memStore)
@@ -219,44 +232,90 @@ func TestMemStore_PostAndFindByOrderId(t *testing.T) {
 }
 
 func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
-	otherMarket := "another"
-	var memStore = NewMemStore([]string{testMarket, otherMarket})
-	var newOrderStore = NewOrderStore(&memStore)
 
-	order1 := &Order{
-		Order: msg.Order{
-			Id:     "d41d8cd98f00b204e9800998ecf8427e",
-			Market: testMarket,
+	var tests = []struct {
+		inMarkets  []string
+		inOrders  []Order
+		inLimit   uint64
+		outMarket string
+		outOrdersCount int
+	}{
+		{
+			inMarkets: []string { testMarket, "another" },
+			inOrders: []Order {
+				{
+					Order: msg.Order{
+						Id:     "d41d8cd98f00b204e9800998ecf8427e",
+						Market: testMarket,
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "ad2dc275947362c45893bbeb30fc3098",
+						Market: "another",
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "4e8e41367997cfe705d62ea80592cbcc",
+						Market: testMarket,
+					},
+				},
+			},
+			inLimit: 5000,
+			outMarket: testMarket,
+			outOrdersCount: 2,
+		},
+		{
+			inMarkets: []string { testMarket },
+			inOrders: []Order {
+				{
+					Order: msg.Order{
+						Id:     "d41d8cd98f00b204e9800998ecf8427e",
+						Market: testMarket,
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "ad2dc275947362c45893bbeb30fc3098",
+						Market: testMarket,
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "4e8e41367997cfe705d62ea80592cbcc",
+						Market: testMarket,
+					},
+				},
+			},
+			inLimit: 2,
+			outMarket: testMarket,
+			outOrdersCount: 2,
 		},
 	}
+	for _, tt := range tests {
+		var memStore = NewMemStore(tt.inMarkets)
+		var newOrderStore = NewOrderStore(&memStore)
 
-	order2 := &Order{
-		Order: msg.Order{
-			Id:     "ad2dc275947362c45893bbeb30fc3098",
-			Market: otherMarket,
-		},
+		for _, order := range tt.inOrders {
+			err := newOrderStore.Post(&order)
+			assert.Nil(t, err)
+		}
+
+		params := GetParams{Limit: tt.inLimit}
+		orders, err := newOrderStore.GetAll(tt.outMarket, params)
+		assert.Nil(t, err)
+		assert.Equal(t, tt.outOrdersCount, len(orders))
 	}
-
-	order3 := &Order{
-		Order: msg.Order{
-			Id:     "4e8e41367997cfe705d62ea80592cbcc",
-			Market: testMarket,
-		},
-	}
-
-	err := newOrderStore.Post(order1)
-	assert.Nil(t, err)
-	err = newOrderStore.Post(order2)
-	assert.Nil(t, err)
-	err = newOrderStore.Post(order3)
-	assert.Nil(t, err)
-
-	params := GetParams{Limit: 12345}
-	orders, err := newOrderStore.GetAll(testMarket, params)
-	assert.Equal(t, 2, len(orders))
-	orders, err = newOrderStore.GetAll(otherMarket, params)
 }
 
+func TestMemStore_GetAllOrdersForNoneExistentMarket(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newOrderStore = NewOrderStore(&memStore)
+	o, err := newOrderStore.GetAll("UNKNOWN", GetParams{ Limit: GetParamsLimitDefault })
+	assert.Error(t, err, "market does not exist")
+	assert.Nil(t, o)
+}
 
 func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 	otherMarket := "another"

@@ -6,7 +6,7 @@ import (
 )
 
 type TradeStore interface {
-	// Get retrieves a trades for a given market.
+	// GetAll retrieves a trades for a given market.
 	GetAll(market string, params GetParams) ([]*Trade, error)
 	// Get retrieves a trade for a given id.
 	Get(market string, id string) (*Trade, error)
@@ -14,14 +14,14 @@ type TradeStore interface {
 	GetByOrderId(market string, orderId string, params GetParams) ([]*Trade, error)
 	// Post creates a new trade in the store.
 	Post(r *Trade) error
-	// Put updates an existing trade in the store
+	// Put updates an existing trade in the store.
 	Put(r *Trade) error
 	// Removes a trade from the store.
 	Delete(r *Trade) error
 }
 
 type OrderStore interface {
-	// All retrieves all orders for a given market.
+	// GetAll retrieves all orders for a given market.
 	GetAll(market string, params GetParams) ([]*Order, error)
 	// Get retrieves an order for a given market and id.
 	Get(market string, id string) (*Order, error)
