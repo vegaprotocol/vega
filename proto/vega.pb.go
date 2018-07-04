@@ -192,15 +192,9 @@ func (m *Order) GetId() string {
 
 type OrderConfirmation struct {
 	Order       *Order   `protobuf:"bytes,1,opt,name=order" json:"order,omitempty"`
-	PassiveOrdersAffected []*Order `protobuf:"bytes,1,opt,name=order" json:"order,omitempty"`
 	Trades                []*Trade `protobuf:"bytes,2,rep,name=trades" json:"trades,omitempty"`
+	PassiveOrdersAffected []*Order `protobuf:"bytes,3,opt,name=order" json:"order,omitempty"`
 }
-
-type OrderCancelation struct {
-	CancelledOrder       *Order   `protobuf:"bytes,1,opt,name=order" json:"order,omitempty"`
-	Reason               string   `protobuf:"bytes,1,opt,name=order" json:"order,omitempty"`
-}
-
 
 func (m *OrderConfirmation) Reset()                    { *m = OrderConfirmation{} }
 func (m *OrderConfirmation) String() string            { return proto.CompactTextString(m) }
