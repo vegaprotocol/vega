@@ -9,6 +9,7 @@ import (
 	"vega/proto"
 )
 
+
 type TradeService interface {
 	Init(tradeStore datastore.TradeStore)
 	GetTrades(ctx context.Context, market string, limit uint64) (trades []msg.Trade, err error)
@@ -50,6 +51,8 @@ func (t *tradeService) GetTradesForOrder(ctx context.Context, market string, ord
 	}
 	return tradeMsgs, err
 }
+
+
 
 type OrderService interface {
 	Init(orderStore datastore.OrderStore)

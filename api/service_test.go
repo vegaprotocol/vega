@@ -23,13 +23,14 @@ func TestGetTradesOnAllMarkets(t *testing.T) {
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("GetAll", market, datastore.GetParams{Limit: 12345}).Return([]*datastore.Trade{
+
+	tradeStore.On("GetAll", market, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]*datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}},
 	}, nil).Once()
 
-	var tradeSet, err = tradeService.GetTrades(ctx, market, 12345)
+	var tradeSet, err = tradeService.GetTrades(ctx, market, datastore.GetParamsLimitDefault)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeSet)
@@ -45,7 +46,7 @@ func TestGetTradesForOrderOnMarket(t *testing.T) {
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: 12345}).Return([]*datastore.Trade{
+	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]*datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}, OrderId: orderId},
@@ -54,7 +55,7 @@ func TestGetTradesForOrderOnMarket(t *testing.T) {
 		{Trade: msg.Trade{Id: "F", Market: market, Price: 6}, OrderId: orderId},
 	}, nil).Once()
 
-	var tradeSet, err = tradeService.GetTradesForOrder(ctx, market, orderId, 12345)
+	var tradeSet, err = tradeService.GetTradesForOrder(ctx, market, orderId, datastore.GetParamsLimitDefault)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeSet)

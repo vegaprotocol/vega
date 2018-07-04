@@ -163,6 +163,7 @@ func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
 	return v.trade, nil
 }
 
+
 // GetByOrderId retrieves all trades for a given order id.
 func (t *memTradeStore) GetByOrderId(market string, orderId string, params GetParams) ([]*Trade, error) {
 
