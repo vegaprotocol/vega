@@ -31,8 +31,7 @@ func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 				}
 			}
 			if toRemove != -1 {
-				copy(priceLevel.orders[toRemove:], priceLevel.orders[toRemove+1:])
-				priceLevel.orders = priceLevel.orders[:len(priceLevel.orders)-1]
+				priceLevel.removeOrder(toRemove)
 			}
 			if len(priceLevel.orders) == 0 {
 				toDelete = idx
@@ -128,4 +127,8 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 		lastTradedPrice = trades[len(trades)-1].Price
 	}
 	return trades, impactedOrders, lastTradedPrice
+}
+
+func (s *OrderBookSide) getLevels() []*PriceLevel {
+	return s.levels
 }

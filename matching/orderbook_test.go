@@ -9,79 +9,79 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// test for order validation
-//func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
-//	book := NewBook("testOrderBook", DefaultConfig())
-//	book.latestTimestamp = 10
-//
-//	invalidTimestampOrderMsg := &msg.Order{
-//		Market:    "testOrderBook",
-//		Party:     "A",
-//		Side:      msg.Side_Sell,
-//		Price:     100,
-//		Size:      100,
-//		Remaining: 100,
-//		Type:      msg.Order_GTC,
-//		Timestamp: 0,
-//		Id:        "id-number-one",
-//	}
-//	_, err := book.AddOrder(invalidTimestampOrderMsg)
-//	assert.Equal(t, msg.OrderError_ORDER_OUT_OF_SEQUENCE, err)
-//
-//	book.latestTimestamp = 0
-//	invalidRemainginSizeOrderMsg := &msg.Order{
-//		Market:    "testOrderBook",
-//		Party:     "A",
-//		Side:      msg.Side_Sell,
-//		Price:     100,
-//		Size:      100,
-//		Remaining: 300,
-//		Type:      msg.Order_GTC,
-//		Timestamp: 0,
-//		Id:        "id-number-one",
-//	}
-//	_, err = book.AddOrder(invalidRemainginSizeOrderMsg)
-//	assert.Equal(t, msg.OrderError_INVALID_REMAINING_SIZE, err)
-//
-//	invalidIdOrderMsg := &msg.Order{
-//		Market:    "testOrderBook",
-//		Party:     "A",
-//		Side:      msg.Side_Sell,
-//		Price:     100,
-//		Size:      100,
-//		Remaining: 100,
-//		Type:      msg.Order_GTC,
-//		Timestamp: 0,
-//		Id:        "foobar",
-//	}
-//	_, err = book.AddOrder(invalidIdOrderMsg)
-//	assert.Equal(t, msg.OrderError_NON_EMPTY_NEW_ORDER_ID, err)
-//}
-//
-//func TestOrderBook_RemoveOrder(t *testing.T) {
-//	book := NewBook("testOrderBook", DefaultConfig())
-//
-//	newOrder := &msg.Order{
-//		Market:    "testOrderBook",
-//		Party:     "A",
-//		Side:      msg.Side_Sell,
-//		Price:     101,
-//		Size:      100,
-//		Remaining: 100,
-//		Type:      msg.Order_GTC,
-//		Timestamp: 0,
-//	}
-//
-//	book.AddOrder(newOrder)
-//
-//	log.Println("calling remove order")
-//	err := book.RemoveOrder(newOrder)
-//	if err != nil {
-//		log.Println("sth bad happened")
-//	}
-//
-//	book.PrintState("after remove order")
-//}
+//test for order validation
+func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
+	book := NewBook("testOrderBook", DefaultConfig())
+	book.latestTimestamp = 10
+
+	invalidTimestampOrderMsg := &msg.Order{
+		Market:    "testOrderBook",
+		Party:     "A",
+		Side:      msg.Side_Sell,
+		Price:     100,
+		Size:      100,
+		Remaining: 100,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+		Id:        "id-number-one",
+	}
+	_, err := book.AddOrder(invalidTimestampOrderMsg)
+	assert.Equal(t, msg.OrderError_ORDER_OUT_OF_SEQUENCE, err)
+
+	book.latestTimestamp = 0
+	invalidRemainginSizeOrderMsg := &msg.Order{
+		Market:    "testOrderBook",
+		Party:     "A",
+		Side:      msg.Side_Sell,
+		Price:     100,
+		Size:      100,
+		Remaining: 300,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+		Id:        "id-number-one",
+	}
+	_, err = book.AddOrder(invalidRemainginSizeOrderMsg)
+	assert.Equal(t, msg.OrderError_INVALID_REMAINING_SIZE, err)
+
+	invalidIdOrderMsg := &msg.Order{
+		Market:    "testOrderBook",
+		Party:     "A",
+		Side:      msg.Side_Sell,
+		Price:     100,
+		Size:      100,
+		Remaining: 100,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+		Id:        "foobar",
+	}
+	_, err = book.AddOrder(invalidIdOrderMsg)
+	assert.Equal(t, msg.OrderError_NON_EMPTY_NEW_ORDER_ID, err)
+}
+
+func TestOrderBook_RemoveOrder(t *testing.T) {
+	book := NewBook("testOrderBook", DefaultConfig())
+
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Party:     "A",
+		Side:      msg.Side_Sell,
+		Price:     101,
+		Size:      100,
+		Remaining: 100,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+	}
+
+	book.AddOrder(newOrder)
+
+	log.Println("calling remove order")
+	err := book.RemoveOrder(newOrder)
+	if err != nil {
+		log.Println("sth bad happened")
+	}
+
+	book.PrintState("after remove order")
+}
 
 func TestOrderBook_AddOrder(t *testing.T) {
 	book := NewBook("testOrderBook", DefaultConfig())

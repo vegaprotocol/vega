@@ -2,7 +2,6 @@ package matching
 
 import (
 	"fmt"
-	//"sync"
 	"vega/proto"
 
 	"github.com/golang/go/src/pkg/strconv"
@@ -22,7 +21,7 @@ type OrderBook struct {
 	lastTradedPrice uint64
 	config          Config
 	latestTimestamp uint64
-	ReqNumber int64
+	ReqNumber       int64
 }
 
 // Create an order book with a given name
@@ -47,10 +46,10 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		b.latestTimestamp = order.Timestamp
 	}
 
-	//b.PrintState("Entry state:")
+	b.PrintState("Entry state:")
 
 	// uncross with opposite
-		trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
+	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
 
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
@@ -58,18 +57,17 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// if state of the book changed show state
 	if len(trades) != 0 {
-		//b.PrintState("After uncross state:")
+		b.PrintState("After uncross state:")
 	}
 
 	// if order is persistent type add to order book to the correct side
 	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
 		b.getSide(order.Side).addOrder(order, order.Side)
 
-		//b.PrintState("After addOrder state:")
+		b.PrintState("After addOrder state:")
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
-	//b.mutex.Unlock()
 	return orderConfirmation, msg.OrderError_NONE
 }
 
@@ -107,53 +105,27 @@ func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.O
 	confirm := msg.OrderConfirmationPool.Get().(*msg.OrderConfirmation)
 	confirm.Order = order
 	confirm.PassiveOrdersAffected = impactedOrders
-	confirm.Trades =                trades
+	confirm.Trades = trades
 	return confirm
 }
 
+func (b *OrderBook) PrintState(msg string) {
+	fmt.Println()
+	fmt.Println(msg)
+	fmt.Println("------------------------------------------------------------")
+	fmt.Println("                        BUY SIDE                            ")
+	for _, priceLevel := range b.buy.getLevels() {
+		if len(priceLevel.orders) > 0 {
+			priceLevel.print()
+		}
+	}
+	fmt.Println("------------------------------------------------------------")
+	fmt.Println("                        SELL SIDE                           ")
+	for _, priceLevel := range b.sell.getLevels() {
+		if len(priceLevel.orders) > 0 {
+			priceLevel.print()
+		}
+	}
+	fmt.Println("------------------------------------------------------------")
 
-//func collectGarbage(i btree.Item) bool {
-//		priceLevel := i.(*PriceLevel)
-//		priceLevel.collectGarbage()
-//		return true
-//}
-
-//func (b *OrderBook) PrintState(msg string) {
-//	log.Println()
-//	log.Println(msg)
-//	log.Println("------------------------------------------------------------")
-//	log.Println("                        BUY SIDE                            ")
-//	b.buy.levels.Descend(printOrders())
-//	log.Println("------------------------------------------------------------")
-//	log.Println("                        SELL SIDE                           ")
-//	b.sell.levels.Ascend(printOrders())
-//	log.Println("------------------------------------------------------------")
-//
-//}
-//
-//func printOrders() func(i btree.Item) bool {
-//	return func(i btree.Item) bool {
-//		priceLevel := i.(*PriceLevel)
-//		if len(priceLevel.orders) > 0 {
-//
-//			log.Printf("priceLevel: %d", priceLevel.price)
-//
-//			for _, o := range priceLevel.orders {
-//				var side string
-//				if o.order.Side == msg.Side_Buy {
-//					side = "BUY"
-//				} else {
-//					side = "SELL"
-//				}
-//
-//				line := fmt.Sprintf("      %s %s @%d size=%d R=%d Type=%d T=%d %s",
-//					o.order.Party, side, o.order.Price, o.order.Size, o.order.Remaining, o.order.Type, o.order.Timestamp, o.order.Id)
-//
-//				log.Println(line)
-//			}
-//
-//			log.Println()
-//		}
-//		return true
-//	}
-//}
+}

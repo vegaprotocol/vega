@@ -27,7 +27,11 @@ func (l *PriceLevel) addOrder(o *msg.Order) {
 
 	// add orders to slice of orders on this price level
 	l.orders = append(l.orders, o)
+}
 
+func (l *PriceLevel) removeOrder(index int) {
+	copy(l.orders[index:], l.orders[index+1:])
+	l.orders = l.orders[:len(l.orders)-1]
 }
 
 func (l *PriceLevel) increaseVolumeByTimestamp(o *msg.Order) {
@@ -121,7 +125,6 @@ func (l *PriceLevel) uncross(agg *msg.Order) (filled bool, trades []*msg.Trade, 
 
 	if len(toRemove) > 0 {
 		for _, idx := range toRemove {
-			//l.decreaseVolumeByTimestamp(l.orders[idx-removed])
 			copy(l.orders[idx-removed:], l.orders[idx-removed+1:])
 			removed++
 		}
@@ -186,10 +189,21 @@ func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
 	trade.Aggressor = agg.Side
 	trade.Buyer = buyer.Party
 	trade.Seller = seller.Party
-
-	//trade.id = trade.Digest()
-	//trade.id = fmt.Sprintf("%d", time.Now().UnixNano())
-
-	//log.Printf("Matched: %v\n", trade)
 	return trade
+}
+
+func (l PriceLevel) print() {
+	fmt.Printf("priceLevel: %d", l.price)
+	for _, o := range l.orders {
+		var side string
+		if o.Side == msg.Side_Buy {
+			side = "BUY"
+		} else {
+			side = "SELL"
+		}
+
+		line := fmt.Sprintf("      %s %s @%d size=%d R=%d Type=%d T=%d %s",
+			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id)
+		fmt.Println(line)
+	}
 }
