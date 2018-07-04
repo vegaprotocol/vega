@@ -1,11 +1,12 @@
 # #!/bin/bash
 
 # Set GOPATH if it's unset
-if [ -z ${var+x} ]
+if [ -z ${GOPATH+x} ];
 then
     GOPATH=$HOME/go
-    #echo "Using ${GOPATH} for GOPATH"
-fi     
+fi
+
+echo "Using ${GOPATH} for GOPATH"
 
 SERVICE_HOME=services/trading
 PROTO_DEF=$SERVICE_HOME/trading.proto
