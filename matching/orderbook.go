@@ -7,11 +7,6 @@ import (
 	"github.com/golang/go/src/pkg/strconv"
 )
 
-type Orders struct {
-	price  uint64
-	orders []*msg.Order
-}
-
 type OrderBook struct {
 	name            string
 	buy             *OrderBookSide

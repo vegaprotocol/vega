@@ -9,7 +9,6 @@ type MatchingEngine interface {
 	CreateMarket(id string)
 	SubmitOrder(order msg.Order) (*msg.OrderConfirmation, msg.OrderError)
 	DeleteOrder(id string) *msg.Order
-	GetMarketData(marketId string) *msg.MarketData
 }
 
 func (v Vega) CreateMarket(id string) {
@@ -29,7 +28,6 @@ func (v Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderEr
 	if err != msg.OrderError_NONE {
 		return nil, err
 	}
-
 	return confirmationMessage, msg.OrderError_NONE
 }
 
@@ -37,7 +35,4 @@ func (v Vega) DeleteOrder(order *msg.Order) {
 	if market, exists := v.markets[order.Market]; exists {
 		market.RemoveOrder(order)
 	}
-
-	// update orderCancellation channel
-
 }
