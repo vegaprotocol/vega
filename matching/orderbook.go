@@ -46,7 +46,11 @@ func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, m
 	//printSlice(*trades)
 	if len(*trades) == 0 {
 		for _, c := range b.config.OrderChans {
-			c <- *orderMessage
+			go func(c chan<- msg.Order, orderMessage *msg.Order) {
+				fmt.Println("ORDER MESSAGE: SENDING...")
+				c <- *orderMessage
+				fmt.Println("ORDER MESSAGE: SENT")
+			}(c, orderMessage)
 		}
 	}
 	return orderConfirmation, msg.OrderError_NONE

@@ -14,7 +14,7 @@ import (
 	"vega/proto"
 )
 
-const sseChannelSize = 32
+const sseChannelSize = 2 << 16
 
 func main() {
 	chain := flag.Bool("chain", false, "Start a Tendermint blockchain socket")

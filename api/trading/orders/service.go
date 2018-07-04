@@ -29,8 +29,9 @@ func (p *rpcOrderService) CreateOrder(order models.Order) (success bool, err err
 		return false, err
 	}
 
-	var reqUrl = "http://localhost:46657/broadcast_tx_commit?tx=%22" + newGuid() + "|" + payload + "%22"
-	resp, err := http.Get(reqUrl)
+	reqUrl := "http://localhost:46657/broadcast_tx_async?tx=%22" + newGuid() + "|" + payload + "%22"
+	client := &http.Client{Timeout:5 * time.Second}
+	resp, err := client.Get(reqUrl)
 	if err != nil {
 		return false, err
 	}
