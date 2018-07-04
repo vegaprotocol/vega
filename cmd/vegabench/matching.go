@@ -55,5 +55,4 @@ func BenchmarkMatching(
 			oconfirm.Release()
 		}
 	}
-
 }
