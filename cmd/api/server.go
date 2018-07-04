@@ -36,7 +36,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	fmt.Println(lis)
 
 	// Normal GRPC thing
 	grpcServer := grpc.NewServer()
@@ -56,4 +55,6 @@ func main() {
 	}
 
 	go http.ListenAndServe(":8080", mux)
+
+	for {}
 }
