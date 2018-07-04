@@ -2,8 +2,8 @@
 package main
 
 import (
-	"vega/api/endpoints/sse"
 	"vega/api/endpoints/rest"
+	"vega/api/endpoints/sse"
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"

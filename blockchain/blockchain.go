@@ -5,14 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-
 	"fmt"
-
-	"github.com/tendermint/abci/example/code"
-	"github.com/tendermint/abci/types"
 
 	"vega/core"
 	"vega/proto"
+
+	"github.com/tendermint/abci/example/code"
+	"github.com/tendermint/abci/types"
 )
 
 type State struct {

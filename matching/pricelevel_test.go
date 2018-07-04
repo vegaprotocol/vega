@@ -2,8 +2,9 @@ package matching
 
 import (
 	"testing"
-	"github.com/stretchr/testify/assert"
 	"vega/proto"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetPriceLevel(t *testing.T) {
