@@ -78,17 +78,6 @@ func (m *MemoryStoreProvider) listenForOrders() {
 func (m *MemoryStoreProvider) processOrderMessage(orderMsg msg.Order) {
 	o := NewOrderFromProtoMessage(orderMsg)
 
-	switch msg.Order_Status(o.Status) {
-	case msg.Order_NEW:
-		// Audit new order via order audit log
-	case msg.Order_FILLED:
-		// Audit new order filled ^
-	case msg.Order_ACTIVE:
-		// Audit new order active ^
-	case msg.Order_CANCELLED:
-		// Audit new order cancelled ^
-	}
-
 	m.orderStore.Put(o)
 
 	fmt.Printf("Added order of size %d, price %d", o.Size, o.Price)

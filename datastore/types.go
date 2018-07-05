@@ -47,7 +47,6 @@ func (or *Order) ToProtoMessage() *msg.Order {
 		Remaining: or.Remaining,
 		Timestamp: or.Timestamp,
 		Side:      or.Side,
-		Status:    or.Status,
 		Type:      or.Type,
 	}
 }
