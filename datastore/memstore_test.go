@@ -45,6 +45,23 @@ func TestMemStore_PostAndGetNewOrder(t *testing.T) {
 	assert.Equal(t, order, o)
 }
 
+func TestMemStore_PostDuplicateOrder(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newOrderStore = NewOrderStore(&memStore)
+
+	var order = &Order{
+		Order: msg.Order{
+			Id:     "45305210ff7a9bb9450b1833cc10368a",
+			Market: testMarket,
+		},
+	}
+
+	err := newOrderStore.Post(order)
+	assert.Nil(t, err)
+	err = newOrderStore.Post(order)
+	assert.Error(t, err, "order exists in store")
+}
+
 func TestMemStore_PostOrderToNoneExistentMarket(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newOrderStore = NewOrderStore(&memStore)
@@ -93,6 +110,33 @@ func TestMemStore_PostPutAndGetExistingOrder(t *testing.T) {
 	assert.Equal(t, uint64(5), o.Size)
 }
 
+
+func TestMemStore_PutNoneExistentOrder(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newOrderStore = NewOrderStore(&memStore)
+	var order = &Order{
+		Order: msg.Order{
+			Id:     "45305210ff7a9bb9450b1833cc10368a",
+			Market: testMarket,
+		},
+	}
+	err := newOrderStore.Put(order)
+	assert.Error(t, err, "order not found in store")
+}
+
+func TestMemStore_PutOrderToNoneExistentMarket(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newOrderStore = NewOrderStore(&memStore)
+	var order = &Order{
+		Order: msg.Order{
+			Id:     "45305210ff7a9bb9450b1833cc10368a",
+			Market: "GBP/EUR19",
+		},
+	}
+	err := newOrderStore.Put(order)
+	assert.Error(t, err, "market does not exist")
+}
+
 func TestMemStore_PostAndDeleteOrder(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newOrderStore = NewOrderStore(&memStore)
@@ -115,6 +159,28 @@ func TestMemStore_PostAndDeleteOrder(t *testing.T) {
 	assert.Nil(t, err)
 
 	o, err = newOrderStore.Get(testMarket, order.Id)
+	assert.Nil(t, o)
+}
+
+func TestMemStore_DeleteOrderFromNoneExistentMarket(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newOrderStore = NewOrderStore(&memStore)
+	var order = &Order{
+		Order: msg.Order{
+			Id:     "45305210ff7a9bb9450b1833cc10368a",
+			Market: "GBP/EUR19",
+		},
+	}
+	err := newOrderStore.Delete(order)
+	assert.Error(t, err, "market does not exist")
+}
+
+
+func TestMemStore_GetOrderForNoneExistentMarket(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newOrderStore = NewOrderStore(&memStore)
+	o, err := newOrderStore.Get("UNKNOWN", "ID")
+	assert.Error(t, err, "market does not exist")
 	assert.Nil(t, o)
 }
 

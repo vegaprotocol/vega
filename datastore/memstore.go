@@ -7,6 +7,7 @@ import (
 // memMarket should keep track of the trades/orders operating on a Market.
 type memMarket struct {
 	name   string
+	ordersIndex []string
 	orders map[string]*memOrder
 	trades map[string]*memTrade
 }
@@ -80,13 +81,17 @@ func (t *memOrderStore) GetAll(market string, params GetParams) ([]*Order, error
 	if err != nil {
 		return nil, err
 	}
+
+	// Limit is by default descending
 	pos := uint64(0)
 	orders := make([]*Order, 0)
-	for _, value := range t.store.markets[market].orders {
-		orders = append(orders, value.order)
+	for i := len(t.store.markets[market].ordersIndex)-1; i >= 0; i-- {
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
+		idx := t.store.markets[market].ordersIndex[i]
+		value :=t.store.markets[market].orders[idx]
+		orders = append(orders, value.order)
 		pos++
 	}
 	return orders, nil
@@ -123,7 +128,10 @@ func (t *memOrderStore) Post(or *Order) error {
 			trades: make([]*memTrade, 0),
 			order:  or,
 		}
+		// Insert order struct into lookup hashtable
 		t.store.markets[or.Market].orders[or.Id] = order
+		// Due to go randomisation of keys, we'll need to add an index entry too for ordering
+		t.store.markets[or.Market].ordersIndex = append(t.store.markets[or.Market].ordersIndex, or.Id)
 	}
 	return nil
 }
@@ -153,7 +161,19 @@ func (t *memOrderStore) Delete(or *Order) error {
 	if err != nil {
 		return err
 	}
+
+	// Remove value
 	delete(t.store.markets[or.Market].orders, or.Id)
+
+	// Remove index
+	pos := uint64(0)
+	for p, value := range t.store.markets[or.Market].ordersIndex {
+		if value == or.Id {
+			pos = uint64(p)
+			break
+		}
+	}
+	t.store.markets[or.Market].ordersIndex = append(t.store.markets[or.Market].ordersIndex[:pos], t.store.markets[or.Market].ordersIndex[pos+1:]...)
 	return nil
 }
 
