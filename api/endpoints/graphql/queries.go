@@ -9,11 +9,11 @@ type Resolver struct {
 	risk       core.RiskEngine
 	settlement core.SettlementEngine
 }
-
-func NewResolver(vega core.Vega) *Resolver {
-	return &Resolver{
-		matching:   vega,
-		risk:       vega,
-		settlement: vega,
-	}
-}
+//
+//func NewResolver(vega core.Vega) *Resolver {
+//	return &Resolver{
+//		matching:   vega,
+//		risk:       vega,
+//		settlement: vega,
+//	}
+//}

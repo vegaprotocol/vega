@@ -17,7 +17,6 @@ func TestOrderModelFromProtoMessage(t *testing.T) {
 		Size:                 1,
 		Remaining:            50,
 		Type:                 1,
-		Status:               0,
 		Timestamp:            1,
 	}
 
@@ -31,7 +30,6 @@ func TestOrderModelFromProtoMessage(t *testing.T) {
 			Size: 1,
 			Remaining: 50,
 			Type: 1,
-			Status: 0,
 			Timestamp: 1,
 		},
 	}
@@ -52,7 +50,6 @@ func TestOrderModelToProtoMessage(t *testing.T) {
 			Size: 1,
 			Remaining: 50,
 			Type: 1,
-			Status: 0,
 			Timestamp: 1,
 		},
 	}
@@ -66,7 +63,6 @@ func TestOrderModelToProtoMessage(t *testing.T) {
 		Size:                 1,
 		Remaining:            50,
 		Type:                 1,
-		Status:               0,
 		Timestamp:            1,
 	}
 

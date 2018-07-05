@@ -10,7 +10,7 @@ import (
 func TestNewBlockchain(t *testing.T) {
 	config := core.Config{}
 	vegaApp := core.New(config)
-	chain := NewBlockchain(*vegaApp)
+	chain := NewBlockchain(vegaApp)
 
 	assert.Equal(t, chain.state.Height, int64(0))
 }
