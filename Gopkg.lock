@@ -65,6 +65,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "release-branch.go1"
+  name = "github.com/golang/go"
+  packages = ["src/pkg/strconv"]
+  revision = "08b97d4061dd75ceec1d44e4335183cd791c9306"
+
+[[projects]]
   name = "github.com/golang/protobuf"
   packages = [
     "jsonpb",
@@ -77,12 +83,6 @@
   ]
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
   version = "v1.1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/google/btree"
-  packages = ["."]
-  revision = "e89373fe6b4a7413d7acd6da1725b83ef713e6e4"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -139,12 +139,6 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/petar/GoLLRB"
-  packages = ["llrb"]
-  revision = "53be0d36a84c2a886ca057d34b6aa4468df9ccb4"
-
-[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -192,12 +186,6 @@
   packages = ["codec"]
   revision = "b4c50a2b199d93b13dc15e78929cfb23bfdf21ab"
   version = "v1.1.1"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/crypto"
-  packages = ["sha3"]
-  revision = "159ae71589f303f9fbfd7528413e0fe944b9c1cb"
 
 [[projects]]
   branch = "master"
@@ -285,6 +273,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4220a4e8306ab59ae089396c4063ecfd9ac6d37ddb8a7cfd9a38909e99af1b0c"
+  inputs-digest = "9b9e77abace9a69f01bf382bf03fcae8cb0ce9c63785928111edebd9c0a5ba73"
   solver-name = "gps-cdcl"
   solver-version = 1
