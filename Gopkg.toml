@@ -35,19 +35,11 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/google/btree"
-
-[[constraint]]
-  branch = "master"
   name = "github.com/graph-gophers/graphql-go"
 
 [[constraint]]
   name = "github.com/tendermint/abci"
   version = "0.11.0"
-
-[[constraint]]
-  branch = "master"
-  name = "golang.org/x/crypto"
 
 [prune]
   go-tests = true
