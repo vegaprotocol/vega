@@ -2,12 +2,13 @@ package core
 
 import (
 	"vega/matching"
+	"vega/proto"
 )
 
 type Vega struct {
-	config  Config
-	markets map[string]*matching.OrderBook
-	orders  map[string]*matching.OrderEntry
+	config                 Config
+	markets                map[string]*matching.OrderBook
+	OrderConfirmationChans []chan msg.OrderConfirmation
 }
 
 type Config struct {
@@ -16,9 +17,9 @@ type Config struct {
 
 func New(config Config) *Vega {
 	return &Vega{
-		config:  config,
-		markets: make(map[string]*matching.OrderBook),
-		orders:  make(map[string]*matching.OrderEntry),
+		config:                 config,
+		markets:                make(map[string]*matching.OrderBook),
+		OrderConfirmationChans: []chan msg.OrderConfirmation{},
 	}
 }
 

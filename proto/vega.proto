@@ -21,6 +21,7 @@ message Order {
 message OrderConfirmation {
     Order order = 1;
     repeated Trade trades = 2;
+    repeated Order passiveOrdersAffected = 3;
 }
 
 enum OrderError {

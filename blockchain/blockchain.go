@@ -5,14 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-
 	"fmt"
-
-	"github.com/tendermint/abci/example/code"
-	"github.com/tendermint/abci/types"
 
 	"vega/core"
 	"vega/proto"
+
+	"github.com/tendermint/abci/example/code"
+	"github.com/tendermint/abci/types"
 )
 
 type State struct {
@@ -24,11 +23,11 @@ type State struct {
 type Blockchain struct {
 	types.BaseApplication
 
-	vega  core.Vega
+	vega  *core.Vega
 	state State
 }
 
-func NewBlockchain(vegaApp core.Vega) *Blockchain {
+func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 	state := State{}
 	return &Blockchain{state: state, vega: vegaApp}
 }
@@ -105,14 +104,20 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	}
 
 	// deserialize JSON to struct
-	var order msg.Order
-	e := json.Unmarshal(jsonBlob, &order)
+	order := msg.OrderPool.Get().(*msg.Order)
+	e := json.Unmarshal(jsonBlob, order)
 	if e != nil {
 		fmt.Println("Error: ", e.Error())
 	}
 
 	// deliver to the Vega trading core
-	app.vega.SubmitOrder(order)
+	confirmationMessage, _ := app.vega.SubmitOrder(order)
+	if confirmationMessage != nil {
+		fmt.Printf("abci reports it received a confirmation message from vega:")
+		fmt.Printf("aggressive order %+v", confirmationMessage.Order)
+		fmt.Printf("trades %+v", confirmationMessage.Trades)
+		fmt.Printf("passive orders affected %+v", confirmationMessage.PassiveOrdersAffected)
+	}
 
 	app.state.Size += 1
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
