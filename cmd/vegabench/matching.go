@@ -23,7 +23,7 @@ func BenchmarkMatching(
 		reportInterval = numberOfOrders
 	}
 
-	config := core.DefaultConfig()
+	config := core.GetConfig()
 
 	vega := core.New(config)
 	vega.CreateMarket(marketId)

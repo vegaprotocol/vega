@@ -6,44 +6,29 @@ import (
 	"vega/api/endpoints/sse"
 	"vega/blockchain"
 	"vega/core"
-	"vega/datastore"
 	"vega/proto"
-	"vega/api"
+
 )
 
 const sseChannelSize = 2 << 16
-const storeChannelSize = 2 << 16
 const marketName = "BTC/DEC18"
 
 func main() {
+	config := core.GetConfig()
 
-	config := core.DefaultConfig()
-
-	// Storage Service provides read stores for consumer VEGA API
-	// Uses in memory storage (maps/slices etc), configurable in future
-	storeOrderChan := make(chan msg.Order, storeChannelSize)
-	storeTradeChan := make(chan msg.Trade, storeChannelSize)
-	storage := &datastore.MemoryStoreProvider{}
-	storage.Init([]string{marketName}, storeOrderChan, storeTradeChan)
-
-	// Initialise concrete consumer services
-	orderService := api.NewOrderService()
-	tradeService := api.NewTradeService()
-	orderService.Init(storage.OrderStore())
-	tradeService.Init(storage.TradeStore())
+	// Vega core
+	vega := core.New(config)
 
 	// REST server
-	restServer := rest.NewRestServer(orderService, tradeService)
+	restServer := rest.NewRestServer(vega)
+	go restServer.Start()
 
+	// SSE server
 	sseOrderChan := make(chan msg.Order, sseChannelSize)
 	sseTradeChan := make(chan msg.Trade, sseChannelSize)
 	sseServer := sse.NewServer(sseOrderChan, sseTradeChan)
-
-	vega := core.New(config)
-	vega.CreateMarket(marketName)
-
-	go restServer.Start()
 	go sseServer.Start()
+
 	blockchain.Start(vega)
 
 }

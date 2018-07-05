@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"vega/api"
+	"vega/core"
 )
 
 type restServer struct{
@@ -11,10 +12,10 @@ type restServer struct{
 	tradeService api.TradeService
 }
 
-func NewRestServer(orderService api.OrderService, tradeService api.TradeService) *restServer {
+func NewRestServer(vega *core.Vega) *restServer {
 	return &restServer{
-		orderService: orderService,
-		tradeService: tradeService,
+		orderService: vega.OrdersService,
+		tradeService: vega.TradesService,
 	}
 }
 
@@ -25,3 +26,4 @@ func (s *restServer) Start() {
 	router := NewRouter(s.orderService, s.tradeService)
 	http.ListenAndServe(addr, router)
 }
+
