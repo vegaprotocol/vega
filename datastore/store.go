@@ -1,9 +1,5 @@
 package datastore
 
-import (
-	"vega/proto"
-)
-
 type TradeStore interface {
 	// GetAll retrieves a trades for a given market.
 	// If market == "" it will return trades for all markets in the store.
@@ -46,8 +42,6 @@ type MemoryStoreProvider struct {
 	memStore   MemStore
 	tradeStore TradeStore
 	orderStore OrderStore
-	tradeChan  <-chan msg.Trade
-	orderChan  <-chan msg.Order
 }
 
 func (m *MemoryStoreProvider) Init(markets []string) {
