@@ -110,7 +110,7 @@ func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (succes
 }
 
 func (p *orderService) GetOrders(ctx context.Context, market string, limit uint64) (orders []msg.Order, err error) {
-	o, err := p.orderStore.GetAll(market, datastore.GetParams{ Limit: limit })
+	o, err := p.orderStore.GetAll(market, "", datastore.GetParams{ Limit: limit })
 	if err != nil {
 		return nil, err
 	}

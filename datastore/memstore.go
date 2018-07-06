@@ -14,8 +14,13 @@ type memMarket struct {
 
 // In memory order struct keeps an internal map of pointers to trades for an order.
 type memOrder struct {
-	order  *Order
+	order  Order
 	trades []*memTrade
+}
+
+
+func (mo *memOrder) String() string {
+	return "order-id=" + mo.order.Id
 }
 
 // memOrderStore should implement OrderStore interface.
@@ -25,8 +30,12 @@ type memOrderStore struct {
 
 // In memory trade struct keeps a pointer to the related order.
 type memTrade struct {
-	trade *Trade
+	trade Trade
 	order *memOrder
+}
+
+func (mt *memTrade) String() string {
+	return "trade-id=" + mt.trade.Id
 }
 
 // memTradeStore should implement TradeStore interface.
@@ -38,6 +47,9 @@ type memTradeStore struct {
 // It is initialised by calling NewMemStore with a list of markets.
 type MemStore struct {
 	markets map[string]*memMarket
+
+	trades []*memTrade // All trades on all markets
+	orders []*memOrder // All orders on all markets
 }
 
 // NewMemStore creates an instance of the ram based data store.
@@ -76,67 +88,76 @@ func (ms *MemStore) marketExists(market string) bool {
 }
 
 // GetAll retrieves a orders for a given market.
-func (t *memOrderStore) GetAll(market string, params GetParams) ([]*Order, error) {
-	err := t.marketExists(market)
-	if err != nil {
-		return nil, err
-	}
-
-	// Limit is by default descending
-	pos := uint64(0)
-	orders := make([]*Order, 0)
-	for i := len(t.store.markets[market].ordersIndex)-1; i >= 0; i-- {
-		if params.Limit > 0 && pos == params.Limit {
-			break
+func (t *memOrderStore) GetAll(market string, party string, params GetParams) ([]Order, error) {
+	// Return all orders on all markets
+	if market == "" {
+		// Limit is by default descending
+		pos := uint64(0)
+		orders := make([]Order, 0)
+		for i := len(t.store.orders)-1; i >= 0; i-- {
+			if params.Limit > 0 && pos == params.Limit {
+				break
+			}
+			value := t.store.orders[i]
+			if party == "" {
+				// Scan all parties
+				orders = append(orders, value.order)
+				pos++
+			} else {
+				// Scan for specific party
+				if value.order.Party == party {
+					orders = append(orders, value.order)
+					pos++
+				}
+			}
 		}
-		idx := t.store.markets[market].ordersIndex[i]
-		value :=t.store.markets[market].orders[idx]
-		orders = append(orders, value.order)
-		pos++
-	}
-	return orders, nil
-}
-
-// GetByParty retrieves all orders for a given party name on a market.
-func (t *memOrderStore) GetByParty(market string, party string, params GetParams) ([]*Order, error) {
-	err := t.marketExists(market)
-	if err != nil {
-		return nil, err
-	}
-
-	// Limit is by default descending
-	pos := uint64(0)
-	orders := make([]*Order, 0)
-	for i := len(t.store.markets[market].ordersIndex)-1; i >= 0; i-- {
-		if params.Limit > 0 && pos == params.Limit {
-			break
+		return orders, nil
+	// Return orders from single market
+	} else {
+		err := t.marketExists(market)
+		if err != nil {
+			return nil, err
 		}
-		idx := t.store.markets[market].ordersIndex[i]
-		value :=t.store.markets[market].orders[idx]
-		if value.order.Party == party {
-			orders = append(orders, value.order)
-			pos++
+		// Limit is by default descending
+		pos := uint64(0)
+		orders := make([]Order, 0)
+		for i := len(t.store.markets[market].ordersIndex)-1; i >= 0; i-- {
+			if params.Limit > 0 && pos == params.Limit {
+				break
+			}
+			key := t.store.markets[market].ordersIndex[i]
+			value := t.store.markets[market].orders[key]
+			if party == "" {
+				// Scan all parties
+				orders = append(orders, value.order)
+				pos++
+			} else {
+				// Scan for specific party
+				if value.order.Party == party {
+					orders = append(orders, value.order)
+					pos++
+				}
+			}
 		}
-
+		return orders, nil
 	}
-	return orders, nil
 }
 
 // Get retrieves an order for a given market and id.
-func (t *memOrderStore) Get(market string, id string) (*Order, error) {
+func (t *memOrderStore) Get(market string, id string) (Order, error) {
 	err := t.marketExists(market)
 	if err != nil {
-		return nil, err
+		return Order{}, err
 	}
 	v, ok := t.store.markets[market].orders[id]
 	if !ok {
-		return nil, NotFoundError{fmt.Errorf("could not find id %s", id)}
+		return Order{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
 	}
 	return v.order, nil
 }
 
 // Post creates a new order in the memory store.
-func (t *memOrderStore) Post(or *Order) error {
+func (t *memOrderStore) Post(or Order) error {
 	// todo validation of incoming order
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -151,18 +172,24 @@ func (t *memOrderStore) Post(or *Order) error {
 		fmt.Println("Adding new order with ID ", or.Id)
 		order := &memOrder{
 			trades: make([]*memTrade, 0),
-			order:  or,
+			order: or,
 		}
 		// Insert order struct into lookup hashtable
 		t.store.markets[or.Market].orders[or.Id] = order
+
+		//fmt.Printf("%v", t.store.markets[or.Market].orders)
+		//fmt.Println("")
+
 		// Due to go randomisation of keys, we'll need to add an index entry too for ordering
 		t.store.markets[or.Market].ordersIndex = append(t.store.markets[or.Market].ordersIndex, or.Id)
+		// Add to global orders index
+		t.store.orders = append(t.store.orders, order)
 	}
 	return nil
 }
 
 // Put updates an existing order in the memory store.
-func (t *memOrderStore) Put(or *Order) error {
+func (t *memOrderStore) Put(or Order) error {
 	// todo validation of incoming order
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -181,7 +208,7 @@ func (t *memOrderStore) Put(or *Order) error {
 }
 
 // Delete removes an order from the memory store.
-func (t *memOrderStore) Delete(or *Order) error {
+func (t *memOrderStore) Delete(or Order) error {
 	err := t.marketExists(or.Market)
 	if err != nil {
 		return err
@@ -199,6 +226,16 @@ func (t *memOrderStore) Delete(or *Order) error {
 		}
 	}
 	t.store.markets[or.Market].ordersIndex = append(t.store.markets[or.Market].ordersIndex[:pos], t.store.markets[or.Market].ordersIndex[pos+1:]...)
+
+	// Remove global index
+	for i, value := range t.store.orders {
+		if value.order.Id == or.Id {
+		 	pos = uint64(i)
+		}
+	}
+	copy(t.store.orders[pos:], t.store.orders[pos+1:])
+	t.store.orders[len(t.store.orders)-1] = nil // or the zero value of T
+	t.store.orders = t.store.orders[:len(t.store.orders)-1]
 	return nil
 }
 
@@ -212,13 +249,13 @@ func (t *memOrderStore) marketExists(market string) error {
 }
 
 // GetAll retrieves all trades for a given market.
-func (t *memTradeStore) GetAll(market string, params GetParams) ([]*Trade, error) {
+func (t *memTradeStore) GetAll(market string, params GetParams) ([]Trade, error) {
 	err := t.marketExists(market)
 	if err != nil {
 		return nil, err
 	}
 	pos := uint64(0)
-	trades := make([]*Trade, 0)
+	trades := make([]Trade, 0)
 	for _, value := range t.store.markets[market].trades {
 		trades = append(trades, value.trade)
 		if params.Limit > 0 && pos == params.Limit {
@@ -230,21 +267,21 @@ func (t *memTradeStore) GetAll(market string, params GetParams) ([]*Trade, error
 }
 
 // Get retrieves a trade for a given id.
-func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
+func (t *memTradeStore) Get(market string, id string) (Trade, error) {
 	err := t.marketExists(market)
 	if err != nil {
-		return nil, err
+		return Trade{}, err
 	}
 	v, ok := t.store.markets[market].trades[id]
 	if !ok {
-		return nil, NotFoundError{fmt.Errorf("could not find id %s", id)}
+		return Trade{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
 	}
 	return v.trade, nil
 }
 
 
 // GetByOrderId retrieves all trades for a given order id.
-func (t *memTradeStore) GetByOrderId(market string, orderId string, params GetParams) ([]*Trade, error) {
+func (t *memTradeStore) GetByOrderId(market string, orderId string, params GetParams) ([]Trade, error) {
 	err := t.marketExists(market)
 	if err != nil {
 		return nil, err
@@ -254,7 +291,7 @@ func (t *memTradeStore) GetByOrderId(market string, orderId string, params GetPa
 		return nil, fmt.Errorf("order not found in memstore: %s", orderId)
 	} else {
 		pos := uint64(0)
-		trades := make([]*Trade, 0)
+		trades := make([]Trade, 0)
 		for _, v := range order.trades {
 			trades = append(trades, v.trade)
 			if params.Limit > 0 && pos == params.Limit {
@@ -267,7 +304,7 @@ func (t *memTradeStore) GetByOrderId(market string, orderId string, params GetPa
 }
 
 // Post creates a new trade in the memory store.
-func (t *memTradeStore) Post(tr *Trade) error {
+func (t *memTradeStore) Post(tr Trade) error {
 	//todo validation of incoming trade
 	// if err := tr.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -295,7 +332,7 @@ func (t *memTradeStore) Post(tr *Trade) error {
 }
 
 // Put updates an existing trade in the store.
-func (t *memTradeStore) Put(tr *Trade) error {
+func (t *memTradeStore) Put(tr Trade) error {
 	//todo validation of incoming trade
 	// if err := tr.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
@@ -323,7 +360,7 @@ func (t *memTradeStore) Put(tr *Trade) error {
 }
 
 // Removes an order from the store.
-func (t *memTradeStore) Delete(tr *Trade) error {
+func (t *memTradeStore) Delete(tr Trade) error {
 	err := t.marketExists(tr.Market)
 	if err != nil {
 		return err

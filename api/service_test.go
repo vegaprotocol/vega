@@ -26,7 +26,7 @@ func TestTradeService_TestGetAllTradesOnMarket(t *testing.T) {
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
 
-	tradeStore.On("GetAll", market, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]*datastore.Trade{
+	tradeStore.On("GetAll", market, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}},
@@ -48,7 +48,7 @@ func TestTradeService_GetAllTradesForOrderOnMarket(t *testing.T) {
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]*datastore.Trade{
+	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}, OrderId: orderId},
@@ -74,7 +74,7 @@ func TestOrderService_GetOrderById(t *testing.T) {
 	var orderService = NewOrderService()
 	orderService.Init(&orderStore)
 
-	orderStore.On("Get", market, orderId).Return(&datastore.Order{
+	orderStore.On("Get", market, orderId).Return(datastore.Order{
 		Order: msg.Order{ Id: orderId, Market: market },
 	}, nil)
 
@@ -94,7 +94,7 @@ func TestOrderService_GetOrders(t *testing.T) {
 	var orderService = NewOrderService()
 	orderService.Init(&orderStore)
 
-	orderStore.On("GetAll", market, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]*datastore.Order{
+	orderStore.On("GetAll", market, "", datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Order{
 		{Order: msg.Order{Id: "A", Market: market, Price: 1},},
 		{Order: msg.Order{Id: "B", Market: market, Price: 2},},
 		{Order: msg.Order{Id: "C", Market: market, Price: 3},},
@@ -118,7 +118,7 @@ func TestTradeService_GetTradeById(t *testing.T) {
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("Get", market, tradeId).Return(&datastore.Trade{
+	tradeStore.On("Get", market, tradeId).Return(datastore.Trade{
 		Trade: msg.Trade{ Id: tradeId, Market: market },
 	}, nil)
 

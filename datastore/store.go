@@ -7,32 +7,34 @@ import (
 
 type TradeStore interface {
 	// GetAll retrieves a trades for a given market.
-	GetAll(market string, params GetParams) ([]*Trade, error)
+	// If market == "" it will return trades for all markets in the store.
+	// If party == "" it will return trades for all parties.
+	GetAll(market string, params GetParams) ([]Trade, error)
 	// Get retrieves a trade for a given id.
-	Get(market string, id string) (*Trade, error)
+	Get(market string, id string) (Trade, error)
 	// GetByOrderId retrieves all trades for a given order id.
-	GetByOrderId(market string, orderId string, params GetParams) ([]*Trade, error)
+	GetByOrderId(market string, orderId string, params GetParams) ([]Trade, error)
 	// Post creates a new trade in the store.
-	Post(r *Trade) error
+	Post(r Trade) error
 	// Put updates an existing trade in the store.
-	Put(r *Trade) error
+	Put(r Trade) error
 	// Removes a trade from the store.
-	Delete(r *Trade) error
+	Delete(r Trade) error
 }
 
 type OrderStore interface {
 	// GetAll retrieves all orders for a given market.
-	GetAll(market string, params GetParams) ([]*Order, error)
+	// If market == "" it will return orders for all markets in the store.
+	// If party == "" it will return orders for all parties.
+	GetAll(market string, party string, params GetParams) ([]Order, error)
 	// Get retrieves an order for a given market and id.
-	Get(market string, id string) (*Order, error)
-	// GetByParty retrieves all orders for a given party name.
-	GetByParty(market string, party string, params GetParams) ([]*Order, error)
+	Get(market string, id string) (Order, error)
 	// Post creates a new order in the store.
-	Post(r *Order) error
+	Post(r Order) error
 	// Put updates an existing order in the store.
-	Put(r *Order) error
+	Put(r Order) error
 	// Removes an order from the store.
-	Delete(r *Order) error
+	Delete(r Order) error
 }
 
 type StoreProvider interface {
@@ -78,7 +80,7 @@ func (m *MemoryStoreProvider) listenForOrders() {
 func (m *MemoryStoreProvider) processOrderMessage(orderMsg msg.Order) {
 	o := NewOrderFromProtoMessage(orderMsg)
 
-	m.orderStore.Put(o)
+	m.orderStore.Put(*o)
 
 	fmt.Printf("Added order of size %d, price %d", o.Size, o.Price)
 	fmt.Println("---")
@@ -89,7 +91,7 @@ func (m *MemoryStoreProvider) listenForTrades() {
 
 		t := NewTradeFromProtoMessage(tradeMsg, "")
 
-		m.tradeStore.Put(t)
+		m.tradeStore.Put(*t)
 
 		fmt.Printf("Added trade of size %d, price %d", t.Size, t.Price)
 		fmt.Println("---")

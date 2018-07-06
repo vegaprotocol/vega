@@ -10,11 +10,11 @@ type OrderStore struct {
 }
 
 // Delete provides a mock function with given fields: r
-func (_m *OrderStore) Delete(r *datastore.Order) error {
+func (_m *OrderStore) Delete(r datastore.Order) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*datastore.Order) error); ok {
+	if rf, ok := ret.Get(0).(func(datastore.Order) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)
@@ -24,16 +24,14 @@ func (_m *OrderStore) Delete(r *datastore.Order) error {
 }
 
 // Get provides a mock function with given fields: market, id
-func (_m *OrderStore) Get(market string, id string) (*datastore.Order, error) {
+func (_m *OrderStore) Get(market string, id string) (datastore.Order, error) {
 	ret := _m.Called(market, id)
 
-	var r0 *datastore.Order
-	if rf, ok := ret.Get(0).(func(string, string) *datastore.Order); ok {
+	var r0 datastore.Order
+	if rf, ok := ret.Get(0).(func(string, string) datastore.Order); ok {
 		r0 = rf(market, id)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*datastore.Order)
-		}
+		r0 = ret.Get(0).(datastore.Order)
 	}
 
 	var r1 error
@@ -46,39 +44,16 @@ func (_m *OrderStore) Get(market string, id string) (*datastore.Order, error) {
 	return r0, r1
 }
 
-// GetAll provides a mock function with given fields: market, params
-func (_m *OrderStore) GetAll(market string, params datastore.GetParams) ([]*datastore.Order, error) {
-	ret := _m.Called(market, params)
-
-	var r0 []*datastore.Order
-	if rf, ok := ret.Get(0).(func(string, datastore.GetParams) []*datastore.Order); ok {
-		r0 = rf(market, params)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*datastore.Order)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, datastore.GetParams) error); ok {
-		r1 = rf(market, params)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetByParty provides a mock function with given fields: market, party, params
-func (_m *OrderStore) GetByParty(market string, party string, params datastore.GetParams) ([]*datastore.Order, error) {
+// GetAll provides a mock function with given fields: market, party, params
+func (_m *OrderStore) GetAll(market string, party string, params datastore.GetParams) ([]datastore.Order, error) {
 	ret := _m.Called(market, party, params)
 
-	var r0 []*datastore.Order
-	if rf, ok := ret.Get(0).(func(string, string, datastore.GetParams) []*datastore.Order); ok {
+	var r0 []datastore.Order
+	if rf, ok := ret.Get(0).(func(string, string, datastore.GetParams) []datastore.Order); ok {
 		r0 = rf(market, party, params)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*datastore.Order)
+			r0 = ret.Get(0).([]datastore.Order)
 		}
 	}
 
@@ -93,11 +68,11 @@ func (_m *OrderStore) GetByParty(market string, party string, params datastore.G
 }
 
 // Post provides a mock function with given fields: r
-func (_m *OrderStore) Post(r *datastore.Order) error {
+func (_m *OrderStore) Post(r datastore.Order) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*datastore.Order) error); ok {
+	if rf, ok := ret.Get(0).(func(datastore.Order) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)
@@ -107,11 +82,11 @@ func (_m *OrderStore) Post(r *datastore.Order) error {
 }
 
 // Put provides a mock function with given fields: r
-func (_m *OrderStore) Put(r *datastore.Order) error {
+func (_m *OrderStore) Put(r datastore.Order) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*datastore.Order) error); ok {
+	if rf, ok := ret.Get(0).(func(datastore.Order) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)

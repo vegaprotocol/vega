@@ -10,11 +10,11 @@ type TradeStore struct {
 }
 
 // Delete provides a mock function with given fields: r
-func (_m *TradeStore) Delete(r *datastore.Trade) error {
+func (_m *TradeStore) Delete(r datastore.Trade) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*datastore.Trade) error); ok {
+	if rf, ok := ret.Get(0).(func(datastore.Trade) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)
@@ -24,16 +24,14 @@ func (_m *TradeStore) Delete(r *datastore.Trade) error {
 }
 
 // Get provides a mock function with given fields: market, id
-func (_m *TradeStore) Get(market string, id string) (*datastore.Trade, error) {
+func (_m *TradeStore) Get(market string, id string) (datastore.Trade, error) {
 	ret := _m.Called(market, id)
 
-	var r0 *datastore.Trade
-	if rf, ok := ret.Get(0).(func(string, string) *datastore.Trade); ok {
+	var r0 datastore.Trade
+	if rf, ok := ret.Get(0).(func(string, string) datastore.Trade); ok {
 		r0 = rf(market, id)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*datastore.Trade)
-		}
+		r0 = ret.Get(0).(datastore.Trade)
 	}
 
 	var r1 error
@@ -47,15 +45,15 @@ func (_m *TradeStore) Get(market string, id string) (*datastore.Trade, error) {
 }
 
 // GetAll provides a mock function with given fields: market, params
-func (_m *TradeStore) GetAll(market string, params datastore.GetParams) ([]*datastore.Trade, error) {
+func (_m *TradeStore) GetAll(market string, params datastore.GetParams) ([]datastore.Trade, error) {
 	ret := _m.Called(market, params)
 
-	var r0 []*datastore.Trade
-	if rf, ok := ret.Get(0).(func(string, datastore.GetParams) []*datastore.Trade); ok {
+	var r0 []datastore.Trade
+	if rf, ok := ret.Get(0).(func(string, datastore.GetParams) []datastore.Trade); ok {
 		r0 = rf(market, params)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*datastore.Trade)
+			r0 = ret.Get(0).([]datastore.Trade)
 		}
 	}
 
@@ -70,15 +68,15 @@ func (_m *TradeStore) GetAll(market string, params datastore.GetParams) ([]*data
 }
 
 // GetByOrderId provides a mock function with given fields: market, orderId, params
-func (_m *TradeStore) GetByOrderId(market string, orderId string, params datastore.GetParams) ([]*datastore.Trade, error) {
+func (_m *TradeStore) GetByOrderId(market string, orderId string, params datastore.GetParams) ([]datastore.Trade, error) {
 	ret := _m.Called(market, orderId, params)
 
-	var r0 []*datastore.Trade
-	if rf, ok := ret.Get(0).(func(string, string, datastore.GetParams) []*datastore.Trade); ok {
+	var r0 []datastore.Trade
+	if rf, ok := ret.Get(0).(func(string, string, datastore.GetParams) []datastore.Trade); ok {
 		r0 = rf(market, orderId, params)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*datastore.Trade)
+			r0 = ret.Get(0).([]datastore.Trade)
 		}
 	}
 
@@ -93,11 +91,11 @@ func (_m *TradeStore) GetByOrderId(market string, orderId string, params datasto
 }
 
 // Post provides a mock function with given fields: r
-func (_m *TradeStore) Post(r *datastore.Trade) error {
+func (_m *TradeStore) Post(r datastore.Trade) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*datastore.Trade) error); ok {
+	if rf, ok := ret.Get(0).(func(datastore.Trade) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)
@@ -107,11 +105,11 @@ func (_m *TradeStore) Post(r *datastore.Trade) error {
 }
 
 // Put provides a mock function with given fields: r
-func (_m *TradeStore) Put(r *datastore.Trade) error {
+func (_m *TradeStore) Put(r datastore.Trade) error {
 	ret := _m.Called(r)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*datastore.Trade) error); ok {
+	if rf, ok := ret.Get(0).(func(datastore.Trade) error); ok {
 		r0 = rf(r)
 	} else {
 		r0 = ret.Error(0)
