@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"fmt"
 	"vega/proto"
 )
 
@@ -38,7 +37,7 @@ type OrderStore interface {
 }
 
 type StoreProvider interface {
-	Init(markets []string, orderChan <-chan msg.Order, tradeChan <-chan msg.Trade)
+	Init(markets []string)
 	TradeStore() TradeStore
 	OrderStore() OrderStore
 }
@@ -51,15 +50,10 @@ type MemoryStoreProvider struct {
 	orderChan  <-chan msg.Order
 }
 
-func (m *MemoryStoreProvider) Init(markets []string, orderChan <-chan msg.Order, tradeChan <-chan msg.Trade) {
+func (m *MemoryStoreProvider) Init(markets []string) {
 	m.memStore = NewMemStore(markets)
 	m.tradeStore = NewTradeStore(&m.memStore)
 	m.orderStore = NewOrderStore(&m.memStore)
-	m.tradeChan = tradeChan
-	m.orderChan = orderChan
-
-	go m.listenForOrders()
-	go m.listenForTrades()
 }
 
 func (m *MemoryStoreProvider) TradeStore() TradeStore {
@@ -68,34 +62,4 @@ func (m *MemoryStoreProvider) TradeStore() TradeStore {
 
 func (m *MemoryStoreProvider) OrderStore() OrderStore {
 	return m.orderStore
-}
-
-func (m *MemoryStoreProvider) listenForOrders() {
-	for orderMsg := range m.orderChan {
-		m.processOrderMessage(orderMsg)
-	}
-}
-
-// processOrderMessage takes an incoming order msg protobuf and logs/updates the stores.
-func (m *MemoryStoreProvider) processOrderMessage(orderMsg msg.Order) {
-	o := NewOrderFromProtoMessage(orderMsg)
-
-	m.orderStore.Put(*o)
-
-	fmt.Printf("Added order of size %d, price %d", o.Size, o.Price)
-	fmt.Println("---")
-}
-
-func (m *MemoryStoreProvider) listenForTrades() {
-	for tradeMsg := range m.tradeChan {
-
-		t := NewTradeFromProtoMessage(tradeMsg, "")
-
-		m.tradeStore.Put(*t)
-
-		fmt.Printf("Added trade of size %d, price %d", t.Size, t.Price)
-		fmt.Println("---")
-
-	}
-
 }

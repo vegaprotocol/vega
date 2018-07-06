@@ -21,10 +21,8 @@ func main() {
 
 	// Storage Service provides read stores for consumer VEGA API
 	// Uses in memory storage (maps/slices etc), configurable in future
-	storeOrderChan := make(chan msg.Order, storeChannelSize)
-	storeTradeChan := make(chan msg.Trade, storeChannelSize)
 	storage := &datastore.MemoryStoreProvider{}
-	storage.Init([]string{marketName}, storeOrderChan, storeTradeChan)
+	storage.Init([]string{marketName})
 
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
