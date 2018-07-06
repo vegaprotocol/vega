@@ -8,7 +8,7 @@ import (
 
 func TestOrderModelFromProtoMessage(t *testing.T) {
 
-	in := msg.Order{
+	in := &msg.Order{
 		Id:                   "d41d8cd98f00b204e9800998ecf8427e",
 		Market:               "market",
 		Party:                "party",
@@ -72,7 +72,7 @@ func TestOrderModelToProtoMessage(t *testing.T) {
 
 
 func TestTradeModelFromProtoMessage(t *testing.T) {
-	in := msg.Trade{
+	in := &msg.Trade{
 		Id:                   "d41d8cd98f00b204e9800998ecf8427e",
 		Market:               "market",
 		Price:                50,
