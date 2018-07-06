@@ -69,6 +69,29 @@ func (_m *OrderStore) GetAll(market string, params datastore.GetParams) ([]*data
 	return r0, r1
 }
 
+// GetByParty provides a mock function with given fields: market, party, params
+func (_m *OrderStore) GetByParty(market string, party string, params datastore.GetParams) ([]*datastore.Order, error) {
+	ret := _m.Called(market, party, params)
+
+	var r0 []*datastore.Order
+	if rf, ok := ret.Get(0).(func(string, string, datastore.GetParams) []*datastore.Order); ok {
+		r0 = rf(market, party, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*datastore.Order)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string, datastore.GetParams) error); ok {
+		r1 = rf(market, party, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Post provides a mock function with given fields: r
 func (_m *OrderStore) Post(r *datastore.Order) error {
 	ret := _m.Called(r)

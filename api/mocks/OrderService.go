@@ -32,6 +32,27 @@ func (_m *OrderService) CreateOrder(ctx context.Context, order msg.Order) (bool,
 	return r0, r1
 }
 
+// GetById provides a mock function with given fields: ctx, market, id
+func (_m *OrderService) GetById(ctx context.Context, market string, id string) (msg.Order, error) {
+	ret := _m.Called(ctx, market, id)
+
+	var r0 msg.Order
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) msg.Order); ok {
+		r0 = rf(ctx, market, id)
+	} else {
+		r0 = ret.Get(0).(msg.Order)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, market, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOrders provides a mock function with given fields: ctx, market, limit
 func (_m *OrderService) GetOrders(ctx context.Context, market string, limit uint64) ([]msg.Order, error) {
 	ret := _m.Called(ctx, market, limit)

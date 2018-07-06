@@ -97,6 +97,31 @@ func (t *memOrderStore) GetAll(market string, params GetParams) ([]*Order, error
 	return orders, nil
 }
 
+// GetByParty retrieves all orders for a given party name on a market.
+func (t *memOrderStore) GetByParty(market string, party string, params GetParams) ([]*Order, error) {
+	err := t.marketExists(market)
+	if err != nil {
+		return nil, err
+	}
+
+	// Limit is by default descending
+	pos := uint64(0)
+	orders := make([]*Order, 0)
+	for i := len(t.store.markets[market].ordersIndex)-1; i >= 0; i-- {
+		if params.Limit > 0 && pos == params.Limit {
+			break
+		}
+		idx := t.store.markets[market].ordersIndex[i]
+		value :=t.store.markets[market].orders[idx]
+		if value.order.Party == party {
+			orders = append(orders, value.order)
+			pos++
+		}
+
+	}
+	return orders, nil
+}
+
 // Get retrieves an order for a given market and id.
 func (t *memOrderStore) Get(market string, id string) (*Order, error) {
 	err := t.marketExists(market)

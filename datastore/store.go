@@ -26,7 +26,7 @@ type OrderStore interface {
 	// Get retrieves an order for a given market and id.
 	Get(market string, id string) (*Order, error)
 	// GetByParty retrieves all orders for a given party name.
-	//GetByParty(party string, params GetParams) ([]*Order, error)
+	GetByParty(market string, party string, params GetParams) ([]*Order, error)
 	// Post creates a new order in the store.
 	Post(r *Order) error
 	// Put updates an existing order in the store.
