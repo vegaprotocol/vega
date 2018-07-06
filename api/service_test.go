@@ -16,15 +16,17 @@ func TestNewTradeService(t *testing.T) {
 	assert.NotNil(t, newTradeService)
 }
 
-func TestGetTradesOnAllMarkets(t *testing.T) {
-	var market = "MKT/A"
+const ServiceTestMarket = "BTC/DEC18"
+
+func TestTradeService_TestGetAllTradesOnMarket(t *testing.T) {
+	var market = ServiceTestMarket
 
 	var ctx = context.Background()
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
 
-	tradeStore.On("GetAll", market, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]*datastore.Trade{
+	tradeStore.On("GetAll", market, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}},
@@ -38,15 +40,15 @@ func TestGetTradesOnAllMarkets(t *testing.T) {
 	tradeStore.AssertExpectations(t)
 }
 
-func TestGetTradesForOrderOnMarket(t *testing.T) {
-	var market = "MKT/A"
-	var orderId = "Z"
+func TestTradeService_GetAllTradesForOrderOnMarket(t *testing.T) {
+	var market = ServiceTestMarket
+	var orderId = "12345"
 
 	var ctx = context.Background()
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
 	tradeService.Init(&tradeStore)
-	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]*datastore.Trade{
+	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}, OrderId: orderId},
@@ -62,4 +64,71 @@ func TestGetTradesForOrderOnMarket(t *testing.T) {
 	assert.Equal(t, 6, len(tradeSet))
 	tradeStore.AssertExpectations(t)
 }
+
+func TestOrderService_GetOrderById(t *testing.T) {
+	var market = ServiceTestMarket
+	var orderId = "12345"
+
+	var ctx = context.Background()
+	var orderStore = mocks.OrderStore{}
+	var orderService = NewOrderService()
+	orderService.Init(&orderStore)
+
+	orderStore.On("Get", market, orderId).Return(datastore.Order{
+		Order: msg.Order{ Id: orderId, Market: market },
+	}, nil)
+
+	var order, err = orderService.GetById(ctx, market, orderId)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, order)
+	assert.Equal(t, orderId, order.Id)
+	orderStore.AssertExpectations(t)
+	
+}
+
+func TestOrderService_GetOrders(t *testing.T) {
+	var market = ServiceTestMarket
+	var party = ""
+	var ctx = context.Background()
+	var orderStore = mocks.OrderStore{}
+	var orderService = NewOrderService()
+	orderService.Init(&orderStore)
+
+	orderStore.On("GetAll", market, party, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Order{
+		{Order: msg.Order{Id: "A", Market: market, Price: 1, Party: party},},
+		{Order: msg.Order{Id: "B", Market: market, Price: 2, Party: party},},
+		{Order: msg.Order{Id: "C", Market: market, Price: 3, Party: party},},
+		{Order: msg.Order{Id: "D", Market: market, Price: 4, Party: party},},
+		{Order: msg.Order{Id: "E", Market: market, Price: 5, Party: party},},
+	}, nil).Once()
+
+	var orders, err = orderService.GetOrders(ctx, market, party, datastore.GetParamsLimitDefault)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, orders)
+	assert.Equal(t, 5, len(orders))
+	orderStore.AssertExpectations(t)
+}
+
+func TestTradeService_GetTradeById(t *testing.T) {
+	var market = ServiceTestMarket
+	var tradeId = "54321"
+
+	var ctx = context.Background()
+	var tradeStore = mocks.TradeStore{}
+	var tradeService = NewTradeService()
+	tradeService.Init(&tradeStore)
+	tradeStore.On("Get", market, tradeId).Return(datastore.Trade{
+		Trade: msg.Trade{ Id: tradeId, Market: market },
+	}, nil)
+
+	var trade, err = tradeService.GetById(ctx, market, tradeId)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, trade)
+	assert.Equal(t, tradeId, trade.Id)
+	tradeStore.AssertExpectations(t)
+}
+
 

@@ -76,7 +76,7 @@ func TestHandlers_GetOrdersReturnsSuccessWithModels(t *testing.T) {
 	market := "BTC/DEC18"
 	limit := uint64(18446744073709551615)
 	orderService := &mocks.OrderService{}
-	orderService.On("GetOrders", context, market, limit).Return(
+	orderService.On("GetOrders", context, market, "", limit).Return(
 		[]msg.Order{
 			{Id: "1"},
 			{Id: "2"},
@@ -100,11 +100,12 @@ func TestHandlers_GetOrdersReturnsFailureWhenError(t *testing.T) {
 	context, _ := gin.CreateTestContext(w)
 	context.Request = &http.Request{Method: "GET", URL: &url.URL{Path: "/orders?market=test"}}
 
+	party := ""
 	market := "BTC/DEC18"
 	limit := uint64(18446744073709551615)
 
 	orderService := &mocks.OrderService{}
-	orderService.On("GetOrders", context, market, limit).Return(
+	orderService.On("GetOrders", context, market, party, limit).Return(
 		[]msg.Order{}, errors.New("An expected error"),
 	).Once()
 
@@ -124,11 +125,12 @@ func TestHandlers_GetOrdersWithParamsReturnsSuccessWithModels(t *testing.T) {
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
 
+	party := ""
 	market := "BTC/TEST"
 	limit := uint64(18446744073709551615)
 
 	orderService := &mocks.OrderService{}
-	orderService.On("GetOrders", context, market, limit).Return(
+	orderService.On("GetOrders", context, market, "", limit).Return(
 		[]msg.Order{
 			{Id: "1"},
 			{Id: "2"},
@@ -139,7 +141,7 @@ func TestHandlers_GetOrdersWithParamsReturnsSuccessWithModels(t *testing.T) {
 		OrderService: orderService,
 	}
 
-	handlers.GetOrdersWithParams(context, market, limit)
+	handlers.GetOrdersWithParams(context, market, party, limit)
 
 	assert.Equal(t, w.Code, http.StatusOK)
 	assert.Equal(t, "{\"orders\":[{\"id\":\"1\"},{\"id\":\"2\"}],\"result\":\"success\"}", w.Body.String())
@@ -151,11 +153,12 @@ func TestHandlers_GetOrdersWithParamsReturnsFailureWhenError(t *testing.T) {
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
 
+	party := ""
 	market := "BTC/TEST"
 	limit := uint64(18446744073709551615)
 
 	orderService := &mocks.OrderService{}
-	orderService.On("GetOrders", context, market, limit).Return(
+	orderService.On("GetOrders", context, market, party, limit).Return(
 		nil, errors.New("An expected error"),
 	).Once()
 
@@ -163,7 +166,7 @@ func TestHandlers_GetOrdersWithParamsReturnsFailureWhenError(t *testing.T) {
 		OrderService: orderService,
 	}
 
-	handlers.GetOrdersWithParams(context, market, limit)
+	handlers.GetOrdersWithParams(context, market, party, limit)
 
 	assert.Equal(t, w.Code, http.StatusInternalServerError)
 	assert.Equal(t, "{\"error\":\"An expected error\",\"result\":\"failure\"}", w.Body.String())

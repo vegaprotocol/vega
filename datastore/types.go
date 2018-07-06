@@ -7,9 +7,9 @@ type Trade struct {
 	OrderId string
 }
 
-func NewTradeFromProtoMessage(m msg.Trade, orderId string) *Trade {
+func NewTradeFromProtoMessage(m *msg.Trade, orderId string) *Trade {
 	return &Trade{
-		Trade:   m,
+		Trade:   *m,
 		OrderId: orderId,
 	}
 }
@@ -31,9 +31,9 @@ type Order struct {
 	msg.Order
 }
 
-func NewOrderFromProtoMessage(m msg.Order) *Order {
+func NewOrderFromProtoMessage(m *msg.Order) *Order {
 	return &Order{
-		Order: m,
+		Order: *m,
 	}
 }
 

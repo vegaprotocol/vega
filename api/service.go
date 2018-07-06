@@ -12,6 +12,7 @@ import (
 
 type TradeService interface {
 	Init(tradeStore datastore.TradeStore)
+	GetById(ctx context.Context, market string, id string) (trade msg.Trade, err error)
 	GetTrades(ctx context.Context, market string, limit uint64) (trades []msg.Trade, err error)
 	GetTradesForOrder(ctx context.Context, market string, orderId string, limit uint64) (trades []msg.Trade, err error)
 }
@@ -52,12 +53,19 @@ func (t *tradeService) GetTradesForOrder(ctx context.Context, market string, ord
 	return tradeMsgs, err
 }
 
-
+func (t *tradeService) GetById(ctx context.Context, market string, id string) (trade msg.Trade, err error) {
+	tr, err := t.tradeStore.Get(market, id)
+	if err != nil {
+		return msg.Trade{}, err
+	}
+	return *tr.ToProtoMessage(), err
+}
 
 type OrderService interface {
 	Init(orderStore datastore.OrderStore)
+	GetById(ctx context.Context, market string, id string) (order msg.Order, err error)
 	CreateOrder(ctx context.Context, order msg.Order) (success bool, err error)
-	GetOrders(ctx context.Context, market string, limit uint64) (orders []msg.Order, err error)
+	GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error)
 }
 
 type orderService struct {
@@ -100,8 +108,8 @@ func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (succes
 	return true, err
 }
 
-func (p *orderService) GetOrders(ctx context.Context, market string, limit uint64) (orders []msg.Order, err error) {
-	o, err := p.orderStore.GetAll(market, datastore.GetParams{ Limit: limit })
+func (p *orderService) GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error) {
+	o, err := p.orderStore.GetAll(market, party, datastore.GetParams{ Limit: limit })
 	if err != nil {
 		return nil, err
 	}
@@ -120,5 +128,13 @@ func (p *orderService) GetOrders(ctx context.Context, market string, limit uint6
 		})
 	}
 	return result, err
+}
+
+func (p *orderService) GetById(ctx context.Context, market string, id string) (order msg.Order, err error) {
+	or, err := p.orderStore.Get(market, id)
+	if err != nil {
+		return msg.Order{}, err
+	}
+	return *or.ToProtoMessage(), err
 }
 

@@ -11,6 +11,27 @@ type TradeService struct {
 	mock.Mock
 }
 
+// GetById provides a mock function with given fields: ctx, market, id
+func (_m *TradeService) GetById(ctx context.Context, market string, id string) (msg.Trade, error) {
+	ret := _m.Called(ctx, market, id)
+
+	var r0 msg.Trade
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) msg.Trade); ok {
+		r0 = rf(ctx, market, id)
+	} else {
+		r0 = ret.Get(0).(msg.Trade)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, market, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTrades provides a mock function with given fields: ctx, market, limit
 func (_m *TradeService) GetTrades(ctx context.Context, market string, limit uint64) ([]msg.Trade, error) {
 	ret := _m.Called(ctx, market, limit)
