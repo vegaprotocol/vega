@@ -50,10 +50,11 @@ func (handlers *Handlers) CreateOrderWithModel(ctx *gin.Context, o msg.Order) {
 func (handlers *Handlers) GetOrders(ctx *gin.Context) {
 	market := ctx.DefaultQuery("market", DefaultMarket)
 	limit := ctx.DefaultQuery("limit", "")
-	handlers.GetOrdersWithParams(ctx, market,  handlers.stringToUint64(limit, LimitMax))
+	party := ctx.DefaultQuery("party", "")
+	handlers.GetOrdersWithParams(ctx, market, party, handlers.stringToUint64(limit, LimitMax))
 }
 
-func (handlers *Handlers) GetOrdersWithParams(ctx *gin.Context, market string, limit uint64) {
+func (handlers *Handlers) GetOrdersWithParams(ctx *gin.Context, market string, party string, limit uint64) {
 	orders, err := handlers.OrderService.GetOrders(ctx, market, "", limit)
 	if err == nil {
 		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess, ResponseKeyOrders: orders})
