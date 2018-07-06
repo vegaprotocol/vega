@@ -65,8 +65,7 @@ type OrderService interface {
 	Init(orderStore datastore.OrderStore)
 	GetById(ctx context.Context, market string, id string) (order msg.Order, err error)
 	CreateOrder(ctx context.Context, order msg.Order) (success bool, err error)
-	GetOrders(ctx context.Context, market string, limit uint64) (orders []msg.Order, err error)
-	//GetOrdersForParty(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error)
+	GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error)
 }
 
 type orderService struct {
@@ -109,8 +108,8 @@ func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (succes
 	return true, err
 }
 
-func (p *orderService) GetOrders(ctx context.Context, market string, limit uint64) (orders []msg.Order, err error) {
-	o, err := p.orderStore.GetAll(market, "", datastore.GetParams{ Limit: limit })
+func (p *orderService) GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error) {
+	o, err := p.orderStore.GetAll(market, party, datastore.GetParams{ Limit: limit })
 	if err != nil {
 		return nil, err
 	}

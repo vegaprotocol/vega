@@ -76,7 +76,7 @@ func TestHandlers_GetOrdersReturnsSuccessWithModels(t *testing.T) {
 	market := "BTC/DEC18"
 	limit := uint64(18446744073709551615)
 	orderService := &mocks.OrderService{}
-	orderService.On("GetOrders", context, market, limit).Return(
+	orderService.On("GetOrders", context, market, "", limit).Return(
 		[]msg.Order{
 			{Id: "1"},
 			{Id: "2"},
@@ -104,7 +104,7 @@ func TestHandlers_GetOrdersReturnsFailureWhenError(t *testing.T) {
 	limit := uint64(18446744073709551615)
 
 	orderService := &mocks.OrderService{}
-	orderService.On("GetOrders", context, market, limit).Return(
+	orderService.On("GetOrders", context, market, "", limit).Return(
 		[]msg.Order{}, errors.New("An expected error"),
 	).Once()
 
@@ -128,7 +128,7 @@ func TestHandlers_GetOrdersWithParamsReturnsSuccessWithModels(t *testing.T) {
 	limit := uint64(18446744073709551615)
 
 	orderService := &mocks.OrderService{}
-	orderService.On("GetOrders", context, market, limit).Return(
+	orderService.On("GetOrders", context, market, "", limit).Return(
 		[]msg.Order{
 			{Id: "1"},
 			{Id: "2"},
@@ -155,7 +155,7 @@ func TestHandlers_GetOrdersWithParamsReturnsFailureWhenError(t *testing.T) {
 	limit := uint64(18446744073709551615)
 
 	orderService := &mocks.OrderService{}
-	orderService.On("GetOrders", context, market, limit).Return(
+	orderService.On("GetOrders", context, market, "", limit).Return(
 		nil, errors.New("An expected error"),
 	).Once()
 

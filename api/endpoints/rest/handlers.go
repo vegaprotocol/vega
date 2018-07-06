@@ -54,7 +54,7 @@ func (handlers *Handlers) GetOrders(ctx *gin.Context) {
 }
 
 func (handlers *Handlers) GetOrdersWithParams(ctx *gin.Context, market string, limit uint64) {
-	orders, err := handlers.OrderService.GetOrders(ctx, market, limit)
+	orders, err := handlers.OrderService.GetOrders(ctx, market, "", limit)
 	if err == nil {
 		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess, ResponseKeyOrders: orders})
 	} else {

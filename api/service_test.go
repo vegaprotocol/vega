@@ -89,20 +89,21 @@ func TestOrderService_GetOrderById(t *testing.T) {
 
 func TestOrderService_GetOrders(t *testing.T) {
 	var market = ServiceTestMarket
+	var party = ""
 	var ctx = context.Background()
 	var orderStore = mocks.OrderStore{}
 	var orderService = NewOrderService()
 	orderService.Init(&orderStore)
 
-	orderStore.On("GetAll", market, "", datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Order{
-		{Order: msg.Order{Id: "A", Market: market, Price: 1},},
-		{Order: msg.Order{Id: "B", Market: market, Price: 2},},
-		{Order: msg.Order{Id: "C", Market: market, Price: 3},},
-		{Order: msg.Order{Id: "D", Market: market, Price: 4},},
-		{Order: msg.Order{Id: "E", Market: market, Price: 5},},
+	orderStore.On("GetAll", market, party, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Order{
+		{Order: msg.Order{Id: "A", Market: market, Price: 1, Party: party},},
+		{Order: msg.Order{Id: "B", Market: market, Price: 2, Party: party},},
+		{Order: msg.Order{Id: "C", Market: market, Price: 3, Party: party},},
+		{Order: msg.Order{Id: "D", Market: market, Price: 4, Party: party},},
+		{Order: msg.Order{Id: "E", Market: market, Price: 5, Party: party},},
 	}, nil).Once()
 
-	var orders, err = orderService.GetOrders(ctx, market, datastore.GetParamsLimitDefault)
+	var orders, err = orderService.GetOrders(ctx, market, party, datastore.GetParamsLimitDefault)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, orders)
