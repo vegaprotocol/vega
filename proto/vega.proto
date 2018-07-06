@@ -62,3 +62,16 @@ message MarketDepth {
     uint64 buyPriceLevels = 5;
     uint64 sellPriceLevels = 6;
 }
+
+message Candle {
+    string date = 1;
+    uint64 high = 2;
+    uint64 low = 3;
+    uint64 open = 4;
+    uint64 close = 5;
+    uint64 volume = 6;
+}
+
+message Candles {
+    repeated Candle candles = 1;
+}

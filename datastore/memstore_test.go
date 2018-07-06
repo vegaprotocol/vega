@@ -471,4 +471,3 @@ func TestMemStore_PutTrade(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, uint64(9000), trade.Price)
 }
-

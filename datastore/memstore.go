@@ -6,10 +6,11 @@ import (
 
 // memMarket should keep track of the trades/orders operating on a Market.
 type memMarket struct {
-	name   string
-	ordersIndex []string
-	orders map[string]*memOrder
-	trades map[string]*memTrade
+	name         string
+	ordersIndex  []string
+	orders       map[string]*memOrder
+	trades       map[string]*memTrade
+	priceHistory PriceHistory
 }
 
 // In memory order struct keeps an internal map of pointers to trades for an order.
@@ -85,12 +86,12 @@ func (t *memOrderStore) GetAll(market string, params GetParams) ([]*Order, error
 	// Limit is by default descending
 	pos := uint64(0)
 	orders := make([]*Order, 0)
-	for i := len(t.store.markets[market].ordersIndex)-1; i >= 0; i-- {
+	for i := len(t.store.markets[market].ordersIndex) - 1; i >= 0; i-- {
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
 		idx := t.store.markets[market].ordersIndex[i]
-		value :=t.store.markets[market].orders[idx]
+		value := t.store.markets[market].orders[idx]
 		orders = append(orders, value.order)
 		pos++
 	}
@@ -217,7 +218,6 @@ func (t *memTradeStore) Get(market string, id string) (*Trade, error) {
 	return v.trade, nil
 }
 
-
 // GetByOrderId retrieves all trades for a given order id.
 func (t *memTradeStore) GetByOrderId(market string, orderId string, params GetParams) ([]*Trade, error) {
 	err := t.marketExists(market)
@@ -262,6 +262,10 @@ func (t *memTradeStore) Post(tr *Trade) error {
 			// Map new trade to memstore and append trade to order
 			t.store.markets[tr.Market].trades[tr.Id] = trade
 			o.trades = append(o.trades, trade)
+
+			// Add tradeInfo to price history
+			tradeInfo := &tradeInfo{timestamp: tr.Timestamp, price: tr.Price, size: tr.Size}
+			t.store.markets[tr.Market].priceHistory = append(t.store.markets[tr.Market].priceHistory, tradeInfo)
 		}
 		return nil
 	} else {
