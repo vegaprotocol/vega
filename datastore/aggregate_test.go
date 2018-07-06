@@ -59,9 +59,9 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 
 		d := generateRandomOrderAndTrade(price, size, timestamp)
 
-		err := newOrderStore.Post(d.order)
+		err := newOrderStore.Post(*d.order)
 		assert.Nil(t, err)
-		err = newTradeStore.Post(d.trade)
+		err = newTradeStore.Post(*d.trade)
 		assert.Nil(t, err)
 	}
 
