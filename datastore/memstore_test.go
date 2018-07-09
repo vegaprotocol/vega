@@ -637,6 +637,3 @@ func TestMemTrade_ToString(t *testing.T) {
 	}
 	assert.Equal(t, "memTrade::trade-id=c0e8490aa4b1d0071ae8f01cdf45c6aa", memTrade.String())
 }
-
-
-

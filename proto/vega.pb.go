@@ -456,6 +456,19 @@ type MarketDepth struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
+type Candle struct {
+	Date   string `protobuf:"varint,1,opt,name=date,proto3" json:"date,omitempty"`
+	High   uint64 `protobuf:"varint,2,opt,name=high,proto3" json:"high,omitempty"`
+	Low    uint64 `protobuf:"varint,3,opt,name=low,proto3" json:"low,omitempty"`
+	Open   uint64 `protobuf:"varint,4,opt,name=open,proto3" json:"open,omitempty"`
+	Close  uint64 `protobuf:"varint,5,opt,name=close,proto3" json:"close,omitempty"`
+	Volume uint64 `protobuf:"varint,6,opt,name=volume,proto3" json:"volume,omitempty"`
+}
+
+type Candles struct {
+	Candles []*Candle `protobuf:"bytes,1,rep,name=candles,proto3" json:"candles,omitempty"`
+}
+
 func (m *MarketDepth) Reset()         { *m = MarketDepth{} }
 func (m *MarketDepth) String() string { return proto.CompactTextString(m) }
 func (*MarketDepth) ProtoMessage()    {}

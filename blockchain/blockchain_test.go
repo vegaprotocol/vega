@@ -5,12 +5,20 @@ import (
 	"vega/core"
 
 	"github.com/stretchr/testify/assert"
+	"vega/datastore"
 )
 
 func TestNewBlockchain(t *testing.T) {
-	config := core.Config{}
-	vegaApp := core.New(config)
-	chain := NewBlockchain(vegaApp)
+	config := core.GetConfig()
+
+	// Storage Service provides read stores for consumer VEGA API
+	// Uses in memory storage (maps/slices etc), configurable in future
+	storage := &datastore.MemoryStoreProvider{}
+	storage.Init([]string{"market-name"})
+
+	// Vega core
+	vega := core.New(config, storage)
+	chain := NewBlockchain(vega)
 
 	assert.Equal(t, chain.state.Height, int64(0))
 }

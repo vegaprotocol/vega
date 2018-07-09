@@ -1,5 +1,7 @@
 package datastore
 
+import "vega/proto"
+
 type TradeStore interface {
 	// GetAll retrieves a trades for a given market.
 	// If market == "" it will return trades for all markets in the store.
@@ -15,6 +17,8 @@ type TradeStore interface {
 	Put(r Trade) error
 	// Removes a trade from the store.
 	Delete(r Trade) error
+	// Aggregates trades into candles
+	GetCandles(market string, since, interval uint64) (msg.Candles, error)
 }
 
 type OrderStore interface {

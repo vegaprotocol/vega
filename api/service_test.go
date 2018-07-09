@@ -1,12 +1,14 @@
 package api
 
 import (
-	"testing"
 	"context"
+	"testing"
+	"time"
 
+	"vega/core"
 	"vega/datastore"
-	"vega/proto"
 	"vega/datastore/mocks"
+	"vega/proto"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +26,9 @@ func TestTradeService_TestGetAllTradesOnMarket(t *testing.T) {
 	var ctx = context.Background()
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
-	tradeService.Init(&tradeStore)
+
+	vega := &core.Vega{}
+	tradeService.Init(vega, &tradeStore)
 
 	tradeStore.On("GetAll", market, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}},
@@ -47,7 +51,10 @@ func TestTradeService_GetAllTradesForOrderOnMarket(t *testing.T) {
 	var ctx = context.Background()
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
-	tradeService.Init(&tradeStore)
+
+	vega := &core.Vega{}
+	tradeService.Init(vega, &tradeStore)
+
 	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Trade{
 		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
 		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
@@ -72,10 +79,12 @@ func TestOrderService_GetOrderById(t *testing.T) {
 	var ctx = context.Background()
 	var orderStore = mocks.OrderStore{}
 	var orderService = NewOrderService()
-	orderService.Init(&orderStore)
+
+	vega := &core.Vega{}
+	orderService.Init(vega, &orderStore)
 
 	orderStore.On("Get", market, orderId).Return(datastore.Order{
-		Order: msg.Order{ Id: orderId, Market: market },
+		Order: msg.Order{Id: orderId, Market: market},
 	}, nil)
 
 	var order, err = orderService.GetById(ctx, market, orderId)
@@ -84,7 +93,7 @@ func TestOrderService_GetOrderById(t *testing.T) {
 	assert.NotNil(t, order)
 	assert.Equal(t, orderId, order.Id)
 	orderStore.AssertExpectations(t)
-	
+
 }
 
 func TestOrderService_GetOrders(t *testing.T) {
@@ -93,14 +102,16 @@ func TestOrderService_GetOrders(t *testing.T) {
 	var ctx = context.Background()
 	var orderStore = mocks.OrderStore{}
 	var orderService = NewOrderService()
-	orderService.Init(&orderStore)
+
+	vega := &core.Vega{}
+	orderService.Init(vega, &orderStore)
 
 	orderStore.On("GetAll", market, party, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Order{
-		{Order: msg.Order{Id: "A", Market: market, Price: 1, Party: party},},
-		{Order: msg.Order{Id: "B", Market: market, Price: 2, Party: party},},
-		{Order: msg.Order{Id: "C", Market: market, Price: 3, Party: party},},
-		{Order: msg.Order{Id: "D", Market: market, Price: 4, Party: party},},
-		{Order: msg.Order{Id: "E", Market: market, Price: 5, Party: party},},
+		{Order: msg.Order{Id: "A", Market: market, Price: 1, Party: party}},
+		{Order: msg.Order{Id: "B", Market: market, Price: 2, Party: party}},
+		{Order: msg.Order{Id: "C", Market: market, Price: 3, Party: party}},
+		{Order: msg.Order{Id: "D", Market: market, Price: 4, Party: party}},
+		{Order: msg.Order{Id: "E", Market: market, Price: 5, Party: party}},
 	}, nil).Once()
 
 	var orders, err = orderService.GetOrders(ctx, market, party, datastore.GetParamsLimitDefault)
@@ -118,9 +129,11 @@ func TestTradeService_GetTradeById(t *testing.T) {
 	var ctx = context.Background()
 	var tradeStore = mocks.TradeStore{}
 	var tradeService = NewTradeService()
-	tradeService.Init(&tradeStore)
+
+	vega := &core.Vega{}
+	tradeService.Init(vega, &tradeStore)
 	tradeStore.On("Get", market, tradeId).Return(datastore.Trade{
-		Trade: msg.Trade{ Id: tradeId, Market: market },
+		Trade: msg.Trade{Id: tradeId, Market: market},
 	}, nil)
 
 	var trade, err = tradeService.GetById(ctx, market, tradeId)
@@ -131,4 +144,49 @@ func TestTradeService_GetTradeById(t *testing.T) {
 	tradeStore.AssertExpectations(t)
 }
 
+func TestTradeService_GetCandlesChart(t *testing.T) {
+	var market = ServiceTestMarket
+	const genesisTimeStr = "2018-07-09T12:00:00Z"
+	genesisT, _ := time.Parse(time.RFC3339, genesisTimeStr)
 
+	nowT := genesisT.Add(6 * time.Minute)
+
+	// genesis is 6 minutes ago, retrieve information for last 5 minutes and organise it in 1 minute blocks
+	// which is interval 60 as there are 60 blocks in 1 minute.
+	// This should result in 5 candles
+
+	since := nowT.Add(-5 * time.Minute)
+	interval := uint64(60)
+
+	var ctx = context.Background()
+	var tradeStore = mocks.TradeStore{}
+	var tradeService = NewTradeService()
+
+	vega := &core.Vega{}
+	vega.SetAbciHeight(6 * 60)
+
+	tradeService.Init(vega, &tradeStore)
+	sinceInBlocks := uint64(60)
+
+	tradeStore.On("GetCandles", market, sinceInBlocks, interval).Return(msg.Candles{
+		[]*msg.Candle{
+			{High: 112, Low: 109, Open: 110, Close: 112, Volume: 10598},
+			{High: 114, Low: 111, Open: 111, Close: 112, Volume: 6360},
+			{High: 119, Low: 113, Open: 113, Close: 117, Volume: 17892},
+			{High: 117, Low: 116, Open: 116, Close: 116, Volume: 3061},
+			{High: 124, Low: 115, Open: 115, Close: 124, Volume: 9613},
+		},
+	}, nil).Once()
+
+	candles, err := tradeService.GetCandlesChart(ctx, market, since, interval)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, candles)
+	assert.Equal(t, 5, len(candles.Candles))
+
+	assert.Equal(t, "2018-07-09T12:01:00Z", candles.Candles[0].Date)
+	assert.Equal(t, "2018-07-09T12:02:00Z", candles.Candles[1].Date)
+	assert.Equal(t, "2018-07-09T12:03:00Z", candles.Candles[2].Date)
+	assert.Equal(t, "2018-07-09T12:04:00Z", candles.Candles[3].Date)
+	assert.Equal(t, "2018-07-09T12:05:00Z", candles.Candles[4].Date)
+}

@@ -2,6 +2,7 @@
 package mocks
 
 import context "context"
+import core "vega/core"
 import datastore "vega/datastore"
 import mock "github.com/stretchr/testify/mock"
 import msg "vega/proto"
@@ -76,7 +77,7 @@ func (_m *OrderService) GetOrders(ctx context.Context, market string, party stri
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: orderStore
-func (_m *OrderService) Init(orderStore datastore.OrderStore) {
-	_m.Called(orderStore)
+// Init provides a mock function with given fields: vega, orderStore
+func (_m *OrderService) Init(vega *core.Vega, orderStore datastore.OrderStore) {
+	_m.Called(vega, orderStore)
 }

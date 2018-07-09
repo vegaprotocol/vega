@@ -25,3 +25,4 @@ func (s *restServer) Start() {
 	router := NewRouter(s.orderService, s.tradeService)
 	http.ListenAndServe(addr, router)
 }
+
