@@ -25,6 +25,7 @@ func main() {
 
 	// Vega core
 	vega := core.New(config, storage)
+	vega.InitialiseMarkets()
 
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
