@@ -337,6 +337,36 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 			outOrdersCount: 1,
 		},
 		{
+			inMarkets: []string { testMarket, "marketZ" },
+			inOrders: []Order {
+				{
+					Order: msg.Order{
+						Id:     "d41d8cd98f00b204e9800998ecf8427e",
+						Market: testMarket,
+						Party: "partyA",
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "ad2dc275947362c45893bbeb30fc3098",
+						Market: "marketZ",
+						Party: "party",
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "4e8e41367997cfe705d62ea80592cbcc",
+						Market: testMarket,
+						Party: "party",
+					},
+				},
+			},
+			inParty: "",
+			inLimit: 5000,
+			inMarket: testMarket,
+			outOrdersCount: 2,
+		},
+		{
 			inMarkets: []string { testMarket },
 			inOrders: []Order {
 				{
@@ -495,6 +525,14 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 	assert.Equal(t, 2, len(trades))
 }
 
+func TestMemStore_GetAllTradesForNoneExistentMarket(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newTradeStore = NewTradeStore(&memStore)
+	o, err := newTradeStore.GetAll("UNKNOWN", GetParams{ Limit: GetParamsLimitDefault })
+	assert.Error(t, err, "market does not exist")
+	assert.Nil(t, o)
+}
+
 func TestMemStore_PutTrade(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newOrderStore = NewOrderStore(&memStore)
@@ -545,6 +583,13 @@ func TestMemStore_PutTrade(t *testing.T) {
 	assert.Equal(t, uint64(9000), tradeOut.Price)
 }
 
+func TestMemStore_GetTradeForNoneExistentMarket(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newTradeStore = NewTradeStore(&memStore)
+	_, err := newTradeStore.Get("UNKNOWN", "ID")
+	assert.Error(t, err, "market does not exist")
+}
+
 func TestMemOrder_ToString(t *testing.T) {
 	orderId := "d41d8cd98f00b204e9800998ecf8427e"
 	order := Order{
@@ -558,7 +603,6 @@ func TestMemOrder_ToString(t *testing.T) {
 	}
 	assert.Equal(t, "memOrder::order-id=d41d8cd98f00b204e9800998ecf8427e", memOrder.String())
 }
-
 
 func TestMemTrade_ToString(t *testing.T) {
 	tradeId := "c0e8490aa4b1d0071ae8f01cdf45c6aa"

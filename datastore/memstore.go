@@ -45,7 +45,6 @@ type memTradeStore struct {
 // MemStore is a RAM based top level structure to hold information about all markets.
 // It is initialised by calling NewMemStore with a list of markets.
 type MemStore struct {
-	//mu sync.Mutex
 	markets map[string]*memMarket
 
 	trades []*memTrade // All trades on all markets
@@ -158,9 +157,6 @@ func (t *memOrderStore) Get(market string, id string) (Order, error) {
 
 // Post creates a new order in the memory store.
 func (t *memOrderStore) Post(or Order) error {
-	//t.store.mu.Lock()
-	//defer t.store.mu.Unlock()
-
 	// todo validation of incoming order
 	//	if err := or.Validate(); err != nil {
 	//		return fmt.Errorf("cannot store record: %s", err)
