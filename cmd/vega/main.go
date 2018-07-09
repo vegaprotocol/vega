@@ -13,7 +13,6 @@ import (
 )
 
 const sseChannelSize = 2 << 16
-const storeChannelSize = 2 << 16
 const marketName = "BTC/DEC18"
 
 func main() {
@@ -26,7 +25,6 @@ func main() {
 
 	// Vega core
 	vega := core.New(config, storage)
-
 
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
@@ -45,5 +43,4 @@ func main() {
 	go sseServer.Start()
 
 	blockchain.Start(vega)
-
 }
