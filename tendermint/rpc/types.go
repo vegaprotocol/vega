@@ -29,10 +29,12 @@ type BlockID struct {
 type BlockInfo struct {
 	Block Block     `json:"block"`
 	Meta  BlockMeta `json:"block_meta"`
+	//todo(cdm)
 }
 
 // BlockMeta represents metadata about a block in the Tendermint blockchain.
 type BlockMeta struct {
+	//todo(cdm)
 }
 
 // BlockSizeParams specifies the limits on the block size.
@@ -94,6 +96,7 @@ type Commit struct {
 // CommitInfo represents
 type CommitInfo struct {
 	Canonical bool
+	//todo(cdm)
 }
 
 // ConsensusParams defines the key parameters that determine the validity of
@@ -181,6 +184,25 @@ type Header struct {
 
 // NetInfo represents
 type NetInfo struct {
+	//todo(cdm)
+}
+
+// NodeInfo is the basic node information exchanged
+// between two peers during the Tendermint P2P handshake.
+type NodeInfo struct {
+	// Authenticate
+	ID         string `json:"id"`          // authenticated identifier
+	ListenAddr string `json:"listen_addr"` // accepting incoming
+
+	// Check compatibility.
+	// Channels are HexBytes so easier to read as JSON
+	Network  string    `json:"network"`  // network/chain ID
+	Version  string    `json:"version"`  // major.minor.revision
+	Channels ByteSlice `json:"channels"` // channels this node knows about
+
+	// ASCIIText fields
+	Moniker string   `json:"moniker"` // arbitrary moniker
+	Other   []string `json:"other"`   // other application specific data
 }
 
 // PartSetHeader defines the total number of pieces in a PartSet and the Merkle
@@ -191,7 +213,20 @@ type PartSetHeader struct {
 	Total int       `json:"total"`
 }
 
+// todo(cdm) add description
 type Status struct {
+	NodeInfo      NodeInfo  `json:"node_info"`
+	SyncInfo      SyncInfo  `json:"sync_info"`
+	ValidatorInfo Validator `json:"validator_info"`
+}
+
+// Info about the node's syncing state
+type SyncInfo struct {
+	LatestBlockHash   ByteSlice `json:"latest_block_hash"`
+	LatestAppHash     ByteSlice `json:"latest_app_hash"`
+	LatestBlockHeight int64     `json:"latest_block_height"`
+	LatestBlockTime   time.Time `json:"latest_block_time"`
+	CatchingUp        bool      `json:"catching_up"`
 }
 
 // TaggedByteSlice represents a byte slice encoded using Tendermint's custom
@@ -225,6 +260,7 @@ type TxSizeParams struct {
 }
 
 type Transaction struct {
+	//todo(cdm)
 }
 
 type TransactionList struct {

@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -112,18 +111,19 @@ func (q *Query) Expression() (string, error) {
 // a fluent/chained manner. If any errors are encountered whilst adding the
 // filter, then the error is preserved and returned when the Expression method
 // is eventually called.
-func (q *Query) Filter(criteria string, value interface{}) *Query {
-	if q.err != nil {
-		return q
-	}
-	split := strings.Split(criteria, " ")
-	if len(split) != 2 {
-		q.err = fmt.Errorf(
-			"rpc: expected a single space between the query condition's tag and operator: %q",
-			criteria)
-		return q
-	}
-	// Limit tag to just ASCII alphanumeric characters, hyphen, underscore, and
-	// period for now.
-	return q
-}
+// todo(tav) not fully implemented yet
+//func (q *Query) Filter(criteria string, value interface{}) *Query {
+//	if q.err != nil {
+//		return q
+//	}
+//	split := strings.Split(criteria, " ")
+//	if len(split) != 2 {
+//		q.err = fmt.Errorf(
+//			"rpc: expected a single space between the query condition's tag and operator: %q",
+//			criteria)
+//		return q
+//	}
+//	// Limit tag to just ASCII alphanumeric characters, hyphen, underscore, and
+//	// period for now.
+//	return q
+//}
