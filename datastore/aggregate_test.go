@@ -73,5 +73,34 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 	fmt.Println()
 	assert.Nil(t, err)
 	assert.Equal(t, 8, len(candles.Candles))
+
+
+	candles, err = newTradeStore.GetCandles(testMarket, 5, 3)
+	fmt.Printf("candles returned:\n")
+	for idx, c := range candles.Candles {
+		fmt.Printf("%d %+v\n", idx, *c)
+	}
+	fmt.Println()
+	assert.Nil(t, err)
+	assert.Equal(t, 7, len(candles.Candles))
+
+	candles, err = newTradeStore.GetCandles(testMarket, 5, 2)
+	fmt.Printf("candles returned:\n")
+	for idx, c := range candles.Candles {
+		fmt.Printf("%d %+v\n", idx, *c)
+	}
+	fmt.Println()
+	assert.Nil(t, err)
+	assert.Equal(t, 10, len(candles.Candles))
+
+	candles, err = newTradeStore.GetCandles(testMarket, 10, 2)
+	fmt.Printf("candles returned:\n")
+	for idx, c := range candles.Candles {
+		fmt.Printf("%d %+v\n", idx, *c)
+	}
+	fmt.Println()
+	assert.Nil(t, err)
+	assert.Equal(t, 7, len(candles.Candles))
+
 }
 

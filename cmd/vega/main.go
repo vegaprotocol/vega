@@ -8,8 +8,8 @@ import (
 	"vega/core"
 	"vega/proto"
 
-	"vega/api"
 	"vega/datastore"
+	"vega/api"
 )
 
 const sseChannelSize = 2 << 16
@@ -24,17 +24,18 @@ func main() {
 	storage := &datastore.MemoryStoreProvider{}
 	storage.Init([]string{marketName})
 
-	// Initialise concrete consumer services
-	orderService := api.NewOrderService()
-	tradeService := api.NewTradeService()
-	orderService.Init(storage.OrderStore())
-	tradeService.Init(storage.TradeStore())
-
 	// Vega core
 	vega := core.New(config, storage)
 
+
+	// Initialise concrete consumer services
+	orderService := api.NewOrderService()
+	tradeService := api.NewTradeService()
+	orderService.Init(vega, storage.OrderStore())
+	tradeService.Init(vega, storage.TradeStore())
+
 	// REST server
-	restServer := rest.NewRestServer(vega)
+	restServer := rest.NewRestServer(orderService, tradeService)
 	go restServer.Start()
 
 	// SSE server

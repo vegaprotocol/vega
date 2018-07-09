@@ -1,6 +1,8 @@
 package core
 
 import (
+	"time"
+
 	"vega/datastore"
 	"vega/matching"
 	"vega/proto"
@@ -12,9 +14,13 @@ type Vega struct {
 	OrdersStore    datastore.OrderStore
 	TradesStore    datastore.TradeStore
 	matchingEngine matching.MatchingEngine
+
+	abciHeight int64
 }
 
 const marketName = "BTC/DEC18"
+
+const genesisTimeStr = "2018-07-09T12:00:00Z"
 
 type Config struct{}
 
@@ -28,12 +34,26 @@ func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 		markets:        make(map[string]*matching.OrderBook),
 		OrdersStore:    store.OrderStore(),
 		TradesStore:    store.TradeStore(),
-		matchingEngine: &matchingEngine,
+		matchingEngine: matchingEngine,
+		abciHeight:     0,
 	}
 }
 
 func GetConfig() *Config {
 	return &Config{}
+}
+
+func (v *Vega) SetAbciHeight(n int64) {
+	v.abciHeight = n
+}
+
+func (v *Vega) GetAbciHeight() int64 {
+	return v.abciHeight
+}
+
+func (v *Vega) GetTime() time.Time {
+	genesisTime, _ := time.Parse(time.RFC3339, genesisTimeStr)
+	return genesisTime.Add(time.Duration(v.abciHeight) * time.Second)
 }
 
 func (v *Vega) InitialiseMarkets() {
@@ -55,18 +75,18 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// if OK send to stores
 
 	// insert aggressive remaing order
-	v.OrdersStore.Post(datastore.NewOrderFromProtoMessage(*order))
+	v.OrdersStore.Post(*datastore.NewOrderFromProtoMessage(order))
 
 	// insert all passive orders siting on the book
 	for _, order := range confirmation.PassiveOrdersAffected {
 		//UpdateOrders TBD
-		v.OrdersStore.Put(datastore.NewOrderFromProtoMessage(*order))
+		v.OrdersStore.Put(*datastore.NewOrderFromProtoMessage(order))
 	}
 
 	// insert all trades resulted from the executed order
 	for _, trade := range confirmation.Trades {
 		//CreateTrade TBD
-		v.TradesStore.Post(datastore.NewTradeFromProtoMessage(*trade, order.Id))
+		v.TradesStore.Post(*datastore.NewTradeFromProtoMessage(trade, order.Id))
 	}
 
 	// ------------------------------------------------//

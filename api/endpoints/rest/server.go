@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"vega/api"
-	"vega/core"
 )
 
 type restServer struct{
@@ -12,10 +11,10 @@ type restServer struct{
 	tradeService api.TradeService
 }
 
-func NewRestServer(vega *core.Vega) *restServer {
+func NewRestServer(orderService api.OrderService, tradeService api.TradeService) *restServer {
 	return &restServer{
-		orderService: vega.OrdersService,
-		tradeService: vega.TradesService,
+		orderService: orderService,
+		tradeService: tradeService,
 	}
 }
 

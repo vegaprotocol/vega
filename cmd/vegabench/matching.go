@@ -25,8 +25,8 @@ func BenchmarkMatching(
 
 	config := core.GetConfig()
 
-	vega := core.New(config)
-	vega.CreateMarket(marketId)
+	vega := core.New(config, nil)
+	vega.InitialiseMarkets()
 
 	timestamp := uint64(0)
 	for k := 0; k < b.N; k++ {

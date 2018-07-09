@@ -152,6 +152,9 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 	binary.PutVarint(appHash, app.state.Size)
 	app.state.AppHash = appHash
 	app.state.Height += 1
+
+	app.vega.SetAbciHeight(app.state.Height)
+
 	// saveState(app.state)
 	return types.ResponseCommit{Data: appHash}
 }
