@@ -583,11 +583,28 @@ func TestMemStore_PutTrade(t *testing.T) {
 	assert.Equal(t, uint64(9000), tradeOut.Price)
 }
 
-func TestMemStore_GetTradeForNoneExistentMarket(t *testing.T) {
+func TestMemStore_PutGetAndDeleteTradeForNoneExistentMarket(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newTradeStore = NewTradeStore(&memStore)
-	_, err := newTradeStore.Get("UNKNOWN", "ID")
+
+	trade := Trade{
+		Trade: msg.Trade{
+			Id: "A",
+			Price: 9000,
+			Market: "UNKNOWN",
+		},
+		OrderId: "Z",
+	}
+
+	err := newTradeStore.Put(trade)
 	assert.Error(t, err, "market does not exist")
+	
+	_, err = newTradeStore.Get("UNKNOWN", "ID")
+	assert.Error(t, err, "market does not exist")
+
+	err = newTradeStore.Delete(trade)
+	assert.Error(t, err, "market does not exist")
+
 }
 
 func TestMemOrder_ToString(t *testing.T) {
