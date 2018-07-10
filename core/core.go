@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"time"
 
 	"vega/datastore"
@@ -65,7 +66,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	//----------------- MATCHING ENGINE --------------//
 	// send order to matching engine
 	confirmation, err := v.matchingEngine.SubmitOrder(order)
-	if err == msg.OrderError_NONE {
+	if confirmation == nil || err != msg.OrderError_NONE {
 		// some error handling
 		return nil, err
 	}
@@ -74,19 +75,24 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	//-------------------- STORES --------------------//
 	// if OK send to stores
 
-	// insert aggressive remaing order
+	// insert aggressive remaining order
 	v.OrdersStore.Post(*datastore.NewOrderFromProtoMessage(order))
 
-	// insert all passive orders siting on the book
-	for _, order := range confirmation.PassiveOrdersAffected {
-		//UpdateOrders TBD
-		v.OrdersStore.Put(*datastore.NewOrderFromProtoMessage(order))
+	if confirmation.PassiveOrdersAffected != nil {
+		// insert all passive orders siting on the book
+		for _, order := range confirmation.PassiveOrdersAffected {
+			v.OrdersStore.Put(*datastore.NewOrderFromProtoMessage(order))
+		}
 	}
 
-	// insert all trades resulted from the executed order
-	for _, trade := range confirmation.Trades {
-		//CreateTrade TBD
-		v.TradesStore.Post(*datastore.NewTradeFromProtoMessage(trade, order.Id))
+	if confirmation.Trades != nil {
+		// insert all trades resulted from the executed order
+		for idx, trade := range confirmation.Trades {
+			trade.Id = fmt.Sprintf("%s-%d", order.Id, idx)
+			if err := v.TradesStore.Post(*datastore.NewTradeFromProtoMessage(trade, order.Id)); err != nil {
+				fmt.Printf("TradesStore.Post error: %+v\n", err)
+			}
+		}
 	}
 
 	// ------------------------------------------------//

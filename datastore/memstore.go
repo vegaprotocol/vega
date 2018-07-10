@@ -321,6 +321,7 @@ func (t *memTradeStore) Post(tr Trade) error {
 		if _, exists := t.store.markets[tr.Market].trades[tr.Id]; exists {
 			return fmt.Errorf("trade exists in memstore: %s", tr.Id)
 		} else {
+			fmt.Printf("adding trade %+v\n", trade)
 			// Map new trade to memstore and append trade to order
 			t.store.markets[tr.Market].trades[tr.Id] = trade
 			o.trades = append(o.trades, trade)

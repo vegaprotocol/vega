@@ -4,8 +4,10 @@ package api
 import (
 	"context"
 	"errors"
-	"time"
+	"fmt"
 	"net/http"
+	"time"
+
 	"vega/datastore"
 	"vega/proto"
 	"vega/core"
@@ -81,6 +83,8 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 		sinceBlock = 0
 	}
 
+	fmt.Printf("interval: %d\n", interval)
+	fmt.Printf("sinceBlock: %d\n", sinceBlock)
 	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), interval)
 	if err != nil {
 		return msg.Candles{}, err
@@ -118,8 +122,6 @@ func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 
 func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (success bool, err error) {
 
-	utcNow := time.Now().UTC()
-	order.Timestamp = unixTimestamp(utcNow)
 	order.Remaining = order.Size
 
 	payload, err := jsonWithEncoding(order)

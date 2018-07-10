@@ -57,7 +57,7 @@ func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 //
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
-	fmt.Println("Foo: " + string(tx))
+	fmt.Println("CheckTx: " + string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -87,6 +87,7 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
+	fmt.Println("DeliverTx: " + string(tx))
 	// split the transaction
 	var _, value []byte
 	parts := bytes.Split(tx, []byte("|"))
@@ -109,14 +110,17 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	if e != nil {
 		fmt.Println("Error: ", e.Error())
 	}
+	order.Id = fmt.Sprintf("V%d-%d", app.state.Height, app.state.Size)
+	order.Timestamp = uint64(app.state.Height)
 
+	fmt.Printf("blockchain submiting order: %s\n", order.Id)
 	// deliver to the Vega trading core
 	confirmationMessage, _ := app.vega.SubmitOrder(order)
 	if confirmationMessage != nil {
-		fmt.Printf("abci reports it received a confirmation message from vega:")
-		fmt.Printf("aggressive order %+v", confirmationMessage.Order)
-		fmt.Printf("trades %+v", confirmationMessage.Trades)
-		fmt.Printf("passive orders affected %+v", confirmationMessage.PassiveOrdersAffected)
+		fmt.Printf("ABCI reports it received a confirmation message from vega:\n")
+		fmt.Printf("- aggressive order: %+v\n", confirmationMessage.Order)
+		fmt.Printf("- trades: %+v\n", confirmationMessage.Trades)
+		fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
 	}
 
 	app.state.Size += 1

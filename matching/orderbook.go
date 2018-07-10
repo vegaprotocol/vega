@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"vega/proto"
 
-	"github.com/golang/go/src/pkg/strconv"
 )
 
 type OrderBook struct {
@@ -14,7 +13,6 @@ type OrderBook struct {
 	lastTradedPrice uint64
 	config          Config
 	latestTimestamp uint64
-	ReqNumber       int64
 }
 
 // Create an order book with a given name
@@ -32,14 +30,12 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	if err := b.validateOrder(order); err != msg.OrderError_NONE {
 		return nil, err
 	}
-	b.ReqNumber++
 
-	order.Id = strconv.FormatInt(b.ReqNumber, 10)
 	if order.Timestamp > b.latestTimestamp {
 		b.latestTimestamp = order.Timestamp
 	}
 
-	//b.PrintState("Entry state:")
+	b.PrintState("Entry state:")
 
 	// uncross with opposite
 	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
@@ -51,14 +47,14 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// if state of the book changed show state
 	if len(trades) != 0 {
-		//b.PrintState("After uncross state:")
+		b.PrintState("After uncross state:")
 	}
 
 	// if order is persistent type add to order book to the correct side
 	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
 		b.getSide(order.Side).addOrder(order, order.Side)
 
-		//b.PrintState("After addOrder state:")
+		b.PrintState("After addOrder state:")
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
@@ -66,7 +62,6 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 }
 
 func (b *OrderBook) RemoveOrder(order *msg.Order) error {
-	b.ReqNumber++
 	err := b.getSide(order.Side).RemoveOrder(order)
 	return err
 }

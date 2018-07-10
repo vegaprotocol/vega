@@ -23,9 +23,5 @@ func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {
 		return msg.OrderError_INVALID_REMAINING_SIZE
 	}
 
-	if orderMessage.Id != "" {
-		return msg.OrderError_NON_EMPTY_NEW_ORDER_ID
-	}
-
 	return msg.OrderError_NONE
 }

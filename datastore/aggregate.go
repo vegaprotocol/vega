@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"fmt"
 	"vega/proto"
 )
 
@@ -26,12 +27,16 @@ func (t *memTradeStore) GetCandles(market string, since, interval uint64) (candl
 		intervalProgression uint64
 	)
 
+	fmt.Printf("t.store.markets[market].priceHistory: %+v\n", len(t.store.markets[market].priceHistory))
+
 	candle := newCandle()
 	for idx, trade := range t.store.markets[market].priceHistory {
 		// reach data slice for timestamps of interest
 		if trade.timestamp < since {
 			continue
 		}
+
+		fmt.Printf("trade: %+v\n", trade)
 
 		// if new candle set open price of the first trade
 		if candle.Open == 0 {
@@ -60,6 +65,7 @@ func (t *memTradeStore) GetCandles(market string, since, interval uint64) (candl
 		// if reached the end of data finish
 		if idx == len(t.store.markets[market].priceHistory)-1 {
 			candle.Close = trade.price
+			fmt.Printf("candle: %+v\n", candle)
 			candles.Candles = append(candles.Candles, candle)
 			break
 		}
@@ -68,6 +74,7 @@ func (t *memTradeStore) GetCandles(market string, since, interval uint64) (candl
 		if intervalProgression + 1 == interval &&
 			t.store.markets[market].priceHistory[idx+1].timestamp != currentTimestamp {
 			candle.Close = trade.price
+			fmt.Printf("candle: %+v\n", candle)
 			candles.Candles = append(candles.Candles, candle)
 			intervalProgression = 0
 			candle = newCandle()

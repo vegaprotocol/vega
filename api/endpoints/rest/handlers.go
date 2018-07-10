@@ -1,17 +1,22 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
-	"github.com/gin-gonic/gin"
+	"strconv"
+	"time"
+
 	"vega/api"
 	"vega/proto"
-	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 const ResponseKeyResult = "result"
 const ResponseKeyError = "error"
 const ResponseKeyOrders = "orders"
 const ResponseKeyTrades = "trades"
+const ResponseKeyCandles = "candles"
 const ResponseResultSuccess = "success"
 const ResponseResultFailure = "failure"
 const ResponseResultFailureValidation = "invalid"
@@ -101,4 +106,31 @@ func (handlers *Handlers) stringToUint64(str string, defaultValue uint64) uint64
 		return defaultValue
 	}
 	return uint64(i)
+}
+
+func (handlers *Handlers) GetCandleChart(ctx *gin.Context) {
+	market := ctx.DefaultQuery("market", DefaultMarket)
+
+	sinceStr := ctx.DefaultQuery("since", "2018-07-09T12:00:00Z")
+
+	fmt.Printf("sinceStr: %s\n", sinceStr)
+	since, err := time.Parse(time.RFC3339, sinceStr)
+	if err != nil {
+		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
+	}
+
+
+	intervalStr := ctx.DefaultQuery("interval", "2")
+	fmt.Printf("intervalStr: %s\n", intervalStr)
+	interval, err := strconv.ParseUint(intervalStr, 10, 64)
+	if err != nil {
+		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
+	}
+
+	candles, err := handlers.TradeService.GetCandlesChart(ctx, market, since, interval)
+	if err == nil {
+		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess, ResponseKeyCandles: candles})
+	} else {
+		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
+	}
 }

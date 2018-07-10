@@ -172,16 +172,18 @@ func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
 	}
 
 	trade := msg.TradePool.Get().(*msg.Trade)
+	trade.Market = agg.Market
 	trade.Price = pass.Price
 	trade.Size = size
 	trade.Aggressor = agg.Side
 	trade.Buyer = buyer.Party
 	trade.Seller = seller.Party
+	trade.Timestamp = agg.Timestamp
 	return trade
 }
 
 func (l PriceLevel) print() {
-	fmt.Printf("priceLevel: %d", l.price)
+	fmt.Printf("priceLevel: %d\n", l.price)
 	for _, o := range l.orders {
 		var side string
 		if o.Side == msg.Side_Buy {
