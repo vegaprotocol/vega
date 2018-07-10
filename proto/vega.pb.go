@@ -457,12 +457,14 @@ type MarketDepth struct {
 }
 
 type Candle struct {
-	Date   string `protobuf:"varint,1,opt,name=date,proto3" json:"date,omitempty"`
-	High   uint64 `protobuf:"varint,2,opt,name=high,proto3" json:"high,omitempty"`
-	Low    uint64 `protobuf:"varint,3,opt,name=low,proto3" json:"low,omitempty"`
-	Open   uint64 `protobuf:"varint,4,opt,name=open,proto3" json:"open,omitempty"`
-	Close  uint64 `protobuf:"varint,5,opt,name=close,proto3" json:"close,omitempty"`
-	Volume uint64 `protobuf:"varint,6,opt,name=volume,proto3" json:"volume,omitempty"`
+	Date             string `protobuf:"varint,1,opt,name=date,proto3" json:"date,omitempty"`
+	High             uint64 `protobuf:"varint,2,opt,name=high,proto3" json:"high,omitempty"`
+	Low              uint64 `protobuf:"varint,3,opt,name=low,proto3" json:"low,omitempty"`
+	Open             uint64 `protobuf:"varint,4,opt,name=open,proto3" json:"open,omitempty"`
+	Close            uint64 `protobuf:"varint,5,opt,name=close,proto3" json:"close,omitempty"`
+	Volume           uint64 `protobuf:"varint,6,opt,name=volume,proto3" json:"volume,omitempty"`
+	OpenBlockNumber  uint64 `protobuf:"varint,7,opt,name=openBlockNumber,proto3" json:"volume,omitempty"`
+	CloseBlockNumber uint64 `protobuf:"varint,8,opt,name=closeBlockNumber,proto3" json:"volume,omitempty"`
 }
 
 type Candles struct {
