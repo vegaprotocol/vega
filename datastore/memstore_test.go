@@ -307,19 +307,19 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 		outOrdersCount int
 	}{
 		{
-			inMarkets: []string { testMarket, "another" },
+			inMarkets: []string { testMarket, "marketZ" },
 			inOrders: []Order {
 				{
 					Order: msg.Order{
 						Id:     "d41d8cd98f00b204e9800998ecf8427e",
 						Market: testMarket,
-						Party: "party1",
+						Party: "partyA",
 					},
 				},
 				{
 					Order: msg.Order{
 						Id:     "ad2dc275947362c45893bbeb30fc3098",
-						Market: "another",
+						Market: "marketZ",
 						Party: "party",
 					},
 				},
@@ -331,10 +331,40 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 					},
 				},
 			},
-			inParty: "party1",
+			inParty: "partyA",
 			inLimit: 5000,
 			inMarket: testMarket,
 			outOrdersCount: 1,
+		},
+		{
+			inMarkets: []string { testMarket, "marketZ" },
+			inOrders: []Order {
+				{
+					Order: msg.Order{
+						Id:     "d41d8cd98f00b204e9800998ecf8427e",
+						Market: testMarket,
+						Party: "partyA",
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "ad2dc275947362c45893bbeb30fc3098",
+						Market: "marketZ",
+						Party: "party",
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "4e8e41367997cfe705d62ea80592cbcc",
+						Market: testMarket,
+						Party: "party",
+					},
+				},
+			},
+			inParty: "",
+			inLimit: 5000,
+			inMarket: testMarket,
+			outOrdersCount: 2,
 		},
 		{
 			inMarkets: []string { testMarket },
@@ -343,27 +373,87 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 					Order: msg.Order{
 						Id:     "d41d8cd98f00b204e9800998ecf8427e",
 						Market: testMarket,
-						Party: "party1",
+						Party: "partyA",
 					},
 				},
 				{
 					Order: msg.Order{
 						Id:     "ad2dc275947362c45893bbeb30fc3098",
 						Market: testMarket,
-						Party: "party1",
+						Party: "partyA",
 					},
 				},
 				{
 					Order: msg.Order{
 						Id:     "4e8e41367997cfe705d62ea80592cbcc",
 						Market: testMarket,
-						Party: "party2",
+						Party: "partyB",
 					},
 				},
 			},
 			inLimit: 2,
-			inParty: "party1",
+			inParty: "partyA",
 			inMarket: testMarket,
+			outOrdersCount: 2,
+		},
+		{
+			inMarkets: []string { testMarket, "marketY", "marketZ" },
+			inOrders: []Order {
+				{
+					Order: msg.Order{
+						Id:     "d41d8cd98f00b204e9800998ecf8427e",
+						Market: testMarket,
+						Party: "partyA",
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "ad2dc275947362c45893bbeb30fc3098",
+						Market: "marketY",
+						Party: "partyB",
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "4e8e41367997cfe705d62ea80592cbcc",
+						Market: "marketZ",
+						Party: "partyB",
+					},
+				},
+			},
+			inParty: "",
+			inLimit: 9999,
+			inMarket: "",
+			outOrdersCount: 3,
+		},
+		{
+			inMarkets: []string { testMarket, "marketY", "marketZ" },
+			inOrders: []Order {
+				{
+					Order: msg.Order{
+						Id:     "d41d8cd98f00b204e9800998ecf8427e",
+						Market: testMarket,
+						Party: "partyA",
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "ad2dc275947362c45893bbeb30fc3098",
+						Market: "marketY",
+						Party: "partyB",
+					},
+				},
+				{
+					Order: msg.Order{
+						Id:     "4e8e41367997cfe705d62ea80592cbcc",
+						Market: "marketZ",
+						Party: "partyB",
+					},
+				},
+			},
+			inParty: "partyB",
+			inLimit: 9999,
+			inMarket: "",
 			outOrdersCount: 2,
 		},
 	}
@@ -435,6 +525,14 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 	assert.Equal(t, 2, len(trades))
 }
 
+func TestMemStore_GetAllTradesForNoneExistentMarket(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newTradeStore = NewTradeStore(&memStore)
+	o, err := newTradeStore.GetAll("UNKNOWN", GetParams{ Limit: GetParamsLimitDefault })
+	assert.Error(t, err, "market does not exist")
+	assert.Nil(t, o)
+}
+
 func TestMemStore_PutTrade(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket})
 	var newOrderStore = NewOrderStore(&memStore)
@@ -463,6 +561,11 @@ func TestMemStore_PutTrade(t *testing.T) {
 	err = newTradeStore.Post(trade)
 	assert.Nil(t, err)
 
+
+	tradeOut, err := newTradeStore.Get(testMarket, tradeId)
+	assert.Nil(t, err)
+	assert.Equal(t, uint64(1000), tradeOut.Price)
+
 	trade = Trade{
 		Trade: msg.Trade{
 			Id: tradeId,
@@ -475,7 +578,62 @@ func TestMemStore_PutTrade(t *testing.T) {
 	err = newTradeStore.Put(trade)
 	assert.Nil(t, err)
 
-	tradeOut, err := newTradeStore.Get(testMarket, tradeId)
+	tradeOut, err = newTradeStore.Get(testMarket, tradeId)
 	assert.Nil(t, err)
 	assert.Equal(t, uint64(9000), tradeOut.Price)
+}
+
+func TestMemStore_PutGetAndDeleteTradeForNoneExistentMarket(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newTradeStore = NewTradeStore(&memStore)
+
+	trade := Trade{
+		Trade: msg.Trade{
+			Id: "A",
+			Price: 9000,
+			Market: "UNKNOWN",
+		},
+		OrderId: "Z",
+	}
+
+	err := newTradeStore.Put(trade)
+	assert.Error(t, err, "market does not exist")
+	
+	_, err = newTradeStore.Get("UNKNOWN", "ID")
+	assert.Error(t, err, "market does not exist")
+
+	err = newTradeStore.Delete(trade)
+	assert.Error(t, err, "market does not exist")
+
+}
+
+func TestMemOrder_ToString(t *testing.T) {
+	orderId := "d41d8cd98f00b204e9800998ecf8427e"
+	order := Order{
+		Order: msg.Order{
+			Id:     orderId,
+			Market: testMarket,
+		},
+	}
+	memOrder := memOrder{
+		order: order,
+	}
+	assert.Equal(t, "memOrder::order-id=d41d8cd98f00b204e9800998ecf8427e", memOrder.String())
+}
+
+func TestMemTrade_ToString(t *testing.T) {
+	tradeId := "c0e8490aa4b1d0071ae8f01cdf45c6aa"
+	orderId := "d41d8cd98f00b204e9800998ecf8427e"
+	trade := Trade{
+		Trade: msg.Trade{
+			Id: tradeId,
+			Price: 9000,
+			Market: testMarket,
+		},
+		OrderId: orderId,
+	}
+	memTrade := memTrade{
+		trade: trade,
+	}
+	assert.Equal(t, "memTrade::trade-id=c0e8490aa4b1d0071ae8f01cdf45c6aa", memTrade.String())
 }

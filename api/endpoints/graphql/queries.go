@@ -5,7 +5,7 @@ import (
 )
 
 type Resolver struct {
-	matching   core.MatchingEngine
+	//matching   core.MatchingEngine
 	risk       core.RiskEngine
 	settlement core.SettlementEngine
 }

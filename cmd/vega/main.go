@@ -13,7 +13,6 @@ import (
 )
 
 const sseChannelSize = 2 << 16
-const storeChannelSize = 2 << 16
 const marketName = "BTC/DEC18"
 
 func main() {
@@ -45,5 +44,4 @@ func main() {
 	go sseServer.Start()
 
 	blockchain.Start(vega)
-
 }

@@ -19,9 +19,8 @@ type memOrder struct {
 	trades []*memTrade
 }
 
-
 func (mo *memOrder) String() string {
-	return "order-id=" + mo.order.Id
+	return "memOrder::order-id=" + mo.order.Id
 }
 
 // memOrderStore should implement OrderStore interface.
@@ -36,7 +35,7 @@ type memTrade struct {
 }
 
 func (mt *memTrade) String() string {
-	return "trade-id=" + mt.trade.Id
+	return "memTrade::trade-id=" + mt.trade.Id
 }
 
 // memTradeStore should implement TradeStore interface.
@@ -175,7 +174,7 @@ func (t *memOrderStore) Post(or Order) error {
 			trades: make([]*memTrade, 0),
 			order: or,
 		}
-		// Insert order struct into lookup hashtable
+		// Insert order struct into lookup hash table
 		t.store.markets[or.Market].orders[or.Id] = order
 
 		//fmt.Printf("%v", t.store.markets[or.Market].orders)
@@ -215,10 +214,10 @@ func (t *memOrderStore) Delete(or Order) error {
 		return err
 	}
 
-	// Remove value
+	// Remove from market values
 	delete(t.store.markets[or.Market].orders, or.Id)
 
-	// Remove index
+	// Remove from market order index
 	pos := uint64(0)
 	for p, value := range t.store.markets[or.Market].ordersIndex {
 		if value == or.Id {
@@ -228,15 +227,16 @@ func (t *memOrderStore) Delete(or Order) error {
 	}
 	t.store.markets[or.Market].ordersIndex = append(t.store.markets[or.Market].ordersIndex[:pos], t.store.markets[or.Market].ordersIndex[pos+1:]...)
 
-	// Remove global index
+	// Remove from global index
 	for i, value := range t.store.orders {
 		if value.order.Id == or.Id {
 		 	pos = uint64(i)
 		}
 	}
 	copy(t.store.orders[pos:], t.store.orders[pos+1:])
-	t.store.orders[len(t.store.orders)-1] = nil // or the zero value of T
+	t.store.orders[len(t.store.orders)-1] = nil
 	t.store.orders = t.store.orders[:len(t.store.orders)-1]
+
 	return nil
 }
 
@@ -357,7 +357,6 @@ func (t *memTradeStore) Put(tr Trade) error {
 		} else {
 			return fmt.Errorf("trade not found in memstore: %s", tr.Id)
 		}
-		//o.trades = append(o.trades, trade)
 		return nil
 	} else {
 		return fmt.Errorf("related order for trade not found in memstore: %s", tr.OrderId)
