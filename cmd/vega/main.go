@@ -2,14 +2,15 @@
 package main
 
 import (
+	"log"
 	"vega/api/endpoints/rest"
 	"vega/api/endpoints/sse"
 	"vega/blockchain"
 	"vega/core"
 	"vega/proto"
 
-	"vega/datastore"
 	"vega/api"
+	"vega/datastore"
 )
 
 const sseChannelSize = 2 << 16
@@ -43,5 +44,7 @@ func main() {
 	sseServer := sse.NewServer(sseOrderChan, sseTradeChan)
 	go sseServer.Start()
 
-	blockchain.Start(vega)
+	if err := blockchain.Start(*vega); err != nil {
+		log.Fatal(err)
+	}
 }
