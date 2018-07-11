@@ -25,6 +25,7 @@ import (
 //}
 
 func BenchmarkMatching1000Allocated(b *testing.B) {
+	b.ReportAllocs()
 	BenchmarkMatching(1000, b, true, 0, true, 0)
 }
 

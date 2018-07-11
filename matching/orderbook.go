@@ -2,8 +2,9 @@ package matching
 
 import (
 	"fmt"
-	"vega/api/endpoints/sse"
 	"vega/proto"
+
+	"github.com/golang/go/src/pkg/strconv"
 )
 
 type OrderBook struct {
@@ -11,95 +12,105 @@ type OrderBook struct {
 	buy             *OrderBookSide
 	sell            *OrderBookSide
 	lastTradedPrice uint64
-	orders          map[string]*OrderEntry
 	config          Config
 	latestTimestamp uint64
-	sse             sse.Server
+	ReqNumber       int64
 }
 
 // Create an order book with a given name
-func NewBook(name string, orderLookup map[string]*OrderEntry, config Config) *OrderBook {
-	book := &OrderBook{
+func NewBook(name string, config Config) *OrderBook {
+	return &OrderBook{
 		name:   name,
-		orders: orderLookup,
+		buy:    &OrderBookSide{},
+		sell:   &OrderBookSide{},
 		config: config,
 	}
-	buy, sell := makeSide(msg.Side_Buy, book), makeSide(msg.Side_Sell, book)
-	book.buy = buy
-	book.buy.other = sell
-	book.sell = sell
-	book.sell.other = buy
-	return book
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
-func (b *OrderBook) AddOrder(orderMessage *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
-	if err := b.validateOrder(orderMessage); err != msg.OrderError_NONE {
+func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+	if err := b.validateOrder(order); err != msg.OrderError_NONE {
 		return nil, err
 	}
-	if orderMessage.Timestamp > b.latestTimestamp {
-		b.latestTimestamp = orderMessage.Timestamp
+	b.ReqNumber++
+
+	order.Id = strconv.FormatInt(b.ReqNumber, 10)
+	if order.Timestamp > b.latestTimestamp {
+		b.latestTimestamp = order.Timestamp
 	}
-	orderEntry := orderEntryFromMessage(orderMessage)
-	trades := b.sideFor(orderMessage).addOrder(orderEntry)
-	orderConfirmation := MakeResponse(orderMessage, trades)
-	//printSlice(*trades)
-	if len(*trades) == 0 {
-		for _, c := range b.config.OrderChans {
-			go func(c chan<- msg.Order, orderMessage *msg.Order) {
-				fmt.Println("ORDER MESSAGE: SENDING...")
-				c <- *orderMessage
-				fmt.Println("ORDER MESSAGE: SENT")
-			}(c, orderMessage)
-		}
+
+	//b.PrintState("Entry state:")
+
+	// uncross with opposite
+	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
+
+	if lastTradedPrice != 0 {
+		b.lastTradedPrice = lastTradedPrice
 	}
+
+	// if state of the book changed show state
+	if len(trades) != 0 {
+		//b.PrintState("After uncross state:")
+	}
+
+	// if order is persistent type add to order book to the correct side
+	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
+		b.getSide(order.Side).addOrder(order, order.Side)
+
+		//b.PrintState("After addOrder state:")
+	}
+
+	orderConfirmation := makeResponse(order, trades, impactedOrders)
 	return orderConfirmation, msg.OrderError_NONE
 }
 
-func printSlice(s []Trade) {
-	fmt.Printf("len=%d cap=%d\n", len(s), cap(s))
+func (b *OrderBook) RemoveOrder(order *msg.Order) error {
+	b.ReqNumber++
+	err := b.getSide(order.Side).RemoveOrder(order)
+	return err
 }
 
-func (b *OrderBook) sideFor(orderMessage *msg.Order) *OrderBookSide {
-	if orderMessage.Side == msg.Side_Buy {
+func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
+	if orderSide == msg.Side_Buy {
 		return b.buy
-	} else { // side == Sell
+	} else {
 		return b.sell
 	}
 }
 
-func (b *OrderBook) GetName() string {
-	return b.name
-}
-
-func (b *OrderBook) GetMarketData() *msg.MarketData {
-	return &msg.MarketData{
-		BestBid:         b.buy.bestPrice(),
-		BestOffer:       b.sell.bestPrice(),
-		LastTradedPrice: b.lastTradedPrice,
-	}
-}
-
-func (b *OrderBook) GetMarketDepth() *msg.MarketDepth {
-	return &msg.MarketDepth{
-		BuyOrderCount:   b.buy.getOrderCount(),
-		SellOrderCount:  b.sell.getOrderCount(),
-		BuyOrderVolume:  b.buy.getTotalVolume(),
-		SellOrderVolume: b.sell.getTotalVolume(),
-		BuyPriceLevels:  uint64(b.buy.getNumberOfPriceLevels()),
-		SellPriceLevels: uint64(b.sell.getNumberOfPriceLevels()),
-	}
-}
-
-func (b *OrderBook) RemoveOrder(id string) *msg.Order {
-	if order, exists := b.orders[id]; exists {
-		return order.remove().order
+func (b *OrderBook) getOppositeSide(orderSide msg.Side) *OrderBookSide {
+	if orderSide == msg.Side_Buy {
+		return b.sell
 	} else {
-		return nil
+		return b.buy
 	}
 }
 
-//
-//func (b *OrderBook) GetBook() (buy, sell []*OrderEntry) {
-//
-//}
+func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.Order) *msg.OrderConfirmation {
+	confirm := msg.OrderConfirmationPool.Get().(*msg.OrderConfirmation)
+	confirm.Order = order
+	confirm.PassiveOrdersAffected = impactedOrders
+	confirm.Trades = trades
+	return confirm
+}
+
+func (b *OrderBook) PrintState(msg string) {
+	fmt.Println()
+	fmt.Println(msg)
+	fmt.Println("------------------------------------------------------------")
+	fmt.Println("                        BUY SIDE                            ")
+	for _, priceLevel := range b.buy.getLevels() {
+		if len(priceLevel.orders) > 0 {
+			priceLevel.print()
+		}
+	}
+	fmt.Println("------------------------------------------------------------")
+	fmt.Println("                        SELL SIDE                           ")
+	for _, priceLevel := range b.sell.getLevels() {
+		if len(priceLevel.orders) > 0 {
+			priceLevel.print()
+		}
+	}
+	fmt.Println("------------------------------------------------------------")
+
+}

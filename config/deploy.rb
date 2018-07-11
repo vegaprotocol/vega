@@ -1,7 +1,7 @@
 require "colorize"
 
 # config valid for current version and patch releases of Capistrano
-lock "~> 3.10.1"
+lock "~> 3.11.0"
 
 set :application, "vega"
 set :repo_url, "git@gitlab.com:vega-protocol/trading-core.git"
@@ -10,7 +10,7 @@ set :repo_url, "git@gitlab.com:vega-protocol/trading-core.git"
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
 
 # Default deploy_to directory is /var/www/my_app_name
-set :deploy_to, "/home/dave/vega"
+set :deploy_to, "/home/vega/"
 
 namespace :vega do
   desc "Builds the vega binary locally"
@@ -32,9 +32,9 @@ namespace :vega do
 
   desc "Reset tendermint"
   task :reset_tendermint do
-    on roles(:app) do
+    on role(:app) do
       begin
-        execute "/home/dave/go/bin/tendermint unsafe_reset_all"
+        execute "tendermint unsafe_reset_all"
       rescue => ex
         puts ex.message.red
       end
@@ -44,7 +44,7 @@ namespace :vega do
   desc "Start tendermint"
   task :start_tendermint do
     on roles(:app) do
-      execute "nohup /home/dave/go/bin/tendermint node >/tmp/tendermint.log >/tmp/tendermint.log 2>&1 & sleep 5", pty: true
+      execute "nohup tendermint node >/tmp/tendermint.log >/tmp/tendermint.log 2>&1 & sleep 5", pty: true
     end
   end
 
