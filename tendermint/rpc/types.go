@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"vega/tendermint/types"
 )
 
 // Block represents a block in the Tendermint blockchain.
@@ -13,8 +14,6 @@ type Block struct {
 	Evidence   *Evidence `json:"evidence"`
 	Header     *Header   `json:"header"`
 	PrevCommit *Commit   `json:"last_commit"`
-	// TODO(tav): At some point Tendermint will probably add a Version field to
-	// this struct.
 }
 
 // BlockID is comprised of the Simple Tree hash of the block header encoded as a
@@ -29,12 +28,12 @@ type BlockID struct {
 type BlockInfo struct {
 	Block Block     `json:"block"`
 	Meta  BlockMeta `json:"block_meta"`
-	//todo(cdm)
 }
 
 // BlockMeta represents metadata about a block in the Tendermint blockchain.
 type BlockMeta struct {
-	//todo(cdm)
+	BlockID BlockID `json:"block_id"` // the block hash and partsethash
+	Header  *Header `json:"header"`   // The block's Header
 }
 
 // BlockSizeParams specifies the limits on the block size.
@@ -96,7 +95,6 @@ type Commit struct {
 // CommitInfo represents
 type CommitInfo struct {
 	Canonical bool
-	//todo(cdm)
 }
 
 // ConsensusParams defines the key parameters that determine the validity of
@@ -182,9 +180,54 @@ type Header struct {
 	EvidenceHash ByteSlice `json:"evidence_hash"` // evidence included in the block
 }
 
-// NetInfo represents
+// NetInfo represents current network info.
 type NetInfo struct {
-	//todo(cdm)
+	Listening bool     `json:"listening"`
+	Listeners []string `json:"listeners"`
+	NPeers    int      `json:"n_peers"`
+	Peers     []Peer   `json:"peers"`
+}
+
+// A peer
+type Peer struct {
+	NodeInfo         `json:"node_info"`
+	IsOutbound       bool             `json:"is_outbound"`
+	ConnectionStatus ConnectionStatus `json:"connection_status"`
+}
+
+// ConnectionStatus represents the status of the current connection and internal monitors.
+type ConnectionStatus struct {
+	Duration    time.Duration
+	SendMonitor MonitorStatus
+	RecvMonitor MonitorStatus
+	Channels    []ChannelStatus
+}
+
+// ChannelStatus represents the status of a current channel
+type ChannelStatus struct {
+	ID                byte
+	SendQueueCapacity int
+	SendQueueSize     int
+	Priority          int
+	RecentlySent      int64
+}
+
+// MonitorStatus represents the current Monitor status. All transfer rates are in bytes
+// per second rounded to the nearest byte.
+type MonitorStatus struct {
+	Active   bool          // Flag indicating an active transfer
+	Start    time.Time     // Transfer start time
+	Duration time.Duration // Time period covered by the statistics
+	Idle     time.Duration // Time since the last transfer of at least 1 byte
+	Bytes    int64         // Total number of bytes transferred
+	Samples  int64         // Total number of samples taken
+	InstRate int64         // Instantaneous transfer rate
+	CurRate  int64         // Current transfer rate (EMA of InstRate)
+	AvgRate  int64         // Average transfer rate (Bytes / Duration)
+	PeakRate int64         // Maximum instantaneous transfer rate
+	BytesRem int64         // Number of bytes remaining in the transfer
+	TimeRem  time.Duration // Estimated time to completion
+	Progress uint32        // Overall transfer progress
 }
 
 // NodeInfo is the basic node information exchanged
@@ -213,7 +256,8 @@ type PartSetHeader struct {
 	Total int       `json:"total"`
 }
 
-// todo(cdm) add description
+// Status of Tendermint including; node info, pubkey, latest block
+// hash, app hash, block height and time.
 type Status struct {
 	NodeInfo      NodeInfo  `json:"node_info"`
 	SyncInfo      SyncInfo  `json:"sync_info"`
@@ -259,8 +303,27 @@ type TxSizeParams struct {
 	MaxGas   int64 `json:"max_gas"`
 }
 
+// Transaction represents the result of querying for a transaction.
 type Transaction struct {
-	//todo(cdm)
+	Hash     ByteSlice               `json:"hash"`
+	Height   int64                   `json:"height"`
+	Index    uint32                  `json:"index"`
+	TxResult types.DeliverTxResponse `json:"tx_result"`
+	Tx       ByteSlice               `json:"tx"`
+	Proof    TxProof                 `json:"proof,omitempty"`
+}
+
+// TxProof represents a Merkle proof of the presence of a transaction in the Merkle tree.
+type TxProof struct {
+	Index, Total int
+	RootHash     ByteSlice
+	Data         ByteSlice
+	Proof        SimpleProof
+}
+
+// SimpleProof represents a simple merkle proof.
+type SimpleProof struct {
+	Aunts [][]byte `json:"aunts"` // Hashes from leaf's sibling to a root's child.
 }
 
 type TransactionList struct {
