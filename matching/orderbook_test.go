@@ -42,20 +42,6 @@ func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
 	}
 	_, err = book.AddOrder(invalidRemainginSizeOrderMsg)
 	assert.Equal(t, msg.OrderError_INVALID_REMAINING_SIZE, err)
-
-	invalidIdOrderMsg := &msg.Order{
-		Market:    "testOrderBook",
-		Party:     "A",
-		Side:      msg.Side_Sell,
-		Price:     100,
-		Size:      100,
-		Remaining: 100,
-		Type:      msg.Order_GTC,
-		Timestamp: 0,
-		Id:        "foobar",
-	}
-	_, err = book.AddOrder(invalidIdOrderMsg)
-	assert.Equal(t, msg.OrderError_NON_EMPTY_NEW_ORDER_ID, err)
 }
 
 func TestOrderBook_RemoveOrder(t *testing.T) {
