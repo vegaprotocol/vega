@@ -7,11 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"vega/core"
+	"vega/log"
+	"vega/proto"
+
 	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
-
-	"vega/core"
-	"vega/proto"
 )
 
 type Blockchain struct {
@@ -49,7 +50,7 @@ func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 //
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
-	fmt.Println("CheckTx: " + string(tx))
+	log.Infof("CheckTx: %s", string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -79,21 +80,21 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	fmt.Println("DeliverTx: " + string(tx))
+	log.Infof("DeliverTx: %s", string(tx))
 	// split the transaction
 	var _, value []byte
 	parts := bytes.Split(tx, []byte("|"))
 	if len(parts) == 2 {
 		_, value = parts[0], parts[1]
 	} else {
-		fmt.Println("Invalid tx: " + string(tx))
+		log.Infof("Invalid tx: %s", string(tx))
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
 	// decode base64
 	var jsonBlob, err = base64.URLEncoding.DecodeString(string(value))
 	if err != nil {
-		fmt.Println("Error decoding: " + err.Error())
+		log.Errorf("Error decoding: %s", err.Error())
 	}
 
 	// deserialize JSON to struct
@@ -106,10 +107,10 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	// deliver to the Vega trading core
 	confirmationMessage, _ := app.vega.SubmitOrder(order)
 	if confirmationMessage != nil {
-		fmt.Printf("ABCI reports it received a confirmation message from vega:\n")
-		fmt.Printf("- aggressive order: %+v\n", confirmationMessage.Order)
-		fmt.Printf("- trades: %+v\n", confirmationMessage.Trades)
-		fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+		log.Infof("ABCI reports it received a confirmation message from vega:\n")
+		log.Infof("- aggressive order: %+v\n", confirmationMessage.Order)
+		log.Infof("- trades: %+v\n", confirmationMessage.Trades)
+		log.Infof("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
 	}
 
 	app.vega.State.Size += 1

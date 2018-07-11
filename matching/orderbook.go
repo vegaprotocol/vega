@@ -1,9 +1,8 @@
 package matching
 
 import (
-	"fmt"
+	"vega/log"
 	"vega/proto"
-
 )
 
 type OrderBook struct {
@@ -90,22 +89,22 @@ func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.O
 }
 
 func (b *OrderBook) PrintState(msg string) {
-	fmt.Println()
-	fmt.Println(msg)
-	fmt.Println("------------------------------------------------------------")
-	fmt.Println("                        BUY SIDE                            ")
+	log.Infof("\n")
+	log.Infof("%s\n", msg)
+	log.Infof("------------------------------------------------------------\n")
+	log.Infof("                        BUY SIDE                            \n")
 	for _, priceLevel := range b.buy.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print()
 		}
 	}
-	fmt.Println("------------------------------------------------------------")
-	fmt.Println("                        SELL SIDE                           ")
+	log.Infof("------------------------------------------------------------\n")
+	log.Infof("                        SELL SIDE                           \n")
 	for _, priceLevel := range b.sell.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print()
 		}
 	}
-	fmt.Println("------------------------------------------------------------")
+	log.Infof("------------------------------------------------------------\n")
 
 }

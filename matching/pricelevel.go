@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"vega/log"
 	"vega/proto"
 )
 
@@ -194,6 +195,6 @@ func (l PriceLevel) print() {
 
 		line := fmt.Sprintf("      %s %s @%d size=%d R=%d Type=%d T=%d %s",
 			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id)
-		fmt.Println(line)
+		log.Infof("%s", line)
 	}
 }
