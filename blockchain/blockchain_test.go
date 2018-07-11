@@ -20,5 +20,5 @@ func TestNewBlockchain(t *testing.T) {
 	vega := core.New(config, storage)
 	chain := NewBlockchain(vega)
 
-	assert.Equal(t, chain.state.Height, int64(0))
+	assert.Equal(t, chain.vega.State.Height, int64(0))
 }
