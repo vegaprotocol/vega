@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"vega/core"
 
-	"github.com/tendermint/abci/server"
+	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tmlibs/common"
 )
 
