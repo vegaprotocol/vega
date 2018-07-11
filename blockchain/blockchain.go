@@ -7,11 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/tendermint/tendermint/abci/example/code"
+	"github.com/tendermint/tendermint/abci/types"
+
 	"vega/core"
 	"vega/proto"
-
-	"github.com/tendermint/abci/example/code"
-	"github.com/tendermint/abci/types"
 )
 
 type Blockchain struct {
