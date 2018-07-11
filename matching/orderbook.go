@@ -42,7 +42,6 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
-
 	}
 
 	// if state of the book changed show state

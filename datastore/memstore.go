@@ -94,7 +94,7 @@ func (t *memOrderStore) GetAll(market string, party string, params GetParams) ([
 		// Limit is by default descending
 		pos := uint64(0)
 		orders := make([]Order, 0)
-		for i := len(t.store.orders)-1; i >= 0; i-- {
+		for i := len(t.store.orders) - 1; i >= 0; i-- {
 			if params.Limit > 0 && pos == params.Limit {
 				break
 			}
@@ -112,7 +112,7 @@ func (t *memOrderStore) GetAll(market string, party string, params GetParams) ([
 			}
 		}
 		return orders, nil
-	// Return orders from single market
+		// Return orders from single market
 	} else {
 		err := t.marketExists(market)
 		if err != nil {
@@ -121,7 +121,7 @@ func (t *memOrderStore) GetAll(market string, party string, params GetParams) ([
 		// Limit is by default descending
 		pos := uint64(0)
 		orders := make([]Order, 0)
-		for i := len(t.store.markets[market].ordersIndex)-1; i >= 0; i-- {
+		for i := len(t.store.markets[market].ordersIndex) - 1; i >= 0; i-- {
 			if params.Limit > 0 && pos == params.Limit {
 				break
 			}
@@ -172,7 +172,7 @@ func (t *memOrderStore) Post(or Order) error {
 		fmt.Println("Adding new order with ID ", or.Id)
 		order := &memOrder{
 			trades: make([]*memTrade, 0),
-			order: or,
+			order:  or,
 		}
 		// Insert order struct into lookup hash table
 		t.store.markets[or.Market].orders[or.Id] = order
@@ -230,7 +230,7 @@ func (t *memOrderStore) Delete(or Order) error {
 	// Remove from global index
 	for i, value := range t.store.orders {
 		if value.order.Id == or.Id {
-		 	pos = uint64(i)
+			pos = uint64(i)
 		}
 	}
 	copy(t.store.orders[pos:], t.store.orders[pos+1:])
@@ -321,7 +321,6 @@ func (t *memTradeStore) Post(tr Trade) error {
 		if _, exists := t.store.markets[tr.Market].trades[tr.Id]; exists {
 			return fmt.Errorf("trade exists in memstore: %s", tr.Id)
 		} else {
-			fmt.Printf("adding trade %+v\n", trade)
 			// Map new trade to memstore and append trade to order
 			t.store.markets[tr.Market].trades[tr.Id] = trade
 			o.trades = append(o.trades, trade)

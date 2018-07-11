@@ -92,7 +92,6 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			}
 		}
 	}
-
 	// ------------------------------------------------//
 	//------------------- RISK ENGINE -----------------//
 

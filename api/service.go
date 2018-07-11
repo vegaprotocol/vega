@@ -1,6 +1,5 @@
 package api
 
-
 import (
 	"context"
 	"errors"
@@ -8,11 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	"vega/core"
 	"vega/datastore"
 	"vega/proto"
-	"vega/core"
 )
-
 
 type TradeService interface {
 	Init(app *core.Vega, tradeStore datastore.TradeStore)
@@ -23,7 +21,7 @@ type TradeService interface {
 }
 
 type tradeService struct {
-	app *core.Vega
+	app        *core.Vega
 	tradeStore datastore.TradeStore
 }
 
@@ -92,7 +90,7 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 
 	aggregationStartTime := appCurrentTime.Add(-delta)
 	for i, candle := range c.Candles {
-		candleDuration := time.Duration(i * int(interval)) * time.Second
+		candleDuration := time.Duration(i*int(interval)) * time.Second
 		candle.Date = aggregationStartTime.Add(candleDuration).Format(time.RFC3339)
 	}
 
@@ -107,7 +105,7 @@ type OrderService interface {
 }
 
 type orderService struct {
-	app *core.Vega
+	app        *core.Vega
 	orderStore datastore.OrderStore
 }
 
@@ -147,7 +145,7 @@ func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (succes
 }
 
 func (p *orderService) GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error) {
-	o, err := p.orderStore.GetAll(market, party, datastore.GetParams{ Limit: limit })
+	o, err := p.orderStore.GetAll(market, party, datastore.GetParams{Limit: limit})
 	if err != nil {
 		return nil, err
 	}
@@ -175,4 +173,3 @@ func (p *orderService) GetById(ctx context.Context, market string, id string) (o
 	}
 	return *or.ToProtoMessage(), err
 }
-

@@ -19,6 +19,7 @@ func BenchmarkMatching(
 	randSize bool,
 	reportInterval int) {
 
+		b.ReportAllocs()
 	if reportInterval == 0 {
 		reportInterval = numberOfOrders
 	}
@@ -54,5 +55,17 @@ func BenchmarkMatching(
 		if oerr == 0 {
 			oconfirm.Release()
 		}
+		result, _ := vega.SubmitOrder(&msg.Order{
+			Market:    marketId,
+			Party:     fmt.Sprintf("P%v", timestamp),
+			Side:      msg.Side(rand.Intn(2)),
+			Price:     uint64(rand.Intn(100) + 50),
+			Size:      size,
+			Remaining: size,
+			Type:      msg.Order_GTC,
+			Timestamp: timestamp,
+		})
+		_ = result
+
 	}
 }

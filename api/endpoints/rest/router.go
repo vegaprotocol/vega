@@ -5,10 +5,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/satori/go.uuid"
-	)
+)
 
-func NewRouter(orderService api.OrderService, tradeService api.TradeService) *gin.Engine  {
-	
+func NewRouter(orderService api.OrderService, tradeService api.TradeService) *gin.Engine {
+
 	// Set up HTTP request handlers
 	httpHandlers := Handlers{
 		OrderService: orderService,
@@ -27,9 +27,7 @@ func NewRouter(orderService api.OrderService, tradeService api.TradeService) *gi
 	router.GET("/orders/:orderId/trades", httpHandlers.GetTradesForOrder)
 	router.GET("/orders", httpHandlers.GetOrders)
 	router.POST("/orders", httpHandlers.CreateOrder)
-
 	router.GET("/candles", httpHandlers.GetCandleChart)
-
 	return router
 }
 

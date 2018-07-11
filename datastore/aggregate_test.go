@@ -62,7 +62,6 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 			i = 15
 			timestamp += 5
 		}
-
 		d := generateRandomOrderAndTrade(price, size, timestamp)
 
 		err := newOrderStore.Post(*d.order)

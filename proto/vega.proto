@@ -70,6 +70,8 @@ message Candle {
     uint64 open = 4;
     uint64 close = 5;
     uint64 volume = 6;
+    uint64 openBlockNumber = 7;
+    uint64 closeBlockNumber = 8;
 }
 
 message Candles {

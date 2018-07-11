@@ -17,7 +17,7 @@ import (
 type Blockchain struct {
 	types.BaseApplication
 
-	vega  *core.Vega
+	vega *core.Vega
 }
 
 func NewBlockchain(vegaApp *core.Vega) *Blockchain {

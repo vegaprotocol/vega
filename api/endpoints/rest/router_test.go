@@ -1,17 +1,19 @@
 package rest
 
 import (
-	"testing"
-	"net/http/httptest"
 	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"vega/api/mocks"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/gin-gonic/gin"
-	"vega/api/mocks"
 )
 
 func TestNewRouter_ExistsAndServesHttp(t *testing.T) {
 	router := buildRouter()
-	
+
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/", nil)
 	router.ServeHTTP(w, req)

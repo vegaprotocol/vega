@@ -119,7 +119,6 @@ func (handlers *Handlers) GetCandleChart(ctx *gin.Context) {
 		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
 	}
 
-
 	intervalStr := ctx.DefaultQuery("interval", "2")
 	fmt.Printf("intervalStr: %s\n", intervalStr)
 	interval, err := strconv.ParseUint(intervalStr, 10, 64)

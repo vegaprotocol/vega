@@ -22,12 +22,12 @@ func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, inte
 		return msg.Candles{}, err
 	}
 
-	nOfCandles := uint64(math.Ceil(float64((currentBlock-sinceBlock)/interval)))
+	nOfCandles := uint64(math.Ceil(float64((currentBlock - sinceBlock) / interval)))
 	var candles = make([]*msg.Candle, nOfCandles, nOfCandles)
 
 	for idx := range candles {
 		candles[idx] = &msg.Candle{}
-		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx) * interval
+		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx)*interval
 		candles[idx].CloseBlockNumber = candles[idx].OpenBlockNumber + interval
 	}
 

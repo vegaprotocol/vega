@@ -13,7 +13,7 @@ type MatchingEngine interface {
 type matchingEngine struct {
 	//matchingEngine MatchingEngine
 	markets map[string]*OrderBook
-	config Config
+	config  Config
 }
 
 func NewMatchingEngine() MatchingEngine {
