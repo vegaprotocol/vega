@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"vega/datastore"
+	"vega/log"
 	"vega/matching"
 	"vega/proto"
 )
@@ -88,7 +89,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%d", order.Id, idx)
 			if err := v.TradesStore.Post(*datastore.NewTradeFromProtoMessage(trade, order.Id)); err != nil {
-				fmt.Printf("TradesStore.Post error: %+v\n", err)
+				log.Infof("TradesStore.Post error: %+v\n", err)
 			}
 		}
 	}

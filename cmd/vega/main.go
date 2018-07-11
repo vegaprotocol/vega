@@ -2,11 +2,11 @@
 package main
 
 import (
-	"log"
 	"vega/api/endpoints/rest"
 	"vega/api/endpoints/sse"
 	"vega/blockchain"
 	"vega/core"
+	"vega/log"
 	"vega/proto"
 
 	"vega/api"
@@ -18,6 +18,8 @@ const marketName = "BTC/DEC18"
 
 func main() {
 	config := core.GetConfig()
+
+	log.InitConsoleLogger(log.DebugLevel)
 
 	// Storage Service provides read stores for consumer VEGA API
 	// Uses in memory storage (maps/slices etc), configurable in future
@@ -45,6 +47,6 @@ func main() {
 	go sseServer.Start()
 
 	if err := blockchain.Start(vega); err != nil {
-		log.Fatal(err)
+		log.Fatalf("%s", err)
 	}
 }
