@@ -44,7 +44,7 @@ func main() {
 	sseServer := sse.NewServer(sseOrderChan, sseTradeChan)
 	go sseServer.Start()
 
-	if err := blockchain.Start(*vega); err != nil {
+	if err := blockchain.Start(vega); err != nil {
 		log.Fatal(err)
 	}
 }
