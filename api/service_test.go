@@ -163,12 +163,13 @@ func TestTradeService_GetCandlesChart(t *testing.T) {
 	var tradeService = NewTradeService()
 
 	vega := &core.Vega{}
-	vega.SetAbciHeight(6 * 60)
+	vega.State = &core.State{}
+	vega.State.Height = 6 * 60
 
 	tradeService.Init(vega, &tradeStore)
 	sinceInBlocks := uint64(60)
 
-	tradeStore.On("GetCandles", market, sinceInBlocks, interval).Return(msg.Candles{
+	tradeStore.On("GetCandles", market, sinceInBlocks, uint64(vega.State.Height), interval).Return(msg.Candles{
 		[]*msg.Candle{
 			{High: 112, Low: 109, Open: 110, Close: 112, Volume: 10598},
 			{High: 114, Low: 111, Open: 111, Close: 112, Volume: 6360},

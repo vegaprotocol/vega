@@ -14,22 +14,14 @@ import (
 	"github.com/tendermint/abci/types"
 )
 
-type State struct {
-	Size    int64  `json:"size"`
-	Height  int64  `json:"height"`
-	AppHash []byte `json:"app_hash"`
-}
-
 type Blockchain struct {
 	types.BaseApplication
 
 	vega  *core.Vega
-	state State
 }
 
 func NewBlockchain(vegaApp *core.Vega) *Blockchain {
-	state := State{}
-	return &Blockchain{state: state, vega: vegaApp}
+	return &Blockchain{vega: vegaApp}
 }
 
 // Mempool Connection
@@ -110,10 +102,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	if e != nil {
 		fmt.Println("Error: ", e.Error())
 	}
-	order.Id = fmt.Sprintf("V%d-%d", app.state.Height, app.state.Size)
-	order.Timestamp = uint64(app.state.Height)
 
-	fmt.Printf("blockchain submiting order: %s\n", order.Id)
 	// deliver to the Vega trading core
 	confirmationMessage, _ := app.vega.SubmitOrder(order)
 	if confirmationMessage != nil {
@@ -123,7 +112,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 		fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
 	}
 
-	app.state.Size += 1
+	app.vega.State.Size += 1
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
@@ -153,11 +142,9 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 func (app *Blockchain) Commit() types.ResponseCommit {
 	// Using a memdb - just return the big endian size of the db
 	appHash := make([]byte, 8)
-	binary.PutVarint(appHash, app.state.Size)
-	app.state.AppHash = appHash
-	app.state.Height += 1
-
-	app.vega.SetAbciHeight(app.state.Height)
+	binary.PutVarint(appHash, app.vega.State.Size)
+	app.vega.State.AppHash = appHash
+	app.vega.State.Height += 1
 
 	// saveState(app.state)
 	return types.ResponseCommit{Data: appHash}

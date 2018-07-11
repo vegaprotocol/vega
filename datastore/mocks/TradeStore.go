@@ -91,20 +91,20 @@ func (_m *TradeStore) GetByOrderId(market string, orderId string, params datasto
 	return r0, r1
 }
 
-// GetCandles provides a mock function with given fields: market, since, interval
-func (_m *TradeStore) GetCandles(market string, since uint64, interval uint64) (msg.Candles, error) {
-	ret := _m.Called(market, since, interval)
+// GetCandles provides a mock function with given fields: market, sinceBlock, currentBlock, interval
+func (_m *TradeStore) GetCandles(market string, sinceBlock uint64, currentBlock uint64, interval uint64) (msg.Candles, error) {
+	ret := _m.Called(market, sinceBlock, currentBlock, interval)
 
 	var r0 msg.Candles
-	if rf, ok := ret.Get(0).(func(string, uint64, uint64) msg.Candles); ok {
-		r0 = rf(market, since, interval)
+	if rf, ok := ret.Get(0).(func(string, uint64, uint64, uint64) msg.Candles); ok {
+		r0 = rf(market, sinceBlock, currentBlock, interval)
 	} else {
 		r0 = ret.Get(0).(msg.Candles)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, uint64, uint64) error); ok {
-		r1 = rf(market, since, interval)
+	if rf, ok := ret.Get(1).(func(string, uint64, uint64, uint64) error); ok {
+		r1 = rf(market, sinceBlock, currentBlock, interval)
 	} else {
 		r1 = ret.Error(1)
 	}

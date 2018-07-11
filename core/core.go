@@ -9,21 +9,20 @@ import (
 	"vega/proto"
 )
 
+const marketName = "BTC/DEC18"
+
+const genesisTimeStr = "2018-07-09T12:00:00Z"
+
+type Config struct{}
+
 type Vega struct {
 	config         *Config
 	markets        map[string]*matching.OrderBook
 	OrdersStore    datastore.OrderStore
 	TradesStore    datastore.TradeStore
 	matchingEngine matching.MatchingEngine
-
-	abciHeight int64
+	State          *State
 }
-
-const marketName = "BTC/DEC18"
-
-const genesisTimeStr = "2018-07-09T12:00:00Z"
-
-type Config struct{}
 
 func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 
@@ -36,7 +35,7 @@ func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 		OrdersStore:    store.OrderStore(),
 		TradesStore:    store.TradeStore(),
 		matchingEngine: matchingEngine,
-		abciHeight:     0,
+		State:          newState(),
 	}
 }
 
@@ -44,17 +43,13 @@ func GetConfig() *Config {
 	return &Config{}
 }
 
-func (v *Vega) SetAbciHeight(n int64) {
-	v.abciHeight = n
-}
-
 func (v *Vega) GetAbciHeight() int64 {
-	return v.abciHeight
+	return v.State.Height
 }
 
 func (v *Vega) GetTime() time.Time {
 	genesisTime, _ := time.Parse(time.RFC3339, genesisTimeStr)
-	return genesisTime.Add(time.Duration(v.abciHeight) * time.Second)
+	return genesisTime.Add(time.Duration(v.State.Height) * time.Second)
 }
 
 func (v *Vega) InitialiseMarkets() {
@@ -62,6 +57,9 @@ func (v *Vega) InitialiseMarkets() {
 }
 
 func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+
+	order.Id = fmt.Sprintf("V%d-%d", v.State.Height, v.State.Size)
+	order.Timestamp = uint64(v.State.Height)
 
 	//----------------- MATCHING ENGINE --------------//
 	// send order to matching engine

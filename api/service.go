@@ -85,7 +85,7 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 
 	fmt.Printf("interval: %d\n", interval)
 	fmt.Printf("sinceBlock: %d\n", sinceBlock)
-	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), interval)
+	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), uint64(t.app.GetAbciHeight()), interval)
 	if err != nil {
 		return msg.Candles{}, err
 	}
