@@ -82,6 +82,18 @@ func TestHandlers_SendResponseXml(t *testing.T) {
 	assert.Equal(t,"<map><robert>axelrod</robert></map>", w.Body.String())
 }
 
+func TestHandlers_SendResponseInvalidRequestStatusCode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	w := httptest.NewRecorder()
+	context := buildContextWithDefaultRouteRequest(w,true)
+
+	sendResponse(context, gin.H { "test" : "test" }, -1)
+
+	assert.Equal(t, w.Code, http.StatusInternalServerError)
+	assert.Equal(t,"<map><test>test</test></map>", w.Body.String())
+}
+
 // Helpers
 func buildContextWithDefaultRouteRequest(w http.ResponseWriter, requestXml bool) *gin.Context {
 

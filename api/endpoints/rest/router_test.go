@@ -1,17 +1,19 @@
 package rest
 
 import (
-	"testing"
-	"net/http/httptest"
 	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"vega/api/mocks"
+
 	"github.com/stretchr/testify/assert"
-	"vega/api/trading/orders/mocks"
 	"github.com/gin-gonic/gin"
 )
 
 func TestNewRouter_ExistsAndServesHttp(t *testing.T) {
 	router := buildRouter()
-	
+
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/", nil)
 	router.ServeHTTP(w, req)
@@ -32,7 +34,8 @@ func TestRequestIdMiddleware(t *testing.T) {
 // Helpers
 func buildRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
-	orderService := &mocks.MockOrderService{}
-	router := NewRouter(orderService)
+	orderService := &mocks.OrderService{}
+	tradeService := &mocks.TradeService{}
+	router := NewRouter(orderService, tradeService)
 	return router
 }

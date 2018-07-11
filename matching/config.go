@@ -1,17 +1,7 @@
 package matching
 
-import "vega/proto"
-
-type Config struct {
-	Quiet      bool
-	TradeChans []chan<- msg.Trade
-	OrderChans []chan<- msg.Order
-}
+type Config struct {}
 
 func DefaultConfig() Config {
-	return Config{
-		Quiet:      false,
-		OrderChans: []chan<- msg.Order{},
-		TradeChans: []chan<- msg.Trade{},
-	}
+	return Config{}
 }

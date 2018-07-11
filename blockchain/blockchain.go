@@ -5,32 +5,23 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-
 	"fmt"
 
-	"github.com/tendermint/abci/example/code"
-	"github.com/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/example/code"
+	"github.com/tendermint/tendermint/abci/types"
 
 	"vega/core"
 	"vega/proto"
 )
 
-type State struct {
-	Size    int64  `json:"size"`
-	Height  int64  `json:"height"`
-	AppHash []byte `json:"app_hash"`
-}
-
 type Blockchain struct {
 	types.BaseApplication
 
-	vega  core.Vega
-	state State
+	vega *core.Vega
 }
 
-func NewBlockchain(vegaApp core.Vega) *Blockchain {
-	state := State{}
-	return &Blockchain{state: state, vega: vegaApp}
+func NewBlockchain(vegaApp *core.Vega) *Blockchain {
+	return &Blockchain{vega: vegaApp}
 }
 
 // Mempool Connection
@@ -58,7 +49,7 @@ func NewBlockchain(vegaApp core.Vega) *Blockchain {
 //
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
-	fmt.Println("Foo: " + string(tx))
+	fmt.Println("CheckTx: " + string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -88,6 +79,7 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
+	fmt.Println("DeliverTx: " + string(tx))
 	// split the transaction
 	var _, value []byte
 	parts := bytes.Split(tx, []byte("|"))
@@ -105,16 +97,22 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	}
 
 	// deserialize JSON to struct
-	var order msg.Order
-	e := json.Unmarshal(jsonBlob, &order)
+	order := msg.OrderPool.Get().(*msg.Order)
+	e := json.Unmarshal(jsonBlob, order)
 	if e != nil {
 		fmt.Println("Error: ", e.Error())
 	}
 
 	// deliver to the Vega trading core
-	app.vega.SubmitOrder(order)
+	confirmationMessage, _ := app.vega.SubmitOrder(order)
+	if confirmationMessage != nil {
+		fmt.Printf("ABCI reports it received a confirmation message from vega:\n")
+		fmt.Printf("- aggressive order: %+v\n", confirmationMessage.Order)
+		fmt.Printf("- trades: %+v\n", confirmationMessage.Trades)
+		fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+	}
 
-	app.state.Size += 1
+	app.vega.State.Size += 1
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
 
@@ -144,9 +142,10 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 func (app *Blockchain) Commit() types.ResponseCommit {
 	// Using a memdb - just return the big endian size of the db
 	appHash := make([]byte, 8)
-	binary.PutVarint(appHash, app.state.Size)
-	app.state.AppHash = appHash
-	app.state.Height += 1
+	binary.PutVarint(appHash, app.vega.State.Size)
+	app.vega.State.AppHash = appHash
+	app.vega.State.Height += 1
+
 	// saveState(app.state)
 	return types.ResponseCommit{Data: appHash}
 }

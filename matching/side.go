@@ -1,114 +1,133 @@
 package matching
 
 import (
-	"log"
-
 	"vega/proto"
-
-	"github.com/google/btree"
 )
 
-const priceLevelsBTreeDegree = 128
-
 type OrderBookSide struct {
-	book        *OrderBook
-	side        msg.Side
-	other       *OrderBookSide
-	levels      *btree.BTree
-	orderCount  uint64
-	totalVolume uint64
+	levels []*PriceLevel
 }
 
-func makeSide(side msg.Side, book *OrderBook) *OrderBookSide {
-	return &OrderBookSide{
-		book:   book,
-		side:   side,
-		levels: btree.New(priceLevelsBTreeDegree),
-	}
+func (s *OrderBookSide) addOrder(o *msg.Order, side msg.Side) {
+	s.getPriceLevel(o.Price, side).addOrder(o)
 }
 
-func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
-	var priceLevel *PriceLevel
-	item := s.levels.Get(&PriceLevel{side: s.side, price: price})
-	if item == nil {
-		priceLevel = NewPriceLevel(s, price)
-		s.levels.ReplaceOrInsert(priceLevel)
-	} else {
-		priceLevel = item.(*PriceLevel)
-	}
-	return priceLevel
-}
-
-func (s *OrderBookSide) getNumberOfPriceLevels() int {
-	return s.levels.Len()
-}
-
-func (s *OrderBookSide) getOrderCount() uint64 {
-	return s.orderCount
-}
-
-func (s *OrderBookSide) getTotalVolume() uint64 {
-	return s.totalVolume
-}
-
-func (s *OrderBookSide) removePriceLevel(price uint64) {
-	s.levels.Delete(&PriceLevel{side: s.side, price: price})
-}
-
-func (s *OrderBookSide) topPriceLevel() *PriceLevel {
-	if s.levels.Len() > 0 {
-		return s.levels.Max().(*PriceLevel)
-	} else {
-		return nil
-	}
-}
-
-func (s *OrderBookSide) pivotPriceLevel(agg *OrderEntry) *PriceLevel {
-	if s.side == msg.Side_Buy {
-		return &PriceLevel{side: s.side, price: agg.order.Price - 1}
-	} else {
-		return &PriceLevel{side: s.side, price: agg.order.Price + 1}
-	}
-}
-
-func (s *OrderBookSide) bestPrice() uint64 {
-	if s.topPriceLevel() == nil {
-		return 0
-	} else {
-		return s.topPriceLevel().price
-	}
-}
-
-func (s *OrderBookSide) addOrder(o *OrderEntry) *[]Trade {
-	trades := s.other.uncross(o)
-	if o.persist && o.order.Remaining > 0 {
-		s.book.orders[o.order.Id] = o
-		o.book = s.book
-		o.side = s
-		o.priceLevel = s.getPriceLevel(o.order.Price)
-		o.priceLevel.addOrder(o)
-		if !s.book.config.Quiet {
-			log.Printf("Added: %v\n", o)
+func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
+	// TODO: implement binary search on the slice
+	toDelete := -1
+	for idx, priceLevel := range s.levels {
+		if priceLevel.price == o.Price {
+			toRemove := -1
+			for j, order := range priceLevel.orders {
+				if order.Id == o.Id {
+					toRemove = j
+					break
+				}
+			}
+			if toRemove != -1 {
+				priceLevel.removeOrder(toRemove)
+			}
+			if len(priceLevel.orders) == 0 {
+				toDelete = idx
+			}
+			break
 		}
 	}
-	return trades
+	if toDelete != -1 {
+		copy(s.levels[toDelete:], s.levels[toDelete+1:])
+		s.levels = s.levels[:len(s.levels)-1]
+
+	}
+	if toDelete == -1 {
+		// TODO: implement ORDER_NOT_FOUND_ERROR and add to protobufs
+		return nil
+	}
+	return nil
 }
 
-// Go through the price levels from best to worst uncrossing each in turn
-func (s *OrderBookSide) uncross(agg *OrderEntry) *[]Trade {
-	trades := make([]Trade, 0)
-	s.levels.DescendGreaterThan(s.pivotPriceLevel(agg), uncrossPriceLevel(agg, &trades))
+func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
+	// TODO: implement binary search on the slice
+	at := -1
+	if side == msg.Side_Buy {
+		// buy side levels should be ordered in descending
+		for i, level := range s.levels {
+			if level.price > price {
+				continue
+			}
+			if level.price == price {
+				return level
+			}
+			at = i
+			break
+		}
+	} else {
+		// sell side levels should be ordered in ascending
+		for i, level := range s.levels {
+			if level.price < price {
+				continue
+			}
+			if level.price == price {
+				return level
+			}
+			at = i
+			break
+		}
+	}
+	level := NewPriceLevel(price)
+	if at == -1 {
+		s.levels = append(s.levels, level)
+		return level
+	}
+	s.levels = append(s.levels[:at], append([]*PriceLevel{level}, s.levels[at:]...)...)
+	return level
+}
+
+func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uint64) {
+
+	var (
+		trades          []*msg.Trade
+		impactedOrders  []*msg.Order
+		lastTradedPrice uint64
+	)
+
+	if agg.Side == msg.Side_Sell {
+		for _, level := range s.levels {
+			// buy side levels are ordered descending
+			if level.price >= agg.Price {
+				filled, nTrades, nImpact := level.uncross(agg)
+				trades = append(trades, nTrades...)
+				impactedOrders = append(impactedOrders, nImpact...)
+				if filled {
+					break
+				}
+			} else {
+				break
+			}
+		}
+	}
+
+	if agg.Side == msg.Side_Buy {
+		for _, level := range s.levels {
+			// sell side levels are ordered ascending
+			if level.price <= agg.Price {
+				filled, nTrades, nImpact := level.uncross(agg)
+				trades = append(trades, nTrades...)
+				impactedOrders = append(impactedOrders, nImpact...)
+				if filled {
+					break
+				}
+			} else {
+				break
+			}
+		}
+	}
+
 	if len(trades) > 0 {
-		s.book.lastTradedPrice = trades[len(trades)-1].price
+		lastTradedPrice = trades[len(trades)-1].Price
 	}
-	return &trades
+	return trades, impactedOrders, lastTradedPrice
 }
 
-// Returns closure over the aggressor and trade slice that calls priceLevel.uncross(...)
-func uncrossPriceLevel(agg *OrderEntry, trades *[]Trade) func(i btree.Item) bool {
-	return func(i btree.Item) bool {
-		priceLevel := i.(*PriceLevel)
-		filled := priceLevel.uncross(agg, trades)
-		return !filled
-	}
+func (s *OrderBookSide) getLevels() []*PriceLevel {
+	return s.levels
 }

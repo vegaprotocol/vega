@@ -4,29 +4,71 @@ variables:
   BIN_NAME: vega
   ARTIFACTS_DIR: artifacts
   GO_PROJECT: vega
+  ARTIFACTS_BIN: ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/cmd/${GO_PROJECT}/${BIN_NAME}
+
+cache:
+  paths:
+    - /apt-cache
+    - /go/src/github.com
+    - /go/src/golang.org
+    - /go/src/google.golang.org
+    - /go/src/gopkg.in
 
 stages:
-  - build
   - test
+  - build
+  - deploy
 
 before_script:
-  - mkdir -p ${GOPATH}/src/${GO_PROJECT}
+  - mkdir -p ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds
   - mkdir -p ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}
   - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
+  - ln -s ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds/${GO_PROJECT}
   - cd ${GOPATH}/src/${GO_PROJECT}
+  - export ARTIFACTS_BIN=${ARTIFACTS_BIN}
+  - make dep
 
-build-my-project:
+unit_tests:
+  stage: test
+  script:
+    - make test
+
+race_detector:
+  stage: test
+  script:
+    - make race
+
+# FUTURE:
+# Requires custom GCC based docker image
+# 
+# memory_sanitizer:
+#  stage: test
+#  script:
+#    - make msan
+
+code_coverage:
+  stage: test
+  script:
+    - make coverage
+
+code_coverage_report:
+  stage: test
+  script:
+    - make coverhtml
+  only:
+    - master
+
+lint_code:
+  stage: test
+  script:
+    - make lint
+
+build_vega:
   stage: build
   script:
-    - dep ensure
-    - go build -o ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}/cmd/${GO_PROJECT}/${BIN_NAME} ./cmd/vega
+    - make
   artifacts:
     paths:
       - ${ARTIFACTS_DIR}
-
-test-my-project:
-  stage: test
-  script:
-    - dep ensure
-    - go test -v -coverprofile .testCoverage.txt ./api/endpoints/rest
+    expire_in: 2 weeks

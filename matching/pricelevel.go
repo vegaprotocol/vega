@@ -1,160 +1,199 @@
 package matching
 
 import (
-	"container/list"
-	"log"
+	"fmt"
 	"math"
 
 	"vega/proto"
-
-	"github.com/google/btree"
 )
 
 type PriceLevel struct {
-	book              *OrderBook
-	side              msg.Side
 	price             uint64
-	volume            uint64
-	volumeByTimestamp map[uint64]uint64
-	orders            *list.List
+	orders            []*msg.Order
+	volumeAtTimestamp map[uint64]uint64
 }
 
-func NewPriceLevel(s *OrderBookSide, price uint64) *PriceLevel {
+func NewPriceLevel(price uint64) *PriceLevel {
 	return &PriceLevel{
-		book:              s.book,
-		side:              s.side,
 		price:             price,
-		orders:            list.New(),
-		volumeByTimestamp: make(map[uint64]uint64),
+		orders:            []*msg.Order{},
+		volumeAtTimestamp: make(map[uint64]uint64),
 	}
 }
 
-func (l *PriceLevel) firstOrder() *OrderEntry {
-	if l.orders.Front() != nil {
-		return l.orders.Front().Value.(*OrderEntry)
+func (l *PriceLevel) addOrder(o *msg.Order) {
+	// adjust volume by timestamp map for correct pro-rata calculation
+	l.increaseVolumeByTimestamp(o)
+	// add orders to slice of orders on this price level
+	l.orders = append(l.orders, o)
+}
+
+func (l *PriceLevel) removeOrder(index int) {
+	copy(l.orders[index:], l.orders[index+1:])
+	l.orders = l.orders[:len(l.orders)-1]
+}
+
+func (l *PriceLevel) increaseVolumeByTimestamp(o *msg.Order) {
+	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
+		l.volumeAtTimestamp[o.Timestamp] = vbt + o.Remaining
 	} else {
-		return nil
+		l.volumeAtTimestamp[o.Timestamp] = o.Remaining
 	}
 }
 
-func (l *PriceLevel) lastOrder() *OrderEntry {
-	if l.orders.Back() != nil {
-		return l.orders.Back().Value.(*OrderEntry)
-	} else {
-		return nil
-	}
-}
-
-func (l *PriceLevel) topTimestamp() uint64 {
-	if l.firstOrder() != nil {
-		return l.firstOrder().order.Timestamp
-	} else {
-		return 0
-	}
-}
-
-func (l *PriceLevel) addOrder(o *OrderEntry) {
-	if o.order.Remaining > 0 {
-		o.priceLevel = l
-		if vbt, exists := l.volumeByTimestamp[o.order.Timestamp]; exists {
-			l.volumeByTimestamp[o.order.Timestamp] = vbt + o.order.Remaining
+func (l *PriceLevel) decreaseVolumeByTimestamp(o *msg.Order) {
+	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
+		if vbt <= o.Remaining {
+			delete(l.volumeAtTimestamp, o.Timestamp)
 		} else {
-			l.volumeByTimestamp[o.order.Timestamp] = o.order.Remaining
+			l.volumeAtTimestamp[o.Timestamp] = vbt - o.Remaining
 		}
-		l.volume += o.order.Remaining
-		o.side.totalVolume += o.order.Remaining
-		o.side.orderCount++
-		o.elem = l.orders.PushBack(o)
 	}
 }
 
-func (l *PriceLevel) removeOrder(o *OrderEntry) *OrderEntry {
-	if l != o.priceLevel || l.price != o.order.Price {
-		panic("removeOrder called on wrong price level for order/price")
-	}
-	l.volume -= o.order.Remaining
-	l.orders.Remove(o.elem)
-	o.side.totalVolume -= o.order.Remaining
-	o.side.orderCount--
-	if vbt, exists := l.volumeByTimestamp[o.order.Timestamp]; exists {
-		if vbt <= o.order.Remaining {
-			delete(l.volumeByTimestamp, o.order.Timestamp)
-		} else {
-			l.volumeByTimestamp[o.order.Timestamp] = vbt - o.order.Remaining
-		}
-
-	}
-	if l.orders.Len() == 0 {
-		o.side.removePriceLevel(l.price)
-	}
-	o.elem = nil
-	o.priceLevel = nil
-	o.side = nil
-	//o.book = nil
-	return o
-}
-
-func (l *PriceLevel) Less(other btree.Item) bool {
-	if l.side == msg.Side_Buy {
-		return l.price < other.(*PriceLevel).price
-	} else {
-		return l.price > other.(*PriceLevel).price
+func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp uint64, trade *msg.Trade) {
+	if vbt, exists := l.volumeAtTimestamp[currentTimestamp]; exists {
+		l.volumeAtTimestamp[currentTimestamp] = vbt - trade.Size
 	}
 }
 
-func (l PriceLevel) uncross(agg *OrderEntry, trades *[]Trade) bool {
-	volumeToShare := agg.order.Remaining
-	currentTimestamp := l.topTimestamp()
-	initialVolumeAtTimestamp := l.volumeByTimestamp[currentTimestamp]
-	el := l.orders.Front()
-	for el != nil && agg.order.Remaining > 0 {
+func (l *PriceLevel) uncross(agg *msg.Order) (filled bool, trades []*msg.Trade, impactedOrders []*msg.Order) {
 
-		pass := el.Value.(*OrderEntry)
-		next := el.Next()
+	var (
+		toRemove []int
+		removed  int
+	)
 
-		// See if we are at a new top time
-		if currentTimestamp != pass.order.Timestamp {
-			delete(l.volumeByTimestamp, currentTimestamp)
-			currentTimestamp = pass.order.Timestamp
-			initialVolumeAtTimestamp = l.volumeByTimestamp[currentTimestamp]
-			volumeToShare = agg.order.Remaining
+	// start from earliest timestamp
+	currentTimestamp := l.earliestTimestamp()
+	totalVolumeAtTimestamp := l.volumeAtTimestamp[currentTimestamp]
+	volumeToShare := agg.Remaining
+
+	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
+	for i, order := range l.orders {
+
+		// See if we are at a new top timestamp
+		if currentTimestamp != order.Timestamp {
+			// if consumed all orders on the current timestamp, delete exhausted timestamp and proceed to the next one
+			delete(l.volumeAtTimestamp, currentTimestamp)
+			// assign new timestamp
+			currentTimestamp = order.Timestamp
+			// assign new volume at timestamp
+			totalVolumeAtTimestamp = l.volumeAtTimestamp[currentTimestamp]
+			volumeToShare = agg.Remaining
 		}
 
 		// Get size and make newTrade
-		size := l.getVolumeAllocation(agg, pass, volumeToShare, initialVolumeAtTimestamp)
-		trade := l.book.newTrade(agg, pass, size)
-
-		// Update book state
-		if trade != nil {
-			*trades = append(*trades, *trade)
-			l.volume -= trade.size
-			pass.side.totalVolume -= trade.size
-			if vbt, exists := l.volumeByTimestamp[currentTimestamp]; exists {
-				l.volumeByTimestamp[currentTimestamp] = vbt - trade.size
-			}
-			if pass.order.Remaining == 0 {
-				pass.remove()
-			}
-			if !l.book.config.Quiet {
-				log.Printf("Matched: %v\n", trade)
-			}
+		size := l.getVolumeAllocation(agg, order, volumeToShare, totalVolumeAtTimestamp)
+		if size <= 0 {
+			panic("Trade.size > order.remaining")
 		}
-		el = next
+
+		// New Trade
+		trade := newTrade(agg, order, size)
+
+		// Update Remaining for both aggressive and passive
+		agg.Remaining -= size
+		order.Remaining -= size
+
+		// Schedule order for deletion
+		if order.Remaining == 0 {
+			toRemove = append(toRemove, i)
+			l.decreaseVolumeByTimestamp(order)
+		}
+
+		// Update Volumes for the price level
+		l.adjustVolumeByTimestamp(currentTimestamp, trade)
+
+		// Update trades
+		trades = append(trades, trade)
+		impactedOrders = append(impactedOrders, order)
+
+		// Exit when done
+		if agg.Remaining == 0 {
+			break
+		}
 	}
-	return agg.order.Remaining == 0
+
+	if len(toRemove) > 0 {
+		for _, idx := range toRemove {
+			copy(l.orders[idx-removed:], l.orders[idx-removed+1:])
+			removed++
+		}
+		l.orders = l.orders[:len(l.orders)-removed]
+	}
+
+	return agg.Remaining == 0, trades, impactedOrders
 }
 
-// Get size for a specific trade assuming remaining aggressive volume is allocated pro-rata among all passive trades
+func (l *PriceLevel) earliestTimestamp() uint64 {
+	if len(l.orders) != 0 {
+		return l.orders[0].Timestamp
+	}
+	return 0
+}
+
+// Get size for a specific trade assuming aggressive order volume is allocated pro-rata among all passive trades
 // with the same timestamp by their share of the total volume with the same price and timestamp. (NB: "normal"
 // trading would thus *always* increment the logical timestamp between trades.)
 func (l *PriceLevel) getVolumeAllocation(
-	agg, pass *OrderEntry,
+	agg, pass *msg.Order,
 	volumeToShare, initialVolumeAtTimestamp uint64) uint64 {
 
-	weight := float64(pass.order.Remaining) / float64(initialVolumeAtTimestamp)
+	weight := float64(pass.Remaining) / float64(initialVolumeAtTimestamp)
 	size := weight * float64(min(volumeToShare, initialVolumeAtTimestamp))
 	if size-math.Trunc(size) > 0 {
 		size++ // Otherwise we can end up allocating 1 short because of integer division rounding
 	}
-	return min(min(uint64(size), agg.order.Remaining), pass.order.Remaining)
+	return min(min(uint64(size), agg.Remaining), pass.Remaining)
+}
+
+// Returns the min of 2 uint64s
+func min(x, y uint64) uint64 {
+	if y < x {
+		return y
+	}
+	return x
+}
+
+// Creates a trade of a given size between two orders and updates the order details
+func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
+	var buyer, seller *msg.Order
+	if agg.Side == msg.Side_Buy {
+		buyer = agg
+		seller = pass
+	} else {
+		buyer = pass
+		seller = agg
+	}
+
+	if agg.Side == pass.Side {
+		panic(fmt.Sprintf("agg.side == pass.side (agg: %v, pass: %v)", agg, pass))
+	}
+
+	trade := msg.TradePool.Get().(*msg.Trade)
+	trade.Market = agg.Market
+	trade.Price = pass.Price
+	trade.Size = size
+	trade.Aggressor = agg.Side
+	trade.Buyer = buyer.Party
+	trade.Seller = seller.Party
+	trade.Timestamp = agg.Timestamp
+	return trade
+}
+
+func (l PriceLevel) print() {
+	fmt.Printf("priceLevel: %d\n", l.price)
+	for _, o := range l.orders {
+		var side string
+		if o.Side == msg.Side_Buy {
+			side = "BUY"
+		} else {
+			side = "SELL"
+		}
+
+		line := fmt.Sprintf("      %s %s @%d size=%d R=%d Type=%d T=%d %s",
+			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id)
+		fmt.Println(line)
+	}
 }
