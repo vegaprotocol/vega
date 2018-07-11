@@ -78,7 +78,7 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 	assertCandleIsEmpty(t, candles.Candles[2])
 	fmt.Println()
 	assert.Nil(t, err)
-	assert.Equal(t, 9, len(candles.Candles))
+	assert.Equal(t, 10, len(candles.Candles))
 
 
 	candles, err = newTradeStore.GetCandles(testMarket, 5, timestamp, 3)
@@ -88,7 +88,7 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 	}
 	fmt.Println()
 	assert.Nil(t, err)
-	assert.Equal(t, 7, len(candles.Candles))
+	assert.Equal(t, 8, len(candles.Candles))
 	assertCandleIsEmpty(t, candles.Candles[0])
 
 	candles, err = newTradeStore.GetCandles(testMarket, 5, timestamp, 2)
@@ -98,7 +98,7 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 	}
 	fmt.Println()
 	assert.Nil(t, err)
-	assert.Equal(t, 11, len(candles.Candles))
+	assert.Equal(t, 12, len(candles.Candles))
 	assertCandleIsEmpty(t, candles.Candles[0])
 	assertCandleIsEmpty(t, candles.Candles[1])
 
@@ -109,7 +109,7 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 	}
 	fmt.Println()
 	assert.Nil(t, err)
-	assert.Equal(t, 8, len(candles.Candles))
+	assert.Equal(t, 9, len(candles.Candles))
 
 }
 

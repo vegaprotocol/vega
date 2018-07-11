@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -80,9 +79,7 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 	if sinceBlock < 0 {
 		sinceBlock = 0
 	}
-
-	fmt.Printf("interval: %d\n", interval)
-	fmt.Printf("sinceBlock: %d\n", sinceBlock)
+	
 	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), uint64(t.app.GetAbciHeight()), interval)
 	if err != nil {
 		return msg.Candles{}, err
@@ -127,7 +124,7 @@ func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (succes
 		return false, err
 	}
 
-	reqUrl := "http://localhost:46657/broadcast_tx_async?tx=%22" + newGuid() + "|" + payload + "%22"
+	reqUrl := "http://localhost:26657/broadcast_tx_async?tx=%22" + newGuid() + "|" + payload + "%22"
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get(reqUrl)
 	if err != nil {
