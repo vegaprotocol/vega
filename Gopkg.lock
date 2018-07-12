@@ -166,7 +166,6 @@
   revision = "96c7c9e13d1f77ed61c21ff429651a5cb1e7f311"
 
 [[projects]]
-  branch = "master"
   name = "github.com/tendermint/tendermint"
   packages = [
     "abci/example/code",
@@ -176,6 +175,7 @@
     "libs/log"
   ]
   revision = "2aa2b63cadc42cca1071c36adfd2f2ce14e1aa8f"
+  version = "v0.22.3"
 
 [[projects]]
   name = "github.com/tendermint/tmlibs"
