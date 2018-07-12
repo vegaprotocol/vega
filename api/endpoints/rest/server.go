@@ -3,7 +3,9 @@ package rest
 import (
 	"fmt"
 	"net/http"
+
 	"vega/api"
+	"vega/log"
 )
 
 type restServer struct{
@@ -21,7 +23,7 @@ func NewRestServer(orderService api.OrderService, tradeService api.TradeService)
 func (s *restServer) Start() {
 	var port= 3003
 	var addr= fmt.Sprintf(":%d", port)
-	fmt.Printf("Starting REST based HTTP server on port %d...\n", port)
+	log.Infof("Starting REST based HTTP server on port %d...\n", port)
 	router := NewRouter(s.orderService, s.tradeService)
 	http.ListenAndServe(addr, router)
 }

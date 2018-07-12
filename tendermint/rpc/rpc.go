@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
+
+	"vega/log"
 
 	"github.com/gorilla/websocket"
 )
@@ -171,7 +172,7 @@ func (c *Client) call(ctx context.Context, method string, params opts) (json.Raw
 	// be closed.
 	select {
 	case c.pending <- req:
-		fmt.Printf(".. Made %s call\n", method)
+		log.Infof(".. Made %s call\n", method)
 		ch := make(chan *response, 1)
 		c.Lock()
 		c.results[id] = ch
@@ -219,7 +220,7 @@ func (c *Client) closeWithError(err error) error {
 }
 
 func (c *Client) handleError(err error) {
-	log.Printf("Got error: %s", err)
+	log.Errorf("Got error: %s", err)
 	c.Lock()
 	c.closeWithError(err)
 	c.Unlock()

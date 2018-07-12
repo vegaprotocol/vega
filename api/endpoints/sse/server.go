@@ -2,9 +2,9 @@ package sse
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
+	"vega/log"
 	"vega/proto"
 
 	sse "github.com/alexandrevicenzi/go-sse"
@@ -39,12 +39,12 @@ func NewServer(orderChan <-chan msg.Order, tradeChan <-chan msg.Trade) Server {
 func (s *Server) Start() {
 	var port = 3002
 	var addr = fmt.Sprintf(":%d", port)
-	fmt.Printf("Starting SSE server on port %d\n", port)
+	log.Infof("Starting SSE server on port %d\n", port)
 	defer s.server.Shutdown()
 
 	http.Handle("/events/", &s.server)
 
-	log.Fatal(http.ListenAndServe(addr, nil))
+	log.Errorf("%s", http.ListenAndServe(addr, nil).Error())
 }
 
 func (s *Server) handleOrders(orders <-chan msg.Order) {
