@@ -6,11 +6,13 @@ import (
 
 // memMarket should keep track of the trades/orders operating on a Market.
 type memMarket struct {
-	name         string
-	ordersIndex  []string
-	orders       map[string]*memOrder
-	trades       map[string]*memTrade
-	priceHistory PriceHistory
+	name                    string
+	ordersIndex             []string
+	orders                  map[string]*memOrder
+	trades                  map[string]*memTrade
+	priceHistory            PriceHistory
+	buySideRemainingOrders  BuySideRemainingOrders
+	sellSideRemainingOrders SellSideRemainingOrders
 }
 
 // In memory order struct keeps an internal map of pointers to trades for an order.
@@ -184,6 +186,10 @@ func (t *memOrderStore) Post(or Order) error {
 		t.store.markets[or.Market].ordersIndex = append(t.store.markets[or.Market].ordersIndex, or.Id)
 		// Add to global orders index
 		t.store.orders = append(t.store.orders, order)
+
+		// Insert into buySideRemainingOrders and sellSideRemainingOrders - these are ordered
+		t.store.markets[or.Market].buySideRemainingOrders.insert(&or)
+		t.store.markets[or.Market].sellSideRemainingOrders.insert(&or)
 	}
 	return nil
 }
@@ -201,6 +207,11 @@ func (t *memOrderStore) Put(or Order) error {
 	if _, exists := t.store.markets[or.Market].orders[or.Id]; exists {
 		fmt.Println("Updating order with ID ", or.Id)
 		t.store.markets[or.Market].orders[or.Id].order = or
+
+		// update buySideRemainingOrders sellSideRemainingOrders
+		t.store.markets[or.Market].buySideRemainingOrders.update(&or)
+		t.store.markets[or.Market].buySideRemainingOrders.update(&or)
+
 	} else {
 		return fmt.Errorf("order not found in memstore: %s", or.Id)
 	}
@@ -236,6 +247,10 @@ func (t *memOrderStore) Delete(or Order) error {
 	copy(t.store.orders[pos:], t.store.orders[pos+1:])
 	t.store.orders[len(t.store.orders)-1] = nil
 	t.store.orders = t.store.orders[:len(t.store.orders)-1]
+
+	// remove from buySideRemainingOrders sellSideRemainingOrders
+	t.store.markets[or.Market].buySideRemainingOrders.remove(&or)
+	t.store.markets[or.Market].buySideRemainingOrders.remove(&or)
 
 	return nil
 }

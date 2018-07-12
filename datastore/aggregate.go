@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"math"
+
 	"vega/proto"
 )
 
@@ -13,21 +14,17 @@ type tradeInfo struct {
 	size      uint64
 }
 
-func newCandle() *msg.Candle {
-	return &msg.Candle{}
-}
-
 func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
 	if err := t.marketExists(market); err != nil {
 		return msg.Candles{}, err
 	}
 
-	nOfCandles := uint64(math.Ceil(float64((currentBlock-sinceBlock)/interval)))+1
+	nOfCandles := uint64(math.Ceil(float64((currentBlock-sinceBlock)/interval))) + 1
 	var candles = make([]*msg.Candle, nOfCandles, nOfCandles)
 
 	for idx := range candles {
 		candles[idx] = &msg.Candle{}
-		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx) * interval
+		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx)*interval
 		candles[idx].CloseBlockNumber = candles[idx].OpenBlockNumber + interval
 	}
 
@@ -90,3 +87,62 @@ func updateCandle(candles []*msg.Candle, idx int, trade *tradeInfo) {
 	//fmt.Printf("updated: %+v\n", candles[idx])
 }
 
+func (o *memOrderStore) GetOrderBookDepth(market string) (msg.OrderBookDepth, error) {
+	if err := o.marketExists(market); err != nil {
+		return msg.OrderBookDepth{}, err
+	}
+
+	var (
+		output              msg.OrderBookDepth
+		buySidePriceLevels  []*msg.PriceLevel
+		sellSidePriceLevels []*msg.PriceLevel
+		buysSideCumulative  uint64
+		sellSideCumulative  uint64
+	)
+
+	// repeat all twice for BUY side and SELL side
+	// get all orders for market ordered by price
+	// iterate through fetched orders and insert into a level
+	// while iterating calculate cumulative volume and insert at consecutive price level
+
+	currentPrice := o.store.markets[market].buySideRemainingOrders[0].price
+	priceLevel := msg.PriceLevel{Price: currentPrice}
+	for _, order := range o.store.markets[market].buySideRemainingOrders {
+		// if price progression, update cumulatives and append current price level
+		if currentPrice != order.price {
+			buysSideCumulative += priceLevel.Volume
+			priceLevel.CumulativeVolume = buysSideCumulative
+			buySidePriceLevels = append(buySidePriceLevels, &priceLevel)
+
+			// update current price and allocate new price level
+			currentPrice = order.price
+			priceLevel = msg.PriceLevel{Price: currentPrice}
+		}
+
+		// update volume in current price level
+		priceLevel.Volume += order.remaining
+	}
+
+	currentPrice = o.store.markets[market].sellSideRemainingOrders[0].price
+	priceLevel = msg.PriceLevel{Price: currentPrice}
+	for _, order := range o.store.markets[market].sellSideRemainingOrders {
+		// if price progression, update cumulatives and append current price level
+		if currentPrice != order.price {
+			sellSideCumulative += priceLevel.Volume
+			priceLevel.CumulativeVolume = sellSideCumulative
+			buySidePriceLevels = append(sellSidePriceLevels, &priceLevel)
+
+			// update current price and allocate new price level
+			currentPrice = order.price
+			priceLevel = msg.PriceLevel{Price: currentPrice}
+		}
+
+		// update volume in current price level
+		priceLevel.Volume += order.remaining
+	}
+
+	output.Name = market
+	output.Buy = buySidePriceLevels
+	output.Sell = sellSidePriceLevels
+	return output, nil
+}

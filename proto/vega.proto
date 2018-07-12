@@ -77,3 +77,16 @@ message Candle {
 message Candles {
     repeated Candle candles = 1;
 }
+
+message PriceLevel {
+    uint64 price = 1;
+    uint64 numberOfOrders = 2;
+    uint64 volume = 3;
+    uint64 cumulativeVolume = 4;
+}
+
+message OrderBookDepth {
+    string   name = 1;
+    repeated PriceLevel buy = 2;
+    repeated PriceLevel sell = 3;
+}
