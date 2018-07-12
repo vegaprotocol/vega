@@ -1,17 +1,9 @@
 syntax = "proto3";
 
-package vega;
-option go_package = "msg";
-
-service Trading {
-    rpc CreateOrder(Order) returns (OrderResponse);
-}
+package msg;
+option go_package = "vega/services/msg";
 
 enum Side { Buy = 0; Sell = 1; }
-
-message OrderResponse {
-    bool success = 1;
-}
 
 message Order {
     enum Type { GTC = 0; GTT = 1; ENE = 2; FOK = 3; }
@@ -30,6 +22,10 @@ message OrderConfirmation {
     Order order = 1;
     repeated Trade trades = 2;
     repeated Order passiveOrdersAffected = 3;
+}
+
+message OrderResponse {
+  bool works = 1;
 }
 
 enum OrderError {
@@ -77,8 +73,6 @@ message Candle {
     uint64 open = 4;
     uint64 close = 5;
     uint64 volume = 6;
-    uint64 openBlockNumber = 7;
-    uint64 closeBlockNumber = 8;
 }
 
 message Candles {
