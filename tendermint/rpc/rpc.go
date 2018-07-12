@@ -139,6 +139,13 @@ func (c *Client) Connect() error {
 	return nil
 }
 
+func (c *Client) HasError() bool {
+	c.mu.RLock()
+	hasErr := c.err != nil
+	c.mu.RUnlock()
+	return hasErr
+}
+
 // FindTransaction corresponds to the Tendermint TxSearch call. It returns the
 // set of matching transactions and the total number of results as part of the
 // TransactionList response.
