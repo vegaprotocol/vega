@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"vega/api"
-	vgrpc "vega/grpc"
 
 	"google.golang.org/grpc"
 )
@@ -36,6 +35,6 @@ func (g *grpcServer) Start() {
 		TradeService: g.tradeService,
 	}
 	grpcServer := grpc.NewServer()
-	vgrpc.RegisterTradingServer(grpcServer, handlers)
+	api.RegisterTradingServer(grpcServer, handlers)
 	grpcServer.Serve(lis)
 }

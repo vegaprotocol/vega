@@ -3,7 +3,7 @@ syntax = "proto3";
 import "proto/vega.proto";
 
 package vega;
-option go_package = "grpc";
+option go_package = "api";
 
 service trading {
     rpc CreateOrder(Order) returns (OrderResponse);

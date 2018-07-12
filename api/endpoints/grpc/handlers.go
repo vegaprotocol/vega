@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"vega/grpc"
 	"vega/proto"
 	"vega/api"
 )
@@ -13,7 +12,7 @@ type Handlers struct {
 	TradeService api.TradeService
 }
 
-func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*grpc.OrderResponse, error) {
+func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
 	fmt.Println(order.Market)
 
 	success := true
@@ -21,5 +20,5 @@ func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*grpc.Ord
 	// Call into API Order service layer
 	//success, err := h.OrderService.CreateOrder(ctx, *order)
 
-	return &grpc.OrderResponse{Success: success}, nil
+	return &api.OrderResponse{Success: success}, nil
 }
