@@ -1,0 +1,15 @@
+syntax = "proto3";
+import "vega.proto";
+
+package vega;
+option go_package = "msg";
+
+service Vega {
+    rpc CreateOrder(Order) returns (OrderResponse);
+}
+
+message OrderResponse {
+    bool success = 1;
+}
+
+
