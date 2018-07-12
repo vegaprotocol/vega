@@ -1,28 +1,37 @@
 package datastore
 
-type BuySideRemainingOrders []*remainingOrderInfo
-type SellSideRemainingOrders []*remainingOrderInfo
+import "github.com/golang/go/src/pkg/fmt"
+
+type BuySideRemainingOrders struct {
+	orders []*remainingOrderInfo
+}
+type SellSideRemainingOrders struct {
+	orders []*remainingOrderInfo
+}
 
 type remainingOrderInfo struct {
 	price     uint64
 	remaining uint64
 }
 
-func (orders BuySideRemainingOrders) insert(newOrder *Order) {
-	at := orders.getIndex(newOrder)
+func (ro *BuySideRemainingOrders) insert(newOrder *Order) {
+	fmt.Printf("inserting into BuySideRemainingOrders %+v\n", newOrder)
+	at := ro.getIndex(newOrder)
 
 	r := &remainingOrderInfo{price: newOrder.Price, remaining: newOrder.Remaining}
 	// if not found, append at the end
 	if at == -1 {
-		orders = append(orders, r)
+		ro.orders = append(ro.orders, r)
+		fmt.Printf("BuySideRemainingOrders append %\n", len(ro.orders))
 		return
 	}
-	orders = append(orders[:at], append([]*remainingOrderInfo{r}, orders[at:]...)...)
+	ro.orders = append(ro.orders[:at], append([]*remainingOrderInfo{r}, ro.orders[at:]...)...)
+	fmt.Printf("BuySideRemainingOrders %d\n", len(ro.orders))
 }
 
-func (orders BuySideRemainingOrders) getIndex(order *Order) int {
+func (ro BuySideRemainingOrders) getIndex(order *Order) int {
 	at := -1
-	for i, o := range orders {
+	for i, o := range ro.orders {
 		if o.price > order.Price {
 			continue
 		}
@@ -34,22 +43,22 @@ func (orders BuySideRemainingOrders) getIndex(order *Order) int {
 	return at
 }
 
-func (orders BuySideRemainingOrders) update(updatedOrder *Order) {
-	at := orders.getIndex(updatedOrder)
+func (ro *BuySideRemainingOrders) update(updatedOrder *Order) {
+	at := ro.getIndex(updatedOrder)
 
 	// if not found, append at the end
 	if at == -1 {
 		return
 	}
 	update := &remainingOrderInfo{price: updatedOrder.Price, remaining: updatedOrder.Remaining}
-	orders[at] = update
+	ro.orders[at] = update
 }
 
-func (orders BuySideRemainingOrders) remove(rmOrder *Order) {
-	toDelete := orders.getIndex(rmOrder)
+func (ro *BuySideRemainingOrders) remove(rmOrder *Order) {
+	toDelete := ro.getIndex(rmOrder)
 	if toDelete != -1 {
-		copy(orders[toDelete:], orders[toDelete+1:])
-		orders = orders[:len(orders)-1]
+		copy(ro.orders[toDelete:], ro.orders[toDelete+1:])
+		ro.orders = ro.orders[:len(ro.orders)-1]
 	}
 	if toDelete == -1 {
 		// TODO: implement ORDER_NOT_FOUND_ERROR and add to protobufs
@@ -57,21 +66,24 @@ func (orders BuySideRemainingOrders) remove(rmOrder *Order) {
 	}
 }
 
-func (orders SellSideRemainingOrders) insert(newOrder *Order) {
-	at := orders.getIndex(newOrder)
+func (ro *SellSideRemainingOrders) insert(newOrder *Order) {
+	fmt.Printf("inserting into SellSideRemainingOrders %+v\n", newOrder)
+	at := ro.getIndex(newOrder)
 
 	r := &remainingOrderInfo{price: newOrder.Price, remaining: newOrder.Remaining}
 	// if not found, append at the end
 	if at == -1 {
-		orders = append(orders, r)
+		ro.orders = append(ro.orders, r)
+		fmt.Printf("SellSideRemainingOrders append %d\n", len(ro.orders))
 		return
 	}
-	orders = append(orders[:at], append([]*remainingOrderInfo{r}, orders[at:]...)...)
+	ro.orders = append(ro.orders[:at], append([]*remainingOrderInfo{r}, ro.orders[at:]...)...)
+	fmt.Printf("SellSideRemainingOrders %d\n", len(ro.orders))
 }
 
-func (orders SellSideRemainingOrders) getIndex(order *Order) int {
+func (ro SellSideRemainingOrders) getIndex(order *Order) int {
 	at := -1
-	for i, o := range orders {
+	for i, o := range ro.orders {
 		if o.price < order.Price {
 			continue
 		}
@@ -83,22 +95,22 @@ func (orders SellSideRemainingOrders) getIndex(order *Order) int {
 	return at
 }
 
-func (orders SellSideRemainingOrders) update(updatedOrder *Order) {
-	at := orders.getIndex(updatedOrder)
+func (ro *SellSideRemainingOrders) update(updatedOrder *Order) {
+	at := ro.getIndex(updatedOrder)
 
 	// if not found, append at the end
 	if at == -1 {
 		return
 	}
 	update := &remainingOrderInfo{price: updatedOrder.Price, remaining: updatedOrder.Remaining}
-	orders[at] = update
+	ro.orders[at] = update
 }
 
-func (orders SellSideRemainingOrders) remove(rmOrder *Order) {
-	toDelete := orders.getIndex(rmOrder)
+func (ro *SellSideRemainingOrders) remove(rmOrder *Order) {
+	toDelete := ro.getIndex(rmOrder)
 	if toDelete != -1 {
-		copy(orders[toDelete:], orders[toDelete+1:])
-		orders = orders[:len(orders)-1]
+		copy(ro.orders[toDelete:], ro.orders[toDelete+1:])
+		ro.orders = ro.orders[:len(ro.orders)-1]
 	}
 	if toDelete == -1 {
 		// TODO: implement ORDER_NOT_FOUND_ERROR and add to protobufs

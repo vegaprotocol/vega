@@ -34,6 +34,8 @@ type OrderStore interface {
 	Put(r Order) error
 	// Removes an order from the store.
 	Delete(r Order) error
+	// Returns Order Book Depth for a market
+	GetOrderBookDepth(market string) (msg.OrderBookDepth, error)
 }
 
 type StoreProvider interface {

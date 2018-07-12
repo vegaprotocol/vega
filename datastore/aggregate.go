@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"math"
-
 	"vega/proto"
 )
 
@@ -84,7 +83,6 @@ func updateCandle(candles []*msg.Candle, idx int, trade *tradeInfo) {
 	if candles[idx].Low > trade.price || candles[idx].Low == 0 {
 		candles[idx].Low = trade.price
 	}
-	//fmt.Printf("updated: %+v\n", candles[idx])
 }
 
 func (o *memOrderStore) GetOrderBookDepth(market string) (msg.OrderBookDepth, error) {
@@ -93,56 +91,63 @@ func (o *memOrderStore) GetOrderBookDepth(market string) (msg.OrderBookDepth, er
 	}
 
 	var (
-		output              msg.OrderBookDepth
-		buySidePriceLevels  []*msg.PriceLevel
-		sellSidePriceLevels []*msg.PriceLevel
+		currentPrice uint64
+		at uint64
 		buysSideCumulative  uint64
 		sellSideCumulative  uint64
 	)
+
+	orderBookDepth := msg.OrderBookDepth{Name: market, Buy: []*msg.PriceLevel{}, Sell: []*msg.PriceLevel{}}
 
 	// repeat all twice for BUY side and SELL side
 	// get all orders for market ordered by price
 	// iterate through fetched orders and insert into a level
 	// while iterating calculate cumulative volume and insert at consecutive price level
-
-	currentPrice := o.store.markets[market].buySideRemainingOrders[0].price
-	priceLevel := msg.PriceLevel{Price: currentPrice}
-	for _, order := range o.store.markets[market].buySideRemainingOrders {
-		// if price progression, update cumulatives and append current price level
-		if currentPrice != order.price {
-			buysSideCumulative += priceLevel.Volume
-			priceLevel.CumulativeVolume = buysSideCumulative
-			buySidePriceLevels = append(buySidePriceLevels, &priceLevel)
-
-			// update current price and allocate new price level
+	for idx, order := range o.store.markets[market].buySideRemainingOrders.orders {
+		if idx == 0 {
+			orderBookDepth.Buy = append(orderBookDepth.Buy, &msg.PriceLevel{Price: order.price})
 			currentPrice = order.price
-			priceLevel = msg.PriceLevel{Price: currentPrice}
 		}
 
-		// update volume in current price level
-		priceLevel.Volume += order.remaining
+		if idx != 0 && currentPrice != order.price {
+			currentPrice = order.price
+			buysSideCumulative += orderBookDepth.Buy[at].Volume
+			orderBookDepth.Buy[at].CumulativeVolume = buysSideCumulative
+			orderBookDepth.Buy = append(orderBookDepth.Buy, &msg.PriceLevel{Price: order.price})
+			at++
+		}
+		orderBookDepth.Buy[at].Volume += order.remaining
+		orderBookDepth.Buy[at].NumberOfOrders++
+
+		if idx + 1 == len(o.store.markets[market].buySideRemainingOrders.orders) {
+			buysSideCumulative += orderBookDepth.Buy[at].Volume
+			orderBookDepth.Buy[at].CumulativeVolume = buysSideCumulative
+		}
 	}
 
-	currentPrice = o.store.markets[market].sellSideRemainingOrders[0].price
-	priceLevel = msg.PriceLevel{Price: currentPrice}
-	for _, order := range o.store.markets[market].sellSideRemainingOrders {
-		// if price progression, update cumulatives and append current price level
-		if currentPrice != order.price {
-			sellSideCumulative += priceLevel.Volume
-			priceLevel.CumulativeVolume = sellSideCumulative
-			buySidePriceLevels = append(sellSidePriceLevels, &priceLevel)
-
-			// update current price and allocate new price level
+	currentPrice = 0
+	at = 0
+	for idx, order := range o.store.markets[market].sellSideRemainingOrders.orders {
+		if idx == 0 {
+			orderBookDepth.Sell = append(orderBookDepth.Sell, &msg.PriceLevel{Price: order.price})
 			currentPrice = order.price
-			priceLevel = msg.PriceLevel{Price: currentPrice}
 		}
 
-		// update volume in current price level
-		priceLevel.Volume += order.remaining
+		if idx != 0 && currentPrice != order.price {
+			currentPrice = order.price
+			sellSideCumulative += orderBookDepth.Sell[at].Volume
+			orderBookDepth.Sell[at].CumulativeVolume = sellSideCumulative
+			orderBookDepth.Sell = append(orderBookDepth.Sell, &msg.PriceLevel{Price: order.price})
+			at++
+		}
+		orderBookDepth.Sell[at].Volume += order.remaining
+		orderBookDepth.Sell[at].NumberOfOrders++
+
+		if idx + 1 == len(o.store.markets[market].sellSideRemainingOrders.orders) {
+			sellSideCumulative += orderBookDepth.Sell[at].Volume
+			orderBookDepth.Sell[at].CumulativeVolume = sellSideCumulative
+		}
 	}
 
-	output.Name = market
-	output.Buy = buySidePriceLevels
-	output.Sell = sellSidePriceLevels
-	return output, nil
+	return orderBookDepth, nil
 }

@@ -22,6 +22,10 @@ func generateRandomOrderAndTrade(price, size, timestamp uint64) *TestOrderAndTra
 			Order: msg.Order{
 				Id:     orderId,
 				Market: testMarket,
+				Price:     price,
+				Size:      size,
+				Remaining: size,
+				Timestamp: timestamp,
 			},
 		},
 		&Trade{
@@ -121,3 +125,50 @@ func assertCandleIsEmpty(t assert.TestingT, candle *msg.Candle) {
 	assert.Equal(t, uint64(0), candle.Close)
 }
 
+func TestMemOrderStore_GetOrderBookDepth(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket})
+	var newOrderStore = NewOrderStore(&memStore)
+
+	price := uint64(100)
+	timestamp := uint64(0)
+	for i := 0; i < 100; i++ {
+		if rand.Intn(3) == 1{
+			price--
+		} else {
+			price++
+		}
+
+		if rand.Intn(5) == 1 {
+			timestamp++
+		}
+		size := uint64(rand.Intn(400) + 800)
+
+		// simulate timestamp gap
+		if i == 10 {
+			i = 15
+			timestamp += 5
+		}
+		d := generateRandomOrderAndTrade(price, size, timestamp)
+		if i%2 == 0{
+			d.order.Side = msg.Side_Sell
+		}
+
+		err := newOrderStore.Post(*d.order)
+		assert.Nil(t, err)
+	}
+
+	orderBookDepth, err := newOrderStore.GetOrderBookDepth(testMarket)
+	assert.Nil(t, err)
+	fmt.Printf("orderBookDepth for buy side:\n")
+	for idx, priceLevel := range orderBookDepth.Buy {
+		fmt.Printf("%d %+v\n", idx, *priceLevel)
+	}
+
+
+	fmt.Printf("orderBookDepth for sell side:\n")
+	for idx, priceLevel := range orderBookDepth.Sell {
+		fmt.Printf("%d %+v\n", idx, *priceLevel)
+	}
+
+	fmt.Printf("orderBookDepth buy=%d sell=%d\n", len(orderBookDepth.Buy), len(orderBookDepth.Sell))
+}
