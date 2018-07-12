@@ -1,10 +1,11 @@
 syntax = "proto3";
-import "vega.proto";
+
+import "proto/vega.proto";
 
 package vega;
-option go_package = "msg";
+option go_package = "api";
 
-service Vega {
+service trading {
     rpc CreateOrder(Order) returns (OrderResponse);
 }
 
