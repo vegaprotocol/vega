@@ -44,7 +44,7 @@ func (s *Server) Start() {
 
 	http.Handle("/events/", &s.server)
 
-	log.Errorf("%s", http.ListenAndServe(addr, nil).Error())
+	log.Fatalf("Failed to start SSE server: %s", http.ListenAndServe(addr, nil))
 }
 
 func (s *Server) handleOrders(orders <-chan msg.Order) {
