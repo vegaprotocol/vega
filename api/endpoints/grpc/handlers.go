@@ -14,11 +14,9 @@ type Handlers struct {
 
 func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
 	fmt.Println(order.Market)
-
-	success := true
 	
 	// Call into API Order service layer
-	//success, err := h.OrderService.CreateOrder(ctx, *order)
+	success, err := h.OrderService.CreateOrder(ctx, *order)
 
-	return &api.OrderResponse{Success: success}, nil
+	return &api.OrderResponse{Success: success}, err
 }
