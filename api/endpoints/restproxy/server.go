@@ -8,7 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 
-	"vega/api"
+	vgrpc "vega/grpc"
 	"log"
 )
 
@@ -30,7 +30,7 @@ func (s *restProxyServer) Start() {
 	endpoint := "localhost:3004"
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+	if err := vgrpc.RegisterTradingHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 		log.Fatal(err)
 	} else {
 		http.ListenAndServe(addr, mux)

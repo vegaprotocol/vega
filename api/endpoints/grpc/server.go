@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"vega/api"
+	vgrpc "vega/grpc"
 
 	"google.golang.org/grpc"
 )
@@ -30,13 +31,11 @@ func (g *grpcServer) Start() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	fmt.Println(lis)
-
 	var handlers = &Handlers{
 		OrderService: g.orderService,
 		TradeService: g.tradeService,
 	}
 	grpcServer := grpc.NewServer()
-	api.RegisterTradingServer(grpcServer, handlers)
+	vgrpc.RegisterTradingServer(grpcServer, handlers)
 	grpcServer.Serve(lis)
 }
