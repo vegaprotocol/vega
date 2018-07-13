@@ -14,6 +14,11 @@ import (
 	"sync"
 )
 
+var (
+	clients []*rpc.Client
+	mux sync.Mutex
+)
+
 type TradeService interface {
 	Init(app *core.Vega, tradeStore datastore.TradeStore)
 	GetById(ctx context.Context, market string, id string) (trade msg.Trade, err error)
@@ -118,32 +123,7 @@ func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.orderStore = orderStore
 }
 
-var (
-	clients []*rpc.Client
-	mux sync.Mutex
-)
 
-func getClient() (*rpc.Client, error) {
-	mux.Lock()
-	if len(clients) == 0 {
-		mux.Unlock()
-		client := rpc.Client{
-		}
-		if err := client.Connect(); err != nil {
-			return nil, err
-		}
-	}
-	client := clients[0]
-	clients = clients[1:]
-	mux.Unlock()
-	return client, nil
-}
-
-func releaseClient(c *rpc.Client) {
-	mux.Lock()
-	clients = append(clients, c)
-	mux.Unlock()
-}
 
 func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (success bool, err error) {
 	order.Remaining = order.Size
@@ -166,28 +146,9 @@ func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (succes
 		return false, err
 	}
 
-	/*
-	payload, err := jsonWithEncoding(order)
-	if err != nil {
-		return false, err
+	if client != nil {
+		releaseClient(client)
 	}
-
-	reqUrl := "http://localhost:46657/broadcast_tx_async?tx=%22" + newGuid() + "|" + payload + "%22"
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(reqUrl)
-	if err != nil {
-		return false, err
-	}
-	defer resp.Body.Close()
-	*/
-
-	// For debugging only
-	// body, err := ioutil.ReadAll(resp.Body)
-	//if err == nil {
-	//	fmt.Println(string(body))
-	//}
-
-	releaseClient(client)
 	return true, err
 }
 
@@ -219,4 +180,26 @@ func (p *orderService) GetById(ctx context.Context, market string, id string) (o
 		return msg.Order{}, err
 	}
 	return *or.ToProtoMessage(), err
+}
+
+func getClient() (*rpc.Client, error) {
+	mux.Lock()
+	if len(clients) == 0 {
+		mux.Unlock()
+		client := rpc.Client{
+		}
+		if err := client.Connect(); err != nil {
+			return nil, err
+		}
+	}
+	client := clients[0]
+	clients = clients[1:]
+	mux.Unlock()
+	return client, nil
+}
+
+func releaseClient(c *rpc.Client) {
+	mux.Lock()
+	clients = append(clients, c)
+	mux.Unlock()
 }
