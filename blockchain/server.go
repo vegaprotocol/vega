@@ -12,7 +12,7 @@ import (
 func Start(vega *core.Vega) error {
 	log.Infof("Starting Vega blockchain socket...")
 	blockchain := NewBlockchain(vega)
-	srv, err := server.NewServer("127.0.0.1:26658", "socket", blockchain)
+	srv, err := server.NewServer("127.0.0.1:46658", "socket", blockchain)
 	if err != nil {
 		return err
 	}

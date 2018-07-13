@@ -124,7 +124,7 @@ func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (succes
 		return false, err
 	}
 
-	reqUrl := "http://localhost:26657/broadcast_tx_async?tx=%22" + newGuid() + "|" + payload + "%22"
+	reqUrl := "http://localhost:46657/broadcast_tx_async?tx=%22" + newGuid() + "|" + payload + "%22"
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get(reqUrl)
 	if err != nil {

@@ -11,6 +11,8 @@ import (
 
 	"vega/api"
 	"vega/datastore"
+	"vega/api/endpoints/grpc"
+	"vega/api/endpoints/restproxy"
 )
 
 const sseChannelSize = 2 << 16
@@ -39,6 +41,14 @@ func main() {
 	// REST server
 	restServer := rest.NewRestServer(orderService, tradeService)
 	go restServer.Start()
+
+	// GRPC server
+	grpcServer := grpc.NewGRPCServer(orderService, tradeService)
+	go grpcServer.Start()
+
+	// REST<>GRPC (reverse proxy) server
+	restProxyServer := restproxy.NewRestProxyServer()
+	go restProxyServer.Start()
 
 	// SSE server
 	sseOrderChan := make(chan msg.Order, sseChannelSize)

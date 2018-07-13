@@ -105,6 +105,16 @@
   revision = "bb9738501bd42a6536227b96068349b814379d6e"
 
 [[projects]]
+  name = "github.com/grpc-ecosystem/grpc-gateway"
+  packages = [
+    "runtime",
+    "runtime/internal",
+    "utilities"
+  ]
+  revision = "92583770e3f01b09a0d3e9bdf64321d8bebd48f2"
+  version = "v1.4.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/kr/logfmt"
   packages = ["."]
@@ -310,6 +320,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "adde071b4f363e88374efb2c7594200522e96a5460e15ee666312842148fc865"
+  inputs-digest = "b9676b85755f1f5597578ccb42bf07cab9a81f54e13e3ba406fd4c305bd3ccc3"
   solver-name = "gps-cdcl"
   solver-version = 1
