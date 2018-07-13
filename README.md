@@ -63,14 +63,14 @@ The API specification is defined as a [https://developers.google.com/protocol-bu
 To edit the API:
 
 1) Discuss some changes with your colleagues
-2) Modify `services/trading/trading.proto` with new stuff
-3) If adding / changing service endpoints, modify the `services/trading/rest-bindings.yml` to define REST/HTTP specific information
+2) Modify `services/your_service/your_proto_def.proto` with new stuff
+3) If adding / changing service endpoints, modify the `services/your_service/rest-bindings.yml` to define REST/HTTP specific information
 4) Run `sh scripts/gen_api.sh` to regenerate gRPC stubs, reverse proxy and swagger docs
 5) Build with `sh build.sh`
 
 Documentation can be parsed by any swagger software, if using go-swagger:
 
-`swagger serve services/trading/trading.swagger.json`
+`swagger serve services/your_service/your_proto_def.swagger.json`
 
 ### Deploying
 
