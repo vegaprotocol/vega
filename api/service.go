@@ -15,7 +15,7 @@ import (
 )
 
 type TradeService interface {
-	Init(app *core.Vega, tradeStore *datastore.TradeStore)
+	Init(app *core.Vega, tradeStore datastore.TradeStore)
 	GetById(ctx context.Context, market string, id string) (trade msg.Trade, err error)
 	GetTrades(ctx context.Context, market string, limit uint64) (trades []msg.Trade, err error)
 	GetTradesForOrder(ctx context.Context, market string, orderId string, limit uint64) (trades []msg.Trade, err error)
@@ -31,7 +31,7 @@ func NewTradeService() TradeService {
 	return &tradeService{}
 }
 
-func (t *tradeService) Init(app *core.Vega, tradeStore *datastore.TradeStore) {
+func (t *tradeService) Init(app *core.Vega, tradeStore datastore.TradeStore) {
 	t.app = app
 	t.tradeStore = tradeStore
 }
@@ -98,10 +98,10 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 }
 
 type OrderService interface {
-	Init(vega *core.Vega, orderStore *datastore.OrderStore)
+	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	GetById(ctx context.Context, market string, id string) (order msg.Order, err error)
-	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
-	GetOrders(ctx context.Context, market string, party string, limit uint64) (orders *[]msg.Order, err error)
+	CreateOrder(ctx context.Context, order msg.Order) (success bool, err error)
+	GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error)
 }
 
 type orderService struct {
@@ -113,7 +113,7 @@ func NewOrderService() OrderService {
 	return &orderService{}
 }
 
-func (p *orderService) Init(app *core.Vega, orderStore *datastore.OrderStore) {
+func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.app = app
 	p.orderStore = orderStore
 }
@@ -145,19 +145,15 @@ func releaseClient(c *rpc.Client) {
 	mux.Unlock()
 }
 
-func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
+func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (success bool, err error) {
 	order.Remaining = order.Size
 
-	bytes, err := proto.Marshal(order)
+	bytes, err := proto.Marshal(&order)
 	if err != nil {
 		return false, err
 	}
 
-	// todo clients from a pool
-	client := &rpc.Client{}
-
-
-	err = client.Connect()
+	client, err := getClient()
 	if err != nil {
 		return false, err
 	}
@@ -171,7 +167,6 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	}
 
 	/*
-	
 	payload, err := jsonWithEncoding(order)
 	if err != nil {
 		return false, err
@@ -192,10 +187,11 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	//	fmt.Println(string(body))
 	//}
 
+	releaseClient(client)
 	return true, err
 }
 
-func (p *orderService) GetOrders(ctx context.Context, market string, party string, limit uint64) (orders *[]msg.Order, err error) {
+func (p *orderService) GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error) {
 	o, err := p.orderStore.GetAll(market, party, datastore.GetParams{Limit: limit})
 	if err != nil {
 		return nil, err
@@ -214,7 +210,7 @@ func (p *orderService) GetOrders(ctx context.Context, market string, party strin
 			Type:      order.Type,
 		})
 	}
-	return &result, err
+	return result, err
 }
 
 func (p *orderService) GetById(ctx context.Context, market string, id string) (order msg.Order, err error) {

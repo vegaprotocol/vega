@@ -81,7 +81,7 @@ func TestOrderService_GetOrderById(t *testing.T) {
 	var orderService = NewOrderService()
 
 	vega := &core.Vega{}
-	orderService.Init(vega, orderStore)
+	orderService.Init(vega, &orderStore)
 
 	orderStore.On("Get", market, orderId).Return(datastore.Order{
 		Order: msg.Order{Id: orderId, Market: market},
