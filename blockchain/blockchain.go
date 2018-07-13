@@ -2,9 +2,7 @@ package blockchain
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 
 	"github.com/tendermint/tendermint/abci/example/code"
@@ -12,6 +10,7 @@ import (
 
 	"vega/core"
 	"vega/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 type Blockchain struct {
@@ -80,6 +79,7 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	fmt.Println("DeliverTx: " + string(tx))
+
 	// split the transaction
 	var _, value []byte
 	parts := bytes.Split(tx, []byte("|"))
@@ -90,15 +90,9 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
-	// decode base64
-	var jsonBlob, err = base64.URLEncoding.DecodeString(string(value))
-	if err != nil {
-		fmt.Println("Error decoding: " + err.Error())
-	}
-
-	// deserialize JSON to struct
+	// deserialize proto msg to struct
 	order := msg.OrderPool.Get().(*msg.Order)
-	e := json.Unmarshal(jsonBlob, order)
+	e := proto.Unmarshal(value, order)
 	if e != nil {
 		fmt.Println("Error: ", e.Error())
 	}

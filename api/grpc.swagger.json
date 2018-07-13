@@ -22,10 +22,20 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/vegaOrderResponse"
+              "$ref": "#/definitions/grpcOrderResponse"
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/vegaOrder"
+            }
+          }
+        ],
         "tags": [
           "trading"
         ]
@@ -43,12 +53,48 @@
       ],
       "default": "GTC"
     },
-    "vegaOrderResponse": {
+    "grpcOrderResponse": {
       "type": "object",
       "properties": {
         "success": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "vegaOrder": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "market": {
+          "type": "string"
+        },
+        "party": {
+          "type": "string"
+        },
+        "side": {
+          "$ref": "#/definitions/vegaSide"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "remaining": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "type": {
+          "$ref": "#/definitions/OrderType"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

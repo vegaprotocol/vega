@@ -30,7 +30,7 @@ func TestHandlers_CreateOrderWithModelWhenValidReturnsSuccess(t *testing.T) {
 
 	order := buildNewOrder()
 	orderService := &mocks.OrderService{}
-	orderService.On("CreateOrder", context, order).Return(
+	orderService.On("CreateOrder", context, &order).Return(
 		true, nil,
 	).Once()
 
@@ -52,7 +52,7 @@ func TestHandlers_CreateOrderWithModelWhenErrorReturnsFailure(t *testing.T) {
 
 	order := buildNewOrder()
 	orderService := &mocks.OrderService{}
-	orderService.On("CreateOrder", context, order).Return(
+	orderService.On("CreateOrder", context, &order).Return(
 		false, errors.New("An expected error"),
 	).Once()
 

@@ -105,7 +105,7 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	GetById(ctx context.Context, market string, id string) (order msg.Order, err error)
-	CreateOrder(ctx context.Context, order msg.Order) (success bool, err error)
+	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error)
 }
 
@@ -123,21 +123,32 @@ func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.orderStore = orderStore
 }
 
-
-
-func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (success bool, err error) {
+func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
 	order.Remaining = order.Size
 
-	bytes, err := proto.Marshal(&order)
+	// Protobuf marshall the incoming order to byte slice.
+	bytes, err := proto.Marshal(order)
+	if err != nil {
+		return false, err
+	}
+	if len(bytes) == 0 {
+		return false, errors.New("order message cannot be empty")
+	}
+
+	// Tendermint requires unique transactions so we pre-pend a guid + pipe to the byte array.
+	// It's split on arrival out of concensus.
+	bytes, err = bytesWithPipedGuid(bytes)
 	if err != nil {
 		return false, err
 	}
 
+	// Get a lightweight RPC client (our custom Tendermint client) from a pool (create one if n/a).
 	client, err := getClient()
 	if err != nil {
 		return false, err
 	}
 
+	// Fire off the transaction for consensus
 	err = client.AsyncTransaction(ctx, bytes)
 	if err != nil {
 		if !client.HasError() {
@@ -146,6 +157,7 @@ func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (succes
 		return false, err
 	}
 
+	// If all went well we return the client to the pool for another caller.
 	if client != nil {
 		releaseClient(client)
 	}
@@ -191,6 +203,7 @@ func getClient() (*rpc.Client, error) {
 		if err := client.Connect(); err != nil {
 			return nil, err
 		}
+		return &client, nil
 	}
 	client := clients[0]
 	clients = clients[1:]
