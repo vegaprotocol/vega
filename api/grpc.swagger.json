@@ -14,7 +14,48 @@
   "produces": [
     "application/json"
   ],
-  "paths": {},
+  "paths": {
+    "/1.0/orderBookDepth": {
+      "get": {
+        "operationId": "GetOrderBookDepth",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/vegaOrderBookDepth"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/1.0/orders": {
+      "post": {
+        "operationId": "CreateOrder",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading"
+        ]
+      }
+    }
+  },
   "definitions": {
     "OrderType": {
       "type": "string",

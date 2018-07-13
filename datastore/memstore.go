@@ -189,10 +189,12 @@ func (t *memOrderStore) Post(or Order) error {
 		t.store.orders = append(t.store.orders, order)
 
 		// Insert into buySideRemainingOrders and sellSideRemainingOrders - these are ordered
-		if order.order.Side == msg.Side_Buy {
-			t.store.markets[or.Market].buySideRemainingOrders.insert(&or)
-		} else {
-			t.store.markets[or.Market].sellSideRemainingOrders.insert(&or)
+		if order.order.Remaining != uint64(0) {
+			if order.order.Side == msg.Side_Buy {
+				t.store.markets[or.Market].buySideRemainingOrders.insert(&or)
+			} else {
+				t.store.markets[or.Market].sellSideRemainingOrders.insert(&or)
+			}
 		}
 	}
 	return nil
@@ -212,11 +214,20 @@ func (t *memOrderStore) Put(or Order) error {
 		fmt.Println("Updating order with ID ", or.Id)
 		t.store.markets[or.Market].orders[or.Id].order = or
 
-		// update buySideRemainingOrders sellSideRemainingOrders
-		if or.Side == msg.Side_Buy {
-			t.store.markets[or.Market].buySideRemainingOrders.update(&or)
+		if or.Remaining == uint64(0) {
+			// update buySideRemainingOrders sellSideRemainingOrders
+			if or.Side == msg.Side_Buy {
+				t.store.markets[or.Market].buySideRemainingOrders.remove(&or)
+			} else {
+				t.store.markets[or.Market].sellSideRemainingOrders.remove(&or)
+			}
 		} else {
-			t.store.markets[or.Market].buySideRemainingOrders.update(&or)
+			// update buySideRemainingOrders sellSideRemainingOrders
+			if or.Side == msg.Side_Buy {
+				t.store.markets[or.Market].buySideRemainingOrders.update(&or)
+			} else {
+				t.store.markets[or.Market].sellSideRemainingOrders.update(&or)
+			}
 		}
 
 	} else {
@@ -259,7 +270,7 @@ func (t *memOrderStore) Delete(or Order) error {
 	if or.Side == msg.Side_Buy {
 		t.store.markets[or.Market].buySideRemainingOrders.remove(&or)
 	} else {
-		t.store.markets[or.Market].buySideRemainingOrders.remove(&or)
+		t.store.markets[or.Market].sellSideRemainingOrders.remove(&or)
 	}
 
 	return nil
