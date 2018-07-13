@@ -89,8 +89,7 @@ func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.O
 }
 
 func (b *OrderBook) PrintState(msg string) {
-	log.Infof("\n")
-	log.Infof("%s\n", msg)
+	log.Infof("\n%s\n", msg)
 	log.Infof("------------------------------------------------------------\n")
 	log.Infof("                        BUY SIDE                            \n")
 	for _, priceLevel := range b.buy.getLevels() {
