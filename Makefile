@@ -33,6 +33,7 @@ coverhtml: ## Generate global code coverage report in HTML
 
 dep: ## Get the dependencies
 	@dep ensure
+	@dep ensure -update
 
 build: dep ## Build the binary file
 	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
