@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"vega/blockchain"
 	"vega/core"
-	"vega/services/msg"
+	"vega/services/order"
 
 	"vega/api"
 	"vega/datastore"
@@ -45,7 +45,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
-	msg.RegisterTradingServer(grpcServer, orderService)
+	services.RegisterOrderServer(grpcServer, orderService)
 	go grpcServer.Serve(lis)
 
 	// Listen for JSON requests
@@ -55,7 +55,7 @@ func main() {
 
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	err2 := msg.RegisterTradingHandlerFromEndpoint(ctx, mux, "localhost:5678", opts)
+	err2 := services.RegisterOrderHandlerFromEndpoint(ctx, mux, "localhost:5678", opts)
 	if err2 != nil {
 		fmt.Println(err2)
 	}

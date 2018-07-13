@@ -29,7 +29,7 @@ do
 	protoc -I/usr/local/include -I. \
 	       -I$GOPATH/src \
 	       -Ivendor/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-	       --grpc-gateway_out=logtostderr=true,grpc_api_configuration=$SERVICE_HOME/rest-bindings.yml,import_path=foo:. \
+	       --grpc-gateway_out=logtostderr=true,grpc_api_configuration=$SERVICE_HOME/rest-bindings.yml:. \
 	       $PROTO_DEF
 
 	# Generates Swagger documentation

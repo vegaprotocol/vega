@@ -1,14 +1,14 @@
 type: google.api.Service
 config_version: 3
 
-name: api.vega.trading
-title: Vega Trading API
+name: api.vega.order
+title: Vega Order API
 
 apis:
-  - name: trading
+  - name: order
 
 http:
   rules:
-  - selector: services.Trading.CreateOrder
+  - selector: services.Order.CreateOrder
     post: '/1.0/orders'
     # body: *

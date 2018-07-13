@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 	"vega/services/msg"
+	"vega/services/order"
 
 	"google.golang.org/grpc"
 )
@@ -29,7 +30,7 @@ func main() {
 
 	defer conn.Close()
 
-	client := msg.NewTradingClient(conn)
+	client := services.NewOrderClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

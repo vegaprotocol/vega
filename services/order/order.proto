@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package vega;
-option go_package = "order";
+package services;
+option go_package = "services";
 
-import "services/msg/messages";
+import "services/msg/messages.proto";
 
 service Order {
-    rpc CreateOrder(Order) returns (OrderResponse);
+    rpc CreateOrder(msg.Order) returns (msg.OrderResponse);
 }

@@ -9,6 +9,7 @@ import (
 	"vega/core"
 	"vega/datastore"
 	"vega/services/msg"
+	"vega/services/order"
 )
 
 type TradeService interface {
@@ -95,7 +96,7 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 }
 
 type OrderService interface {
-	msg.TradingServer
+	services.OrderServer
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	GetById(ctx context.Context, market string, id string) (order msg.Order, err error)
 	GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error)
