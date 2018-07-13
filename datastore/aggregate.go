@@ -85,11 +85,7 @@ func updateCandle(candles []*msg.Candle, idx int, trade *tradeInfo) {
 	}
 }
 
-func (o *memOrderStore) GetOrderBookDepth(market string) (msg.OrderBookDepth, error) {
-	if err := o.marketExists(market); err != nil {
-		return msg.OrderBookDepth{}, err
-	}
-
+func (o *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, error) {
 	var (
 		currentPrice uint64
 		at uint64
@@ -149,5 +145,5 @@ func (o *memOrderStore) GetOrderBookDepth(market string) (msg.OrderBookDepth, er
 		}
 	}
 
-	return orderBookDepth, nil
+	return &orderBookDepth, nil
 }

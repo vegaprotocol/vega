@@ -14,24 +14,7 @@
   "produces": [
     "application/json"
   ],
-  "paths": {
-    "/1.0/orders": {
-      "post": {
-        "operationId": "CreateOrder",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/vegaOrderResponse"
-            }
-          }
-        },
-        "tags": [
-          "trading"
-        ]
-      }
-    }
-  },
+  "paths": {},
   "definitions": {
     "OrderType": {
       "type": "string",
@@ -43,12 +26,53 @@
       ],
       "default": "GTC"
     },
-    "vegaOrderResponse": {
+    "grpcOrderResponse": {
       "type": "object",
       "properties": {
         "success": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "vegaOrderBookDepth": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "buy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        },
+        "sell": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        }
+      }
+    },
+    "vegaPriceLevel": {
+      "type": "object",
+      "properties": {
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "numberOfOrders": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "volume": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cumulativeVolume": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

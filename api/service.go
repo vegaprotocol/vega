@@ -99,6 +99,7 @@ type OrderService interface {
 	GetById(ctx context.Context, market string, id string) (order msg.Order, err error)
 	CreateOrder(ctx context.Context, order msg.Order) (success bool, err error)
 	GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error)
+	GetOrderBookDepthChart(ctx context.Context, market string) (orderBookDepth *msg.OrderBookDepth, err error)
 }
 
 type orderService struct {
@@ -169,4 +170,8 @@ func (p *orderService) GetById(ctx context.Context, market string, id string) (o
 		return msg.Order{}, err
 	}
 	return *or.ToProtoMessage(), err
+}
+
+func (p *orderService) GetOrderBookDepthChart(ctx context.Context, marketName string) (orderBookDepth *msg.OrderBookDepth, err error) {
+	return p.orderStore.GetOrderBookDepth(marketName)
 }
