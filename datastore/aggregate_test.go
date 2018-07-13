@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"vega/proto"
+	"vega/services/msg"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +46,7 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 	price := uint64(100)
 	timestamp := uint64(0)
 	for i := 0; i < 100; i++ {
-		if rand.Intn(3) == 1{
+		if rand.Intn(3) == 1 {
 			price--
 		} else {
 			price++
@@ -79,7 +79,6 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 	fmt.Println()
 	assert.Nil(t, err)
 	assert.Equal(t, 10, len(candles.Candles))
-
 
 	candles, err = newTradeStore.GetCandles(testMarket, 5, timestamp, 3)
 	fmt.Printf("candles returned:\n")
@@ -120,4 +119,3 @@ func assertCandleIsEmpty(t assert.TestingT, candle *msg.Candle) {
 	assert.Equal(t, uint64(0), candle.Open)
 	assert.Equal(t, uint64(0), candle.Close)
 }
-

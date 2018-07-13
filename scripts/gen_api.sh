@@ -8,7 +8,7 @@ fi
 
 echo "Using ${GOPATH} for GOPATH"
 
-SERVICE_HOME=services/trading
+SERVICE_HOME=services/msg
 PROTO_DEF=$SERVICE_HOME/trading.proto
 
 # This first protoc command creates a gRPC stub:

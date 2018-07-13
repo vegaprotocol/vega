@@ -2,11 +2,11 @@
 // source: services/trading/trading.proto
 
 /*
-Package trading is a reverse proxy.
+Package msg is a reverse proxy.
 
 It translates gRPC into RESTful JSON APIs.
 */
-package trading
+package msg
 
 import (
 	"io"

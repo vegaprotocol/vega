@@ -2,21 +2,22 @@ package datastore
 
 import (
 	"testing"
+	"vega/services/msg"
+
 	"github.com/stretchr/testify/assert"
-	"vega/proto"
 )
 
 func TestMemoryStoreProvider_Init(t *testing.T) {
 	memStoreProvider := MemoryStoreProvider{}
-	memStoreProvider.Init([]string{ "market" })
+	memStoreProvider.Init([]string{"market"})
 
-	err := memStoreProvider.OrderStore().Post(Order {
-		Order: msg.Order{ Id: "order-id", Market: "market", Price: 73921},
+	err := memStoreProvider.OrderStore().Post(Order{
+		Order: msg.Order{Id: "order-id", Market: "market", Price: 73921},
 	})
 	assert.Nil(t, err)
 
-	err = memStoreProvider.TradeStore().Post(Trade {
-		Trade: msg.Trade{ Id: "trade-id", Market: "market", Price: 23489},
+	err = memStoreProvider.TradeStore().Post(Trade{
+		Trade:   msg.Trade{Id: "trade-id", Market: "market", Price: 23489},
 		OrderId: "order-id",
 	})
 	assert.Nil(t, err)

@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 
 	"vega/core"
-	"vega/proto"
+	"vega/services/msg"
 )
 
 type Blockchain struct {

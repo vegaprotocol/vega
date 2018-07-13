@@ -2,8 +2,7 @@ package matching
 
 import (
 	"fmt"
-	"vega/proto"
-
+	"vega/services/msg"
 )
 
 type OrderBook struct {

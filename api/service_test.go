@@ -8,7 +8,7 @@ import (
 	"vega/core"
 	"vega/datastore"
 	"vega/datastore/mocks"
-	"vega/proto"
+	"vega/services/msg"
 
 	"github.com/stretchr/testify/assert"
 )

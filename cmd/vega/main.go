@@ -2,15 +2,20 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
-	"vega/api/endpoints/rest"
-	"vega/api/endpoints/sse"
+	"net"
+	"net/http"
 	"vega/blockchain"
 	"vega/core"
-	"vega/proto"
+	"vega/services/msg"
 
 	"vega/api"
 	"vega/datastore"
+
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"google.golang.org/grpc"
 )
 
 const sseChannelSize = 2 << 16
@@ -34,15 +39,28 @@ func main() {
 	orderService.Init(vega, storage.OrderStore())
 	tradeService.Init(vega, storage.TradeStore())
 
-	// REST server
-	restServer := rest.NewRestServer(orderService, tradeService)
-	go restServer.Start()
+	// Listen for GRPC requests
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 5678))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	grpcServer := grpc.NewServer()
+	msg.RegisterTradingServer(grpcServer, orderService)
+	go grpcServer.Serve(lis)
 
-	// SSE server
-	sseOrderChan := make(chan msg.Order, sseChannelSize)
-	sseTradeChan := make(chan msg.Trade, sseChannelSize)
-	sseServer := sse.NewServer(sseOrderChan, sseTradeChan)
-	go sseServer.Start()
+	// Listen for JSON requests
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	mux := runtime.NewServeMux()
+	opts := []grpc.DialOption{grpc.WithInsecure()}
+	err2 := msg.RegisterTradingHandlerFromEndpoint(ctx, mux, "localhost:5678", opts)
+	if err2 != nil {
+		fmt.Println(err2)
+	}
+
+	go http.ListenAndServe(":8080", mux)
 
 	if err := blockchain.Start(vega); err != nil {
 		log.Fatal(err)

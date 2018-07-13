@@ -3,7 +3,7 @@ package matching
 import (
 	"fmt"
 
-	"vega/proto"
+	"vega/services/msg"
 )
 
 func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {

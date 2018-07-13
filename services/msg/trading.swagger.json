@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "services/trading/trading.proto",
+    "title": "services/msg/trading.proto",
     "version": "version not set"
   },
   "schemes": [
@@ -14,24 +14,7 @@
   "produces": [
     "application/json"
   ],
-  "paths": {
-    "/1.0/orders": {
-      "post": {
-        "operationId": "CreateOrder",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/servicesOrderResponse"
-            }
-          }
-        },
-        "tags": [
-          "Trading"
-        ]
-      }
-    }
-  },
+  "paths": {},
   "definitions": {
     "OrderType": {
       "type": "string",
@@ -43,16 +26,16 @@
       ],
       "default": "GTC"
     },
-    "servicesOrderResponse": {
+    "vegaOrderResponse": {
       "type": "object",
       "properties": {
-        "works": {
+        "success": {
           "type": "boolean",
           "format": "boolean"
         }
       }
     },
-    "servicesSide": {
+    "vegaSide": {
       "type": "string",
       "enum": [
         "Buy",

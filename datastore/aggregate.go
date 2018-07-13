@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"math"
-	"vega/proto"
+	"vega/services/msg"
 )
 
 type PriceHistory []*tradeInfo
@@ -22,12 +22,12 @@ func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, inte
 		return msg.Candles{}, err
 	}
 
-	nOfCandles := uint64(math.Ceil(float64((currentBlock-sinceBlock)/interval)))+1
+	nOfCandles := uint64(math.Ceil(float64((currentBlock-sinceBlock)/interval))) + 1
 	var candles = make([]*msg.Candle, nOfCandles, nOfCandles)
 
 	for idx := range candles {
 		candles[idx] = &msg.Candle{}
-		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx) * interval
+		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx)*interval
 		candles[idx].CloseBlockNumber = candles[idx].OpenBlockNumber + interval
 	}
 
@@ -89,4 +89,3 @@ func updateCandle(candles []*msg.Candle, idx int, trade *tradeInfo) {
 	}
 	//fmt.Printf("updated: %+v\n", candles[idx])
 }
-

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"vega/core"
-	"vega/proto"
+	"vega/services/msg"
 )
 
 const marketId = "TEST"
@@ -19,7 +19,7 @@ func BenchmarkMatching(
 	randSize bool,
 	reportInterval int) {
 
-		b.ReportAllocs()
+	b.ReportAllocs()
 	if reportInterval == 0 {
 		reportInterval = numberOfOrders
 	}

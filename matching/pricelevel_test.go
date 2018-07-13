@@ -2,7 +2,7 @@ package matching
 
 import (
 	"testing"
-	"vega/proto"
+	"vega/services/msg"
 
 	"github.com/stretchr/testify/assert"
 )

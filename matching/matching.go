@@ -1,7 +1,7 @@
 package matching
 
 import (
-	"vega/proto"
+	"vega/services/msg"
 )
 
 type MatchingEngine interface {

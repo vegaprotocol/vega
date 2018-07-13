@@ -4,9 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"google.golang.org/grpc"
 	"time"
-	pb "vega/services/trading"
+	"vega/services/msg"
+
+	"google.golang.org/grpc"
 )
 
 var (
@@ -23,17 +24,17 @@ func main() {
 	opts = append(opts, grpc.WithInsecure())
 	conn, err := grpc.Dial(*serverAddr, opts...)
 	if err != nil {
-		fmt.Println("fail to dial: %v", err)
+		fmt.Println("fail to dial: %w", err)
 	}
 
 	defer conn.Close()
 
-	client := pb.NewTradingClient(conn)
+	client := msg.NewTradingClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	order := &pb.Order{
+	order := &msg.Order{
 		Market: "My Amazing Market",
 	}
 
@@ -41,6 +42,6 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(response.Works)
+		fmt.Println(response.Success)
 	}
 }

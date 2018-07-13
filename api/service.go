@@ -8,7 +8,7 @@ import (
 
 	"vega/core"
 	"vega/datastore"
-	"vega/proto"
+	"vega/services/msg"
 )
 
 type TradeService interface {
@@ -79,7 +79,7 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 	if sinceBlock < 0 {
 		sinceBlock = 0
 	}
-	
+
 	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), uint64(t.app.GetAbciHeight()), interval)
 	if err != nil {
 		return msg.Candles{}, err
@@ -95,9 +95,9 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 }
 
 type OrderService interface {
+	msg.TradingServer
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	GetById(ctx context.Context, market string, id string) (order msg.Order, err error)
-	CreateOrder(ctx context.Context, order msg.Order) (success bool, err error)
 	GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error)
 }
 
@@ -115,20 +115,20 @@ func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.orderStore = orderStore
 }
 
-func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (success bool, err error) {
+func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (response *msg.OrderResponse, err error) {
 
 	order.Remaining = order.Size
 
 	payload, err := jsonWithEncoding(order)
 	if err != nil {
-		return false, err
+		return &msg.OrderResponse{Success: false}, err
 	}
 
 	reqUrl := "http://localhost:46657/broadcast_tx_async?tx=%22" + newGuid() + "|" + payload + "%22"
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get(reqUrl)
 	if err != nil {
-		return false, err
+		return &msg.OrderResponse{Success: false}, err
 	}
 	defer resp.Body.Close()
 
@@ -138,7 +138,7 @@ func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (succes
 	//	fmt.Println(string(body))
 	//}
 
-	return true, err
+	return &msg.OrderResponse{Success: true}, err
 }
 
 func (p *orderService) GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error) {
