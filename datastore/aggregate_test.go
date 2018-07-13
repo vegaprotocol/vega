@@ -132,28 +132,46 @@ func TestMemOrderStore_GetOrderBookDepth(t *testing.T) {
 	price := uint64(100)
 	timestamp := uint64(0)
 	for i := 0; i < 100; i++ {
-		if rand.Intn(3) == 1{
-			price--
-		} else {
+		if i%2 == 1 {
+			timestamp++
 			price++
 		}
+		o := &Order{
+			msg.Order{
+				Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+				Market: testMarket,
+				Side: msg.Side_Sell,
+				Price:     price,
+				Size:      uint64(100),
+				Remaining: uint64(100),
+				Timestamp: timestamp,
+			},
+		}
 
-		if rand.Intn(5) == 1 {
+		err := newOrderStore.Post(*o)
+		assert.Nil(t, err)
+	}
+
+	timestamp = 0
+	price = 100
+	for i := 0; i < 100; i++ {
+		if i%2 == 1 {
 			timestamp++
+			price++
 		}
-		size := uint64(rand.Intn(400) + 800)
+		o := &Order{
+			msg.Order{
+				Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+				Market: testMarket,
+				Side: msg.Side_Buy,
+				Price:     price,
+				Size:      uint64(100),
+				Remaining: uint64(100),
+				Timestamp: timestamp,
+			},
+		}
 
-		// simulate timestamp gap
-		if i == 10 {
-			i = 15
-			timestamp += 5
-		}
-		d := generateRandomOrderAndTrade(price, size, timestamp)
-		if i%2 == 0{
-			d.order.Side = msg.Side_Sell
-		}
-
-		err := newOrderStore.Post(*d.order)
+		err := newOrderStore.Post(*o)
 		assert.Nil(t, err)
 	}
 
@@ -163,12 +181,19 @@ func TestMemOrderStore_GetOrderBookDepth(t *testing.T) {
 	for idx, priceLevel := range orderBookDepth.Buy {
 		fmt.Printf("%d %+v\n", idx, *priceLevel)
 	}
-
+	assert.Equal(t, orderBookDepth.Buy[0].Price, uint64(150))
+	assert.Equal(t, orderBookDepth.Buy[len(orderBookDepth.Buy)-1].Price, uint64(100))
+	assert.Equal(t, orderBookDepth.Buy[0].CumulativeVolume, orderBookDepth.Buy[0].Volume)
+	assert.Equal(t, orderBookDepth.Buy[len(orderBookDepth.Buy)-1].CumulativeVolume, uint64(100*100))
 
 	fmt.Printf("orderBookDepth for sell side:\n")
 	for idx, priceLevel := range orderBookDepth.Sell {
 		fmt.Printf("%d %+v\n", idx, *priceLevel)
 	}
 
-	fmt.Printf("orderBookDepth buy=%d sell=%d\n", len(orderBookDepth.Buy), len(orderBookDepth.Sell))
+	assert.Equal(t, orderBookDepth.Sell[0].Price, uint64(100))
+	assert.Equal(t, orderBookDepth.Sell[len(orderBookDepth.Sell)-1].Price, uint64(150))
+
+	assert.Equal(t, orderBookDepth.Sell[0].CumulativeVolume, orderBookDepth.Sell[0].Volume)
+	assert.Equal(t, orderBookDepth.Sell[len(orderBookDepth.Sell)-1].CumulativeVolume, uint64(100*100))
 }

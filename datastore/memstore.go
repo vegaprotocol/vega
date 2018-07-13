@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"fmt"
+	"vega/proto"
 )
 
 // memMarket should keep track of the trades/orders operating on a Market.
@@ -188,8 +189,11 @@ func (t *memOrderStore) Post(or Order) error {
 		t.store.orders = append(t.store.orders, order)
 
 		// Insert into buySideRemainingOrders and sellSideRemainingOrders - these are ordered
-		t.store.markets[or.Market].buySideRemainingOrders.insert(&or)
-		t.store.markets[or.Market].sellSideRemainingOrders.insert(&or)
+		if order.order.Side == msg.Side_Buy {
+			t.store.markets[or.Market].buySideRemainingOrders.insert(&or)
+		} else {
+			t.store.markets[or.Market].sellSideRemainingOrders.insert(&or)
+		}
 	}
 	return nil
 }
@@ -209,8 +213,11 @@ func (t *memOrderStore) Put(or Order) error {
 		t.store.markets[or.Market].orders[or.Id].order = or
 
 		// update buySideRemainingOrders sellSideRemainingOrders
-		t.store.markets[or.Market].buySideRemainingOrders.update(&or)
-		t.store.markets[or.Market].buySideRemainingOrders.update(&or)
+		if or.Side == msg.Side_Buy {
+			t.store.markets[or.Market].buySideRemainingOrders.update(&or)
+		} else {
+			t.store.markets[or.Market].buySideRemainingOrders.update(&or)
+		}
 
 	} else {
 		return fmt.Errorf("order not found in memstore: %s", or.Id)
@@ -249,8 +256,11 @@ func (t *memOrderStore) Delete(or Order) error {
 	t.store.orders = t.store.orders[:len(t.store.orders)-1]
 
 	// remove from buySideRemainingOrders sellSideRemainingOrders
-	t.store.markets[or.Market].buySideRemainingOrders.remove(&or)
-	t.store.markets[or.Market].buySideRemainingOrders.remove(&or)
+	if or.Side == msg.Side_Buy {
+		t.store.markets[or.Market].buySideRemainingOrders.remove(&or)
+	} else {
+		t.store.markets[or.Market].buySideRemainingOrders.remove(&or)
+	}
 
 	return nil
 }
