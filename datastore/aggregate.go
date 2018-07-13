@@ -148,6 +148,6 @@ func (o *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, e
 			orderBookDepth.Sell[at].CumulativeVolume = sellSideCumulative
 		}
 	}
-	
+
 	return &orderBookDepth, nil
 }
