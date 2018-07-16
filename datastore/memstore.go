@@ -4,6 +4,25 @@ import (
 	"fmt"
 )
 
+// memOrderStore should implement OrderStore interface.
+type memOrderStore struct {
+	store *MemStore
+}
+
+// memTradeStore should implement TradeStore interface.
+type memTradeStore struct {
+	store *MemStore
+}
+
+// MemStore is a RAM based top level structure to hold information about all markets.
+// It is initialised by calling NewMemStore with a list of markets.
+type MemStore struct {
+	markets map[string]*memMarket
+
+	trades []*memTrade // All trades on all markets
+	orders []*memOrder // All orders on all markets
+}
+
 // memMarket should keep track of the trades/orders operating on a Market.
 type memMarket struct {
 	name         string
@@ -23,11 +42,6 @@ func (mo *memOrder) String() string {
 	return "memOrder::order-id=" + mo.order.Id
 }
 
-// memOrderStore should implement OrderStore interface.
-type memOrderStore struct {
-	store *MemStore
-}
-
 // In memory trade struct keeps a pointer to the related order.
 type memTrade struct {
 	trade Trade
@@ -36,20 +50,6 @@ type memTrade struct {
 
 func (mt *memTrade) String() string {
 	return "memTrade::trade-id=" + mt.trade.Id
-}
-
-// memTradeStore should implement TradeStore interface.
-type memTradeStore struct {
-	store *MemStore
-}
-
-// MemStore is a RAM based top level structure to hold information about all markets.
-// It is initialised by calling NewMemStore with a list of markets.
-type MemStore struct {
-	markets map[string]*memMarket
-
-	trades []*memTrade // All trades on all markets
-	orders []*memOrder // All orders on all markets
 }
 
 // NewMemStore creates an instance of the ram based data store.
