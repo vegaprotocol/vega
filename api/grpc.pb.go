@@ -35,7 +35,7 @@ func (m *OrderResponse) Reset()         { *m = OrderResponse{} }
 func (m *OrderResponse) String() string { return proto.CompactTextString(m) }
 func (*OrderResponse) ProtoMessage()    {}
 func (*OrderResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_f86a72c877c43e73, []int{0}
+	return fileDescriptor_grpc_bceb42c1a3a495a4, []int{0}
 }
 func (m *OrderResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrderResponse.Unmarshal(m, b)
@@ -79,6 +79,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TradingClient interface {
 	CreateOrder(ctx context.Context, in *proto1.Order, opts ...grpc.CallOption) (*OrderResponse, error)
+	GetOrderBookDepth(ctx context.Context, in *proto1.Market, opts ...grpc.CallOption) (*proto1.OrderBookDepth, error)
 }
 
 type tradingClient struct {
@@ -98,9 +99,19 @@ func (c *tradingClient) CreateOrder(ctx context.Context, in *proto1.Order, opts 
 	return out, nil
 }
 
+func (c *tradingClient) GetOrderBookDepth(ctx context.Context, in *proto1.Market, opts ...grpc.CallOption) (*proto1.OrderBookDepth, error) {
+	out := new(proto1.OrderBookDepth)
+	err := c.cc.Invoke(ctx, "/grpc.trading/GetOrderBookDepth", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradingServer is the server API for Trading service.
 type TradingServer interface {
 	CreateOrder(context.Context, *proto1.Order) (*OrderResponse, error)
+	GetOrderBookDepth(context.Context, *proto1.Market) (*proto1.OrderBookDepth, error)
 }
 
 func RegisterTradingServer(s *grpc.Server, srv TradingServer) {
@@ -125,6 +136,24 @@ func _Trading_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Trading_GetOrderBookDepth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto1.Market)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingServer).GetOrderBookDepth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.trading/GetOrderBookDepth",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingServer).GetOrderBookDepth(ctx, req.(*proto1.Market))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Trading_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "grpc.trading",
 	HandlerType: (*TradingServer)(nil),
@@ -133,22 +162,28 @@ var _Trading_serviceDesc = grpc.ServiceDesc{
 			MethodName: "CreateOrder",
 			Handler:    _Trading_CreateOrder_Handler,
 		},
+		{
+			MethodName: "GetOrderBookDepth",
+			Handler:    _Trading_GetOrderBookDepth_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/grpc.proto",
 }
 
-func init() { proto.RegisterFile("api/grpc.proto", fileDescriptor_grpc_f86a72c877c43e73) }
+func init() { proto.RegisterFile("api/grpc.proto", fileDescriptor_grpc_bceb42c1a3a495a4) }
 
-var fileDescriptor_grpc_f86a72c877c43e73 = []byte{
-	// 141 bytes of a gzipped FileDescriptorProto
+var fileDescriptor_grpc_bceb42c1a3a495a4 = []byte{
+	// 174 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x4b, 0x2c, 0xc8, 0xd4,
 	0x4f, 0x2f, 0x2a, 0x48, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x01, 0xb1, 0xa5, 0x04,
 	0xc0, 0x1c, 0xfd, 0xb2, 0xd4, 0xf4, 0x44, 0x88, 0xb8, 0x92, 0x26, 0x17, 0xaf, 0x7f, 0x51, 0x4a,
 	0x6a, 0x51, 0x50, 0x6a, 0x71, 0x41, 0x7e, 0x5e, 0x71, 0xaa, 0x90, 0x04, 0x17, 0x7b, 0x71, 0x69,
-	0x72, 0x72, 0x6a, 0x71, 0xb1, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0x47, 0x10, 0x8c, 0x6b, 0x64, 0xc5,
+	0x72, 0x72, 0x6a, 0x71, 0xb1, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0x47, 0x10, 0x8c, 0x6b, 0x54, 0xcc,
 	0xc5, 0x5e, 0x52, 0x94, 0x98, 0x92, 0x99, 0x97, 0x2e, 0xa4, 0xcf, 0xc5, 0xed, 0x5c, 0x94, 0x9a,
 	0x58, 0x92, 0x0a, 0xd6, 0x2b, 0xc4, 0xad, 0x07, 0x36, 0x11, 0xcc, 0x91, 0x12, 0xd6, 0x03, 0x5b,
-	0x8b, 0x62, 0xaa, 0x13, 0x6b, 0x14, 0x73, 0x62, 0x41, 0x66, 0x12, 0x1b, 0xd8, 0x52, 0x63, 0x40,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x9e, 0xf9, 0x98, 0x27, 0x9e, 0x00, 0x00, 0x00,
+	0x8b, 0x6a, 0xaa, 0x39, 0x97, 0xa0, 0x7b, 0x6a, 0x09, 0x58, 0xcc, 0x29, 0x3f, 0x3f, 0xdb, 0x25,
+	0xb5, 0xa0, 0x24, 0x43, 0x88, 0x07, 0xa2, 0xcd, 0x37, 0xb1, 0x28, 0x3b, 0xb5, 0x44, 0x4a, 0x04,
+	0xc9, 0x10, 0xb8, 0x1a, 0x27, 0xd6, 0x28, 0xe6, 0xc4, 0x82, 0xcc, 0x24, 0x36, 0xb0, 0x6b, 0x8d,
+	0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x8e, 0xe5, 0xb0, 0x9d, 0xd7, 0x00, 0x00, 0x00,
 }

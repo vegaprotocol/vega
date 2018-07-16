@@ -12,3 +12,6 @@ http:
   - selector: grpc.trading.CreateOrder
     post: '/1.0/orders'
     body: "*"
+  - selector: grpc.trading.GetOrderBookDepth
+    get: '/1.0/orderBookDepth'
+

@@ -15,6 +15,30 @@
     "application/json"
   ],
   "paths": {
+    "/1.0/orderBookDepth": {
+      "get": {
+        "operationId": "GetOrderBookDepth",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/vegaOrderBookDepth"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/1.0/orders": {
       "post": {
         "operationId": "CreateOrder",
@@ -93,6 +117,47 @@
           "$ref": "#/definitions/OrderType"
         },
         "timestamp": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaOrderBookDepth": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "buy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        },
+        "sell": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        }
+      }
+    },
+    "vegaPriceLevel": {
+      "type": "object",
+      "properties": {
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "numberOfOrders": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "volume": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cumulativeVolume": {
           "type": "string",
           "format": "uint64"
         }

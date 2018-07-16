@@ -54,6 +54,29 @@ func (_m *OrderService) GetById(ctx context.Context, market string, id string) (
 	return r0, r1
 }
 
+// GetOrderBookDepthChart provides a mock function with given fields: ctx, market
+func (_m *OrderService) GetOrderBookDepthChart(ctx context.Context, market string) (*msg.OrderBookDepth, error) {
+	ret := _m.Called(ctx, market)
+
+	var r0 *msg.OrderBookDepth
+	if rf, ok := ret.Get(0).(func(context.Context, string) *msg.OrderBookDepth); ok {
+		r0 = rf(ctx, market)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*msg.OrderBookDepth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, market)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOrders provides a mock function with given fields: ctx, market, party, limit
 func (_m *OrderService) GetOrders(ctx context.Context, market string, party string, limit uint64) ([]msg.Order, error) {
 	ret := _m.Called(ctx, market, party, limit)

@@ -16,3 +16,7 @@ func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*api.Orde
 	success, err := h.OrderService.CreateOrder(ctx, order)
 	return &api.OrderResponse{Success: success}, err
 }
+
+func (h *Handlers) GetOrderBookDepth(ctx context.Context, market *msg.Market) (orderBookDepth *msg.OrderBookDepth, err error) {
+	return h.OrderService.GetOrderBookDepthChart(ctx, market.Name)
+}

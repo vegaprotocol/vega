@@ -171,6 +171,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/tav/golly"
+  packages = ["process"]
+  revision = "96c7c9e13d1f77ed61c21ff429651a5cb1e7f311"
+
+[[projects]]
+  branch = "master"
   name = "github.com/tendermint/tendermint"
   packages = [
     "abci/example/code",
@@ -195,6 +201,31 @@
   packages = ["codec"]
   revision = "b4c50a2b199d93b13dc15e78929cfb23bfdf21ab"
   version = "v1.1.1"
+
+[[projects]]
+  name = "go.uber.org/atomic"
+  packages = ["."]
+  revision = "1ea20fb1cbb1cc08cbd0d913a96dead89aa18289"
+  version = "v1.3.2"
+
+[[projects]]
+  name = "go.uber.org/multierr"
+  packages = ["."]
+  revision = "3c4937480c32f4c13a875a1829af76c98ca3d40a"
+  version = "v1.1.0"
+
+[[projects]]
+  name = "go.uber.org/zap"
+  packages = [
+    ".",
+    "buffer",
+    "internal/bufferpool",
+    "internal/color",
+    "internal/exit",
+    "zapcore"
+  ]
+  revision = "eeedf312bc6c57391d84767a4cd413f02a917974"
+  version = "v1.8.0"
 
 [[projects]]
   name = "golang.org/x/net"
@@ -289,6 +320,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b9676b85755f1f5597578ccb42bf07cab9a81f54e13e3ba406fd4c305bd3ccc3"
+  inputs-digest = "2bb4d81c263884ef929d80342516c5e094dddd1c377360ffab9c47f8c4bea6b6"
   solver-name = "gps-cdcl"
   solver-version = 1
