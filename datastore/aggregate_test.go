@@ -32,7 +32,8 @@ func generateRandomOrderAndTrade(price, size, timestamp uint64) *TestOrderAndTra
 				Size:      size,
 				Timestamp: timestamp,
 			},
-			OrderId: orderId,
+			PassiveOrderId: orderId,
+			AggressiveOrderId: orderId,
 		},
 	}
 	return d

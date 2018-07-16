@@ -60,22 +60,28 @@ func (store *memTradeStore) Post(trade Trade) error {
 	// check if passive and aggressive orders exist in the order store
 
 	// if passive exists
-	passiveOrder, passiveExists := store.store.markets[trade.Market].orders[trade.OrderId]
-	if !passiveExists {
-		return fmt.Errorf("passive order for trade not found in memstore: %s", trade.OrderId)
+	aggressiveOrder, aggressiveExists := store.store.markets[trade.Market].orders[trade.AggressiveOrderId]
+	if !aggressiveExists {
+		return fmt.Errorf("aggressive order for trade not found in memstore: %s", trade.AggressiveOrderId)
 	}
 
-	// TODO: same for aggressive order
+	// if passive exists
+	passiveOrder, passiveExists := store.store.markets[trade.Market].orders[trade.PassiveOrderId]
+	if !passiveExists {
+		return fmt.Errorf("passive order for trade not found in memstore: %s", trade.PassiveOrderId)
+	}
 
 	newTrade := &memTrade{
 		trade: trade,
-		order: passiveOrder,
+		aggressive: aggressiveOrder,
+		passive: passiveOrder,
 	}
 
 	// Add new trade to trades hashtable
 	store.store.markets[trade.Market].trades[trade.Id] = newTrade
 
-	// append trade to passive order
+	// append trade to aggressive and passive order
+	aggressiveOrder.trades = append(aggressiveOrder.trades, newTrade)
 	passiveOrder.trades = append(passiveOrder.trades, newTrade)
 
 	store.store.markets[trade.Market].tradesByTimestamp = append(store.store.markets[trade.Market].tradesByTimestamp, newTrade)

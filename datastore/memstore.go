@@ -44,8 +44,9 @@ func (mo *memOrder) String() string {
 
 // In memory trade struct keeps a pointer to the related order.
 type memTrade struct {
-	trade Trade
-	order *memOrder
+	trade      Trade
+	aggressive *memOrder
+	passive    *memOrder
 }
 
 func (mt *memTrade) String() string {

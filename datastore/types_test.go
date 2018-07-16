@@ -94,10 +94,11 @@ func TestTradeModelFromProtoMessage(t *testing.T) {
 			Aggressor:            1,
 			Timestamp:            3,
 		},
-		OrderId: "035ed2311b96d2a65ec6a6fe71046c14",
+		AggressiveOrderId: "035ed2311b96d2a65ec6a6fe71046c1",
+		PassiveOrderId: "035ed2311b96d2a65ec6a6fe71046c14",
 	}
 
-	trade := NewTradeFromProtoMessage(in, "035ed2311b96d2a65ec6a6fe71046c14")
+	trade := NewTradeFromProtoMessage(in, "035ed2311b96d2a65ec6a6fe71046c1", "035ed2311b96d2a65ec6a6fe71046c14")
 	assert.Equal(t, out, trade)
 }
 
@@ -113,7 +114,8 @@ func TestTradeModelToProtoMessage(t *testing.T) {
 			Aggressor:            1,
 			Timestamp:            3,
 		},
-		OrderId: "035ed2311b96d2a65ec6a6fe71046c14",
+		PassiveOrderId: "035ed2311b96d2a65ec6a6fe71046c14",
+		AggressiveOrderId: "035ed2311b96d2a65ec6a6fe71046c1",
 	}
 
 	out := &msg.Trade{
