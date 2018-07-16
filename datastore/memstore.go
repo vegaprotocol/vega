@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"fmt"
-	"vega/proto"
+	"vega/msg"
 )
 
 // memMarket should keep track of the trades/orders operating on a Market.

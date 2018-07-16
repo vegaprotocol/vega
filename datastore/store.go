@@ -1,6 +1,6 @@
 package datastore
 
-import "vega/proto"
+import "vega/msg"
 
 type TradeStore interface {
 	// GetAll retrieves a trades for a given market.

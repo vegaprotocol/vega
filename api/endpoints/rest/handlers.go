@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"vega/api"
-	"vega/proto"
+	"vega/msg"
 
 	"github.com/gin-gonic/gin"
 )

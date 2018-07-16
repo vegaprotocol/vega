@@ -11,7 +11,7 @@ package api
 import (
 	"io"
 	"net/http"
-	"vega/proto"
+	"vega/msg"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"

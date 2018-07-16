@@ -8,7 +8,7 @@ import (
 	"vega/api/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"vega/proto"
+	"vega/msg"
 	"errors"
 )
 

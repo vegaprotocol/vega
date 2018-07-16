@@ -1,3 +1,4 @@
+
 # Represents a date/time
 scalar DateTime
 
@@ -7,21 +8,21 @@ type Market {
   name: String!
 }
 
-# Represents a price on either the buy or sell side and all the orders at that price
-type PriceLevel {
-
-  # The price of all the orders at this level
-  price: Int!
-
-  # The total remaining size of all orders at this level
-  volume: Int!
-
-  # The number of orders at this price level
-  numberOfOrders: Int!
-
-  # The cumulative total volume to this price level
-  cumulativeVolume: Int!
-}
+## Represents a price on either the buy or sell side and all the orders at that price
+#type PriceLevel {
+#
+#  # The price of all the orders at this level
+#  price: Int!
+#
+#  # The total remaining size of all orders at this level
+#  volume: Int!
+#
+#  # The number of orders at this price level
+#  numberOfOrders: Int!
+#
+#  # The cumulative total volume to this price level
+#  cumulativeVolume: Int!
+#}
 
 
 # Valid order types, these determine what happens when an order is added to the book
@@ -112,47 +113,46 @@ type Trade {
 }
 
 
-type Candle {
-  date: DateTime!
+#type Candle {
+#  date: DateTime!
+#
+#  high: Int!
+#
+#  low: Int!
+#
+#  open: Int!
+#
+#  close: Int!
+#
+#  volume: Int!
+#
+#  openBlockNumber: Int!
+#
+#  closeBlockNumber: Int!
+#}
+#
+#type OrderBookDepth {
+#  name: String!
+#
+#  buy: [PriceLevel!]
+#
+#  sell: [PriceLevel!]
+#}
+#
+#
 
-  high: Int!
 
-  low: Int!
 
-  open: Int!
-
-  close: Int!
-
-  volume: Int!
-
-  openBlockNumber: Int!
-
-  closeBlockNumber: Int!
+type OrderQuery {
+  orders: [Order!]!
 }
 
-type OrderBookDepth {
-  name: String!
-
-  buy: [PriceLevel!]
-  
-  sell: [PriceLevel!]
-}
-
-
-type Query {
-  markets(asset: String): [Market!]
-}
-
-#type Subscription {
-#  markets(market: String): [Market]
+#type MyMutation {
+#  order(market: String, Price: Int, type: OrderType, side: Side, expiry: Int): Order
 #}
 
-type Mutation {
-  order(market: ID, Price: Int, type: OrderType, side: Side, expiry: DateTime): Order
+schema {
+  query: OrderQuery
 }
 
-schema {
-  query: Query
-#  subscription: Subscription
-  mutation: Mutation
-}
+

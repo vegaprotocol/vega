@@ -7,12 +7,13 @@ import (
 	"vega/api/endpoints/sse"
 	"vega/blockchain"
 	"vega/core"
-	"vega/proto"
+	"vega/msg"
 
 	"vega/api"
 	"vega/datastore"
 	"vega/api/endpoints/grpc"
 	"vega/api/endpoints/restproxy"
+	"vega/api/endpoints/graphql"
 )
 
 const sseChannelSize = 2 << 16
@@ -47,6 +48,10 @@ func main() {
 	// REST<>GRPC (reverse proxy) server
 	restProxyServer := restproxy.NewRestProxyServer()
 	go restProxyServer.Start()
+
+	// GraphQL server
+	graphServer := graphql.NewGraphQLServer(orderService, tradeService)
+	go graphServer.Start()
 
 	// SSE server
 	sseOrderChan := make(chan msg.Order, sseChannelSize)

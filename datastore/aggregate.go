@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"math"
-	"vega/proto"
+	"vega/msg"
 )
 
 type PriceHistory []*tradeInfo

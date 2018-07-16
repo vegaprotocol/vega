@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"vega/proto"
+	"vega/msg"
 
 	sse "github.com/alexandrevicenzi/go-sse"
 	"github.com/golang/protobuf/jsonpb"

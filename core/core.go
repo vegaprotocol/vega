@@ -6,7 +6,7 @@ import (
 
 	"vega/datastore"
 	"vega/matching"
-	"vega/proto"
+	"vega/msg"
 )
 
 const marketName = "BTC/DEC18"

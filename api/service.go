@@ -7,7 +7,7 @@ import (
 
 	"vega/core"
 	"vega/datastore"
-	"vega/proto"
+	"vega/msg"
 	"vega/tendermint/rpc"
 
 	"github.com/golang/protobuf/proto"

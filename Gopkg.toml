@@ -7,10 +7,6 @@
   branch = "master"
 
 [[constraint]]
-  name = "github.com/graph-gophers/graphql-go"
-  branch = "master"
-
-[[constraint]]
   name = "github.com/stretchr/testify"
   version = "1.2.1"
 
@@ -28,5 +24,4 @@
 
 [[constraint]]
   name = "github.com/grpc-ecosystem/grpc-gateway"
-  version = "1.4.1"
-
+  version = "1.4./ve.1"

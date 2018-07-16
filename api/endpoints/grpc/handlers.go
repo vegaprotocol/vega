@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"context"
-	"vega/proto"
+	"vega/msg"
 	"vega/api"
 )
 
