@@ -25,6 +25,14 @@ func NewExecutableSchema(resolvers ResolverRoot) graphql.ExecutableSchema {
 }
 
 type Resolvers interface {
+	Candle_high(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_low(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_open(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_close(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_volume(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
+
 	Order_price(ctx context.Context, obj *msg.Order) (int, error)
 	Order_type(ctx context.Context, obj *msg.Order) (OrderType, error)
 	Order_side(ctx context.Context, obj *msg.Order) (Side, error)
@@ -33,12 +41,32 @@ type Resolvers interface {
 	Order_remaining(ctx context.Context, obj *msg.Order) (int, error)
 
 	Order_timestamp(ctx context.Context, obj *msg.Order) (int, error)
-	OrderQuery_orders(ctx context.Context) ([]msg.Order, error)
+	Query_orders(ctx context.Context) ([]msg.Order, error)
+	Query_trades(ctx context.Context) ([]msg.Trade, error)
+	Query_candles(ctx context.Context) ([]msg.Candle, error)
+
+	Trade_market(ctx context.Context, obj *msg.Trade) (Market, error)
+
+	Trade_aggressor(ctx context.Context, obj *msg.Trade) (Side, error)
+	Trade_price(ctx context.Context, obj *msg.Trade) (int, error)
+	Trade_size(ctx context.Context, obj *msg.Trade) (int, error)
+	Trade_timestamp(ctx context.Context, obj *msg.Trade) (int, error)
 }
 
 type ResolverRoot interface {
+	Candle() CandleResolver
 	Order() OrderResolver
-	OrderQuery() OrderQueryResolver
+	Query() QueryResolver
+	Trade() TradeResolver
+}
+type CandleResolver interface {
+	High(ctx context.Context, obj *msg.Candle) (int, error)
+	Low(ctx context.Context, obj *msg.Candle) (int, error)
+	Open(ctx context.Context, obj *msg.Candle) (int, error)
+	Close(ctx context.Context, obj *msg.Candle) (int, error)
+	Volume(ctx context.Context, obj *msg.Candle) (int, error)
+	OpenBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
+	CloseBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *msg.Order) (int, error)
@@ -47,15 +75,51 @@ type OrderResolver interface {
 	Market(ctx context.Context, obj *msg.Order) (Market, error)
 	Size(ctx context.Context, obj *msg.Order) (int, error)
 	Remaining(ctx context.Context, obj *msg.Order) (int, error)
-
 	Timestamp(ctx context.Context, obj *msg.Order) (int, error)
 }
-type OrderQueryResolver interface {
+type QueryResolver interface {
 	Orders(ctx context.Context) ([]msg.Order, error)
+	Trades(ctx context.Context) ([]msg.Trade, error)
+	Candles(ctx context.Context) ([]msg.Candle, error)
+}
+type TradeResolver interface {
+	Market(ctx context.Context, obj *msg.Trade) (Market, error)
+	Aggressor(ctx context.Context, obj *msg.Trade) (Side, error)
+	Price(ctx context.Context, obj *msg.Trade) (int, error)
+	Size(ctx context.Context, obj *msg.Trade) (int, error)
+	Timestamp(ctx context.Context, obj *msg.Trade) (int, error)
 }
 
 type shortMapper struct {
 	r ResolverRoot
+}
+
+func (s shortMapper) Candle_high(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().High(ctx, obj)
+}
+
+func (s shortMapper) Candle_low(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().Low(ctx, obj)
+}
+
+func (s shortMapper) Candle_open(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().Open(ctx, obj)
+}
+
+func (s shortMapper) Candle_close(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().Close(ctx, obj)
+}
+
+func (s shortMapper) Candle_volume(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().Volume(ctx, obj)
+}
+
+func (s shortMapper) Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().OpenBlockNumber(ctx, obj)
+}
+
+func (s shortMapper) Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().CloseBlockNumber(ctx, obj)
 }
 
 func (s shortMapper) Order_price(ctx context.Context, obj *msg.Order) (int, error) {
@@ -86,8 +150,36 @@ func (s shortMapper) Order_timestamp(ctx context.Context, obj *msg.Order) (int, 
 	return s.r.Order().Timestamp(ctx, obj)
 }
 
-func (s shortMapper) OrderQuery_orders(ctx context.Context) ([]msg.Order, error) {
-	return s.r.OrderQuery().Orders(ctx)
+func (s shortMapper) Query_orders(ctx context.Context) ([]msg.Order, error) {
+	return s.r.Query().Orders(ctx)
+}
+
+func (s shortMapper) Query_trades(ctx context.Context) ([]msg.Trade, error) {
+	return s.r.Query().Trades(ctx)
+}
+
+func (s shortMapper) Query_candles(ctx context.Context) ([]msg.Candle, error) {
+	return s.r.Query().Candles(ctx)
+}
+
+func (s shortMapper) Trade_market(ctx context.Context, obj *msg.Trade) (Market, error) {
+	return s.r.Trade().Market(ctx, obj)
+}
+
+func (s shortMapper) Trade_aggressor(ctx context.Context, obj *msg.Trade) (Side, error) {
+	return s.r.Trade().Aggressor(ctx, obj)
+}
+
+func (s shortMapper) Trade_price(ctx context.Context, obj *msg.Trade) (int, error) {
+	return s.r.Trade().Price(ctx, obj)
+}
+
+func (s shortMapper) Trade_size(ctx context.Context, obj *msg.Trade) (int, error) {
+	return s.r.Trade().Size(ctx, obj)
+}
+
+func (s shortMapper) Trade_timestamp(ctx context.Context, obj *msg.Trade) (int, error) {
+	return s.r.Trade().Timestamp(ctx, obj)
 }
 
 type executableSchema struct {
@@ -102,7 +194,7 @@ func (e *executableSchema) Query(ctx context.Context, op *query.Operation) *grap
 	ec := executionContext{graphql.GetRequestContext(ctx), e.resolvers}
 
 	buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
-		data := ec._OrderQuery(ctx, op.Selections)
+		data := ec._Query(ctx, op.Selections)
 		var buf bytes.Buffer
 		data.MarshalGQL(&buf)
 		return buf.Bytes()
@@ -126,6 +218,264 @@ type executionContext struct {
 	*graphql.RequestContext
 
 	resolvers Resolvers
+}
+
+var candleImplementors = []string{"Candle"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Candle(ctx context.Context, sel []query.Selection, obj *msg.Candle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.Doc, sel, candleImplementors, ec.Variables)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Candle")
+		case "date":
+			out.Values[i] = ec._Candle_date(ctx, field, obj)
+		case "high":
+			out.Values[i] = ec._Candle_high(ctx, field, obj)
+		case "low":
+			out.Values[i] = ec._Candle_low(ctx, field, obj)
+		case "open":
+			out.Values[i] = ec._Candle_open(ctx, field, obj)
+		case "close":
+			out.Values[i] = ec._Candle_close(ctx, field, obj)
+		case "volume":
+			out.Values[i] = ec._Candle_volume(ctx, field, obj)
+		case "openBlockNumber":
+			out.Values[i] = ec._Candle_openBlockNumber(ctx, field, obj)
+		case "closeBlockNumber":
+			out.Values[i] = ec._Candle_closeBlockNumber(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _Candle_date(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Candle"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	res := obj.Date
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_high(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_low(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_open(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_close(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_volume(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_openBlockNumber(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_openBlockNumber(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_closeBlockNumber(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_closeBlockNumber(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
 var marketImplementors = []string{"Market"}
@@ -433,14 +783,14 @@ func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.
 	})
 }
 
-var orderQueryImplementors = []string{"OrderQuery"}
+var queryImplementors = []string{"Query"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _OrderQuery(ctx context.Context, sel []query.Selection) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.Doc, sel, orderQueryImplementors, ec.Variables)
+func (ec *executionContext) _Query(ctx context.Context, sel []query.Selection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.Doc, sel, queryImplementors, ec.Variables)
 
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Object: "OrderQuery",
+		Object: "Query",
 	})
 
 	out := graphql.NewOrderedMap(len(fields))
@@ -449,13 +799,17 @@ func (ec *executionContext) _OrderQuery(ctx context.Context, sel []query.Selecti
 
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("OrderQuery")
+			out.Values[i] = graphql.MarshalString("Query")
 		case "orders":
-			out.Values[i] = ec._OrderQuery_orders(ctx, field)
+			out.Values[i] = ec._Query_orders(ctx, field)
+		case "trades":
+			out.Values[i] = ec._Query_trades(ctx, field)
+		case "candles":
+			out.Values[i] = ec._Query_candles(ctx, field)
 		case "__schema":
-			out.Values[i] = ec._OrderQuery___schema(ctx, field)
+			out.Values[i] = ec._Query___schema(ctx, field)
 		case "__type":
-			out.Values[i] = ec._OrderQuery___type(ctx, field)
+			out.Values[i] = ec._Query___type(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -464,9 +818,9 @@ func (ec *executionContext) _OrderQuery(ctx context.Context, sel []query.Selecti
 	return out
 }
 
-func (ec *executionContext) _OrderQuery_orders(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_orders(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Object: "OrderQuery",
+		Object: "Query",
 		Args:   nil,
 		Field:  field,
 	})
@@ -480,7 +834,7 @@ func (ec *executionContext) _OrderQuery_orders(ctx context.Context, field graphq
 		}()
 
 		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.OrderQuery_orders(ctx)
+			return ec.resolvers.Query_orders(ctx)
 		})
 		if err != nil {
 			ec.Error(ctx, err)
@@ -503,9 +857,87 @@ func (ec *executionContext) _OrderQuery_orders(ctx context.Context, field graphq
 	})
 }
 
-func (ec *executionContext) _OrderQuery___schema(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_trades(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query_trades(ctx)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Trade)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Trade(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_candles(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query_candles(ctx)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Candle)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Candle(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "OrderQuery"
+	rctx.Object = "Query"
 	rctx.Args = nil
 	rctx.Field = field
 	rctx.PushField(field.Alias)
@@ -517,7 +949,7 @@ func (ec *executionContext) _OrderQuery___schema(ctx context.Context, field grap
 	return ec.___Schema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OrderQuery___type(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := field.Args["name"]; ok {
@@ -530,7 +962,7 @@ func (ec *executionContext) _OrderQuery___type(ctx context.Context, field graphq
 	}
 	args["name"] = arg0
 	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "OrderQuery"
+	rctx.Object = "Query"
 	rctx.Args = args
 	rctx.Field = field
 	rctx.PushField(field.Alias)
@@ -545,7 +977,7 @@ func (ec *executionContext) _OrderQuery___type(ctx context.Context, field graphq
 var tradeImplementors = []string{"Trade"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Trade(ctx context.Context, sel []query.Selection, obj *Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade(ctx context.Context, sel []query.Selection, obj *msg.Trade) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.Doc, sel, tradeImplementors, ec.Variables)
 
 	out := graphql.NewOrderedMap(len(fields))
@@ -579,29 +1011,48 @@ func (ec *executionContext) _Trade(ctx context.Context, sel []query.Selection, o
 	return out
 }
 
-func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
 	rctx := graphql.GetResolverContext(ctx)
 	rctx.Object = "Trade"
 	rctx.Args = nil
 	rctx.Field = field
 	rctx.PushField(field.Alias)
 	defer rctx.Pop()
-	res := obj.ID
+	res := obj.Id
 	return graphql.MarshalID(res)
 }
 
-func (ec *executionContext) _Trade_market(ctx context.Context, field graphql.CollectedField, obj *Trade) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Trade"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Market
-	return ec._Market(ctx, field.Selections, &res)
+func (ec *executionContext) _Trade_market(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Trade",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Trade_market(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(Market)
+		return ec._Market(ctx, field.Selections, &res)
+	})
 }
 
-func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.CollectedField, obj *Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
 	rctx := graphql.GetResolverContext(ctx)
 	rctx.Object = "Trade"
 	rctx.Args = nil
@@ -612,7 +1063,7 @@ func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.Coll
 	return graphql.MarshalString(res)
 }
 
-func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.CollectedField, obj *Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
 	rctx := graphql.GetResolverContext(ctx)
 	rctx.Object = "Trade"
 	rctx.Args = nil
@@ -623,48 +1074,124 @@ func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.Col
 	return graphql.MarshalString(res)
 }
 
-func (ec *executionContext) _Trade_aggressor(ctx context.Context, field graphql.CollectedField, obj *Trade) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Trade"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Aggressor
-	return res
+func (ec *executionContext) _Trade_aggressor(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Trade",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Trade_aggressor(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(Side)
+		return res
+	})
 }
 
-func (ec *executionContext) _Trade_price(ctx context.Context, field graphql.CollectedField, obj *Trade) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Trade"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Price
-	return graphql.MarshalInt(res)
+func (ec *executionContext) _Trade_price(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Trade",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Trade_price(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
-func (ec *executionContext) _Trade_size(ctx context.Context, field graphql.CollectedField, obj *Trade) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Trade"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Size
-	return graphql.MarshalInt(res)
+func (ec *executionContext) _Trade_size(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Trade",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Trade_size(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
-func (ec *executionContext) _Trade_timestamp(ctx context.Context, field graphql.CollectedField, obj *Trade) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Trade"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Timestamp
-	return graphql.MarshalInt(res)
+func (ec *executionContext) _Trade_timestamp(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Trade",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Trade_timestamp(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -1439,9 +1966,6 @@ type Order {
   # The market the order is trading on (probably stored internally as a hash of the market details)
   market: Market!
 
-  # If the order can expire, specifies the expiry date/time
-  #expiry: DateTime
-
   # Total number of contracts that may be bought or sold (immutable)
   size: Int!
 
@@ -1484,23 +2008,24 @@ type Trade {
 }
 
 
-#type Candle {
-#  date: DateTime!
-#
-#  high: Int!
-#
-#  low: Int!
-#
-#  open: Int!
-#
-#  close: Int!
-#
-#  volume: Int!
-#
-#  openBlockNumber: Int!
-#
-#  closeBlockNumber: Int!
-#}
+type Candle {
+  date: DateTime!
+
+  high: Int!
+
+  low: Int!
+
+  open: Int!
+
+  close: Int!
+
+  volume: Int!
+
+  openBlockNumber: Int!
+
+  closeBlockNumber: Int!
+}
+
 #
 #type OrderBookDepth {
 #  name: String!
@@ -1513,17 +2038,19 @@ type Trade {
 #
 
 
-
-type OrderQuery {
-  orders: [Order!]!
-}
-
 #type MyMutation {
 #  order(market: String, Price: Int, type: OrderType, side: Side, expiry: Int): Order
 #}
 
+
+type Query {
+  orders : [Order!]!
+  trades: [Trade!]!
+  candles: [Candle!]!
+}
+
 schema {
-  query: OrderQuery
+  query: Query
 }
 
 

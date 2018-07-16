@@ -7,5 +7,7 @@ model:
 models:
   Order:
     model: vega/msg.Order
-#  Trade:
-#    model: vega/msg.Trade
+  Trade:
+    model: vega/msg.Trade
+  Candle:
+    model: vega/msg.Candle

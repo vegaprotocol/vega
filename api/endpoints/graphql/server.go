@@ -31,7 +31,7 @@ func (g *graphServer) Start() {
 
 	http.Handle("/", handler.Playground("Orders", "/query"))
 	http.Handle("/query", handler.GraphQL(
-		NewExecutableSchema(NewQueryResolver(g.orderService)),
+		NewExecutableSchema(NewResolverRoot(g.orderService, g.tradeService)),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			// send this panic somewhere    ß
 			log.Print(err)

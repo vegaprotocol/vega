@@ -68,9 +68,6 @@ type Order {
   # The market the order is trading on (probably stored internally as a hash of the market details)
   market: Market!
 
-  # If the order can expire, specifies the expiry date/time
-  #expiry: DateTime
-
   # Total number of contracts that may be bought or sold (immutable)
   size: Int!
 
@@ -113,23 +110,24 @@ type Trade {
 }
 
 
-#type Candle {
-#  date: DateTime!
-#
-#  high: Int!
-#
-#  low: Int!
-#
-#  open: Int!
-#
-#  close: Int!
-#
-#  volume: Int!
-#
-#  openBlockNumber: Int!
-#
-#  closeBlockNumber: Int!
-#}
+type Candle {
+  date: DateTime!
+
+  high: Int!
+
+  low: Int!
+
+  open: Int!
+
+  close: Int!
+
+  volume: Int!
+
+  openBlockNumber: Int!
+
+  closeBlockNumber: Int!
+}
+
 #
 #type OrderBookDepth {
 #  name: String!
@@ -142,17 +140,19 @@ type Trade {
 #
 
 
-
-type OrderQuery {
-  orders: [Order!]!
-}
-
 #type MyMutation {
 #  order(market: String, Price: Int, type: OrderType, side: Side, expiry: Int): Order
 #}
 
+
+type Query {
+  orders : [Order!]!
+  trades: [Trade!]!
+  candles: [Candle!]!
+}
+
 schema {
-  query: OrderQuery
+  query: Query
 }
 
 

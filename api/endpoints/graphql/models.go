@@ -11,16 +11,6 @@ import (
 type Market struct {
 	Name string `json:"name"`
 }
-type Trade struct {
-	ID        string `json:"id"`
-	Market    Market `json:"market"`
-	Buyer     string `json:"buyer"`
-	Seller    string `json:"seller"`
-	Aggressor Side   `json:"aggressor"`
-	Price     int    `json:"price"`
-	Size      int    `json:"size"`
-	Timestamp int    `json:"timestamp"`
-}
 
 type OrderType string
 
