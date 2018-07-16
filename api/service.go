@@ -3,12 +3,20 @@ package api
 import (
 	"context"
 	"errors"
-	"net/http"
 	"time"
 
 	"vega/core"
 	"vega/datastore"
 	"vega/proto"
+	"vega/tendermint/rpc"
+
+	"github.com/golang/protobuf/proto"
+	"sync"
+)
+
+var (
+	clients []*rpc.Client
+	mux sync.Mutex
 )
 
 type TradeService interface {
@@ -97,8 +105,9 @@ func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since
 type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	GetById(ctx context.Context, market string, id string) (order msg.Order, err error)
-	CreateOrder(ctx context.Context, order msg.Order) (success bool, err error)
+	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	GetOrders(ctx context.Context, market string, party string, limit uint64) (orders []msg.Order, err error)
+	GetOrderBookDepthChart(ctx context.Context, market string) (orderBookDepth *msg.OrderBookDepth, err error)
 }
 
 type orderService struct {
@@ -115,29 +124,44 @@ func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.orderStore = orderStore
 }
 
-func (p *orderService) CreateOrder(ctx context.Context, order msg.Order) (success bool, err error) {
-
+func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
 	order.Remaining = order.Size
 
-	payload, err := jsonWithEncoding(order)
+	// Protobuf marshall the incoming order to byte slice.
+	bytes, err := proto.Marshal(order)
+	if err != nil {
+		return false, err
+	}
+	if len(bytes) == 0 {
+		return false, errors.New("order message cannot be empty")
+	}
+
+	// Tendermint requires unique transactions so we pre-pend a guid + pipe to the byte array.
+	// It's split on arrival out of concensus.
+	bytes, err = bytesWithPipedGuid(bytes)
 	if err != nil {
 		return false, err
 	}
 
-	reqUrl := "http://localhost:46657/broadcast_tx_async?tx=%22" + newGuid() + "|" + payload + "%22"
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(reqUrl)
+	// Get a lightweight RPC client (our custom Tendermint client) from a pool (create one if n/a).
+	client, err := getClient()
 	if err != nil {
 		return false, err
 	}
-	defer resp.Body.Close()
 
-	// For debugging only
-	// body, err := ioutil.ReadAll(resp.Body)
-	//if err == nil {
-	//	fmt.Println(string(body))
-	//}
+	// Fire off the transaction for consensus
+	err = client.AsyncTransaction(ctx, bytes)
+	if err != nil {
+		if !client.HasError() {
+			releaseClient(client)
+		}
+		return false, err
+	}
 
+	// If all went well we return the client to the pool for another caller.
+	if client != nil {
+		releaseClient(client)
+	}
 	return true, err
 }
 
@@ -169,4 +193,31 @@ func (p *orderService) GetById(ctx context.Context, market string, id string) (o
 		return msg.Order{}, err
 	}
 	return *or.ToProtoMessage(), err
+}
+
+func (p *orderService) GetOrderBookDepthChart(ctx context.Context, marketName string) (orderBookDepth *msg.OrderBookDepth, err error) {
+	return p.orderStore.GetOrderBookDepth(marketName)
+}
+
+func getClient() (*rpc.Client, error) {
+	mux.Lock()
+	if len(clients) == 0 {
+		mux.Unlock()
+		client := rpc.Client{
+		}
+		if err := client.Connect(); err != nil {
+			return nil, err
+		}
+		return &client, nil
+	}
+	client := clients[0]
+	clients = clients[1:]
+	mux.Unlock()
+	return client, nil
+}
+
+func releaseClient(c *rpc.Client) {
+	mux.Lock()
+	clients = append(clients, c)
+	mux.Unlock()
 }

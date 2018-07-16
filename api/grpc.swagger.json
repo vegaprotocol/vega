@@ -15,6 +15,30 @@
     "application/json"
   ],
   "paths": {
+    "/1.0/orderBookDepth": {
+      "get": {
+        "operationId": "GetOrderBookDepth",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/vegaOrderBookDepth"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/1.0/orders": {
       "post": {
         "operationId": "CreateOrder",
@@ -22,10 +46,20 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/vegaOrderResponse"
+              "$ref": "#/definitions/grpcOrderResponse"
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/vegaOrder"
+            }
+          }
+        ],
         "tags": [
           "trading"
         ]
@@ -43,12 +77,89 @@
       ],
       "default": "GTC"
     },
-    "vegaOrderResponse": {
+    "grpcOrderResponse": {
       "type": "object",
       "properties": {
         "success": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "vegaOrder": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "market": {
+          "type": "string"
+        },
+        "party": {
+          "type": "string"
+        },
+        "side": {
+          "$ref": "#/definitions/vegaSide"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "remaining": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "type": {
+          "$ref": "#/definitions/OrderType"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaOrderBookDepth": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "buy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        },
+        "sell": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        }
+      }
+    },
+    "vegaPriceLevel": {
+      "type": "object",
+      "properties": {
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "numberOfOrders": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "volume": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cumulativeVolume": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

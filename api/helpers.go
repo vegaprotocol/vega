@@ -23,3 +23,9 @@ func jsonWithEncoding(o interface{}) (string, error) {
 	encoded := base64.StdEncoding.EncodeToString(json)
 	return encoded, err
 }
+
+func bytesWithPipedGuid(input []byte) ([]byte, error) {
+	prefix := newGuid() + "|"
+	prefixBytes := []byte(prefix)
+	return append(prefixBytes, input...), nil
+}
