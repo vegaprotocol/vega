@@ -10,9 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// this runs just once as first
+func init() {
+	log.InitConsoleLogger(log.DebugLevel)
+}
+
 //test for order validation
 func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
-	log.InitConsoleLogger(log.DebugLevel)
 	book := NewBook("testOrderBook", DefaultConfig())
 	book.latestTimestamp = 10
 
