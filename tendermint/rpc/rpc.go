@@ -13,15 +13,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// DefaultAddress provides the default host:port for the Tendermint RPC server.
-const DefaultAddress = "127.0.0.1:46657"
-
-// Endpoint specifies the WebSockets endpoint path on the Tendermint RPC server.
-const Endpoint = "/websocket"
+const (
+	address          = "127.0.0.1:46657"
+	endpoint         = "/websocket"
+	handshakeTimeout = 10 * time.Second
+	writeTimeout     = 30 * time.Second
+)
 
 // Errors returned by the Client.
 var (
-	ErrCheckTxFailed = errors.New("rpc: CheckTx failed during the CreateTransaction call")
+	ErrCheckTxFailed = errors.New("rpc: CheckTx failed during the AddTransaction call")
 	ErrClosed        = errors.New("rpc: client has already been closed")
 )
 
@@ -43,7 +44,7 @@ type response struct {
 
 type rpcError struct {
 	Code    int    `json:"code"`
-	Data    string `json:"data,omitempty"`
+	Data    string `json:"data"`
 	Message string `json:"message"`
 }
 
@@ -58,47 +59,29 @@ func (err rpcError) Error() string {
 // calling the Connect method, and then call the appropriate methods
 // corresponding to Tendermint's JSON-RPC API.
 type Client struct {
-	sync.RWMutex     // Protects the closed, connClosed, err, lastID and results struct fields.
-	Address          string
-	HandshakeTimeout time.Duration
-	WriteTimeout     time.Duration
+	Address          string        // Defaults to 127.0.0.1:46657
+	HandshakeTimeout time.Duration // Defaults to 10 seconds
+	WriteTimeout     time.Duration // Defaults to 30 seconds
 	closed           chan struct{}
 	conn             *websocket.Conn
 	connClosed       bool
 	err              error
 	lastID           uint64
+	mu               sync.RWMutex // Protects the closed, connClosed, err, lastID and results struct fields.
 	pending          chan *request
 	results          map[uint64]chan *response
 }
 
-// CreateTransactionResponse represents the data returned from the
-// CreateTransaction call.
-type CreateTransactionResponse struct {
-	// Code represents the exit code from the corresponding CheckTx ABCI call. A
-	// non-zero Code value represents an error. The meaning of non-zero codes is
-	// specific to the given ABCI app that is being used.
-	Code uint32 `json:"code"`
-	Data []byte `json:"data"`
-	Hash []byte `json:"hash"`
-	Log  string `json:"log"`
-}
-
-// CreateTransaction corresponds to the BroadcastTxSync Tendermint call. It adds
+// AddTransaction corresponds to the Tendermint BroadcastTxSync call. It adds
 // the given transaction data to Tendermint's mempool and returns data from the
-// corresponding CheckTx response.
+// corresponding ABCI CheckTx call.
 //
-// If the given transaction data fails CheckTx, then the method will return a
-// ErrCheckTxFailed error, and the caller can inspect the returned
-// CreateTransactionResponse value for the application-specific error code and
-// log message.
-func (c *Client) CreateTransaction(ctx context.Context, txdata []byte) (*CreateTransactionResponse, error) {
-	data, err := c.call(ctx, "broadcast_tx_sync", opts{"tx": txdata})
-	if err != nil {
-		return nil, err
-	}
-	resp := &CreateTransactionResponse{}
-	err = json.Unmarshal(data, resp)
-	if err != nil {
+// If the given transaction data fails CheckTx, then the method will return
+// ErrCheckTxFailed, and the caller can inspect the returned CheckTxResult for
+// the ABCI app-specific error code and log message.
+func (c *Client) AddTransaction(ctx context.Context, txdata []byte) (*CheckTxResult, error) {
+	resp := &CheckTxResult{}
+	if err := c.call(ctx, "broadcast_tx_sync", opts{"tx": txdata}, resp); err != nil {
 		return nil, err
 	}
 	if resp.Code != 0 {
@@ -107,20 +90,35 @@ func (c *Client) CreateTransaction(ctx context.Context, txdata []byte) (*CreateT
 	return resp, nil
 }
 
+// AsyncTransaction corresponds to the Tendermint BroadcastTxAsync call. It adds
+// the given transaction data to Tendermint's mempool and returns immediately.
+func (c *Client) AsyncTransaction(ctx context.Context, txdata []byte) error {
+	return c.call(ctx, "broadcast_tx_async", opts{"tx": txdata}, nil)
+}
+
 // Close terminates the underlying WebSocket connection.
 func (c *Client) Close() error {
-	c.Lock()
-	defer c.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.closeWithError(nil)
 }
 
 // Connect initialises the Client and establishes a WebSocket connection to the
 // Tendermint endpoint. It must only be called once per Client.
 func (c *Client) Connect() error {
+	if c.Address == "" {
+		c.Address = address
+	}
+	if c.HandshakeTimeout == 0 {
+		c.HandshakeTimeout = handshakeTimeout
+	}
+	if c.WriteTimeout == 0 {
+		c.WriteTimeout = writeTimeout
+	}
 	dialer := &websocket.Dialer{
 		HandshakeTimeout: c.HandshakeTimeout,
 	}
-	w, _, err := dialer.Dial("ws://"+c.Address+Endpoint, nil)
+	w, _, err := dialer.Dial("ws://"+c.Address+endpoint, nil)
 	if err != nil {
 		return err
 	}
@@ -134,29 +132,174 @@ func (c *Client) Connect() error {
 	})
 	c.closed = make(chan struct{})
 	c.pending = make(chan *request, 100)
-	c.results = make(map[uint64]chan *response)
+	c.results = map[uint64]chan *response{}
 	c.conn = w
 	go c.readLoop()
 	go c.writeLoop(pings)
 	return nil
 }
 
+func (c *Client) HasError() bool {
+	c.mu.RLock()
+	hasErr := c.err != nil
+	c.mu.RUnlock()
+	return hasErr
+}
+
+// FindTransaction corresponds to the Tendermint TxSearch call. It returns the
+// set of matching transactions and the total number of results as part of the
+// TransactionList response.
+//
+// The page parameter, which is 1-indexed, can be used to get the specific page
+// of results that you're interested in. And the perPage variable defines the
+// number of maximum results (up to 100) that you want per page.
+//
+// And if prove is set to true, then the response will include proofs of the
+// transactions' inclusion in the Tendermint blockchain.
+func (c *Client) FindTransaction(ctx context.Context, query *Query, page int, perPage int, prove bool) (*TransactionList, error) {
+	qs, err := query.Expression()
+	if err != nil {
+		return nil, err
+	}
+	resp := &TransactionList{}
+	err = c.call(ctx, "tx_search", opts{"query": qs, "page": page, "per_page": perPage, "prove": prove}, resp)
+	return resp, err
+}
+
+// Genesis corresponds to the Tendermint Genesis call. It returns the
+// initial conditions of the Tendermint blockchain.
+func (c *Client) Genesis(ctx context.Context) (*Genesis, error) {
+	type Container struct {
+		Info *Genesis `json:"genesis"`
+	}
+	resp := &Container{}
+	err := c.call(ctx, "genesis", nil, resp)
+	return resp.Info, err
+}
+
+// GetBlockInfo corresponds to the Tendermint Block call. It returns the
+// BlockInfo for the block at the given height, or the latest block if the
+// height is 0 or negative.
+func (c *Client) GetBlockInfo(ctx context.Context, height int64) (*BlockInfo, error) {
+	params := opts{}
+	if height > 0 {
+		params["height"] = height
+	}
+	resp := &BlockInfo{}
+	err := c.call(ctx, "block", params, resp)
+	return resp, err
+}
+
+// GetBlockMetas corresponds to the Tendermint Blockchain call. It returns the
+// BlockMeta info in descending order for all the blocks within the given
+// [minHeight, maxHeight] range. At most 20 BlockMetas will be returned.
+//
+// If minHeight is less than 0 or negative, it defaults to 1. And if maxHeight
+// is 0, it defaults to the height of the current blockchain, i.e. the latest
+// block.
+func (c *Client) GetBlockMetas(ctx context.Context, minHeight int64, maxHeight int64) ([]*BlockMeta, error) {
+	if minHeight <= 0 {
+		minHeight = 1
+	}
+	resp := []*BlockMeta{}
+	err := c.call(ctx, "blockchain", opts{"minHeight": minHeight, "maxHeight": maxHeight}, resp)
+	return resp, err
+}
+
+// GetCommitInfo corresponds to the Tendermint Commit call. It returns the
+// CommitInfo for the block at the given height, or the latest block if the
+// height is 0 or negative.
+func (c *Client) GetCommitInfo(ctx context.Context, height int64) (*CommitInfo, error) {
+	params := opts{}
+	if height > 0 {
+		params["height"] = height
+	}
+	resp := &CommitInfo{}
+	err := c.call(ctx, "commit", params, resp)
+	return resp, err
+}
+
 // IsNodeReachable corresponds to the Tendermint Health call. It can be used as
 // a ping to test whether the Tendermint node is still up and running.
 func (c *Client) IsNodeReachable(ctx context.Context) (bool, error) {
-	resp, err := c.call(ctx, "health", opts{})
-	if err != nil {
-		return false, err
+	var resp struct{}
+	err := c.call(ctx, "health", nil, resp)
+	return err != nil, err
+}
+
+// NetInfo corresponds to the Tendermint NetInfo call.
+func (c *Client) NetInfo(ctx context.Context) (*NetInfo, error) {
+	resp := &NetInfo{}
+	err := c.call(ctx, "net_info", nil, resp)
+	return resp, err
+}
+
+// Status corresponds to the Tendermint Status call. It returns a bunch of
+// useful info relating to the current state of the Tendermint node.
+func (c *Client) Status(ctx context.Context) (*Status, error) {
+	resp := &Status{}
+	err := c.call(ctx, "status", nil, resp)
+	return resp, err
+}
+
+// Transaction corresponds to the Tendermint Tx call. It returns a Transaction
+// matching the given transaction hash.
+func (c *Client) Transaction(ctx context.Context, hash []byte, prove bool) (*Transaction, error) {
+	resp := &Transaction{}
+	err := c.call(ctx, "tx", opts{"hash": hash, "prove": prove}, resp)
+	return resp, err
+}
+
+// UnconfirmedTransactions corresponds to the Tendermint UnconfirmedTxs call. It
+// returns a list of transaction data for unconfirmed transactions up to the
+// given limit. If the given limit is less than 1 or greater than 100, then the
+// number of returned transactions defaults to 30.
+func (c *Client) UnconfirmedTransactions(ctx context.Context, limit int) ([][]byte, error) {
+	type Unconfirmed struct {
+		Count        int      `json:"n_txs"`
+		Transactions [][]byte `json:"txs"`
 	}
-	return string(resp) == "{}", nil
+	resp := &Unconfirmed{}
+	err := c.call(ctx, "unconfirmed_txs", opts{"limit": limit}, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Transactions, nil
+}
+
+// UnconfirmedTransactionsCount corresponds to the Tendermint NumUnconfirmedTxs
+// call. It returns the number of unconfirmed transactions.
+func (c *Client) UnconfirmedTransactionsCount(ctx context.Context) (int, error) {
+	type Unconfirmed struct {
+		Count int `json:"n_txs"`
+	}
+	resp := &Unconfirmed{}
+	err := c.call(ctx, "num_unconfirmed_txs", nil, resp)
+	if err != nil {
+		return 0, err
+	}
+	return resp.Count, nil
+}
+
+// Validators corresponds to the Tendermint Validators call. It returns the
+// validator set at the given height, or the latest block if the height is 0 or
+// negative.
+func (c *Client) Validators(ctx context.Context, height int) (*ValidatorSet, error) {
+	params := opts{}
+	if height > 0 {
+		params["height"] = height
+	}
+	resp := &ValidatorSet{}
+	err := c.call(ctx, "validators", params, resp)
+	return resp, err
 }
 
 // The call method encodes the given JSON-RPC 2.0 call over the underlying
 // WebSocket connection.
-func (c *Client) call(ctx context.Context, method string, params opts) (json.RawMessage, error) {
+func (c *Client) call(ctx context.Context, method string, params opts, resp interface{}) error {
 	body, err := json.Marshal(params)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	id := c.nextID()
 	req := &request{
@@ -171,32 +314,35 @@ func (c *Client) call(ctx context.Context, method string, params opts) (json.Raw
 	// be closed.
 	select {
 	case c.pending <- req:
-		fmt.Printf(".. Made %s call\n", method)
+		log.Printf("tendermint/rpc: called %s", method)
 		ch := make(chan *response, 1)
-		c.Lock()
+		c.mu.Lock()
 		c.results[id] = ch
-		c.Unlock()
+		c.mu.Unlock()
 		// Once the request has been put onto the write queue, we select on
 		// either receiving the response, or the underlying connection being
 		// closed.
 		select {
 		case resp := <-ch:
-			c.Lock()
+			c.mu.Lock()
 			delete(c.results, id)
-			c.Unlock()
+			c.mu.Unlock()
 			if resp.Error != nil {
-				return nil, fmt.Errorf(
+				return fmt.Errorf(
 					"rpc: got error response from %s call to Tendermint: %s",
 					method, resp.Error)
 			}
-			return resp.Result, nil
+			if resp != nil {
+				return json.Unmarshal(resp.Result, resp)
+			}
+			return nil
 		case <-c.closed:
-			return nil, ErrClosed
+			return ErrClosed
 		}
 	case <-c.closed:
-		return nil, ErrClosed
+		return ErrClosed
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return ctx.Err()
 	}
 }
 
@@ -219,23 +365,23 @@ func (c *Client) closeWithError(err error) error {
 }
 
 func (c *Client) handleError(err error) {
-	log.Printf("Got error: %s", err)
-	c.Lock()
+	log.Printf("tendermint/rpc: got error: %s", err)
+	c.mu.Lock()
 	c.closeWithError(err)
-	c.Unlock()
+	c.mu.Unlock()
 }
 
 func (c *Client) isClosed() bool {
-	c.RLock()
-	defer c.RUnlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.connClosed
 }
 
 func (c *Client) nextID() uint64 {
-	c.Lock()
+	c.mu.Lock()
 	c.lastID++
 	next := c.lastID
-	c.Unlock()
+	c.mu.Unlock()
 	return next
 }
 
@@ -257,12 +403,13 @@ func (c *Client) readLoop() {
 			c.handleError(err)
 			return
 		}
-		c.RLock()
+		c.mu.RLock()
 		ch, exists := c.results[resp.ID]
-		c.RUnlock()
+		c.mu.RUnlock()
 		if !exists {
-			// TODO(tav): We probably don't want to actually quit here.
-			log.Fatalf("ERROR: received unexpected response ID '%d' for a JSON-RPC call", resp.ID)
+			log.Printf("tendermint/rpc: received unexpected response ID: %d", resp.ID)
+			c.Close()
+			return
 		}
 		ch <- resp
 	}
@@ -292,6 +439,8 @@ func (c *Client) writeLoop(pings chan string) {
 				c.handleError(err)
 				return
 			}
+		case <-c.closed:
+			return
 		}
 	}
 }

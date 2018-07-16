@@ -44,7 +44,7 @@ func (handlers *Handlers) CreateOrder(ctx *gin.Context) {
 }
 
 func (handlers *Handlers) CreateOrderWithModel(ctx *gin.Context, o msg.Order) {
-	success, err := handlers.OrderService.CreateOrder(ctx, o)
+	success, err := handlers.OrderService.CreateOrder(ctx, &o)
 	if success {
 		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess})
 	} else {
