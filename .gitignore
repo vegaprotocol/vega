@@ -1,7 +1,6 @@
 # Vega specific entries
 cover.out
 coverage.html
-log/
 pkg/
 vendor
 vega
