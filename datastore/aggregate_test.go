@@ -22,6 +22,7 @@ func generateRandomOrderAndTrade(price, size, timestamp uint64) *TestOrderAndTra
 			Order: msg.Order{
 				Id:     orderId,
 				Market: testMarket,
+				Party: testParty,
 			},
 		},
 		&Trade{
@@ -40,7 +41,7 @@ func generateRandomOrderAndTrade(price, size, timestamp uint64) *TestOrderAndTra
 }
 
 func TestMemTradeStore_GetCandles(t *testing.T) {
-	var memStore = NewMemStore([]string{testMarket})
+	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
 	var newOrderStore = NewOrderStore(&memStore)
 	var newTradeStore = NewTradeStore(&memStore)
 

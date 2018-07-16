@@ -31,7 +31,7 @@ type OrderStore interface {
 }
 
 type StoreProvider interface {
-	Init(markets []string)
+	Init(markets, parties []string)
 	TradeStore() TradeStore
 	OrderStore() OrderStore
 }
@@ -42,8 +42,8 @@ type MemoryStoreProvider struct {
 	orderStore OrderStore
 }
 
-func (m *MemoryStoreProvider) Init(markets []string) {
-	m.memStore = NewMemStore(markets)
+func (m *MemoryStoreProvider) Init(markets, parties []string) {
+	m.memStore = NewMemStore(markets, parties)
 	m.tradeStore = NewTradeStore(&m.memStore)
 	m.orderStore = NewOrderStore(&m.memStore)
 }

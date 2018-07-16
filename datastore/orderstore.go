@@ -52,6 +52,11 @@ func (store *memOrderStore) Post(order Order) error {
 	if err := store.marketExists(order.Market); err != nil {
 		return err
 	}
+
+	if err := store.partyExists(order.Party); err != nil {
+		return err
+	}
+
 	if _, exists := store.store.markets[order.Market].orders[order.Id]; exists {
 		return fmt.Errorf("order exists in memstore: %s", order.Id)
 	}
@@ -67,6 +72,10 @@ func (store *memOrderStore) Post(order Order) error {
 
 	// Insert new order into slice of orders ordered by timestamp
 	store.store.markets[order.Market].ordersByTimestamp = append(store.store.markets[order.Market].ordersByTimestamp, newOrder)
+
+
+	// Insert new order into Party map of slices of orders
+	store.store.parties[order.Party].ordersByTimestamp = append(store.store.parties[order.Party].ordersByTimestamp, newOrder)
 	return nil
 }
 
@@ -95,7 +104,7 @@ func (store *memOrderStore) Delete(order Order) error {
 	// Remove from orders map
 	delete(store.store.markets[order.Market].orders, order.Id)
 
-	// Remove from ordersByTimestamp
+	// Remove from MARKET ordersByTimestamp
 	var pos uint64
 	for idx, v := range store.store.markets[order.Market].ordersByTimestamp {
 		if v.order.Id == order.Id {
@@ -106,6 +115,17 @@ func (store *memOrderStore) Delete(order Order) error {
 	store.store.markets[order.Market].ordersByTimestamp =
 		append(store.store.markets[order.Market].ordersByTimestamp[:pos], store.store.markets[order.Market].ordersByTimestamp[pos+1:]...)
 
+	// Remove from PARTIES ordersByTimestamp
+	pos = 0
+	for idx, v := range store.store.parties[order.Party].ordersByTimestamp {
+		if v.order.Id == order.Id {
+			pos = uint64(idx)
+			break
+		}
+	}
+	store.store.parties[order.Party].ordersByTimestamp =
+		append(store.store.parties[order.Party].ordersByTimestamp[:pos], store.store.parties[order.Party].ordersByTimestamp[pos+1:]...)
+
 	return nil
 }
 
@@ -114,6 +134,13 @@ func (store *memOrderStore) Delete(order Order) error {
 func (store *memOrderStore) marketExists(market string) error {
 	if !store.store.marketExists(market) {
 		return NotFoundError{fmt.Errorf("could not find market %s", market)}
+	}
+	return nil
+}
+
+func (store *memOrderStore) partyExists(party string) error {
+	if !store.store.partyExists(party) {
+		return NotFoundError{fmt.Errorf("could not find party %s", party)}
 	}
 	return nil
 }

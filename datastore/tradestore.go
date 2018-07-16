@@ -84,7 +84,12 @@ func (store *memTradeStore) Post(trade Trade) error {
 	aggressiveOrder.trades = append(aggressiveOrder.trades, newTrade)
 	passiveOrder.trades = append(passiveOrder.trades, newTrade)
 
+	// update tradesByTimestamp for MARKETS
 	store.store.markets[trade.Market].tradesByTimestamp = append(store.store.markets[trade.Market].tradesByTimestamp, newTrade)
+
+	// update party for both aggressive and passive parties
+	store.store.parties[newTrade.aggressive.order.Party].tradesByTimestamp = append(store.store.parties[newTrade.aggressive.order.Party].tradesByTimestamp, newTrade)
+	store.store.parties[newTrade.passive.order.Party].tradesByTimestamp = append(store.store.parties[newTrade.passive.order.Party].tradesByTimestamp, newTrade)
 	return nil
 }
 
@@ -120,6 +125,31 @@ func (store *memTradeStore) Delete(trade Trade) error {
 	}
 	store.store.markets[trade.Market].tradesByTimestamp =
 		append(store.store.markets[trade.Market].tradesByTimestamp[:pos], store.store.markets[trade.Market].tradesByTimestamp[pos+1:]...)
+
+
+	fmt.Printf("DELETE TRADE: %+v\n", trade)
+	// Remove from PARTIES tradesByTimestamp for BUYER
+	pos = 0
+	for idx, v := range store.store.parties[trade.Buyer].tradesByTimestamp {
+		if v.trade.Id == trade.Id {
+			pos = uint64(idx)
+			break
+		}
+	}
+	store.store.parties[trade.Buyer].tradesByTimestamp =
+		append(store.store.parties[trade.Buyer].tradesByTimestamp[:pos], store.store.parties[trade.Buyer].tradesByTimestamp[pos+1:]...)
+
+	// Remove from PARTIES tradesByTimestamp for SELLER
+	pos = 0
+	for idx, v := range store.store.parties[trade.Seller].tradesByTimestamp {
+		if v.trade.Id == trade.Id {
+			pos = uint64(idx)
+			break
+		}
+	}
+	store.store.parties[trade.Seller].tradesByTimestamp =
+		append(store.store.parties[trade.Seller].tradesByTimestamp[:pos], store.store.parties[trade.Seller].tradesByTimestamp[pos+1:]...)
+
 	return nil
 }
 
