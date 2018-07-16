@@ -69,10 +69,10 @@ func (r *MyOrderResolver) Price(ctx context.Context, obj *msg.Order) (int, error
 	return int(obj.Price), nil
 }
 func (r *MyOrderResolver) Type(ctx context.Context, obj *msg.Order) (OrderType, error) {
-	return OrderType(obj.Type), nil
+	return OrderType(obj.Type.String()), nil
 }
 func (r *MyOrderResolver) Side(ctx context.Context, obj *msg.Order) (Side, error) {
-	return Side(obj.Side), nil
+	return Side(obj.Side.String()), nil
 }
 func (r *MyOrderResolver) Market(ctx context.Context, obj *msg.Order) (Market, error) {
 	return Market { obj.Market }, nil
@@ -129,7 +129,7 @@ func (r *MyTradeResolver) Market(ctx context.Context, obj *msg.Trade) (Market, e
 	return Market{ obj.Market }, nil
 }
 func (r *MyTradeResolver) Aggressor(ctx context.Context, obj *msg.Trade) (Side, error) {
-	return Side(obj.Aggressor), nil
+	return Side(obj.Aggressor.String()), nil
 }
 func (r *MyTradeResolver) Price(ctx context.Context, obj *msg.Trade) (int, error) {
 	return int(obj.Price), nil

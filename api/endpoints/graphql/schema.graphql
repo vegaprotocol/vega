@@ -29,17 +29,17 @@ type Market {
 enum OrderType {
 
   # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
-  FOK, #FILL_OR_KILL,
+  FOK,
 
   # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-  ENE, #EXECUTE_AND_ELIMINATE,
+  ENE,
 
   # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
-  GTC, #GOOD_TILL_CANCELLED,
+  GTC,
 
   # This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
   # NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
-  GTT, #GOOD_TILL_TIME,
+  GTT,
 }
 
 
