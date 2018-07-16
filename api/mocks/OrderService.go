@@ -13,18 +13,18 @@ type OrderService struct {
 }
 
 // CreateOrder provides a mock function with given fields: ctx, order
-func (_m *OrderService) CreateOrder(ctx context.Context, order msg.Order) (bool, error) {
+func (_m *OrderService) CreateOrder(ctx context.Context, order *msg.Order) (bool, error) {
 	ret := _m.Called(ctx, order)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, msg.Order) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *msg.Order) bool); ok {
 		r0 = rf(ctx, order)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, msg.Order) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *msg.Order) error); ok {
 		r1 = rf(ctx, order)
 	} else {
 		r1 = ret.Error(1)

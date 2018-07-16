@@ -1,7 +1,7 @@
 type: google.api.Service
 config_version: 3
 
-name: api.grpc.trading
+name: grpc.trading
 title: Vega Trading API
 
 apis:
@@ -11,5 +11,7 @@ http:
   rules:
   - selector: grpc.trading.CreateOrder
     post: '/1.0/orders'
+    body: "*"
   - selector: grpc.trading.GetOrderBookDepth
     get: '/1.0/orderBookDepth'
+
