@@ -5,20 +5,12 @@ import (
 	"vega/proto"
 )
 
-type PriceHistory []*tradeInfo
-
-type tradeInfo struct {
-	timestamp uint64
-	price     uint64
-	size      uint64
-}
-
 func newCandle() *msg.Candle {
 	return &msg.Candle{}
 }
 
-func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
-	if err := t.marketExists(market); err != nil {
+func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
+	if err := store.marketExists(market); err != nil {
 		return msg.Candles{}, err
 	}
 
@@ -34,19 +26,19 @@ func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, inte
 	found := false
 	idx := 0
 
-	for tidx, trade := range t.store.markets[market].priceHistory {
+	for tidx, t := range store.store.markets[market].tradesByTimestamp {
 		// iterate trades until reached ones of interest
-		if trade.timestamp < sinceBlock {
+		if t.trade.Timestamp < sinceBlock {
 			continue
 		}
 
 		// OK I have now only trades I need
-		if candles[idx].OpenBlockNumber <= trade.timestamp && trade.timestamp < candles[idx].CloseBlockNumber {
-			updateCandle(candles, idx, trade)
+		if candles[idx].OpenBlockNumber <= t.trade.Timestamp && t.trade.Timestamp < candles[idx].CloseBlockNumber {
+			updateCandle(candles, idx, &t.trade)
 		} else {
 			// if current trade is not fit for current candle, close the candle with previous trade if non-empty candle
 			if candles[idx].Volume != 0 {
-				candles[idx].Close = t.store.markets[market].priceHistory[tidx-1].price
+				candles[idx].Close = store.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
 			}
 			// proceed to next candle
 			idx++
@@ -57,8 +49,8 @@ func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, inte
 				if idx > int(nOfCandles)-1 {
 					break
 				}
-				if candles[idx].OpenBlockNumber <= trade.timestamp && trade.timestamp < candles[idx].CloseBlockNumber {
-					updateCandle(candles, idx, trade)
+				if candles[idx].OpenBlockNumber <= t.trade.Timestamp && t.trade.Timestamp < candles[idx].CloseBlockNumber {
+					updateCandle(candles, idx, &t.trade)
 					found = true
 				} else {
 					idx++
@@ -76,16 +68,16 @@ func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, inte
 	return output, nil
 }
 
-func updateCandle(candles []*msg.Candle, idx int, trade *tradeInfo) {
+func updateCandle(candles []*msg.Candle, idx int, trade *Trade) {
 	if candles[idx].Volume == 0 {
-		candles[idx].Open = trade.price
+		candles[idx].Open = trade.Price
 	}
-	candles[idx].Volume += trade.size
-	if candles[idx].High < trade.price {
-		candles[idx].High = trade.price
+	candles[idx].Volume += trade.Size
+	if candles[idx].High < trade.Price {
+		candles[idx].High = trade.Price
 	}
-	if candles[idx].Low > trade.price || candles[idx].Low == 0 {
-		candles[idx].Low = trade.price
+	if candles[idx].Low > trade.Price || candles[idx].Low == 0 {
+		candles[idx].Low = trade.Price
 	}
 	//fmt.Printf("updated: %+v\n", candles[idx])
 }

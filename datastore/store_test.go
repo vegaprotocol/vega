@@ -21,11 +21,11 @@ func TestMemoryStoreProvider_Init(t *testing.T) {
 	})
 	assert.Nil(t, err)
 
-	order, err := memStoreProvider.OrderStore().Get("market", "order-id")
+	order, err := memStoreProvider.OrderStore().GetByMarketAndId("market", "order-id")
 	assert.Nil(t, err)
 	assert.Equal(t, uint64(73921), order.Price)
 
-	trade, err := memStoreProvider.TradeStore().Get("market", "trade-id")
+	trade, err := memStoreProvider.TradeStore().GetByMarketAndId("market", "trade-id")
 	assert.Nil(t, err)
 	assert.Equal(t, uint64(23489), trade.Price)
 }

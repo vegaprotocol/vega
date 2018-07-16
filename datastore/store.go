@@ -3,14 +3,10 @@ package datastore
 import "vega/proto"
 
 type TradeStore interface {
-	// GetAll retrieves a trades for a given market.
-	// If market == "" it will return trades for all markets in the store.
-	// If party == "" it will return trades for all parties.
-	GetAll(market string, params GetParams) ([]Trade, error)
+	// GetByMarket retrieves trades for a given market.
+	GetByMarket(market string, _ GetParams) ([]Trade, error)
 	// Get retrieves a trade for a given id.
-	Get(market string, id string) (Trade, error)
-	// GetByOrderId retrieves all trades for a given order id.
-	GetByOrderId(market string, orderId string, params GetParams) ([]Trade, error)
+	GetByMarketAndId(market string, id string) (Trade, error)
 	// Post creates a new trade in the store.
 	Post(r Trade) error
 	// Put updates an existing trade in the store.
@@ -22,12 +18,10 @@ type TradeStore interface {
 }
 
 type OrderStore interface {
-	// GetAll retrieves all orders for a given market.
-	// If market == "" it will return orders for all markets in the store.
-	// If party == "" it will return orders for all parties.
-	GetAll(market string, party string, params GetParams) ([]Order, error)
+	// GetByMarket retrieves all orders for a given market.
+	GetByMarket(market string, params GetParams) ([]Order, error)
 	// Get retrieves an order for a given market and id.
-	Get(market string, id string) (Order, error)
+	GetByMarketAndId(market string, id string) (Order, error)
 	// Post creates a new order in the store.
 	Post(r Order) error
 	// Put updates an existing order in the store.
