@@ -13,7 +13,6 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 
 	"github.com/golang/protobuf/proto"
-
 )
 
 type Blockchain struct {

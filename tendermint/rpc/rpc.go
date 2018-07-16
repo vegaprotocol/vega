@@ -368,7 +368,7 @@ func (c *Client) closeWithError(err error) error {
 
 func (c *Client) handleError(err error) {
 	log.Errorf("Got error: %s", err)
-	c.Lock()
+	c.mu.Lock()
 	c.closeWithError(err)
 	c.mu.Unlock()
 }
@@ -409,7 +409,7 @@ func (c *Client) readLoop() {
 		ch, exists := c.results[resp.ID]
 		c.mu.RUnlock()
 		if !exists {
-			log.Printf("tendermint/rpc: received unexpected response ID: %d", resp.ID)
+			log.Infof("Received unexpected response ID: %d", resp.ID)
 			c.Close()
 			return
 		}
