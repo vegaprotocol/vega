@@ -16,12 +16,9 @@ type OrderType string
 
 const (
 	// The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
-	OrderTypeFok OrderType = "FOK" // FILL_OR_KILL,
-	// The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-	OrderTypeEne OrderType = "ENE" // EXECUTE_AND_ELIMINATE,
-	// This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
-	OrderTypeGtc OrderType = "GTC" // GOOD_TILL_CANCELLED,
-	// This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+	OrderTypeFok OrderType = "FOK" // The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
+	OrderTypeEne OrderType = "ENE" // This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
+	OrderTypeGtc OrderType = "GTC" // This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
 	// NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
 	OrderTypeGtt OrderType = "GTT"
 )

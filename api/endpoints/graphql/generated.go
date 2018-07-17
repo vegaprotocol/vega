@@ -45,6 +45,8 @@ type Resolvers interface {
 	Query_trades(ctx context.Context) ([]msg.Trade, error)
 	Query_candles(ctx context.Context) ([]msg.Candle, error)
 
+	Subscription_tradeCandles(ctx context.Context, market string, interval int) (<-chan []msg.Candle, error)
+
 	Trade_market(ctx context.Context, obj *msg.Trade) (Market, error)
 
 	Trade_aggressor(ctx context.Context, obj *msg.Trade) (Side, error)
@@ -57,6 +59,7 @@ type ResolverRoot interface {
 	Candle() CandleResolver
 	Order() OrderResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 	Trade() TradeResolver
 }
 type CandleResolver interface {
@@ -75,6 +78,7 @@ type OrderResolver interface {
 	Market(ctx context.Context, obj *msg.Order) (Market, error)
 	Size(ctx context.Context, obj *msg.Order) (int, error)
 	Remaining(ctx context.Context, obj *msg.Order) (int, error)
+
 	Timestamp(ctx context.Context, obj *msg.Order) (int, error)
 }
 type QueryResolver interface {
@@ -82,8 +86,12 @@ type QueryResolver interface {
 	Trades(ctx context.Context) ([]msg.Trade, error)
 	Candles(ctx context.Context) ([]msg.Candle, error)
 }
+type SubscriptionResolver interface {
+	TradeCandles(ctx context.Context, market string, interval int) (<-chan []msg.Candle, error)
+}
 type TradeResolver interface {
 	Market(ctx context.Context, obj *msg.Trade) (Market, error)
+
 	Aggressor(ctx context.Context, obj *msg.Trade) (Side, error)
 	Price(ctx context.Context, obj *msg.Trade) (int, error)
 	Size(ctx context.Context, obj *msg.Trade) (int, error)
@@ -162,6 +170,10 @@ func (s shortMapper) Query_candles(ctx context.Context) ([]msg.Candle, error) {
 	return s.r.Query().Candles(ctx)
 }
 
+func (s shortMapper) Subscription_tradeCandles(ctx context.Context, market string, interval int) (<-chan []msg.Candle, error) {
+	return s.r.Subscription().TradeCandles(ctx, market, interval)
+}
+
 func (s shortMapper) Trade_market(ctx context.Context, obj *msg.Trade) (Market, error) {
 	return s.r.Trade().Market(ctx, obj)
 }
@@ -211,7 +223,31 @@ func (e *executableSchema) Mutation(ctx context.Context, op *query.Operation) *g
 }
 
 func (e *executableSchema) Subscription(ctx context.Context, op *query.Operation) func() *graphql.Response {
-	return graphql.OneShot(graphql.ErrorResponse(ctx, "subscriptions are not supported"))
+	ec := executionContext{graphql.GetRequestContext(ctx), e.resolvers}
+
+	next := ec._Subscription(ctx, op.Selections)
+	if ec.Errors != nil {
+		return graphql.OneShot(&graphql.Response{Data: []byte("null"), Errors: ec.Errors})
+	}
+
+	var buf bytes.Buffer
+	return func() *graphql.Response {
+		buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
+			data.MarshalGQL(&buf)
+			return buf.Bytes()
+		})
+
+		return &graphql.Response{
+			Data:   buf,
+			Errors: ec.Errors,
+		}
+	}
 }
 
 type executionContext struct {
@@ -972,6 +1008,77 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	return ec.___Type(ctx, field.Selections, res)
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Subscription(ctx context.Context, sel []query.Selection) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.Doc, sel, subscriptionImplementors, ec.Variables)
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "tradeCandles":
+		return ec._Subscription_tradeCandles(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
+}
+
+func (ec *executionContext) _Subscription_tradeCandles(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := field.Args["market"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["market"] = arg0
+	var arg1 int
+	if tmp, ok := field.Args["interval"]; ok {
+		var err error
+		arg1, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["interval"] = arg1
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{Field: field})
+	results, err := ec.resolvers.Subscription_tradeCandles(ctx, args["market"].(string), args["interval"].(int))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		var out graphql.OrderedMap
+		out.Add(field.Alias, func() graphql.Marshaler {
+			arr1 := graphql.Array{}
+			for idx1 := range res {
+				arr1 = append(arr1, func() graphql.Marshaler {
+					rctx := graphql.GetResolverContext(ctx)
+					rctx.PushIndex(idx1)
+					defer rctx.Pop()
+					return ec._Candle(ctx, field.Selections, &res[idx1])
+				}())
+			}
+			return arr1
+		}())
+		return &out
+	}
 }
 
 var tradeImplementors = []string{"Trade"}
@@ -1927,17 +2034,17 @@ type Market {
 enum OrderType {
 
   # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
-  FOK, #FILL_OR_KILL,
+  FOK,
 
   # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-  ENE, #EXECUTE_AND_ELIMINATE,
+  ENE,
 
   # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
-  GTC, #GOOD_TILL_CANCELLED,
+  GTC,
 
   # This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
   # NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
-  GTT, #GOOD_TILL_TIME,
+  GTT,
 }
 
 
@@ -2037,11 +2144,13 @@ type Candle {
 #
 #
 
-
 #type MyMutation {
 #  order(market: String, Price: Int, type: OrderType, side: Side, expiry: Int): Order
 #}
 
+type Subscription {
+  tradeCandles(market: String!, interval: Int!): [Candle!]!
+}
 
 type Query {
   orders : [Order!]!
@@ -2050,7 +2159,8 @@ type Query {
 }
 
 schema {
-  query: Query
+  query: Query,
+  subscription: Subscription
 }
 
 

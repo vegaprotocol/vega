@@ -139,11 +139,13 @@ type Candle {
 #
 #
 
-
 #type MyMutation {
 #  order(market: String, Price: Int, type: OrderType, side: Side, expiry: Int): Order
 #}
 
+type Subscription {
+  tradeCandles(market: String!, interval: Int!): [Candle!]!
+}
 
 type Query {
   orders : [Order!]!
@@ -152,7 +154,8 @@ type Query {
 }
 
 schema {
-  query: Query
+  query: Query,
+  subscription: Subscription
 }
 
 

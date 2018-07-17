@@ -28,10 +28,10 @@ func (g *graphServer) Start() {
 	var port = 3006
 	fmt.Printf("Starting GraphQL based server on port %d...\n", port)
 	var addr = fmt.Sprintf(":%d", port)
-
+	var resolverRoot = NewResolverRoot(g.orderService, g.tradeService)
 	http.Handle("/", handler.Playground("Orders", "/query"))
 	http.Handle("/query", handler.GraphQL(
-		NewExecutableSchema(NewResolverRoot(g.orderService, g.tradeService)),
+		NewExecutableSchema(resolverRoot),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			// send this panic somewhere    ß
 			log.Print(err)
