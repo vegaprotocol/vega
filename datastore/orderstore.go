@@ -91,12 +91,8 @@ func (store *memOrderStore) GetByPartyAndId(party string, id string) (Order, err
 
 // Post creates a new order in the memory store.
 func (store *memOrderStore) Post(order Order) error {
-	// TODO: validation of incoming order
-	if err := store.marketExists(order.Market); err != nil {
-		return err
-	}
-
-	if err := store.partyExists(order.Party); err != nil {
+	if err := store.validate(&order); err != nil {
+		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
@@ -104,7 +100,6 @@ func (store *memOrderStore) Post(order Order) error {
 		return fmt.Errorf("order exists in memstore: %s", order.Id)
 	}
 
-	fmt.Println("Adding new order with ID ", order.Id)
 	newOrder := &memOrder{
 		trades: make([]*memTrade, 0),
 		order:  order,
@@ -124,23 +119,23 @@ func (store *memOrderStore) Post(order Order) error {
 
 // Put updates an existing order in the memory store.
 func (store *memOrderStore) Put(order Order) error {
-	// TODO: validation of incoming order
-	if err := store.marketExists(order.Market); err != nil {
+	if err := store.validate(&order); err != nil {
+		fmt.Printf("error: %+v\n", err)
 		return err
 	}
+
 	if _, exists := store.store.markets[order.Market].orders[order.Id]; !exists {
 		return fmt.Errorf("order not found in memstore: %s", order.Id)
 	}
 
-	fmt.Println("Updating order with ID ", order.Id)
 	store.store.markets[order.Market].orders[order.Id].order = order
 	return nil
 }
 
 // Delete removes an order from the memory store.
 func (store *memOrderStore) Delete(order Order) error {
-	err := store.marketExists(order.Market)
-	if err != nil {
+	if err := store.validate(&order); err != nil {
+		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
@@ -185,5 +180,17 @@ func (store *memOrderStore) partyExists(party string) error {
 	if !store.store.partyExists(party) {
 		return NotFoundError{fmt.Errorf("could not find party %s", party)}
 	}
+	return nil
+}
+
+func (store *memOrderStore) validate(order *Order) error {
+	if err := store.marketExists(order.Market); err != nil {
+		return err
+	}
+
+	if err := store.partyExists(order.Party); err != nil {
+		return err
+	}
+
 	return nil
 }

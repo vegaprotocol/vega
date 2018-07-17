@@ -94,6 +94,7 @@ func (store *memTradeStore) GetByPartyAndId(party string, id string) (Trade, err
 // Post creates a new trade in the memory store.
 func (store *memTradeStore) Post(trade Trade) error {
 	if err := store.validate(&trade); err != nil {
+		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
