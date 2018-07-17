@@ -53,8 +53,25 @@ func (r *MyQueryResolver) Candles(ctx context.Context) ([]msg.Candle, error) {
 	since := nowT.Add(-5 * time.Minute)
 	interval := uint64(60)
 
-	_, err := r.tradeService.GetCandlesChart(ctx,"BTC/DEC18", since, interval)
-	return nil, err
+	res, err := r.tradeService.GetCandlesChart(ctx,"BTC/DEC18", since, interval)
+	if err != nil {
+		return nil, err
+	}
+
+	candles := make([]msg.Candle, 0)
+	for _, v := range res.Candles {
+		candles = append(candles, msg.Candle{
+			Volume: v.Volume,
+			High: v.High,
+			Low: v.Low,
+			Date: v.Date,
+			Open: v.Open,
+			Close: v.Close,
+			OpenBlockNumber: v.OpenBlockNumber,
+			CloseBlockNumber: v.CloseBlockNumber,
+		})
+	}
+	return candles, err
 }
 
 // END: Query Resolver
