@@ -186,19 +186,19 @@ func TestMemStore_DeleteOrderFromNoneExistentMarket(t *testing.T) {
 
 
 func TestMemStore_GetOrderForNoneExistentMarket(t *testing.T) {
-	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
+	var memStore = NewMemStore([]string{testMarket}, []string{testPartyA, testPartyB})
 	var newOrderStore = NewOrderStore(&memStore)
 	_, err := newOrderStore.GetByMarketAndId("UNKNOWN", "ID")
 	assert.Error(t, err, "market does not exist")
 }
 
 func TestMemStore_PostAndGetTrade(t *testing.T) {
-	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
+	var memStore = NewMemStore([]string{testMarket}, []string{testPartyA, testPartyB})
 	var newOrderStore = NewOrderStore(&memStore)
 	var newTradeStore = NewTradeStore(&memStore)
 
 	var trade = Trade{
-		Trade:   msg.Trade{Market: testMarket},
+		Trade:   msg.Trade{Market: testMarket, Buyer: testPartyA, Seller: testPartyB},
 		AggressiveOrderId: "d41d8cd98f00b204e9800998ecf8427e",
 		PassiveOrderId: "d41d8cd98f00b204e9800998ecf9999e",
 	}
@@ -207,7 +207,7 @@ func TestMemStore_PostAndGetTrade(t *testing.T) {
 		Order: msg.Order{
 			Id:     "d41d8cd98f00b204e9800998ecf9999e",
 			Market: testMarket,
-			Party: testParty,
+			Party: testPartyB,
 		},
 	}
 
@@ -215,7 +215,7 @@ func TestMemStore_PostAndGetTrade(t *testing.T) {
 		Order: msg.Order{
 			Id:     "d41d8cd98f00b204e9800998ecf8427e",
 			Market: testMarket,
-			Party: testParty,
+			Party: testPartyA,
 		},
 	}
 
@@ -451,7 +451,7 @@ func TestMemStore_GetAllOrdersForNoneExistentMarket(t *testing.T) {
 
 func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 	otherMarket := "another"
-	var memStore = NewMemStore([]string{testMarket, otherMarket}, []string{testParty})
+	var memStore = NewMemStore([]string{testMarket, otherMarket}, []string{testPartyA, testPartyB})
 	var newOrderStore = NewOrderStore(&memStore)
 	var newTradeStore = NewTradeStore(&memStore)
 
@@ -462,7 +462,7 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 		Order: msg.Order{
 			Id:     orderIdA,
 			Market: testMarket,
-			Party: testParty,
+			Party: testPartyA,
 		},
 	}
 
@@ -470,7 +470,7 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 		Order: msg.Order{
 			Id:     orderIdB,
 			Market: testMarket,
-			Party: testParty,
+			Party: testPartyB,
 		},
 	}
 
@@ -479,6 +479,8 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 			Id: "c0e8490aa4b1d0071ae8f01cdf45c6aa",
 			Price: 1000,
 			Market: testMarket,
+			Buyer: testPartyA,
+			Seller: testPartyB,
 		},
 		PassiveOrderId: orderIdA,
 		AggressiveOrderId: orderIdB,
@@ -488,6 +490,8 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 			Id: "d41d8cd98fsb204e9800998ecf8427e",
 			Price: 2000,
 			Market: testMarket,
+			Buyer: testPartyA,
+			Seller: testPartyB,
 		},
 		PassiveOrderId: orderIdA,
 		AggressiveOrderId: orderIdB,
@@ -519,7 +523,7 @@ func TestMemStore_GetAllTradesForNoneExistentMarket(t *testing.T) {
 }
 
 func TestMemStore_PutTrade(t *testing.T) {
-	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
+	var memStore = NewMemStore([]string{testMarket}, []string{testPartyA, testPartyB})
 	var newOrderStore = NewOrderStore(&memStore)
 	var newTradeStore = NewTradeStore(&memStore)
 
@@ -528,7 +532,7 @@ func TestMemStore_PutTrade(t *testing.T) {
 		Order: msg.Order{
 			Id:     passiveOrderId,
 			Market: testMarket,
-			Party: testParty,
+			Party: testPartyA,
 		},
 	}
 
@@ -537,7 +541,7 @@ func TestMemStore_PutTrade(t *testing.T) {
 		Order: msg.Order{
 			Id:     aggressiveOrderId,
 			Market: testMarket,
-			Party: testParty,
+			Party: testPartyB,
 		},
 	}
 
@@ -547,6 +551,8 @@ func TestMemStore_PutTrade(t *testing.T) {
 			Id: tradeId,
 			Price: 1000,
 			Market: testMarket,
+			Buyer: testPartyA,
+			Seller: testPartyB,
 		},
 		PassiveOrderId: passiveOrderId,
 		AggressiveOrderId: aggressiveOrderId,
@@ -571,6 +577,8 @@ func TestMemStore_PutTrade(t *testing.T) {
 			Id: tradeId,
 			Price: 9000,
 			Market: testMarket,
+			Buyer: testPartyA,
+			Seller: testPartyB,
 		},
 		PassiveOrderId: passiveOrderId,
 		AggressiveOrderId: aggressiveOrderId,

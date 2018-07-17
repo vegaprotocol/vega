@@ -93,10 +93,10 @@ func (store *memTradeStore) GetByPartyAndId(party string, id string) (Trade, err
 
 // Post creates a new trade in the memory store.
 func (store *memTradeStore) Post(trade Trade) error {
-	//TODO: validation of incoming trade
-	if err := store.marketExists(trade.Market); err != nil {
+	if err := store.validate(&trade); err != nil {
 		return err
 	}
+
 	if _, exists := store.store.markets[trade.Market].trades[trade.Id]; exists {
 		return fmt.Errorf("trade exists in memstore: %s", trade.Id)
 	}
@@ -139,7 +139,11 @@ func (store *memTradeStore) Post(trade Trade) error {
 
 // Put updates an existing trade in the store.
 func (store *memTradeStore) Put(trade Trade) error {
-	//TODO: validation of incoming trade
+	if err := store.validate(&trade); err != nil {
+		fmt.Printf("error: %+v\n", err)
+		return err
+	}
+
 	if err := store.marketExists(trade.Market); err != nil {
 		return err
 	}
@@ -154,12 +158,7 @@ func (store *memTradeStore) Put(trade Trade) error {
 
 // Removes trade from the store.
 func (store *memTradeStore) Delete(trade Trade) error {
-	if err := store.marketExists(trade.Market); err != nil {
-		fmt.Printf("error: %+v\n", err)
-		return err
-	}
-
-	if err := store.partyExists(trade.Buyer); err != nil {
+	if err := store.validate(&trade); err != nil {
 		fmt.Printf("error: %+v\n", err)
 		return err
 	}
@@ -207,8 +206,8 @@ func (store *memTradeStore) Delete(trade Trade) error {
 
 // Checks to see if we have a market on the related memory store with given identifier.
 // Returns an error if the market cannot be found and nil otherwise.
-func (t *memTradeStore) marketExists(market string) error {
-	if !t.store.marketExists(market) {
+func (store *memTradeStore) marketExists(market string) error {
+	if !store.store.marketExists(market) {
 		return NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
 	return nil
@@ -218,6 +217,22 @@ func (store *memTradeStore) partyExists(party string) error {
 	if !store.store.partyExists(party) {
 		return NotFoundError{fmt.Errorf("could not find party %s", party)}
 	}
+	return nil
+}
+
+func (store *memTradeStore) validate(trade *Trade) error {
+	if err := store.marketExists(trade.Market); err != nil {
+		return err
+	}
+
+	if err := store.partyExists(trade.Buyer); err != nil {
+		return err
+	}
+
+	if err := store.partyExists(trade.Seller); err != nil {
+		return err
+	}
+
 	return nil
 }
 
