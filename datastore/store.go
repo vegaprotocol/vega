@@ -7,6 +7,10 @@ type TradeStore interface {
 	GetByMarket(market string, _ GetParams) ([]Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByMarketAndId(market string, id string) (Trade, error)
+	// GetByParty retrieves trades for a given party.
+	GetByParty(party string, _ GetParams) ([]Trade, error)
+	// Get retrieves a trade for a given id.
+	GetByPartyAndId(party string, id string) (Trade, error)
 	// Post creates a new trade in the store.
 	Post(r Trade) error
 	// Put updates an existing trade in the store.
@@ -22,6 +26,10 @@ type OrderStore interface {
 	GetByMarket(market string, params GetParams) ([]Order, error)
 	// Get retrieves an order for a given market and id.
 	GetByMarketAndId(market string, id string) (Order, error)
+	// GetByParty retrieves trades for a given party.
+	GetByParty(party string, _ GetParams) ([]Order, error)
+	// Get retrieves a trade for a given id.
+	GetByPartyAndId(party string, id string) (Order, error)
 	// Post creates a new order in the store.
 	Post(r Order) error
 	// Put updates an existing order in the store.

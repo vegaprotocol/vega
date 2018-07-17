@@ -19,7 +19,7 @@ func (store *memTradeStore) GetByMarket(market string, params GetParams) ([]Trad
 	}
 
 	var (
-		pos uint64
+		pos    uint64
 		output []Trade
 	)
 
@@ -47,6 +47,50 @@ func (store *memTradeStore) GetByMarketAndId(market string, id string) (Trade, e
 	return v.trade, nil
 }
 
+// GetByPart retrieves all trades for a given party.
+func (store *memTradeStore) GetByParty(party string, params GetParams) ([]Trade, error) {
+	if err := store.partyExists(party); err != nil {
+		return nil, err
+	}
+
+	var (
+		pos    uint64
+		output []Trade
+	)
+
+	// limit is descending. Get me most recent N orders
+	for i := len(store.store.parties[party].tradesByTimestamp) - 1; i >= 0; i-- {
+		if params.Limit > 0 && pos == params.Limit {
+			break
+		}
+		// TODO: apply filters
+		output = append(output, store.store.parties[party].tradesByTimestamp[i].trade)
+		pos++
+	}
+	return output, nil
+}
+
+// GetByPartyAndId retrieves a trade for a given id.
+func (store *memTradeStore) GetByPartyAndId(party string, id string) (Trade, error) {
+	if err := store.partyExists(party); err != nil {
+		return Trade{}, err
+	}
+
+	var at = -1
+	for idx, trade := range store.store.parties[party].tradesByTimestamp {
+		if trade.trade.Id == id {
+			at = idx
+			break
+		}
+	}
+
+	if at == -1 {
+		return Trade{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
+	}
+	return store.store.parties[party].tradesByTimestamp[at].trade, nil
+}
+
+
 // Post creates a new trade in the memory store.
 func (store *memTradeStore) Post(trade Trade) error {
 	//TODO: validation of incoming trade
@@ -72,9 +116,9 @@ func (store *memTradeStore) Post(trade Trade) error {
 	}
 
 	newTrade := &memTrade{
-		trade: trade,
+		trade:      trade,
 		aggressive: aggressiveOrder,
-		passive: passiveOrder,
+		passive:    passiveOrder,
 	}
 
 	// Add new trade to trades hashtable
@@ -103,7 +147,7 @@ func (store *memTradeStore) Put(trade Trade) error {
 	if _, exists := store.store.markets[trade.Market].trades[trade.Id]; !exists {
 		return fmt.Errorf("trade not found in memstore: %s", trade.Id)
 	}
-		// Perform the update
+	// Perform the update
 	store.store.markets[trade.Market].trades[trade.Id].trade = trade
 	return nil
 }
@@ -111,9 +155,18 @@ func (store *memTradeStore) Put(trade Trade) error {
 // Removes trade from the store.
 func (store *memTradeStore) Delete(trade Trade) error {
 	if err := store.marketExists(trade.Market); err != nil {
+		fmt.Printf("error: %+v\n", err)
 		return err
 	}
-	delete(store.store.markets[trade.Market].trades, trade.Id)
+
+	if err := store.partyExists(trade.Buyer); err != nil {
+		fmt.Printf("error: %+v\n", err)
+		return err
+	}
+
+	if err := store.partyExists(trade.Seller); err != nil {
+		return err
+	}
 
 	// Remove from tradesByTimestamp
 	var pos uint64
@@ -126,8 +179,6 @@ func (store *memTradeStore) Delete(trade Trade) error {
 	store.store.markets[trade.Market].tradesByTimestamp =
 		append(store.store.markets[trade.Market].tradesByTimestamp[:pos], store.store.markets[trade.Market].tradesByTimestamp[pos+1:]...)
 
-
-	fmt.Printf("DELETE TRADE: %+v\n", trade)
 	// Remove from PARTIES tradesByTimestamp for BUYER
 	pos = 0
 	for idx, v := range store.store.parties[trade.Buyer].tradesByTimestamp {
@@ -150,6 +201,7 @@ func (store *memTradeStore) Delete(trade Trade) error {
 	store.store.parties[trade.Seller].tradesByTimestamp =
 		append(store.store.parties[trade.Seller].tradesByTimestamp[:pos], store.store.parties[trade.Seller].tradesByTimestamp[pos+1:]...)
 
+	delete(store.store.markets[trade.Market].trades, trade.Id)
 	return nil
 }
 
@@ -161,3 +213,11 @@ func (t *memTradeStore) marketExists(market string) error {
 	}
 	return nil
 }
+
+func (store *memTradeStore) partyExists(party string) error {
+	if !store.store.partyExists(party) {
+		return NotFoundError{fmt.Errorf("could not find party %s", party)}
+	}
+	return nil
+}
+

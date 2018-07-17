@@ -46,6 +46,49 @@ func (store *memOrderStore) GetByMarketAndId(market string, id string) (Order, e
 	return v.order, nil
 }
 
+func (store *memOrderStore) GetByParty(party string, params GetParams) ([]Order, error) {
+	if err := store.partyExists(party); err != nil {
+		return nil, err
+	}
+
+	var (
+		pos uint64
+		output []Order
+	)
+
+	// limit is descending. Get me most recent N orders
+	for i := len(store.store.parties[party].ordersByTimestamp) - 1; i >= 0; i-- {
+		if params.Limit > 0 && pos == params.Limit {
+			break
+		}
+		// TODO: apply filters
+		output = append(output, store.store.parties[party].ordersByTimestamp[i].order)
+		pos++
+	}
+	return output, nil
+}
+
+// Get retrieves an order for a given market and id.
+func (store *memOrderStore) GetByPartyAndId(party string, id string) (Order, error) {
+	if err := store.partyExists(party); err != nil {
+		return Order{}, err
+	}
+
+	var at = -1
+	for idx, order := range store.store.parties[party].ordersByTimestamp {
+		if order.order.Id == id {
+			at = idx
+			break
+		}
+	}
+
+	if at == -1 {
+		return Order{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
+	}
+	return store.store.parties[party].ordersByTimestamp[at].order, nil
+}
+
+
 // Post creates a new order in the memory store.
 func (store *memOrderStore) Post(order Order) error {
 	// TODO: validation of incoming order

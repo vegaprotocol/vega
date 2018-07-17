@@ -1,7 +1,5 @@
 package datastore
 
-import "github.com/golang/go/src/pkg/fmt"
-
 // MemStore is a RAM based top level structure to hold information about all markets.
 // It is initialised by calling NewMemStore with a list of markets.
 type MemStore struct {
@@ -30,12 +28,6 @@ func NewMemStore(markets, parties []string) MemStore {
 			tradesByTimestamp: []*memTrade{},
 		}
 		memParties[name] = &memParty
-	}
-
-	fmt.Printf("MEMSTORE: %+v", memParties)
-
-	for _, name := range parties {
-		fmt.Printf("MEMSTORE: %+v", memParties[name])
 	}
 
 	return MemStore{

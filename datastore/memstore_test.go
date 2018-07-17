@@ -642,3 +642,118 @@ func TestMemTrade_ToString(t *testing.T) {
 	}
 	assert.Equal(t, "memTrade::trade-id=c0e8490aa4b1d0071ae8f01cdf45c6aa", memTrade.String())
 }
+
+func TestMemOrderStore_Parties(t *testing.T) {
+	// test when store is added they are added to parties map
+	var memStore = NewMemStore([]string{testMarket}, []string{testPartyA, testPartyB})
+	var newOrderStore = NewOrderStore(&memStore)
+	var newTradeStore = NewTradeStore(&memStore)
+
+	passiveOrder := Order{
+		Order: msg.Order{
+			Id:     "d41d8cd98f00b204e9800998ecf9999e",
+			Market: testMarket,
+			Party: testPartyA,
+			Remaining: 0,
+		},
+	}
+
+	aggressiveOrder := Order{
+		Order: msg.Order{
+			Id:     "d41d8cd98f00b204e9800998ecf8427e",
+			Market: testMarket,
+			Party: testPartyB,
+			Remaining: 100,
+		},
+	}
+
+	trade := Trade{
+		Trade: msg.Trade{
+			Id: "trade-id",
+			Price: 9000,
+			Market: testMarket,
+			Buyer: testPartyA,
+			Seller: testPartyB,
+			Aggressor: msg.Side_Buy,
+		},
+		AggressiveOrderId: aggressiveOrder.Order.Id,
+		PassiveOrderId: passiveOrder.Order.Id,
+	}
+
+	err := newOrderStore.Post(passiveOrder)
+	assert.Nil(t, err)
+
+	err = newOrderStore.Post(aggressiveOrder)
+	assert.Nil(t, err)
+
+	err = newTradeStore.Post(trade)
+
+	ordersAtPartyA, err := newOrderStore.GetByParty(testPartyA, GetParams{})
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(ordersAtPartyA))
+
+	ordersAtPartyB, err := newOrderStore.GetByParty(testPartyB, GetParams{})
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(ordersAtPartyB))
+
+	orderAtPartyA, err := newOrderStore.GetByPartyAndId(testPartyA, passiveOrder.Id)
+	assert.Nil(t, err)
+	assert.Equal(t, passiveOrder, orderAtPartyA)
+
+	orderAtPartyB, err := newOrderStore.GetByPartyAndId(testPartyB, aggressiveOrder.Id)
+	assert.Nil(t, err)
+	assert.Equal(t, aggressiveOrder, orderAtPartyB)
+
+	tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, GetParams{})
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(tradesAtPartyA))
+
+	tradesAtPartyB, err := newTradeStore.GetByParty(testPartyB, GetParams{})
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(tradesAtPartyB))
+
+	// update order, parties should also be updated as its a pointer
+	updatedAggressiveOrder := Order{
+		Order: msg.Order{
+			Id:     "d41d8cd98f00b204e9800998ecf8427e",
+			Market: testMarket,
+			Party: testPartyB,
+			Remaining: 0,
+		},
+	}
+
+	err = newOrderStore.Put(updatedAggressiveOrder)
+	assert.Nil(t, err)
+	orderAtPartyB, err = newOrderStore.GetByPartyAndId(testPartyB, aggressiveOrder.Id)
+	assert.Nil(t, err)
+	assert.Equal(t, updatedAggressiveOrder, orderAtPartyB)
+
+
+	// delete trade from trade store, parties should be updated
+	err = newTradeStore.Delete(trade)
+	assert.Nil(t, err)
+
+	tradesAtPartyA, err = newTradeStore.GetByParty(testPartyA, GetParams{})
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(tradesAtPartyA))
+
+	tradesAtPartyB, err = newTradeStore.GetByParty(testPartyB, GetParams{})
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(tradesAtPartyB))
+
+	// delete order from trade store, parties should be updated
+	err = newOrderStore.Delete(passiveOrder)
+	assert.Nil(t, err)
+
+	ordersAtPartyA, err = newOrderStore.GetByParty(testPartyA, GetParams{})
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(ordersAtPartyA))
+
+	// delete order from trade store, parties should be updated
+	err = newOrderStore.Delete(aggressiveOrder)
+	assert.Nil(t, err)
+
+	ordersAtPartyB, err = newOrderStore.GetByParty(testPartyB, GetParams{})
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(ordersAtPartyB))
+}
