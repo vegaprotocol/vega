@@ -8,6 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"vega/api"
+	"github.com/rs/cors"
 )
 
 type restProxyServer struct {}
@@ -31,7 +32,7 @@ func (s *restProxyServer) Start() {
 	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 		log.Fatal(err)
 	} else {
-		//handler := cors.Default().Handler(mux)
-		http.ListenAndServe(addr, mux)
+		handler := cors.Default().Handler(mux)
+		http.ListenAndServe(addr, handler)
 	}
 }
