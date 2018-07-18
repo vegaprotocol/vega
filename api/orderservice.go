@@ -21,8 +21,8 @@ var (
 type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
-	GetOpenOrdersByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error)
-	GetOpenOrdersByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error)
+	GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error)
+	GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetMarkets(ctx context.Context) ([]string, error)
@@ -83,16 +83,16 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	return true, err
 }
 
-func (p *orderService) GetOpenOrdersByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error) {
+func (p *orderService) GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error) {
 	o, err := p.orderStore.GetByMarket(market, datastore.GetParams{Limit: limit})
 	if err != nil {
 		return nil, err
 	}
 	result := make([]*msg.Order, 0)
 	for _, order := range o {
-		if order.Remaining == 0 {
-			continue
-		}
+		//if order.Remaining == 0 {
+		//	continue
+		//}
 		o := &msg.Order{
 			Id:        order.Id,
 			Market:    order.Market,
@@ -109,16 +109,16 @@ func (p *orderService) GetOpenOrdersByMarket(ctx context.Context, market string,
 	return result, err
 }
 
-func (p *orderService) GetOpenOrdersByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error) {
+func (p *orderService) GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error) {
 	o, err := p.orderStore.GetByParty(party, datastore.GetParams{Limit: limit})
 	if err != nil {
 		return nil, err
 	}
 	result := make([]*msg.Order, 0)
 	for _, order := range o {
-		if order.Remaining == 0 {
-			continue
-		}
+		//if order.Remaining == 0 {
+		//	continue
+		//}
 		o := &msg.Order{
 			Id:        order.Id,
 			Market:    order.Market,

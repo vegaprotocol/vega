@@ -7,6 +7,7 @@ import (
 	"log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
+	"github.com/rs/cors"
 	"vega/api"
 )
 
@@ -17,20 +18,21 @@ func NewRestProxyServer() *restProxyServer {
 }
 
 func (s *restProxyServer) Start() {
-	var port = 3005
+	var port = 3003
 	var addr = fmt.Sprintf(":%d", port)
-	fmt.Printf("Starting REST<>GRPC reverse proxy based HTTP server on port %d...\n", port)
+	fmt.Printf("Starting REST<>GRPC based HTTP server on port %d...\n", port)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	endpoint := "localhost:3004"
+	endpoint := "localhost:3003"
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 		log.Fatal(err)
 	} else {
-		http.ListenAndServe(addr, mux)
+		handler := cors.Default().Handler(mux)
+		http.ListenAndServe(addr, handler)
 	}
 }

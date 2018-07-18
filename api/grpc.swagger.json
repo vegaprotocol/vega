@@ -15,84 +15,7 @@
     "application/json"
   ],
   "paths": {
-    "/1.0/markets": {
-      "get": {
-        "operationId": "GetMarkets",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/grpcGetMarketsResponse"
-            }
-          }
-        },
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/1.0/openOrdersByParty": {
-      "get": {
-        "operationId": "GetOpenOrdersByParty",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/grpcGetOpenOrdersByPartyResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "party",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "params.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/1.0/orderByMarketAndId": {
-      "get": {
-        "operationId": "GetOrderByMarketAndId",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/grpcGetOrderByMarketAndIdResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "market",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/1.0/orders": {
+    "/1.0/createOrder": {
       "post": {
         "operationId": "CreateOrder",
         "responses": {
@@ -117,6 +40,98 @@
           "trading"
         ]
       }
+    },
+    "/1.0/marketOrder": {
+      "get": {
+        "operationId": "OrderByMarketAndId",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderByMarketAndIdResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/1.0/marketOrders": {
+      "get": {
+        "operationId": "OrdersByMarket",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrdersByMarketResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "params.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/1.0/partyOrders": {
+      "get": {
+        "operationId": "OrdersByParty",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrdersByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "party",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "params.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
     }
   },
   "definitions": {
@@ -130,7 +145,7 @@
       ],
       "default": "GTC"
     },
-    "grpcGetMarketsResponse": {
+    "grpcMarketsResponse": {
       "type": "object",
       "properties": {
         "markets": {
@@ -141,42 +156,20 @@
         }
       }
     },
-    "grpcGetOpenOrdersByMarketResponse": {
-      "type": "object",
-      "properties": {
-        "orders": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaOrder"
-          }
-        }
-      }
-    },
-    "grpcGetOpenOrdersByPartyResponse": {
-      "type": "object",
-      "properties": {
-        "orders": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaOrder"
-          }
-        }
-      }
-    },
-    "grpcGetOrderByMarketAndIdResponse": {
-      "type": "object",
-      "properties": {
-        "order": {
-          "$ref": "#/definitions/vegaOrder"
-        }
-      }
-    },
-    "grpcGetParams": {
+    "grpcOptionalParams": {
       "type": "object",
       "properties": {
         "limit": {
           "type": "string",
           "format": "uint64"
+        }
+      }
+    },
+    "grpcOrderByMarketAndIdResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder"
         }
       }
     },
@@ -186,6 +179,28 @@
         "success": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "grpcOrdersByMarketResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
+        }
+      }
+    },
+    "grpcOrdersByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
         }
       }
     },

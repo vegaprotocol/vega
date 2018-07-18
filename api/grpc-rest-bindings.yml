@@ -10,13 +10,13 @@ apis:
 http:
   rules:
   - selector: grpc.trading.CreateOrder
-    post: '/1.0/orders'
+    post: '/1.0/createOrder'
     body: "*"
-  - selector: grpc.trading.GetByMarket
-    get: '/1.0/openOrdersByMarket'
-  - selector: grpc.trading.GetOpenOrdersByParty
-    get: '/1.0/openOrdersByParty'
-  - selector: grpc.trading.GetOrderByMarketAndId
-    get: '/1.0/orderByMarketAndId'
+  - selector: grpc.trading.OrdersByMarket
+    get: '/1.0/marketOrders'
+  - selector: grpc.trading.OrdersByParty
+    get: '/1.0/partyOrders'
+  - selector: grpc.trading.OrderByMarketAndId
+    get: '/1.0/marketOrder'
   - selector: grpc.trading.GetMarkets
     get: '/1.0/markets'

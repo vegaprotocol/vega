@@ -12,11 +12,11 @@ import (
 
 type TradeService interface {
 	Init(app *core.Vega, tradeStore datastore.TradeStore)
-	GetTradesByMarket(ctx context.Context, market string, limit uint64) (trades []*msg.Trade, err error)
-	GetTradesByParty(ctx context.Context, party string, limit uint64) (trades []*msg.Trade, err error)
+	GetByMarket(ctx context.Context, market string, limit uint64) (trades []*msg.Trade, err error)
+	GetByParty(ctx context.Context, party string, limit uint64) (trades []*msg.Trade, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
-	GetCandlesChart(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error)
+	GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error)
 }
 
 type tradeService struct {
@@ -33,7 +33,7 @@ func (t *tradeService) Init(app *core.Vega, tradeStore datastore.TradeStore) {
 	t.tradeStore = tradeStore
 }
 
-func (t *tradeService) GetTradesByMarket(ctx context.Context, market string, limit uint64) (trades []*msg.Trade, err error) {
+func (t *tradeService) GetByMarket(ctx context.Context, market string, limit uint64) (trades []*msg.Trade, err error) {
 	tr, err := t.tradeStore.GetByMarket(market, datastore.GetParams{Limit: limit})
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (t *tradeService) GetTradesByMarket(ctx context.Context, market string, lim
 	return tradeMsgs, err
 }
 
-func (t *tradeService) GetTradesByParty(ctx context.Context, party string, limit uint64) (trades []*msg.Trade, err error) {
+func (t *tradeService) GetByParty(ctx context.Context, party string, limit uint64) (trades []*msg.Trade, err error) {
 	tr, err := t.tradeStore.GetByParty(party, datastore.GetParams{Limit: limit})
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id str
 	return tr.ToProtoMessage(), err
 }
 
-func (t *tradeService) GetCandlesChart(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error) {
+func (t *tradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error) {
 	// compare time and translate it into timestamps
 	appCurrentTime := t.app.GetTime()
 
