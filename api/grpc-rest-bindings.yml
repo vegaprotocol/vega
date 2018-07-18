@@ -18,5 +18,7 @@ http:
     get: '/1.0/partyOrders'
   - selector: grpc.trading.OrderByMarketAndId
     get: '/1.0/marketOrder'
-  - selector: grpc.trading.GetMarkets
+  - selector: grpc.trading.Markets
     get: '/1.0/markets'
+  - selector: grpc.trading.TradeCandles
+    get: '/1.0/candles'
