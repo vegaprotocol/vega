@@ -23,8 +23,31 @@ func (_m *OrderStore) Delete(r datastore.Order) error {
 	return r0
 }
 
-// Get provides a mock function with given fields: market, id
-func (_m *OrderStore) Get(market string, id string) (datastore.Order, error) {
+// GetByMarket provides a mock function with given fields: market, params
+func (_m *OrderStore) GetByMarket(market string, params datastore.GetParams) ([]datastore.Order, error) {
+	ret := _m.Called(market, params)
+
+	var r0 []datastore.Order
+	if rf, ok := ret.Get(0).(func(string, datastore.GetParams) []datastore.Order); ok {
+		r0 = rf(market, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]datastore.Order)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, datastore.GetParams) error); ok {
+		r1 = rf(market, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByMarketAndId provides a mock function with given fields: market, id
+func (_m *OrderStore) GetByMarketAndId(market string, id string) (datastore.Order, error) {
 	ret := _m.Called(market, id)
 
 	var r0 datastore.Order
@@ -44,13 +67,13 @@ func (_m *OrderStore) Get(market string, id string) (datastore.Order, error) {
 	return r0, r1
 }
 
-// GetAll provides a mock function with given fields: market, party, params
-func (_m *OrderStore) GetAll(market string, party string, params datastore.GetParams) ([]datastore.Order, error) {
-	ret := _m.Called(market, party, params)
+// GetByParty provides a mock function with given fields: party, params
+func (_m *OrderStore) GetByParty(party string, params datastore.GetParams) ([]datastore.Order, error) {
+	ret := _m.Called(party, params)
 
 	var r0 []datastore.Order
-	if rf, ok := ret.Get(0).(func(string, string, datastore.GetParams) []datastore.Order); ok {
-		r0 = rf(market, party, params)
+	if rf, ok := ret.Get(0).(func(string, datastore.GetParams) []datastore.Order); ok {
+		r0 = rf(party, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]datastore.Order)
@@ -58,8 +81,29 @@ func (_m *OrderStore) GetAll(market string, party string, params datastore.GetPa
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string, datastore.GetParams) error); ok {
-		r1 = rf(market, party, params)
+	if rf, ok := ret.Get(1).(func(string, datastore.GetParams) error); ok {
+		r1 = rf(party, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByPartyAndId provides a mock function with given fields: party, id
+func (_m *OrderStore) GetByPartyAndId(party string, id string) (datastore.Order, error) {
+	ret := _m.Called(party, id)
+
+	var r0 datastore.Order
+	if rf, ok := ret.Get(0).(func(string, string) datastore.Order); ok {
+		r0 = rf(party, id)
+	} else {
+		r0 = ret.Get(0).(datastore.Order)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(party, id)
 	} else {
 		r1 = ret.Error(1)
 	}

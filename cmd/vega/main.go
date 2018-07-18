@@ -24,7 +24,7 @@ func main() {
 	// Storage Service provides read stores for consumer VEGA API
 	// Uses in memory storage (maps/slices etc), configurable in future
 	storage := &datastore.MemoryStoreProvider{}
-	storage.Init([]string{marketName})
+	storage.Init([]string{marketName}, []string{"partyA", "partyB"})
 
 	// Vega core
 	vega := core.New(config, storage)

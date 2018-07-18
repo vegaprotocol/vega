@@ -194,3 +194,12 @@ func (store *memOrderStore) validate(order *Order) error {
 
 	return nil
 }
+
+// move this to markets store in the future
+func (store *memOrderStore) GetMarkets() ([]string, error) {
+	var markets []string
+	for key, _ := range store.store.markets {
+		markets = append(markets, key)
+	}
+	return markets, nil
+}

@@ -4,11 +4,11 @@ import "vega/proto"
 
 type TradeStore interface {
 	// GetByMarket retrieves trades for a given market.
-	GetByMarket(market string, _ GetParams) ([]Trade, error)
+	GetByMarket(market string, params GetParams) ([]Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByMarketAndId(market string, id string) (Trade, error)
 	// GetByParty retrieves trades for a given party.
-	GetByParty(party string, _ GetParams) ([]Trade, error)
+	GetByParty(party string, params GetParams) ([]Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (Trade, error)
 	// Post creates a new trade in the store.
@@ -27,7 +27,7 @@ type OrderStore interface {
 	// Get retrieves an order for a given market and id.
 	GetByMarketAndId(market string, id string) (Order, error)
 	// GetByParty retrieves trades for a given party.
-	GetByParty(party string, _ GetParams) ([]Order, error)
+	GetByParty(party string, params GetParams) ([]Order, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (Order, error)
 	// Post creates a new order in the store.
@@ -36,6 +36,8 @@ type OrderStore interface {
 	Put(r Order) error
 	// Removes an order from the store.
 	Delete(r Order) error
+	// Returns all the markets
+	GetMarkets() ([]string, error)
 }
 
 type StoreProvider interface {

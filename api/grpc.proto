@@ -7,8 +7,49 @@ option go_package = "api";
 
 service trading {
     rpc CreateOrder(vega.Order) returns (OrderResponse);
+    rpc GetOpenOrdersByMarket(GetOpenOrdersByMarketRequest) returns (GetOpenOrdersByMarketResponse);
+    rpc GetOpenOrdersByParty(GetOpenOrdersByPartyRequest) returns (GetOpenOrdersByPartyResponse);
+    rpc GetOrderByMarketAndId(GetOrderByMarketAndIdRequest) returns (GetOrderByMarketAndIdResponse);
+    rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse);
 }
 
 message OrderResponse {
     bool success = 1;
+}
+
+message GetOpenOrdersByMarketRequest {
+    string market = 1;
+    GetParams params = 2;
+}
+
+message GetOpenOrdersByMarketResponse {
+    repeated vega.Order orders = 1;
+}
+
+message GetOpenOrdersByPartyRequest {
+    string party = 1;
+    GetParams params = 2;
+}
+
+message GetOpenOrdersByPartyResponse {
+    repeated vega.Order orders = 1;
+}
+
+message GetOrderByMarketAndIdRequest {
+    string market = 1;
+    string id = 2;
+}
+
+message GetOrderByMarketAndIdResponse {
+    vega.Order order = 1;
+}
+
+message GetMarketsRequest {}
+
+message GetMarketsResponse {
+    repeated string markets = 1;
+}
+
+message GetParams {
+    uint64 limit = 1;
 }

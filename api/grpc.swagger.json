@@ -15,6 +15,83 @@
     "application/json"
   ],
   "paths": {
+    "/1.0/markets": {
+      "get": {
+        "operationId": "GetMarkets",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcGetMarketsResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/1.0/openOrdersByParty": {
+      "get": {
+        "operationId": "GetOpenOrdersByParty",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcGetOpenOrdersByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "party",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "params.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/1.0/orderByMarketAndId": {
+      "get": {
+        "operationId": "GetOrderByMarketAndId",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcGetOrderByMarketAndIdResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/1.0/orders": {
       "post": {
         "operationId": "CreateOrder",
@@ -52,6 +129,56 @@
         "FOK"
       ],
       "default": "GTC"
+    },
+    "grpcGetMarketsResponse": {
+      "type": "object",
+      "properties": {
+        "markets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "grpcGetOpenOrdersByMarketResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
+        }
+      }
+    },
+    "grpcGetOpenOrdersByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
+        }
+      }
+    },
+    "grpcGetOrderByMarketAndIdResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder"
+        }
+      }
+    },
+    "grpcGetParams": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
     },
     "grpcOrderResponse": {
       "type": "object",
