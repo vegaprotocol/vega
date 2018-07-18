@@ -6,6 +6,7 @@ import (
 	"time"
 	"vega/api"
 	"vega/msg"
+	"math/rand"
 )
 
 type resolverRoot struct {
@@ -163,62 +164,81 @@ func (r *MyTradeResolver) Timestamp(ctx context.Context, obj *msg.Trade) (int, e
 
 type MySubscriptionResolver resolverRoot
 
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randString(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
 func (r *MySubscriptionResolver) TradeCandles(ctx context.Context, market string, interval int) (<-chan []msg.Candle, error) {
 	events := make(chan []msg.Candle, 1)
+	connected := true
+
+
+	id := randString(8)
+	fmt.Println("New subscriber on channel: ", id)
+
+	go func(id string) {
+		<-ctx.Done()
+		connected = false
+		fmt.Println("Subscriber closed connection:", id)
+	}(id)
 
 	go func(channel chan[]msg.Candle) {
-		subscribed := true
-		fmt.Println("new subscriber on channel")
-		select {
-			case <-ctx.Done():
-				subscribed = false
-				fmt.Println("subscriber on channel left the party :(")
-			default:
-				fmt.Println("start generating candles at interval")
-				for subscribed {
-					currentTime := time.Now()
+		for connected {
+			currentTime := time.Now()
 
-					fmt.Printf("market: %s interval: %d", market, interval)
-					fmt.Println()
+			fmt.Printf("market: %s interval: %d", market, interval)
+			fmt.Println()
 
-					count :=int64(interval)
-					since := currentTime.Add(time.Duration(-count) * time.Second)
+			count :=int64(interval)
+			since := currentTime.Add(time.Duration(-300) * time.Second)
 
 
-					fmt.Printf("%+v, %+v", since, currentTime)
+			fmt.Printf("%+v, %+v", since, currentTime)
 
-					
-					res, err := r.tradeService.GetCandlesChart(ctx, market, since, 1)
-					if err != nil {
-						fmt.Errorf("there was an error when getting candles charts: %v", err)
-					}
-
-					fmt.Printf("Candles holder: %+v", res)
-					fmt.Println()
-					fmt.Printf("Candles returned: %+v", res.Candles)
-					fmt.Println()
-
-					candles := make([]msg.Candle, 0)
-
-					for _, v := range res.Candles {
-						candles = append(candles, msg.Candle{
-							Volume:           v.Volume,
-							High:             v.High,
-							Low:              v.Low,
-							Date:             v.Date,
-							Open:             v.Open,
-							Close:            v.Close,
-							OpenBlockNumber:  v.OpenBlockNumber,
-							CloseBlockNumber: v.CloseBlockNumber,
-						})
-					}
-
-					channel <- candles
-
-					time.Sleep(time.Duration(count) * time.Second)
-					fmt.Println("pong")
-				}
+			res1, err := r.tradeService.GetTrades(ctx, market, 99999)
+			if err != nil {
+				fmt.Errorf("there was an error when getting candles charts: %v", err)
 			}
+
+			fmt.Printf("Trades in store: %+v  ------ [%d] ------", res1, len(res1))
+			fmt.Println()
+
+			res, err := r.tradeService.GetCandlesChart(ctx, market, since, 60)
+			if err != nil {
+				fmt.Errorf("there was an error when getting candles charts: %v", err)
+			}
+
+			fmt.Printf("Candles holder: %+v", res)
+			fmt.Println(id)
+			fmt.Printf("Candles returned: %+v", res.Candles)
+			fmt.Println(id)
+
+			candles := make([]msg.Candle, 0)
+
+			for _, v := range res.Candles {
+				candles = append(candles, msg.Candle{
+					Volume:           v.Volume,
+					High:             v.High,
+					Low:              v.Low,
+					Date:             v.Date,
+					Open:             v.Open,
+					Close:            v.Close,
+					OpenBlockNumber:  v.OpenBlockNumber,
+					CloseBlockNumber: v.CloseBlockNumber,
+				})
+			}
+
+			channel <- candles
+
+			time.Sleep(time.Duration(count) * time.Second)
+		}
 	}(events)
 	
 	return events, nil

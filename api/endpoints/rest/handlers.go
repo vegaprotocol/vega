@@ -119,6 +119,14 @@ func (handlers *Handlers) GetCandleChart(ctx *gin.Context) {
 		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
 	}
 
+
+	currentTime := time.Now().UTC()
+	since = currentTime.Add(time.Duration(-604800) * time.Second)
+
+
+	fmt.Printf("%+v, %+v", since, currentTime)
+	fmt.Println()
+
 	intervalStr := ctx.DefaultQuery("interval", "2")
 	fmt.Printf("intervalStr: %s\n", intervalStr)
 	interval, err := strconv.ParseUint(intervalStr, 10, 64)
@@ -130,6 +138,9 @@ func (handlers *Handlers) GetCandleChart(ctx *gin.Context) {
 	if err == nil {
 		wasSuccess(ctx, gin.H{ResponseKeyResult: ResponseResultSuccess, ResponseKeyCandles: candles})
 	} else {
+
+		fmt.Errorf("err %v", err)
+
 		wasFailure(ctx, gin.H{ResponseKeyResult: ResponseResultFailure, ResponseKeyError: err.Error()})
 	}
 }
