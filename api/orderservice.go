@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"vega/proto"
+	"vega/msg"
 	"vega/core"
 	"vega/datastore"
 	"vega/tendermint/rpc"

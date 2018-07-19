@@ -2,7 +2,7 @@ package matching
 
 import (
 	"fmt"
-	"vega/proto"
+	"vega/msg"
 
 )
 
