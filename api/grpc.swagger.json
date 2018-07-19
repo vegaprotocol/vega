@@ -139,6 +139,37 @@
         ]
       }
     },
+    "/1.0/marketTrades": {
+      "get": {
+        "operationId": "TradesByMarket",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcTradesByMarketResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "params.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/1.0/markets": {
       "get": {
         "operationId": "Markets",
@@ -312,6 +343,17 @@
         }
       }
     },
+    "grpcTradesByMarketResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTrade"
+          }
+        }
+      }
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -412,6 +454,38 @@
         "Sell"
       ],
       "default": "Buy"
+    },
+    "vegaTrade": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "market": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "buyer": {
+          "type": "string"
+        },
+        "seller": {
+          "type": "string"
+        },
+        "aggressor": {
+          "$ref": "#/definitions/vegaSide"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
     }
   }
 }
