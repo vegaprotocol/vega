@@ -13,19 +13,23 @@ type Handlers struct {
 	TradeService api.TradeService
 }
 
-const limitMax = uint64(10000)
+// If no limit is provided at the gRPC API level, the system will use this limit instead.
+// (Prevent returning all results every time a careless query is made)
+const defaultLimit = uint64(1000)
 
+// CreateOrder is used to send an order into the VEGA platform, via consensus. TODO pre-validation.
 func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
 	success, err := h.OrderService.CreateOrder(ctx, order)
 	return &api.OrderResponse{Success: success}, err
 }
 
+// OrdersByMarket provides a list of orders for a given market. Optional limits can be provided. Most recent first.
 func (h *Handlers) OrdersByMarket(ctx context.Context, request *api.OrdersByMarketRequest) (*api.OrdersByMarketResponse, error) {
 	market := request.Market
 	if market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
-	limit := limitMax
+	limit := defaultLimit
 	if request.Params != nil && request.Params.Limit > 0 {
 		limit = request.Params.Limit
 	}
@@ -40,12 +44,13 @@ func (h *Handlers) OrdersByMarket(ctx context.Context, request *api.OrdersByMark
 	return response, nil
 }
 
+// OrdersByParty provides a list of orders for a given party. Optional limits can be provided. Most recent first.
 func (h *Handlers) OrdersByParty(ctx context.Context, request *api.OrdersByPartyRequest) (*api.OrdersByPartyResponse, error) {
 	party := request.Party
 	if party == "" {
 		return nil, errors.New("Party empty or missing")
 	}
-	limit := limitMax
+	limit := defaultLimit
 	if request.Params != nil && request.Params.Limit > 0 {
 		limit = request.Params.Limit
 	}
@@ -60,6 +65,7 @@ func (h *Handlers) OrdersByParty(ctx context.Context, request *api.OrdersByParty
 	return response, nil
 }
 
+// Markets provides a list of all current markets that exist on the VEGA platform.
 func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (*api.MarketsResponse, error) {
 	markets, err := h.OrderService.GetMarkets(ctx)
 	if err != nil {
@@ -72,8 +78,18 @@ func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (*a
 	return response, nil
 }
 
+// OrdersByMarketAndId searches for the given order by Id and Market. If found it will return
+// an Order msg otherwise it will return an error.
 func (h *Handlers) OrderByMarketAndId(ctx context.Context, request *api.OrderByMarketAndIdRequest) (*api.OrderByMarketAndIdResponse, error) {
-	order, err := h.OrderService.GetByMarketAndId(ctx, request.Market, request.Id)
+	market := request.Market
+	if market == "" {
+		return nil, errors.New("Market empty or missing")
+	}
+	id := request.Id
+	if id == "" {
+		return nil, errors.New("Id empty or missing")
+	}
+	order, err := h.OrderService.GetByMarketAndId(ctx, market, id)
 	if err != nil {
 		return nil, err
 	}
@@ -82,14 +98,16 @@ func (h *Handlers) OrderByMarketAndId(ctx context.Context, request *api.OrderByM
 	return response, nil
 }
 
+// TradeCandles returns trade open/close/volume data for the given time period and interval.
+// It will fill in any tradeless intervals with zero based candles. Since time period must be in RFC3339 string format.
 func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRequest) (*api.TradeCandlesResponse, error) {
 	market := request.Market
 	if market == "" {
-		market = "BTC/DEC18"
+		return nil, errors.New("Market empty or missing")
 	}
 	sinceStr := request.Since
 	if sinceStr == "" {
-		market = "2018-07-09T12:00:00Z"
+		sinceStr = "2018-07-09T12:00:00Z"
 	}
 	since, err := time.Parse(time.RFC3339, sinceStr)
 	if err != nil {
@@ -108,5 +126,4 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 		response.Candles = res.Candles
 	}
 	return response, nil
-
 }
