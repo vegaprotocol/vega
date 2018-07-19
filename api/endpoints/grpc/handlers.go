@@ -102,7 +102,7 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 		return nil, errors.New("Market empty or missing")
 	}
 	if request.Since == "" {
-		request.Since = "2018-07-09T12:00:00Z"
+		request.Since = "2018-07-05T13:36:01Z"
 	}
 	since, err := time.Parse(time.RFC3339, request.Since)
 	if err != nil {
