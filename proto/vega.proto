@@ -5,6 +5,10 @@ option go_package = "msg";
 
 enum Side { Buy = 0; Sell = 1; }
 
+message Market {
+    string name = 1;
+}
+
 message Order {
     enum Type { GTC = 0; GTT = 1; ENE = 2; FOK = 3; }
     string id = 1;
