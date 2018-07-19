@@ -215,7 +215,13 @@ func (m *memOrderStore) marketExists(market string) error {
 
 func (m *memOrderStore) partyExists(party string) error {
 	if !m.store.partyExists(party) {
-		return NotFoundError{fmt.Errorf("could not find party %s", party)}
+		memParty := memParty{
+			party:   party,
+			ordersByTimestamp: []*memOrder{},
+			tradesByTimestamp: []*memTrade{},
+		}
+		m.store.parties[party] = &memParty
+		return nil
 	}
 	return nil
 }
