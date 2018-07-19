@@ -155,6 +155,30 @@
         ]
       }
     },
+    "/1.0/orderBookDepth": {
+      "get": {
+        "operationId": "OrderBookDepth",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderBookDepthResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/1.0/partyOrders": {
       "get": {
         "operationId": "OrdersByParty",
@@ -215,6 +239,26 @@
         "limit": {
           "type": "string",
           "format": "uint64"
+        }
+      }
+    },
+    "grpcOrderBookDepthResponse": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "buy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        },
+        "sell": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
         }
       }
     },
@@ -335,6 +379,27 @@
           "$ref": "#/definitions/OrderType"
         },
         "timestamp": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaPriceLevel": {
+      "type": "object",
+      "properties": {
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "numberOfOrders": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "volume": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "cumulativeVolume": {
           "type": "string",
           "format": "uint64"
         }

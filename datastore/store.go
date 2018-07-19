@@ -38,6 +38,8 @@ type OrderStore interface {
 	Delete(r Order) error
 	// Returns all the markets
 	GetMarkets() ([]string, error)
+	// Returns Order Book Depth for a market
+	GetOrderBookDepth(market string) (*msg.OrderBookDepth, error)
 }
 
 type StoreProvider interface {

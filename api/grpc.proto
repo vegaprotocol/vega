@@ -12,6 +12,7 @@ service trading {
     rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
     rpc Markets(MarketsRequest) returns (MarketsResponse);
     rpc TradeCandles(TradeCandlesRequest) returns (TradeCandlesResponse);
+    rpc OrderBookDepth(OrderBookDepthRequest) returns (OrderBookDepthResponse);
     //rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);       TODO
     //rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO
 
@@ -64,6 +65,16 @@ message TradeCandlesRequest {
 
 message TradeCandlesResponse {
     repeated vega.Candle candles = 1;
+}
+
+message OrderBookDepthRequest {
+    string market = 1;
+}
+
+message OrderBookDepthResponse {
+    string   name = 1;
+    repeated vega.PriceLevel buy = 2;
+    repeated vega.PriceLevel sell = 3;
 }
 
 message OptionalParams {

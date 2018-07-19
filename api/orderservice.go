@@ -26,6 +26,7 @@ type OrderService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetMarkets(ctx context.Context) ([]string, error)
+	GetOrderBookDepth(ctx context.Context, market string) (orderBookDepth *msg.OrderBookDepth, err error)
 }
 
 type orderService struct {
@@ -158,6 +159,11 @@ func (p *orderService) GetMarkets(ctx context.Context) ([]string, error) {
 	}
 	return markets, err
 }
+
+func (p *orderService) GetOrderBookDepth(ctx context.Context, marketName string) (orderBookDepth *msg.OrderBookDepth, err error) {
+	return p.orderStore.GetOrderBookDepth(marketName)
+}
+
 
 func getClient() (*rpc.Client, error) {
 	mux.Lock()

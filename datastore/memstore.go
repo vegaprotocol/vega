@@ -43,6 +43,8 @@ type memMarket struct {
 	tradesByTimestamp []*memTrade
 	orders            map[string]*memOrder
 	trades            map[string]*memTrade
+	buySideRemainingOrders  BuySideRemainingOrders
+	sellSideRemainingOrders SellSideRemainingOrders
 }
 
 // memParty should keep track of the trades/orders per Party.

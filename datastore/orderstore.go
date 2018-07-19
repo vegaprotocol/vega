@@ -1,6 +1,9 @@
 package datastore
 
-import "fmt"
+import (
+	"fmt"
+	"vega/proto"
+)
 
 // memOrderStore should implement OrderStore interface.
 type memOrderStore struct {
@@ -12,8 +15,8 @@ func NewOrderStore(ms *MemStore) OrderStore {
 	return &memOrderStore{store: ms}
 }
 
-func (store *memOrderStore) GetByMarket(market string, params GetParams) ([]Order, error) {
-	if err := store.marketExists(market); err != nil {
+func (m *memOrderStore) GetByMarket(market string, params GetParams) ([]Order, error) {
+	if err := m.marketExists(market); err != nil {
 		return nil, err
 	}
 
@@ -23,31 +26,31 @@ func (store *memOrderStore) GetByMarket(market string, params GetParams) ([]Orde
 	)
 
 	// limit is descending. Get me most recent N orders
-	for i := len(store.store.markets[market].ordersByTimestamp) - 1; i >= 0; i-- {
+	for i := len(m.store.markets[market].ordersByTimestamp) - 1; i >= 0; i-- {
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
 		// TODO: apply filters
-		output = append(output, store.store.markets[market].ordersByTimestamp[i].order)
+		output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
 		pos++
 	}
 	return output, nil
 }
 
 // Get retrieves an order for a given market and id.
-func (store *memOrderStore) GetByMarketAndId(market string, id string) (Order, error) {
-	if err := store.marketExists(market); err != nil {
+func (m *memOrderStore) GetByMarketAndId(market string, id string) (Order, error) {
+	if err := m.marketExists(market); err != nil {
 		return Order{}, err
 	}
-	v, ok := store.store.markets[market].orders[id]
+	v, ok := m.store.markets[market].orders[id]
 	if !ok {
 		return Order{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
 	}
 	return v.order, nil
 }
 
-func (store *memOrderStore) GetByParty(party string, params GetParams) ([]Order, error) {
-	if err := store.partyExists(party); err != nil {
+func (m *memOrderStore) GetByParty(party string, params GetParams) ([]Order, error) {
+	if err := m.partyExists(party); err != nil {
 		return nil, err
 	}
 
@@ -57,25 +60,25 @@ func (store *memOrderStore) GetByParty(party string, params GetParams) ([]Order,
 	)
 
 	// limit is descending. Get me most recent N orders
-	for i := len(store.store.parties[party].ordersByTimestamp) - 1; i >= 0; i-- {
+	for i := len(m.store.parties[party].ordersByTimestamp) - 1; i >= 0; i-- {
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
 		// TODO: apply filters
-		output = append(output, store.store.parties[party].ordersByTimestamp[i].order)
+		output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
 		pos++
 	}
 	return output, nil
 }
 
 // Get retrieves an order for a given market and id.
-func (store *memOrderStore) GetByPartyAndId(party string, id string) (Order, error) {
-	if err := store.partyExists(party); err != nil {
+func (m *memOrderStore) GetByPartyAndId(party string, id string) (Order, error) {
+	if err := m.partyExists(party); err != nil {
 		return Order{}, err
 	}
 
 	var at = -1
-	for idx, order := range store.store.parties[party].ordersByTimestamp {
+	for idx, order := range m.store.parties[party].ordersByTimestamp {
 		if order.order.Id == id {
 			at = idx
 			break
@@ -85,18 +88,18 @@ func (store *memOrderStore) GetByPartyAndId(party string, id string) (Order, err
 	if at == -1 {
 		return Order{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
 	}
-	return store.store.parties[party].ordersByTimestamp[at].order, nil
+	return m.store.parties[party].ordersByTimestamp[at].order, nil
 }
 
 
 // Post creates a new order in the memory store.
-func (store *memOrderStore) Post(order Order) error {
-	if err := store.validate(&order); err != nil {
+func (m *memOrderStore) Post(order Order) error {
+	if err := m.validate(&order); err != nil {
 		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
-	if _, exists := store.store.markets[order.Market].orders[order.Id]; exists {
+	if _, exists := m.store.markets[order.Market].orders[order.Id]; exists {
 		return fmt.Errorf("order exists in memstore: %s", order.Id)
 	}
 
@@ -106,89 +109,123 @@ func (store *memOrderStore) Post(order Order) error {
 	}
 
 	// Insert new order struct into lookup hash table
-	store.store.markets[order.Market].orders[order.Id] = newOrder
+	m.store.markets[order.Market].orders[order.Id] = newOrder
 
 	// Insert new order into slice of orders ordered by timestamp
-	store.store.markets[order.Market].ordersByTimestamp = append(store.store.markets[order.Market].ordersByTimestamp, newOrder)
+	m.store.markets[order.Market].ordersByTimestamp = append(m.store.markets[order.Market].ordersByTimestamp, newOrder)
 
 
 	// Insert new order into Party map of slices of orders
-	store.store.parties[order.Party].ordersByTimestamp = append(store.store.parties[order.Party].ordersByTimestamp, newOrder)
+	m.store.parties[order.Party].ordersByTimestamp = append(m.store.parties[order.Party].ordersByTimestamp, newOrder)
+
+	// Insert into buySideRemainingOrders and sellSideRemainingOrders - these are ordered
+	if newOrder.order.Remaining != uint64(0) {
+		if newOrder.order.Side == msg.Side_Buy {
+			m.store.markets[order.Market].buySideRemainingOrders.insert(&order)
+		} else {
+			m.store.markets[order.Market].sellSideRemainingOrders.insert(&order)
+		}
+	}
+
 	return nil
 }
 
 // Put updates an existing order in the memory store.
-func (store *memOrderStore) Put(order Order) error {
-	if err := store.validate(&order); err != nil {
+func (m *memOrderStore) Put(order Order) error {
+	if err := m.validate(&order); err != nil {
 		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
-	if _, exists := store.store.markets[order.Market].orders[order.Id]; !exists {
+	if _, exists := m.store.markets[order.Market].orders[order.Id]; !exists {
 		return fmt.Errorf("order not found in memstore: %s", order.Id)
 	}
 
-	store.store.markets[order.Market].orders[order.Id].order = order
+	m.store.markets[order.Market].orders[order.Id].order = order
+
+	if order.Remaining == uint64(0) {
+		// update buySideRemainingOrders sellSideRemainingOrders
+		if order.Side == msg.Side_Buy {
+			m.store.markets[order.Market].buySideRemainingOrders.remove(&order)
+		} else {
+			m.store.markets[order.Market].sellSideRemainingOrders.remove(&order)
+		}
+	} else {
+		// update buySideRemainingOrders sellSideRemainingOrders
+		if order.Side == msg.Side_Buy {
+			m.store.markets[order.Market].buySideRemainingOrders.update(&order)
+		} else {
+			m.store.markets[order.Market].sellSideRemainingOrders.update(&order)
+		}
+	}
+
 	return nil
 }
 
 // Delete removes an order from the memory store.
-func (store *memOrderStore) Delete(order Order) error {
-	if err := store.validate(&order); err != nil {
+func (m *memOrderStore) Delete(order Order) error {
+	if err := m.validate(&order); err != nil {
 		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
 	// Remove from orders map
-	delete(store.store.markets[order.Market].orders, order.Id)
+	delete(m.store.markets[order.Market].orders, order.Id)
 
 	// Remove from MARKET ordersByTimestamp
 	var pos uint64
-	for idx, v := range store.store.markets[order.Market].ordersByTimestamp {
+	for idx, v := range m.store.markets[order.Market].ordersByTimestamp {
 		if v.order.Id == order.Id {
 			pos = uint64(idx)
 			break
 		}
 	}
-	store.store.markets[order.Market].ordersByTimestamp =
-		append(store.store.markets[order.Market].ordersByTimestamp[:pos], store.store.markets[order.Market].ordersByTimestamp[pos+1:]...)
+	m.store.markets[order.Market].ordersByTimestamp =
+		append(m.store.markets[order.Market].ordersByTimestamp[:pos], m.store.markets[order.Market].ordersByTimestamp[pos+1:]...)
 
 	// Remove from PARTIES ordersByTimestamp
 	pos = 0
-	for idx, v := range store.store.parties[order.Party].ordersByTimestamp {
+	for idx, v := range m.store.parties[order.Party].ordersByTimestamp {
 		if v.order.Id == order.Id {
 			pos = uint64(idx)
 			break
 		}
 	}
-	store.store.parties[order.Party].ordersByTimestamp =
-		append(store.store.parties[order.Party].ordersByTimestamp[:pos], store.store.parties[order.Party].ordersByTimestamp[pos+1:]...)
+	m.store.parties[order.Party].ordersByTimestamp =
+		append(m.store.parties[order.Party].ordersByTimestamp[:pos], m.store.parties[order.Party].ordersByTimestamp[pos+1:]...)
+
+	// remove from buySideRemainingOrders sellSideRemainingOrders
+	if order.Side == msg.Side_Buy {
+		m.store.markets[order.Market].buySideRemainingOrders.remove(&order)
+	} else {
+		m.store.markets[order.Market].sellSideRemainingOrders.remove(&order)
+	}
 
 	return nil
 }
 
 // Checks to see if we have a market on the related memory store with given identifier.
 // Returns an error if the market cannot be found and nil otherwise.
-func (store *memOrderStore) marketExists(market string) error {
-	if !store.store.marketExists(market) {
+func (m *memOrderStore) marketExists(market string) error {
+	if !m.store.marketExists(market) {
 		return NotFoundError{fmt.Errorf("could not find market %s", market)}
 	}
 	return nil
 }
 
-func (store *memOrderStore) partyExists(party string) error {
-	if !store.store.partyExists(party) {
+func (m *memOrderStore) partyExists(party string) error {
+	if !m.store.partyExists(party) {
 		return NotFoundError{fmt.Errorf("could not find party %s", party)}
 	}
 	return nil
 }
 
-func (store *memOrderStore) validate(order *Order) error {
-	if err := store.marketExists(order.Market); err != nil {
+func (m *memOrderStore) validate(order *Order) error {
+	if err := m.marketExists(order.Market); err != nil {
 		return err
 	}
 
-	if err := store.partyExists(order.Party); err != nil {
+	if err := m.partyExists(order.Party); err != nil {
 		return err
 	}
 
@@ -196,9 +233,9 @@ func (store *memOrderStore) validate(order *Order) error {
 }
 
 // move this to markets store in the future
-func (store *memOrderStore) GetMarkets() ([]string, error) {
+func (m *memOrderStore) GetMarkets() ([]string, error) {
 	var markets []string
-	for key, _ := range store.store.markets {
+	for key, _ := range m.store.markets {
 		markets = append(markets, key)
 	}
 	return markets, nil
