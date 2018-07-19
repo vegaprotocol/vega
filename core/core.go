@@ -22,12 +22,18 @@ type Vega struct {
 	TradesStore    datastore.TradeStore
 	matchingEngine matching.MatchingEngine
 	State          *State
+	RiskEngine     RiskEngine
 }
 
 func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 
 	// Initialise matching engine
 	matchingEngine := matching.NewMatchingEngine()
+
+	// Initialse risk engine
+	riskEngine := &riskEngine{
+		Command: &ExecCommand{},
+	}
 
 	return &Vega{
 		config:         config,
@@ -36,6 +42,7 @@ func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 		TradesStore:    store.TradeStore(),
 		matchingEngine: matchingEngine,
 		State:          newState(),
+		RiskEngine:     *riskEngine,
 	}
 }
 
