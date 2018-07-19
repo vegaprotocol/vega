@@ -3,14 +3,6 @@
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/alexandrevicenzi/go-sse"
-  branch = "master"
-
-[[constraint]]
-  name = "github.com/graph-gophers/graphql-go"
-  branch = "master"
-
-[[constraint]]
   name = "github.com/stretchr/testify"
   version = "1.2.1"
 

@@ -25,15 +25,14 @@ func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*api.Orde
 
 // OrdersByMarket provides a list of orders for a given market. Optional limits can be provided. Most recent first.
 func (h *Handlers) OrdersByMarket(ctx context.Context, request *api.OrdersByMarketRequest) (*api.OrdersByMarketResponse, error) {
-	market := request.Market
-	if market == "" {
+	if request.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
 	limit := defaultLimit
 	if request.Params != nil && request.Params.Limit > 0 {
 		limit = request.Params.Limit
 	}
-	orders, err := h.OrderService.GetByMarket(ctx, market, limit)
+	orders, err := h.OrderService.GetByMarket(ctx, request.Market, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -46,15 +45,14 @@ func (h *Handlers) OrdersByMarket(ctx context.Context, request *api.OrdersByMark
 
 // OrdersByParty provides a list of orders for a given party. Optional limits can be provided. Most recent first.
 func (h *Handlers) OrdersByParty(ctx context.Context, request *api.OrdersByPartyRequest) (*api.OrdersByPartyResponse, error) {
-	party := request.Party
-	if party == "" {
+	if request.Party == "" {
 		return nil, errors.New("Party empty or missing")
 	}
 	limit := defaultLimit
 	if request.Params != nil && request.Params.Limit > 0 {
 		limit = request.Params.Limit
 	}
-	orders, err := h.OrderService.GetByParty(ctx, party, limit)
+	orders, err := h.OrderService.GetByParty(ctx, request.Party, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -81,15 +79,13 @@ func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (*a
 // OrdersByMarketAndId searches for the given order by Id and Market. If found it will return
 // an Order msg otherwise it will return an error.
 func (h *Handlers) OrderByMarketAndId(ctx context.Context, request *api.OrderByMarketAndIdRequest) (*api.OrderByMarketAndIdResponse, error) {
-	market := request.Market
-	if market == "" {
+	if request.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
-	id := request.Id
-	if id == "" {
+	if request.Id == "" {
 		return nil, errors.New("Id empty or missing")
 	}
-	order, err := h.OrderService.GetByMarketAndId(ctx, market, id)
+	order, err := h.OrderService.GetByMarketAndId(ctx, request.Market, request.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -105,11 +101,10 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 	if market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
-	sinceStr := request.Since
-	if sinceStr == "" {
-		sinceStr = "2018-07-09T12:00:00Z"
+	if request.Since == "" {
+		request.Since = "2018-07-09T12:00:00Z"
 	}
-	since, err := time.Parse(time.RFC3339, sinceStr)
+	since, err := time.Parse(time.RFC3339, request.Since)
 	if err != nil {
 		return nil, err
 	}
@@ -130,8 +125,7 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 
 
 func (h *Handlers) OrderBookDepth(ctx context.Context, request *api.OrderBookDepthRequest) (*api.OrderBookDepthResponse, error) {
-	market := request.Market
-	if market == "" {
+	if request.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
 	depth, err := h.OrderService.GetOrderBookDepth(ctx, request.Market)
