@@ -15,16 +15,28 @@ type riskEngine struct {
 }
 
 type RiskCommand interface {
-	Output(command string, args ...string) ([]byte, error)
+	Output() ([]byte, error)
 }
 
-type ExecCommand struct{}
+func newRiskEngine() *riskEngine {
+	return &riskEngine{
+		Command: &ExecCommand{
+			command: "python",
+			args:    []string{"-c", "20"},
+		},
+	}
+}
 
-func (ec ExecCommand) Output(command string, args ...string) ([]byte, error) {
-	return exec.Command(command, args...).Output()
+type ExecCommand struct {
+	command string
+	args    []string
+}
+
+func (ec ExecCommand) Output() ([]byte, error) {
+	return exec.Command(ec.command, ec.args...).Output()
 }
 
 func (re riskEngine) Assess(order *msg.Order) {
-	returnValue, _ := re.Command.Output("echo", "20")
+	returnValue, _ := re.Command.Output()
 	order.RiskFactor, _ = binary.Uvarint(returnValue)
 }
