@@ -12,7 +12,7 @@ type MockCommand struct {
 	desiredValue string
 }
 
-func (mc MockCommand) Output(command string, args ...string) ([]byte, error) {
+func (mc MockCommand) Output() ([]byte, error) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	binary.PutUvarint(buf, 20)
 	return buf, nil

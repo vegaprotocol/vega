@@ -30,10 +30,8 @@ func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 	// Initialise matching engine
 	matchingEngine := matching.NewMatchingEngine()
 
-	// Initialse risk engine
-	riskEngine := &riskEngine{
-		Command: &ExecCommand{},
-	}
+	// Initialise risk engine
+	riskEngine := newRiskEngine()
 
 	return &Vega{
 		config:         config,
