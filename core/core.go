@@ -11,7 +11,7 @@ import (
 
 const marketName = "BTC/DEC18"
 
-const genesisTimeStr = "2018-07-09T12:00:00Z"
+const genesisTimeStr = "2018-07-05T13:36:01Z"
 
 type Config struct{}
 
