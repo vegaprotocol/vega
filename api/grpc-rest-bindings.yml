@@ -21,4 +21,7 @@ http:
   - selector: grpc.trading.Markets
     get: '/1.0/markets'
   - selector: grpc.trading.TradeCandles
-    get: '/1.0/candles'
+     get: '/1.0/candles'
+
+#  - selector: grpc.trading.OrderBookDepth
+#     get: '/1.0/orderBookDepth'

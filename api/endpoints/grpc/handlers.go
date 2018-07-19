@@ -5,7 +5,7 @@ import (
 	"vega/proto"
 	"vega/api"
 	"time"
-	"fmt"
+	"github.com/pkg/errors"
 )
 
 type Handlers struct {
@@ -13,66 +13,76 @@ type Handlers struct {
 	TradeService api.TradeService
 }
 
-const LIMIT_MAX = uint64(10000)
+const limitMax = uint64(10000)
 
 func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
-	// Call into API Order service layer
 	success, err := h.OrderService.CreateOrder(ctx, order)
 	return &api.OrderResponse{Success: success}, err
 }
 
-func (h *Handlers) OrdersByMarket(ctx context.Context, request *api.OrdersByMarketRequest) (r *api.OrdersByMarketResponse, err error) {
+func (h *Handlers) OrdersByMarket(ctx context.Context, request *api.OrdersByMarketRequest) (*api.OrdersByMarketResponse, error) {
 	market := request.Market
 	if market == "" {
-		market = "BTC/DEC18"
+		return nil, errors.New("Market empty or missing")
 	}
-	limit := LIMIT_MAX
+	limit := limitMax
 	if request.Params != nil && request.Params.Limit > 0 {
 		limit = request.Params.Limit
 	}
-
-	fmt.Println(market, limit)
-
 	orders, err := h.OrderService.GetByMarket(ctx, market, limit)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("orders len: ", len(orders))
-	if orders != nil && len(orders) > 0 {
-		r.Orders = orders
+	var response = &api.OrdersByMarketResponse{}
+	if len(orders) > 0 {
+	   response.Orders = orders
 	}
-
-	return r, nil
+	return response, nil
 }
 
-func (h *Handlers) OrdersByParty(ctx context.Context, request *api.OrdersByPartyRequest) (r *api.OrdersByPartyResponse, err error) {
-	orders, err := h.OrderService.GetByParty(ctx, request.Party, request.Params.Limit)
+func (h *Handlers) OrdersByParty(ctx context.Context, request *api.OrdersByPartyRequest) (*api.OrdersByPartyResponse, error) {
+	party := request.Party
+	if party == "" {
+		return nil, errors.New("Party empty or missing")
+	}
+	limit := limitMax
+	if request.Params != nil && request.Params.Limit > 0 {
+		limit = request.Params.Limit
+	}
+	orders, err := h.OrderService.GetByParty(ctx, party, limit)
 	if err != nil {
 		return nil, err
 	}
-	r.Orders = orders
-	return r, nil
+	var response = &api.OrdersByPartyResponse{}
+	if len(orders) > 0 {
+		response.Orders = orders
+	}
+	return response, nil
 }
 
-func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (r *api.MarketsResponse, err error) {
+func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (*api.MarketsResponse, error) {
 	markets, err := h.OrderService.GetMarkets(ctx)
 	if err != nil {
 		return nil, err
 	}
-	r.Markets = markets
-	return r, nil
+	var response = &api.MarketsResponse{}
+	if len(markets) > 0 {
+		response.Markets = markets
+	}
+	return response, nil
 }
 
-func (h *Handlers) OrderByMarketAndId(ctx context.Context, request *api.OrderByMarketAndIdRequest) (r *api.OrderByMarketAndIdResponse, err error) {
+func (h *Handlers) OrderByMarketAndId(ctx context.Context, request *api.OrderByMarketAndIdRequest) (*api.OrderByMarketAndIdResponse, error) {
 	order, err := h.OrderService.GetByMarketAndId(ctx, request.Market, request.Id)
 	if err != nil {
 		return nil, err
 	}
-	r.Order = order
-	return r, nil
+	var response = &api.OrderByMarketAndIdResponse{}
+	response.Order = order
+	return response, nil
 }
 
-func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRequest) (r *api.TradeCandlesResponse, err error) {
+func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRequest) (*api.TradeCandlesResponse, error) {
 	market := request.Market
 	if market == "" {
 		market = "BTC/DEC18"
@@ -93,7 +103,10 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 	if err != nil {
 		return nil, err
 	}
-	r.Candles = res.Candles
-	return r, nil
+	var response = &api.TradeCandlesResponse{}
+	if len(res.Candles) > 0 {
+		response.Candles = res.Candles
+	}
+	return response, nil
 
 }
