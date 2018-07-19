@@ -15,23 +15,36 @@
     "application/json"
   ],
   "paths": {
-    "/1.0/orderBookDepth": {
+    "/1.0/candles": {
       "get": {
-        "operationId": "GetOrderBookDepth",
+        "operationId": "TradeCandles",
         "responses": {
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/vegaOrderBookDepth"
+              "$ref": "#/definitions/grpcTradeCandlesResponse"
             }
           }
         },
         "parameters": [
           {
-            "name": "name",
+            "name": "market",
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
           }
         ],
         "tags": [
@@ -39,7 +52,7 @@
         ]
       }
     },
-    "/1.0/orders": {
+    "/1.0/createOrder": {
       "post": {
         "operationId": "CreateOrder",
         "responses": {
@@ -64,6 +77,138 @@
           "trading"
         ]
       }
+    },
+    "/1.0/marketOrder": {
+      "get": {
+        "operationId": "OrderByMarketAndId",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderByMarketAndIdResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/1.0/marketOrders": {
+      "get": {
+        "operationId": "OrdersByMarket",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrdersByMarketResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "params.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/1.0/markets": {
+      "get": {
+        "operationId": "Markets",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcMarketsResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/1.0/orderBookDepth": {
+      "get": {
+        "operationId": "OrderBookDepth",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderBookDepthResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/1.0/partyOrders": {
+      "get": {
+        "operationId": "OrdersByParty",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrdersByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "party",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "params.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
     }
   },
   "definitions": {
@@ -77,12 +222,129 @@
       ],
       "default": "GTC"
     },
+    "grpcMarketsResponse": {
+      "type": "object",
+      "properties": {
+        "markets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "grpcOptionalParams": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "grpcOrderBookDepthResponse": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "buy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        },
+        "sell": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        }
+      }
+    },
+    "grpcOrderByMarketAndIdResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder"
+        }
+      }
+    },
     "grpcOrderResponse": {
       "type": "object",
       "properties": {
         "success": {
           "type": "boolean",
           "format": "boolean"
+        }
+      }
+    },
+    "grpcOrdersByMarketResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
+        }
+      }
+    },
+    "grpcOrdersByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
+        }
+      }
+    },
+    "grpcTradeCandlesResponse": {
+      "type": "object",
+      "properties": {
+        "candles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaCandle"
+          }
+        }
+      }
+    },
+    "vegaCandle": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "high": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "low": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "open": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "close": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "volume": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "openBlockNumber": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "closeBlockNumber": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
@@ -119,26 +381,6 @@
         "timestamp": {
           "type": "string",
           "format": "uint64"
-        }
-      }
-    },
-    "vegaOrderBookDepth": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "buy": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPriceLevel"
-          }
-        },
-        "sell": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPriceLevel"
-          }
         }
       }
     },

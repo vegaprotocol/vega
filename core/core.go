@@ -87,7 +87,8 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%d", order.Id, idx)
-			if err := v.TradesStore.Post(*datastore.NewTradeFromProtoMessage(trade, order.Id)); err != nil {
+			t := datastore.NewTradeFromProtoMessage(trade, order.Id, confirmation.PassiveOrdersAffected[idx].Id)
+			if err := v.TradesStore.Post(*t); err != nil {
 				fmt.Printf("TradesStore.Post error: %+v\n", err)
 			}
 		}

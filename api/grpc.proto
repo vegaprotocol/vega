@@ -7,9 +7,76 @@ option go_package = "api";
 
 service trading {
     rpc CreateOrder(vega.Order) returns (OrderResponse);
-    rpc GetOrderBookDepth(vega.Market) returns (vega.OrderBookDepth);
+    rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
+    rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
+    rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
+    rpc Markets(MarketsRequest) returns (MarketsResponse);
+    rpc TradeCandles(TradeCandlesRequest) returns (TradeCandlesResponse);
+    rpc OrderBookDepth(OrderBookDepthRequest) returns (OrderBookDepthResponse);
+    //rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);       TODO
+    //rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO
+
 }
 
 message OrderResponse {
     bool success = 1;
+}
+
+message OrdersByMarketRequest {
+    string market = 1;
+    OptionalParams params = 2;
+}
+
+message OrdersByMarketResponse {
+    repeated vega.Order orders = 1;
+}
+
+message OrdersByPartyRequest {
+    string party = 1;
+    OptionalParams params = 2;
+}
+
+message OrdersByPartyResponse {
+    repeated vega.Order orders = 1;
+}
+
+message OrderByMarketAndIdRequest {
+    string market = 1;
+    string id = 2;
+}
+
+message OrderByMarketAndIdResponse {
+    vega.Order order = 1;
+}
+
+message MarketsRequest {
+    // empty for now
+}
+
+message MarketsResponse {
+    repeated string markets = 1;
+}
+
+message TradeCandlesRequest {
+    string market = 1;
+    string since = 2;
+    uint64 interval = 3;
+}
+
+message TradeCandlesResponse {
+    repeated vega.Candle candles = 1;
+}
+
+message OrderBookDepthRequest {
+    string market = 1;
+}
+
+message OrderBookDepthResponse {
+    string   name = 1;
+    repeated vega.PriceLevel buy = 2;
+    repeated vega.PriceLevel sell = 3;
+}
+
+message OptionalParams {
+    uint64 limit = 1;
 }

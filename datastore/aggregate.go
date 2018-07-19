@@ -5,6 +5,7 @@ import (
 	"vega/proto"
 )
 
+
 type PriceHistory []*tradeInfo
 
 type tradeInfo struct {
@@ -13,36 +14,40 @@ type tradeInfo struct {
 	size      uint64
 }
 
-func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
-	if err := t.marketExists(market); err != nil {
+func newCandle() *msg.Candle {
+	return &msg.Candle{}
+}
+
+func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
+	if err := store.marketExists(market); err != nil {
 		return msg.Candles{}, err
 	}
 
-	nOfCandles := uint64(math.Ceil(float64((currentBlock-sinceBlock)/interval))) + 1
+	nOfCandles := uint64(math.Ceil(float64((currentBlock-sinceBlock)/interval)))+1
 	var candles = make([]*msg.Candle, nOfCandles, nOfCandles)
 
 	for idx := range candles {
 		candles[idx] = &msg.Candle{}
-		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx)*interval
+		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx) * interval
 		candles[idx].CloseBlockNumber = candles[idx].OpenBlockNumber + interval
 	}
 
 	found := false
 	idx := 0
 
-	for tidx, trade := range t.store.markets[market].priceHistory {
+	for tidx, t := range store.store.markets[market].tradesByTimestamp {
 		// iterate trades until reached ones of interest
-		if trade.timestamp < sinceBlock {
+		if t.trade.Timestamp < sinceBlock {
 			continue
 		}
 
 		// OK I have now only trades I need
-		if candles[idx].OpenBlockNumber <= trade.timestamp && trade.timestamp < candles[idx].CloseBlockNumber {
-			updateCandle(candles, idx, trade)
+		if candles[idx].OpenBlockNumber <= t.trade.Timestamp && t.trade.Timestamp < candles[idx].CloseBlockNumber {
+			updateCandle(candles, idx, &t.trade)
 		} else {
 			// if current trade is not fit for current candle, close the candle with previous trade if non-empty candle
 			if candles[idx].Volume != 0 {
-				candles[idx].Close = t.store.markets[market].priceHistory[tidx-1].price
+				candles[idx].Close = store.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
 			}
 			// proceed to next candle
 			idx++
@@ -53,8 +58,8 @@ func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, inte
 				if idx > int(nOfCandles)-1 {
 					break
 				}
-				if candles[idx].OpenBlockNumber <= trade.timestamp && trade.timestamp < candles[idx].CloseBlockNumber {
-					updateCandle(candles, idx, trade)
+				if candles[idx].OpenBlockNumber <= t.trade.Timestamp && t.trade.Timestamp < candles[idx].CloseBlockNumber {
+					updateCandle(candles, idx, &t.trade)
 					found = true
 				} else {
 					idx++
@@ -72,21 +77,21 @@ func (t *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, inte
 	return output, nil
 }
 
-func updateCandle(candles []*msg.Candle, idx int, trade *tradeInfo) {
+func updateCandle(candles []*msg.Candle, idx int, trade *Trade) {
 	if candles[idx].Volume == 0 {
-		candles[idx].Open = trade.price
+		candles[idx].Open = trade.Price
 	}
-	candles[idx].Volume += trade.size
-	if candles[idx].High < trade.price {
-		candles[idx].High = trade.price
+	candles[idx].Volume += trade.Size
+	if candles[idx].High < trade.Price {
+		candles[idx].High = trade.Price
 	}
-	if candles[idx].Low > trade.price || candles[idx].Low == 0 {
-		candles[idx].Low = trade.price
+	if candles[idx].Low > trade.Price || candles[idx].Low == 0 {
+		candles[idx].Low = trade.Price
 	}
 }
 
-func (o *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, error) {
-	if err := o.marketExists(market); err != nil {
+func (m *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, error) {
+	if err := m.marketExists(market); err != nil {
 		return &msg.OrderBookDepth{}, err
 	}
 
@@ -103,7 +108,7 @@ func (o *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, e
 	// get all orders for market ordered by price
 	// iterate through fetched orders and insert into a level
 	// while iterating calculate cumulative volume and insert at consecutive price level
-	for idx, order := range o.store.markets[market].buySideRemainingOrders.orders {
+	for idx, order := range m.store.markets[market].buySideRemainingOrders.orders {
 		if idx == 0 {
 			orderBookDepth.Buy = append(orderBookDepth.Buy, &msg.PriceLevel{Price: order.price})
 			currentPrice = order.price
@@ -119,7 +124,7 @@ func (o *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, e
 		orderBookDepth.Buy[at].Volume += order.remaining
 		orderBookDepth.Buy[at].NumberOfOrders++
 
-		if idx + 1 == len(o.store.markets[market].buySideRemainingOrders.orders) {
+		if idx + 1 == len(m.store.markets[market].buySideRemainingOrders.orders) {
 			buysSideCumulative += orderBookDepth.Buy[at].Volume
 			orderBookDepth.Buy[at].CumulativeVolume = buysSideCumulative
 		}
@@ -127,7 +132,7 @@ func (o *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, e
 
 	currentPrice = 0
 	at = 0
-	for idx, order := range o.store.markets[market].sellSideRemainingOrders.orders {
+	for idx, order := range m.store.markets[market].sellSideRemainingOrders.orders {
 		if idx == 0 {
 			orderBookDepth.Sell = append(orderBookDepth.Sell, &msg.PriceLevel{Price: order.price})
 			currentPrice = order.price
@@ -143,7 +148,7 @@ func (o *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, e
 		orderBookDepth.Sell[at].Volume += order.remaining
 		orderBookDepth.Sell[at].NumberOfOrders++
 
-		if idx + 1 == len(o.store.markets[market].sellSideRemainingOrders.orders) {
+		if idx + 1 == len(m.store.markets[market].sellSideRemainingOrders.orders) {
 			sellSideCumulative += orderBookDepth.Sell[at].Volume
 			orderBookDepth.Sell[at].CumulativeVolume = sellSideCumulative
 		}
