@@ -20,6 +20,7 @@ message Order {
     uint64 remaining = 7;
     Type type = 8;
     uint64 timestamp = 9;
+    uint64 riskFactor = 10;
 }
 
 message OrderConfirmation {
