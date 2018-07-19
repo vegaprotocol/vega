@@ -138,3 +138,20 @@ func (h *Handlers) OrderBookDepth(ctx context.Context, request *api.OrderBookDep
 	response.Sell = depth.Sell
 	return response, nil
 }
+
+func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMarketRequest) (*api.TradesByMarketResponse, error) {
+	if request.Market == "" {
+		return nil, errors.New("Market empty or missing")
+	}
+	limit := defaultLimit
+	if request.Params != nil && request.Params.Limit > 0 {
+		limit = request.Params.Limit
+	}
+	trades, err := h.TradeService.GetByMarket(ctx, request.Market, limit)
+	if err != nil {
+		return nil, err
+	}
+	var response = &api.TradesByMarketResponse{}
+	response.Trades = trades
+	return response, nil
+}
