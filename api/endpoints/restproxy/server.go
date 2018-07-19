@@ -32,7 +32,11 @@ func (s *restProxyServer) Start() {
 	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
 		log.Fatal(err)
 	} else {
+		// CORS support
 		handler := cors.Default().Handler(mux)
+		// Gzip encoding support
+		handler = NewGzipHandler(handler.(http.HandlerFunc))
+		// Start http server on port specified
 		http.ListenAndServe(addr, handler)
 	}
 }
