@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/binary"
+	"fmt"
 	"os/exec"
 	"vega/msg"
 )
@@ -37,6 +38,12 @@ func (ec ExecCommand) Output() ([]byte, error) {
 }
 
 func (re riskEngine) Assess(order *msg.Order) {
-	returnValue, _ := re.Command.Output()
+	returnValue, err := re.Command.Output()
+
+	if err != nil {
+		// TODO - log this
+		fmt.Println(err)
+	}
+
 	order.RiskFactor, _ = binary.Uvarint(returnValue)
 }
