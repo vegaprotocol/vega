@@ -19,8 +19,8 @@ type TradeStore interface {
 	Delete(r Trade) error
 	// Aggregates trades into candles
 	GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error)
-
-	CalculateNetPositions(party string) (*Positions)
+	// Returns exposure per market
+	GetNetPositionsByParty(party string) map[string]int64
 }
 
 type OrderStore interface {

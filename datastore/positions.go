@@ -1,41 +1,33 @@
 package datastore
 
-//type Position struct {
-//	market string
-//	startPrice uint64
-//	closePrice uint64
-//	startSide msg.Side
-//	closeSide msg.Side
-//}
-
-type Positions struct {
-	positions map[string]uint64
-}
-
-func (store *memTradeStore) CalculateNetPositions(party string) (positions *Positions){
+func (store *memTradeStore) GetNetPositionsByParty(party string) map[string]int64 {
+	positions := make(map[string]int64, 0)
 	tradesByTimestamp, err := store.GetByParty(party, GetParams{})
 	if err != nil {
-		return &Positions{}
+		return positions
 	}
 	for _, trade := range tradesByTimestamp {
-		if position, ok := positions.positions[trade.Market]; ok {
+		//fmt.Printf("T: %+v\n", trade)
+		if exposure, ok := positions[trade.Market]; ok {
 			if trade.Buyer == party {
-				position += trade.Price * trade.Size
+				exposure += int64(trade.Price * trade.Size)
 			}
 			if trade.Seller == party {
-				position -= trade.Price * trade.Size
+				exposure -= int64(trade.Price * trade.Size)
 			}
-			positions.positions[party] = position
+			positions[trade.Market] = exposure
+			//fmt.Printf("positions.positions[trade.Market] = %+v\n", positions.positions[trade.Market])
 		} else {
-			positions.positions[trade.Market] = 0
+			positions[trade.Market] = 0
 			if trade.Buyer == party {
-				position += trade.Price * trade.Size
+				exposure += int64(trade.Price * trade.Size)
 			}
 			if trade.Seller == party {
-				position -= trade.Price * trade.Size
+				exposure -= int64(trade.Price * trade.Size)
 			}
-			positions.positions[party] = position
+			positions[trade.Market] = exposure
+			//fmt.Printf("positions.positions[trade.Market] = %+v\n", positions.positions[trade.Market])
 		}
 	}
-	return &Positions{}
+	return positions
 }

@@ -155,3 +155,16 @@ func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMark
 	response.Trades = trades
 	return response, nil
 }
+
+func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsByPartyRequest) (*api.PositionsByPartyResponse, error) {
+	if request.Party == "" {
+		return nil, errors.New("Party empty or missing")
+	}
+	positions, err := h.TradeService.GetPositionsByParty(ctx, request.Party)
+	if err != nil {
+		return nil, err
+	}
+	var response = &api.PositionsByPartyResponse{}
+	response.Positions = positions
+	return response, nil
+}

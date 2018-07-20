@@ -240,6 +240,31 @@
           "trading"
         ]
       }
+    },
+    "/1.0/partyPositions": {
+      "get": {
+        "summary": "rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO",
+        "operationId": "PositionsByParty",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcPositionsByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "party",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
     }
   },
   "definitions": {
@@ -328,6 +353,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaOrder"
+          }
+        }
+      }
+    },
+    "grpcPositionsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "positions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPosition"
           }
         }
       }
@@ -423,6 +459,21 @@
         "timestamp": {
           "type": "string",
           "format": "uint64"
+        }
+      }
+    },
+    "vegaPosition": {
+      "type": "object",
+      "properties": {
+        "market": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string"
+        },
+        "exposure": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

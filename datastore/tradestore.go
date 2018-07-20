@@ -121,7 +121,6 @@ func (store *memTradeStore) Post(trade Trade) error {
 		aggressive: aggressiveOrder,
 		passive:    passiveOrder,
 	}
-
 	// Add new trade to trades hashtable
 	store.store.markets[trade.Market].trades[trade.Id] = newTrade
 

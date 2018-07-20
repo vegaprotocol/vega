@@ -93,3 +93,9 @@ message OrderBookDepth {
     repeated PriceLevel buy = 2;
     repeated PriceLevel sell = 3;
 }
+
+message Position {
+    string market = 1;
+    string direction = 2;
+    int64 exposure  = 3;
+}
