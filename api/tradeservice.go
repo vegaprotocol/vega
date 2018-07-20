@@ -7,7 +7,7 @@ import (
 
 	"vega/core"
 	"vega/datastore"
-	"vega/proto"
+	"vega/msg"
 )
 
 type TradeService interface {

@@ -9,7 +9,7 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 
 	"vega/core"
-	"vega/proto"
+	"vega/msg"
 	"github.com/golang/protobuf/proto"
 )
 
