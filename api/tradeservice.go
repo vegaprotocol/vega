@@ -116,7 +116,7 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 
 	for key, val := range mapOfNetPositions {
 		currentPrice, _ := t.tradeStore.GetCurrentMarketPrice(key)
-		
+
 		fmt.Printf("current Price %d\n", currentPrice)
 		exposure = int64(math.Abs(float64(val.Position)))
 		PNL = int64(int64(currentPrice) * int64(math.Abs(float64(val.Volume))) - exposure)

@@ -104,10 +104,10 @@ func TestPositions(t *testing.T) {
 	trades, _ := newTradeStore.GetByParty(testPartyA, GetParams{})
 	fmt.Printf("stuff %d\n", len(trades))
 
-	positions := newTradeStore.CalculateNetPositions(testPartyA)
+	positions := newTradeStore.GetNetPositionsByParty(testPartyA)
 
 	fmt.Printf("positions returned:\n")
-	for key, val := range positions.positions {
+	for key, val := range positions {
 		fmt.Printf("%+v %d\n", key, val)
 	}
 
@@ -152,10 +152,10 @@ func TestPositions(t *testing.T) {
 	err = newTradeStore.Post(*d.trade)
 	assert.Nil(t, err)
 
-	positions = newTradeStore.CalculateNetPositions(testPartyA)
+	positions = newTradeStore.GetNetPositionsByParty(testPartyA)
 
 	fmt.Printf("positions returned:\n")
-	for key, val := range positions.positions {
+	for key, val := range positions {
 		fmt.Printf("%+v %d\n", key, val)
 	}
 }
