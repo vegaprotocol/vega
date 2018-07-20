@@ -12,7 +12,7 @@ type Positions struct {
 	positions map[string]uint64
 }
 
-func (store *memTradeStore) calculateNetPositions(party string) (positions *Positions){
+func (store *memTradeStore) CalculateNetPositions(party string) (positions *Positions){
 	tradesByTimestamp, err := store.GetByParty(party, GetParams{})
 	if err != nil {
 		return &Positions{}
