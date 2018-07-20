@@ -116,6 +116,7 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 
 	for key, val := range mapOfNetPositions {
 		currentPrice, _ := t.tradeStore.GetCurrentMarketPrice(key)
+		
 		fmt.Printf("current Price %d\n", currentPrice)
 		exposure = int64(math.Abs(float64(val.Position)))
 		PNL = int64(int64(currentPrice) * int64(math.Abs(float64(val.Volume))) - exposure)
@@ -157,9 +158,3 @@ func getPNLResult(direction string, PNL int64) string {
 	}
 	return ""
 }
-
-//115 x 100 = za tyle to jest w tej chwili do opierdolenia
-//moj exposure = (agg amount X Agg price) tyle mam tego gowna w tej chwili
-//PNL = currentPrice - moj exposure
-//if SHORT && PNL < 0 => PROFIT
-//if LONG && PNL > 0 => PROFIT
