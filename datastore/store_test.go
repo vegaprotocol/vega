@@ -3,7 +3,7 @@ package datastore
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
-	"vega/proto"
+	"vega/msg"
 )
 
 func TestMemoryStoreProvider_Init(t *testing.T) {

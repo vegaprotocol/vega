@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"fmt"
-	"vega/proto"
+	"vega/msg"
 )
 
 // memOrderStore should implement OrderStore interface.
