@@ -3,11 +3,13 @@ package api
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	"vega/core"
 	"vega/datastore"
 	"vega/proto"
+	"github.com/golang/go/src/pkg/fmt"
 )
 
 type TradeService interface {
@@ -105,11 +107,27 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 
 func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*msg.Position, err error) {
 	mapOfNetPositions := t.tradeStore.GetNetPositionsByParty(party)
+	var (
+		profitOrLoss string
+		exposure int64
+		PNL int64
+		direction string
+	)
+
 	for key, val := range mapOfNetPositions {
+		currentPrice, _ := t.tradeStore.GetCurrentMarketPrice(key)
+		fmt.Printf("current Price %d\n", currentPrice)
+		exposure = int64(math.Abs(float64(val.Position)))
+		PNL = int64(int64(currentPrice) * int64(math.Abs(float64(val.Volume))) - exposure)
+		direction = getDirection(val.Position)
+		profitOrLoss = getPNLResult(direction, PNL)
+
 		newPosition := &msg.Position{
 			Market: key,
-			Direction: getDirection(val),
-			Exposure: val,
+			Direction: direction,
+			Exposure: exposure,
+			PNL: PNL,
+			PNLResult: profitOrLoss,
 		}
 		positions = append(positions, newPosition)
 	}
@@ -123,4 +141,25 @@ func getDirection(val int64) string{
 	return "NET"
 }
 
+func getPNLResult(direction string, PNL int64) string {
+	if PNL == 0 {
+		return ""
+	}
+	if direction == "SHORT" && PNL < 0 {
+		return "PROFIT"
+	} else {
+		return "LOSS"
+	}
+	if direction == "LONG" && PNL > 0 {
+		return "PROFIT"
+	} else {
+		return "LOSS"
+	}
+	return ""
+}
 
+//115 x 100 = za tyle to jest w tej chwili do opierdolenia
+//moj exposure = (agg amount X Agg price) tyle mam tego gowna w tej chwili
+//PNL = currentPrice - moj exposure
+//if SHORT && PNL < 0 => PROFIT
+//if LONG && PNL > 0 => PROFIT

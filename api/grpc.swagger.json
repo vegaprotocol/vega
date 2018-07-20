@@ -474,6 +474,13 @@
         "exposure": {
           "type": "string",
           "format": "int64"
+        },
+        "PNL": {
+          "type": "string",
+          "format": "int64"
+        },
+        "PNLResult": {
+          "type": "string"
         }
       }
     },

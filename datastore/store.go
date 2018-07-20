@@ -20,7 +20,9 @@ type TradeStore interface {
 	// Aggregates trades into candles
 	GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error)
 	// Returns exposure per market
-	GetNetPositionsByParty(party string) map[string]int64
+	GetNetPositionsByParty(party string) map[string]Exposure
+	// Returns current market price
+	GetCurrentMarketPrice(market string) (uint64, error)
 }
 
 type OrderStore interface {
