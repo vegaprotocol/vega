@@ -15,13 +15,14 @@ import (
 
 type Blockchain struct {
 	types.BaseApplication
-
 	vega *core.Vega
 }
 
 func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 	return &Blockchain{vega: vegaApp}
 }
+
+
 
 // Mempool Connection
 //
