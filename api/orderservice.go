@@ -21,9 +21,9 @@ type OrderService interface {
 }
 
 type orderService struct {
-	app              *core.Vega
-	orderStore       datastore.OrderStore
-	blockchainClient blockchain.Client
+	app        *core.Vega
+	orderStore datastore.OrderStore
+	blockchain blockchain.Client
 }
 
 func NewOrderService() OrderService {
@@ -33,20 +33,20 @@ func NewOrderService() OrderService {
 func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.app = app
 	p.orderStore = orderStore
-	p.blockchainClient = blockchain.NewClient()
+	p.blockchain = blockchain.NewClient()
 }
 
 func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
 	order.Remaining = order.Size
 	// TODO validate
 	// Call out to the blockchain package/layer and use internal client to gain consensus
-	return p.blockchainClient.CreateOrder(ctx, order)
+	return p.blockchain.CreateOrder(ctx, order)
 }
 
 func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
 	// Cancel by ID, market, other fields not required
 	// TODO validate
-	return p.blockchainClient.CancelOrder(ctx, order)
+	return p.blockchain.CancelOrder(ctx, order)
 }
 
 func (p *orderService) GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error) {

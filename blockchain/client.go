@@ -9,7 +9,6 @@ import (
 	"vega/tendermint/rpc"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/satori/go.uuid"
 )
 
 type Client interface
@@ -28,18 +27,11 @@ func NewClient() Client {
 }
 
 func (b *client) CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
-	return b.sendOrderCommand(ctx, order, CancelOrder)
+	return b.sendOrderCommand(ctx, order, CancelOrderCommand)
 }
 
 func (b *client) CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
-	return b.sendOrderCommand(ctx, order, CreateOrder)
-}
-
-func (b *client) encode(input []byte, cmd byte) ([]byte, error) {
-	prefix := uuid.NewV4().String() + "|"
-	prefixBytes := []byte(prefix)
-	//commandInput := append([]byte{cmd}, input...)
-	return append(prefixBytes, input...), nil
+	return b.sendOrderCommand(ctx, order, CreateOrderCommand)
 }
 
 func (b *client) getRpcClient() (*rpc.Client, error) {
@@ -76,8 +68,8 @@ func (b *client) sendOrderCommand(ctx context.Context, order *msg.Order, cmd Com
 	}
 
 	// Tendermint requires unique transactions so we pre-pend a guid + pipe to the byte array.
-	// It's split on arrival out of concensus along with a byte that represents command e.g. cancel order
-	bytes, err = b.encode(bytes, byte(cmd))
+	// It's split on arrival out of consensus along with a byte that represents command e.g. cancel order
+	bytes, err = VegaTxEncode(bytes, cmd)
 	if err != nil {
 		return false, err
 	}
@@ -103,3 +95,4 @@ func (b *client) sendOrderCommand(ctx context.Context, order *msg.Order, cmd Com
 	}
 	return true, nil
 }
+

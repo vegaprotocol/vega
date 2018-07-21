@@ -1,7 +1,6 @@
 package blockchain
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 
@@ -21,8 +20,6 @@ type Blockchain struct {
 func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 	return &Blockchain{vega: vegaApp}
 }
-
-
 
 // Mempool Connection
 //
@@ -81,30 +78,41 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	fmt.Println("DeliverTx: " + string(tx))
 
-	// split the transaction
-	var _, value []byte
-	parts := bytes.Split(tx, []byte("|"))
-	if len(parts) == 2 {
-		_, value = parts[0], parts[1]
-	} else {
-		fmt.Println("Invalid tx: " + string(tx))
+	// Decode payload and command
+	value, cmd, err := VegaTxDecode(tx)
+	if err != nil {
+		fmt.Println("Error: Invalid tx: " + string(tx))
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
+	// All incoming messages are order (for now)...
 	// deserialize proto msg to struct
 	order := msg.OrderPool.Get().(*msg.Order)
 	e := proto.Unmarshal(value, order)
 	if e != nil {
-		fmt.Println("Error: ", e.Error())
+		fmt.Println("Error: Decoding order to proto: ", e.Error())
+		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
-	// deliver to the Vega trading core
-	confirmationMessage, _ := app.vega.SubmitOrder(order)
-	if confirmationMessage != nil {
-		fmt.Printf("ABCI reports it received a confirmation message from vega:\n")
-		fmt.Printf("- aggressive order: %+v\n", confirmationMessage.Order)
-		fmt.Printf("- trades: %+v\n", confirmationMessage.Trades)
-		fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+	// Process known command types
+	switch cmd {
+		case CreateOrderCommand:
+			fmt.Println("ABCI received a CREATE ORDER command after consensus")
+
+			// Submit the create new order request to the Vega trading core
+			confirmationMessage, _ := app.vega.SubmitOrder(order)
+			if confirmationMessage != nil {
+				fmt.Printf("ABCI reports it received a confirmation message from vega:\n")
+				fmt.Printf("- aggressive order: %+v\n", confirmationMessage.Order)
+				fmt.Printf("- trades: %+v\n", confirmationMessage.Trades)
+				fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+			}
+
+		case CancelOrderCommand:
+			fmt.Println("ABCI received a CANCEL ORDER command after consensus")
+
+		default:
+			fmt.Println("UNKNOWN command received after consensus")
 	}
 
 	app.vega.State.Size += 1
@@ -144,3 +152,5 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 	// saveState(app.state)
 	return types.ResponseCommit{Data: appHash}
 }
+
+
