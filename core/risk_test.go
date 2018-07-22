@@ -1,7 +1,6 @@
 package core
 
 import (
-	"encoding/binary"
 	"testing"
 	"vega/msg"
 
@@ -13,8 +12,9 @@ type MockCommand struct {
 }
 
 func (mc MockCommand) Output() ([]byte, error) {
-	buf := make([]byte, binary.MaxVarintLen64)
-	binary.PutUvarint(buf, 20)
+	//buf := make([]byte, binary.MaxVarintLen64)
+	//binary.PutUvarint(buf, 20)
+	buf := []byte("20\n")
 	return buf, nil
 }
 

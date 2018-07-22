@@ -1,9 +1,9 @@
 package core
 
 import (
-	"encoding/binary"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"vega/msg"
 )
 
@@ -23,7 +23,7 @@ func newRiskEngine() *riskEngine {
 	return &riskEngine{
 		Command: &ExecCommand{
 			command: "python",
-			args:    []string{"-c", "20"},
+			args:    []string{"-c", "print(20)"},
 		},
 	}
 }
@@ -45,5 +45,10 @@ func (re riskEngine) Assess(order *msg.Order) {
 		fmt.Println(err)
 	}
 
-	order.RiskFactor, _ = binary.Uvarint(returnValue)
+	//order.RiskFactor, _ = binary.Uvarint(returnValue)
+
+	order.RiskFactor, err = strconv.ParseUint(string(returnValue[:len(returnValue)-1]), 10, 64)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
