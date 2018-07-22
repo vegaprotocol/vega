@@ -5,9 +5,10 @@ import (
 	"errors"
 	"sync"
 
-	"vega/msg"
 	"vega/core"
 	"vega/datastore"
+	"vega/msg"
+
 	"vega/tendermint/rpc"
 
 	"github.com/golang/protobuf/proto"
@@ -15,7 +16,7 @@ import (
 
 var (
 	clients []*rpc.Client
-	mux sync.Mutex
+	mux     sync.Mutex
 )
 
 type OrderService interface {
@@ -95,15 +96,16 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, limit uin
 		//	continue
 		//}
 		o := &msg.Order{
-			Id:        order.Id,
-			Market:    order.Market,
-			Party:     order.Party,
-			Side:      order.Side,
-			Price:     order.Price,
-			Size:      order.Timestamp,
-			Remaining: order.Remaining,
-			Timestamp: order.Timestamp,
-			Type:      order.Type,
+			Id:         order.Id,
+			Market:     order.Market,
+			Party:      order.Party,
+			Side:       order.Side,
+			Price:      order.Price,
+			Size:       order.Timestamp,
+			Remaining:  order.Remaining,
+			Timestamp:  order.Timestamp,
+			Type:       order.Type,
+			RiskFactor: order.RiskFactor,
 		}
 		result = append(result, o)
 	}
@@ -121,15 +123,16 @@ func (p *orderService) GetByParty(ctx context.Context, party string, limit uint6
 		//	continue
 		//}
 		o := &msg.Order{
-			Id:        order.Id,
-			Market:    order.Market,
-			Party:     order.Party,
-			Side:      order.Side,
-			Price:     order.Price,
-			Size:      order.Timestamp,
-			Remaining: order.Remaining,
-			Timestamp: order.Timestamp,
-			Type:      order.Type,
+			Id:         order.Id,
+			Market:     order.Market,
+			Party:      order.Party,
+			Side:       order.Side,
+			Price:      order.Price,
+			Size:       order.Timestamp,
+			Remaining:  order.Remaining,
+			Timestamp:  order.Timestamp,
+			Type:       order.Type,
+			RiskFactor: order.RiskFactor,
 		}
 		result = append(result, o)
 	}
@@ -164,13 +167,11 @@ func (p *orderService) GetOrderBookDepth(ctx context.Context, marketName string)
 	return p.orderStore.GetOrderBookDepth(marketName)
 }
 
-
 func getClient() (*rpc.Client, error) {
 	mux.Lock()
 	if len(clients) == 0 {
 		mux.Unlock()
-		client := rpc.Client{
-		}
+		client := rpc.Client{}
 		if err := client.Connect(); err != nil {
 			return nil, err
 		}

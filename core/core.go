@@ -74,6 +74,13 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		return nil, err
 	}
 
+	// ------------------------------------------------//
+	//------------------- RISK ENGINE -----------------//
+
+	v.RiskEngine.Assess(order)
+
+	// ------------------------------------------------//
+
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
 	// if OK send to stores
@@ -98,12 +105,6 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			}
 		}
 	}
-	// ------------------------------------------------//
-	//------------------- RISK ENGINE -----------------//
-
-	v.RiskEngine.Assess(order)
-
-	// ------------------------------------------------//
 
 	return confirmation, msg.OrderError_NONE
 }
