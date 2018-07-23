@@ -37,8 +37,15 @@ func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 }
 
 func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
+	// Set defaults, prevent unwanted external manipulation
 	order.Remaining = order.Size
+	order.Status = msg.Order_Active
+	order.Type = msg.Order_GTC // VEGA only supports GTC at present
+	order.Timestamp = 0
+	order.RiskFactor = 0
+
 	// TODO validate
+
 	// Call out to the blockchain package/layer and use internal client to gain consensus
 	return p.blockchain.CreateOrder(ctx, order)
 }

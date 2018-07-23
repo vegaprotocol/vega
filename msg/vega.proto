@@ -25,6 +25,10 @@ message Order {
     Status status = 11;
 }
 
+message OrderCancellation {
+    Order order = 1;
+}
+
 message OrderConfirmation {
     Order order = 1;
     repeated Trade trades = 2;

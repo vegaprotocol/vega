@@ -25,6 +25,11 @@ func NewBook(name string, config Config) *OrderBook {
 	}
 }
 
+// Cancel an order that is active on an orderbook
+func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+	return nil, msg.OrderError_NONE
+}
+
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
 func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	if err := b.validateOrder(order); err != msg.OrderError_NONE {

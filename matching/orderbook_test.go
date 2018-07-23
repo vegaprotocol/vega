@@ -753,6 +753,32 @@ func TestOrderBook_AddOrder(t *testing.T) {
 
 }
 
+
+func TestOrderBook_CancelOrder(t *testing.T) {
+
+	// Arrange
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Party:     "A",
+		Side:      msg.Side_Sell,
+		Price:     101,
+		Size:      100,
+		Remaining: 100,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+	}
+	book.AddOrder(newOrder)
+
+	// Act
+	//err := book.CancelOrder(newOrder)
+
+	// Assert
+	assert.Equal(t, false, false)
+}
+
+
+
 func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {
 	// run asserts for protocol trade data
 	assert.Equal(t, expectedTrade.Price, trade.Price)
