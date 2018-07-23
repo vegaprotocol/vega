@@ -1,7 +1,7 @@
 package matching
 
 import (
-	"vega/proto"
+	"vega/msg"
 )
 
 type OrderBookSide struct {

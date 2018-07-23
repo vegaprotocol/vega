@@ -2,8 +2,7 @@ package datastore
 
 import (
 	"testing"
-	"vega/proto"
-
+	"vega/msg"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,7 +5,7 @@ import (
 	"math"
 
 	"vega/log"
-	"vega/proto"
+	"vega/msg"
 )
 
 type PriceLevel struct {

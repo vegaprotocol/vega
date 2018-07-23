@@ -1,16 +1,18 @@
 package datastore
 
-import "vega/proto"
+import "vega/msg"
 
 type Trade struct {
 	msg.Trade
-	OrderId string
+	AggressiveOrderId string
+	PassiveOrderId string
 }
 
-func NewTradeFromProtoMessage(m *msg.Trade, orderId string) *Trade {
+func NewTradeFromProtoMessage(m *msg.Trade, aggressiveOrderId, passiveOrderId string) *Trade {
 	return &Trade{
 		Trade:   *m,
-		OrderId: orderId,
+		AggressiveOrderId: aggressiveOrderId,
+		PassiveOrderId: passiveOrderId,
 	}
 }
 

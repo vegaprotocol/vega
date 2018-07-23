@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-
 	"vega/core"
 	"vega/log"
-	"vega/proto"
-
+	"vega/msg"
 	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
-
 	"github.com/golang/protobuf/proto"
 )
 

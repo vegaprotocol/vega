@@ -2,21 +2,14 @@
 package main
 
 import (
-	"vega/api/endpoints/rest"
-	"vega/api/endpoints/sse"
-	"vega/blockchain"
-	"vega/core"
-	"vega/log"
-	"vega/proto"
-
 	"vega/api"
-	"vega/datastore"
 	"vega/api/endpoints/grpc"
 	"vega/api/endpoints/restproxy"
+	"vega/blockchain"
+	"vega/core"
+	"vega/datastore"
+	"vega/log"
 )
-
-const sseChannelSize = 2 << 16
-const marketName = "BTC/DEC18"
 
 func main() {
 	config := core.GetConfig()
@@ -26,7 +19,7 @@ func main() {
 	// Storage Service provides read stores for consumer VEGA API
 	// Uses in memory storage (maps/slices etc), configurable in future
 	storage := &datastore.MemoryStoreProvider{}
-	storage.Init([]string{marketName})
+	storage.Init([]string{"BTC/DEC18"}, []string{"partyA", "partyB", "TEST"})
 
 	// Vega core
 	vega := core.New(config, storage)
@@ -38,23 +31,13 @@ func main() {
 	orderService.Init(vega, storage.OrderStore())
 	tradeService.Init(vega, storage.TradeStore())
 
-	// REST server
-	restServer := rest.NewRestServer(orderService, tradeService)
-	go restServer.Start()
-
 	// GRPC server
 	grpcServer := grpc.NewGRPCServer(orderService, tradeService)
 	go grpcServer.Start()
 
 	// REST<>GRPC (reverse proxy) server
-	restProxyServer := restproxy.NewRestProxyServer()
-	go restProxyServer.Start()
-
-	// SSE server
-	sseOrderChan := make(chan msg.Order, sseChannelSize)
-	sseTradeChan := make(chan msg.Trade, sseChannelSize)
-	sseServer := sse.NewServer(sseOrderChan, sseTradeChan)
-	go sseServer.Start()
+	restServer := restproxy.NewRestProxyServer()
+	go restServer.Start()
 
 	if err := blockchain.Start(vega); err != nil {
 		log.Fatalf("%s", err)

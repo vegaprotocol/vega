@@ -2,40 +2,12 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:8780178bd0bfe1201adf49fcbbbd6f9b9e5790992114cffdeed5db0e7bd43f49"
-  name = "github.com/alexandrevicenzi/go-sse"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "cdfb375b261850b6aafeddaa033baf3708a736de"
-
-[[projects]]
   digest = "1:a2c1d0e43bd3baaa071d1b9ed72c27d78169b2b269f71c105ac4ba34b1be4a39"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "UT"
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:36fe9527deed01d2a317617e59304eb2c4ce9f8a24115bcc5c2e37b3aee5bae4"
-  name = "github.com/gin-contrib/sse"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae"
-
-[[projects]]
-  digest = "1:76052d394539fa449628bc0a7d19d12051e350d3598d28d2263798c2976e9cf5"
-  name = "github.com/gin-gonic/gin"
-  packages = [
-    ".",
-    "binding",
-    "render",
-  ]
-  pruneopts = "UT"
-  revision = "d459835d2b077e44f7c9b453505ee29881d5d12d"
-  version = "v1.2"
 
 [[projects]]
   digest = "1:d0309acc14b09c713e2fd1283be859c8e03f5f40c69e221410a0f652742b139c"
@@ -105,28 +77,6 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:4b5d2e9d2295d68a4525b017f31aa7b111dd0c3d04ca4bcb877cc741d62412ea"
-  name = "github.com/graph-gophers/graphql-go"
-  packages = [
-    ".",
-    "errors",
-    "internal/common",
-    "internal/exec",
-    "internal/exec/packer",
-    "internal/exec/resolvable",
-    "internal/exec/selected",
-    "internal/query",
-    "internal/schema",
-    "internal/validation",
-    "introspection",
-    "log",
-    "trace",
-  ]
-  pruneopts = "UT"
-  revision = "bb9738501bd42a6536227b96068349b814379d6e"
-
-[[projects]]
   digest = "1:4df19d38aa8efc5648954a56630305d0c4ad9bd22531c31f9617b110bc12d00e"
   name = "github.com/grpc-ecosystem/grpc-gateway"
   packages = [
@@ -147,26 +97,6 @@
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
 [[projects]]
-  digest = "1:d4d17353dbd05cb52a2a52b7fe1771883b682806f68db442b436294926bbfafb"
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
-  version = "v0.0.3"
-
-[[projects]]
-  digest = "1:27af6024faa3c28426a698b8c653be0fd908bc96e25b7d76f2192eb342427db6"
-  name = "github.com/opentracing/opentracing-go"
-  packages = [
-    ".",
-    "ext",
-    "log",
-  ]
-  pruneopts = "UT"
-  revision = "1949ddbfd147afd4d964a9f00b24eb291e0e7c38"
-  version = "v1.0.2"
-
-[[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -181,6 +111,14 @@
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:9695b472826ca23e521d650849fefac3102dddbf841c9a4b35fb9d3ed5d17011"
+  name = "github.com/rs/cors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
+  version = "v1.4.0"
 
 [[projects]]
   digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
@@ -243,14 +181,6 @@
   version = "v0.9.0"
 
 [[projects]]
-  digest = "1:03aa6e485e528acb119fb32901cf99582c380225fc7d5a02758e08b180cb56c3"
-  name = "github.com/ugorji/go"
-  packages = ["codec"]
-  pruneopts = "UT"
-  revision = "b4c50a2b199d93b13dc15e78929cfb23bfdf21ab"
-  version = "v1.1.1"
-
-[[projects]]
   digest = "1:3c1a69cdae3501bf75e76d0d86dc6f2b0a7421bc205c0cb7b96b19eed464a34d"
   name = "go.uber.org/atomic"
   packages = ["."]
@@ -267,7 +197,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:e6d865f90ef1178c14bdb49ea9f244bfcb28c06ea9773dc077492032632de0b8"
+  digest = "1:460b7b5d45569fa85bc34c0a9aa1498577afee6f24dac2d66a0d53d3737d29ab"
   name = "go.uber.org/zap"
   packages = [
     ".",
@@ -278,8 +208,8 @@
     "zapcore",
   ]
   pruneopts = "UT"
-  revision = "eeedf312bc6c57391d84767a4cd413f02a917974"
-  version = "v1.8.0"
+  revision = "4d45f9617f7d90f7a663ff21c7a4321dbe78098b"
+  version = "v1.9.0"
 
 [[projects]]
   digest = "1:448e521e3240f01d756f18a1b1be2f0005355e0cb464ccd5b4a8d9c3ec1b3931"
@@ -295,14 +225,6 @@
   ]
   pruneopts = "UT"
   revision = "292b43bbf7cb8d35ddf40f8d5100ef3837cced3f"
-
-[[projects]]
-  branch = "master"
-  digest = "1:d773e525476aefa22ea944a5425a9bfb99819b2e67eeb9b1966454fd57522bbf"
-  name = "golang.org/x/sys"
-  packages = ["unix"]
-  pruneopts = "UT"
-  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
 
 [[projects]]
   digest = "1:7509ba4347d1f8de6ae9be8818b0cd1abc3deeffe28aeaf4be6d4b6b5178d9ca"
@@ -369,37 +291,18 @@
   revision = "168a6198bcb0ef175f7dacec0b8691fc141dc9b8"
   version = "v1.13.0"
 
-[[projects]]
-  digest = "1:cbc72c4c4886a918d6ab4b95e347ffe259846260f99ebdd8a198c2331cf2b2e9"
-  name = "gopkg.in/go-playground/validator.v8"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "5f1438d3fca68893a817e4a66806cea46a9e4ebf"
-  version = "v8.18.2"
-
-[[projects]]
-  digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/alexandrevicenzi/go-sse",
-    "github.com/gin-gonic/gin",
-    "github.com/gin-gonic/gin/binding",
     "github.com/gogo/protobuf/gogoproto",
     "github.com/gogo/protobuf/proto",
-    "github.com/golang/protobuf/jsonpb",
     "github.com/golang/protobuf/proto",
     "github.com/gorilla/websocket",
-    "github.com/graph-gophers/graphql-go",
     "github.com/grpc-ecosystem/grpc-gateway/runtime",
     "github.com/grpc-ecosystem/grpc-gateway/utilities",
+    "github.com/pkg/errors",
+    "github.com/rs/cors",
     "github.com/satori/go.uuid",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",

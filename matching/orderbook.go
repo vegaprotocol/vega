@@ -2,7 +2,7 @@ package matching
 
 import (
 	"vega/log"
-	"vega/proto"
+	"vega/msg"
 )
 
 type OrderBook struct {

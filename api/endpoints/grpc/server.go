@@ -22,7 +22,7 @@ func NewGRPCServer(orderService api.OrderService, tradeService api.TradeService)
 }
 
 func (g *grpcServer) Start() {
-	var port = 3004
+	var port = 3002
 	fmt.Printf("Starting GRPC based server on port %d...\n", port)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))

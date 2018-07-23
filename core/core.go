@@ -7,12 +7,12 @@ import (
 	"vega/datastore"
 	"vega/log"
 	"vega/matching"
-	"vega/proto"
+	"vega/msg"
 )
 
 const marketName = "BTC/DEC18"
 
-const genesisTimeStr = "2018-07-09T12:00:00Z"
+const genesisTimeStr = "2018-07-05T13:36:01Z"
 
 type Config struct{}
 
@@ -88,7 +88,9 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%d", order.Id, idx)
-			if err := v.TradesStore.Post(*datastore.NewTradeFromProtoMessage(trade, order.Id)); err != nil {
+
+			t := datastore.NewTradeFromProtoMessage(trade, order.Id, confirmation.PassiveOrdersAffected[idx].Id)
+			if err := v.TradesStore.Post(*t); err != nil {
 				log.Infof("TradesStore.Post error: %+v\n", err)
 			}
 		}
