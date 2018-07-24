@@ -100,22 +100,30 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 			fmt.Println("ABCI received a CREATE ORDER command after consensus")
 
 			// Submit the create new order request to the Vega trading core
-			confirmationMessage, _ := app.vega.SubmitOrder(order)
+			confirmationMessage, errorMessage := app.vega.SubmitOrder(order)
 			if confirmationMessage != nil {
 				fmt.Printf("ABCI reports it received an order confirmation message from vega:\n")
 				fmt.Printf("- aggressive order: %+v\n", confirmationMessage.Order)
 				fmt.Printf("- trades: %+v\n", confirmationMessage.Trades)
 				fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
 			}
+			if errorMessage != msg.OrderError_NONE {
+				fmt.Printf("ABCI reports it received an order error message from vega:\n")
+				fmt.Printf("- error: %+v\n", errorMessage.String())
+			}
 
 		case CancelOrderCommand:
 			fmt.Println("ABCI received a CANCEL ORDER command after consensus")
 
 			// Submit the create new order request to the Vega trading core
-			cancellationMessage, _ := app.vega.CancelOrder(order)
+			cancellationMessage, errorMessage := app.vega.CancelOrder(order)
 			if cancellationMessage != nil {
 				fmt.Printf("ABCI reports it received an order cancellation message from vega:\n")
 				fmt.Printf("- cancelled order: %+v\n", cancellationMessage.Order)
+			}
+			if errorMessage != msg.OrderError_NONE {
+				fmt.Printf("ABCI reports it received an order error message from vega:\n")
+				fmt.Printf("- error: %+v\n", errorMessage.String())
 			}
 
 		default:
