@@ -85,7 +85,9 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		for _, order := range confirmation.PassiveOrdersAffected {
 			// Note: writing to store should not prevent flow to other engines
 			err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
-			fmt.Printf("OrderStore.Put error: %+v\n", err)
+			if err != nil {
+				fmt.Printf("OrderStore.Put error: %+v\n", err)
+			}
 		}
 	}
 

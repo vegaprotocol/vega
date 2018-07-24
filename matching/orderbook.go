@@ -43,15 +43,15 @@ func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.O
 	if order.Id == "" || len(order.Id) < 4 {
 		return nil, msg.OrderError_INVALID_ORDER_ID
 	}
-	var err error
+
 	if order.Side == msg.Side_Buy {
-		err = b.buy.RemoveOrder(order)
+		if err := b.buy.RemoveOrder(order); err != nil {
+			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
+		}
 	} else {
-		err = b.sell.RemoveOrder(order)
-	}
-	if err != nil {
-		// todo(cdm): structured logging here as this shouldnt happen often and we'd love to know if it does (MR!)
-		return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
+		if err := b.sell.RemoveOrder(order); err != nil {
+			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
+		}
 	}
 
 	// Important, mark the order as cancelled (and no longer active)
