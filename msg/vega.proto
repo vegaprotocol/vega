@@ -25,6 +25,10 @@ message Order {
     Status status = 11;
 }
 
+message OrderCancellation {
+    Order order = 1;
+}
+
 message OrderConfirmation {
     Order order = 1;
     repeated Trade trades = 2;
@@ -34,9 +38,11 @@ message OrderConfirmation {
 enum OrderError {
     NONE = 0;
     INVALID_MARKET_ID = 1;
-    ORDER_OUT_OF_SEQUENCE = 2;
-    INVALID_REMAINING_SIZE = 3;
-    NON_EMPTY_NEW_ORDER_ID = 4;
+    INVALID_ORDER_ID = 2;
+    ORDER_OUT_OF_SEQUENCE = 3;
+    INVALID_REMAINING_SIZE = 4;
+    NON_EMPTY_NEW_ORDER_ID = 5;
+    ORDER_REMOVAL_FAILURE = 6;
 }
 
 message Trade {

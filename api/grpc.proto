@@ -7,6 +7,7 @@ option go_package = "api";
 
 service trading {
     rpc CreateOrder(vega.Order) returns (OrderResponse);
+    rpc CancelOrder(vega.Order) returns (OrderResponse);
     rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
     rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
     rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
@@ -15,7 +16,6 @@ service trading {
     rpc OrderBookDepth(OrderBookDepthRequest) returns (OrderBookDepthResponse);
     rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
     //rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO
-
 }
 
 message OrderResponse {
