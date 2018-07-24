@@ -25,9 +25,40 @@ func NewBook(name string, config Config) *OrderBook {
 	}
 }
 
-// Cancel an order that is active on an orderbook
-func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
-	return nil, msg.OrderError_NONE
+// Cancel an order that is active on an orderbook. Market and Order ID are validated, however the order must match
+// the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
+// not trust that the external world can provide these values reliably.
+func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
+	// todo(cdm): an improvement here would be to add lookup validation in the matching engine, order pointer slice idx
+	// Validate Market
+	if order.Market != b.name {
+		panic(fmt.Sprintf(
+			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
+			order.Market,
+			b.name))
+	}
+	// Validate Order ID must be present
+	if order.Id == "" || len(order.Id) < 4 {
+		return nil, msg.OrderError_INVALID_ORDER_ID
+	}
+	var err error
+	if order.Side == msg.Side_Buy {
+		err = b.buy.RemoveOrder(order)
+	} else {
+		err = b.sell.RemoveOrder(order)
+	}
+	if err != nil {
+		// todo(cdm): structured logging here as this shouldnt happen often and we'd love to know if it does (MR!)
+		return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
+	}
+
+	// Important, mark the order as cancelled (and no longer active)
+	order.Status = msg.Order_Cancelled
+
+	result := &msg.OrderCancellation{
+		Order: order,
+	}
+	return result, msg.OrderError_NONE
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object

@@ -50,10 +50,15 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	return p.blockchain.CreateOrder(ctx, order)
 }
 
+// CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
 func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
-	// Cancel by ID, market, other fields not required
-	// TODO validate
-	return p.blockchain.CancelOrder(ctx, order)
+	// Validate order exists using read store
+	o, err := p.orderStore.GetByMarketAndId(order.Market, order.Id)
+	if err != nil {
+		return false, err
+	}
+	// Send cancellation request by consensus 
+	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
 }
 
 func (p *orderService) GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error) {
@@ -135,27 +140,3 @@ func (p *orderService) GetMarkets(ctx context.Context) ([]string, error) {
 func (p *orderService) GetOrderBookDepth(ctx context.Context, marketName string) (orderBookDepth *msg.OrderBookDepth, err error) {
 	return p.orderStore.GetOrderBookDepth(marketName)
 }
-
-//
-//func getClient() (*rpc.Client, error) {
-//	mux.Lock()
-//	if len(clients) == 0 {
-//		mux.Unlock()
-//		client := rpc.Client{
-//		}
-//		if err := client.Connect(); err != nil {
-//			return nil, err
-//		}
-//		return &client, nil
-//	}
-//	client := clients[0]
-//	clients = clients[1:]
-//	mux.Unlock()
-//	return client, nil
-//}
-//
-//func releaseClient(c *rpc.Client) {
-//	mux.Lock()
-//	clients = append(clients, c)
-//	mux.Unlock()
-//}

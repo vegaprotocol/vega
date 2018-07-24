@@ -102,7 +102,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 			// Submit the create new order request to the Vega trading core
 			confirmationMessage, _ := app.vega.SubmitOrder(order)
 			if confirmationMessage != nil {
-				fmt.Printf("ABCI reports it received a confirmation message from vega:\n")
+				fmt.Printf("ABCI reports it received an order confirmation message from vega:\n")
 				fmt.Printf("- aggressive order: %+v\n", confirmationMessage.Order)
 				fmt.Printf("- trades: %+v\n", confirmationMessage.Trades)
 				fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
@@ -110,6 +110,13 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 
 		case CancelOrderCommand:
 			fmt.Println("ABCI received a CANCEL ORDER command after consensus")
+
+			// Submit the create new order request to the Vega trading core
+			cancellationMessage, _ := app.vega.CancelOrder(order)
+			if cancellationMessage != nil {
+				fmt.Printf("ABCI reports it received an order cancellation message from vega:\n")
+				fmt.Printf("- cancelled order: %+v\n", cancellationMessage.Order)
+			}
 
 		default:
 			fmt.Println("UNKNOWN command received after consensus")

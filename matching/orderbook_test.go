@@ -7,6 +7,7 @@ import (
 	"vega/msg"
 
 	"github.com/stretchr/testify/assert"
+	"fmt"
 )
 
 //test for order validation
@@ -753,8 +754,8 @@ func TestOrderBook_AddOrder(t *testing.T) {
 
 }
 
-
 func TestOrderBook_CancelOrder(t *testing.T) {
+	log.Println("BEGIN CANCELLING ORDER")
 
 	// Arrange
 	book := NewBook("testOrderBook", DefaultConfig())
@@ -767,17 +768,24 @@ func TestOrderBook_CancelOrder(t *testing.T) {
 		Remaining: 100,
 		Type:      msg.Order_GTC,
 		Timestamp: 0,
+		Id: fmt.Sprintf("V%d-%d", 1, 1),
 	}
-	book.AddOrder(newOrder)
+	
+	confirmation, err := book.AddOrder(newOrder)
+	orderAdded := confirmation.Order
 
 	// Act
-	//err := book.CancelOrder(newOrder)
+	res, err := book.CancelOrder(orderAdded)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
 
 	// Assert
-	assert.Equal(t, false, false)
+	assert.Equal(t, msg.OrderError_NONE, err)
+	assert.Equal(t, "V1-1", res.Order.Id)
+
+	book.PrintState("AFTER CANCEL ORDER")
 }
-
-
 
 func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {
 	// run asserts for protocol trade data

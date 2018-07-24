@@ -6,12 +6,12 @@ import (
 
 type MatchingEngine interface {
 	CreateMarket(id string)
+	CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError)
 	SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError)
 	DeleteOrder(order *msg.Order)
 }
 
 type matchingEngine struct {
-	//matchingEngine MatchingEngine
 	markets map[string]*OrderBook
 	config  Config
 }
@@ -44,4 +44,16 @@ func (me *matchingEngine) DeleteOrder(order *msg.Order) {
 	if market, exists := me.markets[order.Market]; exists {
 		market.RemoveOrder(order)
 	}
+}
+
+func (me *matchingEngine) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
+	market, exists := me.markets[order.Market]
+	if !exists {
+		return nil, msg.OrderError_INVALID_MARKET_ID
+	}
+	cancellationResult, err :=	market.CancelOrder(order)
+	if err != msg.OrderError_NONE {
+		return nil, err
+	}
+	return cancellationResult, msg.OrderError_NONE
 }
