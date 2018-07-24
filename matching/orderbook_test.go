@@ -783,6 +783,7 @@ func TestOrderBook_CancelOrder(t *testing.T) {
 	// Assert
 	assert.Equal(t, msg.OrderError_NONE, err)
 	assert.Equal(t, "V1-1", res.Order.Id)
+	assert.Equal(t, msg.Order_Cancelled, res.Order.Status)
 
 	book.PrintState("AFTER CANCEL ORDER")
 }
