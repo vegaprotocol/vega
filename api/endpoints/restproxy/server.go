@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"vega/api"
 	"github.com/rs/cors"
+	"github.com/gogo/gateway"
 )
 
 type restProxyServer struct {}
@@ -27,13 +28,24 @@ func (s *restProxyServer) Start() {
 	defer cancel()
 
 	endpoint := "localhost:3002"
-	mux := runtime.NewServeMux()
+	jsonpb := &gateway.JSONPb{
+		EmitDefaults: true,
+		Indent:       "  ",
+		OrigName:     true,
+	}
+
+	gwmux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonpb),
+		// This is necessary to get error details properly marshalled in unary requests.
+		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
+	)
+	
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
+	if err := api.RegisterTradingHandlerFromEndpoint(ctx, gwmux, endpoint, opts); err != nil {
 		log.Fatal(err)
 	} else {
 		// CORS support
-		handler := cors.Default().Handler(mux)
+		handler := cors.Default().Handler(gwmux)
 		// Gzip encoding support
 		handler = NewGzipHandler(handler.(http.HandlerFunc))
 		// Start http server on port specified
