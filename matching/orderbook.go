@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"vega/msg"
 
+	"log"
 )
 
 type OrderBook struct {
@@ -32,10 +33,11 @@ func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.O
 	// todo(cdm): an improvement here would be to add lookup validation in the matching engine, order pointer slice idx
 	// Validate Market
 	if order.Market != b.name {
-		panic(fmt.Sprintf(
+		log.Println(fmt.Sprintf(
 			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
 			order.Market,
 			b.name))
+		return nil, msg.OrderError_INVALID_MARKET_ID
 	}
 	// Validate Order ID must be present
 	if order.Id == "" || len(order.Id) < 4 {

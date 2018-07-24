@@ -1,17 +1,18 @@
 package blockchain
 
 import (
-	"testing"
-	"vega/msg"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"log"
+	"testing"
+	"vega/msg"
 )
 
 func TestVegaTxEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	order := &msg.Order{
-		Id: "V9-120",
+		Id:     "V9-120",
 		Market: "BTC/DEC18",
-		Party: "PartyA",
+		Party:  "PartyA",
 	}
 
 	orderBytes, err := proto.Marshal(order)
@@ -32,3 +33,14 @@ func TestVegaTxEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	assert.Equal(t, "PartyA", resultOrder.Party)
 }
 
+func TestVegaTxDecodeInvalidPayload(t *testing.T) {
+	invalidBytes := []byte{10, 20, 30, 40}
+
+	decodeBytes, cmd, err := VegaTxDecode(invalidBytes)
+
+	log.Println(decodeBytes)
+	log.Println(cmd)
+	log.Println(err)
+
+	assert.Error(t, err)
+}
