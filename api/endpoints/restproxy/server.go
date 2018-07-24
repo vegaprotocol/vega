@@ -3,16 +3,15 @@ package restproxy
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"google.golang.org/grpc"
-	"vega/api"
 	"github.com/rs/cors"
-	"github.com/gogo/gateway"
+	"google.golang.org/grpc"
+	"log"
+	"net/http"
+	"vega/api"
 )
 
-type restProxyServer struct {}
+type restProxyServer struct{}
 
 func NewRestProxyServer() *restProxyServer {
 	return &restProxyServer{}
@@ -28,7 +27,7 @@ func (s *restProxyServer) Start() {
 	defer cancel()
 
 	endpoint := "localhost:3002"
-	jsonpb := &gateway.JSONPb{
+	jsonpb := &JSONPb{
 		EmitDefaults: true,
 		Indent:       "  ",
 		OrigName:     true,
@@ -39,7 +38,7 @@ func (s *restProxyServer) Start() {
 		// This is necessary to get error details properly marshalled in unary requests.
 		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
 	)
-	
+
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 	if err := api.RegisterTradingHandlerFromEndpoint(ctx, gwmux, endpoint, opts); err != nil {
 		log.Fatal(err)

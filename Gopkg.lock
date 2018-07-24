@@ -38,14 +38,6 @@
   version = "v1.7.0"
 
 [[projects]]
-  digest = "1:35178d5e85babd9003561874629eed96d18922bb2da97ad2e0d00fe67576963f"
-  name = "github.com/gogo/gateway"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "6d3dfbe4e3b52add3800488f526462e69bce526a"
-  version = "v1.0.0"
-
-[[projects]]
   digest = "1:af1306bff89268721ea2550d504413c9487ebfca11e2ff8f39ae79b99a720ff5"
   name = "github.com/gogo/protobuf"
   packages = [
@@ -264,8 +256,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/gogo/gateway",
     "github.com/gogo/protobuf/gogoproto",
+    "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/golang/protobuf/proto",
     "github.com/gorilla/websocket",
