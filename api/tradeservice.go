@@ -3,13 +3,11 @@ package api
 import (
 	"context"
 	"errors"
-	"math"
 	"time"
 
 	"vega/core"
 	"vega/datastore"
 	"vega/proto"
-	"github.com/golang/go/src/pkg/fmt"
 )
 
 type TradeService interface {
@@ -19,7 +17,7 @@ type TradeService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
 	GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error)
-	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.Position, err error)
+	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
 }
 
 type tradeService struct {
@@ -90,7 +88,7 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 	if sinceBlock < 0 {
 		sinceBlock = 0
 	}
-	
+
 	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), uint64(t.app.GetAbciHeight()), interval)
 	if err != nil {
 		return msg.Candles{}, err
@@ -105,56 +103,83 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 	return c, nil
 }
 
-func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*msg.Position, err error) {
-	mapOfNetPositions := t.tradeStore.GetNetPositionsByParty(party)
-	var (
-		profitOrLoss string
-		exposure int64
-		PNL int64
-		direction string
-	)
-
-	for key, val := range mapOfNetPositions {
-		currentPrice, _ := t.tradeStore.GetCurrentMarketPrice(key)
-
-		fmt.Printf("current Price %d\n", currentPrice)
-		exposure = int64(math.Abs(float64(val.Position)))
-		PNL = int64(int64(currentPrice) * int64(math.Abs(float64(val.Volume))) - exposure)
-		direction = getDirection(val.Position)
-		profitOrLoss = getPNLResult(direction, PNL)
-
-		newPosition := &msg.Position{
-			Market: key,
-			Direction: direction,
-			Exposure: exposure,
-			PNL: PNL,
-			PNLResult: profitOrLoss,
-		}
-		positions = append(positions, newPosition)
+func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error) {
+	mapOfMarketPositions := t.tradeStore.GetPositionsByParty(party)
+	for _, marketPositions := range mapOfMarketPositions {
+		positions = append(positions, marketPositions)
 	}
-
 	return positions, nil
 }
 
-func getDirection(val int64) string{
-	if val > 0 { return "LONG" }
-	if val < 0 { return "SHORT"}
-	return "NET"
-}
-
-func getPNLResult(direction string, PNL int64) string {
-	if PNL == 0 {
-		return ""
-	}
-	if direction == "SHORT" && PNL < 0 {
-		return "PROFIT"
-	} else {
-		return "LOSS"
-	}
-	if direction == "LONG" && PNL > 0 {
-		return "PROFIT"
-	} else {
-		return "LOSS"
-	}
-	return ""
-}
+//func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*msg.Position, err error) {
+//	mapOfNetPositions := t.tradeStore.GetNetPositionsByParty(party)
+//
+//	var (
+//		absoluteExposure int64
+//		PNL              int64
+//		direction        string
+//		profitOrLoss     string
+//	)
+//
+//	for marketName, exposure := range mapOfNetPositions {
+//		// get last traded price for this market
+//		currentPrice, _ := t.tradeStore.GetCurrentMarketPrice(marketName)
+//		fmt.Printf("current price for market %s is %d\n", marketName, currentPrice)
+//
+//		// calculate absolute value of the exposure on that market
+//		absoluteExposure = int64(math.Abs(float64(exposure.Position)))
+//
+//		// calculate profit and loss which is currentPrice * Abs(volume of current exposure) - absoluteExposure on that market
+//		//volume weighted price
+//		PNL = int64(int64(currentPrice)*int64(math.Abs(float64(exposure.Volume))) - absoluteExposure)
+//
+//		// exposure.Position is negative for shorts. Check sign to get direction of position on that market
+//		direction = getDirection(exposure.Position)
+//
+//		// verify whether direction of your position is aligned with your PNL on that market
+//		profitOrLoss = getPNLResult(direction, PNL)
+//
+//		// this calculates position per market. Append to list of positions.
+//		newPosition := &msg.Position{
+//			Market:    marketName,
+//			Direction: direction,
+//			Exposure:  absoluteExposure,
+//			PNL:       PNL,
+//			PNLResult: profitOrLoss,
+//		}
+//		positions = append(positions, newPosition)
+//	}
+//
+//	return positions, nil
+//}
+//
+//func getDirection(val int64) string {
+//	if val > 0 {
+//		return LongPosition
+//	}
+//	if val < 0 {
+//		return ShortPosition
+//	}
+//	return Net
+//}
+//
+//func getPNLResult(direction string, PNL int64) string {
+//	if PNL == 0 {
+//		return Net
+//	}
+//
+//	// if trader shorts and PNL at current market price is negative that means he is making money
+//	if direction == ShortPosition && PNL < 0 {
+//		return Profit
+//	} else {
+//		return Loss
+//	}
+//
+//	// if trader is long and PNL at current market price is positive that means he is making money
+//	if direction == LongPosition && PNL > 0 {
+//		return Profit
+//	} else {
+//		return Loss
+//	}
+//	return ""
+//}

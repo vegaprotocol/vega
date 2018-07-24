@@ -242,7 +242,7 @@ func (store *memTradeStore) validate(trade *Trade) error {
 	return nil
 }
 
-func (store *memTradeStore) GetCurrentMarketPrice(market string) (uint64, error) {
+func (store *memTradeStore) GetMarkPrice(market string) (uint64, error) {
 	recentTrade, err := store.GetByMarket(market, GetParams{Limit:1})
 	if err != nil {
 		return 0, err

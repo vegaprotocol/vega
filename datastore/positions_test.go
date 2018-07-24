@@ -99,20 +99,36 @@ func TestPositions(t *testing.T) {
 	var newTradeStore = NewTradeStore(&memStore)
 
 	timestamp := populateStores(t, newOrderStore, newTradeStore)
-	fmt.Printf("timestamp %d\n", timestamp)
 
-	trades, _ := newTradeStore.GetByParty(testPartyA, GetParams{})
-	fmt.Printf("stuff %d\n", len(trades))
+	positions := newTradeStore.GetPositionsByParty(testPartyA)
 
-	positions := newTradeStore.GetNetPositionsByParty(testPartyA)
-
-	fmt.Printf("positions returned:\n")
+	fmt.Printf("positions returned for partyA:\n")
 	for key, val := range positions {
-		fmt.Printf("%+v %d\n", key, val)
+		fmt.Printf("%+v %v\n", key, val)
+		assert.Equal(t, key, testMarket)
+		assert.Equal(t, val.Market, testMarket)
+
+		assert.Equal(t, int64(118000), val.RealisedVolume)
+		assert.Equal(t, int64(1000), val.RealisedPNL)
+		assert.Equal(t, int64(0), val.UnrealisedVolume)
+		assert.Equal(t, int64(0), val.UnrealisedPNL)
+	}
+
+	positions = newTradeStore.GetPositionsByParty(testPartyB)
+
+	fmt.Printf("positions returned for partyB:\n")
+	for key, val := range positions {
+		fmt.Printf("%+v %v\n", key, val)
+		assert.Equal(t, key, testMarket)
+		assert.Equal(t, val.Market, testMarket)
+
+		assert.Equal(t, int64(-1000), val.RealisedVolume)
+		assert.Equal(t, int64(-1000), val.RealisedPNL)
+		assert.Equal(t, int64(1000), val.UnrealisedVolume)
+		assert.Equal(t, int64(118000), val.UnrealisedPNL)
 	}
 
 	// close position
-
 	passiveOrderId := fmt.Sprintf("%d", rand.Intn(1000000000000))
 	aggressiveOrderId := fmt.Sprintf("%d", rand.Intn(1000000000000))
 	tradeId := fmt.Sprintf("%d", rand.Intn(1000000000000))
@@ -152,10 +168,17 @@ func TestPositions(t *testing.T) {
 	err = newTradeStore.Post(*d.trade)
 	assert.Nil(t, err)
 
-	positions = newTradeStore.GetNetPositionsByParty(testPartyA)
+	positions = newTradeStore.GetPositionsByParty(testPartyA)
 
 	fmt.Printf("positions returned:\n")
 	for key, val := range positions {
-		fmt.Printf("%+v %d\n", key, val)
+		fmt.Printf("%+v %v\n", key, val)
+		assert.Equal(t, key, testMarket)
+		assert.Equal(t, val.Market, testMarket)
+
+		assert.Equal(t, int64(1000), val.RealisedVolume)
+		assert.Equal(t, int64(1000), val.RealisedPNL)
+		assert.Equal(t, int64(0), val.UnrealisedVolume)
+		assert.Equal(t, int64(0), val.UnrealisedPNL)
 	}
 }

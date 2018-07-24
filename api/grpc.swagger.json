@@ -363,7 +363,7 @@
         "positions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaPosition"
+            "$ref": "#/definitions/vegaMarketPosition"
           }
         }
       }
@@ -426,6 +426,30 @@
         }
       }
     },
+    "vegaMarketPosition": {
+      "type": "object",
+      "properties": {
+        "Market": {
+          "type": "string"
+        },
+        "RealisedVolume": {
+          "type": "string",
+          "format": "int64"
+        },
+        "RealisedPNL": {
+          "type": "string",
+          "format": "int64"
+        },
+        "UnrealisedVolume": {
+          "type": "string",
+          "format": "int64"
+        },
+        "UnrealisedPNL": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "vegaOrder": {
       "type": "object",
       "properties": {
@@ -459,28 +483,6 @@
         "timestamp": {
           "type": "string",
           "format": "uint64"
-        }
-      }
-    },
-    "vegaPosition": {
-      "type": "object",
-      "properties": {
-        "market": {
-          "type": "string"
-        },
-        "direction": {
-          "type": "string"
-        },
-        "exposure": {
-          "type": "string",
-          "format": "int64"
-        },
-        "PNL": {
-          "type": "string",
-          "format": "int64"
-        },
-        "PNLResult": {
-          "type": "string"
         }
       }
     },
