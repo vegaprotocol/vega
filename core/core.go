@@ -7,6 +7,7 @@ import (
 	"vega/datastore"
 	"vega/matching"
 	"vega/msg"
+	"vega/risk"
 )
 
 const marketName = "BTC/DEC18"
@@ -18,11 +19,11 @@ type Config struct{}
 type Vega struct {
 	config         *Config
 	markets        map[string]*matching.OrderBook
-	OrderStore    datastore.OrderStore
-	TradeStore    datastore.TradeStore
+	OrderStore     datastore.OrderStore
+	TradeStore     datastore.TradeStore
 	matchingEngine matching.MatchingEngine
 	State          *State
-	RiskEngine     RiskEngine
+	riskEngine     risk.RiskEngine
 }
 
 func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
@@ -31,16 +32,16 @@ func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 	matchingEngine := matching.NewMatchingEngine()
 
 	// Initialise risk engine
-	riskEngine := newRiskEngine()
+	riskEngine := risk.New()
 
 	return &Vega{
 		config:         config,
 		markets:        make(map[string]*matching.OrderBook),
-		OrderStore:    store.OrderStore(),
-		TradeStore:    store.TradeStore(),
+		OrderStore:     store.OrderStore(),
+		TradeStore:     store.TradeStore(),
 		matchingEngine: matchingEngine,
+		riskEngine:     riskEngine,
 		State:          newState(),
-		RiskEngine:     *riskEngine,
 	}
 }
 
@@ -107,12 +108,17 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			}
 		}
 	}
-	
+
 	// ------------------------------------------------//
 	//------------------- RISK ENGINE -----------------//
 
-	v.RiskEngine.Assess(order)
+	fmt.Println("Risk BEFORE calling model calculation = ", order.RiskFactor)
+
+	v.riskEngine.Assess(order)
 	confirmation.Order = order
+
+	fmt.Println("Risk AFTER calling model calculation = ", order.RiskFactor)
+
 
 	// ------------------------------------------------//
 
@@ -139,6 +145,6 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 		// Note: writing to store should not prevent flow to other
 		fmt.Printf("OrderStore.Put error: %+v\n", err)
 	}
-	
+
 	return cancellation, msg.OrderError_NONE
 }
