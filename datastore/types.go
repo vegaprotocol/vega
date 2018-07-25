@@ -1,8 +1,6 @@
 package datastore
 
-import (
-	"vega/msg"
-)
+import "vega/msg"
 
 type Trade struct {
 	msg.Trade

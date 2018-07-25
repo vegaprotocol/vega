@@ -136,11 +136,6 @@ func (m *memOrderStore) Put(order Order) error {
 		return err
 	}
 
-
-	fmt.Println("PUT...")
-	fmt.Printf("%+v", order)
-	fmt.Println("")
-
 	if _, exists := m.store.markets[order.Market].orders[order.Id]; !exists {
 		return fmt.Errorf("order not found in memstore: %s", order.Id)
 	}
