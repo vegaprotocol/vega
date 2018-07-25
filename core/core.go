@@ -75,9 +75,19 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		return nil, errorMsg
 	}
 
+	// ------------------------------------------------//
+	// 2) --------------- RISK ENGINE -----------------//
+
+	fmt.Println("Risk BEFORE calling model calculation = ", order.RiskFactor)
+
+	v.riskEngine.Assess(order)
+	confirmation.Order = order
+
+	fmt.Println("Risk AFTER calling model calculation = ", order.RiskFactor)
+
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
-	// 2) if OK send to stores
+	// 3) save to stores
 
 	// insert aggressive remaining order
 	err := v.OrderStore.Post(*datastore.NewOrderFromProtoMessage(order))
@@ -108,16 +118,6 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			}
 		}
 	}
-
-	// ------------------------------------------------//
-	//------------------- RISK ENGINE -----------------//
-
-	fmt.Println("Risk BEFORE calling model calculation = ", order.RiskFactor)
-
-	v.riskEngine.Assess(order)
-	confirmation.Order = order
-
-	fmt.Println("Risk AFTER calling model calculation = ", order.RiskFactor)
 
 
 	// ------------------------------------------------//
