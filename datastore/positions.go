@@ -55,8 +55,10 @@ func (t *memTradeStore) CalculateVolumeEntryPriceWeightedAveragesForLong(marketB
 		} else {
 			if thresholdReached == false {
 				thresholdReached = true
-				buyAverageEntryPriceForClosed += (ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
-				avgEntryPriceForOpenContracts += (thresholdController - ClosedContracts) * int64(trade.Price)
+				buyAverageEntryPriceForClosed +=
+					(ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
+				avgEntryPriceForOpenContracts +=
+					(thresholdController - ClosedContracts) * int64(trade.Price)
 			} else {
 				avgEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
 			}
@@ -130,8 +132,10 @@ func (t *memTradeStore) CalculateVolumeEntryPriceWeightedAveragesForShort(market
 		} else {
 			if thresholdReached == false {
 				thresholdReached = true
-				sellAverageEntryPriceForClosed += (ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
-				avgEntryPriceForOpenContracts += (thresholdController - ClosedContracts) * int64(trade.Price)
+				sellAverageEntryPriceForClosed +=
+					(ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
+				avgEntryPriceForOpenContracts +=
+					(thresholdController - ClosedContracts) * int64(trade.Price)
 			} else {
 				avgEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
 			}
@@ -192,22 +196,22 @@ func (t *memTradeStore) GetPositionsByParty(party string) map[string]*msg.Market
 		// long
 		if OpenVolumeSign == 1 {
 			//// calculate avg entry price for closed and open contracts when position is long
-			deltaAverageEntryPrice, avgEntryPriceForOpenContracts = t.CalculateVolumeEntryPriceWeightedAveragesForLong(marketBucket,
-				OpenContracts, ClosedContracts)
+			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
+				t.CalculateVolumeEntryPriceWeightedAveragesForLong(marketBucket, OpenContracts, ClosedContracts)
 		}
 
 		// net
 		if OpenVolumeSign == 0 {
 			//// calculate avg entry price for closed and open contracts when position is net
-			deltaAverageEntryPrice, avgEntryPriceForOpenContracts = t.CalculateVolumeEntryPriceWeightedAveragesForNet(marketBucket,
-				OpenContracts, ClosedContracts)
+			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
+				t.CalculateVolumeEntryPriceWeightedAveragesForNet(marketBucket, OpenContracts, ClosedContracts)
 		}
 
 		// short
 		if OpenVolumeSign == -1 {
 			//// calculate avg entry price for closed and open contracts when position is short
-			deltaAverageEntryPrice, avgEntryPriceForOpenContracts = t.CalculateVolumeEntryPriceWeightedAveragesForShort(marketBucket,
-				OpenContracts, ClosedContracts)
+			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
+				t.CalculateVolumeEntryPriceWeightedAveragesForShort(marketBucket, OpenContracts, ClosedContracts)
 		}
 
 		markPrice, _ = t.GetMarkPrice(market)
