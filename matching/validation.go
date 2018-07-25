@@ -3,16 +3,17 @@ package matching
 import (
 	"fmt"
 
-	"vega/proto"
+	"vega/msg"
+	"log"
 )
 
 func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {
-
 	if orderMessage.Market != b.name {
-		panic(fmt.Sprintf(
+		log.Println(fmt.Sprintf(
 			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
 			orderMessage.Market,
 			b.name))
+		return msg.OrderError_INVALID_MARKET_ID
 	}
 
 	if orderMessage.Timestamp < b.latestTimestamp {

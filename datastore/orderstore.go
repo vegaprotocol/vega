@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"fmt"
-	"vega/proto"
+	"vega/msg"
 )
 
 // memOrderStore should implement OrderStore interface.
@@ -21,7 +21,7 @@ func (m *memOrderStore) GetByMarket(market string, params GetParams) ([]Order, e
 	}
 
 	var (
-		pos uint64
+		pos    uint64
 		output []Order
 	)
 
@@ -55,7 +55,7 @@ func (m *memOrderStore) GetByParty(party string, params GetParams) ([]Order, err
 	}
 
 	var (
-		pos uint64
+		pos    uint64
 		output []Order
 	)
 
@@ -91,7 +91,6 @@ func (m *memOrderStore) GetByPartyAndId(party string, id string) (Order, error) 
 	return m.store.parties[party].ordersByTimestamp[at].order, nil
 }
 
-
 // Post creates a new order in the memory store.
 func (m *memOrderStore) Post(order Order) error {
 	if err := m.validate(&order); err != nil {
@@ -113,7 +112,6 @@ func (m *memOrderStore) Post(order Order) error {
 
 	// Insert new order into slice of orders ordered by timestamp
 	m.store.markets[order.Market].ordersByTimestamp = append(m.store.markets[order.Market].ordersByTimestamp, newOrder)
-
 
 	// Insert new order into Party map of slices of orders
 	m.store.parties[order.Party].ordersByTimestamp = append(m.store.parties[order.Party].ordersByTimestamp, newOrder)
@@ -216,7 +214,7 @@ func (m *memOrderStore) marketExists(market string) error {
 func (m *memOrderStore) partyExists(party string) error {
 	if !m.store.partyExists(party) {
 		memParty := memParty{
-			party:   party,
+			party:             party,
 			ordersByTimestamp: []*memOrder{},
 			tradesByTimestamp: []*memTrade{},
 		}

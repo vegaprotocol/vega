@@ -15,6 +15,32 @@
     "application/json"
   ],
   "paths": {
+    "/1.0/cancelOrder": {
+      "post": {
+        "operationId": "CancelOrder",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/vegaOrder"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/1.0/candles": {
       "get": {
         "operationId": "TradeCandles",
@@ -268,6 +294,15 @@
     }
   },
   "definitions": {
+    "OrderStatus": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Expired",
+        "Cancelled"
+      ],
+      "default": "Active"
+    },
     "OrderType": {
       "type": "string",
       "enum": [
@@ -483,6 +518,13 @@
         "timestamp": {
           "type": "string",
           "format": "uint64"
+        },
+        "riskFactor": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "status": {
+          "$ref": "#/definitions/OrderStatus"
         }
       }
     },

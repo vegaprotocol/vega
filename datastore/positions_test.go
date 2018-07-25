@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"vega/proto"
+	"vega/msg"
 
 	"github.com/stretchr/testify/assert"
 )

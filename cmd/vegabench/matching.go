@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"vega/core"
-	"vega/proto"
+	"vega/msg"
 )
 
 const marketId = "TEST"
