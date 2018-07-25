@@ -30,7 +30,6 @@ func NewBook(name string, config Config) *OrderBook {
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
 func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
-	// todo(cdm): an improvement here would be to add lookup validation in the matching engine, order pointer slice idx
 	// Validate Market
 	if order.Market != b.name {
 		log.Println(fmt.Sprintf(
@@ -46,12 +45,12 @@ func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.O
 
 	if order.Side == msg.Side_Buy {
 		if err := b.buy.RemoveOrder(order); err != nil {
-			fmt.Println("BUY REMOVE ERROR: ", err)
+			fmt.Println("Error removing (buy side): ", err)
 			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	} else {
 		if err := b.sell.RemoveOrder(order); err != nil {
-			fmt.Println("SELL REMOVE ERROR: ", err)
+			fmt.Println("Error removing (sell side): ", err)
 			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	}

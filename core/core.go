@@ -115,7 +115,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 
 func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
 
-	fmt.Printf("%+v", order)
+	fmt.Printf("CancelOrder: %+v", order)
 	fmt.Println("")
 
 	// -----------------------------------------------//
