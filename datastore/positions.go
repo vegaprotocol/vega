@@ -3,7 +3,6 @@ package datastore
 import (
 	"math"
 	"vega/proto"
-	"github.com/golang/go/src/pkg/fmt"
 )
 
 //type Exposure struct {
@@ -146,15 +145,130 @@ func (t *memTradeStore) GetTradesBySideBuckets(party string) map[string]*MarketB
 			marketBuckets[trade.Market].sells = append(marketBuckets[trade.Market].sells, &tradesByTimestamp[idx])
 			marketBuckets[trade.Market].sellVolume += int64(tradesByTimestamp[idx].Size)
 		}
+	}
+	return marketBuckets
+}
 
-		fmt.Printf("adding trade %+v\n", trade)
+func (t *memTradeStore) CalculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *MarketBucket,
+	OpenContracts, ClosedContracts int64) (int64, int64) {
+
+	var (
+		buyAverageEntryPriceForClosed  int64
+		sellAverageEntryPriceForClosed int64
+		deltaAverageEntryPrice         int64
+		avgEntryPriceForOpenContracts  int64
+		thresholdController            int64
+		thresholdReached               bool
+	)
+
+	// calculate avg entry price for closed and open contracts
+	for _, trade := range marketBucket.buys {
+		thresholdController += int64(trade.Size)
+		if thresholdController <= ClosedContracts {
+			buyAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
+		} else {
+			if thresholdReached == false {
+				thresholdReached = true
+				buyAverageEntryPriceForClosed += (ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
+				avgEntryPriceForOpenContracts += (thresholdController - ClosedContracts) * int64(trade.Price)
+			} else {
+				avgEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
+			}
+		}
 	}
 
-	fmt.Printf("added trades buys %+v\n", marketBuckets["market"].buys)
-	fmt.Printf("added trades sells %+v\n", marketBuckets["market"].sells)
-	fmt.Printf("buyVolume %+v\n", marketBuckets["market"].buyVolume)
-	fmt.Printf("sellVolume %+v\n", marketBuckets["market"].sellVolume)
-	return marketBuckets
+	for _, trade := range marketBucket.sells {
+		sellAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
+	}
+
+	if ClosedContracts != 0 {
+		deltaAverageEntryPrice = (sellAverageEntryPriceForClosed - buyAverageEntryPriceForClosed) / ClosedContracts
+	} else {
+		deltaAverageEntryPrice = 0
+	}
+
+	if OpenContracts != 0 {
+		avgEntryPriceForOpenContracts = int64(math.Abs(float64(avgEntryPriceForOpenContracts / OpenContracts)))
+	} else {
+		avgEntryPriceForOpenContracts = 0
+	}
+
+	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
+}
+
+func (t *memTradeStore) CalculateVolumeEntryPriceWeightedAveragesForNet(marketBucket *MarketBucket,
+	OpenContracts, ClosedContracts int64) (int64, int64) {
+
+	var (
+		buyAverageEntryPriceForClosed  int64
+		sellAverageEntryPriceForClosed int64
+		deltaAverageEntryPrice         int64
+		avgEntryPriceForOpenContracts  int64
+	)
+
+	avgEntryPriceForOpenContracts = 0
+
+	for _, trade := range marketBucket.buys {
+		buyAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
+	}
+	for _, trade := range marketBucket.sells {
+		sellAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
+	}
+
+	if ClosedContracts != 0 {
+		deltaAverageEntryPrice = (sellAverageEntryPriceForClosed - buyAverageEntryPriceForClosed) / ClosedContracts
+	} else {
+		deltaAverageEntryPrice = 0
+	}
+
+	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
+}
+
+func (t *memTradeStore) CalculateVolumeEntryPriceWeightedAveragesForShort(marketBucket *MarketBucket,
+	OpenContracts, ClosedContracts int64) (int64, int64) {
+
+	var (
+		buyAverageEntryPriceForClosed  int64
+		sellAverageEntryPriceForClosed int64
+		deltaAverageEntryPrice         int64
+		avgEntryPriceForOpenContracts  int64
+		thresholdController            int64
+		thresholdReached               bool
+	)
+
+	// calculate avg entry price for closed and open contracts
+	for _, trade := range marketBucket.sells {
+		thresholdController += int64(trade.Size)
+		if thresholdController <= ClosedContracts {
+			sellAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
+		} else {
+			if thresholdReached == false {
+				thresholdReached = true
+				sellAverageEntryPriceForClosed += (ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
+				avgEntryPriceForOpenContracts += (thresholdController - ClosedContracts) * int64(trade.Price)
+			} else {
+				avgEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
+			}
+		}
+	}
+
+	for _, trade := range marketBucket.buys {
+		buyAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
+	}
+
+	if ClosedContracts != 0 {
+		deltaAverageEntryPrice = (sellAverageEntryPriceForClosed - buyAverageEntryPriceForClosed) / ClosedContracts
+	} else {
+		deltaAverageEntryPrice = 0
+	}
+
+	if OpenContracts != 0 {
+		avgEntryPriceForOpenContracts = int64(math.Abs(float64(avgEntryPriceForOpenContracts / OpenContracts)))
+	} else {
+		avgEntryPriceForOpenContracts = 0
+	}
+
+	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
 }
 
 func (t *memTradeStore) GetPositionsByParty(party string) map[string]*msg.MarketPosition {
@@ -162,15 +276,11 @@ func (t *memTradeStore) GetPositionsByParty(party string) map[string]*msg.Market
 	marketBuckets := t.GetTradesBySideBuckets(party)
 
 	var (
-		OpenVolumeSign                 int8
-		ClosedContracts                int64
-		OpenContracts                  int64
-		buyAverageEntryPriceForClosed  int64
-		sellAverageEntryPriceForClosed int64
-		deltaAverageEntryPrice         int64
-
+		OpenVolumeSign                int8
+		ClosedContracts               int64
+		OpenContracts                 int64
+		deltaAverageEntryPrice        int64
 		avgEntryPriceForOpenContracts int64
-		thresholdController           int64
 		markPrice                     uint64
 	)
 
@@ -190,140 +300,28 @@ func (t *memTradeStore) GetPositionsByParty(party string) map[string]*msg.Market
 		if marketBucket.buyVolume < marketBucket.sellVolume {
 			OpenVolumeSign = -1
 			ClosedContracts = marketBucket.buyVolume
-			//OpenContracts = marketBucket.sellVolume - marketBucket.buyVolume
 			OpenContracts = marketBucket.buyVolume - marketBucket.sellVolume
 		}
 
-		buyAverageEntryPriceForClosed = 0
-		avgEntryPriceForOpenContracts = 0
-		thresholdController = 0
-		thresholdReached := false
-
-		fmt.Printf("\n\nPARTY %s\n", party)
 		// long
 		if OpenVolumeSign == 1 {
-			// calculate avg entry price for closed and open contracts
-			for _, trade := range marketBucket.buys {
-				thresholdController += int64(trade.Size)
-				fmt.Printf("trade size %d\n", trade.Size)
-				fmt.Printf("trade price %d\n", trade.Price)
-				fmt.Printf("thresholdController %d\n", thresholdController)
-				fmt.Printf("ClosedContracts %d\n", ClosedContracts)
-				if thresholdController <= ClosedContracts {
-					fmt.Printf("LESS than thresholdController\n")
-					buyAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
-				} else {
-					if thresholdReached == false {
-						thresholdReached = true
-						fmt.Printf("BETWEEn than thresholdController\n")
-						buyAverageEntryPriceForClosed += (ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
-						avgEntryPriceForOpenContracts += (thresholdController - ClosedContracts) * int64(trade.Price)
-					} else {
-						fmt.Printf("MORE than thresholdController\n")
-						avgEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
-					}
-				}
-			}
-
-			for _, trade := range marketBucket.sells {
-				fmt.Printf("sells\n")
-				fmt.Printf("trade size %d\n", trade.Size)
-				fmt.Printf("trade price %d\n", trade.Price)
-				sellAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
-			}
-
-			fmt.Printf("kkkk\n")
-			fmt.Printf("buyAverageEntryPriceForClosed %d\n", buyAverageEntryPriceForClosed)
-			fmt.Printf("sellAverageEntryPriceForClosed %d\n", sellAverageEntryPriceForClosed)
-			fmt.Printf("ClosedContracts %d\n", ClosedContracts)
-			fmt.Printf("avgEntryPriceForOpenContracts %d\n", avgEntryPriceForOpenContracts)
-
-			if ClosedContracts != 0 {
-				deltaAverageEntryPrice = (sellAverageEntryPriceForClosed - buyAverageEntryPriceForClosed) / ClosedContracts
-			} else {
-				deltaAverageEntryPrice = 0
-			}
-
-			if OpenContracts != 0 {
-				avgEntryPriceForOpenContracts = int64(math.Abs(float64(avgEntryPriceForOpenContracts / OpenContracts)))
-			} else {
-				avgEntryPriceForOpenContracts = 0
-			}
-			fmt.Printf("AVERAGES:\n")
-			fmt.Printf("deltaAverageEntryPrice %d\n", deltaAverageEntryPrice)
-			fmt.Printf("avgEntryPriceForOpenContracts %d\n", avgEntryPriceForOpenContracts)
-			fmt.Printf("kkkk\n")
+			//// calculate avg entry price for closed and open contracts when position is long
+			deltaAverageEntryPrice, avgEntryPriceForOpenContracts = t.CalculateVolumeEntryPriceWeightedAveragesForLong(marketBucket,
+				OpenContracts, ClosedContracts)
 		}
 
 		// net
 		if OpenVolumeSign == 0 {
-			avgEntryPriceForOpenContracts = 0
-
-			for _, trade := range marketBucket.buys {
-				buyAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
-			}
-			for _, trade := range marketBucket.sells {
-				sellAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
-			}
-
-			if ClosedContracts != 0 {
-				deltaAverageEntryPrice = (sellAverageEntryPriceForClosed - buyAverageEntryPriceForClosed) / ClosedContracts
-			} else {
-				deltaAverageEntryPrice = 0
-			}
-
+			//// calculate avg entry price for closed and open contracts when position is net
+			deltaAverageEntryPrice, avgEntryPriceForOpenContracts = t.CalculateVolumeEntryPriceWeightedAveragesForNet(marketBucket,
+				OpenContracts, ClosedContracts)
 		}
 
 		// short
 		if OpenVolumeSign == -1 {
-			// calculate avg entry price for closed and open contracts
-			for _, trade := range marketBucket.sells {
-				thresholdController += int64(trade.Size)
-				fmt.Printf("trade %+v\n", trade)
-				fmt.Printf("thresholdController %d\n", thresholdController)
-				fmt.Printf("ClosedContracts %d\n", ClosedContracts)
-				if thresholdController <= ClosedContracts {
-					fmt.Printf("LESS than thresholdController\n")
-					sellAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
-				} else {
-					if thresholdReached == false {
-						thresholdReached = true
-						fmt.Printf("BETWEEn than thresholdController\n")
-						sellAverageEntryPriceForClosed += (ClosedContracts - thresholdController + int64(trade.Size)) * int64(trade.Price)
-						avgEntryPriceForOpenContracts += (thresholdController - ClosedContracts) * int64(trade.Price)
-					} else {
-						fmt.Printf("MORE than thresholdController\n")
-						avgEntryPriceForOpenContracts += int64(trade.Size * trade.Price)
-					}
-				}
-			}
-
-			for _, trade := range marketBucket.buys {
-				buyAverageEntryPriceForClosed += int64(trade.Size * trade.Price)
-			}
-
-			fmt.Printf("sssss\n")
-			fmt.Printf("buyAverageEntryPriceForClosed %d\n", buyAverageEntryPriceForClosed)
-			fmt.Printf("sellAverageEntryPriceForClosed %d\n", sellAverageEntryPriceForClosed)
-			fmt.Printf("ClosedContracts %d\n", ClosedContracts)
-			fmt.Printf("avgEntryPriceForOpenContracts %d\n", avgEntryPriceForOpenContracts)
-
-			if ClosedContracts != 0 {
-				deltaAverageEntryPrice = (sellAverageEntryPriceForClosed- buyAverageEntryPriceForClosed) / ClosedContracts
-			} else {
-				deltaAverageEntryPrice = 0
-			}
-
-			if OpenContracts != 0 {
-				avgEntryPriceForOpenContracts = int64(math.Abs(float64(avgEntryPriceForOpenContracts / OpenContracts)))
-			} else {
-				avgEntryPriceForOpenContracts = 0
-			}
-
-			fmt.Printf("AVERAGES:\n")
-			fmt.Printf("deltaAverageEntryPrice %d\n", deltaAverageEntryPrice)
-			fmt.Printf("avgEntryPriceForOpenContracts %d\n", avgEntryPriceForOpenContracts)
-			fmt.Printf("kkkk\n")
+			//// calculate avg entry price for closed and open contracts when position is short
+			deltaAverageEntryPrice, avgEntryPriceForOpenContracts = t.CalculateVolumeEntryPriceWeightedAveragesForShort(marketBucket,
+				OpenContracts, ClosedContracts)
 		}
 
 		markPrice, _ = t.GetMarkPrice(market)
@@ -331,23 +329,12 @@ func (t *memTradeStore) GetPositionsByParty(party string) map[string]*msg.Market
 			continue
 		}
 
-		fmt.Printf("OpenVolumeSign %d\n", OpenVolumeSign)
-		fmt.Printf("OpenContracts %d\n", OpenContracts)
-		fmt.Printf("ClosedContracts %d\n", ClosedContracts)
-		fmt.Printf("deltaAverageEntryPrice %d\n", deltaAverageEntryPrice)
-		fmt.Printf("avgEntryPriceForOpenContracts %d\n", avgEntryPriceForOpenContracts)
-		fmt.Printf("markPrice %d\n", markPrice)
-
-
 		positions[market] = &msg.MarketPosition{}
 		positions[market].Market = market
 		positions[market].RealisedVolume = int64(ClosedContracts)
 		positions[market].UnrealisedVolume = int64(OpenContracts)
 		positions[market].RealisedPNL = int64(ClosedContracts * deltaAverageEntryPrice)
 		positions[market].UnrealisedPNL = int64(OpenContracts * (int64(markPrice) - avgEntryPriceForOpenContracts))
-
-		fmt.Printf("RealisedPNL %d\n", positions[market].RealisedPNL)
-		fmt.Printf("unrealisedPNL %d\n", positions[market].UnrealisedPNL)
 	}
 
 	return positions

@@ -281,6 +281,7 @@ func TestPositions1(t *testing.T) {
 
 	fmt.Printf("positions returned:\n")
 	for key, val := range positions {
+		fmt.Printf("%+v\n", val)
 		assert.Equal(t, testMarket, key)
 		assert.Equal(t, testMarket, val.Market)
 
@@ -294,6 +295,7 @@ func TestPositions1(t *testing.T) {
 
 	fmt.Printf("positions returned:\n")
 	for key, val := range positions {
+		fmt.Printf("%+v\n", val)
 		assert.Equal(t, testMarket, key)
 		assert.Equal(t, testMarket, val.Market)
 
@@ -355,6 +357,7 @@ func TestPositions1(t *testing.T) {
 
 	fmt.Printf("positions returned:\n")
 	for key, val := range positions {
+		fmt.Printf("%+v\n", val)
 		assert.Equal(t, testMarket, key)
 		assert.Equal(t, testMarket, val.Market)
 
@@ -368,6 +371,7 @@ func TestPositions1(t *testing.T) {
 
 	fmt.Printf("positions returned:\n")
 	for key, val := range positions {
+		fmt.Printf("%+v\n", val)
 		assert.Equal(t, testMarket, key)
 		assert.Equal(t, testMarket, val.Market)
 
@@ -421,10 +425,10 @@ func TestPositions1(t *testing.T) {
 	err = newTradeStore.Post(*trade)
 	assert.Nil(t, err)
 
-	fmt.Printf("\n\n\n")
 	positions = newTradeStore.GetPositionsByParty(testPartyA)
 	fmt.Printf("positions returned:\n")
 	for key, val := range positions {
+		fmt.Printf("%+v\n", val)
 		assert.Equal(t, testMarket, key)
 		assert.Equal(t, testMarket, val.Market)
 
@@ -438,6 +442,7 @@ func TestPositions1(t *testing.T) {
 
 	fmt.Printf("positions returned:\n")
 	for key, val := range positions {
+		fmt.Printf("%+v\n", val)
 		assert.Equal(t, testMarket, key)
 		assert.Equal(t, testMarket, val.Market)
 
@@ -490,10 +495,10 @@ func TestPositions1(t *testing.T) {
 	err = newTradeStore.Post(*trade)
 	assert.Nil(t, err)
 
-	fmt.Printf("\n\n\n")
 	positions = newTradeStore.GetPositionsByParty(testPartyA)
 	fmt.Printf("positions returned:\n")
 	for key, val := range positions {
+		fmt.Printf("%+v\n", val)
 		assert.Equal(t, testMarket, key)
 		assert.Equal(t, testMarket, val.Market)
 
@@ -507,6 +512,7 @@ func TestPositions1(t *testing.T) {
 
 	fmt.Printf("positions returned:\n")
 	for key, val := range positions {
+		fmt.Printf("%+v\n", val)
 		assert.Equal(t, testMarket, key)
 		assert.Equal(t, testMarket, val.Market)
 
