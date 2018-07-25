@@ -114,7 +114,6 @@ func (m *memOrderStore) Post(order Order) error {
 	// Insert new order into slice of orders ordered by timestamp
 	m.store.markets[order.Market].ordersByTimestamp = append(m.store.markets[order.Market].ordersByTimestamp, newOrder)
 
-
 	// Insert new order into Party map of slices of orders
 	m.store.parties[order.Party].ordersByTimestamp = append(m.store.parties[order.Party].ordersByTimestamp, newOrder)
 

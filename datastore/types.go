@@ -50,5 +50,6 @@ func (or *Order) ToProtoMessage() *msg.Order {
 		Timestamp: or.Timestamp,
 		Side:      or.Side,
 		Type:      or.Type,
+		Status:    or.Status,
 	}
 }
