@@ -41,15 +41,16 @@ func NewOrderFromProtoMessage(m *msg.Order) *Order {
 
 func (or *Order) ToProtoMessage() *msg.Order {
 	return &msg.Order{
-		Id:         or.Id,
-		Market:     or.Market,
-		Party:      or.Party,
-		Price:      or.Price,
-		Size:       or.Size,
-		Remaining:  or.Remaining,
-		Timestamp:  or.Timestamp,
-		Side:       or.Side,
-		Type:       or.Type,
+		Id:        or.Id,
+		Market:    or.Market,
+		Party:     or.Party,
+		Price:     or.Price,
+		Size:      or.Size,
+		Remaining: or.Remaining,
+		Timestamp: or.Timestamp,
+		Side:      or.Side,
+		Type:      or.Type,
+		Status:    or.Status,
 		RiskFactor: or.RiskFactor,
 	}
 }

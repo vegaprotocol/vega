@@ -127,6 +127,9 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 
 func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
 
+	fmt.Printf("CancelOrder: %+v", order)
+	fmt.Println("")
+
 	// -----------------------------------------------//
 	//----------------- MATCHING ENGINE --------------//
 	// 1) cancel order in matching engine

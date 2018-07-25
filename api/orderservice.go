@@ -72,16 +72,17 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, limit uin
 		//	continue
 		//}
 		o := &msg.Order{
-			Id:         order.Id,
-			Market:     order.Market,
-			Party:      order.Party,
-			Side:       order.Side,
-			Price:      order.Price,
-			Size:       order.Timestamp,
-			Remaining:  order.Remaining,
-			Timestamp:  order.Timestamp,
-			Type:       order.Type,
-			RiskFactor: order.RiskFactor,
+			Id:        order.Id,
+			Market:    order.Market,
+			Party:     order.Party,
+			Side:      order.Side,
+			Price:     order.Price,
+			Size:      order.Size,
+			Remaining: order.Remaining,
+			Timestamp: order.Timestamp,
+			Type:      order.Type,
+			Status:    order.Status,
+			RiskFactor:order.RiskFactor,
 		}
 		result = append(result, o)
 	}
@@ -99,16 +100,17 @@ func (p *orderService) GetByParty(ctx context.Context, party string, limit uint6
 		//	continue
 		//}
 		o := &msg.Order{
-			Id:         order.Id,
-			Market:     order.Market,
-			Party:      order.Party,
-			Side:       order.Side,
-			Price:      order.Price,
-			Size:       order.Timestamp,
-			Remaining:  order.Remaining,
-			Timestamp:  order.Timestamp,
-			Type:       order.Type,
-			RiskFactor: order.RiskFactor,
+			Id:        order.Id,
+			Market:    order.Market,
+			Party:     order.Party,
+			Side:      order.Side,
+			Price:     order.Price,
+			Size:      order.Size,
+			Remaining: order.Remaining,
+			Timestamp: order.Timestamp,
+			Type:      order.Type,
+			Status:    order.Status,
+			RiskFactor:order.RiskFactor,
 		}
 		result = append(result, o)
 	}
