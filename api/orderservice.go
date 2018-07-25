@@ -2,25 +2,16 @@ package api
 
 import (
 	"context"
-	"errors"
-	"sync"
-
-	"vega/proto"
+	"vega/blockchain"
 	"vega/core"
 	"vega/datastore"
-	"vega/tendermint/rpc"
-
-	"github.com/golang/protobuf/proto"
-)
-
-var (
-	clients []*rpc.Client
-	mux sync.Mutex
+	"vega/msg"
 )
 
 type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
+	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error)
 	GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
@@ -32,6 +23,7 @@ type OrderService interface {
 type orderService struct {
 	app        *core.Vega
 	orderStore datastore.OrderStore
+	blockchain blockchain.Client
 }
 
 func NewOrderService() OrderService {
@@ -41,47 +33,32 @@ func NewOrderService() OrderService {
 func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.app = app
 	p.orderStore = orderStore
+	p.blockchain = blockchain.NewClient()
 }
 
 func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
+	// Set defaults, prevent unwanted external manipulation
 	order.Remaining = order.Size
+	order.Status = msg.Order_Active
+	order.Type = msg.Order_GTC // VEGA only supports GTC at present
+	order.Timestamp = 0
+	order.RiskFactor = 0
 
-	// Protobuf marshall the incoming order to byte slice.
-	bytes, err := proto.Marshal(order)
+	// TODO validate
+
+	// Call out to the blockchain package/layer and use internal client to gain consensus
+	return p.blockchain.CreateOrder(ctx, order)
+}
+
+// CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
+func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
+	// Validate order exists using read store
+	o, err := p.orderStore.GetByMarketAndId(order.Market, order.Id)
 	if err != nil {
 		return false, err
 	}
-	if len(bytes) == 0 {
-		return false, errors.New("order message cannot be empty")
-	}
-
-	// Tendermint requires unique transactions so we pre-pend a guid + pipe to the byte array.
-	// It's split on arrival out of concensus.
-	bytes, err = bytesWithPipedGuid(bytes)
-	if err != nil {
-		return false, err
-	}
-
-	// Get a lightweight RPC client (our custom Tendermint client) from a pool (create one if n/a).
-	client, err := getClient()
-	if err != nil {
-		return false, err
-	}
-
-	// Fire off the transaction for consensus
-	err = client.AsyncTransaction(ctx, bytes)
-	if err != nil {
-		if !client.HasError() {
-			releaseClient(client)
-		}
-		return false, err
-	}
-
-	// If all went well we return the client to the pool for another caller.
-	if client != nil {
-		releaseClient(client)
-	}
-	return true, err
+	// Send cancellation request by consensus 
+	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
 }
 
 func (p *orderService) GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error) {
@@ -162,28 +139,4 @@ func (p *orderService) GetMarkets(ctx context.Context) ([]string, error) {
 
 func (p *orderService) GetOrderBookDepth(ctx context.Context, marketName string) (orderBookDepth *msg.OrderBookDepth, err error) {
 	return p.orderStore.GetOrderBookDepth(marketName)
-}
-
-
-func getClient() (*rpc.Client, error) {
-	mux.Lock()
-	if len(clients) == 0 {
-		mux.Unlock()
-		client := rpc.Client{
-		}
-		if err := client.Connect(); err != nil {
-			return nil, err
-		}
-		return &client, nil
-	}
-	client := clients[0]
-	clients = clients[1:]
-	mux.Unlock()
-	return client, nil
-}
-
-func releaseClient(c *rpc.Client) {
-	mux.Lock()
-	clients = append(clients, c)
-	mux.Unlock()
 }

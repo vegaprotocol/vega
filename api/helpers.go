@@ -12,9 +12,3 @@ func unixTimestamp(datetime time.Time) uint64 {
 func newGuid() string {
 	return uuid.NewV4().String()
 }
-
-func bytesWithPipedGuid(input []byte) ([]byte, error) {
-	prefix := newGuid() + "|"
-	prefixBytes := []byte(prefix)
-	return append(prefixBytes, input...), nil
-}

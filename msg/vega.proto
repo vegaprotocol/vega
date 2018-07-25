@@ -11,6 +11,7 @@ message Market {
 
 message Order {
     enum Type { GTC = 0; GTT = 1; ENE = 2; FOK = 3; }
+    enum Status { Active = 0; Expired = 1; Cancelled = 2;}
     string id = 1;
     string market = 2;
     string party = 3;
@@ -21,6 +22,11 @@ message Order {
     Type type = 8;
     uint64 timestamp = 9;
     uint64 riskFactor = 10;
+    Status status = 11;
+}
+
+message OrderCancellation {
+    Order order = 1;
 }
 
 message OrderConfirmation {
@@ -32,9 +38,11 @@ message OrderConfirmation {
 enum OrderError {
     NONE = 0;
     INVALID_MARKET_ID = 1;
-    ORDER_OUT_OF_SEQUENCE = 2;
-    INVALID_REMAINING_SIZE = 3;
-    NON_EMPTY_NEW_ORDER_ID = 4;
+    INVALID_ORDER_ID = 2;
+    ORDER_OUT_OF_SEQUENCE = 3;
+    INVALID_REMAINING_SIZE = 4;
+    NON_EMPTY_NEW_ORDER_ID = 5;
+    ORDER_REMOVAL_FAILURE = 6;
 }
 
 message Trade {
