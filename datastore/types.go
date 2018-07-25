@@ -1,6 +1,8 @@
 package datastore
 
-import "vega/msg"
+import (
+	"vega/msg"
+)
 
 type Trade struct {
 	msg.Trade
@@ -50,5 +52,6 @@ func (or *Order) ToProtoMessage() *msg.Order {
 		Timestamp: or.Timestamp,
 		Side:      or.Side,
 		Type:      or.Type,
+		Status:    or.Status,
 	}
 }

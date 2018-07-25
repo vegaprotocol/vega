@@ -3,6 +3,7 @@ package matching
 import (
 	"vega/msg"
 	"github.com/pkg/errors"
+	"fmt"
 )
 
 type OrderBookSide struct {
@@ -40,6 +41,7 @@ func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 
 	}
 	if toDelete == -1 {
+		fmt.Println("order not found")
 		return errors.New("order not found")
 	}
 	return nil

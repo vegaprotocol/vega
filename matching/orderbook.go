@@ -46,10 +46,12 @@ func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.O
 
 	if order.Side == msg.Side_Buy {
 		if err := b.buy.RemoveOrder(order); err != nil {
+			fmt.Println("BUY REMOVE ERROR: ", err)
 			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	} else {
 		if err := b.sell.RemoveOrder(order); err != nil {
+			fmt.Println("SELL REMOVE ERROR: ", err)
 			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	}
