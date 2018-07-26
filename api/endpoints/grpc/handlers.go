@@ -17,9 +17,15 @@ type Handlers struct {
 // (Prevent returning all results every time a careless query is made)
 const defaultLimit = uint64(1000)
 
-// CreateOrder is used to send an order into the VEGA platform, via consensus. TODO pre-validation.
+// CreateOrder is used to request sending an order into the VEGA platform, via consensus.
 func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
 	success, err := h.OrderService.CreateOrder(ctx, order)
+	return &api.OrderResponse{Success: success}, err
+}
+
+// CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
+func (h *Handlers) CancelOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
+	success, err := h.OrderService.CancelOrder(ctx, order)
 	return &api.OrderResponse{Success: success}, err
 }
 

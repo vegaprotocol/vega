@@ -3,15 +3,15 @@ package restproxy
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"google.golang.org/grpc"
-	"vega/api"
 	"github.com/rs/cors"
+	"google.golang.org/grpc"
+	"net/http"
+	"vega/api"
+	"vega/log"
 )
 
-type restProxyServer struct {}
+type restProxyServer struct{}
 
 func NewRestProxyServer() *restProxyServer {
 	return &restProxyServer{}
@@ -20,17 +20,28 @@ func NewRestProxyServer() *restProxyServer {
 func (s *restProxyServer) Start() {
 	var port = 3003
 	var addr = fmt.Sprintf(":%d", port)
-	fmt.Printf("Starting REST<>GRPC based HTTP server on port %d...\n", port)
+	log.Infof("Starting REST<>GRPC based HTTP server on port %d...\n", port)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	endpoint := "localhost:3002"
-	mux := runtime.NewServeMux()
+	jsonpb := &JSONPb{
+		EmitDefaults: true,
+		Indent:       "  ",
+		OrigName:     true,
+	}
+
+	mux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonpb),
+		// This is necessary to get error details properly marshalled in unary requests.
+		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
+	)
+
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Registering trading handler for rest proxy endpoints %+v", err)
 	} else {
 		// CORS support
 		handler := cors.Default().Handler(mux)

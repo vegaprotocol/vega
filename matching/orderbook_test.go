@@ -3,10 +3,8 @@ package matching
 import (
 	"fmt"
 	"testing"
-
 	"vega/log"
 	"vega/msg"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -756,7 +754,141 @@ func TestOrderBook_AddOrder(t *testing.T) {
 			expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
 		}
 	}
+}
 
+
+func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "invalid",
+		Party:     "A",
+		Side:      msg.Side_Sell,
+		Price:     101,
+		Size:      100,
+		Remaining: 100,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+		Id: fmt.Sprintf("V%d-%d", 1, 1),
+	}
+
+	_, err := book.AddOrder(newOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	assert.Equal(t, msg.OrderError_INVALID_MARKET_ID, err)
+
+
+}
+
+func TestOrderBook_CancelSellOrder(t *testing.T) {
+	fmt.Println("BEGIN CANCELLING VALID ORDER")
+
+	// Arrange
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Party:     "A",
+		Side:      msg.Side_Sell,
+		Price:     101,
+		Size:      100,
+		Remaining: 100,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+		Id: fmt.Sprintf("V%d-%d", 1, 1),
+	}
+	
+	confirmation, err := book.AddOrder(newOrder)
+	orderAdded := confirmation.Order
+
+	// Act
+	res, err := book.CancelOrder(orderAdded)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	// Assert
+	assert.Equal(t, msg.OrderError_NONE, err)
+	assert.Equal(t, "V1-1", res.Order.Id)
+	assert.Equal(t, msg.Order_Cancelled, res.Order.Status)
+
+	book.PrintState("AFTER CANCEL ORDER")
+}
+
+func TestOrderBook_CancelBuyOrder(t *testing.T) {
+	fmt.Println("BEGIN CANCELLING VALID ORDER")
+
+	// Arrange
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Party:     "A",
+		Side:      msg.Side_Buy,
+		Price:     101,
+		Size:      100,
+		Remaining: 100,
+		Type:      msg.Order_GTC,
+		Timestamp: 0,
+		Id: fmt.Sprintf("V%d-%d", 1, 1),
+	}
+
+	confirmation, err := book.AddOrder(newOrder)
+	orderAdded := confirmation.Order
+
+	// Act
+	res, err := book.CancelOrder(orderAdded)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	// Assert
+	assert.Equal(t, msg.OrderError_NONE, err)
+	assert.Equal(t, "V1-1", res.Order.Id)
+	assert.Equal(t, msg.Order_Cancelled, res.Order.Status)
+
+	book.PrintState("AFTER CANCEL ORDER")
+}
+
+func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
+	fmt.Println("BEGIN CANCELLING MARKET MISMATCH ORDER")
+
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market: "testOrderBook",
+		Id:     "123456",
+	}
+
+	confirmation, err := book.AddOrder(newOrder)
+	orderAdded := confirmation.Order
+
+	orderAdded.Market = "invalid"  // Bad market, malformed?
+
+	_, err = book.CancelOrder(orderAdded)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	assert.Equal(t, msg.OrderError_INVALID_MARKET_ID, err)
+}
+
+func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
+	fmt.Println("BEGIN CANCELLING INVALID ORDER")
+
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market: "testOrderBook",
+		Id:     "id",
+	}
+
+	confirmation, err := book.AddOrder(newOrder)
+	orderAdded := confirmation.Order
+
+	_, err = book.CancelOrder(orderAdded)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	assert.Equal(t, msg.OrderError_INVALID_ORDER_ID, err)
 }
 
 func expectTrade(t *testing.T, expectedTrade, trade *msg.Trade) {

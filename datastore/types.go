@@ -5,14 +5,14 @@ import "vega/msg"
 type Trade struct {
 	msg.Trade
 	AggressiveOrderId string
-	PassiveOrderId string
+	PassiveOrderId    string
 }
 
 func NewTradeFromProtoMessage(m *msg.Trade, aggressiveOrderId, passiveOrderId string) *Trade {
 	return &Trade{
-		Trade:   *m,
+		Trade:             *m,
 		AggressiveOrderId: aggressiveOrderId,
-		PassiveOrderId: passiveOrderId,
+		PassiveOrderId:    passiveOrderId,
 	}
 }
 
@@ -50,5 +50,7 @@ func (or *Order) ToProtoMessage() *msg.Order {
 		Timestamp: or.Timestamp,
 		Side:      or.Side,
 		Type:      or.Type,
+		Status:    or.Status,
+		RiskFactor: or.RiskFactor,
 	}
 }

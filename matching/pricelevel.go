@@ -184,7 +184,7 @@ func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
 }
 
 func (l PriceLevel) print() {
-	fmt.Printf("priceLevel: %d\n", l.price)
+	log.Infof("priceLevel: %d\n", l.price)
 	for _, o := range l.orders {
 		var side string
 		if o.Side == msg.Side_Buy {
