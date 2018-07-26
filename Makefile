@@ -16,13 +16,13 @@ lint: ## Lint the files
 	@go get -u golang.org/x/lint/golint
 	@golint -set_exit_status ${PKG_LIST}
 
-test: dep ## Run unit tests
+test: ## Run unit tests
 	@go test -short ${PKG_LIST} -v
 
-race: dep ## Run data race detector
+race: ## Run data race detector
 	@go test -race -short ${PKG_LIST}
 
-msan: dep ## Run memory sanitizer
+msan: ## Run memory sanitizer
 	@go test -msan -short ${PKG_LIST}
 
 coverage: ## Generate global code coverage report
@@ -35,7 +35,7 @@ dep: ## Get the dependencies
 	@dep ensure
 	@dep ensure -update
 
-build: dep ## Build the binary file
+build: ## Build the binary file
 	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
 
 clean: ## Remove previous build

@@ -1,10 +1,11 @@
 package blockchain
 
 import (
-	"github.com/gogo/protobuf/proto"
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"testing"
 	"vega/msg"
+	"github.com/gogo/protobuf/proto"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVegaTxEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {

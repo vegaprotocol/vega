@@ -2,7 +2,6 @@
 cover.out
 coverage.html
 pkg/
-vendor
 vega
 vegabench
 .idea/
