@@ -15,7 +15,7 @@ func NewOrderStore(ms *MemStore) OrderStore {
 	return &memOrderStore{store: ms}
 }
 
-func (m *memOrderStore) GetByMarket(market string, params GetParams) ([]Order, error) {
+func (m *memOrderStore) GetByMarket(market string, params GetOrderParams) ([]Order, error) {
 	if err := m.marketExists(market); err != nil {
 		return nil, err
 	}
@@ -30,12 +30,102 @@ func (m *memOrderStore) GetByMarket(market string, params GetParams) ([]Order, e
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
-		// TODO: apply filters
-		output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
-		pos++
+		if applyFilter(m.store.markets[market].ordersByTimestamp[i].order, params) {
+			output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
+			pos++
+		}
 	}
 	return output, nil
 }
+
+func applyFilter(order Order, params GetOrderParams) bool {
+	var ok bool
+
+	if params.MarketFilter != nil {
+		ok = apply(order.Market, params.MarketFilter)
+	}
+
+	if params.PartyFilter != nil {
+		ok = apply(order.Market, params.PartyFilter)
+	}
+
+	if params.SideFilter != nil {
+		ok = apply(order.Market, params.SideFilter)
+	}
+
+	if params.PriceFilter != nil {
+		ok = apply(order.Price, params.PriceFilter)
+	}
+
+	if params.SizeFilter != nil {
+		ok = apply(order.Remaining, params.PriceFilter)
+	}
+
+	if params.RemainingFilter != nil {
+		ok = apply(order.Remaining, params.PriceFilter)
+	}
+
+	if params.TypeFilter != nil {
+		ok = apply(order.Market, params.TypeFilter)
+	}
+
+	if params.TimestampFilter != nil {
+		ok = apply(order.Timestamp, params.PriceFilter)
+	}
+
+	if params.RiskFactor != nil {
+		ok = apply(order.Market, params.TypeFilter)
+	}
+
+	if params.StatusFilter != nil {
+		ok = apply(order.Market, params.StatusFilter)
+	}
+
+	return ok
+}
+
+func apply (value interface{}, params *QueryFilter) bool {
+	var ok bool
+	if params.filterRange != nil {
+		ok = applyRangeFilter(value, params.filterRange, params.kind)
+	}
+
+	if params.eq != nil {
+		ok = applyEqualFilter(value, params.eq)
+	}
+
+	if params.eq != nil {
+		ok = applyNotEqualFilter(value, params.eq)
+	}
+
+	return ok
+}
+
+func applyRangeFilter(value interface{}, r *Range, kind string) bool {
+	if kind == "uint64" {
+		if r.lower.(uint64) < value.(uint64) && r.upper.(uint64) < value.(uint64) {
+			return true
+		}
+	}
+	// implement other kinds
+	return false
+}
+
+func applyEqualFilter(value interface{}, eq interface{}) bool {
+	if eq == value {
+		return true
+	}
+	return false
+}
+
+func applyNotEqualFilter(value interface{}, neq interface{}) bool {
+	if neq != value {
+		return true
+	}
+	return false
+}
+
+
 
 // Get retrieves an order for a given market and id.
 func (m *memOrderStore) GetByMarketAndId(market string, id string) (Order, error) {
@@ -49,7 +139,7 @@ func (m *memOrderStore) GetByMarketAndId(market string, id string) (Order, error
 	return v.order, nil
 }
 
-func (m *memOrderStore) GetByParty(party string, params GetParams) ([]Order, error) {
+func (m *memOrderStore) GetByParty(party string, params GetOrderParams) ([]Order, error) {
 	if err := m.partyExists(party); err != nil {
 		return nil, err
 	}
@@ -64,9 +154,10 @@ func (m *memOrderStore) GetByParty(party string, params GetParams) ([]Order, err
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
-		// TODO: apply filters
-		output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
-		pos++
+		if applyFilter(m.store.parties[party].ordersByTimestamp[i].order, params) {
+			output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
+			pos++
+		}
 	}
 	return output, nil
 }
