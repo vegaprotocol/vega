@@ -95,9 +95,9 @@ message OrderBookDepth {
 }
 
 message MarketPosition {
-    string Market = 1;
-    int64 RealisedVolume = 2;
-    int64 RealisedPNL  = 3;
-    int64 UnrealisedVolume = 4;
-    int64 UnrealisedPNL = 5;
+    string market = 1;
+    int64 realisedVolume = 2;
+    int64 realisedPNL  = 3;
+    int64 unrealisedVolume = 4;
+    int64 unrealisedPNL = 5;
 }
