@@ -12,6 +12,9 @@ http:
   - selector: grpc.trading.CreateOrder
     post: '/1.0/createOrder'
     body: "*"
+  - selector: grpc.trading.CancelOrder
+    post: '/1.0/cancelOrder'
+    body: "*"
   - selector: grpc.trading.OrdersByMarket
     get: '/1.0/marketOrders'
   - selector: grpc.trading.OrdersByParty

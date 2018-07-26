@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"testing"
-	"vega/proto"
+	"vega/msg"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -91,6 +91,7 @@ func TestMemStore_PostPutAndGetExistingOrder(t *testing.T) {
 			Party:  testParty,
 			Price:  100,
 			Size:   1,
+			Status: msg.Order_Active,
 		},
 	}
 
@@ -104,6 +105,7 @@ func TestMemStore_PostPutAndGetExistingOrder(t *testing.T) {
 
 	order.Price = 1000
 	order.Size = 5
+	order.Status = msg.Order_Cancelled
 
 	err = newOrderStore.Put( order)
 	assert.Nil(t, err)
@@ -113,6 +115,7 @@ func TestMemStore_PostPutAndGetExistingOrder(t *testing.T) {
 	assert.Equal(t, order, o)
 	assert.Equal(t, uint64(1000), o.Price)
 	assert.Equal(t, uint64(5), o.Size)
+	assert.Equal(t, msg.Order_Cancelled, o.Status)
 }
 
 
