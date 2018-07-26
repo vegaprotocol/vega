@@ -141,7 +141,7 @@ func (m *memOrderStore) Put(order Order) error {
 
 	m.store.markets[order.Market].orders[order.Id].order = order
 
-	if order.Remaining == uint64(0) {
+	if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled {
 		// update buySideRemainingOrders sellSideRemainingOrders
 		if order.Side == msg.Side_Buy {
 			m.store.markets[order.Market].buySideRemainingOrders.remove(&order)
