@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"vega/log"
 	"vega/msg"
 )
 
@@ -183,7 +184,7 @@ func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
 }
 
 func (l PriceLevel) print() {
-	fmt.Printf("priceLevel: %d\n", l.price)
+	log.Infof("priceLevel: %d\n", l.price)
 	for _, o := range l.orders {
 		var side string
 		if o.Side == msg.Side_Buy {
@@ -194,6 +195,6 @@ func (l PriceLevel) print() {
 
 		line := fmt.Sprintf("      %s %s @%d size=%d R=%d Type=%d T=%d %s",
 			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id)
-		fmt.Println(line)
+		log.Infof("%s", line)
 	}
 }

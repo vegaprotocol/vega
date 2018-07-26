@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"vega/msg"
-	"log"
+	"vega/log"
 )
 
 func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {
 	if orderMessage.Market != b.name {
-		log.Println(fmt.Sprintf(
+		log.Infof(fmt.Sprintf(
 			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
 			orderMessage.Market,
 			b.name))

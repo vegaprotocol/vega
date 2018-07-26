@@ -1,6 +1,8 @@
 package datastore
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // memTradeStore should implement TradeStore interface.
 type memTradeStore struct {

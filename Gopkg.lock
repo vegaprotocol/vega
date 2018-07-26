@@ -63,14 +63,14 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/grpc-ecosystem/grpc-gateway"
   packages = [
     "runtime",
     "runtime/internal",
     "utilities"
   ]
-  revision = "209d7ce1a333550d4ce54dad94432192eeb2041b"
+  revision = "92583770e3f01b09a0d3e9bdf64321d8bebd48f2"
+  version = "v1.4.1"
 
 [[projects]]
   branch = "master"
@@ -119,6 +119,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/tav/golly"
+  packages = ["process"]
+  revision = "96c7c9e13d1f77ed61c21ff429651a5cb1e7f311"
+
+[[projects]]
+  branch = "master"
   name = "github.com/tendermint/tendermint"
   packages = [
     "abci/example/code",
@@ -127,7 +133,7 @@
     "libs/common",
     "libs/log"
   ]
-  revision = "2aa2b63cadc42cca1071c36adfd2f2ce14e1aa8f"
+  revision = "c64a3c74c870d725ba1356f75b4afadf0928c297"
 
 [[projects]]
   name = "github.com/tendermint/tmlibs"
@@ -137,6 +143,31 @@
   ]
   revision = "49596e0a1f48866603813df843c9409fc19805c6"
   version = "v0.9.0"
+
+[[projects]]
+  name = "go.uber.org/atomic"
+  packages = ["."]
+  revision = "1ea20fb1cbb1cc08cbd0d913a96dead89aa18289"
+  version = "v1.3.2"
+
+[[projects]]
+  name = "go.uber.org/multierr"
+  packages = ["."]
+  revision = "3c4937480c32f4c13a875a1829af76c98ca3d40a"
+  version = "v1.1.0"
+
+[[projects]]
+  name = "go.uber.org/zap"
+  packages = [
+    ".",
+    "buffer",
+    "internal/bufferpool",
+    "internal/color",
+    "internal/exit",
+    "zapcore"
+  ]
+  revision = "4d45f9617f7d90f7a663ff21c7a4321dbe78098b"
+  version = "v1.9.0"
 
 [[projects]]
   name = "golang.org/x/net"
@@ -213,6 +244,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8c8f763efc09abcc5fd7deb965353d07e60942585a4d82d66924a9cf74c1d928"
+  inputs-digest = "de571ad88b8e8f6eb2a612be55317a1bf41ab74522f40dee09167050a0f2c255"
   solver-name = "gps-cdcl"
   solver-version = 1

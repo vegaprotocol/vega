@@ -2,17 +2,19 @@
 package main
 
 import (
-	"log"
 	"vega/api"
 	"vega/api/endpoints/grpc"
 	"vega/api/endpoints/restproxy"
 	"vega/blockchain"
 	"vega/core"
 	"vega/datastore"
+	"vega/log"
 )
 
 func main() {
 	config := core.GetConfig()
+
+	log.InitConsoleLogger(log.DebugLevel)
 
 	// Storage Service provides read stores for consumer VEGA API
 	// Uses in memory storage (maps/slices etc), configurable in future
@@ -38,6 +40,6 @@ func main() {
 	go restServer.Start()
 
 	if err := blockchain.Start(vega); err != nil {
-		log.Fatal(err)
+		log.Fatalf("%s", err)
 	}
 }

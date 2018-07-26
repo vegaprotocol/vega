@@ -1,10 +1,9 @@
 package matching
 
 import (
-	"fmt"
+	"vega/log"
 	"vega/msg"
-
-	"log"
+	"fmt"
 )
 
 type OrderBook struct {
@@ -32,7 +31,7 @@ func NewBook(name string, config Config) *OrderBook {
 func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
 	// Validate Market
 	if order.Market != b.name {
-		log.Println(fmt.Sprintf(
+		log.Errorf(fmt.Sprintf(
 			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
 			order.Market,
 			b.name))
@@ -45,12 +44,12 @@ func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.O
 
 	if order.Side == msg.Side_Buy {
 		if err := b.buy.RemoveOrder(order); err != nil {
-			fmt.Println("Error removing (buy side): ", err)
+			log.Errorf("Error removing (buy side): ", err)
 			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	} else {
 		if err := b.sell.RemoveOrder(order); err != nil {
-			fmt.Println("Error removing (sell side): ", err)
+			log.Errorf("Error removing (sell side): ", err)
 			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	}
@@ -129,22 +128,21 @@ func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.O
 }
 
 func (b *OrderBook) PrintState(msg string) {
-	fmt.Println()
-	fmt.Println(msg)
-	fmt.Println("------------------------------------------------------------")
-	fmt.Println("                        BUY SIDE                            ")
+	log.Infof("\n%s\n", msg)
+	log.Infof("------------------------------------------------------------\n")
+	log.Infof("                        BUY SIDE                            \n")
 	for _, priceLevel := range b.buy.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print()
 		}
 	}
-	fmt.Println("------------------------------------------------------------")
-	fmt.Println("                        SELL SIDE                           ")
+	log.Infof("------------------------------------------------------------\n")
+	log.Infof("                        SELL SIDE                           \n")
 	for _, priceLevel := range b.sell.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print()
 		}
 	}
-	fmt.Println("------------------------------------------------------------")
+	log.Infof("------------------------------------------------------------\n")
 
 }

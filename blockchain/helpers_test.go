@@ -1,11 +1,11 @@
 package blockchain
 
 import (
-	"github.com/gogo/protobuf/proto"
-	"github.com/stretchr/testify/assert"
-	"log"
+	"fmt"
 	"testing"
 	"vega/msg"
+	"github.com/gogo/protobuf/proto"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVegaTxEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
@@ -38,9 +38,9 @@ func TestVegaTxDecodeInvalidPayload(t *testing.T) {
 
 	decodeBytes, cmd, err := VegaTxDecode(invalidBytes)
 
-	log.Println(decodeBytes)
-	log.Println(cmd)
-	log.Println(err)
+	fmt.Println(decodeBytes)
+	fmt.Println(cmd)
+	fmt.Println(err)
 
 	assert.Error(t, err)
 }

@@ -2,13 +2,11 @@ package blockchain
 
 import (
 	"encoding/binary"
-	"fmt"
-
+	"vega/core"
+	"vega/log"
+	"vega/msg"
 	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
-
-	"vega/core"
-	"vega/msg"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -46,7 +44,7 @@ func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 //
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
-	fmt.Println("CheckTx: " + string(tx))
+	log.Infof("CheckTx: %s", string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -76,12 +74,12 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	fmt.Println("DeliverTx: " + string(tx))
+	log.Infof("DeliverTx: %s", string(tx))
 
 	// Decode payload and command
 	value, cmd, err := VegaTxDecode(tx)
 	if err != nil {
-		fmt.Println("Error: Invalid tx: " + string(tx))
+		log.Infof("Invalid tx: %s", string(tx))
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
@@ -90,44 +88,44 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	order := msg.OrderPool.Get().(*msg.Order)
 	e := proto.Unmarshal(value, order)
 	if e != nil {
-		fmt.Println("Error: Decoding order to proto: ", e.Error())
+		log.Infof("Error: Decoding order to proto: ", e.Error())
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
 	// Process known command types
 	switch cmd {
 		case CreateOrderCommand:
-			fmt.Println("ABCI received a CREATE ORDER command after consensus")
+			log.Infof("ABCI received a CREATE ORDER command after consensus")
 
 			// Submit the create new order request to the Vega trading core
 			confirmationMessage, errorMessage := app.vega.SubmitOrder(order)
 			if confirmationMessage != nil {
-				fmt.Printf("ABCI reports it received an order confirmation message from vega:\n")
-				fmt.Printf("- aggressive order: %+v\n", confirmationMessage.Order)
-				fmt.Printf("- trades: %+v\n", confirmationMessage.Trades)
-				fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+				log.Infof("ABCI reports it received an order confirmation message from vega:\n")
+				log.Infof("- aggressive order: %+v\n", confirmationMessage.Order)
+				log.Infof("- trades: %+v\n", confirmationMessage.Trades)
+				log.Infof("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
 			}
 			if errorMessage != msg.OrderError_NONE {
-				fmt.Printf("ABCI reports it received an order error message from vega:\n")
-				fmt.Printf("- error: %+v\n", errorMessage.String())
+				log.Infof("ABCI reports it received an order error message from vega:\n")
+				log.Infof("- error: %+v\n", errorMessage.String())
 			}
 
 		case CancelOrderCommand:
-			fmt.Println("ABCI received a CANCEL ORDER command after consensus")
+			log.Infof("ABCI received a CANCEL ORDER command after consensus")
 
 			// Submit the create new order request to the Vega trading core
 			cancellationMessage, errorMessage := app.vega.CancelOrder(order)
 			if cancellationMessage != nil {
-				fmt.Printf("ABCI reports it received an order cancellation message from vega:\n")
-				fmt.Printf("- cancelled order: %+v\n", cancellationMessage.Order)
+				log.Infof("ABCI reports it received an order cancellation message from vega:\n")
+				log.Infof("- cancelled order: %+v\n", cancellationMessage.Order)
 			}
 			if errorMessage != msg.OrderError_NONE {
-				fmt.Printf("ABCI reports it received an order error message from vega:\n")
-				fmt.Printf("- error: %+v\n", errorMessage.String())
+				log.Infof("ABCI reports it received an order error message from vega:\n")
+				log.Infof("- error: %+v\n", errorMessage.String())
 			}
 
 		default:
-			fmt.Println("UNKNOWN command received after consensus")
+			log.Errorf("UNKNOWN command received after consensus: %v", cmd)
 	}
 
 	app.vega.State.Size += 1

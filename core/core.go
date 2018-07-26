@@ -8,6 +8,7 @@ import (
 	"vega/matching"
 	"vega/msg"
 	"vega/risk"
+	"vega/log"
 )
 
 const marketName = "BTC/DEC18"
@@ -78,12 +79,12 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// ------------------------------------------------//
 	// 2) --------------- RISK ENGINE -----------------//
 
-	fmt.Println("Risk BEFORE calling model calculation = ", order.RiskFactor)
+	log.Infof("Risk BEFORE calling model calculation = ", order.RiskFactor)
 
 	v.riskEngine.Assess(order)
 	confirmation.Order = order
 
-	fmt.Println("Risk AFTER calling model calculation = ", order.RiskFactor)
+	log.Infof("Risk AFTER calling model calculation = ", order.RiskFactor)
 
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
@@ -93,7 +94,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	err := v.OrderStore.Post(*datastore.NewOrderFromProtoMessage(order))
 	if err != nil {
 		// Note: writing to store should not prevent flow to other engines
-		fmt.Printf("OrderStore.Post error: %+v\n", err)
+		log.Infof("OrderStore.Post error: %+v\n", err)
 	}
 
 	if confirmation.PassiveOrdersAffected != nil {
@@ -102,7 +103,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			// Note: writing to store should not prevent flow to other engines
 			err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
 			if err != nil {
-				fmt.Printf("OrderStore.Put error: %+v\n", err)
+				log.Infof("OrderStore.Put error: %+v\n", err)
 			}
 		}
 	}
@@ -111,10 +112,11 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%d", order.Id, idx)
+
 			t := datastore.NewTradeFromProtoMessage(trade, order.Id, confirmation.PassiveOrdersAffected[idx].Id)
 			if err := v.TradeStore.Post(*t); err != nil {
 				// Note: writing to store should not prevent flow to other engines
-				fmt.Printf("TradeStore.Post error: %+v\n", err)
+				log.Infof("TradeStore.Post error: %+v\n", err)
 			}
 		}
 	}
@@ -127,8 +129,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 
 func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
 
-	fmt.Printf("CancelOrder: %+v", order)
-	fmt.Println("")
+	log.Infof("CancelOrder: %+v", order)
 
 	// -----------------------------------------------//
 	//----------------- MATCHING ENGINE --------------//
@@ -146,7 +147,7 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 	err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
 	if err != nil {
 		// Note: writing to store should not prevent flow to other
-		fmt.Printf("OrderStore.Put error: %+v\n", err)
+		log.Infof("OrderStore.Put error: %+v\n", err)
 	}
 
 	return cancellation, msg.OrderError_NONE

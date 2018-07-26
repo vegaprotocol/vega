@@ -2,7 +2,7 @@ package restproxy
 
 import (
 	"compress/gzip"
-	"log"
+	"vega/log"
 	"net/http"
 	"strings"
 	"sync"
@@ -43,7 +43,7 @@ func (gzr *gzipResponseWriter) Write(b []byte) (int, error) {
 	if _, ok := gzr.Header()["Content-Type"]; !ok {
 		// If no content type, apply sniffing algorithm to un-gzipped body.
 		gzr.ResponseWriter.Header().Set("Content-Type", http.DetectContentType(b))
-	}
+	}                    
 
 	if !gzr.headerWritten {
 		// This is exactly what Go would also do if it hasn't been written yet.
@@ -81,7 +81,7 @@ func NewGzipHandler(fn http.HandlerFunc) http.HandlerFunc {
 			// StatusNotModified and StatusNoContent expect an empty body so don't close it.
 			if gzr.statusCode != http.StatusNotModified && gzr.statusCode != http.StatusNoContent {
 				if err := gzr.w.Close(); err != nil {
-					log.Printf("[ERR] %v", err)
+					log.Errorf("Gzip error: %v", err)
 				}
 			}
 			pool.Put(gzr)
