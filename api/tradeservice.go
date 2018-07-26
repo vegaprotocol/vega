@@ -17,6 +17,7 @@ type TradeService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
 	GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error)
+	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
 }
 
 type tradeService struct {
@@ -87,7 +88,7 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 	if sinceBlock < 0 {
 		sinceBlock = 0
 	}
-	
+
 	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), uint64(t.app.GetAbciHeight()), interval)
 	if err != nil {
 		return msg.Candles{}, err
@@ -102,4 +103,10 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 	return c, nil
 }
 
-
+func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error) {
+	mapOfMarketPositions := t.tradeStore.GetPositionsByParty(party)
+	for _, marketPositions := range mapOfMarketPositions {
+		positions = append(positions, marketPositions)
+	}
+	return positions, nil
+}

@@ -266,6 +266,31 @@
           "trading"
         ]
       }
+    },
+    "/1.0/partyPositions": {
+      "get": {
+        "summary": "rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO",
+        "operationId": "PositionsByParty",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcPositionsByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "party",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
     }
   },
   "definitions": {
@@ -367,6 +392,17 @@
         }
       }
     },
+    "grpcPositionsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "positions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaMarketPosition"
+          }
+        }
+      }
+    },
     "grpcTradeCandlesResponse": {
       "type": "object",
       "properties": {
@@ -422,6 +458,30 @@
         "closeBlockNumber": {
           "type": "string",
           "format": "uint64"
+        }
+      }
+    },
+    "vegaMarketPosition": {
+      "type": "object",
+      "properties": {
+        "Market": {
+          "type": "string"
+        },
+        "RealisedVolume": {
+          "type": "string",
+          "format": "int64"
+        },
+        "RealisedPNL": {
+          "type": "string",
+          "format": "int64"
+        },
+        "UnrealisedVolume": {
+          "type": "string",
+          "format": "int64"
+        },
+        "UnrealisedPNL": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

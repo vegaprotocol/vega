@@ -102,3 +102,11 @@ message OrderBookDepth {
     repeated PriceLevel buy = 2;
     repeated PriceLevel sell = 3;
 }
+
+message MarketPosition {
+    string market = 1;
+    int64 realisedVolume = 2;
+    int64 realisedPNL  = 3;
+    int64 unrealisedVolume = 4;
+    int64 unrealisedPNL = 5;
+}

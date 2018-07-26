@@ -16,6 +16,8 @@ service trading {
     rpc OrderBookDepth(OrderBookDepthRequest) returns (OrderBookDepthResponse);
     rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
     //rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO
+    rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
+
 }
 
 message OrderResponse {
@@ -84,6 +86,13 @@ message OrderBookDepthResponse {
     string   name = 1;
     repeated vega.PriceLevel buy = 2;
     repeated vega.PriceLevel sell = 3;
+}
+
+message PositionsByPartyRequest{
+    string party = 1;
+}
+message PositionsByPartyResponse{
+    repeated vega.MarketPosition positions = 1;
 }
 
 message OptionalParams {

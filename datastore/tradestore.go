@@ -123,7 +123,6 @@ func (store *memTradeStore) Post(trade Trade) error {
 		aggressive: aggressiveOrder,
 		passive:    passiveOrder,
 	}
-
 	// Add new trade to trades hashtable
 	store.store.markets[trade.Market].trades[trade.Id] = newTrade
 
@@ -243,5 +242,17 @@ func (store *memTradeStore) validate(trade *Trade) error {
 	}
 
 	return nil
+}
+
+func (store *memTradeStore) GetMarkPrice(market string) (uint64, error) {
+	recentTrade, err := store.GetByMarket(market, GetParams{Limit:1})
+	if err != nil {
+		return 0, err
+	}
+	if len(recentTrade) == 0 {
+		return 0, fmt.Errorf("NO TRADES")
+	}
+
+	return recentTrade[0].Price, nil
 }
 

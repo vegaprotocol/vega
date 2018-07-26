@@ -22,7 +22,7 @@ func generateRandomOrderAndTrade(price, size, timestamp uint64) *TestOrderAndTra
 			Order: msg.Order{
 				Id:     orderId,
 				Market: testMarket,
-				Party: testParty,
+				Party: testPartyA,
 			},
 		},
 		&Trade{
