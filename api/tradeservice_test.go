@@ -183,3 +183,8 @@ func TestNewTradeService(t *testing.T) {
 //	assert.Equal(t, "2018-07-09T12:04:00Z", candles.Candles[3].Date)
 //	assert.Equal(t, "2018-07-09T12:05:00Z", candles.Candles[4].Date)
 //}
+
+
+func TestTradeService_GetPositionsByParty(t *testing.T) {
+
+}
