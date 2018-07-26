@@ -1,4 +1,4 @@
-// Package rpc implements a WebSocket RPC client interface to Tendermint.
+// Package rpc implements a WebSocket RPC Client interface to Tendermint.
 package rpc
 
 import (
@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
+
+	"vega/log"
 
 	"github.com/gorilla/websocket"
 )
@@ -23,7 +24,7 @@ const (
 // Errors returned by the Client.
 var (
 	ErrCheckTxFailed = errors.New("rpc: CheckTx failed during the AddTransaction call")
-	ErrClosed        = errors.New("rpc: client has already been closed")
+	ErrClosed        = errors.New("rpc: Client has already been closed")
 )
 
 type opts map[string]interface{}
@@ -48,6 +49,25 @@ type rpcError struct {
 	Message string `json:"message"`
 }
 
+type TendermintClient interface {
+	AddTransaction(ctx context.Context, txdata []byte) (*CheckTxResult, error)
+	AsyncTransaction(ctx context.Context, txdata []byte) error
+	Close() error
+	Connect() error
+	HasError() bool
+	FindTransaction(ctx context.Context, query *Query, page int, perPage int, prove bool) (*TransactionList, error)
+	GetBlockInfo(ctx context.Context, height int64) (*BlockInfo, error)
+	Genesis(ctx context.Context) (*Genesis, error)
+	GetBlockMetas(ctx context.Context, minHeight int64, maxHeight int64) ([]*BlockMeta, error)
+	GetCommitInfo(ctx context.Context, height int64) (*CommitInfo, error)
+	IsNodeReachable(ctx context.Context) (bool, error)
+	NetInfo(ctx context.Context) (*NetInfo, error)
+	Status(ctx context.Context) (*Status, error)
+	Transaction(ctx context.Context, hash []byte, prove bool) (*Transaction, error)
+	UnconfirmedTransactions(ctx context.Context, limit int) ([][]byte, error)
+	Validators(ctx context.Context, height int) (*ValidatorSet, error)
+}
+
 func (err rpcError) Error() string {
 	if err.Data != "" {
 		return fmt.Sprintf("%d (%s): %s", err.Code, err.Message, err.Data)
@@ -70,6 +90,11 @@ type Client struct {
 	mu               sync.RWMutex // Protects the closed, connClosed, err, lastID and results struct fields.
 	pending          chan *request
 	results          map[uint64]chan *response
+}
+
+// New provides a new Tendermint RPC Client can be used to interface with Tendermint abci server etc.
+func New() TendermintClient {
+	return &Client{}
 }
 
 // AddTransaction corresponds to the Tendermint BroadcastTxSync call. It adds
@@ -314,7 +339,8 @@ func (c *Client) call(ctx context.Context, method string, params opts, resp inte
 	// be closed.
 	select {
 	case c.pending <- req:
-		log.Printf("tendermint/rpc: called %s", method)
+		log.Infof("Made %s call\n", method)
+
 		ch := make(chan *response, 1)
 		c.mu.Lock()
 		c.results[id] = ch
@@ -365,7 +391,7 @@ func (c *Client) closeWithError(err error) error {
 }
 
 func (c *Client) handleError(err error) {
-	log.Printf("tendermint/rpc: got error: %s", err)
+	log.Errorf("Got error: %s", err)
 	c.mu.Lock()
 	c.closeWithError(err)
 	c.mu.Unlock()
@@ -407,7 +433,7 @@ func (c *Client) readLoop() {
 		ch, exists := c.results[resp.ID]
 		c.mu.RUnlock()
 		if !exists {
-			log.Printf("tendermint/rpc: received unexpected response ID: %d", resp.ID)
+			log.Infof("Received unexpected response ID: %d", resp.ID)
 			c.Close()
 			return
 		}

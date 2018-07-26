@@ -7,21 +7,24 @@ import (
 	"vega/datastore"
 	"vega/matching"
 	"vega/msg"
+	"vega/risk"
+	"vega/log"
 )
 
 const marketName = "BTC/DEC18"
 
-const genesisTimeStr = "2018-07-09T12:00:00Z"
+const genesisTimeStr = "2018-07-05T13:36:01Z"
 
 type Config struct{}
 
 type Vega struct {
 	config         *Config
 	markets        map[string]*matching.OrderBook
-	OrdersStore    datastore.OrderStore
-	TradesStore    datastore.TradeStore
+	OrderStore     datastore.OrderStore
+	TradeStore     datastore.TradeStore
 	matchingEngine matching.MatchingEngine
 	State          *State
+	riskEngine     risk.RiskEngine
 }
 
 func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
@@ -29,12 +32,16 @@ func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 	// Initialise matching engine
 	matchingEngine := matching.NewMatchingEngine()
 
+	// Initialise risk engine
+	riskEngine := risk.New()
+
 	return &Vega{
 		config:         config,
 		markets:        make(map[string]*matching.OrderBook),
-		OrdersStore:    store.OrderStore(),
-		TradesStore:    store.TradeStore(),
+		OrderStore:     store.OrderStore(),
+		TradeStore:     store.TradeStore(),
 		matchingEngine: matchingEngine,
+		riskEngine:     riskEngine,
 		State:          newState(),
 	}
 }
@@ -61,25 +68,43 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	order.Id = fmt.Sprintf("V%d-%d", v.State.Height, v.State.Size)
 	order.Timestamp = uint64(v.State.Height)
 
+	// -----------------------------------------------//
 	//----------------- MATCHING ENGINE --------------//
-	// send order to matching engine
-	confirmation, err := v.matchingEngine.SubmitOrder(order)
-	if confirmation == nil || err != msg.OrderError_NONE {
-		// some error handling
-		return nil, err
+	// 1) submit order to matching engine
+	confirmation, errorMsg := v.matchingEngine.SubmitOrder(order)
+	if confirmation == nil || errorMsg != msg.OrderError_NONE {
+		return nil, errorMsg
 	}
+
+	// ------------------------------------------------//
+	// 2) --------------- RISK ENGINE -----------------//
+
+	log.Infof("Risk BEFORE calling model calculation = ", order.RiskFactor)
+
+	v.riskEngine.Assess(order)
+	confirmation.Order = order
+
+	log.Infof("Risk AFTER calling model calculation = ", order.RiskFactor)
 
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
-	// if OK send to stores
+	// 3) save to stores
 
 	// insert aggressive remaining order
-	v.OrdersStore.Post(*datastore.NewOrderFromProtoMessage(order))
+	err := v.OrderStore.Post(*datastore.NewOrderFromProtoMessage(order))
+	if err != nil {
+		// Note: writing to store should not prevent flow to other engines
+		log.Infof("OrderStore.Post error: %+v\n", err)
+	}
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// insert all passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			v.OrdersStore.Put(*datastore.NewOrderFromProtoMessage(order))
+			// Note: writing to store should not prevent flow to other engines
+			err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+			if err != nil {
+				log.Infof("OrderStore.Put error: %+v\n", err)
+			}
 		}
 	}
 
@@ -87,17 +112,43 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%d", order.Id, idx)
-			if err := v.TradesStore.Post(*datastore.NewTradeFromProtoMessage(trade, order.Id)); err != nil {
-				fmt.Printf("TradesStore.Post error: %+v\n", err)
+
+			t := datastore.NewTradeFromProtoMessage(trade, order.Id, confirmation.PassiveOrdersAffected[idx].Id)
+			if err := v.TradeStore.Post(*t); err != nil {
+				// Note: writing to store should not prevent flow to other engines
+				log.Infof("TradeStore.Post error: %+v\n", err)
 			}
 		}
 	}
-	// ------------------------------------------------//
-	//------------------- RISK ENGINE -----------------//
 
-	// SOME STUFF
 
 	// ------------------------------------------------//
 
 	return confirmation, msg.OrderError_NONE
+}
+
+func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
+
+	log.Infof("CancelOrder: %+v", order)
+
+	// -----------------------------------------------//
+	//----------------- MATCHING ENGINE --------------//
+	// 1) cancel order in matching engine
+	cancellation, errorMsg := v.matchingEngine.CancelOrder(order)
+	if cancellation == nil || errorMsg != msg.OrderError_NONE {
+		return nil, errorMsg
+	}
+
+	// -----------------------------------------------//
+	//-------------------- STORES --------------------//
+	// 2) if OK update stores
+
+	// insert aggressive remaining order
+	err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+	if err != nil {
+		// Note: writing to store should not prevent flow to other
+		log.Infof("OrderStore.Put error: %+v\n", err)
+	}
+
+	return cancellation, msg.OrderError_NONE
 }

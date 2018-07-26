@@ -2,15 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:8780178bd0bfe1201adf49fcbbbd6f9b9e5790992114cffdeed5db0e7bd43f49"
-  name = "github.com/alexandrevicenzi/go-sse"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "cdfb375b261850b6aafeddaa033baf3708a736de"
-
-[[projects]]
-  digest = "1:a2c1d0e43bd3baaa071d1b9ed72c27d78169b2b269f71c105ac4ba34b1be4a39"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "UT"
@@ -18,27 +9,6 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:36fe9527deed01d2a317617e59304eb2c4ce9f8a24115bcc5c2e37b3aee5bae4"
-  name = "github.com/gin-contrib/sse"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae"
-
-[[projects]]
-  digest = "1:76052d394539fa449628bc0a7d19d12051e350d3598d28d2263798c2976e9cf5"
-  name = "github.com/gin-gonic/gin"
-  packages = [
-    ".",
-    "binding",
-    "render",
-  ]
-  pruneopts = "UT"
-  revision = "d459835d2b077e44f7c9b453505ee29881d5d12d"
-  version = "v1.2"
-
-[[projects]]
-  digest = "1:d0309acc14b09c713e2fd1283be859c8e03f5f40c69e221410a0f652742b139c"
   name = "github.com/go-kit/kit"
   packages = [
     "log",
@@ -105,7 +75,6 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:4df19d38aa8efc5648954a56630305d0c4ad9bd22531c31f9617b110bc12d00e"
   name = "github.com/grpc-ecosystem/grpc-gateway"
   packages = [
     "runtime",
@@ -125,15 +94,6 @@
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
 [[projects]]
-  digest = "1:d4d17353dbd05cb52a2a52b7fe1771883b682806f68db442b436294926bbfafb"
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
-  version = "v0.0.3"
-
-[[projects]]
-  digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
   name = "github.com/pkg/errors"
   packages = ["."]
   pruneopts = "UT"
@@ -149,7 +109,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  name = "github.com/rs/cors"
+  packages = ["."]
+  revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
+  version = "v1.4.0"
+
+[[projects]]
   name = "github.com/satori/go.uuid"
   packages = ["."]
   pruneopts = "UT"
@@ -186,8 +151,7 @@
     "libs/common",
     "libs/log",
   ]
-  pruneopts = "UT"
-  revision = "2aa2b63cadc42cca1071c36adfd2f2ce14e1aa8f"
+  revision = "c64a3c74c870d725ba1356f75b4afadf0928c297"
 
 [[projects]]
   digest = "1:4d6d38eb1b9f0449249cee69554d62d580676460ebe8e5a1a829f9737c00cf36"
@@ -201,16 +165,19 @@
   version = "v0.9.0"
 
 [[projects]]
-  digest = "1:03aa6e485e528acb119fb32901cf99582c380225fc7d5a02758e08b180cb56c3"
-  name = "github.com/ugorji/go"
-  packages = ["codec"]
-  pruneopts = "UT"
-  revision = "b4c50a2b199d93b13dc15e78929cfb23bfdf21ab"
-  version = "v1.1.1"
+  name = "go.uber.org/atomic"
+  packages = ["."]
+  revision = "1ea20fb1cbb1cc08cbd0d913a96dead89aa18289"
+  version = "v1.3.2"
 
 [[projects]]
-  digest = "1:eab957401876e949db82999e5b0e6fcc2e98b47dc0118961343cc8f3874f2619"
-  name = "github.com/vektah/gqlgen"
+  name = "go.uber.org/multierr"
+  packages = ["."]
+  revision = "3c4937480c32f4c13a875a1829af76c98ca3d40a"
+  version = "v1.1.0"
+
+[[projects]]
+  name = "go.uber.org/zap"
   packages = [
     "graphql",
     "handler",
@@ -221,9 +188,8 @@
     "neelance/schema",
     "neelance/validation",
   ]
-  pruneopts = "UT"
-  revision = "381b34691fd93829e50ba8821412dc3467ec4821"
-  version = "0.3.0"
+  revision = "4d45f9617f7d90f7a663ff21c7a4321dbe78098b"
+  version = "v1.9.0"
 
 [[projects]]
   digest = "1:448e521e3240f01d756f18a1b1be2f0005355e0cb464ccd5b4a8d9c3ec1b3931"
@@ -241,15 +207,6 @@
   revision = "292b43bbf7cb8d35ddf40f8d5100ef3837cced3f"
 
 [[projects]]
-  branch = "master"
-  digest = "1:d773e525476aefa22ea944a5425a9bfb99819b2e67eeb9b1966454fd57522bbf"
-  name = "golang.org/x/sys"
-  packages = ["unix"]
-  pruneopts = "UT"
-  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
-
-[[projects]]
-  digest = "1:7509ba4347d1f8de6ae9be8818b0cd1abc3deeffe28aeaf4be6d4b6b5178d9ca"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -313,53 +270,9 @@
   revision = "168a6198bcb0ef175f7dacec0b8691fc141dc9b8"
   version = "v1.13.0"
 
-[[projects]]
-  digest = "1:cbc72c4c4886a918d6ab4b95e347ffe259846260f99ebdd8a198c2331cf2b2e9"
-  name = "gopkg.in/go-playground/validator.v8"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "5f1438d3fca68893a817e4a66806cea46a9e4ebf"
-  version = "v8.18.2"
-
-[[projects]]
-  digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = [
-    "github.com/alexandrevicenzi/go-sse",
-    "github.com/gin-gonic/gin",
-    "github.com/gin-gonic/gin/binding",
-    "github.com/gogo/protobuf/gogoproto",
-    "github.com/gogo/protobuf/proto",
-    "github.com/golang/protobuf/jsonpb",
-    "github.com/golang/protobuf/proto",
-    "github.com/gorilla/websocket",
-    "github.com/grpc-ecosystem/grpc-gateway/runtime",
-    "github.com/grpc-ecosystem/grpc-gateway/utilities",
-    "github.com/satori/go.uuid",
-    "github.com/stretchr/testify/assert",
-    "github.com/stretchr/testify/mock",
-    "github.com/tendermint/tendermint/abci/example/code",
-    "github.com/tendermint/tendermint/abci/server",
-    "github.com/tendermint/tendermint/abci/types",
-    "github.com/tendermint/tmlibs/common",
-    "github.com/vektah/gqlgen/graphql",
-    "github.com/vektah/gqlgen/handler",
-    "github.com/vektah/gqlgen/neelance/introspection",
-    "github.com/vektah/gqlgen/neelance/query",
-    "github.com/vektah/gqlgen/neelance/schema",
-    "golang.org/x/net/context",
-    "google.golang.org/grpc",
-    "google.golang.org/grpc/codes",
-    "google.golang.org/grpc/grpclog",
-    "google.golang.org/grpc/status",
-  ]
+  inputs-digest = "de571ad88b8e8f6eb2a612be55317a1bf41ab74522f40dee09167050a0f2c255"
   solver-name = "gps-cdcl"
   solver-version = 1

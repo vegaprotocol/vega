@@ -2,6 +2,7 @@ package matching
 
 import (
 	"vega/msg"
+	"github.com/pkg/errors"
 )
 
 type OrderBookSide struct {
@@ -39,8 +40,7 @@ func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 
 	}
 	if toDelete == -1 {
-		// TODO: implement ORDER_NOT_FOUND_ERROR and add to protobufs
-		return nil
+		return errors.New("order not found")
 	}
 	return nil
 }

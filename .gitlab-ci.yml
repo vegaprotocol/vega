@@ -22,22 +22,20 @@ stages:
 before_script:
   - mkdir -p ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds
   - mkdir -p ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}
-  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
   - ln -s ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds/${GO_PROJECT}
   - cd ${GOPATH}/src/${GO_PROJECT}
   - export ARTIFACTS_BIN=${ARTIFACTS_BIN}
-  - make dep
 
 unit_tests:
   stage: test
   script:
     - make test
 
-race_detector:
-  stage: test
-  script:
-    - make race
+#race_detector:
+#  stage: test
+#  script:
+#    - make race
 
 # FUTURE:
 # Requires custom GCC based docker image
@@ -59,10 +57,10 @@ code_coverage_report:
   only:
     - master
 
-lint_code:
-  stage: test
-  script:
-    - make lint
+#lint_code:
+#  stage: test
+#  script:
+#    - make lint
 
 build_vega:
   stage: build

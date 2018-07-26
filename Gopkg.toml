@@ -3,10 +3,6 @@
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/alexandrevicenzi/go-sse"
-  branch = "master"
-
-[[constraint]]
   name = "github.com/stretchr/testify"
   version = "1.2.1"
 
@@ -23,5 +19,5 @@
   version = "=1.13.0"
 
 [[constraint]]
-  name = "github.com/grpc-ecosystem/grpc-gateway"
-  version = "1.4./ve.1"
+  branch = "master"
+  name = "github.com/tav/golly"

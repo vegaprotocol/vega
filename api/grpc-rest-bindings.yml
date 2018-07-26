@@ -10,8 +10,24 @@ apis:
 http:
   rules:
   - selector: grpc.trading.CreateOrder
-    post: '/1.0/orders'
+    post: '/1.0/createOrder'
     body: "*"
-  - selector: grpc.trading.GetOrderBookDepth
+  - selector: grpc.trading.CancelOrder
+    post: '/1.0/cancelOrder'
+    body: "*"
+  - selector: grpc.trading.OrdersByMarket
+    get: '/1.0/marketOrders'
+  - selector: grpc.trading.OrdersByParty
+    get: '/1.0/partyOrders'
+  - selector: grpc.trading.OrderByMarketAndId
+    get: '/1.0/marketOrder'
+  - selector: grpc.trading.Markets
+    get: '/1.0/markets'
+  - selector: grpc.trading.TradeCandles
+    get: '/1.0/candles'
+  - selector: grpc.trading.OrderBookDepth
     get: '/1.0/orderBookDepth'
-
+  - selector: grpc.trading.TradesByMarket
+    get: '/1.0/marketTrades'
+  - selector: grpc.trading.PositionsByParty
+    get: '/1.0/partyPositions'

@@ -1,21 +1,17 @@
 package blockchain
 
 import (
-	"bytes"
 	"encoding/binary"
-	"fmt"
-
+	"vega/core"
+	"vega/log"
+	"vega/msg"
 	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
-
-	"vega/core"
-	"vega/msg"
 	"github.com/golang/protobuf/proto"
 )
 
 type Blockchain struct {
 	types.BaseApplication
-
 	vega *core.Vega
 }
 
@@ -48,7 +44,7 @@ func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 //
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
-	fmt.Println("CheckTx: " + string(tx))
+	log.Infof("CheckTx: %s", string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -78,32 +74,58 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	fmt.Println("DeliverTx: " + string(tx))
+	log.Infof("DeliverTx: %s", string(tx))
 
-	// split the transaction
-	var _, value []byte
-	parts := bytes.Split(tx, []byte("|"))
-	if len(parts) == 2 {
-		_, value = parts[0], parts[1]
-	} else {
-		fmt.Println("Invalid tx: " + string(tx))
+	// Decode payload and command
+	value, cmd, err := VegaTxDecode(tx)
+	if err != nil {
+		log.Infof("Invalid tx: %s", string(tx))
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
+	// All incoming messages are order (for now)...
 	// deserialize proto msg to struct
 	order := msg.OrderPool.Get().(*msg.Order)
 	e := proto.Unmarshal(value, order)
 	if e != nil {
-		fmt.Println("Error: ", e.Error())
+		log.Infof("Error: Decoding order to proto: ", e.Error())
+		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
-	// deliver to the Vega trading core
-	confirmationMessage, _ := app.vega.SubmitOrder(order)
-	if confirmationMessage != nil {
-		fmt.Printf("ABCI reports it received a confirmation message from vega:\n")
-		fmt.Printf("- aggressive order: %+v\n", confirmationMessage.Order)
-		fmt.Printf("- trades: %+v\n", confirmationMessage.Trades)
-		fmt.Printf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+	// Process known command types
+	switch cmd {
+		case CreateOrderCommand:
+			log.Infof("ABCI received a CREATE ORDER command after consensus")
+
+			// Submit the create new order request to the Vega trading core
+			confirmationMessage, errorMessage := app.vega.SubmitOrder(order)
+			if confirmationMessage != nil {
+				log.Infof("ABCI reports it received an order confirmation message from vega:\n")
+				log.Infof("- aggressive order: %+v\n", confirmationMessage.Order)
+				log.Infof("- trades: %+v\n", confirmationMessage.Trades)
+				log.Infof("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+			}
+			if errorMessage != msg.OrderError_NONE {
+				log.Infof("ABCI reports it received an order error message from vega:\n")
+				log.Infof("- error: %+v\n", errorMessage.String())
+			}
+
+		case CancelOrderCommand:
+			log.Infof("ABCI received a CANCEL ORDER command after consensus")
+
+			// Submit the create new order request to the Vega trading core
+			cancellationMessage, errorMessage := app.vega.CancelOrder(order)
+			if cancellationMessage != nil {
+				log.Infof("ABCI reports it received an order cancellation message from vega:\n")
+				log.Infof("- cancelled order: %+v\n", cancellationMessage.Order)
+			}
+			if errorMessage != msg.OrderError_NONE {
+				log.Infof("ABCI reports it received an order error message from vega:\n")
+				log.Infof("- error: %+v\n", errorMessage.String())
+			}
+
+		default:
+			log.Errorf("UNKNOWN command received after consensus: %v", cmd)
 	}
 
 	app.vega.State.Size += 1
@@ -143,3 +165,5 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 	// saveState(app.state)
 	return types.ResponseCommit{Data: appHash}
 }
+
+

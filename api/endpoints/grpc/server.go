@@ -2,10 +2,9 @@ package grpc
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"vega/api"
-
+	"vega/log"
 	"google.golang.org/grpc"
 )
 
@@ -22,8 +21,8 @@ func NewGRPCServer(orderService api.OrderService, tradeService api.TradeService)
 }
 
 func (g *grpcServer) Start() {
-	var port = 3004
-	fmt.Printf("Starting GRPC based server on port %d...\n", port)
+	var port = 3002
+	log.Infof("Starting GRPC based server on port %d...\n", port)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {

@@ -3,8 +3,6 @@ package api
 import (
 	"time"
 	"github.com/satori/go.uuid"
-	"encoding/base64"
-	"encoding/json"
 )
 
 func unixTimestamp(datetime time.Time) uint64 {
@@ -13,19 +11,4 @@ func unixTimestamp(datetime time.Time) uint64 {
 
 func newGuid() string {
 	return uuid.NewV4().String()
-}
-
-func jsonWithEncoding(o interface{}) (string, error) {
-	json, err := json.Marshal(o)
-	if err != nil {
-		return "", err
-	}
-	encoded := base64.StdEncoding.EncodeToString(json)
-	return encoded, err
-}
-
-func bytesWithPipedGuid(input []byte) ([]byte, error) {
-	prefix := newGuid() + "|"
-	prefixBytes := []byte(prefix)
-	return append(prefixBytes, input...), nil
 }

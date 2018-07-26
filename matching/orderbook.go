@@ -1,9 +1,9 @@
 package matching
 
 import (
-	"fmt"
+	"vega/log"
 	"vega/msg"
-
+	"fmt"
 )
 
 type OrderBook struct {
@@ -23,6 +23,44 @@ func NewBook(name string, config Config) *OrderBook {
 		sell:   &OrderBookSide{},
 		config: config,
 	}
+}
+
+// Cancel an order that is active on an orderbook. Market and Order ID are validated, however the order must match
+// the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
+// not trust that the external world can provide these values reliably.
+func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
+	// Validate Market
+	if order.Market != b.name {
+		log.Errorf(fmt.Sprintf(
+			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
+			order.Market,
+			b.name))
+		return nil, msg.OrderError_INVALID_MARKET_ID
+	}
+	// Validate Order ID must be present
+	if order.Id == "" || len(order.Id) < 4 {
+		return nil, msg.OrderError_INVALID_ORDER_ID
+	}
+
+	if order.Side == msg.Side_Buy {
+		if err := b.buy.RemoveOrder(order); err != nil {
+			log.Errorf("Error removing (buy side): ", err)
+			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
+		}
+	} else {
+		if err := b.sell.RemoveOrder(order); err != nil {
+			log.Errorf("Error removing (sell side): ", err)
+			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
+		}
+	}
+
+	// Important, mark the order as cancelled (and no longer active)
+	order.Status = msg.Order_Cancelled
+
+	result := &msg.OrderCancellation{
+		Order: order,
+	}
+	return result, msg.OrderError_NONE
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
@@ -90,22 +128,21 @@ func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.O
 }
 
 func (b *OrderBook) PrintState(msg string) {
-	fmt.Println()
-	fmt.Println(msg)
-	fmt.Println("------------------------------------------------------------")
-	fmt.Println("                        BUY SIDE                            ")
+	log.Infof("\n%s\n", msg)
+	log.Infof("------------------------------------------------------------\n")
+	log.Infof("                        BUY SIDE                            \n")
 	for _, priceLevel := range b.buy.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print()
 		}
 	}
-	fmt.Println("------------------------------------------------------------")
-	fmt.Println("                        SELL SIDE                           ")
+	log.Infof("------------------------------------------------------------\n")
+	log.Infof("                        SELL SIDE                           \n")
 	for _, priceLevel := range b.sell.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print()
 		}
 	}
-	fmt.Println("------------------------------------------------------------")
+	log.Infof("------------------------------------------------------------\n")
 
 }

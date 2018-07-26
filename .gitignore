@@ -1,11 +1,18 @@
 # Vega specific entries
 cover.out
 coverage.html
-log/
-pkg/
-vendor
 vega
 vegabench
 .idea/
 *.iws
 .testCoverage.txt
+
+# emacs 
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
