@@ -15,7 +15,7 @@ func NewTradeStore(ms *MemStore) TradeStore {
 }
 
 // GetByMarket retrieves all trades for a given market.
-func (store *memTradeStore) GetByMarket(market string, params GetParams) ([]Trade, error) {
+func (store *memTradeStore) GetByMarket(market string, params GetTradeParams) ([]Trade, error) {
 	if err := store.marketExists(market); err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (store *memTradeStore) GetByMarketAndId(market string, id string) (Trade, e
 }
 
 // GetByPart retrieves all trades for a given party.
-func (store *memTradeStore) GetByParty(party string, params GetParams) ([]Trade, error) {
+func (store *memTradeStore) GetByParty(party string, params GetTradeParams) ([]Trade, error) {
 	if err := store.partyExists(party); err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (store *memTradeStore) validate(trade *Trade) error {
 }
 
 func (store *memTradeStore) GetMarkPrice(market string) (uint64, error) {
-	recentTrade, err := store.GetByMarket(market, GetParams{Limit:1})
+	recentTrade, err := store.GetByMarket(market, GetTradeParams{Limit:1})
 	if err != nil {
 		return 0, err
 	}
