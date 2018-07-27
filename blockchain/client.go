@@ -1,9 +1,9 @@
 package blockchain
 
 import (
-	"sync"
 	"context"
 	"errors"
+	"sync"
 
 	"vega/msg"
 	"vega/tendermint/rpc"
@@ -11,10 +11,10 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-type Client interface
-{
+type Client interface {
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
+	GetGenesisTime(ctx context.Context) (genesis *rpc.Genesis, err error)
 }
 
 type client struct {
@@ -34,12 +34,28 @@ func (b *client) CreateOrder(ctx context.Context, order *msg.Order) (success boo
 	return b.sendOrderCommand(ctx, order, CreateOrderCommand)
 }
 
+func (b *client) GetGenesisTime(ctx context.Context) (genesis *rpc.Genesis, err error) {
+	// Get a lightweight RPC client (our custom Tendermint client) from a pool (create one if n/a).
+	client, err := b.getRpcClient()
+	if err != nil {
+		return nil, err
+	}
+
+	genesis, err = client.Genesis(ctx)
+	if genesis == nil && err != nil {
+		if !client.HasError() {
+			b.releaseRpcClient(client)
+		}
+		return nil, err
+	}
+	return genesis, nil
+}
+
 func (b *client) getRpcClient() (*rpc.Client, error) {
 	b.rpcClientMux.Lock()
 	if len(b.rpcClients) == 0 {
 		b.rpcClientMux.Unlock()
-		client := rpc.Client{
-		}
+		client := rpc.Client{}
 		if err := client.Connect(); err != nil {
 			return nil, err
 		}
@@ -95,4 +111,3 @@ func (b *client) sendOrderCommand(ctx context.Context, order *msg.Order, cmd Com
 	}
 	return true, nil
 }
-

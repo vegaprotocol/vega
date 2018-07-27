@@ -13,9 +13,9 @@ import (
 
 const marketName = "BTC/DEC18"
 
-const genesisTimeStr = "2018-07-05T13:36:01Z"
-
-type Config struct{}
+type Config struct{
+	GenesisTime time.Time
+}
 
 type Vega struct {
 	config         *Config
@@ -46,6 +46,10 @@ func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 	}
 }
 
+func (v *Vega) SetGenesisTime(genesisTime time.Time) {
+	v.config.GenesisTime = genesisTime
+}
+
 func GetConfig() *Config {
 	return &Config{}
 }
@@ -55,7 +59,8 @@ func (v *Vega) GetAbciHeight() int64 {
 }
 
 func (v *Vega) GetTime() time.Time {
-	genesisTime, _ := time.Parse(time.RFC3339, genesisTimeStr)
+	//genesisTime, _ := time.Parse(time.RFC3339, genesisTimeStr)
+	genesisTime := v.config.GenesisTime
 	return genesisTime.Add(time.Duration(v.State.Height) * time.Second)
 }
 
