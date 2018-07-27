@@ -1,0 +1,11 @@
+schema: schema.graphql
+exec:
+  filename: generated.go
+model:
+  filename: models.go
+
+models:
+  Order:
+    model: vega/msg.Order
+  Trade:
+    model: vega/msg.Trade

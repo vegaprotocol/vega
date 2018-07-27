@@ -6,6 +6,7 @@ import (
 	"vega/core"
 	"vega/datastore"
 	"vega/msg"
+	"github.com/pkg/errors"
 )
 
 type OrderService interface {
@@ -56,6 +57,12 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	o, err := p.orderStore.GetByMarketAndId(order.Market, order.Id)
 	if err != nil {
 		return false, err
+	}
+	if o.Status == msg.Order_Cancelled {
+		return false, errors.New("order has already been cancelled")
+	}
+	if o.Remaining == 0 {
+		return false, errors.New("order has been fully filled")
 	}
 	// Send cancellation request by consensus 
 	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
