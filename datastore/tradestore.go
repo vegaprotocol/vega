@@ -30,9 +30,10 @@ func (store *memTradeStore) GetByMarket(market string, params GetTradeParams) ([
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
-		// TODO: apply filters
-		output = append(output, store.store.markets[market].tradesByTimestamp[i].trade)
-		pos++
+		if applyTradeFilter(store.store.markets[market].tradesByTimestamp[i].trade, params) {
+			output = append(output, store.store.markets[market].tradesByTimestamp[i].trade)
+			pos++
+		}
 	}
 	return output, nil
 }
@@ -65,9 +66,10 @@ func (store *memTradeStore) GetByParty(party string, params GetTradeParams) ([]T
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
-		// TODO: apply filters
-		output = append(output, store.store.parties[party].tradesByTimestamp[i].trade)
-		pos++
+		if applyTradeFilter(store.store.parties[party].tradesByTimestamp[i].trade, params) {
+			output = append(output, store.store.parties[party].tradesByTimestamp[i].trade)
+			pos++
+		}
 	}
 	return output, nil
 }

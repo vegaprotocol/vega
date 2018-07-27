@@ -23,10 +23,14 @@ type GetOrderParams struct {
 }
 
 type GetTradeParams struct {
-	Limit  uint64
-	Size   uint64
-	Buyer  string
-	Seller string
+	Limit           uint64
+	MarketFilter    *QueryFilter
+	PriceFilter     *QueryFilter
+	SizeFilter      *QueryFilter
+	BuyerFilter     *QueryFilter
+	SellerFilter    *QueryFilter
+	AggressorFilter *QueryFilter
+	TimestampFilter *QueryFilter
 }
 
 type QueryFilterType int
@@ -84,6 +88,40 @@ func applyOrderFilter(order Order, params GetOrderParams) bool {
 
 	if params.StatusFilter != nil {
 		ok = apply(order.Status, params.StatusFilter)
+	}
+
+	return ok
+}
+
+func applyTradeFilter(trade Trade, params GetTradeParams) bool {
+	var ok = true
+
+	if params.MarketFilter != nil {
+		ok = apply(trade.Market, params.MarketFilter)
+	}
+
+	if params.PriceFilter != nil {
+		ok = apply(trade.Price, params.PriceFilter)
+	}
+
+	if params.SizeFilter != nil {
+		ok = apply(trade.Size, params.SizeFilter)
+	}
+
+	if params.BuyerFilter != nil {
+		ok = apply(trade.Buyer, params.BuyerFilter)
+	}
+
+	if params.SellerFilter != nil {
+		ok = apply(trade.Seller, params.SellerFilter)
+	}
+
+	if params.AggressorFilter != nil {
+		ok = apply(trade.Aggressor, params.AggressorFilter)
+	}
+
+	if params.TimestampFilter != nil {
+		ok = apply(trade.Timestamp, params.TimestampFilter)
 	}
 
 	return ok
