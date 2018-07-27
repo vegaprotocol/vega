@@ -39,12 +39,15 @@ type Resolvers interface {
 	Trade_price(ctx context.Context, obj *msg.Trade) (int, error)
 	Trade_size(ctx context.Context, obj *msg.Trade) (int, error)
 	Trade_timestamp(ctx context.Context, obj *msg.Trade) (int, error)
+	Vega_markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
+	Vega_parties(ctx context.Context, obj *Vega, name *string) ([]Party, error)
 }
 
 type ResolverRoot interface {
 	Order() OrderResolver
 	Query() QueryResolver
 	Trade() TradeResolver
+	Vega() VegaResolver
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *msg.Order) (int, error)
@@ -65,6 +68,10 @@ type TradeResolver interface {
 	Price(ctx context.Context, obj *msg.Trade) (int, error)
 	Size(ctx context.Context, obj *msg.Trade) (int, error)
 	Timestamp(ctx context.Context, obj *msg.Trade) (int, error)
+}
+type VegaResolver interface {
+	Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
+	Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error)
 }
 
 type shortMapper struct {
@@ -125,6 +132,14 @@ func (s shortMapper) Trade_size(ctx context.Context, obj *msg.Trade) (int, error
 
 func (s shortMapper) Trade_timestamp(ctx context.Context, obj *msg.Trade) (int, error) {
 	return s.r.Trade().Timestamp(ctx, obj)
+}
+
+func (s shortMapper) Vega_markets(ctx context.Context, obj *Vega, name *string) ([]Market, error) {
+	return s.r.Vega().Markets(ctx, obj, name)
+}
+
+func (s shortMapper) Vega_parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {
+	return s.r.Vega().Parties(ctx, obj, name)
 }
 
 type executableSchema struct {
@@ -942,23 +957,42 @@ func (ec *executionContext) _Vega_markets(ctx context.Context, field graphql.Col
 		}
 	}
 	args["name"] = arg0
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Vega"
-	rctx.Args = args
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Markets
-	arr1 := graphql.Array{}
-	for idx1 := range res {
-		arr1 = append(arr1, func() graphql.Marshaler {
-			rctx := graphql.GetResolverContext(ctx)
-			rctx.PushIndex(idx1)
-			defer rctx.Pop()
-			return ec._Market(ctx, field.Selections, &res[idx1])
-		}())
-	}
-	return arr1
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Vega",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Vega_markets(ctx, obj, args["name"].(*string))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]Market)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Market(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
 }
 
 func (ec *executionContext) _Vega_parties(ctx context.Context, field graphql.CollectedField, obj *Vega) graphql.Marshaler {
@@ -978,23 +1012,42 @@ func (ec *executionContext) _Vega_parties(ctx context.Context, field graphql.Col
 		}
 	}
 	args["name"] = arg0
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Vega"
-	rctx.Args = args
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Parties
-	arr1 := graphql.Array{}
-	for idx1 := range res {
-		arr1 = append(arr1, func() graphql.Marshaler {
-			rctx := graphql.GetResolverContext(ctx)
-			rctx.PushIndex(idx1)
-			defer rctx.Pop()
-			return ec._Party(ctx, field.Selections, &res[idx1])
-		}())
-	}
-	return arr1
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Vega",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Vega_parties(ctx, obj, args["name"].(*string))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]Party)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Party(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
 }
 
 var __DirectiveImplementors = []string{"__Directive"}

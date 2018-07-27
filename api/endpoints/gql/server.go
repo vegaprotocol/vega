@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/vektah/gqlgen/handler"
 	"net/http"
 	"runtime/debug"
 	"vega/api"
 	"vega/log"
-	"github.com/vektah/gqlgen/handler"
 )
 
 type graphServer struct {

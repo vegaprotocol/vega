@@ -4,6 +4,7 @@ import (
 	"context"
 	"vega/api"
 	"vega/msg"
+	"errors"
 )
 
 type resolverRoot struct {
@@ -27,12 +28,13 @@ func (r *resolverRoot) Order() OrderResolver {
 func (r *resolverRoot) Trade() TradeResolver {
 	return (*MyTradeResolver)(r)
 }
-
+func (r *resolverRoot) Vega() VegaResolver {
+	return (*MyVegaResolver)(r)
+}
 
 // BEGIN: Query Resolver
 
 type MyQueryResolver resolverRoot
-
 
 func (r *MyQueryResolver) Vega(ctx context.Context) (Vega, error) {
 	var vega = Vega{}
@@ -40,6 +42,60 @@ func (r *MyQueryResolver) Vega(ctx context.Context) (Vega, error) {
 }
 
 // END: Query Resolver
+
+
+type MyVegaResolver resolverRoot
+
+func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error) {
+	if name == nil {
+		return nil, errors.New("All markets for VEGA platform not implemented")
+	}
+
+	// Look for orders for market (will validate market internally)
+	orders, err := r.orderService.GetByMarket(ctx, *name, 1000)
+	if err != nil {
+		return nil, err
+	}
+	
+	valOrders := make([]msg.Order, 0)
+	for _, v := range orders {
+		valOrders = append(valOrders, *v)
+	}
+	
+	var markets = make([]Market, 0)
+	var market = Market{
+		Name: *name,
+		Orders: valOrders,
+	}
+	markets = append(markets, market)
+	
+	return markets, nil
+}
+
+func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {
+	if name == nil {
+		return nil, errors.New("All parties for VEGA platform not implemented")
+	}
+
+	// Look for orders for party (will validate market internally)
+	orders, err := r.orderService.GetByParty(ctx, *name, 1000)
+	if err != nil {
+		return nil, err
+	}
+
+	valOrders := make([]msg.Order, 0)
+	for _, v := range orders {
+		valOrders = append(valOrders, *v)
+	}
+	var parties = make([]Party, 0)
+	var party = Party{
+		Name: *name,
+		Orders: valOrders,
+	}
+	parties = append(parties, party)
+	
+	return parties, nil
+}
 
 
 // BEGIN: Order Resolver

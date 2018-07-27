@@ -9,3 +9,9 @@ models:
     model: vega/msg.Order
   Trade:
     model: vega/msg.Trade
+  Vega:
+      fields:
+        markets:
+          resolver: true
+        parties:
+          resolver: true
