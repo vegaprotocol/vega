@@ -41,7 +41,8 @@ type Resolvers interface {
 	Order_remaining(ctx context.Context, obj *msg.Order) (int, error)
 
 	Order_timestamp(ctx context.Context, obj *msg.Order) (int, error)
-	Query_orders(ctx context.Context) ([]msg.Order, error)
+	Query_marketOrders(ctx context.Context, market string) ([]msg.Order, error)
+	Query_partyOrders(ctx context.Context, party string) ([]msg.Order, error)
 	Query_trades(ctx context.Context) ([]msg.Trade, error)
 	Query_candles(ctx context.Context) ([]msg.Candle, error)
 
@@ -82,7 +83,8 @@ type OrderResolver interface {
 	Timestamp(ctx context.Context, obj *msg.Order) (int, error)
 }
 type QueryResolver interface {
-	Orders(ctx context.Context) ([]msg.Order, error)
+	MarketOrders(ctx context.Context, market string) ([]msg.Order, error)
+	PartyOrders(ctx context.Context, party string) ([]msg.Order, error)
 	Trades(ctx context.Context) ([]msg.Trade, error)
 	Candles(ctx context.Context) ([]msg.Candle, error)
 }
@@ -158,8 +160,12 @@ func (s shortMapper) Order_timestamp(ctx context.Context, obj *msg.Order) (int, 
 	return s.r.Order().Timestamp(ctx, obj)
 }
 
-func (s shortMapper) Query_orders(ctx context.Context) ([]msg.Order, error) {
-	return s.r.Query().Orders(ctx)
+func (s shortMapper) Query_marketOrders(ctx context.Context, market string) ([]msg.Order, error) {
+	return s.r.Query().MarketOrders(ctx, market)
+}
+
+func (s shortMapper) Query_partyOrders(ctx context.Context, party string) ([]msg.Order, error) {
+	return s.r.Query().PartyOrders(ctx, party)
 }
 
 func (s shortMapper) Query_trades(ctx context.Context) ([]msg.Trade, error) {
@@ -836,8 +842,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel []query.Selection) g
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "orders":
-			out.Values[i] = ec._Query_orders(ctx, field)
+		case "marketOrders":
+			out.Values[i] = ec._Query_marketOrders(ctx, field)
+		case "partyOrders":
+			out.Values[i] = ec._Query_partyOrders(ctx, field)
 		case "trades":
 			out.Values[i] = ec._Query_trades(ctx, field)
 		case "candles":
@@ -854,10 +862,21 @@ func (ec *executionContext) _Query(ctx context.Context, sel []query.Selection) g
 	return out
 }
 
-func (ec *executionContext) _Query_orders(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_marketOrders(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := field.Args["market"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["market"] = arg0
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Object: "Query",
-		Args:   nil,
+		Args:   args,
 		Field:  field,
 	})
 	return graphql.Defer(func() (ret graphql.Marshaler) {
@@ -870,7 +889,57 @@ func (ec *executionContext) _Query_orders(ctx context.Context, field graphql.Col
 		}()
 
 		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query_orders(ctx)
+			return ec.resolvers.Query_marketOrders(ctx, args["market"].(string))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Order)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Order(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_partyOrders(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := field.Args["party"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["party"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query_partyOrders(ctx, args["party"].(string))
 		})
 		if err != nil {
 			ec.Error(ctx, err)
@@ -2009,8 +2078,8 @@ scalar DateTime
 
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market {
-  # Market full name
-  name: String!
+    # Market full name
+    name: String!
 }
 
 ## Represents a price on either the buy or sell side and all the orders at that price
@@ -2033,104 +2102,104 @@ type Market {
 # Valid order types, these determine what happens when an order is added to the book
 enum OrderType {
 
-  # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
-  FOK,
+    # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
+    FOK,
 
-  # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-  ENE,
+    # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
+    ENE,
 
-  # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
-  GTC,
+    # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
+    GTC,
 
-  # This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
-  # NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
-  GTT,
+    # This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+    # NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
+    GTT,
 }
 
 
 # Whether the placer of an order is aiming to buy or sell on the market
 enum Side {
-  Buy
-  Sell
+    Buy
+    Sell
 }
 
 
 # An order in Vega, if active it will be on the OrderBoook for the market
 type Order {
 
-  # Hash of the order data
-  id: ID!
+    # Hash of the order data
+    id: ID!
 
-  # The worst price the order will trade at (e.g. buy for price or less, sell for price or more)
-  price: Int!
+    # The worst price the order will trade at (e.g. buy for price or less, sell for price or more)
+    price: Int!
 
-  # The type of order (determines how and if it executes, and whether it persists on the book)
-  type: OrderType!
+    # The type of order (determines how and if it executes, and whether it persists on the book)
+    type: OrderType!
 
-  # Whether the order is to buy or sell
-  side: Side!
+    # Whether the order is to buy or sell
+    side: Side!
 
-  # The market the order is trading on (probably stored internally as a hash of the market details)
-  market: Market!
+    # The market the order is trading on (probably stored internally as a hash of the market details)
+    market: Market!
 
-  # Total number of contracts that may be bought or sold (immutable)
-  size: Int!
+    # Total number of contracts that may be bought or sold (immutable)
+    size: Int!
 
-  # Number of contracts remaining of the total that have not yet been bought or sold
-  remaining: Int!
+    # Number of contracts remaining of the total that have not yet been bought or sold
+    remaining: Int!
 
-  # The trader who place the order (probably stored internally as the trader's public key)
-  party: String!
+    # The trader who place the order (probably stored internally as the trader's public key)
+    party: String!
 
-  # If the order was added to the book or uncrossed at any point, the timestamp when that was done
-  timestamp: Int!
+    # If the order was added to the book or uncrossed at any point, the timestamp when that was done
+    timestamp: Int!
 }
 
 
 # A trade on Vega, the result of two orders being "matched" in the market
 type Trade {
 
-  # The hash of the trade data
-  id: ID!
+    # The hash of the trade data
+    id: ID!
 
-  # The market the trade occurred on
-  market: Market!
+    # The market the trade occurred on
+    market: Market!
 
-  # The order that bought
-  buyer: String!
+    # The order that bought
+    buyer: String!
 
-  # The order that sold
-  seller: String!
-  
-  aggressor: Side!
+    # The order that sold
+    seller: String!
 
-  # The price of the trade (probably initially the passive order price, other determination algorithms are possible though)
-  price: Int!
+    aggressor: Side!
 
-  # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade
-  size: Int!
+    # The price of the trade (probably initially the passive order price, other determination algorithms are possible though)
+    price: Int!
 
-  # When the trade occured, probably the timestamp of the agressive order
-  timestamp: Int!
+    # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade
+    size: Int!
+
+    # When the trade occured, probably the timestamp of the agressive order
+    timestamp: Int!
 }
 
 
 type Candle {
-  date: DateTime!
+    date: DateTime!
 
-  high: Int!
+    high: Int!
 
-  low: Int!
+    low: Int!
 
-  open: Int!
+    open: Int!
 
-  close: Int!
+    close: Int!
 
-  volume: Int!
+    volume: Int!
 
-  openBlockNumber: Int!
+    openBlockNumber: Int!
 
-  closeBlockNumber: Int!
+    closeBlockNumber: Int!
 }
 
 #
@@ -2149,19 +2218,22 @@ type Candle {
 #}
 
 type Subscription {
-  tradeCandles(market: String!, interval: Int!): [Candle!]!
+    tradeCandles(market: String!, interval: Int!): [Candle!]!
+#    newOrders(market: String!)
 }
 
 type Query {
-  orders : [Order!]!
-  trades: [Trade!]!
-  candles: [Candle!]!
+#    orders(market: String, party: String) : [Order!]!
+    marketOrders(market: String!) : [Order!]!
+    partyOrders(party: String!) : [Order!]!
+
+    trades: [Trade!]!
+    candles: [Candle!]!
 }
 
 schema {
-  query: Query,
-  subscription: Subscription
+    query: Query,
+    subscription: Subscription
 }
-
 
 `)

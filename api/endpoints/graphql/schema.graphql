@@ -1,0 +1,164 @@
+
+# Represents a date/time
+scalar DateTime
+
+# Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
+type Market {
+    # Market full name
+    name: String!
+}
+
+## Represents a price on either the buy or sell side and all the orders at that price
+#type PriceLevel {
+#
+#  # The price of all the orders at this level
+#  price: Int!
+#
+#  # The total remaining size of all orders at this level
+#  volume: Int!
+#
+#  # The number of orders at this price level
+#  numberOfOrders: Int!
+#
+#  # The cumulative total volume to this price level
+#  cumulativeVolume: Int!
+#}
+
+
+# Valid order types, these determine what happens when an order is added to the book
+enum OrderType {
+
+    # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
+    FOK,
+
+    # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
+    ENE,
+
+    # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
+    GTC,
+
+    # This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+    # NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
+    GTT,
+}
+
+
+# Whether the placer of an order is aiming to buy or sell on the market
+enum Side {
+    Buy
+    Sell
+}
+
+
+# An order in Vega, if active it will be on the OrderBoook for the market
+type Order {
+
+    # Hash of the order data
+    id: ID!
+
+    # The worst price the order will trade at (e.g. buy for price or less, sell for price or more)
+    price: Int!
+
+    # The type of order (determines how and if it executes, and whether it persists on the book)
+    type: OrderType!
+
+    # Whether the order is to buy or sell
+    side: Side!
+
+    # The market the order is trading on (probably stored internally as a hash of the market details)
+    market: Market!
+
+    # Total number of contracts that may be bought or sold (immutable)
+    size: Int!
+
+    # Number of contracts remaining of the total that have not yet been bought or sold
+    remaining: Int!
+
+    # The trader who place the order (probably stored internally as the trader's public key)
+    party: String!
+
+    # If the order was added to the book or uncrossed at any point, the timestamp when that was done
+    timestamp: Int!
+}
+
+
+# A trade on Vega, the result of two orders being "matched" in the market
+type Trade {
+
+    # The hash of the trade data
+    id: ID!
+
+    # The market the trade occurred on
+    market: Market!
+
+    # The order that bought
+    buyer: String!
+
+    # The order that sold
+    seller: String!
+
+    aggressor: Side!
+
+    # The price of the trade (probably initially the passive order price, other determination algorithms are possible though)
+    price: Int!
+
+    # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade
+    size: Int!
+
+    # When the trade occured, probably the timestamp of the agressive order
+    timestamp: Int!
+}
+
+
+type Candle {
+    date: DateTime!
+
+    high: Int!
+
+    low: Int!
+
+    open: Int!
+
+    close: Int!
+
+    volume: Int!
+
+    openBlockNumber: Int!
+
+    closeBlockNumber: Int!
+}
+
+#
+#type OrderBookDepth {
+#  name: String!
+#
+#  buy: [PriceLevel!]
+#
+#  sell: [PriceLevel!]
+#}
+#
+#
+
+#type MyMutation {
+#  order(market: String, Price: Int, type: OrderType, side: Side, expiry: Int): Order
+#}
+
+type Subscription {
+    tradeCandles(market: String!, interval: Int!): [Candle!]!
+#    newOrders(market: String!)
+}
+
+type Query {
+#    orders(market: String, party: String) : [Order!]!
+    marketOrders(market: String!) : [Order!]!
+    partyOrders(party: String!) : [Order!]!
+
+    trades: [Trade!]!
+    candles: [Candle!]!
+}
+
+schema {
+    query: Query,
+    subscription: Subscription
+}
+

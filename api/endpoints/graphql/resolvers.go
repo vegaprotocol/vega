@@ -7,6 +7,7 @@ import (
 	"vega/api"
 	"vega/msg"
 	"math/rand"
+	"github.com/pkg/errors"
 )
 
 type resolverRoot struct {
@@ -42,14 +43,68 @@ func (r *resolverRoot) Subscription() SubscriptionResolver {
 	return (*MySubscriptionResolver)(r)
 }
 
-func (r *MyQueryResolver) Orders(ctx context.Context) ([]msg.Order, error) {
-	orders, err := r.orderService.GetOrders(ctx, "BTC/DEC18", "", 99999)
-	return orders, err
+
+func (r *MyQueryResolver) MarketOrders(ctx context.Context, market string) ([]msg.Order, error) {
+	orders, err := r.orderService.GetByMarket(ctx, market, 9999)
+	if err != nil {
+		return nil, err
+	}
+
+	// gQL requires values not pointers in returned slice
+	valOrders := make([]msg.Order, 0)
+	for _, v := range orders {
+		valOrders = append(valOrders, *v)
+	}
+	return valOrders, err
+}
+
+func (r *MyQueryResolver) PartyOrders(ctx context.Context, party string) ([]msg.Order, error) {
+	orders, err := r.orderService.GetByParty(ctx, party, 9999)
+	if err != nil {
+		return nil, err
+	}
+
+	// gQL requires values not pointers in returned slice
+	valOrders := make([]msg.Order, 0)
+	for _, v := range orders {
+		valOrders = append(valOrders, *v)
+	}
+	return valOrders, err
+
+}
+
+func (r *MyQueryResolver) Orders(ctx context.Context, market string, party string)  ([]msg.Order, error) {
+	var orders []*msg.Order
+	var err error
+	var found = false
+	if market == "" && party != "" {
+
+		found = true
+	}
+	if party == "" && market != "" {
+
+		found = true
+	}
+	if !found {
+		return nil, errors.New("Market or Party param missing")
+	}
+
+	// gQL requires values not pointers in returned slice
+	valOrders := make([]msg.Order, 0)
+	for _, v := range orders {
+		valOrders = append(valOrders, *v)
+	}
+	return valOrders, err
 }
 
 func (r *MyQueryResolver) Trades(ctx context.Context) ([]msg.Trade, error) {
-	_, err := r.tradeService.GetTrades(ctx, "BTC/DEC18", 99999)
-	return nil, err
+	trades, err := r.tradeService.GetByMarket(ctx, "BTC/DEC18", 99999)
+	// gQL requires values not pointers in returned slice
+	valTrades := make([]msg.Trade, 0)
+	for _, v := range trades {
+		valTrades  = append(valTrades, *v)
+	}
+	return valTrades, err
 }
 
 func (r *MyQueryResolver) Candles(ctx context.Context) ([]msg.Candle, error) {
@@ -59,23 +114,14 @@ func (r *MyQueryResolver) Candles(ctx context.Context) ([]msg.Candle, error) {
 	since := nowT.Add(-5 * time.Minute)
 	interval := uint64(60)
 
-	res, err := r.tradeService.GetCandlesChart(ctx, "BTC/DEC18", since, interval)
+	res, err := r.tradeService.GetCandles(ctx, "BTC/DEC18", since, interval)
 	if err != nil {
 		return nil, err
 	}
 
 	candles := make([]msg.Candle, 0)
 	for _, v := range res.Candles {
-		candles = append(candles, msg.Candle{
-			Volume:           v.Volume,
-			High:             v.High,
-			Low:              v.Low,
-			Date:             v.Date,
-			Open:             v.Open,
-			Close:            v.Close,
-			OpenBlockNumber:  v.OpenBlockNumber,
-			CloseBlockNumber: v.CloseBlockNumber,
-		})
+		candles = append(candles, *v)
 	}
 	return candles, err
 }
@@ -179,7 +225,6 @@ func (r *MySubscriptionResolver) TradeCandles(ctx context.Context, market string
 	events := make(chan []msg.Candle, 1)
 	connected := true
 
-
 	id := randString(8)
 	fmt.Println("New subscriber on channel: ", id)
 
@@ -202,7 +247,7 @@ func (r *MySubscriptionResolver) TradeCandles(ctx context.Context, market string
 
 			fmt.Printf("%+v, %+v", since, currentTime)
 
-			res1, err := r.tradeService.GetTrades(ctx, market, 99999)
+			res1, err := r.tradeService.GetByMarket(ctx, market, 99999)
 			if err != nil {
 				fmt.Errorf("there was an error when getting candles charts: %v", err)
 			}
@@ -210,7 +255,7 @@ func (r *MySubscriptionResolver) TradeCandles(ctx context.Context, market string
 			fmt.Printf("Trades in store: %+v  ------ [%d] ------", res1, len(res1))
 			fmt.Println()
 
-			res, err := r.tradeService.GetCandlesChart(ctx, market, since, 60)
+			res, err := r.tradeService.GetCandles(ctx, market, since, 60)
 			if err != nil {
 				fmt.Errorf("there was an error when getting candles charts: %v", err)
 			}
