@@ -12,6 +12,7 @@ type Query {
     vega: Vega!
 }
 
+# VEGA the world's premier distributed derivatives trading platform
 type Vega {
     
     # An instrument that is trading on the VEGA network
@@ -31,19 +32,39 @@ type Market {
     orders: [Order!]
 
     # Trades on a market
-    #trades: [Trades!]
+    trades: [Trade!]
 
     # Current depth on the orderbook for this market
-    #depth: [MarketDepth!]
+    depth: MarketDepth!
 }
 
-# Represents a party on Vega, could be an ethereum wallet address in the future
-type Party {
-    # Party identifier
-    name: String!
+# Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
+# The depth of market measure provides an indication of the liquidity and depth for the instrument.
+type MarketDepth {
+  # Market name
+  name: String!
 
-    # Orders relating to a party
-    orders: [Order!]
+  # Buy side price levels if available
+  buy: [PriceLevel!]
+
+  # Sell side price levels (if available)
+  sell: [PriceLevel!]
+}
+
+# Represents a price on either the buy or sell side and all the orders at that price
+type PriceLevel {
+
+    # The price of all the orders at this level
+    price: Int!
+
+    # The total remaining size of all orders at this level
+    volume: Int!
+
+    # The number of orders at this price level
+    numberOfOrders: Int!
+
+    # The cumulative total volume to this price level
+    cumulativeVolume: Int!
 }
 
 # Candle stick representation of trading
@@ -72,6 +93,15 @@ type Candle {
 
     # The block number of the closing trade
     closeBlockNumber: Int!
+}
+
+# Represents a party on Vega, could be an ethereum wallet address in the future
+type Party {
+    # Party identifier
+    name: String!
+
+    # Orders relating to a party
+    orders: [Order!]
 }
 
 # An order in Vega, if active it will be on the OrderBoook for the market

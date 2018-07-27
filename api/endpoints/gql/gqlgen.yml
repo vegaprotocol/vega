@@ -9,9 +9,19 @@ models:
     model: vega/msg.Order
   Trade:
     model: vega/msg.Trade
+  PriceLevel:
+    model: vega/msg.PriceLevel
+  MarketDepth:
+    model: vega/msg.MarketDepth
+  Candle:
+    model: vega/msg.Candle
+  Market:
+    fields:
+      depth:
+        resolver: true
   Vega:
-      fields:
-        markets:
-          resolver: true
-        parties:
-          resolver: true
+    fields:
+      markets:
+        resolver: true
+      parties:
+        resolver: true

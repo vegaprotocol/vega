@@ -25,16 +25,37 @@ func NewExecutableSchema(resolvers ResolverRoot) graphql.ExecutableSchema {
 }
 
 type Resolvers interface {
+	Candle_high(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_low(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_open(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_close(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_volume(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
+
+	Market_depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
+
+	MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
+	MarketDepth_sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
+
 	Order_price(ctx context.Context, obj *msg.Order) (int, error)
 	Order_type(ctx context.Context, obj *msg.Order) (OrderType, error)
 	Order_side(ctx context.Context, obj *msg.Order) (Side, error)
 	Order_market(ctx context.Context, obj *msg.Order) (Market, error)
 	Order_size(ctx context.Context, obj *msg.Order) (int, error)
 	Order_remaining(ctx context.Context, obj *msg.Order) (int, error)
+
 	Order_timestamp(ctx context.Context, obj *msg.Order) (int, error)
 	Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
+
+	PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (int, error)
+	PriceLevel_volume(ctx context.Context, obj *msg.PriceLevel) (int, error)
+	PriceLevel_numberOfOrders(ctx context.Context, obj *msg.PriceLevel) (int, error)
+	PriceLevel_cumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (int, error)
 	Query_vega(ctx context.Context) (Vega, error)
+
 	Trade_market(ctx context.Context, obj *msg.Trade) (Market, error)
+
 	Trade_aggressor(ctx context.Context, obj *msg.Trade) (Side, error)
 	Trade_price(ctx context.Context, obj *msg.Trade) (int, error)
 	Trade_size(ctx context.Context, obj *msg.Trade) (int, error)
@@ -44,10 +65,30 @@ type Resolvers interface {
 }
 
 type ResolverRoot interface {
+	Candle() CandleResolver
+	Market() MarketResolver
+	MarketDepth() MarketDepthResolver
 	Order() OrderResolver
+	PriceLevel() PriceLevelResolver
 	Query() QueryResolver
 	Trade() TradeResolver
 	Vega() VegaResolver
+}
+type CandleResolver interface {
+	High(ctx context.Context, obj *msg.Candle) (int, error)
+	Low(ctx context.Context, obj *msg.Candle) (int, error)
+	Open(ctx context.Context, obj *msg.Candle) (int, error)
+	Close(ctx context.Context, obj *msg.Candle) (int, error)
+	Volume(ctx context.Context, obj *msg.Candle) (int, error)
+	OpenBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
+	CloseBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
+}
+type MarketResolver interface {
+	Depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
+}
+type MarketDepthResolver interface {
+	Buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
+	Sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *msg.Order) (int, error)
@@ -56,14 +97,22 @@ type OrderResolver interface {
 	Market(ctx context.Context, obj *msg.Order) (Market, error)
 	Size(ctx context.Context, obj *msg.Order) (int, error)
 	Remaining(ctx context.Context, obj *msg.Order) (int, error)
+
 	Timestamp(ctx context.Context, obj *msg.Order) (int, error)
 	Status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
+}
+type PriceLevelResolver interface {
+	Price(ctx context.Context, obj *msg.PriceLevel) (int, error)
+	Volume(ctx context.Context, obj *msg.PriceLevel) (int, error)
+	NumberOfOrders(ctx context.Context, obj *msg.PriceLevel) (int, error)
+	CumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (int, error)
 }
 type QueryResolver interface {
 	Vega(ctx context.Context) (Vega, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *msg.Trade) (Market, error)
+
 	Aggressor(ctx context.Context, obj *msg.Trade) (Side, error)
 	Price(ctx context.Context, obj *msg.Trade) (int, error)
 	Size(ctx context.Context, obj *msg.Trade) (int, error)
@@ -76,6 +125,46 @@ type VegaResolver interface {
 
 type shortMapper struct {
 	r ResolverRoot
+}
+
+func (s shortMapper) Candle_high(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().High(ctx, obj)
+}
+
+func (s shortMapper) Candle_low(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().Low(ctx, obj)
+}
+
+func (s shortMapper) Candle_open(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().Open(ctx, obj)
+}
+
+func (s shortMapper) Candle_close(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().Close(ctx, obj)
+}
+
+func (s shortMapper) Candle_volume(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().Volume(ctx, obj)
+}
+
+func (s shortMapper) Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().OpenBlockNumber(ctx, obj)
+}
+
+func (s shortMapper) Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (int, error) {
+	return s.r.Candle().CloseBlockNumber(ctx, obj)
+}
+
+func (s shortMapper) Market_depth(ctx context.Context, obj *Market) (msg.MarketDepth, error) {
+	return s.r.Market().Depth(ctx, obj)
+}
+
+func (s shortMapper) MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error) {
+	return s.r.MarketDepth().Buy(ctx, obj)
+}
+
+func (s shortMapper) MarketDepth_sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error) {
+	return s.r.MarketDepth().Sell(ctx, obj)
 }
 
 func (s shortMapper) Order_price(ctx context.Context, obj *msg.Order) (int, error) {
@@ -108,6 +197,22 @@ func (s shortMapper) Order_timestamp(ctx context.Context, obj *msg.Order) (int, 
 
 func (s shortMapper) Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error) {
 	return s.r.Order().Status(ctx, obj)
+}
+
+func (s shortMapper) PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (int, error) {
+	return s.r.PriceLevel().Price(ctx, obj)
+}
+
+func (s shortMapper) PriceLevel_volume(ctx context.Context, obj *msg.PriceLevel) (int, error) {
+	return s.r.PriceLevel().Volume(ctx, obj)
+}
+
+func (s shortMapper) PriceLevel_numberOfOrders(ctx context.Context, obj *msg.PriceLevel) (int, error) {
+	return s.r.PriceLevel().NumberOfOrders(ctx, obj)
+}
+
+func (s shortMapper) PriceLevel_cumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (int, error) {
+	return s.r.PriceLevel().CumulativeVolume(ctx, obj)
 }
 
 func (s shortMapper) Query_vega(ctx context.Context) (Vega, error) {
@@ -180,6 +285,264 @@ type executionContext struct {
 	resolvers Resolvers
 }
 
+var candleImplementors = []string{"Candle"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Candle(ctx context.Context, sel []query.Selection, obj *msg.Candle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.Doc, sel, candleImplementors, ec.Variables)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Candle")
+		case "date":
+			out.Values[i] = ec._Candle_date(ctx, field, obj)
+		case "high":
+			out.Values[i] = ec._Candle_high(ctx, field, obj)
+		case "low":
+			out.Values[i] = ec._Candle_low(ctx, field, obj)
+		case "open":
+			out.Values[i] = ec._Candle_open(ctx, field, obj)
+		case "close":
+			out.Values[i] = ec._Candle_close(ctx, field, obj)
+		case "volume":
+			out.Values[i] = ec._Candle_volume(ctx, field, obj)
+		case "openBlockNumber":
+			out.Values[i] = ec._Candle_openBlockNumber(ctx, field, obj)
+		case "closeBlockNumber":
+			out.Values[i] = ec._Candle_closeBlockNumber(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _Candle_date(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Candle"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	res := obj.Date
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_high(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_low(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_open(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_close(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_volume(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_openBlockNumber(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_openBlockNumber(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Candle_closeBlockNumber(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_closeBlockNumber(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
 var marketImplementors = []string{"Market"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -197,6 +560,10 @@ func (ec *executionContext) _Market(ctx context.Context, sel []query.Selection, 
 			out.Values[i] = ec._Market_name(ctx, field, obj)
 		case "orders":
 			out.Values[i] = ec._Market_orders(ctx, field, obj)
+		case "trades":
+			out.Values[i] = ec._Market_trades(ctx, field, obj)
+		case "depth":
+			out.Values[i] = ec._Market_depth(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -234,6 +601,172 @@ func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.Co
 		}())
 	}
 	return arr1
+}
+
+func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Market"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	res := obj.Trades
+	arr1 := graphql.Array{}
+	for idx1 := range res {
+		arr1 = append(arr1, func() graphql.Marshaler {
+			rctx := graphql.GetResolverContext(ctx)
+			rctx.PushIndex(idx1)
+			defer rctx.Pop()
+			return ec._Trade(ctx, field.Selections, &res[idx1])
+		}())
+	}
+	return arr1
+}
+
+func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Market",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Market_depth(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(msg.MarketDepth)
+		return ec._MarketDepth(ctx, field.Selections, &res)
+	})
+}
+
+var marketDepthImplementors = []string{"MarketDepth"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _MarketDepth(ctx context.Context, sel []query.Selection, obj *msg.MarketDepth) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.Doc, sel, marketDepthImplementors, ec.Variables)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarketDepth")
+		case "name":
+			out.Values[i] = ec._MarketDepth_name(ctx, field, obj)
+		case "buy":
+			out.Values[i] = ec._MarketDepth_buy(ctx, field, obj)
+		case "sell":
+			out.Values[i] = ec._MarketDepth_sell(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _MarketDepth_name(ctx context.Context, field graphql.CollectedField, obj *msg.MarketDepth) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "MarketDepth"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	res := obj.Name
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.CollectedField, obj *msg.MarketDepth) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "MarketDepth",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.MarketDepth_buy(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.PriceLevel)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._PriceLevel(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql.CollectedField, obj *msg.MarketDepth) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "MarketDepth",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.MarketDepth_sell(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.PriceLevel)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._PriceLevel(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
 }
 
 var orderImplementors = []string{"Order"}
@@ -593,6 +1126,155 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 		}())
 	}
 	return arr1
+}
+
+var priceLevelImplementors = []string{"PriceLevel"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _PriceLevel(ctx context.Context, sel []query.Selection, obj *msg.PriceLevel) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.Doc, sel, priceLevelImplementors, ec.Variables)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PriceLevel")
+		case "price":
+			out.Values[i] = ec._PriceLevel_price(ctx, field, obj)
+		case "volume":
+			out.Values[i] = ec._PriceLevel_volume(ctx, field, obj)
+		case "numberOfOrders":
+			out.Values[i] = ec._PriceLevel_numberOfOrders(ctx, field, obj)
+		case "cumulativeVolume":
+			out.Values[i] = ec._PriceLevel_cumulativeVolume(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *msg.PriceLevel) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "PriceLevel",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.PriceLevel_price(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _PriceLevel_volume(ctx context.Context, field graphql.CollectedField, obj *msg.PriceLevel) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "PriceLevel",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.PriceLevel_volume(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, field graphql.CollectedField, obj *msg.PriceLevel) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "PriceLevel",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.PriceLevel_numberOfOrders(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _PriceLevel_cumulativeVolume(ctx context.Context, field graphql.CollectedField, obj *msg.PriceLevel) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "PriceLevel",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.PriceLevel_cumulativeVolume(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
 var queryImplementors = []string{"Query"}
@@ -1766,6 +2448,7 @@ type Query {
     vega: Vega!
 }
 
+# VEGA the world's premier distributed derivatives trading platform
 type Vega {
     
     # An instrument that is trading on the VEGA network
@@ -1781,8 +2464,71 @@ type Market {
     # Market full name
     name: String!
 
-    # Orders relating to a market
+    # Orders on a market
     orders: [Order!]
+
+    # Trades on a market
+    trades: [Trade!]
+
+    # Current depth on the orderbook for this market
+    depth: MarketDepth!
+}
+
+# Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
+# The depth of market measure provides an indication of the liquidity and depth for the instrument.
+type MarketDepth {
+  # Market name
+  name: String!
+
+  # Buy side price levels if available
+  buy: [PriceLevel!]
+
+  # Sell side price levels (if available)
+  sell: [PriceLevel!]
+}
+
+# Represents a price on either the buy or sell side and all the orders at that price
+type PriceLevel {
+
+    # The price of all the orders at this level
+    price: Int!
+
+    # The total remaining size of all orders at this level
+    volume: Int!
+
+    # The number of orders at this price level
+    numberOfOrders: Int!
+
+    # The cumulative total volume to this price level
+    cumulativeVolume: Int!
+}
+
+# Candle stick representation of trading
+type Candle {
+
+    # The date and time for the candlestick
+    date: DateTime!
+
+    # High price
+    high: Int!
+
+    # Low price
+    low: Int!
+
+    # Open price
+    open: Int!
+
+    # Close price
+    close: Int!
+
+    # Volume price
+    volume: Int!
+
+    # The block number of the opening trade
+    openBlockNumber: Int!
+
+    # The block number of the closing trade
+    closeBlockNumber: Int!
 }
 
 # Represents a party on Vega, could be an ethereum wallet address in the future
@@ -1893,4 +2639,5 @@ enum Side {
     Buy
     Sell
 }
+
 `)
