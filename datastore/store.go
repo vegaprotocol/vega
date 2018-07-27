@@ -43,7 +43,7 @@ type OrderStore interface {
 	// Returns all the markets
 	GetMarkets() ([]string, error)
 	// Returns Order Book Depth for a market
-	GetOrderBookDepth(market string) (*msg.OrderBookDepth, error)
+	GetMarketDepth(market string) (*msg.MarketDepth, error)
 }
 
 type StoreProvider interface {

@@ -130,15 +130,15 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 }
 
 
-func (h *Handlers) OrderBookDepth(ctx context.Context, request *api.OrderBookDepthRequest) (*api.OrderBookDepthResponse, error) {
+func (h *Handlers) MarketDepth(ctx context.Context, request *api.MarketDepthRequest) (*api.MarketDepthResponse, error) {
 	if request.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
-	depth, err := h.OrderService.GetOrderBookDepth(ctx, request.Market)
+	depth, err := h.OrderService.GetMarketDepth(ctx, request.Market)
 	if err != nil {
 		return nil, err
 	}
-	var response = &api.OrderBookDepthResponse{}
+	var response = &api.MarketDepthResponse{}
 	response.Buy = depth.Buy
 	response.Name = depth.Name
 	response.Sell = depth.Sell

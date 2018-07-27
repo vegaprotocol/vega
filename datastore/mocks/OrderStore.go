@@ -112,6 +112,29 @@ func (_m *OrderStore) GetByPartyAndId(party string, id string) (datastore.Order,
 	return r0, r1
 }
 
+// GetMarketDepth provides a mock function with given fields: market
+func (_m *OrderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
+	ret := _m.Called(market)
+
+	var r0 *msg.MarketDepth
+	if rf, ok := ret.Get(0).(func(string) *msg.MarketDepth); ok {
+		r0 = rf(market)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*msg.MarketDepth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(market)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMarkets provides a mock function with given fields:
 func (_m *OrderStore) GetMarkets() ([]string, error) {
 	ret := _m.Called()
@@ -128,29 +151,6 @@ func (_m *OrderStore) GetMarkets() ([]string, error) {
 	var r1 error
 	if rf, ok := ret.Get(1).(func() error); ok {
 		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetOrderBookDepth provides a mock function with given fields: market
-func (_m *OrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, error) {
-	ret := _m.Called(market)
-
-	var r0 *msg.OrderBookDepth
-	if rf, ok := ret.Get(0).(func(string) *msg.OrderBookDepth); ok {
-		r0 = rf(market)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*msg.OrderBookDepth)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(market)
 	} else {
 		r1 = ret.Error(1)
 	}

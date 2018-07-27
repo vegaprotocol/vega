@@ -35,7 +35,7 @@ func (m *OrderResponse) Reset()         { *m = OrderResponse{} }
 func (m *OrderResponse) String() string { return proto.CompactTextString(m) }
 func (*OrderResponse) ProtoMessage()    {}
 func (*OrderResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{0}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{0}
 }
 func (m *OrderResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrderResponse.Unmarshal(m, b)
@@ -74,7 +74,7 @@ func (m *OrdersByMarketRequest) Reset()         { *m = OrdersByMarketRequest{} }
 func (m *OrdersByMarketRequest) String() string { return proto.CompactTextString(m) }
 func (*OrdersByMarketRequest) ProtoMessage()    {}
 func (*OrdersByMarketRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{1}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{1}
 }
 func (m *OrdersByMarketRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrdersByMarketRequest.Unmarshal(m, b)
@@ -119,7 +119,7 @@ func (m *OrdersByMarketResponse) Reset()         { *m = OrdersByMarketResponse{}
 func (m *OrdersByMarketResponse) String() string { return proto.CompactTextString(m) }
 func (*OrdersByMarketResponse) ProtoMessage()    {}
 func (*OrdersByMarketResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{2}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{2}
 }
 func (m *OrdersByMarketResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrdersByMarketResponse.Unmarshal(m, b)
@@ -158,7 +158,7 @@ func (m *OrdersByPartyRequest) Reset()         { *m = OrdersByPartyRequest{} }
 func (m *OrdersByPartyRequest) String() string { return proto.CompactTextString(m) }
 func (*OrdersByPartyRequest) ProtoMessage()    {}
 func (*OrdersByPartyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{3}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{3}
 }
 func (m *OrdersByPartyRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrdersByPartyRequest.Unmarshal(m, b)
@@ -203,7 +203,7 @@ func (m *OrdersByPartyResponse) Reset()         { *m = OrdersByPartyResponse{} }
 func (m *OrdersByPartyResponse) String() string { return proto.CompactTextString(m) }
 func (*OrdersByPartyResponse) ProtoMessage()    {}
 func (*OrdersByPartyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{4}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{4}
 }
 func (m *OrdersByPartyResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrdersByPartyResponse.Unmarshal(m, b)
@@ -242,7 +242,7 @@ func (m *OrderByMarketAndIdRequest) Reset()         { *m = OrderByMarketAndIdReq
 func (m *OrderByMarketAndIdRequest) String() string { return proto.CompactTextString(m) }
 func (*OrderByMarketAndIdRequest) ProtoMessage()    {}
 func (*OrderByMarketAndIdRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{5}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{5}
 }
 func (m *OrderByMarketAndIdRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrderByMarketAndIdRequest.Unmarshal(m, b)
@@ -287,7 +287,7 @@ func (m *OrderByMarketAndIdResponse) Reset()         { *m = OrderByMarketAndIdRe
 func (m *OrderByMarketAndIdResponse) String() string { return proto.CompactTextString(m) }
 func (*OrderByMarketAndIdResponse) ProtoMessage()    {}
 func (*OrderByMarketAndIdResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{6}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{6}
 }
 func (m *OrderByMarketAndIdResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrderByMarketAndIdResponse.Unmarshal(m, b)
@@ -324,7 +324,7 @@ func (m *MarketsRequest) Reset()         { *m = MarketsRequest{} }
 func (m *MarketsRequest) String() string { return proto.CompactTextString(m) }
 func (*MarketsRequest) ProtoMessage()    {}
 func (*MarketsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{7}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{7}
 }
 func (m *MarketsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MarketsRequest.Unmarshal(m, b)
@@ -355,7 +355,7 @@ func (m *MarketsResponse) Reset()         { *m = MarketsResponse{} }
 func (m *MarketsResponse) String() string { return proto.CompactTextString(m) }
 func (*MarketsResponse) ProtoMessage()    {}
 func (*MarketsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{8}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{8}
 }
 func (m *MarketsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MarketsResponse.Unmarshal(m, b)
@@ -395,7 +395,7 @@ func (m *TradeCandlesRequest) Reset()         { *m = TradeCandlesRequest{} }
 func (m *TradeCandlesRequest) String() string { return proto.CompactTextString(m) }
 func (*TradeCandlesRequest) ProtoMessage()    {}
 func (*TradeCandlesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{9}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{9}
 }
 func (m *TradeCandlesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TradeCandlesRequest.Unmarshal(m, b)
@@ -447,7 +447,7 @@ func (m *TradeCandlesResponse) Reset()         { *m = TradeCandlesResponse{} }
 func (m *TradeCandlesResponse) String() string { return proto.CompactTextString(m) }
 func (*TradeCandlesResponse) ProtoMessage()    {}
 func (*TradeCandlesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{10}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{10}
 }
 func (m *TradeCandlesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TradeCandlesResponse.Unmarshal(m, b)
@@ -474,42 +474,96 @@ func (m *TradeCandlesResponse) GetCandles() []*msg.Candle {
 	return nil
 }
 
-type OrderBookDepthRequest struct {
+type MarketDepthRequest struct {
 	Market               string   `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *OrderBookDepthRequest) Reset()         { *m = OrderBookDepthRequest{} }
-func (m *OrderBookDepthRequest) String() string { return proto.CompactTextString(m) }
-func (*OrderBookDepthRequest) ProtoMessage()    {}
-func (*OrderBookDepthRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{11}
+func (m *MarketDepthRequest) Reset()         { *m = MarketDepthRequest{} }
+func (m *MarketDepthRequest) String() string { return proto.CompactTextString(m) }
+func (*MarketDepthRequest) ProtoMessage()    {}
+func (*MarketDepthRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{11}
 }
-func (m *OrderBookDepthRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_OrderBookDepthRequest.Unmarshal(m, b)
+func (m *MarketDepthRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MarketDepthRequest.Unmarshal(m, b)
 }
-func (m *OrderBookDepthRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_OrderBookDepthRequest.Marshal(b, m, deterministic)
+func (m *MarketDepthRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MarketDepthRequest.Marshal(b, m, deterministic)
 }
-func (dst *OrderBookDepthRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OrderBookDepthRequest.Merge(dst, src)
+func (dst *MarketDepthRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MarketDepthRequest.Merge(dst, src)
 }
-func (m *OrderBookDepthRequest) XXX_Size() int {
-	return xxx_messageInfo_OrderBookDepthRequest.Size(m)
+func (m *MarketDepthRequest) XXX_Size() int {
+	return xxx_messageInfo_MarketDepthRequest.Size(m)
 }
-func (m *OrderBookDepthRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_OrderBookDepthRequest.DiscardUnknown(m)
+func (m *MarketDepthRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_MarketDepthRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_OrderBookDepthRequest proto.InternalMessageInfo
+var xxx_messageInfo_MarketDepthRequest proto.InternalMessageInfo
 
-func (m *OrderBookDepthRequest) GetMarket() string {
+func (m *MarketDepthRequest) GetMarket() string {
 	if m != nil {
 		return m.Market
 	}
 	return ""
+}
+
+type MarketDepthResponse struct {
+	Name                 string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Buy                  []*msg.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
+	Sell                 []*msg.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *MarketDepthResponse) Reset()         { *m = MarketDepthResponse{} }
+func (m *MarketDepthResponse) String() string { return proto.CompactTextString(m) }
+func (*MarketDepthResponse) ProtoMessage()    {}
+func (*MarketDepthResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{12}
+}
+func (m *MarketDepthResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MarketDepthResponse.Unmarshal(m, b)
+}
+func (m *MarketDepthResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MarketDepthResponse.Marshal(b, m, deterministic)
+}
+func (dst *MarketDepthResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MarketDepthResponse.Merge(dst, src)
+}
+func (m *MarketDepthResponse) XXX_Size() int {
+	return xxx_messageInfo_MarketDepthResponse.Size(m)
+}
+func (m *MarketDepthResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MarketDepthResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MarketDepthResponse proto.InternalMessageInfo
+
+func (m *MarketDepthResponse) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *MarketDepthResponse) GetBuy() []*msg.PriceLevel {
+	if m != nil {
+		return m.Buy
+	}
+	return nil
+}
+
+func (m *MarketDepthResponse) GetSell() []*msg.PriceLevel {
+	if m != nil {
+		return m.Sell
+	}
+	return nil
 }
 
 type TradesByMarketRequest struct {
@@ -524,7 +578,7 @@ func (m *TradesByMarketRequest) Reset()         { *m = TradesByMarketRequest{} }
 func (m *TradesByMarketRequest) String() string { return proto.CompactTextString(m) }
 func (*TradesByMarketRequest) ProtoMessage()    {}
 func (*TradesByMarketRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{12}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{13}
 }
 func (m *TradesByMarketRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TradesByMarketRequest.Unmarshal(m, b)
@@ -569,7 +623,7 @@ func (m *TradesByMarketResponse) Reset()         { *m = TradesByMarketResponse{}
 func (m *TradesByMarketResponse) String() string { return proto.CompactTextString(m) }
 func (*TradesByMarketResponse) ProtoMessage()    {}
 func (*TradesByMarketResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{13}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{14}
 }
 func (m *TradesByMarketResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TradesByMarketResponse.Unmarshal(m, b)
@@ -596,60 +650,6 @@ func (m *TradesByMarketResponse) GetTrades() []*msg.Trade {
 	return nil
 }
 
-type OrderBookDepthResponse struct {
-	Name                 string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Buy                  []*msg.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
-	Sell                 []*msg.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
-}
-
-func (m *OrderBookDepthResponse) Reset()         { *m = OrderBookDepthResponse{} }
-func (m *OrderBookDepthResponse) String() string { return proto.CompactTextString(m) }
-func (*OrderBookDepthResponse) ProtoMessage()    {}
-func (*OrderBookDepthResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{14}
-}
-func (m *OrderBookDepthResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_OrderBookDepthResponse.Unmarshal(m, b)
-}
-func (m *OrderBookDepthResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_OrderBookDepthResponse.Marshal(b, m, deterministic)
-}
-func (dst *OrderBookDepthResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OrderBookDepthResponse.Merge(dst, src)
-}
-func (m *OrderBookDepthResponse) XXX_Size() int {
-	return xxx_messageInfo_OrderBookDepthResponse.Size(m)
-}
-func (m *OrderBookDepthResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_OrderBookDepthResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_OrderBookDepthResponse proto.InternalMessageInfo
-
-func (m *OrderBookDepthResponse) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *OrderBookDepthResponse) GetBuy() []*msg.PriceLevel {
-	if m != nil {
-		return m.Buy
-	}
-	return nil
-}
-
-func (m *OrderBookDepthResponse) GetSell() []*msg.PriceLevel {
-	if m != nil {
-		return m.Sell
-	}
-	return nil
-}
-
 type PositionsByPartyRequest struct {
 	Party                string   `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -661,7 +661,7 @@ func (m *PositionsByPartyRequest) Reset()         { *m = PositionsByPartyRequest
 func (m *PositionsByPartyRequest) String() string { return proto.CompactTextString(m) }
 func (*PositionsByPartyRequest) ProtoMessage()    {}
 func (*PositionsByPartyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{15}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{15}
 }
 func (m *PositionsByPartyRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PositionsByPartyRequest.Unmarshal(m, b)
@@ -699,7 +699,7 @@ func (m *PositionsByPartyResponse) Reset()         { *m = PositionsByPartyRespon
 func (m *PositionsByPartyResponse) String() string { return proto.CompactTextString(m) }
 func (*PositionsByPartyResponse) ProtoMessage()    {}
 func (*PositionsByPartyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{16}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{16}
 }
 func (m *PositionsByPartyResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PositionsByPartyResponse.Unmarshal(m, b)
@@ -737,7 +737,7 @@ func (m *OptionalParams) Reset()         { *m = OptionalParams{} }
 func (m *OptionalParams) String() string { return proto.CompactTextString(m) }
 func (*OptionalParams) ProtoMessage()    {}
 func (*OptionalParams) Descriptor() ([]byte, []int) {
-	return fileDescriptor_grpc_d6d9c92579c8606a, []int{17}
+	return fileDescriptor_grpc_e5a4073db52f8edc, []int{17}
 }
 func (m *OptionalParams) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OptionalParams.Unmarshal(m, b)
@@ -776,10 +776,10 @@ func init() {
 	proto.RegisterType((*MarketsResponse)(nil), "grpc.MarketsResponse")
 	proto.RegisterType((*TradeCandlesRequest)(nil), "grpc.TradeCandlesRequest")
 	proto.RegisterType((*TradeCandlesResponse)(nil), "grpc.TradeCandlesResponse")
-	proto.RegisterType((*OrderBookDepthRequest)(nil), "grpc.OrderBookDepthRequest")
+	proto.RegisterType((*MarketDepthRequest)(nil), "grpc.MarketDepthRequest")
+	proto.RegisterType((*MarketDepthResponse)(nil), "grpc.MarketDepthResponse")
 	proto.RegisterType((*TradesByMarketRequest)(nil), "grpc.TradesByMarketRequest")
 	proto.RegisterType((*TradesByMarketResponse)(nil), "grpc.TradesByMarketResponse")
-	proto.RegisterType((*OrderBookDepthResponse)(nil), "grpc.OrderBookDepthResponse")
 	proto.RegisterType((*PositionsByPartyRequest)(nil), "grpc.PositionsByPartyRequest")
 	proto.RegisterType((*PositionsByPartyResponse)(nil), "grpc.PositionsByPartyResponse")
 	proto.RegisterType((*OptionalParams)(nil), "grpc.OptionalParams")
@@ -804,7 +804,7 @@ type TradingClient interface {
 	OrderByMarketAndId(ctx context.Context, in *OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*OrderByMarketAndIdResponse, error)
 	Markets(ctx context.Context, in *MarketsRequest, opts ...grpc.CallOption) (*MarketsResponse, error)
 	TradeCandles(ctx context.Context, in *TradeCandlesRequest, opts ...grpc.CallOption) (*TradeCandlesResponse, error)
-	OrderBookDepth(ctx context.Context, in *OrderBookDepthRequest, opts ...grpc.CallOption) (*OrderBookDepthResponse, error)
+	MarketDepth(ctx context.Context, in *MarketDepthRequest, opts ...grpc.CallOption) (*MarketDepthResponse, error)
 	TradesByMarket(ctx context.Context, in *TradesByMarketRequest, opts ...grpc.CallOption) (*TradesByMarketResponse, error)
 	// rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO
 	PositionsByParty(ctx context.Context, in *PositionsByPartyRequest, opts ...grpc.CallOption) (*PositionsByPartyResponse, error)
@@ -881,9 +881,9 @@ func (c *tradingClient) TradeCandles(ctx context.Context, in *TradeCandlesReques
 	return out, nil
 }
 
-func (c *tradingClient) OrderBookDepth(ctx context.Context, in *OrderBookDepthRequest, opts ...grpc.CallOption) (*OrderBookDepthResponse, error) {
-	out := new(OrderBookDepthResponse)
-	err := c.cc.Invoke(ctx, "/grpc.trading/OrderBookDepth", in, out, opts...)
+func (c *tradingClient) MarketDepth(ctx context.Context, in *MarketDepthRequest, opts ...grpc.CallOption) (*MarketDepthResponse, error) {
+	out := new(MarketDepthResponse)
+	err := c.cc.Invoke(ctx, "/grpc.trading/MarketDepth", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -917,7 +917,7 @@ type TradingServer interface {
 	OrderByMarketAndId(context.Context, *OrderByMarketAndIdRequest) (*OrderByMarketAndIdResponse, error)
 	Markets(context.Context, *MarketsRequest) (*MarketsResponse, error)
 	TradeCandles(context.Context, *TradeCandlesRequest) (*TradeCandlesResponse, error)
-	OrderBookDepth(context.Context, *OrderBookDepthRequest) (*OrderBookDepthResponse, error)
+	MarketDepth(context.Context, *MarketDepthRequest) (*MarketDepthResponse, error)
 	TradesByMarket(context.Context, *TradesByMarketRequest) (*TradesByMarketResponse, error)
 	// rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO
 	PositionsByParty(context.Context, *PositionsByPartyRequest) (*PositionsByPartyResponse, error)
@@ -1053,20 +1053,20 @@ func _Trading_TradeCandles_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Trading_OrderBookDepth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OrderBookDepthRequest)
+func _Trading_MarketDepth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarketDepthRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingServer).OrderBookDepth(ctx, in)
+		return srv.(TradingServer).MarketDepth(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/grpc.trading/OrderBookDepth",
+		FullMethod: "/grpc.trading/MarketDepth",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingServer).OrderBookDepth(ctx, req.(*OrderBookDepthRequest))
+		return srv.(TradingServer).MarketDepth(ctx, req.(*MarketDepthRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1140,8 +1140,8 @@ var _Trading_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Trading_TradeCandles_Handler,
 		},
 		{
-			MethodName: "OrderBookDepth",
-			Handler:    _Trading_OrderBookDepth_Handler,
+			MethodName: "MarketDepth",
+			Handler:    _Trading_MarketDepth_Handler,
 		},
 		{
 			MethodName: "TradesByMarket",
@@ -1156,50 +1156,50 @@ var _Trading_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/grpc.proto",
 }
 
-func init() { proto.RegisterFile("api/grpc.proto", fileDescriptor_grpc_d6d9c92579c8606a) }
+func init() { proto.RegisterFile("api/grpc.proto", fileDescriptor_grpc_e5a4073db52f8edc) }
 
-var fileDescriptor_grpc_d6d9c92579c8606a = []byte{
-	// 667 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x55, 0xed, 0x6b, 0x13, 0x4f,
-	0x10, 0x26, 0xef, 0xcd, 0xa4, 0xbf, 0xfb, 0x95, 0x6d, 0x5a, 0xaf, 0x5b, 0x5f, 0xe2, 0x2a, 0x25,
-	0xa2, 0x34, 0x10, 0xc1, 0x4f, 0xbe, 0x60, 0xab, 0xa0, 0x54, 0x6d, 0x5c, 0x04, 0xa1, 0x20, 0xb2,
-	0xbd, 0x5b, 0xe2, 0xd2, 0xcb, 0xdd, 0x79, 0x7b, 0x0d, 0xf4, 0x2f, 0xf4, 0xdf, 0x92, 0xdb, 0x9d,
-	0x6b, 0x72, 0xd7, 0x0b, 0x6d, 0x3f, 0xf8, 0x2d, 0xb3, 0xcf, 0xcc, 0x33, 0xcf, 0xcc, 0xcd, 0x4c,
-	0xc0, 0x11, 0xb1, 0x1a, 0x4d, 0x93, 0xd8, 0xdb, 0x8f, 0x93, 0x28, 0x8d, 0x48, 0x33, 0xfb, 0x4d,
-	0x9d, 0x99, 0x9e, 0x8e, 0xe6, 0x72, 0x2a, 0xec, 0x2b, 0x7b, 0x02, 0xff, 0x1d, 0x27, 0xbe, 0x4c,
-	0xb8, 0xd4, 0x71, 0x14, 0x6a, 0x49, 0x5c, 0xe8, 0xe8, 0x73, 0xcf, 0x93, 0x5a, 0xbb, 0xb5, 0x41,
-	0x6d, 0xb8, 0xc6, 0x73, 0x93, 0xfd, 0x80, 0x2d, 0xe3, 0xaa, 0x0f, 0x2e, 0x3e, 0x8b, 0xe4, 0x4c,
-	0xa6, 0x5c, 0xfe, 0x3e, 0x97, 0x3a, 0x25, 0xdb, 0xd0, 0x9e, 0x99, 0x07, 0x13, 0xd1, 0xe5, 0x68,
-	0x91, 0x67, 0xd0, 0x8e, 0x45, 0x22, 0x66, 0xda, 0xad, 0x0f, 0x6a, 0xc3, 0xde, 0xb8, 0xbf, 0x6f,
-	0xe4, 0x1c, 0xc7, 0xa9, 0x8a, 0x42, 0x11, 0x4c, 0x0c, 0xc6, 0xd1, 0x87, 0xbd, 0x82, 0xed, 0x32,
-	0x3d, 0x4a, 0x7a, 0x04, 0xed, 0xc8, 0x20, 0x6e, 0x6d, 0xd0, 0x18, 0xf6, 0xc6, 0xbd, 0x7d, 0x53,
-	0x80, 0xd5, 0x8d, 0x10, 0x3b, 0x81, 0x7e, 0x1e, 0x3e, 0x11, 0x49, 0x7a, 0x91, 0x8b, 0xeb, 0x43,
-	0x2b, 0xce, 0x6c, 0xd4, 0x66, 0x8d, 0x5b, 0x4a, 0x7b, 0xb9, 0xa8, 0x1c, 0xb9, 0x6f, 0xa3, 0xec,
-	0x10, 0x76, 0xcc, 0x43, 0x5e, 0xd7, 0xdb, 0xd0, 0xff, 0xe8, 0x5f, 0xd7, 0x3b, 0x07, 0xea, 0xca,
-	0x37, 0xe2, 0xba, 0xbc, 0xae, 0x7c, 0xf6, 0x06, 0x68, 0x15, 0x09, 0xea, 0x78, 0x08, 0x2d, 0x93,
-	0xcc, 0x90, 0x94, 0x64, 0x58, 0x84, 0x6d, 0x80, 0x63, 0x23, 0x35, 0xa6, 0x66, 0x4f, 0xe1, 0xff,
-	0xcb, 0x97, 0xc5, 0xc7, 0xb7, 0xf9, 0x6d, 0x41, 0x5d, 0x9e, 0x9b, 0xec, 0x27, 0x6c, 0x7e, 0x4b,
-	0x84, 0x2f, 0x0f, 0x45, 0xe8, 0x07, 0x52, 0x5f, 0x27, 0xbf, 0x0f, 0x2d, 0xad, 0x42, 0x4f, 0x62,
-	0x05, 0xd6, 0x20, 0x14, 0xd6, 0x54, 0x98, 0xca, 0x64, 0x2e, 0x02, 0xb7, 0x31, 0xa8, 0x0d, 0x9b,
-	0xfc, 0xd2, 0x66, 0xaf, 0xa1, 0x5f, 0x4c, 0x80, 0x92, 0xf6, 0xa0, 0xe3, 0xd9, 0x27, 0xec, 0xf1,
-	0xba, 0x2d, 0xce, 0xfa, 0xf1, 0x1c, 0x64, 0x23, 0xfc, 0x46, 0x07, 0x51, 0x74, 0xf6, 0x4e, 0xc6,
-	0xe9, 0xaf, 0x6b, 0x24, 0x66, 0xe3, 0x6c, 0x12, 0xfe, 0xbb, 0x71, 0x2e, 0xd3, 0x2f, 0x86, 0x26,
-	0x35, 0x48, 0x71, 0x68, 0x8c, 0x37, 0x47, 0x88, 0xcd, 0x71, 0x1b, 0x96, 0xca, 0xc1, 0x70, 0x02,
-	0xcd, 0x50, 0xcc, 0x24, 0x8a, 0x33, 0xbf, 0x09, 0x83, 0xc6, 0xe9, 0xf9, 0x85, 0x5b, 0x37, 0x7c,
-	0x1b, 0x96, 0x6f, 0x92, 0x28, 0x4f, 0x7e, 0x92, 0x73, 0x19, 0xf0, 0x0c, 0x24, 0x8f, 0xa1, 0xa9,
-	0x65, 0x90, 0x35, 0xbe, 0xda, 0xc9, 0xa0, 0x6c, 0x04, 0x77, 0x26, 0x91, 0x56, 0x59, 0x49, 0x37,
-	0xda, 0x24, 0xf6, 0x05, 0xdc, 0xab, 0x01, 0x28, 0x75, 0x0c, 0xdd, 0x38, 0xc7, 0xb0, 0xd8, 0xbe,
-	0xcd, 0x6b, 0x5b, 0x92, 0x07, 0xf2, 0x85, 0x1b, 0xdb, 0x03, 0xa7, 0xd8, 0xd1, 0x2c, 0x6f, 0xa0,
-	0x66, 0xca, 0x7e, 0x8e, 0x26, 0xb7, 0xc6, 0xf8, 0x4f, 0x0b, 0x3a, 0x59, 0xaf, 0x54, 0x38, 0x25,
-	0x23, 0xe8, 0x1d, 0x26, 0x52, 0xa4, 0xd2, 0xb4, 0x8c, 0x2c, 0x8f, 0x3f, 0xdd, 0xc4, 0xaf, 0x54,
-	0x38, 0x72, 0x59, 0x80, 0x08, 0x3d, 0x19, 0xdc, 0x34, 0xe0, 0x08, 0x9c, 0xe2, 0x71, 0x22, 0xbb,
-	0x4b, 0x6e, 0xe5, 0x11, 0xa2, 0x77, 0xab, 0x41, 0x24, 0xfb, 0x80, 0x37, 0x37, 0xef, 0x17, 0xa1,
-	0x45, 0xf7, 0xe5, 0xae, 0xd3, 0xdd, 0x4a, 0x0c, 0x99, 0xbe, 0x03, 0xb9, 0x7a, 0x15, 0xc8, 0x83,
-	0xa5, 0x90, 0xaa, 0xa3, 0x43, 0x07, 0xab, 0x1d, 0x90, 0xf8, 0x05, 0x74, 0xf0, 0x36, 0x10, 0x1c,
-	0xf3, 0xe2, 0xf1, 0xa0, 0x5b, 0xa5, 0x57, 0x8c, 0x7b, 0x0f, 0xeb, 0xcb, 0x5b, 0x4c, 0x76, 0xac,
-	0x5b, 0xc5, 0xe9, 0xa0, 0xb4, 0x0a, 0x2a, 0xb5, 0xfb, 0x72, 0xfa, 0x0b, 0xed, 0x2e, 0xaf, 0x78,
-	0xa1, 0xdd, 0x57, 0x17, 0xe6, 0x08, 0x9c, 0xe2, 0x26, 0xe6, 0x64, 0x95, 0xeb, 0x9f, 0x93, 0xad,
-	0x58, 0xde, 0xaf, 0xb0, 0x51, 0x1e, 0x77, 0x72, 0xcf, 0x46, 0xac, 0xd8, 0x1b, 0x7a, 0x7f, 0x15,
-	0x6c, 0x29, 0x0f, 0x5a, 0x27, 0x0d, 0x11, 0xab, 0xd3, 0xb6, 0xf9, 0x43, 0x7e, 0xfe, 0x37, 0x00,
-	0x00, 0xff, 0xff, 0x7e, 0x4f, 0xf5, 0x37, 0xb8, 0x07, 0x00, 0x00,
+var fileDescriptor_grpc_e5a4073db52f8edc = []byte{
+	// 664 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x55, 0x6d, 0x6b, 0xd4, 0x40,
+	0x10, 0xe6, 0xde, 0x7b, 0x73, 0xf5, 0x2c, 0xdb, 0x6b, 0x4d, 0xb7, 0xbe, 0x9c, 0xab, 0x94, 0x13,
+	0x4b, 0x0f, 0x4e, 0xf0, 0x93, 0x2f, 0xd8, 0x2a, 0x28, 0xbe, 0xf4, 0x5c, 0x04, 0xa1, 0x20, 0xb2,
+	0x4d, 0x96, 0x73, 0x31, 0x97, 0xc4, 0x6c, 0x5a, 0xe8, 0x9f, 0xf3, 0xb7, 0x49, 0x76, 0x27, 0xbd,
+	0x24, 0xcd, 0x71, 0xed, 0x07, 0xbf, 0x65, 0xf6, 0x99, 0x99, 0xe7, 0x99, 0xdd, 0x99, 0x09, 0xf4,
+	0x45, 0xa4, 0xc6, 0xb3, 0x38, 0x72, 0x0f, 0xa2, 0x38, 0x4c, 0x42, 0xd2, 0x4c, 0xbf, 0x69, 0x7f,
+	0xae, 0x67, 0xe3, 0x73, 0x39, 0x13, 0xf6, 0x94, 0x3d, 0x81, 0x5b, 0xc7, 0xb1, 0x27, 0x63, 0x2e,
+	0x75, 0x14, 0x06, 0x5a, 0x12, 0x07, 0x3a, 0xfa, 0xcc, 0x75, 0xa5, 0xd6, 0x4e, 0x6d, 0x58, 0x1b,
+	0xad, 0xf1, 0xcc, 0x64, 0x3f, 0x60, 0xcb, 0xb8, 0xea, 0xc3, 0x8b, 0xcf, 0x22, 0xfe, 0x2d, 0x13,
+	0x2e, 0xff, 0x9c, 0x49, 0x9d, 0x90, 0x6d, 0x68, 0xcf, 0xcd, 0x81, 0x89, 0xe8, 0x72, 0xb4, 0xc8,
+	0x3e, 0xb4, 0x23, 0x11, 0x8b, 0xb9, 0x76, 0xea, 0xc3, 0xda, 0xa8, 0x37, 0x19, 0x1c, 0x18, 0x39,
+	0xc7, 0x51, 0xa2, 0xc2, 0x40, 0xf8, 0x53, 0x83, 0x71, 0xf4, 0x61, 0x2f, 0x61, 0xbb, 0x9c, 0x1e,
+	0x25, 0x3d, 0x82, 0x76, 0x68, 0x10, 0xa7, 0x36, 0x6c, 0x8c, 0x7a, 0x93, 0xde, 0x81, 0x29, 0xc0,
+	0xea, 0x46, 0x88, 0x9d, 0xc0, 0x20, 0x0b, 0x9f, 0x8a, 0x38, 0xb9, 0xc8, 0xc4, 0x0d, 0xa0, 0x15,
+	0xa5, 0x36, 0x6a, 0xb3, 0xc6, 0x0d, 0xa5, 0xbd, 0x58, 0x54, 0x8e, 0xb9, 0x6f, 0xa2, 0xec, 0x08,
+	0x76, 0xcc, 0x41, 0x56, 0xd7, 0x9b, 0xc0, 0xfb, 0xe0, 0xad, 0xba, 0xbb, 0x3e, 0xd4, 0x95, 0x67,
+	0xc4, 0x75, 0x79, 0x5d, 0x79, 0xec, 0x35, 0xd0, 0xaa, 0x24, 0xa8, 0xe3, 0x21, 0xb4, 0x0c, 0x99,
+	0x49, 0x52, 0x92, 0x61, 0x11, 0xb6, 0x01, 0x7d, 0x1b, 0xa9, 0x91, 0x9a, 0x3d, 0x85, 0xdb, 0x97,
+	0x27, 0x8b, 0xc7, 0xb7, 0xfc, 0xb6, 0xa0, 0x2e, 0xcf, 0x4c, 0xf6, 0x13, 0x36, 0xbf, 0xc5, 0xc2,
+	0x93, 0x47, 0x22, 0xf0, 0x7c, 0xa9, 0x57, 0xc9, 0x1f, 0x40, 0x4b, 0xab, 0xc0, 0x95, 0x58, 0x81,
+	0x35, 0x08, 0x85, 0x35, 0x15, 0x24, 0x32, 0x3e, 0x17, 0xbe, 0xd3, 0x18, 0xd6, 0x46, 0x4d, 0x7e,
+	0x69, 0xb3, 0x57, 0x30, 0x28, 0x12, 0xa0, 0xa4, 0x3d, 0xe8, 0xb8, 0xf6, 0x08, 0xef, 0x78, 0xdd,
+	0x16, 0x67, 0xfd, 0x78, 0x06, 0xb2, 0x7d, 0x20, 0xb6, 0x9a, 0xb7, 0x32, 0x4a, 0x7e, 0xad, 0xd0,
+	0xc7, 0x34, 0x6c, 0x16, 0xbc, 0x91, 0x8c, 0x40, 0x33, 0x10, 0x73, 0x89, 0xce, 0xe6, 0x9b, 0x30,
+	0x68, 0x9c, 0x9e, 0x5d, 0x38, 0x75, 0x43, 0xbe, 0x61, 0xc9, 0xa7, 0xb1, 0x72, 0xe5, 0x27, 0x79,
+	0x2e, 0x7d, 0x9e, 0x82, 0xe4, 0x31, 0x34, 0xb5, 0xf4, 0xd3, 0xa2, 0xaa, 0x9d, 0x0c, 0x9a, 0x0e,
+	0x90, 0x29, 0xf1, 0xff, 0x0d, 0x50, 0x39, 0xfd, 0xa2, 0x4d, 0x13, 0x83, 0x14, 0xdb, 0xd4, 0x78,
+	0x73, 0x84, 0xd8, 0x18, 0xee, 0x4c, 0x43, 0xad, 0xd2, 0xd4, 0xd7, 0x9a, 0x21, 0xf6, 0x05, 0x9c,
+	0xab, 0x01, 0xc8, 0x38, 0x81, 0x6e, 0x94, 0x61, 0x48, 0x3a, 0xb0, 0xa4, 0x56, 0x5a, 0x16, 0xc8,
+	0x17, 0x6e, 0x6c, 0x0f, 0xfa, 0xc5, 0xca, 0x52, 0x5e, 0x5f, 0xcd, 0x95, 0xbd, 0x96, 0x26, 0xb7,
+	0xc6, 0xe4, 0x6f, 0x0b, 0x3a, 0xa9, 0x66, 0x15, 0xcc, 0xc8, 0x18, 0x7a, 0x47, 0xb1, 0x14, 0x89,
+	0x34, 0xbd, 0x4e, 0xf2, 0x8d, 0x4f, 0x37, 0xf1, 0xb6, 0x0a, 0xeb, 0x2d, 0x0d, 0x10, 0x81, 0x2b,
+	0xfd, 0xeb, 0x06, 0x7c, 0x84, 0x7e, 0x71, 0x2d, 0x91, 0xdd, 0x9c, 0x5b, 0xf9, 0x29, 0xe9, 0xdd,
+	0x6a, 0x10, 0x93, 0xbd, 0xc7, 0x6d, 0x9b, 0xdd, 0x17, 0xa1, 0x45, 0xf7, 0xfc, 0xad, 0xd3, 0xdd,
+	0x4a, 0x0c, 0x33, 0x7d, 0x07, 0x72, 0x75, 0x1f, 0x90, 0x07, 0xb9, 0x90, 0xaa, 0x75, 0x43, 0x87,
+	0xcb, 0x1d, 0x30, 0xf1, 0x73, 0xe8, 0xe0, 0x56, 0x20, 0xd8, 0x6e, 0xc5, 0xb5, 0x41, 0xb7, 0x4a,
+	0xa7, 0x18, 0xf7, 0x0e, 0xd6, 0xf3, 0xf3, 0x4b, 0x76, 0xac, 0x5b, 0xc5, 0xd2, 0xa0, 0xb4, 0x0a,
+	0xc2, 0x34, 0x87, 0xd0, 0xcb, 0x0d, 0x26, 0x71, 0xf2, 0x64, 0xf9, 0xc9, 0xa6, 0x3b, 0x15, 0xc8,
+	0xe2, 0xc9, 0x8a, 0x83, 0x90, 0x3d, 0x59, 0xe5, 0xf4, 0x65, 0x4f, 0xb6, 0x64, 0x76, 0xbe, 0xc2,
+	0x46, 0xb9, 0xcb, 0xc9, 0x3d, 0x1b, 0xb1, 0x64, 0x5c, 0xe8, 0xfd, 0x65, 0xb0, 0x4d, 0x79, 0xd8,
+	0x3a, 0x69, 0x88, 0x48, 0x9d, 0xb6, 0xcd, 0x1f, 0xf8, 0xd9, 0xbf, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0x7a, 0xf7, 0xd7, 0x2f, 0xa9, 0x07, 0x00, 0x00,
 }

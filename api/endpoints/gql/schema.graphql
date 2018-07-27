@@ -27,8 +27,14 @@ type Market {
     # Market full name
     name: String!
 
-    # Orders relating to a market
+    # Orders on a market
     orders: [Order!]
+
+    # Trades on a market
+    #trades: [Trades!]
+
+    # Current depth on the orderbook for this market
+    #depth: [MarketDepth!]
 }
 
 # Represents a party on Vega, could be an ethereum wallet address in the future
@@ -38,6 +44,34 @@ type Party {
 
     # Orders relating to a party
     orders: [Order!]
+}
+
+# Candle stick representation of trading
+type Candle {
+
+    # The date and time for the candlestick
+    date: DateTime!
+
+    # High price
+    high: Int!
+
+    # Low price
+    low: Int!
+
+    # Open price
+    open: Int!
+
+    # Close price
+    close: Int!
+
+    # Volume price
+    volume: Int!
+
+    # The block number of the opening trade
+    openBlockNumber: Int!
+
+    # The block number of the closing trade
+    closeBlockNumber: Int!
 }
 
 # An order in Vega, if active it will be on the OrderBoook for the market
@@ -139,3 +173,4 @@ enum Side {
     Buy
     Sell
 }
+

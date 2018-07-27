@@ -12,6 +12,27 @@ type OrderService struct {
 	mock.Mock
 }
 
+// CancelOrder provides a mock function with given fields: ctx, order
+func (_m *OrderService) CancelOrder(ctx context.Context, order *msg.Order) (bool, error) {
+	ret := _m.Called(ctx, order)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *msg.Order) bool); ok {
+		r0 = rf(ctx, order)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *msg.Order) error); ok {
+		r1 = rf(ctx, order)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CreateOrder provides a mock function with given fields: ctx, order
 func (_m *OrderService) CreateOrder(ctx context.Context, order *msg.Order) (bool, error) {
 	ret := _m.Called(ctx, order)
@@ -125,6 +146,29 @@ func (_m *OrderService) GetByPartyAndId(ctx context.Context, market string, id s
 	return r0, r1
 }
 
+// GetMarketDepth provides a mock function with given fields: ctx, market
+func (_m *OrderService) GetMarketDepth(ctx context.Context, market string) (*msg.MarketDepth, error) {
+	ret := _m.Called(ctx, market)
+
+	var r0 *msg.MarketDepth
+	if rf, ok := ret.Get(0).(func(context.Context, string) *msg.MarketDepth); ok {
+		r0 = rf(ctx, market)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*msg.MarketDepth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, market)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMarkets provides a mock function with given fields: ctx
 func (_m *OrderService) GetMarkets(ctx context.Context) ([]string, error) {
 	ret := _m.Called(ctx)
@@ -141,29 +185,6 @@ func (_m *OrderService) GetMarkets(ctx context.Context) ([]string, error) {
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetOrderBookDepth provides a mock function with given fields: ctx, market
-func (_m *OrderService) GetOrderBookDepth(ctx context.Context, market string) (*msg.OrderBookDepth, error) {
-	ret := _m.Called(ctx, market)
-
-	var r0 *msg.OrderBookDepth
-	if rf, ok := ret.Get(0).(func(context.Context, string) *msg.OrderBookDepth); ok {
-		r0 = rf(ctx, market)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*msg.OrderBookDepth)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, market)
 	} else {
 		r1 = ret.Error(1)
 	}

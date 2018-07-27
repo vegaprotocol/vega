@@ -110,9 +110,9 @@ func updateCandle(candles []*msg.Candle, idx int, trade *Trade) {
 	}
 }
 
-func (m *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, error) {
+func (m *memOrderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
 	if err := m.marketExists(market); err != nil {
-		return &msg.OrderBookDepth{}, err
+		return &msg.MarketDepth{}, err
 	}
 
 	var (
@@ -122,7 +122,7 @@ func (m *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, e
 		sellSideCumulative  uint64
 	)
 
-	orderBookDepth := msg.OrderBookDepth{Name: market, Buy: []*msg.PriceLevel{}, Sell: []*msg.PriceLevel{}}
+	orderBookDepth := msg.MarketDepth{Name: market, Buy: []*msg.PriceLevel{}, Sell: []*msg.PriceLevel{}}
 
 	// repeat all twice for BUY side and SELL side
 	// get all orders for market ordered by price
