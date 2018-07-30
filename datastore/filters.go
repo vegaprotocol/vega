@@ -1,7 +1,5 @@
 package datastore
 
-import "github.com/golang/go/src/pkg/fmt"
-
 // GetParamsLimitDefault should be used if no limit is specified
 // when working with the GetParams struct.
 const GetParamsLimitDefault = uint64(1844674407370955161)
@@ -128,7 +126,6 @@ func applyTradeFilter(trade Trade, params GetTradeParams) bool {
 }
 
 func apply(value interface{}, params *QueryFilter) bool {
-	fmt.Printf("params: %+v\n", params)
 	if params.filterRange != nil {
 		return applyRangeFilter(value, params.filterRange, params.kind)
 	}
@@ -144,11 +141,8 @@ func apply(value interface{}, params *QueryFilter) bool {
 }
 
 func applyRangeFilter(value interface{}, r *Range, kind string) bool {
-	fmt.Printf("params: %+v\n", r)
-	fmt.Printf("value: %+v\n", value.(uint64))
 	if kind == "uint64" {
 		if r.Lower.(uint64) <= value.(uint64) && value.(uint64) <= r.Upper.(uint64) {
-			fmt.Printf("TRUE")
 			return true
 		}
 	}
