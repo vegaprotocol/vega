@@ -25,13 +25,13 @@ func NewExecutableSchema(resolvers ResolverRoot) graphql.ExecutableSchema {
 }
 
 type Resolvers interface {
-	Candle_high(ctx context.Context, obj *msg.Candle) (int, error)
-	Candle_low(ctx context.Context, obj *msg.Candle) (int, error)
-	Candle_open(ctx context.Context, obj *msg.Candle) (int, error)
-	Candle_close(ctx context.Context, obj *msg.Candle) (int, error)
-	Candle_volume(ctx context.Context, obj *msg.Candle) (int, error)
-	Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
-	Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
+	Candle_high(ctx context.Context, obj *msg.Candle) (string, error)
+	Candle_low(ctx context.Context, obj *msg.Candle) (string, error)
+	Candle_open(ctx context.Context, obj *msg.Candle) (string, error)
+	Candle_close(ctx context.Context, obj *msg.Candle) (string, error)
+	Candle_volume(ctx context.Context, obj *msg.Candle) (string, error)
+	Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
+	Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 
 	Market_depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
 
@@ -59,10 +59,10 @@ type Resolvers interface {
 	Position_unrealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	Position_unrealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
 
-	PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (int, error)
-	PriceLevel_volume(ctx context.Context, obj *msg.PriceLevel) (int, error)
-	PriceLevel_numberOfOrders(ctx context.Context, obj *msg.PriceLevel) (int, error)
-	PriceLevel_cumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (int, error)
+	PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (string, error)
+	PriceLevel_volume(ctx context.Context, obj *msg.PriceLevel) (string, error)
+	PriceLevel_numberOfOrders(ctx context.Context, obj *msg.PriceLevel) (string, error)
+	PriceLevel_cumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (string, error)
 	Query_vega(ctx context.Context) (Vega, error)
 
 	Trade_market(ctx context.Context, obj *msg.Trade) (Market, error)
@@ -89,13 +89,13 @@ type ResolverRoot interface {
 	Vega() VegaResolver
 }
 type CandleResolver interface {
-	High(ctx context.Context, obj *msg.Candle) (int, error)
-	Low(ctx context.Context, obj *msg.Candle) (int, error)
-	Open(ctx context.Context, obj *msg.Candle) (int, error)
-	Close(ctx context.Context, obj *msg.Candle) (int, error)
-	Volume(ctx context.Context, obj *msg.Candle) (int, error)
-	OpenBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
-	CloseBlockNumber(ctx context.Context, obj *msg.Candle) (int, error)
+	High(ctx context.Context, obj *msg.Candle) (string, error)
+	Low(ctx context.Context, obj *msg.Candle) (string, error)
+	Open(ctx context.Context, obj *msg.Candle) (string, error)
+	Close(ctx context.Context, obj *msg.Candle) (string, error)
+	Volume(ctx context.Context, obj *msg.Candle) (string, error)
+	OpenBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
+	CloseBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 }
 type MarketResolver interface {
 	Depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
@@ -131,10 +131,10 @@ type PositionResolver interface {
 	UnrealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
 }
 type PriceLevelResolver interface {
-	Price(ctx context.Context, obj *msg.PriceLevel) (int, error)
-	Volume(ctx context.Context, obj *msg.PriceLevel) (int, error)
-	NumberOfOrders(ctx context.Context, obj *msg.PriceLevel) (int, error)
-	CumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (int, error)
+	Price(ctx context.Context, obj *msg.PriceLevel) (string, error)
+	Volume(ctx context.Context, obj *msg.PriceLevel) (string, error)
+	NumberOfOrders(ctx context.Context, obj *msg.PriceLevel) (string, error)
+	CumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (string, error)
 }
 type QueryResolver interface {
 	Vega(ctx context.Context) (Vega, error)
@@ -156,31 +156,31 @@ type shortMapper struct {
 	r ResolverRoot
 }
 
-func (s shortMapper) Candle_high(ctx context.Context, obj *msg.Candle) (int, error) {
+func (s shortMapper) Candle_high(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().High(ctx, obj)
 }
 
-func (s shortMapper) Candle_low(ctx context.Context, obj *msg.Candle) (int, error) {
+func (s shortMapper) Candle_low(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().Low(ctx, obj)
 }
 
-func (s shortMapper) Candle_open(ctx context.Context, obj *msg.Candle) (int, error) {
+func (s shortMapper) Candle_open(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().Open(ctx, obj)
 }
 
-func (s shortMapper) Candle_close(ctx context.Context, obj *msg.Candle) (int, error) {
+func (s shortMapper) Candle_close(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().Close(ctx, obj)
 }
 
-func (s shortMapper) Candle_volume(ctx context.Context, obj *msg.Candle) (int, error) {
+func (s shortMapper) Candle_volume(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().Volume(ctx, obj)
 }
 
-func (s shortMapper) Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (int, error) {
+func (s shortMapper) Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().OpenBlockNumber(ctx, obj)
 }
 
-func (s shortMapper) Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (int, error) {
+func (s shortMapper) Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().CloseBlockNumber(ctx, obj)
 }
 
@@ -264,19 +264,19 @@ func (s shortMapper) Position_unrealisedProfitDirection(ctx context.Context, obj
 	return s.r.Position().UnrealisedProfitDirection(ctx, obj)
 }
 
-func (s shortMapper) PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (int, error) {
+func (s shortMapper) PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (string, error) {
 	return s.r.PriceLevel().Price(ctx, obj)
 }
 
-func (s shortMapper) PriceLevel_volume(ctx context.Context, obj *msg.PriceLevel) (int, error) {
+func (s shortMapper) PriceLevel_volume(ctx context.Context, obj *msg.PriceLevel) (string, error) {
 	return s.r.PriceLevel().Volume(ctx, obj)
 }
 
-func (s shortMapper) PriceLevel_numberOfOrders(ctx context.Context, obj *msg.PriceLevel) (int, error) {
+func (s shortMapper) PriceLevel_numberOfOrders(ctx context.Context, obj *msg.PriceLevel) (string, error) {
 	return s.r.PriceLevel().NumberOfOrders(ctx, obj)
 }
 
-func (s shortMapper) PriceLevel_cumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (int, error) {
+func (s shortMapper) PriceLevel_cumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (string, error) {
 	return s.r.PriceLevel().CumulativeVolume(ctx, obj)
 }
 
@@ -435,8 +435,8 @@ func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.Coll
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -465,8 +465,8 @@ func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.Colle
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -495,8 +495,8 @@ func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.Coll
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -525,8 +525,8 @@ func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.Col
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -555,8 +555,8 @@ func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.Co
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -585,8 +585,8 @@ func (ec *executionContext) _Candle_openBlockNumber(ctx context.Context, field g
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -615,8 +615,8 @@ func (ec *executionContext) _Candle_closeBlockNumber(ctx context.Context, field 
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -1723,8 +1723,8 @@ func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -1753,8 +1753,8 @@ func (ec *executionContext) _PriceLevel_volume(ctx context.Context, field graphq
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -1783,8 +1783,8 @@ func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, fiel
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -1813,8 +1813,8 @@ func (ec *executionContext) _PriceLevel_cumulativeVolume(ctx context.Context, fi
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -3062,17 +3062,17 @@ type MarketDepth {
 # Represents a price on either the buy or sell side and all the orders at that price
 type PriceLevel {
 
-    # The price of all the orders at this level
-    price: Int!
+    # The price of all the orders at this level (uint64)
+    price: String!
 
-    # The total remaining size of all orders at this level
-    volume: Int!
+    # The total remaining size of all orders at this level (uint64)
+    volume: String!
 
-    # The number of orders at this price level
-    numberOfOrders: Int!
+    # The number of orders at this price level (uint64)
+    numberOfOrders: String!
 
-    # The cumulative total volume to this price level
-    cumulativeVolume: Int!
+    # The cumulative total volume to this price level (uint64)
+    cumulativeVolume: String!
 }
 
 # Candle stick representation of trading
@@ -3081,26 +3081,26 @@ type Candle {
     # The date and time for the candlestick
     date: DateTime!
 
-    # High price
-    high: Int!
+    # High price (uint64)
+    high: String!
 
-    # Low price
-    low: Int!
+    # Low price (uint64)
+    low: String!
 
-    # Open price
-    open: Int!
+    # Open price (uint64)
+    open: String!
 
-    # Close price
-    close: Int!
+    # Close price (uint64)
+    close: String!
 
-    # Volume price
-    volume: Int!
+    # Volume price (uint64)
+    volume: String!
 
-    # The block number of the opening trade
-    openBlockNumber: Int!
+    # The block number of the opening trade (uint64)
+    openBlockNumber: String!
 
-    # The block number of the closing trade
-    closeBlockNumber: Int!
+    # The block number of the closing trade (uint64)
+    closeBlockNumber: String!
 }
 
 # Represents a party on Vega, could be an ethereum wallet address in the future
@@ -3126,19 +3126,19 @@ type Position {
     #Market name     TODO reference a market edge
     market: String!
 
-    # Realised volume
+    # Realised volume (uint64)
     realisedVolume: String!
 
-    # Realised Profit and Loss
+    # Realised Profit and Loss (int64, will be converted to uint64 with +ve/-ve indicator in future)
     realisedProfitValue: String!
 
     # Realised Profit or Loss direction
     realisedProfitDirection: ValueDirection!
 
-    # Unrealised volume
+    # Unrealised volume (uint64)
     unrealisedVolume: String!
 
-    # Unrealised Profit and Loss
+    # Unrealised Profit and Loss  (int64, will be converted to uint64 with +ve/-ve indicator in future)
     unrealisedProfitValue: String!
 
     # Unrealised Profit or Loss direction

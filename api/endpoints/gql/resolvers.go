@@ -250,26 +250,26 @@ func (r *MyTradeResolver) Timestamp(ctx context.Context, obj *msg.Trade) (int, e
 
 type MyCandleResolver resolverRoot
 
-func (r *MyCandleResolver) High(ctx context.Context, obj *msg.Candle) (int, error) {
-	return int(obj.High), nil
+func (r *MyCandleResolver) High(ctx context.Context, obj *msg.Candle) (string, error) {
+	return strconv.FormatUint(obj.High, 10), nil
 }
-func (r *MyCandleResolver) Low(ctx context.Context, obj *msg.Candle) (int, error) {
-	return int(obj.Low), nil
+func (r *MyCandleResolver) Low(ctx context.Context, obj *msg.Candle) (string, error) {
+	return strconv.FormatUint(obj.Low, 10), nil
 }
-func (r *MyCandleResolver) Open(ctx context.Context, obj *msg.Candle) (int, error) {
-	return int(obj.Open), nil
+func (r *MyCandleResolver) Open(ctx context.Context, obj *msg.Candle) (string, error) {
+	return strconv.FormatUint(obj.Open, 10), nil
 }
-func (r *MyCandleResolver) Close(ctx context.Context, obj *msg.Candle) (int, error) {
-	return int(obj.Close), nil
+func (r *MyCandleResolver) Close(ctx context.Context, obj *msg.Candle) (string, error) {
+	return strconv.FormatUint(obj.Close, 10), nil
 }
-func (r *MyCandleResolver) Volume(ctx context.Context, obj *msg.Candle) (int, error) {
-	return int(obj.Volume), nil
+func (r *MyCandleResolver) Volume(ctx context.Context, obj *msg.Candle) (string, error) {
+	return strconv.FormatUint(obj.Volume, 10), nil
 }
-func (r *MyCandleResolver) OpenBlockNumber(ctx context.Context, obj *msg.Candle) (int, error) {
-	return int(obj.OpenBlockNumber), nil
+func (r *MyCandleResolver) OpenBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
+	return strconv.FormatUint(obj.OpenBlockNumber, 10), nil
 }
-func (r *MyCandleResolver) CloseBlockNumber(ctx context.Context, obj *msg.Candle) (int, error) {
-	return int(obj.CloseBlockNumber), nil
+func (r *MyCandleResolver) CloseBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
+	return strconv.FormatUint(obj.CloseBlockNumber, 10), nil
 }
 
 // END: Candle Resolver
@@ -278,20 +278,20 @@ func (r *MyCandleResolver) CloseBlockNumber(ctx context.Context, obj *msg.Candle
 
 type MyPriceLevelResolver resolverRoot
 
-func (r *MyPriceLevelResolver) Price(ctx context.Context, obj *msg.PriceLevel) (int, error) {
-	return int(obj.Price), nil
+func (r *MyPriceLevelResolver) Price(ctx context.Context, obj *msg.PriceLevel) (string, error) {
+	return strconv.FormatUint(obj.Price, 10), nil
 }
 
-func (r *MyPriceLevelResolver) Volume(ctx context.Context, obj *msg.PriceLevel) (int, error) {
-	return int(obj.Volume), nil
+func (r *MyPriceLevelResolver) Volume(ctx context.Context, obj *msg.PriceLevel) (string, error) {
+	return strconv.FormatUint(obj.Volume, 10), nil
 }
 
-func (r *MyPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *msg.PriceLevel) (int, error) {
-	return int(obj.Price), nil
+func (r *MyPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *msg.PriceLevel) (string, error) {
+	return strconv.FormatUint(obj.Price, 10), nil
 }
 
-func (r *MyPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (int, error) {
-	return int(obj.CumulativeVolume), nil
+func (r *MyPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (string, error) {
+	return strconv.FormatUint(obj.CumulativeVolume, 10), nil
 }
 
 // END: Price Level Resolver

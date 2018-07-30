@@ -85,17 +85,17 @@ type MarketDepth {
 # Represents a price on either the buy or sell side and all the orders at that price
 type PriceLevel {
 
-    # The price of all the orders at this level
-    price: Int!
+    # The price of all the orders at this level (uint64)
+    price: String!
 
-    # The total remaining size of all orders at this level
-    volume: Int!
+    # The total remaining size of all orders at this level (uint64)
+    volume: String!
 
-    # The number of orders at this price level
-    numberOfOrders: Int!
+    # The number of orders at this price level (uint64)
+    numberOfOrders: String!
 
-    # The cumulative total volume to this price level
-    cumulativeVolume: Int!
+    # The cumulative total volume to this price level (uint64)
+    cumulativeVolume: String!
 }
 
 # Candle stick representation of trading
@@ -104,26 +104,26 @@ type Candle {
     # The date and time for the candlestick
     date: DateTime!
 
-    # High price
-    high: Int!
+    # High price (uint64)
+    high: String!
 
-    # Low price
-    low: Int!
+    # Low price (uint64)
+    low: String!
 
-    # Open price
-    open: Int!
+    # Open price (uint64)
+    open: String!
 
-    # Close price
-    close: Int!
+    # Close price (uint64)
+    close: String!
 
-    # Volume price
-    volume: Int!
+    # Volume price (uint64)
+    volume: String!
 
-    # The block number of the opening trade
-    openBlockNumber: Int!
+    # The block number of the opening trade (uint64)
+    openBlockNumber: String!
 
-    # The block number of the closing trade
-    closeBlockNumber: Int!
+    # The block number of the closing trade (uint64)
+    closeBlockNumber: String!
 }
 
 # Represents a party on Vega, could be an ethereum wallet address in the future
@@ -149,19 +149,19 @@ type Position {
     #Market name     TODO reference a market edge
     market: String!
 
-    # Realised volume
+    # Realised volume (uint64)
     realisedVolume: String!
 
-    # Realised Profit and Loss
+    # Realised Profit and Loss (int64, will be converted to uint64 with +ve/-ve indicator in future)
     realisedProfitValue: String!
 
     # Realised Profit or Loss direction
     realisedProfitDirection: ValueDirection!
 
-    # Unrealised volume
+    # Unrealised volume (uint64)
     unrealisedVolume: String!
 
-    # Unrealised Profit and Loss
+    # Unrealised Profit and Loss  (int64, will be converted to uint64 with +ve/-ve indicator in future)
     unrealisedProfitValue: String!
 
     # Unrealised Profit or Loss direction
