@@ -14,7 +14,7 @@ type MarketBucket struct {
 
 func (t *memTradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
 	marketBuckets := make(map[string]*MarketBucket, 0)
-	tradesByTimestamp, err := t.GetByParty(party, GetParams{})
+	tradesByTimestamp, err := t.GetByParty(party, GetTradeParams{})
 	if err != nil {
 		return marketBuckets
 	}
@@ -225,6 +225,7 @@ func (t *memTradeStore) GetPositionsByParty(party string) map[string]*msg.Market
 		positions[market].UnrealisedVolume = int64(OpenContracts)
 		positions[market].RealisedPNL = int64(ClosedContracts * deltaAverageEntryPrice)
 		positions[market].UnrealisedPNL = int64(OpenContracts * (int64(markPrice) - avgEntryPriceForOpenContracts))
+		positions[market].AverageEntryPrice = uint64(avgEntryPriceForOpenContracts)
 	}
 
 	return positions

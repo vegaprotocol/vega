@@ -135,12 +135,12 @@ type EvidenceParams struct {
 
 // Genesis specifies the initial conditions of the Tendermint blockchain.
 type Genesis struct {
-	AppHash         ByteSlice        `json:"app_hash"`
-	AppStateJSON    json.RawMessage  `json:"app_state"`
-	ChainID         string           `json:"chain_id"`
-	ConsensusParams *ConsensusParams `json:"consensus_params"`
-	GenesisTime     time.Time        `json:"genesis_time"`
-	Validators      []Validator      `json:"validators"`
+	AppHash         ByteSlice          `json:"app_hash"`
+	AppStateJSON    json.RawMessage    `json:"app_state"`
+	ChainID         string             `json:"chain_id"`
+	ConsensusParams *ConsensusParams   `json:"consensus_params"`
+	GenesisTime     time.Time          `json:"genesis_time"`
+	Validators      []GenesisValidator `json:"validators"`
 }
 
 // GenesisValidator represents an initial Tendermint validator.
