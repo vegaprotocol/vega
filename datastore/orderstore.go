@@ -15,7 +15,7 @@ func NewOrderStore(ms *MemStore) OrderStore {
 	return &memOrderStore{store: ms}
 }
 
-func (m *memOrderStore) GetByMarket(market string, params GetParams) ([]Order, error) {
+func (m *memOrderStore) GetByMarket(market string, params GetOrderParams) ([]Order, error) {
 	if err := m.marketExists(market); err != nil {
 		return nil, err
 	}
@@ -30,9 +30,10 @@ func (m *memOrderStore) GetByMarket(market string, params GetParams) ([]Order, e
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
-		// TODO: apply filters
-		output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
-		pos++
+		if applyOrderFilter(m.store.markets[market].ordersByTimestamp[i].order, params) {
+			output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
+			pos++
+		}
 	}
 	return output, nil
 }
@@ -49,7 +50,7 @@ func (m *memOrderStore) GetByMarketAndId(market string, id string) (Order, error
 	return v.order, nil
 }
 
-func (m *memOrderStore) GetByParty(party string, params GetParams) ([]Order, error) {
+func (m *memOrderStore) GetByParty(party string, params GetOrderParams) ([]Order, error) {
 	if err := m.partyExists(party); err != nil {
 		return nil, err
 	}
@@ -64,9 +65,10 @@ func (m *memOrderStore) GetByParty(party string, params GetParams) ([]Order, err
 		if params.Limit > 0 && pos == params.Limit {
 			break
 		}
-		// TODO: apply filters
-		output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
-		pos++
+		if applyOrderFilter(m.store.parties[party].ordersByTimestamp[i].order, params) {
+			output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
+			pos++
+		}
 	}
 	return output, nil
 }
