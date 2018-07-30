@@ -7,6 +7,8 @@ import (
 	"errors"
 	"strconv"
 	"fmt"
+	"time"
+	"math/rand"
 )
 
 type resolverRoot struct {
@@ -53,6 +55,9 @@ func (r *resolverRoot) Position() PositionResolver {
 }
 func (r *resolverRoot) Party() PartyResolver {
 	return (*MyPartyResolver)(r)
+}
+func (r *resolverRoot) Subscription() SubscriptionResolver {
+	return (*MySubscriptionResolver)(r)
 }
 
 
@@ -325,6 +330,11 @@ func (r *MyPositionResolver) UnrealisedProfitDirection(ctx context.Context, obj 
 	return r.direction(obj.UnrealisedPNL), nil
 }
 
+func (r *MyPositionResolver) Market(ctx context.Context, obj *msg.MarketPosition) (Market, error) {
+	return Market{Name: obj.Market}, nil
+}
+
+
 func (r *MyPositionResolver) absInt64Str(val int64) (string) {
 	if val < 0 {
 		return strconv.FormatInt(val * -1, 10)
@@ -392,6 +402,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	accepted, err := r.orderService.CreateOrder(ctx, order)
 	if err != nil {
+		fmt.Printf("err: %+v", err)
 		return res, err
 	}
 
@@ -428,4 +439,112 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 }
 
 // END: Mutation Resolver
+
+
+// BEGIN: Subscription Resolver
+
+type MySubscriptionResolver resolverRoot
+
+func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval int) (<-chan []msg.Candle, error) {
+	events := make(chan []msg.Candle, 1)
+	connected := true
+
+	id := randString(8)
+	fmt.Println("New subscriber on channel: ", id)
+
+	go func(id string) {
+		<-ctx.Done()
+		connected = false
+		fmt.Println("Subscriber closed connection:", id)
+	}(id)
+
+	go func(channel chan[]msg.Candle) {
+		for connected {
+			currentTime := time.Now()
+
+			fmt.Printf("market: %s interval: %d", market, interval)
+			fmt.Println()
+
+			count :=int64(interval)
+			since := currentTime.Add(time.Duration(-300) * time.Second)
+
+
+			fmt.Printf("%+v, %+v", since, currentTime)
+
+			res1, err := r.tradeService.GetByMarket(ctx, market, 99999)
+			if err != nil {
+				fmt.Errorf("there was an error when getting candles charts: %v", err)
+			}
+
+			fmt.Printf("Trades in store: %+v  ------ [%d] ------", res1, len(res1))
+			fmt.Println()
+
+			res, err := r.tradeService.GetCandles(ctx, market, since, 60)
+			if err != nil {
+				fmt.Errorf("there was an error when getting candles charts: %v", err)
+			}
+
+			fmt.Printf("Candles holder: %+v", res)
+			fmt.Println(id)
+			fmt.Printf("Candles returned: %+v", res.Candles)
+			fmt.Println(id)
+
+			candles := make([]msg.Candle, 0)
+
+			for _, v := range res.Candles {
+				candles = append(candles, msg.Candle{
+					Volume:           v.Volume,
+					High:             v.High,
+					Low:              v.Low,
+					Date:             v.Date,
+					Open:             v.Open,
+					Close:            v.Close,
+					OpenBlockNumber:  v.OpenBlockNumber,
+					CloseBlockNumber: v.CloseBlockNumber,
+				})
+			}
+
+			channel <- candles
+
+			time.Sleep(time.Duration(count) * time.Second)
+		}
+	}(events)
+
+	return events, nil
+}
+func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []*msg.Order, error) {
+
+	return nil, nil
+}
+func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []*msg.Trade, error) {
+
+	return nil, nil
+}
+func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan []*msg.MarketPosition, error) {
+
+	return nil, nil
+}
+func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error) {
+
+	return nil, nil
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randString(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+// END: Subscription Resolver
+
+
+
+
+
+
+
 

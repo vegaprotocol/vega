@@ -1,11 +1,11 @@
 ## GQL - TODO
 ###############
-# --Mutations
-# Int->String (unint64)
 # Trades subscription
 # Orders subscription
-# Fix candles sub
-# Market on positions point to a Vega.Market?
+#   >>> open orders filter (future?)
+# Candles subscription
+# Positions subscription
+# Depth subscription
 
 
 # Represents a date/time
@@ -13,11 +13,12 @@ scalar DateTime
 
 schema {
     query: Query,
+    subscription: Subscription
 }
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
-
+    
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price and Size will be converted to uint64 internally.
     orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!): PreConsensus!
@@ -29,9 +30,20 @@ type Mutation {
 
 # Queries allow a caller to read data and filter data via GraphQL.
 type Query {
+    # Int64 not yet supported, strings are returned and will need to be handled by clients:
+    # https://github.com/graphql-go/graphql/issues/257
     
     # VEGA root query
     vega: Vega!
+}
+
+# Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
+type Subscription {
+    candles(market: String!, interval: Int!): [Candle!]!
+    orders(market: String, party: String): [Order]!
+    trades(market: String, party: String): [Trade]!
+    positions(party: String!): [Position]!
+    marketDepth(market: String!): MarketDepth!
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -71,14 +83,14 @@ type Market {
 # The depth of market measure provides an indication of the liquidity and depth for the instrument.
 type MarketDepth {
 
-  # Market name
-  name: String!
+    # Market name
+    name: String!
 
-  # Buy side price levels if available
-  buy: [PriceLevel!]
-
-  # Sell side price levels (if available)
-  sell: [PriceLevel!]
+    # Buy side price levels if available
+    buy: [PriceLevel!]
+    
+    # Sell side price levels (if available)
+    sell: [PriceLevel!]
 }
 
 
@@ -146,8 +158,8 @@ type Party {
 # refer to positions being comprised of trades, rather of volume.
 type Position {
 
-    #Market name     TODO reference a market edge
-    market: String!
+    # Market relating to this position
+    market: Market!
 
     # Realised volume (uint64)
     realisedVolume: String!

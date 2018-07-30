@@ -51,7 +51,7 @@ type Resolvers interface {
 	Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
 
 	Party_positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error)
-
+	Position_market(ctx context.Context, obj *msg.MarketPosition) (Market, error)
 	Position_realisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	Position_realisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	Position_realisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
@@ -64,6 +64,12 @@ type Resolvers interface {
 	PriceLevel_numberOfOrders(ctx context.Context, obj *msg.PriceLevel) (string, error)
 	PriceLevel_cumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (string, error)
 	Query_vega(ctx context.Context) (Vega, error)
+
+	Subscription_candles(ctx context.Context, market string, interval int) (<-chan []msg.Candle, error)
+	Subscription_orders(ctx context.Context, market *string, party *string) (<-chan []*msg.Order, error)
+	Subscription_trades(ctx context.Context, market *string, party *string) (<-chan []*msg.Trade, error)
+	Subscription_positions(ctx context.Context, party string) (<-chan []*msg.MarketPosition, error)
+	Subscription_marketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error)
 
 	Trade_market(ctx context.Context, obj *msg.Trade) (Market, error)
 
@@ -85,6 +91,7 @@ type ResolverRoot interface {
 	Position() PositionResolver
 	PriceLevel() PriceLevelResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 	Trade() TradeResolver
 	Vega() VegaResolver
 }
@@ -123,6 +130,7 @@ type PartyResolver interface {
 	Positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error)
 }
 type PositionResolver interface {
+	Market(ctx context.Context, obj *msg.MarketPosition) (Market, error)
 	RealisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	RealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	RealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
@@ -138,6 +146,13 @@ type PriceLevelResolver interface {
 }
 type QueryResolver interface {
 	Vega(ctx context.Context) (Vega, error)
+}
+type SubscriptionResolver interface {
+	Candles(ctx context.Context, market string, interval int) (<-chan []msg.Candle, error)
+	Orders(ctx context.Context, market *string, party *string) (<-chan []*msg.Order, error)
+	Trades(ctx context.Context, market *string, party *string) (<-chan []*msg.Trade, error)
+	Positions(ctx context.Context, party string) (<-chan []*msg.MarketPosition, error)
+	MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *msg.Trade) (Market, error)
@@ -240,6 +255,10 @@ func (s shortMapper) Party_positions(ctx context.Context, obj *Party) ([]msg.Mar
 	return s.r.Party().Positions(ctx, obj)
 }
 
+func (s shortMapper) Position_market(ctx context.Context, obj *msg.MarketPosition) (Market, error) {
+	return s.r.Position().Market(ctx, obj)
+}
+
 func (s shortMapper) Position_realisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error) {
 	return s.r.Position().RealisedVolume(ctx, obj)
 }
@@ -282,6 +301,26 @@ func (s shortMapper) PriceLevel_cumulativeVolume(ctx context.Context, obj *msg.P
 
 func (s shortMapper) Query_vega(ctx context.Context) (Vega, error) {
 	return s.r.Query().Vega(ctx)
+}
+
+func (s shortMapper) Subscription_candles(ctx context.Context, market string, interval int) (<-chan []msg.Candle, error) {
+	return s.r.Subscription().Candles(ctx, market, interval)
+}
+
+func (s shortMapper) Subscription_orders(ctx context.Context, market *string, party *string) (<-chan []*msg.Order, error) {
+	return s.r.Subscription().Orders(ctx, market, party)
+}
+
+func (s shortMapper) Subscription_trades(ctx context.Context, market *string, party *string) (<-chan []*msg.Trade, error) {
+	return s.r.Subscription().Trades(ctx, market, party)
+}
+
+func (s shortMapper) Subscription_positions(ctx context.Context, party string) (<-chan []*msg.MarketPosition, error) {
+	return s.r.Subscription().Positions(ctx, party)
+}
+
+func (s shortMapper) Subscription_marketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error) {
+	return s.r.Subscription().MarketDepth(ctx, market)
 }
 
 func (s shortMapper) Trade_market(ctx context.Context, obj *msg.Trade) (Market, error) {
@@ -353,7 +392,31 @@ func (e *executableSchema) Mutation(ctx context.Context, op *query.Operation) *g
 }
 
 func (e *executableSchema) Subscription(ctx context.Context, op *query.Operation) func() *graphql.Response {
-	return graphql.OneShot(graphql.ErrorResponse(ctx, "subscriptions are not supported"))
+	ec := executionContext{graphql.GetRequestContext(ctx), e.resolvers}
+
+	next := ec._Subscription(ctx, op.Selections)
+	if ec.Errors != nil {
+		return graphql.OneShot(&graphql.Response{Data: []byte("null"), Errors: ec.Errors})
+	}
+
+	var buf bytes.Buffer
+	return func() *graphql.Response {
+		buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
+			data.MarshalGQL(&buf)
+			return buf.Bytes()
+		})
+
+		return &graphql.Response{
+			Data:   buf,
+			Errors: ec.Errors,
+		}
+	}
 }
 
 type executionContext struct {
@@ -1445,14 +1508,33 @@ func (ec *executionContext) _Position(ctx context.Context, sel []query.Selection
 }
 
 func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Position"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Market
-	return graphql.MarshalString(res)
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Position",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Position_market(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(Market)
+		return ec._Market(ctx, field.Selections, &res)
+	})
 }
 
 func (ec *executionContext) _Position_realisedVolume(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
@@ -1916,6 +1998,283 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	return ec.___Type(ctx, field.Selections, res)
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Subscription(ctx context.Context, sel []query.Selection) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.Doc, sel, subscriptionImplementors, ec.Variables)
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "candles":
+		return ec._Subscription_candles(ctx, fields[0])
+	case "orders":
+		return ec._Subscription_orders(ctx, fields[0])
+	case "trades":
+		return ec._Subscription_trades(ctx, fields[0])
+	case "positions":
+		return ec._Subscription_positions(ctx, fields[0])
+	case "marketDepth":
+		return ec._Subscription_marketDepth(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
+}
+
+func (ec *executionContext) _Subscription_candles(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := field.Args["market"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["market"] = arg0
+	var arg1 int
+	if tmp, ok := field.Args["interval"]; ok {
+		var err error
+		arg1, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["interval"] = arg1
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{Field: field})
+	results, err := ec.resolvers.Subscription_candles(ctx, args["market"].(string), args["interval"].(int))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		var out graphql.OrderedMap
+		out.Add(field.Alias, func() graphql.Marshaler {
+			arr1 := graphql.Array{}
+			for idx1 := range res {
+				arr1 = append(arr1, func() graphql.Marshaler {
+					rctx := graphql.GetResolverContext(ctx)
+					rctx.PushIndex(idx1)
+					defer rctx.Pop()
+					return ec._Candle(ctx, field.Selections, &res[idx1])
+				}())
+			}
+			return arr1
+		}())
+		return &out
+	}
+}
+
+func (ec *executionContext) _Subscription_orders(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := field.Args["market"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["market"] = arg0
+	var arg1 *string
+	if tmp, ok := field.Args["party"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["party"] = arg1
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{Field: field})
+	results, err := ec.resolvers.Subscription_orders(ctx, args["market"].(*string), args["party"].(*string))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		var out graphql.OrderedMap
+		out.Add(field.Alias, func() graphql.Marshaler {
+			arr1 := graphql.Array{}
+			for idx1 := range res {
+				arr1 = append(arr1, func() graphql.Marshaler {
+					rctx := graphql.GetResolverContext(ctx)
+					rctx.PushIndex(idx1)
+					defer rctx.Pop()
+					if res[idx1] == nil {
+						return graphql.Null
+					}
+					return ec._Order(ctx, field.Selections, res[idx1])
+				}())
+			}
+			return arr1
+		}())
+		return &out
+	}
+}
+
+func (ec *executionContext) _Subscription_trades(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := field.Args["market"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["market"] = arg0
+	var arg1 *string
+	if tmp, ok := field.Args["party"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["party"] = arg1
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{Field: field})
+	results, err := ec.resolvers.Subscription_trades(ctx, args["market"].(*string), args["party"].(*string))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		var out graphql.OrderedMap
+		out.Add(field.Alias, func() graphql.Marshaler {
+			arr1 := graphql.Array{}
+			for idx1 := range res {
+				arr1 = append(arr1, func() graphql.Marshaler {
+					rctx := graphql.GetResolverContext(ctx)
+					rctx.PushIndex(idx1)
+					defer rctx.Pop()
+					if res[idx1] == nil {
+						return graphql.Null
+					}
+					return ec._Trade(ctx, field.Selections, res[idx1])
+				}())
+			}
+			return arr1
+		}())
+		return &out
+	}
+}
+
+func (ec *executionContext) _Subscription_positions(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := field.Args["party"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["party"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{Field: field})
+	results, err := ec.resolvers.Subscription_positions(ctx, args["party"].(string))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		var out graphql.OrderedMap
+		out.Add(field.Alias, func() graphql.Marshaler {
+			arr1 := graphql.Array{}
+			for idx1 := range res {
+				arr1 = append(arr1, func() graphql.Marshaler {
+					rctx := graphql.GetResolverContext(ctx)
+					rctx.PushIndex(idx1)
+					defer rctx.Pop()
+					if res[idx1] == nil {
+						return graphql.Null
+					}
+					return ec._Position(ctx, field.Selections, res[idx1])
+				}())
+			}
+			return arr1
+		}())
+		return &out
+	}
+}
+
+func (ec *executionContext) _Subscription_marketDepth(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := field.Args["market"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return nil
+		}
+	}
+	args["market"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{Field: field})
+	results, err := ec.resolvers.Subscription_marketDepth(ctx, args["market"].(string))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		var out graphql.OrderedMap
+		out.Add(field.Alias, func() graphql.Marshaler { return ec._MarketDepth(ctx, field.Selections, &res) }())
+		return &out
+	}
 }
 
 var tradeImplementors = []string{"Trade"}
@@ -2977,12 +3336,12 @@ func (ec *executionContext) introspectType(name string) *introspection.Type {
 
 var parsedSchema = schema.MustParse(`## GQL - TODO
 ###############
-# --Mutations
-# Int->String (unint64)
 # Trades subscription
 # Orders subscription
-# Fix candles sub
-# Market on positions point to a Vega.Market?
+#   >>> open orders filter (future?)
+# Candles subscription
+# Positions subscription
+# Depth subscription
 
 
 # Represents a date/time
@@ -2990,11 +3349,12 @@ scalar DateTime
 
 schema {
     query: Query,
+    subscription: Subscription
 }
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
-
+    
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price and Size will be converted to uint64 internally.
     orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!): PreConsensus!
@@ -3006,9 +3366,20 @@ type Mutation {
 
 # Queries allow a caller to read data and filter data via GraphQL.
 type Query {
+    # Int64 not yet supported, strings are returned and will need to be handled by clients:
+    # https://github.com/graphql-go/graphql/issues/257
     
     # VEGA root query
     vega: Vega!
+}
+
+# Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
+type Subscription {
+    candles(market: String!, interval: Int!): [Candle!]!
+    orders(market: String, party: String): [Order]!
+    trades(market: String, party: String): [Trade]!
+    positions(party: String!): [Position]!
+    marketDepth(market: String!): MarketDepth!
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -3048,14 +3419,14 @@ type Market {
 # The depth of market measure provides an indication of the liquidity and depth for the instrument.
 type MarketDepth {
 
-  # Market name
-  name: String!
+    # Market name
+    name: String!
 
-  # Buy side price levels if available
-  buy: [PriceLevel!]
-
-  # Sell side price levels (if available)
-  sell: [PriceLevel!]
+    # Buy side price levels if available
+    buy: [PriceLevel!]
+    
+    # Sell side price levels (if available)
+    sell: [PriceLevel!]
 }
 
 
@@ -3123,8 +3494,8 @@ type Party {
 # refer to positions being comprised of trades, rather of volume.
 type Position {
 
-    #Market name     TODO reference a market edge
-    market: String!
+    # Market relating to this position
+    market: Market!
 
     # Realised volume (uint64)
     realisedVolume: String!
