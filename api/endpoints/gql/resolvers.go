@@ -195,8 +195,8 @@ func (r *MyMarketDepthResolver) Sell(ctx context.Context, obj *msg.MarketDepth) 
 
 type MyOrderResolver resolverRoot
 
-func (r *MyOrderResolver) Price(ctx context.Context, obj *msg.Order) (int, error) {
-	return int(obj.Price), nil
+func (r *MyOrderResolver) Price(ctx context.Context, obj *msg.Order) (string, error) {
+	return strconv.FormatUint(obj.Price, 10), nil
 }
 func (r *MyOrderResolver) Type(ctx context.Context, obj *msg.Order) (OrderType, error) {
 	return OrderType(obj.Type.String()), nil
@@ -209,14 +209,14 @@ func (r *MyOrderResolver) Market(ctx context.Context, obj *msg.Order) (Market, e
 		Name: obj.Market,
 	}, nil
 }
-func (r *MyOrderResolver) Size(ctx context.Context, obj *msg.Order) (int, error) {
-	return int(obj.Size), nil
+func (r *MyOrderResolver) Size(ctx context.Context, obj *msg.Order) (string, error) {
+	return strconv.FormatUint(obj.Size, 10), nil
 }
-func (r *MyOrderResolver) Remaining(ctx context.Context, obj *msg.Order) (int, error) {
-	return int(obj.Remaining), nil
+func (r *MyOrderResolver) Remaining(ctx context.Context, obj *msg.Order) (string, error) {
+	return strconv.FormatUint(obj.Remaining, 10), nil
 }
-func (r *MyOrderResolver) Timestamp(ctx context.Context, obj *msg.Order) (int, error) {
-	return int(obj.Timestamp), nil
+func (r *MyOrderResolver) Timestamp(ctx context.Context, obj *msg.Order) (string, error) {
+	return strconv.FormatUint(obj.Timestamp, 10), nil
 }
 func (r *MyOrderResolver) Status(ctx context.Context, obj *msg.Order) (OrderStatus, error) {
 	return OrderStatus(obj.Status.String()), nil
@@ -234,14 +234,14 @@ func (r *MyTradeResolver) Market(ctx context.Context, obj *msg.Trade) (Market, e
 func (r *MyTradeResolver) Aggressor(ctx context.Context, obj *msg.Trade) (Side, error) {
 	return Side(obj.Aggressor.String()), nil
 }
-func (r *MyTradeResolver) Price(ctx context.Context, obj *msg.Trade) (int, error) {
-	return int(obj.Price), nil
+func (r *MyTradeResolver) Price(ctx context.Context, obj *msg.Trade) (string, error) {
+	return strconv.FormatUint(obj.Price, 10), nil
 }
-func (r *MyTradeResolver) Size(ctx context.Context, obj *msg.Trade) (int, error) {
-	return int(obj.Size), nil
+func (r *MyTradeResolver) Size(ctx context.Context, obj *msg.Trade) (string, error) {
+	return strconv.FormatUint(obj.Size, 10), nil
 }
-func (r *MyTradeResolver) Timestamp(ctx context.Context, obj *msg.Trade) (int, error) {
-	return int(obj.Timestamp), nil
+func (r *MyTradeResolver) Timestamp(ctx context.Context, obj *msg.Trade) (string, error) {
+	return strconv.FormatUint(obj.Timestamp, 10), nil
 }
 
 // END: Trade Resolver

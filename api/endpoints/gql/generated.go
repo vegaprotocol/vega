@@ -40,14 +40,14 @@ type Resolvers interface {
 	Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error)
 	Mutation_orderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 
-	Order_price(ctx context.Context, obj *msg.Order) (int, error)
+	Order_price(ctx context.Context, obj *msg.Order) (string, error)
 	Order_type(ctx context.Context, obj *msg.Order) (OrderType, error)
 	Order_side(ctx context.Context, obj *msg.Order) (Side, error)
 	Order_market(ctx context.Context, obj *msg.Order) (Market, error)
-	Order_size(ctx context.Context, obj *msg.Order) (int, error)
-	Order_remaining(ctx context.Context, obj *msg.Order) (int, error)
+	Order_size(ctx context.Context, obj *msg.Order) (string, error)
+	Order_remaining(ctx context.Context, obj *msg.Order) (string, error)
 
-	Order_timestamp(ctx context.Context, obj *msg.Order) (int, error)
+	Order_timestamp(ctx context.Context, obj *msg.Order) (string, error)
 	Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
 
 	Party_positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error)
@@ -68,9 +68,9 @@ type Resolvers interface {
 	Trade_market(ctx context.Context, obj *msg.Trade) (Market, error)
 
 	Trade_aggressor(ctx context.Context, obj *msg.Trade) (Side, error)
-	Trade_price(ctx context.Context, obj *msg.Trade) (int, error)
-	Trade_size(ctx context.Context, obj *msg.Trade) (int, error)
-	Trade_timestamp(ctx context.Context, obj *msg.Trade) (int, error)
+	Trade_price(ctx context.Context, obj *msg.Trade) (string, error)
+	Trade_size(ctx context.Context, obj *msg.Trade) (string, error)
+	Trade_timestamp(ctx context.Context, obj *msg.Trade) (string, error)
 	Vega_markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
 	Vega_parties(ctx context.Context, obj *Vega, name *string) ([]Party, error)
 }
@@ -109,14 +109,14 @@ type MutationResolver interface {
 	OrderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 }
 type OrderResolver interface {
-	Price(ctx context.Context, obj *msg.Order) (int, error)
+	Price(ctx context.Context, obj *msg.Order) (string, error)
 	Type(ctx context.Context, obj *msg.Order) (OrderType, error)
 	Side(ctx context.Context, obj *msg.Order) (Side, error)
 	Market(ctx context.Context, obj *msg.Order) (Market, error)
-	Size(ctx context.Context, obj *msg.Order) (int, error)
-	Remaining(ctx context.Context, obj *msg.Order) (int, error)
+	Size(ctx context.Context, obj *msg.Order) (string, error)
+	Remaining(ctx context.Context, obj *msg.Order) (string, error)
 
-	Timestamp(ctx context.Context, obj *msg.Order) (int, error)
+	Timestamp(ctx context.Context, obj *msg.Order) (string, error)
 	Status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
 }
 type PartyResolver interface {
@@ -143,9 +143,9 @@ type TradeResolver interface {
 	Market(ctx context.Context, obj *msg.Trade) (Market, error)
 
 	Aggressor(ctx context.Context, obj *msg.Trade) (Side, error)
-	Price(ctx context.Context, obj *msg.Trade) (int, error)
-	Size(ctx context.Context, obj *msg.Trade) (int, error)
-	Timestamp(ctx context.Context, obj *msg.Trade) (int, error)
+	Price(ctx context.Context, obj *msg.Trade) (string, error)
+	Size(ctx context.Context, obj *msg.Trade) (string, error)
+	Timestamp(ctx context.Context, obj *msg.Trade) (string, error)
 }
 type VegaResolver interface {
 	Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
@@ -204,7 +204,7 @@ func (s shortMapper) Mutation_orderCancel(ctx context.Context, id string, market
 	return s.r.Mutation().OrderCancel(ctx, id, market, party)
 }
 
-func (s shortMapper) Order_price(ctx context.Context, obj *msg.Order) (int, error) {
+func (s shortMapper) Order_price(ctx context.Context, obj *msg.Order) (string, error) {
 	return s.r.Order().Price(ctx, obj)
 }
 
@@ -220,15 +220,15 @@ func (s shortMapper) Order_market(ctx context.Context, obj *msg.Order) (Market, 
 	return s.r.Order().Market(ctx, obj)
 }
 
-func (s shortMapper) Order_size(ctx context.Context, obj *msg.Order) (int, error) {
+func (s shortMapper) Order_size(ctx context.Context, obj *msg.Order) (string, error) {
 	return s.r.Order().Size(ctx, obj)
 }
 
-func (s shortMapper) Order_remaining(ctx context.Context, obj *msg.Order) (int, error) {
+func (s shortMapper) Order_remaining(ctx context.Context, obj *msg.Order) (string, error) {
 	return s.r.Order().Remaining(ctx, obj)
 }
 
-func (s shortMapper) Order_timestamp(ctx context.Context, obj *msg.Order) (int, error) {
+func (s shortMapper) Order_timestamp(ctx context.Context, obj *msg.Order) (string, error) {
 	return s.r.Order().Timestamp(ctx, obj)
 }
 
@@ -292,15 +292,15 @@ func (s shortMapper) Trade_aggressor(ctx context.Context, obj *msg.Trade) (Side,
 	return s.r.Trade().Aggressor(ctx, obj)
 }
 
-func (s shortMapper) Trade_price(ctx context.Context, obj *msg.Trade) (int, error) {
+func (s shortMapper) Trade_price(ctx context.Context, obj *msg.Trade) (string, error) {
 	return s.r.Trade().Price(ctx, obj)
 }
 
-func (s shortMapper) Trade_size(ctx context.Context, obj *msg.Trade) (int, error) {
+func (s shortMapper) Trade_size(ctx context.Context, obj *msg.Trade) (string, error) {
 	return s.r.Trade().Size(ctx, obj)
 }
 
-func (s shortMapper) Trade_timestamp(ctx context.Context, obj *msg.Trade) (int, error) {
+func (s shortMapper) Trade_timestamp(ctx context.Context, obj *msg.Trade) (string, error) {
 	return s.r.Trade().Timestamp(ctx, obj)
 }
 
@@ -1086,8 +1086,8 @@ func (ec *executionContext) _Order_price(ctx context.Context, field graphql.Coll
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -1206,8 +1206,8 @@ func (ec *executionContext) _Order_size(ctx context.Context, field graphql.Colle
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -1236,8 +1236,8 @@ func (ec *executionContext) _Order_remaining(ctx context.Context, field graphql.
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -1277,8 +1277,8 @@ func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -2073,8 +2073,8 @@ func (ec *executionContext) _Trade_price(ctx context.Context, field graphql.Coll
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -2103,8 +2103,8 @@ func (ec *executionContext) _Trade_size(ctx context.Context, field graphql.Colle
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -2133,8 +2133,8 @@ func (ec *executionContext) _Trade_timestamp(ctx context.Context, field graphql.
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -2996,7 +2996,7 @@ schema {
 type Mutation {
 
     # Send a create order request into VEGA network, this does not immediately create the order.
-    # It validates and sends the request out for consensus.
+    # It validates and sends the request out for consensus. Price and Size will be converted to uint64 internally.
     orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!): PreConsensus!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
@@ -3152,8 +3152,8 @@ type Order {
     # Hash of the order data
     id: ID!
 
-    # The worst price the order will trade at (e.g. buy for price or less, sell for price or more)
-    price: Int!
+    # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+    price: String!
 
     # The type of order (determines how and if it executes, and whether it persists on the book)
     type: OrderType!
@@ -3164,17 +3164,17 @@ type Order {
     # The market the order is trading on (probably stored internally as a hash of the market details)
     market: Market!
 
-    # Total number of contracts that may be bought or sold (immutable)
-    size: Int!
+    # Total number of contracts that may be bought or sold (immutable) (uint64)
+    size: String!
 
-    # Number of contracts remaining of the total that have not yet been bought or sold
-    remaining: Int!
+    # Number of contracts remaining of the total that have not yet been bought or sold (uint64)
+    remaining: String!
 
     # The trader who place the order (probably stored internally as the trader's public key)
     party: String!
 
     # If the order was added to the book or uncrossed at any point, the timestamp when that was done
-    timestamp: Int!
+    timestamp: String!
 
     # The status of an order, for example 'Active'
     status: OrderStatus!
@@ -3199,14 +3199,14 @@ type Trade {
     # The aggressor indicates whether this trade was related to a BUY or SELL
     aggressor: Side!
 
-    # The price of the trade (probably initially the passive order price, other determination algorithms are possible though)
-    price: Int!
+    # The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)
+    price: String!
 
-    # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade
-    size: Int!
+    # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
+    size: String!
 
     # When the trade occured, probably the timestamp of the agressive order
-    timestamp: Int!
+    timestamp: String!
 }
 
 # Valid order types, these determine what happens when an order is added to the book

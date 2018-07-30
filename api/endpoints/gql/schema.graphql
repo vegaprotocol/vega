@@ -19,7 +19,7 @@ schema {
 type Mutation {
 
     # Send a create order request into VEGA network, this does not immediately create the order.
-    # It validates and sends the request out for consensus.
+    # It validates and sends the request out for consensus. Price and Size will be converted to uint64 internally.
     orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!): PreConsensus!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
@@ -175,8 +175,8 @@ type Order {
     # Hash of the order data
     id: ID!
 
-    # The worst price the order will trade at (e.g. buy for price or less, sell for price or more)
-    price: Int!
+    # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+    price: String!
 
     # The type of order (determines how and if it executes, and whether it persists on the book)
     type: OrderType!
@@ -187,17 +187,17 @@ type Order {
     # The market the order is trading on (probably stored internally as a hash of the market details)
     market: Market!
 
-    # Total number of contracts that may be bought or sold (immutable)
-    size: Int!
+    # Total number of contracts that may be bought or sold (immutable) (uint64)
+    size: String!
 
-    # Number of contracts remaining of the total that have not yet been bought or sold
-    remaining: Int!
+    # Number of contracts remaining of the total that have not yet been bought or sold (uint64)
+    remaining: String!
 
     # The trader who place the order (probably stored internally as the trader's public key)
     party: String!
 
     # If the order was added to the book or uncrossed at any point, the timestamp when that was done
-    timestamp: Int!
+    timestamp: String!
 
     # The status of an order, for example 'Active'
     status: OrderStatus!
@@ -222,14 +222,14 @@ type Trade {
     # The aggressor indicates whether this trade was related to a BUY or SELL
     aggressor: Side!
 
-    # The price of the trade (probably initially the passive order price, other determination algorithms are possible though)
-    price: Int!
+    # The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)
+    price: String!
 
-    # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade
-    size: Int!
+    # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
+    size: String!
 
     # When the trade occured, probably the timestamp of the agressive order
-    timestamp: Int!
+    timestamp: String!
 }
 
 # Valid order types, these determine what happens when an order is added to the book
