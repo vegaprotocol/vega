@@ -64,6 +64,9 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	if o.Remaining == 0 {
 		return false, errors.New("order has been fully filled")
 	}
+	if o.Party != order.Party {
+		return false, errors.New("party mis-match cannot cancel order")
+	}
 	// Send cancellation request by consensus 
 	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
 }

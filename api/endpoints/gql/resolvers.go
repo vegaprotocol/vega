@@ -399,7 +399,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	return res, nil
 }
 
-func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string) (PreConsensus, error) {
+func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error) {
 	order := &msg.Order{}
 	res := PreConsensus{}
 
@@ -412,6 +412,10 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 		return res, errors.New("id missing or empty")
 	}
 	order.Id = id
+	if len(party) == 0 {
+		return res, errors.New("party missing or empty")
+	}
+	order.Party = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
 	accepted, err := r.orderService.CancelOrder(ctx, order)

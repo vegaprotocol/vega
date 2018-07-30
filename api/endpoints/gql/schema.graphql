@@ -24,7 +24,7 @@ type Mutation {
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
-    orderCancel(id: ID!, market: String!): PreConsensus!
+    orderCancel(id: ID!, market: String!, party: String!): PreConsensus!
 }
 
 # Queries allow a caller to read data and filter data via GraphQL.

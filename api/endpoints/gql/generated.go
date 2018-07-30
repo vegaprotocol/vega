@@ -38,7 +38,7 @@ type Resolvers interface {
 	MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	MarketDepth_sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error)
-	Mutation_orderCancel(ctx context.Context, id string, market string) (PreConsensus, error)
+	Mutation_orderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 
 	Order_price(ctx context.Context, obj *msg.Order) (int, error)
 	Order_type(ctx context.Context, obj *msg.Order) (OrderType, error)
@@ -106,7 +106,7 @@ type MarketDepthResolver interface {
 }
 type MutationResolver interface {
 	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error)
-	OrderCancel(ctx context.Context, id string, market string) (PreConsensus, error)
+	OrderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *msg.Order) (int, error)
@@ -200,8 +200,8 @@ func (s shortMapper) Mutation_orderCreate(ctx context.Context, market string, pa
 	return s.r.Mutation().OrderCreate(ctx, market, party, price, size, side, type_)
 }
 
-func (s shortMapper) Mutation_orderCancel(ctx context.Context, id string, market string) (PreConsensus, error) {
-	return s.r.Mutation().OrderCancel(ctx, id, market)
+func (s shortMapper) Mutation_orderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error) {
+	return s.r.Mutation().OrderCancel(ctx, id, market, party)
 }
 
 func (s shortMapper) Order_price(ctx context.Context, obj *msg.Order) (int, error) {
@@ -979,6 +979,16 @@ func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field gra
 		}
 	}
 	args["market"] = arg1
+	var arg2 string
+	if tmp, ok := field.Args["party"]; ok {
+		var err error
+		arg2, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["party"] = arg2
 	rctx := graphql.GetResolverContext(ctx)
 	rctx.Object = "Mutation"
 	rctx.Args = args
@@ -986,7 +996,7 @@ func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field gra
 	rctx.PushField(field.Alias)
 	defer rctx.Pop()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return ec.resolvers.Mutation_orderCancel(ctx, args["id"].(string), args["market"].(string))
+		return ec.resolvers.Mutation_orderCancel(ctx, args["id"].(string), args["market"].(string), args["party"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2991,7 +3001,7 @@ type Mutation {
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
-    orderCancel(id: ID!, market: String!): PreConsensus!
+    orderCancel(id: ID!, market: String!, party: String!): PreConsensus!
 }
 
 # Queries allow a caller to read data and filter data via GraphQL.
