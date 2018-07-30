@@ -5,6 +5,7 @@ package datastore
 type MemStore struct {
 	markets map[string]*memMarket
 	parties map[string]*memParty
+	risk    map[string]*memRisk
 }
 
 // NewMemStore creates an instance of the ram based data store.
@@ -20,10 +21,10 @@ func NewMemStore(markets, parties []string) MemStore {
 		memMarkets[name] = &memMarket
 	}
 
-	memParties :=  make(map[string]*memParty, len(parties))
+	memParties := make(map[string]*memParty, len(parties))
 	for _, name := range parties {
 		memParty := memParty{
-			party:   name,
+			party:             name,
 			ordersByTimestamp: []*memOrder{},
 			tradesByTimestamp: []*memTrade{},
 		}
@@ -38,20 +39,26 @@ func NewMemStore(markets, parties []string) MemStore {
 
 // memMarket should keep track of the trades/orders operating on a Market.
 type memMarket struct {
-	name              string
-	ordersByTimestamp []*memOrder
-	tradesByTimestamp []*memTrade
-	orders            map[string]*memOrder
-	trades            map[string]*memTrade
+	name                    string
+	ordersByTimestamp       []*memOrder
+	tradesByTimestamp       []*memTrade
+	orders                  map[string]*memOrder
+	trades                  map[string]*memTrade
 	buySideRemainingOrders  BuySideRemainingOrders
 	sellSideRemainingOrders SellSideRemainingOrders
 }
 
 // memParty should keep track of the trades/orders per Party.
 type memParty struct {
-	party              string
+	party             string
 	ordersByTimestamp []*memOrder
 	tradesByTimestamp []*memTrade
+}
+
+// memRisk
+type memRisk struct {
+	party      string
+	marketRisk map[string]uint64
 }
 
 // In memory order struct keeps an internal map of pointers to trades for an order.

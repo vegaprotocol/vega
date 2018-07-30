@@ -110,3 +110,8 @@ message MarketPosition {
     int64 unrealisedVolume = 4;
     int64 unrealisedPNL = 5;
 }
+
+message Margin {
+    string market = 1;
+    uint64 forwardRisk = 2;
+}

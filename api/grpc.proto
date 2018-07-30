@@ -91,6 +91,7 @@ message OrderBookDepthResponse {
 message PositionsByPartyRequest{
     string party = 1;
 }
+
 message PositionsByPartyResponse{
     repeated vega.MarketPosition positions = 1;
 }

@@ -46,22 +46,29 @@ type OrderStore interface {
 	GetOrderBookDepth(market string) (*msg.OrderBookDepth, error)
 }
 
+type RiskStore interface {
+	GetMarginByParty(party string) ([]*msg.Margin, error)
+}
+
 type StoreProvider interface {
 	Init(markets, parties []string)
 	TradeStore() TradeStore
 	OrderStore() OrderStore
+	RiskStore()  RiskStore
 }
 
 type MemoryStoreProvider struct {
 	memStore   MemStore
 	tradeStore TradeStore
 	orderStore OrderStore
+	riskStore  RiskStore
 }
 
 func (m *MemoryStoreProvider) Init(markets, parties []string) {
 	m.memStore = NewMemStore(markets, parties)
 	m.tradeStore = NewTradeStore(&m.memStore)
 	m.orderStore = NewOrderStore(&m.memStore)
+	m.riskStore = NewRiskStore(&m.memStore)
 }
 
 func (m *MemoryStoreProvider) TradeStore() TradeStore {
@@ -70,4 +77,8 @@ func (m *MemoryStoreProvider) TradeStore() TradeStore {
 
 func (m *MemoryStoreProvider) OrderStore() OrderStore {
 	return m.orderStore
+}
+
+func (m *MemoryStoreProvider) RiskStore() RiskStore {
+	return m.riskStore
 }
