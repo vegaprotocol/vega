@@ -15,9 +15,15 @@ models:
     model: vega/msg.MarketDepth
   Candle:
     model: vega/msg.Candle
+  Position:
+    model: vega/msg.MarketPosition
   Market:
     fields:
       depth:
+        resolver: true
+  Party:
+    fields:
+      positions:
         resolver: true
   Vega:
     fields:

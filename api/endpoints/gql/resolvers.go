@@ -5,6 +5,8 @@ import (
 	"vega/api"
 	"vega/msg"
 	"errors"
+	"strconv"
+	"fmt"
 )
 
 type resolverRoot struct {
@@ -21,6 +23,9 @@ func NewResolverRoot(orderService api.OrderService, tradeService api.TradeServic
 
 func (r *resolverRoot) Query() QueryResolver {
 	return (*MyQueryResolver)(r)
+}
+func (r *resolverRoot) Mutation() MutationResolver {
+	return (*MyMutationResolver)(r)
 }
 func (r *resolverRoot) Candle() CandleResolver {
 	return (*MyCandleResolver)(r)
@@ -43,6 +48,14 @@ func (r *resolverRoot) Trade() TradeResolver {
 func (r *resolverRoot) Vega() VegaResolver {
 	return (*MyVegaResolver)(r)
 }
+func (r *resolverRoot) Position() PositionResolver {
+	return (*MyPositionResolver)(r)
+}
+func (r *resolverRoot) Party() PartyResolver {
+	return (*MyPartyResolver)(r)
+}
+
+
 
 // BEGIN: Query Resolver
 
@@ -59,7 +72,7 @@ type MyVegaResolver resolverRoot
 
 func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error) {
 	if name == nil {
-		return nil, errors.New("All markets for VEGA platform not implemented")
+		return nil, errors.New("all markets for VEGA platform not implemented")
 	}
 
 	// Look for orders for market (will validate market internally)
@@ -96,7 +109,7 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 
 func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {
 	if name == nil {
-		return nil, errors.New("All parties for VEGA platform not implemented")
+		return nil, errors.New("all parties for VEGA platform not implemented")
 	}
 
 	// Look for orders for party (will validate market internally)
@@ -136,6 +149,26 @@ func (r *MyMarketResolver) Depth(ctx context.Context, obj *Market) (msg.MarketDe
 }
 
 // END: Market Resolver
+
+
+// BEGIN: Party Resolver
+
+type MyPartyResolver resolverRoot
+
+func (r *MyPartyResolver) Positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error) {
+	positions, err := r.tradeService.GetPositionsByParty(ctx, obj.Name)
+	if err != nil {
+		return nil, err
+	}
+	var valPositions = make([]msg.MarketPosition, 0)
+	for _, v := range positions {
+		valPositions = append(valPositions, *v)
+	}
+	return valPositions, nil
+}
+
+// END: Party Resolver
+
 
 // BEGIN: Market Depth Resolver
 
@@ -262,3 +295,133 @@ func (r *MyPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *msg.Pr
 }
 
 // END: Price Level Resolver
+
+
+// BEGIN: Position Resolver
+
+type MyPositionResolver resolverRoot
+
+func (r *MyPositionResolver) RealisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error) {
+	return string(obj.RealisedVolume), nil
+}
+
+func (r *MyPositionResolver) RealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error) {
+	return r.absInt64Str(obj.RealisedPNL), nil
+}
+
+func (r *MyPositionResolver) RealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error) {
+	return r.direction(obj.RealisedPNL), nil
+}
+
+func (r *MyPositionResolver) UnrealisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error) {
+	return string(obj.UnrealisedVolume), nil
+}
+
+func (r *MyPositionResolver) UnrealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error) {
+	return r.absInt64Str(obj.UnrealisedPNL), nil
+}
+
+func (r *MyPositionResolver) UnrealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error) {
+	return r.direction(obj.UnrealisedPNL), nil
+}
+
+func (r *MyPositionResolver) absInt64Str(val int64) (string) {
+	if val < 0 {
+		return strconv.FormatInt(val * -1, 10)
+	}
+	return strconv.FormatInt(val, 10)
+}
+
+func (r *MyPositionResolver) direction(val int64) (ValueDirection) {
+	if val < 0 {
+		return ValueDirectionNegative
+	}
+	return ValueDirectionPositive
+}
+
+// END: Position Resolver
+
+
+// BEGIN: Mutation Resolver
+
+type MyMutationResolver resolverRoot
+
+func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, party string, price string,
+	size string, side Side, type_ OrderType) (PreConsensus, error) {
+	order := &msg.Order{}
+	res := PreConsensus{}
+
+	// We need to convert strings to uint64 (JS doesn't yet support uint64)
+	p, err := SafeStringUint64(price)
+	if err != nil {
+		return res, err
+	}
+	order.Price = p
+	s, err := SafeStringUint64(size)
+	if err != nil {
+		return res, err
+	}
+	order.Size = s
+	if len(market) == 0 {
+		return res, errors.New("market missing or empty")
+	}
+	order.Market = market
+	if len(party) == 0 {
+		return res, errors.New("party missing or empty")
+	}
+	order.Party = party
+	switch type_ {
+		case OrderTypeGtc:
+			order.Type = msg.Order_GTC
+		case OrderTypeGtt:
+			order.Type = msg.Order_GTT
+		case OrderTypeEne:
+			order.Type = msg.Order_ENE
+		case OrderTypeFok:
+			order.Type = msg.Order_FOK
+		default:
+			return res, errors.New(fmt.Sprintf("unknown type: %s", type_.String()))
+	}
+	switch side {
+		case SideBuy:
+			order.Side = msg.Side_Buy
+		case SideSell:
+			order.Side = msg.Side_Sell
+	}
+
+	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+	accepted, err := r.orderService.CreateOrder(ctx, order)
+	if err != nil {
+		return res, err
+	}
+
+	res.Accepted = accepted
+	return res, nil
+}
+
+func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string) (PreConsensus, error) {
+	order := &msg.Order{}
+	res := PreConsensus{}
+
+	// Cancellation currently only requires ID and Market to be set, all other fields will be added
+	if len(market) == 0 {
+		return res, errors.New("market missing or empty")
+	}
+	order.Market = market
+	if len(id) == 0 {
+		return res, errors.New("id missing or empty")
+	}
+	order.Id = id
+
+	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
+	accepted, err := r.orderService.CancelOrder(ctx, order)
+	if err != nil {
+		return res, err
+	}
+
+	res.Accepted = accepted
+	return res, nil
+}
+
+// END: Mutation Resolver
+

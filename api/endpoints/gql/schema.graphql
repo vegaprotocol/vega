@@ -1,3 +1,12 @@
+## GQL - TODO
+###############
+# --Mutations
+# Int->String (unint64)
+# Trades subscription
+# Orders subscription
+# Fix candles sub
+# Market on positions point to a Vega.Market?
+
 
 # Represents a date/time
 scalar DateTime
@@ -6,10 +15,30 @@ schema {
     query: Query,
 }
 
+# Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
+type Mutation {
+
+    # Send a create order request into VEGA network, this does not immediately create the order.
+    # It validates and sends the request out for consensus.
+    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!): PreConsensus!
+
+    # Send a cancel order request into VEGA network, this does not immediately cancel an order.
+    # It validates and sends the request out for consensus.
+    orderCancel(id: ID!, market: String!): PreConsensus!
+}
+
+# Queries allow a caller to read data and filter data via GraphQL.
 type Query {
     
     # VEGA root query
     vega: Vega!
+}
+
+# An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
+type PreConsensus {
+
+    # If true then the operation was validated and passed on for consensus with other nodes on the VEGA platform.
+    accepted: Boolean!
 }
 
 # VEGA the world's premier distributed derivatives trading platform
@@ -41,6 +70,7 @@ type Market {
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
 # The depth of market measure provides an indication of the liquidity and depth for the instrument.
 type MarketDepth {
+
   # Market name
   name: String!
 
@@ -50,6 +80,7 @@ type MarketDepth {
   # Sell side price levels (if available)
   sell: [PriceLevel!]
 }
+
 
 # Represents a price on either the buy or sell side and all the orders at that price
 type PriceLevel {
@@ -102,7 +133,41 @@ type Party {
 
     # Orders relating to a party
     orders: [Order!]
+
+    # Trading positions relating to a party
+    positions: [Position!]
 }
+
+
+# An individual trader at any point in time is considered net long or net short.
+# This refers to their Open Volume, calculated using FIFO. This volume should now be signed as either
+# negative for LONG positions and positive for SHORT positions. A single trade may end up "splitting" with some
+# of its volume matched into closed volume and some of its volume remaining as open volume. This is why we don't
+# refer to positions being comprised of trades, rather of volume.
+type Position {
+
+    #Market name     TODO reference a market edge
+    market: String!
+
+    # Realised volume
+    realisedVolume: String!
+
+    # Realised Profit and Loss
+    realisedProfitValue: String!
+
+    # Realised Profit or Loss direction
+    realisedProfitDirection: ValueDirection!
+
+    # Unrealised volume
+    unrealisedVolume: String!
+
+    # Unrealised Profit and Loss
+    unrealisedProfitValue: String!
+
+    # Unrealised Profit or Loss direction
+    unrealisedProfitDirection: ValueDirection!
+}
+
 
 # An order in Vega, if active it will be on the OrderBoook for the market
 type Order {
@@ -203,4 +268,11 @@ enum Side {
     Buy
     Sell
 }
+
+# Whether the position etc value is in profit (positive) or loss (negative).
+enum ValueDirection {
+    Positive
+    Negative
+}
+
 
