@@ -349,19 +349,18 @@ func (c *Client) call(ctx context.Context, method string, params opts, resp inte
 		// either receiving the response, or the underlying connection being
 		// closed.
 		select {
-		case resp := <-ch:
+		case r := <-ch:
 			c.mu.Lock()
 			delete(c.results, id)
 			c.mu.Unlock()
-			if resp.Error != nil {
+			if r.Error != nil {
 				return fmt.Errorf(
 					"rpc: got error response from %s call to Tendermint: %s",
-					method, resp.Error)
+					method, r.Error)
 			}
-			if resp != nil {
-				return json.Unmarshal(resp.Result, resp)
+			if r != nil {
+				return json.Unmarshal(r.Result, resp)
 			}
-			return nil
 		case <-c.closed:
 			return ErrClosed
 		}
@@ -370,6 +369,7 @@ func (c *Client) call(ctx context.Context, method string, params opts, resp inte
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+	return nil
 }
 
 func (c *Client) closeWithError(err error) error {
