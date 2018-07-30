@@ -109,4 +109,5 @@ message MarketPosition {
     int64 realisedPNL  = 3;
     int64 unrealisedVolume = 4;
     int64 unrealisedPNL = 5;
+    uint64 averageEntryPrice = 6;
 }
