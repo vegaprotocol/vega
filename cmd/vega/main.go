@@ -29,7 +29,7 @@ func main() {
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
 	tradeService := api.NewTradeService()
-	orderService.Init(vega, storage.OrderStore(), storage.EventStore())
+	orderService.Init(vega, storage.OrderStore())
 	tradeService.Init(vega, storage.TradeStore())
 
 	// GRPC server

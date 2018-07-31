@@ -85,7 +85,7 @@ func (m *memOrderStore) queueEvent(o Order) error {
 	defer m.mu.Unlock()
 
 	if m.subscribers == nil || len(m.subscribers) == 0 {
-		log.Debugf("Orders->queueEvent: No subscribers available")
+		log.Debugf("OrderStore -> queueEvent: No subscribers available")
 		return nil
 	}
 
@@ -93,7 +93,7 @@ func (m *memOrderStore) queueEvent(o Order) error {
 		m.buffer = make([]Order, 0)
 	}
 
-	log.Debugf("Orders->queueEvent: Adding order to buffer: %+v", o)
+	log.Debugf("OrderStore -> queueEvent: Adding order to buffer: %+v", o)
 	m.buffer = append(m.buffer, o)
 	return nil
 }
@@ -287,7 +287,6 @@ func (m *memOrderStore) Delete(order Order) error {
 		m.store.markets[order.Market].sellSideRemainingOrders.remove(&order)
 	}
 
-	m.queueEvent(order)
 	return nil
 }
 

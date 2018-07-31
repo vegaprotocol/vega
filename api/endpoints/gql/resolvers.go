@@ -513,24 +513,28 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 	return nil, nil
 }
+
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error) {
-
-	c, ref := r.orderService.Subscribe(ctx)
-	log.Debugf("GQL subscriber ref: %d", ref)
-
+	c, ref := r.orderService.ObserveOrders(ctx)
+	log.Debugf("GraphQL Orders -> New subscriber: %d", ref)
 	return c, nil
 }
-func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error) {
 
-	return nil, nil
+func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error) {
+	c, ref := r.tradeService.ObserveTrades(ctx)
+	log.Debugf("GraphQL Trades -> New subscriber: %d", ref)
+	return c, nil
 }
+
 func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan []*msg.MarketPosition, error) {
 
 	return nil, nil
 }
-func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error) {
 
-	return nil, nil
+func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error) {
+	c, ref := r.orderService.ObserveMarketDepth(ctx, market)
+	log.Debugf("GraphQL Market Depth -> New subscriber: %d", ref)
+	return c, nil
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")

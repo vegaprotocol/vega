@@ -11,23 +11,24 @@ import (
 )
 
 type OrderService interface {
-	Init(vega *core.Vega, orderStore datastore.OrderStore, eventStore datastore.EventStore)
+	Init(vega *core.Vega, orderStore datastore.OrderStore)
+	ObserveOrders(ctx context.Context) (orders <-chan msg.Order, ref uint64)
+
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error)
 	GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
+
 	GetMarkets(ctx context.Context) ([]string, error)
 	GetMarketDepth(ctx context.Context, market string) (marketDepth *msg.MarketDepth, err error)
-	Subscribe(ctx context.Context) (orders <-chan msg.Order, ref uint64)
-	Unsubscribe(ctx context.Context, ref uint64) error
+	ObserveMarketDepth(ctx context.Context, market string) (depth <-chan msg.MarketDepth, ref uint64)
 }
 
 type orderService struct {
 	app        *core.Vega
 	orderStore datastore.OrderStore
-	eventStore datastore.EventStore
 	blockchain blockchain.Client
 }
 
@@ -35,10 +36,9 @@ func NewOrderService() OrderService {
 	return &orderService{}
 }
 
-func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore, eventStore datastore.EventStore) {
+func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.app = app
 	p.orderStore = orderStore
-	p.eventStore = eventStore
 	p.blockchain = blockchain.NewClient()
 }
 
@@ -160,7 +160,7 @@ func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (o
 	return p.orderStore.GetMarketDepth(marketName)
 }
 
-func (p *orderService) Subscribe(ctx context.Context) (<-chan msg.Order, uint64) {
+func (p *orderService) ObserveOrders(ctx context.Context) (<-chan msg.Order, uint64) {
 	orders := make(chan msg.Order)
 	internal := make(chan []datastore.Order)
 	ref := p.orderStore.Subscribe(internal)
@@ -187,6 +187,34 @@ func (p *orderService) Subscribe(ctx context.Context) (<-chan msg.Order, uint64)
 	return orders, ref
 }
 
-func (p *orderService) Unsubscribe(ctx context.Context, ref uint64) error {
-	return p.orderStore.Unsubscribe(ref)
+func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, uint64) {
+	depth := make(chan msg.MarketDepth)
+	internal := make(chan []datastore.Order)
+	ref := p.orderStore.Subscribe(internal)
+
+	go func(id uint64, internal chan []datastore.Order) {
+		<-ctx.Done()
+		log.Debugf("OrderService -> Depth closed connection: %d", id)
+		err := p.orderStore.Unsubscribe(id)
+		if err != nil {
+			log.Errorf("Error un-subscribing depth when context.Done() on OrderService for id: %d", id)
+		}
+		close(internal)
+	}(ref, internal)
+
+	go func(id uint64) {
+		for range internal {
+
+			d, err := p.orderStore.GetMarketDepth(market)
+			if err != nil {
+				log.Errorf("error calculating market depth", err)
+			} else {
+				depth <- *d
+			}
+
+		}
+		log.Debugf("OrderService -> Channel for depth subscriber %d has been closed", ref)
+	}(ref)
+
+	return depth, ref
 }

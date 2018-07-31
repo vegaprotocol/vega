@@ -8,16 +8,23 @@ import (
 	"vega/core"
 	"vega/datastore"
 	"vega/msg"
+	"vega/log"
 )
 
 type TradeService interface {
 	Init(app *core.Vega, tradeStore datastore.TradeStore)
+	ObserveTrades(ctx context.Context) (orders <-chan msg.Trade, ref uint64)
+
 	GetByMarket(ctx context.Context, market string, limit uint64) (trades []*msg.Trade, err error)
 	GetByParty(ctx context.Context, party string, limit uint64) (trades []*msg.Trade, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
+
 	GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error)
+	ObserveCandles(ctx context.Context, market string, interval uint64) (candle <-chan msg.Candles, ref uint64)
+
 	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
+	ObservePositions(ctx context.Context, party string) (positions <-chan msg.MarketPosition, ref uint64)
 }
 
 type tradeService struct {
@@ -109,4 +116,66 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 		positions = append(positions, marketPositions)
 	}
 	return positions, nil
+}
+
+func (t *tradeService) ObserveTrades(ctx context.Context) (<-chan msg.Trade, uint64) {
+	trades := make(chan msg.Trade)
+	internal := make(chan []datastore.Trade)
+	ref := t.tradeStore.Subscribe(internal)
+
+	go func(id uint64, internal chan []datastore.Trade) {
+		<-ctx.Done()
+		log.Debugf("TradeService -> Subscriber closed connection: %d", id)
+		err := t.tradeStore.Unsubscribe(id)
+		if err != nil {
+			log.Errorf("Error un-subscribing when context.Done() on TradeService for id: %d", id)
+		}
+		close(internal)
+	}(ref, internal)
+
+	go func(id uint64) {
+		for v := range internal {
+			for _, item := range v {
+				trades <- *item.ToProtoMessage()
+			}
+		}
+		log.Debugf("TradeService -> Channel for subscriber %d has been closed", ref)
+	}(ref)
+
+	return trades, ref
+}
+
+func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-chan msg.MarketPosition, uint64) {
+	positions := make(chan msg.MarketPosition)
+	internal := make(chan []datastore.Trade)
+	ref := t.tradeStore.Subscribe(internal)
+
+	go func(id uint64, internal chan []datastore.Trade) {
+		<-ctx.Done()
+		log.Debugf("TradeService -> Positions subscriber closed connection: %d", id)
+		err := t.tradeStore.Unsubscribe(id)
+		if err != nil {
+			log.Errorf("Error un-subscribing positions when context.Done() on TradeService for id: %d", id)
+		}
+		close(internal)
+	}(ref, internal)
+
+	go func(id uint64) {
+		for range internal {
+			mapOfMarketPositions := t.tradeStore.GetPositionsByParty(party)
+			for _, marketPositions := range mapOfMarketPositions {
+				positions <- *marketPositions
+			}
+		}
+		log.Debugf("TradeService -> Channel for positions subscriber %d has been closed", ref)
+	}(ref)
+
+	return positions, ref
+}
+
+func (t *tradeService) ObserveCandles(ctx context.Context, market string, interval uint64) (candle <-chan msg.Candles, ref uint64) {
+
+	log.Fatalf("ObserveCandles not implemented yet, not sure of best approach :(")
+
+	return nil, 0
 }
