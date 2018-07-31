@@ -1,19 +1,103 @@
 package datastore
 
 import (
+	"errors"
 	"fmt"
 	"vega/msg"
+	"sync"
+	"vega/log"
 )
 
 // memOrderStore should implement OrderStore interface.
 type memOrderStore struct {
 	store *MemStore
+	subscribers map[uint64] chan<- []Order
+	buffer []Order
+	subscriberId uint64
+	mu sync.Mutex
 }
 
 // NewOrderStore initialises a new OrderStore backed by a MemStore.
 func NewOrderStore(ms *MemStore) OrderStore {
 	return &memOrderStore{store: ms}
 }
+
+func (m *memOrderStore) Subscribe(orders chan<- []Order) uint64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.subscribers == nil {
+		log.Debugf("OrderStore -> Subscribe: Creating subscriber chan map")
+		m.subscribers = make(map[uint64] chan<- []Order)
+	}
+
+	m.subscriberId = m.subscriberId+1
+	m.subscribers[m.subscriberId] = orders
+	log.Debugf("OrderStore -> Subscribe: Order subscriber added: %d", m.subscriberId)
+	return m.subscriberId
+}
+
+func (m *memOrderStore) Unsubscribe(id uint64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.subscribers == nil || len(m.subscribers) == 0 {
+		log.Debugf("OrderStore -> Unsubscribe: No subscribers available")
+		return nil
+	}
+
+	if _, exists := m.subscribers[id]; exists {
+		delete(m.subscribers, id)
+		log.Debugf("OrderStore -> Unsubscribe: Subscriber removed: %v", id)
+		return nil
+	}
+	return errors.New(fmt.Sprintf("OrderStore subscriber does not exist with id: %d", id))
+}
+
+func (m *memOrderStore) Notify() error {
+
+	if m.subscribers == nil || len(m.subscribers) == 0 {
+		log.Debugf("OrderStore -> Notify: No subscribers connected")
+		return nil
+	}
+
+	if m.buffer == nil || len(m.buffer) == 0 {
+		// Only publish when we have items
+		log.Debugf("OrderStore -> Notify: No orders in buffer")
+		return nil
+	}
+	
+	m.mu.Lock()
+	items := m.buffer
+	m.buffer = nil
+	m.mu.Unlock()
+
+	// iterate over items in buffer and push to observers
+	for _, sub := range m.subscribers {
+		sub <- items
+	}
+	
+	return nil
+}
+
+func (m *memOrderStore) queueEvent(o Order) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.subscribers == nil || len(m.subscribers) == 0 {
+		log.Debugf("Orders->queueEvent: No subscribers available")
+		return nil
+	}
+
+	if m.buffer == nil {
+		m.buffer = make([]Order, 0)
+	}
+
+	log.Debugf("Orders->queueEvent: Adding order to buffer: %+v", o)
+	m.buffer = append(m.buffer, o)
+	return nil
+}
+
 
 func (m *memOrderStore) GetByMarket(market string, params GetOrderParams) ([]Order, error) {
 	if err := m.marketExists(market); err != nil {
@@ -127,6 +211,7 @@ func (m *memOrderStore) Post(order Order) error {
 		}
 	}
 
+	m.queueEvent(order)
 	return nil
 }
 
@@ -159,6 +244,7 @@ func (m *memOrderStore) Put(order Order) error {
 		}
 	}
 
+	m.queueEvent(order)
 	return nil
 }
 
@@ -201,6 +287,7 @@ func (m *memOrderStore) Delete(order Order) error {
 		m.store.markets[order.Market].sellSideRemainingOrders.remove(&order)
 	}
 
+	m.queueEvent(order)
 	return nil
 }
 

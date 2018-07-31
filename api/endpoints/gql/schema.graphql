@@ -39,9 +39,9 @@ type Query {
 
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
 type Subscription {
-    candles(market: String!, interval: Int!): [Candle!]!
-    orders(market: String, party: String): [Order]!
-    trades(market: String, party: String): [Trade]!
+    candles(market: String!, interval: Int!): Candle!
+    orders(market: String, party: String): Order!
+    trades(market: String, party: String): Trade!
     positions(party: String!): [Position]!
     marketDepth(market: String!): MarketDepth!
 }

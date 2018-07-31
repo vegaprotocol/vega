@@ -32,7 +32,7 @@ func Start(vega *core.Vega) error {
 		if genesis != nil {
 			break
 		}
-		time.Sleep(3 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 	log.Infof("Genesis time set to: %+v\n", genesis.GenesisTime)
 	vega.SetGenesisTime(genesis.GenesisTime)

@@ -345,25 +345,48 @@ func (c *Client) call(ctx context.Context, method string, params opts, resp inte
 		c.mu.Lock()
 		c.results[id] = ch
 		c.mu.Unlock()
+
+
 		// Once the request has been put onto the write queue, we select on
 		// either receiving the response, or the underlying connection being
 		// closed.
-		select {
-		case r := <-ch:
-			c.mu.Lock()
-			delete(c.results, id)
-			c.mu.Unlock()
-			if r.Error != nil {
-				return fmt.Errorf(
-					"rpc: got error response from %s call to Tendermint: %s",
-					method, r.Error)
+		if method == "broadcast_tx_async" {
+			select {
+			case resp := <-ch:
+				c.mu.Lock()
+				delete(c.results, id)
+				c.mu.Unlock()
+				if resp.Error != nil {
+					return fmt.Errorf(
+						"rpc: got error response from %s call to Tendermint: %s",
+						method, resp.Error)
+				}
+				if resp != nil {
+					return json.Unmarshal(resp.Result, resp)
+				}
+			case <-c.closed:
+				return ErrClosed
 			}
-			if r != nil {
-				return json.Unmarshal(r.Result, resp)
+		} else {
+			// Other commands use r, not resp
+			select {
+			case r := <-ch:
+				c.mu.Lock()
+				delete(c.results, id)
+				c.mu.Unlock()
+				if r.Error != nil {
+					return fmt.Errorf(
+						"rpc: got error response from %s call to Tendermint: %s",
+						method, r.Error)
+				}
+				if r != nil {
+					return json.Unmarshal(r.Result, resp)
+				}
+			case <-c.closed:
+				return ErrClosed
 			}
-		case <-c.closed:
-			return ErrClosed
 		}
+
 	case <-c.closed:
 		return ErrClosed
 	case <-ctx.Done():

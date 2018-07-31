@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 	"math/rand"
+	"vega/log"
 )
 
 type resolverRoot struct {
@@ -445,7 +446,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 
 type MySubscriptionResolver resolverRoot
 
-func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval int) (<-chan []msg.Candle, error) {
+func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error) {
 	events := make(chan []msg.Candle, 1)
 	connected := true
 
@@ -471,13 +472,13 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 			fmt.Printf("%+v, %+v", since, currentTime)
 
-			res1, err := r.tradeService.GetByMarket(ctx, market, 99999)
-			if err != nil {
-				fmt.Errorf("there was an error when getting candles charts: %v", err)
-			}
-
-			fmt.Printf("Trades in store: %+v  ------ [%d] ------", res1, len(res1))
-			fmt.Println()
+			//res1, err := r.tradeService.GetByMarket(ctx, market, 99999)
+			//if err != nil {
+			//	fmt.Errorf("there was an error when getting candles charts: %v", err)
+			//}
+			//
+			//fmt.Printf("Trades in store: %+v  ------ [%d] ------", res1, len(res1))
+			//fmt.Println()
 
 			res, err := r.tradeService.GetCandles(ctx, market, since, 60)
 			if err != nil {
@@ -510,13 +511,16 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 		}
 	}(events)
 
-	return events, nil
-}
-func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []*msg.Order, error) {
-
 	return nil, nil
 }
-func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []*msg.Trade, error) {
+func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error) {
+
+	c, ref := r.orderService.Subscribe(ctx)
+	log.Debugf("GQL subscriber ref: %d", ref)
+
+	return c, nil
+}
+func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error) {
 
 	return nil, nil
 }

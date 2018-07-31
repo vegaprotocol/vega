@@ -3,6 +3,11 @@ package datastore
 import "vega/msg"
 
 type TradeStore interface {
+
+	Subscribe(trades chan<- []Trade) uint64
+	Unsubscribe(id uint64) error
+	Notify() error
+
 	// GetByMarket retrieves trades for a given market.
 	GetByMarket(market string, params GetTradeParams) ([]Trade, error)
 	// Get retrieves a trade for a given id.
@@ -26,6 +31,11 @@ type TradeStore interface {
 }
 
 type OrderStore interface {
+
+	Subscribe(orders chan<- []Order) uint64
+	Unsubscribe(id uint64) error
+	Notify() error
+	
 	// GetByMarket retrieves all orders for a given market.
 	GetByMarket(market string, params GetOrderParams) ([]Order, error)
 	// Get retrieves an order for a given market and id.
