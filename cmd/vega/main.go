@@ -25,11 +25,12 @@ func main() {
 	vega := core.New(config, storage)
 	vega.InitialiseMarkets()
 
+
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
 	tradeService := api.NewTradeService()
 	orderService.Init(vega, storage.OrderStore())
-	tradeService.Init(vega, storage.TradeStore())
+	tradeService.Init(vega, storage.TradeStore(), vega.RiskEngine)
 
 	// GRPC server
 	grpcServer := grpc.NewGRPCServer(orderService, tradeService)

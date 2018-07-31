@@ -21,8 +21,8 @@ type TradeStore interface {
 	GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error)
 	// Returns current market price
 	GetMarkPrice(market string) (uint64, error)
-	// Returns map of positions per market
-	GetPositionsByParty(party string) map[string]*msg.MarketPosition
+	// Returns map of market name to market buckets
+	GetTradesBySideBuckets(party string) map[string]*MarketBucket
 }
 
 type OrderStore interface {
@@ -46,29 +46,32 @@ type OrderStore interface {
 	GetOrderBookDepth(market string) (*msg.OrderBookDepth, error)
 }
 
-type RiskStore interface {
-	GetMarginByParty(party string) ([]*msg.Margin, error)
+type PartyStore interface {
+	Post(party string) error
+	Put(party string) error
+	Delete(party string) error
+	GetAllParties() ([]string, error)
 }
 
 type StoreProvider interface {
 	Init(markets, parties []string)
 	TradeStore() TradeStore
 	OrderStore() OrderStore
-	RiskStore()  RiskStore
+	PartyStore() PartyStore
 }
 
 type MemoryStoreProvider struct {
 	memStore   MemStore
 	tradeStore TradeStore
 	orderStore OrderStore
-	riskStore  RiskStore
+	partyStore PartyStore
 }
 
 func (m *MemoryStoreProvider) Init(markets, parties []string) {
 	m.memStore = NewMemStore(markets, parties)
 	m.tradeStore = NewTradeStore(&m.memStore)
 	m.orderStore = NewOrderStore(&m.memStore)
-	m.riskStore = NewRiskStore(&m.memStore)
+	m.partyStore = NewPartyStore(&m.memStore)
 }
 
 func (m *MemoryStoreProvider) TradeStore() TradeStore {
@@ -79,6 +82,6 @@ func (m *MemoryStoreProvider) OrderStore() OrderStore {
 	return m.orderStore
 }
 
-func (m *MemoryStoreProvider) RiskStore() RiskStore {
-	return m.riskStore
+func (m *MemoryStoreProvider) PartyStore() PartyStore {
+	return m.partyStore
 }

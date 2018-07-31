@@ -5,7 +5,6 @@ package datastore
 type MemStore struct {
 	markets map[string]*memMarket
 	parties map[string]*memParty
-	risk    map[string]*memRisk
 }
 
 // NewMemStore creates an instance of the ram based data store.
