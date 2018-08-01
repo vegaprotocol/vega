@@ -62,7 +62,7 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 }
 
 func (p *orderService) GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error) {
-	o, err := p.orderStore.GetByMarket(market, datastore.GetParams{Limit: limit})
+	o, err := p.orderStore.GetByMarket(market, datastore.GetOrderParams{Limit: limit})
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, limit uin
 }
 
 func (p *orderService) GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error) {
-	o, err := p.orderStore.GetByParty(party, datastore.GetParams{Limit: limit})
+	o, err := p.orderStore.GetByParty(party, datastore.GetOrderParams{Limit: limit})
 	if err != nil {
 		return nil, err
 	}

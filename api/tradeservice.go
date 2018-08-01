@@ -40,7 +40,7 @@ func (t *tradeService) Init(app *core.Vega, tradeStore datastore.TradeStore, ris
 }
 
 func (t *tradeService) GetByMarket(ctx context.Context, market string, limit uint64) (trades []*msg.Trade, err error) {
-	tr, err := t.tradeStore.GetByMarket(market, datastore.GetParams{Limit: limit})
+	tr, err := t.tradeStore.GetByMarket(market, datastore.GetTradeParams{Limit: limit})
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (t *tradeService) GetByMarket(ctx context.Context, market string, limit uin
 }
 
 func (t *tradeService) GetByParty(ctx context.Context, party string, limit uint64) (trades []*msg.Trade, err error) {
-	tr, err := t.tradeStore.GetByParty(party, datastore.GetParams{Limit: limit})
+	tr, err := t.tradeStore.GetByParty(party, datastore.GetTradeParams{Limit: limit})
 	if err != nil {
 		return nil, err
 	}

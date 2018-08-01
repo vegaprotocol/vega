@@ -109,5 +109,6 @@ message MarketPosition {
     int64 realisedPNL  = 3;
     int64 unrealisedVolume = 4;
     int64 unrealisedPNL = 5;
-    int64 MinimumMargin = 7;
+    uint64 averageEntryPrice = 6;
+    int64 minimumMargin = 7;
 }
