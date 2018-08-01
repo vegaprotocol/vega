@@ -8,9 +8,15 @@ import (
 	"strconv"
 	"vega/log"
 	"vega/msg"
+	"github.com/golang/go/src/pkg/strings"
 )
 
-const riskModelFileName = "/risk-model.py"
+const (
+	riskModelFileName = "/risk-model.py"
+	shortIndex = 0
+	longIndex = 1
+)
+
 
 type RiskEngine interface {
 	AddNewMarket(market *msg.Market)
@@ -96,20 +102,34 @@ func (re *riskEngine) Assess(riskFactor *RiskFactor) error {
 	fmt.Printf("python stdout: %s\n", stdout)
 	if err != nil {
 		println(err.Error())
-		stdout = []byte("0.00553")
+		// SHORT|LONG
+		stdout = []byte("0.00553|0.00550")
 	}
+
+	s := strings.Split(string(stdout), "|")
+	if len(s) != 2 {
+		fmt.Printf("error: unable to get risk factor")
+		return fmt.Errorf("unable to get risk factor")
+	}
+
 	// Currently the risk script spec is to just print the int64 value '0.00553' on stdout
-	n, err := strconv.ParseFloat(string(stdout), 64)
+	riskFactorShort, err := strconv.ParseFloat(s[shortIndex], 64)
 	if err != nil {
 		println(err.Error())
 		return err
 	}
 
-	riskFactor.Long = n
-	riskFactor.Short = n
+	riskFactorLong, err := strconv.ParseFloat(s[longIndex], 64)
+	if err != nil {
+		println(err.Error())
+		return err
+	}
+
+	riskFactor.Short = riskFactorShort
+	riskFactor.Long = riskFactorLong
 	fmt.Printf("Risk Factors obtained from risk model: \n")
-	fmt.Printf("Long: %f\n", riskFactor.Long)
 	fmt.Printf("Short: %f\n", riskFactor.Short)
+	fmt.Printf("Long: %f\n", riskFactor.Long)
 
 	return nil
 }

@@ -316,7 +316,7 @@ func TestPositions(t *testing.T) {
 		assert.Equal(t, int64(0), val.RealisedPNL)
 		assert.Equal(t, int64(1000), val.UnrealisedVolume)
 		assert.Equal(t, int64(0), val.UnrealisedPNL)
-		assert.Equal(t, int64(553), val.MinimumMargin)
+		assert.Equal(t, int64(550), val.MinimumMargin)
 	}
 
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyB)
@@ -394,7 +394,7 @@ func TestPositions(t *testing.T) {
 		assert.Equal(t, int64(0), val.RealisedPNL)
 		assert.Equal(t, int64(1000), val.UnrealisedVolume)
 		assert.Equal(t, int64(10*1000), val.UnrealisedPNL)
-		assert.Equal(t, int64(-9392), val.MinimumMargin)
+		assert.Equal(t, int64(-9395), val.MinimumMargin)
 	}
 
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyB)
