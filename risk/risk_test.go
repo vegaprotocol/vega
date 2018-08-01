@@ -2,9 +2,17 @@ package risk
 
 import (
 	"testing"
+
+	"vega/log"
 	"vega/msg"
+
 	"github.com/stretchr/testify/assert"
 )
+
+// this runs just once as first
+func init() {
+	log.InitConsoleLogger(log.DebugLevel)
+}
 
 func TestRiskEngine_AddNewMarket(t *testing.T) {
 	re := New()

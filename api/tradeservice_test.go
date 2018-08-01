@@ -1,18 +1,25 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
 
-	"vega/msg"
+	"vega/core"
 	"vega/datastore"
+	"vega/log"
+	"vega/msg"
+	"vega/risk"
 
 	"github.com/stretchr/testify/assert"
-	"context"
-	"vega/core"
-	"vega/risk"
 )
+
+// this runs just once as first
+func init() {
+	log.InitConsoleLogger(log.DebugLevel)
+}
+
 
 func TestNewTradeService(t *testing.T) {
 	var newTradeService = NewTradeService()
