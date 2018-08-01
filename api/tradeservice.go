@@ -6,7 +6,7 @@ import (
 	"math"
 	"time"
 
-	"google.golang.org/appengine/log"
+	"github.com/golang/go/src/pkg/fmt"
 	"vega/core"
 	"vega/datastore"
 	"vega/msg"
@@ -118,8 +118,8 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 		deltaAverageEntryPrice        int64
 		avgEntryPriceForOpenContracts int64
 		markPrice                     uint64
-		riskFactor                    int64
-		forwardRiskMargin             int64
+		riskFactor                    float64
+		forwardRiskMargin             float64
 	)
 
 	for market, marketBucket := range marketBuckets {
@@ -176,8 +176,11 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 		marketPositions.RealisedPNL = int64(ClosedContracts * deltaAverageEntryPrice)
 		marketPositions.UnrealisedPNL = int64(OpenContracts * (int64(markPrice) - avgEntryPriceForOpenContracts))
 
-		forwardRiskMargin = marketPositions.UnrealisedVolume * int64(markPrice) * riskFactor * marketBucket.MinimumContractSize
-		marketPositions.MinimumMargin = marketPositions.UnrealisedPNL + forwardRiskMargin
+		forwardRiskMargin = float64(marketPositions.UnrealisedVolume) * float64(markPrice) *
+			riskFactor * float64(marketBucket.MinimumContractSize)
+
+		// deliberately loose precision for minimum margin requirement to operate on int64 on the API
+		marketPositions.MinimumMargin = marketPositions.UnrealisedPNL + int64(forwardRiskMargin)
 
 		positions = append(positions, marketPositions)
 	}
@@ -185,12 +188,12 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 	return positions, nil
 }
 
-func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) int64 {
+func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) float64 {
 	riskFactorLong, riskFactorShort, err := t.riskEngine.GetRiskFactors(market)
 	if err != nil {
-		log.Errorf(ctx, "failed to obtain risk factors from risk engine for market: %s", market)
+		fmt.Errorf("failed to obtain risk factors from risk engine for market: %s", market)
 	}
-	var riskFactor int64
+	var riskFactor float64
 	if openVolumeSign == 1 {
 		riskFactor = riskFactorLong
 	}

@@ -95,8 +95,6 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		v.RiskEngine.CalibrateRiskModel()
 	}
 
-	log.Infof("Risk AFTER calling model calculation = ", order.RiskFactor)
-
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
 	// 3) save to stores

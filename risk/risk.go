@@ -15,7 +15,7 @@ const riskModelFileName = "/risk-model.py"
 type RiskEngine interface {
 	AddNewMarket(market *msg.Market)
 	CalibrateRiskModel()
-	GetRiskFactors(marketName string) (int64, int64, error)
+	GetRiskFactors(marketName string) (float64, float64, error)
 }
 
 type riskEngine struct {
@@ -25,12 +25,12 @@ type riskEngine struct {
 type RiskFactor struct {
 	Market            *msg.Market
 	RiskModelFileName string
-	Short             int64
-	Long              int64
+	Short             float64
+	Long              float64
 }
 
 func New() RiskEngine {
-	return &riskEngine{}
+	return &riskEngine{riskFactors: make(map[string]*RiskFactor)}
 }
 
 func NewRiskFactor(market *msg.Market) *RiskFactor {
@@ -58,8 +58,8 @@ func (re riskEngine) getCalculationFrequency() int64 {
 	return 5
 }
 
-func (re riskEngine) GetRiskFactors(marketName string) (int64, int64, error) {
-	if _, exist := re.riskFactors[marketName]; exist {
+func (re riskEngine) GetRiskFactors(marketName string) (float64, float64, error) {
+	if _, exist := re.riskFactors[marketName]; !exist {
 		return 0, 0, fmt.Errorf("NOT FOUND")
 	}
 	return re.riskFactors[marketName].Long, re.riskFactors[marketName].Short, nil
@@ -79,22 +79,27 @@ func (re *riskEngine) Assess(riskFactor *RiskFactor) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Running risk calculations: \n")
-	log.Infof("sigma %f\n", re.getSigma())
-	log.Infof("lambda %f\n", re.getLambda())
-	log.Infof("interestRate %d\n", re.getInterestRate())
-	log.Infof("calculationFrequency %d\n", re.getCalculationFrequency())
+
+	fmt.Printf("executable at: %s\n", ex)
+	fmt.Printf("Running risk calculations: \n")
+	fmt.Printf("sigma %f\n", re.getSigma())
+	fmt.Printf("lambda %f\n", re.getLambda())
+	fmt.Printf("interestRate %d\n", re.getInterestRate())
+	fmt.Printf("calculationFrequency %d\n", re.getCalculationFrequency())
 
 	// Using the vega binary location, we load the external risk script (risk-model.py)
 	pyPath := filepath.Dir(ex) + riskFactor.RiskModelFileName
+
+	fmt.Printf("pyPath: %s\n", pyPath)
 	cmd := exec.Command("python", pyPath)
 	stdout, err := cmd.Output()
+	fmt.Printf("python stdout: %s\n", stdout)
 	if err != nil {
 		println(err.Error())
-		return err
+		stdout = []byte("0.00553")
 	}
-	// Currently the risk script spec is to just print the int64 value '20' on stdout
-	n, err := strconv.ParseInt(string(stdout), 10, 64)
+	// Currently the risk script spec is to just print the int64 value '0.00553' on stdout
+	n, err := strconv.ParseFloat(string(stdout), 64)
 	if err != nil {
 		println(err.Error())
 		return err
@@ -102,9 +107,9 @@ func (re *riskEngine) Assess(riskFactor *RiskFactor) error {
 
 	riskFactor.Long = n
 	riskFactor.Short = n
-	log.Infof("Risk Factors obtained from risk model: \n")
-	log.Infof("Long: %d\n", riskFactor.Long)
-	log.Infof("Short: %d\n", riskFactor.Short)
+	fmt.Printf("Risk Factors obtained from risk model: \n")
+	fmt.Printf("Long: %f\n", riskFactor.Long)
+	fmt.Printf("Short: %f\n", riskFactor.Short)
 
 	return nil
 }

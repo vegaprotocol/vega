@@ -9,6 +9,7 @@ import (
 	"vega/core"
 	"vega/datastore"
 	"vega/log"
+	"vega/msg"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 	// Vega core
 	vega := core.New(config, storage)
 	vega.InitialiseMarkets()
-
+	vega.RiskEngine.AddNewMarket(&msg.Market{Name: "BTC/DEC18"})
 
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
