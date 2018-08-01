@@ -180,7 +180,10 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 			riskFactor * float64(marketBucket.MinimumContractSize)
 
 		// deliberately loose precision for minimum margin requirement to operate on int64 on the API
-		marketPositions.MinimumMargin = marketPositions.UnrealisedPNL + int64(forwardRiskMargin)
+
+		//if minimumMargin is a negative number it means that trader is in credit towards vega
+		//if minimumMargin is a positive number it means that trader is in debit towards vega
+		marketPositions.MinimumMargin = -marketPositions.UnrealisedPNL + int64(math.Abs(forwardRiskMargin))
 
 		positions = append(positions, marketPositions)
 	}

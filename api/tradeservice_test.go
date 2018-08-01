@@ -316,6 +316,7 @@ func TestPositions(t *testing.T) {
 		assert.Equal(t, int64(0), val.RealisedPNL)
 		assert.Equal(t, int64(1000), val.UnrealisedVolume)
 		assert.Equal(t, int64(0), val.UnrealisedPNL)
+		assert.Equal(t, int64(553), val.MinimumMargin)
 	}
 
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyB)
@@ -330,6 +331,7 @@ func TestPositions(t *testing.T) {
 		assert.Equal(t, int64(0), val.RealisedPNL)
 		assert.Equal(t, int64(-1000), val.UnrealisedVolume)
 		assert.Equal(t, int64(0), val.UnrealisedPNL)
+		assert.Equal(t, int64(553), val.MinimumMargin)
 	}
 
 	// market moves by 10 up what is the PNL?
@@ -392,6 +394,7 @@ func TestPositions(t *testing.T) {
 		assert.Equal(t, int64(0), val.RealisedPNL)
 		assert.Equal(t, int64(1000), val.UnrealisedVolume)
 		assert.Equal(t, int64(10*1000), val.UnrealisedPNL)
+		assert.Equal(t, int64(-9392), val.MinimumMargin)
 	}
 
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyB)
@@ -406,6 +409,7 @@ func TestPositions(t *testing.T) {
 		assert.Equal(t, int64(0), val.RealisedPNL)
 		assert.Equal(t, int64(-1000), val.UnrealisedVolume)
 		assert.Equal(t, int64(-10*1000), val.UnrealisedPNL)
+		assert.Equal(t, int64(10608), val.MinimumMargin)
 	}
 
 
@@ -464,6 +468,7 @@ func TestPositions(t *testing.T) {
 		assert.Equal(t, int64(9000), val.RealisedPNL)
 		assert.Equal(t, int64(100), val.UnrealisedVolume)
 		assert.Equal(t, int64(10*100), val.UnrealisedPNL)
+		assert.Equal(t, int64(-940), val.MinimumMargin)
 	}
 
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyB)
@@ -478,6 +483,7 @@ func TestPositions(t *testing.T) {
 		assert.Equal(t, int64(-9000), val.RealisedPNL)
 		assert.Equal(t, int64(-100), val.UnrealisedVolume)
 		assert.Equal(t, int64(-10*100), val.UnrealisedPNL)
+		assert.Equal(t, int64(1060), val.MinimumMargin)
 	}
 
 	// close remaining 10% of position at 110
