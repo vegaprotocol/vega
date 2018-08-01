@@ -6,10 +6,10 @@ import (
 	"math"
 	"time"
 
-	"github.com/golang/go/src/pkg/fmt"
 	"vega/core"
 	"vega/datastore"
 	"vega/msg"
+	"vega/log"
 	"vega/risk"
 )
 
@@ -195,7 +195,7 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) float64 {
 	riskFactorLong, riskFactorShort, err := t.riskEngine.GetRiskFactors(market)
 	if err != nil {
-		fmt.Errorf("failed to obtain risk factors from risk engine for market: %s", market)
+		log.Errorf("failed to obtain risk factors from risk engine for market: %s", market)
 	}
 	var riskFactor float64
 	if openVolumeSign == 1 {
