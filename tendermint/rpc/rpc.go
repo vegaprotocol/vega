@@ -358,7 +358,7 @@ func (c *Client) call(ctx context.Context, method string, params opts, resp inte
 					"rpc: got error response from %s call to Tendermint: %s",
 					method, r.Error)
 			}
-			if r != nil {
+			if resp != nil {
 				return json.Unmarshal(r.Result, resp)
 			}
 		case <-c.closed:
