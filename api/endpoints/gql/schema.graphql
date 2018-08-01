@@ -42,7 +42,7 @@ type Subscription {
     candles(market: String!, interval: Int!): Candle!
     orders(market: String, party: String): Order!
     trades(market: String, party: String): Trade!
-    positions(party: String!): [Position]!
+    positions(party: String!): Position!
     marketDepth(market: String!): MarketDepth!
 }
 
@@ -178,6 +178,9 @@ type Position {
 
     # Unrealised Profit or Loss direction
     unrealisedProfitDirection: ValueDirection!
+
+    # Average entry price for this position
+    averageEntryPrice: String!
 }
 
 

@@ -331,10 +331,13 @@ func (r *MyPositionResolver) UnrealisedProfitDirection(ctx context.Context, obj 
 	return r.direction(obj.UnrealisedPNL), nil
 }
 
+func (r *MyPositionResolver) AverageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error)  {
+	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
+}
+
 func (r *MyPositionResolver) Market(ctx context.Context, obj *msg.MarketPosition) (Market, error) {
 	return Market{Name: obj.Market}, nil
 }
-
 
 func (r *MyPositionResolver) absInt64Str(val int64) (string) {
 	if val < 0 {
@@ -446,74 +449,6 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 
 type MySubscriptionResolver resolverRoot
 
-func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error) {
-	events := make(chan []msg.Candle, 1)
-	connected := true
-
-	id := randString(8)
-	fmt.Println("New subscriber on channel: ", id)
-
-	go func(id string) {
-		<-ctx.Done()
-		connected = false
-		fmt.Println("Subscriber closed connection:", id)
-	}(id)
-
-	go func(channel chan[]msg.Candle) {
-		for connected {
-			currentTime := time.Now()
-
-			fmt.Printf("market: %s interval: %d", market, interval)
-			fmt.Println()
-
-			count :=int64(interval)
-			since := currentTime.Add(time.Duration(-300) * time.Second)
-
-
-			fmt.Printf("%+v, %+v", since, currentTime)
-
-			//res1, err := r.tradeService.GetByMarket(ctx, market, 99999)
-			//if err != nil {
-			//	fmt.Errorf("there was an error when getting candles charts: %v", err)
-			//}
-			//
-			//fmt.Printf("Trades in store: %+v  ------ [%d] ------", res1, len(res1))
-			//fmt.Println()
-
-			res, err := r.tradeService.GetCandles(ctx, market, since, 60)
-			if err != nil {
-				fmt.Errorf("there was an error when getting candles charts: %v", err)
-			}
-
-			fmt.Printf("Candles holder: %+v", res)
-			fmt.Println(id)
-			fmt.Printf("Candles returned: %+v", res.Candles)
-			fmt.Println(id)
-
-			candles := make([]msg.Candle, 0)
-
-			for _, v := range res.Candles {
-				candles = append(candles, msg.Candle{
-					Volume:           v.Volume,
-					High:             v.High,
-					Low:              v.Low,
-					Date:             v.Date,
-					Open:             v.Open,
-					Close:            v.Close,
-					OpenBlockNumber:  v.OpenBlockNumber,
-					CloseBlockNumber: v.CloseBlockNumber,
-				})
-			}
-
-			channel <- candles
-
-			time.Sleep(time.Duration(count) * time.Second)
-		}
-	}(events)
-
-	return nil, nil
-}
-
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error) {
 	c, ref := r.orderService.ObserveOrders(ctx)
 	log.Debugf("GraphQL Orders -> New subscriber: %d", ref)
@@ -526,9 +461,10 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan []*msg.MarketPosition, error) {
-
-	return nil, nil
+func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan msg.MarketPosition, error) {
+	c, ref := r.tradeService.ObservePositions(ctx, party)
+	log.Debugf("GraphQL Positions -> New subscriber: %d", ref)
+	return c, nil
 }
 
 func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error) {
@@ -536,6 +472,61 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	log.Debugf("GraphQL Market Depth -> New subscriber: %d", ref)
 	return c, nil
 }
+
+
+
+
+
+func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error) {
+
+	events := make(chan msg.Candle, 0)
+	connected := true
+	id := randString(8)
+	fmt.Println("New subscriber on channel: ", id)
+
+	go func(id string, channel chan msg.Candle) {
+		<-ctx.Done()
+		connected = false
+		close(channel)
+		fmt.Println("Subscriber closed connection:", id)
+	}(id, events)
+
+	go func(channel chan msg.Candle) {
+		for connected {
+
+			log.Debugf("market: %s interval: %d", market, interval)
+
+			candle, err := r.tradeService.GetCandle(ctx, market, int64(interval))
+			if err != nil {
+				log.Errorf("error calculating latest candle for subscriber: %v", err)
+			}
+
+			if candle != nil {
+
+				fmt.Printf("Candle returned: %+v", candle)
+				fmt.Println()
+
+				channel <- *candle
+			} else {
+				log.Errorf("Get Candle was nil for market %s and interval %d", market, interval)
+			}
+
+
+			// bucket is full (candle complete)
+			time.Sleep(time.Duration(interval) * time.Second)
+		}
+	}(events)
+
+	return events, nil
+}
+
+
+
+
+
+
+
+
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -546,6 +537,7 @@ func randString(n int) string {
 	}
 	return string(b)
 }
+
 
 // END: Subscription Resolver
 

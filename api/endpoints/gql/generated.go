@@ -58,6 +58,7 @@ type Resolvers interface {
 	Position_unrealisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	Position_unrealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	Position_unrealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
+	Position_averageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error)
 
 	PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (string, error)
 	PriceLevel_volume(ctx context.Context, obj *msg.PriceLevel) (string, error)
@@ -68,7 +69,7 @@ type Resolvers interface {
 	Subscription_candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error)
 	Subscription_orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error)
 	Subscription_trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error)
-	Subscription_positions(ctx context.Context, party string) (<-chan []*msg.MarketPosition, error)
+	Subscription_positions(ctx context.Context, party string) (<-chan msg.MarketPosition, error)
 	Subscription_marketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error)
 
 	Trade_market(ctx context.Context, obj *msg.Trade) (Market, error)
@@ -137,6 +138,7 @@ type PositionResolver interface {
 	UnrealisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	UnrealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	UnrealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
+	AverageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error)
 }
 type PriceLevelResolver interface {
 	Price(ctx context.Context, obj *msg.PriceLevel) (string, error)
@@ -151,7 +153,7 @@ type SubscriptionResolver interface {
 	Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error)
 	Orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error)
 	Trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error)
-	Positions(ctx context.Context, party string) (<-chan []*msg.MarketPosition, error)
+	Positions(ctx context.Context, party string) (<-chan msg.MarketPosition, error)
 	MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error)
 }
 type TradeResolver interface {
@@ -283,6 +285,10 @@ func (s shortMapper) Position_unrealisedProfitDirection(ctx context.Context, obj
 	return s.r.Position().UnrealisedProfitDirection(ctx, obj)
 }
 
+func (s shortMapper) Position_averageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error) {
+	return s.r.Position().AverageEntryPrice(ctx, obj)
+}
+
 func (s shortMapper) PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (string, error) {
 	return s.r.PriceLevel().Price(ctx, obj)
 }
@@ -315,7 +321,7 @@ func (s shortMapper) Subscription_trades(ctx context.Context, market *string, pa
 	return s.r.Subscription().Trades(ctx, market, party)
 }
 
-func (s shortMapper) Subscription_positions(ctx context.Context, party string) (<-chan []*msg.MarketPosition, error) {
+func (s shortMapper) Subscription_positions(ctx context.Context, party string) (<-chan msg.MarketPosition, error) {
 	return s.r.Subscription().Positions(ctx, party)
 }
 
@@ -1499,6 +1505,8 @@ func (ec *executionContext) _Position(ctx context.Context, sel []query.Selection
 			out.Values[i] = ec._Position_unrealisedProfitValue(ctx, field, obj)
 		case "unrealisedProfitDirection":
 			out.Values[i] = ec._Position_unrealisedProfitDirection(ctx, field, obj)
+		case "averageEntryPrice":
+			out.Values[i] = ec._Position_averageEntryPrice(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1714,6 +1722,36 @@ func (ec *executionContext) _Position_unrealisedProfitDirection(ctx context.Cont
 		}
 		res := resTmp.(ValueDirection)
 		return res
+	})
+}
+
+func (ec *executionContext) _Position_averageEntryPrice(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Position",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Position_averageEntryPrice(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -2190,21 +2228,7 @@ func (ec *executionContext) _Subscription_positions(ctx context.Context, field g
 			return nil
 		}
 		var out graphql.OrderedMap
-		out.Add(field.Alias, func() graphql.Marshaler {
-			arr1 := graphql.Array{}
-			for idx1 := range res {
-				arr1 = append(arr1, func() graphql.Marshaler {
-					rctx := graphql.GetResolverContext(ctx)
-					rctx.PushIndex(idx1)
-					defer rctx.Pop()
-					if res[idx1] == nil {
-						return graphql.Null
-					}
-					return ec._Position(ctx, field.Selections, res[idx1])
-				}())
-			}
-			return arr1
-		}())
+		out.Add(field.Alias, func() graphql.Marshaler { return ec._Position(ctx, field.Selections, &res) }())
 		return &out
 	}
 }
@@ -3339,7 +3363,7 @@ type Subscription {
     candles(market: String!, interval: Int!): Candle!
     orders(market: String, party: String): Order!
     trades(market: String, party: String): Trade!
-    positions(party: String!): [Position]!
+    positions(party: String!): Position!
     marketDepth(market: String!): MarketDepth!
 }
 
@@ -3475,6 +3499,9 @@ type Position {
 
     # Unrealised Profit or Loss direction
     unrealisedProfitDirection: ValueDirection!
+
+    # Average entry price for this position
+    averageEntryPrice: String!
 }
 
 
