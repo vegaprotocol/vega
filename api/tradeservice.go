@@ -121,17 +121,13 @@ func (t *tradeService) GetCandle(ctx context.Context, market string, intervalSec
 		sinceBlock = 0
 	}
 
-	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), uint64(height), uint64(intervalSeconds))
+	c, err := t.tradeStore.GetCandle(market, uint64(height), uint64(intervalSeconds))
 	if err != nil {
 		return nil, err
 	}
 
-	var candle *msg.Candle
-	if c.Candles != nil && len(c.Candles) == 1 {
-		candle = c.Candles[0]
-		candle.Date = blockTime.Add(time.Duration(-1 * intervalSeconds)).Format(time.RFC3339)
-	}
-	return candle, nil
+	c.Date = blockTime.Add(time.Duration(-1 * intervalSeconds)).Format(time.RFC3339)
+	return c, nil
 }
 
 

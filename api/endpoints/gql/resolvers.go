@@ -511,9 +511,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 				log.Errorf("Get Candle was nil for market %s and interval %d", market, interval)
 			}
 
-
-			// bucket is full (candle complete)
-			time.Sleep(time.Duration(interval) * time.Second)
+			time.Sleep(1 * time.Second)
 		}
 	}(events)
 

@@ -18,6 +18,42 @@ func newCandle() *msg.Candle {
 	return &msg.Candle{}
 }
 
+
+func (store *memTradeStore) GetCandle(market string, currentBlock, interval uint64) (*msg.Candle, error) {
+	if err := store.marketExists(market); err != nil {
+		return nil, err
+	}
+
+	sinceBlock := currentBlock - interval
+
+	candle := &msg.Candle{
+		CloseBlockNumber: currentBlock,
+		OpenBlockNumber: sinceBlock,
+	}
+
+	for _, t := range store.store.markets[market].tradesByTimestamp {
+
+		// iterate trades until reached ones of interest
+		if t.trade.Timestamp < sinceBlock {
+			continue
+		}
+
+		if candle.Volume == 0 {
+			candle.Open = t.trade.Price
+		}
+		candle.Volume += t.trade.Size
+		if candle.High < t.trade.Price {
+			candle.High = t.trade.Price
+		}
+		if candle.Low > t.trade.Price || candle.Low == 0 {
+			candle.Low = t.trade.Price
+		}
+	}
+
+	return candle, nil
+}
+
+
 func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
 	if err := store.marketExists(market); err != nil {
 		return msg.Candles{}, err
