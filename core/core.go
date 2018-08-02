@@ -52,23 +52,27 @@ func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
 	}
 }
 
+func GetConfig() *Config {
+	return &Config{RiskCalculationFrequency: riskCalculationFrequency}
+}
+
 func (v *Vega) SetGenesisTime(genesisTime time.Time) {
 	v.config.GenesisTime = genesisTime
 }
 
-func GetConfig() *Config {
-	return &Config{RiskCalculationFrequency: riskCalculationFrequency}
+func (v *Vega) GetGenesisTime() time.Time {
+	return v.config.GenesisTime
 }
 
 func (v *Vega) GetAbciHeight() int64 {
 	return v.State.Height
 }
 
-func (v *Vega) GetTime() time.Time {
-	//genesisTime, _ := time.Parse(time.RFC3339, genesisTimeStr)
-	genesisTime := v.config.GenesisTime
-	return genesisTime.Add(time.Duration(v.State.Height) * time.Second)
-}
+//func (v *Vega) GetTime() time.Time {
+//	//genesisTime, _ := time.Parse(time.RFC3339, genesisTimeStr)
+//	genesisTime := v.config.GenesisTime
+//	return genesisTime.Add(time.Duration(v.State.Height) * time.Second)
+//}
 
 func (v *Vega) InitialiseMarkets() {
 	v.matchingEngine.CreateMarket(marketName)

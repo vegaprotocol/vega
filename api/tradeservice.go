@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"math"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"vega/msg"
 	"vega/log"
 	"vega/risk"
+	"vega/vegatime"
 )
 
 type TradeService interface {
@@ -81,28 +81,16 @@ func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id str
 
 func (t *tradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error) {
 	// compare time and translate it into timestamps
-	appCurrentTime := t.app.GetTime()
+	vtc := vegatime.NewVegaTimeConverter(t.app)
+	sinceBlock := vtc.TimeToBlock(since)
 
-	delta := appCurrentTime.Sub(since)
-	deltaInSeconds := int64(delta.Seconds())
-	if deltaInSeconds < 0 {
-		return msg.Candles{}, errors.New("INVALID_REQUEST")
-	}
-
-	sinceBlock := t.app.GetAbciHeight() - deltaInSeconds
-	if sinceBlock < 0 {
-		sinceBlock = 0
-	}
-
-	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), uint64(t.app.GetAbciHeight()), interval)
+	c, err := t.tradeStore.GetCandles(market, sinceBlock, uint64(t.app.GetAbciHeight()), interval)
 	if err != nil {
 		return msg.Candles{}, err
 	}
 
-	aggregationStartTime := appCurrentTime.Add(-delta)
-	for i, candle := range c.Candles {
-		candleDuration := time.Duration(i*int(interval)) * time.Second
-		candle.Date = aggregationStartTime.Add(candleDuration).Format(time.RFC3339)
+	for _, candle := range c.Candles {
+		candle.Date = vtc.BlockToTime(candle.OpenBlockNumber).Format(time.RFC3339)
 	}
 
 	return c, nil
