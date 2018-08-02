@@ -309,7 +309,7 @@ func (r *MyPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *msg.Pr
 type MyPositionResolver resolverRoot
 
 func (r *MyPositionResolver) RealisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error) {
-	return string(obj.RealisedVolume), nil
+	return strconv.FormatInt(obj.RealisedVolume, 10), nil
 }
 
 func (r *MyPositionResolver) RealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error) {
@@ -321,7 +321,7 @@ func (r *MyPositionResolver) RealisedProfitDirection(ctx context.Context, obj *m
 }
 
 func (r *MyPositionResolver) UnrealisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error) {
-	return string(obj.UnrealisedVolume), nil
+	return strconv.FormatInt(obj.UnrealisedVolume, 10), nil
 }
 
 func (r *MyPositionResolver) UnrealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error) {
