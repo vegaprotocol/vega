@@ -1,9 +1,25 @@
 package api
 
 import (
+	"context"
+	"fmt"
+	"math/rand"
 	"testing"
+
+	"vega/core"
+	"vega/datastore"
+	"vega/log"
+	"vega/msg"
+	"vega/risk"
+
 	"github.com/stretchr/testify/assert"
 )
+
+// this runs just once as first
+func init() {
+	log.InitConsoleLogger(log.DebugLevel)
+}
+
 
 func TestNewTradeService(t *testing.T) {
 	var newTradeService = NewTradeService()
@@ -186,5 +202,366 @@ func TestNewTradeService(t *testing.T) {
 
 
 func TestTradeService_GetPositionsByParty(t *testing.T) {
+
+}
+
+func TestPositions(t *testing.T) {
+	testMarket := "BTC/DEC18"
+	testParty := "testParty"
+	testPartyA := "testPartyA"
+	testPartyB := "testPartyB"
+
+	var memStore = datastore.NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
+	var newOrderStore = datastore.NewOrderStore(&memStore)
+	var newTradeStore = datastore.NewTradeStore(&memStore)
+
+	var ctx = context.Background()
+	var tradeService = NewTradeService()
+
+	vega := &core.Vega{}
+	riskEngine := risk.New()
+	riskEngine.AddNewMarket(&msg.Market{Name: testMarket})
+
+	tradeService.Init(vega, newTradeStore, riskEngine)
+
+	passiveOrderId := fmt.Sprintf("%d", rand.Intn(1000000000000))
+	aggressiveOrderId := fmt.Sprintf("%d", rand.Intn(1000000000000))
+	tradeId := fmt.Sprintf("%d", rand.Intn(1000000000000))
+
+	aggressiveOrder := &datastore.Order{
+		Order: msg.Order{
+			Id:     aggressiveOrderId,
+			Market: testMarket,
+			Party:  testPartyA,
+			Side:   msg.Side_Buy,
+		},
+	}
+	passiveOrder := &datastore.Order{
+		Order: msg.Order{
+			Id:     passiveOrderId,
+			Market: testMarket,
+			Party:  testPartyB,
+			Side:   msg.Side_Sell,
+		},
+	}
+
+	trade := &datastore.Trade{
+		Trade: msg.Trade{
+			Id:        tradeId,
+			Price:     100,
+			Market:    testMarket,
+			Size:      500,
+			Timestamp: 0,
+			Buyer:     testPartyA,
+			Seller:    testPartyB,
+			Aggressor: msg.Side_Buy,
+		},
+		PassiveOrderId:    passiveOrderId,
+		AggressiveOrderId: aggressiveOrderId,
+	}
+
+	err := newOrderStore.Post(*passiveOrder)
+	assert.Nil(t, err)
+	err = newOrderStore.Post(*aggressiveOrder)
+	assert.Nil(t, err)
+	err = newTradeStore.Post(*trade)
+	assert.Nil(t, err)
+
+	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+
+	aggressiveOrder = &datastore.Order{
+		Order: msg.Order{
+			Id:     aggressiveOrderId,
+			Market: testMarket,
+			Party:  testPartyA,
+			Side:   msg.Side_Buy,
+		},
+	}
+	passiveOrder = &datastore.Order{
+		Order: msg.Order{
+			Id:     passiveOrderId,
+			Market: testMarket,
+			Party:  testPartyB,
+			Side:   msg.Side_Sell,
+		},
+	}
+
+	trade = &datastore.Trade{
+		Trade: msg.Trade{
+			Id:        tradeId,
+			Price:     100,
+			Market:    testMarket,
+			Size:      500,
+			Timestamp: 0,
+			Buyer:     testPartyA,
+			Seller:    testPartyB,
+			Aggressor: msg.Side_Buy,
+		},
+		PassiveOrderId:    passiveOrderId,
+		AggressiveOrderId: aggressiveOrderId,
+	}
+
+	err = newOrderStore.Post(*passiveOrder)
+	assert.Nil(t, err)
+	err = newOrderStore.Post(*aggressiveOrder)
+	assert.Nil(t, err)
+	err = newTradeStore.Post(*trade)
+	assert.Nil(t, err)
+
+
+	// two trades of 500 contracts done at the same price of 100
+	positions, err := tradeService.GetPositionsByParty(ctx, testPartyA)
+	assert.Nil(t, err)
+
+	fmt.Printf("positions returned:\n")
+	for _, val := range positions {
+		fmt.Printf("%+v\n", val)
+		assert.Equal(t, testMarket, val.Market)
+		assert.Equal(t, int64(0), val.RealisedVolume)
+		assert.Equal(t, int64(0), val.RealisedPNL)
+		assert.Equal(t, int64(1000), val.UnrealisedVolume)
+		assert.Equal(t, int64(0), val.UnrealisedPNL)
+		assert.Equal(t, int64(550), val.MinimumMargin)
+	}
+
+	positions, err = tradeService.GetPositionsByParty(ctx, testPartyB)
+	assert.Nil(t, err)
+
+	fmt.Printf("positions returned:\n")
+	for _, val := range positions {
+		fmt.Printf("%+v\n", val)
+		assert.Equal(t, testMarket, val.Market)
+
+		assert.Equal(t, int64(0), val.RealisedVolume)
+		assert.Equal(t, int64(0), val.RealisedPNL)
+		assert.Equal(t, int64(-1000), val.UnrealisedVolume)
+		assert.Equal(t, int64(0), val.UnrealisedPNL)
+		assert.Equal(t, int64(553), val.MinimumMargin)
+	}
+
+	// market moves by 10 up what is the PNL?
+	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	aggressiveOrder = &datastore.Order{
+		Order: msg.Order{
+			Id:     aggressiveOrderId,
+			Market: testMarket,
+			Party:  "partyC",
+			Side:   msg.Side_Buy,
+		},
+	}
+	passiveOrder = &datastore.Order{
+		Order: msg.Order{
+			Id:     passiveOrderId,
+			Market: testMarket,
+			Party:  "partyD",
+			Side:   msg.Side_Sell,
+		},
+	}
+
+	trade = &datastore.Trade{
+		Trade: msg.Trade{
+			Id:        tradeId,
+			Price:     110,
+			Market:    testMarket,
+			Size:      1,
+			Timestamp: 0,
+			Buyer:     "partyC",
+			Seller:    "partyD",
+			Aggressor: msg.Side_Buy,
+		},
+		PassiveOrderId:    passiveOrderId,
+		AggressiveOrderId: aggressiveOrderId,
+	}
+
+	err = newOrderStore.Post(*passiveOrder)
+	assert.Nil(t, err)
+	err = newOrderStore.Post(*aggressiveOrder)
+	assert.Nil(t, err)
+	err = newTradeStore.Post(*trade)
+	assert.Nil(t, err)
+
+	// current mark price for testMarket should be 110, the PNL for partyA and partyB should change
+	markPrice, err := newTradeStore.GetMarkPrice(testMarket)
+	assert.Equal(t, uint64(110), markPrice)
+	assert.Nil(t, err)
+
+	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)
+	assert.Nil(t, err)
+
+	fmt.Printf("positions returned:\n")
+	for _, val := range positions {
+		fmt.Printf("%+v\n", val)
+		assert.Equal(t, testMarket, val.Market)
+
+		assert.Equal(t, int64(0), val.RealisedVolume)
+		assert.Equal(t, int64(0), val.RealisedPNL)
+		assert.Equal(t, int64(1000), val.UnrealisedVolume)
+		assert.Equal(t, int64(10*1000), val.UnrealisedPNL)
+		assert.Equal(t, int64(-9395), val.MinimumMargin)
+	}
+
+	positions, err = tradeService.GetPositionsByParty(ctx, testPartyB)
+	assert.Nil(t, err)
+
+	fmt.Printf("positions returned:\n")
+	for _, val := range positions {
+		fmt.Printf("%+v\n", val)
+		assert.Equal(t, testMarket, val.Market)
+
+		assert.Equal(t, int64(0), val.RealisedVolume)
+		assert.Equal(t, int64(0), val.RealisedPNL)
+		assert.Equal(t, int64(-1000), val.UnrealisedVolume)
+		assert.Equal(t, int64(-10*1000), val.UnrealisedPNL)
+		assert.Equal(t, int64(10608), val.MinimumMargin)
+	}
+
+
+	// close 90% of position at 110
+	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	aggressiveOrder = &datastore.Order{
+		Order: msg.Order{
+			Id:     aggressiveOrderId,
+			Market: testMarket,
+			Party:  testPartyA,
+			Side:   msg.Side_Sell,
+		},
+	}
+	passiveOrder = &datastore.Order{
+		Order: msg.Order{
+			Id:     passiveOrderId,
+			Market: testMarket,
+			Party:  testPartyB,
+			Side:   msg.Side_Buy,
+		},
+	}
+
+	trade = &datastore.Trade{
+		Trade: msg.Trade{
+			Id:        tradeId,
+			Price:     110,
+			Market:    testMarket,
+			Size:      900,
+			Timestamp: 0,
+			Buyer:     testPartyB,
+			Seller:    testPartyA,
+			Aggressor: msg.Side_Sell,
+		},
+		PassiveOrderId:    passiveOrderId,
+		AggressiveOrderId: aggressiveOrderId,
+	}
+
+	err = newOrderStore.Post(*passiveOrder)
+	assert.Nil(t, err)
+	err = newOrderStore.Post(*aggressiveOrder)
+	assert.Nil(t, err)
+	err = newTradeStore.Post(*trade)
+	assert.Nil(t, err)
+
+	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)
+	assert.Nil(t, err)
+
+	fmt.Printf("positions returned:\n")
+	for _, val := range positions {
+		fmt.Printf("%+v\n", val)
+		assert.Equal(t, testMarket, val.Market)
+
+		assert.Equal(t, int64(900), val.RealisedVolume)
+		assert.Equal(t, int64(9000), val.RealisedPNL)
+		assert.Equal(t, int64(100), val.UnrealisedVolume)
+		assert.Equal(t, int64(10*100), val.UnrealisedPNL)
+		assert.Equal(t, int64(-940), val.MinimumMargin)
+	}
+
+	positions, err = tradeService.GetPositionsByParty(ctx, testPartyB)
+	assert.Nil(t, err)
+
+	fmt.Printf("positions returned:\n")
+	for _, val := range positions {
+		fmt.Printf("%+v\n", val)
+		assert.Equal(t, testMarket, val.Market)
+
+		assert.Equal(t, int64(900), val.RealisedVolume)
+		assert.Equal(t, int64(-9000), val.RealisedPNL)
+		assert.Equal(t, int64(-100), val.UnrealisedVolume)
+		assert.Equal(t, int64(-10*100), val.UnrealisedPNL)
+		assert.Equal(t, int64(1060), val.MinimumMargin)
+	}
+
+	// close remaining 10% of position at 110
+	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
+	aggressiveOrder = &datastore.Order{
+		Order: msg.Order{
+			Id:     aggressiveOrderId,
+			Market: testMarket,
+			Party:  testPartyA,
+			Side:   msg.Side_Sell,
+		},
+	}
+	passiveOrder = &datastore.Order{
+		Order: msg.Order{
+			Id:     passiveOrderId,
+			Market: testMarket,
+			Party:  testPartyB,
+			Side:   msg.Side_Buy,
+		},
+	}
+
+	trade = &datastore.Trade{
+		Trade: msg.Trade{
+			Id:        tradeId,
+			Price:     110,
+			Market:    testMarket,
+			Size:      100,
+			Timestamp: 0,
+			Buyer:     testPartyB,
+			Seller:    testPartyA,
+			Aggressor: msg.Side_Sell,
+		},
+		PassiveOrderId:    passiveOrderId,
+		AggressiveOrderId: aggressiveOrderId,
+	}
+
+	err = newOrderStore.Post(*passiveOrder)
+	assert.Nil(t, err)
+	err = newOrderStore.Post(*aggressiveOrder)
+	assert.Nil(t, err)
+	err = newTradeStore.Post(*trade)
+	assert.Nil(t, err)
+
+	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)
+	assert.Nil(t, err)
+
+	fmt.Printf("positions returned:\n")
+	for _, val := range positions {
+		fmt.Printf("%+v\n", val)
+		assert.Equal(t, testMarket, val.Market)
+
+		assert.Equal(t, int64(1000), val.RealisedVolume)
+		assert.Equal(t, int64(10000), val.RealisedPNL)
+		assert.Equal(t, int64(0), val.UnrealisedVolume)
+		assert.Equal(t, int64(0), val.UnrealisedPNL)
+	}
+
+	positions, err = tradeService.GetPositionsByParty(ctx, testPartyB)
+	assert.Nil(t, err)
+
+	fmt.Printf("positions returned:\n")
+	for _, val := range positions {
+		fmt.Printf("%+v\n", val)
+		assert.Equal(t, testMarket, val.Market)
+
+		assert.Equal(t, int64(1000), val.RealisedVolume)
+		assert.Equal(t, int64(-10000), val.RealisedPNL)
+		assert.Equal(t, int64(0), val.UnrealisedVolume)
+		assert.Equal(t, int64(0), val.UnrealisedPNL)
+	}
 
 }

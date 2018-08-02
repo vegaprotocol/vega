@@ -41,7 +41,7 @@ func (m *memTradeStore) Unsubscribe(id uint64) error {
 	defer m.mu.Unlock()
 
 	if m.subscribers == nil || len(m.subscribers) == 0 {
-		log.Debugf("TradeStore -> Unsubscribe: No subscribers available")
+		log.Debugf("TradeStore -> Unsubscribe: No subscribers connected")
 		return nil
 	}
 
@@ -84,7 +84,7 @@ func (m *memTradeStore) queueEvent(t Trade) error {
 	defer m.mu.Unlock()
 
 	if m.subscribers == nil || len(m.subscribers) == 0 {
-		log.Debugf("TradeStore -> queueEvent: No subscribers available")
+		log.Debugf("TradeStore -> queueEvent: No subscribers connected")
 		return nil
 	}
 

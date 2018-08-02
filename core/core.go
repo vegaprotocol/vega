@@ -5,16 +5,20 @@ import (
 	"time"
 
 	"vega/datastore"
+	"vega/log"
 	"vega/matching"
 	"vega/msg"
 	"vega/risk"
-	"vega/log"
 )
 
-const marketName = "BTC/DEC18"
+const (
+	marketName               = "BTC/DEC18"
+	riskCalculationFrequency = 5
+)
 
-type Config struct{
-	GenesisTime time.Time
+type Config struct {
+	GenesisTime              time.Time
+	RiskCalculationFrequency uint64
 }
 
 type Vega struct {
@@ -22,9 +26,10 @@ type Vega struct {
 	markets        map[string]*matching.OrderBook
 	OrderStore     datastore.OrderStore
 	TradeStore     datastore.TradeStore
+	PartyStore     datastore.PartyStore
 	matchingEngine matching.MatchingEngine
 	State          *State
-	riskEngine     risk.RiskEngine
+	RiskEngine     risk.RiskEngine
 }
 
 func New(config *Config, store datastore.StoreProvider) *Vega {
@@ -40,8 +45,9 @@ func New(config *Config, store datastore.StoreProvider) *Vega {
 		markets:        make(map[string]*matching.OrderBook),
 		OrderStore:     store.OrderStore(),
 		TradeStore:     store.TradeStore(),
+		PartyStore:     store.PartyStore(),
 		matchingEngine: matchingEngine,
-		riskEngine:     riskEngine,
+		RiskEngine:     riskEngine,
 		State:          newState(),
 	}
 }
@@ -51,7 +57,7 @@ func (v *Vega) SetGenesisTime(genesisTime time.Time) {
 }
 
 func GetConfig() *Config {
-	return &Config{}
+	return &Config{RiskCalculationFrequency: riskCalculationFrequency}
 }
 
 func (v *Vega) GetAbciHeight() int64 {
@@ -84,12 +90,10 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// ------------------------------------------------//
 	// 2) --------------- RISK ENGINE -----------------//
 
-	log.Infof("Risk BEFORE calling model calculation = ", order.RiskFactor)
-
-	v.riskEngine.Assess(order)
-	confirmation.Order = order
-
-	log.Infof("Risk AFTER calling model calculation = ", order.RiskFactor)
+	// CALL IT EVERY 5 BLOCKS
+	if order.Timestamp%v.config.RiskCalculationFrequency == 0 {
+		v.RiskEngine.CalibrateRiskModel()
+	}
 
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
@@ -127,6 +131,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		v.TradeStore.Notify()
 	}
 
+	// TODO: ONE METHOD TO create or update risk record for this order party etc
 
 	// ------------------------------------------------//
 

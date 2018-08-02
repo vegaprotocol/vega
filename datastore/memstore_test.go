@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"testing"
+	"vega/log"
 	"vega/msg"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,6 +11,11 @@ const testMarket = "market"
 const testParty = "party"
 const testPartyA = "partyA"
 const testPartyB = "partyB"
+
+// this runs just once as first
+func init() {
+	log.InitConsoleLogger(log.DebugLevel)
+}
 
 func TestNewMemStore_ReturnsNewMemStoreInstance(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty})

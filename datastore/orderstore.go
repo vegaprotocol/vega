@@ -42,7 +42,7 @@ func (m *memOrderStore) Unsubscribe(id uint64) error {
 	defer m.mu.Unlock()
 
 	if m.subscribers == nil || len(m.subscribers) == 0 {
-		log.Debugf("OrderStore -> Unsubscribe: No subscribers available")
+		log.Debugf("OrderStore -> Unsubscribe: No subscribers connected")
 		return nil
 	}
 
@@ -85,7 +85,7 @@ func (m *memOrderStore) queueEvent(o Order) error {
 	defer m.mu.Unlock()
 
 	if m.subscribers == nil || len(m.subscribers) == 0 {
-		log.Debugf("OrderStore -> queueEvent: No subscribers available")
+		log.Debugf("OrderStore -> queueEvent: No subscribers connected")
 		return nil
 	}
 
