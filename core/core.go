@@ -96,7 +96,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 
 	// CALL IT EVERY 5 BLOCKS
 	if order.Timestamp%v.config.RiskCalculationFrequency == 0 {
-		v.RiskEngine.CalibrateRiskModel()
+		v.RiskEngine.RecalculateRisk()
 	}
 
 	// -----------------------------------------------//
