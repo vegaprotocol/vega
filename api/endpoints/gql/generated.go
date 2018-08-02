@@ -59,6 +59,7 @@ type Resolvers interface {
 	Position_unrealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	Position_unrealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
 	Position_averageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error)
+	Position_minimumMargin(ctx context.Context, obj *msg.MarketPosition) (string, error)
 
 	PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (string, error)
 	PriceLevel_volume(ctx context.Context, obj *msg.PriceLevel) (string, error)
@@ -139,6 +140,7 @@ type PositionResolver interface {
 	UnrealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error)
 	UnrealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
 	AverageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error)
+	MinimumMargin(ctx context.Context, obj *msg.MarketPosition) (string, error)
 }
 type PriceLevelResolver interface {
 	Price(ctx context.Context, obj *msg.PriceLevel) (string, error)
@@ -287,6 +289,10 @@ func (s shortMapper) Position_unrealisedProfitDirection(ctx context.Context, obj
 
 func (s shortMapper) Position_averageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error) {
 	return s.r.Position().AverageEntryPrice(ctx, obj)
+}
+
+func (s shortMapper) Position_minimumMargin(ctx context.Context, obj *msg.MarketPosition) (string, error) {
+	return s.r.Position().MinimumMargin(ctx, obj)
 }
 
 func (s shortMapper) PriceLevel_price(ctx context.Context, obj *msg.PriceLevel) (string, error) {
@@ -1507,6 +1513,8 @@ func (ec *executionContext) _Position(ctx context.Context, sel []query.Selection
 			out.Values[i] = ec._Position_unrealisedProfitDirection(ctx, field, obj)
 		case "averageEntryPrice":
 			out.Values[i] = ec._Position_averageEntryPrice(ctx, field, obj)
+		case "minimumMargin":
+			out.Values[i] = ec._Position_minimumMargin(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1742,6 +1750,36 @@ func (ec *executionContext) _Position_averageEntryPrice(ctx context.Context, fie
 
 		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
 			return ec.resolvers.Position_averageEntryPrice(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
+}
+
+func (ec *executionContext) _Position_minimumMargin(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Position",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Position_minimumMargin(ctx, obj)
 		})
 		if err != nil {
 			ec.Error(ctx, err)
@@ -3502,6 +3540,9 @@ type Position {
 
     # Average entry price for this position
     averageEntryPrice: String!
+
+    # Minimum margin for this position
+    minimumMargin: String!
 }
 
 

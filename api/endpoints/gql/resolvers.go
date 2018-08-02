@@ -336,6 +336,10 @@ func (r *MyPositionResolver) AverageEntryPrice(ctx context.Context, obj *msg.Mar
 	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
 }
 
+func (r *MyPositionResolver) MinimumMargin(ctx context.Context, obj *msg.MarketPosition) (string, error)  {
+	return strconv.FormatInt(obj.MinimumMargin, 10), nil
+}
+
 func (r *MyPositionResolver) Market(ctx context.Context, obj *msg.MarketPosition) (Market, error) {
 	return Market{Name: obj.Market}, nil
 }

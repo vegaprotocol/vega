@@ -181,6 +181,9 @@ type Position {
 
     # Average entry price for this position
     averageEntryPrice: String!
+
+    # Minimum margin for this position
+    minimumMargin: String!
 }
 
 
