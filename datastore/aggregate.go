@@ -19,13 +19,11 @@ func newCandle() *msg.Candle {
 }
 
 
-func (store *memTradeStore) GetCandle(market string, currentBlock, interval uint64) (*msg.Candle, error) {
+func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error) {
 	if err := store.marketExists(market); err != nil {
 		return nil, err
 	}
-
-	sinceBlock := currentBlock - interval
-
+	
 	candle := &msg.Candle{
 		CloseBlockNumber: currentBlock,
 		OpenBlockNumber: sinceBlock,

@@ -25,7 +25,7 @@ type TradeStore interface {
 	// Aggregates trades into candles
 	GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error)
 	// Aggregate trades into a single candle from currentBlock for interval
-	GetCandle(market string, currentBlock, interval uint64) (*msg.Candle, error)
+	GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error)
 
 	// Returns current market price
 	GetMarkPrice(market string) (uint64, error)

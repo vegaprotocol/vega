@@ -21,8 +21,8 @@ type TradeService interface {
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
 
 	GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error)
-	GetCandle(ctx context.Context, market string, intervalSeconds int64) (candle *msg.Candle, err error)
-	//ObserveCandles(ctx context.Context, market string, interval uint64) (candle <-chan msg.Candles, ref uint64)
+	GetCandleSinceBlock(ctx context.Context, market string, sinceBlock uint64) (candle *msg.Candle, time time.Time, err error)
+	GetLatestBlock() (blockNow uint64)
 
 	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
 	ObservePositions(ctx context.Context, party string) (positions <-chan msg.MarketPosition, ref uint64)
@@ -111,25 +111,27 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 	return c, nil
 }
 
-// GetCandle will return exactly one candle for the last interval (seconds) from the current VEGA time.
+// GetCandleSinceBlock will return exactly one candle for the last interval (seconds) from the current VEGA time.
 // It can return an empty candle if there was no trading activity in the last interval (seconds)
-func (t *tradeService) GetCandle(ctx context.Context, market string, intervalSeconds int64) (*msg.Candle, error) {
+// This function is designed to be used in partnership with a streaming endpoint where the candle is filled up
+// with a fixed interval e.g. sixty seconds
+func (t *tradeService) GetCandleSinceBlock(ctx context.Context, market string, sinceBlock uint64) (*msg.Candle, time.Time, error) {
 	blockTime := t.app.GetTime()
 	height := t.app.GetAbciHeight()
-	sinceBlock :=  height - intervalSeconds
-	if sinceBlock < 0 {
-		sinceBlock = 0
-	}
-
-	c, err := t.tradeStore.GetCandle(market, uint64(height), uint64(intervalSeconds))
+	c, err := t.tradeStore.GetCandle(market, sinceBlock, uint64(height))
 	if err != nil {
-		return nil, err
+		return nil, blockTime, err
 	}
-
-	c.Date = blockTime.Add(time.Duration(-1 * intervalSeconds)).Format(time.RFC3339)
-	return c, nil
+	c.Date = blockTime.Format(time.RFC3339)
+	return c, blockTime, nil
 }
 
+// GetLatestBlock is a helper function for now that will allow the caller to provide a sinceBlock to the GetCandleSinceBlock
+// function. TODO when we have the VEGA time package we can do all kinds of fantastic block->real time ops without this call
+func (t *tradeService) GetLatestBlock() uint64 {
+	height := t.app.GetAbciHeight()
+	return uint64(height)
+}
 
 func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error) {
 	mapOfMarketPositions := t.tradeStore.GetPositionsByParty(party)
@@ -193,28 +195,3 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 
 	return positions, ref
 }
-
-//func (t *tradeService) ObserveCandles(ctx context.Context, market string, interval uint64) (candle <-chan msg.Candle, ref uint64) {
-//	candles := make(chan msg.Candle)
-//	internal := make(chan []datastore.Trade)
-//	ref := t.tradeStore.Subscribe(internal)
-//
-//	go func(id uint64, internal chan []datastore.Trade) {
-//		<-ctx.Done()
-//		log.Debugf("TradeService -> Candles subscriber closed connection: %d", id)
-//		err := t.tradeStore.Unsubscribe(id)
-//		if err != nil {
-//			log.Errorf("Error un-subscribing candles when context.Done() on TradeService for id: %d", id)
-//		}
-//		close(internal)
-//	}(ref, internal)
-//
-//	go func(id uint64) {
-//		for range internal {
-//
-//		}
-//		log.Debugf("TradeService -> Channel for candles subscriber %d has been closed", ref)
-//	}(ref)
-//
-//	return candles, ref
-//}

@@ -8,13 +8,14 @@ import (
 	"strconv"
 	"fmt"
 	"time"
-	"math/rand"
 	"vega/log"
+	"github.com/satori/go.uuid"
 )
 
 type resolverRoot struct {
 	orderService api.OrderService
 	tradeService api.TradeService
+
 }
 
 func NewResolverRoot(orderService api.OrderService, tradeService api.TradeService) *resolverRoot {
@@ -82,12 +83,12 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 	}
 
 	// Look for orders for market (will validate market internally)
-	orders, err := r.orderService.GetByMarket(ctx, *name, 1000)
+	orders, err := r.orderService.GetByMarket(ctx, *name, 65536)
 	if err != nil {
 		return nil, err
 	}
 
-	trades, err := r.tradeService.GetByMarket(ctx, *name, 1000)
+	trades, err := r.tradeService.GetByMarket(ctx, *name, 65536)
 	if err != nil {
 		return nil, err
 	}
@@ -473,75 +474,55 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	return c, nil
 }
 
-
-
-
-
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error) {
-
 	events := make(chan msg.Candle, 0)
 	connected := true
-	id := randString(8)
-	fmt.Println("New subscriber on channel: ", id)
 
-	go func(id string, channel chan msg.Candle) {
+	id := uuid.NewV4().String()
+	log.Debugf("Candles subscriber connected: ", id)
+
+	go func(ref string) {
 		<-ctx.Done()
 		connected = false
-		close(channel)
-		fmt.Println("Subscriber closed connection:", id)
-	}(id, events)
+		log.Debugf("Candles subscriber closed connection:", ref)
+	}(id)
 
-	go func(channel chan msg.Candle) {
-		for connected {
-
-			log.Debugf("market: %s interval: %d", market, interval)
-
-			candle, err := r.tradeService.GetCandle(ctx, market, int64(interval))
+	go func(events chan msg.Candle) {
+		var pos uint64 = 0
+		blockNow := r.tradeService.GetLatestBlock()
+		candleTime := ""
+		for {
+			candle, blocktime, err := r.tradeService.GetCandleSinceBlock(ctx, market, blockNow)
 			if err != nil {
-				log.Errorf("error calculating latest candle for subscriber: %v", err)
+				log.Errorf("candle calculating latest candle for subscriber: %v", err)
 			}
-
+			if pos == 0 {
+				candleDuration := time.Duration(int(interval)) * time.Second
+				candleTime = blocktime.Add(candleDuration).Format(time.RFC3339)
+			}
+			candle.Date = candleTime
+			pos++
+			if pos == uint64(interval) {
+				blockNow = r.tradeService.GetLatestBlock()
+				pos = 0
+			}
 			if candle != nil {
-
-				fmt.Printf("Candle returned: %+v", candle)
-				fmt.Println()
-
-				channel <- *candle
+				events <- *candle
 			} else {
-				log.Errorf("Get Candle was nil for market %s and interval %d", market, interval)
+				log.Errorf("candle was nil for market %s and interval %d", market, interval)
 			}
-
-			time.Sleep(1 * time.Second)
+			if connected {
+				time.Sleep(1 * time.Second)
+			} else {
+				return
+			}
 		}
 	}(events)
 
 	return events, nil
 }
 
-
-
-
-
-
-
-
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func randString(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
-}
-
-
 // END: Subscription Resolver
-
-
-
-
 
 
 
