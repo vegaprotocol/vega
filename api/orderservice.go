@@ -6,18 +6,24 @@ import (
 	"vega/core"
 	"vega/datastore"
 	"vega/msg"
+	"github.com/pkg/errors"
+	"vega/log"
 )
 
 type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
+	ObserveOrders(ctx context.Context) (orders <-chan msg.Order, ref uint64)
+
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error)
 	GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
+
 	GetMarkets(ctx context.Context) ([]string, error)
-	GetOrderBookDepth(ctx context.Context, market string) (orderBookDepth *msg.OrderBookDepth, err error)
+	GetMarketDepth(ctx context.Context, market string) (marketDepth *msg.MarketDepth, err error)
+	ObserveMarketDepth(ctx context.Context, market string) (depth <-chan msg.MarketDepth, ref uint64)
 }
 
 type orderService struct {
@@ -56,6 +62,15 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	o, err := p.orderStore.GetByMarketAndId(order.Market, order.Id)
 	if err != nil {
 		return false, err
+	}
+	if o.Status == msg.Order_Cancelled {
+		return false, errors.New("order has already been cancelled")
+	}
+	if o.Remaining == 0 {
+		return false, errors.New("order has been fully filled")
+	}
+	if o.Party != order.Party {
+		return false, errors.New("party mis-match cannot cancel order")
 	}
 	// Send cancellation request by consensus 
 	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
@@ -141,6 +156,65 @@ func (p *orderService) GetMarkets(ctx context.Context) ([]string, error) {
 	return markets, err
 }
 
-func (p *orderService) GetOrderBookDepth(ctx context.Context, marketName string) (orderBookDepth *msg.OrderBookDepth, err error) {
-	return p.orderStore.GetOrderBookDepth(marketName)
+func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (orderBookDepth *msg.MarketDepth, err error) {
+	return p.orderStore.GetMarketDepth(marketName)
+}
+
+func (p *orderService) ObserveOrders(ctx context.Context) (<-chan msg.Order, uint64) {
+	orders := make(chan msg.Order)
+	internal := make(chan []datastore.Order)
+	ref := p.orderStore.Subscribe(internal)
+
+	go func(id uint64, internal chan []datastore.Order) {
+		<-ctx.Done()
+		log.Debugf("OrderService -> Subscriber closed connection: %d", id)
+		err := p.orderStore.Unsubscribe(id)
+		if err != nil {
+			log.Errorf("Error un-subscribing when context.Done() on OrderService for id: %d", id)
+		}
+		close(internal)
+	}(ref, internal)
+
+	go func(id uint64) {
+		for v := range internal {
+			for _, item := range v {
+				orders <- *item.ToProtoMessage()
+			}
+		}
+		log.Debugf("OrderService -> Channel for subscriber %d has been closed", ref)
+	}(ref)
+
+	return orders, ref
+}
+
+func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, uint64) {
+	depth := make(chan msg.MarketDepth)
+	internal := make(chan []datastore.Order)
+	ref := p.orderStore.Subscribe(internal)
+
+	go func(id uint64, internal chan []datastore.Order) {
+		<-ctx.Done()
+		log.Debugf("OrderService -> Depth closed connection: %d", id)
+		err := p.orderStore.Unsubscribe(id)
+		if err != nil {
+			log.Errorf("Error un-subscribing depth when context.Done() on OrderService for id: %d", id)
+		}
+		close(internal)
+	}(ref, internal)
+
+	go func(id uint64) {
+		for range internal {
+
+			d, err := p.orderStore.GetMarketDepth(market)
+			if err != nil {
+				log.Errorf("error calculating market depth", err)
+			} else {
+				depth <- *d
+			}
+
+		}
+		log.Debugf("OrderService -> Channel for depth subscriber %d has been closed", ref)
+	}(ref)
+
+	return depth, ref
 }

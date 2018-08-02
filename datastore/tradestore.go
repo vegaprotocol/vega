@@ -1,17 +1,100 @@
 package datastore
 
 import (
+	"errors"
 	"fmt"
+	"sync"
+	"vega/log"
 )
 
 // memTradeStore should implement TradeStore interface.
 type memTradeStore struct {
 	store *MemStore
+	subscribers map[uint64] chan<- []Trade
+	buffer []Trade
+	subscriberId uint64
+	mu sync.Mutex
 }
 
 // NewTradeStore initialises a new TradeStore backed by a MemStore.
 func NewTradeStore(ms *MemStore) TradeStore {
 	return &memTradeStore{store: ms}
+}
+
+func (m *memTradeStore) Subscribe(orders chan<- []Trade) uint64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.subscribers == nil {
+		log.Debugf("TradeStore -> Subscribe: Creating subscriber chan map")
+		m.subscribers = make(map[uint64] chan<- []Trade)
+	}
+
+	m.subscriberId = m.subscriberId+1
+	m.subscribers[m.subscriberId] = orders
+	log.Debugf("TradeStore -> Subscribe: Trade subscriber added: %d", m.subscriberId)
+	return m.subscriberId
+}
+
+func (m *memTradeStore) Unsubscribe(id uint64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.subscribers == nil || len(m.subscribers) == 0 {
+		log.Debugf("TradeStore -> Unsubscribe: No subscribers connected")
+		return nil
+	}
+
+	if _, exists := m.subscribers[id]; exists {
+		delete(m.subscribers, id)
+		log.Debugf("TradeStore -> Unsubscribe: Subscriber removed: %v", id)
+		return nil
+	}
+	return errors.New(fmt.Sprintf("TradeStore subscriber does not exist with id: %d", id))
+}
+
+func (m *memTradeStore) Notify() error {
+
+	if m.subscribers == nil || len(m.subscribers) == 0 {
+		log.Debugf("TradeStore -> Notify: No subscribers connected")
+		return nil
+	}
+
+	if m.buffer == nil || len(m.buffer) == 0 {
+		// Only publish when we have items
+		log.Debugf("TradeStore -> Notify: No trades in buffer")
+		return nil
+	}
+
+	m.mu.Lock()
+	items := m.buffer
+	m.buffer = nil
+	m.mu.Unlock()
+
+	// iterate over items in buffer and push to observers
+	for _, sub := range m.subscribers {
+		sub <- items
+	}
+
+	return nil
+}
+
+func (m *memTradeStore) queueEvent(t Trade) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.subscribers == nil || len(m.subscribers) == 0 {
+		log.Debugf("TradeStore -> queueEvent: No subscribers connected")
+		return nil
+	}
+
+	if m.buffer == nil {
+		m.buffer = make([]Trade, 0)
+	}
+
+	log.Debugf("TradeStore -> queueEvent: Adding trade to buffer: %+v", t)
+	m.buffer = append(m.buffer, t)
+	return nil
 }
 
 // GetByMarket retrieves all trades for a given market.
@@ -125,8 +208,10 @@ func (store *memTradeStore) Post(trade Trade) error {
 		aggressive: aggressiveOrder,
 		passive:    passiveOrder,
 	}
-	// Add new trade to trades hashtable
+	
+	// Add new trade to trades hashtable & queue in buffer to notify observers
 	store.store.markets[trade.Market].trades[trade.Id] = newTrade
+	store.queueEvent(trade)
 
 	// append trade to aggressive and passive order
 	aggressiveOrder.trades = append(aggressiveOrder.trades, newTrade)
@@ -155,8 +240,9 @@ func (store *memTradeStore) Put(trade Trade) error {
 	if _, exists := store.store.markets[trade.Market].trades[trade.Id]; !exists {
 		return fmt.Errorf("trade not found in memstore: %s", trade.Id)
 	}
-	// Perform the update
+	// Perform the update & queue in buffer to notify observers
 	store.store.markets[trade.Market].trades[trade.Id].trade = trade
+	store.queueEvent(trade)
 	return nil
 }
 

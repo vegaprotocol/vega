@@ -104,6 +104,30 @@
         ]
       }
     },
+    "/1.0/marketDepth": {
+      "get": {
+        "operationId": "MarketDepth",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcMarketDepthResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/1.0/marketOrder": {
       "get": {
         "operationId": "OrderByMarketAndId",
@@ -212,30 +236,6 @@
         ]
       }
     },
-    "/1.0/orderBookDepth": {
-      "get": {
-        "operationId": "OrderBookDepth",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/grpcOrderBookDepthResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "market",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
     "/1.0/partyOrders": {
       "get": {
         "operationId": "OrdersByParty",
@@ -313,6 +313,26 @@
       ],
       "default": "GTC"
     },
+    "grpcMarketDepthResponse": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "buy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        },
+        "sell": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        }
+      }
+    },
     "grpcMarketsResponse": {
       "type": "object",
       "properties": {
@@ -330,26 +350,6 @@
         "limit": {
           "type": "string",
           "format": "uint64"
-        }
-      }
-    },
-    "grpcOrderBookDepthResponse": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "buy": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPriceLevel"
-          }
-        },
-        "sell": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPriceLevel"
-          }
         }
       }
     },
@@ -464,22 +464,22 @@
     "vegaMarketPosition": {
       "type": "object",
       "properties": {
-        "Market": {
+        "market": {
           "type": "string"
         },
-        "RealisedVolume": {
+        "realisedVolume": {
           "type": "string",
           "format": "int64"
         },
-        "RealisedPNL": {
+        "realisedPNL": {
           "type": "string",
           "format": "int64"
         },
-        "UnrealisedVolume": {
+        "unrealisedVolume": {
           "type": "string",
           "format": "int64"
         },
-        "UnrealisedPNL": {
+        "unrealisedPNL": {
           "type": "string",
           "format": "int64"
         }

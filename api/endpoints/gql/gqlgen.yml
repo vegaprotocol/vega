@@ -1,0 +1,33 @@
+schema: schema.graphql
+exec:
+  filename: generated.go
+model:
+  filename: models.go
+
+models:
+  Order:
+    model: vega/msg.Order
+  Trade:
+    model: vega/msg.Trade
+  PriceLevel:
+    model: vega/msg.PriceLevel
+  MarketDepth:
+    model: vega/msg.MarketDepth
+  Candle:
+    model: vega/msg.Candle
+  Position:
+    model: vega/msg.MarketPosition
+  Market:
+    fields:
+      depth:
+        resolver: true
+  Party:
+    fields:
+      positions:
+        resolver: true
+  Vega:
+    fields:
+      markets:
+        resolver: true
+      parties:
+        resolver: true

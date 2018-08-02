@@ -32,7 +32,7 @@ type Vega struct {
 	RiskEngine     risk.RiskEngine
 }
 
-func New(config *Config, store *datastore.MemoryStoreProvider) *Vega {
+func New(config *Config, store datastore.StoreProvider) *Vega {
 
 	// Initialise matching engine
 	matchingEngine := matching.NewMatchingEngine()
@@ -107,19 +107,19 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	err := v.OrderStore.Post(*datastore.NewOrderFromProtoMessage(order))
 	if err != nil {
 		// Note: writing to store should not prevent flow to other engines
-		log.Infof("OrderStore.Post error: %+v\n", err)
+		log.Errorf("OrderStore.Post error: %v", err)
 	}
-
 	if confirmation.PassiveOrdersAffected != nil {
 		// insert all passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			// Note: writing to store should not prevent flow to other engines
 			err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
 			if err != nil {
-				log.Infof("OrderStore.Put error: %+v\n", err)
+				log.Errorf("OrderStore.Put error: %v", err)
 			}
 		}
 	}
+	v.OrderStore.Notify()
 
 	if confirmation.Trades != nil {
 		// insert all trades resulted from the executed order
@@ -129,9 +129,10 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			t := datastore.NewTradeFromProtoMessage(trade, order.Id, confirmation.PassiveOrdersAffected[idx].Id)
 			if err := v.TradeStore.Post(*t); err != nil {
 				// Note: writing to store should not prevent flow to other engines
-				log.Infof("TradeStore.Post error: %+v\n", err)
+				log.Errorf("TradeStore.Post error: %+v", err)
 			}
 		}
+		v.TradeStore.Notify()
 	}
 
 	// TODO: ONE METHOD TO create or update risk record for this order party etc
@@ -160,9 +161,12 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 	// insert aggressive remaining order
 	err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
 	if err != nil {
-		// Note: writing to store should not prevent flow to other
-		log.Infof("OrderStore.Put error: %+v\n", err)
+		// Note: writing to store should not prevent flow to other engines
+		log.Errorf("OrderStore.Put error: %v", err)
 	}
+	v.OrderStore.Notify()
+
+	// ------------------------------------------------//
 
 	return cancellation, msg.OrderError_NONE
 }

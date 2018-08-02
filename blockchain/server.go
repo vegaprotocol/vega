@@ -2,13 +2,13 @@ package blockchain
 
 import (
 	"context"
-	"time"
 	"vega/core"
 	"vega/log"
 
 	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tmlibs/common"
 	"vega/tendermint/rpc"
+	"time"
 )
 
 // Starts up a Vega blockchain server.
@@ -27,11 +27,12 @@ func Start(vega *core.Vega) error {
 	blockchainClient := NewClient()
 	var genesis *rpc.Genesis
 	for {
-		time.Sleep(1 * time.Second)
+		log.Infof("Attempting to retrieve Tendermint genesis time...")
 		genesis, err = blockchainClient.GetGenesisTime(context.Background())
 		if genesis != nil {
 			break
 		}
+		time.Sleep(5 * time.Second)
 	}
 	log.Infof("Genesis time set to: %+v\n", genesis.GenesisTime)
 	vega.SetGenesisTime(genesis.GenesisTime)

@@ -3,6 +3,11 @@ package datastore
 import "vega/msg"
 
 type TradeStore interface {
+
+	Subscribe(trades chan<- []Trade) uint64
+	Unsubscribe(id uint64) error
+	Notify() error
+
 	// GetByMarket retrieves trades for a given market.
 	GetByMarket(market string, params GetTradeParams) ([]Trade, error)
 	// Get retrieves a trade for a given id.
@@ -19,6 +24,9 @@ type TradeStore interface {
 	Delete(r Trade) error
 	// Aggregates trades into candles
 	GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error)
+	// Aggregate trades into a single candle from currentBlock for interval
+	GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error)
+
 	// Returns current market price
 	GetMarkPrice(market string) (uint64, error)
 	// Returns map of market name to market buckets
@@ -26,6 +34,11 @@ type TradeStore interface {
 }
 
 type OrderStore interface {
+
+	Subscribe(orders chan<- []Order) uint64
+	Unsubscribe(id uint64) error
+	Notify() error
+	
 	// GetByMarket retrieves all orders for a given market.
 	GetByMarket(market string, params GetOrderParams) ([]Order, error)
 	// Get retrieves an order for a given market and id.
@@ -43,7 +56,7 @@ type OrderStore interface {
 	// Returns all the markets
 	GetMarkets() ([]string, error)
 	// Returns Order Book Depth for a market
-	GetOrderBookDepth(market string) (*msg.OrderBookDepth, error)
+	GetMarketDepth(market string) (*msg.MarketDepth, error)
 }
 
 type PartyStore interface {

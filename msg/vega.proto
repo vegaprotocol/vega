@@ -66,15 +66,6 @@ message MarketData {
     uint64 lastTradedPrice = 3;
 }
 
-message MarketDepth {
-    uint64 buyOrderCount = 1;
-    uint64 sellOrderCount = 2;
-    uint64 buyOrderVolume = 3;
-    uint64 sellOrderVolume = 4;
-    uint64 buyPriceLevels = 5;
-    uint64 sellPriceLevels = 6;
-}
-
 message Candle {
     string date = 1;
     uint64 high = 2;
@@ -97,7 +88,7 @@ message PriceLevel {
     uint64 cumulativeVolume = 4;
 }
 
-message OrderBookDepth {
+message MarketDepth {
     string   name = 1;
     repeated PriceLevel buy = 2;
     repeated PriceLevel sell = 3;

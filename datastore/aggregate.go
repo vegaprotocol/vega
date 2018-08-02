@@ -18,6 +18,44 @@ func newCandle() *msg.Candle {
 	return &msg.Candle{}
 }
 
+func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error) {
+	if err := store.marketExists(market); err != nil {
+		return nil, err
+	}
+	
+	candle := &msg.Candle{
+		CloseBlockNumber: currentBlock,
+		OpenBlockNumber: sinceBlock,
+	}
+
+	for idx, t := range store.store.markets[market].tradesByTimestamp {
+		// iterate trades until reached ones of interest
+		if t.trade.Timestamp < sinceBlock {
+			continue
+		}
+
+		if candle.Open == 0 {
+			candle.Open = t.trade.Price
+		}
+
+		if candle.Volume == 0 {
+			candle.Open = t.trade.Price
+		}
+		candle.Volume += t.trade.Size
+		if candle.High < t.trade.Price {
+			candle.High = t.trade.Price
+		}
+		if candle.Low > t.trade.Price || candle.Low == 0 {
+			candle.Low = t.trade.Price
+		}
+		if idx == len(store.store.markets[market].tradesByTimestamp)-1 {
+			candle.Close = t.trade.Price
+		}
+	}
+
+	return candle, nil
+}
+
 func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
 	if err := store.marketExists(market); err != nil {
 		return msg.Candles{}, err
@@ -110,9 +148,9 @@ func updateCandle(candles []*msg.Candle, idx int, trade *Trade) {
 	}
 }
 
-func (m *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, error) {
+func (m *memOrderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
 	if err := m.marketExists(market); err != nil {
-		return &msg.OrderBookDepth{}, err
+		return &msg.MarketDepth{}, err
 	}
 
 	var (
@@ -122,7 +160,7 @@ func (m *memOrderStore) GetOrderBookDepth(market string) (*msg.OrderBookDepth, e
 		sellSideCumulative  uint64
 	)
 
-	orderBookDepth := msg.OrderBookDepth{Name: market, Buy: []*msg.PriceLevel{}, Sell: []*msg.PriceLevel{}}
+	orderBookDepth := msg.MarketDepth{Name: market, Buy: []*msg.PriceLevel{}, Sell: []*msg.PriceLevel{}}
 
 	// repeat all twice for BUY side and SELL side
 	// get all orders for market ordered by price

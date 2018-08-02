@@ -9,12 +9,13 @@ import (
 	"vega/core"
 	"vega/datastore"
 	"vega/log"
+	"vega/api/endpoints/gql"
 	"vega/msg"
 )
 
 func main() {
+	// Configuration and logging
 	config := core.GetConfig()
-
 	log.InitConsoleLogger(log.DebugLevel)
 
 	// Storage Service provides read stores for consumer VEGA API
@@ -22,7 +23,7 @@ func main() {
 	storage := &datastore.MemoryStoreProvider{}
 	storage.Init([]string{"BTC/DEC18"}, []string{"partyA", "partyB", "TEST"})
 
-	// Vega core
+	// VEGA core
 	vega := core.New(config, storage)
 	vega.InitialiseMarkets()
 	vega.RiskEngine.AddNewMarket(&msg.Market{Name: "BTC/DEC18"})
@@ -34,13 +35,22 @@ func main() {
 	tradeService.Init(vega, storage.TradeStore(), vega.RiskEngine)
 
 	// GRPC server
+	// Port 3002
 	grpcServer := grpc.NewGRPCServer(orderService, tradeService)
 	go grpcServer.Start()
 
-	// REST<>GRPC (reverse proxy) server
+	// REST<>GRPC (gRPC proxy) server
+	// Port 3003
 	restServer := restproxy.NewRestProxyServer()
 	go restServer.Start()
 
+	// GraphQL server (using new production quality gQL)
+	// Port 3004
+	graphServer := gql.NewGraphQLServer(orderService, tradeService)
+	go graphServer.Start()
+
+	// ABCI socket server
+	// Port 46658
 	if err := blockchain.Start(vega); err != nil {
 		log.Fatalf("%s", err)
 	}

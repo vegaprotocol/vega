@@ -10,6 +10,7 @@ import (
 
 	"vega/log"
 	"vega/msg"
+	"fmt"
 )
 
 const (
@@ -67,7 +68,7 @@ func (re riskEngine) getCalculationFrequency() int64 {
 
 func (re riskEngine) GetRiskFactors(marketName string) (float64, float64, error) {
 	if _, exist := re.riskFactors[marketName]; !exist {
-		return 0, 0, errors.New("NOT FOUND")
+		return 0, 0, errors.New(fmt.Sprintf("risk factors for market %s do not exist", marketName))
 	}
 	return re.riskFactors[marketName].Long, re.riskFactors[marketName].Short, nil
 }
@@ -75,7 +76,7 @@ func (re riskEngine) GetRiskFactors(marketName string) (float64, float64, error)
 func (re riskEngine) CalibrateRiskModel() {
 	for marketName, _ := range re.riskFactors {
 		if err := re.Assess(re.riskFactors[marketName]); err != nil {
-			log.Errorf("Error during risk assessment at market %s", marketName)
+			log.Errorf("error during risk assessment at market %s", marketName)
 		}
 	}
 }
@@ -87,29 +88,29 @@ func (re *riskEngine) Assess(riskFactor *RiskFactor) error {
 		return err
 	}
 
-	log.Infof("executable at: %s", ex)
-	log.Infof("Running risk calculations: ")
-	log.Infof("sigma %f", re.getSigma())
-	log.Infof("lambda %f", re.getLambda())
-	log.Infof("interestRate %d", re.getInterestRate())
-	log.Infof("calculationFrequency %d", re.getCalculationFrequency())
+	log.Debugf("executable at: %s", ex)
+	log.Debugf("Running risk calculations: ")
+	log.Debugf("sigma %f", re.getSigma())
+	log.Debugf("lambda %f", re.getLambda())
+	log.Debugf("interestRate %d", re.getInterestRate())
+	log.Debugf("calculationFrequency %d", re.getCalculationFrequency())
 
 	// Using the vega binary location, we load the external risk script (risk-model.py)
 	pyPath := filepath.Dir(ex) + riskFactor.RiskModelFileName
 
-	log.Infof("pyPath: %s\n", pyPath)
+	log.Debugf("pyPath: %s\n", pyPath)
 	cmd := exec.Command("python", pyPath)
 	stdout, err := cmd.Output()
-	log.Infof("python stdout: %s\n", stdout)
+	log.Debugf("python stdout: %s\n", stdout)
 	if err != nil {
-		println(err.Error())
+		log.Errorf("error calling out to python", err.Error())
 		// SHORT|LONG
 		stdout = []byte("0.00553|0.00550")
 	}
 
 	s := strings.Split(string(stdout), "|")
 	if len(s) != 2 {
-		log.Errorf("error: unable to get risk factor")
+		log.Errorf("unable to get risk factor, length of items = %d", len(s))
 		return errors.New("unable to get risk factor")
 	}
 
