@@ -23,13 +23,13 @@ type Config struct {
 
 type Vega struct {
 	Config         *Config
+	State          *State
 	markets        map[string]*matching.OrderBook
 	OrderStore     datastore.OrderStore
 	TradeStore     datastore.TradeStore
 	PartyStore     datastore.PartyStore
 	matchingEngine matching.MatchingEngine
-	State          *State
-	RiskEngine     risk.RiskEngine
+	riskEngine     risk.RiskEngine
 }
 
 func New(config *Config, store datastore.StoreProvider) *Vega {
@@ -47,7 +47,7 @@ func New(config *Config, store datastore.StoreProvider) *Vega {
 		TradeStore:     store.TradeStore(),
 		PartyStore:     store.PartyStore(),
 		matchingEngine: matchingEngine,
-		RiskEngine:     riskEngine,
+		riskEngine:     riskEngine,
 		State:          NewState(),
 	}
 }
@@ -64,18 +64,17 @@ func (v *Vega) GetGenesisTime() time.Time {
 	return v.Config.GenesisTime
 }
 
-func (v *Vega) GetAbciHeight() int64 {
-	return v.State.Height
+func (v *Vega) GetChainHeight() uint64 {
+	return uint64(v.State.Height)
 }
 
-//func (v *Vega) GetTime() time.Time {
-//	//genesisTime, _ := time.Parse(time.RFC3339, genesisTimeStr)
-//	genesisTime := v.Config.GenesisTime
-//	return genesisTime.Add(time.Duration(v.State.Height) * time.Second)
-//}
+func (v *Vega) GetRiskFactors(marketName string) (float64, float64, error) {
+	return v.riskEngine.GetRiskFactors(marketName)
+}
 
 func (v *Vega) InitialiseMarkets() {
 	v.matchingEngine.CreateMarket(marketName)
+	v.riskEngine.AddNewMarket(&msg.Market{Name: marketName})
 }
 
 func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
@@ -94,9 +93,9 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// ------------------------------------------------//
 	// 2) --------------- RISK ENGINE -----------------//
 
-	// CALL IT EVERY 5 BLOCKS
+	// Call out to risk engine calculation every N blocks
 	if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
-		v.RiskEngine.RecalculateRisk()
+		v.riskEngine.RecalculateRisk()
 	}
 
 	// -----------------------------------------------//
@@ -119,6 +118,8 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			}
 		}
 	}
+	
+	// Notify change observers, we batch events for efficiency
 	v.OrderStore.Notify()
 
 	if confirmation.Trades != nil {
@@ -132,6 +133,8 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 				log.Errorf("TradeStore.Post error: %+v", err)
 			}
 		}
+
+		// Notify change observers, we batch events for efficiency
 		v.TradeStore.Notify()
 	}
 
@@ -164,6 +167,8 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 		// Note: writing to store should not prevent flow to other engines
 		log.Errorf("OrderStore.Put error: %v", err)
 	}
+
+	// Notify change observers, we batch events for efficiency
 	v.OrderStore.Notify()
 
 	// ------------------------------------------------//
