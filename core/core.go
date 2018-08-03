@@ -22,7 +22,7 @@ type Config struct {
 }
 
 type Vega struct {
-	config         *Config
+	Config         *Config
 	markets        map[string]*matching.OrderBook
 	OrderStore     datastore.OrderStore
 	TradeStore     datastore.TradeStore
@@ -41,14 +41,14 @@ func New(config *Config, store datastore.StoreProvider) *Vega {
 	riskEngine := risk.New()
 
 	return &Vega{
-		config:         config,
+		Config:         config,
 		markets:        make(map[string]*matching.OrderBook),
 		OrderStore:     store.OrderStore(),
 		TradeStore:     store.TradeStore(),
 		PartyStore:     store.PartyStore(),
 		matchingEngine: matchingEngine,
 		RiskEngine:     riskEngine,
-		State:          newState(),
+		State:          NewState(),
 	}
 }
 
@@ -57,11 +57,11 @@ func GetConfig() *Config {
 }
 
 func (v *Vega) SetGenesisTime(genesisTime time.Time) {
-	v.config.GenesisTime = genesisTime
+	v.Config.GenesisTime = genesisTime
 }
 
 func (v *Vega) GetGenesisTime() time.Time {
-	return v.config.GenesisTime
+	return v.Config.GenesisTime
 }
 
 func (v *Vega) GetAbciHeight() int64 {
@@ -70,7 +70,7 @@ func (v *Vega) GetAbciHeight() int64 {
 
 //func (v *Vega) GetTime() time.Time {
 //	//genesisTime, _ := time.Parse(time.RFC3339, genesisTimeStr)
-//	genesisTime := v.config.GenesisTime
+//	genesisTime := v.Config.GenesisTime
 //	return genesisTime.Add(time.Duration(v.State.Height) * time.Second)
 //}
 
@@ -95,7 +95,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// 2) --------------- RISK ENGINE -----------------//
 
 	// CALL IT EVERY 5 BLOCKS
-	if order.Timestamp%v.config.RiskCalculationFrequency == 0 {
+	if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
 		v.RiskEngine.RecalculateRisk()
 	}
 

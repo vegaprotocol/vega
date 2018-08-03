@@ -6,6 +6,6 @@ type State struct {
 	AppHash []byte `json:"app_hash"`
 }
 
-func newState() *State {
+func NewState() *State {
 	return &State{}
 }
