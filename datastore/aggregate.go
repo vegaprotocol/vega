@@ -31,6 +31,15 @@ func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock ui
 	for idx, t := range store.store.markets[market].tradesByTimestamp {
 		// iterate trades until reached ones of interest
 		if t.trade.Timestamp < sinceBlock {
+			if t.trade.Price != 0 {
+				// keep updating empty candle with latest price so that in case there are no trades of interest,
+				// open close high and low values are set to the correct level of most recent trade
+				candle.Open = t.trade.Price
+				candle.Close = candle.Open
+				candle.High = candle.Open
+				candle.Low = candle.Open
+				candle.Volume = 0
+			}
 			continue
 		}
 
@@ -67,7 +76,7 @@ func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, 
 	for idx := range candles {
 		candles[idx] = &msg.Candle{}
 		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx) * interval
-		candles[idx].CloseBlockNumber = candles[idx].OpenBlockNumber + interval -1
+		candles[idx].CloseBlockNumber = candles[idx].OpenBlockNumber + interval - 1
 	}
 
 	found := false
