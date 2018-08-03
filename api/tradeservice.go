@@ -108,7 +108,7 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 // with a fixed interval e.g. sixty seconds
 func (t *tradeService) GetCandleSinceBlock(ctx context.Context, market string, sinceBlock uint64) (*msg.Candle, time.Time, error) {
 	vtc := vegatime.NewVegaTimeConverter(t.app)
-	height := t.app.GetAbciHeight()
+	height := t.GetLatestBlock()
 	c, err := t.tradeStore.GetCandle(market, sinceBlock, uint64(height))
 	if err != nil {
 		return nil, vtc.BlockToTime(sinceBlock), err
