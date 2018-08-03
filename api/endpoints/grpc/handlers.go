@@ -109,7 +109,7 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 	}
 
 	if request.Since == "" {
-		request.Since = "2018-08-02T15:40:38Z"
+		return nil, errors.New("Since date is missing")
 	}
 
 	since, err := time.Parse(time.RFC3339, request.Since)
