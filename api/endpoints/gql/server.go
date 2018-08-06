@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/rs/cors"
 	"github.com/vektah/gqlgen/handler"
 	"net/http"
 	"vega/api"
@@ -36,13 +37,13 @@ func (g *graphServer) Start() {
 	var addr = fmt.Sprintf(":%d", port)
 	var resolverRoot = NewResolverRoot(g.orderService, g.tradeService)
 	http.Handle("/", handler.Playground("VEGA", "/query"))
-	http.Handle("/query", handler.GraphQL(
+	http.Handle("/query", cors.Default().Handler(handler.GraphQL(
 		NewExecutableSchema(resolverRoot),
 		handler.WebsocketUpgrader(upgrader),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			log.Errorf("GraphQL error: %v", err)
 			return errors.New("an error occurred from the GraphQL server, please retry")
-		}),
+		})),
 	))
 
 	err := http.ListenAndServe(addr, nil)
