@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/vektah/gqlgen/handler"
 	"net/http"
-	"runtime/debug"
 	"vega/api"
 	"vega/log"
 )
@@ -24,18 +24,24 @@ func NewGraphQLServer(orderService api.OrderService, tradeService api.TradeServi
 }
 
 func (g *graphServer) Start() {
+	var upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
 	var port = 3004
 	log.Infof("Starting GraphQL based server on port %d...\n", port)
 	var addr = fmt.Sprintf(":%d", port)
 	var resolverRoot = NewResolverRoot(g.orderService, g.tradeService)
-	http.Handle("/", handler.Playground("Orders", "/query"))
+	http.Handle("/", handler.Playground("VEGA", "/query"))
 	http.Handle("/query", handler.GraphQL(
 		NewExecutableSchema(resolverRoot),
+		handler.WebsocketUpgrader(upgrader),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
-			// send this panic somewhere    ß
 			log.Errorf("GraphQL error: %v", err)
-			debug.PrintStack()
-			return errors.New("user message on panic")
+			return errors.New("an error occurred from the GraphQL server, please retry")
 		}),
 	))
 
