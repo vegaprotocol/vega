@@ -105,6 +105,13 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, limit uin
 }
 
 func (p *orderService) GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error) {
+
+
+
+
+
+
+
 	o, err := p.orderStore.GetByParty(party, datastore.GetOrderParams{Limit: limit})
 	if err != nil {
 		return nil, err

@@ -1,5 +1,7 @@
 package datastore
 
+import("vega/common")
+
 // GetParamsLimitDefault should be used if no limit is specified
 // when working with the GetParams struct.
 const GetParamsLimitDefault = uint64(1844674407370955161)
@@ -8,41 +10,27 @@ const GetParamsLimitDefault = uint64(1844674407370955161)
 // into the datastores when querying for records.
 type GetOrderParams struct {
 	Limit           uint64
-	MarketFilter    *QueryFilter
-	PartyFilter     *QueryFilter
-	SideFilter      *QueryFilter
-	PriceFilter     *QueryFilter
-	SizeFilter      *QueryFilter
-	RemainingFilter *QueryFilter
-	TypeFilter      *QueryFilter
-	TimestampFilter *QueryFilter
-	RiskFactor      *QueryFilter
-	StatusFilter    *QueryFilter
+	MarketFilter    *common.QueryFilter
+	PartyFilter     *common.QueryFilter
+	SideFilter      *common.QueryFilter
+	PriceFilter     *common.QueryFilter
+	SizeFilter      *common.QueryFilter
+	RemainingFilter *common.QueryFilter
+	TypeFilter      *common.QueryFilter
+	TimestampFilter *common.QueryFilter
+	RiskFactor      *common.QueryFilter
+	StatusFilter    *common.QueryFilter
 }
 
 type GetTradeParams struct {
 	Limit           uint64
-	MarketFilter    *QueryFilter
-	PriceFilter     *QueryFilter
-	SizeFilter      *QueryFilter
-	BuyerFilter     *QueryFilter
-	SellerFilter    *QueryFilter
-	AggressorFilter *QueryFilter
-	TimestampFilter *QueryFilter
-}
-
-type QueryFilterType int
-
-type QueryFilter struct {
-	filterRange *Range
-	neq         interface{}
-	eq          interface{}
-	kind        string
-}
-
-type Range struct {
-	Lower interface{}
-	Upper interface{}
+	MarketFilter    *common.QueryFilter
+	PriceFilter     *common.QueryFilter
+	SizeFilter      *common.QueryFilter
+	BuyerFilter     *common.QueryFilter
+	SellerFilter    *common.QueryFilter
+	AggressorFilter *common.QueryFilter
+	TimestampFilter *common.QueryFilter
 }
 
 func applyOrderFilter(order Order, params GetOrderParams) bool {
@@ -125,46 +113,17 @@ func applyTradeFilter(trade Trade, params GetTradeParams) bool {
 	return ok
 }
 
-func apply(value interface{}, params *QueryFilter) bool {
-	if params.filterRange != nil {
-		return applyRangeFilter(value, params.filterRange, params.kind)
+func apply(value interface{}, params *common.QueryFilter) bool {
+	if params.FilterRange != nil {
+		return params.ApplyRangeFilter(value, params.FilterRange, params.Kind)
 	}
 
-	if params.eq != nil {
-		return applyEqualFilter(value, params.eq)
+	if params.Eq != nil {
+		return params.ApplyEqualFilter(value, params.Eq)
 	}
 
-	if params.neq != nil {
-		return applyNotEqualFilter(value, params.neq)
-	}
-	return false
-}
-
-func applyRangeFilter(value interface{}, r *Range, kind string) bool {
-	if kind == "uint64" {
-		if r.Lower.(uint64) <= value.(uint64) && value.(uint64) <= r.Upper.(uint64) {
-			return true
-		}
-	}
-
-	// add new kind here
-	//if kind == "NEW_KIND" {
-	//		...
-	//}
-
-	return false
-}
-
-func applyEqualFilter(value interface{}, eq interface{}) bool {
-	if eq == value {
-		return true
-	}
-	return false
-}
-
-func applyNotEqualFilter(value interface{}, neq interface{}) bool {
-	if neq != value {
-		return true
+	if params.Neq != nil {
+		return params.ApplyNotEqualFilter(value, params.Neq)
 	}
 	return false
 }

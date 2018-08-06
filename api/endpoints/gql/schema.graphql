@@ -70,10 +70,10 @@ type Market {
     name: String!
 
     # Orders on a market
-    orders: [Order!]
+    orders (where: OrderFilter): [Order!]
 
     # Trades on a market
-    trades: [Trade!]
+    trades (where: TradeFilter): [Trade!]
 
     # Current depth on the orderbook for this market
     depth: MarketDepth!
@@ -144,7 +144,7 @@ type Party {
     name: String!
 
     # Orders relating to a party
-    orders: [Order!]
+    orders(where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
 
     # Trading positions relating to a party
     positions: [Position!]
@@ -292,5 +292,80 @@ enum ValueDirection {
     Positive
     Negative
 }
+
+# Filters for Trade queries on VEGA graphql, typically specified by WHERE clause
+input TradeFilter {
+    # logical operators
+    AND: [TradeFilter!] # combines all passed `TradeFilter` objects with logical AND
+    # TODO OR support in the core.datastore
+    # OR: [OrderFilter!] # combines all passed `TradeFilter` objects with logical OR
+
+    # ID filters
+    id: ID # matches all trades with exact ID value
+    id_neq: ID # matches all trades with different ID to value
+    id_from: ID # matches all trades from this ID value
+    id_to: ID # matches all trades to this ID value
+
+    # Market filters
+    market: String # matches all trades with exact market value
+    market_neq: String # matches all trades with different market to value
+    
+    # Buyer filters
+    buyer: String # matches all trades with exact buyer value
+    buyer_neq: String # matches all trades with different buyer to value
+
+    # Buyer filters
+    seller: String # matches all trades with exact seller value
+    seller_neq: String # matches all trades with different seller to value
+
+    # Aggressor filters
+    aggressor: Side # matches all trades with exact aggressor value e.g. Buy
+    aggressor_neq: Side # matches all trades with different aggressor to value
+
+    # Price filters
+    price: String # matches all trades with exact price value
+    price_neq: String # matches all trades with different price to value
+    price_from: String # matches all trades from this price value
+    price_to: String # matches all trades to this price value
+
+    # Size filters
+    size: String # matches all trades with exact size value
+    size_neq: String # matches all trades with different size to value
+    size_from: String # matches all trades from this size value
+    size_to: String # matches all trades to this size value
+
+    # TimeStamp filters
+    timestamp: String # matches all trades with exact timestamp value
+    timestamp_neq: String # matches all trades with different timestamp to value
+    timestamp_from: String # matches all trades from this timestamp value
+    timestamp_to: String # matches all trades to this timestamp value
+}
+
+# Filters for Order queries on VEGA graphql, typically specified by WHERE clause
+input OrderFilter {
+    # logical operators
+    AND: [OrderFilter!] # combines all passed `OrderFilter` objects with logical AND
+    # TODO OR support in the core.datastore
+    #OR: [OrderFilter!] # combines all passed `OrderFilter` objects with logical OR
+
+    # Open only filter
+    open: Boolean # Include only open orders in results (default: False)
+
+    # ID filters
+    id: ID # matches all orders with exact ID value
+    id_neq: ID # matches all orders with different ID to value
+    id_from: ID # matches all orders from this ID value
+    id_to: ID # matches all orders to this ID value
+
+    # Market filters
+    market: String # matches all orders with exact market value
+    market_neq: String # matches all orders with different market to value
+
+    
+    # TODO more filters ....
+
+
+}
+
 
 

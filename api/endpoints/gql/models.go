@@ -15,6 +15,16 @@ type Market struct {
 	Trades []msg.Trade     `json:"trades"`
 	Depth  msg.MarketDepth `json:"depth"`
 }
+type OrderFilter struct {
+	AND        []OrderFilter `json:"AND"`
+	Open       *bool         `json:"open"`
+	ID         *string       `json:"id"`
+	Id_neq     *string       `json:"id_neq"`
+	Id_from    *string       `json:"id_from"`
+	Id_to      *string       `json:"id_to"`
+	Market     *string       `json:"market"`
+	Market_neq *string       `json:"market_neq"`
+}
 type Party struct {
 	Name      string               `json:"name"`
 	Orders    []msg.Order          `json:"orders"`
@@ -22,6 +32,33 @@ type Party struct {
 }
 type PreConsensus struct {
 	Accepted bool `json:"accepted"`
+}
+type TradeFilter struct {
+	AND            []TradeFilter `json:"AND"`
+	ID             *string       `json:"id"`
+	Id_neq         *string       `json:"id_neq"`
+	Id_from        *string       `json:"id_from"`
+	Id_to          *string       `json:"id_to"`
+	Market         *string       `json:"market"`
+	Market_neq     *string       `json:"market_neq"`
+	Buyer          *string       `json:"buyer"`
+	Buyer_neq      *string       `json:"buyer_neq"`
+	Seller         *string       `json:"seller"`
+	Seller_neq     *string       `json:"seller_neq"`
+	Aggressor      *Side         `json:"aggressor"`
+	Aggressor_neq  *Side         `json:"aggressor_neq"`
+	Price          *string       `json:"price"`
+	Price_neq      *string       `json:"price_neq"`
+	Price_from     *string       `json:"price_from"`
+	Price_to       *string       `json:"price_to"`
+	Size           *string       `json:"size"`
+	Size_neq       *string       `json:"size_neq"`
+	Size_from      *string       `json:"size_from"`
+	Size_to        *string       `json:"size_to"`
+	Timestamp      *string       `json:"timestamp"`
+	Timestamp_neq  *string       `json:"timestamp_neq"`
+	Timestamp_from *string       `json:"timestamp_from"`
+	Timestamp_to   *string       `json:"timestamp_to"`
 }
 type Vega struct {
 	Markets []Market `json:"markets"`

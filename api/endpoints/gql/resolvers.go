@@ -75,6 +75,10 @@ func (r *MyQueryResolver) Vega(ctx context.Context) (Vega, error) {
 
 // END: Query Resolver
 
+
+
+// BEGIN: Root Resolver
+
 type MyVegaResolver resolverRoot
 
 func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error) {
@@ -119,25 +123,19 @@ func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) (
 		return nil, errors.New("all parties for VEGA platform not implemented")
 	}
 
-	// Look for orders for party (will validate market internally)
-	orders, err := r.orderService.GetByParty(ctx, *name, 1000)
-	if err != nil {
-		return nil, err
-	}
+	// Todo(cdm): partystore --> check if party exists...
 
-	valOrders := make([]msg.Order, 0)
-	for _, v := range orders {
-		valOrders = append(valOrders, *v)
-	}
 	var parties = make([]Party, 0)
 	var party = Party{
 		Name: *name,
-		Orders: valOrders,
 	}
 	parties = append(parties, party)
 	
 	return parties, nil
 }
+
+// END: Root Resolver
+
 
 // BEGIN: Market Resolver
 
@@ -161,6 +159,28 @@ func (r *MyMarketResolver) Depth(ctx context.Context, obj *Market) (msg.MarketDe
 // BEGIN: Party Resolver
 
 type MyPartyResolver resolverRoot
+
+
+func (r *MyPartyResolver) Orders(ctx context.Context, obj *Party, where *OrderFilter,
+	skip *int, first *int, last *int) ([]msg.Order, error) {
+
+	if where != nil {
+		// We have optional query filters!
+		log.Debugf("OrderFilters: %+v", where)
+	}
+
+	// Look for orders for party (will validate market internally)
+	orders, err := r.orderService.GetByParty(ctx, obj.Name, 1000)
+	if err != nil {
+		return nil, err
+	}
+	valOrders := make([]msg.Order, 0)
+	for _, v := range orders {
+		valOrders = append(valOrders, *v)
+	}
+	return valOrders, nil
+}
+
 
 func (r *MyPartyResolver) Positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error) {
 	positions, err := r.tradeService.GetPositionsByParty(ctx, obj.Name)

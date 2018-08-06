@@ -23,6 +23,8 @@ models:
         resolver: true
   Party:
     fields:
+      orders:
+        resolver: true
       positions:
         resolver: true
   Vega:
