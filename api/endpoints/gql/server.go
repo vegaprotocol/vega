@@ -41,7 +41,7 @@ func (g *graphServer) Start() {
 		handler.WebsocketUpgrader(upgrader),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			log.Errorf("GraphQL error: %v", err)
-			return errors.New("an error occurred from the GraphQL server, please retry")
+			return errors.New("an error occurred with GraphQL, try again")
 		}),
 	))
 
