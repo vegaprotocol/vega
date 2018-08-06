@@ -10,7 +10,6 @@ import (
 	"vega/datastore"
 	"vega/log"
 	"vega/api/endpoints/gql"
-	"vega/msg"
 )
 
 func main() {
@@ -26,13 +25,12 @@ func main() {
 	// VEGA core
 	vega := core.New(config, storage)
 	vega.InitialiseMarkets()
-	vega.RiskEngine.AddNewMarket(&msg.Market{Name: "BTC/DEC18"})
 
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
 	tradeService := api.NewTradeService()
 	orderService.Init(vega, storage.OrderStore())
-	tradeService.Init(vega, storage.TradeStore(), vega.RiskEngine)
+	tradeService.Init(vega, storage.TradeStore())
 
 	// GRPC server
 	// Port 3002

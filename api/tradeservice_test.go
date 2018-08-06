@@ -10,8 +10,6 @@ import (
 	"vega/datastore"
 	"vega/log"
 	"vega/msg"
-	"vega/risk"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -211,18 +209,17 @@ func TestPositions(t *testing.T) {
 	testPartyA := "testPartyA"
 	testPartyB := "testPartyB"
 
-	var memStore = datastore.NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
-	var newOrderStore = datastore.NewOrderStore(&memStore)
-	var newTradeStore = datastore.NewTradeStore(&memStore)
-
 	var ctx = context.Background()
 	var tradeService = NewTradeService()
 
-	vega := &core.Vega{}
-	riskEngine := risk.New()
-	riskEngine.AddNewMarket(&msg.Market{Name: testMarket})
+	storage := &datastore.MemoryStoreProvider{}
+	storage.Init([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 
-	tradeService.Init(vega, newTradeStore, riskEngine)
+	config := core.GetConfig()
+	vega := core.New(config, storage)
+	vega.InitialiseMarkets()
+
+	tradeService.Init(vega, storage.TradeStore())
 
 	passiveOrderId := fmt.Sprintf("%d", rand.Intn(1000000000000))
 	aggressiveOrderId := fmt.Sprintf("%d", rand.Intn(1000000000000))
@@ -260,11 +257,11 @@ func TestPositions(t *testing.T) {
 		AggressiveOrderId: aggressiveOrderId,
 	}
 
-	err := newOrderStore.Post(*passiveOrder)
+	err := storage.OrderStore().Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = newOrderStore.Post(*aggressiveOrder)
+	err = storage.OrderStore().Post(*aggressiveOrder)
 	assert.Nil(t, err)
-	err = newTradeStore.Post(*trade)
+	err = storage.TradeStore().Post(*trade)
 	assert.Nil(t, err)
 
 	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
@@ -303,11 +300,11 @@ func TestPositions(t *testing.T) {
 		AggressiveOrderId: aggressiveOrderId,
 	}
 
-	err = newOrderStore.Post(*passiveOrder)
+	err = storage.OrderStore().Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = newOrderStore.Post(*aggressiveOrder)
+	err = storage.OrderStore().Post(*aggressiveOrder)
 	assert.Nil(t, err)
-	err = newTradeStore.Post(*trade)
+	err = storage.TradeStore().Post(*trade)
 	assert.Nil(t, err)
 
 
@@ -377,15 +374,15 @@ func TestPositions(t *testing.T) {
 		AggressiveOrderId: aggressiveOrderId,
 	}
 
-	err = newOrderStore.Post(*passiveOrder)
+	err = storage.OrderStore().Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = newOrderStore.Post(*aggressiveOrder)
+	err = storage.OrderStore().Post(*aggressiveOrder)
 	assert.Nil(t, err)
-	err = newTradeStore.Post(*trade)
+	err = storage.TradeStore().Post(*trade)
 	assert.Nil(t, err)
 
 	// current mark price for testMarket should be 110, the PNL for partyA and partyB should change
-	markPrice, err := newTradeStore.GetMarkPrice(testMarket)
+	markPrice, err := storage.TradeStore().GetMarkPrice(testMarket)
 	assert.Equal(t, uint64(110), markPrice)
 	assert.Nil(t, err)
 
@@ -456,11 +453,11 @@ func TestPositions(t *testing.T) {
 		AggressiveOrderId: aggressiveOrderId,
 	}
 
-	err = newOrderStore.Post(*passiveOrder)
+	err = storage.OrderStore().Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = newOrderStore.Post(*aggressiveOrder)
+	err = storage.OrderStore().Post(*aggressiveOrder)
 	assert.Nil(t, err)
-	err = newTradeStore.Post(*trade)
+	err = storage.TradeStore().Post(*trade)
 	assert.Nil(t, err)
 
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)
@@ -529,11 +526,11 @@ func TestPositions(t *testing.T) {
 		AggressiveOrderId: aggressiveOrderId,
 	}
 
-	err = newOrderStore.Post(*passiveOrder)
+	err = storage.OrderStore().Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = newOrderStore.Post(*aggressiveOrder)
+	err = storage.OrderStore().Post(*aggressiveOrder)
 	assert.Nil(t, err)
-	err = newTradeStore.Post(*trade)
+	err = storage.TradeStore().Post(*trade)
 	assert.Nil(t, err)
 
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)

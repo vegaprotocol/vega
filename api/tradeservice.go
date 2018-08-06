@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"math"
 	"time"
 
@@ -10,11 +9,11 @@ import (
 	"vega/datastore"
 	"vega/msg"
 	"vega/log"
-	"vega/risk"
+	"vega/vegatime"
 )
 
 type TradeService interface {
-	Init(app *core.Vega, tradeStore datastore.TradeStore, riskEngine risk.RiskEngine)
+	Init(app *core.Vega, tradeStore datastore.TradeStore)
 	ObserveTrades(ctx context.Context) (orders <-chan msg.Trade, ref uint64)
 
 	GetByMarket(ctx context.Context, market string, limit uint64) (trades []*msg.Trade, err error)
@@ -33,17 +32,15 @@ type TradeService interface {
 type tradeService struct {
 	app        *core.Vega
 	tradeStore datastore.TradeStore
-	riskEngine risk.RiskEngine
 }
 
 func NewTradeService() TradeService {
 	return &tradeService{}
 }
 
-func (t *tradeService) Init(app *core.Vega, tradeStore datastore.TradeStore, riskEngine risk.RiskEngine) {
+func (t *tradeService) Init(app *core.Vega, tradeStore datastore.TradeStore) {
 	t.app = app
 	t.tradeStore = tradeStore
-	t.riskEngine = riskEngine
 }
 
 func (t *tradeService) GetByMarket(ctx context.Context, market string, limit uint64) (trades []*msg.Trade, err error) {
@@ -87,24 +84,17 @@ func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id str
 }
 
 func (t *tradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error) {
-	appCurrentTime := t.app.GetTime()
-	delta := appCurrentTime.Sub(since)
-	deltaInSeconds := int64(delta.Seconds())
-	if deltaInSeconds < 0 {
-		return msg.Candles{}, errors.New("INVALID_REQUEST")
-	}
-	sinceBlock := t.app.GetAbciHeight() - deltaInSeconds
-	if sinceBlock < 0 {
-		sinceBlock = 0
-	}
-	c, err := t.tradeStore.GetCandles(market, uint64(sinceBlock), uint64(t.app.GetAbciHeight()), interval)
+	// compare time and translate it into timestamps
+	vtc := vegatime.NewVegaTimeConverter(t.app)
+	sinceBlock := vtc.TimeToBlock(since)
+
+	c, err := t.tradeStore.GetCandles(market, sinceBlock, uint64(t.app.GetChainHeight()), interval)
 	if err != nil {
 		return msg.Candles{}, err
 	}
-	aggregationStartTime := appCurrentTime.Add(-delta)
-	for i, candle := range c.Candles {
-		candleDuration := time.Duration(i*int(interval)) * time.Second
-		candle.Date = aggregationStartTime.Add(candleDuration).Format(time.RFC3339)
+
+	for _, candle := range c.Candles {
+		candle.Date = vtc.BlockToTime(candle.OpenBlockNumber).Format(time.RFC3339)
 	}
 	return c, nil
 }
@@ -114,20 +104,20 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 // This function is designed to be used in partnership with a streaming endpoint where the candle is filled up
 // with a fixed interval e.g. sixty seconds
 func (t *tradeService) GetCandleSinceBlock(ctx context.Context, market string, sinceBlock uint64) (*msg.Candle, time.Time, error) {
-	blockTime := t.app.GetTime()
-	height := t.app.GetAbciHeight()
+	vtc := vegatime.NewVegaTimeConverter(t.app)
+	height := t.GetLatestBlock()
 	c, err := t.tradeStore.GetCandle(market, sinceBlock, uint64(height))
 	if err != nil {
-		return nil, blockTime, err
+		return nil, vtc.BlockToTime(sinceBlock), err
 	}
-	c.Date = blockTime.Format(time.RFC3339)
-	return c, blockTime, nil
+	c.Date = vtc.BlockToTime(c.OpenBlockNumber).Format(time.RFC3339)
+	return c, vtc.BlockToTime(sinceBlock), nil
 }
 
 // GetLatestBlock is a helper function for now that will allow the caller to provide a sinceBlock to the GetCandleSinceBlock
 // function. TODO when we have the VEGA time package we can do all kinds of fantastic block->real time ops without this call
 func (t *tradeService) GetLatestBlock() uint64 {
-	height := t.app.GetAbciHeight()
+	height := t.app.GetChainHeight()
 	return uint64(height)
 }
 
@@ -274,7 +264,7 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 }
 
 func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) float64 {
-	riskFactorLong, riskFactorShort, err := t.riskEngine.GetRiskFactors(market)
+	riskFactorLong, riskFactorShort, err := t.app.GetRiskFactors(market)
 	if err != nil {
 		log.Errorf("failed to obtain risk factors from risk engine for market: %s", market)
 	}

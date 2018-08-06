@@ -18,7 +18,6 @@ func newCandle() *msg.Candle {
 	return &msg.Candle{}
 }
 
-
 func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error) {
 	if err := store.marketExists(market); err != nil {
 		return nil, err
@@ -29,11 +28,23 @@ func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock ui
 		OpenBlockNumber: sinceBlock,
 	}
 
-	for _, t := range store.store.markets[market].tradesByTimestamp {
-
+	for idx, t := range store.store.markets[market].tradesByTimestamp {
 		// iterate trades until reached ones of interest
 		if t.trade.Timestamp < sinceBlock {
+			if t.trade.Price != 0 {
+				// keep updating empty candle with latest price so that in case there are no trades of interest,
+				// open close high and low values are set to the correct level of most recent trade
+				candle.Open = t.trade.Price
+				candle.Close = candle.Open
+				candle.High = candle.Open
+				candle.Low = candle.Open
+				candle.Volume = 0
+			}
 			continue
+		}
+
+		if candle.Open == 0 {
+			candle.Open = t.trade.Price
 		}
 
 		if candle.Volume == 0 {
@@ -46,11 +57,13 @@ func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock ui
 		if candle.Low > t.trade.Price || candle.Low == 0 {
 			candle.Low = t.trade.Price
 		}
+		if idx == len(store.store.markets[market].tradesByTimestamp)-1 {
+			candle.Close = t.trade.Price
+		}
 	}
 
 	return candle, nil
 }
-
 
 func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
 	if err := store.marketExists(market); err != nil {
@@ -63,7 +76,7 @@ func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, 
 	for idx := range candles {
 		candles[idx] = &msg.Candle{}
 		candles[idx].OpenBlockNumber = sinceBlock + uint64(idx) * interval
-		candles[idx].CloseBlockNumber = candles[idx].OpenBlockNumber + interval -1
+		candles[idx].CloseBlockNumber = candles[idx].OpenBlockNumber + interval - 1
 	}
 
 	found := false
