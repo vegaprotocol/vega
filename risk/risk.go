@@ -22,7 +22,7 @@ const (
 
 type RiskEngine interface {
 	AddNewMarket(market *msg.Market)
-	CalibrateRiskModel()
+	RecalculateRisk()
 	GetRiskFactors(marketName string) (float64, float64, error)
 }
 
@@ -73,7 +73,7 @@ func (re riskEngine) GetRiskFactors(marketName string) (float64, float64, error)
 	return re.riskFactors[marketName].Long, re.riskFactors[marketName].Short, nil
 }
 
-func (re riskEngine) CalibrateRiskModel() {
+func (re riskEngine) RecalculateRisk() {
 	for marketName, _ := range re.riskFactors {
 		if err := re.Assess(re.riskFactors[marketName]); err != nil {
 			log.Errorf("error during risk assessment at market %s", marketName)

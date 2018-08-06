@@ -211,5 +211,32 @@ func TestMemTradeStore_GetCandles4(t *testing.T) {
 	assert.Equal(t, uint64(130), candles.Candles[7].Low)
 	assert.Equal(t, uint64(131), candles.Candles[7].Open)
 	assert.Equal(t, uint64(131), candles.Candles[7].Close)
+}
 
+func TestMemTradeStore_GetCandle(t *testing.T) {
+	var memStore= NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
+	var newOrderStore= NewOrderStore(&memStore)
+	var newTradeStore= NewTradeStore(&memStore)
+
+	timestamp := populateStores(t, newOrderStore, newTradeStore)
+
+	candle, err := newTradeStore.GetCandle(testMarket,timestamp, timestamp)
+	fmt.Printf("candle returned: %+v\n", candle)
+	assert.Nil(t, err)
+
+	assert.Equal(t, uint64(5000), candle.Volume)
+	assert.Equal(t, uint64(132), candle.High)
+	assert.Equal(t, uint64(130), candle.Low)
+	assert.Equal(t, uint64(131), candle.Open)
+	assert.Equal(t, uint64(131), candle.Close)
+
+	candle, err = newTradeStore.GetCandle(testMarket,timestamp+10, timestamp+10)
+	fmt.Printf("candle returned: %+v\n", candle)
+	assert.Nil(t, err)
+
+	assert.Equal(t, uint64(0), candle.Volume)
+	assert.Equal(t, uint64(131), candle.High)
+	assert.Equal(t, uint64(131), candle.Low)
+	assert.Equal(t, uint64(131), candle.Open)
+	assert.Equal(t, uint64(131), candle.Close)
 }

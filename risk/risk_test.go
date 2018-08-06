@@ -33,7 +33,7 @@ func TestRiskEngine_CalibrateRiskModel(t *testing.T) {
 	assert.Equal(t, 0.00550, riskFactorLong)
 	assert.Equal(t, 0.00553, riskFactorShort)
 
-	re.CalibrateRiskModel()
+	re.RecalculateRisk()
 	riskFactorLong, riskFactorShort, err = re.GetRiskFactors(newMarket.Name)
 	assert.Nil(t, err)
 	assert.Equal(t, 0.00550, riskFactorLong)
