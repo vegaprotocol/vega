@@ -14,6 +14,27 @@ type QueryFilter struct {
 	Kind        string
 }
 
+type QueryFilterPaginated struct {
+	First *uint64
+	Last  *uint64
+	Skip  *uint64
+}
+
+func (q *QueryFilter) ApplyFilters(value interface{}) bool {
+	if q.FilterRange != nil {
+		return q.ApplyRangeFilter(value, q.FilterRange, q.Kind)
+	}
+
+	if q.Eq != nil {
+		return q.ApplyEqualFilter(value, q.Eq)
+	}
+
+	if q.Neq != nil {
+		return q.ApplyNotEqualFilter(value, q.Neq)
+	}
+	return false
+}
+
 func (q *QueryFilter) ApplyRangeFilter(value interface{}, r *QueryFilterRange, kind string) bool {
 	if kind == "uint64" {
 		if r.Lower.(uint64) <= value.(uint64) && value.(uint64) <= r.Upper.(uint64) {

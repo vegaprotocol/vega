@@ -6,10 +6,11 @@ import("vega/common")
 // when working with the GetParams struct.
 const GetParamsLimitDefault = uint64(1844674407370955161)
 
-// GetParams is used for optional parameters that can be passed
-// into the datastores when querying for records.
 type GetOrderParams struct {
+	common.QueryFilterPaginated
+
 	Limit           uint64
+
 	MarketFilter    *common.QueryFilter
 	PartyFilter     *common.QueryFilter
 	SideFilter      *common.QueryFilter
@@ -23,7 +24,10 @@ type GetOrderParams struct {
 }
 
 type GetTradeParams struct {
+	common.QueryFilterPaginated
+
 	Limit           uint64
+	
 	MarketFilter    *common.QueryFilter
 	PriceFilter     *common.QueryFilter
 	SizeFilter      *common.QueryFilter
@@ -37,43 +41,43 @@ func applyOrderFilter(order Order, params GetOrderParams) bool {
 	var ok = true
 
 	if params.MarketFilter != nil {
-		ok = apply(order.Market, params.MarketFilter)
+		ok = params.MarketFilter.ApplyFilters(order.Market)
 	}
 
 	if params.PartyFilter != nil {
-		ok = apply(order.Party, params.PartyFilter)
+		ok = params.PartyFilter.ApplyFilters(order.Party)
 	}
 
 	if params.SideFilter != nil {
-		ok = apply(order.Side, params.SideFilter)
+		ok = params.SideFilter.ApplyFilters(order.Side)
 	}
 
 	if params.PriceFilter != nil {
-		ok = apply(order.Price, params.PriceFilter)
+		ok = params.PriceFilter.ApplyFilters(order.Price)
 	}
 
 	if params.SizeFilter != nil {
-		ok = apply(order.Size, params.SizeFilter)
+		ok = params.SizeFilter.ApplyFilters(order.Size)
 	}
 
 	if params.RemainingFilter != nil {
-		ok = apply(order.Remaining, params.RemainingFilter)
+		ok = params.RemainingFilter.ApplyFilters(order.Remaining)
 	}
 
 	if params.TypeFilter != nil {
-		ok = apply(order.Type, params.TypeFilter)
+		ok = params.TypeFilter.ApplyFilters(order.Type)
 	}
 
 	if params.TimestampFilter != nil {
-		ok = apply(order.Timestamp, params.TimestampFilter)
+		ok = params.TimestampFilter.ApplyFilters(order.Timestamp)
 	}
 
 	if params.RiskFactor != nil {
-		ok = apply(order.RiskFactor, params.RiskFactor)
+		ok = params.RiskFactor.ApplyFilters(order.RiskFactor)
 	}
 
 	if params.StatusFilter != nil {
-		ok = apply(order.Status, params.StatusFilter)
+		ok = params.StatusFilter.ApplyFilters(order.Status)
 	}
 
 	return ok
@@ -83,47 +87,33 @@ func applyTradeFilter(trade Trade, params GetTradeParams) bool {
 	var ok = true
 
 	if params.MarketFilter != nil {
-		ok = apply(trade.Market, params.MarketFilter)
+		ok = params.MarketFilter.ApplyFilters(trade.Market)
 	}
 
 	if params.PriceFilter != nil {
-		ok = apply(trade.Price, params.PriceFilter)
+		ok = params.PriceFilter.ApplyFilters(trade.Price)
 	}
 
 	if params.SizeFilter != nil {
-		ok = apply(trade.Size, params.SizeFilter)
+		ok = params.SizeFilter.ApplyFilters(trade.Size)
 	}
 
 	if params.BuyerFilter != nil {
-		ok = apply(trade.Buyer, params.BuyerFilter)
+		ok = params.BuyerFilter.ApplyFilters(trade.Buyer)
 	}
 
 	if params.SellerFilter != nil {
-		ok = apply(trade.Seller, params.SellerFilter)
+		ok = params.SellerFilter.ApplyFilters(trade.Seller)
 	}
 
 	if params.AggressorFilter != nil {
-		ok = apply(trade.Aggressor, params.AggressorFilter)
+		ok = params.AggressorFilter.ApplyFilters(trade.Aggressor)
 	}
 
 	if params.TimestampFilter != nil {
-		ok = apply(trade.Timestamp, params.TimestampFilter)
+		ok = params.TimestampFilter.ApplyFilters(trade.Timestamp)
 	}
 
 	return ok
 }
 
-func apply(value interface{}, params *common.QueryFilter) bool {
-	if params.FilterRange != nil {
-		return params.ApplyRangeFilter(value, params.FilterRange, params.Kind)
-	}
-
-	if params.Eq != nil {
-		return params.ApplyEqualFilter(value, params.Eq)
-	}
-
-	if params.Neq != nil {
-		return params.ApplyNotEqualFilter(value, params.Neq)
-	}
-	return false
-}

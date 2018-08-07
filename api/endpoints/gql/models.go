@@ -16,14 +16,38 @@ type Market struct {
 	Depth  msg.MarketDepth `json:"depth"`
 }
 type OrderFilter struct {
-	AND        []OrderFilter `json:"AND"`
-	Open       *bool         `json:"open"`
-	ID         *string       `json:"id"`
-	Id_neq     *string       `json:"id_neq"`
-	Id_from    *string       `json:"id_from"`
-	Id_to      *string       `json:"id_to"`
-	Market     *string       `json:"market"`
-	Market_neq *string       `json:"market_neq"`
+	AND            []OrderFilter `json:"AND"`
+	Open           *bool         `json:"open"`
+	ID             *string       `json:"id"`
+	Id_neq         *string       `json:"id_neq"`
+	Id_from        *string       `json:"id_from"`
+	Id_to          *string       `json:"id_to"`
+	Market         *string       `json:"market"`
+	Market_neq     *string       `json:"market_neq"`
+	Party          *string       `json:"party"`
+	Party_neq      *string       `json:"party_neq"`
+	Side           *Side         `json:"side"`
+	Side_neq       *Side         `json:"side_neq"`
+	Price          *string       `json:"price"`
+	Price_neq      *string       `json:"price_neq"`
+	Price_from     *string       `json:"price_from"`
+	Price_to       *string       `json:"price_to"`
+	Size           *string       `json:"size"`
+	Size_neq       *string       `json:"size_neq"`
+	Size_from      *string       `json:"size_from"`
+	Size_to        *string       `json:"size_to"`
+	Remaining      *string       `json:"remaining"`
+	Remaining_neq  *string       `json:"remaining_neq"`
+	Remaining_from *string       `json:"remaining_from"`
+	Remaining_to   *string       `json:"remaining_to"`
+	Type           *OrderType    `json:"type"`
+	Type_neq       *OrderType    `json:"type_neq"`
+	Timestamp      *string       `json:"timestamp"`
+	Timestamp_neq  *string       `json:"timestamp_neq"`
+	Timestamp_from *string       `json:"timestamp_from"`
+	Timestamp_to   *string       `json:"timestamp_to"`
+	Status         *OrderStatus  `json:"status"`
+	Status_neq     *OrderStatus  `json:"status_neq"`
 }
 type Party struct {
 	Name      string               `json:"name"`

@@ -3561,6 +3561,270 @@ func UnmarshalOrderFilter(v interface{}) (OrderFilter, error) {
 			if err != nil {
 				return it, err
 			}
+		case "party":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Party = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "party_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Party_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "side":
+			var err error
+			var ptr1 Side
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Side = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "side_neq":
+			var err error
+			var ptr1 Side
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Side_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "remaining":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Remaining = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "remaining_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Remaining_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "remaining_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Remaining_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "remaining_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Remaining_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "type":
+			var err error
+			var ptr1 OrderType
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Type = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "type_neq":
+			var err error
+			var ptr1 OrderType
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Type_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "status":
+			var err error
+			var ptr1 OrderStatus
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Status = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "status_neq":
+			var err error
+			var ptr1 OrderStatus
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Status_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4233,12 +4497,43 @@ input OrderFilter {
     market: String # matches all orders with exact market value
     market_neq: String # matches all orders with different market to value
 
+    # Party filters
+    party: String # matches all orders with exact party value
+    party_neq: String # matches all orders with different party to value
+
+    # Side filters
+    side: Side # matches all orders with exact side value e.g. Buy
+    side_neq: Side # matches all orders with different side to value
+
+    # Price filters
+    price: String # matches all orders with exact price value
+    price_neq: String # matches all orders with different price to value
+    price_from: String # matches all orders from this price value
+    price_to: String # matches all orders to this price value
+
+    # Size filters
+    size: String # matches all orders with exact size value
+    size_neq: String # matches all orders with different size to value
+    size_from: String # matches all orders from this size value
+    size_to: String # matches all orders to this size value
+
+    # Remaining filters
+    remaining: String # matches all orders with exact remaining value
+    remaining_neq: String # matches all orders with different remaining to value
+    remaining_from: String # matches all orders from this remaining value
+    remaining_to: String # matches all orders to this remaining value
+
+    # Type filters
+    type: OrderType # matches all orders with exact type value
+    type_neq: OrderType # matches all orders with different type to value
     
-    # TODO more filters ....
+    # Timestamp filters
+    timestamp: String # matches all orders with exact timestamp value
+    timestamp_neq: String # matches all orders with different timestamp to value
+    timestamp_from: String # matches all orders from this timestamp value
+    timestamp_to: String # matches all orders to this timestamp value
 
-
-}
-
-
-
-`)
+    # Status filters
+    status: OrderStatus # matches all orders with exact status value
+    status_neq: OrderStatus # matches all orders with different status to value
+}`)

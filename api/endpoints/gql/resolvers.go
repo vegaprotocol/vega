@@ -409,25 +409,14 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 		return res, errors.New("party missing or empty")
 	}
 	order.Party = party
-	switch type_ {
-		case OrderTypeGtc:
-			order.Type = msg.Order_GTC
-		case OrderTypeGtt:
-			order.Type = msg.Order_GTT
-		case OrderTypeEne:
-			order.Type = msg.Order_ENE
-		case OrderTypeFok:
-			order.Type = msg.Order_FOK
-		default:
-			return res, errors.New(fmt.Sprintf("unknown type: %s", type_.String()))
+	order.Type, err = ParseOrderType(&type_)
+	if err != nil {
+		return res, err
 	}
-	switch side {
-		case SideBuy:
-			order.Side = msg.Side_Buy
-		case SideSell:
-			order.Side = msg.Side_Sell
+	order.Side, err = ParseSide(&side)
+	if err != nil {
+		return res, err
 	}
-
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	accepted, err := r.orderService.CreateOrder(ctx, order)
 	if err != nil {
