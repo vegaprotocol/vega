@@ -10,6 +10,7 @@ import (
 	"time"
 	"vega/log"
 	"github.com/satori/go.uuid"
+	"vega/common"
 )
 
 type resolverRoot struct {
@@ -167,6 +168,22 @@ func (r *MyPartyResolver) Orders(ctx context.Context, obj *Party, where *OrderFi
 	if where != nil {
 		// We have optional query filters!
 		log.Debugf("OrderFilters: %+v", where)
+
+		orderQueryFilters := &common.OrderQueryFilters{}
+		if where.AND != nil && len(where.AND) > 0 {
+			// range all filters
+			for _, filter := range where.AND {
+				_, err := ParseOrderFilter(&filter, orderQueryFilters)
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			_, err := ParseOrderFilter(where, orderQueryFilters)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	// Look for orders for party (will validate market internally)

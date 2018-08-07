@@ -5,39 +5,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type OrderQueryFilters struct {
-	common.QueryFilterPaginated
-	
-	MarketFilter    *common.QueryFilter
-	PartyFilter     *common.QueryFilter
-	SideFilter      *common.QueryFilter
-	PriceFilter     *common.QueryFilter
-	SizeFilter      *common.QueryFilter
-	RemainingFilter *common.QueryFilter
-	TypeFilter      *common.QueryFilter
-	TimestampFilter *common.QueryFilter
-	StatusFilter    *common.QueryFilter
-}
-
-type TradeQueryFilters struct {
-	common.QueryFilterPaginated
-
-	MarketFilter    *common.QueryFilter
-	PriceFilter     *common.QueryFilter
-	SizeFilter      *common.QueryFilter
-	BuyerFilter     *common.QueryFilter
-	SellerFilter    *common.QueryFilter
-	AggressorFilter *common.QueryFilter
-	TimestampFilter *common.QueryFilter
-}
-
-func ParseOrderFilter(filters *OrderFilter, holder *OrderQueryFilters) (bool, error) {
+func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (bool, error) {
 	if filters == nil {
 		return false, errors.New("filters must be set when calling ParseOrderFilter")
 	}
 	// In case the caller forgets to pass in a struct, we check and create the holder
 	if holder == nil {
-		holder = &OrderQueryFilters{}
+		holder = &common.OrderQueryFilters{}
 	}
 	// Match filters in GQL against the query filters in the api-services & data stores
 	foundFilter := false
@@ -192,14 +166,22 @@ func ParseOrderFilter(filters *OrderFilter, holder *OrderQueryFilters) (bool, er
 		foundFilter = true
 	}
 	if filters.Type != nil {
+		orderType, err := ParseOrderType(filters.Type)
+		if err != nil {
+			return false, err
+		}
 		holder.TypeFilter = &common.QueryFilter{
-			Eq: ParseOrderType(filters.Type),
+			Eq: orderType,
 		}
 		foundFilter = true
 	}
 	if filters.Type_neq != nil {
+		orderType, err := ParseOrderType(filters.Type_neq)
+		if err != nil {
+			return false, err
+		}
 		holder.TypeFilter = &common.QueryFilter{
-			Neq: ParseOrderType(filters.Type_neq),
+			Neq: orderType,
 		}
 		foundFilter = true
 	}
@@ -242,27 +224,35 @@ func ParseOrderFilter(filters *OrderFilter, holder *OrderQueryFilters) (bool, er
 		foundFilter = true
 	}
 	if filters.Status != nil {
+		orderStatus, err := ParseOrderStatus(filters.Status)
+		if err != nil {
+			return false, err 
+		}
 		holder.StatusFilter = &common.QueryFilter{
-			Eq: ParseOrderStatus(filters.Status),
+			Eq: orderStatus,
 		}
 		foundFilter = true
 	}
 	if filters.Status_neq != nil {
+		orderStatus, err := ParseOrderStatus(filters.Status_neq)
+		if err != nil {
+			return false, err
+		}
 		holder.StatusFilter = &common.QueryFilter{
-			Neq: ParseOrderStatus(filters.Status_neq),
+			Neq: orderStatus,
 		}
 		foundFilter = true
 	}
 	return foundFilter, nil
 }
 
-func ParseTradeFilter(filters *TradeFilter, holder *TradeQueryFilters) (bool, error) {
+func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (bool, error) {
 	if filters == nil {
 		return false, errors.New("filters must be set when calling ParseTradeFilter")
 	}
 	// In case the caller forgets to pass in a struct, we check and create the holder
 	if holder == nil {
-		holder = &TradeQueryFilters{}
+		holder = &common.TradeQueryFilters{}
 	}
 	// Match filters in GQL against the query filters in the api-services & data stores
 	foundFilter := false

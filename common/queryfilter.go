@@ -7,17 +7,43 @@ type QueryFilterRange struct {
 	Upper interface{}
 }
 
+type QueryFilterPaginated struct {
+	First *uint64
+	Last  *uint64
+	Skip  *uint64
+}
+
+type OrderQueryFilters struct {
+	QueryFilterPaginated
+
+	MarketFilter    *QueryFilter
+	PartyFilter     *QueryFilter
+	SideFilter      *QueryFilter
+	PriceFilter     *QueryFilter
+	SizeFilter      *QueryFilter
+	RemainingFilter *QueryFilter
+	TypeFilter      *QueryFilter
+	TimestampFilter *QueryFilter
+	StatusFilter    *QueryFilter
+}
+
+type TradeQueryFilters struct {
+	QueryFilterPaginated
+
+	MarketFilter    *QueryFilter
+	PriceFilter     *QueryFilter
+	SizeFilter      *QueryFilter
+	BuyerFilter     *QueryFilter
+	SellerFilter    *QueryFilter
+	AggressorFilter *QueryFilter
+	TimestampFilter *QueryFilter
+}
+
 type QueryFilter struct {
 	FilterRange *QueryFilterRange
 	Neq         interface{}
 	Eq          interface{}
 	Kind        string
-}
-
-type QueryFilterPaginated struct {
-	First *uint64
-	Last  *uint64
-	Skip  *uint64
 }
 
 func (q *QueryFilter) ApplyFilters(value interface{}) bool {
@@ -63,3 +89,5 @@ func (q *QueryFilter) ApplyNotEqualFilter(value interface{}, neq interface{}) bo
 	}
 	return false
 }
+
+
