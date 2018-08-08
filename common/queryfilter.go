@@ -1,9 +1,9 @@
 package common
 
-const QueryFilterOperationAnd QueryFilterOperation = 0
-const QueryFilterOperationOr QueryFilterOperation = 1
+const QueryFilterOperatorOr QueryFilterOperator = 0
+const QueryFilterOperatorAnd QueryFilterOperator = 1
 
-type QueryFilterOperation int8
+type QueryFilterOperator int8
 
 type QueryFilterType int
 
@@ -20,6 +20,7 @@ type QueryFilterPaginated struct {
 
 type OrderQueryFilters struct {
 	QueryFilterPaginated
+	Operator        QueryFilterOperator
 
 	IdFilter        *QueryFilter
 	MarketFilter    *QueryFilter

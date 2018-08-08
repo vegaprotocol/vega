@@ -176,11 +176,13 @@ func (r *MyPartyResolver) Orders(ctx context.Context, party *Party, where *Order
 					return nil, err
 				}
 			}
+			orderQueryFilters.Operator = common.QueryFilterOperatorAnd
 		} else {
 			_, err := ParseOrderFilter(where, orderQueryFilters)
 			if err != nil {
 				return nil, err
 			}
+			orderQueryFilters.Operator = common.QueryFilterOperatorOr
 		}
 		if last != nil {
 			*orderQueryFilters.Last = uint64(*last)

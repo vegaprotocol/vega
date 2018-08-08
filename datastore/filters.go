@@ -39,7 +39,7 @@ type GetTradeParams struct {
 	TimestampFilter *common.QueryFilter
 }
 
-func applyOrderFilter(order Order, filters *common.OrderQueryFilters, op common.QueryFilterOperation) bool {
+func applyOrderFilter(order Order, filters *common.OrderQueryFilters) bool {
 	ok := true
 	count := 0
 
@@ -119,7 +119,7 @@ func applyOrderFilter(order Order, filters *common.OrderQueryFilters, op common.
 		}
 	}
 
-	if op == common.QueryFilterOperationAnd {
+	if filters.Operator == common.QueryFilterOperatorAnd {
 		// If we AND all the filters the counts should match
 		// and if they do we have the exact match
 		return count == filters.Count()
