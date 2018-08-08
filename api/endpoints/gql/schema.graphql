@@ -303,8 +303,6 @@ input TradeFilter {
     # ID filters
     id: ID # matches all trades with exact ID value
     id_neq: ID # matches all trades with different ID to value
-    id_from: ID # matches all trades from this ID value
-    id_to: ID # matches all trades to this ID value
 
     # Market filters
     market: String # matches all trades with exact market value
@@ -354,8 +352,6 @@ input OrderFilter {
     # ID filters
     id: ID # matches all orders with exact ID value
     id_neq: ID # matches all orders with different ID to value
-    id_from: ID # matches all orders from this ID value
-    id_to: ID # matches all orders to this ID value
 
     # Market filters
     market: String # matches all orders with exact market value

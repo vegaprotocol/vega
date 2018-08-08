@@ -20,8 +20,6 @@ type OrderFilter struct {
 	Open           *bool         `json:"open"`
 	ID             *string       `json:"id"`
 	Id_neq         *string       `json:"id_neq"`
-	Id_from        *string       `json:"id_from"`
-	Id_to          *string       `json:"id_to"`
 	Market         *string       `json:"market"`
 	Market_neq     *string       `json:"market_neq"`
 	Party          *string       `json:"party"`
@@ -61,8 +59,6 @@ type TradeFilter struct {
 	AND            []TradeFilter `json:"AND"`
 	ID             *string       `json:"id"`
 	Id_neq         *string       `json:"id_neq"`
-	Id_from        *string       `json:"id_from"`
-	Id_to          *string       `json:"id_to"`
 	Market         *string       `json:"market"`
 	Market_neq     *string       `json:"market_neq"`
 	Buyer          *string       `json:"buyer"`

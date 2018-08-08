@@ -441,8 +441,9 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 			assert.Nil(t, err)
 		}
 
-		params := GetOrderParams{Limit: tt.inLimit}
-		orders, err := newOrderStore.GetByMarket(tt.inMarket, params)
+		filters := &common.OrderQueryFilters{}
+		filters.Last = &tt.inLimit
+		orders, err := newOrderStore.GetByMarket(tt.inMarket, filters)
 		assert.Nil(t, err)
 		assert.Equal(t, tt.outOrdersCount, len(orders))
 	}
@@ -451,7 +452,7 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 func TestMemStore_GetAllOrdersForNoneExistentMarket(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
 	var newOrderStore = NewOrderStore(&memStore)
-	o, err := newOrderStore.GetByMarket("UNKNOWN", GetOrderParams{Limit: GetParamsLimitDefault})
+	o, err := newOrderStore.GetByMarket("UNKNOWN", nil)
 	assert.Error(t, err, "market does not exist")
 	assert.Nil(t, o)
 }
@@ -701,11 +702,11 @@ func TestMemOrderStore_Parties(t *testing.T) {
 
 	err = newTradeStore.Post(trade)
 
-	ordersAtPartyA, err := newOrderStore.GetByParty(testPartyA, GetOrderParams{})
+	ordersAtPartyA, err := newOrderStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(ordersAtPartyA))
 
-	ordersAtPartyB, err := newOrderStore.GetByParty(testPartyB, GetOrderParams{})
+	ordersAtPartyB, err := newOrderStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(ordersAtPartyB))
 
@@ -757,7 +758,7 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	err = newOrderStore.Delete(passiveOrder)
 	assert.Nil(t, err)
 
-	ordersAtPartyA, err = newOrderStore.GetByParty(testPartyA, GetOrderParams{})
+	ordersAtPartyA, err = newOrderStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(ordersAtPartyA))
 
@@ -765,7 +766,7 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	err = newOrderStore.Delete(aggressiveOrder)
 	assert.Nil(t, err)
 
-	ordersAtPartyB, err = newOrderStore.GetByParty(testPartyB, GetOrderParams{})
+	ordersAtPartyB, err = newOrderStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(ordersAtPartyB))
 }
@@ -908,146 +909,146 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 	err = newOrderStore.Post(order4)
 	assert.Nil(t, err)
 
-	getOrderParams := GetOrderParams{
+	orderFilters := &common.OrderQueryFilters{
 		MarketFilter: &common.QueryFilter{Eq: testMarket},
 		PartyFilter:  &common.QueryFilter{Eq: testPartyA},
 	}
-	orders, err := newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err := newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
 	// get all orders
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		MarketFilter: &common.QueryFilter{Eq: testMarket},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		PriceFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{Lower: uint64(150), Upper: uint64(1150)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		PriceFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{Lower: uint64(99), Upper: uint64(200)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		RemainingFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{Lower: uint64(1), Upper: uint64(10000)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		RemainingFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{Lower: uint64(0), Upper: uint64(10000)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		SizeFilter: &common.QueryFilter{Eq: uint64(900)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		SizeFilter: &common.QueryFilter{Neq: uint64(900)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		TypeFilter: &common.QueryFilter{Eq: msg.Order_GTC},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		TypeFilter: &common.QueryFilter{Neq: msg.Order_GTC},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		PriceFilter: &common.QueryFilter{Eq: uint64(1000)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		TypeFilter:  &common.QueryFilter{Neq: msg.Order_GTC},
 		PriceFilter: &common.QueryFilter{Eq: uint64(1000)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		TimestampFilter: &common.QueryFilter{Eq: uint64(1)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		TimestampFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(1), uint64(10)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		TimestampFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(5), uint64(10)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		TimestampFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(0), uint64(10)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		StatusFilter: &common.QueryFilter{Eq: msg.Order_Active},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		StatusFilter: &common.QueryFilter{Eq: msg.Order_Cancelled},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		StatusFilter: &common.QueryFilter{Eq: msg.Order_Expired},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
-	getOrderParams = GetOrderParams{
+	orderFilters = &common.OrderQueryFilters{
 		StatusFilter: &common.QueryFilter{Neq: msg.Order_Expired},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 }

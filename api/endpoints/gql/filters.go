@@ -3,6 +3,7 @@ package gql
 import (
 	"vega/common"
 	"github.com/pkg/errors"
+	"fmt"
 )
 
 func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (bool, error) {
@@ -15,6 +16,23 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 	}
 	// Match filters in GQL against the query filters in the api-services & data stores
 	foundFilter := false
+	if filters.ID != nil {
+		id := *filters.ID
+
+		fmt.Println("ID in filters gql: ", id)
+		
+		holder.IdFilter = &common.QueryFilter{
+			Eq: id,
+		}
+		foundFilter = true
+	}
+	if filters.Id_neq != nil {
+		id := *filters.Id_neq
+		holder.IdFilter = &common.QueryFilter{
+			Neq: id,
+		}
+		foundFilter = true
+	}
 	if filters.Market != nil {
 		holder.MarketFilter = &common.QueryFilter{
 			Eq: filters.Market,
@@ -129,6 +147,10 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 	}
 	if filters.Remaining != nil {
 		remaining, err := SafeStringUint64(*filters.Remaining)
+
+
+		fmt.Println("Remaining in filters gql: ", remaining)
+
 		if err != nil {
 			return false, err
 		}
@@ -256,6 +278,20 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 	}
 	// Match filters in GQL against the query filters in the api-services & data stores
 	foundFilter := false
+	if filters.ID != nil {
+		id := *filters.ID
+		holder.IdFilter = &common.QueryFilter{
+			Eq: id,
+		}
+		foundFilter = true
+	}
+	if filters.Id_neq != nil {
+		id := *filters.Id_neq
+		holder.IdFilter = &common.QueryFilter{
+			Neq: id,
+		}
+		foundFilter = true
+	}
 	if filters.Market != nil {
 		holder.MarketFilter = &common.QueryFilter{
 			Eq: filters.Market,

@@ -8,6 +8,7 @@ import (
 	"vega/msg"
 	"github.com/pkg/errors"
 	"vega/log"
+	"vega/common"
 )
 
 type OrderService interface {
@@ -16,8 +17,8 @@ type OrderService interface {
 
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
-	GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error)
-	GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error)
+	GetByMarket(ctx context.Context, market string, filters *common.OrderQueryFilters) (orders []*msg.Order, err error)
+	GetByParty(ctx context.Context, party string, filters *common.OrderQueryFilters) (orders []*msg.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 
@@ -76,8 +77,8 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
 }
 
-func (p *orderService) GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error) {
-	o, err := p.orderStore.GetByMarket(market, datastore.GetOrderParams{Limit: limit})
+func (p *orderService) GetByMarket(ctx context.Context, market string, filters *common.OrderQueryFilters) (orders []*msg.Order, err error) {
+	o, err := p.orderStore.GetByMarket(market, filters)
 	if err != nil {
 		return nil, err
 	}
@@ -104,15 +105,8 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, limit uin
 	return result, err
 }
 
-func (p *orderService) GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error) {
-
-
-
-
-
-
-
-	o, err := p.orderStore.GetByParty(party, datastore.GetOrderParams{Limit: limit})
+func (p *orderService) GetByParty(ctx context.Context, party string, filters *common.OrderQueryFilters) (orders []*msg.Order, err error) {
+	o, err := p.orderStore.GetByParty(party, filters)
 	if err != nil {
 		return nil, err
 	}

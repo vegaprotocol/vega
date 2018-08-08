@@ -88,7 +88,7 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 	}
 
 	// Look for orders for market (will validate market internally)
-	orders, err := r.orderService.GetByMarket(ctx, *name, 65536)
+	orders, err := r.orderService.GetByMarket(ctx, *name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -161,15 +161,13 @@ func (r *MyMarketResolver) Depth(ctx context.Context, obj *Market) (msg.MarketDe
 
 type MyPartyResolver resolverRoot
 
-
-func (r *MyPartyResolver) Orders(ctx context.Context, obj *Party, where *OrderFilter,
+func (r *MyPartyResolver) Orders(ctx context.Context, party *Party, where *OrderFilter,
 	skip *int, first *int, last *int) ([]msg.Order, error) {
 
+	orderQueryFilters := &common.OrderQueryFilters{}
 	if where != nil {
-		// We have optional query filters!
 		log.Debugf("OrderFilters: %+v", where)
 
-		orderQueryFilters := &common.OrderQueryFilters{}
 		if where.AND != nil && len(where.AND) > 0 {
 			// range all filters
 			for _, filter := range where.AND {
@@ -184,10 +182,12 @@ func (r *MyPartyResolver) Orders(ctx context.Context, obj *Party, where *OrderFi
 				return nil, err
 			}
 		}
+		if last != nil {
+			*orderQueryFilters.Last = uint64(*last)
+		}
+		// todo(cdm): first (asc), skip (directional ffwd)
 	}
-
-	// Look for orders for party (will validate market internally)
-	orders, err := r.orderService.GetByParty(ctx, obj.Name, 1000)
+	orders, err := r.orderService.GetByParty(ctx, party.Name, orderQueryFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,6 @@ func (r *MyPartyResolver) Orders(ctx context.Context, obj *Party, where *OrderFi
 	}
 	return valOrders, nil
 }
-
 
 func (r *MyPartyResolver) Positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error) {
 	positions, err := r.tradeService.GetPositionsByParty(ctx, obj.Name)

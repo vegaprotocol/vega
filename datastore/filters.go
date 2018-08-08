@@ -1,27 +1,29 @@
 package datastore
 
-import("vega/common")
+import("vega/common"
+	"fmt"
+)
 
 // GetParamsLimitDefault should be used if no limit is specified
 // when working with the GetParams struct.
 const GetParamsLimitDefault = uint64(1844674407370955161)
 
-type GetOrderParams struct {
-	common.QueryFilterPaginated
-
-	Limit           uint64
-
-	MarketFilter    *common.QueryFilter
-	PartyFilter     *common.QueryFilter
-	SideFilter      *common.QueryFilter
-	PriceFilter     *common.QueryFilter
-	SizeFilter      *common.QueryFilter
-	RemainingFilter *common.QueryFilter
-	TypeFilter      *common.QueryFilter
-	TimestampFilter *common.QueryFilter
-	RiskFactor      *common.QueryFilter
-	StatusFilter    *common.QueryFilter
-}
+//type GetOrderParams struct {
+//	common.QueryFilterPaginated
+//
+//	Limit           uint64
+//
+//	MarketFilter    *common.QueryFilter
+//	PartyFilter     *common.QueryFilter
+//	SideFilter      *common.QueryFilter
+//	PriceFilter     *common.QueryFilter
+//	SizeFilter      *common.QueryFilter
+//	RemainingFilter *common.QueryFilter
+//	TypeFilter      *common.QueryFilter
+//	TimestampFilter *common.QueryFilter
+//	RiskFactor      *common.QueryFilter
+//	StatusFilter    *common.QueryFilter
+//}
 
 type GetTradeParams struct {
 	common.QueryFilterPaginated
@@ -37,50 +39,96 @@ type GetTradeParams struct {
 	TimestampFilter *common.QueryFilter
 }
 
-func applyOrderFilter(order Order, params GetOrderParams) bool {
-	var ok = true
+func applyOrderFilter(order Order, filters *common.OrderQueryFilters, op common.QueryFilterOperation) bool {
+	ok := true
+	count := 0
 
-	if params.MarketFilter != nil {
-		ok = params.MarketFilter.ApplyFilters(order.Market)
+	if filters.IdFilter != nil {
+
+		fmt.Println(fmt.Sprintf("ID in filters datastore: %+v %+v", filters.IdFilter.Eq, order.Id))
+
+		ok = filters.IdFilter.ApplyFilters(order.Id)
+		if ok {
+			count++
+		}
 	}
 
-	if params.PartyFilter != nil {
-		ok = params.PartyFilter.ApplyFilters(order.Party)
+	if filters.MarketFilter != nil {
+		ok = filters.MarketFilter.ApplyFilters(order.Market)
+		if ok {
+			count++
+		}
 	}
 
-	if params.SideFilter != nil {
-		ok = params.SideFilter.ApplyFilters(order.Side)
+	if filters.PartyFilter != nil {
+		ok = filters.PartyFilter.ApplyFilters(order.Party)
+		if ok {
+			count++
+		}
 	}
 
-	if params.PriceFilter != nil {
-		ok = params.PriceFilter.ApplyFilters(order.Price)
+	if filters.SideFilter != nil {
+		ok = filters.SideFilter.ApplyFilters(order.Side)
+		if ok {
+			count++
+		}
 	}
 
-	if params.SizeFilter != nil {
-		ok = params.SizeFilter.ApplyFilters(order.Size)
+	if filters.PriceFilter != nil {
+		ok = filters.PriceFilter.ApplyFilters(order.Price)
+		if ok {
+			count++
+		}
 	}
 
-	if params.RemainingFilter != nil {
-		ok = params.RemainingFilter.ApplyFilters(order.Remaining)
+	if filters.SizeFilter != nil {
+		ok = filters.SizeFilter.ApplyFilters(order.Size)
+		if ok {
+			count++
+		}
 	}
 
-	if params.TypeFilter != nil {
-		ok = params.TypeFilter.ApplyFilters(order.Type)
+	if filters.RemainingFilter != nil {
+		
+		fmt.Println("Remaining in filters datastore: ", filters.RemainingFilter.Eq, order.Remaining)
+
+		ok = filters.RemainingFilter.ApplyFilters(order.Remaining)
+		if ok {
+			count++
+		}
 	}
 
-	if params.TimestampFilter != nil {
-		ok = params.TimestampFilter.ApplyFilters(order.Timestamp)
+	if filters.TypeFilter != nil {
+		ok = filters.TypeFilter.ApplyFilters(order.Type)
+		if ok {
+			count++
+		}
 	}
 
-	if params.RiskFactor != nil {
-		ok = params.RiskFactor.ApplyFilters(order.RiskFactor)
+	if filters.TimestampFilter != nil {
+		ok = filters.TimestampFilter.ApplyFilters(order.Timestamp)
+		if ok {
+			count++
+		}
+	}
+	
+	if filters.StatusFilter != nil {
+		ok = filters.StatusFilter.ApplyFilters(order.Status)
+		if ok {
+			count++
+		}
 	}
 
-	if params.StatusFilter != nil {
-		ok = params.StatusFilter.ApplyFilters(order.Status)
+	if op == common.QueryFilterOperationAnd {
+		// If we AND all the filters the counts should match
+		// and if they do we have the exact match
+		return count == filters.Count()
+	} else {
+		// We are in an OR operation so if any of the filters
+		// have matched we can return true, false otherwise
+		return ok
 	}
 
-	return ok
 }
 
 func applyTradeFilter(trade Trade, params GetTradeParams) bool {

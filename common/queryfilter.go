@@ -1,5 +1,10 @@
 package common
 
+const QueryFilterOperationAnd QueryFilterOperation = 0
+const QueryFilterOperationOr QueryFilterOperation = 1
+
+type QueryFilterOperation int8
+
 type QueryFilterType int
 
 type QueryFilterRange struct {
@@ -16,6 +21,7 @@ type QueryFilterPaginated struct {
 type OrderQueryFilters struct {
 	QueryFilterPaginated
 
+	IdFilter        *QueryFilter
 	MarketFilter    *QueryFilter
 	PartyFilter     *QueryFilter
 	SideFilter      *QueryFilter
@@ -27,9 +33,45 @@ type OrderQueryFilters struct {
 	StatusFilter    *QueryFilter
 }
 
+func (o *OrderQueryFilters) Count() int {
+	len := 0
+	if o.IdFilter != nil {
+		len++
+	}
+	if o.MarketFilter != nil {
+		len++
+	}
+	if o.PartyFilter != nil {
+		len++
+	}
+	if o.SideFilter != nil {
+		len++
+	}
+	if o.PriceFilter != nil {
+		len++
+	}
+	if o.SizeFilter != nil {
+		len++
+	}
+	if o.RemainingFilter != nil {
+		len++
+	}
+	if o.TypeFilter != nil {
+		len++
+	}
+	if o.TimestampFilter != nil {
+		len++
+	}
+	if o.StatusFilter != nil {
+		len++
+	}
+	return len
+}
+
 type TradeQueryFilters struct {
 	QueryFilterPaginated
 
+	IdFilter        *QueryFilter
 	MarketFilter    *QueryFilter
 	PriceFilter     *QueryFilter
 	SizeFilter      *QueryFilter
@@ -50,11 +92,9 @@ func (q *QueryFilter) ApplyFilters(value interface{}) bool {
 	if q.FilterRange != nil {
 		return q.ApplyRangeFilter(value, q.FilterRange, q.Kind)
 	}
-
 	if q.Eq != nil {
 		return q.ApplyEqualFilter(value, q.Eq)
 	}
-
 	if q.Neq != nil {
 		return q.ApplyNotEqualFilter(value, q.Neq)
 	}

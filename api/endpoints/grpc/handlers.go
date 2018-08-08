@@ -6,6 +6,7 @@ import (
 	"vega/api"
 	"time"
 	"github.com/pkg/errors"
+	"vega/common"
 )
 
 type Handlers struct {
@@ -34,11 +35,11 @@ func (h *Handlers) OrdersByMarket(ctx context.Context, request *api.OrdersByMark
 	if request.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
-	limit := defaultLimit
+	orderFilters := &common.OrderQueryFilters{}
 	if request.Params != nil && request.Params.Limit > 0 {
-		limit = request.Params.Limit
+		orderFilters.Last = &request.Params.Limit
 	}
-	orders, err := h.OrderService.GetByMarket(ctx, request.Market, limit)
+	orders, err := h.OrderService.GetByMarket(ctx, request.Market, orderFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -54,11 +55,11 @@ func (h *Handlers) OrdersByParty(ctx context.Context, request *api.OrdersByParty
 	if request.Party == "" {
 		return nil, errors.New("Party empty or missing")
 	}
-	limit := defaultLimit
+	orderFilters := &common.OrderQueryFilters{}
 	if request.Params != nil && request.Params.Limit > 0 {
-		limit = request.Params.Limit
+		orderFilters.Last = &request.Params.Limit
 	}
-	orders, err := h.OrderService.GetByParty(ctx, request.Party, limit)
+	orders, err := h.OrderService.GetByParty(ctx, request.Party, orderFilters)
 	if err != nil {
 		return nil, err
 	}

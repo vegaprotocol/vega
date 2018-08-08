@@ -6,6 +6,7 @@ import (
 	"vega/msg"
 	"sync"
 	"vega/log"
+	"vega/common"
 )
 
 // memOrderStore should implement OrderStore interface.
@@ -99,9 +100,13 @@ func (m *memOrderStore) queueEvent(o Order) error {
 }
 
 
-func (m *memOrderStore) GetByMarket(market string, params GetOrderParams) ([]Order, error) {
+func (m *memOrderStore) GetByMarket(market string, filters *common.OrderQueryFilters) ([]Order, error) {
 	if err := m.marketExists(market); err != nil {
 		return nil, err
+	}
+
+	if filters == nil {
+		filters = &common.OrderQueryFilters{}
 	}
 
 	var (
@@ -111,10 +116,10 @@ func (m *memOrderStore) GetByMarket(market string, params GetOrderParams) ([]Ord
 
 	// limit is descending. Get me most recent N orders
 	for i := len(m.store.markets[market].ordersByTimestamp) - 1; i >= 0; i-- {
-		if params.Limit > 0 && pos == params.Limit {
+		if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
 			break
 		}
-		if applyOrderFilter(m.store.markets[market].ordersByTimestamp[i].order, params) {
+		if applyOrderFilter(m.store.markets[market].ordersByTimestamp[i].order, filters) {
 			output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
 			pos++
 		}
@@ -134,9 +139,13 @@ func (m *memOrderStore) GetByMarketAndId(market string, id string) (Order, error
 	return v.order, nil
 }
 
-func (m *memOrderStore) GetByParty(party string, params GetOrderParams) ([]Order, error) {
+func (m *memOrderStore) GetByParty(party string, filters *common.OrderQueryFilters) ([]Order, error) {
 	if err := m.partyExists(party); err != nil {
 		return nil, err
+	}
+
+	if filters == nil {
+		filters = &common.OrderQueryFilters{}
 	}
 
 	var (
@@ -146,10 +155,10 @@ func (m *memOrderStore) GetByParty(party string, params GetOrderParams) ([]Order
 
 	// limit is descending. Get me most recent N orders
 	for i := len(m.store.parties[party].ordersByTimestamp) - 1; i >= 0; i-- {
-		if params.Limit > 0 && pos == params.Limit {
+		if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
 			break
 		}
-		if applyOrderFilter(m.store.parties[party].ordersByTimestamp[i].order, params) {
+		if applyOrderFilter(m.store.parties[party].ordersByTimestamp[i].order, filters) {
 			output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
 			pos++
 		}

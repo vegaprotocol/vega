@@ -3517,28 +3517,6 @@ func UnmarshalOrderFilter(v interface{}) (OrderFilter, error) {
 			if err != nil {
 				return it, err
 			}
-		case "id_from":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalID(v)
-				it.Id_from = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "id_to":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalID(v)
-				it.Id_to = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
 		case "market":
 			var err error
 			var ptr1 string
@@ -3869,28 +3847,6 @@ func UnmarshalTradeFilter(v interface{}) (TradeFilter, error) {
 			if v != nil {
 				ptr1, err = graphql.UnmarshalID(v)
 				it.Id_neq = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "id_from":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalID(v)
-				it.Id_from = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "id_to":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalID(v)
-				it.Id_to = &ptr1
 			}
 
 			if err != nil {
@@ -4439,8 +4395,6 @@ input TradeFilter {
     # ID filters
     id: ID # matches all trades with exact ID value
     id_neq: ID # matches all trades with different ID to value
-    id_from: ID # matches all trades from this ID value
-    id_to: ID # matches all trades to this ID value
 
     # Market filters
     market: String # matches all trades with exact market value
@@ -4490,8 +4444,6 @@ input OrderFilter {
     # ID filters
     id: ID # matches all orders with exact ID value
     id_neq: ID # matches all orders with different ID to value
-    id_from: ID # matches all orders from this ID value
-    id_to: ID # matches all orders to this ID value
 
     # Market filters
     market: String # matches all orders with exact market value
