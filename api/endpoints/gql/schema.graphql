@@ -13,7 +13,8 @@ scalar DateTime
 
 schema {
     query: Query,
-    subscription: Subscription
+    subscription: Subscription,
+    mutation: Mutation
 }
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
