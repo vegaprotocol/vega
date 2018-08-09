@@ -81,11 +81,12 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, filters *
 	if err != nil {
 		return nil, err
 	}
+	filterOpen := filters != nil && filters.Open == true
 	result := make([]*msg.Order, 0)
 	for _, order := range o {
-		//if order.Remaining == 0 {
-		//	continue
-		//}
+		if filterOpen && (order.Remaining == 0 || order.Status != msg.Order_Active) {
+			continue
+		}
 		o := &msg.Order{
 			Id:        order.Id,
 			Market:    order.Market,
@@ -108,11 +109,12 @@ func (p *orderService) GetByParty(ctx context.Context, party string, filters *co
 	if err != nil {
 		return nil, err
 	}
+	filterOpen := filters != nil && filters.Open == true
 	result := make([]*msg.Order, 0)
 	for _, order := range o {
-		//if order.Remaining == 0 {
-		//	continue
-		//}
+		if filterOpen && (order.Remaining == 0 || order.Status != msg.Order_Active) {
+			continue
+		}
 		o := &msg.Order{
 			Id:        order.Id,
 			Market:    order.Market,

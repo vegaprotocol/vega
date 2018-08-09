@@ -3,7 +3,6 @@ package gql
 import (
 	"vega/common"
 	"github.com/pkg/errors"
-	"fmt"
 )
 
 func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (bool, error) {
@@ -18,9 +17,6 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 	foundFilter := false
 	if filters.ID != nil {
 		id := *filters.ID
-
-		fmt.Println("ID in filters gql: ", id)
-		
 		holder.IdFilter = &common.QueryFilter{
 			Eq: id,
 		}
@@ -147,10 +143,6 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 	}
 	if filters.Remaining != nil {
 		remaining, err := SafeStringUint64(*filters.Remaining)
-
-
-		fmt.Println("Remaining in filters gql: ", remaining)
-
 		if err != nil {
 			return false, err
 		}
@@ -264,6 +256,9 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 			Neq: orderStatus,
 		}
 		foundFilter = true
+	}
+	if filters.Open != nil {
+		holder.Open = *filters.Open
 	}
 	return foundFilter, nil
 }

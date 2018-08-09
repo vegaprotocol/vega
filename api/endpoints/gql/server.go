@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"vega/api"
 	"vega/log"
+	"runtime/debug"
 )
 
 type graphServer struct {
@@ -45,10 +46,11 @@ func (g *graphServer) Start() {
 		handler.WebsocketUpgrader(upgrader),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			log.Errorf("GraphQL error: %v", err)
-			return errors.New("an error occurred with GraphQL, try again")
+			debug.PrintStack()
+			return errors.New("an internal error occurred")
 		})),
 	))
 
 	err := http.ListenAndServe(addr, nil)
-	log.Fatalf("GraphQL server fatal error: %v", err)
+	log.Fatalf("Fatal error with GraphQL server: %v", err)
 }

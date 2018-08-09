@@ -110,20 +110,47 @@ func (m *memOrderStore) GetByMarket(market string, filters *common.OrderQueryFil
 	}
 
 	var (
-		pos    uint64
-		output []Order
+		pos     uint64
+		skipped uint64
+		output  []Order
 	)
 
-	// limit is descending. Get me most recent N orders
-	for i := len(m.store.markets[market].ordersByTimestamp) - 1; i >= 0; i-- {
-		if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
-			break
+	// Last == descending by timestamp
+	// First == ascending by timestamp
+	// Skip == offset by value, then first/last depending on direction
+
+	if filters.First != nil && *filters.First > 0 {
+		// If first is set we iterate ascending
+		for i := 0; i < len(m.store.markets[market].ordersByTimestamp); i++ {
+			if pos == *filters.First {
+				break
+			}
+			if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, filters) {
+				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
+				pos++
+			}
 		}
-		if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, filters) {
-			output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
-			pos++
+	} else {
+		// default is descending 'last' n items
+		for i := len(m.store.markets[market].ordersByTimestamp) - 1; i >= 0; i-- {
+			if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
+				break
+			}
+			if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, filters) {
+				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
+				pos++
+			}
 		}
 	}
+
 	return output, nil
 }
 
@@ -149,19 +176,46 @@ func (m *memOrderStore) GetByParty(party string, filters *common.OrderQueryFilte
 
 	var (
 		pos    uint64
+		skipped uint64
 		output []Order
 	)
+	
+	// Last == descending by timestamp
+	// First == ascending by timestamp
+	// Skip == offset by value, then first/last depending on direction
 
-	// limit is descending. Get me most recent N orders
-	for i := len(m.store.parties[party].ordersByTimestamp) - 1; i >= 0; i-- {
-		if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
-			break
+	if filters.First != nil && *filters.First > 0 {
+		// If first is set we iterate ascending
+		for i := 0; i < len(m.store.parties[party].ordersByTimestamp); i++ {
+			if pos == *filters.First {
+				break
+			}
+			if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, filters) {
+				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
+				pos++
+			}
 		}
-		if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, filters) {
-			output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
-			pos++
+	} else {
+		// default is descending 'last' n items
+		for i := len(m.store.parties[party].ordersByTimestamp) - 1; i >= 0; i-- {
+			if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
+				break
+			}
+			if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, filters) {
+				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
+				pos++
+			}
 		}
 	}
+
 	return output, nil
 }
 

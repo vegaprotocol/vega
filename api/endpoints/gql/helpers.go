@@ -88,14 +88,27 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 			queryFilters.Operator = common.QueryFilterOperatorAnd
 		}
 		// Always parse outer filters
-		_, err := ParseOrderFilter(where, queryFilters)
+		_, err = ParseOrderFilter(where, queryFilters)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// Parse pagination params (if set)
+	if last != nil {
+		l := uint64(*last)
+		queryFilters.Last = &l
+	}
+	if first != nil {
 		if last != nil {
-			*queryFilters.Last = uint64(*last)
+			return nil, errors.New("first and last cannot both be specified in query")
 		}
-		// todo(cdm): first (asc), skip (directional ffwd)
+		f := uint64(*first)
+		queryFilters.First = &f
+	}
+	if skip != nil {
+		s := uint64(*skip)
+		queryFilters.Skip = &s
 	}
 
 	return queryFilters, nil
@@ -106,6 +119,8 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 	if queryFilters == nil {
 		queryFilters = &common.TradeQueryFilters{}
 	}
+
+	// Parse 'where' and build query filters that will be used internally (if set)
 	if where != nil {
 		log.Debugf("TradeFilters: %+v", where)
 
@@ -132,17 +147,28 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 			queryFilters.Operator = common.QueryFilterOperatorAnd
 		}
 		// Always parse outer filters
-		_, err := ParseTradeFilter(where, queryFilters)
+		_, err = ParseTradeFilter(where, queryFilters)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// Parse pagination params (if set)
+	if last != nil {
+		l := uint64(*last)
+		queryFilters.Last = &l
+	}
+	if first != nil {
 		if last != nil {
-			*queryFilters.Last = uint64(*last)
+			return nil, errors.New("first and last cannot both be specified in query")
 		}
-		// todo(cdm): first (asc), skip (directional ffwd)
+		f := uint64(*first)
+		queryFilters.First = &f
+	}
+	if skip != nil {
+		s := uint64(*skip)
+		queryFilters.Skip = &s
 	}
 
 	return queryFilters, nil
 }
-
-

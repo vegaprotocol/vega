@@ -108,21 +108,47 @@ func (ts *memTradeStore) GetByMarket(market string, filters *common.TradeQueryFi
 	}
 
 	var (
-		pos    uint64
-		output []Trade
+		pos     uint64
+		skipped uint64
+		output  []Trade
 	)
 
-	// limit is descending. Get me most recent N orders
-	for i := len(ts.store.markets[market].tradesByTimestamp) - 1; i >= 0; i-- {
-		if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
-			break
-		}
+	// Last == descending by timestamp
+	// First == ascending by timestamp
+	// Skip == offset by value, then first/last depending on direction
 
-		if applyTradeFilters(ts.store.markets[market].tradesByTimestamp[i].trade, filters) {
-			output = append(output, ts.store.markets[market].tradesByTimestamp[i].trade)
-			pos++
+	if filters.First != nil && *filters.First > 0 {
+		// If first is set we iterate ascending
+		for i := 0; i < len(ts.store.markets[market].tradesByTimestamp); i++ {
+			if pos == *filters.First {
+				break
+			}
+			if applyTradeFilters(ts.store.markets[market].tradesByTimestamp[i].trade, filters) {
+				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, ts.store.markets[market].tradesByTimestamp[i].trade)
+				pos++
+			}
+		}
+	} else {
+		// default is descending 'last' n items
+		for i := len(ts.store.markets[market].tradesByTimestamp) - 1; i >= 0; i-- {
+			if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
+				break
+			}
+			if applyTradeFilters(ts.store.markets[market].tradesByTimestamp[i].trade, filters) {
+				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, ts.store.markets[market].tradesByTimestamp[i].trade)
+				pos++
+			}
 		}
 	}
+
 	return output, nil
 }
 
