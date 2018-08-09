@@ -51,6 +51,5 @@ func (or *Order) ToProtoMessage() *msg.Order {
 		Side:      or.Side,
 		Type:      or.Type,
 		Status:    or.Status,
-		RiskFactor: or.RiskFactor,
 	}
 }

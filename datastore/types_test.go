@@ -19,7 +19,6 @@ func TestOrderModelFromProtoMessage(t *testing.T) {
 		Remaining:  50,
 		Type:       1,
 		Timestamp:  1,
-		RiskFactor: 20,
 	}
 
 	out := &Order{
@@ -33,7 +32,6 @@ func TestOrderModelFromProtoMessage(t *testing.T) {
 			Remaining:  50,
 			Type:       1,
 			Timestamp:  1,
-			RiskFactor: 20,
 		},
 	}
 
@@ -54,7 +52,6 @@ func TestOrderModelToProtoMessage(t *testing.T) {
 			Remaining:  50,
 			Type:       1,
 			Timestamp:  1,
-			RiskFactor: 20,
 		},
 	}
 
@@ -68,7 +65,6 @@ func TestOrderModelToProtoMessage(t *testing.T) {
 		Remaining:  50,
 		Type:       1,
 		Timestamp:  1,
-		RiskFactor: 20,
 	}
 
 	order := in.ToProtoMessage()

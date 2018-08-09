@@ -852,7 +852,6 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -868,7 +867,6 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -884,7 +882,6 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 			Remaining:  1000,
 			Type:       msg.Order_GTC,
 			Timestamp:  1,
-			RiskFactor: 20,
 			Status:     msg.Order_Cancelled,
 		},
 	}
@@ -900,7 +897,6 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 			Remaining:  100,
 			Type:       msg.Order_GTC,
 			Timestamp:  1,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1074,7 +1070,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1090,7 +1085,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1127,7 +1121,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1143,7 +1136,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1180,7 +1172,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1196,7 +1187,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1233,7 +1223,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  1000,
 			Type:       msg.Order_GTC,
 			Timestamp:  1,
-			RiskFactor: 20,
 			Status:     msg.Order_Cancelled,
 		},
 	}
@@ -1249,7 +1238,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  100,
 			Type:       msg.Order_GTC,
 			Timestamp:  1,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}

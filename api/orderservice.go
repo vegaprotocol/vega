@@ -49,7 +49,6 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	order.Status = msg.Order_Active
 	order.Type = msg.Order_GTC // VEGA only supports GTC at present
 	order.Timestamp = 0
-	order.RiskFactor = 0
 
 	// TODO validate
 
@@ -98,7 +97,6 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, filters *
 			Timestamp: order.Timestamp,
 			Type:      order.Type,
 			Status:    order.Status,
-			RiskFactor:order.RiskFactor,
 		}
 		result = append(result, o)
 	}
@@ -126,7 +124,6 @@ func (p *orderService) GetByParty(ctx context.Context, party string, filters *co
 			Timestamp: order.Timestamp,
 			Type:      order.Type,
 			Status:    order.Status,
-			RiskFactor:order.RiskFactor,
 		}
 		result = append(result, o)
 	}
