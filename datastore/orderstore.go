@@ -119,7 +119,7 @@ func (m *memOrderStore) GetByMarket(market string, filters *common.OrderQueryFil
 		if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
 			break
 		}
-		if applyOrderFilter(m.store.markets[market].ordersByTimestamp[i].order, filters) {
+		if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, filters) {
 			output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
 			pos++
 		}
@@ -143,7 +143,6 @@ func (m *memOrderStore) GetByParty(party string, filters *common.OrderQueryFilte
 	if err := m.partyExists(party); err != nil {
 		return nil, err
 	}
-
 	if filters == nil {
 		filters = &common.OrderQueryFilters{}
 	}
@@ -158,7 +157,7 @@ func (m *memOrderStore) GetByParty(party string, filters *common.OrderQueryFilte
 		if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
 			break
 		}
-		if applyOrderFilter(m.store.parties[party].ordersByTimestamp[i].order, filters) {
+		if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, filters) {
 			output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
 			pos++
 		}

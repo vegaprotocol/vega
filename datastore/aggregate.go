@@ -18,8 +18,8 @@ func newCandle() *msg.Candle {
 	return &msg.Candle{}
 }
 
-func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error) {
-	if err := store.marketExists(market); err != nil {
+func (ts *memTradeStore) GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error) {
+	if err := ts.marketExists(market); err != nil {
 		return nil, err
 	}
 	
@@ -28,7 +28,7 @@ func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock ui
 		OpenBlockNumber: sinceBlock,
 	}
 
-	for idx, t := range store.store.markets[market].tradesByTimestamp {
+	for idx, t := range ts.store.markets[market].tradesByTimestamp {
 		// iterate trades until reached ones of interest
 		if t.trade.Timestamp < sinceBlock {
 			if t.trade.Price != 0 {
@@ -57,7 +57,7 @@ func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock ui
 		if candle.Low > t.trade.Price || candle.Low == 0 {
 			candle.Low = t.trade.Price
 		}
-		if idx == len(store.store.markets[market].tradesByTimestamp)-1 {
+		if idx == len(ts.store.markets[market].tradesByTimestamp)-1 {
 			candle.Close = t.trade.Price
 		}
 	}
@@ -65,8 +65,8 @@ func (store *memTradeStore) GetCandle(market string, sinceBlock, currentBlock ui
 	return candle, nil
 }
 
-func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
-	if err := store.marketExists(market); err != nil {
+func (ts *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error) {
+	if err := ts.marketExists(market); err != nil {
 		return msg.Candles{}, err
 	}
 
@@ -82,7 +82,7 @@ func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, 
 	found := false
 	idx := 0
 
-	for tidx, t := range store.store.markets[market].tradesByTimestamp {
+	for tidx, t := range ts.store.markets[market].tradesByTimestamp {
 		// iterate trades until reached ones of interest
 		if t.trade.Timestamp < sinceBlock {
 			continue
@@ -94,17 +94,17 @@ func (store *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, 
 		} else {
 			// if current trade is not fit for current candle, close the candle with previous trade if non-empty candle
 			if candles[idx].Volume != 0 {
-				candles[idx].Close = store.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
+				candles[idx].Close = ts.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
 			}
 
 			// if we start from a candle that is empty, and there are no previous candles to copy close price
 			// its values should be populated with values of the previous trade that is outside of the sinceBlock scope
 			if idx == 0 && tidx > 0 && candles[idx].Volume == 0 {
 				candles[idx].Volume = 0
-				candles[idx].Open = store.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
-				candles[idx].Close = store.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
-				candles[idx].High = store.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
-				candles[idx].Low = store.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
+				candles[idx].Open = ts.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
+				candles[idx].Close = ts.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
+				candles[idx].High = ts.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
+				candles[idx].Low = ts.store.markets[market].tradesByTimestamp[tidx-1].trade.Price
 			}
 
 			// proceed to next candle

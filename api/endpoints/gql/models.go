@@ -17,6 +17,7 @@ type Market struct {
 }
 type OrderFilter struct {
 	AND            []OrderFilter `json:"AND"`
+	OR             []OrderFilter `json:"OR"`
 	Open           *bool         `json:"open"`
 	ID             *string       `json:"id"`
 	Id_neq         *string       `json:"id_neq"`
@@ -57,6 +58,7 @@ type PreConsensus struct {
 }
 type TradeFilter struct {
 	AND            []TradeFilter `json:"AND"`
+	OR             []TradeFilter `json:"OR"`
 	ID             *string       `json:"id"`
 	Id_neq         *string       `json:"id_neq"`
 	Market         *string       `json:"market"`

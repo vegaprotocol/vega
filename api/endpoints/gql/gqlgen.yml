@@ -19,6 +19,10 @@ models:
     model: vega/msg.MarketPosition
   Market:
     fields:
+      orders:
+        resolver: true
+      trades:
+        resolver: true
       depth:
         resolver: true
   Party:

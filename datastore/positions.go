@@ -8,9 +8,9 @@ type MarketBucket struct {
 	MinimumContractSize int64
 }
 
-func (t *memTradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
+func (ts *memTradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
 	marketBuckets := make(map[string]*MarketBucket, 0)
-	tradesByTimestamp, err := t.GetByParty(party, GetTradeParams{})
+	tradesByTimestamp, err := ts.GetByParty(party, nil)
 	if err != nil {
 		return marketBuckets
 	}

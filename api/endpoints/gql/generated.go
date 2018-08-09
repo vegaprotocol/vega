@@ -33,6 +33,8 @@ type Resolvers interface {
 	Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 	Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 
+	Market_orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
+	Market_trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
 	Market_depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
 
 	MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
@@ -108,6 +110,8 @@ type CandleResolver interface {
 	CloseBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 }
 type MarketResolver interface {
+	Orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
+	Trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
 	Depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
 }
 type MarketDepthResolver interface {
@@ -203,6 +207,14 @@ func (s shortMapper) Candle_openBlockNumber(ctx context.Context, obj *msg.Candle
 
 func (s shortMapper) Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().CloseBlockNumber(ctx, obj)
+}
+
+func (s shortMapper) Market_orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error) {
+	return s.r.Market().Orders(ctx, obj, where, skip, first, last)
+}
+
+func (s shortMapper) Market_trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error) {
+	return s.r.Market().Trades(ctx, obj, where, skip, first, last)
 }
 
 func (s shortMapper) Market_depth(ctx context.Context, obj *Market) (msg.MarketDepth, error) {
@@ -758,23 +770,87 @@ func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.Co
 		}
 	}
 	args["where"] = arg0
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Market"
-	rctx.Args = args
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Orders
-	arr1 := graphql.Array{}
-	for idx1 := range res {
-		arr1 = append(arr1, func() graphql.Marshaler {
-			rctx := graphql.GetResolverContext(ctx)
-			rctx.PushIndex(idx1)
-			defer rctx.Pop()
-			return ec._Order(ctx, field.Selections, &res[idx1])
-		}())
+	var arg1 *int
+	if tmp, ok := field.Args["skip"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
 	}
-	return arr1
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := field.Args["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := field.Args["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["last"] = arg3
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Market",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Market_orders(ctx, obj, args["where"].(*OrderFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Order)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Order(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
 }
 
 func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
@@ -794,23 +870,87 @@ func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.Co
 		}
 	}
 	args["where"] = arg0
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Market"
-	rctx.Args = args
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Trades
-	arr1 := graphql.Array{}
-	for idx1 := range res {
-		arr1 = append(arr1, func() graphql.Marshaler {
-			rctx := graphql.GetResolverContext(ctx)
-			rctx.PushIndex(idx1)
-			defer rctx.Pop()
-			return ec._Trade(ctx, field.Selections, &res[idx1])
-		}())
+	var arg1 *int
+	if tmp, ok := field.Args["skip"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
 	}
-	return arr1
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := field.Args["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := field.Args["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["last"] = arg3
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Market",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Market_trades(ctx, obj, args["where"].(*TradeFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Trade)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Trade(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
 }
 
 func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
@@ -3484,6 +3624,21 @@ func UnmarshalOrderFilter(v interface{}) (OrderFilter, error) {
 			if err != nil {
 				return it, err
 			}
+		case "OR":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				}
+			}
+			it.OR = make([]OrderFilter, len(rawIf1))
+			for idx1 := range rawIf1 {
+				it.OR[idx1], err = UnmarshalOrderFilter(rawIf1[idx1])
+			}
+			if err != nil {
+				return it, err
+			}
 		case "open":
 			var err error
 			var ptr1 bool
@@ -3830,6 +3985,21 @@ func UnmarshalTradeFilter(v interface{}) (TradeFilter, error) {
 			if err != nil {
 				return it, err
 			}
+		case "OR":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				}
+			}
+			it.OR = make([]TradeFilter, len(rawIf1))
+			for idx1 := range rawIf1 {
+				it.OR[idx1], err = UnmarshalTradeFilter(rawIf1[idx1])
+			}
+			if err != nil {
+				return it, err
+			}
 		case "id":
 			var err error
 			var ptr1 string
@@ -4105,7 +4275,8 @@ scalar DateTime
 
 schema {
     query: Query,
-    subscription: Subscription
+    subscription: Subscription,
+    mutation: Mutation
 }
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
@@ -4162,10 +4333,10 @@ type Market {
     name: String!
 
     # Orders on a market
-    orders (where: OrderFilter): [Order!]
+    orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
 
     # Trades on a market
-    trades (where: TradeFilter): [Trade!]
+    trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
 
     # Current depth on the orderbook for this market
     depth: MarketDepth!
@@ -4389,8 +4560,7 @@ enum ValueDirection {
 input TradeFilter {
     # logical operators
     AND: [TradeFilter!] # combines all passed ` + "`" + `TradeFilter` + "`" + ` objects with logical AND
-    # TODO OR support in the core.datastore
-    # OR: [OrderFilter!] # combines all passed ` + "`" + `TradeFilter` + "`" + ` objects with logical OR
+    OR: [TradeFilter!] # combines all passed ` + "`" + `TradeFilter` + "`" + ` objects with logical OR
 
     # ID filters
     id: ID # matches all trades with exact ID value
@@ -4435,8 +4605,7 @@ input TradeFilter {
 input OrderFilter {
     # logical operators
     AND: [OrderFilter!] # combines all passed ` + "`" + `OrderFilter` + "`" + ` objects with logical AND
-    # TODO OR support in the core.datastore
-    #OR: [OrderFilter!] # combines all passed ` + "`" + `OrderFilter` + "`" + ` objects with logical OR
+    OR: [OrderFilter!] # combines all passed ` + "`" + `OrderFilter` + "`" + ` objects with logical OR
 
     # Open only filter
     open: Boolean # Include only open orders in results (default: False)

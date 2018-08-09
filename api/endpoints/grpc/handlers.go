@@ -157,7 +157,11 @@ func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMark
 	if request.Params != nil && request.Params.Limit > 0 {
 		limit = request.Params.Limit
 	}
-	trades, err := h.TradeService.GetByMarket(ctx, request.Market, limit)
+
+	filters := &common.TradeQueryFilters{}
+	*filters.Last = limit
+	
+	trades, err := h.TradeService.GetByMarket(ctx, request.Market, filters)
 	if err != nil {
 		return nil, err
 	}

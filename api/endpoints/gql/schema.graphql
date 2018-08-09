@@ -71,10 +71,10 @@ type Market {
     name: String!
 
     # Orders on a market
-    orders (where: OrderFilter): [Order!]
+    orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
 
     # Trades on a market
-    trades (where: TradeFilter): [Trade!]
+    trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
 
     # Current depth on the orderbook for this market
     depth: MarketDepth!
@@ -298,8 +298,7 @@ enum ValueDirection {
 input TradeFilter {
     # logical operators
     AND: [TradeFilter!] # combines all passed `TradeFilter` objects with logical AND
-    # TODO OR support in the core.datastore
-    # OR: [OrderFilter!] # combines all passed `TradeFilter` objects with logical OR
+    OR: [TradeFilter!] # combines all passed `TradeFilter` objects with logical OR
 
     # ID filters
     id: ID # matches all trades with exact ID value
@@ -344,8 +343,7 @@ input TradeFilter {
 input OrderFilter {
     # logical operators
     AND: [OrderFilter!] # combines all passed `OrderFilter` objects with logical AND
-    # TODO OR support in the core.datastore
-    #OR: [OrderFilter!] # combines all passed `OrderFilter` objects with logical OR
+    OR: [OrderFilter!] # combines all passed `OrderFilter` objects with logical OR
 
     # Open only filter
     open: Boolean # Include only open orders in results (default: False)

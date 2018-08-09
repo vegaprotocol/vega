@@ -516,7 +516,12 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 	err = newTradeStore.Post(tradeB)
 	assert.Nil(t, err)
 
-	trades, err := newTradeStore.GetByMarket(testMarket, GetTradeParams{Limit: 12345})
+	last := uint64(10000)
+	filters := &common.TradeQueryFilters{}
+	filters.Last = &last
+	
+	trades, err := newTradeStore.GetByMarket(testMarket, filters)
+
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 }
@@ -524,7 +529,7 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 func TestMemStore_GetAllTradesForNoneExistentMarket(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
 	var newTradeStore = NewTradeStore(&memStore)
-	o, err := newTradeStore.GetByMarket("UNKNOWN", GetTradeParams{Limit: GetParamsLimitDefault})
+	o, err := newTradeStore.GetByMarket("UNKNOWN", nil)
 	assert.Error(t, err, "market does not exist")
 	assert.Nil(t, o)
 }
@@ -718,11 +723,11 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, aggressiveOrder, orderAtPartyB)
 
-	tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, GetTradeParams{})
+	tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(tradesAtPartyA))
 
-	tradesAtPartyB, err := newTradeStore.GetByParty(testPartyB, GetTradeParams{})
+	tradesAtPartyB, err := newTradeStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(tradesAtPartyB))
 
@@ -746,11 +751,11 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	err = newTradeStore.Delete(trade)
 	assert.Nil(t, err)
 
-	tradesAtPartyA, err = newTradeStore.GetByParty(testPartyA, GetTradeParams{})
+	tradesAtPartyA, err = newTradeStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(tradesAtPartyA))
 
-	tradesAtPartyB, err = newTradeStore.GetByParty(testPartyB, GetTradeParams{})
+	tradesAtPartyB, err = newTradeStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(tradesAtPartyB))
 
@@ -823,11 +828,11 @@ func TestAddPartiesOnTheFly(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, aggressiveOrder, orderAtPartyB)
 
-	tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, GetTradeParams{})
+	tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(tradesAtPartyA))
 
-	tradesAtPartyB, err := newTradeStore.GetByParty(testPartyB, GetTradeParams{})
+	tradesAtPartyB, err := newTradeStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(tradesAtPartyB))
 }
@@ -1271,126 +1276,126 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 	err = newTradeStore.Post(trade4)
 	assert.Nil(t, err)
 
-	getTradeParams := GetTradeParams{
+	getTradeParams := &common.TradeQueryFilters{
 		MarketFilter: &common.QueryFilter{Eq: testMarket},
 	}
 	trades, err := newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		PriceFilter: &common.QueryFilter{Eq: uint64(9000)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		PriceFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(0), uint64(150)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SizeFilter: &common.QueryFilter{Neq: uint64(10000)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SizeFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(0), uint64(150)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SizeFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(150), uint64(1500)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SizeFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(1020), uint64(1500)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SizeFilter: &common.QueryFilter{Eq: uint64(1500)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SizeFilter: &common.QueryFilter{Eq: uint64(1050)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		BuyerFilter: &common.QueryFilter{Eq: testPartyA},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		BuyerFilter: &common.QueryFilter{Eq: testPartyB},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		BuyerFilter: &common.QueryFilter{Neq: testPartyA},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		BuyerFilter: &common.QueryFilter{Neq: testPartyB},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SellerFilter: &common.QueryFilter{Eq: testPartyA},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SellerFilter: &common.QueryFilter{Eq: testPartyB},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SellerFilter: &common.QueryFilter{Neq: testPartyA},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SellerFilter: &common.QueryFilter{Neq: testPartyB},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SellerFilter:    &common.QueryFilter{Eq: testPartyB},
 		AggressorFilter: &common.QueryFilter{Eq: msg.Side_Buy},
 	}
@@ -1398,7 +1403,7 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		SellerFilter:    &common.QueryFilter{Eq: testPartyB},
 		AggressorFilter: &common.QueryFilter{Eq: msg.Side_Sell},
 	}
@@ -1406,35 +1411,35 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		AggressorFilter: &common.QueryFilter{Eq: msg.Side_Sell},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		TimestampFilter: &common.QueryFilter{Eq: uint64(0)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		TimestampFilter: &common.QueryFilter{Neq: uint64(0)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		TimestampFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(0), uint64(0)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
+	getTradeParams = &common.TradeQueryFilters{
 		TimestampFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(1), uint64(1000)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)

@@ -10,7 +10,6 @@ import (
 	"time"
 	"vega/log"
 	"github.com/satori/go.uuid"
-	"vega/common"
 )
 
 type resolverRoot struct {
@@ -93,7 +92,7 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 		return nil, err
 	}
 
-	trades, err := r.tradeService.GetByMarket(ctx, *name, 65536)
+	trades, err := r.tradeService.GetByMarket(ctx, *name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -142,11 +141,47 @@ func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) (
 
 type MyMarketResolver resolverRoot
 
-func (r *MyMarketResolver) Depth(ctx context.Context, obj *Market) (msg.MarketDepth, error) {
+func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
+	where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error) {
+
+	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := r.orderService.GetByMarket(ctx, market.Name, queryFilters)
+	if err != nil {
+		return nil, err
+	}
+	valOrders := make([]msg.Order, 0)
+	for _, v := range orders {
+		valOrders = append(valOrders, *v)
+	}
+	return valOrders, nil
+}
+
+func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
+	where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error) {
+
+	queryFilters, err := buildTradeQueryFilters(where, skip, first, last)
+	if err != nil {
+		return nil, err
+	}
+	trades, err := r.tradeService.GetByMarket(ctx, market.Name, queryFilters)
+	if err != nil {
+		return nil, err
+	}
+	valTrades := make([]msg.Trade, 0)
+	for _, v := range trades {
+		valTrades = append(valTrades, *v)
+	}
+	return valTrades, nil
+}
+
+func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (msg.MarketDepth, error) {
 
 	// Look for market depth for the given market (will validate market internally)
 	// FYI: Market depth is also known as OrderBook depth within the matching-engine
-	depth, err := r.orderService.GetMarketDepth(ctx, obj.Name)
+	depth, err := r.orderService.GetMarketDepth(ctx, market.Name)
 	if err != nil {
 		return msg.MarketDepth{}, err
 	}
@@ -161,35 +196,14 @@ func (r *MyMarketResolver) Depth(ctx context.Context, obj *Market) (msg.MarketDe
 
 type MyPartyResolver resolverRoot
 
-func (r *MyPartyResolver) Orders(ctx context.Context, party *Party, where *OrderFilter,
-	skip *int, first *int, last *int) ([]msg.Order, error) {
+func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
+	where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error) {
 
-	orderQueryFilters := &common.OrderQueryFilters{}
-	if where != nil {
-		log.Debugf("OrderFilters: %+v", where)
-
-		if where.AND != nil && len(where.AND) > 0 {
-			// range all filters
-			for _, filter := range where.AND {
-				_, err := ParseOrderFilter(&filter, orderQueryFilters)
-				if err != nil {
-					return nil, err
-				}
-			}
-			orderQueryFilters.Operator = common.QueryFilterOperatorAnd
-		} else {
-			_, err := ParseOrderFilter(where, orderQueryFilters)
-			if err != nil {
-				return nil, err
-			}
-			orderQueryFilters.Operator = common.QueryFilterOperatorOr
-		}
-		if last != nil {
-			*orderQueryFilters.Last = uint64(*last)
-		}
-		// todo(cdm): first (asc), skip (directional ffwd)
+	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
+	if err != nil {
+		return nil, err
 	}
-	orders, err := r.orderService.GetByParty(ctx, party.Name, orderQueryFilters)
+	orders, err := r.orderService.GetByParty(ctx, party.Name, queryFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -554,7 +568,5 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 }
 
 // END: Subscription Resolver
-
-
 
 

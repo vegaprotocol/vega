@@ -12,11 +12,11 @@ type TradeStore interface {
 	Notify() error
 
 	// GetByMarket retrieves trades for a given market.
-	GetByMarket(market string, params GetTradeParams) ([]Trade, error)
+	GetByMarket(market string, params *common.TradeQueryFilters) ([]Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByMarketAndId(market string, id string) (Trade, error)
 	// GetByParty retrieves trades for a given party.
-	GetByParty(party string, params GetTradeParams) ([]Trade, error)
+	GetByParty(party string, params *common.TradeQueryFilters) ([]Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (Trade, error)
 	// Post creates a new trade in the store.

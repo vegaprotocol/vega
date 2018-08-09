@@ -71,6 +71,7 @@ func (o *OrderQueryFilters) Count() int {
 
 type TradeQueryFilters struct {
 	QueryFilterPaginated
+	Operator        QueryFilterOperator
 
 	IdFilter        *QueryFilter
 	MarketFilter    *QueryFilter
@@ -81,6 +82,36 @@ type TradeQueryFilters struct {
 	AggressorFilter *QueryFilter
 	TimestampFilter *QueryFilter
 }
+
+func (o *TradeQueryFilters) Count() int {
+	len := 0
+	if o.IdFilter != nil {
+		len++
+	}
+	if o.MarketFilter != nil {
+		len++
+	}
+	if o.PriceFilter != nil {
+		len++
+	}
+	if o.SizeFilter != nil {
+		len++
+	}
+	if o.BuyerFilter != nil {
+		len++
+	}
+	if o.SellerFilter != nil {
+		len++
+	}
+	if o.AggressorFilter != nil {
+		len++
+	}
+	if o.TimestampFilter != nil {
+		len++
+	}
+	return len
+}
+
 
 type QueryFilter struct {
 	FilterRange *QueryFilterRange

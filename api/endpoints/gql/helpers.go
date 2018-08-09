@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"vega/msg"
+	"vega/common"
+	"vega/log"
 )
 
 func SafeStringUint64(input string) (uint64, error) {
@@ -54,3 +56,93 @@ func ParseSide(side *Side) (msg.Side, error) {
 			return msg.Side_Buy, errors.New(fmt.Sprintf("unknown side: %s", side.String()))
 	}
 }
+
+
+func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int) (queryFilters *common.OrderQueryFilters, err error) {
+	if queryFilters == nil {
+		queryFilters = &common.OrderQueryFilters{}
+	}
+	if where != nil {
+		log.Debugf("OrderFilters: %+v", where)
+
+		// OR default
+		queryFilters.Operator = common.QueryFilterOperatorOr
+		if where.OR != nil {
+			if where.AND != nil {
+				return nil, errors.New("combination of operators is not currently supported")
+			}
+			for _, filter := range where.OR {
+				_, err := ParseOrderFilter(&filter, queryFilters)
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else if where.AND != nil {
+			for _, filter := range where.AND {
+				_, err := ParseOrderFilter(&filter, queryFilters)
+				if err != nil {
+					return nil, err
+				}
+			}
+			// If AND specified switch operator to AND inc outer filters
+			queryFilters.Operator = common.QueryFilterOperatorAnd
+		}
+		// Always parse outer filters
+		_, err := ParseOrderFilter(where, queryFilters)
+		if err != nil {
+			return nil, err
+		}
+		if last != nil {
+			*queryFilters.Last = uint64(*last)
+		}
+		// todo(cdm): first (asc), skip (directional ffwd)
+	}
+
+	return queryFilters, nil
+}
+
+
+func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int) (queryFilters *common.TradeQueryFilters, err error) {
+	if queryFilters == nil {
+		queryFilters = &common.TradeQueryFilters{}
+	}
+	if where != nil {
+		log.Debugf("TradeFilters: %+v", where)
+
+		// OR default
+		queryFilters.Operator = common.QueryFilterOperatorOr
+		if where.OR != nil {
+			if where.AND != nil {
+				return nil, errors.New("combination of operators is not currently supported")
+			}
+			for _, filter := range where.OR {
+				_, err := ParseTradeFilter(&filter, queryFilters)
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else if where.AND != nil {
+			for _, filter := range where.AND {
+				_, err := ParseTradeFilter(&filter, queryFilters)
+				if err != nil {
+					return nil, err
+				}
+			}
+			// If AND specified switch operator to AND inc outer filters
+			queryFilters.Operator = common.QueryFilterOperatorAnd
+		}
+		// Always parse outer filters
+		_, err := ParseTradeFilter(where, queryFilters)
+		if err != nil {
+			return nil, err
+		}
+		if last != nil {
+			*queryFilters.Last = uint64(*last)
+		}
+		// todo(cdm): first (asc), skip (directional ffwd)
+	}
+
+	return queryFilters, nil
+}
+
+
