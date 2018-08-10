@@ -102,32 +102,9 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 		return nil, errors.New(fmt.Sprintf("market %s does not exist", *name))
 	}
 	
-	//// Look for orders for market (will validate market internally)
-	//orders, err := r.orderService.GetByMarket(ctx, *name, nil)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//trades, err := r.tradeService.GetByMarket(ctx, *name, nil)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//valOrders := make([]msg.Order, 0)
-	//for _, v := range orders {
-	//	valOrders = append(valOrders, *v)
-	//}
-	//
-	//valTrades := make([]msg.Trade, 0)
-	//for _, v := range trades {
-	//	valTrades = append(valTrades, *v)
-	//}
-
 	var markets = make([]Market, 0)
 	var market = Market{
 		Name: *name,
-		//Orders: valOrders,
-		//Trades: valTrades,
 	}
 	markets = append(markets, market)
 	

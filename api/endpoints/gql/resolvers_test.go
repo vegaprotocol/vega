@@ -4,6 +4,7 @@ import (
 	"testing"
 	"vega/api/mocks"
 	"vega/api"
+	"vega/msg"
 	"github.com/stretchr/testify/assert"
 	"context"
 	"github.com/pkg/errors"
@@ -119,8 +120,46 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	assert.NotNil(t, parties)
 	assert.Len(t, parties, 1)
 
+	parties, err = vegaResolver.Parties(ctx, vega, nil)
+	assert.Error(t, err)
+	assert.Nil(t, parties)
 }
 
+
+func TestNewResolverRoot_MarketResolver(t *testing.T) {
+	ctx := context.Background()
+	mockTradeService := &mocks.TradeService{}
+	mockOrderService := &mocks.OrderService{}
+	btcDec18 := "BTC/DEC18"
+	mockOrderService.On("GetMarkets", ctx).Return(
+		[]string{"testMarket", btcDec18}, nil,
+	).Times(3)
+
+	mockOrderService.On("GetMarketDepth", ctx, btcDec18).Return(
+		&msg.MarketDepth{
+			Name: btcDec18,
+		}, nil,
+	).Once()
+
+	var tradeService api.TradeService
+	var orderService api.OrderService
+	tradeService = mockTradeService
+	orderService = mockOrderService
+
+	root := NewResolverRoot(orderService, tradeService)
+	assert.NotNil(t, root)
+	marketResolver := root.Market()
+	assert.NotNil(t, marketResolver)
+
+	market := &Market{
+		Name: btcDec18,
+	}
+
+	depth, err := marketResolver.Depth(ctx, market)
+	assert.Nil(t, err)
+	assert.NotNil(t, depth)
+	assert.Equal(t, btcDec18, depth.Name)
+}
 
 func buildTestResolverRoot() *resolverRoot {
 	var tradeService api.TradeService
