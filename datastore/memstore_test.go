@@ -1052,6 +1052,13 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
+
+	orderFilters = &common.OrderQueryFilters{
+		IdFilter: &common.QueryFilter{ Eq: "d41d8cd98f00b204e9800998ecf8427c"},
+	}
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(orders))
 }
 
 func TestNewTradeStore_Filtering(t *testing.T) {
@@ -1429,6 +1436,13 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 
 	getTradeParams = &common.TradeQueryFilters{
 		TimestampFilter: &common.QueryFilter{FilterRange: &common.QueryFilterRange{uint64(1), uint64(1000)}, Kind: "uint64"},
+	}
+	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(trades))
+
+	getTradeParams = &common.TradeQueryFilters{
+		IdFilter: &common.QueryFilter{ Eq: "trade-id-3"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)

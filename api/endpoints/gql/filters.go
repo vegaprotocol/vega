@@ -66,7 +66,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Price != nil {
-		price, err := SafeStringUint64(*filters.Price)
+		price, err := safeStringUint64(*filters.Price)
 		if err != nil {
 			return false, err
 		}
@@ -76,7 +76,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Price_neq != nil {
-		price, err := SafeStringUint64(*filters.Price_neq)
+		price, err := safeStringUint64(*filters.Price_neq)
 		if err != nil {
 			return false, err
 		}
@@ -86,11 +86,11 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Price_from != nil && filters.Price_to != nil {
-		lower, err := SafeStringUint64(*filters.Price_from)
+		lower, err := safeStringUint64(*filters.Price_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := SafeStringUint64(*filters.Price_to)
+		upper, err := safeStringUint64(*filters.Price_to)
 		if err != nil {
 			return false, err
 		}
@@ -104,7 +104,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Size != nil {
-		size, err := SafeStringUint64(*filters.Size)
+		size, err := safeStringUint64(*filters.Size)
 		if err != nil {
 			return false, err
 		}
@@ -114,7 +114,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Size_neq != nil {
-		size, err := SafeStringUint64(*filters.Size_neq)
+		size, err := safeStringUint64(*filters.Size_neq)
 		if err != nil {
 			return false, err
 		}
@@ -124,11 +124,11 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Size_from != nil && filters.Size_to != nil {
-		lower, err := SafeStringUint64(*filters.Size_from)
+		lower, err := safeStringUint64(*filters.Size_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := SafeStringUint64(*filters.Size_to)
+		upper, err := safeStringUint64(*filters.Size_to)
 		if err != nil {
 			return false, err
 		}
@@ -142,7 +142,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Remaining != nil {
-		remaining, err := SafeStringUint64(*filters.Remaining)
+		remaining, err := safeStringUint64(*filters.Remaining)
 		if err != nil {
 			return false, err
 		}
@@ -152,7 +152,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Remaining_neq != nil {
-		remaining, err := SafeStringUint64(*filters.Remaining_neq)
+		remaining, err := safeStringUint64(*filters.Remaining_neq)
 		if err != nil {
 			return false, err
 		}
@@ -162,11 +162,11 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Remaining_from != nil && filters.Remaining_to != nil {
-		lower, err := SafeStringUint64(*filters.Remaining_from)
+		lower, err := safeStringUint64(*filters.Remaining_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := SafeStringUint64(*filters.Remaining_to)
+		upper, err := safeStringUint64(*filters.Remaining_to)
 		if err != nil {
 			return false, err
 		}
@@ -180,7 +180,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Type != nil {
-		orderType, err := ParseOrderType(filters.Type)
+		orderType, err := parseOrderType(filters.Type)
 		if err != nil {
 			return false, err
 		}
@@ -190,7 +190,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Type_neq != nil {
-		orderType, err := ParseOrderType(filters.Type_neq)
+		orderType, err := parseOrderType(filters.Type_neq)
 		if err != nil {
 			return false, err
 		}
@@ -200,7 +200,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Timestamp != nil {
-		timestamp, err := SafeStringUint64(*filters.Timestamp)
+		timestamp, err := safeStringUint64(*filters.Timestamp)
 		if err != nil {
 			return false, err
 		}
@@ -210,7 +210,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Timestamp_neq != nil {
-		timestamp, err := SafeStringUint64(*filters.Timestamp_neq)
+		timestamp, err := safeStringUint64(*filters.Timestamp_neq)
 		if err != nil {
 			return false, err
 		}
@@ -220,11 +220,11 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Timestamp_from != nil && filters.Timestamp_to != nil {
-		lower, err := SafeStringUint64(*filters.Timestamp_from)
+		lower, err := safeStringUint64(*filters.Timestamp_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := SafeStringUint64(*filters.Timestamp_to)
+		upper, err := safeStringUint64(*filters.Timestamp_to)
 		if err != nil {
 			return false, err
 		}
@@ -238,7 +238,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Status != nil {
-		orderStatus, err := ParseOrderStatus(filters.Status)
+		orderStatus, err := parseOrderStatus(filters.Status)
 		if err != nil {
 			return false, err 
 		}
@@ -248,7 +248,7 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Status_neq != nil {
-		orderStatus, err := ParseOrderStatus(filters.Status_neq)
+		orderStatus, err := parseOrderStatus(filters.Status_neq)
 		if err != nil {
 			return false, err
 		}
@@ -300,7 +300,7 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Price != nil {
-		price, err := SafeStringUint64(*filters.Price)
+		price, err := safeStringUint64(*filters.Price)
 		if err != nil {
 			return false, err
 		}
@@ -310,7 +310,7 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Price_neq != nil {
-		price, err := SafeStringUint64(*filters.Price_neq)
+		price, err := safeStringUint64(*filters.Price_neq)
 		if err != nil {
 			return false, err
 		}
@@ -320,11 +320,11 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Price_from != nil && filters.Price_to != nil {
-		lower, err := SafeStringUint64(*filters.Price_from)
+		lower, err := safeStringUint64(*filters.Price_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := SafeStringUint64(*filters.Price_to)
+		upper, err := safeStringUint64(*filters.Price_to)
 		if err != nil {
 			return false, err
 		}
@@ -338,7 +338,7 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Size != nil {
-		size, err := SafeStringUint64(*filters.Size)
+		size, err := safeStringUint64(*filters.Size)
 		if err != nil {
 			return false, err
 		}
@@ -348,7 +348,7 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Size_neq != nil {
-		size, err := SafeStringUint64(*filters.Size_neq)
+		size, err := safeStringUint64(*filters.Size_neq)
 		if err != nil {
 			return false, err
 		}
@@ -358,11 +358,11 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Size_from != nil && filters.Size_to != nil {
-		lower, err := SafeStringUint64(*filters.Size_from)
+		lower, err := safeStringUint64(*filters.Size_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := SafeStringUint64(*filters.Size_to)
+		upper, err := safeStringUint64(*filters.Size_to)
 		if err != nil {
 			return false, err
 		}
@@ -412,7 +412,7 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Timestamp != nil {
-		timestamp, err := SafeStringUint64(*filters.Timestamp)
+		timestamp, err := safeStringUint64(*filters.Timestamp)
 		if err != nil {
 			return false, err
 		}
@@ -422,7 +422,7 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Timestamp_neq != nil {
-		timestamp, err := SafeStringUint64(*filters.Timestamp_neq)
+		timestamp, err := safeStringUint64(*filters.Timestamp_neq)
 		if err != nil {
 			return false, err
 		}
@@ -432,11 +432,11 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		foundFilter = true
 	}
 	if filters.Timestamp_from != nil && filters.Timestamp_to != nil {
-		lower, err := SafeStringUint64(*filters.Timestamp_from)
+		lower, err := safeStringUint64(*filters.Timestamp_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := SafeStringUint64(*filters.Timestamp_to)
+		upper, err := safeStringUint64(*filters.Timestamp_to)
 		if err != nil {
 			return false, err
 		}

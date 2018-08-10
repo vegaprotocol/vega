@@ -9,7 +9,7 @@ import (
 	"vega/log"
 )
 
-func SafeStringUint64(input string) (uint64, error) {
+func safeStringUint64(input string) (uint64, error) {
 	if i, err := strconv.ParseUint(input, 10, 64); err == nil {
 		fmt.Printf("i=%d, type: %T\n", i, i)
 		return i, nil
@@ -18,7 +18,7 @@ func SafeStringUint64(input string) (uint64, error) {
 	return 0, errors.New(fmt.Sprintf("Invalid input string for uint64 conversion %s", input))
 }
 
-func ParseOrderType(orderType *OrderType) (msg.Order_Type, error) {
+func parseOrderType(orderType *OrderType) (msg.Order_Type, error) {
 	switch *orderType {
 		case OrderTypeGtc:
 			return msg.Order_GTC, nil
@@ -33,7 +33,7 @@ func ParseOrderType(orderType *OrderType) (msg.Order_Type, error) {
 	}
 }
 
-func ParseOrderStatus(orderStatus *OrderStatus) (msg.Order_Status, error) {
+func parseOrderStatus(orderStatus *OrderStatus) (msg.Order_Status, error) {
 	switch *orderStatus {
 	case OrderStatusActive:
 		return msg.Order_Active, nil
@@ -46,7 +46,7 @@ func ParseOrderStatus(orderStatus *OrderStatus) (msg.Order_Status, error) {
 	}
 }
 
-func ParseSide(side *Side) (msg.Side, error) {
+func parseSide(side *Side) (msg.Side, error) {
 	switch *side {
 		case SideBuy:
 			return msg.Side_Buy, nil

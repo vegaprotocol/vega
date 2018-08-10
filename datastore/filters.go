@@ -1,7 +1,9 @@
 package datastore
 
-import("vega/common")
+import "vega/common"
 
+// applyOrderFilters takes an incoming set of OrderQueryFilters and applies them
+// to the specified order. Internally the OrderQueryFilters will set operator e.g. AND/OR
 func applyOrderFilters(order Order, filters *common.OrderQueryFilters) bool {
 	ok := true
 	count := 0
@@ -82,6 +84,12 @@ func applyTradeFilters(trade Trade, filters *common.TradeQueryFilters) bool {
 	ok := true
 	count := 0
 
+	if filters.IdFilter != nil {
+		ok = filters.IdFilter.ApplyFilters(trade.Id)
+		if ok {
+			count++
+		}
+	}
 	if filters.MarketFilter != nil {
 		ok = filters.MarketFilter.ApplyFilters(trade.Market)
 		if ok {

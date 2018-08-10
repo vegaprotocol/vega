@@ -423,12 +423,12 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	res := PreConsensus{}
 
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
-	p, err := SafeStringUint64(price)
+	p, err := safeStringUint64(price)
 	if err != nil {
 		return res, err
 	}
 	order.Price = p
-	s, err := SafeStringUint64(size)
+	s, err := safeStringUint64(size)
 	if err != nil {
 		return res, err
 	}
@@ -441,11 +441,11 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 		return res, errors.New("party missing or empty")
 	}
 	order.Party = party
-	order.Type, err = ParseOrderType(&type_)
+	order.Type, err = parseOrderType(&type_)
 	if err != nil {
 		return res, err
 	}
-	order.Side, err = ParseSide(&side)
+	order.Side, err = parseSide(&side)
 	if err != nil {
 		return res, err
 	}
