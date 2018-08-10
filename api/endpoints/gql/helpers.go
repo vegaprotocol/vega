@@ -6,12 +6,10 @@ import (
 	"github.com/pkg/errors"
 	"vega/msg"
 	"vega/common"
-	"vega/log"
 )
 
 func safeStringUint64(input string) (uint64, error) {
 	if i, err := strconv.ParseUint(input, 10, 64); err == nil {
-		fmt.Printf("i=%d, type: %T\n", i, i)
 		return i, nil
 	}
 	// A conversion error occurred, return the error
@@ -63,7 +61,7 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 		queryFilters = &common.OrderQueryFilters{}
 	}
 	if where != nil {
-		log.Debugf("OrderFilters: %+v", where)
+		//log.Debugf("OrderFilters: %+v", where)
 
 		// AND default
 		queryFilters.Operator = common.QueryFilterOperatorAnd
@@ -122,7 +120,7 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 
 	// Parse 'where' and build query filters that will be used internally (if set)
 	if where != nil {
-		log.Debugf("TradeFilters: %+v", where)
+		//log.Debugf("TradeFilters: %+v", where)
 
 		// AND default
 		queryFilters.Operator = common.QueryFilterOperatorAnd

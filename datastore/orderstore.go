@@ -242,7 +242,6 @@ func (m *memOrderStore) GetByPartyAndId(party string, id string) (Order, error) 
 // Post creates a new order in the memory store.
 func (m *memOrderStore) Post(order Order) error {
 	if err := m.validate(&order); err != nil {
-		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
@@ -280,7 +279,6 @@ func (m *memOrderStore) Post(order Order) error {
 // Put updates an existing order in the memory store.
 func (m *memOrderStore) Put(order Order) error {
 	if err := m.validate(&order); err != nil {
-		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
@@ -313,7 +311,6 @@ func (m *memOrderStore) Put(order Order) error {
 // Delete removes an order from the memory store.
 func (m *memOrderStore) Delete(order Order) error {
 	if err := m.validate(&order); err != nil {
-		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 

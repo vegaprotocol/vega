@@ -157,7 +157,6 @@ func (ts *memTradeStore) GetByPartyAndId(party string, id string) (Trade, error)
 // Post creates a new trade in the memory store.
 func (ts *memTradeStore) Post(trade Trade) error {
 	if err := ts.validate(&trade); err != nil {
-		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 	if _, exists := ts.store.markets[trade.Market].trades[trade.Id]; exists {
@@ -204,7 +203,6 @@ func (ts *memTradeStore) Post(trade Trade) error {
 // Put updates an existing trade in the store.
 func (ts *memTradeStore) Put(trade Trade) error {
 	if err := ts.validate(&trade); err != nil {
-		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
@@ -224,7 +222,6 @@ func (ts *memTradeStore) Put(trade Trade) error {
 // Removes trade from the store.
 func (ts *memTradeStore) Delete(trade Trade) error {
 	if err := ts.validate(&trade); err != nil {
-		fmt.Printf("error: %+v\n", err)
 		return err
 	}
 
