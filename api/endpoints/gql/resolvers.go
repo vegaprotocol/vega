@@ -83,35 +83,51 @@ type MyVegaResolver resolverRoot
 
 func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error) {
 	if name == nil {
-		return nil, errors.New("all markets for VEGA platform not implemented")
+		return nil, errors.New("all markets on VEGA query not implemented")
 	}
 
-	// Look for orders for market (will validate market internally)
-	orders, err := r.orderService.GetByMarket(ctx, *name, nil)
+	existing, err := r.orderService.GetMarkets(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	trades, err := r.tradeService.GetByMarket(ctx, *name, nil)
-	if err != nil {
-		return nil, err
+	found := false
+	for _, m := range existing {
+		if *name == m {
+		   found = true
+		   break
+		} 
 	}
-
-	valOrders := make([]msg.Order, 0)
-	for _, v := range orders {
-		valOrders = append(valOrders, *v)
+	if !found {
+		return nil, errors.New(fmt.Sprintf("market %s does not exist", *name))
 	}
-
-	valTrades := make([]msg.Trade, 0)
-	for _, v := range trades {
-		valTrades = append(valTrades, *v)
-	}
+	
+	//// Look for orders for market (will validate market internally)
+	//orders, err := r.orderService.GetByMarket(ctx, *name, nil)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//trades, err := r.tradeService.GetByMarket(ctx, *name, nil)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//valOrders := make([]msg.Order, 0)
+	//for _, v := range orders {
+	//	valOrders = append(valOrders, *v)
+	//}
+	//
+	//valTrades := make([]msg.Trade, 0)
+	//for _, v := range trades {
+	//	valTrades = append(valTrades, *v)
+	//}
 
 	var markets = make([]Market, 0)
 	var market = Market{
 		Name: *name,
-		Orders: valOrders,
-		Trades: valTrades,
+		//Orders: valOrders,
+		//Trades: valTrades,
 	}
 	markets = append(markets, market)
 	
@@ -120,7 +136,7 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 
 func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {
 	if name == nil {
-		return nil, errors.New("all parties for VEGA platform not implemented")
+		return nil, errors.New("all parties on VEGA query not implemented")
 	}
 
 	// Todo(cdm): partystore --> check if party exists...
