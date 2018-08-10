@@ -106,50 +106,7 @@ func (ts *memTradeStore) GetByMarket(market string, filters *common.TradeQueryFi
 	if filters == nil {
 		filters = &common.TradeQueryFilters{}
 	}
-
-	var (
-		pos     uint64
-		skipped uint64
-		output  []Trade
-	)
-
-	// Last == descending by timestamp
-	// First == ascending by timestamp
-	// Skip == offset by value, then first/last depending on direction
-
-	if filters.First != nil && *filters.First > 0 {
-		// If first is set we iterate ascending
-		for i := 0; i < len(ts.store.markets[market].tradesByTimestamp); i++ {
-			if pos == *filters.First {
-				break
-			}
-			if applyTradeFilters(ts.store.markets[market].tradesByTimestamp[i].trade, filters) {
-				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
-					skipped++
-					continue
-				}
-				output = append(output, ts.store.markets[market].tradesByTimestamp[i].trade)
-				pos++
-			}
-		}
-	} else {
-		// default is descending 'last' n items
-		for i := len(ts.store.markets[market].tradesByTimestamp) - 1; i >= 0; i-- {
-			if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
-				break
-			}
-			if applyTradeFilters(ts.store.markets[market].tradesByTimestamp[i].trade, filters) {
-				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
-					skipped++
-					continue
-				}
-				output = append(output, ts.store.markets[market].tradesByTimestamp[i].trade)
-				pos++
-			}
-		}
-	}
-
-	return output, nil
+	return ts.filterResults(ts.store.markets[market].tradesByTimestamp, filters)
 }
 
 // GetByMarketAndId retrieves a trade for a given id.
@@ -166,29 +123,32 @@ func (ts *memTradeStore) GetByMarketAndId(market string, id string) (Trade, erro
 
 // GetByPart retrieves all trades for a given party.
 func (ts *memTradeStore) GetByParty(party string, filters *common.TradeQueryFilters) ([]Trade, error) {
+
 	if err := ts.partyExists(party); err != nil {
 		return nil, err
 	}
+
 	if filters == nil {
 		filters = &common.TradeQueryFilters{}
 	}
 
-	var (
-		pos    uint64
-		output []Trade
-	)
-
-	// limit is descending. Get me most recent N orders
-	for i := len(ts.store.parties[party].tradesByTimestamp) - 1; i >= 0; i-- {
-		if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
-			break
-		}
-		if applyTradeFilters(ts.store.parties[party].tradesByTimestamp[i].trade, filters) {
-			output = append(output, ts.store.parties[party].tradesByTimestamp[i].trade)
-			pos++
-		}
-	}
-	return output, nil
+	//var (
+	//	pos    uint64
+	//	output []Trade
+	//)
+	//
+	//// limit is descending. Get me most recent N orders
+	//for i := len(ts.store.parties[party].tradesByTimestamp) - 1; i >= 0; i-- {
+	//	if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
+	//		break
+	//	}
+	//	if applyTradeFilters(ts.store.parties[party].tradesByTimestamp[i].trade, filters) {
+	//		output = append(output, ts.store.parties[party].tradesByTimestamp[i].trade)
+	//		pos++
+	//	}
+	//}
+	
+	return ts.filterResults(ts.store.parties[party].tradesByTimestamp, filters)
 }
 
 // GetByPartyAndId retrieves a trade for a given id.
@@ -377,3 +337,45 @@ func (ts *memTradeStore) GetMarkPrice(market string) (uint64, error) {
 	return recentTrade[0].Price, nil
 }
 
+
+func (ts *memTradeStore) filterResults(input []*memTrade, filters *common.TradeQueryFilters) (output []Trade, error error) {
+	var pos, skipped uint64
+
+	// Last == descending by timestamp
+	// First == ascending by timestamp
+	// Skip == offset by value, then first/last depending on direction
+
+	if filters.First != nil && *filters.First > 0 {
+		// If first is set we iterate ascending
+		for i := 0; i < len(input); i++ {
+			if pos == *filters.First {
+				break
+			}
+			if applyTradeFilters(input[i].trade, filters) {
+				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, input[i].trade)
+				pos++
+			}
+		}
+	} else {
+		// default is descending 'last' n items
+		for i := len(input) - 1; i >= 0; i-- {
+			if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
+				break
+			}
+			if applyTradeFilters(input[i].trade, filters) {
+				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, input[i].trade)
+				pos++
+			}
+		}
+	}
+	
+	return output, nil
+}
