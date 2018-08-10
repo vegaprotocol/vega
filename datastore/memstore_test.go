@@ -1401,6 +1401,7 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 	getTradeParams = &common.TradeQueryFilters{
 		SellerFilter:    &common.QueryFilter{Eq: testPartyB},
 		AggressorFilter: &common.QueryFilter{Eq: msg.Side_Sell},
+		Operator: common.QueryFilterOperatorOr,
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)

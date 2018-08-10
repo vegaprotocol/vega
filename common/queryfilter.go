@@ -1,7 +1,7 @@
 package common
 
-const QueryFilterOperatorOr QueryFilterOperator = 0
-const QueryFilterOperatorAnd QueryFilterOperator = 1
+const QueryFilterOperatorAnd QueryFilterOperator = 0
+const QueryFilterOperatorOr QueryFilterOperator = 1
 
 type QueryFilterOperator int8
 

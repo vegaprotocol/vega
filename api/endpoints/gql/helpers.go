@@ -65,8 +65,8 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 	if where != nil {
 		log.Debugf("OrderFilters: %+v", where)
 
-		// OR default
-		queryFilters.Operator = common.QueryFilterOperatorOr
+		// AND default
+		queryFilters.Operator = common.QueryFilterOperatorAnd
 		if where.OR != nil {
 			if where.AND != nil {
 				return nil, errors.New("combination of operators is not currently supported")
@@ -77,6 +77,8 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 					return nil, err
 				}
 			}
+			// If OR specified switch operator to OR inc outer filters
+			queryFilters.Operator = common.QueryFilterOperatorOr
 		} else if where.AND != nil {
 			for _, filter := range where.AND {
 				_, err := ParseOrderFilter(&filter, queryFilters)
@@ -84,8 +86,6 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 					return nil, err
 				}
 			}
-			// If AND specified switch operator to AND inc outer filters
-			queryFilters.Operator = common.QueryFilterOperatorAnd
 		}
 		// Always parse outer filters
 		_, err = ParseOrderFilter(where, queryFilters)
@@ -124,8 +124,8 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 	if where != nil {
 		log.Debugf("TradeFilters: %+v", where)
 
-		// OR default
-		queryFilters.Operator = common.QueryFilterOperatorOr
+		// AND default
+		queryFilters.Operator = common.QueryFilterOperatorAnd
 		if where.OR != nil {
 			if where.AND != nil {
 				return nil, errors.New("combination of operators is not currently supported")
@@ -136,6 +136,8 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 					return nil, err
 				}
 			}
+			// If OR specified switch operator to OR inc outer filters
+			queryFilters.Operator = common.QueryFilterOperatorOr
 		} else if where.AND != nil {
 			for _, filter := range where.AND {
 				_, err := ParseTradeFilter(&filter, queryFilters)
@@ -143,8 +145,6 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 					return nil, err
 				}
 			}
-			// If AND specified switch operator to AND inc outer filters
-			queryFilters.Operator = common.QueryFilterOperatorAnd
 		}
 		// Always parse outer filters
 		_, err = ParseTradeFilter(where, queryFilters)

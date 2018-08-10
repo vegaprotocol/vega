@@ -131,22 +131,6 @@ func (ts *memTradeStore) GetByParty(party string, filters *common.TradeQueryFilt
 	if filters == nil {
 		filters = &common.TradeQueryFilters{}
 	}
-
-	//var (
-	//	pos    uint64
-	//	output []Trade
-	//)
-	//
-	//// limit is descending. Get me most recent N orders
-	//for i := len(ts.store.parties[party].tradesByTimestamp) - 1; i >= 0; i-- {
-	//	if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
-	//		break
-	//	}
-	//	if applyTradeFilters(ts.store.parties[party].tradesByTimestamp[i].trade, filters) {
-	//		output = append(output, ts.store.parties[party].tradesByTimestamp[i].trade)
-	//		pos++
-	//	}
-	//}
 	
 	return ts.filterResults(ts.store.parties[party].tradesByTimestamp, filters)
 }
