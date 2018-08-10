@@ -36,6 +36,7 @@ type Resolvers interface {
 	Market_orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
 	Market_trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
 	Market_depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
+	Market_candles(ctx context.Context, obj *Market, last int, interval int) ([]msg.Candle, error)
 
 	MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	MarketDepth_sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
@@ -113,6 +114,7 @@ type MarketResolver interface {
 	Orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
 	Trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
 	Depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
+	Candles(ctx context.Context, obj *Market, last int, interval int) ([]msg.Candle, error)
 }
 type MarketDepthResolver interface {
 	Buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
@@ -219,6 +221,10 @@ func (s shortMapper) Market_trades(ctx context.Context, obj *Market, where *Trad
 
 func (s shortMapper) Market_depth(ctx context.Context, obj *Market) (msg.MarketDepth, error) {
 	return s.r.Market().Depth(ctx, obj)
+}
+
+func (s shortMapper) Market_candles(ctx context.Context, obj *Market, last int, interval int) ([]msg.Candle, error) {
+	return s.r.Market().Candles(ctx, obj, last, interval)
 }
 
 func (s shortMapper) MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error) {
@@ -734,6 +740,8 @@ func (ec *executionContext) _Market(ctx context.Context, sel []query.Selection, 
 			out.Values[i] = ec._Market_trades(ctx, field, obj)
 		case "depth":
 			out.Values[i] = ec._Market_depth(ctx, field, obj)
+		case "candles":
+			out.Values[i] = ec._Market_candles(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -980,6 +988,66 @@ func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.Col
 		}
 		res := resTmp.(msg.MarketDepth)
 		return ec._MarketDepth(ctx, field.Selections, &res)
+	})
+}
+
+func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := field.Args["last"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["last"] = arg0
+	var arg1 int
+	if tmp, ok := field.Args["interval"]; ok {
+		var err error
+		arg1, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["interval"] = arg1
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Market",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Market_candles(ctx, obj, args["last"].(int), args["interval"].(int))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Candle)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Candle(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
 	})
 }
 
@@ -4340,6 +4408,9 @@ type Market {
 
     # Current depth on the orderbook for this market
     depth: MarketDepth!
+
+    # Candles on a market
+    candles (last: Int!, interval: Int!): [Candle!]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.

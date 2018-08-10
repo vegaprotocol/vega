@@ -78,6 +78,9 @@ type Market {
 
     # Current depth on the orderbook for this market
     depth: MarketDepth!
+
+    # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
+    candles (last: Int!, interval: Int!): [Candle!]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.

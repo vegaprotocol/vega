@@ -25,6 +25,8 @@ models:
         resolver: true
       depth:
         resolver: true
+      candles:
+        resolver: true
   Party:
     fields:
       orders:

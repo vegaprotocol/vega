@@ -10,10 +10,11 @@ import (
 )
 
 type Market struct {
-	Name   string          `json:"name"`
-	Orders []msg.Order     `json:"orders"`
-	Trades []msg.Trade     `json:"trades"`
-	Depth  msg.MarketDepth `json:"depth"`
+	Name    string          `json:"name"`
+	Orders  []msg.Order     `json:"orders"`
+	Trades  []msg.Trade     `json:"trades"`
+	Depth   msg.MarketDepth `json:"depth"`
+	Candles []msg.Candle    `json:"candles"`
 }
 type OrderFilter struct {
 	AND            []OrderFilter `json:"AND"`

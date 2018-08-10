@@ -119,7 +119,7 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 	}
 
 	interval := request.Interval
-	if interval < 1 {
+	if interval < 2 {
 		interval = 2
 	}
 	res, err := h.TradeService.GetCandles(ctx, market, since, interval)

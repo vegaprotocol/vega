@@ -23,7 +23,10 @@ type TradeService interface {
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
 
 	GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error)
+
+	GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (candles msg.Candles, err error)
 	GetCandleSinceBlock(ctx context.Context, market string, sinceBlock uint64) (candle *msg.Candle, time time.Time, err error)
+
 	GetLatestBlock() (blockNow uint64)
 
 	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
@@ -90,6 +93,28 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 	sinceBlock := vtc.TimeToBlock(since)
 
 	c, err := t.tradeStore.GetCandles(market, sinceBlock, uint64(t.app.GetChainHeight()), interval)
+	if err != nil {
+		return msg.Candles{}, err
+	}
+
+	for _, candle := range c.Candles {
+		candle.Date = vtc.BlockToTime(candle.OpenBlockNumber).Format(time.RFC3339)
+	}
+	return c, nil
+}
+
+func (t *tradeService) GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (candles msg.Candles, err error) {
+	vtc := vegatime.NewVegaTimeConverter(t.app)
+	
+	// Convert last N candles to vega-time
+	latestBlock := uint64(t.GetLatestBlock())
+	offset := uint64(interval) * uint64(last)
+	sinceBlock := uint64(0)
+	if offset < latestBlock {
+		sinceBlock = latestBlock - offset
+	}
+	
+	c, err := t.tradeStore.GetCandles(market, sinceBlock, latestBlock, interval)
 	if err != nil {
 		return msg.Candles{}, err
 	}

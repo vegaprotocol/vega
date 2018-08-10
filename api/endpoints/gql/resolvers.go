@@ -189,6 +189,30 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (msg.Marke
 	return *depth, nil
 }
 
+func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
+	last int, interval int) ([]msg.Candle, error) {
+
+	// Validate params
+	if interval < 2 {
+		return nil, errors.New("interval must be equal to or greater than 2")
+	}
+	if last < 1 {
+		return nil, errors.New("last must be equal to or greater than 1")
+	}
+
+	res, err := r.tradeService.GetLastCandles(ctx, market.Name, uint64(last), uint64(interval))
+	if err != nil {
+		return nil, err
+	}
+
+	valCandles := make([]msg.Candle, 0)
+	for _, v := range res.Candles {
+		valCandles = append(valCandles, *v)
+	}
+
+	return valCandles, nil
+}
+
 // END: Market Resolver
 
 
