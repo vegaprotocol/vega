@@ -123,15 +123,12 @@ func (ts *memTradeStore) GetByMarketAndId(market string, id string) (Trade, erro
 
 // GetByPart retrieves all trades for a given party.
 func (ts *memTradeStore) GetByParty(party string, filters *common.TradeQueryFilters) ([]Trade, error) {
-
 	if err := ts.partyExists(party); err != nil {
 		return nil, err
 	}
-
 	if filters == nil {
 		filters = &common.TradeQueryFilters{}
 	}
-	
 	return ts.filterResults(ts.store.parties[party].tradesByTimestamp, filters)
 }
 

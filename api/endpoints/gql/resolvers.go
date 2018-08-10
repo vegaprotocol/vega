@@ -9,6 +9,7 @@ import (
 	"time"
 	"vega/log"
 	"github.com/satori/go.uuid"
+	"fmt"
 )
 
 type resolverRoot struct {
@@ -519,13 +520,23 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 type MySubscriptionResolver resolverRoot
 
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error) {
-	c, ref := r.orderService.ObserveOrders(ctx)
+	// Validate market, and todo future Party (when party store exists)
+	err := r.validateMarket(ctx, market)
+	if err != nil {
+		return nil, err
+	}
+	c, ref := r.orderService.ObserveOrders(ctx, market, party)
 	log.Debugf("GraphQL Orders -> New subscriber: %d", ref)
 	return c, nil
 }
 
 func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error) {
-	c, ref := r.tradeService.ObserveTrades(ctx)
+	// Validate market, and todo future Party (when party store exists)
+	err := r.validateMarket(ctx, market)
+	if err != nil {
+		return nil, err
+	}
+	c, ref := r.tradeService.ObserveTrades(ctx, market, party)
 	log.Debugf("GraphQL Trades -> New subscriber: %d", ref)
 	return c, nil
 }
@@ -537,6 +548,11 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 }
 
 func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error) {
+	// Validate market
+	err := r.validateMarket(ctx, &market)
+	if err != nil {
+		return nil, err
+	}
 	c, ref := r.orderService.ObserveMarketDepth(ctx, market)
 	log.Debugf("GraphQL Market Depth -> New subscriber: %d", ref)
 	return c, nil
@@ -545,6 +561,14 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error) {
 	events := make(chan msg.Candle, 0)
 	connected := true
+
+	if interval < 2 {
+		return nil, errors.New("interval must be equal to or greater than 2")
+	}
+	err := r.validateMarket(ctx, &market)
+	if err != nil {
+		return nil, err
+	}
 
 	id := uuid.NewV4().String()
 	log.Debugf("Candles subscriber connected: ", id)
@@ -588,6 +612,31 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	}(events)
 
 	return events, nil
+}
+
+func (r *MySubscriptionResolver) validateMarket(ctx context.Context, market *string) error {
+	// todo(cdm): change this when we have a marketservice/marketstore
+	if market != nil {
+		if len(*market) == 0 {
+			return errors.New("market must not be empty")
+		}
+		markets, err := r.orderService.GetMarkets(ctx)
+		if err != nil {
+			return err
+		}
+		// Scan all markets for a match
+		found := false
+		for _, v := range markets {
+			if v == *market {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.New(fmt.Sprintf("market %s not found", *market))
+		}
+	}
+	return nil
 }
 
 // END: Subscription Resolver

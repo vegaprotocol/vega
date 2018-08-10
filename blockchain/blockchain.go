@@ -48,6 +48,8 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
+var tx_averages []int
+
 // Consensus Connection
 // Step 1: DeliverTx
 //
@@ -74,7 +76,12 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	log.Infof("DeliverTx: %s", string(tx))
+	log.Infof("DeliverTx: %s", string(tx), len(tx))
+
+	if tx_averages == nil {
+		tx_averages = make([]int, 0)
+	}
+	tx_averages = append(tx_averages, len(tx))
 
 	// Decode payload and command
 	value, cmd, err := VegaTxDecode(tx)
@@ -126,6 +133,21 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 
 		default:
 			log.Errorf("UNKNOWN command received after consensus: %v", cmd)
+	}
+
+	if len(tx_averages) > 0 {
+		totaltx := 0
+		for _, itx := range tx_averages {
+			totaltx += itx
+		}
+		averagetx := totaltx / len(tx_averages)
+
+		log.Debugf("Stats: Current tx average size = %v bytes", averagetx)
+
+		// MAX sample size for avg calculation is 5000 txs
+		if len(tx_averages) == 5000 {
+			tx_averages = nil
+		}
 	}
 
 	app.vega.State.Size += 1

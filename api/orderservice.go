@@ -13,7 +13,7 @@ import (
 
 type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
-	ObserveOrders(ctx context.Context) (orders <-chan msg.Order, ref uint64)
+	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan msg.Order, ref uint64)
 
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
@@ -160,7 +160,7 @@ func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (o
 	return p.orderStore.GetMarketDepth(marketName)
 }
 
-func (p *orderService) ObserveOrders(ctx context.Context) (<-chan msg.Order, uint64) {
+func (p *orderService) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan msg.Order, uint64) {
 	orders := make(chan msg.Order)
 	internal := make(chan []datastore.Order)
 	ref := p.orderStore.Subscribe(internal)
@@ -178,6 +178,12 @@ func (p *orderService) ObserveOrders(ctx context.Context) (<-chan msg.Order, uin
 	go func(id uint64) {
 		for v := range internal {
 			for _, item := range v {
+				if market != nil && item.Market != *market {
+					continue
+				}
+				if party != nil && item.Party != *party {
+					continue
+				}
 				orders <- *item.ToProtoMessage()
 			}
 		}
