@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"context"
 	"github.com/pkg/errors"
+	"vega/common"
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
@@ -155,10 +156,41 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 		Name: btcDec18,
 	}
 
+	// DEPTH
+
 	depth, err := marketResolver.Depth(ctx, market)
 	assert.Nil(t, err)
 	assert.NotNil(t, depth)
 	assert.Equal(t, btcDec18, depth.Name)
+
+	mockOrderService.On("GetMarketDepth", ctx, btcDec18).Return(
+		nil, errors.New("phobos transport system overload"),
+	).Once()
+
+	depth, err = marketResolver.Depth(ctx, market)
+	assert.Error(t, err)
+
+	// ORDERS
+
+	mockOrderService.On("GetByMarket", ctx, btcDec18, &common.OrderQueryFilters{}).Return(
+		[]*msg.Order{
+			&msg.Order{
+				Id: "order-id-1",
+				Price: 1000,
+				Timestamp: 1,
+			},
+			&msg.Order{
+				Id: "order-id-2",
+				Price: 2000,
+				Timestamp: 2,
+			},
+		}, nil,
+	).Once()
+
+	orders, err := marketResolver.Orders(ctx, market, nil, nil, nil, nil)
+	assert.NotNil(t, orders)
+	assert.Nil(t, err)
+	assert.Len(t, orders, 2)
 }
 
 func buildTestResolverRoot() *resolverRoot {

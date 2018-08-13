@@ -86,11 +86,11 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 		return nil, errors.New("all markets on VEGA query not implemented")
 	}
 
+	// Todo(cdm): MarketStore --> check if market exists via dedicated marketstore...
 	existing, err := r.orderService.GetMarkets(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	found := false
 	for _, m := range existing {
 		if *name == m {
@@ -116,8 +116,7 @@ func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) (
 		return nil, errors.New("all parties on VEGA query not implemented")
 	}
 
-	// Todo(cdm): partystore --> check if party exists...
-
+	// Todo(cdm): PartyStore --> check if party exists...
 	var parties = make([]Party, 0)
 	var party = Party{
 		Name: *name,
