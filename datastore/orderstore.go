@@ -6,7 +6,7 @@ import (
 	"vega/msg"
 	"sync"
 	"vega/log"
-	"vega/common"
+	"vega/filters"
 )
 
 // memOrderStore should implement OrderStore interface.
@@ -100,13 +100,13 @@ func (m *memOrderStore) queueEvent(o Order) error {
 }
 
 
-func (m *memOrderStore) GetByMarket(market string, filters *common.OrderQueryFilters) ([]Order, error) {
+func (m *memOrderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]Order, error) {
 	if err := m.marketExists(market); err != nil {
 		return nil, err
 	}
 
-	if filters == nil {
-		filters = &common.OrderQueryFilters{}
+	if queryFilters == nil {
+		queryFilters = &filters.OrderQueryFilters{}
 	}
 
 	var (
@@ -119,14 +119,14 @@ func (m *memOrderStore) GetByMarket(market string, filters *common.OrderQueryFil
 	// First == ascending by timestamp
 	// Skip == offset by value, then first/last depending on direction
 
-	if filters.First != nil && *filters.First > 0 {
+	if queryFilters.First != nil && *queryFilters.First > 0 {
 		// If first is set we iterate ascending
 		for i := 0; i < len(m.store.markets[market].ordersByTimestamp); i++ {
-			if pos == *filters.First {
+			if pos == *queryFilters.First {
 				break
 			}
-			if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, filters) {
-				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+			if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, queryFilters) {
+				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
 					skipped++
 					continue
 				}
@@ -137,11 +137,11 @@ func (m *memOrderStore) GetByMarket(market string, filters *common.OrderQueryFil
 	} else {
 		// default is descending 'last' n items
 		for i := len(m.store.markets[market].ordersByTimestamp) - 1; i >= 0; i-- {
-			if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
+			if queryFilters.Last != nil && *queryFilters.Last > 0 && pos == *queryFilters.Last {
 				break
 			}
-			if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, filters) {
-				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+			if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, queryFilters) {
+				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
 					skipped++
 					continue
 				}
@@ -166,12 +166,12 @@ func (m *memOrderStore) GetByMarketAndId(market string, id string) (Order, error
 	return v.order, nil
 }
 
-func (m *memOrderStore) GetByParty(party string, filters *common.OrderQueryFilters) ([]Order, error) {
+func (m *memOrderStore) GetByParty(party string, queryFilters *filters.OrderQueryFilters) ([]Order, error) {
 	if err := m.partyExists(party); err != nil {
 		return nil, err
 	}
-	if filters == nil {
-		filters = &common.OrderQueryFilters{}
+	if queryFilters == nil {
+		queryFilters = &filters.OrderQueryFilters{}
 	}
 
 	var (
@@ -184,14 +184,14 @@ func (m *memOrderStore) GetByParty(party string, filters *common.OrderQueryFilte
 	// First == ascending by timestamp
 	// Skip == offset by value, then first/last depending on direction
 
-	if filters.First != nil && *filters.First > 0 {
+	if queryFilters.First != nil && *queryFilters.First > 0 {
 		// If first is set we iterate ascending
 		for i := 0; i < len(m.store.parties[party].ordersByTimestamp); i++ {
-			if pos == *filters.First {
+			if pos == *queryFilters.First {
 				break
 			}
-			if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, filters) {
-				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+			if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, queryFilters) {
+				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
 					skipped++
 					continue
 				}
@@ -202,11 +202,11 @@ func (m *memOrderStore) GetByParty(party string, filters *common.OrderQueryFilte
 	} else {
 		// default is descending 'last' n items
 		for i := len(m.store.parties[party].ordersByTimestamp) - 1; i >= 0; i-- {
-			if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
+			if queryFilters.Last != nil && *queryFilters.Last > 0 && pos == *queryFilters.Last {
 				break
 			}
-			if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, filters) {
-				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+			if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, queryFilters) {
+				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
 					skipped++
 					continue
 				}

@@ -1,101 +1,101 @@
 package gql
 
 import (
-	"vega/common"
+	"vega/filters"
 	"github.com/pkg/errors"
 )
 
-func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (bool, error) {
-	if filters == nil {
+func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilters) (bool, error) {
+	if queryFilters == nil {
 		return false, errors.New("filters must be set when calling ParseOrderFilter")
 	}
 	// In case the caller forgets to pass in a struct, we check and create the holder
 	if holder == nil {
-		holder = &common.OrderQueryFilters{}
+		holder = &filters.OrderQueryFilters{}
 	}
 	// Match filters in GQL against the query filters in the api-services & data stores
 	foundFilter := false
-	if filters.ID != nil {
-		id := *filters.ID
-		holder.IdFilter = &common.QueryFilter{
+	if queryFilters.ID != nil {
+		id := *queryFilters.ID
+		holder.IdFilter = &filters.QueryFilter{
 			Eq: id,
 		}
 		foundFilter = true
 	}
-	if filters.Id_neq != nil {
-		id := *filters.Id_neq
-		holder.IdFilter = &common.QueryFilter{
+	if queryFilters.Id_neq != nil {
+		id := *queryFilters.Id_neq
+		holder.IdFilter = &filters.QueryFilter{
 			Neq: id,
 		}
 		foundFilter = true
 	}
-	if filters.Market != nil {
-		holder.MarketFilter = &common.QueryFilter{
-			Eq: filters.Market,
+	if queryFilters.Market != nil {
+		holder.MarketFilter = &filters.QueryFilter{
+			Eq: queryFilters.Market,
 		}
 		foundFilter = true
 	}
-	if filters.Market_neq != nil {
-		holder.MarketFilter = &common.QueryFilter{
-			Neq: filters.Market_neq,
+	if queryFilters.Market_neq != nil {
+		holder.MarketFilter = &filters.QueryFilter{
+			Neq: queryFilters.Market_neq,
 		}
 		foundFilter = true
 	}
-	if filters.Party != nil {
-		holder.PartyFilter = &common.QueryFilter{
-			Eq: filters.Party,
+	if queryFilters.Party != nil {
+		holder.PartyFilter = &filters.QueryFilter{
+			Eq: queryFilters.Party,
 		}
 		foundFilter = true
 	}
-	if filters.Party_neq != nil {
-		holder.PartyFilter = &common.QueryFilter{
-			Neq: filters.Party_neq,
+	if queryFilters.Party_neq != nil {
+		holder.PartyFilter = &filters.QueryFilter{
+			Neq: queryFilters.Party_neq,
 		}
 		foundFilter = true
 	}
-	if filters.Side != nil {
-		holder.SideFilter = &common.QueryFilter{
-			Eq: filters.Side,
+	if queryFilters.Side != nil {
+		holder.SideFilter = &filters.QueryFilter{
+			Eq: queryFilters.Side,
 		}
 		foundFilter = true
 	}
-	if filters.Side_neq != nil {
-		holder.SideFilter = &common.QueryFilter{
-			Neq: filters.Side_neq,
+	if queryFilters.Side_neq != nil {
+		holder.SideFilter = &filters.QueryFilter{
+			Neq: queryFilters.Side_neq,
 		}
 		foundFilter = true
 	}
-	if filters.Price != nil {
-		price, err := safeStringUint64(*filters.Price)
+	if queryFilters.Price != nil {
+		price, err := safeStringUint64(*queryFilters.Price)
 		if err != nil {
 			return false, err
 		}
-		holder.PriceFilter = &common.QueryFilter{
+		holder.PriceFilter = &filters.QueryFilter{
 			Eq: price,
 		}
 		foundFilter = true
 	}
-	if filters.Price_neq != nil {
-		price, err := safeStringUint64(*filters.Price_neq)
+	if queryFilters.Price_neq != nil {
+		price, err := safeStringUint64(*queryFilters.Price_neq)
 		if err != nil {
 			return false, err
 		}
-		holder.PriceFilter = &common.QueryFilter{
+		holder.PriceFilter = &filters.QueryFilter{
 			Neq: price,
 		}
 		foundFilter = true
 	}
-	if filters.Price_from != nil && filters.Price_to != nil {
-		lower, err := safeStringUint64(*filters.Price_from)
+	if queryFilters.Price_from != nil && queryFilters.Price_to != nil {
+		lower, err := safeStringUint64(*queryFilters.Price_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*filters.Price_to)
+		upper, err := safeStringUint64(*queryFilters.Price_to)
 		if err != nil {
 			return false, err
 		}
-		holder.PriceFilter = &common.QueryFilter{
-			FilterRange: &common.QueryFilterRange{
+		holder.PriceFilter = &filters.QueryFilter{
+			FilterRange: &filters.QueryFilterRange{
 				Lower: lower,
 				Upper: upper,
 			},
@@ -103,37 +103,37 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		}
 		foundFilter = true
 	}
-	if filters.Size != nil {
-		size, err := safeStringUint64(*filters.Size)
+	if queryFilters.Size != nil {
+		size, err := safeStringUint64(*queryFilters.Size)
 		if err != nil {
 			return false, err
 		}
-		holder.SizeFilter = &common.QueryFilter{
+		holder.SizeFilter = &filters.QueryFilter{
 			Eq: size,
 		}
 		foundFilter = true
 	}
-	if filters.Size_neq != nil {
-		size, err := safeStringUint64(*filters.Size_neq)
+	if queryFilters.Size_neq != nil {
+		size, err := safeStringUint64(*queryFilters.Size_neq)
 		if err != nil {
 			return false, err
 		}
-		holder.SizeFilter = &common.QueryFilter{
+		holder.SizeFilter = &filters.QueryFilter{
 			Neq: size,
 		}
 		foundFilter = true
 	}
-	if filters.Size_from != nil && filters.Size_to != nil {
-		lower, err := safeStringUint64(*filters.Size_from)
+	if queryFilters.Size_from != nil && queryFilters.Size_to != nil {
+		lower, err := safeStringUint64(*queryFilters.Size_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*filters.Size_to)
+		upper, err := safeStringUint64(*queryFilters.Size_to)
 		if err != nil {
 			return false, err
 		}
-		holder.SizeFilter = &common.QueryFilter{
-			FilterRange: &common.QueryFilterRange{
+		holder.SizeFilter = &filters.QueryFilter{
+			FilterRange: &filters.QueryFilterRange{
 				Lower: lower,
 				Upper: upper,
 			},
@@ -141,37 +141,37 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		}
 		foundFilter = true
 	}
-	if filters.Remaining != nil {
-		remaining, err := safeStringUint64(*filters.Remaining)
+	if queryFilters.Remaining != nil {
+		remaining, err := safeStringUint64(*queryFilters.Remaining)
 		if err != nil {
 			return false, err
 		}
-		holder.RemainingFilter = &common.QueryFilter{
+		holder.RemainingFilter = &filters.QueryFilter{
 			Eq: remaining,
 		}
 		foundFilter = true
 	}
-	if filters.Remaining_neq != nil {
-		remaining, err := safeStringUint64(*filters.Remaining_neq)
+	if queryFilters.Remaining_neq != nil {
+		remaining, err := safeStringUint64(*queryFilters.Remaining_neq)
 		if err != nil {
 			return false, err
 		}
-		holder.RemainingFilter = &common.QueryFilter{
+		holder.RemainingFilter = &filters.QueryFilter{
 			Neq: remaining,
 		}
 		foundFilter = true
 	}
-	if filters.Remaining_from != nil && filters.Remaining_to != nil {
-		lower, err := safeStringUint64(*filters.Remaining_from)
+	if queryFilters.Remaining_from != nil && queryFilters.Remaining_to != nil {
+		lower, err := safeStringUint64(*queryFilters.Remaining_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*filters.Remaining_to)
+		upper, err := safeStringUint64(*queryFilters.Remaining_to)
 		if err != nil {
 			return false, err
 		}
-		holder.RemainingFilter = &common.QueryFilter{
-			FilterRange: &common.QueryFilterRange{
+		holder.RemainingFilter = &filters.QueryFilter{
+			FilterRange: &filters.QueryFilterRange{
 				Lower: lower,
 				Upper: upper,
 			},
@@ -179,57 +179,57 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		}
 		foundFilter = true
 	}
-	if filters.Type != nil {
-		orderType, err := parseOrderType(filters.Type)
+	if queryFilters.Type != nil {
+		orderType, err := parseOrderType(queryFilters.Type)
 		if err != nil {
 			return false, err
 		}
-		holder.TypeFilter = &common.QueryFilter{
+		holder.TypeFilter = &filters.QueryFilter{
 			Eq: orderType,
 		}
 		foundFilter = true
 	}
-	if filters.Type_neq != nil {
-		orderType, err := parseOrderType(filters.Type_neq)
+	if queryFilters.Type_neq != nil {
+		orderType, err := parseOrderType(queryFilters.Type_neq)
 		if err != nil {
 			return false, err
 		}
-		holder.TypeFilter = &common.QueryFilter{
+		holder.TypeFilter = &filters.QueryFilter{
 			Neq: orderType,
 		}
 		foundFilter = true
 	}
-	if filters.Timestamp != nil {
-		timestamp, err := safeStringUint64(*filters.Timestamp)
+	if queryFilters.Timestamp != nil {
+		timestamp, err := safeStringUint64(*queryFilters.Timestamp)
 		if err != nil {
 			return false, err
 		}
-		holder.TimestampFilter = &common.QueryFilter{
+		holder.TimestampFilter = &filters.QueryFilter{
 			Eq: timestamp,
 		}
 		foundFilter = true
 	}
-	if filters.Timestamp_neq != nil {
-		timestamp, err := safeStringUint64(*filters.Timestamp_neq)
+	if queryFilters.Timestamp_neq != nil {
+		timestamp, err := safeStringUint64(*queryFilters.Timestamp_neq)
 		if err != nil {
 			return false, err
 		}
-		holder.TimestampFilter = &common.QueryFilter{
+		holder.TimestampFilter = &filters.QueryFilter{
 			Neq: timestamp,
 		}
 		foundFilter = true
 	}
-	if filters.Timestamp_from != nil && filters.Timestamp_to != nil {
-		lower, err := safeStringUint64(*filters.Timestamp_from)
+	if queryFilters.Timestamp_from != nil && queryFilters.Timestamp_to != nil {
+		lower, err := safeStringUint64(*queryFilters.Timestamp_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*filters.Timestamp_to)
+		upper, err := safeStringUint64(*queryFilters.Timestamp_to)
 		if err != nil {
 			return false, err
 		}
-		holder.TimestampFilter = &common.QueryFilter{
-			FilterRange: &common.QueryFilterRange{
+		holder.TimestampFilter = &filters.QueryFilter{
+			FilterRange: &filters.QueryFilterRange{
 				Lower: lower,
 				Upper: upper,
 			},
@@ -237,99 +237,99 @@ func ParseOrderFilter(filters *OrderFilter, holder *common.OrderQueryFilters) (b
 		}
 		foundFilter = true
 	}
-	if filters.Status != nil {
-		orderStatus, err := parseOrderStatus(filters.Status)
+	if queryFilters.Status != nil {
+		orderStatus, err := parseOrderStatus(queryFilters.Status)
 		if err != nil {
 			return false, err 
 		}
-		holder.StatusFilter = &common.QueryFilter{
+		holder.StatusFilter = &filters.QueryFilter{
 			Eq: orderStatus,
 		}
 		foundFilter = true
 	}
-	if filters.Status_neq != nil {
-		orderStatus, err := parseOrderStatus(filters.Status_neq)
+	if queryFilters.Status_neq != nil {
+		orderStatus, err := parseOrderStatus(queryFilters.Status_neq)
 		if err != nil {
 			return false, err
 		}
-		holder.StatusFilter = &common.QueryFilter{
+		holder.StatusFilter = &filters.QueryFilter{
 			Neq: orderStatus,
 		}
 		foundFilter = true
 	}
-	if filters.Open != nil {
-		holder.Open = *filters.Open
+	if queryFilters.Open != nil {
+		holder.Open = *queryFilters.Open
 	}
 	return foundFilter, nil
 }
 
-func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (bool, error) {
-	if filters == nil {
+func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilters) (bool, error) {
+	if queryFilters == nil {
 		return false, errors.New("filters must be set when calling ParseTradeFilter")
 	}
 	// In case the caller forgets to pass in a struct, we check and create the holder
 	if holder == nil {
-		holder = &common.TradeQueryFilters{}
+		holder = &filters.TradeQueryFilters{}
 	}
 	// Match filters in GQL against the query filters in the api-services & data stores
 	foundFilter := false
-	if filters.ID != nil {
-		id := *filters.ID
-		holder.IdFilter = &common.QueryFilter{
+	if queryFilters.ID != nil {
+		id := *queryFilters.ID
+		holder.IdFilter = &filters.QueryFilter{
 			Eq: id,
 		}
 		foundFilter = true
 	}
-	if filters.Id_neq != nil {
-		id := *filters.Id_neq
-		holder.IdFilter = &common.QueryFilter{
+	if queryFilters.Id_neq != nil {
+		id := *queryFilters.Id_neq
+		holder.IdFilter = &filters.QueryFilter{
 			Neq: id,
 		}
 		foundFilter = true
 	}
-	if filters.Market != nil {
-		holder.MarketFilter = &common.QueryFilter{
-			Eq: filters.Market,
+	if queryFilters.Market != nil {
+		holder.MarketFilter = &filters.QueryFilter{
+			Eq: queryFilters.Market,
 		}
 		foundFilter = true
 	}
-	if filters.Market_neq != nil {
-		holder.MarketFilter = &common.QueryFilter{
-			Neq: filters.Market_neq,
+	if queryFilters.Market_neq != nil {
+		holder.MarketFilter = &filters.QueryFilter{
+			Neq: queryFilters.Market_neq,
 		}
 		foundFilter = true
 	}
-	if filters.Price != nil {
-		price, err := safeStringUint64(*filters.Price)
+	if queryFilters.Price != nil {
+		price, err := safeStringUint64(*queryFilters.Price)
 		if err != nil {
 			return false, err
 		}
-		holder.PriceFilter = &common.QueryFilter{
+		holder.PriceFilter = &filters.QueryFilter{
 			Eq: price,
 		}
 		foundFilter = true
 	}
-	if filters.Price_neq != nil {
-		price, err := safeStringUint64(*filters.Price_neq)
+	if queryFilters.Price_neq != nil {
+		price, err := safeStringUint64(*queryFilters.Price_neq)
 		if err != nil {
 			return false, err
 		}
-		holder.PriceFilter = &common.QueryFilter{
+		holder.PriceFilter = &filters.QueryFilter{
 			Neq: price,
 		}
 		foundFilter = true
 	}
-	if filters.Price_from != nil && filters.Price_to != nil {
-		lower, err := safeStringUint64(*filters.Price_from)
+	if queryFilters.Price_from != nil && queryFilters.Price_to != nil {
+		lower, err := safeStringUint64(*queryFilters.Price_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*filters.Price_to)
+		upper, err := safeStringUint64(*queryFilters.Price_to)
 		if err != nil {
 			return false, err
 		}
-		holder.PriceFilter = &common.QueryFilter{
-			FilterRange: &common.QueryFilterRange{
+		holder.PriceFilter = &filters.QueryFilter{
+			FilterRange: &filters.QueryFilterRange{
 				Lower: lower,
 				Upper: upper,
 			},
@@ -337,37 +337,37 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		}
 		foundFilter = true
 	}
-	if filters.Size != nil {
-		size, err := safeStringUint64(*filters.Size)
+	if queryFilters.Size != nil {
+		size, err := safeStringUint64(*queryFilters.Size)
 		if err != nil {
 			return false, err
 		}
-		holder.SizeFilter = &common.QueryFilter{
+		holder.SizeFilter = &filters.QueryFilter{
 			Eq: size,
 		}
 		foundFilter = true
 	}
-	if filters.Size_neq != nil {
-		size, err := safeStringUint64(*filters.Size_neq)
+	if queryFilters.Size_neq != nil {
+		size, err := safeStringUint64(*queryFilters.Size_neq)
 		if err != nil {
 			return false, err
 		}
-		holder.SizeFilter = &common.QueryFilter{
+		holder.SizeFilter = &filters.QueryFilter{
 			Neq: size,
 		}
 		foundFilter = true
 	}
-	if filters.Size_from != nil && filters.Size_to != nil {
-		lower, err := safeStringUint64(*filters.Size_from)
+	if queryFilters.Size_from != nil && queryFilters.Size_to != nil {
+		lower, err := safeStringUint64(*queryFilters.Size_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*filters.Size_to)
+		upper, err := safeStringUint64(*queryFilters.Size_to)
 		if err != nil {
 			return false, err
 		}
-		holder.SizeFilter = &common.QueryFilter{
-			FilterRange: &common.QueryFilterRange{
+		holder.SizeFilter = &filters.QueryFilter{
+			FilterRange: &filters.QueryFilterRange{
 				Lower: lower,
 				Upper: upper,
 			},
@@ -375,73 +375,73 @@ func ParseTradeFilter(filters *TradeFilter, holder *common.TradeQueryFilters) (b
 		}
 		foundFilter = true
 	}
-	if filters.Buyer != nil {
-		holder.BuyerFilter = &common.QueryFilter{
-			Eq: filters.Buyer,
+	if queryFilters.Buyer != nil {
+		holder.BuyerFilter = &filters.QueryFilter{
+			Eq: queryFilters.Buyer,
 		}
 		foundFilter = true
 	}
-	if filters.Buyer_neq != nil {
-		holder.BuyerFilter = &common.QueryFilter{
-			Neq: filters.Buyer_neq,
+	if queryFilters.Buyer_neq != nil {
+		holder.BuyerFilter = &filters.QueryFilter{
+			Neq: queryFilters.Buyer_neq,
 		}
 		foundFilter = true
 	}
-	if filters.Seller != nil {
-		holder.SellerFilter = &common.QueryFilter{
-			Eq: filters.Seller,
+	if queryFilters.Seller != nil {
+		holder.SellerFilter = &filters.QueryFilter{
+			Eq: queryFilters.Seller,
 		}
 		foundFilter = true
 	}
-	if filters.Seller_neq != nil {
-		holder.SellerFilter = &common.QueryFilter{
-			Neq: filters.Seller_neq,
+	if queryFilters.Seller_neq != nil {
+		holder.SellerFilter = &filters.QueryFilter{
+			Neq: queryFilters.Seller_neq,
 		}
 		foundFilter = true
 	}
-	if filters.Aggressor != nil {
-		holder.AggressorFilter = &common.QueryFilter{
-			Eq: filters.Aggressor,
+	if queryFilters.Aggressor != nil {
+		holder.AggressorFilter = &filters.QueryFilter{
+			Eq: queryFilters.Aggressor,
 		}
 		foundFilter = true
 	}
-	if filters.Aggressor_neq != nil {
-		holder.AggressorFilter = &common.QueryFilter{
-			Neq: filters.Aggressor_neq,
+	if queryFilters.Aggressor_neq != nil {
+		holder.AggressorFilter = &filters.QueryFilter{
+			Neq: queryFilters.Aggressor_neq,
 		}
 		foundFilter = true
 	}
-	if filters.Timestamp != nil {
-		timestamp, err := safeStringUint64(*filters.Timestamp)
+	if queryFilters.Timestamp != nil {
+		timestamp, err := safeStringUint64(*queryFilters.Timestamp)
 		if err != nil {
 			return false, err
 		}
-		holder.TimestampFilter = &common.QueryFilter{
+		holder.TimestampFilter = &filters.QueryFilter{
 			Eq: timestamp,
 		}
 		foundFilter = true
 	}
-	if filters.Timestamp_neq != nil {
-		timestamp, err := safeStringUint64(*filters.Timestamp_neq)
+	if queryFilters.Timestamp_neq != nil {
+		timestamp, err := safeStringUint64(*queryFilters.Timestamp_neq)
 		if err != nil {
 			return false, err
 		}
-		holder.TimestampFilter = &common.QueryFilter{
+		holder.TimestampFilter = &filters.QueryFilter{
 			Neq: timestamp,
 		}
 		foundFilter = true
 	}
-	if filters.Timestamp_from != nil && filters.Timestamp_to != nil {
-		lower, err := safeStringUint64(*filters.Timestamp_from)
+	if queryFilters.Timestamp_from != nil && queryFilters.Timestamp_to != nil {
+		lower, err := safeStringUint64(*queryFilters.Timestamp_from)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*filters.Timestamp_to)
+		upper, err := safeStringUint64(*queryFilters.Timestamp_to)
 		if err != nil {
 			return false, err
 		}
-		holder.TimestampFilter = &common.QueryFilter{
-			FilterRange: &common.QueryFilterRange{
+		holder.TimestampFilter = &filters.QueryFilter{
+			FilterRange: &filters.QueryFilterRange{
 				Lower: lower,
 				Upper: upper,
 			},

@@ -1,4 +1,4 @@
-package common
+package filters
 
 const QueryFilterOperatorAnd QueryFilterOperator = 0
 const QueryFilterOperatorOr QueryFilterOperator = 1

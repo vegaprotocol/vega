@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"context"
 	"github.com/pkg/errors"
-	"vega/common"
+	"vega/filters"
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
@@ -172,7 +172,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 
 	// ORDERS
 
-	mockOrderService.On("GetByMarket", ctx, btcDec18, &common.OrderQueryFilters{}).Return(
+	mockOrderService.On("GetByMarket", ctx, btcDec18, &filters.OrderQueryFilters{}).Return(
 		[]*msg.Order{
 			&msg.Order{
 				Id: "order-id-1",

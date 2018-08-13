@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 	"vega/log"
-	"vega/common"
+	"vega/filters"
 )
 
 // memTradeStore should implement TradeStore interface.
@@ -99,14 +99,14 @@ func (ts *memTradeStore) queueEvent(t Trade) error {
 }
 
 // GetByMarket retrieves all trades for a given market.
-func (ts *memTradeStore) GetByMarket(market string, filters *common.TradeQueryFilters) ([]Trade, error) {
+func (ts *memTradeStore) GetByMarket(market string, queryFilters *filters.TradeQueryFilters) ([]Trade, error) {
 	if err := ts.marketExists(market); err != nil {
 		return nil, err
 	}
-	if filters == nil {
-		filters = &common.TradeQueryFilters{}
+	if queryFilters == nil {
+		queryFilters = &filters.TradeQueryFilters{}
 	}
-	return ts.filterResults(ts.store.markets[market].tradesByTimestamp, filters)
+	return ts.filterResults(ts.store.markets[market].tradesByTimestamp, queryFilters)
 }
 
 // GetByMarketAndId retrieves a trade for a given id.
@@ -122,14 +122,14 @@ func (ts *memTradeStore) GetByMarketAndId(market string, id string) (Trade, erro
 }
 
 // GetByPart retrieves all trades for a given party.
-func (ts *memTradeStore) GetByParty(party string, filters *common.TradeQueryFilters) ([]Trade, error) {
+func (ts *memTradeStore) GetByParty(party string, queryFilters *filters.TradeQueryFilters) ([]Trade, error) {
 	if err := ts.partyExists(party); err != nil {
 		return nil, err
 	}
-	if filters == nil {
-		filters = &common.TradeQueryFilters{}
+	if queryFilters == nil {
+		queryFilters = &filters.TradeQueryFilters{}
 	}
-	return ts.filterResults(ts.store.parties[party].tradesByTimestamp, filters)
+	return ts.filterResults(ts.store.parties[party].tradesByTimestamp, queryFilters)
 }
 
 // GetByPartyAndId retrieves a trade for a given id.
@@ -303,7 +303,7 @@ func (ts *memTradeStore) validate(trade *Trade) error {
 
 func (ts *memTradeStore) GetMarkPrice(market string) (uint64, error) {
 	last := uint64(1)
-	filters := &common.TradeQueryFilters{}
+	filters := &filters.TradeQueryFilters{}
 	filters.Last = &last
 	recentTrade, err := ts.GetByMarket(market, filters)
 	if err != nil {
@@ -316,21 +316,21 @@ func (ts *memTradeStore) GetMarkPrice(market string) (uint64, error) {
 }
 
 
-func (ts *memTradeStore) filterResults(input []*memTrade, filters *common.TradeQueryFilters) (output []Trade, error error) {
+func (ts *memTradeStore) filterResults(input []*memTrade, queryFilters *filters.TradeQueryFilters) (output []Trade, error error) {
 	var pos, skipped uint64
 
 	// Last == descending by timestamp
 	// First == ascending by timestamp
 	// Skip == offset by value, then first/last depending on direction
 
-	if filters.First != nil && *filters.First > 0 {
+	if queryFilters.First != nil && *queryFilters.First > 0 {
 		// If first is set we iterate ascending
 		for i := 0; i < len(input); i++ {
-			if pos == *filters.First {
+			if pos == *queryFilters.First {
 				break
 			}
-			if applyTradeFilters(input[i].trade, filters) {
-				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+			if applyTradeFilters(input[i].trade, queryFilters) {
+				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
 					skipped++
 					continue
 				}
@@ -341,11 +341,11 @@ func (ts *memTradeStore) filterResults(input []*memTrade, filters *common.TradeQ
 	} else {
 		// default is descending 'last' n items
 		for i := len(input) - 1; i >= 0; i-- {
-			if filters.Last != nil && *filters.Last > 0 && pos == *filters.Last {
+			if queryFilters.Last != nil && *queryFilters.Last > 0 && pos == *queryFilters.Last {
 				break
 			}
-			if applyTradeFilters(input[i].trade, filters) {
-				if filters.Skip != nil && *filters.Skip > 0 && skipped < *filters.Skip {
+			if applyTradeFilters(input[i].trade, queryFilters) {
+				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
 					skipped++
 					continue
 				}

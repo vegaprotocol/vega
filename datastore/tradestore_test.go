@@ -4,7 +4,7 @@ import (
 	"testing"
 	"vega/msg"
 	"github.com/stretchr/testify/assert"
-	"vega/common"
+	"vega/filters"
 )
 
 func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
@@ -26,10 +26,10 @@ func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
 
 	// Want first 2 trades (timestamp ascending)
 	first := uint64(2)
-	filters := &common.TradeQueryFilters{}
-	filters.First = &first
+	queryFilters := &filters.TradeQueryFilters{}
+	queryFilters.First = &first
 
-	trades, err = newTradeStore.GetByMarket(testMarket, filters)
+	trades, err = newTradeStore.GetByMarket(testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 	assert.Equal(t, "trade-id-1", trades[0].Id)
@@ -37,10 +37,10 @@ func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
 
 	// Want last 3 trades (timestamp descending)
 	last := uint64(3)
-	filters = &common.TradeQueryFilters{}
-	filters.Last = &last
+	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters.Last = &last
 
-	trades, err = newTradeStore.GetByMarket(testMarket, filters)
+	trades, err = newTradeStore.GetByMarket(testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, "trade-id-6", trades[0].Id)
@@ -49,22 +49,22 @@ func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
 
 	// Want first 2 trades after skipping 2
 	skip := uint64(2)
-	filters = &common.TradeQueryFilters{}
-	filters.First = &first
-	filters.Skip = &skip
+	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters.First = &first
+	queryFilters.Skip = &skip
 
-	trades, err = newTradeStore.GetByMarket(testMarket, filters)
+	trades, err = newTradeStore.GetByMarket(testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 	assert.Equal(t, "trade-id-3", trades[0].Id)
 	assert.Equal(t, "trade-id-4", trades[1].Id)
 
 	// Want last 3 trades after skipping 2
-	filters = &common.TradeQueryFilters{}
-	filters.Last = &last
-	filters.Skip = &skip
+	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters.Last = &last
+	queryFilters.Skip = &skip
 
-	trades, err = newTradeStore.GetByMarket(testMarket, filters)
+	trades, err = newTradeStore.GetByMarket(testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, "trade-id-4", trades[0].Id)
@@ -75,11 +75,11 @@ func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
 	// effectively skipping past the end of the set, so no
 	// trades should be available at that offset
 	skip = uint64(50)
-	filters = &common.TradeQueryFilters{}
-	filters.Last = &last
-	filters.Skip = &skip
+	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters.Last = &last
+	queryFilters.Skip = &skip
 
-	trades, err = newTradeStore.GetByMarket(testMarket, filters)
+	trades, err = newTradeStore.GetByMarket(testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(trades))
 

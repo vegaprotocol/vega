@@ -6,7 +6,7 @@ import (
 	"vega/api"
 	"time"
 	"github.com/pkg/errors"
-	"vega/common"
+	"vega/filters"
 )
 
 type Handlers struct {
@@ -35,7 +35,7 @@ func (h *Handlers) OrdersByMarket(ctx context.Context, request *api.OrdersByMark
 	if request.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
-	orderFilters := &common.OrderQueryFilters{}
+	orderFilters := &filters.OrderQueryFilters{}
 	if request.Params != nil && request.Params.Limit > 0 {
 		orderFilters.Last = &request.Params.Limit
 	}
@@ -55,7 +55,7 @@ func (h *Handlers) OrdersByParty(ctx context.Context, request *api.OrdersByParty
 	if request.Party == "" {
 		return nil, errors.New("Party empty or missing")
 	}
-	orderFilters := &common.OrderQueryFilters{}
+	orderFilters := &filters.OrderQueryFilters{}
 	if request.Params != nil && request.Params.Limit > 0 {
 		orderFilters.Last = &request.Params.Limit
 	}
@@ -158,7 +158,7 @@ func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMark
 		limit = request.Params.Limit
 	}
 
-	filters := &common.TradeQueryFilters{}
+	filters := &filters.TradeQueryFilters{}
 	*filters.Last = limit
 	
 	trades, err := h.TradeService.GetByMarket(ctx, request.Market, filters)
