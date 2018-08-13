@@ -315,7 +315,7 @@ func (ts *memTradeStore) GetMarkPrice(market string) (uint64, error) {
 	return recentTrade[0].Price, nil
 }
 
-
+// filter results and paginate based on query filters
 func (ts *memTradeStore) filterResults(input []*memTrade, queryFilters *filters.TradeQueryFilters) (output []Trade, error error) {
 	var pos, skipped uint64
 

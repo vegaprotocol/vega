@@ -99,59 +99,14 @@ func (m *memOrderStore) queueEvent(o Order) error {
 	return nil
 }
 
-
 func (m *memOrderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]Order, error) {
 	if err := m.marketExists(market); err != nil {
 		return nil, err
 	}
-
 	if queryFilters == nil {
 		queryFilters = &filters.OrderQueryFilters{}
 	}
-
-	var (
-		pos     uint64
-		skipped uint64
-		output  []Order
-	)
-
-	// Last == descending by timestamp
-	// First == ascending by timestamp
-	// Skip == offset by value, then first/last depending on direction
-
-	if queryFilters.First != nil && *queryFilters.First > 0 {
-		// If first is set we iterate ascending
-		for i := 0; i < len(m.store.markets[market].ordersByTimestamp); i++ {
-			if pos == *queryFilters.First {
-				break
-			}
-			if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, queryFilters) {
-				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
-					skipped++
-					continue
-				}
-				output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
-				pos++
-			}
-		}
-	} else {
-		// default is descending 'last' n items
-		for i := len(m.store.markets[market].ordersByTimestamp) - 1; i >= 0; i-- {
-			if queryFilters.Last != nil && *queryFilters.Last > 0 && pos == *queryFilters.Last {
-				break
-			}
-			if applyOrderFilters(m.store.markets[market].ordersByTimestamp[i].order, queryFilters) {
-				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
-					skipped++
-					continue
-				}
-				output = append(output, m.store.markets[market].ordersByTimestamp[i].order)
-				pos++
-			}
-		}
-	}
-
-	return output, nil
+	return m.filterResults(m.store.markets[market].ordersByTimestamp, queryFilters)
 }
 
 // Get retrieves an order for a given market and id.
@@ -173,50 +128,7 @@ func (m *memOrderStore) GetByParty(party string, queryFilters *filters.OrderQuer
 	if queryFilters == nil {
 		queryFilters = &filters.OrderQueryFilters{}
 	}
-
-	var (
-		pos    uint64
-		skipped uint64
-		output []Order
-	)
-	
-	// Last == descending by timestamp
-	// First == ascending by timestamp
-	// Skip == offset by value, then first/last depending on direction
-
-	if queryFilters.First != nil && *queryFilters.First > 0 {
-		// If first is set we iterate ascending
-		for i := 0; i < len(m.store.parties[party].ordersByTimestamp); i++ {
-			if pos == *queryFilters.First {
-				break
-			}
-			if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, queryFilters) {
-				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
-					skipped++
-					continue
-				}
-				output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
-				pos++
-			}
-		}
-	} else {
-		// default is descending 'last' n items
-		for i := len(m.store.parties[party].ordersByTimestamp) - 1; i >= 0; i-- {
-			if queryFilters.Last != nil && *queryFilters.Last > 0 && pos == *queryFilters.Last {
-				break
-			}
-			if applyOrderFilters(m.store.parties[party].ordersByTimestamp[i].order, queryFilters) {
-				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
-					skipped++
-					continue
-				}
-				output = append(output, m.store.parties[party].ordersByTimestamp[i].order)
-				pos++
-			}
-		}
-	}
-
-	return output, nil
+	return m.filterResults(m.store.parties[party].ordersByTimestamp, queryFilters)
 }
 
 // Get retrieves an order for a given market and id.
@@ -390,4 +302,47 @@ func (m *memOrderStore) GetMarkets() ([]string, error) {
 		markets = append(markets, key)
 	}
 	return markets, nil
+}
+
+// filter results and paginate based on query filters
+func (m *memOrderStore) filterResults(input []*memOrder, queryFilters *filters.OrderQueryFilters) (output []Order, error error) {
+	var pos, skipped uint64
+
+	// Last == descending by timestamp
+	// First == ascending by timestamp
+	// Skip == offset by value, then first/last depending on direction
+
+	if queryFilters.First != nil && *queryFilters.First > 0 {
+		// If first is set we iterate ascending
+		for i := 0; i < len(input); i++ {
+			if pos == *queryFilters.First {
+				break
+			}
+			if applyOrderFilters(input[i].order, queryFilters) {
+				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, input[i].order)
+				pos++
+			}
+		}
+	} else {
+		// default is descending 'last' n items
+		for i := len(input) - 1; i >= 0; i-- {
+			if queryFilters.Last != nil && *queryFilters.Last > 0 && pos == *queryFilters.Last {
+				break
+			}
+			if applyOrderFilters(input[i].order, queryFilters) {
+				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
+					skipped++
+					continue
+				}
+				output = append(output, input[i].order)
+				pos++
+			}
+		}
+	}
+
+	return output, nil
 }
