@@ -71,13 +71,16 @@ type Market {
     name: String!
 
     # Orders on a market
-    orders: [Order!]
+    orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
 
     # Trades on a market
-    trades: [Trade!]
+    trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
 
     # Current depth on the orderbook for this market
     depth: MarketDepth!
+
+    # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
+    candles (last: Int!, interval: Int!): [Candle!]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
@@ -145,7 +148,7 @@ type Party {
     name: String!
 
     # Orders relating to a party
-    orders: [Order!]
+    orders(where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
 
     # Trading positions relating to a party
     positions: [Position!]
@@ -294,4 +297,105 @@ enum ValueDirection {
     Negative
 }
 
+# Filters for Trade queries on VEGA graphql, typically specified by WHERE clause
+input TradeFilter {
+    # logical operators
+    AND: [TradeFilter!] # combines all passed `TradeFilter` objects with logical AND
+    OR: [TradeFilter!] # combines all passed `TradeFilter` objects with logical OR
 
+    # ID filters
+    id: ID # matches all trades with exact ID value
+    id_neq: ID # matches all trades with different ID to value
+
+    # Market filters
+    market: String # matches all trades with exact market value
+    market_neq: String # matches all trades with different market to value
+    
+    # Buyer filters
+    buyer: String # matches all trades with exact buyer value
+    buyer_neq: String # matches all trades with different buyer to value
+
+    # Buyer filters
+    seller: String # matches all trades with exact seller value
+    seller_neq: String # matches all trades with different seller to value
+
+    # Aggressor filters
+    aggressor: Side # matches all trades with exact aggressor value e.g. Buy
+    aggressor_neq: Side # matches all trades with different aggressor to value
+
+    # Price filters
+    price: String # matches all trades with exact price value
+    price_neq: String # matches all trades with different price to value
+    price_from: String # matches all trades from this price value
+    price_to: String # matches all trades to this price value
+
+    # Size filters
+    size: String # matches all trades with exact size value
+    size_neq: String # matches all trades with different size to value
+    size_from: String # matches all trades from this size value
+    size_to: String # matches all trades to this size value
+
+    # TimeStamp filters
+    timestamp: String # matches all trades with exact timestamp value
+    timestamp_neq: String # matches all trades with different timestamp to value
+    timestamp_from: String # matches all trades from this timestamp value
+    timestamp_to: String # matches all trades to this timestamp value
+}
+
+# Filters for Order queries on VEGA graphql, typically specified by WHERE clause
+input OrderFilter {
+    # logical operators
+    AND: [OrderFilter!] # combines all passed `OrderFilter` objects with logical AND
+    OR: [OrderFilter!] # combines all passed `OrderFilter` objects with logical OR
+
+    # Open only filter
+    open: Boolean # Include only open orders in results (default: False)
+
+    # ID filters
+    id: ID # matches all orders with exact ID value
+    id_neq: ID # matches all orders with different ID to value
+
+    # Market filters
+    market: String # matches all orders with exact market value
+    market_neq: String # matches all orders with different market to value
+
+    # Party filters
+    party: String # matches all orders with exact party value
+    party_neq: String # matches all orders with different party to value
+
+    # Side filters
+    side: Side # matches all orders with exact side value e.g. Buy
+    side_neq: Side # matches all orders with different side to value
+
+    # Price filters
+    price: String # matches all orders with exact price value
+    price_neq: String # matches all orders with different price to value
+    price_from: String # matches all orders from this price value
+    price_to: String # matches all orders to this price value
+
+    # Size filters
+    size: String # matches all orders with exact size value
+    size_neq: String # matches all orders with different size to value
+    size_from: String # matches all orders from this size value
+    size_to: String # matches all orders to this size value
+
+    # Remaining filters
+    remaining: String # matches all orders with exact remaining value
+    remaining_neq: String # matches all orders with different remaining to value
+    remaining_from: String # matches all orders from this remaining value
+    remaining_to: String # matches all orders to this remaining value
+
+    # Type filters
+    type: OrderType # matches all orders with exact type value
+    type_neq: OrderType # matches all orders with different type to value
+    
+    # Timestamp filters
+    timestamp: String # matches all orders with exact timestamp value
+    timestamp_neq: String # matches all orders with different timestamp to value
+    timestamp_from: String # matches all orders from this timestamp value
+    timestamp_to: String # matches all orders to this timestamp value
+
+    # Status filters
+    status: OrderStatus # matches all orders with exact status value
+    status_neq: OrderStatus # matches all orders with different status to value
+}

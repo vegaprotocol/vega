@@ -6,6 +6,7 @@ import (
 	"vega/api"
 	"time"
 	"github.com/pkg/errors"
+	"vega/filters"
 )
 
 type Handlers struct {
@@ -34,11 +35,11 @@ func (h *Handlers) OrdersByMarket(ctx context.Context, request *api.OrdersByMark
 	if request.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
-	limit := defaultLimit
+	orderFilters := &filters.OrderQueryFilters{}
 	if request.Params != nil && request.Params.Limit > 0 {
-		limit = request.Params.Limit
+		orderFilters.Last = &request.Params.Limit
 	}
-	orders, err := h.OrderService.GetByMarket(ctx, request.Market, limit)
+	orders, err := h.OrderService.GetByMarket(ctx, request.Market, orderFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -54,11 +55,11 @@ func (h *Handlers) OrdersByParty(ctx context.Context, request *api.OrdersByParty
 	if request.Party == "" {
 		return nil, errors.New("Party empty or missing")
 	}
-	limit := defaultLimit
+	orderFilters := &filters.OrderQueryFilters{}
 	if request.Params != nil && request.Params.Limit > 0 {
-		limit = request.Params.Limit
+		orderFilters.Last = &request.Params.Limit
 	}
-	orders, err := h.OrderService.GetByParty(ctx, request.Party, limit)
+	orders, err := h.OrderService.GetByParty(ctx, request.Party, orderFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +119,7 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 	}
 
 	interval := request.Interval
-	if interval < 1 {
+	if interval < 2 {
 		interval = 2
 	}
 	res, err := h.TradeService.GetCandles(ctx, market, since, interval)
@@ -156,7 +157,11 @@ func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMark
 	if request.Params != nil && request.Params.Limit > 0 {
 		limit = request.Params.Limit
 	}
-	trades, err := h.TradeService.GetByMarket(ctx, request.Market, limit)
+
+	filters := &filters.TradeQueryFilters{}
+	*filters.Last = limit
+	
+	trades, err := h.TradeService.GetByMarket(ctx, request.Market, filters)
 	if err != nil {
 		return nil, err
 	}

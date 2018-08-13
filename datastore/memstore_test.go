@@ -5,6 +5,7 @@ import (
 	"vega/log"
 	"vega/msg"
 	"github.com/stretchr/testify/assert"
+	"vega/filters"
 )
 
 const testMarket = "market"
@@ -440,8 +441,9 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 			assert.Nil(t, err)
 		}
 
-		params := GetOrderParams{Limit: tt.inLimit}
-		orders, err := newOrderStore.GetByMarket(tt.inMarket, params)
+		filters := &filters.OrderQueryFilters{}
+		filters.Last = &tt.inLimit
+		orders, err := newOrderStore.GetByMarket(tt.inMarket, filters)
 		assert.Nil(t, err)
 		assert.Equal(t, tt.outOrdersCount, len(orders))
 	}
@@ -450,7 +452,7 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 func TestMemStore_GetAllOrdersForNoneExistentMarket(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
 	var newOrderStore = NewOrderStore(&memStore)
-	o, err := newOrderStore.GetByMarket("UNKNOWN", GetOrderParams{Limit: GetParamsLimitDefault})
+	o, err := newOrderStore.GetByMarket("UNKNOWN", nil)
 	assert.Error(t, err, "market does not exist")
 	assert.Nil(t, o)
 }
@@ -514,7 +516,12 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 	err = newTradeStore.Post(tradeB)
 	assert.Nil(t, err)
 
-	trades, err := newTradeStore.GetByMarket(testMarket, GetTradeParams{Limit: 12345})
+	last := uint64(10000)
+	filters := &filters.TradeQueryFilters{}
+	filters.Last = &last
+	
+	trades, err := newTradeStore.GetByMarket(testMarket, filters)
+
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 }
@@ -522,7 +529,7 @@ func TestMemStore_GetAllTradesForMarket(t *testing.T) {
 func TestMemStore_GetAllTradesForNoneExistentMarket(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
 	var newTradeStore = NewTradeStore(&memStore)
-	o, err := newTradeStore.GetByMarket("UNKNOWN", GetTradeParams{Limit: GetParamsLimitDefault})
+	o, err := newTradeStore.GetByMarket("UNKNOWN", nil)
 	assert.Error(t, err, "market does not exist")
 	assert.Nil(t, o)
 }
@@ -700,11 +707,11 @@ func TestMemOrderStore_Parties(t *testing.T) {
 
 	err = newTradeStore.Post(trade)
 
-	ordersAtPartyA, err := newOrderStore.GetByParty(testPartyA, GetOrderParams{})
+	ordersAtPartyA, err := newOrderStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(ordersAtPartyA))
 
-	ordersAtPartyB, err := newOrderStore.GetByParty(testPartyB, GetOrderParams{})
+	ordersAtPartyB, err := newOrderStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(ordersAtPartyB))
 
@@ -716,11 +723,11 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, aggressiveOrder, orderAtPartyB)
 
-	tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, GetTradeParams{})
+	tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(tradesAtPartyA))
 
-	tradesAtPartyB, err := newTradeStore.GetByParty(testPartyB, GetTradeParams{})
+	tradesAtPartyB, err := newTradeStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(tradesAtPartyB))
 
@@ -744,11 +751,11 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	err = newTradeStore.Delete(trade)
 	assert.Nil(t, err)
 
-	tradesAtPartyA, err = newTradeStore.GetByParty(testPartyA, GetTradeParams{})
+	tradesAtPartyA, err = newTradeStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(tradesAtPartyA))
 
-	tradesAtPartyB, err = newTradeStore.GetByParty(testPartyB, GetTradeParams{})
+	tradesAtPartyB, err = newTradeStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(tradesAtPartyB))
 
@@ -756,7 +763,7 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	err = newOrderStore.Delete(passiveOrder)
 	assert.Nil(t, err)
 
-	ordersAtPartyA, err = newOrderStore.GetByParty(testPartyA, GetOrderParams{})
+	ordersAtPartyA, err = newOrderStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(ordersAtPartyA))
 
@@ -764,7 +771,7 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	err = newOrderStore.Delete(aggressiveOrder)
 	assert.Nil(t, err)
 
-	ordersAtPartyB, err = newOrderStore.GetByParty(testPartyB, GetOrderParams{})
+	ordersAtPartyB, err = newOrderStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(ordersAtPartyB))
 }
@@ -821,11 +828,11 @@ func TestAddPartiesOnTheFly(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, aggressiveOrder, orderAtPartyB)
 
-	tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, GetTradeParams{})
+	tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(tradesAtPartyA))
 
-	tradesAtPartyB, err := newTradeStore.GetByParty(testPartyB, GetTradeParams{})
+	tradesAtPartyB, err := newTradeStore.GetByParty(testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(tradesAtPartyB))
 }
@@ -845,7 +852,6 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -861,7 +867,6 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -877,7 +882,6 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 			Remaining:  1000,
 			Type:       msg.Order_GTC,
 			Timestamp:  1,
-			RiskFactor: 20,
 			Status:     msg.Order_Cancelled,
 		},
 	}
@@ -893,7 +897,6 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 			Remaining:  100,
 			Type:       msg.Order_GTC,
 			Timestamp:  1,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -907,148 +910,155 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 	err = newOrderStore.Post(order4)
 	assert.Nil(t, err)
 
-	getOrderParams := GetOrderParams{
-		MarketFilter: &QueryFilter{eq: testMarket},
-		PartyFilter:  &QueryFilter{eq: testPartyA},
+	orderFilters := &filters.OrderQueryFilters{
+		MarketFilter: &filters.QueryFilter{Eq: testMarket},
+		PartyFilter:  &filters.QueryFilter{Eq: testPartyA},
 	}
-	orders, err := newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err := newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
 	// get all orders
-	getOrderParams = GetOrderParams{
-		MarketFilter: &QueryFilter{eq: testMarket},
+	orderFilters = &filters.OrderQueryFilters{
+		MarketFilter: &filters.QueryFilter{Eq: testMarket},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
-	getOrderParams = GetOrderParams{
-		PriceFilter: &QueryFilter{filterRange: &Range{Lower: uint64(150), Upper: uint64(1150)}, kind: "uint64"},
+	orderFilters = &filters.OrderQueryFilters{
+		PriceFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{Lower: uint64(150), Upper: uint64(1150)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
-	getOrderParams = GetOrderParams{
-		PriceFilter: &QueryFilter{filterRange: &Range{Lower: uint64(99), Upper: uint64(200)}, kind: "uint64"},
+	orderFilters = &filters.OrderQueryFilters{
+		PriceFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{Lower: uint64(99), Upper: uint64(200)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
-	getOrderParams = GetOrderParams{
-		RemainingFilter: &QueryFilter{filterRange: &Range{Lower: uint64(1), Upper: uint64(10000)}, kind: "uint64"},
+	orderFilters = &filters.OrderQueryFilters{
+		RemainingFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{Lower: uint64(1), Upper: uint64(10000)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(orders))
 
-	getOrderParams = GetOrderParams{
-		RemainingFilter: &QueryFilter{filterRange: &Range{Lower: uint64(0), Upper: uint64(10000)}, kind: "uint64"},
+	orderFilters = &filters.OrderQueryFilters{
+		RemainingFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{Lower: uint64(0), Upper: uint64(10000)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
-	getOrderParams = GetOrderParams{
-		SizeFilter: &QueryFilter{eq: uint64(900)},
+	orderFilters = &filters.OrderQueryFilters{
+		SizeFilter: &filters.QueryFilter{Eq: uint64(900)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
-	getOrderParams = GetOrderParams{
-		SizeFilter: &QueryFilter{neq: uint64(900)},
+	orderFilters = &filters.OrderQueryFilters{
+		SizeFilter: &filters.QueryFilter{Neq: uint64(900)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
-	getOrderParams = GetOrderParams{
-		TypeFilter: &QueryFilter{eq: msg.Order_GTC},
+	orderFilters = &filters.OrderQueryFilters{
+		TypeFilter: &filters.QueryFilter{Eq: msg.Order_GTC},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
-	getOrderParams = GetOrderParams{
-		TypeFilter: &QueryFilter{neq: msg.Order_GTC},
+	orderFilters = &filters.OrderQueryFilters{
+		TypeFilter: &filters.QueryFilter{Neq: msg.Order_GTC},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
-	getOrderParams = GetOrderParams{
-		PriceFilter: &QueryFilter{eq: uint64(1000)},
+	orderFilters = &filters.OrderQueryFilters{
+		PriceFilter: &filters.QueryFilter{Eq: uint64(1000)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
-	getOrderParams = GetOrderParams{
-		TypeFilter:  &QueryFilter{neq: msg.Order_GTC},
-		PriceFilter: &QueryFilter{eq: uint64(1000)},
+	orderFilters = &filters.OrderQueryFilters{
+		TypeFilter:  &filters.QueryFilter{Neq: msg.Order_GTC},
+		PriceFilter: &filters.QueryFilter{Eq: uint64(1000)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
-	getOrderParams = GetOrderParams{
-		TimestampFilter: &QueryFilter{eq: uint64(1)},
+	orderFilters = &filters.OrderQueryFilters{
+		TimestampFilter: &filters.QueryFilter{Eq: uint64(1)},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(orders))
 
-	getOrderParams = GetOrderParams{
-		TimestampFilter: &QueryFilter{filterRange: &Range{uint64(1), uint64(10)}, kind: "uint64"},
+	orderFilters = &filters.OrderQueryFilters{
+		TimestampFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{uint64(1), uint64(10)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(orders))
 
-	getOrderParams = GetOrderParams{
-		TimestampFilter: &QueryFilter{filterRange: &Range{uint64(5), uint64(10)}, kind: "uint64"},
+	orderFilters = &filters.OrderQueryFilters{
+		TimestampFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{uint64(5), uint64(10)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
-	getOrderParams = GetOrderParams{
-		TimestampFilter: &QueryFilter{filterRange: &Range{uint64(0), uint64(10)}, kind: "uint64"},
+	orderFilters = &filters.OrderQueryFilters{
+		TimestampFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{uint64(0), uint64(10)}, Kind: "uint64"},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
-	getOrderParams = GetOrderParams{
-		StatusFilter: &QueryFilter{eq: msg.Order_Active},
+	orderFilters = &filters.OrderQueryFilters{
+		StatusFilter: &filters.QueryFilter{Eq: msg.Order_Active},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
-	getOrderParams = GetOrderParams{
-		StatusFilter: &QueryFilter{eq: msg.Order_Cancelled},
+	orderFilters = &filters.OrderQueryFilters{
+		StatusFilter: &filters.QueryFilter{Eq: msg.Order_Cancelled},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
-	getOrderParams = GetOrderParams{
-		StatusFilter: &QueryFilter{eq: msg.Order_Expired},
+	orderFilters = &filters.OrderQueryFilters{
+		StatusFilter: &filters.QueryFilter{Eq: msg.Order_Expired},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
-	getOrderParams = GetOrderParams{
-		StatusFilter: &QueryFilter{neq: msg.Order_Expired},
+	orderFilters = &filters.OrderQueryFilters{
+		StatusFilter: &filters.QueryFilter{Neq: msg.Order_Expired},
 	}
-	orders, err = newOrderStore.GetByMarket(testMarket, getOrderParams)
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
+
+	orderFilters = &filters.OrderQueryFilters{
+		IdFilter: &filters.QueryFilter{ Eq: "d41d8cd98f00b204e9800998ecf8427c"},
+	}
+	orders, err = newOrderStore.GetByMarket(testMarket, orderFilters)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(orders))
 }
 
 func TestNewTradeStore_Filtering(t *testing.T) {
@@ -1067,7 +1077,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1083,7 +1092,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1120,7 +1128,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1136,7 +1143,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1173,7 +1179,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1189,7 +1194,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  0,
 			Type:       msg.Order_GTC,
 			Timestamp:  0,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1226,7 +1230,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  1000,
 			Type:       msg.Order_GTC,
 			Timestamp:  1,
-			RiskFactor: 20,
 			Status:     msg.Order_Cancelled,
 		},
 	}
@@ -1242,7 +1245,6 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 			Remaining:  100,
 			Type:       msg.Order_GTC,
 			Timestamp:  1,
-			RiskFactor: 20,
 			Status:     msg.Order_Active,
 		},
 	}
@@ -1269,171 +1271,179 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 	err = newTradeStore.Post(trade4)
 	assert.Nil(t, err)
 
-	getTradeParams := GetTradeParams{
-		MarketFilter: &QueryFilter{eq: testMarket},
+	getTradeParams := &filters.TradeQueryFilters{
+		MarketFilter: &filters.QueryFilter{Eq: testMarket},
 	}
 	trades, err := newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(trades))
 
-	getTradeParams = GetTradeParams{
-		PriceFilter: &QueryFilter{eq: uint64(9000)},
+	getTradeParams = &filters.TradeQueryFilters{
+		PriceFilter: &filters.QueryFilter{Eq: uint64(9000)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		PriceFilter: &QueryFilter{filterRange: &Range{uint64(0), uint64(150)}, kind: "uint64"},
+	getTradeParams = &filters.TradeQueryFilters{
+		PriceFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{uint64(0), uint64(150)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SizeFilter: &QueryFilter{neq: uint64(10000)},
+	getTradeParams = &filters.TradeQueryFilters{
+		SizeFilter: &filters.QueryFilter{Neq: uint64(10000)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SizeFilter: &QueryFilter{filterRange: &Range{uint64(0), uint64(150)}, kind: "uint64"},
+	getTradeParams = &filters.TradeQueryFilters{
+		SizeFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{uint64(0), uint64(150)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SizeFilter: &QueryFilter{filterRange: &Range{uint64(150), uint64(1500)}, kind: "uint64"},
+	getTradeParams = &filters.TradeQueryFilters{
+		SizeFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{uint64(150), uint64(1500)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SizeFilter: &QueryFilter{filterRange: &Range{uint64(1020), uint64(1500)}, kind: "uint64"},
+	getTradeParams = &filters.TradeQueryFilters{
+		SizeFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{uint64(1020), uint64(1500)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SizeFilter: &QueryFilter{eq: uint64(1500)},
+	getTradeParams = &filters.TradeQueryFilters{
+		SizeFilter: &filters.QueryFilter{Eq: uint64(1500)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SizeFilter: &QueryFilter{eq: uint64(1050)},
+	getTradeParams = &filters.TradeQueryFilters{
+		SizeFilter: &filters.QueryFilter{Eq: uint64(1050)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		BuyerFilter: &QueryFilter{eq: testPartyA},
+	getTradeParams = &filters.TradeQueryFilters{
+		BuyerFilter: &filters.QueryFilter{Eq: testPartyA},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
-		BuyerFilter: &QueryFilter{eq: testPartyB},
+	getTradeParams = &filters.TradeQueryFilters{
+		BuyerFilter: &filters.QueryFilter{Eq: testPartyB},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		BuyerFilter: &QueryFilter{neq: testPartyA},
+	getTradeParams = &filters.TradeQueryFilters{
+		BuyerFilter: &filters.QueryFilter{Neq: testPartyA},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		BuyerFilter: &QueryFilter{neq: testPartyB},
+	getTradeParams = &filters.TradeQueryFilters{
+		BuyerFilter: &filters.QueryFilter{Neq: testPartyB},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SellerFilter: &QueryFilter{eq: testPartyA},
+	getTradeParams = &filters.TradeQueryFilters{
+		SellerFilter: &filters.QueryFilter{Eq: testPartyA},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SellerFilter: &QueryFilter{eq: testPartyB},
+	getTradeParams = &filters.TradeQueryFilters{
+		SellerFilter: &filters.QueryFilter{Eq: testPartyB},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SellerFilter: &QueryFilter{neq: testPartyA},
+	getTradeParams = &filters.TradeQueryFilters{
+		SellerFilter: &filters.QueryFilter{Neq: testPartyA},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SellerFilter: &QueryFilter{neq: testPartyB},
+	getTradeParams = &filters.TradeQueryFilters{
+		SellerFilter: &filters.QueryFilter{Neq: testPartyB},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SellerFilter:    &QueryFilter{eq: testPartyB},
-		AggressorFilter: &QueryFilter{eq: msg.Side_Buy},
+	getTradeParams = &filters.TradeQueryFilters{
+		SellerFilter:    &filters.QueryFilter{Eq: testPartyB},
+		AggressorFilter: &filters.QueryFilter{Eq: msg.Side_Buy},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
-		SellerFilter:    &QueryFilter{eq: testPartyB},
-		AggressorFilter: &QueryFilter{eq: msg.Side_Sell},
+	getTradeParams = &filters.TradeQueryFilters{
+		SellerFilter:    &filters.QueryFilter{Eq: testPartyB},
+		AggressorFilter: &filters.QueryFilter{Eq: msg.Side_Sell},
+		Operator:        filters.QueryFilterOperatorOr,
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		AggressorFilter: &QueryFilter{eq: msg.Side_Sell},
+	getTradeParams = &filters.TradeQueryFilters{
+		AggressorFilter: &filters.QueryFilter{Eq: msg.Side_Sell},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		TimestampFilter: &QueryFilter{eq: uint64(0)},
+	getTradeParams = &filters.TradeQueryFilters{
+		TimestampFilter: &filters.QueryFilter{Eq: uint64(0)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
-		TimestampFilter: &QueryFilter{neq: uint64(0)},
+	getTradeParams = &filters.TradeQueryFilters{
+		TimestampFilter: &filters.QueryFilter{Neq: uint64(0)},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 
-	getTradeParams = GetTradeParams{
-		TimestampFilter: &QueryFilter{filterRange: &Range{uint64(0), uint64(0)}, kind: "uint64"},
+	getTradeParams = &filters.TradeQueryFilters{
+		TimestampFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{uint64(0), uint64(0)}, Kind: "uint64"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 
-	getTradeParams = GetTradeParams{
-		TimestampFilter: &QueryFilter{filterRange: &Range{uint64(1), uint64(1000)}, kind: "uint64"},
+	getTradeParams = &filters.TradeQueryFilters{
+		TimestampFilter: &filters.QueryFilter{FilterRange: &filters.QueryFilterRange{uint64(1), uint64(1000)}, Kind: "uint64"},
+	}
+	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(trades))
+
+	getTradeParams = &filters.TradeQueryFilters{
+		IdFilter: &filters.QueryFilter{ Eq: "trade-id-3"},
 	}
 	trades, err = newTradeStore.GetByMarket(testMarket, getTradeParams)
 	assert.Nil(t, err)

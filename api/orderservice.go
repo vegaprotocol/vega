@@ -8,16 +8,17 @@ import (
 	"vega/msg"
 	"github.com/pkg/errors"
 	"vega/log"
+	"vega/filters"
 )
 
 type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
-	ObserveOrders(ctx context.Context) (orders <-chan msg.Order, ref uint64)
+	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan msg.Order, ref uint64)
 
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
-	GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error)
-	GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error)
+	GetByMarket(ctx context.Context, market string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
+	GetByParty(ctx context.Context, party string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 
@@ -48,7 +49,6 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	order.Status = msg.Order_Active
 	order.Type = msg.Order_GTC // VEGA only supports GTC at present
 	order.Timestamp = 0
-	order.RiskFactor = 0
 
 	// TODO validate
 
@@ -76,16 +76,17 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
 }
 
-func (p *orderService) GetByMarket(ctx context.Context, market string, limit uint64) (orders []*msg.Order, err error) {
-	o, err := p.orderStore.GetByMarket(market, datastore.GetOrderParams{Limit: limit})
+func (p *orderService) GetByMarket(ctx context.Context, market string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error) {
+	o, err := p.orderStore.GetByMarket(market, filters)
 	if err != nil {
 		return nil, err
 	}
+	filterOpen := filters != nil && filters.Open == true
 	result := make([]*msg.Order, 0)
 	for _, order := range o {
-		//if order.Remaining == 0 {
-		//	continue
-		//}
+		if filterOpen && (order.Remaining == 0 || order.Status != msg.Order_Active) {
+			continue
+		}
 		o := &msg.Order{
 			Id:        order.Id,
 			Market:    order.Market,
@@ -97,23 +98,23 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, limit uin
 			Timestamp: order.Timestamp,
 			Type:      order.Type,
 			Status:    order.Status,
-			RiskFactor:order.RiskFactor,
 		}
 		result = append(result, o)
 	}
 	return result, err
 }
 
-func (p *orderService) GetByParty(ctx context.Context, party string, limit uint64) (orders []*msg.Order, err error) {
-	o, err := p.orderStore.GetByParty(party, datastore.GetOrderParams{Limit: limit})
+func (p *orderService) GetByParty(ctx context.Context, party string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error) {
+	o, err := p.orderStore.GetByParty(party, filters)
 	if err != nil {
 		return nil, err
 	}
+	filterOpen := filters != nil && filters.Open == true
 	result := make([]*msg.Order, 0)
 	for _, order := range o {
-		//if order.Remaining == 0 {
-		//	continue
-		//}
+		if filterOpen && (order.Remaining == 0 || order.Status != msg.Order_Active) {
+			continue
+		}
 		o := &msg.Order{
 			Id:        order.Id,
 			Market:    order.Market,
@@ -125,7 +126,6 @@ func (p *orderService) GetByParty(ctx context.Context, party string, limit uint6
 			Timestamp: order.Timestamp,
 			Type:      order.Type,
 			Status:    order.Status,
-			RiskFactor:order.RiskFactor,
 		}
 		result = append(result, o)
 	}
@@ -160,7 +160,7 @@ func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (o
 	return p.orderStore.GetMarketDepth(marketName)
 }
 
-func (p *orderService) ObserveOrders(ctx context.Context) (<-chan msg.Order, uint64) {
+func (p *orderService) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan msg.Order, uint64) {
 	orders := make(chan msg.Order)
 	internal := make(chan []datastore.Order)
 	ref := p.orderStore.Subscribe(internal)
@@ -178,6 +178,12 @@ func (p *orderService) ObserveOrders(ctx context.Context) (<-chan msg.Order, uin
 	go func(id uint64) {
 		for v := range internal {
 			for _, item := range v {
+				if market != nil && item.Market != *market {
+					continue
+				}
+				if party != nil && item.Party != *party {
+					continue
+				}
 				orders <- *item.ToProtoMessage()
 			}
 		}

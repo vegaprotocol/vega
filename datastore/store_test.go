@@ -38,4 +38,8 @@ func TestMemoryStoreProvider_Init(t *testing.T) {
 	trade, err := memStoreProvider.TradeStore().GetByMarketAndId("market", "trade-id")
 	assert.Nil(t, err)
 	assert.Equal(t, uint64(23489), trade.Price)
+
+	parties, err := memStoreProvider.PartyStore().GetAllParties()
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(parties))
 }

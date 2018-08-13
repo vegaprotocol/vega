@@ -1,6 +1,9 @@
 package datastore
 
-import "vega/msg"
+import (
+	"vega/msg"
+	"vega/filters"
+)
 
 type TradeStore interface {
 
@@ -9,11 +12,11 @@ type TradeStore interface {
 	Notify() error
 
 	// GetByMarket retrieves trades for a given market.
-	GetByMarket(market string, params GetTradeParams) ([]Trade, error)
+	GetByMarket(market string, params *filters.TradeQueryFilters) ([]Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByMarketAndId(market string, id string) (Trade, error)
 	// GetByParty retrieves trades for a given party.
-	GetByParty(party string, params GetTradeParams) ([]Trade, error)
+	GetByParty(party string, params *filters.TradeQueryFilters) ([]Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (Trade, error)
 	// Post creates a new trade in the store.
@@ -40,11 +43,11 @@ type OrderStore interface {
 	Notify() error
 	
 	// GetByMarket retrieves all orders for a given market.
-	GetByMarket(market string, params GetOrderParams) ([]Order, error)
+	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]Order, error)
 	// Get retrieves an order for a given market and id.
 	GetByMarketAndId(market string, id string) (Order, error)
 	// GetByParty retrieves trades for a given party.
-	GetByParty(party string, params GetOrderParams) ([]Order, error)
+	GetByParty(party string, filters *filters.OrderQueryFilters) ([]Order, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (Order, error)
 	// Post creates a new order in the store.

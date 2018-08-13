@@ -307,7 +307,6 @@ func TestPositions(t *testing.T) {
 	err = storage.TradeStore().Post(*trade)
 	assert.Nil(t, err)
 
-
 	// two trades of 500 contracts done at the same price of 100
 	positions, err := tradeService.GetPositionsByParty(ctx, testPartyA)
 	assert.Nil(t, err)

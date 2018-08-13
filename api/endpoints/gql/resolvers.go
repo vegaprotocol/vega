@@ -6,10 +6,10 @@ import (
 	"vega/msg"
 	"errors"
 	"strconv"
-	"fmt"
 	"time"
 	"vega/log"
 	"github.com/satori/go.uuid"
+	"fmt"
 )
 
 type resolverRoot struct {
@@ -75,39 +75,36 @@ func (r *MyQueryResolver) Vega(ctx context.Context) (Vega, error) {
 
 // END: Query Resolver
 
+
+
+// BEGIN: Root Resolver
+
 type MyVegaResolver resolverRoot
 
 func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error) {
 	if name == nil {
-		return nil, errors.New("all markets for VEGA platform not implemented")
+		return nil, errors.New("all markets on VEGA query not implemented")
 	}
 
-	// Look for orders for market (will validate market internally)
-	orders, err := r.orderService.GetByMarket(ctx, *name, 65536)
+	// Todo(cdm): MarketStore --> check if market exists via dedicated marketstore...
+	existing, err := r.orderService.GetMarkets(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	trades, err := r.tradeService.GetByMarket(ctx, *name, 65536)
-	if err != nil {
-		return nil, err
+	found := false
+	for _, m := range existing {
+		if *name == m {
+		   found = true
+		   break
+		} 
 	}
-
-	valOrders := make([]msg.Order, 0)
-	for _, v := range orders {
-		valOrders = append(valOrders, *v)
+	if !found {
+		return nil, errors.New(fmt.Sprintf("market %s does not exist", *name))
 	}
-
-	valTrades := make([]msg.Trade, 0)
-	for _, v := range trades {
-		valTrades = append(valTrades, *v)
-	}
-
+	
 	var markets = make([]Market, 0)
 	var market = Market{
 		Name: *name,
-		Orders: valOrders,
-		Trades: valTrades,
 	}
 	markets = append(markets, market)
 	
@@ -116,43 +113,96 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 
 func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {
 	if name == nil {
-		return nil, errors.New("all parties for VEGA platform not implemented")
+		return nil, errors.New("all parties on VEGA query not implemented")
 	}
 
-	// Look for orders for party (will validate market internally)
-	orders, err := r.orderService.GetByParty(ctx, *name, 1000)
-	if err != nil {
-		return nil, err
-	}
-
-	valOrders := make([]msg.Order, 0)
-	for _, v := range orders {
-		valOrders = append(valOrders, *v)
-	}
+	// Todo(cdm): PartyStore --> check if party exists...
 	var parties = make([]Party, 0)
 	var party = Party{
 		Name: *name,
-		Orders: valOrders,
 	}
 	parties = append(parties, party)
 	
 	return parties, nil
 }
 
+// END: Root Resolver
+
+
 // BEGIN: Market Resolver
 
 type MyMarketResolver resolverRoot
 
-func (r *MyMarketResolver) Depth(ctx context.Context, obj *Market) (msg.MarketDepth, error) {
+func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
+	where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error) {
+
+	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := r.orderService.GetByMarket(ctx, market.Name, queryFilters)
+	if err != nil {
+		return nil, err
+	}
+	valOrders := make([]msg.Order, 0)
+	for _, v := range orders {
+		valOrders = append(valOrders, *v)
+	}
+	return valOrders, nil
+}
+
+func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
+	where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error) {
+
+	queryFilters, err := buildTradeQueryFilters(where, skip, first, last)
+	if err != nil {
+		return nil, err
+	}
+	trades, err := r.tradeService.GetByMarket(ctx, market.Name, queryFilters)
+	if err != nil {
+		return nil, err
+	}
+	valTrades := make([]msg.Trade, 0)
+	for _, v := range trades {
+		valTrades = append(valTrades, *v)
+	}
+	return valTrades, nil
+}
+
+func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (msg.MarketDepth, error) {
 
 	// Look for market depth for the given market (will validate market internally)
 	// FYI: Market depth is also known as OrderBook depth within the matching-engine
-	depth, err := r.orderService.GetMarketDepth(ctx, obj.Name)
+	depth, err := r.orderService.GetMarketDepth(ctx, market.Name)
 	if err != nil {
 		return msg.MarketDepth{}, err
 	}
 
 	return *depth, nil
+}
+
+func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
+	last int, interval int) ([]msg.Candle, error) {
+
+	// Validate params
+	if interval < 2 {
+		return nil, errors.New("interval must be equal to or greater than 2")
+	}
+	if last < 1 {
+		return nil, errors.New("last must be equal to or greater than 1")
+	}
+
+	res, err := r.tradeService.GetLastCandles(ctx, market.Name, uint64(last), uint64(interval))
+	if err != nil {
+		return nil, err
+	}
+
+	valCandles := make([]msg.Candle, 0)
+	for _, v := range res.Candles {
+		valCandles = append(valCandles, *v)
+	}
+
+	return valCandles, nil
 }
 
 // END: Market Resolver
@@ -161,6 +211,24 @@ func (r *MyMarketResolver) Depth(ctx context.Context, obj *Market) (msg.MarketDe
 // BEGIN: Party Resolver
 
 type MyPartyResolver resolverRoot
+
+func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
+	where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error) {
+
+	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := r.orderService.GetByParty(ctx, party.Name, queryFilters)
+	if err != nil {
+		return nil, err
+	}
+	valOrders := make([]msg.Order, 0)
+	for _, v := range orders {
+		valOrders = append(valOrders, *v)
+	}
+	return valOrders, nil
+}
 
 func (r *MyPartyResolver) Positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error) {
 	positions, err := r.tradeService.GetPositionsByParty(ctx, obj.Name)
@@ -371,12 +439,12 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	res := PreConsensus{}
 
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
-	p, err := SafeStringUint64(price)
+	p, err := safeStringUint64(price)
 	if err != nil {
 		return res, err
 	}
 	order.Price = p
-	s, err := SafeStringUint64(size)
+	s, err := safeStringUint64(size)
 	if err != nil {
 		return res, err
 	}
@@ -389,29 +457,18 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 		return res, errors.New("party missing or empty")
 	}
 	order.Party = party
-	switch type_ {
-		case OrderTypeGtc:
-			order.Type = msg.Order_GTC
-		case OrderTypeGtt:
-			order.Type = msg.Order_GTT
-		case OrderTypeEne:
-			order.Type = msg.Order_ENE
-		case OrderTypeFok:
-			order.Type = msg.Order_FOK
-		default:
-			return res, errors.New(fmt.Sprintf("unknown type: %s", type_.String()))
+	order.Type, err = parseOrderType(&type_)
+	if err != nil {
+		return res, err
 	}
-	switch side {
-		case SideBuy:
-			order.Side = msg.Side_Buy
-		case SideSell:
-			order.Side = msg.Side_Sell
+	order.Side, err = parseSide(&side)
+	if err != nil {
+		return res, err
 	}
-
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	accepted, err := r.orderService.CreateOrder(ctx, order)
 	if err != nil {
-		fmt.Printf("err: %+v", err)
+		log.Errorf("error creating order via rpc client and graph-ql", err)
 		return res, err
 	}
 
@@ -455,13 +512,23 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 type MySubscriptionResolver resolverRoot
 
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error) {
-	c, ref := r.orderService.ObserveOrders(ctx)
+	// Validate market, and todo future Party (when party store exists)
+	err := r.validateMarket(ctx, market)
+	if err != nil {
+		return nil, err
+	}
+	c, ref := r.orderService.ObserveOrders(ctx, market, party)
 	log.Debugf("GraphQL Orders -> New subscriber: %d", ref)
 	return c, nil
 }
 
 func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error) {
-	c, ref := r.tradeService.ObserveTrades(ctx)
+	// Validate market, and todo future Party (when party store exists)
+	err := r.validateMarket(ctx, market)
+	if err != nil {
+		return nil, err
+	}
+	c, ref := r.tradeService.ObserveTrades(ctx, market, party)
 	log.Debugf("GraphQL Trades -> New subscriber: %d", ref)
 	return c, nil
 }
@@ -473,6 +540,11 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 }
 
 func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error) {
+	// Validate market
+	err := r.validateMarket(ctx, &market)
+	if err != nil {
+		return nil, err
+	}
 	c, ref := r.orderService.ObserveMarketDepth(ctx, market)
 	log.Debugf("GraphQL Market Depth -> New subscriber: %d", ref)
 	return c, nil
@@ -482,13 +554,21 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	events := make(chan msg.Candle, 0)
 	connected := true
 
+	if interval < 2 {
+		return nil, errors.New("interval must be equal to or greater than 2")
+	}
+	err := r.validateMarket(ctx, &market)
+	if err != nil {
+		return nil, err
+	}
+
 	id := uuid.NewV4().String()
-	log.Debugf("Candles subscriber connected: ", id)
+	log.Debugf("Candles subscriber connected: %s", id)
 
 	go func(ref string) {
 		<-ctx.Done()
 		connected = false
-		log.Debugf("Candles subscriber closed connection:", ref)
+		log.Debugf("Candles subscriber closed connection: %s", ref)
 	}(id)
 
 	go func(events chan msg.Candle) {
@@ -526,8 +606,31 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	return events, nil
 }
 
+func (r *MySubscriptionResolver) validateMarket(ctx context.Context, market *string) error {
+	// todo(cdm): change this when we have a marketservice/marketstore
+	if market != nil {
+		if len(*market) == 0 {
+			return errors.New("market must not be empty")
+		}
+		markets, err := r.orderService.GetMarkets(ctx)
+		if err != nil {
+			return err
+		}
+		// Scan all markets for a match
+		found := false
+		for _, v := range markets {
+			if v == *market {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.New(fmt.Sprintf("market %s not found", *market))
+		}
+	}
+	return nil
+}
+
 // END: Subscription Resolver
-
-
 
 

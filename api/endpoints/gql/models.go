@@ -10,10 +10,44 @@ import (
 )
 
 type Market struct {
-	Name   string          `json:"name"`
-	Orders []msg.Order     `json:"orders"`
-	Trades []msg.Trade     `json:"trades"`
-	Depth  msg.MarketDepth `json:"depth"`
+	Name    string          `json:"name"`
+	Orders  []msg.Order     `json:"orders"`
+	Trades  []msg.Trade     `json:"trades"`
+	Depth   msg.MarketDepth `json:"depth"`
+	Candles []msg.Candle    `json:"candles"`
+}
+type OrderFilter struct {
+	AND            []OrderFilter `json:"AND"`
+	OR             []OrderFilter `json:"OR"`
+	Open           *bool         `json:"open"`
+	ID             *string       `json:"id"`
+	Id_neq         *string       `json:"id_neq"`
+	Market         *string       `json:"market"`
+	Market_neq     *string       `json:"market_neq"`
+	Party          *string       `json:"party"`
+	Party_neq      *string       `json:"party_neq"`
+	Side           *Side         `json:"side"`
+	Side_neq       *Side         `json:"side_neq"`
+	Price          *string       `json:"price"`
+	Price_neq      *string       `json:"price_neq"`
+	Price_from     *string       `json:"price_from"`
+	Price_to       *string       `json:"price_to"`
+	Size           *string       `json:"size"`
+	Size_neq       *string       `json:"size_neq"`
+	Size_from      *string       `json:"size_from"`
+	Size_to        *string       `json:"size_to"`
+	Remaining      *string       `json:"remaining"`
+	Remaining_neq  *string       `json:"remaining_neq"`
+	Remaining_from *string       `json:"remaining_from"`
+	Remaining_to   *string       `json:"remaining_to"`
+	Type           *OrderType    `json:"type"`
+	Type_neq       *OrderType    `json:"type_neq"`
+	Timestamp      *string       `json:"timestamp"`
+	Timestamp_neq  *string       `json:"timestamp_neq"`
+	Timestamp_from *string       `json:"timestamp_from"`
+	Timestamp_to   *string       `json:"timestamp_to"`
+	Status         *OrderStatus  `json:"status"`
+	Status_neq     *OrderStatus  `json:"status_neq"`
 }
 type Party struct {
 	Name      string               `json:"name"`
@@ -22,6 +56,32 @@ type Party struct {
 }
 type PreConsensus struct {
 	Accepted bool `json:"accepted"`
+}
+type TradeFilter struct {
+	AND            []TradeFilter `json:"AND"`
+	OR             []TradeFilter `json:"OR"`
+	ID             *string       `json:"id"`
+	Id_neq         *string       `json:"id_neq"`
+	Market         *string       `json:"market"`
+	Market_neq     *string       `json:"market_neq"`
+	Buyer          *string       `json:"buyer"`
+	Buyer_neq      *string       `json:"buyer_neq"`
+	Seller         *string       `json:"seller"`
+	Seller_neq     *string       `json:"seller_neq"`
+	Aggressor      *Side         `json:"aggressor"`
+	Aggressor_neq  *Side         `json:"aggressor_neq"`
+	Price          *string       `json:"price"`
+	Price_neq      *string       `json:"price_neq"`
+	Price_from     *string       `json:"price_from"`
+	Price_to       *string       `json:"price_to"`
+	Size           *string       `json:"size"`
+	Size_neq       *string       `json:"size_neq"`
+	Size_from      *string       `json:"size_from"`
+	Size_to        *string       `json:"size_to"`
+	Timestamp      *string       `json:"timestamp"`
+	Timestamp_neq  *string       `json:"timestamp_neq"`
+	Timestamp_from *string       `json:"timestamp_from"`
+	Timestamp_to   *string       `json:"timestamp_to"`
 }
 type Vega struct {
 	Markets []Market `json:"markets"`

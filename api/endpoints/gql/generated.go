@@ -33,7 +33,10 @@ type Resolvers interface {
 	Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 	Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 
+	Market_orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
+	Market_trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
 	Market_depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
+	Market_candles(ctx context.Context, obj *Market, last int, interval int) ([]msg.Candle, error)
 
 	MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	MarketDepth_sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
@@ -50,6 +53,7 @@ type Resolvers interface {
 	Order_timestamp(ctx context.Context, obj *msg.Order) (string, error)
 	Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
 
+	Party_orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
 	Party_positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error)
 	Position_market(ctx context.Context, obj *msg.MarketPosition) (Market, error)
 	Position_realisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error)
@@ -107,7 +111,10 @@ type CandleResolver interface {
 	CloseBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 }
 type MarketResolver interface {
+	Orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
+	Trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
 	Depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
+	Candles(ctx context.Context, obj *Market, last int, interval int) ([]msg.Candle, error)
 }
 type MarketDepthResolver interface {
 	Buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
@@ -129,6 +136,7 @@ type OrderResolver interface {
 	Status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
 }
 type PartyResolver interface {
+	Orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
 	Positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error)
 }
 type PositionResolver interface {
@@ -203,8 +211,20 @@ func (s shortMapper) Candle_closeBlockNumber(ctx context.Context, obj *msg.Candl
 	return s.r.Candle().CloseBlockNumber(ctx, obj)
 }
 
+func (s shortMapper) Market_orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error) {
+	return s.r.Market().Orders(ctx, obj, where, skip, first, last)
+}
+
+func (s shortMapper) Market_trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error) {
+	return s.r.Market().Trades(ctx, obj, where, skip, first, last)
+}
+
 func (s shortMapper) Market_depth(ctx context.Context, obj *Market) (msg.MarketDepth, error) {
 	return s.r.Market().Depth(ctx, obj)
+}
+
+func (s shortMapper) Market_candles(ctx context.Context, obj *Market, last int, interval int) ([]msg.Candle, error) {
+	return s.r.Market().Candles(ctx, obj, last, interval)
 }
 
 func (s shortMapper) MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error) {
@@ -253,6 +273,10 @@ func (s shortMapper) Order_timestamp(ctx context.Context, obj *msg.Order) (strin
 
 func (s shortMapper) Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error) {
 	return s.r.Order().Status(ctx, obj)
+}
+
+func (s shortMapper) Party_orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error) {
+	return s.r.Party().Orders(ctx, obj, where, skip, first, last)
 }
 
 func (s shortMapper) Party_positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error) {
@@ -716,6 +740,8 @@ func (ec *executionContext) _Market(ctx context.Context, sel []query.Selection, 
 			out.Values[i] = ec._Market_trades(ctx, field, obj)
 		case "depth":
 			out.Values[i] = ec._Market_depth(ctx, field, obj)
+		case "candles":
+			out.Values[i] = ec._Market_candles(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -736,43 +762,203 @@ func (ec *executionContext) _Market_name(ctx context.Context, field graphql.Coll
 }
 
 func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Market"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Orders
-	arr1 := graphql.Array{}
-	for idx1 := range res {
-		arr1 = append(arr1, func() graphql.Marshaler {
-			rctx := graphql.GetResolverContext(ctx)
-			rctx.PushIndex(idx1)
-			defer rctx.Pop()
-			return ec._Order(ctx, field.Selections, &res[idx1])
-		}())
+	args := map[string]interface{}{}
+	var arg0 *OrderFilter
+	if tmp, ok := field.Args["where"]; ok {
+		var err error
+		var ptr1 OrderFilter
+		if tmp != nil {
+			ptr1, err = UnmarshalOrderFilter(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
 	}
-	return arr1
+	args["where"] = arg0
+	var arg1 *int
+	if tmp, ok := field.Args["skip"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := field.Args["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := field.Args["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["last"] = arg3
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Market",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Market_orders(ctx, obj, args["where"].(*OrderFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Order)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Order(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
 }
 
 func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Market"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Trades
-	arr1 := graphql.Array{}
-	for idx1 := range res {
-		arr1 = append(arr1, func() graphql.Marshaler {
-			rctx := graphql.GetResolverContext(ctx)
-			rctx.PushIndex(idx1)
-			defer rctx.Pop()
-			return ec._Trade(ctx, field.Selections, &res[idx1])
-		}())
+	args := map[string]interface{}{}
+	var arg0 *TradeFilter
+	if tmp, ok := field.Args["where"]; ok {
+		var err error
+		var ptr1 TradeFilter
+		if tmp != nil {
+			ptr1, err = UnmarshalTradeFilter(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
 	}
-	return arr1
+	args["where"] = arg0
+	var arg1 *int
+	if tmp, ok := field.Args["skip"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := field.Args["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := field.Args["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["last"] = arg3
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Market",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Market_trades(ctx, obj, args["where"].(*TradeFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Trade)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Trade(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
 }
 
 func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
@@ -802,6 +988,66 @@ func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.Col
 		}
 		res := resTmp.(msg.MarketDepth)
 		return ec._MarketDepth(ctx, field.Selections, &res)
+	})
+}
+
+func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := field.Args["last"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["last"] = arg0
+	var arg1 int
+	if tmp, ok := field.Args["interval"]; ok {
+		var err error
+		arg1, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["interval"] = arg1
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Market",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Market_candles(ctx, obj, args["last"].(int), args["interval"].(int))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Candle)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Candle(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
 	})
 }
 
@@ -1426,23 +1672,103 @@ func (ec *executionContext) _Party_name(ctx context.Context, field graphql.Colle
 }
 
 func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.CollectedField, obj *Party) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Party"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := obj.Orders
-	arr1 := graphql.Array{}
-	for idx1 := range res {
-		arr1 = append(arr1, func() graphql.Marshaler {
-			rctx := graphql.GetResolverContext(ctx)
-			rctx.PushIndex(idx1)
-			defer rctx.Pop()
-			return ec._Order(ctx, field.Selections, &res[idx1])
-		}())
+	args := map[string]interface{}{}
+	var arg0 *OrderFilter
+	if tmp, ok := field.Args["where"]; ok {
+		var err error
+		var ptr1 OrderFilter
+		if tmp != nil {
+			ptr1, err = UnmarshalOrderFilter(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
 	}
-	return arr1
+	args["where"] = arg0
+	var arg1 *int
+	if tmp, ok := field.Args["skip"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := field.Args["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := field.Args["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["last"] = arg3
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Party",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Party_orders(ctx, obj, args["where"].(*OrderFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Order)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Order(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
 }
 
 func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.CollectedField, obj *Party) graphql.Marshaler {
@@ -3345,6 +3671,651 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	return ec.___Type(ctx, field.Selections, res)
 }
 
+func UnmarshalOrderFilter(v interface{}) (OrderFilter, error) {
+	var it OrderFilter
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "AND":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				}
+			}
+			it.AND = make([]OrderFilter, len(rawIf1))
+			for idx1 := range rawIf1 {
+				it.AND[idx1], err = UnmarshalOrderFilter(rawIf1[idx1])
+			}
+			if err != nil {
+				return it, err
+			}
+		case "OR":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				}
+			}
+			it.OR = make([]OrderFilter, len(rawIf1))
+			for idx1 := range rawIf1 {
+				it.OR[idx1], err = UnmarshalOrderFilter(rawIf1[idx1])
+			}
+			if err != nil {
+				return it, err
+			}
+		case "open":
+			var err error
+			var ptr1 bool
+			if v != nil {
+				ptr1, err = graphql.UnmarshalBoolean(v)
+				it.Open = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "id":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalID(v)
+				it.ID = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "id_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalID(v)
+				it.Id_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "market":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Market = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "market_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Market_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "party":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Party = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "party_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Party_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "side":
+			var err error
+			var ptr1 Side
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Side = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "side_neq":
+			var err error
+			var ptr1 Side
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Side_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "remaining":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Remaining = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "remaining_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Remaining_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "remaining_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Remaining_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "remaining_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Remaining_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "type":
+			var err error
+			var ptr1 OrderType
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Type = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "type_neq":
+			var err error
+			var ptr1 OrderType
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Type_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "status":
+			var err error
+			var ptr1 OrderStatus
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Status = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "status_neq":
+			var err error
+			var ptr1 OrderStatus
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Status_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalTradeFilter(v interface{}) (TradeFilter, error) {
+	var it TradeFilter
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "AND":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				}
+			}
+			it.AND = make([]TradeFilter, len(rawIf1))
+			for idx1 := range rawIf1 {
+				it.AND[idx1], err = UnmarshalTradeFilter(rawIf1[idx1])
+			}
+			if err != nil {
+				return it, err
+			}
+		case "OR":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				}
+			}
+			it.OR = make([]TradeFilter, len(rawIf1))
+			for idx1 := range rawIf1 {
+				it.OR[idx1], err = UnmarshalTradeFilter(rawIf1[idx1])
+			}
+			if err != nil {
+				return it, err
+			}
+		case "id":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalID(v)
+				it.ID = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "id_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalID(v)
+				it.Id_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "market":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Market = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "market_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Market_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "buyer":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Buyer = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "buyer_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Buyer_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "seller":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Seller = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "seller_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Seller_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "aggressor":
+			var err error
+			var ptr1 Side
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Aggressor = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "aggressor_neq":
+			var err error
+			var ptr1 Side
+			if v != nil {
+				err = (&ptr1).UnmarshalGQL(v)
+				it.Aggressor_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "price_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Price_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "size_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Size_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp_neq":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp_neq = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp_from":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp_from = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "timestamp_to":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Timestamp_to = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) introspectSchema() *introspection.Schema {
 	return introspection.WrapSchema(parsedSchema)
 }
@@ -3372,7 +4343,8 @@ scalar DateTime
 
 schema {
     query: Query,
-    subscription: Subscription
+    subscription: Subscription,
+    mutation: Mutation
 }
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
@@ -3429,13 +4401,16 @@ type Market {
     name: String!
 
     # Orders on a market
-    orders: [Order!]
+    orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
 
     # Trades on a market
-    trades: [Trade!]
+    trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
 
     # Current depth on the orderbook for this market
     depth: MarketDepth!
+
+    # Candles on a market
+    candles (last: Int!, interval: Int!): [Candle!]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
@@ -3503,7 +4478,7 @@ type Party {
     name: String!
 
     # Orders relating to a party
-    orders: [Order!]
+    orders(where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
 
     # Trading positions relating to a party
     positions: [Position!]
@@ -3652,5 +4627,105 @@ enum ValueDirection {
     Negative
 }
 
+# Filters for Trade queries on VEGA graphql, typically specified by WHERE clause
+input TradeFilter {
+    # logical operators
+    AND: [TradeFilter!] # combines all passed ` + "`" + `TradeFilter` + "`" + ` objects with logical AND
+    OR: [TradeFilter!] # combines all passed ` + "`" + `TradeFilter` + "`" + ` objects with logical OR
 
-`)
+    # ID filters
+    id: ID # matches all trades with exact ID value
+    id_neq: ID # matches all trades with different ID to value
+
+    # Market filters
+    market: String # matches all trades with exact market value
+    market_neq: String # matches all trades with different market to value
+    
+    # Buyer filters
+    buyer: String # matches all trades with exact buyer value
+    buyer_neq: String # matches all trades with different buyer to value
+
+    # Buyer filters
+    seller: String # matches all trades with exact seller value
+    seller_neq: String # matches all trades with different seller to value
+
+    # Aggressor filters
+    aggressor: Side # matches all trades with exact aggressor value e.g. Buy
+    aggressor_neq: Side # matches all trades with different aggressor to value
+
+    # Price filters
+    price: String # matches all trades with exact price value
+    price_neq: String # matches all trades with different price to value
+    price_from: String # matches all trades from this price value
+    price_to: String # matches all trades to this price value
+
+    # Size filters
+    size: String # matches all trades with exact size value
+    size_neq: String # matches all trades with different size to value
+    size_from: String # matches all trades from this size value
+    size_to: String # matches all trades to this size value
+
+    # TimeStamp filters
+    timestamp: String # matches all trades with exact timestamp value
+    timestamp_neq: String # matches all trades with different timestamp to value
+    timestamp_from: String # matches all trades from this timestamp value
+    timestamp_to: String # matches all trades to this timestamp value
+}
+
+# Filters for Order queries on VEGA graphql, typically specified by WHERE clause
+input OrderFilter {
+    # logical operators
+    AND: [OrderFilter!] # combines all passed ` + "`" + `OrderFilter` + "`" + ` objects with logical AND
+    OR: [OrderFilter!] # combines all passed ` + "`" + `OrderFilter` + "`" + ` objects with logical OR
+
+    # Open only filter
+    open: Boolean # Include only open orders in results (default: False)
+
+    # ID filters
+    id: ID # matches all orders with exact ID value
+    id_neq: ID # matches all orders with different ID to value
+
+    # Market filters
+    market: String # matches all orders with exact market value
+    market_neq: String # matches all orders with different market to value
+
+    # Party filters
+    party: String # matches all orders with exact party value
+    party_neq: String # matches all orders with different party to value
+
+    # Side filters
+    side: Side # matches all orders with exact side value e.g. Buy
+    side_neq: Side # matches all orders with different side to value
+
+    # Price filters
+    price: String # matches all orders with exact price value
+    price_neq: String # matches all orders with different price to value
+    price_from: String # matches all orders from this price value
+    price_to: String # matches all orders to this price value
+
+    # Size filters
+    size: String # matches all orders with exact size value
+    size_neq: String # matches all orders with different size to value
+    size_from: String # matches all orders from this size value
+    size_to: String # matches all orders to this size value
+
+    # Remaining filters
+    remaining: String # matches all orders with exact remaining value
+    remaining_neq: String # matches all orders with different remaining to value
+    remaining_from: String # matches all orders from this remaining value
+    remaining_to: String # matches all orders to this remaining value
+
+    # Type filters
+    type: OrderType # matches all orders with exact type value
+    type_neq: OrderType # matches all orders with different type to value
+    
+    # Timestamp filters
+    timestamp: String # matches all orders with exact timestamp value
+    timestamp_neq: String # matches all orders with different timestamp to value
+    timestamp_from: String # matches all orders from this timestamp value
+    timestamp_to: String # matches all orders to this timestamp value
+
+    # Status filters
+    status: OrderStatus # matches all orders with exact status value
+    status_neq: OrderStatus # matches all orders with different status to value
+}`)

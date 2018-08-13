@@ -1,170 +1,146 @@
 package datastore
 
-// GetParamsLimitDefault should be used if no limit is specified
-// when working with the GetParams struct.
-const GetParamsLimitDefault = uint64(1844674407370955161)
+import "vega/filters"
 
-// GetParams is used for optional parameters that can be passed
-// into the datastores when querying for records.
-type GetOrderParams struct {
-	Limit           uint64
-	MarketFilter    *QueryFilter
-	PartyFilter     *QueryFilter
-	SideFilter      *QueryFilter
-	PriceFilter     *QueryFilter
-	SizeFilter      *QueryFilter
-	RemainingFilter *QueryFilter
-	TypeFilter      *QueryFilter
-	TimestampFilter *QueryFilter
-	RiskFactor      *QueryFilter
-	StatusFilter    *QueryFilter
-}
+// applyOrderFilters takes an incoming set of OrderQueryFilters and applies them
+// to the specified order. Internally the OrderQueryFilters will set operator e.g. AND/OR
+func applyOrderFilters(order Order, queryFilters *filters.OrderQueryFilters) bool {
+	ok := true
+	count := 0
 
-type GetTradeParams struct {
-	Limit           uint64
-	MarketFilter    *QueryFilter
-	PriceFilter     *QueryFilter
-	SizeFilter      *QueryFilter
-	BuyerFilter     *QueryFilter
-	SellerFilter    *QueryFilter
-	AggressorFilter *QueryFilter
-	TimestampFilter *QueryFilter
-}
-
-type QueryFilterType int
-
-type QueryFilter struct {
-	filterRange *Range
-	neq         interface{}
-	eq          interface{}
-	kind        string
-}
-
-type Range struct {
-	Lower interface{}
-	Upper interface{}
-}
-
-func applyOrderFilter(order Order, params GetOrderParams) bool {
-	var ok = true
-
-	if params.MarketFilter != nil {
-		ok = apply(order.Market, params.MarketFilter)
+	if queryFilters.IdFilter != nil {
+		ok = queryFilters.IdFilter.ApplyFilters(order.Id)
+		if ok {
+			count++
+		}
 	}
-
-	if params.PartyFilter != nil {
-		ok = apply(order.Party, params.PartyFilter)
+	if queryFilters.MarketFilter != nil {
+		ok = queryFilters.MarketFilter.ApplyFilters(order.Market)
+		if ok {
+			count++
+		}
 	}
-
-	if params.SideFilter != nil {
-		ok = apply(order.Side, params.SideFilter)
+	if queryFilters.PartyFilter != nil {
+		ok = queryFilters.PartyFilter.ApplyFilters(order.Party)
+		if ok {
+			count++
+		}
 	}
-
-	if params.PriceFilter != nil {
-		ok = apply(order.Price, params.PriceFilter)
+	if queryFilters.SideFilter != nil {
+		ok = queryFilters.SideFilter.ApplyFilters(order.Side)
+		if ok {
+			count++
+		}
 	}
-
-	if params.SizeFilter != nil {
-		ok = apply(order.Size, params.SizeFilter)
+	if queryFilters.PriceFilter != nil {
+		ok = queryFilters.PriceFilter.ApplyFilters(order.Price)
+		if ok {
+			count++
+		}
 	}
-
-	if params.RemainingFilter != nil {
-		ok = apply(order.Remaining, params.RemainingFilter)
+	if queryFilters.SizeFilter != nil {
+		ok = queryFilters.SizeFilter.ApplyFilters(order.Size)
+		if ok {
+			count++
+		}
 	}
-
-	if params.TypeFilter != nil {
-		ok = apply(order.Type, params.TypeFilter)
+	if queryFilters.RemainingFilter != nil {
+		ok = queryFilters.RemainingFilter.ApplyFilters(order.Remaining)
+		if ok {
+			count++
+		}
 	}
-
-	if params.TimestampFilter != nil {
-		ok = apply(order.Timestamp, params.TimestampFilter)
+	if queryFilters.TypeFilter != nil {
+		ok = queryFilters.TypeFilter.ApplyFilters(order.Type)
+		if ok {
+			count++
+		}
 	}
-
-	if params.RiskFactor != nil {
-		ok = apply(order.RiskFactor, params.RiskFactor)
+	if queryFilters.TimestampFilter != nil {
+		ok = queryFilters.TimestampFilter.ApplyFilters(order.Timestamp)
+		if ok {
+			count++
+		}
 	}
-
-	if params.StatusFilter != nil {
-		ok = apply(order.Status, params.StatusFilter)
-	}
-
-	return ok
-}
-
-func applyTradeFilter(trade Trade, params GetTradeParams) bool {
-	var ok = true
-
-	if params.MarketFilter != nil {
-		ok = apply(trade.Market, params.MarketFilter)
-	}
-
-	if params.PriceFilter != nil {
-		ok = apply(trade.Price, params.PriceFilter)
-	}
-
-	if params.SizeFilter != nil {
-		ok = apply(trade.Size, params.SizeFilter)
-	}
-
-	if params.BuyerFilter != nil {
-		ok = apply(trade.Buyer, params.BuyerFilter)
-	}
-
-	if params.SellerFilter != nil {
-		ok = apply(trade.Seller, params.SellerFilter)
-	}
-
-	if params.AggressorFilter != nil {
-		ok = apply(trade.Aggressor, params.AggressorFilter)
-	}
-
-	if params.TimestampFilter != nil {
-		ok = apply(trade.Timestamp, params.TimestampFilter)
-	}
-
-	return ok
-}
-
-func apply(value interface{}, params *QueryFilter) bool {
-	if params.filterRange != nil {
-		return applyRangeFilter(value, params.filterRange, params.kind)
-	}
-
-	if params.eq != nil {
-		return applyEqualFilter(value, params.eq)
-	}
-
-	if params.neq != nil {
-		return applyNotEqualFilter(value, params.neq)
-	}
-	return false
-}
-
-func applyRangeFilter(value interface{}, r *Range, kind string) bool {
-	if kind == "uint64" {
-		if r.Lower.(uint64) <= value.(uint64) && value.(uint64) <= r.Upper.(uint64) {
-			return true
+	if queryFilters.StatusFilter != nil {
+		ok = queryFilters.StatusFilter.ApplyFilters(order.Status)
+		if ok {
+			count++
 		}
 	}
 
-	// add new kind here
-	//if kind == "NEW_KIND" {
-	//		...
-	//}
-
-	return false
-}
-
-func applyEqualFilter(value interface{}, eq interface{}) bool {
-	if eq == value {
-		return true
+	if queryFilters.Operator == filters.QueryFilterOperatorAnd {
+		// If we AND all the queryFilters the counts should match
+		// and if they do we have the exact match
+		return count == queryFilters.Count()
+	} else {
+		// We are in an OR operation so if any of the queryFilters
+		// have matched we can return true, false otherwise
+		return ok
 	}
-	return false
 }
 
-func applyNotEqualFilter(value interface{}, neq interface{}) bool {
-	if neq != value {
-		return true
+func applyTradeFilters(trade Trade, queryFilters *filters.TradeQueryFilters) bool {
+	ok := true
+	count := 0
+
+	if queryFilters.IdFilter != nil {
+		ok = queryFilters.IdFilter.ApplyFilters(trade.Id)
+		if ok {
+			count++
+		}
 	}
-	return false
+	if queryFilters.MarketFilter != nil {
+		ok = queryFilters.MarketFilter.ApplyFilters(trade.Market)
+		if ok {
+			count++
+		}
+	}
+	if queryFilters.PriceFilter != nil {
+		ok = queryFilters.PriceFilter.ApplyFilters(trade.Price)
+		if ok {
+			count++
+		}
+	}
+	if queryFilters.SizeFilter != nil {
+		ok = queryFilters.SizeFilter.ApplyFilters(trade.Size)
+		if ok {
+			count++
+		}
+	}
+	if queryFilters.BuyerFilter != nil {
+		ok = queryFilters.BuyerFilter.ApplyFilters(trade.Buyer)
+		if ok {
+			count++
+		}
+	}
+	if queryFilters.SellerFilter != nil {
+		ok = queryFilters.SellerFilter.ApplyFilters(trade.Seller)
+		if ok {
+			count++
+		}
+	}
+	if queryFilters.AggressorFilter != nil {
+		ok = queryFilters.AggressorFilter.ApplyFilters(trade.Aggressor)
+		if ok {
+			count++
+		}
+	}
+	if queryFilters.TimestampFilter != nil {
+		ok = queryFilters.TimestampFilter.ApplyFilters(trade.Timestamp)
+		if ok {
+			count++
+		}
+	}
+
+	if queryFilters.Operator == filters.QueryFilterOperatorAnd {
+		// If we AND all the queryFilters the counts should match
+		// and if they do we have the exact match
+		return count == queryFilters.Count()
+	} else {
+		// We are in an OR operation so if any of the queryFilters
+		// have matched we can return true, false otherwise
+		return ok
+	}
 }
+
