@@ -563,12 +563,12 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	}
 
 	id := uuid.NewV4().String()
-	log.Debugf("Candles subscriber connected: ", id)
+	log.Debugf("Candles subscriber connected: %s", id)
 
 	go func(ref string) {
 		<-ctx.Done()
 		connected = false
-		log.Debugf("Candles subscriber closed connection:", ref)
+		log.Debugf("Candles subscriber closed connection: %s", ref)
 	}(id)
 
 	go func(events chan msg.Candle) {
