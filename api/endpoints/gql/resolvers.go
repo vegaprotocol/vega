@@ -10,6 +10,7 @@ import (
 	"vega/log"
 	"github.com/satori/go.uuid"
 	"fmt"
+	"vega/filters"
 )
 
 type resolverRoot struct {
@@ -262,6 +263,22 @@ func (r *MyMarketDepthResolver) Sell(ctx context.Context, obj *msg.MarketDepth) 
 		valBuyLevels = append(valBuyLevels, *v)
 	}
 	return valBuyLevels, nil
+}
+
+func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error) {
+	queryFilters := &filters.TradeQueryFilters{}
+	last := uint64(1)
+	queryFilters.Last = &last
+	trades, err := r.tradeService.GetByMarket(ctx, obj.Name, queryFilters)
+	if err != nil {
+		return nil, err
+	}
+	if trades != nil && trades[0] != nil {
+		return trades[0], nil
+	}
+	// No trades found on the market yet (and no errors)
+	// this can happen at the beginning of a new market
+	return nil, nil
 }
 
 // END: Market Depth Resolver

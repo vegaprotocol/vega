@@ -1,12 +1,4 @@
-## GQL - TODO
-###############
-# Trades subscription
-# Orders subscription
-#   >>> open orders filter (future?)
-# Candles subscription
-# Positions subscription
-# Depth subscription
-
+## VEGA - GraphQL schema
 
 # Represents a date/time
 scalar DateTime
@@ -90,13 +82,15 @@ type MarketDepth {
     # Market name
     name: String!
 
-    # Buy side price levels if available
+    # Buy side price levels (if available)
     buy: [PriceLevel!]
     
     # Sell side price levels (if available)
     sell: [PriceLevel!]
-}
 
+    # Last trade for the given market (if availabe)
+    lastTrade: Trade
+}
 
 # Represents a price on either the buy or sell side and all the orders at that price
 type PriceLevel {
@@ -154,7 +148,6 @@ type Party {
     positions: [Position!]
 }
 
-
 # An individual trader at any point in time is considered net long or net short.
 # This refers to their Open Volume, calculated using FIFO. This volume should now be signed as either
 # negative for LONG positions and positive for SHORT positions. A single trade may end up "splitting" with some
@@ -190,7 +183,6 @@ type Position {
     minimumMargin: String!
 }
 
-
 # An order in Vega, if active it will be on the OrderBoook for the market
 type Order {
 
@@ -224,7 +216,6 @@ type Order {
     # The status of an order, for example 'Active'
     status: OrderStatus!
 }
-
 
 # A trade on Vega, the result of two orders being "matched" in the market
 type Trade {

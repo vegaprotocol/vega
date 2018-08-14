@@ -40,6 +40,7 @@ type Resolvers interface {
 
 	MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	MarketDepth_sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
+	MarketDepth_lastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error)
 	Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error)
 	Mutation_orderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 
@@ -119,6 +120,7 @@ type MarketResolver interface {
 type MarketDepthResolver interface {
 	Buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	Sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
+	LastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error)
 }
 type MutationResolver interface {
 	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error)
@@ -233,6 +235,10 @@ func (s shortMapper) MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) 
 
 func (s shortMapper) MarketDepth_sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error) {
 	return s.r.MarketDepth().Sell(ctx, obj)
+}
+
+func (s shortMapper) MarketDepth_lastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error) {
+	return s.r.MarketDepth().LastTrade(ctx, obj)
 }
 
 func (s shortMapper) Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error) {
@@ -1070,6 +1076,8 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel []query.Select
 			out.Values[i] = ec._MarketDepth_buy(ctx, field, obj)
 		case "sell":
 			out.Values[i] = ec._MarketDepth_sell(ctx, field, obj)
+		case "lastTrade":
+			out.Values[i] = ec._MarketDepth_lastTrade(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1164,6 +1172,39 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 			}())
 		}
 		return arr1
+	})
+}
+
+func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field graphql.CollectedField, obj *msg.MarketDepth) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "MarketDepth",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.MarketDepth_lastTrade(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*msg.Trade)
+		if res == nil {
+			return graphql.Null
+		}
+		return ec._Trade(ctx, field.Selections, res)
 	})
 }
 
@@ -4328,15 +4369,7 @@ func (ec *executionContext) introspectType(name string) *introspection.Type {
 	return introspection.WrapType(t)
 }
 
-var parsedSchema = schema.MustParse(`## GQL - TODO
-###############
-# Trades subscription
-# Orders subscription
-#   >>> open orders filter (future?)
-# Candles subscription
-# Positions subscription
-# Depth subscription
-
+var parsedSchema = schema.MustParse(`## VEGA - GraphQL schema
 
 # Represents a date/time
 scalar DateTime
@@ -4409,7 +4442,7 @@ type Market {
     # Current depth on the orderbook for this market
     depth: MarketDepth!
 
-    # Candles on a market
+    # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
     candles (last: Int!, interval: Int!): [Candle!]
 }
 
@@ -4420,13 +4453,15 @@ type MarketDepth {
     # Market name
     name: String!
 
-    # Buy side price levels if available
+    # Buy side price levels (if available)
     buy: [PriceLevel!]
     
     # Sell side price levels (if available)
     sell: [PriceLevel!]
-}
 
+    # Last trade for the given market (if availabe)
+    lastTrade: Trade
+}
 
 # Represents a price on either the buy or sell side and all the orders at that price
 type PriceLevel {
@@ -4484,7 +4519,6 @@ type Party {
     positions: [Position!]
 }
 
-
 # An individual trader at any point in time is considered net long or net short.
 # This refers to their Open Volume, calculated using FIFO. This volume should now be signed as either
 # negative for LONG positions and positive for SHORT positions. A single trade may end up "splitting" with some
@@ -4520,7 +4554,6 @@ type Position {
     minimumMargin: String!
 }
 
-
 # An order in Vega, if active it will be on the OrderBoook for the market
 type Order {
 
@@ -4554,7 +4587,6 @@ type Order {
     # The status of an order, for example 'Active'
     status: OrderStatus!
 }
-
 
 # A trade on Vega, the result of two orders being "matched" in the market
 type Trade {
