@@ -133,19 +133,31 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 	return response, nil
 }
 
-
 func (h *Handlers) MarketDepth(ctx context.Context, request *api.MarketDepthRequest) (*api.MarketDepthResponse, error) {
 	if request.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
+	// Query market depth statistics
 	depth, err := h.OrderService.GetMarketDepth(ctx, request.Market)
 	if err != nil {
 		return nil, err
 	}
+	// Query last 1 trades from store
+	queryFilters := &filters.TradeQueryFilters{}
+	last := uint64(1)
+	queryFilters.Last = &last
+	trades, err := h.TradeService.GetByMarket(ctx, request.Market, queryFilters)
+	if err != nil {
+		return nil, err
+	}
+	// Build market depth response, including last trade (if available)
 	var response = &api.MarketDepthResponse{}
 	response.Buy = depth.Buy
 	response.Name = depth.Name
 	response.Sell = depth.Sell
+	if trades != nil && trades[0] != nil {
+	 	response.LastTrade = trades[0]
+	}
 	return response, nil
 }
 

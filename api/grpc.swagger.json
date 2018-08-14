@@ -330,6 +330,9 @@
           "items": {
             "$ref": "#/definitions/vegaPriceLevel"
           }
+        },
+        "lastTrade": {
+          "$ref": "#/definitions/vegaTrade"
         }
       }
     },
@@ -482,6 +485,14 @@
         "unrealisedPNL": {
           "type": "string",
           "format": "int64"
+        },
+        "averageEntryPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "minimumMargin": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -516,10 +527,6 @@
           "$ref": "#/definitions/OrderType"
         },
         "timestamp": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "riskFactor": {
           "type": "string",
           "format": "uint64"
         },
