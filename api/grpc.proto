@@ -15,9 +15,9 @@ service trading {
     rpc TradeCandles(TradeCandlesRequest) returns (TradeCandlesResponse);
     rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
     rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
-    //rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO
     rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
-
+    rpc Statistics(StatisticsRequest) returns (vega.Statistics);
+    //rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO
 }
 
 message OrderResponse {
@@ -95,6 +95,10 @@ message PositionsByPartyRequest{
 
 message PositionsByPartyResponse{
     repeated vega.MarketPosition positions = 1;
+}
+
+message StatisticsRequest {
+    // empty for now
 }
 
 message OptionalParams {

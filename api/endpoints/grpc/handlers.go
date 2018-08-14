@@ -194,3 +194,14 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 	response.Positions = positions
 	return response, nil
 }
+
+func (h *Handlers) Statistics(context.Context, *api.StatisticsRequest) (*msg.Statistics, error) {
+
+	stats := &msg.Statistics{
+		BlockHeight: uint64(10),
+		BacklogLength: uint64(1342),
+		Status: msg.AppStatus_CHAIN_ERROR,
+	}
+
+	return stats, nil
+}
