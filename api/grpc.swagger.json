@@ -15,7 +15,7 @@
     "application/json"
   ],
   "paths": {
-    "/1.0/cancelOrder": {
+    "/cancelOrder": {
       "post": {
         "operationId": "CancelOrder",
         "responses": {
@@ -41,7 +41,7 @@
         ]
       }
     },
-    "/1.0/candles": {
+    "/candles": {
       "get": {
         "operationId": "TradeCandles",
         "responses": {
@@ -78,7 +78,7 @@
         ]
       }
     },
-    "/1.0/createOrder": {
+    "/createOrder": {
       "post": {
         "operationId": "CreateOrder",
         "responses": {
@@ -104,7 +104,7 @@
         ]
       }
     },
-    "/1.0/marketDepth": {
+    "/marketDepth": {
       "get": {
         "operationId": "MarketDepth",
         "responses": {
@@ -128,7 +128,7 @@
         ]
       }
     },
-    "/1.0/marketOrder": {
+    "/marketOrder": {
       "get": {
         "operationId": "OrderByMarketAndId",
         "responses": {
@@ -158,7 +158,7 @@
         ]
       }
     },
-    "/1.0/marketOrders": {
+    "/marketOrders": {
       "get": {
         "operationId": "OrdersByMarket",
         "responses": {
@@ -189,7 +189,7 @@
         ]
       }
     },
-    "/1.0/marketTrades": {
+    "/marketTrades": {
       "get": {
         "operationId": "TradesByMarket",
         "responses": {
@@ -220,7 +220,7 @@
         ]
       }
     },
-    "/1.0/markets": {
+    "/markets": {
       "get": {
         "operationId": "Markets",
         "responses": {
@@ -236,7 +236,7 @@
         ]
       }
     },
-    "/1.0/partyOrders": {
+    "/partyOrders": {
       "get": {
         "operationId": "OrdersByParty",
         "responses": {
@@ -267,9 +267,8 @@
         ]
       }
     },
-    "/1.0/partyPositions": {
+    "/partyPositions": {
       "get": {
-        "summary": "rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO",
         "operationId": "PositionsByParty",
         "responses": {
           "200": {
@@ -287,6 +286,22 @@
             "type": "string"
           }
         ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/statistics": {
+      "get": {
+        "operationId": "Statistics",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/vegaStatistics"
+            }
+          }
+        },
         "tags": [
           "trading"
         ]
@@ -428,6 +443,18 @@
         }
       }
     },
+    "vegaAppStatus": {
+      "type": "string",
+      "enum": [
+        "CHAIN_NOT_FOUND",
+        "CHAIN_ERROR",
+        "CHAIN_REPLAYING",
+        "APP_CONNECTED",
+        "APP_ERROR",
+        "APP_DISCONNECTED"
+      ],
+      "default": "CHAIN_NOT_FOUND"
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -563,6 +590,71 @@
         "Sell"
       ],
       "default": "Buy"
+    },
+    "vegaStatistics": {
+      "type": "object",
+      "properties": {
+        "blockHeight": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "backlogLength": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "totalPeers": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "genesisTime": {
+          "type": "string"
+        },
+        "currentTime": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/vegaAppStatus"
+        },
+        "averageTxBytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "averageOrdersPerBlock": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "tradesPerSecond": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "ordersPerSecond": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "lastTrade": {
+          "$ref": "#/definitions/vegaTrade"
+        },
+        "lastOrder": {
+          "$ref": "#/definitions/vegaOrder"
+        },
+        "lastCandle": {
+          "$ref": "#/definitions/vegaCandle"
+        },
+        "totalMarkets": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "totalParties": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "AppVersionHash": {
+          "type": "string"
+        },
+        "AppVersion": {
+          "type": "string"
+        }
+      }
     },
     "vegaTrade": {
       "type": "object",

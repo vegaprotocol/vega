@@ -194,3 +194,7 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 	response.Positions = positions
 	return response, nil
 }
+
+func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsRequest) (*msg.Statistics, error) {
+	return h.OrderService.GetStatistics(ctx)
+}

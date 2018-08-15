@@ -102,3 +102,32 @@ message MarketPosition {
     uint64 averageEntryPrice = 6;
     int64 minimumMargin = 7;
 }
+
+message Statistics {
+    uint64 blockHeight = 1;
+    uint64 backlogLength = 2;
+    uint64 totalPeers = 3;
+    string genesisTime = 4;
+    string currentTime = 5;
+    AppStatus status = 6;
+    uint64 txPerBlock = 7;
+    uint64 averageTxBytes = 8;
+    uint64 averageOrdersPerBlock = 9;
+    uint64 tradesPerSecond = 10;
+    uint64 ordersPerSecond = 11;
+    Trade  lastTrade = 12;
+    Order  lastOrder = 13;
+    uint64 totalMarkets = 14;
+    uint64 totalParties = 15;
+    string appVersionHash = 16;
+    string appVersion = 17;
+}
+
+enum AppStatus {
+    CHAIN_NOT_FOUND = 0;
+    CHAIN_ERROR = 1;
+    CHAIN_REPLAYING = 2;
+    APP_CONNECTED = 3;
+    APP_ERROR = 4;
+    APP_DISCONNECTED = 5;
+}

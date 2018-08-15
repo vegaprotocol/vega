@@ -9,6 +9,7 @@ import (
 	cmn "github.com/tendermint/tmlibs/common"
 	"vega/tendermint/rpc"
 	"time"
+	"vega/msg"
 )
 
 // Starts up a Vega blockchain server.
@@ -19,10 +20,10 @@ func Start(vega *core.Vega) error {
 	if err != nil {
 		return err
 	}
-
 	if err := srv.Start(); err != nil {
 		return err
 	}
+	vega.Statistics.Status = msg.AppStatus_CHAIN_NOT_FOUND
 
 	blockchainClient := NewClient()
 	var genesis *rpc.Genesis
@@ -36,6 +37,7 @@ func Start(vega *core.Vega) error {
 	}
 	log.Infof("Genesis time set to: %+v\n", genesis.GenesisTime)
 	vega.SetGenesisTime(genesis.GenesisTime)
+	vega.Statistics.Status = msg.AppStatus_APP_CONNECTED
 
 	// Wait forever
 	cmn.TrapSignal(func() {

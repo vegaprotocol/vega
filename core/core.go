@@ -19,11 +19,14 @@ const (
 type Config struct {
 	GenesisTime              time.Time
 	RiskCalculationFrequency uint64
+	AppVersion               string
+	AppVersionHash           string
 }
 
 type Vega struct {
 	Config         *Config
 	State          *State
+	Statistics     *msg.Statistics
 	markets        map[string]*matching.OrderBook
 	OrderStore     datastore.OrderStore
 	TradeStore     datastore.TradeStore
@@ -40,8 +43,15 @@ func New(config *Config, store datastore.StoreProvider) *Vega {
 	// Initialise risk engine
 	riskEngine := risk.New()
 
+	// todo: version from commit hash, app version incrementing
+	statistics := &msg.Statistics{}
+	statistics.Status = msg.AppStatus_APP_DISCONNECTED
+	statistics.AppVersionHash = config.AppVersionHash
+	statistics.AppVersion = config.AppVersion
+
 	return &Vega{
 		Config:         config,
+		Statistics:     statistics,
 		markets:        make(map[string]*matching.OrderBook),
 		OrderStore:     store.OrderStore(),
 		TradeStore:     store.TradeStore(),
@@ -75,6 +85,7 @@ func (v *Vega) GetRiskFactors(marketName string) (float64, float64, error) {
 func (v *Vega) InitialiseMarkets() {
 	v.matchingEngine.CreateMarket(marketName)
 	v.riskEngine.AddNewMarket(&msg.Market{Name: marketName})
+	v.Statistics.TotalMarkets = 1
 }
 
 func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
@@ -119,6 +130,8 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		}
 	}
 	
+	v.Statistics.LastOrder = order
+	
 	// Notify change observers, we batch events for efficiency
 	v.OrderStore.Notify()
 
@@ -132,6 +145,8 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 				// Note: writing to store should not prevent flow to other engines
 				log.Errorf("TradeStore.Post error: %+v", err)
 			}
+
+			v.Statistics.LastTrade = trade
 		}
 
 		// Notify change observers, we batch events for efficiency

@@ -12,6 +12,7 @@ import (
 	"vega/log"
 
 	"github.com/gorilla/websocket"
+	"strconv"
 )
 
 const (
@@ -256,6 +257,12 @@ func (c *Client) IsNodeReachable(ctx context.Context) (bool, error) {
 func (c *Client) NetInfo(ctx context.Context) (*NetInfo, error) {
 	resp := &NetInfo{}
 	err := c.call(ctx, "net_info", nil, resp)
+	if err == nil && resp.nPeersRaw != "" {
+		resp.NPeers, err = strconv.Atoi(resp.nPeersRaw)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return resp, err
 }
 
@@ -281,7 +288,7 @@ func (c *Client) Transaction(ctx context.Context, hash []byte, prove bool) (*Tra
 // number of returned transactions defaults to 30.
 func (c *Client) UnconfirmedTransactions(ctx context.Context, limit int) ([][]byte, error) {
 	type Unconfirmed struct {
-		Count        int      `json:"n_txs"`
+		Count        string  `json:"n_txs"`  // str vs int field see unconfirmed tx count below
 		Transactions [][]byte `json:"txs"`
 	}
 	resp := &Unconfirmed{}
@@ -296,12 +303,19 @@ func (c *Client) UnconfirmedTransactions(ctx context.Context, limit int) ([][]by
 // call. It returns the number of unconfirmed transactions.
 func (c *Client) UnconfirmedTransactionsCount(ctx context.Context) (int, error) {
 	type Unconfirmed struct {
-		Count int `json:"n_txs"`
+		countRaw string `json:"n_txs"`  // marshalling sees this as a string from TM
+		Count int
 	}
 	resp := &Unconfirmed{}
 	err := c.call(ctx, "num_unconfirmed_txs", nil, resp)
 	if err != nil {
 		return 0, err
+	}
+	if resp.countRaw != "" {
+		resp.Count, err = strconv.Atoi(resp.countRaw)
+		if err != nil {
+			return 0, err
+		}
 	}
 	return resp.Count, nil
 }
@@ -339,7 +353,7 @@ func (c *Client) call(ctx context.Context, method string, params opts, resp inte
 	// be closed.
 	select {
 	case c.pending <- req:
-		log.Infof("Made %s call\n", method)
+		log.Debugf("Made %s call\n", method)
 
 		ch := make(chan *response, 1)
 		c.mu.Lock()
