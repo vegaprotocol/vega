@@ -15,6 +15,9 @@ type Client interface {
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
 	GetGenesisTime(ctx context.Context) (genesis *rpc.Genesis, err error)
+	GetStatus(ctx context.Context) (status *rpc.Status, err error)
+	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
+	GetNetworkInfo(ctx context.Context) (netInfo *rpc.NetInfo, err error)
 }
 
 type client struct {
@@ -35,7 +38,6 @@ func (b *client) CreateOrder(ctx context.Context, order *msg.Order) (success boo
 }
 
 func (b *client) GetGenesisTime(ctx context.Context) (genesis *rpc.Genesis, err error) {
-	// Get a lightweight RPC client (our custom Tendermint client) from a pool (create one if n/a).
 	client, err := b.getRpcClient()
 	if err != nil {
 		return nil, err
@@ -49,6 +51,52 @@ func (b *client) GetGenesisTime(ctx context.Context) (genesis *rpc.Genesis, err 
 		return nil, err
 	}
 	return genesis, nil
+}
+
+func (b *client) GetStatus(ctx context.Context) (status *rpc.Status, err error) {
+	client, err := b.getRpcClient()
+	if err != nil {
+		return nil, err
+	}
+	status, err = client.Status(ctx)
+	if status == nil && err != nil {
+		if !client.HasError() {
+			b.releaseRpcClient(client)
+		}
+		return nil, err
+	}
+	return status, nil
+}
+
+func (b *client) GetNetworkInfo(ctx context.Context) (netInfo *rpc.NetInfo, err error) {
+	client, err := b.getRpcClient()
+	if err != nil {
+		return nil, err
+	}
+	netInfo, err = client.NetInfo(ctx)
+	if err != nil {
+		if !client.HasError() {
+			b.releaseRpcClient(client)
+		}
+		return nil, err
+	}
+	return netInfo, nil
+
+}
+
+func (b *client) GetUnconfirmedTxCount(ctx context.Context) (count int, err error) {
+	client, err := b.getRpcClient()
+	if err != nil {
+		return 0, err
+	}
+	count, err = client.UnconfirmedTransactionsCount(ctx)
+	if err != nil {
+		if !client.HasError() {
+			b.releaseRpcClient(client)
+		}
+		return 0, err
+	}
+	return count, nil
 }
 
 func (b *client) getRpcClient() (*rpc.Client, error) {

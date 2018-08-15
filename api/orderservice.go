@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"vega/log"
 	"vega/filters"
+	"time"
 )
 
 type OrderService interface {
@@ -25,6 +26,8 @@ type OrderService interface {
 	GetMarkets(ctx context.Context) ([]string, error)
 	GetMarketDepth(ctx context.Context, market string) (marketDepth *msg.MarketDepth, err error)
 	ObserveMarketDepth(ctx context.Context, market string) (depth <-chan msg.MarketDepth, ref uint64)
+
+	GetStatistics(ctx context.Context) (*msg.Statistics, error)
 }
 
 type orderService struct {
@@ -223,4 +226,56 @@ func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<
 	}(ref)
 
 	return depth, ref
+}
+
+func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, error) {
+	refused := "dial tcp 127.0.0.1:46657: connect: connection refused"
+	rpcErr := "Statistics: block-chain rpc client error [%s] %v"
+
+	p.app.Statistics.CurrentTime = time.Now().UTC().Format(time.RFC3339)
+	p.app.Statistics.GenesisTime = p.app.GetGenesisTime().Format(time.RFC3339)
+	p.app.Statistics.BlockHeight = uint64(p.app.State.Height)
+
+	// Call out to Tendermint via RPC client to obtain other stats
+	// -----------------------------------------------------------
+
+ 	// Status call for addr etc
+ 	status, err := p.blockchain.GetStatus(ctx)
+ 	if err != nil {
+ 		if err.Error() == refused {
+ 			// We ignore rpc connection refused messages as
+			// this usually means that the chain is not ready
+			return p.app.Statistics, nil
+		}
+		// All other errors we need to log and return to user (for now)
+ 		log.Errorf(rpcErr, "status", err)
+ 		return p.app.Statistics, err
+	}
+	log.Debugf("Statistics: Tendermint status: %v", status)
+
+	// Unconfirmed TX count == current transaction backlog length
+	backlogLength, err := p.blockchain.GetUnconfirmedTxCount(ctx)
+	if err != nil {
+		if err.Error() == refused {
+			return p.app.Statistics, nil
+		}
+		log.Errorf(rpcErr, "unconfirmed-tx-count", err)
+		return p.app.Statistics, err
+	}
+	log.Debugf("Statistics: Tendermint unconfirmed tx count: %v", backlogLength)
+	p.app.Statistics.BacklogLength = uint64(backlogLength)
+
+	// Net info provides peer stats etc (blockchain network info)
+	netInfo, err := p.blockchain.GetNetworkInfo(ctx)
+	if err != nil {
+		if err.Error() == refused {
+			return p.app.Statistics, nil
+		}
+		log.Errorf(rpcErr, "net-info", err)
+		return p.app.Statistics, err
+	}
+	log.Debugf("Statistics: Tendermint net-info: %v", netInfo)
+	p.app.Statistics.TotalPeers = uint64(netInfo.NPeers)
+
+	return p.app.Statistics, nil
 }

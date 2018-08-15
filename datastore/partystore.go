@@ -21,9 +21,8 @@ func (m *memPartyStore) Delete(party string) error {
 	return nil
 }
 
-
 func (m *memPartyStore) GetAllParties() (parties []string, err error) {
-	for party, _ := range m.store.parties {
+	for party := range m.store.parties {
 		parties = append(parties, party)
 	}
 	return parties, nil

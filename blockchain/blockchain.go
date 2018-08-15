@@ -49,6 +49,10 @@ func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 }
 
 var tx_averages []int
+var ob_averages []int
+var current_ob int
+var current_tb int
+var tx_per_block uint64
 
 // Consensus Connection
 // Step 1: DeliverTx
@@ -76,12 +80,18 @@ var tx_averages []int
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	log.Infof("DeliverTx: %s", string(tx), len(tx))
+	txLength := len(tx)
+	log.Infof("DeliverTx: %s [%v]", string(tx), txLength)
+	tx_per_block++
+
+	if app.vega.Statistics.Status == msg.AppStatus_CHAIN_NOT_FOUND {
+		app.vega.Statistics.Status = msg.AppStatus_CHAIN_REPLAYING
+	}
 
 	if tx_averages == nil {
 		tx_averages = make([]int, 0)
 	}
-	tx_averages = append(tx_averages, len(tx))
+	tx_averages = append(tx_averages, txLength)
 
 	// Decode payload and command
 	value, cmd, err := VegaTxDecode(tx)
@@ -111,11 +121,14 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 				log.Infof("- aggressive order: %+v\n", confirmationMessage.Order)
 				log.Infof("- trades: %+v\n", confirmationMessage.Trades)
 				log.Infof("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+
+				current_tb += len(confirmationMessage.Trades)
 			}
 			if errorMessage != msg.OrderError_NONE {
 				log.Infof("ABCI reports it received an order error message from vega:\n")
 				log.Infof("- error: %+v\n", errorMessage.String())
 			}
+			current_ob++
 
 		case CancelOrderCommand:
 			log.Infof("ABCI received a CANCEL ORDER command after consensus")
@@ -140,9 +153,9 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 		for _, itx := range tx_averages {
 			totaltx += itx
 		}
-		averagetx := totaltx / len(tx_averages)
-
-		log.Debugf("Stats: Current tx average size = %v bytes", averagetx)
+		averageTx := totaltx / len(tx_averages)
+		log.Debugf("Stats: Current tx average size = %v bytes", averageTx)
+		app.vega.Statistics.AverageTxBytes = uint64(averageTx)
 
 		// MAX sample size for avg calculation is 5000 txs
 		if len(tx_averages) == 5000 {
@@ -150,9 +163,16 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 		}
 	}
 
+	// Update total parties statistic
+	parties, err := app.vega.PartyStore.GetAllParties()
+	if err == nil {
+		app.vega.Statistics.TotalParties = uint64(len(parties))
+	}
+
 	app.vega.State.Size += 1
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
+
 
 // Consensus Connection
 // Step 2: Commit the block and persist to disk.
@@ -184,7 +204,36 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 	app.vega.State.AppHash = appHash
 	app.vega.State.Height += 1
 
-	// saveState(app.state)
+	app.vega.Statistics.OrdersPerSecond = uint64(current_ob)
+	app.vega.Statistics.TradesPerSecond = uint64(current_tb)
+	app.vega.Statistics.TxPerBlock = tx_per_block
+	tx_per_block = 0
+
+	// Calculate total orders per block average
+	if current_ob > 0 {
+		if ob_averages == nil {
+			ob_averages = make([]int, 0)
+		}
+		ob_averages = append(ob_averages, current_ob)
+		if len(ob_averages) > 0 {
+			totalob := 0
+			for _, itx := range ob_averages {
+				totalob += itx
+			}
+			averageOb := totalob / len(ob_averages)
+			log.Debugf("Stats: Current orders/block average = %v", averageOb)
+			app.vega.Statistics.AverageOrdersPerBlock = uint64(averageOb)
+
+			// MAX sample size for avg calculation is 5000 blocks
+			if len(ob_averages) == 5000 {
+				ob_averages = nil
+			}
+		}
+	}
+	
+	current_ob = 0
+	current_tb = 0
+
 	return types.ResponseCommit{Data: appHash}
 }
 

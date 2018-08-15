@@ -10,12 +10,23 @@ import (
 	"vega/datastore"
 	"vega/log"
 	"vega/api/endpoints/gql"
+	"os"
 )
 
 func main() {
 	// Configuration and logging
 	config := core.GetConfig()
 	log.InitConsoleLogger(log.DebugLevel)
+
+	// todo read from something like gitlab
+	config.AppVersion = "0.1.927"
+	config.AppVersionHash = "d6cd1e2bd19e03a81132a23b2025920577f84e37"
+	appVersion := os.Getenv("APP_VERSION")
+	appVersionHash := os.Getenv("APP_VERSION_HASH")
+	if appVersion != "" && appVersionHash != "" {
+		config.AppVersion = appVersion
+		config.AppVersionHash = appVersionHash
+	}
 
 	// Storage Service provides read stores for consumer VEGA API
 	// Uses in memory storage (maps/slices etc), configurable in future
