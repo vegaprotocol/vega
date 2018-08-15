@@ -210,7 +210,7 @@ type ChannelStatus struct {
 	SendQueueCapacity int
 	SendQueueSize     int
 	Priority          int
-	RecentlySent      int64
+	RecentlySent      string
 }
 
 // MonitorStatus represents the current Monitor status. All transfer rates are in bytes
@@ -220,15 +220,15 @@ type MonitorStatus struct {
 	Start    string        // Transfer start time
 	Duration string        // Time period covered by the statistics
 	Idle     string        // Time since the last transfer of at least 1 byte
-	Bytes    int64         // Total number of bytes transferred
-	Samples  int64         // Total number of samples taken
-	InstRate int64         // Instantaneous transfer rate
-	CurRate  int64         // Current transfer rate (EMA of InstRate)
-	AvgRate  int64         // Average transfer rate (Bytes / Duration)
-	PeakRate int64         // Maximum instantaneous transfer rate
-	BytesRem int64         // Number of bytes remaining in the transfer
+	Bytes    string         // Total number of bytes transferred
+	Samples  string         // Total number of samples taken
+	InstRate string         // Instantaneous transfer rate
+	CurRate  string         // Current transfer rate (EMA of InstRate)
+	AvgRate  string         // Average transfer rate (Bytes / Duration)
+	PeakRate string         // Maximum instantaneous transfer rate
+	BytesRem string         // Number of bytes remaining in the transfer
 	TimeRem  string        // Estimated time to completion
-	Progress uint32        // Overall transfer progress
+	Progress string        // Overall transfer progress
 }
 
 // NodeInfo is the basic node information exchanged
