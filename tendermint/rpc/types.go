@@ -217,9 +217,9 @@ type ChannelStatus struct {
 // per second rounded to the nearest byte.
 type MonitorStatus struct {
 	Active   bool          // Flag indicating an active transfer
-	Start    time.Time     // Transfer start time
-	Duration time.Duration // Time period covered by the statistics
-	Idle     time.Duration // Time since the last transfer of at least 1 byte
+	Start    string        // Transfer start time
+	Duration string        // Time period covered by the statistics
+	Idle     string        // Time since the last transfer of at least 1 byte
 	Bytes    int64         // Total number of bytes transferred
 	Samples  int64         // Total number of samples taken
 	InstRate int64         // Instantaneous transfer rate
@@ -227,7 +227,7 @@ type MonitorStatus struct {
 	AvgRate  int64         // Average transfer rate (Bytes / Duration)
 	PeakRate int64         // Maximum instantaneous transfer rate
 	BytesRem int64         // Number of bytes remaining in the transfer
-	TimeRem  time.Duration // Estimated time to completion
+	TimeRem  string        // Estimated time to completion
 	Progress uint32        // Overall transfer progress
 }
 
