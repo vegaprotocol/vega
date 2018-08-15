@@ -207,9 +207,9 @@ type ConnectionStatus struct {
 // ChannelStatus represents the status of a current channel
 type ChannelStatus struct {
 	ID                byte
-	SendQueueCapacity int
-	SendQueueSize     int
-	Priority          int
+	SendQueueCapacity string
+	SendQueueSize     string
+	Priority          string
 	RecentlySent      string
 }
 
