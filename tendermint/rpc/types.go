@@ -198,7 +198,7 @@ type Peer struct {
 
 // ConnectionStatus represents the status of the current connection and internal monitors.
 type ConnectionStatus struct {
-	Duration    time.Duration
+	Duration    string
 	SendMonitor MonitorStatus
 	RecvMonitor MonitorStatus
 	Channels    []ChannelStatus
