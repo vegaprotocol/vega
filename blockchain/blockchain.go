@@ -163,12 +163,6 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 		}
 	}
 
-	// Update total parties statistic
-	parties, err := app.vega.PartyStore.GetAllParties()
-	if err == nil {
-		app.vega.Statistics.TotalParties = uint64(len(parties))
-	}
-
 	app.vega.State.Size += 1
 	return types.ResponseDeliverTx{Code: code.CodeTypeOK}
 }
@@ -230,7 +224,7 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 			}
 		}
 	}
-	
+
 	current_ob = 0
 	current_tb = 0
 

@@ -10,7 +10,6 @@ import (
 	"vega/tendermint/rpc"
 	"time"
 	"vega/msg"
-	"fmt"
 )
 
 // Starts up a Vega blockchain server.
@@ -19,11 +18,9 @@ func Start(vega *core.Vega) error {
 	blockchain := NewBlockchain(vega)
 	srv, err := server.NewServer("127.0.0.1:46658", "socket", blockchain)
 	if err != nil {
-		fmt.Println("AAAAA")
 		return err
 	}
 	if err := srv.Start(); err != nil {
-		fmt.Println("BBBBB")
 		return err
 	}
 	vega.Statistics.Status = msg.AppStatus_CHAIN_NOT_FOUND

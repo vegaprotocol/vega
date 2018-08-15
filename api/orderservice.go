@@ -236,22 +236,10 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 	p.app.Statistics.GenesisTime = p.app.GetGenesisTime().Format(time.RFC3339)
 	p.app.Statistics.BlockHeight = uint64(p.app.State.Height)
 
-	// Call out to Tendermint via RPC client to obtain other stats
-	// -----------------------------------------------------------
-
- 	// Status call for addr etc
- 	//status, err := p.blockchain.GetStatus(ctx)
- 	//if err != nil {
- 	//	if err.Error() == refused {
- 	//		// We ignore rpc connection refused messages as
-	//		// this usually means that the chain is not ready
-	//		return p.app.Statistics, nil
-	//	}
-	//	// All other errors we need to log and return to user (for now)
- 	//	log.Errorf(rpcErr, "status", err)
- 	//	return p.app.Statistics, err
-	//}
-	//log.Debugf("Statistics: Tendermint status: %+v", status)
+	parties, err := p.app.PartyStore.GetAllParties()
+	if err == nil {
+		p.app.Statistics.TotalParties = uint64(len(parties))
+	}
 
 	// Unconfirmed TX count == current transaction backlog length
 	backlogLength, err := p.blockchain.GetUnconfirmedTxCount(ctx)
