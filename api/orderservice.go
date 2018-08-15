@@ -240,18 +240,18 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 	// -----------------------------------------------------------
 
  	// Status call for addr etc
- 	status, err := p.blockchain.GetStatus(ctx)
- 	if err != nil {
- 		if err.Error() == refused {
- 			// We ignore rpc connection refused messages as
-			// this usually means that the chain is not ready
-			return p.app.Statistics, nil
-		}
-		// All other errors we need to log and return to user (for now)
- 		log.Errorf(rpcErr, "status", err)
- 		return p.app.Statistics, err
-	}
-	log.Debugf("Statistics: Tendermint status: %+v", status)
+ 	//status, err := p.blockchain.GetStatus(ctx)
+ 	//if err != nil {
+ 	//	if err.Error() == refused {
+ 	//		// We ignore rpc connection refused messages as
+	//		// this usually means that the chain is not ready
+	//		return p.app.Statistics, nil
+	//	}
+	//	// All other errors we need to log and return to user (for now)
+ 	//	log.Errorf(rpcErr, "status", err)
+ 	//	return p.app.Statistics, err
+	//}
+	//log.Debugf("Statistics: Tendermint status: %+v", status)
 
 	// Unconfirmed TX count == current transaction backlog length
 	backlogLength, err := p.blockchain.GetUnconfirmedTxCount(ctx)
@@ -262,7 +262,7 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 		log.Errorf(rpcErr, "unconfirmed-tx-count", err)
 		return p.app.Statistics, err
 	}
-	log.Debugf("Statistics: Tendermint unconfirmed tx count: %+v", backlogLength)
+	//log.Debugf("Statistics: Tendermint unconfirmed tx count: %+v", backlogLength)
 	p.app.Statistics.BacklogLength = uint64(backlogLength)
 
 	// Net info provides peer stats etc (blockchain network info)
@@ -274,7 +274,7 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 		log.Errorf(rpcErr, "net-info", err)
 		return p.app.Statistics, err
 	}
-	log.Debugf("Statistics: Tendermint net-info: %+v", netInfo)
+	//log.Debugf("Statistics: Tendermint net-info: %+v", netInfo)
 	p.app.Statistics.TotalPeers = uint64(netInfo.NPeers)
 
 	return p.app.Statistics, nil

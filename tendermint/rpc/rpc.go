@@ -257,7 +257,7 @@ func (c *Client) IsNodeReachable(ctx context.Context) (bool, error) {
 func (c *Client) NetInfo(ctx context.Context) (*NetInfo, error) {
 	resp := &NetInfo{}
 	err := c.call(ctx, "net_info", nil, resp)
-	if err == nil {
+	if err == nil && resp.nPeersRaw != "" {
 		resp.NPeers, err = strconv.Atoi(resp.nPeersRaw)
 		if err != nil {
 			return nil, err
@@ -311,9 +311,11 @@ func (c *Client) UnconfirmedTransactionsCount(ctx context.Context) (int, error) 
 	if err != nil {
 		return 0, err
 	}
-	resp.Count, err = strconv.Atoi(resp.countRaw)
-	if err != nil {
-		return 0, err
+	if resp.countRaw != "" {
+		resp.Count, err = strconv.Atoi(resp.countRaw)
+		if err != nil {
+			return 0, err
+		}
 	}
 	return resp.Count, nil
 }
@@ -351,7 +353,7 @@ func (c *Client) call(ctx context.Context, method string, params opts, resp inte
 	// be closed.
 	select {
 	case c.pending <- req:
-		log.Infof("Made %s call\n", method)
+		log.Debugf("Made %s call\n", method)
 
 		ch := make(chan *response, 1)
 		c.mu.Lock()
