@@ -184,7 +184,8 @@ type Header struct {
 type NetInfo struct {
 	Listening bool     `json:"listening"`
 	Listeners []string `json:"listeners"`
-	NPeers    int      `json:"n_peers"`
+	nPeersRaw string   `json:"n_peers"`
+	NPeers    int
 	Peers     []Peer   `json:"peers"`
 }
 
