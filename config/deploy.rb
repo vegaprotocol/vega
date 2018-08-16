@@ -32,7 +32,7 @@ namespace :vega do
 
   desc "Reset tendermint"
   task :reset_tendermint do
-    on role(:app) do
+    on roles(:app) do
       begin
         execute "tendermint unsafe_reset_all"
       rescue => ex
@@ -44,14 +44,14 @@ namespace :vega do
   desc "Start tendermint"
   task :start_tendermint do
     on roles(:app) do
-      execute "nohup tendermint node >/tmp/tendermint.log >/tmp/tendermint.log 2>&1 & sleep 5", pty: true
+      execute "nohup tendermint node >/tmp/tendermint.log >/tmp/tendermint.log 2>&1 & sleep 1", pty: true
     end
   end
 
   desc "Start vega"
   task :start do
     on roles(:app) do
-      execute "nohup #{current_path.join("vega")} --chain >/tmp/vega.log >/tmp/vega.log 2>&1 & sleep 5", pty: true
+      execute "nohup #{current_path.join("vega")} --chain >/tmp/vega.log >/tmp/vega.log 2>&1 & sleep 1", pty: true
     end
   end
 
