@@ -42,13 +42,15 @@ func (b *client) GetGenesisTime(ctx context.Context) (genesis *rpc.Genesis, err 
 	if err != nil {
 		return nil, err
 	}
-
 	genesis, err = client.Genesis(ctx)
 	if genesis == nil && err != nil {
 		if !client.HasError() {
 			b.releaseRpcClient(client)
 		}
 		return nil, err
+	}
+	if client != nil {
+		b.releaseRpcClient(client)
 	}
 	return genesis, nil
 }
@@ -65,6 +67,9 @@ func (b *client) GetStatus(ctx context.Context) (status *rpc.Status, err error) 
 		}
 		return nil, err
 	}
+	if client != nil {
+		b.releaseRpcClient(client)
+	}
 	return status, nil
 }
 
@@ -79,6 +84,9 @@ func (b *client) GetNetworkInfo(ctx context.Context) (netInfo *rpc.NetInfo, err 
 			b.releaseRpcClient(client)
 		}
 		return nil, err
+	}
+	if client != nil {
+		b.releaseRpcClient(client)
 	}
 	return netInfo, nil
 
@@ -95,6 +103,9 @@ func (b *client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 			b.releaseRpcClient(client)
 		}
 		return 0, err
+	}
+	if client != nil {
+		b.releaseRpcClient(client)
 	}
 	return count, nil
 }
