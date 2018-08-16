@@ -2,6 +2,9 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
+
 	"vega/api"
 	"vega/api/endpoints/grpc"
 	"vega/api/endpoints/restproxy"
@@ -10,13 +13,15 @@ import (
 	"vega/datastore"
 	"vega/log"
 	"vega/api/endpoints/gql"
-	"os"
 )
 
 func main() {
 	// Configuration and logging
 	config := core.GetConfig()
-	log.InitConsoleLogger(log.DebugLevel)
+
+	if err := initLogger(); err != nil {
+		log.Fatalf("%s", err)
+	}
 
 	// todo read from something like gitlab
 	config.AppVersion = "0.1.927"
@@ -63,4 +68,19 @@ func main() {
 	if err := blockchain.Start(vega); err != nil {
 		log.Fatalf("%s", err)
 	}
+}
+
+func initLogger() error {
+	log.InitConsoleLogger(log.DebugLevel)
+
+	// Load the os executable file location
+	ex, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	logFileName := filepath.Dir(ex) + ".log"
+	log.Infof("initialising log file at %s", logFileName)
+	log.InitFileLogger(logFileName, log.DebugLevel)
+
+	return nil
 }
