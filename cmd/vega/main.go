@@ -71,16 +71,12 @@ func main() {
 }
 
 func initLogger() error {
-	log.InitConsoleLogger(log.DebugLevel)
-
 	// Load the os executable file location
 	ex, err := os.Executable()
 	if err != nil {
 		return err
 	}
 	logFileName := filepath.Dir(ex) + ".log"
-	log.Infof("initialising log file at %s", logFileName)
 	log.InitFileLogger(logFileName, log.DebugLevel)
-
 	return nil
 }
