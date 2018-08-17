@@ -31,25 +31,25 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 	}
 	if queryFilters.Market != nil {
 		holder.MarketFilter = &filters.QueryFilter{
-			Eq: queryFilters.Market,
+			Eq: *queryFilters.Market,
 		}
 		foundFilter = true
 	}
 	if queryFilters.Market_neq != nil {
 		holder.MarketFilter = &filters.QueryFilter{
-			Neq: queryFilters.Market_neq,
+			Neq: *queryFilters.Market_neq,
 		}
 		foundFilter = true
 	}
 	if queryFilters.Party != nil {
 		holder.PartyFilter = &filters.QueryFilter{
-			Eq: queryFilters.Party,
+			Eq: *queryFilters.Party,
 		}
 		foundFilter = true
 	}
 	if queryFilters.Party_neq != nil {
 		holder.PartyFilter = &filters.QueryFilter{
-			Neq: queryFilters.Party_neq,
+			Neq: *queryFilters.Party_neq,
 		}
 		foundFilter = true
 	}
