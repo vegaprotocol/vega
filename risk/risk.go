@@ -129,9 +129,9 @@ func (re *riskEngine) Assess(riskFactor *RiskFactor) error {
 
 	riskFactor.Short = riskFactorShort
 	riskFactor.Long = riskFactorLong
-	log.Infof("Risk Factors obtained from risk model: ")
-	log.Infof("Short: %f", riskFactor.Short)
-	log.Infof("Long: %f", riskFactor.Long)
+	log.Debugf("Risk Factors obtained from risk model: ")
+	log.Debugf("Short: %f", riskFactor.Short)
+	log.Debugf("Long: %f", riskFactor.Long)
 
 	return nil
 }

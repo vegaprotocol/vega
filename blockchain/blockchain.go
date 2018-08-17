@@ -96,7 +96,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	// Decode payload and command
 	value, cmd, err := VegaTxDecode(tx)
 	if err != nil {
-		log.Infof("Invalid tx: %s", string(tx))
+		log.Errorf("Invalid tx: %s", string(tx))
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
@@ -105,43 +105,43 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	order := msg.OrderPool.Get().(*msg.Order)
 	e := proto.Unmarshal(value, order)
 	if e != nil {
-		log.Infof("Error: Decoding order to proto: ", e.Error())
+		log.Errorf("Error: Decoding order to proto: ", e.Error())
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
 	// Process known command types
 	switch cmd {
 		case CreateOrderCommand:
-			log.Infof("ABCI received a CREATE ORDER command after consensus")
+			log.Debugf("ABCI received a CREATE ORDER command after consensus")
 
 			// Submit the create new order request to the Vega trading core
 			confirmationMessage, errorMessage := app.vega.SubmitOrder(order)
 			if confirmationMessage != nil {
-				log.Infof("ABCI reports it received an order confirmation message from vega:\n")
-				log.Infof("- aggressive order: %+v\n", confirmationMessage.Order)
-				log.Infof("- trades: %+v\n", confirmationMessage.Trades)
-				log.Infof("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+				log.Debugf("ABCI reports it received an order confirmation message from vega:\n")
+				log.Debugf("- aggressive order: %+v\n", confirmationMessage.Order)
+				log.Debugf("- trades: %+v\n", confirmationMessage.Trades)
+				log.Debugf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
 
 				current_tb += len(confirmationMessage.Trades)
 			}
 			if errorMessage != msg.OrderError_NONE {
-				log.Infof("ABCI reports it received an order error message from vega:\n")
-				log.Infof("- error: %+v\n", errorMessage.String())
+				log.Debugf("ABCI reports it received an order error message from vega:\n")
+				log.Debugf("- error: %+v\n", errorMessage.String())
 			}
 			current_ob++
 
 		case CancelOrderCommand:
-			log.Infof("ABCI received a CANCEL ORDER command after consensus")
+			log.Debugf("ABCI received a CANCEL ORDER command after consensus")
 
 			// Submit the create new order request to the Vega trading core
 			cancellationMessage, errorMessage := app.vega.CancelOrder(order)
 			if cancellationMessage != nil {
-				log.Infof("ABCI reports it received an order cancellation message from vega:\n")
-				log.Infof("- cancelled order: %+v\n", cancellationMessage.Order)
+				log.Debugf("ABCI reports it received an order cancellation message from vega:\n")
+				log.Debugf("- cancelled order: %+v\n", cancellationMessage.Order)
 			}
 			if errorMessage != msg.OrderError_NONE {
-				log.Infof("ABCI reports it received an order error message from vega:\n")
-				log.Infof("- error: %+v\n", errorMessage.String())
+				log.Debugf("ABCI reports it received an order error message from vega:\n")
+				log.Debugf("- error: %+v\n", errorMessage.String())
 			}
 
 		default:

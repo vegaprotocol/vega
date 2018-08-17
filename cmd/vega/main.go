@@ -89,6 +89,8 @@ func initLogger() error {
 			return err
 		}
 	}
-	log.InitFileLogger(logFileName, log.DebugLevel)
+	log.InitFileLogger(logFileName, log.InfoLevel)
+	// todo: config set log level and console logger ON/OFF
+	//log.InitConsoleLogger(log.InfoLevel)
 	return nil
 }
