@@ -257,8 +257,8 @@ func (c *Client) IsNodeReachable(ctx context.Context) (bool, error) {
 func (c *Client) NetInfo(ctx context.Context) (*NetInfo, error) {
 	resp := &NetInfo{}
 	err := c.call(ctx, "net_info", nil, resp)
-	if err == nil && resp.nPeersRaw != "" {
-		resp.NPeers, err = strconv.Atoi(resp.nPeersRaw)
+	if err == nil && resp.NPeersStr != "" {
+		resp.NPeers, err = strconv.Atoi(resp.NPeersStr)
 		if err != nil {
 			return nil, err
 		}
@@ -288,13 +288,20 @@ func (c *Client) Transaction(ctx context.Context, hash []byte, prove bool) (*Tra
 // number of returned transactions defaults to 30.
 func (c *Client) UnconfirmedTransactions(ctx context.Context, limit int) ([][]byte, error) {
 	type Unconfirmed struct {
-		Count        string  `json:"n_txs"`  // str vs int field see unconfirmed tx count below
+		CountStr     string `json:"n_txs"`  // marshalling sees this as a string from TM
+		Count        int
 		Transactions [][]byte `json:"txs"`
 	}
 	resp := &Unconfirmed{}
 	err := c.call(ctx, "unconfirmed_txs", opts{"limit": limit}, resp)
 	if err != nil {
 		return nil, err
+	}
+	if resp.CountStr != "" {
+		resp.Count, err = strconv.Atoi(resp.CountStr)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return resp.Transactions, nil
 }
@@ -303,7 +310,7 @@ func (c *Client) UnconfirmedTransactions(ctx context.Context, limit int) ([][]by
 // call. It returns the number of unconfirmed transactions.
 func (c *Client) UnconfirmedTransactionsCount(ctx context.Context) (int, error) {
 	type Unconfirmed struct {
-		countRaw string `json:"n_txs"`  // marshalling sees this as a string from TM
+		CountStr string `json:"n_txs"`  // marshalling sees this as a string from TM
 		Count int
 	}
 	resp := &Unconfirmed{}
@@ -311,8 +318,8 @@ func (c *Client) UnconfirmedTransactionsCount(ctx context.Context) (int, error) 
 	if err != nil {
 		return 0, err
 	}
-	if resp.countRaw != "" {
-		resp.Count, err = strconv.Atoi(resp.countRaw)
+	if resp.CountStr != "" {
+		resp.Count, err = strconv.Atoi(resp.CountStr)
 		if err != nil {
 			return 0, err
 		}
@@ -373,6 +380,7 @@ func (c *Client) call(ctx context.Context, method string, params opts, resp inte
 					method, r.Error)
 			}
 			if resp != nil {
+				//fmt.Println(fmt.Sprintf("raw: %+v", string(r.Result)))
 				return json.Unmarshal(r.Result, resp)
 			}
 		case <-c.closed:

@@ -77,6 +77,18 @@ func initLogger() error {
 		return err
 	}
 	logFileName := filepath.Dir(ex) + ".log"
+	// delete log file each time ./vega is spun up
+	// --> (this file gets HUGE quickly) when DEBUG level
+	// todo: create new one for timestamp
+	// t := time.Now()
+	// fmt.Println(t.Format("20060102150405"))
+	_, err = os.Stat(logFileName)
+	if err == nil {
+		err = os.Remove(logFileName)
+		if err != nil {
+			return err
+		}
+	}
 	log.InitFileLogger(logFileName, log.DebugLevel)
 	return nil
 }
