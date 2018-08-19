@@ -13,6 +13,8 @@ import (
 	"vega/datastore"
 	"vega/log"
 	"vega/api/endpoints/gql"
+	"time"
+	"fmt"
 )
 
 func main() {
@@ -76,12 +78,10 @@ func initLogger() error {
 	if err != nil {
 		return err
 	}
-	logFileName := filepath.Dir(ex) + "/vega-out.log"
-	// delete log file each time ./vega is spun up
-	// --> (this file gets HUGE quickly) when DEBUG level
-	// todo: create new one for timestamp
-	// t := time.Now()
-	// fmt.Println(t.Format("20060102150405"))
+	t := time.Now()
+	logFileName := filepath.Dir(ex) + "/vega-" + t.Format("20060102150405") + ".log"
+	fmt.Println(logFileName)
+
 	_, err = os.Stat(logFileName)
 	if err == nil {
 		err = os.Remove(logFileName)
@@ -89,6 +89,7 @@ func initLogger() error {
 			return err
 		}
 	}
+
 	log.InitFileLogger(logFileName, log.InfoLevel)
 	// todo: config set log level and console logger ON/OFF
 	//log.InitConsoleLogger(log.InfoLevel)
