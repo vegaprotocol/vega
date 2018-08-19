@@ -36,7 +36,7 @@ func main() {
 	// Storage Service provides read stores for consumer VEGA API
 	// Uses in memory storage (maps/slices etc), configurable in future
 	storage := &datastore.MemoryStoreProvider{}
-	storage.Init([]string{"BTC/DEC18"}, []string{"partyA", "partyB", "TEST"})
+	storage.Init([]string{"BTC/DEC18"}, []string{})
 
 	// VEGA core
 	vega := core.New(config, storage)
@@ -76,7 +76,7 @@ func initLogger() error {
 	if err != nil {
 		return err
 	}
-	logFileName := filepath.Dir(ex) + ".log"
+	logFileName := filepath.Dir(ex) + "/vega-out.log"
 	// delete log file each time ./vega is spun up
 	// --> (this file gets HUGE quickly) when DEBUG level
 	// todo: create new one for timestamp

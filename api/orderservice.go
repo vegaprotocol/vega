@@ -239,6 +239,7 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 	parties, err := p.app.PartyStore.GetAllParties()
 	if err == nil {
 		p.app.Statistics.TotalParties = uint64(len(parties))
+		p.app.Statistics.Parties = parties
 	}
 
 	// Unconfirmed TX count == current transaction backlog length
@@ -264,6 +265,7 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 	}
 	//log.Debugf("Statistics: Tendermint net-info: %+v", netInfo)
 	p.app.Statistics.TotalPeers = uint64(netInfo.NPeers)
+
 
 	return p.app.Statistics, nil
 }

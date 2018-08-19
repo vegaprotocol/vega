@@ -2,6 +2,7 @@
 cover.out
 coverage.html
 vega
+vega-out.log
 vegabench
 .idea/
 *.iws
