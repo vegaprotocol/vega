@@ -175,7 +175,6 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 		if err != nil {
 			log.Errorf("Error un-subscribing when context.Done() on OrderService for id: %d", id)
 		}
-		close(internal)
 	}(ref, internal)
 
 	go func(id uint64) {
@@ -208,7 +207,6 @@ func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<
 		if err != nil {
 			log.Errorf("Error un-subscribing depth when context.Done() on OrderService for id: %d", id)
 		}
-		close(internal)
 	}(ref, internal)
 
 	go func(id uint64) {
