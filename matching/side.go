@@ -1,9 +1,10 @@
 package matching
 
 import (
+	"vega/log"
 	"vega/msg"
+
 	"github.com/pkg/errors"
-	"fmt"
 )
 
 type OrderBookSide struct {
@@ -86,9 +87,9 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
 func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uint64) {
 
 	var (
-		trades          []*msg.Trade
-		impactedOrders  []*msg.Order
-		lastTradedPrice uint64
+		trades            []*msg.Trade
+		impactedOrders    []*msg.Order
+		lastTradedPrice   uint64
 		totalVolumeToFill uint64
 	)
 
@@ -98,7 +99,6 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 			for _, level := range s.levels {
 				if level.price >= agg.Price {
 					totalVolumeToFill += level.volume
-					fmt.Printf("BUY SIDE totalVolumeToFill %d until price %d \n", totalVolumeToFill, agg.Price)
 				}
 			}
 		}
@@ -107,12 +107,11 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 			for _, level := range s.levels {
 				if level.price <= agg.Price {
 					totalVolumeToFill += level.volume
-					fmt.Printf("SELL SIDE totalVolumeToFill %d until price %d \n", totalVolumeToFill, agg.Price )
 				}
 			}
 		}
 
-		fmt.Printf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining)
+		log.Debugf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining)
 
 		if totalVolumeToFill <= agg.Remaining {
 			return trades, impactedOrders, 0

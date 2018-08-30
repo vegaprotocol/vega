@@ -3,8 +3,10 @@ package matching
 import (
 	"fmt"
 	"testing"
+
 	"vega/log"
 	"vega/msg"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -765,6 +767,73 @@ func TestOrderBook_AddOrder(t *testing.T) {
 				},
 			},
 		},
+		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
+			aggressiveOrder: &msg.Order{
+				Market:    "testOrderBook",
+				Party:     "ZZ",
+				Side:      msg.Side_Sell,
+				Price:     95,
+				Size:      200,
+				Remaining: 200,
+				Type:      msg.Order_GTT, // nonpersistent
+				Timestamp: 5,
+				ExpirationDatetime: "2006-01-02T15:04:05Z07:00",
+				ExpirationTimestamp: 6,
+			},
+			expectedTrades: []msg.Trade{},
+			expectedPassiveOrdersAffected: []msg.Order{},
+		},
+		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
+			aggressiveOrder: &msg.Order{
+				Market:    "testOrderBook",
+				Party:     "ZXY",
+				Side:      msg.Side_Buy,
+				Price:     95,
+				Size:      100,
+				Remaining: 100,
+				Type:      msg.Order_FOK, // nonpersistent
+				Timestamp: 6,
+			},
+			expectedTrades: []msg.Trade{
+				{
+					Market:    "testOrderBook",
+					Price:     95,
+					Size:      100,
+					Buyer:     "ZXY",
+					Seller:    "ZZ",
+					Aggressor: msg.Side_Buy,
+				},
+			},
+			expectedPassiveOrdersAffected: []msg.Order{
+				{
+					Market:    "testOrderBook",
+					Party:     "ZZ",
+					Side:      msg.Side_Sell,
+					Price:     95,
+					Size:      200,
+					Remaining: 100,
+					Type:      msg.Order_GTT, // nonpersistent
+					Timestamp: 5,
+					ExpirationDatetime: "2006-01-02T15:04:05Z07:00",
+					ExpirationTimestamp: 7,
+				},
+			},
+		},
+		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
+			aggressiveOrder: &msg.Order{
+				Market:    "testOrderBook",
+				Party:     "XX",
+				Side:      msg.Side_Buy,
+				Price:     102,
+				Size:      2000,
+				Remaining: 2000,
+				Type:      msg.Order_FOK, // nonpersistent
+				Timestamp: 6,
+			},
+			expectedTrades: []msg.Trade{},
+			expectedPassiveOrdersAffected: []msg.Order{},
+		},
+		// expect empty book after that as remaining order GTT has to expire
 	}
 
 	for i, s := range scenario {
@@ -800,6 +869,9 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		for i, orderAffected := range confirmationMsg.PassiveOrdersAffected {
 			expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
 		}
+
+		// call remove expired orders every scenario
+		book.RemoveExpiredOrders(s.aggressiveOrder.Timestamp)
 	}
 }
 

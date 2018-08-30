@@ -1,9 +1,10 @@
 package matching
 
 import (
+	"fmt"
+
 	"vega/log"
 	"vega/msg"
-	"fmt"
 )
 
 type OrderBook struct {
@@ -24,6 +25,7 @@ func NewBook(name string, config Config) *OrderBook {
 		buy:    &OrderBookSide{},
 		sell:   &OrderBookSide{},
 		config: config,
+		expiryTable: make(map[uint64][]*msg.Order, 0),
 	}
 }
 
@@ -116,15 +118,12 @@ func (b *OrderBook) RemoveOrder(order *msg.Order) error {
 }
 
 func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) {
-	for idx := range b.expiryTable {
-		b.RemoveOrder(b.expiryTable[expirationTimestamp][idx])
+	if _, ok := b.expiryTable[expirationTimestamp]; ok {
+		for idx := range b.expiryTable[expirationTimestamp] {
+			b.RemoveOrder(b.expiryTable[expirationTimestamp][idx])
+		}
+		delete(b.expiryTable, expirationTimestamp)
 	}
-	delete(b.expiryTable, expirationTimestamp)
-
-	for idx := range b.expiryTable {
-		b.RemoveOrder(b.expiryTable[expirationTimestamp][idx])
-	}
-	delete(b.expiryTable, expirationTimestamp)
 }
 
 func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
