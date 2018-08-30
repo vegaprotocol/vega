@@ -124,6 +124,7 @@ message Statistics {
     uint64 totalParties = 15;
     string appVersionHash = 16;
     string appVersion = 17;
+    string vegaTime = 18;
 }
 
 enum AppStatus {

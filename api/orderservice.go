@@ -11,6 +11,7 @@ import (
 	"vega/filters"
 	"time"
 	"vega/vegatime"
+	"github.com/golang/go/src/pkg/fmt"
 )
 
 type OrderService interface {
@@ -55,17 +56,19 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 
 	// if order is GTT convert datetime to blockchain timestamp
 	if order.Type == msg.Order_GTT {
-		since, err := time.Parse(time.RFC3339, order.ExpirationDatetime)
+		expirationDateTime, err := time.Parse(time.RFC3339, order.ExpirationDatetime)
 		if err != nil {
 			return false, errors.New("invalid expiration datetime")
 		}
 
-		expirationTimestamp := vegatime.NewVegaTimeConverter(p.app).TimeToBlock(since)
+		expirationTimestamp := vegatime.NewVegaTimeConverter(p.app).TimeToBlock(expirationDateTime)
 		if expirationTimestamp <= uint64(p.app.State.Height) {
 			return false, errors.New("invalid expiration datetime")
 		}
 		order.ExpirationTimestamp = expirationTimestamp
 	}
+
+	fmt.Printf("datetime %s, timestamp %d \n", order.ExpirationDatetime, order.ExpirationTimestamp)
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
 	return p.blockchain.CreateOrder(ctx, order)
@@ -246,6 +249,8 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 
 	p.app.Statistics.CurrentTime = time.Now().UTC().Format(time.RFC3339)
 	p.app.Statistics.GenesisTime = p.app.GetGenesisTime().Format(time.RFC3339)
+	vtc := vegatime.NewVegaTimeConverter(p.app)
+	p.app.Statistics.VegaTime = vtc.BlockToTime(uint64(p.app.State.Height)).Format(time.RFC3339)
 	p.app.Statistics.BlockHeight = uint64(p.app.State.Height)
 
 	parties, err := p.app.PartyStore.GetAllParties()
