@@ -22,6 +22,8 @@ message Order {
     Type type = 8;
     uint64 timestamp = 9;
     Status status = 10;
+    string expirationDatetime = 11;
+    uint64 expirationTimestamp = 12;
 }
 
 message OrderCancellation {
@@ -42,6 +44,7 @@ enum OrderError {
     INVALID_REMAINING_SIZE = 4;
     NON_EMPTY_NEW_ORDER_ID = 5;
     ORDER_REMOVAL_FAILURE = 6;
+    INVALID_EXPIRATION_DATETIME = 7;
 }
 
 message Trade {

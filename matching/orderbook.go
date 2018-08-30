@@ -13,6 +13,8 @@ type OrderBook struct {
 	lastTradedPrice uint64
 	config          Config
 	latestTimestamp uint64
+
+	expiryTable map[uint64][]*msg.Order
 }
 
 // Create an order book with a given name
@@ -89,6 +91,16 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// if order is persistent type add to order book to the correct side
 	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
+
+		// if order type GTT append order to expiryTable at expiration timestamp
+		if order.Type == msg.Order_GTT {
+			if _, ok := b.expiryTable[order.ExpirationTimestamp]; !ok {
+				b.expiryTable[order.ExpirationTimestamp] = []*msg.Order{order}
+			} else {
+				b.expiryTable[order.ExpirationTimestamp] = append(b.expiryTable[order.ExpirationTimestamp], order)
+			}
+		}
+
 		b.getSide(order.Side).addOrder(order, order.Side)
 
 		b.PrintState("After addOrder state:")
@@ -101,6 +113,18 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 func (b *OrderBook) RemoveOrder(order *msg.Order) error {
 	err := b.getSide(order.Side).RemoveOrder(order)
 	return err
+}
+
+func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) {
+	for idx := range b.expiryTable {
+		b.RemoveOrder(b.expiryTable[expirationTimestamp][idx])
+	}
+	delete(b.expiryTable, expirationTimestamp)
+
+	for idx := range b.expiryTable {
+		b.RemoveOrder(b.expiryTable[expirationTimestamp][idx])
+	}
+	delete(b.expiryTable, expirationTimestamp)
 }
 
 func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {

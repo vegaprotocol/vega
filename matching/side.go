@@ -3,6 +3,7 @@ package matching
 import (
 	"vega/msg"
 	"github.com/pkg/errors"
+	"fmt"
 )
 
 type OrderBookSide struct {
@@ -88,7 +89,35 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 		trades          []*msg.Trade
 		impactedOrders  []*msg.Order
 		lastTradedPrice uint64
+		totalVolumeToFill uint64
 	)
+
+	if agg.Type == msg.Order_FOK {
+
+		if agg.Side == msg.Side_Sell {
+			for _, level := range s.levels {
+				if level.price >= agg.Price {
+					totalVolumeToFill += level.volume
+					fmt.Printf("BUY SIDE totalVolumeToFill %d until price %d \n", totalVolumeToFill, agg.Price)
+				}
+			}
+		}
+
+		if agg.Side == msg.Side_Buy {
+			for _, level := range s.levels {
+				if level.price <= agg.Price {
+					totalVolumeToFill += level.volume
+					fmt.Printf("SELL SIDE totalVolumeToFill %d until price %d \n", totalVolumeToFill, agg.Price )
+				}
+			}
+		}
+
+		fmt.Printf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining)
+
+		if totalVolumeToFill <= agg.Remaining {
+			return trades, impactedOrders, 0
+		}
+	}
 
 	if agg.Side == msg.Side_Sell {
 		for _, level := range s.levels {

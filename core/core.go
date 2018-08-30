@@ -95,6 +95,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 
 	// -----------------------------------------------//
 	//----------------- MATCHING ENGINE --------------//
+
 	// 1) submit order to matching engine
 	confirmation, errorMsg := v.matchingEngine.SubmitOrder(order)
 	if confirmation == nil || errorMsg != msg.OrderError_NONE {

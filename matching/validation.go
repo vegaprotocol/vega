@@ -24,5 +24,10 @@ func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {
 		return msg.OrderError_INVALID_REMAINING_SIZE
 	}
 
+	// if order is GTT, validate timestamp and convert to block number
+	if orderMessage.Type == msg.Order_GTT && orderMessage.ExpirationDatetime == "" {
+			return msg.OrderError_INVALID_EXPIRATION_DATETIME
+	}
+
 	return msg.OrderError_NONE
 }

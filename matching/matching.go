@@ -37,6 +37,9 @@ func (me *matchingEngine) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation,
 	if err != msg.OrderError_NONE {
 		return nil, err
 	}
+
+	market.RemoveExpiredOrders(order.Timestamp)
+
 	return confirmationMessage, msg.OrderError_NONE
 }
 

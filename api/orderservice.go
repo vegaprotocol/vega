@@ -10,6 +10,7 @@ import (
 	"vega/log"
 	"vega/filters"
 	"time"
+	"vega/vegatime"
 )
 
 type OrderService interface {
@@ -50,10 +51,21 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	// Set defaults, prevent unwanted external manipulation
 	order.Remaining = order.Size
 	order.Status = msg.Order_Active
-	order.Type = msg.Order_GTC // VEGA only supports GTC at present
 	order.Timestamp = 0
 
-	// TODO validate
+	// if order is GTT convert datetime to blockchain timestamp
+	if order.Type == msg.Order_GTT {
+		since, err := time.Parse(time.RFC3339, order.ExpirationDatetime)
+		if err != nil {
+			return false, errors.New("invalid expiration datetime")
+		}
+
+		expirationTimestamp := vegatime.NewVegaTimeConverter(p.app).TimeToBlock(since)
+		if expirationTimestamp <= uint64(p.app.State.Height) {
+			return false, errors.New("invalid expiration datetime")
+		}
+		order.ExpirationTimestamp = expirationTimestamp
+	}
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
 	return p.blockchain.CreateOrder(ctx, order)
