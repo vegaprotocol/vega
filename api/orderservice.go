@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"github.com/golang/go/src/pkg/fmt"
 	"github.com/pkg/errors"
 	"time"
 	"vega/blockchain"
@@ -67,8 +66,6 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 		}
 		order.ExpirationTimestamp = expirationTimestamp
 	}
-
-	fmt.Printf("datetime %s, timestamp %d \n", order.ExpirationDatetime, order.ExpirationTimestamp)
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
 	return p.blockchain.CreateOrder(ctx, order)
