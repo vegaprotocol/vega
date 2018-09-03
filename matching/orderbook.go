@@ -108,6 +108,29 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		b.PrintState("After addOrder state:")
 	}
 
+	// update order statuses based on the order types
+	if order.Type == msg.Order_FOK {
+		if order.Remaining == order.Size {
+			order.Status = msg.Order_Stopped
+		} else {
+			order.Status = msg.Order_Filled
+		}
+	}
+
+	if order.Type == msg.Order_ENE {
+		if order.Remaining == order.Size {
+			order.Status = msg.Order_Stopped
+		} else {
+			order.Status = msg.Order_Filled
+		}
+	}
+
+	for idx, _ := range impactedOrders {
+		if impactedOrders[idx].Remaining == 0 {
+			impactedOrders[idx].Status = msg.Order_Filled
+		}
+	}
+
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
 	return orderConfirmation, msg.OrderError_NONE
 }
@@ -115,6 +138,16 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 func (b *OrderBook) RemoveOrder(order *msg.Order) error {
 	err := b.getSide(order.Side).RemoveOrder(order)
 	return err
+}
+
+func (b *OrderBook) GetExpiredOrders(expirationTimestamp uint64) []*msg.Order{
+	var expiredOrders []*msg.Order
+	if _, ok := b.expiryTable[expirationTimestamp]; ok {
+		for idx := range b.expiryTable[expirationTimestamp] {
+			expiredOrders = append(expiredOrders, b.expiryTable[expirationTimestamp][idx])
+		}
+	}
+	return expiredOrders
 }
 
 func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) {

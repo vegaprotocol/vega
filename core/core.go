@@ -191,3 +191,15 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 
 	return cancellation, msg.OrderError_NONE
 }
+
+func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
+	expiringOrders := v.matchingEngine.GetExpiringOrders(timestamp)
+
+	for _, order := range expiringOrders {
+		// remove orders from the store
+		order.Status = msg.Order_Expired
+		v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+	}
+
+	v.matchingEngine.RemoveExpiringOrders(timestamp)
+}

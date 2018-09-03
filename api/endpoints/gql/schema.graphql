@@ -272,8 +272,14 @@ enum OrderStatus {
     # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
     Cancelled,
 
-    # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
+    # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
     Expired,
+
+    # This order was of type ENE or FOK and could not be processed by the matching engine due to lack of liquidity.
+    Stopped,
+
+    # This order is fully filled with remaining equals zero.
+    Filled,
 }
 
 # Whether the placer of an order is aiming to buy or sell on the market

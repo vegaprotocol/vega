@@ -2,16 +2,16 @@ package api
 
 import (
 	"context"
+	"github.com/golang/go/src/pkg/fmt"
+	"github.com/pkg/errors"
+	"time"
 	"vega/blockchain"
 	"vega/core"
 	"vega/datastore"
-	"vega/msg"
-	"github.com/pkg/errors"
-	"vega/log"
 	"vega/filters"
-	"time"
+	"vega/log"
+	"vega/msg"
 	"vega/vegatime"
-	"github.com/golang/go/src/pkg/fmt"
 )
 
 type OrderService interface {
@@ -90,7 +90,7 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	if o.Party != order.Party {
 		return false, errors.New("party mis-match cannot cancel order")
 	}
-	// Send cancellation request by consensus 
+	// Send cancellation request by consensus
 	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
 }
 
@@ -106,16 +106,18 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, filters *
 			continue
 		}
 		o := &msg.Order{
-			Id:        order.Id,
-			Market:    order.Market,
-			Party:     order.Party,
-			Side:      order.Side,
-			Price:     order.Price,
-			Size:      order.Size,
-			Remaining: order.Remaining,
-			Timestamp: order.Timestamp,
-			Type:      order.Type,
-			Status:    order.Status,
+			Id:                  order.Id,
+			Market:              order.Market,
+			Party:               order.Party,
+			Side:                order.Side,
+			Price:               order.Price,
+			Size:                order.Size,
+			Remaining:           order.Remaining,
+			Timestamp:           order.Timestamp,
+			Type:                order.Type,
+			Status:              order.Status,
+			ExpirationDatetime:  order.ExpirationDatetime,
+			ExpirationTimestamp: order.ExpirationTimestamp,
 		}
 		result = append(result, o)
 	}
@@ -134,16 +136,18 @@ func (p *orderService) GetByParty(ctx context.Context, party string, filters *fi
 			continue
 		}
 		o := &msg.Order{
-			Id:        order.Id,
-			Market:    order.Market,
-			Party:     order.Party,
-			Side:      order.Side,
-			Price:     order.Price,
-			Size:      order.Size,
-			Remaining: order.Remaining,
-			Timestamp: order.Timestamp,
-			Type:      order.Type,
-			Status:    order.Status,
+			Id:                  order.Id,
+			Market:              order.Market,
+			Party:               order.Party,
+			Side:                order.Side,
+			Price:               order.Price,
+			Size:                order.Size,
+			Remaining:           order.Remaining,
+			Timestamp:           order.Timestamp,
+			Type:                order.Type,
+			Status:              order.Status,
+			ExpirationDatetime:  order.ExpirationDatetime,
+			ExpirationTimestamp: order.ExpirationTimestamp,
 		}
 		result = append(result, o)
 	}

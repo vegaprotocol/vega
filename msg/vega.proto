@@ -11,7 +11,7 @@ message Market {
 
 message Order {
     enum Type { GTC = 0; GTT = 1; ENE = 2; FOK = 3; }
-    enum Status { Active = 0; Expired = 1; Cancelled = 2;}
+    enum Status { Active = 0; Expired = 1; Cancelled = 2; Stopped = 3; Filled = 4; }
     string id = 1;
     string market = 2;
     string party = 3;
