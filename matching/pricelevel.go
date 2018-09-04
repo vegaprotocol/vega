@@ -152,6 +152,8 @@ func (l *PriceLevel) getVolumeAllocation(
 		size++ // Otherwise we can end up allocating 1 short because of integer division rounding
 	}
 	return min(min(uint64(size), agg.Remaining), pass.Remaining)
+
+	// return min(agg.Remaining, pass.Remaining)
 }
 
 // Returns the min of 2 uint64s

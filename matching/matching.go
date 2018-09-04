@@ -9,8 +9,8 @@ type MatchingEngine interface {
 	CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError)
 	SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError)
 	DeleteOrder(order *msg.Order)
-	GetExpiringOrders(timestamp uint64) []*msg.Order
-	RemoveExpiringOrders(timestamp uint64)
+	RemoveExpiringOrders(timestamp uint64) []*msg.Order
+	AmendOrder(order *msg.Order) msg.OrderError
 }
 
 type matchingEngine struct {
@@ -61,17 +61,17 @@ func (me *matchingEngine) CancelOrder(order *msg.Order) (*msg.OrderCancellation,
 	return cancellationResult, msg.OrderError_NONE
 }
 
-func (me *matchingEngine) GetExpiringOrders(timestamp uint64) []*msg.Order {
+func (me *matchingEngine) RemoveExpiringOrders(timestamp uint64) []*msg.Order {
 	var expiringOrders []*msg.Order
 	for _, market := range me.markets {
-		expiringOrders = append(expiringOrders, market.GetExpiredOrders(timestamp)...)
+		expiringOrders = append(expiringOrders, market.RemoveExpiredOrders(timestamp)...)
 	}
 	return expiringOrders
 }
 
-func (me *matchingEngine) RemoveExpiringOrders(timestamp uint64) {
-	for _, market := range me.markets {
-		market.RemoveExpiredOrders(timestamp)
+func (me *matchingEngine) AmendOrder(order *msg.Order) msg.OrderError {
+	if market, exists := me.markets[order.Market]; exists {
+		return market.AmendOrder(order)
 	}
+	return msg.OrderError_INVALID_MARKET_ID
 }
-

@@ -4,6 +4,7 @@ package blockchain
 const (
 	CreateOrderCommand Command = 0x40
 	CancelOrderCommand Command = 0x41
+	EditOrderCommand Command = 0x42
 )
 
 type Command byte

@@ -104,6 +104,32 @@
         ]
       }
     },
+    "/editOrder": {
+      "post": {
+        "operationId": "EditOrder",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/vegaOrder"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/marketDepth": {
       "get": {
         "operationId": "MarketDepth",
@@ -314,7 +340,9 @@
       "enum": [
         "Active",
         "Expired",
-        "Cancelled"
+        "Cancelled",
+        "Stopped",
+        "Filled"
       ],
       "default": "Active"
     },
@@ -385,6 +413,9 @@
         "success": {
           "type": "boolean",
           "format": "boolean"
+        },
+        "reference": {
+          "type": "string"
         }
       }
     },
@@ -559,6 +590,16 @@
         },
         "status": {
           "$ref": "#/definitions/OrderStatus"
+        },
+        "expirationDatetime": {
+          "type": "string"
+        },
+        "expirationTimestamp": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "reference": {
+          "type": "string"
         }
       }
     },
@@ -615,6 +656,10 @@
         "status": {
           "$ref": "#/definitions/vegaAppStatus"
         },
+        "txPerBlock": {
+          "type": "string",
+          "format": "uint64"
+        },
         "averageTxBytes": {
           "type": "string",
           "format": "uint64"
@@ -637,9 +682,6 @@
         "lastOrder": {
           "$ref": "#/definitions/vegaOrder"
         },
-        "lastCandle": {
-          "$ref": "#/definitions/vegaCandle"
-        },
         "totalMarkets": {
           "type": "string",
           "format": "uint64"
@@ -648,10 +690,13 @@
           "type": "string",
           "format": "uint64"
         },
-        "AppVersionHash": {
+        "appVersionHash": {
           "type": "string"
         },
-        "AppVersion": {
+        "appVersion": {
+          "type": "string"
+        },
+        "vegaTime": {
           "type": "string"
         }
       }

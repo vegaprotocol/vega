@@ -192,14 +192,49 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 	return cancellation, msg.OrderError_NONE
 }
 
+func (v *Vega) EditOrder(newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+	// stores get me order with this reference
+	existingOrder, err := v.OrderStore.GetByPartyAndReference(newOrder.Party, newOrder.Reference)
+	if err != nil {
+		return &msg.OrderConfirmation{}, msg.OrderError_INVALID_ORDER_REFERENCE
+	}
+
+	if newOrder.Size == 0 {
+		return &msg.OrderConfirmation{}, msg.OrderError_EDIT_NOT_ALLOWED
+	}
+
+	// check what type of amend operation to do
+
+	// if increase in size or change in price
+	// ---> DO atomic cancel and submit
+	if newOrder.Price != existingOrder.Price || newOrder.Size > existingOrder.Size {
+		_, err := v.matchingEngine.CancelOrder(existingOrder.ToProtoMessage())
+		if err != msg.OrderError_NONE {
+			return &msg.OrderConfirmation{}, err
+		}
+		return v.matchingEngine.SubmitOrder(newOrder)
+	}
+
+	// if reduce size or change in expiry
+	// ---> DO matching engine amend order values
+	if newOrder.ExpirationDatetime != existingOrder.ExpirationDatetime || newOrder.Size < existingOrder.Size {
+		err := v.matchingEngine.AmendOrder(newOrder)
+		if err != msg.OrderError_NONE {
+			return &msg.OrderConfirmation{}, err
+		}
+		return &msg.OrderConfirmation{}, msg.OrderError_NONE
+	}
+
+	return &msg.OrderConfirmation{}, msg.OrderError_EDIT_NOT_ALLOWED
+}
+
 func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
-	expiringOrders := v.matchingEngine.GetExpiringOrders(timestamp)
+	expiringOrders := v.matchingEngine.RemoveExpiringOrders(timestamp)
 
 	for _, order := range expiringOrders {
 		// remove orders from the store
-		order.Status = msg.Order_Expired
 		v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
 	}
 
-	v.matchingEngine.RemoveExpiringOrders(timestamp)
+
 }

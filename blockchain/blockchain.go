@@ -133,11 +133,25 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 		case CancelOrderCommand:
 			log.Debugf("ABCI received a CANCEL ORDER command after consensus")
 
-			// Submit the create new order request to the Vega trading core
+			// Submit the cancel new order request to the Vega trading core
 			cancellationMessage, errorMessage := app.vega.CancelOrder(order)
 			if cancellationMessage != nil {
 				log.Debugf("ABCI reports it received an order cancellation message from vega:\n")
 				log.Debugf("- cancelled order: %+v\n", cancellationMessage.Order)
+			}
+			if errorMessage != msg.OrderError_NONE {
+				log.Debugf("ABCI reports it received an order error message from vega:\n")
+				log.Debugf("- error: %+v\n", errorMessage.String())
+			}
+
+		case EditOrderCommand:
+			log.Debugf("ABCI received a EDIT ORDER command after consensus")
+
+			// Submit the Edit new order request to the Vega trading core
+			confirmationMessage, errorMessage := app.vega.EditOrder(order)
+			if confirmationMessage != nil {
+				log.Debugf("ABCI reports it received an order cancellation message from vega:\n")
+				log.Debugf("- cancelled order: %+v\n", confirmationMessage.Order)
 			}
 			if errorMessage != msg.OrderError_NONE {
 				log.Debugf("ABCI reports it received an order error message from vega:\n")

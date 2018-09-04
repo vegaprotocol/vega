@@ -67,6 +67,26 @@ func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.O
 	return result, msg.OrderError_NONE
 }
 
+func (b *OrderBook) AmendOrder(order *msg.Order) msg.OrderError {
+	if err := b.validateOrder(order); err != msg.OrderError_NONE {
+		return err
+	}
+
+	if order.Side == msg.Side_Buy {
+		if err := b.buy.amendOrder(order); err != msg.OrderError_NONE {
+			log.Errorf("Error amending (buy side): ", err)
+			return err
+		}
+	} else {
+		if err := b.sell.amendOrder(order); err != msg.OrderError_NONE {
+			log.Errorf("Error amending (sell side): ", err)
+			return err
+		}
+	}
+
+	return msg.OrderError_NONE
+}
+
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
 func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	if err := b.validateOrder(order); err != msg.OrderError_NONE {
@@ -140,23 +160,18 @@ func (b *OrderBook) RemoveOrder(order *msg.Order) error {
 	return err
 }
 
-func (b *OrderBook) GetExpiredOrders(expirationTimestamp uint64) []*msg.Order{
+func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []*msg.Order {
 	var expiredOrders []*msg.Order
 	if _, ok := b.expiryTable[expirationTimestamp]; ok {
 		for idx := range b.expiryTable[expirationTimestamp] {
-			expiredOrders = append(expiredOrders, b.expiryTable[expirationTimestamp][idx])
-		}
-	}
-	return expiredOrders
-}
-
-func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) {
-	if _, ok := b.expiryTable[expirationTimestamp]; ok {
-		for idx := range b.expiryTable[expirationTimestamp] {
 			b.RemoveOrder(b.expiryTable[expirationTimestamp][idx])
+
+			b.expiryTable[expirationTimestamp][idx].Status = msg.Order_Expired
+			expiredOrders = append(expiredOrders, b.expiryTable[expirationTimestamp][idx])
 		}
 		delete(b.expiryTable, expirationTimestamp)
 	}
+	return expiredOrders
 }
 
 func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {

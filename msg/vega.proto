@@ -24,6 +24,7 @@ message Order {
     Status status = 10;
     string expirationDatetime = 11;
     uint64 expirationTimestamp = 12;
+    string reference = 13;
 }
 
 message OrderCancellation {
@@ -45,6 +46,10 @@ enum OrderError {
     NON_EMPTY_NEW_ORDER_ID = 5;
     ORDER_REMOVAL_FAILURE = 6;
     INVALID_EXPIRATION_DATETIME = 7;
+    INVALID_ORDER_REFERENCE = 8;
+    EDIT_NOT_ALLOWED = 9;
+    ORDER_AMEND_FAILURE = 10;
+    ORDER_NOT_FOUND = 11;
 }
 
 message Trade {

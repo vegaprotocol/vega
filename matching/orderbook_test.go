@@ -716,7 +716,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 				Type:      msg.Order_FOK, // nonpersistent
 				Timestamp: 5,
 			},
-			expectedTrades: []msg.Trade{},
+			expectedTrades:                []msg.Trade{},
 			expectedPassiveOrdersAffected: []msg.Order{},
 		},
 		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
@@ -730,7 +730,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 				Type:      msg.Order_FOK, // nonpersistent
 				Timestamp: 5,
 			},
-			expectedTrades: []msg.Trade{},
+			expectedTrades:                []msg.Trade{},
 			expectedPassiveOrdersAffected: []msg.Order{},
 		},
 		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
@@ -769,18 +769,18 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		},
 		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
 			aggressiveOrder: &msg.Order{
-				Market:    "testOrderBook",
-				Party:     "ZZ",
-				Side:      msg.Side_Sell,
-				Price:     95,
-				Size:      200,
-				Remaining: 200,
-				Type:      msg.Order_GTT, // nonpersistent
-				Timestamp: 5,
-				ExpirationDatetime: "2006-01-02T15:04:05Z07:00",
+				Market:              "testOrderBook",
+				Party:               "ZZ",
+				Side:                msg.Side_Sell,
+				Price:               95,
+				Size:                200,
+				Remaining:           200,
+				Type:                msg.Order_GTT, // nonpersistent
+				Timestamp:           5,
+				ExpirationDatetime:  "2006-01-02T15:04:05Z07:00",
 				ExpirationTimestamp: 6,
 			},
-			expectedTrades: []msg.Trade{},
+			expectedTrades:                []msg.Trade{},
 			expectedPassiveOrdersAffected: []msg.Order{},
 		},
 		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
@@ -806,15 +806,15 @@ func TestOrderBook_AddOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []msg.Order{
 				{
-					Market:    "testOrderBook",
-					Party:     "ZZ",
-					Side:      msg.Side_Sell,
-					Price:     95,
-					Size:      200,
-					Remaining: 100,
-					Type:      msg.Order_GTT, // nonpersistent
-					Timestamp: 5,
-					ExpirationDatetime: "2006-01-02T15:04:05Z07:00",
+					Market:              "testOrderBook",
+					Party:               "ZZ",
+					Side:                msg.Side_Sell,
+					Price:               95,
+					Size:                200,
+					Remaining:           100,
+					Type:                msg.Order_GTT, // nonpersistent
+					Timestamp:           5,
+					ExpirationDatetime:  "2006-01-02T15:04:05Z07:00",
 					ExpirationTimestamp: 7,
 				},
 			},
@@ -830,7 +830,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 				Type:      msg.Order_FOK, // nonpersistent
 				Timestamp: 6,
 			},
-			expectedTrades: []msg.Trade{},
+			expectedTrades:                []msg.Trade{},
 			expectedPassiveOrdersAffected: []msg.Order{},
 		},
 		// expect empty book after that as remaining order GTT has to expire
@@ -875,7 +875,6 @@ func TestOrderBook_AddOrder(t *testing.T) {
 	}
 }
 
-
 func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
 	book := NewBook("testOrderBook", DefaultConfig())
 	newOrder := &msg.Order{
@@ -887,7 +886,7 @@ func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
 		Remaining: 100,
 		Type:      msg.Order_GTC,
 		Timestamp: 0,
-		Id: fmt.Sprintf("V%d-%d", 1, 1),
+		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
 
 	_, err := book.AddOrder(newOrder)
@@ -896,7 +895,6 @@ func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
 	}
 
 	assert.Equal(t, msg.OrderError_INVALID_MARKET_ID, err)
-
 
 }
 
@@ -914,9 +912,9 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 		Remaining: 100,
 		Type:      msg.Order_GTC,
 		Timestamp: 0,
-		Id: fmt.Sprintf("V%d-%d", 1, 1),
+		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
-	
+
 	confirmation, err := book.AddOrder(newOrder)
 	orderAdded := confirmation.Order
 
@@ -948,7 +946,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 		Remaining: 100,
 		Type:      msg.Order_GTC,
 		Timestamp: 0,
-		Id: fmt.Sprintf("V%d-%d", 1, 1),
+		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
 
 	confirmation, err := book.AddOrder(newOrder)
@@ -980,7 +978,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	confirmation, err := book.AddOrder(newOrder)
 	orderAdded := confirmation.Order
 
-	orderAdded.Market = "invalid"  // Bad market, malformed?
+	orderAdded.Market = "invalid" // Bad market, malformed?
 
 	_, err = book.CancelOrder(orderAdded)
 	if err != msg.OrderError_NONE {
@@ -1029,4 +1027,247 @@ func expectOrder(t *testing.T, expectedOrder, order *msg.Order) {
 	assert.Equal(t, expectedOrder.Remaining, order.Remaining)
 	assert.Equal(t, expectedOrder.Type, order.Type)
 	assert.Equal(t, expectedOrder.Timestamp, order.Timestamp)
+}
+
+func TestOrderBook_AmendOrder(t *testing.T) {
+	fmt.Println("BEGIN AMENDING ORDER")
+
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+	}
+
+	confirmation, err := book.AddOrder(newOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("confirmation : %+v", confirmation)
+
+	editedOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+	}
+
+	err = book.AmendOrder(editedOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	assert.Equal(t, msg.OrderError_NONE, err)
+}
+
+func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
+	fmt.Println("BEGIN AMENDING ORDER")
+
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+	}
+
+	confirmation, err := book.AddOrder(newOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("confirmation : %+v", confirmation)
+
+	editedOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Sell,
+		Price:     100,
+		Size:      100,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+	}
+	err = book.AmendOrder(editedOrder)
+	if err != msg.OrderError_INVALID_REMAINING_SIZE {
+		fmt.Println(err)
+	}
+
+	assert.Equal(t, msg.OrderError_INVALID_REMAINING_SIZE, err)
+}
+
+func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
+	fmt.Println("BEGIN AMENDING ORDER")
+
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+	}
+
+	confirmation, err := book.AddOrder(newOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("confirmation : %+v", confirmation)
+
+	editedOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Sell,
+		Price:     100,
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+	}
+
+	err = book.AmendOrder(editedOrder)
+	if err != msg.OrderError_ORDER_NOT_FOUND {
+		fmt.Println(err)
+	}
+
+	assert.Equal(t, msg.OrderError_ORDER_NOT_FOUND, err)
+}
+
+func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
+	fmt.Println("BEGIN AMENDING ORDER")
+
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Party:     "A",
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+	}
+
+	confirmation, err := book.AddOrder(newOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("confirmation : %+v", confirmation)
+
+	editedOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Party:     "B",
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+	}
+
+	err = book.AmendOrder(editedOrder)
+	if err != msg.OrderError_ORDER_AMEND_FAILURE {
+		fmt.Println(err)
+	}
+
+	assert.Equal(t, msg.OrderError_ORDER_AMEND_FAILURE, err)
+}
+
+func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
+	fmt.Println("BEGIN AMENDING ORDER")
+
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Party:     "A",
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+		Timestamp: 10,
+	}
+
+	confirmation, err := book.AddOrder(newOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("confirmation : %+v", confirmation)
+
+	editedOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Party:     "A",
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+		Timestamp: 5,
+	}
+
+	err = book.AmendOrder(editedOrder)
+	if err != msg.OrderError_ORDER_OUT_OF_SEQUENCE {
+		fmt.Println(err)
+	}
+
+	assert.Equal(t, msg.OrderError_ORDER_OUT_OF_SEQUENCE, err)
+}
+
+func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
+	fmt.Println("BEGIN AMENDING ORDER")
+
+	book := NewBook("testOrderBook", DefaultConfig())
+	newOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Party:     "A",
+		Size:      200,
+		Remaining: 200,
+		Type:      msg.Order_GTC,
+		Timestamp: 10,
+	}
+
+	confirmation, err := book.AddOrder(newOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("confirmation : %+v", confirmation)
+
+	editedOrder := &msg.Order{
+		Market:    "testOrderBook",
+		Id:        "123456",
+		Side:      msg.Side_Buy,
+		Price:     100,
+		Party:     "B",
+		Size:      300,
+		Remaining: 300,
+		Type:      msg.Order_GTC,
+		Timestamp: 10,
+	}
+
+	err = book.AmendOrder(editedOrder)
+	if err != msg.OrderError_ORDER_AMEND_FAILURE {
+		fmt.Println(err)
+	}
+
+	assert.Equal(t, msg.OrderError_ORDER_AMEND_FAILURE, err)
 }
