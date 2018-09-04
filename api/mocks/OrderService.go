@@ -62,7 +62,7 @@ func (_m *OrderService) CreateOrder(ctx context.Context, order *msg.Order) (bool
 	return r0, r1, r2
 }
 
-// EditOrder provides a mock function with given fields: ctx, order
+// AmendOrder provides a mock function with given fields: ctx, order
 func (_m *OrderService) EditOrder(ctx context.Context, order *msg.Order) (bool, error) {
 	ret := _m.Called(ctx, order)
 

@@ -15,6 +15,32 @@
     "application/json"
   ],
   "paths": {
+    "/amendOrder": {
+      "post": {
+        "operationId": "AmendOrder",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/vegaAmendment"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/cancelOrder": {
       "post": {
         "operationId": "CancelOrder",
@@ -81,32 +107,6 @@
     "/createOrder": {
       "post": {
         "operationId": "CreateOrder",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/grpcOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/vegaOrder"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/editOrder": {
-      "post": {
-        "operationId": "EditOrder",
         "responses": {
           "200": {
             "description": "",
@@ -471,6 +471,32 @@
           "items": {
             "$ref": "#/definitions/vegaTrade"
           }
+        }
+      }
+    },
+    "vegaAmendment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "party": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "expirationDatetime": {
+          "type": "string"
+        },
+        "expirationTimestamp": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

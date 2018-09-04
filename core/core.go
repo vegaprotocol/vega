@@ -93,6 +93,8 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	order.Id = fmt.Sprintf("V%d-%d", v.State.Height, v.State.Size)
 	order.Timestamp = uint64(v.State.Height)
 
+	fmt.Printf("SubmitOrder: %+v", order)
+
 	// -----------------------------------------------//
 	//----------------- MATCHING ENGINE --------------//
 
@@ -192,41 +194,104 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 	return cancellation, msg.OrderError_NONE
 }
 
-func (v *Vega) EditOrder(newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+func (v *Vega) AmendOrder(amendment *msg.Amendment) (*msg.OrderConfirmation, msg.OrderError) {
+	fmt.Printf("Amendment received: %+v\n", amendment)
+
 	// stores get me order with this reference
-	existingOrder, err := v.OrderStore.GetByPartyAndReference(newOrder.Party, newOrder.Reference)
+	existingOrder, err := v.OrderStore.GetByPartyAndId(amendment.Party, amendment.Id)
 	if err != nil {
+		fmt.Printf("Error: %+v\n", msg.OrderError_INVALID_ORDER_REFERENCE)
 		return &msg.OrderConfirmation{}, msg.OrderError_INVALID_ORDER_REFERENCE
 	}
 
-	if newOrder.Size == 0 {
-		return &msg.OrderConfirmation{}, msg.OrderError_EDIT_NOT_ALLOWED
+	fmt.Printf("existingOrder fetched: %+v\n", existingOrder)
+
+	newOrder := msg.OrderPool.Get().(*msg.Order)
+	newOrder.Id = existingOrder.Id
+	newOrder.Market = existingOrder.Market
+	newOrder.Party = existingOrder.Party
+	newOrder.Side = existingOrder.Side
+	newOrder.Price = existingOrder.Price
+	newOrder.Size = existingOrder.Size
+	newOrder.Remaining = existingOrder.Remaining
+	newOrder.Type = existingOrder.Type
+	newOrder.Timestamp = uint64(v.State.Height)
+	newOrder.Status = existingOrder.Status
+	newOrder.ExpirationDatetime = existingOrder.ExpirationDatetime
+	newOrder.ExpirationTimestamp = existingOrder.ExpirationTimestamp
+	newOrder.Reference = existingOrder.Reference
+
+	var (
+		priceShift, sizeIncrease, sizeDecrease, expiryChange = false, false, false, false
+	)
+
+	if amendment.Price != 0 && existingOrder.Price != amendment.Price {
+		newOrder.Price = amendment.Price
+		priceShift = true
 	}
 
-	// check what type of amend operation to do
+	if amendment.Size != 0 {
+		newOrder.Size = amendment.Size
+		newOrder.Remaining = amendment.Size
+		if amendment.Size > existingOrder.Size {
+			sizeIncrease = true
+		}
+		if amendment.Size < existingOrder.Size {
+			sizeDecrease = true
+		}
+	}
+
+	if newOrder.Type == msg.Order_GTT && amendment.ExpirationTimestamp != 0 && amendment.ExpirationDatetime != "" {
+		newOrder.ExpirationTimestamp = amendment.ExpirationTimestamp
+		newOrder.ExpirationDatetime = amendment.ExpirationDatetime
+		expiryChange = true
+	}
+
+	fmt.Printf("priceShift : %+v\n", priceShift)
+	fmt.Printf("sizeIncrease : %+v\n", sizeIncrease)
+	fmt.Printf("sizeDecrease : %+v\n", sizeDecrease)
+	fmt.Printf("expiryChange : %+v\n", expiryChange)
 
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
-	if newOrder.Price != existingOrder.Price || newOrder.Size > existingOrder.Size {
-		_, err := v.matchingEngine.CancelOrder(existingOrder.ToProtoMessage())
-		if err != msg.OrderError_NONE {
-			return &msg.OrderConfirmation{}, err
-		}
-		return v.matchingEngine.SubmitOrder(newOrder)
+	if priceShift || sizeIncrease {
+		return v.OrderCancelReplace(existingOrder.ToProtoMessage(), newOrder)
+	}
+	// if decrease in size or change in expiration date
+	// ---> DO amend in place in matching engine
+	if expiryChange || sizeDecrease {
+		return v.OrderAmendInPlace(newOrder)
 	}
 
-	// if reduce size or change in expiry
-	// ---> DO matching engine amend order values
-	if newOrder.ExpirationDatetime != existingOrder.ExpirationDatetime || newOrder.Size < existingOrder.Size {
-		err := v.matchingEngine.AmendOrder(newOrder)
-		if err != msg.OrderError_NONE {
-			return &msg.OrderConfirmation{}, err
-		}
-		return &msg.OrderConfirmation{}, msg.OrderError_NONE
-	}
-
+	log.Infof("edit not allowed\n")
 	return &msg.OrderConfirmation{}, msg.OrderError_EDIT_NOT_ALLOWED
 }
+
+func (v *Vega) OrderCancelReplace(existingOrder, newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+	fmt.Printf("OrderCancelReplace\n")
+	cancellationMessage, err := v.CancelOrder(existingOrder)
+	fmt.Printf("cancellationMessage: %+v\n", cancellationMessage)
+	if err != msg.OrderError_NONE {
+		fmt.Printf("err : %+v\n", err)
+		return &msg.OrderConfirmation{}, err
+	}
+
+	return v.SubmitOrder(newOrder)
+}
+
+func (v *Vega) OrderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+	fmt.Printf("OrderAmendInPlace\n")
+	err := v.matchingEngine.AmendOrder(newOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Printf("err %+v\n", err)
+		return &msg.OrderConfirmation{}, err
+	}
+
+	v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(newOrder))
+
+	return &msg.OrderConfirmation{}, msg.OrderError_NONE
+}
+
 
 func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 	expiringOrders := v.matchingEngine.RemoveExpiringOrders(timestamp)

@@ -30,9 +30,9 @@ func (h *Handlers) CancelOrder(ctx context.Context, order *msg.Order) (*api.Orde
 	return &api.OrderResponse{Success: success}, err
 }
 
-// EditOrder is used to request editing an order onto the VEGA platform, via consensus.
-func (h *Handlers) EditOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
-	success, err := h.OrderService.EditOrder(ctx, order)
+// AmendOrder is used to request editing an order onto the VEGA platform, via consensus.
+func (h *Handlers) AmendOrder(ctx context.Context, amendment *msg.Amendment) (*api.OrderResponse, error) {
+	success, err := h.OrderService.AmendOrder(ctx, amendment)
 	return &api.OrderResponse{Success: success}, err
 }
 

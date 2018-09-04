@@ -19,7 +19,7 @@ type OrderService interface {
 
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
-	EditOrder(ctx context.Context, order *msg.Order) (success bool, err error)
+	AmendOrder(ctx context.Context, amendment *msg.Amendment) (success bool, err error)
 
 	GetByMarket(ctx context.Context, market string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
 	GetByParty(ctx context.Context, party string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
@@ -54,6 +54,7 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	order.Remaining = order.Size
 	order.Status = msg.Order_Active
 	order.Timestamp = 0
+	order.Reference = ""
 
 	// if order is GTT convert datetime to blockchain timestamp
 	if order.Type == msg.Order_GTT {
@@ -93,9 +94,10 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
 }
 
-func (p *orderService) EditOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
+func (p *orderService) AmendOrder(ctx context.Context, amendment *msg.Amendment) (success bool, err error) {
+
 	// Validate order exists using read store
-	o, err := p.orderStore.GetByMarketAndId(order.Market, order.Id)
+	o, err := p.orderStore.GetByPartyAndId(amendment.Party, amendment.Id)
 	if err != nil {
 		return false, err
 	}
@@ -105,8 +107,8 @@ func (p *orderService) EditOrder(ctx context.Context, order *msg.Order) (success
 	}
 
 	// if order is GTT convert datetime to blockchain timestamp
-	if order.Type == msg.Order_GTT {
-		expirationDateTime, err := time.Parse(time.RFC3339, order.ExpirationDatetime)
+	if amendment.ExpirationDatetime != "" {
+		expirationDateTime, err := time.Parse(time.RFC3339, amendment.ExpirationDatetime)
 		if err != nil {
 			return false, errors.New("invalid expiration datetime")
 		}
@@ -115,11 +117,11 @@ func (p *orderService) EditOrder(ctx context.Context, order *msg.Order) (success
 		if expirationTimestamp <= uint64(p.app.State.Height) {
 			return false, errors.New("invalid expiration datetime")
 		}
-		order.ExpirationTimestamp = expirationTimestamp
+		amendment.ExpirationTimestamp = expirationTimestamp
 	}
 
 	// Send edit request by consensus
-	return p.blockchain.EditOrder(ctx, o.ToProtoMessage())
+	return p.blockchain.AmendOrder(ctx, amendment)
 }
 
 func (p *orderService) GetByMarket(ctx context.Context, market string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error) {
@@ -176,6 +178,7 @@ func (p *orderService) GetByParty(ctx context.Context, party string, filters *fi
 			Status:              order.Status,
 			ExpirationDatetime:  order.ExpirationDatetime,
 			ExpirationTimestamp: order.ExpirationTimestamp,
+			Reference:           order.Reference,
 		}
 		result = append(result, o)
 	}
