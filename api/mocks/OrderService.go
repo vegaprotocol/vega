@@ -13,6 +13,27 @@ type OrderService struct {
 	mock.Mock
 }
 
+// AmendOrder provides a mock function with given fields: ctx, amendment
+func (_m *OrderService) AmendOrder(ctx context.Context, amendment *msg.Amendment) (bool, error) {
+	ret := _m.Called(ctx, amendment)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *msg.Amendment) bool); ok {
+		r0 = rf(ctx, amendment)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *msg.Amendment) error); ok {
+		r1 = rf(ctx, amendment)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CancelOrder provides a mock function with given fields: ctx, order
 func (_m *OrderService) CancelOrder(ctx context.Context, order *msg.Order) (bool, error) {
 	ret := _m.Called(ctx, order)
@@ -60,27 +81,6 @@ func (_m *OrderService) CreateOrder(ctx context.Context, order *msg.Order) (bool
 	}
 
 	return r0, r1, r2
-}
-
-// AmendOrder provides a mock function with given fields: ctx, order
-func (_m *OrderService) EditOrder(ctx context.Context, order *msg.Order) (bool, error) {
-	ret := _m.Called(ctx, order)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *msg.Order) bool); ok {
-		r0 = rf(ctx, order)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *msg.Order) error); ok {
-		r1 = rf(ctx, order)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetByMarket provides a mock function with given fields: ctx, market, _a2
