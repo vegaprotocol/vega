@@ -55,9 +55,9 @@ func (s *OrderBookSide) amendOrder(orderAmended *msg.Order) msg.OrderError {
 func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 	// TODO: implement binary search on the slice
 	toDelete := -1
+	toRemove := -1
 	for idx, priceLevel := range s.levels {
 		if priceLevel.price == o.Price {
-			toRemove := -1
 			for j, order := range priceLevel.orders {
 				if order.Id == o.Id {
 					toRemove = j
@@ -78,7 +78,7 @@ func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 		s.levels = s.levels[:len(s.levels)-1]
 
 	}
-	if toDelete == -1 {
+	if toRemove == -1 {
 		return errors.New("order not found")
 	}
 	return nil

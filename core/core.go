@@ -93,7 +93,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	order.Id = fmt.Sprintf("V%d-%d", v.State.Height, v.State.Size)
 	order.Timestamp = uint64(v.State.Height)
 
-	fmt.Printf("SubmitOrder: %+v", order)
+	log.Infof("SubmitOrder: %+v", order)
 
 	// -----------------------------------------------//
 	//----------------- MATCHING ENGINE --------------//
@@ -195,7 +195,7 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 }
 
 func (v *Vega) AmendOrder(amendment *msg.Amendment) (*msg.OrderConfirmation, msg.OrderError) {
-	fmt.Printf("Amendment received: %+v\n", amendment)
+	log.Infof("Amendment received: %+v\n", amendment)
 
 	// stores get me order with this reference
 	existingOrder, err := v.OrderStore.GetByPartyAndId(amendment.Party, amendment.Id)
@@ -204,7 +204,7 @@ func (v *Vega) AmendOrder(amendment *msg.Amendment) (*msg.OrderConfirmation, msg
 		return &msg.OrderConfirmation{}, msg.OrderError_INVALID_ORDER_REFERENCE
 	}
 
-	fmt.Printf("existingOrder fetched: %+v\n", existingOrder)
+	log.Infof("existingOrder fetched: %+v\n", existingOrder)
 
 	newOrder := msg.OrderPool.Get().(*msg.Order)
 	newOrder.Id = existingOrder.Id
@@ -247,11 +247,6 @@ func (v *Vega) AmendOrder(amendment *msg.Amendment) (*msg.OrderConfirmation, msg
 		expiryChange = true
 	}
 
-	fmt.Printf("priceShift : %+v\n", priceShift)
-	fmt.Printf("sizeIncrease : %+v\n", sizeIncrease)
-	fmt.Printf("sizeDecrease : %+v\n", sizeDecrease)
-	fmt.Printf("expiryChange : %+v\n", expiryChange)
-
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
@@ -263,14 +258,14 @@ func (v *Vega) AmendOrder(amendment *msg.Amendment) (*msg.OrderConfirmation, msg
 		return v.OrderAmendInPlace(newOrder)
 	}
 
-	log.Infof("edit not allowed\n")
+	log.Infof("Edit not allowed")
 	return &msg.OrderConfirmation{}, msg.OrderError_EDIT_NOT_ALLOWED
 }
 
 func (v *Vega) OrderCancelReplace(existingOrder, newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
-	fmt.Printf("OrderCancelReplace\n")
+	log.Infof("OrderCancelReplace")
 	cancellationMessage, err := v.CancelOrder(existingOrder)
-	fmt.Printf("cancellationMessage: %+v\n", cancellationMessage)
+	log.Infof("cancellationMessage: %+v\n", cancellationMessage)
 	if err != msg.OrderError_NONE {
 		fmt.Printf("err : %+v\n", err)
 		return &msg.OrderConfirmation{}, err
@@ -280,7 +275,7 @@ func (v *Vega) OrderCancelReplace(existingOrder, newOrder *msg.Order) (*msg.Orde
 }
 
 func (v *Vega) OrderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
-	fmt.Printf("OrderAmendInPlace\n")
+
 	err := v.matchingEngine.AmendOrder(newOrder)
 	if err != msg.OrderError_NONE {
 		fmt.Printf("err %+v\n", err)
