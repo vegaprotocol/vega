@@ -12,18 +12,18 @@ type OrderBook struct {
 	buy             *OrderBookSide
 	sell            *OrderBookSide
 	lastTradedPrice uint64
-	config          Config
+	config          *Config
 	latestTimestamp uint64
 
 	expiryTable map[uint64][]*msg.Order
 }
 
 // Create an order book with a given name
-func NewBook(name string, config Config) *OrderBook {
+func NewBook(name string, config *Config) *OrderBook {
 	return &OrderBook{
 		name:   name,
-		buy:    &OrderBookSide{},
-		sell:   &OrderBookSide{},
+		buy:    &OrderBookSide{prorataMode: config.ProrataMode},
+		sell:   &OrderBookSide{prorataMode: config.ProrataMode},
 		config: config,
 		expiryTable: make(map[uint64][]*msg.Order, 0),
 	}

@@ -1,7 +1,13 @@
 package matching
 
-type Config struct {}
+type Config struct {
+	ProrataMode bool
+}
 
-func DefaultConfig() Config {
-	return Config{}
+func DefaultConfig() *Config {
+	return &Config{ProrataMode: false}
+}
+
+func ProrataModeConfig() *Config {
+	return &Config{ProrataMode: true}
 }

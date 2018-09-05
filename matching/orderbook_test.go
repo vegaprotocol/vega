@@ -17,7 +17,7 @@ func init() {
 
 //test for order validation
 func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	book.latestTimestamp = 10
 
 	invalidTimestampOrderMsg := &msg.Order{
@@ -51,7 +51,7 @@ func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
 }
 
 func TestOrderBook_RemoveOrder(t *testing.T) {
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
@@ -75,7 +75,7 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 }
 
 func TestOrderBook_AddOrder(t *testing.T) {
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 
 	const numberOfTimestamps = 3
 	m := make(map[int64][]*msg.Order, numberOfTimestamps)
@@ -876,7 +876,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 }
 
 func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "invalid",
 		Party:     "A",
@@ -902,7 +902,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	fmt.Println("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
@@ -936,7 +936,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	fmt.Println("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
@@ -969,7 +969,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	fmt.Println("BEGIN CANCELLING MARKET MISMATCH ORDER")
 
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market: "testOrderBook",
 		Id:     "123456",
@@ -991,7 +991,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	fmt.Println("BEGIN CANCELLING INVALID ORDER")
 
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market: "testOrderBook",
 		Id:     "id",
@@ -1032,7 +1032,7 @@ func expectOrder(t *testing.T, expectedOrder, order *msg.Order) {
 func TestOrderBook_AmendOrder(t *testing.T) {
 	fmt.Println("BEGIN AMENDING ORDER")
 
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1071,7 +1071,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	fmt.Println("BEGIN AMENDING ORDER")
 
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1109,7 +1109,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	fmt.Println("BEGIN AMENDING ORDER")
 
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1148,7 +1148,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	fmt.Println("BEGIN AMENDING ORDER")
 
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1189,7 +1189,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	fmt.Println("BEGIN AMENDING ORDER")
 
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1232,7 +1232,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	fmt.Println("BEGIN AMENDING ORDER")
 
-	book := NewBook("testOrderBook", DefaultConfig())
+	book := NewBook("testOrderBook", ProrataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",

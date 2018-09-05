@@ -8,7 +8,8 @@ import (
 )
 
 type OrderBookSide struct {
-	levels []*PriceLevel
+	levels      []*PriceLevel
+	prorataMode bool
 }
 
 func (s *OrderBookSide) addOrder(o *msg.Order, side msg.Side) {
@@ -112,7 +113,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
 			break
 		}
 	}
-	level := NewPriceLevel(price)
+	level := NewPriceLevel(price, s.prorataMode)
 	if at == -1 {
 		s.levels = append(s.levels, level)
 		return level
