@@ -1272,10 +1272,11 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	assert.Equal(t, msg.OrderError_ORDER_AMEND_FAILURE, err)
 }
 
+// PRORATA MODE OFF which is a default config for vega ME
 func TestOrderBook_AddOrderProrataModeOff(t *testing.T) {
 	book := NewBook("testOrderBook", DefaultConfig())
 
-	const numberOfTimestamps= 3
+	const numberOfTimestamps = 2
 	m := make(map[int64][]*msg.Order, numberOfTimestamps)
 
 	// sell and buy side orders at timestamp 0
