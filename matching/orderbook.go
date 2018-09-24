@@ -1,9 +1,10 @@
 package matching
 
 import (
+	"fmt"
+
 	"vega/log"
 	"vega/msg"
-	"fmt"
 )
 
 type OrderBook struct {
@@ -13,6 +14,8 @@ type OrderBook struct {
 	lastTradedPrice uint64
 	config          Config
 	latestTimestamp uint64
+
+	expiryTable map[uint64][]*msg.Order
 }
 
 // Create an order book with a given name
@@ -22,6 +25,7 @@ func NewBook(name string, config Config) *OrderBook {
 		buy:    &OrderBookSide{},
 		sell:   &OrderBookSide{},
 		config: config,
+		expiryTable: make(map[uint64][]*msg.Order, 0),
 	}
 }
 
@@ -89,9 +93,42 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// if order is persistent type add to order book to the correct side
 	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
+
+		// if order type GTT append order to expiryTable at expiration timestamp
+		if order.Type == msg.Order_GTT {
+			if _, ok := b.expiryTable[order.ExpirationTimestamp]; !ok {
+				b.expiryTable[order.ExpirationTimestamp] = []*msg.Order{order}
+			} else {
+				b.expiryTable[order.ExpirationTimestamp] = append(b.expiryTable[order.ExpirationTimestamp], order)
+			}
+		}
+
 		b.getSide(order.Side).addOrder(order, order.Side)
 
 		b.PrintState("After addOrder state:")
+	}
+
+	// update order statuses based on the order types
+	if order.Type == msg.Order_FOK {
+		if order.Remaining == order.Size {
+			order.Status = msg.Order_Stopped
+		} else {
+			order.Status = msg.Order_Filled
+		}
+	}
+
+	if order.Type == msg.Order_ENE {
+		if order.Remaining == order.Size {
+			order.Status = msg.Order_Stopped
+		} else {
+			order.Status = msg.Order_Filled
+		}
+	}
+
+	for idx, _ := range impactedOrders {
+		if impactedOrders[idx].Remaining == 0 {
+			impactedOrders[idx].Status = msg.Order_Filled
+		}
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
@@ -101,6 +138,25 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 func (b *OrderBook) RemoveOrder(order *msg.Order) error {
 	err := b.getSide(order.Side).RemoveOrder(order)
 	return err
+}
+
+func (b *OrderBook) GetExpiredOrders(expirationTimestamp uint64) []*msg.Order{
+	var expiredOrders []*msg.Order
+	if _, ok := b.expiryTable[expirationTimestamp]; ok {
+		for idx := range b.expiryTable[expirationTimestamp] {
+			expiredOrders = append(expiredOrders, b.expiryTable[expirationTimestamp][idx])
+		}
+	}
+	return expiredOrders
+}
+
+func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) {
+	if _, ok := b.expiryTable[expirationTimestamp]; ok {
+		for idx := range b.expiryTable[expirationTimestamp] {
+			b.RemoveOrder(b.expiryTable[expirationTimestamp][idx])
+		}
+		delete(b.expiryTable, expirationTimestamp)
+	}
 }
 
 func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {

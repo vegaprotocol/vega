@@ -1,7 +1,9 @@
 package matching
 
 import (
+	"vega/log"
 	"vega/msg"
+
 	"github.com/pkg/errors"
 )
 
@@ -85,10 +87,36 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
 func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uint64) {
 
 	var (
-		trades          []*msg.Trade
-		impactedOrders  []*msg.Order
-		lastTradedPrice uint64
+		trades            []*msg.Trade
+		impactedOrders    []*msg.Order
+		lastTradedPrice   uint64
+		totalVolumeToFill uint64
 	)
+
+	if agg.Type == msg.Order_FOK {
+
+		if agg.Side == msg.Side_Sell {
+			for _, level := range s.levels {
+				if level.price >= agg.Price {
+					totalVolumeToFill += level.volume
+				}
+			}
+		}
+
+		if agg.Side == msg.Side_Buy {
+			for _, level := range s.levels {
+				if level.price <= agg.Price {
+					totalVolumeToFill += level.volume
+				}
+			}
+		}
+
+		log.Debugf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining)
+
+		if totalVolumeToFill <= agg.Remaining {
+			return trades, impactedOrders, 0
+		}
+	}
 
 	if agg.Side == msg.Side_Sell {
 		for _, level := range s.levels {

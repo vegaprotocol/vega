@@ -2,14 +2,15 @@ package api
 
 import (
 	"context"
+	"github.com/pkg/errors"
+	"time"
 	"vega/blockchain"
 	"vega/core"
 	"vega/datastore"
-	"vega/msg"
-	"github.com/pkg/errors"
-	"vega/log"
 	"vega/filters"
-	"time"
+	"vega/log"
+	"vega/msg"
+	"vega/vegatime"
 )
 
 type OrderService interface {
@@ -50,10 +51,21 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	// Set defaults, prevent unwanted external manipulation
 	order.Remaining = order.Size
 	order.Status = msg.Order_Active
-	order.Type = msg.Order_GTC // VEGA only supports GTC at present
 	order.Timestamp = 0
 
-	// TODO validate
+	// if order is GTT convert datetime to blockchain timestamp
+	if order.Type == msg.Order_GTT {
+		expirationDateTime, err := time.Parse(time.RFC3339, order.ExpirationDatetime)
+		if err != nil {
+			return false, errors.New("invalid expiration datetime")
+		}
+
+		expirationTimestamp := vegatime.NewVegaTimeConverter(p.app).TimeToBlock(expirationDateTime)
+		if expirationTimestamp <= uint64(p.app.State.Height) {
+			return false, errors.New("invalid expiration datetime")
+		}
+		order.ExpirationTimestamp = expirationTimestamp
+	}
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
 	return p.blockchain.CreateOrder(ctx, order)
@@ -75,7 +87,7 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	if o.Party != order.Party {
 		return false, errors.New("party mis-match cannot cancel order")
 	}
-	// Send cancellation request by consensus 
+	// Send cancellation request by consensus
 	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
 }
 
@@ -91,16 +103,18 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, filters *
 			continue
 		}
 		o := &msg.Order{
-			Id:        order.Id,
-			Market:    order.Market,
-			Party:     order.Party,
-			Side:      order.Side,
-			Price:     order.Price,
-			Size:      order.Size,
-			Remaining: order.Remaining,
-			Timestamp: order.Timestamp,
-			Type:      order.Type,
-			Status:    order.Status,
+			Id:                  order.Id,
+			Market:              order.Market,
+			Party:               order.Party,
+			Side:                order.Side,
+			Price:               order.Price,
+			Size:                order.Size,
+			Remaining:           order.Remaining,
+			Timestamp:           order.Timestamp,
+			Type:                order.Type,
+			Status:              order.Status,
+			ExpirationDatetime:  order.ExpirationDatetime,
+			ExpirationTimestamp: order.ExpirationTimestamp,
 		}
 		result = append(result, o)
 	}
@@ -119,16 +133,18 @@ func (p *orderService) GetByParty(ctx context.Context, party string, filters *fi
 			continue
 		}
 		o := &msg.Order{
-			Id:        order.Id,
-			Market:    order.Market,
-			Party:     order.Party,
-			Side:      order.Side,
-			Price:     order.Price,
-			Size:      order.Size,
-			Remaining: order.Remaining,
-			Timestamp: order.Timestamp,
-			Type:      order.Type,
-			Status:    order.Status,
+			Id:                  order.Id,
+			Market:              order.Market,
+			Party:               order.Party,
+			Side:                order.Side,
+			Price:               order.Price,
+			Size:                order.Size,
+			Remaining:           order.Remaining,
+			Timestamp:           order.Timestamp,
+			Type:                order.Type,
+			Status:              order.Status,
+			ExpirationDatetime:  order.ExpirationDatetime,
+			ExpirationTimestamp: order.ExpirationTimestamp,
 		}
 		result = append(result, o)
 	}
@@ -232,6 +248,8 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 
 	p.app.Statistics.CurrentTime = time.Now().UTC().Format(time.RFC3339)
 	p.app.Statistics.GenesisTime = p.app.GetGenesisTime().Format(time.RFC3339)
+	vtc := vegatime.NewVegaTimeConverter(p.app)
+	p.app.Statistics.VegaTime = vtc.BlockToTime(uint64(p.app.State.Height)).Format(time.RFC3339)
 	p.app.Statistics.BlockHeight = uint64(p.app.State.Height)
 
 	parties, err := p.app.PartyStore.GetAllParties()

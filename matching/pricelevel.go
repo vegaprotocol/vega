@@ -12,6 +12,7 @@ type PriceLevel struct {
 	price             uint64
 	orders            []*msg.Order
 	volumeAtTimestamp map[uint64]uint64
+	volume uint64
 }
 
 func NewPriceLevel(price uint64) *PriceLevel {
@@ -27,9 +28,12 @@ func (l *PriceLevel) addOrder(o *msg.Order) {
 	l.increaseVolumeByTimestamp(o)
 	// add orders to slice of orders on this price level
 	l.orders = append(l.orders, o)
+
+	l.volume += o.Remaining
 }
 
 func (l *PriceLevel) removeOrder(index int) {
+	l.volume -= l.orders[index].Remaining
 	copy(l.orders[index:], l.orders[index+1:])
 	l.orders = l.orders[:len(l.orders)-1]
 }
@@ -96,6 +100,7 @@ func (l *PriceLevel) uncross(agg *msg.Order) (filled bool, trades []*msg.Trade, 
 		// Update Remaining for both aggressive and passive
 		agg.Remaining -= size
 		order.Remaining -= size
+		l.volume -= size
 
 		// Schedule order for deletion
 		if order.Remaining == 0 {

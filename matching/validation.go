@@ -3,8 +3,8 @@ package matching
 import (
 	"fmt"
 
-	"vega/msg"
 	"vega/log"
+	"vega/msg"
 )
 
 func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {
@@ -22,6 +22,12 @@ func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {
 
 	if orderMessage.Remaining > 0 && orderMessage.Remaining != orderMessage.Size {
 		return msg.OrderError_INVALID_REMAINING_SIZE
+	}
+
+	// if order is GTT, validate timestamp and convert to block number
+	if orderMessage.Type == msg.Order_GTT &&
+		(orderMessage.ExpirationDatetime == "" || orderMessage.ExpirationTimestamp == 0) {
+		return msg.OrderError_INVALID_EXPIRATION_DATETIME
 	}
 
 	return msg.OrderError_NONE
