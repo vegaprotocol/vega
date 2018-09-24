@@ -151,6 +151,25 @@ func (m *memOrderStore) GetByPartyAndId(party string, id string) (Order, error) 
 	return m.store.parties[party].ordersByTimestamp[at].order, nil
 }
 
+func (m *memOrderStore) GetByPartyAndReference(party string, reference string) (Order, error) {
+	if exists := m.partyExists(party); !exists {
+		return Order{}, fmt.Errorf("could not find party %s", party)
+	}
+
+	var at = -1
+	for idx, order := range m.store.parties[party].ordersByTimestamp {
+		if order.order.Reference == reference {
+			at = idx
+			break
+		}
+	}
+
+	if at == -1 {
+		return Order{}, NotFoundError{fmt.Errorf("could not find reference %s", reference)}
+	}
+	return m.store.parties[party].ordersByTimestamp[at].order, nil
+}
+
 // Post creates a new order in the memory store.
 func (m *memOrderStore) Post(order Order) error {
 	if err := m.validate(&order); err != nil {

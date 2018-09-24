@@ -93,6 +93,8 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	order.Id = fmt.Sprintf("V%d-%d", v.State.Height, v.State.Size)
 	order.Timestamp = uint64(v.State.Height)
 
+	log.Infof("SubmitOrder: %+v", order)
+
 	// -----------------------------------------------//
 	//----------------- MATCHING ENGINE --------------//
 
@@ -192,14 +194,107 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 	return cancellation, msg.OrderError_NONE
 }
 
+func (v *Vega) AmendOrder(amendment *msg.Amendment) (*msg.OrderConfirmation, msg.OrderError) {
+	log.Infof("Amendment received: %+v\n", amendment)
+
+	// stores get me order with this reference
+	existingOrder, err := v.OrderStore.GetByPartyAndId(amendment.Party, amendment.Id)
+	if err != nil {
+		fmt.Printf("Error: %+v\n", msg.OrderError_INVALID_ORDER_REFERENCE)
+		return &msg.OrderConfirmation{}, msg.OrderError_INVALID_ORDER_REFERENCE
+	}
+
+	log.Infof("existingOrder fetched: %+v\n", existingOrder)
+
+	newOrder := msg.OrderPool.Get().(*msg.Order)
+	newOrder.Id = existingOrder.Id
+	newOrder.Market = existingOrder.Market
+	newOrder.Party = existingOrder.Party
+	newOrder.Side = existingOrder.Side
+	newOrder.Price = existingOrder.Price
+	newOrder.Size = existingOrder.Size
+	newOrder.Remaining = existingOrder.Remaining
+	newOrder.Type = existingOrder.Type
+	newOrder.Timestamp = uint64(v.State.Height)
+	newOrder.Status = existingOrder.Status
+	newOrder.ExpirationDatetime = existingOrder.ExpirationDatetime
+	newOrder.ExpirationTimestamp = existingOrder.ExpirationTimestamp
+	newOrder.Reference = existingOrder.Reference
+
+	var (
+		priceShift, sizeIncrease, sizeDecrease, expiryChange = false, false, false, false
+	)
+
+	if amendment.Price != 0 && existingOrder.Price != amendment.Price {
+		newOrder.Price = amendment.Price
+		priceShift = true
+	}
+
+	if amendment.Size != 0 {
+		newOrder.Size = amendment.Size
+		newOrder.Remaining = amendment.Size
+		if amendment.Size > existingOrder.Size {
+			sizeIncrease = true
+		}
+		if amendment.Size < existingOrder.Size {
+			sizeDecrease = true
+		}
+	}
+
+	if newOrder.Type == msg.Order_GTT && amendment.ExpirationTimestamp != 0 && amendment.ExpirationDatetime != "" {
+		newOrder.ExpirationTimestamp = amendment.ExpirationTimestamp
+		newOrder.ExpirationDatetime = amendment.ExpirationDatetime
+		expiryChange = true
+	}
+
+	// if increase in size or change in price
+	// ---> DO atomic cancel and submit
+	if priceShift || sizeIncrease {
+		return v.OrderCancelReplace(existingOrder.ToProtoMessage(), newOrder)
+	}
+	// if decrease in size or change in expiration date
+	// ---> DO amend in place in matching engine
+	if expiryChange || sizeDecrease {
+		return v.OrderAmendInPlace(newOrder)
+	}
+
+	log.Infof("Edit not allowed")
+	return &msg.OrderConfirmation{}, msg.OrderError_EDIT_NOT_ALLOWED
+}
+
+func (v *Vega) OrderCancelReplace(existingOrder, newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+	log.Infof("OrderCancelReplace")
+	cancellationMessage, err := v.CancelOrder(existingOrder)
+	log.Infof("cancellationMessage: %+v\n", cancellationMessage)
+	if err != msg.OrderError_NONE {
+		fmt.Printf("err : %+v\n", err)
+		return &msg.OrderConfirmation{}, err
+	}
+
+	return v.SubmitOrder(newOrder)
+}
+
+func (v *Vega) OrderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+
+	err := v.matchingEngine.AmendOrder(newOrder)
+	if err != msg.OrderError_NONE {
+		fmt.Printf("err %+v\n", err)
+		return &msg.OrderConfirmation{}, err
+	}
+
+	v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(newOrder))
+
+	return &msg.OrderConfirmation{}, msg.OrderError_NONE
+}
+
+
 func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
-	expiringOrders := v.matchingEngine.GetExpiringOrders(timestamp)
+	expiringOrders := v.matchingEngine.RemoveExpiringOrders(timestamp)
 
 	for _, order := range expiringOrders {
 		// remove orders from the store
-		order.Status = msg.Order_Expired
 		v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
 	}
 
-	v.matchingEngine.RemoveExpiringOrders(timestamp)
+
 }

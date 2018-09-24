@@ -100,18 +100,18 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
-	// All incoming messages are order (for now)...
-	// deserialize proto msg to struct
-	order := msg.OrderPool.Get().(*msg.Order)
-	e := proto.Unmarshal(value, order)
-	if e != nil {
-		log.Errorf("Error: Decoding order to proto: ", e.Error())
-		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
-	}
-
 	// Process known command types
 	switch cmd {
 		case CreateOrderCommand:
+
+			// deserialize proto msg to struct
+			order := msg.OrderPool.Get().(*msg.Order)
+			e := proto.Unmarshal(value, order)
+			if e != nil {
+				log.Errorf("Error: Decoding order to proto: ", e.Error())
+				return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
+			}
+
 			log.Debugf("ABCI received a CREATE ORDER command after consensus")
 
 			// Submit the create new order request to the Vega trading core
@@ -131,9 +131,18 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 			current_ob++
 
 		case CancelOrderCommand:
+
+			// deserialize proto msg to struct
+			order := msg.OrderPool.Get().(*msg.Order)
+			e := proto.Unmarshal(value, order)
+			if e != nil {
+				log.Errorf("Error: Decoding order to proto: ", e.Error())
+				return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
+			}
+
 			log.Debugf("ABCI received a CANCEL ORDER command after consensus")
 
-			// Submit the create new order request to the Vega trading core
+			// Submit the cancel new order request to the Vega trading core
 			cancellationMessage, errorMessage := app.vega.CancelOrder(order)
 			if cancellationMessage != nil {
 				log.Infof("ABCI order cancellation message:")
@@ -142,6 +151,29 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 			if errorMessage != msg.OrderError_NONE {
 				log.Infof("ABCI order error message (cancel):")
 				log.Infof("- error: %+v", errorMessage.String())
+			}
+
+		case AmendmentOrderCommand:
+
+			// deserialize proto msg to struct
+			amendment := &msg.Amendment{}
+			e := proto.Unmarshal(value, amendment)
+			if e != nil {
+				log.Errorf("Error: Decoding order to proto: ", e.Error())
+				return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
+			}
+
+			log.Debugf("ABCI received a Amendment command after consensus")
+
+			// Submit the Amendment new order request to the Vega trading core
+			confirmationMessage, errorMessage := app.vega.AmendOrder(amendment)
+			if confirmationMessage != nil {
+				log.Debugf("ABCI reports it received an order amendment message from vega:\n")
+				log.Debugf("- cancelled order: %+v\n", confirmationMessage.Order)
+			}
+			if errorMessage != msg.OrderError_NONE {
+				log.Debugf("ABCI reports it received an order error message from vega:\n")
+				log.Debugf("- error: %+v\n", errorMessage.String())
 			}
 
 		default:

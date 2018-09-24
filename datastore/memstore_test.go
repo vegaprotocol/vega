@@ -1449,3 +1449,33 @@ func TestNewTradeStore_Filtering(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(trades))
 }
+
+
+func TestMemStore_GetOrderByReference(t *testing.T) {
+	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
+	var newOrderStore = NewOrderStore(&memStore)
+
+	order := Order{
+		Order: msg.Order{
+			Id:         "d41d8cd98f00b204e9800998ecf8427b",
+			Market:     testMarket,
+			Party:      testPartyA,
+			Side:       msg.Side_Buy,
+			Price:      100,
+			Size:       1000,
+			Remaining:  0,
+			Type:       msg.Order_GTC,
+			Timestamp:  0,
+			Status:     msg.Order_Active,
+			Reference:  "123123-34334343-1231231",
+		},
+	}
+
+	err := newOrderStore.Post(order)
+	assert.Nil(t, err)
+
+	fetchedOrder, err := newOrderStore.GetByPartyAndReference(testPartyA, "123123-34334343-1231231")
+	assert.Nil(t, err)
+
+	assert.Equal(t, order, fetchedOrder)
+}

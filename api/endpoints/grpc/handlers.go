@@ -20,13 +20,19 @@ const defaultLimit = uint64(1000)
 
 // CreateOrder is used to request sending an order into the VEGA platform, via consensus.
 func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
-	success, err := h.OrderService.CreateOrder(ctx, order)
-	return &api.OrderResponse{Success: success}, err
+	success, reference, err := h.OrderService.CreateOrder(ctx, order)
+	return &api.OrderResponse{Success: success, Reference: reference}, err
 }
 
 // CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
 func (h *Handlers) CancelOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
 	success, err := h.OrderService.CancelOrder(ctx, order)
+	return &api.OrderResponse{Success: success}, err
+}
+
+// AmendOrder is used to request editing an order onto the VEGA platform, via consensus.
+func (h *Handlers) AmendOrder(ctx context.Context, amendment *msg.Amendment) (*api.OrderResponse, error) {
+	success, err := h.OrderService.AmendOrder(ctx, amendment)
 	return &api.OrderResponse{Success: success}, err
 }
 

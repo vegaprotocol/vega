@@ -483,13 +483,14 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 		return res, err
 	}
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	accepted, err := r.orderService.CreateOrder(ctx, order)
+	accepted, reference, err := r.orderService.CreateOrder(ctx, order)
 	if err != nil {
 		log.Errorf("error creating order via rpc client and graph-ql", err)
 		return res, err
 	}
 
 	res.Accepted = accepted
+	res.Reference = reference
 	return res, nil
 }
 

@@ -55,7 +55,8 @@ type Party struct {
 	Positions []msg.MarketPosition `json:"positions"`
 }
 type PreConsensus struct {
-	Accepted bool `json:"accepted"`
+	Accepted  bool   `json:"accepted"`
+	Reference string `json:"accepted"`
 }
 type TradeFilter struct {
 	AND            []TradeFilter `json:"AND"`

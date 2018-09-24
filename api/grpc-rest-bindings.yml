@@ -15,6 +15,9 @@ http:
   - selector: grpc.trading.CancelOrder
     post: '/cancelOrder'
     body: "*"
+  - selector: grpc.trading.AmendOrder
+    post: '/amendOrder'
+    body: "*"
   - selector: grpc.trading.OrdersByMarket
     get: '/marketOrders'
   - selector: grpc.trading.OrdersByParty

@@ -17,8 +17,10 @@ type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan msg.Order, ref uint64)
 
-	CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error)
+	CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
+	AmendOrder(ctx context.Context, amendment *msg.Amendment) (success bool, err error)
+
 	GetByMarket(ctx context.Context, market string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
 	GetByParty(ctx context.Context, party string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
@@ -47,22 +49,23 @@ func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.blockchain = blockchain.NewClient()
 }
 
-func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
+func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error) {
 	// Set defaults, prevent unwanted external manipulation
 	order.Remaining = order.Size
 	order.Status = msg.Order_Active
 	order.Timestamp = 0
+	order.Reference = ""
 
 	// if order is GTT convert datetime to blockchain timestamp
 	if order.Type == msg.Order_GTT {
 		expirationDateTime, err := time.Parse(time.RFC3339, order.ExpirationDatetime)
 		if err != nil {
-			return false, errors.New("invalid expiration datetime")
+			return false, "", errors.New("invalid expiration datetime")
 		}
 
 		expirationTimestamp := vegatime.NewVegaTimeConverter(p.app).TimeToBlock(expirationDateTime)
 		if expirationTimestamp <= uint64(p.app.State.Height) {
-			return false, errors.New("invalid expiration datetime")
+			return false, "", errors.New("invalid expiration datetime")
 		}
 		order.ExpirationTimestamp = expirationTimestamp
 	}
@@ -89,6 +92,36 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	}
 	// Send cancellation request by consensus
 	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
+}
+
+func (p *orderService) AmendOrder(ctx context.Context, amendment *msg.Amendment) (success bool, err error) {
+
+	// Validate order exists using read store
+	o, err := p.orderStore.GetByPartyAndId(amendment.Party, amendment.Id)
+	if err != nil {
+		return false, err
+	}
+
+	if o.Status != msg.Order_Active {
+		return false, errors.New("order is not active")
+	}
+
+	// if order is GTT convert datetime to blockchain timestamp
+	if amendment.ExpirationDatetime != "" {
+		expirationDateTime, err := time.Parse(time.RFC3339, amendment.ExpirationDatetime)
+		if err != nil {
+			return false, errors.New("invalid expiration datetime")
+		}
+
+		expirationTimestamp := vegatime.NewVegaTimeConverter(p.app).TimeToBlock(expirationDateTime)
+		if expirationTimestamp <= uint64(p.app.State.Height) {
+			return false, errors.New("invalid expiration datetime")
+		}
+		amendment.ExpirationTimestamp = expirationTimestamp
+	}
+
+	// Send edit request by consensus
+	return p.blockchain.AmendOrder(ctx, amendment)
 }
 
 func (p *orderService) GetByMarket(ctx context.Context, market string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error) {
@@ -145,6 +178,7 @@ func (p *orderService) GetByParty(ctx context.Context, party string, filters *fi
 			Status:              order.Status,
 			ExpirationDatetime:  order.ExpirationDatetime,
 			ExpirationTimestamp: order.ExpirationTimestamp,
+			Reference:           order.Reference,
 		}
 		result = append(result, o)
 	}

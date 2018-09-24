@@ -53,5 +53,6 @@ func (or *Order) ToProtoMessage() *msg.Order {
 		Status:              or.Status,
 		ExpirationDatetime:  or.ExpirationDatetime,
 		ExpirationTimestamp: or.ExpirationTimestamp,
+		Reference:           or.Reference,
 	}
 }

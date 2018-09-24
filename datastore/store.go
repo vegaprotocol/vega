@@ -60,6 +60,8 @@ type OrderStore interface {
 	GetMarkets() ([]string, error)
 	// Returns Order Book Depth for a market
 	GetMarketDepth(market string) (*msg.MarketDepth, error)
+	// Returns Order by reference number
+	GetByPartyAndReference(party string, reference string) (Order, error)
 }
 
 type PartyStore interface {

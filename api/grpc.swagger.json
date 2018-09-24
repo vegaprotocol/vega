@@ -15,6 +15,32 @@
     "application/json"
   ],
   "paths": {
+    "/amendOrder": {
+      "post": {
+        "operationId": "AmendOrder",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/vegaAmendment"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/cancelOrder": {
       "post": {
         "operationId": "CancelOrder",
@@ -314,7 +340,9 @@
       "enum": [
         "Active",
         "Expired",
-        "Cancelled"
+        "Cancelled",
+        "Stopped",
+        "Filled"
       ],
       "default": "Active"
     },
@@ -385,6 +413,9 @@
         "success": {
           "type": "boolean",
           "format": "boolean"
+        },
+        "reference": {
+          "type": "string"
         }
       }
     },
@@ -440,6 +471,32 @@
           "items": {
             "$ref": "#/definitions/vegaTrade"
           }
+        }
+      }
+    },
+    "vegaAmendment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "party": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "expirationDatetime": {
+          "type": "string"
+        },
+        "expirationTimestamp": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
@@ -559,6 +616,16 @@
         },
         "status": {
           "$ref": "#/definitions/OrderStatus"
+        },
+        "expirationDatetime": {
+          "type": "string"
+        },
+        "expirationTimestamp": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "reference": {
+          "type": "string"
         }
       }
     },
@@ -615,6 +682,10 @@
         "status": {
           "$ref": "#/definitions/vegaAppStatus"
         },
+        "txPerBlock": {
+          "type": "string",
+          "format": "uint64"
+        },
         "averageTxBytes": {
           "type": "string",
           "format": "uint64"
@@ -637,9 +708,6 @@
         "lastOrder": {
           "$ref": "#/definitions/vegaOrder"
         },
-        "lastCandle": {
-          "$ref": "#/definitions/vegaCandle"
-        },
         "totalMarkets": {
           "type": "string",
           "format": "uint64"
@@ -648,10 +716,13 @@
           "type": "string",
           "format": "uint64"
         },
-        "AppVersionHash": {
+        "appVersionHash": {
           "type": "string"
         },
-        "AppVersion": {
+        "appVersion": {
+          "type": "string"
+        },
+        "vegaTime": {
           "type": "string"
         }
       }

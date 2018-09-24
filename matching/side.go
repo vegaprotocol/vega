@@ -15,12 +15,49 @@ func (s *OrderBookSide) addOrder(o *msg.Order, side msg.Side) {
 	s.getPriceLevel(o.Price, side).addOrder(o)
 }
 
+func (s *OrderBookSide) amendOrder(orderAmended *msg.Order) msg.OrderError {
+	priceLevelIndex := -1
+	orderIndex := -1
+
+	for idx, priceLevel := range s.levels {
+		if priceLevel.price == orderAmended.Price {
+			priceLevelIndex = idx
+			for j, order := range priceLevel.orders {
+				if order.Id == orderAmended.Id {
+					orderIndex = j
+					break
+				}
+			}
+			break
+		}
+	}
+
+	if priceLevelIndex == -1 || orderIndex == -1 {
+		return msg.OrderError_ORDER_NOT_FOUND
+	}
+
+	if s.levels[priceLevelIndex].orders[orderIndex].Party != orderAmended.Party {
+		return msg.OrderError_ORDER_AMEND_FAILURE
+	}
+
+	if s.levels[priceLevelIndex].orders[orderIndex].Size < orderAmended.Size {
+		return msg.OrderError_ORDER_AMEND_FAILURE
+	}
+
+	if s.levels[priceLevelIndex].orders[orderIndex].Reference != orderAmended.Reference {
+		return msg.OrderError_ORDER_AMEND_FAILURE
+	}
+
+	s.levels[priceLevelIndex].orders[orderIndex] = orderAmended
+	return msg.OrderError_NONE
+}
+
 func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 	// TODO: implement binary search on the slice
 	toDelete := -1
+	toRemove := -1
 	for idx, priceLevel := range s.levels {
 		if priceLevel.price == o.Price {
-			toRemove := -1
 			for j, order := range priceLevel.orders {
 				if order.Id == o.Id {
 					toRemove = j
@@ -41,7 +78,7 @@ func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 		s.levels = s.levels[:len(s.levels)-1]
 
 	}
-	if toDelete == -1 {
+	if toRemove == -1 {
 		return errors.New("order not found")
 	}
 	return nil
