@@ -11,9 +11,9 @@ func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
 	 newTradeStore, _ := buildPaginationTestTrades(t)
 
 	// Expect 6 trades with no filtration/pagination
-	trades, err := newTradeStore.GetByParty(testMarket, nil)
+	trades, err := newTradeStore.GetByParty(testPartyA, nil)
 	assert.Nil(t, err)
-	assert.Equal(t, 0, len(trades))
+	assert.Equal(t, 6, len(trades))
 }
 
 func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {

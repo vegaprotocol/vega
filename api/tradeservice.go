@@ -159,7 +159,6 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 		if err != nil {
 			log.Errorf("Error un-subscribing when context.Done() on TradeService for id: %d", id)
 		}
-		close(internal)
 	}(ref, internal)
 
 	go func(id uint64) {
@@ -192,7 +191,6 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 		if err != nil {
 			log.Errorf("Error un-subscribing positions when context.Done() on TradeService for id: %d", id, err)
 		}
-		close(internal)
 	}(ref, internal)
 
 	go func(id uint64) {

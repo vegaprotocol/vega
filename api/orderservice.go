@@ -191,7 +191,6 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 		if err != nil {
 			log.Errorf("Error un-subscribing when context.Done() on OrderService for id: %d", id)
 		}
-		close(internal)
 	}(ref, internal)
 
 	go func(id uint64) {
@@ -224,7 +223,6 @@ func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<
 		if err != nil {
 			log.Errorf("Error un-subscribing depth when context.Done() on OrderService for id: %d", id)
 		}
-		close(internal)
 	}(ref, internal)
 
 	go func(id uint64) {
@@ -257,6 +255,7 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 	parties, err := p.app.PartyStore.GetAllParties()
 	if err == nil {
 		p.app.Statistics.TotalParties = uint64(len(parties))
+		p.app.Statistics.Parties = parties
 	}
 
 	// Unconfirmed TX count == current transaction backlog length
@@ -282,6 +281,7 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 	}
 	//log.Debugf("Statistics: Tendermint net-info: %+v", netInfo)
 	p.app.Statistics.TotalPeers = uint64(netInfo.NPeers)
+
 
 	return p.app.Statistics, nil
 }
