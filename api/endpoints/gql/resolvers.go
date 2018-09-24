@@ -273,7 +273,7 @@ func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *msg.MarketDe
 	if err != nil {
 		return nil, err
 	}
-	if trades != nil && trades[0] != nil {
+	if trades != nil && len(trades) > 0 && trades[0] != nil {
 		return trades[0], nil
 	}
 	// No trades found on the market yet (and no errors)

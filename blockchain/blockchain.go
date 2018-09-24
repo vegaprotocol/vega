@@ -44,7 +44,7 @@ func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 //
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
-	log.Infof("CheckTx: %s", string(tx))
+	log.Debugf("CheckTx: %s", string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -81,7 +81,7 @@ var tx_per_block uint64
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	txLength := len(tx)
-	log.Infof("DeliverTx: %s [%v]", string(tx), txLength)
+	log.Debugf("DeliverTx: %s [%v]", string(tx), txLength)
 	tx_per_block++
 
 	if app.vega.Statistics.Status == msg.AppStatus_CHAIN_NOT_FOUND {
@@ -117,16 +117,16 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 			// Submit the create new order request to the Vega trading core
 			confirmationMessage, errorMessage := app.vega.SubmitOrder(order)
 			if confirmationMessage != nil {
-				log.Debugf("ABCI reports it received an order confirmation message from vega:\n")
-				log.Debugf("- aggressive order: %+v\n", confirmationMessage.Order)
-				log.Debugf("- trades: %+v\n", confirmationMessage.Trades)
-				log.Debugf("- passive orders affected: %+v\n", confirmationMessage.PassiveOrdersAffected)
+				log.Infof("ABCI order confirmation message:")
+				log.Infof("- aggressive order: %+v", confirmationMessage.Order)
+				log.Debugf("- trades: %+v", confirmationMessage.Trades)
+				log.Infof("- passive orders affected: %+v", confirmationMessage.PassiveOrdersAffected)
 
 				current_tb += len(confirmationMessage.Trades)
 			}
 			if errorMessage != msg.OrderError_NONE {
-				log.Debugf("ABCI reports it received an order error message from vega:\n")
-				log.Debugf("- error: %+v\n", errorMessage.String())
+				log.Infof("ABCI order error message (create):")
+				log.Infof("- error: %+v", errorMessage.String())
 			}
 			current_ob++
 
@@ -145,12 +145,12 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 			// Submit the cancel new order request to the Vega trading core
 			cancellationMessage, errorMessage := app.vega.CancelOrder(order)
 			if cancellationMessage != nil {
-				log.Debugf("ABCI reports it received an order cancellation message from vega:\n")
-				log.Debugf("- cancelled order: %+v\n", cancellationMessage.Order)
+				log.Infof("ABCI order cancellation message:")
+				log.Infof("- cancelled order: %+v", cancellationMessage.Order)
 			}
 			if errorMessage != msg.OrderError_NONE {
-				log.Debugf("ABCI reports it received an order error message from vega:\n")
-				log.Debugf("- error: %+v\n", errorMessage.String())
+				log.Infof("ABCI order error message (cancel):")
+				log.Infof("- error: %+v", errorMessage.String())
 			}
 
 		case AmendmentOrderCommand:

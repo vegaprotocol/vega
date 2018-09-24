@@ -274,13 +274,7 @@ func (ts *memTradeStore) marketExists(market string) error {
 
 func (ts *memTradeStore) partyExists(party string) error {
 	if !ts.store.partyExists(party) {
-		memParty := memParty{
-			party:   party,
-			ordersByTimestamp: []*memOrder{},
-			tradesByTimestamp: []*memTrade{},
-		}
-		ts.store.parties[party] = &memParty
-		return nil
+		return errors.New(fmt.Sprintf("party %s already exists", party))
 	}
 	return nil
 }
