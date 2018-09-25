@@ -12,14 +12,16 @@ type PriceLevel struct {
 	price             uint64
 	orders            []*msg.Order
 	volumeAtTimestamp map[uint64]uint64
-	volume uint64
+	volume            uint64
+	prorataMode       bool
 }
 
-func NewPriceLevel(price uint64) *PriceLevel {
+func NewPriceLevel(price uint64, prorataMode bool) *PriceLevel {
 	return &PriceLevel{
 		price:             price,
 		orders:            []*msg.Order{},
 		volumeAtTimestamp: make(map[uint64]uint64),
+		prorataMode:       prorataMode,
 	}
 }
 
@@ -146,14 +148,16 @@ func (l *PriceLevel) getVolumeAllocation(
 	agg, pass *msg.Order,
 	volumeToShare, initialVolumeAtTimestamp uint64) uint64 {
 
-	weight := float64(pass.Remaining) / float64(initialVolumeAtTimestamp)
-	size := weight * float64(min(volumeToShare, initialVolumeAtTimestamp))
-	if size-math.Trunc(size) > 0 {
-		size++ // Otherwise we can end up allocating 1 short because of integer division rounding
+		if l.prorataMode {
+		weight := float64(pass.Remaining) / float64(initialVolumeAtTimestamp)
+		size := weight * float64(min(volumeToShare, initialVolumeAtTimestamp))
+		if size-math.Trunc(size) > 0 {
+			size++ // Otherwise we can end up allocating 1 short because of integer division rounding
+		}
+		return min(min(uint64(size), agg.Remaining), pass.Remaining)
 	}
-	return min(min(uint64(size), agg.Remaining), pass.Remaining)
 
-	// return min(agg.Remaining, pass.Remaining)
+	return min(agg.Remaining, pass.Remaining)
 }
 
 // Returns the min of 2 uint64s

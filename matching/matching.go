@@ -15,11 +15,11 @@ type MatchingEngine interface {
 
 type matchingEngine struct {
 	markets map[string]*OrderBook
-	config  Config
+	config  *Config
 }
 
 func NewMatchingEngine() MatchingEngine {
-	return &matchingEngine{markets: make(map[string]*OrderBook)}
+	return &matchingEngine{markets: make(map[string]*OrderBook), config:DefaultConfig()}
 }
 
 func (me *matchingEngine) CreateMarket(marketName string) {

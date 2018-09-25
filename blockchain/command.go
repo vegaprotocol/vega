@@ -10,6 +10,6 @@ const (
 type Command byte
 
 func (cmd Command) String() string {
-	names := [...]string{"Create Order", "Cancel Order"}
+	names := [...]string{"Create Order", "Cancel Order", "Amend Order"}
 	return names[cmd]
 }
