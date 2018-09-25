@@ -4,7 +4,7 @@ require "colorize"
 #lock "~> 3.11.0"
 
 set :application, "vega"
-set :repo_url, "git@gitlab.com:vega-protocol/trading-core.git"
+# set :repo_url, "git@gitlab.com:vega-protocol/trading-core.git"
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
@@ -17,7 +17,7 @@ namespace :vega do
   task :build do
     run_locally do
       puts "Building vega binary..."
-      system "go build"
+      system "make build"
       puts "done"
     end
   end
@@ -34,7 +34,7 @@ namespace :vega do
   task :reset_tendermint do
     on roles(:app) do
       begin
-        execute "tendermint unsafe_reset_all"
+        execute "./tendermint unsafe_reset_all"
       rescue => ex
         puts ex.message.red
       end
@@ -44,7 +44,7 @@ namespace :vega do
   desc "Start tendermint"
   task :start_tendermint do
     on roles(:app) do
-      execute "nohup tendermint node >/tmp/tendermint.log 2>&1 & sleep 1", pty: true
+      execute "nohup ./tendermint node >/tmp/tendermint.log 2>&1 & sleep 1", pty: true
     end
   end
 
@@ -78,7 +78,7 @@ namespace :vega do
   end
 
   desc "Reset everything - blow away chain data + restart vega and tendermint"
-  task :reset_app_servers do
+  task :reset_and_restart do
     on roles(:app) do
       invoke("vega:stop")
       invoke("vega:stop_tendermint")
