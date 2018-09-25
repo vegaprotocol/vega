@@ -148,8 +148,7 @@ func (l *PriceLevel) getVolumeAllocation(
 	agg, pass *msg.Order,
 	volumeToShare, initialVolumeAtTimestamp uint64) uint64 {
 
-	fmt.Printf("PRORATAMODE %+v", l.prorataMode)
-	if l.prorataMode {
+		if l.prorataMode {
 		weight := float64(pass.Remaining) / float64(initialVolumeAtTimestamp)
 		size := weight * float64(min(volumeToShare, initialVolumeAtTimestamp))
 		if size-math.Trunc(size) > 0 {
@@ -196,7 +195,7 @@ func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
 }
 
 func (l PriceLevel) print() {
-	//log.Infof("priceLevel: %d\n", l.price)
+	log.Debugf("priceLevel: %d\n", l.price)
 	for _, o := range l.orders {
 		var side string
 		if o.Side == msg.Side_Buy {
@@ -205,8 +204,8 @@ func (l PriceLevel) print() {
 			side = "SELL"
 		}
 
-		line := fmt.Sprintf(" %s %s @%d size=%d R=%d Type=%d T=%d %s",
+		line := fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s",
 			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id)
-		log.Infof("%s", line)
+		log.Debugf("%s", line)
 	}
 }

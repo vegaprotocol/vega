@@ -122,8 +122,8 @@ func (m *memOrderStore) GetByMarketAndId(market string, id string) (Order, error
 }
 
 func (m *memOrderStore) GetByParty(party string, queryFilters *filters.OrderQueryFilters) ([]Order, error) {
-	if err := m.partyExists(party); err != nil {
-		return nil, err
+	if !m.partyExists(party) {
+		return nil, NotFoundError{fmt.Errorf("could not find party %s", party)}
 	}
 	if queryFilters == nil {
 		queryFilters = &filters.OrderQueryFilters{}
@@ -133,10 +133,10 @@ func (m *memOrderStore) GetByParty(party string, queryFilters *filters.OrderQuer
 
 // Get retrieves an order for a given market and id.
 func (m *memOrderStore) GetByPartyAndId(party string, id string) (Order, error) {
-	if err := m.partyExists(party); err != nil {
-		return Order{}, err
+	if !m.partyExists(party) {
+		return Order{}, NotFoundError{fmt.Errorf("could not find party %s", party)}
 	}
-
+	
 	var at = -1
 	for idx, order := range m.store.parties[party].ordersByTimestamp {
 		if order.order.Id == id {
@@ -152,8 +152,8 @@ func (m *memOrderStore) GetByPartyAndId(party string, id string) (Order, error) 
 }
 
 func (m *memOrderStore) GetByPartyAndReference(party string, reference string) (Order, error) {
-	if err := m.partyExists(party); err != nil {
-		return Order{}, err
+	if exists := m.partyExists(party); !exists {
+		return Order{}, fmt.Errorf("could not find party %s", party)
 	}
 
 	var at = -1
@@ -176,8 +176,15 @@ func (m *memOrderStore) Post(order Order) error {
 		return err
 	}
 
+	// Order cannot already exist in the store
 	if _, exists := m.store.markets[order.Market].orders[order.Id]; exists {
 		return fmt.Errorf("order exists in memstore: %s", order.Id)
+	}
+
+	// Party 'name' is added on the fly to the parties store
+	if !m.partyExists(order.Party) {
+		m.newMemParty(order.Party)
+		log.Debugf("new party added to store: %v", order.Party)
 	}
 
 	newOrder := &memOrder{
@@ -213,8 +220,12 @@ func (m *memOrderStore) Put(order Order) error {
 		return err
 	}
 
+	if !m.partyExists(order.Party) {
+		return NotFoundError{fmt.Errorf("could not find party %s", order.Party)}
+	}
+
 	if _, exists := m.store.markets[order.Market].orders[order.Id]; !exists {
-		return fmt.Errorf("order not found in memstore: %s", order.Id)
+		return NotFoundError{fmt.Errorf("order not found in memstore: %s", order.Id)}
 	}
 
 	m.store.markets[order.Market].orders[order.Id].order = order
@@ -243,6 +254,10 @@ func (m *memOrderStore) Put(order Order) error {
 func (m *memOrderStore) Delete(order Order) error {
 	if err := m.validate(&order); err != nil {
 		return err
+	}
+
+	if !m.partyExists(order.Party) {
+		return NotFoundError{fmt.Errorf("could not find party %s", order.Party)}
 	}
 
 	// Remove from orders map
@@ -289,17 +304,26 @@ func (m *memOrderStore) marketExists(market string) error {
 	return nil
 }
 
-func (m *memOrderStore) partyExists(party string) error {
-	if !m.store.partyExists(party) {
-		memParty := memParty{
-			party:             party,
-			ordersByTimestamp: []*memOrder{},
-			tradesByTimestamp: []*memTrade{},
-		}
-		m.store.parties[party] = &memParty
-		return nil
+func (m *memOrderStore) partyExists(party string) bool {
+	if m.store.partyExists(party) {
+		return true
 	}
-	return nil
+	return false
+}
+
+
+func (m *memOrderStore) newMemParty(party string) (*memParty, error) {
+	exists := m.partyExists(party)
+	if exists {
+		return nil, errors.New(fmt.Sprintf("party %s already exists", party))
+	}
+	memParty := memParty{
+		party:             party,
+		ordersByTimestamp: []*memOrder{},
+		tradesByTimestamp: []*memTrade{},
+	}
+	m.store.parties[party] = &memParty
+	return &memParty, nil
 }
 
 func (m *memOrderStore) validate(order *Order) error {
@@ -307,9 +331,7 @@ func (m *memOrderStore) validate(order *Order) error {
 		return err
 	}
 
-	if err := m.partyExists(order.Party); err != nil {
-		return err
-	}
+	// more validation here
 
 	return nil
 }

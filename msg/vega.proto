@@ -130,6 +130,7 @@ message Statistics {
     string appVersionHash = 16;
     string appVersion = 17;
     string vegaTime = 18;
+    repeated string Parties = 19;
 }
 
 enum AppStatus {
