@@ -15,7 +15,7 @@ import (
 
 type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
-	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan msg.Order, ref uint64)
+	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []msg.Order, ref uint64)
 
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
@@ -213,8 +213,8 @@ func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (o
 	return p.orderStore.GetMarketDepth(marketName)
 }
 
-func (p *orderService) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan msg.Order, uint64) {
-	orders := make(chan msg.Order)
+func (p *orderService) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, uint64) {
+	orders := make(chan []msg.Order)
 	internal := make(chan []datastore.Order)
 	ref := p.orderStore.Subscribe(internal)
 
@@ -228,7 +228,14 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 	}(ref, internal)
 
 	go func(id uint64) {
+
+		var validatedOrders []msg.Order
+
+		// read internal channel
 		for v := range internal {
+
+			// reset temp slice
+			validatedOrders = nil
 			for _, item := range v {
 				if market != nil && item.Market != *market {
 					continue
@@ -236,8 +243,9 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 				if party != nil && item.Party != *party {
 					continue
 				}
-				orders <- *item.ToProtoMessage()
+				validatedOrders = append(validatedOrders, *item.ToProtoMessage())
 			}
+			orders <- validatedOrders
 		}
 		log.Debugf("OrderService -> Channel for subscriber %d has been closed", ref)
 	}(ref)

@@ -233,6 +233,8 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 	app.vega.State.AppHash = appHash
 	app.vega.State.Height += 1
 
+	app.vega.NotifySubscribers()
+
 	app.vega.Statistics.OrdersPerSecond = uint64(current_ob)
 	app.vega.Statistics.TradesPerSecond = uint64(current_tb)
 	app.vega.Statistics.TxPerBlock = tx_per_block

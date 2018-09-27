@@ -134,9 +134,6 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	}
 	
 	v.Statistics.LastOrder = order
-	
-	// Notify change observers, we batch events for efficiency
-	v.OrderStore.Notify()
 
 	if confirmation.Trades != nil {
 		// insert all trades resulted from the executed order
@@ -151,9 +148,6 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 
 			v.Statistics.LastTrade = trade
 		}
-
-		// Notify change observers, we batch events for efficiency
-		v.TradeStore.Notify()
 	}
 
 	// TODO: ONE METHOD TO create or update risk record for this order party etc
@@ -186,11 +180,7 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 		log.Errorf("OrderStore.Put error: %v", err)
 	}
 
-	// Notify change observers, we batch events for efficiency
-	v.OrderStore.Notify()
-
 	// ------------------------------------------------//
-
 	return cancellation, msg.OrderError_NONE
 }
 
@@ -295,6 +285,9 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 		// remove orders from the store
 		v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
 	}
+}
 
-
+func (v *Vega) NotifySubscribers() {
+	v.OrderStore.Notify()
+	v.TradeStore.Notify()
 }
