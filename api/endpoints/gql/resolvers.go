@@ -529,7 +529,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 
 type MySubscriptionResolver resolverRoot
 
-func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error) {
+func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, error) {
 	// Validate market, and todo future Party (when party store exists)
 	err := r.validateMarket(ctx, market)
 	if err != nil {
@@ -540,7 +540,7 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error) {
+func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, error) {
 	// Validate market, and todo future Party (when party store exists)
 	err := r.validateMarket(ctx, market)
 	if err != nil {

@@ -73,8 +73,8 @@ type Resolvers interface {
 	Query_vega(ctx context.Context) (Vega, error)
 
 	Subscription_candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error)
-	Subscription_orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error)
-	Subscription_trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error)
+	Subscription_orders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, error)
+	Subscription_trades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, error)
 	Subscription_positions(ctx context.Context, party string) (<-chan msg.MarketPosition, error)
 	Subscription_marketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error)
 
@@ -163,8 +163,8 @@ type QueryResolver interface {
 }
 type SubscriptionResolver interface {
 	Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error)
-	Orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error)
-	Trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error)
+	Orders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, error)
+	Trades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, error)
 	Positions(ctx context.Context, party string) (<-chan msg.MarketPosition, error)
 	MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error)
 }
@@ -349,11 +349,11 @@ func (s shortMapper) Subscription_candles(ctx context.Context, market string, in
 	return s.r.Subscription().Candles(ctx, market, interval)
 }
 
-func (s shortMapper) Subscription_orders(ctx context.Context, market *string, party *string) (<-chan msg.Order, error) {
+func (s shortMapper) Subscription_orders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, error) {
 	return s.r.Subscription().Orders(ctx, market, party)
 }
 
-func (s shortMapper) Subscription_trades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, error) {
+func (s shortMapper) Subscription_trades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, error) {
 	return s.r.Subscription().Trades(ctx, market, party)
 }
 
@@ -2568,7 +2568,18 @@ func (ec *executionContext) _Subscription_orders(ctx context.Context, field grap
 			return nil
 		}
 		var out graphql.OrderedMap
-		out.Add(field.Alias, func() graphql.Marshaler { return ec._Order(ctx, field.Selections, &res) }())
+		out.Add(field.Alias, func() graphql.Marshaler {
+			arr1 := graphql.Array{}
+			for idx1 := range res {
+				arr1 = append(arr1, func() graphql.Marshaler {
+					rctx := graphql.GetResolverContext(ctx)
+					rctx.PushIndex(idx1)
+					defer rctx.Pop()
+					return ec._Order(ctx, field.Selections, &res[idx1])
+				}())
+			}
+			return arr1
+		}())
 		return &out
 	}
 }
@@ -2617,7 +2628,18 @@ func (ec *executionContext) _Subscription_trades(ctx context.Context, field grap
 			return nil
 		}
 		var out graphql.OrderedMap
-		out.Add(field.Alias, func() graphql.Marshaler { return ec._Trade(ctx, field.Selections, &res) }())
+		out.Add(field.Alias, func() graphql.Marshaler {
+			arr1 := graphql.Array{}
+			for idx1 := range res {
+				arr1 = append(arr1, func() graphql.Marshaler {
+					rctx := graphql.GetResolverContext(ctx)
+					rctx.PushIndex(idx1)
+					defer rctx.Pop()
+					return ec._Trade(ctx, field.Selections, &res[idx1])
+				}())
+			}
+			return arr1
+		}())
 		return &out
 	}
 }
@@ -4417,8 +4439,8 @@ type Query {
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
 type Subscription {
     candles(market: String!, interval: Int!): Candle!
-    orders(market: String, party: String): Order!
-    trades(market: String, party: String): Trade!
+    orders(market: String, party: String): [Order!]
+    trades(market: String, party: String): [Trade!]
     positions(party: String!): Position!
     marketDepth(market: String!): MarketDepth!
 }
