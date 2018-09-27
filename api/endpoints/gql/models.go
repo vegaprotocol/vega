@@ -56,7 +56,7 @@ type Party struct {
 }
 type PreConsensus struct {
 	Accepted  bool   `json:"accepted"`
-	Reference string `json:"accepted"`
+	Reference string `json:"reference"`
 }
 type TradeFilter struct {
 	AND            []TradeFilter `json:"AND"`
@@ -95,13 +95,15 @@ const (
 	// The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
 	// Active does not necessarily mean it's still on the order book.
 	OrderStatusActive    OrderStatus = "Active"    // The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
-	OrderStatusCancelled OrderStatus = "Cancelled" // This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
-	OrderStatusExpired   OrderStatus = "Expired"
+	OrderStatusCancelled OrderStatus = "Cancelled" // This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
+	OrderStatusExpired   OrderStatus = "Expired"   // This order was of type ENE or FOK and could not be processed by the matching engine due to lack of liquidity.
+	OrderStatusStopped   OrderStatus = "Stopped"   // This order is fully filled with remaining equals zero.
+	OrderStatusFilled    OrderStatus = "Filled"
 )
 
 func (e OrderStatus) IsValid() bool {
 	switch e {
-	case OrderStatusActive, OrderStatusCancelled, OrderStatusExpired:
+	case OrderStatusActive, OrderStatusCancelled, OrderStatusExpired, OrderStatusStopped, OrderStatusFilled:
 		return true
 	}
 	return false

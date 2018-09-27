@@ -44,6 +44,9 @@ type PreConsensus {
 
     # If true then the operation was validated and passed on for consensus with other nodes on the VEGA platform.
     accepted: Boolean!
+
+    # A UUID reference for the caller to aid in tracking operations on VEGA
+    reference: String!
 }
 
 # VEGA the world's premier distributed derivatives trading platform

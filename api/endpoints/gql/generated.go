@@ -2175,6 +2175,8 @@ func (ec *executionContext) _PreConsensus(ctx context.Context, sel []query.Selec
 			out.Values[i] = graphql.MarshalString("PreConsensus")
 		case "accepted":
 			out.Values[i] = ec._PreConsensus_accepted(ctx, field, obj)
+		case "reference":
+			out.Values[i] = ec._PreConsensus_reference(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2192,6 +2194,17 @@ func (ec *executionContext) _PreConsensus_accepted(ctx context.Context, field gr
 	defer rctx.Pop()
 	res := obj.Accepted
 	return graphql.MarshalBoolean(res)
+}
+
+func (ec *executionContext) _PreConsensus_reference(ctx context.Context, field graphql.CollectedField, obj *PreConsensus) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "PreConsensus"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	res := obj.Reference
+	return graphql.MarshalString(res)
 }
 
 var priceLevelImplementors = []string{"PriceLevel"}
@@ -4415,6 +4428,9 @@ type PreConsensus {
 
     # If true then the operation was validated and passed on for consensus with other nodes on the VEGA platform.
     accepted: Boolean!
+
+    # A UUID reference for the caller to aid in tracking operations on VEGA
+    reference: String!
 }
 
 # VEGA the world's premier distributed derivatives trading platform
@@ -4643,8 +4659,14 @@ enum OrderStatus {
     # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
     Cancelled,
 
-    # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
+    # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
     Expired,
+
+    # This order was of type ENE or FOK and could not be processed by the matching engine due to lack of liquidity.
+    Stopped,
+
+    # This order is fully filled with remaining equals zero.
+    Filled,
 }
 
 # Whether the placer of an order is aiming to buy or sell on the market
