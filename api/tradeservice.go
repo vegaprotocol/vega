@@ -15,7 +15,7 @@ import (
 
 type TradeService interface {
 	Init(app *core.Vega, tradeStore datastore.TradeStore)
-	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan msg.Trade, ref uint64)
+	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []msg.Trade, ref uint64)
 
 	GetByMarket(ctx context.Context, market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
 	GetByParty(ctx context.Context, party string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
@@ -147,8 +147,8 @@ func (t *tradeService) GetLatestBlock() uint64 {
 	return uint64(height)
 }
 
-func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, uint64) {
-	trades := make(chan msg.Trade)
+func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, uint64) {
+	trades := make(chan []msg.Trade)
 	internal := make(chan []datastore.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
@@ -162,7 +162,9 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 	}(ref, internal)
 
 	go func(id uint64) {
+		var validatedTrades []msg.Trade
 		for v := range internal {
+			validatedTrades = nil
 			for _, item := range v {
 				if market != nil && item.Market != *market {
 					continue
@@ -170,8 +172,10 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 				if party != nil && (item.Seller != *party || item.Buyer != *party) {
 					continue
 				}
-				trades <- *item.ToProtoMessage()
+
+				validatedTrades = append(validatedTrades, *item.ToProtoMessage())
 			}
+			trades <- validatedTrades
 		}
 		log.Debugf("TradeService -> Channel for subscriber %d has been closed", ref)
 	}(ref)
