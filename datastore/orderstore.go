@@ -75,7 +75,7 @@ func (m *memOrderStore) Notify() error {
 
 	// iterate over items in buffer and push to observers
 	var ok bool
-	for _, sub := range m.subscribers {
+	for id, sub := range m.subscribers {
 		select {
 		case sub <- items:
 			ok = true
@@ -86,7 +86,7 @@ func (m *memOrderStore) Notify() error {
 		if ok{
 			log.Debugf("Orders state updated")
 		} else {
-			log.Debugf("Orders state could not been updated")
+			log.Infof("Orders state could not been updated for subscriber %d", id)
 		}
 	}
 	return nil

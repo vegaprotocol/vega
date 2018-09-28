@@ -74,7 +74,7 @@ func (ts *memTradeStore) Notify() error {
 
 	// iterate over items in buffer and push to observers
 	var ok bool
-	for _, sub := range ts.subscribers {
+	for id, sub := range ts.subscribers {
 		select {
 		case sub <- items:
 			ok = true
@@ -85,7 +85,7 @@ func (ts *memTradeStore) Notify() error {
 		if ok{
 			log.Debugf("Trades state updated")
 		} else {
-			log.Debugf("Trades state could not been updated")
+			log.Infof("Trades state could not been updated for subscriber %id", id)
 		}
 	}
 
