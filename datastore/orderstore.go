@@ -84,9 +84,9 @@ func (m *memOrderStore) Notify() error {
 			ok = false
 		}
 		if ok{
-			log.Debugf("State updated")
+			log.Debugf("Orders state updated")
 		} else {
-			log.Debugf("state could not been updated")
+			log.Debugf("Orders state could not been updated")
 		}
 	}
 	return nil

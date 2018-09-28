@@ -83,9 +83,9 @@ func (ts *memTradeStore) Notify() error {
 			ok = false
 		}
 		if ok{
-			log.Debugf("State updated")
+			log.Debugf("Trades state updated")
 		} else {
-			log.Debugf("state could not been updated")
+			log.Debugf("Trades state could not been updated")
 		}
 	}
 
