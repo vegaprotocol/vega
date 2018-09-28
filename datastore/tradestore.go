@@ -73,8 +73,20 @@ func (ts *memTradeStore) Notify() error {
 	ts.mu.Unlock()
 
 	// iterate over items in buffer and push to observers
-	for _, sub := range ts.subscribers {
-		sub <- items
+	var ok bool
+	for id, sub := range ts.subscribers {
+		select {
+		case sub <- items:
+			ok = true
+			break
+		default:
+			ok = false
+		}
+		if ok{
+			log.Debugf("Trades state updated")
+		} else {
+			log.Infof("Trades state could not been updated for subscriber %id", id)
+		}
 	}
 
 	return nil

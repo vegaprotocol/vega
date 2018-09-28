@@ -74,10 +74,21 @@ func (m *memOrderStore) Notify() error {
 	m.mu.Unlock()
 
 	// iterate over items in buffer and push to observers
-	for _, sub := range m.subscribers {
-		sub <- items
+	var ok bool
+	for id, sub := range m.subscribers {
+		select {
+		case sub <- items:
+			ok = true
+			break
+		default:
+			ok = false
+		}
+		if ok{
+			log.Debugf("Orders state updated")
+		} else {
+			log.Infof("Orders state could not been updated for subscriber %d", id)
+		}
 	}
-	
 	return nil
 }
 
