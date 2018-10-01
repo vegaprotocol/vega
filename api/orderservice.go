@@ -31,6 +31,7 @@ type OrderService interface {
 	ObserveMarketDepth(ctx context.Context, market string) (depth <-chan msg.MarketDepth, ref uint64)
 
 	GetStatistics(ctx context.Context) (*msg.Statistics, error)
+	GetCurrentTime(ctx context.Context) (time.Time, error)
 }
 
 type orderService struct {
@@ -326,4 +327,10 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 
 
 	return p.app.Statistics, nil
+}
+
+func (p *orderService) GetCurrentTime(ctx context.Context) (time.Time, error) {
+	converter := vegatime.NewVegaTimeConverter(p.app)
+	currentTime := converter.BlockToTime(p.app.GetChainHeight())
+	return currentTime, nil
 }

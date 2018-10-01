@@ -332,6 +332,22 @@
           "trading"
         ]
       }
+    },
+    "/vegaTime": {
+      "get": {
+        "operationId": "GetVegaTime",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/grpcVegaTimeResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading"
+        ]
+      }
     }
   },
   "definitions": {
@@ -471,6 +487,14 @@
           "items": {
             "$ref": "#/definitions/vegaTrade"
           }
+        }
+      }
+    },
+    "grpcVegaTimeResponse": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string"
         }
       }
     },
@@ -724,6 +748,12 @@
         },
         "vegaTime": {
           "type": "string"
+        },
+        "Parties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
