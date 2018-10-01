@@ -126,9 +126,17 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		// insert all passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			// Note: writing to store should not prevent flow to other engines
-			err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
-			if err != nil {
-				log.Errorf("OrderStore.Put error: %v", err)
+
+			if order.Status == msg.Order_Cancelled && v.Config.RemoveExpiredGTTOrders {
+				err := v.OrderStore.Delete(*datastore.NewOrderFromProtoMessage(order))
+				if err != nil {
+					log.Errorf("OrderStore.Delete error: %v", err)
+				}
+			} else {
+				err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+				if err != nil {
+					log.Errorf("OrderStore.Put error: %v", err)
+				}
 			}
 		}
 	}
