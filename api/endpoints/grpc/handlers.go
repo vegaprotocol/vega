@@ -7,6 +7,7 @@ import (
 	"time"
 	"github.com/pkg/errors"
 	"vega/filters"
+	"fmt"
 )
 
 type Handlers struct {
@@ -203,4 +204,12 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 
 func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsRequest) (*msg.Statistics, error) {
 	return h.OrderService.GetStatistics(ctx)
+}
+
+func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest) (*api.VegaTimeResponse, error) {
+	currentTime, _ := h.OrderService.GetCurrentTime(ctx)
+
+	var response = &api.VegaTimeResponse{}
+	response.Time = fmt.Sprintf("%s", currentTime.Format(time.RFC3339))
+	return response, nil
 }
