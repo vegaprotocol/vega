@@ -18,6 +18,7 @@ service trading {
     rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
     rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
     rpc Statistics(StatisticsRequest) returns (vega.Statistics);
+    rpc GetVegaTime(VegaTimeRequest) returns (VegaTimeResponse);
     //rpc TradesForOrder(TradesForOrderRequest) return (TradesForOrderResponse);        TODO
 }
 
@@ -105,4 +106,12 @@ message StatisticsRequest {
 
 message OptionalParams {
     uint64 limit = 1;
+}
+
+message VegaTimeRequest {
+    // empty
+}
+
+message VegaTimeResponse {
+    string time = 1;
 }

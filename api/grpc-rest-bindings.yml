@@ -36,3 +36,5 @@ http:
     get: '/partyPositions'
   - selector: grpc.trading.Statistics
     get: '/statistics'
+  - selector: grpc.trading.GetVegaTime
+    get: '/vegaTime'
