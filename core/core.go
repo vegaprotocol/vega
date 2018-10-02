@@ -21,6 +21,8 @@ type Config struct {
 	RiskCalculationFrequency uint64
 	AppVersion               string
 	AppVersionHash           string
+	RemoveExpiredGTTOrders   bool
+
 }
 
 type Vega struct {
@@ -126,17 +128,9 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		// insert all passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			// Note: writing to store should not prevent flow to other engines
-
-			if order.Status == msg.Order_Cancelled && v.Config.RemoveExpiredGTTOrders {
-				err := v.OrderStore.Delete(*datastore.NewOrderFromProtoMessage(order))
-				if err != nil {
-					log.Errorf("OrderStore.Delete error: %v", err)
-				}
-			} else {
-				err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
-				if err != nil {
-					log.Errorf("OrderStore.Put error: %v", err)
-				}
+			err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+			if err != nil {
+				log.Errorf("OrderStore.Put error: %v", err)
 			}
 		}
 	}
@@ -291,7 +285,16 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 
 	for _, order := range expiringOrders {
 		// remove orders from the store
-		v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+		log.Debugf("RemoveExpiredGTTOrders: %t", v.Config.RemoveExpiredGTTOrders)
+		if v.Config.RemoveExpiredGTTOrders {
+			log.Debugf("Removing expired order from the store")
+			err := v.OrderStore.Delete(*datastore.NewOrderFromProtoMessage(order))
+			if err != nil {
+				log.Errorf("OrderStore.Delete error: %v", err)
+			}
+		} else {
+			v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+		}
 	}
 }
 

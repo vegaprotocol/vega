@@ -25,5 +25,8 @@ func (vt *vegaTimeConverter) BlockToTime(blockNumber uint64) time.Time {
 
 func (vt *vegaTimeConverter) TimeToBlock(time time.Time) uint64 {
 	delta := time.Sub(vt.vega.GetGenesisTime())
+	if delta < 0 {
+		return 0
+	}
 	return uint64(delta.Seconds())
 }
