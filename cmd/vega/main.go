@@ -26,6 +26,7 @@ func main() {
 	var logLevelFlag string
 	flag.StringVar(&logLevelFlag, "log", "info", "pass log level: debug, info, error, fatal")
 	flag.BoolVar(&config.RemoveExpiredGTTOrders, "remove_expired_gtt", false, "if true expired GTT orders are saved to data stores")
+	flag.BoolVar(&config.LogPriceLevels, "log_price_levels", false, "if true log price levels")
 	flag.Parse()
 
 	if err := initLogger(logLevelFlag); err != nil {

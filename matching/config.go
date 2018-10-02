@@ -2,6 +2,7 @@ package matching
 
 type Config struct {
 	ProrataMode bool
+	LogPriceLevels bool
 }
 
 func DefaultConfig() *Config {

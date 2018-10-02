@@ -22,6 +22,7 @@ type Config struct {
 	AppVersion               string
 	AppVersionHash           string
 	RemoveExpiredGTTOrders   bool
+	LogPriceLevels           bool
 
 }
 
@@ -40,7 +41,7 @@ type Vega struct {
 func New(config *Config, store datastore.StoreProvider) *Vega {
 
 	// Initialise matching engine
-	matchingEngine := matching.NewMatchingEngine()
+	matchingEngine := matching.NewMatchingEngine(config.LogPriceLevels)
 
 	// Initialise risk engine
 	riskEngine := risk.New()

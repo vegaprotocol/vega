@@ -97,7 +97,9 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		b.latestTimestamp = order.Timestamp
 	}
 
-	b.PrintState("Entry state:")
+	if b.config.LogPriceLevels {
+		b.PrintState("Entry state:")
+	}
 
 	// uncross with opposite
 	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
@@ -107,7 +109,7 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	}
 
 	// if state of the book changed show state
-	if len(trades) != 0 {
+	if b.config.LogPriceLevels && len(trades) != 0 {
 		b.PrintState("After uncross state:")
 	}
 
@@ -125,7 +127,9 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 		b.getSide(order.Side).addOrder(order, order.Side)
 
-		b.PrintState("After addOrder state:")
+		if b.config.LogPriceLevels {
+			b.PrintState("After addOrder state:")
+		}
 	}
 
 	// update order statuses based on the order types
