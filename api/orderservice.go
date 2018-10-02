@@ -62,7 +62,6 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 		if err != nil {
 			return false, "", errors.New("invalid expiration datetime")
 		}
-
 		expirationTimestamp := vegatime.NewVegaTimeConverter(p.app).TimeToBlock(expirationDateTime)
 		if expirationTimestamp <= uint64(p.app.State.Height) {
 			return false, "", errors.New("invalid expiration datetime")

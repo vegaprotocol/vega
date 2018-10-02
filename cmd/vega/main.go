@@ -15,13 +15,20 @@ import (
 	"vega/api/endpoints/gql"
 	"time"
 	"fmt"
+	"flag"
 )
 
 func main() {
 	// Configuration and logging
 	config := core.GetConfig()
 
-	if err := initLogger(); err != nil {
+	// flags
+	var logLevelFlag string
+	flag.StringVar(&logLevelFlag, "log", "info", "pass log level: debug, info, error, fatal")
+	flag.BoolVar(&config.RemoveExpiredGTTOrders, "remove_expired_gtt", false, "if true expired GTT orders are saved to data stores")
+	flag.Parse()
+
+	if err := initLogger(logLevelFlag); err != nil {
 		log.Fatalf("%s", err)
 	}
 
@@ -72,7 +79,9 @@ func main() {
 	}
 }
 
-func initLogger() error {
+func initLogger(levelStr string) error {
+	level := parseLogLevel(levelStr)
+
 	// Load the os executable file location
 	ex, err := os.Executable()
 	if err != nil {
@@ -90,8 +99,22 @@ func initLogger() error {
 		}
 	}
 
-	log.InitFileLogger(logFileName, log.InfoLevel)
+	log.InitFileLogger(logFileName, level)
 	// todo: config set log level and console logger ON/OFF
 	//log.InitConsoleLogger(log.DebugLevel)
 	return nil
+}
+
+func parseLogLevel(level string) log.Level {
+	switch(level) {
+	case "debug":
+		return log.DebugLevel
+	case "info":
+		return log.InfoLevel
+	case "error":
+		return log.ErrorLevel
+	case "fatal":
+		return log.FatalLevel
+	}
+	return log.InfoLevel
 }
