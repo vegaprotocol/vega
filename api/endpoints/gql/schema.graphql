@@ -218,6 +218,9 @@ type Order {
 
     # The status of an order, for example 'Active'
     status: OrderStatus!
+
+    # The external reference (if available) for the order
+    reference: String!
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market

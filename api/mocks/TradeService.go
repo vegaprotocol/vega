@@ -244,15 +244,15 @@ func (_m *TradeService) ObservePositions(ctx context.Context, party string) (<-c
 }
 
 // ObserveTrades provides a mock function with given fields: ctx, market, party
-func (_m *TradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan msg.Trade, uint64) {
+func (_m *TradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, uint64) {
 	ret := _m.Called(ctx, market, party)
 
-	var r0 <-chan msg.Trade
-	if rf, ok := ret.Get(0).(func(context.Context, *string, *string) <-chan msg.Trade); ok {
+	var r0 <-chan []msg.Trade
+	if rf, ok := ret.Get(0).(func(context.Context, *string, *string) <-chan []msg.Trade); ok {
 		r0 = rf(ctx, market, party)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(<-chan msg.Trade)
+			r0 = ret.Get(0).(<-chan []msg.Trade)
 		}
 	}
 

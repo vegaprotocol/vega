@@ -148,6 +148,7 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, filters *
 			Status:              order.Status,
 			ExpirationDatetime:  order.ExpirationDatetime,
 			ExpirationTimestamp: order.ExpirationTimestamp,
+			Reference:           order.Reference,
 		}
 		result = append(result, o)
 	}

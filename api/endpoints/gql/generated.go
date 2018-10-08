@@ -1404,6 +1404,8 @@ func (ec *executionContext) _Order(ctx context.Context, sel []query.Selection, o
 			out.Values[i] = ec._Order_timestamp(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._Order_status(ctx, field, obj)
+		case "reference":
+			out.Values[i] = ec._Order_reference(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1672,6 +1674,17 @@ func (ec *executionContext) _Order_status(ctx context.Context, field graphql.Col
 		res := resTmp.(OrderStatus)
 		return res
 	})
+}
+
+func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Order"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	res := obj.Reference
+	return graphql.MarshalString(res)
 }
 
 var partyImplementors = []string{"Party"}
@@ -4624,6 +4637,9 @@ type Order {
 
     # The status of an order, for example 'Active'
     status: OrderStatus!
+
+    # The external reference (if available) for the order
+    reference: String!
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
