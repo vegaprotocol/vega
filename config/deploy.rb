@@ -51,7 +51,7 @@ namespace :vega do
   desc "Start vega"
   task :start do
     on roles(:app) do
-      execute "nohup #{current_path.join("vega")} >/tmp/vega.log 2>&1 & sleep 1", pty: true
+      execute "nohup #{current_path.join("vega")} -remove_expired_gtt=true -log_price_levels=false >/tmp/vega.log 2>&1 & sleep 1", pty: true
     end
   end
 
