@@ -214,11 +214,7 @@ func (m *memOrderStore) Post(order Order) error {
 
 	// Insert into buySideRemainingOrders and sellSideRemainingOrders - these are ordered
 	if newOrder.order.Remaining != uint64(0) {
-		if newOrder.order.Side == msg.Side_Buy {
-			m.store.markets[order.Market].buySideRemainingOrders.insert(&order)
-		} else {
-			m.store.markets[order.Market].sellSideRemainingOrders.insert(&order)
-		}
+		m.store.markets[order.Market].marketDepth.updateWithRemaining(&order)
 	}
 
 	m.queueEvent(order)
@@ -239,22 +235,13 @@ func (m *memOrderStore) Put(order Order) error {
 		return NotFoundError{fmt.Errorf("order not found in memstore: %s", order.Id)}
 	}
 
+	remainingDelta := m.store.markets[order.Market].orders[order.Id].order.Remaining - order.Remaining
 	m.store.markets[order.Market].orders[order.Id].order = order
 
-	if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled {
-		// update buySideRemainingOrders sellSideRemainingOrders
-		if order.Side == msg.Side_Buy {
-			m.store.markets[order.Market].buySideRemainingOrders.remove(&order)
-		} else {
-			m.store.markets[order.Market].sellSideRemainingOrders.remove(&order)
-		}
+	if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
+		m.store.markets[order.Market].marketDepth.removeWithRemaining(&order)
 	} else {
-		// update buySideRemainingOrders sellSideRemainingOrders
-		if order.Side == msg.Side_Buy {
-			m.store.markets[order.Market].buySideRemainingOrders.update(&order)
-		} else {
-			m.store.markets[order.Market].sellSideRemainingOrders.update(&order)
-		}
+		m.store.markets[order.Market].marketDepth.updateWithRemainingDelta(&order, remainingDelta)
 	}
 
 	m.queueEvent(order)
@@ -295,13 +282,7 @@ func (m *memOrderStore) Delete(order Order) error {
 	}
 	m.store.parties[order.Party].ordersByTimestamp =
 		append(m.store.parties[order.Party].ordersByTimestamp[:pos], m.store.parties[order.Party].ordersByTimestamp[pos+1:]...)
-
-	// remove from buySideRemainingOrders sellSideRemainingOrders
-	if order.Side == msg.Side_Buy {
-		m.store.markets[order.Market].buySideRemainingOrders.remove(&order)
-	} else {
-		m.store.markets[order.Market].sellSideRemainingOrders.remove(&order)
-	}
+	m.store.markets[order.Market].marketDepth.removeWithRemaining(&order)
 
 	return nil
 }
