@@ -4,7 +4,6 @@ import (
 	"testing"
 	"vega/msg"
 	"github.com/stretchr/testify/assert"
-	"fmt"
 )
 
 func TestOrderBookDepth_All(t *testing.T){
