@@ -89,6 +89,12 @@ func (md *MarketDepth) updateWithRemainingDelta(order *Order, remainingDelta uin
 				// update price level
 				md.Buy[idx].Volume -= remainingDelta
 				// updated - job done
+
+				// safeguard - shouldn't happen but if volume for gets negative remove price level
+				if md.Buy[idx].Volume <= 0 {
+					copy(md.Buy[idx:], md.Buy[idx+1:])
+					md.Buy = md.Buy[:len(md.Buy)-1]
+				}
 				return
 			}
 		}
@@ -106,6 +112,12 @@ func (md *MarketDepth) updateWithRemainingDelta(order *Order, remainingDelta uin
 				// update price level
 				md.Sell[idx].Volume -= remainingDelta
 				// updated - job done
+
+				// safeguard - shouldn't happen but if volume for gets negative remove price level
+				if md.Sell[idx].Volume <= 0 {
+					copy(md.Sell[idx:], md.Sell[idx+1:])
+					md.Sell = md.Sell[:len(md.Sell)-1]
+				}
 				return
 			}
 		}
@@ -127,7 +139,7 @@ func (md *MarketDepth) removeWithRemaining(order *Order) {
 				md.Buy[idx].Volume -= order.Remaining
 
 				// remove empty price level
-				if md.Buy[idx].NumberOfOrders == 0 {
+				if md.Buy[idx].NumberOfOrders == 0 || md.Buy[idx].Volume <= 0 {
 					copy(md.Buy[idx:], md.Buy[idx+1:])
 					md.Buy = md.Buy[:len(md.Buy)-1]
 				}
@@ -151,7 +163,7 @@ func (md *MarketDepth) removeWithRemaining(order *Order) {
 				md.Sell[idx].Volume -= order.Remaining
 
 				// remove empty price level
-				if md.Sell[idx].NumberOfOrders == 0 {
+				if md.Sell[idx].NumberOfOrders == 0 || md.Sell[idx].Volume <= 0 {
 					copy(md.Sell[idx:], md.Sell[idx+1:])
 					md.Sell = md.Sell[:len(md.Sell)-1]
 				}
