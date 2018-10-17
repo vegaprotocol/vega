@@ -3,8 +3,6 @@ package main
 
 import (
 	"os"
-	"path/filepath"
-
 	"vega/api"
 	"vega/api/endpoints/grpc"
 	"vega/api/endpoints/restproxy"
@@ -13,8 +11,6 @@ import (
 	"vega/datastore"
 	"vega/log"
 	"vega/api/endpoints/gql"
-	"time"
-	"fmt"
 	"flag"
 )
 
@@ -83,26 +79,25 @@ func main() {
 func initLogger(levelStr string) error {
 	level := parseLogLevel(levelStr)
 
-	// Load the os executable file location
-	ex, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	t := time.Now()
-	logFileName := filepath.Dir(ex) + "/vega-" + t.Format("20060102150405") + ".log"
-	fmt.Println(logFileName)
+	//// Load the os executable file location
+	//ex, err := os.Executable()
+	//if err != nil {
+	//	return err
+	//}
+	//t := time.Now()
+	//logFileName := filepath.Dir(ex) + "/vega-" + t.Format("20060102150405") + ".log"
+	//fmt.Println(logFileName)
+	//
+	//_, err = os.Stat(logFileName)
+	//if err == nil {
+	//	err = os.Remove(logFileName)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 
-	_, err = os.Stat(logFileName)
-	if err == nil {
-		err = os.Remove(logFileName)
-		if err != nil {
-			return err
-		}
-	}
-
-	log.InitFileLogger(logFileName, level)
-	// todo: config set log level and console logger ON/OFF
-	//log.InitConsoleLogger(log.DebugLevel)
+	//log.InitFileLogger(logFileName, level)
+	log.InitConsoleLogger(level)
 	return nil
 }
 
