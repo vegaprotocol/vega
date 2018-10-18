@@ -225,7 +225,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 //
 func (app *Blockchain) Commit() types.ResponseCommit {
 
-	app.vega.RemoveExpiringOrdersAtTimestamp(uint64(app.vega.State.Height))
+	go app.vega.RemoveExpiringOrdersAtTimestamp(uint64(app.vega.State.Height))
 
 	// Using a memdb - just return the big endian size of the db
 	appHash := make([]byte, 8)
