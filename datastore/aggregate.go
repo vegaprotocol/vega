@@ -157,7 +157,7 @@ func updateCandle(candles []*msg.Candle, idx int, trade *Trade) {
 	}
 }
 
-func (m *memOrderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
+func (m *orderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
 	if err := m.marketExists(market); err != nil {
 		return &msg.MarketDepth{}, err
 	}

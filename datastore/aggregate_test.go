@@ -144,6 +144,7 @@ func populateStoresWithEmptyMidAndEndingTrading(t *testing.T, orderStore OrderSt
 func TestMemTradeStore_GetCandles(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore = NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 	var newTradeStore = NewTradeStore(&memStore)
 
 	timestamp := populateStores(t, newOrderStore, newTradeStore)
@@ -186,6 +187,8 @@ func TestMemTradeStore_GetCandles(t *testing.T) {
 func TestMemTradeStore_GetCandles2(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore = NewOrderStore(&memStore)
+	defer newOrderStore.Close()
+
 	var newTradeStore = NewTradeStore(&memStore)
 
 	timestamp := populateStores(t, newOrderStore, newTradeStore)
@@ -221,6 +224,7 @@ func TestMemTradeStore_GetCandles2(t *testing.T) {
 func TestMemTradeStore_GetCandles3(t *testing.T) {
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore = NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 	var newTradeStore = NewTradeStore(&memStore)
 
 	timestamp := populateStores(t, newOrderStore, newTradeStore)
@@ -255,6 +259,7 @@ func TestMemTradeStore_GetCandles3(t *testing.T) {
 func TestMemTradeStore_GetCandles4(t *testing.T) {
 	var memStore= NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore= NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 	var newTradeStore= NewTradeStore(&memStore)
 
 	timestamp := populateStores(t, newOrderStore, newTradeStore)
@@ -284,6 +289,7 @@ func TestMemTradeStore_GetCandles4(t *testing.T) {
 func TestMemTradeStore_GetCandle(t *testing.T) {
 	var memStore= NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore= NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 	var newTradeStore= NewTradeStore(&memStore)
 
 	timestamp := populateStores(t, newOrderStore, newTradeStore)
@@ -312,6 +318,7 @@ func TestMemTradeStore_GetCandle(t *testing.T) {
 func TestMemTradeStore_GetCandles5NonTradingSinceCandles(t *testing.T) {
 	var memStore= NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore= NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 	var newTradeStore= NewTradeStore(&memStore)
 
 	timestamp := populateStoresWithEmptyStartingTrading(t, newOrderStore, newTradeStore)
@@ -346,6 +353,7 @@ func TestMemTradeStore_GetCandles5NonTradingSinceCandles(t *testing.T) {
 func TestMemTradeStore_GetCandles6NonTradingSinceCandles(t *testing.T) {
 	var memStore= NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore= NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 	var newTradeStore= NewTradeStore(&memStore)
 
 	timestamp := populateStoresWithEmptyStartingTrading(t, newOrderStore, newTradeStore)
@@ -380,6 +388,7 @@ func TestMemTradeStore_GetCandles6NonTradingSinceCandles(t *testing.T) {
 func TestMemTradeStore_GetCandles7NonTradingSinceCandles(t *testing.T) {
 	var memStore= NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore= NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 	var newTradeStore= NewTradeStore(&memStore)
 
 	timestamp := populateStoresWithEmptyStartingTrading(t, newOrderStore, newTradeStore)
@@ -413,7 +422,8 @@ func TestMemTradeStore_GetCandles7NonTradingSinceCandles(t *testing.T) {
 
 func TestMemTradeStore_GetCandles8NonTradingSinceCandles(t *testing.T) {
 	var memStore= NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
-	var newOrderStore= NewOrderStore(&memStore)
+	var newOrderStore = NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 	var newTradeStore= NewTradeStore(&memStore)
 
 	timestamp := populateStoresWithEmptyMidAndEndingTrading(t, newOrderStore, newTradeStore)
@@ -485,6 +495,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore = NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 
 	orders := []*Order{
 		&Order{
@@ -655,6 +666,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 
 	var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	var newOrderStore = NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 
 	orders := []*Order{
 		&Order{

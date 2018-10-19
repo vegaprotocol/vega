@@ -78,6 +78,8 @@ func main() {
 	if err := blockchain.Start(vega); err != nil {
 		log.Fatalf("%s", err)
 	}
+
+	vega.OrderStore.Close()
 }
 
 func initLogger(levelStr string) error {

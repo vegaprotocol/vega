@@ -10,6 +10,16 @@ type MarketDepth struct {
 	Sell []*msg.PriceLevel
 }
 
+type MarketDepthUpdater interface {
+	updateWithRemaining(order *Order)
+	updateWithRemainingDelta(order *Order, remainingDelta uint64)
+	removeWithRemaining(order *Order)
+}
+
+func NewMarketDepthUpdater() MarketDepthUpdater {
+	return &MarketDepth{}
+}
+
 // recalculate cumulative volume only once when fetching the MarketDepth
 
 func (md *MarketDepth) updateWithRemainingBuySide(order *Order) {

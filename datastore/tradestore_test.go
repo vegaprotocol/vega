@@ -88,6 +88,7 @@ func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
 func buildPaginationTestTrades(t *testing.T) (TradeStore, OrderStore) {
 	var memStore = NewMemStore([]string{testMarket}, []string{})
 	var newOrderStore = NewOrderStore(&memStore)
+	defer newOrderStore.Close()
 	var newTradeStore = NewTradeStore(&memStore)
 
 	// Arrange seed orders & trades

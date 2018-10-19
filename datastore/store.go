@@ -41,9 +41,12 @@ type OrderStore interface {
 	Subscribe(orders chan<- []Order) uint64
 	Unsubscribe(id uint64) error
 	Notify() error
-	
+
+	Close()
+
 	// GetByMarket retrieves all orders for a given market.
 	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]Order, error)
+	GetByMarket2(market string, filters *filters.OrderQueryFilters) ([]Order, error)
 	// Get retrieves an order for a given market and id.
 	GetByMarketAndId(market string, id string) (Order, error)
 	// GetByParty retrieves trades for a given party.
@@ -52,6 +55,8 @@ type OrderStore interface {
 	GetByPartyAndId(party string, id string) (Order, error)
 	// Post creates a new order in the store.
 	Post(r Order) error
+	PostP(r Order) error
+	PostBatch(batch []Order) error
 	// Put updates an existing order in the store.
 	Put(r Order) error
 	// Removes an order from the store.
