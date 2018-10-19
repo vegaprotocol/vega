@@ -21,7 +21,6 @@ type Config struct {
 	RiskCalculationFrequency uint64
 	AppVersion               string
 	AppVersionHash           string
-	RemoveExpiredGTTOrders   bool
 	LogPriceLevels           bool
 
 }
@@ -283,20 +282,13 @@ func (v *Vega) OrderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, m
 
 func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 	expiringOrders := v.matchingEngine.RemoveExpiringOrders(timestamp)
+	log.Debugf("Removed %v expired orders from matching engine, now update stores", len(expiringOrders))
 
 	for _, order := range expiringOrders {
-		// remove orders from the store
-		log.Debugf("RemoveExpiredGTTOrders: %t", v.Config.RemoveExpiredGTTOrders)
-		if v.Config.RemoveExpiredGTTOrders {
-			log.Debugf("Removing expired order from the store")
-			err := v.OrderStore.Delete(*datastore.NewOrderFromProtoMessage(order))
-			if err != nil {
-				log.Errorf("OrderStore.Delete error: %v", err)
-			}
-		} else {
-			v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
-		}
+		v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
 	}
+
+	log.Debugf("Updated %v expired orders in stores", len(expiringOrders))
 }
 
 func (v *Vega) NotifySubscribers() {
