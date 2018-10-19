@@ -250,18 +250,21 @@ func (m *memOrderStore) Put(order Order) error {
 
 // Delete removes an order from the memory store.
 func (m *memOrderStore) Delete(order Order) error {
+
+	// 1 - validate market
 	if err := m.validate(&order); err != nil {
 		return err
 	}
 
+	// 2 - validate party
 	if !m.partyExists(order.Party) {
 		return NotFoundError{fmt.Errorf("could not find party %s", order.Party)}
 	}
 
-	// Remove from orders map
+	// 3 - Remove from orders map
 	delete(m.store.markets[order.Market].orders, order.Id)
 
-	// Remove from MARKET ordersByTimestamp
+	// 4 - Remove from MARKET ordersByTimestamp
 	var pos uint64
 	for idx, v := range m.store.markets[order.Market].ordersByTimestamp {
 		if v.order.Id == order.Id {
@@ -272,7 +275,7 @@ func (m *memOrderStore) Delete(order Order) error {
 	m.store.markets[order.Market].ordersByTimestamp =
 		append(m.store.markets[order.Market].ordersByTimestamp[:pos], m.store.markets[order.Market].ordersByTimestamp[pos+1:]...)
 
-	// Remove from PARTIES ordersByTimestamp
+	// 5 - Remove from PARTIES ordersByTimestamp
 	pos = 0
 	for idx, v := range m.store.parties[order.Party].ordersByTimestamp {
 		if v.order.Id == order.Id {
@@ -282,6 +285,8 @@ func (m *memOrderStore) Delete(order Order) error {
 	}
 	m.store.parties[order.Party].ordersByTimestamp =
 		append(m.store.parties[order.Party].ordersByTimestamp[:pos], m.store.parties[order.Party].ordersByTimestamp[pos+1:]...)
+
+	// 6 - Remove with remaining market depth
 	m.store.markets[order.Market].marketDepth.removeWithRemaining(&order)
 
 	return nil
