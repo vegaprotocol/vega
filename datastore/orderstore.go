@@ -127,47 +127,37 @@ func (m *orderStore) queueEvent(o msg.Order) error {
 }
 
 func (m *orderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
+	if queryFilters == nil {
+		queryFilters = &filters.OrderQueryFilters{}
+	}
 
-	//if queryFilters == nil {
-	//	queryFilters = &filters.OrderQueryFilters{}
-	//}
-	//
-	//var orderBuffers, out []msg.Order
-	//var tempOrder msg.Order
-	//m.persistentStore.View(func(txn *badger.Txn) error {
-	//	it := txn.NewIterator(badger.DefaultIteratorOptions)
-	//	defer it.Close()
-	//	marketPrefix := []byte(fmt.Sprintf("M:%s_", market))
-	//	for it.Seek(marketPrefix); it.ValidForPrefix(marketPrefix); it.Next() {
-	//		item := it.Item()
-	//		//k := item.Key()
-	//		//err := item.Value(func(v []byte) error {
-	//		//	//fmt.Printf("key=%s, value=%s\n", k, v)
-	//		//	return nil
-	//		//})
-	//		//if err != nil {
-	//		//	return err
-	//		//}
-	//
-	//		orderBuf, _ := item.ValueCopy(nil)
-	//		tempOrder.XXX_Unmarshal(orderBuf)
-	//		out, _ = m.filterResults3([]msg.Order{tempOrder}, queryFilters)
-	//
-	//		orderBuffers = append(orderBuffers, out...)
-	//	}
-	//	return nil
-	//})
-	//
-	//
-	//
-	//var result []Order
-	//for _, order := range orderBuffers {
-	//	result = append(result, *NewOrderFromProtoMessage(&order))
-	//}
-	////return m.filterResults2(result, queryFilters)
-	//return result, nil
+	var (
+		result []*msg.Order
+		tempOrder msg.Order
+	)
 
-	return nil, nil
+	m.persistentStore.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+
+		marketPrefix := []byte(fmt.Sprintf("M:%s_", market))
+		filter := Filter{queryFilters, 0}
+
+		for it.Seek(marketPrefix); it.ValidForPrefix(marketPrefix); it.Next() {
+			item := it.Item()
+			orderBuf, _ := item.ValueCopy(nil)
+			tempOrder.XXX_Unmarshal(orderBuf)
+			if filter.apply(&tempOrder) {
+				// allocate memory and append pointer
+				var order msg.Order
+				order = tempOrder
+				result = append(result, &order)
+			}
+		}
+		return nil
+	})
+
+	return result, nil
 }
 
 // Get retrieves an order for a given market and id.
@@ -403,6 +393,25 @@ func (os *orderStore) Delete(order *msg.Order) error {
 
 	return nil
 }
+
+type Filter struct {
+	queryFilter *filters.OrderQueryFilters
+	Q uint64
+}
+
+func (f Filter) apply(order *msg.Order) (include bool) {
+	if f.queryFilter.First != nil && *f.queryFilter.First > 0 && f.Q < *f.queryFilter.First {
+		include = true
+	}
+
+	if !applyOrderFilters2(*order, f.queryFilter) {
+		include = false
+	}
+
+	f.Q++
+	return include
+}
+
 
 func (m *orderStore) filterResults3(input []msg.Order, queryFilters *filters.OrderQueryFilters) (output []msg.Order, error error) {
 	var pos, skipped uint64
