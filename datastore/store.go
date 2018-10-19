@@ -38,35 +38,31 @@ type TradeStore interface {
 
 type OrderStore interface {
 
-	Subscribe(orders chan<- []Order) uint64
+	Subscribe(orders chan<- []msg.Order) uint64
 	Unsubscribe(id uint64) error
 	Notify() error
 
 	Close()
 
 	// GetByMarket retrieves all orders for a given market.
-	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]Order, error)
-	GetByMarket2(market string, filters *filters.OrderQueryFilters) ([]Order, error)
+	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
 	// Get retrieves an order for a given market and id.
-	GetByMarketAndId(market string, id string) (Order, error)
+	GetByMarketAndId(market string, id string) (*msg.Order, error)
 	// GetByParty retrieves trades for a given party.
-	GetByParty(party string, filters *filters.OrderQueryFilters) ([]Order, error)
+	GetByParty(party string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
 	// Get retrieves a trade for a given id.
-	GetByPartyAndId(party string, id string) (Order, error)
+	GetByPartyAndId(party string, id string) (*msg.Order, error)
 	// Post creates a new order in the store.
-	Post(r Order) error
-	PostP(r Order) error
-	PostBatch(batch []Order) error
+	Post(r *msg.Order) error
+	PostBatch(batch []*msg.Order) error
 	// Put updates an existing order in the store.
-	Put(r Order) error
+	Put(r *msg.Order) error
 	// Removes an order from the store.
-	Delete(r Order) error
-	// Returns all the markets
-	GetMarkets() ([]string, error)
+	Delete(r *msg.Order) error
 	// Returns Order Book Depth for a market
 	GetMarketDepth(market string) (*msg.MarketDepth, error)
 	// Returns Order by reference number
-	GetByPartyAndReference(party string, reference string) (Order, error)
+	GetByPartyAndReference(party string, reference string) (*msg.Order, error)
 }
 
 type PartyStore interface {
@@ -76,35 +72,35 @@ type PartyStore interface {
 	GetAllParties() ([]string, error)
 }
 
-type StoreProvider interface {
-	Init(markets, parties []string)
-	TradeStore() TradeStore
-	OrderStore() OrderStore
-	PartyStore() PartyStore
-}
+//type StoreProvider interface {
+//	Init(markets, parties []string)
+//	TradeStore() TradeStore
+//	OrderStore() OrderStore
+//	PartyStore() PartyStore
+//}
+//
+//type MemoryStoreProvider struct {
+//	memStore   MemStore
+//	tradeStore TradeStore
+//	orderStore OrderStore
+//	partyStore PartyStore
+//}
 
-type MemoryStoreProvider struct {
-	memStore   MemStore
-	tradeStore TradeStore
-	orderStore OrderStore
-	partyStore PartyStore
-}
+//func (m *MemoryStoreProvider) Init(markets, parties []string) {
+//	m.memStore = NewMemStore(markets, parties)
+//	m.tradeStore = NewTradeStore(&m.memStore)
+//	m.orderStore = NewOrderStore(&m.memStore)
+//	m.partyStore = NewPartyStore(&m.memStore)
+//}
 
-func (m *MemoryStoreProvider) Init(markets, parties []string) {
-	m.memStore = NewMemStore(markets, parties)
-	m.tradeStore = NewTradeStore(&m.memStore)
-	m.orderStore = NewOrderStore(&m.memStore)
-	m.partyStore = NewPartyStore(&m.memStore)
-}
-
-func (m *MemoryStoreProvider) TradeStore() TradeStore {
-	return m.tradeStore
-}
-
-func (m *MemoryStoreProvider) OrderStore() OrderStore {
-	return m.orderStore
-}
-
-func (m *MemoryStoreProvider) PartyStore() PartyStore {
-	return m.partyStore
-}
+//func (m *MemoryStoreProvider) TradeStore() TradeStore {
+//	return m.tradeStore
+//}
+//
+//func (m *MemoryStoreProvider) OrderStore() OrderStore {
+//	return m.orderStore
+//}
+//
+//func (m *MemoryStoreProvider) PartyStore() PartyStore {
+//	return m.partyStore
+//}

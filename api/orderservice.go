@@ -14,7 +14,7 @@ import (
 )
 
 type OrderService interface {
-	Init(vega *core.Vega, orderStore datastore.OrderStore)
+	Init(vega *core.Vega)
 	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []msg.Order, ref uint64)
 
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error)
@@ -26,7 +26,7 @@ type OrderService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 
-	GetMarkets(ctx context.Context) ([]string, error)
+	//GetMarkets(ctx context.Context) ([]string, error)
 	GetMarketDepth(ctx context.Context, market string) (marketDepth *msg.MarketDepth, err error)
 	ObserveMarketDepth(ctx context.Context, market string) (depth <-chan msg.MarketDepth, ref uint64)
 
@@ -44,9 +44,10 @@ func NewOrderService() OrderService {
 	return &orderService{}
 }
 
-func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
+func (p *orderService) Init(app *core.Vega) {
 	p.app = app
-	p.orderStore = orderStore
+	dataDir := "./orderStore"
+	p.orderStore = datastore.NewOrderStore(dataDir)
 	p.blockchain = blockchain.NewClient()
 }
 
@@ -91,7 +92,7 @@ func (p *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 		return false, errors.New("party mis-match cannot cancel order")
 	}
 	// Send cancellation request by consensus
-	return p.blockchain.CancelOrder(ctx, o.ToProtoMessage())
+	return p.blockchain.CancelOrder(ctx, o)
 }
 
 func (p *orderService) AmendOrder(ctx context.Context, amendment *msg.Amendment) (success bool, err error) {
@@ -191,7 +192,7 @@ func (p *orderService) GetByMarketAndId(ctx context.Context, market string, id s
 	if err != nil {
 		return &msg.Order{}, err
 	}
-	return o.ToProtoMessage(), err
+	return o, err
 }
 
 func (p *orderService) GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error) {
@@ -199,16 +200,16 @@ func (p *orderService) GetByPartyAndId(ctx context.Context, market string, id st
 	if err != nil {
 		return &msg.Order{}, err
 	}
-	return o.ToProtoMessage(), err
+	return o, err
 }
 
-func (p *orderService) GetMarkets(ctx context.Context) ([]string, error) {
-	markets, err := p.orderStore.GetMarkets()
-	if err != nil {
-		return []string{}, err
-	}
-	return markets, err
-}
+//func (p *orderService) GetMarkets(ctx context.Context) ([]string, error) {
+//	markets, err := p.orderStore.GetMarkets()
+//	if err != nil {
+//		return []string{}, err
+//	}
+//	return markets, err
+//}
 
 func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (orderBookDepth *msg.MarketDepth, err error) {
 	return p.orderStore.GetMarketDepth(marketName)
@@ -216,10 +217,10 @@ func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (o
 
 func (p *orderService) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, uint64) {
 	orders := make(chan []msg.Order)
-	internal := make(chan []datastore.Order)
+	internal := make(chan []msg.Order)
 	ref := p.orderStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []datastore.Order) {
+	go func(id uint64, internal chan []msg.Order) {
 		<-ctx.Done()
 		log.Debugf("OrderService -> Subscriber closed connection: %d", id)
 		err := p.orderStore.Unsubscribe(id)
@@ -244,7 +245,7 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 				if party != nil && item.Party != *party {
 					continue
 				}
-				validatedOrders = append(validatedOrders, *item.ToProtoMessage())
+				validatedOrders = append(validatedOrders, item)
 			}
 			orders <- validatedOrders
 		}
@@ -256,10 +257,10 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 
 func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, uint64) {
 	depth := make(chan msg.MarketDepth)
-	internal := make(chan []datastore.Order)
+	internal := make(chan []msg.Order)
 	ref := p.orderStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []datastore.Order) {
+	go func(id uint64, internal chan []msg.Order) {
 		<-ctx.Done()
 		log.Debugf("OrderService -> Depth closed connection: %d", id)
 		err := p.orderStore.Unsubscribe(id)
