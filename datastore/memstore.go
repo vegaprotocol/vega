@@ -1,5 +1,7 @@
 package datastore
 
+import "vega/msg"
+
 // MemStore is a RAM based top level structure to hold information about all markets.
 // It is initialised by calling NewMemStore with a list of markets.
 type MemStore struct {
@@ -61,7 +63,7 @@ type memRisk struct {
 
 // In memory order struct keeps an internal map of pointers to trades for an order.
 type memOrder struct {
-	order  Order
+	order  msg.Order
 	trades []*memTrade
 }
 
@@ -71,7 +73,7 @@ func (mo *memOrder) String() string {
 
 // In memory trade struct keeps a pointer to the related order.
 type memTrade struct {
-	trade      Trade
+	trade      msg.Trade
 	aggressive *memOrder
 	passive    *memOrder
 }

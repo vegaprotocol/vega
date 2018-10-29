@@ -15,6 +15,7 @@ import (
 
 type OrderService interface {
 	Init(vega *core.Vega)
+	Stop()
 	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []msg.Order, ref uint64)
 
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error)
@@ -49,6 +50,10 @@ func (p *orderService) Init(app *core.Vega) {
 	dataDir := "./orderStore"
 	p.orderStore = datastore.NewOrderStore(dataDir)
 	p.blockchain = blockchain.NewClient()
+}
+
+func (p *orderService) Stop() {
+	p.orderStore.Close()
 }
 
 func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error) {

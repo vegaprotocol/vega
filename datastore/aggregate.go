@@ -144,7 +144,7 @@ func (ts *memTradeStore) GetCandles(market string, sinceBlock, currentBlock, int
 	return output, nil
 }
 
-func updateCandle(candles []*msg.Candle, idx int, trade *Trade) {
+func updateCandle(candles []*msg.Candle, idx int, trade *msg.Trade) {
 	if candles[idx].Volume == 0 {
 		candles[idx].Open = trade.Price
 	}
@@ -158,31 +158,32 @@ func updateCandle(candles []*msg.Candle, idx int, trade *Trade) {
 }
 
 func (m *orderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
-	if err := m.marketExists(market); err != nil {
-		return &msg.MarketDepth{}, err
-	}
+	//if err := m.marketExists(market); err != nil {
+	//	return &msg.MarketDepth{}, err
+	//}
 
 	// get from store, recalculate accumulated volume and respond
-	marketDepth := m.store.markets[market].marketDepth
+	buy := m.orderBookDepth.getBuySide()
+	sell := m.orderBookDepth.getSellSide()
 
 	// recalculate accumulated volume
-	for idx := range marketDepth.Buy {
+	for idx := range buy {
 		if idx == 0 {
-			marketDepth.Buy[idx].CumulativeVolume = marketDepth.Buy[idx].Volume
+			buy[idx].CumulativeVolume = buy[idx].Volume
 			continue
 		}
-		marketDepth.Buy[idx].CumulativeVolume = marketDepth.Buy[idx-1].CumulativeVolume + marketDepth.Buy[idx].Volume
+		buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
 	}
 
-	for idx := range marketDepth.Sell {
+	for idx := range m.orderBookDepth.getSellSide() {
 		if idx == 0 {
-			marketDepth.Sell[idx].CumulativeVolume = marketDepth.Sell[idx].Volume
+			sell[idx].CumulativeVolume = sell[idx].Volume
 			continue
 		}
-		marketDepth.Sell[idx].CumulativeVolume = marketDepth.Sell[idx-1].CumulativeVolume + marketDepth.Sell[idx].Volume
+		sell[idx].CumulativeVolume = sell[idx-1].CumulativeVolume + sell[idx].Volume
 	}
 
-	orderBookDepth := msg.MarketDepth{Name: market, Buy: marketDepth.Buy, Sell: marketDepth.Sell}
+	orderBookDepth := msg.MarketDepth{Name: market, Buy: buy, Sell: sell}
 
 	return &orderBookDepth, nil
 }

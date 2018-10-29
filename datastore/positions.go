@@ -1,8 +1,10 @@
 package datastore
 
+import "vega/msg"
+
 type MarketBucket struct {
-	Buys                []*Trade
-	Sells               []*Trade
+	Buys                []*msg.Trade
+	Sells               []*msg.Trade
 	BuyVolume           int64
 	SellVolume          int64
 	MinimumContractSize int64
@@ -17,7 +19,7 @@ func (ts *memTradeStore) GetTradesBySideBuckets(party string) map[string]*Market
 
 	for idx, trade := range tradesByTimestamp {
 		if _, ok := marketBuckets[trade.Market]; !ok {
-			marketBuckets[trade.Market] = &MarketBucket{[]*Trade{}, []*Trade{}, 0, 0, 1}
+			marketBuckets[trade.Market] = &MarketBucket{[]*msg.Trade{}, []*msg.Trade{}, 0, 0, 1}
 		}
 		if trade.Buyer == party {
 			marketBuckets[trade.Market].Buys = append(marketBuckets[trade.Market].Buys, &tradesByTimestamp[idx])

@@ -33,6 +33,7 @@ type OrderQueryFilters struct {
 	TypeFilter      *QueryFilter
 	TimestampFilter *QueryFilter
 	StatusFilter    *QueryFilter
+	ReferenceFilter *QueryFilter
 }
 
 func (o *OrderQueryFilters) Count() int {
@@ -65,6 +66,9 @@ func (o *OrderQueryFilters) Count() int {
 		len++
 	}
 	if o.StatusFilter != nil {
+		len++
+	}
+	if o.ReferenceFilter != nil {
 		len++
 	}
 	return len

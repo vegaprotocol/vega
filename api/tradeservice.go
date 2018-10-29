@@ -14,7 +14,7 @@ import (
 )
 
 type TradeService interface {
-	Init(app *core.Vega, tradeStore datastore.TradeStore)
+	Init(app *core.Vega)
 	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []msg.Trade, ref uint64)
 
 	GetByMarket(ctx context.Context, market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
@@ -42,9 +42,9 @@ func NewTradeService() TradeService {
 	return &tradeService{}
 }
 
-func (t *tradeService) Init(app *core.Vega, tradeStore datastore.TradeStore) {
+func (t *tradeService) Init(app *core.Vega) {
 	t.app = app
-	t.tradeStore = tradeStore
+	//t.tradeStore = tradeStore
 }
 
 func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error) {

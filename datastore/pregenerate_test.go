@@ -10,14 +10,14 @@ func TestOrderBookDepth_All(t *testing.T){
 
 	var marketDepth MarketDepth
 
-	ordersList := []*Order{
-		{msg.Order{Side: msg.Side_Buy,Price: 116, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Buy,Price: 110, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Buy,Price: 111, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Buy,Price: 111, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Buy,Price: 113, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Buy,Price: 114, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Buy,Price: 116, Remaining: 100}},
+	ordersList := []*msg.Order{
+		{Side: msg.Side_Buy,Price: 116, Remaining: 100},
+		{Side: msg.Side_Buy,Price: 110, Remaining: 100},
+		{Side: msg.Side_Buy,Price: 111, Remaining: 100},
+		{Side: msg.Side_Buy,Price: 111, Remaining: 100},
+		{Side: msg.Side_Buy,Price: 113, Remaining: 100},
+		{Side: msg.Side_Buy,Price: 114, Remaining: 100},
+		{Side: msg.Side_Buy,Price: 116, Remaining: 100},
 	}
 
 	for _, elem := range ordersList {
@@ -50,9 +50,9 @@ func TestOrderBookDepth_All(t *testing.T){
 	assert.Equal(t, marketDepth.Buy[4].CumulativeVolume, uint64(0))
 
 
-	marketDepth.updateWithRemainingDelta(&Order{msg.Order{Side: msg.Side_Buy,Price: 111, Remaining: 50}}, 50)
-	marketDepth.updateWithRemainingDelta(&Order{msg.Order{Side: msg.Side_Buy,Price: 114, Remaining: 80}}, 20)
-	marketDepth.removeWithRemaining(&Order{msg.Order{Side: msg.Side_Buy,Price: 113, Remaining: 100}})
+	marketDepth.updateWithRemainingDelta(&msg.Order{Side: msg.Side_Buy,Price: 111, Remaining: 50}, 50)
+	marketDepth.updateWithRemainingDelta(&msg.Order{Side: msg.Side_Buy,Price: 114, Remaining: 80}, 20)
+	marketDepth.removeWithRemaining(&msg.Order{Side: msg.Side_Buy,Price: 113, Remaining: 100})
 
 	assert.Equal(t, marketDepth.Buy[0].Price, uint64(116))
 	assert.Equal(t, marketDepth.Buy[0].Volume, uint64(200))
@@ -77,15 +77,15 @@ func TestOrderBookDepth_All(t *testing.T){
 
 	// test sell side
 
-	ordersList = []*Order{
-		{msg.Order{Side: msg.Side_Sell,Price: 123, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Sell,Price: 119, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Sell,Price: 120, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Sell,Price: 120, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Sell,Price: 121, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Sell,Price: 121, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Sell,Price: 122, Remaining: 100}},
-		{msg.Order{Side: msg.Side_Sell,Price: 123, Remaining: 100}},
+	ordersList = []*msg.Order{
+		{Side: msg.Side_Sell,Price: 123, Remaining: 100},
+		{Side: msg.Side_Sell,Price: 119, Remaining: 100},
+		{Side: msg.Side_Sell,Price: 120, Remaining: 100},
+		{Side: msg.Side_Sell,Price: 120, Remaining: 100},
+		{Side: msg.Side_Sell,Price: 121, Remaining: 100},
+		{Side: msg.Side_Sell,Price: 121, Remaining: 100},
+		{Side: msg.Side_Sell,Price: 122, Remaining: 100},
+		{Side: msg.Side_Sell,Price: 123, Remaining: 100},
 	}
 
 	for _, elem := range ordersList {
@@ -117,9 +117,9 @@ func TestOrderBookDepth_All(t *testing.T){
 	assert.Equal(t, marketDepth.Sell[4].NumberOfOrders, uint64(2))
 	assert.Equal(t, marketDepth.Sell[4].CumulativeVolume, uint64(0))
 
-	marketDepth.updateWithRemainingDelta(&Order{msg.Order{Side: msg.Side_Sell,Price: 119, Remaining: 100}}, 50)
-	marketDepth.updateWithRemainingDelta(&Order{msg.Order{Side: msg.Side_Sell,Price: 120, Remaining: 100}}, 20)
-	marketDepth.removeWithRemaining(&Order{msg.Order{Side: msg.Side_Sell,Price: 122, Remaining: 100}})
+	marketDepth.updateWithRemainingDelta(&msg.Order{Side: msg.Side_Sell,Price: 119, Remaining: 100}, 50)
+	marketDepth.updateWithRemainingDelta(&msg.Order{Side: msg.Side_Sell,Price: 120, Remaining: 100}, 20)
+	marketDepth.removeWithRemaining(&msg.Order{Side: msg.Side_Sell,Price: 122, Remaining: 100})
 
 	assert.Equal(t, marketDepth.Sell[0].Price, uint64(119))
 	assert.Equal(t, marketDepth.Sell[0].Volume, uint64(50))

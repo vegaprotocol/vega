@@ -10,19 +10,21 @@ type MarketDepth struct {
 	Sell []*msg.PriceLevel
 }
 
-type MarketDepthUpdater interface {
-	updateWithRemaining(order *Order)
-	updateWithRemainingDelta(order *Order, remainingDelta uint64)
-	removeWithRemaining(order *Order)
+			type MarketDepthManager interface {
+	updateWithRemaining(order *msg.Order)
+	updateWithRemainingDelta(order *msg.Order, remainingDelta uint64)
+	removeWithRemaining(order *msg.Order)
+	getBuySide() []*msg.PriceLevel
+	getSellSide() []*msg.PriceLevel
 }
 
-func NewMarketDepthUpdater() MarketDepthUpdater {
+func NewMarketDepthUpdaterGetter() MarketDepthManager {
 	return &MarketDepth{}
 }
 
 // recalculate cumulative volume only once when fetching the MarketDepth
 
-func (md *MarketDepth) updateWithRemainingBuySide(order *Order) {
+func (md *MarketDepth) updateWithRemainingBuySide(order *msg.Order) {
 	var at = -1
 
 	for idx, priceLevel := range md.Buy {
@@ -51,7 +53,7 @@ func (md *MarketDepth) updateWithRemainingBuySide(order *Order) {
 	md.Buy = append(md.Buy[:at], append([]*msg.PriceLevel{{Price: order.Price, Volume: order.Remaining, NumberOfOrders:1}}, md.Buy[at:]...)...)
 }
 
-func (md *MarketDepth) updateWithRemainingSellSide(order *Order) {
+func (md *MarketDepth) updateWithRemainingSellSide(order *msg.Order) {
 	var at = -1
 
 	for idx, priceLevel := range md.Sell {
@@ -79,7 +81,7 @@ func (md *MarketDepth) updateWithRemainingSellSide(order *Order) {
 	md.Sell = append(md.Sell[:at], append([]*msg.PriceLevel{{Price: order.Price, Volume: order.Remaining, NumberOfOrders:1}}, md.Sell[at:]...)...)
 }
 
-func (md *MarketDepth) updateWithRemaining(order *Order) {
+func (md *MarketDepth) updateWithRemaining(order *msg.Order) {
 	if order.Side == msg.Side_Buy {
 		md.updateWithRemainingBuySide(order)
 	}
@@ -88,7 +90,7 @@ func (md *MarketDepth) updateWithRemaining(order *Order) {
 	}
 }
 
-func (md *MarketDepth) updateWithRemainingDelta(order *Order, remainingDelta uint64) {
+func (md *MarketDepth) updateWithRemainingDelta(order *msg.Order, remainingDelta uint64) {
 	if order.Side == msg.Side_Buy {
 		for idx, priceLevel := range md.Buy {
 			if priceLevel.Price > order.Price {
@@ -136,7 +138,7 @@ func (md *MarketDepth) updateWithRemainingDelta(order *Order, remainingDelta uin
 	}
 }
 
-func (md *MarketDepth) removeWithRemaining(order *Order) {
+func (md *MarketDepth) removeWithRemaining(order *msg.Order) {
 	if order.Side == msg.Side_Buy {
 		for idx, priceLevel := range md.Buy {
 			if priceLevel.Price > order.Price {
@@ -184,4 +186,12 @@ func (md *MarketDepth) removeWithRemaining(order *Order) {
 		// not found
 		return
 	}
+}
+
+func (md *MarketDepth) 	getBuySide() []*msg.PriceLevel {
+	return md.Buy
+}
+
+func (md *MarketDepth) getSellSide() []*msg.PriceLevel {
+	return md.Sell
 }

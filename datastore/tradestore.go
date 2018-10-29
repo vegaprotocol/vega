@@ -6,13 +6,14 @@ import (
 	"sync"
 	"vega/log"
 	"vega/filters"
+	"vega/msg"
 )
 
 // memTradeStore should implement TradeStore interface.
 type memTradeStore struct {
 	store *MemStore
-	subscribers map[uint64] chan<- []Trade
-	buffer []Trade
+	subscribers map[uint64] chan<- []msg.Trade
+	buffer []msg.Trade
 	subscriberId uint64
 	mu sync.Mutex
 }
@@ -22,13 +23,13 @@ func NewTradeStore(ms *MemStore) TradeStore {
 	return &memTradeStore{store: ms}
 }
 
-func (ts *memTradeStore) Subscribe(orders chan<- []Trade) uint64 {
+func (ts *memTradeStore) Subscribe(orders chan<- []msg.Trade) uint64 {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
 	if ts.subscribers == nil {
 		log.Debugf("TradeStore -> Subscribe: Creating subscriber chan map")
-		ts.subscribers = make(map[uint64] chan<- []Trade)
+		ts.subscribers = make(map[uint64] chan<- []msg.Trade)
 	}
 
 	ts.subscriberId = ts.subscriberId+1
@@ -92,7 +93,7 @@ func (ts *memTradeStore) Notify() error {
 	return nil
 }
 
-func (ts *memTradeStore) queueEvent(t Trade) error {
+func (ts *memTradeStore) queueEvent(t msg.Trade) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
@@ -102,7 +103,7 @@ func (ts *memTradeStore) queueEvent(t Trade) error {
 	}
 
 	if ts.buffer == nil {
-		ts.buffer = make([]Trade, 0)
+		ts.buffer = make([]msg.Trade, 0)
 	}
 
 	log.Debugf("TradeStore -> queueEvent: Adding trade to buffer: %+v", t)
@@ -111,7 +112,7 @@ func (ts *memTradeStore) queueEvent(t Trade) error {
 }
 
 // GetByMarket retrieves all trades for a given market.
-func (ts *memTradeStore) GetByMarket(market string, queryFilters *filters.TradeQueryFilters) ([]Trade, error) {
+func (ts *memTradeStore) GetByMarket(market string, queryFilters *filters.TradeQueryFilters) ([]msg.Trade, error) {
 	if err := ts.marketExists(market); err != nil {
 		return nil, err
 	}
@@ -122,19 +123,19 @@ func (ts *memTradeStore) GetByMarket(market string, queryFilters *filters.TradeQ
 }
 
 // GetByMarketAndId retrieves a trade for a given id.
-func (ts *memTradeStore) GetByMarketAndId(market string, id string) (Trade, error) {
+func (ts *memTradeStore) GetByMarketAndId(market string, id string) (msg.Trade, error) {
 	if err := ts.marketExists(market); err != nil {
-		return Trade{}, err
+		return msg.Trade{}, err
 	}
 	v, ok := ts.store.markets[market].trades[id]
 	if !ok {
-		return Trade{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
+		return msg.Trade{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
 	}
 	return v.trade, nil
 }
 
 // GetByPart retrieves all trades for a given party.
-func (ts *memTradeStore) GetByParty(party string, queryFilters *filters.TradeQueryFilters) ([]Trade, error) {
+func (ts *memTradeStore) GetByParty(party string, queryFilters *filters.TradeQueryFilters) ([]msg.Trade, error) {
 	if err := ts.partyExists(party); err != nil {
 		return nil, err
 	}
@@ -145,9 +146,9 @@ func (ts *memTradeStore) GetByParty(party string, queryFilters *filters.TradeQue
 }
 
 // GetByPartyAndId retrieves a trade for a given id.
-func (ts *memTradeStore) GetByPartyAndId(party string, id string) (Trade, error) {
+func (ts *memTradeStore) GetByPartyAndId(party string, id string) (msg.Trade, error) {
 	if err := ts.partyExists(party); err != nil {
-		return Trade{}, err
+		return msg.Trade{}, err
 	}
 	var at = -1
 	for idx, trade := range ts.store.parties[party].tradesByTimestamp {
@@ -157,121 +158,121 @@ func (ts *memTradeStore) GetByPartyAndId(party string, id string) (Trade, error)
 		}
 	}
 	if at == -1 {
-		return Trade{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
+		return msg.Trade{}, NotFoundError{fmt.Errorf("could not find id %s", id)}
 	}
 	return ts.store.parties[party].tradesByTimestamp[at].trade, nil
 }
 
 
 // Post creates a new trade in the memory store.
-func (ts *memTradeStore) Post(trade Trade) error {
-	if err := ts.validate(&trade); err != nil {
-		return err
-	}
-	if _, exists := ts.store.markets[trade.Market].trades[trade.Id]; exists {
-		return fmt.Errorf("trade exists in memstore: %s", trade.Id)
-	}
-
-	// check if passive and aggressive orders exist in the order ts
-
-	// if passive exists
-	aggressiveOrder, aggressiveExists := ts.store.markets[trade.Market].orders[trade.AggressiveOrderId]
-	if !aggressiveExists {
-		return fmt.Errorf("aggressive order for trade not found in memstore: %s", trade.AggressiveOrderId)
-	}
-
-	// if passive exists
-	passiveOrder, passiveExists := ts.store.markets[trade.Market].orders[trade.PassiveOrderId]
-	if !passiveExists {
-		return fmt.Errorf("passive order for trade not found in memstore: %s", trade.PassiveOrderId)
-	}
-
-	newTrade := &memTrade{
-		trade:      trade,
-		aggressive: aggressiveOrder,
-		passive:    passiveOrder,
-	}
-	
-	// Add new trade to trades hashtable & queue in buffer to notify observers
-	ts.store.markets[trade.Market].trades[trade.Id] = newTrade
-	ts.queueEvent(trade)
-
-	// append trade to aggressive and passive order
-	aggressiveOrder.trades = append(aggressiveOrder.trades, newTrade)
-	passiveOrder.trades = append(passiveOrder.trades, newTrade)
-
-	// update tradesByTimestamp for MARKETS
-	ts.store.markets[trade.Market].tradesByTimestamp = append(ts.store.markets[trade.Market].tradesByTimestamp, newTrade)
-
-	// update party for both aggressive and passive parties
-	ts.store.parties[newTrade.aggressive.order.Party].tradesByTimestamp = append(ts.store.parties[newTrade.aggressive.order.Party].tradesByTimestamp, newTrade)
-	ts.store.parties[newTrade.passive.order.Party].tradesByTimestamp = append(ts.store.parties[newTrade.passive.order.Party].tradesByTimestamp, newTrade)
+func (ts *memTradeStore) Post(trade msg.Trade) error {
+	//if err := ts.validate(&trade); err != nil {
+	//	return err
+	//}
+	//if _, exists := ts.store.markets[trade.Market].trades[trade.Id]; exists {
+	//	return fmt.Errorf("trade exists in memstore: %s", trade.Id)
+	//}
+	//
+	//// check if passive and aggressive orders exist in the order ts
+	//
+	//// if passive exists
+	//aggressiveOrder, aggressiveExists := ts.store.markets[trade.Market].orders[trade.AggressiveOrderId]
+	//if !aggressiveExists {
+	//	return fmt.Errorf("aggressive order for trade not found in memstore: %s", trade.AggressiveOrderId)
+	//}
+	//
+	//// if passive exists
+	//passiveOrder, passiveExists := ts.store.markets[trade.Market].orders[trade.PassiveOrderId]
+	//if !passiveExists {
+	//	return fmt.Errorf("passive order for trade not found in memstore: %s", trade.PassiveOrderId)
+	//}
+	//
+	//newTrade := &memTrade{
+	//	trade:      trade,
+	//	aggressive: aggressiveOrder,
+	//	passive:    passiveOrder,
+	//}
+	//
+	//// Add new trade to trades hashtable & queue in buffer to notify observers
+	//ts.store.markets[trade.Market].trades[trade.Id] = newTrade
+	//ts.queueEvent(trade)
+	//
+	//// append trade to aggressive and passive order
+	//aggressiveOrder.trades = append(aggressiveOrder.trades, newTrade)
+	//passiveOrder.trades = append(passiveOrder.trades, newTrade)
+	//
+	//// update tradesByTimestamp for MARKETS
+	//ts.store.markets[trade.Market].tradesByTimestamp = append(ts.store.markets[trade.Market].tradesByTimestamp, newTrade)
+	//
+	//// update party for both aggressive and passive parties
+	//ts.store.parties[newTrade.aggressive.order.Party].tradesByTimestamp = append(ts.store.parties[newTrade.aggressive.order.Party].tradesByTimestamp, newTrade)
+	//ts.store.parties[newTrade.passive.order.Party].tradesByTimestamp = append(ts.store.parties[newTrade.passive.order.Party].tradesByTimestamp, newTrade)
 	return nil
 }
 
 // Put updates an existing trade in the store.
-func (ts *memTradeStore) Put(trade Trade) error {
-	if err := ts.validate(&trade); err != nil {
-		return err
-	}
-
-	if err := ts.marketExists(trade.Market); err != nil {
-		return err
-	}
-
-	if _, exists := ts.store.markets[trade.Market].trades[trade.Id]; !exists {
-		return fmt.Errorf("trade not found in memstore: %s", trade.Id)
-	}
-	// Perform the update & queue in buffer to notify observers
-	ts.store.markets[trade.Market].trades[trade.Id].trade = trade
-	ts.queueEvent(trade)
+func (ts *memTradeStore) Put(trade msg.Trade) error {
+	//if err := ts.validate(&trade); err != nil {
+	//	return err
+	//}
+	//
+	//if err := ts.marketExists(trade.Market); err != nil {
+	//	return err
+	//}
+	//
+	//if _, exists := ts.store.markets[trade.Market].trades[trade.Id]; !exists {
+	//	return fmt.Errorf("trade not found in memstore: %s", trade.Id)
+	//}
+	//// Perform the update & queue in buffer to notify observers
+	//ts.store.markets[trade.Market].trades[trade.Id].trade = trade
+	//ts.queueEvent(trade)
 	return nil
 }
 
 // Removes trade from the store.
-func (ts *memTradeStore) Delete(trade Trade) error {
-	if err := ts.validate(&trade); err != nil {
-		return err
-	}
-
-	if err := ts.partyExists(trade.Seller); err != nil {
-		return err
-	}
-
-	// Remove from tradesByTimestamp
-	var pos uint64
-	for idx, v := range ts.store.markets[trade.Market].tradesByTimestamp {
-		if v.trade.Id == trade.Id {
-			pos = uint64(idx)
-			break
-		}
-	}
-	ts.store.markets[trade.Market].tradesByTimestamp =
-		append(ts.store.markets[trade.Market].tradesByTimestamp[:pos], ts.store.markets[trade.Market].tradesByTimestamp[pos+1:]...)
-
-	// Remove from PARTIES tradesByTimestamp for BUYER
-	pos = 0
-	for idx, v := range ts.store.parties[trade.Buyer].tradesByTimestamp {
-		if v.trade.Id == trade.Id {
-			pos = uint64(idx)
-			break
-		}
-	}
-	ts.store.parties[trade.Buyer].tradesByTimestamp =
-		append(ts.store.parties[trade.Buyer].tradesByTimestamp[:pos], ts.store.parties[trade.Buyer].tradesByTimestamp[pos+1:]...)
-
-	// Remove from PARTIES tradesByTimestamp for SELLER
-	pos = 0
-	for idx, v := range ts.store.parties[trade.Seller].tradesByTimestamp {
-		if v.trade.Id == trade.Id {
-			pos = uint64(idx)
-			break
-		}
-	}
-	ts.store.parties[trade.Seller].tradesByTimestamp =
-		append(ts.store.parties[trade.Seller].tradesByTimestamp[:pos], ts.store.parties[trade.Seller].tradesByTimestamp[pos+1:]...)
-
-	delete(ts.store.markets[trade.Market].trades, trade.Id)
+func (ts *memTradeStore) Delete(trade msg.Trade) error {
+	//if err := ts.validate(&trade); err != nil {
+	//	return err
+	//}
+	//
+	//if err := ts.partyExists(trade.Seller); err != nil {
+	//	return err
+	//}
+	//
+	//// Remove from tradesByTimestamp
+	//var pos uint64
+	//for idx, v := range ts.store.markets[trade.Market].tradesByTimestamp {
+	//	if v.trade.Id == trade.Id {
+	//		pos = uint64(idx)
+	//		break
+	//	}
+	//}
+	//ts.store.markets[trade.Market].tradesByTimestamp =
+	//	append(ts.store.markets[trade.Market].tradesByTimestamp[:pos], ts.store.markets[trade.Market].tradesByTimestamp[pos+1:]...)
+	//
+	//// Remove from PARTIES tradesByTimestamp for BUYER
+	//pos = 0
+	//for idx, v := range ts.store.parties[trade.Buyer].tradesByTimestamp {
+	//	if v.trade.Id == trade.Id {
+	//		pos = uint64(idx)
+	//		break
+	//	}
+	//}
+	//ts.store.parties[trade.Buyer].tradesByTimestamp =
+	//	append(ts.store.parties[trade.Buyer].tradesByTimestamp[:pos], ts.store.parties[trade.Buyer].tradesByTimestamp[pos+1:]...)
+	//
+	//// Remove from PARTIES tradesByTimestamp for SELLER
+	//pos = 0
+	//for idx, v := range ts.store.parties[trade.Seller].tradesByTimestamp {
+	//	if v.trade.Id == trade.Id {
+	//		pos = uint64(idx)
+	//		break
+	//	}
+	//}
+	//ts.store.parties[trade.Seller].tradesByTimestamp =
+	//	append(ts.store.parties[trade.Seller].tradesByTimestamp[:pos], ts.store.parties[trade.Seller].tradesByTimestamp[pos+1:]...)
+	//
+	//delete(ts.store.markets[trade.Market].trades, trade.Id)
 	return nil
 }
 
@@ -291,21 +292,21 @@ func (ts *memTradeStore) partyExists(party string) error {
 	return nil
 }
 
-func (ts *memTradeStore) validate(trade *Trade) error {
-	if err := ts.marketExists(trade.Market); err != nil {
-		return err
-	}
-
-	if err := ts.partyExists(trade.Buyer); err != nil {
-		return err
-	}
-
-	if err := ts.partyExists(trade.Seller); err != nil {
-		return err
-	}
-
-	return nil
-}
+//func (ts *memTradeStore) validate(trade *Trade) error {
+//	if err := ts.marketExists(trade.Market); err != nil {
+//		return err
+//	}
+//
+//	if err := ts.partyExists(trade.Buyer); err != nil {
+//		return err
+//	}
+//
+//	if err := ts.partyExists(trade.Seller); err != nil {
+//		return err
+//	}
+//
+//	return nil
+//}
 
 func (ts *memTradeStore) GetMarkPrice(market string) (uint64, error) {
 	last := uint64(1)
@@ -322,7 +323,7 @@ func (ts *memTradeStore) GetMarkPrice(market string) (uint64, error) {
 }
 
 // filter results and paginate based on query filters
-func (ts *memTradeStore) filterResults(input []*memTrade, queryFilters *filters.TradeQueryFilters) (output []Trade, error error) {
+func (ts *memTradeStore) filterResults(input []*memTrade, queryFilters *filters.TradeQueryFilters) (output []msg.Trade, error error) {
 	var pos, skipped uint64
 
 	// Last == descending by timestamp

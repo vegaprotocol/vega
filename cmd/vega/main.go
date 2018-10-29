@@ -10,7 +10,6 @@ import (
 	"vega/api/endpoints/restproxy"
 	"vega/blockchain"
 	"vega/core"
-	"vega/datastore"
 	"vega/log"
 	"vega/api/endpoints/gql"
 	"time"
@@ -45,18 +44,18 @@ func main() {
 
 	// Storage Service provides read stores for consumer VEGA API
 	// Uses in memory storage (maps/slices etc), configurable in future
-	storage := &datastore.MemoryStoreProvider{}
-	storage.Init([]string{"BTC/DEC18"}, []string{})
+	//storage := &datastore.MemoryStoreProvider{}
+	//storage.Init([]string{"BTC/DEC18"}, []string{})
 
 	// VEGA core
-	vega := core.New(config, storage)
+	vega := core.New(config)
 	vega.InitialiseMarkets()
 
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
 	tradeService := api.NewTradeService()
-	orderService.Init(vega, storage.OrderStore())
-	tradeService.Init(vega, storage.TradeStore())
+	orderService.Init(vega)
+	tradeService.Init(vega)
 
 	// GRPC server
 	// Port 3002
@@ -79,7 +78,7 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	vega.OrderStore.Close()
+	orderService.Stop()
 }
 
 func initLogger(levelStr string) error {

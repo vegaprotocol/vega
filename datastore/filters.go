@@ -3,87 +3,10 @@ package datastore
 import (
 	"vega/filters"
 	"vega/msg"
+	"fmt"
 )
 
-// applyOrderFilters takes an incoming set of OrderQueryFilters and applies them
-// to the specified order. Internally the OrderQueryFilters will set operator e.g. AND/OR
-func applyOrderFilters(order Order, queryFilters *filters.OrderQueryFilters) bool {
-	ok := true
-	count := 0
-
-	if queryFilters.IdFilter != nil {
-		ok = queryFilters.IdFilter.ApplyFilters(order.Id)
-		if ok {
-			count++
-		}
-	}
-	if queryFilters.MarketFilter != nil {
-		ok = queryFilters.MarketFilter.ApplyFilters(order.Market)
-		if ok {
-			count++
-		}
-	}
-	if queryFilters.PartyFilter != nil {
-		ok = queryFilters.PartyFilter.ApplyFilters(order.Party)
-		if ok {
-			count++
-		}
-	}
-	if queryFilters.SideFilter != nil {
-		ok = queryFilters.SideFilter.ApplyFilters(order.Side)
-		if ok {
-			count++
-		}
-	}
-	if queryFilters.PriceFilter != nil {
-		ok = queryFilters.PriceFilter.ApplyFilters(order.Price)
-		if ok {
-			count++
-		}
-	}
-	if queryFilters.SizeFilter != nil {
-		ok = queryFilters.SizeFilter.ApplyFilters(order.Size)
-		if ok {
-			count++
-		}
-	}
-	if queryFilters.RemainingFilter != nil {
-		ok = queryFilters.RemainingFilter.ApplyFilters(order.Remaining)
-		if ok {
-			count++
-		}
-	}
-	if queryFilters.TypeFilter != nil {
-		ok = queryFilters.TypeFilter.ApplyFilters(order.Type)
-		if ok {
-			count++
-		}
-	}
-	if queryFilters.TimestampFilter != nil {
-		ok = queryFilters.TimestampFilter.ApplyFilters(order.Timestamp)
-		if ok {
-			count++
-		}
-	}
-	if queryFilters.StatusFilter != nil {
-		ok = queryFilters.StatusFilter.ApplyFilters(order.Status)
-		if ok {
-			count++
-		}
-	}
-
-	if queryFilters.Operator == filters.QueryFilterOperatorAnd {
-		// If we AND all the queryFilters the counts should match
-		// and if they do we have the exact match
-		return count == queryFilters.Count()
-	} else {
-		// We are in an OR operation so if any of the queryFilters
-		// have matched we can return true, false otherwise
-		return ok
-	}
-}
-
-func applyTradeFilters(trade Trade, queryFilters *filters.TradeQueryFilters) bool {
+func applyTradeFilters(trade msg.Trade, queryFilters *filters.TradeQueryFilters) bool {
 	ok := true
 	count := 0
 
@@ -147,9 +70,12 @@ func applyTradeFilters(trade Trade, queryFilters *filters.TradeQueryFilters) boo
 	}
 }
 
-func applyOrderFilters2(order msg.Order, queryFilters *filters.OrderQueryFilters) bool {
+func applyOrderFilters(order *msg.Order, queryFilters *filters.OrderQueryFilters) bool {
 	ok := true
 	count := 0
+
+	fmt.Printf("analyse order: %+v\n", order)
+	fmt.Printf("applyOrderFilters queryFilter: %+v\n", queryFilters)
 
 	if queryFilters.IdFilter != nil {
 		ok = queryFilters.IdFilter.ApplyFilters(order.Id)
@@ -211,6 +137,14 @@ func applyOrderFilters2(order msg.Order, queryFilters *filters.OrderQueryFilters
 			count++
 		}
 	}
+	if queryFilters.ReferenceFilter != nil {
+		ok = queryFilters.ReferenceFilter.ApplyFilters(order.Reference)
+		if ok {
+			count++
+		}
+	}
+
+	fmt.Printf("applyOrderFilters OK: %+v\n", ok)
 
 	if queryFilters.Operator == filters.QueryFilterOperatorAnd {
 		// If we AND all the queryFilters the counts should match

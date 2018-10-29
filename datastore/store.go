@@ -7,24 +7,24 @@ import (
 
 type TradeStore interface {
 
-	Subscribe(trades chan<- []Trade) uint64
+	Subscribe(trades chan<- []msg.Trade) uint64
 	Unsubscribe(id uint64) error
 	Notify() error
 
 	// GetByMarket retrieves trades for a given market.
-	GetByMarket(market string, params *filters.TradeQueryFilters) ([]Trade, error)
+	GetByMarket(market string, params *filters.TradeQueryFilters) ([]msg.Trade, error)
 	// Get retrieves a trade for a given id.
-	GetByMarketAndId(market string, id string) (Trade, error)
+	GetByMarketAndId(market string, id string) (msg.Trade, error)
 	// GetByParty retrieves trades for a given party.
-	GetByParty(party string, params *filters.TradeQueryFilters) ([]Trade, error)
+	GetByParty(party string, params *filters.TradeQueryFilters) ([]msg.Trade, error)
 	// Get retrieves a trade for a given id.
-	GetByPartyAndId(party string, id string) (Trade, error)
+	GetByPartyAndId(party string, id string) (msg.Trade, error)
 	// Post creates a new trade in the store.
-	Post(r Trade) error
+	Post(r msg.Trade) error
 	// Put updates an existing trade in the store.
-	Put(r Trade) error
+	Put(r msg.Trade) error
 	// Removes a trade from the store.
-	Delete(r Trade) error
+	Delete(r msg.Trade) error
 	// Aggregates trades into candles
 	GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error)
 	// Aggregate trades into a single candle from currentBlock for interval

@@ -31,14 +31,11 @@ type Vega struct {
 	State          *State
 	Statistics     *msg.Statistics
 	markets        map[string]*matching.OrderBook
-	OrderStore     datastore.OrderStore
-	TradeStore     datastore.TradeStore
-	PartyStore     datastore.PartyStore
 	matchingEngine matching.MatchingEngine
 	riskEngine     risk.RiskEngine
 }
 
-func New(config *Config, store datastore.StoreProvider) *Vega {
+func New(config *Config) *Vega {
 
 	// Initialise matching engine
 	matchingEngine := matching.NewMatchingEngine(config.LogPriceLevels)
@@ -56,9 +53,6 @@ func New(config *Config, store datastore.StoreProvider) *Vega {
 		Config:         config,
 		Statistics:     statistics,
 		markets:        make(map[string]*matching.OrderBook),
-		OrderStore:     store.OrderStore(),
-		TradeStore:     store.TradeStore(),
-		PartyStore:     store.PartyStore(),
 		matchingEngine: matchingEngine,
 		riskEngine:     riskEngine,
 		State:          NewState(),

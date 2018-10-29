@@ -197,25 +197,21 @@ import (
 
 func BenchmarkBatchInsertToBadger(b *testing.B) {
 
-	var memStore = NewMemStore([]string{testMarket}, []string{testPartyA})
-	var newOrderStore = NewOrderStoreP(&memStore, "./Data")
+	var newOrderStore = NewOrderStore("./Data")
 	defer newOrderStore.Close()
 
 	//stateOrders, _ := newOrderStore.GetByMarket2(testMarket, nil)
 	//fmt.Printf("state %d\n", len(stateOrders))
 
-	var order Order
-	var batchedOrders []Order
+	var batchedOrders []*msg.Order
 	for i := 0; i < b.N; i++ {
-		order = Order{
-			msg.Order{
-				Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
-				Market: testMarket,
-				Party:  testPartyA,
-				Price: uint64(100),
-				Timestamp: uint64(3),
-				Size: uint64(123),
-			},
+		order := &msg.Order{
+			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Market: testMarket,
+			Party:  testPartyA,
+			Price: uint64(100),
+			Timestamp: uint64(3),
+			Size: uint64(123),
 		}
 		batchedOrders = append(batchedOrders, order)
 	}
