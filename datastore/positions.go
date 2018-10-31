@@ -10,7 +10,7 @@ type MarketBucket struct {
 	MinimumContractSize int64
 }
 
-func (ts *memTradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
+func (ts *tradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
 	marketBuckets := make(map[string]*MarketBucket, 0)
 	tradesByTimestamp, err := ts.GetByParty(party, nil)
 	if err != nil {
@@ -22,11 +22,11 @@ func (ts *memTradeStore) GetTradesBySideBuckets(party string) map[string]*Market
 			marketBuckets[trade.Market] = &MarketBucket{[]*msg.Trade{}, []*msg.Trade{}, 0, 0, 1}
 		}
 		if trade.Buyer == party {
-			marketBuckets[trade.Market].Buys = append(marketBuckets[trade.Market].Buys, &tradesByTimestamp[idx])
+			marketBuckets[trade.Market].Buys = append(marketBuckets[trade.Market].Buys, tradesByTimestamp[idx])
 			marketBuckets[trade.Market].BuyVolume += int64(tradesByTimestamp[idx].Size)
 		}
 		if trade.Seller == party {
-			marketBuckets[trade.Market].Sells = append(marketBuckets[trade.Market].Sells, &tradesByTimestamp[idx])
+			marketBuckets[trade.Market].Sells = append(marketBuckets[trade.Market].Sells, tradesByTimestamp[idx])
 			marketBuckets[trade.Market].SellVolume += int64(tradesByTimestamp[idx].Size)
 		}
 	}

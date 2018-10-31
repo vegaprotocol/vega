@@ -13,8 +13,6 @@ import (
 
 // orderStore should implement OrderStore interface.
 type orderStore struct {
-	//store *MemStore
-
 	persistentStore *badger.DB
 	orderBookDepth  MarketDepthManager
 
@@ -126,7 +124,7 @@ func (m *orderStore) queueEvent(o msg.Order) error {
 	return nil
 }
 
-func (m *orderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
+func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
 	if queryFilters == nil {
 		queryFilters = &filters.OrderQueryFilters{}
 	}
@@ -135,22 +133,19 @@ func (m *orderStore) GetByMarket(market string, queryFilters *filters.OrderQuery
 		result []*msg.Order
 	)
 
-	it := m.persistentStore.NewTransaction(false).NewIterator(badger.DefaultIteratorOptions)
+	it := os.persistentStore.NewTransaction(false).NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 
 	marketPrefix := []byte(fmt.Sprintf("M:%s_", market))
-	filter := Filter{queryFilters, 0, 0}
+	filter := OrderFilter{queryFilters, 0, 0}
 
 	for it.Seek(marketPrefix); it.ValidForPrefix(marketPrefix); it.Next() {
 		item := it.Item()
 		orderBuf, _ := item.ValueCopy(nil)
 
-		var tempOrder msg.Order
-		tempOrder.XXX_Unmarshal(orderBuf)
-		if filter.apply(&tempOrder) {
-			// allocate memory and append pointer
-			var order msg.Order
-			order = tempOrder
+		var order msg.Order
+		order.XXX_Unmarshal(orderBuf)
+		if filter.apply(&order) {
 			result = append(result, &order)
 		}
 	}
@@ -191,7 +186,7 @@ func (m *orderStore) GetByParty(party string, queryFilters *filters.OrderQueryFi
 	defer it.Close()
 
 	partyPrefix := []byte(fmt.Sprintf("P:%s_", party))
-	filter := Filter{queryFilters, 0, 0}
+	filter := OrderFilter{queryFilters, 0, 0}
 
 	for it.Seek(partyPrefix); it.ValidForPrefix(partyPrefix); it.Next() {
 		marketKeyItem := it.Item()
@@ -202,12 +197,9 @@ func (m *orderStore) GetByParty(party string, queryFilters *filters.OrderQueryFi
 		}
 
 		orderBuf, _ := orderItem.ValueCopy(nil)
-		var tempOrder msg.Order
-		tempOrder.XXX_Unmarshal(orderBuf)
-		if filter.apply(&tempOrder) {
-			// allocate memory and append pointer
-			var order msg.Order
-			order = tempOrder
+		var order msg.Order
+		order.XXX_Unmarshal(orderBuf)
+		if filter.apply(&order) {
 			result = append(result, &order)
 		}
 	}
@@ -252,33 +244,12 @@ func (m *orderStore) GetByPartyAndId(party string, id string) (*msg.Order, error
 	return &order, nil
 }
 
-func (m *orderStore) GetByPartyAndReference(party string, reference string) (*msg.Order, error) {
-	//if exists := m.partyExists(party); !exists {
-	//	return Order{}, fmt.Errorf("could not find party %s", party)
-	//}
-	//
-	//var at = -1
-	//for idx, order := range m.store.parties[party].ordersByTimestamp {
-	//	if order.order.Reference == reference {
-	//		at = idx
-	//		break
-	//	}
-	//}
-	//
-	//if at == -1 {
-	//	return Order{}, NotFoundError{fmt.Errorf("could not find reference %s", reference)}
-	//}
-	//return m.store.parties[party].ordersByTimestamp[at].order, nil
-	return nil, nil
-}
-
 func (os *orderStore) Post(order *msg.Order) error {
 
 	txn := os.persistentStore.NewTransaction(true)
 	insertAtomically := func(txn *badger.Txn) error {
 		orderBuf, _ := order.XXX_Marshal(nil, true)
 		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
-		fmt.Printf(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
 		idKey := []byte(fmt.Sprintf("ID:%s", order.Id))
 		partyKey := []byte(fmt.Sprintf("P:%s_ID:%s", order.Party, order.Id))
 		if err := txn.Set(marketKey, orderBuf); err != nil {
@@ -376,8 +347,8 @@ func (os *orderStore) Put(order *msg.Order) error {
 
 	err := os.persistentStore.Update(func(txn *badger.Txn) error {
 		orderBuf, _ := order.XXX_Marshal(nil, true)
-		marketKey := fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id)
-		txn.Set([]byte(marketKey), orderBuf)
+		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
+		txn.Set(marketKey, orderBuf)
 		return	nil
 	})
 
@@ -400,31 +371,30 @@ func (os *orderStore) Put(order *msg.Order) error {
 // Delete removes an order from the memory store.
 func (os *orderStore) Delete(order *msg.Order) error {
 
+	txn := os.persistentStore.NewTransaction(true)
 	deleteAtomically := func() error {
-		txn := os.persistentStore.NewTransaction(true)
 		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
 		idKey := []byte(fmt.Sprintf("ID:%s", order.Id))
 		partyKey := []byte(fmt.Sprintf("P:%s_ID:%s", order.Party, order.Id))
 		if err := txn.Delete(marketKey); err != nil {
-			txn.Discard()
 			return err
 		}
 		if err := txn.Delete(idKey); err != nil {
-			txn.Discard()
 			return err
 		}
 		if err := txn.Delete(partyKey); err != nil {
-			txn.Discard()
-			return err
-		}
-		if err := txn.Commit(); err != nil {
-			txn.Discard()
 			return err
 		}
 		return nil
 	}
 
 	if err := deleteAtomically(); err != nil {
+		txn.Discard()
+		return err
+	}
+
+	if err := txn.Commit(); err != nil {
+		txn.Discard()
 		return err
 	}
 
@@ -433,13 +403,13 @@ func (os *orderStore) Delete(order *msg.Order) error {
 	return nil
 }
 
-type Filter struct {
+type OrderFilter struct {
 	queryFilter *filters.OrderQueryFilters
 	skipped uint64
 	Q uint64
 }
 
-func (f *Filter) apply(order *msg.Order) (include bool) {
+func (f *OrderFilter) apply(order *msg.Order) (include bool) {
 	if f.queryFilter.First == nil && f.queryFilter.Skip == nil {
 		include = true
 	} else {
@@ -448,6 +418,7 @@ func (f *Filter) apply(order *msg.Order) (include bool) {
 		}
 
 		if f.queryFilter.Skip != nil && *f.queryFilter.Skip > 0 && f.skipped < *f.queryFilter.Skip {
+			f.skipped++
 			return false
 		}
 	}
@@ -462,46 +433,3 @@ func (f *Filter) apply(order *msg.Order) (include bool) {
 	}
 	return include
 }
-
-
-//func (m *orderStore) filterResults3(input []msg.Order, queryFilters *filters.OrderQueryFilters) (output []msg.Order, error error) {
-//	var pos, skipped uint64
-//
-//	// Last == descending by timestamp
-//	// First == ascending by timestamp
-//	// Skip == offset by value, then first/last depending on direction
-//
-//	if queryFilters.First != nil && *queryFilters.First > 0 {
-//		// If first is set we iterate ascending
-//		for i := 0; i < len(input); i++ {
-//			if pos == *queryFilters.First {
-//				break
-//			}
-//			if applyOrderFilters2(input[i], queryFilters) {
-//				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
-//					skipped++
-//					continue
-//				}
-//				output = append(output, input[i])
-//				pos++
-//			}
-//		}
-//	} else {
-//		// default is descending 'last' n items
-//		for i := len(input) - 1; i >= 0; i-- {
-//			if queryFilters.Last != nil && *queryFilters.Last > 0 && pos == *queryFilters.Last {
-//				break
-//			}
-//			if applyOrderFilters2(input[i], queryFilters) {
-//				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
-//					skipped++
-//					continue
-//				}
-//				output = append(output, input[i])
-//				pos++
-//			}
-//		}
-//	}
-//
-//	return output, nil
-//}
