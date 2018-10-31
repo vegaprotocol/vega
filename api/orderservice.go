@@ -141,22 +141,7 @@ func (p *orderService) GetByMarket(ctx context.Context, market string, filters *
 		if filterOpen && (order.Remaining == 0 || order.Status != msg.Order_Active) {
 			continue
 		}
-		o := &msg.Order{
-			Id:                  order.Id,
-			Market:              order.Market,
-			Party:               order.Party,
-			Side:                order.Side,
-			Price:               order.Price,
-			Size:                order.Size,
-			Remaining:           order.Remaining,
-			Timestamp:           order.Timestamp,
-			Type:                order.Type,
-			Status:              order.Status,
-			ExpirationDatetime:  order.ExpirationDatetime,
-			ExpirationTimestamp: order.ExpirationTimestamp,
-			Reference:           order.Reference,
-		}
-		result = append(result, o)
+		result = append(result, order)
 	}
 	return result, err
 }
@@ -172,22 +157,7 @@ func (p *orderService) GetByParty(ctx context.Context, party string, filters *fi
 		if filterOpen && (order.Remaining == 0 || order.Status != msg.Order_Active) {
 			continue
 		}
-		o := &msg.Order{
-			Id:                  order.Id,
-			Market:              order.Market,
-			Party:               order.Party,
-			Side:                order.Side,
-			Price:               order.Price,
-			Size:                order.Size,
-			Remaining:           order.Remaining,
-			Timestamp:           order.Timestamp,
-			Type:                order.Type,
-			Status:              order.Status,
-			ExpirationDatetime:  order.ExpirationDatetime,
-			ExpirationTimestamp: order.ExpirationTimestamp,
-			Reference:           order.Reference,
-		}
-		result = append(result, o)
+		result = append(result, order)
 	}
 	return result, err
 }
@@ -207,14 +177,6 @@ func (p *orderService) GetByPartyAndId(ctx context.Context, market string, id st
 	}
 	return o, err
 }
-
-//func (p *orderService) GetMarkets(ctx context.Context) ([]string, error) {
-//	markets, err := p.orderStore.GetMarkets()
-//	if err != nil {
-//		return []string{}, err
-//	}
-//	return markets, err
-//}
 
 func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (orderBookDepth *msg.MarketDepth, err error) {
 	return p.orderStore.GetMarketDepth(marketName)
