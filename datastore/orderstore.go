@@ -252,26 +252,6 @@ func (m *orderStore) GetByPartyAndId(party string, id string) (*msg.Order, error
 	return &order, nil
 }
 
-func (m *orderStore) GetByPartyAndReference(party string, reference string) (*msg.Order, error) {
-	//if exists := m.partyExists(party); !exists {
-	//	return Order{}, fmt.Errorf("could not find party %s", party)
-	//}
-	//
-	//var at = -1
-	//for idx, order := range m.store.parties[party].ordersByTimestamp {
-	//	if order.order.Reference == reference {
-	//		at = idx
-	//		break
-	//	}
-	//}
-	//
-	//if at == -1 {
-	//	return Order{}, NotFoundError{fmt.Errorf("could not find reference %s", reference)}
-	//}
-	//return m.store.parties[party].ordersByTimestamp[at].order, nil
-	return nil, nil
-}
-
 func (os *orderStore) Post(order *msg.Order) error {
 
 	txn := os.persistentStore.NewTransaction(true)
@@ -462,46 +442,3 @@ func (f *Filter) apply(order *msg.Order) (include bool) {
 	}
 	return include
 }
-
-
-//func (m *orderStore) filterResults3(input []msg.Order, queryFilters *filters.OrderQueryFilters) (output []msg.Order, error error) {
-//	var pos, skipped uint64
-//
-//	// Last == descending by timestamp
-//	// First == ascending by timestamp
-//	// Skip == offset by value, then first/last depending on direction
-//
-//	if queryFilters.First != nil && *queryFilters.First > 0 {
-//		// If first is set we iterate ascending
-//		for i := 0; i < len(input); i++ {
-//			if pos == *queryFilters.First {
-//				break
-//			}
-//			if applyOrderFilters2(input[i], queryFilters) {
-//				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
-//					skipped++
-//					continue
-//				}
-//				output = append(output, input[i])
-//				pos++
-//			}
-//		}
-//	} else {
-//		// default is descending 'last' n items
-//		for i := len(input) - 1; i >= 0; i-- {
-//			if queryFilters.Last != nil && *queryFilters.Last > 0 && pos == *queryFilters.Last {
-//				break
-//			}
-//			if applyOrderFilters2(input[i], queryFilters) {
-//				if queryFilters.Skip != nil && *queryFilters.Skip > 0 && skipped < *queryFilters.Skip {
-//					skipped++
-//					continue
-//				}
-//				output = append(output, input[i])
-//				pos++
-//			}
-//		}
-//	}
-//
-//	return output, nil
-//}

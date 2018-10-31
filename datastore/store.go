@@ -29,7 +29,6 @@ type TradeStore interface {
 	GetCandles(market string, sinceBlock, currentBlock, interval uint64) (msg.Candles, error)
 	// Aggregate trades into a single candle from currentBlock for interval
 	GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error)
-
 	// Returns current market price
 	GetMarkPrice(market string) (uint64, error)
 	// Returns map of market name to market buckets
@@ -61,8 +60,6 @@ type OrderStore interface {
 	Delete(r *msg.Order) error
 	// Returns Order Book Depth for a market
 	GetMarketDepth(market string) (*msg.MarketDepth, error)
-	// Returns Order by reference number
-	GetByPartyAndReference(party string, reference string) (*msg.Order, error)
 }
 
 type PartyStore interface {
@@ -71,36 +68,3 @@ type PartyStore interface {
 	Delete(party string) error
 	GetAllParties() ([]string, error)
 }
-
-//type StoreProvider interface {
-//	Init(markets, parties []string)
-//	TradeStore() TradeStore
-//	OrderStore() OrderStore
-//	PartyStore() PartyStore
-//}
-//
-//type MemoryStoreProvider struct {
-//	memStore   MemStore
-//	tradeStore TradeStore
-//	orderStore OrderStore
-//	partyStore PartyStore
-//}
-
-//func (m *MemoryStoreProvider) Init(markets, parties []string) {
-//	m.memStore = NewMemStore(markets, parties)
-//	m.tradeStore = NewTradeStore(&m.memStore)
-//	m.orderStore = NewOrderStore(&m.memStore)
-//	m.partyStore = NewPartyStore(&m.memStore)
-//}
-
-//func (m *MemoryStoreProvider) TradeStore() TradeStore {
-//	return m.tradeStore
-//}
-//
-//func (m *MemoryStoreProvider) OrderStore() OrderStore {
-//	return m.orderStore
-//}
-//
-//func (m *MemoryStoreProvider) PartyStore() PartyStore {
-//	return m.partyStore
-//}
