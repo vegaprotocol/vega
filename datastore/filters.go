@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func applyTradeFilters(trade msg.Trade, queryFilters *filters.TradeQueryFilters) bool {
+func applyTradeFilters(trade *msg.Trade, queryFilters *filters.TradeQueryFilters) bool {
 	ok := true
 	count := 0
 

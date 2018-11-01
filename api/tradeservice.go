@@ -22,9 +22,10 @@ type TradeService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
 
-	GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error)
+	// TODO: remove Candles type
+	GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles *msg.Candles, err error)
 
-	GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (candles msg.Candles, err error)
+	GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (candles *msg.Candles, err error)
 	GetCandleSinceBlock(ctx context.Context, market string, sinceBlock uint64) (candle *msg.Candle, time time.Time, err error)
 
 	GetLatestBlock() (blockNow uint64)
@@ -44,57 +45,50 @@ func NewTradeService() TradeService {
 
 func (t *tradeService) Init(app *core.Vega) {
 	t.app = app
-	//t.tradeStore = tradeStore
+	dataDir := "./tradeStore"
+	t.tradeStore = datastore.NewTradeStore(dataDir)
 }
 
 func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error) {
-	tr, err := t.tradeStore.GetByMarket(market, filters)
+	trades, err = t.tradeStore.GetByMarket(market, filters)
 	if err != nil {
 		return nil, err
 	}
-	tradeMsgs := make([]*msg.Trade, 0)
-	for _, trade := range tr {
-		tradeMsgs = append(tradeMsgs, trade.ToProtoMessage())
-	}
-	return tradeMsgs, err
+	return trades, err
 }
 
 func (t *tradeService) GetByParty(ctx context.Context, party string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error) {
-	tr, err := t.tradeStore.GetByParty(party, filters)
+	trades, err = t.tradeStore.GetByParty(party, filters)
 	if err != nil {
 		return nil, err
 	}
-	tradeMsgs := make([]*msg.Trade, 0)
-	for _, trade := range tr {
-		tradeMsgs = append(tradeMsgs, trade.ToProtoMessage())
-	}
-	return tradeMsgs, err
+	return trades, err
 }
 
 func (t *tradeService) GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error) {
-	tr, err := t.tradeStore.GetByMarketAndId(market, id)
+	trade, err = t.tradeStore.GetByMarketAndId(market, id)
 	if err != nil {
 		return &msg.Trade{}, err
 	}
-	return tr.ToProtoMessage(), err
+	return trade, err
 }
 
 func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error) {
-	tr, err := t.tradeStore.GetByPartyAndId(party, id)
+	trade, err = t.tradeStore.GetByPartyAndId(party, id)
 	if err != nil {
 		return &msg.Trade{}, err
 	}
-	return tr.ToProtoMessage(), err
+	return trade, err
 }
 
-func (t *tradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error) {
+func (t *tradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles *msg.Candles, err error) {
 	// compare time and translate it into timestamps
 	vtc := vegatime.NewVegaTimeConverter(t.app)
 	sinceBlock := vtc.TimeToBlock(since)
 
 	c, err := t.tradeStore.GetCandles(market, sinceBlock, uint64(t.app.GetChainHeight()), interval)
 	if err != nil {
-		return msg.Candles{}, err
+		return &msg.Candles{}, err
 	}
 
 	for _, candle := range c.Candles {
@@ -103,7 +97,7 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 	return c, nil
 }
 
-func (t *tradeService) GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (candles msg.Candles, err error) {
+func (t *tradeService) GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (candles *msg.Candles, err error) {
 	vtc := vegatime.NewVegaTimeConverter(t.app)
 	
 	// Convert last N candles to vega-time
@@ -116,7 +110,7 @@ func (t *tradeService) GetLastCandles(ctx context.Context, market string, last u
 	
 	c, err := t.tradeStore.GetCandles(market, sinceBlock, latestBlock, interval)
 	if err != nil {
-		return msg.Candles{}, err
+		return &msg.Candles{}, err
 	}
 
 	for _, candle := range c.Candles {
@@ -149,10 +143,10 @@ func (t *tradeService) GetLatestBlock() uint64 {
 
 func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, uint64) {
 	trades := make(chan []msg.Trade)
-	internal := make(chan []datastore.Trade)
+	internal := make(chan []msg.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []datastore.Trade) {
+	go func(id uint64, internal chan []msg.Trade) {
 		<-ctx.Done()
 		log.Debugf("TradeService -> Subscriber closed connection: %d", id)
 		err := t.tradeStore.Unsubscribe(id)
@@ -173,7 +167,7 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 					continue
 				}
 
-				validatedTrades = append(validatedTrades, *item.ToProtoMessage())
+				validatedTrades = append(validatedTrades, item)
 			}
 			trades <- validatedTrades
 		}
@@ -185,10 +179,10 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 
 func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-chan msg.MarketPosition, uint64) {
 	positions := make(chan msg.MarketPosition)
-	internal := make(chan []datastore.Trade)
+	internal := make(chan []msg.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []datastore.Trade) {
+	go func(id uint64, internal chan []msg.Trade) {
 		<-ctx.Done()
 		log.Debugf("TradeService -> Positions subscriber closed connection: %d", id)
 		err := t.tradeStore.Unsubscribe(id)
