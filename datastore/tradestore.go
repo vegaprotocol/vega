@@ -133,7 +133,12 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 		result []*msg.Trade
 	)
 
-	it := ts.persistentStore.NewTransaction(false).NewIterator(badger.DefaultIteratorOptions)
+	iterationOptions := badger.DefaultIteratorOptions
+	if queryFilters.Last != nil {
+		iterationOptions.Reverse = true
+	}
+
+	it := ts.persistentStore.NewTransaction(false).NewIterator(iterationOptions)
 	defer it.Close()
 
 	marketPrefix := []byte(fmt.Sprintf("M:%s_", market))
@@ -145,6 +150,7 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 
 		var trade msg.Trade
 		trade.XXX_Unmarshal(tradeBuf)
+		fmt.Printf("trade: %+v\n", trade)
 		if filter.apply(&trade) {
 			result = append(result, &trade)
 		}

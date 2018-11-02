@@ -69,7 +69,7 @@ func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
 	//assert.Equal(t, "trade-id-6", trades[0].Id)
 	//assert.Equal(t, "trade-id-5", trades[1].Id)
 	//assert.Equal(t, "trade-id-4", trades[2].Id)
-
+	//
 	// Want first 2 trades after skipping 2
 	skip := uint64(2)
 	queryFilters = &filters.TradeQueryFilters{}
