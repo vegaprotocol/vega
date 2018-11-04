@@ -9,3 +9,4 @@ vegabench
 .testCoverage.txt
 log/capistrano.log
 .DS_Store
+tmp/

@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-const tradeStoreDir = "./tradeStore"
+const tradeStoreDir = "../tmp/tradestore"
 
 func flushTradeStore() {
 	err := os.RemoveAll(tradeStoreDir)
@@ -20,6 +20,7 @@ func flushTradeStore() {
 
 func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
 	flushTradeStore()
+	flushOrderStore()
 	var newOrderStore = NewOrderStore(orderStoreDir)
 	defer newOrderStore.Close()
 	var newTradeStore = NewTradeStore(tradeStoreDir)
@@ -27,14 +28,23 @@ func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
 
 	populateStores(t, newOrderStore, newTradeStore)
 
-	// Expect 6 trades with no filtration/pagination
-	trades, err := newTradeStore.GetByParty(testPartyA, nil)
+	// Want last 3 trades (timestamp descending)
+	last := uint64(3)
+	queryFilters := &filters.TradeQueryFilters{}
+	queryFilters.Last = &last
+
+	// Expect 3 trades with descending trade-ids 
+	trades, err := newTradeStore.GetByParty(testPartyA, queryFilters)
 	assert.Nil(t, err)
-	assert.Equal(t, 6, len(trades))
+	assert.Equal(t, 3, len(trades))
+	assert.Equal(t, "trade-id-6", trades[0].Id)
+	assert.Equal(t, "trade-id-5", trades[1].Id)
+	assert.Equal(t, "trade-id-4", trades[2].Id)
 }
 
 func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
 	flushTradeStore()
+	flushOrderStore()
 	var newOrderStore = NewOrderStore(orderStoreDir)
 	defer newOrderStore.Close()
 	var newTradeStore = NewTradeStore(tradeStoreDir)

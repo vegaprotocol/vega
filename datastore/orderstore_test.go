@@ -23,14 +23,14 @@ const testMarket = "market"
 const testParty = "party"
 const testPartyA = "partyA"
 const testPartyB = "partyB"
-const orderStoreDir = "./orderStore"
+const orderStoreDir = "../tmp/orderstore"
 //
 // this runs just once as first
 func init() {
 	log.InitConsoleLogger(log.DebugLevel)
 }
 
-func flushDb() {
+func flushOrderStore() {
 	err := os.RemoveAll(orderStoreDir)
 	if err != nil {
 		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
@@ -56,7 +56,7 @@ func flushDb() {
 //}
 //
 func TestMemStore_PostAndGetNewOrder(t *testing.T) {
-	flushDb()
+	flushOrderStore()
 	newOrderStore := NewOrderStore(orderStoreDir)
 	defer newOrderStore.Close()
 
@@ -146,7 +146,7 @@ func TestMemStore_PostAndGetNewOrder(t *testing.T) {
 //
 
 func TestMemStore_PutNoneExistentOrder(t *testing.T) {
-	flushDb()
+	flushOrderStore()
 	newOrderStore := NewOrderStore(orderStoreDir)
 	defer newOrderStore.Close()
 	order := &msg.Order{
@@ -368,7 +368,7 @@ func TestMemStore_PutNoneExistentOrder(t *testing.T) {
 ////}
 //
 func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
-	flushDb()
+	flushOrderStore()
 
 	var tests = []struct {
 		inMarkets      []string
@@ -682,7 +682,7 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 //}
 //
 func TestMemOrderStore_Parties(t *testing.T) {
-	flushDb()
+	flushOrderStore()
 
 	// test when store is added they are added to parties map
 	var newOrderStore = NewOrderStore(orderStoreDir)
@@ -854,7 +854,7 @@ func TestMemOrderStore_Parties(t *testing.T) {
 //}
 //
 func TestNewOrderStore_Filtering(t *testing.T) {
-	flushDb()
+	flushOrderStore()
 	var newOrderStore = NewOrderStore(orderStoreDir)
 	defer newOrderStore.Close()
 
@@ -1495,6 +1495,6 @@ func TestMemStore_GetOrderByReference(t *testing.T) {
 
 	fetchedOrder, err := newOrderStore.GetByParty(testPartyA, orderFilters)
 	assert.Nil(t, err)
-
+	assert.Equal(t, 1, len(fetchedOrder))
 	assert.Equal(t, order, fetchedOrder[0])
 }

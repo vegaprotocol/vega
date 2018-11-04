@@ -13,8 +13,8 @@ import (
 
 // orderStore should implement OrderStore interface.
 type orderStore struct {
-	persistentStore *badger.DB
-	orderBookDepth  MarketDepthManager
+	badger         *badgerStore
+	orderBookDepth MarketDepthManager
 
 	subscribers map[uint64] chan<- []msg.Order
 	buffer []msg.Order
@@ -23,6 +23,7 @@ type orderStore struct {
 }
 
 func NewOrderStore(dir string) OrderStore {
+
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
@@ -30,11 +31,12 @@ func NewOrderStore(dir string) OrderStore {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	return &orderStore{persistentStore: db, orderBookDepth: NewMarketDepthUpdaterGetter()}
+	bs := badgerStore{db: db}
+	return &orderStore{badger: &bs, orderBookDepth: NewMarketDepthUpdaterGetter()}
 }
 
 func (os *orderStore) Close() {
-	os.persistentStore.Close()
+	os.badger.db.Close()
 }
 
 func (m *orderStore) Subscribe(orders chan<- []msg.Order) uint64 {
@@ -72,7 +74,7 @@ func (m *orderStore) Unsubscribe(id uint64) error {
 func (m *orderStore) Notify() error {
 
 	if m.subscribers == nil || len(m.subscribers) == 0 {
-		log.Debugf("OrderStore -> Notify: No subscribers connected")
+		//log.Debugf("OrderStore -> Notify: No subscribers connected")
 		return nil
 	}
 
@@ -111,7 +113,7 @@ func (m *orderStore) queueEvent(o msg.Order) error {
 	defer m.mu.Unlock()
 
 	if m.subscribers == nil || len(m.subscribers) == 0 {
-		log.Debugf("OrderStore -> queueEvent: No subscribers connected")
+		//log.Debugf("OrderStore -> queueEvent: No subscribers connected")
 		return nil
 	}
 
@@ -125,21 +127,18 @@ func (m *orderStore) queueEvent(o msg.Order) error {
 }
 
 func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
+	var result []*msg.Order
 	if queryFilters == nil {
 		queryFilters = &filters.OrderQueryFilters{}
 	}
 
-	var (
-		result []*msg.Order
-	)
-
-	it := os.persistentStore.NewTransaction(false).NewIterator(badger.DefaultIteratorOptions)
+	txn := os.badger.db.NewTransaction(false)
+	filter := OrderFilter{queryFilter: queryFilters}
+	descending := filter.queryFilter.HasLast()
+	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
-
-	marketPrefix := []byte(fmt.Sprintf("M:%s_", market))
-	filter := OrderFilter{queryFilters, 0, 0}
-
-	for it.Seek(marketPrefix); it.ValidForPrefix(marketPrefix); it.Next() {
+	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
+	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		item := it.Item()
 		orderBuf, _ := item.ValueCopy(nil)
 
@@ -158,7 +157,7 @@ func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQuer
 // Get retrieves an order for a given market and id.
 func (os *orderStore) GetByMarketAndId(market string, id string) (*msg.Order, error) {
 	var order msg.Order
-	txn := os.persistentStore.NewTransaction(false)
+	txn := os.badger.db.NewTransaction(false)
 	marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", market, id))
 	item, err := txn.Get(marketKey)
 	if err != nil {
@@ -172,28 +171,26 @@ func (os *orderStore) GetByMarketAndId(market string, id string) (*msg.Order, er
 	return &order, nil
 }
 
-func (m *orderStore) GetByParty(party string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
+func (os *orderStore) GetByParty(party string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
+	var result []*msg.Order
 	if queryFilters == nil {
 		queryFilters = &filters.OrderQueryFilters{}
 	}
 
-	var (
-		result []*msg.Order
-	)
-
-	txn := m.persistentStore.NewTransaction(false)
-	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	txn := os.badger.db.NewTransaction(false)
+	filter := OrderFilter{queryFilter: queryFilters}
+	descending := filter.queryFilter.HasLast()
+	
+	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
-
-	partyPrefix := []byte(fmt.Sprintf("P:%s_", party))
-	filter := OrderFilter{queryFilters, 0, 0}
-
-	for it.Seek(partyPrefix); it.ValidForPrefix(partyPrefix); it.Next() {
+	partyPrefix, validForPrefix := os.badger.partyPrefix(party, descending)
+	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		marketKeyItem := it.Item()
 		marketKey, _ := marketKeyItem.ValueCopy(nil)
 		orderItem, err := txn.Get(marketKey)
 		if err != nil {
-			fmt.Printf("ORDER %s DOES NOT EXIST", string(marketKey))
+			// todo return or just log this - check with maks?
+			return nil, errors.New(fmt.Sprintf("order with key %s does not exist in badger store", string(marketKey)))
 		}
 
 		orderBuf, _ := orderItem.ValueCopy(nil)
@@ -212,7 +209,7 @@ func (m *orderStore) GetByParty(party string, queryFilters *filters.OrderQueryFi
 // Get retrieves an order for a given market and id.
 func (m *orderStore) GetByPartyAndId(party string, id string) (*msg.Order, error) {
 	var order msg.Order
-	err := m.persistentStore.View(func(txn *badger.Txn) error {
+	err := m.badger.db.View(func(txn *badger.Txn) error {
 		partyKey := []byte(fmt.Sprintf("P:%s_ID:%s", party, id))
 		marketKeyItem, err := txn.Get(partyKey)
 		if err != nil {
@@ -246,7 +243,7 @@ func (m *orderStore) GetByPartyAndId(party string, id string) (*msg.Order, error
 
 func (os *orderStore) Post(order *msg.Order) error {
 
-	txn := os.persistentStore.NewTransaction(true)
+	txn := os.badger.db.NewTransaction(true)
 	insertAtomically := func(txn *badger.Txn) error {
 		orderBuf, _ := order.XXX_Marshal(nil, true)
 		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
@@ -284,7 +281,7 @@ func (os *orderStore) Post(order *msg.Order) error {
 func (os *orderStore) PostBatch(batch []*msg.Order) error {
 
 
-	wb := os.persistentStore.NewWriteBatch()
+	wb := os.badger.db.NewWriteBatch()
 	defer wb.Cancel()
 
 	insertBatchAtomically := func() error {
@@ -331,7 +328,7 @@ func (os *orderStore) PostBatch(batch []*msg.Order) error {
 func (os *orderStore) Put(order *msg.Order) error {
 
 	var currentOrder msg.Order
-	os.persistentStore.View(func(txn *badger.Txn) error {
+	os.badger.db.View(func(txn *badger.Txn) error {
 		partyKey := fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id)
 		item, err := txn.Get([]byte(partyKey))
 		if err != nil {
@@ -345,7 +342,7 @@ func (os *orderStore) Put(order *msg.Order) error {
 		return nil
 	})
 
-	err := os.persistentStore.Update(func(txn *badger.Txn) error {
+	err := os.badger.db.Update(func(txn *badger.Txn) error {
 		orderBuf, _ := order.XXX_Marshal(nil, true)
 		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
 		txn.Set(marketKey, orderBuf)
@@ -371,7 +368,7 @@ func (os *orderStore) Put(order *msg.Order) error {
 // Delete removes an order from the memory store.
 func (os *orderStore) Delete(order *msg.Order) error {
 
-	txn := os.persistentStore.NewTransaction(true)
+	txn := os.badger.db.NewTransaction(true)
 	deleteAtomically := func() error {
 		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
 		idKey := []byte(fmt.Sprintf("ID:%s", order.Id))
@@ -406,18 +403,20 @@ func (os *orderStore) Delete(order *msg.Order) error {
 type OrderFilter struct {
 	queryFilter *filters.OrderQueryFilters
 	skipped uint64
-	Q uint64
+	found uint64
 }
 
 func (f *OrderFilter) apply(order *msg.Order) (include bool) {
-	if f.queryFilter.First == nil && f.queryFilter.Skip == nil {
+	if f.queryFilter.First == nil && f.queryFilter.Last == nil && f.queryFilter.Skip == nil {
 		include = true
 	} else {
-		if f.queryFilter.First != nil && *f.queryFilter.First > 0 && f.Q < *f.queryFilter.First {
+		if f.queryFilter.HasFirst() && f.found < *f.queryFilter.First {
 			include = true
 		}
-
-		if f.queryFilter.Skip != nil && *f.queryFilter.Skip > 0 && f.skipped < *f.queryFilter.Skip {
+		if f.queryFilter.HasLast() && f.found < *f.queryFilter.Last {
+			include = true
+		}
+		if f.queryFilter.HasSkip() && f.skipped < *f.queryFilter.Skip {
 			f.skipped++
 			return false
 		}
@@ -427,9 +426,9 @@ func (f *OrderFilter) apply(order *msg.Order) (include bool) {
 		return false
 	}
 
-	// if order passes the filter, increment the Q
+	// if item passes the filter, increment the found queue
 	if include {
-		f.Q++
+		f.found++
 	}
 	return include
 }

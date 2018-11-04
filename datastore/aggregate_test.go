@@ -137,7 +137,7 @@ import (
 //
 //func TestMemTradeStore_GetCandles(t *testing.T) {
 //	var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
-//	var newOrderStore = NewOrderStore("./orderStore")
+//	var newOrderStore = NewOrderStore("../tmp/orderstore")
 //	defer newOrderStore.Close()
 //	var newTradeStore = NewTradeStore(&memStore)
 //
@@ -488,7 +488,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	// call getMarketDepth and see if order book depth is OK
 
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
-	var newOrderStore = NewOrderStore("./orderStore")
+	var newOrderStore = NewOrderStore("../tmp/orderstore")
 	defer newOrderStore.Close()
 
 	orders := []*msg.Order{
@@ -641,7 +641,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	// call getMarketDepth and see if order book depth is OK
 
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
-	var newOrderStore = NewOrderStore("./orderStore")
+	var newOrderStore = NewOrderStore("../tmp/orderStore")
 	defer newOrderStore.Close()
 
 	orders := []*msg.Order{

@@ -12,7 +12,7 @@ import (
 
 // tradeStore should implement TradeStore interface.
 type tradeStore struct {
-	persistentStore *badger.DB
+	badger *badgerStore
 
 	subscribers map[uint64] chan<- []msg.Trade
 	buffer []msg.Trade
@@ -28,11 +28,12 @@ func NewTradeStore(dir string) TradeStore {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	return &tradeStore{persistentStore: db}
+	bs := badgerStore{db: db}
+	return &tradeStore{badger: &bs}
 }
 
 func (ts *tradeStore) Close() {
-	ts.persistentStore.Close()
+	ts.badger.db.Close()
 }
 
 func (ts *tradeStore) Subscribe(trades chan<- []msg.Trade) uint64 {
@@ -70,7 +71,7 @@ func (ts *tradeStore) Unsubscribe(id uint64) error {
 func (ts *tradeStore) Notify() error {
 
 	if ts.subscribers == nil || len(ts.subscribers) == 0 {
-		log.Debugf("TradeStore -> Notify: No subscribers connected")
+		//log.Debugf("TradeStore -> Notify: No subscribers connected")
 		return nil
 	}
 
@@ -110,7 +111,7 @@ func (ts *tradeStore) queueEvent(t msg.Trade) error {
 	defer ts.mu.Unlock()
 
 	if ts.subscribers == nil || len(ts.subscribers) == 0 {
-		log.Debugf("TradeStore -> queueEvent: No subscribers connected")
+		//log.Debugf("TradeStore -> queueEvent: No subscribers connected")
 		return nil
 	}
 
@@ -125,21 +126,18 @@ func (ts *tradeStore) queueEvent(t msg.Trade) error {
 
 // GetByMarket retrieves all trades for a given market.
 func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQueryFilters) ([]*msg.Trade, error) {
+	var result []*msg.Trade
 	if queryFilters == nil {
 		queryFilters = &filters.TradeQueryFilters{}
 	}
 
-	var (
-		result []*msg.Trade
-	)
-
-	it := ts.persistentStore.NewTransaction(false).NewIterator(badger.DefaultIteratorOptions)
+	txn := ts.badger.db.NewTransaction(false)
+	filter := TradeFilter{queryFilter: queryFilters}
+	descending := filter.queryFilter.HasLast()
+	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
-
-	marketPrefix := []byte(fmt.Sprintf("M:%s_", market))
-	filter := TradeFilter{queryFilters, 0, 0}
-
-	for it.Seek(marketPrefix); it.ValidForPrefix(marketPrefix); it.Next() {
+	marketPrefix, validForPrefix := ts.badger.marketPrefix(market, descending)
+	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		item := it.Item()
 		tradeBuf, _ := item.ValueCopy(nil)
 
@@ -157,7 +155,7 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 // GetByMarketAndId retrieves a trade for a given id.
 func (ts *tradeStore) GetByMarketAndId(market string, id string) (*msg.Trade, error) {
 	var trade msg.Trade
-	txn := ts.persistentStore.NewTransaction(false)
+	txn := ts.badger.db.NewTransaction(false)
 	marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", market, id))
 
 	item, err := txn.Get(marketKey)
@@ -174,23 +172,18 @@ func (ts *tradeStore) GetByMarketAndId(market string, id string) (*msg.Trade, er
 
 // GetByPart retrieves all trades for a given party.
 func (ts *tradeStore) GetByParty(party string, queryFilters *filters.TradeQueryFilters) ([]*msg.Trade, error) {
-
+	var result []*msg.Trade
 	if queryFilters == nil {
 		queryFilters = &filters.TradeQueryFilters{}
 	}
-
-	var (
-		result []*msg.Trade
-	)
-
-	txn := ts.persistentStore.NewTransaction(false)
-	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	
+	txn := ts.badger.db.NewTransaction(false)
+	filter := TradeFilter{queryFilter: queryFilters}
+	descending := filter.queryFilter.HasLast()
+	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
-
-	partyPrefix := []byte(fmt.Sprintf("P:%s_", party))
-	filter := TradeFilter{queryFilters, 0, 0}
-
-	for it.Seek(partyPrefix); it.ValidForPrefix(partyPrefix); it.Next() {
+	partyPrefix, validForPrefix := ts.badger.partyPrefix(party, descending)
+	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		marketKeyItem := it.Item()
 		marketKey, _ := marketKeyItem.ValueCopy(nil)
 		tradeItem, err := txn.Get(marketKey)
@@ -206,14 +199,14 @@ func (ts *tradeStore) GetByParty(party string, queryFilters *filters.TradeQueryF
 			result = append(result, &trade)
 		}
 	}
-
+	
 	return result, nil
 }
 
 // GetByPartyAndId retrieves a trade for a given id.
 func (ts *tradeStore) GetByPartyAndId(party string, id string) (*msg.Trade, error) {
 	var trade msg.Trade
-	err := ts.persistentStore.View(func(txn *badger.Txn) error {
+	err := ts.badger.db.View(func(txn *badger.Txn) error {
 		partyKey := []byte(fmt.Sprintf("P:%s_ID:%s", party, id))
 		marketKeyItem, err := txn.Get(partyKey)
 		if err != nil {
@@ -249,7 +242,7 @@ func (ts *tradeStore) GetByPartyAndId(party string, id string) (*msg.Trade, erro
 // Post creates a new trade in the memory store.
 func (ts *tradeStore) Post(trade *msg.Trade) error {
 
-	txn := ts.persistentStore.NewTransaction(true)
+	txn := ts.badger.db.NewTransaction(true)
 	insertAtomically := func(txn *badger.Txn) error {
 		orderBuf, _ := trade.XXX_Marshal(nil, true)
 		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", trade.Market, trade.Id))
@@ -288,7 +281,7 @@ func (ts *tradeStore) Post(trade *msg.Trade) error {
 // Removes trade from the store.
 func (ts *tradeStore) Delete(trade *msg.Trade) error {
 
-	txn := ts.persistentStore.NewTransaction(true)
+	txn := ts.badger.db.NewTransaction(true)
 	deleteAtomically := func() error {
 		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", trade.Market, trade.Id))
 		idKey := []byte(fmt.Sprintf("ID:%s", trade.Id))
@@ -323,9 +316,9 @@ func (ts *tradeStore) Delete(trade *msg.Trade) error {
 
 func (ts *tradeStore) GetMarkPrice(market string) (uint64, error) {
 	last := uint64(1)
-	filters := &filters.TradeQueryFilters{}
-	filters.Last = &last
-	recentTrade, err := ts.GetByMarket(market, filters)
+	f := &filters.TradeQueryFilters{}
+	f.Last = &last
+	recentTrade, err := ts.GetByMarket(market, f)
 	if err != nil {
 		return 0, err
 	}
@@ -339,18 +332,21 @@ func (ts *tradeStore) GetMarkPrice(market string) (uint64, error) {
 type TradeFilter struct {
 	queryFilter *filters.TradeQueryFilters
 	skipped uint64
-	Q uint64
+	found uint64
 }
 
 func (f *TradeFilter) apply(trade *msg.Trade) (include bool) {
-	if f.queryFilter.First == nil && f.queryFilter.Skip == nil {
+	if f.queryFilter.First == nil && f.queryFilter.Last == nil && f.queryFilter.Skip == nil {
 		include = true
 	} else {
-		if f.queryFilter.First != nil && *f.queryFilter.First > 0 && f.Q < *f.queryFilter.First {
+
+		if f.queryFilter.HasFirst() && f.found < *f.queryFilter.First {
 			include = true
 		}
-
-		if f.queryFilter.Skip != nil && *f.queryFilter.Skip > 0 && f.skipped < *f.queryFilter.Skip {
+		if f.queryFilter.HasLast() && f.found < *f.queryFilter.Last {
+			include = true
+		}
+		if f.queryFilter.HasSkip() && f.skipped < *f.queryFilter.Skip {
 			f.skipped++
 			return false
 		}
@@ -360,9 +356,9 @@ func (f *TradeFilter) apply(trade *msg.Trade) (include bool) {
 		return false
 	}
 
-	// if order passes the filter, increment the Q
+	// if item passes the filter, increment the found counter
 	if include {
-		f.Q++
+		f.found++
 	}
 	return include
 }
