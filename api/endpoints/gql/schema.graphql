@@ -13,8 +13,8 @@ schema {
 type Mutation {
     
     # Send a create order request into VEGA network, this does not immediately create the order.
-    # It validates and sends the request out for consensus. Price and Size will be converted to uint64 internally.
-    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!): PreConsensus!
+    # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
+    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensus!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.

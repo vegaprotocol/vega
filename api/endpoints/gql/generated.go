@@ -41,7 +41,7 @@ type Resolvers interface {
 	MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	MarketDepth_sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	MarketDepth_lastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error)
-	Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error)
+	Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error)
 	Mutation_orderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 
 	Order_price(ctx context.Context, obj *msg.Order) (string, error)
@@ -123,7 +123,7 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error)
 }
 type MutationResolver interface {
-	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error)
+	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error)
 	OrderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 }
 type OrderResolver interface {
@@ -241,8 +241,8 @@ func (s shortMapper) MarketDepth_lastTrade(ctx context.Context, obj *msg.MarketD
 	return s.r.MarketDepth().LastTrade(ctx, obj)
 }
 
-func (s shortMapper) Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error) {
-	return s.r.Mutation().OrderCreate(ctx, market, party, price, size, side, type_)
+func (s shortMapper) Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error) {
+	return s.r.Mutation().OrderCreate(ctx, market, party, price, size, side, type_, expiration)
 }
 
 func (s shortMapper) Mutation_orderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error) {
@@ -1299,6 +1299,21 @@ func (ec *executionContext) _Mutation_orderCreate(ctx context.Context, field gra
 		}
 	}
 	args["type"] = arg5
+	var arg6 *string
+	if tmp, ok := field.Args["expiration"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg6 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["expiration"] = arg6
 	rctx := graphql.GetResolverContext(ctx)
 	rctx.Object = "Mutation"
 	rctx.Args = args
@@ -1306,7 +1321,7 @@ func (ec *executionContext) _Mutation_orderCreate(ctx context.Context, field gra
 	rctx.PushField(field.Alias)
 	defer rctx.Pop()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return ec.resolvers.Mutation_orderCreate(ctx, args["market"].(string), args["party"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType))
+		return ec.resolvers.Mutation_orderCreate(ctx, args["market"].(string), args["party"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4432,8 +4447,8 @@ schema {
 type Mutation {
     
     # Send a create order request into VEGA network, this does not immediately create the order.
-    # It validates and sends the request out for consensus. Price and Size will be converted to uint64 internally.
-    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!): PreConsensus!
+    # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
+    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensus!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
