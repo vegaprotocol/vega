@@ -33,14 +33,16 @@ func parseOrderType(orderType *OrderType) (msg.Order_Type, error) {
 
 func parseOrderStatus(orderStatus *OrderStatus) (msg.Order_Status, error) {
 	switch *orderStatus {
-	case OrderStatusActive:
-		return msg.Order_Active, nil
-	case OrderStatusExpired:
-		return msg.Order_Expired, nil
-	case OrderStatusCancelled:
-		return msg.Order_Cancelled, nil
-	default:
-		return msg.Order_Active, errors.New(fmt.Sprintf("unknown status: %s", orderStatus.String()))
+		case OrderStatusActive:
+			return msg.Order_Active, nil
+		case OrderStatusExpired:
+			return msg.Order_Expired, nil
+		case OrderStatusCancelled:
+			return msg.Order_Cancelled, nil
+		case OrderStatusFilled:
+			return msg.Order_Filled, nil
+		default:
+			return msg.Order_Active, errors.New(fmt.Sprintf("unknown status: %s", orderStatus.String()))
 	}
 }
 
