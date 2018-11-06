@@ -40,6 +40,21 @@ func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
 	assert.Equal(t, "trade-id-6", trades[0].Id)
 	assert.Equal(t, "trade-id-5", trades[1].Id)
 	assert.Equal(t, "trade-id-4", trades[2].Id)
+	
+	// Want last 3 trades (timestamp descending) and skip 2
+	last = uint64(3)
+	skip := uint64(2)
+	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters.Last = &last
+	queryFilters.Skip = &skip
+
+	// Expect 3 trades with descending trade-ids
+	trades, err = newTradeStore.GetByParty(testPartyA, queryFilters)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(trades))
+	assert.Equal(t, "trade-id-4", trades[0].Id)
+	assert.Equal(t, "trade-id-3", trades[1].Id)
+	assert.Equal(t, "trade-id-2", trades[2].Id)
 }
 
 func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
