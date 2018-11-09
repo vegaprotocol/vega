@@ -2,6 +2,8 @@ package datastore
 
 import (
 	"vega/msg"
+	"fmt"
+	"github.com/dgraph-io/badger"
 )
 
 
@@ -18,6 +20,20 @@ func newCandle() *msg.Candle {
 }
 
 func (ts *tradeStore) GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error) {
+	var candle *msg.Candle
+	txn := ts.badger.db.NewTransaction(false)
+	candleKey := []byte(fmt.Sprintf("M:%s_C:%dB_T:%d", market, 1, sinceBlock))
+	candleItem, err := txn.Get(candleKey)
+	if err != nil {
+		return nil, err
+	}
+	candleBuf, err := candleItem.ValueCopy(nil)
+	if err != nil {
+		return nil, err
+	}
+	candle.XXX_Unmarshal(candleBuf)
+	return candle, nil
+}
 //
 //	candle := &msg.Candle{
 //		CloseBlockNumber: currentBlock,
@@ -59,12 +75,27 @@ func (ts *tradeStore) GetCandle(market string, sinceBlock, currentBlock uint64) 
 //	}
 //
 //	return candle, nil
-	return nil, nil
-}
+//}
 
 // TODO: move into pregeneration
 
-func (ts *tradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) (*msg.Candles, error) {
+func (ts *tradeStore) GetCandles(market string, sinceBlock, currentBlock, interval uint64) ([]*msg.Candle, error) {
+	var candles []*msg.Candle
+	txn := ts.badger.db.NewTransaction(false)
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer it.Close()
+	candlePrefix := []byte(fmt.Sprintf("M:%s_C:%dB_T:%d", market, 1, sinceBlock))
+	for it.Seek(candlePrefix); it.ValidForPrefix(candlePrefix); it.Next() {
+		candleItem := it.Item()
+		candleBuf, _ := candleItem.ValueCopy(nil)
+
+		var candle msg.Candle
+		candle.XXX_Unmarshal(candleBuf)
+		candles = append(candles, &candle)
+	}
+	return candles, nil
+}
+
 //	if err := ts.marketExists(market); err != nil {
 //		return msg.Candles{}, err
 //	}
@@ -141,21 +172,21 @@ func (ts *tradeStore) GetCandles(market string, sinceBlock, currentBlock, interv
 //	var output = msg.Candles{}
 //	output.Candles = candles
 //	return output, nil
-	return nil, nil
-}
+//	return nil, nil
+//}
 
-func updateCandle(candles []*msg.Candle, idx int, trade *msg.Trade) {
-	if candles[idx].Volume == 0 {
-		candles[idx].Open = trade.Price
-	}
-	candles[idx].Volume += trade.Size
-	if candles[idx].High < trade.Price {
-		candles[idx].High = trade.Price
-	}
-	if candles[idx].Low > trade.Price || candles[idx].Low == 0 {
-		candles[idx].Low = trade.Price
-	}
-}
+//func updateCandle(candles []*msg.Candle, idx int, trade *msg.Trade) {
+//	if candles[idx].Volume == 0 {
+//		candles[idx].Open = trade.Price
+//	}
+//	candles[idx].Volume += trade.Size
+//	if candles[idx].High < trade.Price {
+//		candles[idx].High = trade.Price
+//	}
+//	if candles[idx].Low > trade.Price || candles[idx].Low == 0 {
+//		candles[idx].Low = trade.Price
+//	}
+//}
 
 func (m *orderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
 	//if err := m.marketExists(market); err != nil {

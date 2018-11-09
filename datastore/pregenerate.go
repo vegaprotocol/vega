@@ -1,16 +1,19 @@
 package datastore
 
 import (
+	"fmt"
+	"github.com/dgraph-io/badger"
+	"github.com/gogo/protobuf/proto"
 	"vega/msg"
 )
 
 type MarketDepth struct {
 	Name string
-	Buy []*msg.PriceLevel
+	Buy  []*msg.PriceLevel
 	Sell []*msg.PriceLevel
 }
 
-			type MarketDepthManager interface {
+type MarketDepthManager interface {
 	updateWithRemaining(order *msg.Order)
 	updateWithRemainingDelta(order *msg.Order, remainingDelta uint64)
 	removeWithRemaining(order *msg.Order)
@@ -50,7 +53,7 @@ func (md *MarketDepth) updateWithRemainingBuySide(order *msg.Order) {
 		return
 	}
 	// found insert at
-	md.Buy = append(md.Buy[:at], append([]*msg.PriceLevel{{Price: order.Price, Volume: order.Remaining, NumberOfOrders:1}}, md.Buy[at:]...)...)
+	md.Buy = append(md.Buy[:at], append([]*msg.PriceLevel{{Price: order.Price, Volume: order.Remaining, NumberOfOrders: 1}}, md.Buy[at:]...)...)
 }
 
 func (md *MarketDepth) updateWithRemainingSellSide(order *msg.Order) {
@@ -78,7 +81,7 @@ func (md *MarketDepth) updateWithRemainingSellSide(order *msg.Order) {
 		return
 	}
 	// found insert at
-	md.Sell = append(md.Sell[:at], append([]*msg.PriceLevel{{Price: order.Price, Volume: order.Remaining, NumberOfOrders:1}}, md.Sell[at:]...)...)
+	md.Sell = append(md.Sell[:at], append([]*msg.PriceLevel{{Price: order.Price, Volume: order.Remaining, NumberOfOrders: 1}}, md.Sell[at:]...)...)
 }
 
 func (md *MarketDepth) updateWithRemaining(order *msg.Order) {
@@ -188,10 +191,79 @@ func (md *MarketDepth) removeWithRemaining(order *msg.Order) {
 	}
 }
 
-func (md *MarketDepth) 	getBuySide() []*msg.PriceLevel {
+func (md *MarketDepth) getBuySide() []*msg.PriceLevel {
 	return md.Buy
 }
 
 func (md *MarketDepth) getSellSide() []*msg.PriceLevel {
 	return md.Sell
+}
+
+type candleGenerator struct {
+	market string
+	timestamp uint64
+	persistentStore *badger.DB
+	lastCandle      *msg.Candle
+	tradesBuffer    []*msg.Trade
+}
+
+func NewCandleGenerator(market string, timestamp uint64) candleGenerator {
+	return candleGenerator{market, timestamp, nil, nil, nil}
+}
+
+func (cp *candleGenerator) AddTrade(trade *msg.Trade) {
+	cp.tradesBuffer = append(cp.tradesBuffer, trade)
+}
+
+func (cp *candleGenerator) Generate(trade *msg.Trade) error {
+
+	var candle *msg.Candle
+	for idx, t := range cp.tradesBuffer {
+		// set entry candle values for the first trade
+		if idx == 0 {
+			candle.Open = t.Price
+			candle.Low = t.Price
+			candle.High = t.Price
+			candle.Close = t.Price
+		}
+		// set close price
+		if idx == len(cp.tradesBuffer)-1 {
+			candle.Close = t.Price
+		}
+		// set minimum
+		if t.Price < candle.Low {
+			candle.Low = t.Price
+		}
+		// set maximum
+		if t.Price > candle.High {
+			candle.High = t.Price
+		}
+		candle.Volume += t.Size
+	}
+
+	if len(cp.tradesBuffer) == 0 {
+		candle.Open = cp.lastCandle.Close
+		candle.Close = cp.lastCandle.Close
+		candle.Low = cp.lastCandle.Close
+		candle.High = cp.lastCandle.Close
+	}
+
+	cp.lastCandle = candle
+
+	txn := cp.persistentStore.NewTransaction(true)
+	candleKey := []byte(fmt.Sprintf("M:%s_C:1B_T:%d", cp.market, cp.timestamp))
+	buf, err := proto.Marshal(candle)
+	if err != nil {
+		return err
+	}
+	if err := txn.Set(candleKey, buf); err != nil {
+		txn.Discard()
+		return err
+	}
+
+	if err := txn.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }

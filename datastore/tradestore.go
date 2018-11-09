@@ -135,6 +135,7 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 	filter := TradeFilter{queryFilter: queryFilters}
 	descending := filter.queryFilter.HasLast()
 	it := ts.badger.getIterator(txn, descending)
+
 	defer it.Close()
 	marketPrefix, validForPrefix := ts.badger.marketPrefix(market, descending)
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
@@ -143,6 +144,7 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 
 		var trade msg.Trade
 		trade.XXX_Unmarshal(tradeBuf)
+		fmt.Printf("trade: %+v\n", trade)
 		if filter.apply(&trade) {
 			result = append(result, &trade)
 		}
