@@ -20,6 +20,7 @@ type TradeService interface {
 	GetByMarket(ctx context.Context, market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
 	GetByParty(ctx context.Context, party string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error)
+	GetByMarketAndOrderId(ctx context.Context, market string, orderId string) (trades []*msg.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
 
 	GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error)
@@ -85,6 +86,18 @@ func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id str
 		return &msg.Trade{}, err
 	}
 	return tr.ToProtoMessage(), err
+}
+
+func (t *tradeService) GetByMarketAndOrderId(ctx context.Context, market string, orderId string) (trades []*msg.Trade, err error) {
+	tr, err := t.tradeStore.GetByMarketAndOrderId(market, orderId)
+	if err != nil {
+		return nil, err
+	}
+	tradeMsgs := make([]*msg.Trade, 0)
+	for _, trade := range tr {
+		tradeMsgs = append(tradeMsgs, trade.ToProtoMessage())
+	}
+	return tradeMsgs, err
 }
 
 func (t *tradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles msg.Candles, err error) {

@@ -54,6 +54,8 @@ type Resolvers interface {
 	Order_timestamp(ctx context.Context, obj *msg.Order) (string, error)
 	Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
 
+	Order_trades(ctx context.Context, obj *msg.Order) ([]msg.Trade, error)
+
 	Party_orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
 	Party_positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error)
 	Position_market(ctx context.Context, obj *msg.MarketPosition) (Market, error)
@@ -136,6 +138,8 @@ type OrderResolver interface {
 
 	Timestamp(ctx context.Context, obj *msg.Order) (string, error)
 	Status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
+
+	Trades(ctx context.Context, obj *msg.Order) ([]msg.Trade, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
@@ -279,6 +283,10 @@ func (s shortMapper) Order_timestamp(ctx context.Context, obj *msg.Order) (strin
 
 func (s shortMapper) Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error) {
 	return s.r.Order().Status(ctx, obj)
+}
+
+func (s shortMapper) Order_trades(ctx context.Context, obj *msg.Order) ([]msg.Trade, error) {
+	return s.r.Order().Trades(ctx, obj)
 }
 
 func (s shortMapper) Party_orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error) {
@@ -1421,6 +1429,8 @@ func (ec *executionContext) _Order(ctx context.Context, sel []query.Selection, o
 			out.Values[i] = ec._Order_status(ctx, field, obj)
 		case "reference":
 			out.Values[i] = ec._Order_reference(ctx, field, obj)
+		case "trades":
+			out.Values[i] = ec._Order_trades(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1700,6 +1710,45 @@ func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.
 	defer rctx.Pop()
 	res := obj.Reference
 	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Order",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Order_trades(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]msg.Trade)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Trade(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
 }
 
 var partyImplementors = []string{"Party"}
@@ -4655,6 +4704,9 @@ type Order {
 
     # The external reference (if available) for the order
     reference: String!
+
+    # Trades relating to this order
+    trades: [Trade!]
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market

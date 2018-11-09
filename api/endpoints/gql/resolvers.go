@@ -313,6 +313,17 @@ func (r *MyOrderResolver) Timestamp(ctx context.Context, obj *msg.Order) (string
 func (r *MyOrderResolver) Status(ctx context.Context, obj *msg.Order) (OrderStatus, error) {
 	return OrderStatus(obj.Status.String()), nil
 }
+func (r *MyOrderResolver) Trades(ctx context.Context, obj *msg.Order) ([]msg.Trade, error) {
+	trades, err := r.tradeService.GetByMarketAndOrderId(ctx, obj.Market, obj.Id)
+	if err != nil {
+		return nil, err
+	}
+	valTrades := make([]msg.Trade, 0)
+	for _, v := range trades {
+		valTrades = append(valTrades, *v)
+	}
+	return valTrades, nil
+}
 
 // END: Order Resolver
 

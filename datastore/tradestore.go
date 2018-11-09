@@ -321,6 +321,21 @@ func (ts *memTradeStore) GetMarkPrice(market string) (uint64, error) {
 	return recentTrade[0].Price, nil
 }
 
+// Trades generated from order
+func (ts *memTradeStore) GetByMarketAndOrderId(market string, orderId string) ([]Trade, error) {
+	if err := ts.marketExists(market); err != nil {
+		return nil, err
+	}
+
+	memOrder := ts.store.markets[market].orders[orderId]
+	if memOrder == nil {
+		return nil, errors.New(fmt.Sprintf("Order for OrderId %s not found", orderId))
+	}
+
+	queryFilters := &filters.TradeQueryFilters{}
+	return ts.filterResults(memOrder.trades, queryFilters)
+}
+
 // filter results and paginate based on query filters
 func (ts *memTradeStore) filterResults(input []*memTrade, queryFilters *filters.TradeQueryFilters) (output []Trade, error error) {
 	var pos, skipped uint64
