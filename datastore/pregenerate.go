@@ -2,9 +2,12 @@ package datastore
 
 import (
 	"fmt"
+
+	msg "vega/msg"
+
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
-	"vega/msg"
+	"time"
 )
 
 type MarketDepth struct {
@@ -200,65 +203,126 @@ func (md *MarketDepth) getSellSide() []*msg.PriceLevel {
 }
 
 type candleGenerator struct {
-	market string
-	timestamp uint64
+	market          string
 	persistentStore *badger.DB
-	lastCandle      *msg.Candle
 	tradesBuffer    []*msg.Trade
 }
 
-func NewCandleGenerator(market string, timestamp uint64) candleGenerator {
-	return candleGenerator{market, timestamp, nil, nil, nil}
+func NewCandleGenerator(market string) candleGenerator {
+	return candleGenerator{market, nil, nil}
 }
 
 func (cp *candleGenerator) AddTrade(trade *msg.Trade) {
 	cp.tradesBuffer = append(cp.tradesBuffer, trade)
 }
 
-func (cp *candleGenerator) Generate(trade *msg.Trade) error {
+// this should act as a separate slow go routine triggered after block is committed
+func (cp *candleGenerator) Generate() error {
 
-	var candle *msg.Candle
-	for idx, t := range cp.tradesBuffer {
-		// set entry candle values for the first trade
-		if idx == 0 {
-			candle.Open = t.Price
-			candle.Low = t.Price
-			candle.High = t.Price
-			candle.Close = t.Price
+	for idx := range cp.tradesBuffer {
+		// generate candle keys
+		candleKeys := generateCandleKeysForTrade(cp.tradesBuffer[idx])
+
+		// for each trade generate candle keys and run update on each bucket
+		txn := cp.persistentStore.NewTransaction(true)
+		for _, key := range candleKeys {
+
+			item, err := txn.Get(key)
+
+			if err == badger.ErrEmptyKey {
+				candle := NewCandle(cp.tradesBuffer[idx].Price, cp.tradesBuffer[idx].Size)
+				candleBuf, err := proto.Marshal(candle)
+				if err != nil {
+					return err
+				}
+
+				if err = txn.Set(key, candleBuf); err != nil {
+					return err
+				}
+			}
+
+			if err == nil {
+				// umarshal fetched candle
+				var candleForUpdate msg.Candle
+				itemCopy, err := item.ValueCopy(nil)
+				proto.Unmarshal(itemCopy, &candleForUpdate)
+
+				// update fetched candle with new trade
+				UpdateCandle(&candleForUpdate, cp.tradesBuffer[idx])
+
+				// marshal candle
+				candleBuf, err := proto.Marshal(&candleForUpdate)
+				if err != nil {
+					return err
+				}
+
+				// push candle to badger
+				if err = txn.Set(key, candleBuf); err != nil {
+					return err
+				}
+			}
 		}
-		// set close price
-		if idx == len(cp.tradesBuffer)-1 {
-			candle.Close = t.Price
+
+		if err := txn.Commit(); err != nil {
+			return err
 		}
-		// set minimum
-		if t.Price < candle.Low {
-			candle.Low = t.Price
-		}
-		// set maximum
-		if t.Price > candle.High {
-			candle.High = t.Price
-		}
-		candle.Volume += t.Size
 	}
 
 	if len(cp.tradesBuffer) == 0 {
-		candle.Open = cp.lastCandle.Close
-		candle.Close = cp.lastCandle.Close
-		candle.Low = cp.lastCandle.Close
-		candle.High = cp.lastCandle.Close
+		if err := cp.progressWithEmptyCandles(); err != nil {
+			return err
+		}
 	}
 
-	cp.lastCandle = candle
+	return nil
+}
 
+func (cp *candleGenerator) progressWithEmptyCandles() error {
+	// if t is empty we need to take vegatime and update candles if necessary FOR ALL MARKETS
+
+	currentvegatime := int64(1305861602)
+
+	// generate keys for this timestamp
+
+	candleKeys := generateCandleKeysForCurrentTimestamp(cp.market, currentvegatime)
+
+	// if key does not exist seek most recent values, create empty candle with those close value and insert
 	txn := cp.persistentStore.NewTransaction(true)
-	candleKey := []byte(fmt.Sprintf("M:%s_C:1B_T:%d", cp.market, cp.timestamp))
-	buf, err := proto.Marshal(candle)
-	if err != nil {
-		return err
-	}
-	if err := txn.Set(candleKey, buf); err != nil {
-		txn.Discard()
-		return err
+
+	// for all candle intervals
+	for _, key := range candleKeys {
+
+		// if key does not exist, seek most recent value
+		_, err := txn.Get(key)
+		if err == badger.ErrEmptyKey {
+			prefixForMostRecent := append([]byte(string(key)[:len(string(key))-19]), 0xFF)
+			options := badger.DefaultIteratorOptions
+			options.Reverse = true
+			it := txn.NewIterator(options)
+			it.Seek(prefixForMostRecent)
+			item := it.Item()
+			value, err := item.ValueCopy(nil)
+			if err != nil {
+
+			}
+
+			// extract close price from previous candle
+			var previousCandle msg.Candle
+			proto.Unmarshal(value, &previousCandle)
+
+			// generate new candle with extracted close price
+			newCandle := NewCandle(previousCandle.Close, 0)
+			candleBuf, err := proto.Marshal(newCandle)
+			if err != nil {
+				return err
+			}
+
+			// push new candle to the
+			if err := txn.Set(key, candleBuf); err != nil {
+				return err
+			}
+		}
+		//if present do nothing
 	}
 
 	if err := txn.Commit(); err != nil {
@@ -267,3 +331,95 @@ func (cp *candleGenerator) Generate(trade *msg.Trade) error {
 
 	return nil
 }
+
+func NewCandle(openPrice, size uint64) *msg.Candle {
+	//TODO: get candle form pool of candles
+	var candle *msg.Candle
+	candle.Open = openPrice
+	candle.Low = openPrice
+	candle.High = openPrice
+	candle.Close = openPrice
+	candle.Volume = size
+	return candle
+}
+
+func UpdateCandle(candle *msg.Candle, trade *msg.Trade) {
+	// always overwrite close price
+	candle.Close = trade.Price
+	// set minimum
+	if trade.Price < candle.Low {
+		candle.Low = trade.Price
+	}
+	// set maximum
+	if trade.Price > candle.High {
+		candle.High = trade.Price
+	}
+	candle.Volume += trade.Size
+}
+
+func generateCandleKeysForTrade(trade *msg.Trade) map[string][]byte {
+	keys := make(map[string][]byte)
+	timestamps := getMapOfIntervalsToTimestamps(int64(trade.Timestamp))
+
+	for key, val := range timestamps {
+		keys[key] = []byte(fmt.Sprintf("M:%s_I:%s_T:%s", trade.Market, key, val))
+	}
+
+	return keys
+}
+
+func generateCandleKeysForCurrentTimestamp(market string, timestamp int64) map[string][]byte {
+	keys := make(map[string][]byte)
+	timestamps := getMapOfIntervalsToTimestamps(timestamp)
+
+	for key, val := range timestamps {
+		keys[key] = []byte(fmt.Sprintf("M:%s_I:%s_T:%s", market, key, val))
+	}
+
+	return keys
+}
+
+func getMapOfIntervalsToTimestamps(timestamp int64) map[string]string {
+	timestamps := make(map[string]string)
+	t := time.Unix(int64(1305861602), 0)
+
+	roundedToMinute := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location())
+	fmt.Printf("roundedToMinute %+v\n", roundedToMinute)
+	timestamps["1m"] = fmt.Sprintf("%d", roundedToMinute.UnixNano())
+
+	fmt.Printf("\n%d\n", t.Minute())
+	roundedTo5Minutes := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location())
+	fmt.Printf("roundedToMinute %+v\n", roundedTo5Minutes)
+	timestamps["5m"] = fmt.Sprintf("%d", roundedTo5Minutes.UnixNano())
+
+	roundedTo15Minutes := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location())
+	fmt.Printf("roundedTo15Minutes %+v\n", roundedTo15Minutes)
+	timestamps["15m"] = fmt.Sprintf("%d", roundedTo15Minutes.UnixNano())
+
+	roundedTo1Hour := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
+	fmt.Printf("roundedTo1Hour %+v\n", roundedTo1Hour)
+	timestamps["1h"] = fmt.Sprintf("%d", roundedTo1Hour.UnixNano())
+
+	roundedTo6Hour := time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location())
+	fmt.Printf("roundedTo6Hour %+v\n", roundedTo6Hour)
+	timestamps["6h"] = fmt.Sprintf("%d", roundedTo6Hour.UnixNano())
+
+	roundedToDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	fmt.Printf("roundedToDay %+v\n", roundedToDay)
+	timestamps["1d"] = fmt.Sprintf("%d", roundedToDay.UnixNano())
+
+	return timestamps
+}
+
+// STEP 1
+// DONE napisac algorytm wrzucania do generowania kluczy ktory na podstawie timestampu umie zaookraglic do najblizszej rownej wartosci
+
+// STEP 2
+// DONE dla kazdego ze zgenorwanych kluczy
+// - wyciagnij wartosc, sparsuj do candle
+// - zrob updejt na candlu z nowa wartoscia.
+// - sparsuj do binarki i wstaw candla z powrotem
+
+// STEP 3
+// napisac ladny algortym generowania kluczy dla operacji fetch
+// ktory parsuje since time do unix stampa i na podstawie interwalu (time.Second) szuka najblizszego matcha poprzez seek
