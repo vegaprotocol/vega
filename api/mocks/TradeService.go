@@ -137,14 +137,16 @@ func (_m *TradeService) GetCandleSinceBlock(ctx context.Context, market string, 
 }
 
 // GetCandles provides a mock function with given fields: ctx, market, since, interval
-func (_m *TradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (msg.Candles, error) {
+func (_m *TradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (*msg.Candles, error) {
 	ret := _m.Called(ctx, market, since, interval)
 
-	var r0 msg.Candles
-	if rf, ok := ret.Get(0).(func(context.Context, string, time.Time, uint64) msg.Candles); ok {
+	var r0 *msg.Candles
+	if rf, ok := ret.Get(0).(func(context.Context, string, time.Time, uint64) *msg.Candles); ok {
 		r0 = rf(ctx, market, since, interval)
 	} else {
-		r0 = ret.Get(0).(msg.Candles)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*msg.Candles)
+		}
 	}
 
 	var r1 error
@@ -158,14 +160,16 @@ func (_m *TradeService) GetCandles(ctx context.Context, market string, since tim
 }
 
 // GetLastCandles provides a mock function with given fields: ctx, market, last, interval
-func (_m *TradeService) GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (msg.Candles, error) {
+func (_m *TradeService) GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (*msg.Candles, error) {
 	ret := _m.Called(ctx, market, last, interval)
 
-	var r0 msg.Candles
-	if rf, ok := ret.Get(0).(func(context.Context, string, uint64, uint64) msg.Candles); ok {
+	var r0 *msg.Candles
+	if rf, ok := ret.Get(0).(func(context.Context, string, uint64, uint64) *msg.Candles); ok {
 		r0 = rf(ctx, market, last, interval)
 	} else {
-		r0 = ret.Get(0).(msg.Candles)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*msg.Candles)
+		}
 	}
 
 	var r1 error
@@ -264,4 +268,9 @@ func (_m *TradeService) ObserveTrades(ctx context.Context, market *string, party
 	}
 
 	return r0, r1
+}
+
+// Stop provides a mock function with given fields:
+func (_m *TradeService) Stop() {
+	_m.Called()
 }

@@ -33,9 +33,11 @@ type Vega struct {
 	markets        map[string]*matching.OrderBook
 	matchingEngine matching.MatchingEngine
 	riskEngine     risk.RiskEngine
+	OrderStore     datastore.OrderStore
+	TradeStore     datastore.TradeStore
 }
 
-func New(config *Config) *Vega {
+func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.TradeStore) *Vega {
 
 	// Initialise matching engine
 	matchingEngine := matching.NewMatchingEngine(config.LogPriceLevels)
@@ -56,6 +58,8 @@ func New(config *Config) *Vega {
 		matchingEngine: matchingEngine,
 		riskEngine:     riskEngine,
 		State:          NewState(),
+		OrderStore:     orderStore,
+		TradeStore:     tradeStore,
 	}
 }
 
@@ -114,7 +118,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// 3) save to stores
 
 	// insert aggressive remaining order
-	err := v.OrderStore.Post(*datastore.NewOrderFromProtoMessage(order))
+	err := v.OrderStore.Post(order)
 	if err != nil {
 		// Note: writing to store should not prevent flow to other engines
 		log.Errorf("OrderStore.Post error: %v", err)
@@ -123,7 +127,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		// insert all passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			// Note: writing to store should not prevent flow to other engines
-			err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+			err := v.OrderStore.Put(order)
 			if err != nil {
 				log.Errorf("OrderStore.Put error: %v", err)
 			}
@@ -136,9 +140,15 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%d", order.Id, idx)
+			if order.Side == msg.Side_Buy {
+				trade.BuyerOrderId = order.Id
+				trade.SellerOrderId = confirmation.PassiveOrdersAffected[idx].Id
+			} else {
+				trade.SellerOrderId = order.Id
+				trade.BuyerOrderId = confirmation.PassiveOrdersAffected[idx].Id
+			}
 
-			t := datastore.NewTradeFromProtoMessage(trade, order.Id, confirmation.PassiveOrdersAffected[idx].Id)
-			if err := v.TradeStore.Post(*t); err != nil {
+			if err := v.TradeStore.Post(trade); err != nil {
 				// Note: writing to store should not prevent flow to other engines
 				log.Errorf("TradeStore.Post error: %+v", err)
 			}
@@ -171,7 +181,7 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 	// 2) if OK update stores
 
 	// insert aggressive remaining order
-	err := v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+	err := v.OrderStore.Put(order)
 	if err != nil {
 		// Note: writing to store should not prevent flow to other engines
 		log.Errorf("OrderStore.Put error: %v", err)
@@ -237,7 +247,7 @@ func (v *Vega) AmendOrder(amendment *msg.Amendment) (*msg.OrderConfirmation, msg
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		return v.OrderCancelReplace(existingOrder.ToProtoMessage(), newOrder)
+		return v.OrderCancelReplace(existingOrder, newOrder)
 	}
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
@@ -269,7 +279,7 @@ func (v *Vega) OrderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, m
 		return &msg.OrderConfirmation{}, err
 	}
 
-	v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(newOrder))
+	v.OrderStore.Put(newOrder)
 
 	return &msg.OrderConfirmation{}, msg.OrderError_NONE
 }
@@ -283,12 +293,12 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 		log.Debugf("RemoveExpiredGTTOrders: %t", v.Config.RemoveExpiredGTTOrders)
 		if v.Config.RemoveExpiredGTTOrders {
 			log.Debugf("Removing expired order from the store")
-			err := v.OrderStore.Delete(*datastore.NewOrderFromProtoMessage(order))
+			err := v.OrderStore.Delete(order)
 			if err != nil {
 				log.Errorf("OrderStore.Delete error: %v", err)
 			}
 		} else {
-			v.OrderStore.Put(*datastore.NewOrderFromProtoMessage(order))
+			v.OrderStore.Put(order)
 		}
 	}
 }

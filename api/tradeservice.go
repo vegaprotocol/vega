@@ -14,7 +14,8 @@ import (
 )
 
 type TradeService interface {
-	Init(app *core.Vega)
+	Init(app *core.Vega, tradeStore datastore.TradeStore)
+	Stop()
 	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []msg.Trade, ref uint64)
 
 	GetByMarket(ctx context.Context, market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
@@ -43,10 +44,15 @@ func NewTradeService() TradeService {
 	return &tradeService{}
 }
 
-func (t *tradeService) Init(app *core.Vega) {
+func (t *tradeService) Init(app *core.Vega, tradeStore datastore.TradeStore) {
 	t.app = app
-	dataDir := "./tradeStore"
-	t.tradeStore = datastore.NewTradeStore(dataDir)
+	//dataDir := "./tradeStore"
+	//t.tradeStore = datastore.NewTradeStore(dataDir)
+	t.tradeStore = tradeStore
+}
+
+func (t *tradeService) Stop() {
+	t.tradeStore.Close()
 }
 
 func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error) {
@@ -81,7 +87,7 @@ func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id str
 	return trade, err
 }
 
-func (t *tradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (candles *msg.Candles, err error) {
+func (t *tradeService) GetCandles(ctx context.Context, market string, since time.Time, interval uint64) (*msg.Candles, error) {
 	// compare time and translate it into timestamps
 	vtc := vegatime.NewVegaTimeConverter(t.app)
 	sinceBlock := vtc.TimeToBlock(since)
@@ -91,13 +97,16 @@ func (t *tradeService) GetCandles(ctx context.Context, market string, since time
 		return &msg.Candles{}, err
 	}
 
-	for _, candle := range c.Candles {
+	var candles *msg.Candles
+	for _, candle := range c {
 		candle.Date = vtc.BlockToTime(candle.OpenBlockNumber).Format(time.RFC3339)
+		candles.Candles = append(candles.Candles, candle)
 	}
-	return c, nil
+
+	return candles, nil
 }
 
-func (t *tradeService) GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (candles *msg.Candles, err error) {
+func (t *tradeService) GetLastCandles(ctx context.Context, market string, last uint64, interval uint64) (*msg.Candles, error) {
 	vtc := vegatime.NewVegaTimeConverter(t.app)
 	
 	// Convert last N candles to vega-time
@@ -113,10 +122,12 @@ func (t *tradeService) GetLastCandles(ctx context.Context, market string, last u
 		return &msg.Candles{}, err
 	}
 
-	for _, candle := range c.Candles {
+	var candles *msg.Candles
+	for _, candle := range c {
 		candle.Date = vtc.BlockToTime(candle.OpenBlockNumber).Format(time.RFC3339)
+		candles.Candles = append(candles.Candles, candle)
 	}
-	return c, nil
+	return candles, nil
 }
 
 // GetCandleSinceBlock will return exactly one candle for the last interval (seconds) from the current VEGA time.
