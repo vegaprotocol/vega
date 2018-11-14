@@ -146,15 +146,15 @@ func (_m *TradeStore) GetCandle(market string, sinceBlock uint64, currentBlock u
 }
 
 // GetCandles provides a mock function with given fields: market, sinceBlock, currentBlock, interval
-func (_m *TradeStore) GetCandles(market string, sinceBlock uint64, currentBlock uint64, interval uint64) (*msg.Candles, error) {
+func (_m *TradeStore) GetCandles(market string, sinceBlock uint64, currentBlock uint64, interval uint64) ([]*msg.Candle, error) {
 	ret := _m.Called(market, sinceBlock, currentBlock, interval)
 
-	var r0 *msg.Candles
-	if rf, ok := ret.Get(0).(func(string, uint64, uint64, uint64) *msg.Candles); ok {
+	var r0 []*msg.Candle
+	if rf, ok := ret.Get(0).(func(string, uint64, uint64, uint64) []*msg.Candle); ok {
 		r0 = rf(market, sinceBlock, currentBlock, interval)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*msg.Candles)
+			r0 = ret.Get(0).([]*msg.Candle)
 		}
 	}
 

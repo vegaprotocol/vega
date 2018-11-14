@@ -15,6 +15,7 @@ import (
 	"time"
 	"fmt"
 	"flag"
+	"vega/datastore"
 )
 
 func main() {
@@ -47,15 +48,20 @@ func main() {
 	//storage := &datastore.MemoryStoreProvider{}
 	//storage.Init([]string{"BTC/DEC18"}, []string{})
 
+	orderStoreDataDir := "./orderStore"
+	tradeStoreDataDir := "./tradeStore"
+	orderStore := datastore.NewOrderStore(orderStoreDataDir)
+	tradeStore := datastore.NewTradeStore(tradeStoreDataDir)
+
 	// VEGA core
-	vega := core.New(config)
+	vega := core.New(config, orderStore, tradeStore)
 	vega.InitialiseMarkets()
 
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
 	tradeService := api.NewTradeService()
-	orderService.Init(vega)
-	tradeService.Init(vega)
+	orderService.Init(vega, orderStore)
+	tradeService.Init(vega, tradeStore)
 
 	// GRPC server
 	// Port 3002
@@ -79,6 +85,7 @@ func main() {
 	}
 
 	orderService.Stop()
+	tradeService.Stop()
 }
 
 func initLogger(levelStr string) error {

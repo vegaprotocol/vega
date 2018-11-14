@@ -220,29 +220,6 @@ func (_m *OrderService) GetMarketDepth(ctx context.Context, market string) (*msg
 	return r0, r1
 }
 
-// GetMarkets provides a mock function with given fields: ctx
-func (_m *OrderService) GetMarkets(ctx context.Context) ([]string, error) {
-	ret := _m.Called(ctx)
-
-	var r0 []string
-	if rf, ok := ret.Get(0).(func(context.Context) []string); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetStatistics provides a mock function with given fields: ctx
 func (_m *OrderService) GetStatistics(ctx context.Context) (*msg.Statistics, error) {
 	ret := _m.Called(ctx)
@@ -315,4 +292,9 @@ func (_m *OrderService) ObserveOrders(ctx context.Context, market *string, party
 	}
 
 	return r0, r1
+}
+
+// Stop provides a mock function with given fields:
+func (_m *OrderService) Stop() {
+	_m.Called()
 }

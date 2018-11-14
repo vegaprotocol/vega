@@ -7,6 +7,7 @@ import (
 
 	"vega/core"
 	"vega/msg"
+	"vega/datastore/mocks"
 )
 
 const marketId = "TEST"
@@ -26,7 +27,7 @@ func BenchmarkMatching(
 
 	config := core.GetConfig()
 
-	vega := core.New(config, nil)
+	vega := core.New(config, &mocks.OrderStore{}, &mocks.TradeStore{})
 	vega.InitialiseMarkets()
 
 	timestamp := uint64(0)

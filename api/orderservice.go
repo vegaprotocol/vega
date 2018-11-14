@@ -14,7 +14,7 @@ import (
 )
 
 type OrderService interface {
-	Init(vega *core.Vega)
+	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	Stop()
 	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []msg.Order, ref uint64)
 
@@ -45,10 +45,11 @@ func NewOrderService() OrderService {
 	return &orderService{}
 }
 
-func (p *orderService) Init(app *core.Vega) {
+func (p *orderService) Init(app *core.Vega, orderStore datastore.OrderStore) {
 	p.app = app
-	dataDir := "./orderStore"
-	p.orderStore = datastore.NewOrderStore(dataDir)
+	//dataDir := "./orderStore"
+	//p.orderStore = datastore.NewOrderStore(dataDir)
+	p.orderStore = orderStore
 	p.blockchain = blockchain.NewClient()
 }
 
@@ -263,11 +264,11 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 	p.app.Statistics.VegaTime = vtc.BlockToTime(uint64(p.app.State.Height)).Format(time.RFC3339)
 	p.app.Statistics.BlockHeight = uint64(p.app.State.Height)
 
-	parties, err := p.app.PartyStore.GetAllParties()
-	if err == nil {
-		p.app.Statistics.TotalParties = uint64(len(parties))
-		p.app.Statistics.Parties = parties
-	}
+	//parties, err := p.app.PartyStore.GetAllParties()
+	//if err == nil {
+	//	p.app.Statistics.TotalParties = uint64(len(parties))
+	//	p.app.Statistics.Parties = parties
+	//}
 
 	// Unconfirmed TX count == current transaction backlog length
 	backlogLength, err := p.blockchain.GetUnconfirmedTxCount(ctx)

@@ -72,7 +72,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	mockOrderService := &mocks.OrderService{}
 
 	mockOrderService.On("GetMarkets", ctx).Return(
-		[]string {"testMarket", "BTC/DEC18"}, nil,
+		[]string {"BTC/DEC18"}, nil,
 	).Times(3)
 
 	var tradeService api.TradeService
@@ -96,12 +96,6 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	markets, err = vegaResolver.Markets(ctx, vega, &name)
 	assert.Error(t, err)
 	assert.Nil(t, markets)
-
-	name = "testMarket"
-	markets, err = vegaResolver.Markets(ctx, vega, &name)
-	assert.Nil(t, err)
-	assert.NotNil(t, markets)
-	assert.Len(t, markets, 1)
 
 	markets, err = vegaResolver.Markets(ctx, vega, nil)
 	assert.Error(t, err)
