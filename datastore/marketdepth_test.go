@@ -141,3 +141,5 @@ func TestOrderBookDepth_All(t *testing.T){
 	assert.Equal(t, marketDepth.Sell[3].NumberOfOrders, uint64(2))
 	assert.Equal(t, marketDepth.Sell[3].CumulativeVolume, uint64(0))
 }
+
+
