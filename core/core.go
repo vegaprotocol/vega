@@ -21,7 +21,6 @@ type Config struct {
 	RiskCalculationFrequency uint64
 	AppVersion               string
 	AppVersionHash           string
-	RemoveExpiredGTTOrders   bool
 	LogPriceLevels           bool
 
 }
@@ -75,6 +74,10 @@ func (v *Vega) GetGenesisTime() time.Time {
 	return v.Config.GenesisTime
 }
 
+func (v *Vega) GetCurrentTimestamp() uint64 {
+	return uint64(v.State.Timestamp)
+}
+
 func (v *Vega) GetChainHeight() uint64 {
 	return uint64(v.State.Height)
 }
@@ -92,7 +95,7 @@ func (v *Vega) InitialiseMarkets() {
 func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 
 	order.Id = fmt.Sprintf("V%d-%d", v.State.Height, v.State.Size)
-	order.Timestamp = uint64(v.State.Height)
+	order.Timestamp = uint64(v.State.Timestamp)
 
 	log.Infof("SubmitOrder: %+v", order)
 
@@ -109,9 +112,9 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// 2) --------------- RISK ENGINE -----------------//
 
 	// Call out to risk engine calculation every N blocks
-	if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
-		v.riskEngine.RecalculateRisk()
-	}
+	//if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
+	//	v.riskEngine.RecalculateRisk()
+	//}
 
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
@@ -287,20 +290,13 @@ func (v *Vega) OrderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, m
 
 func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 	expiringOrders := v.matchingEngine.RemoveExpiringOrders(timestamp)
+	log.Debugf("Removed %v expired orders from matching engine, now update stores", len(expiringOrders))
 
 	for _, order := range expiringOrders {
-		// remove orders from the store
-		log.Debugf("RemoveExpiredGTTOrders: %t", v.Config.RemoveExpiredGTTOrders)
-		if v.Config.RemoveExpiredGTTOrders {
-			log.Debugf("Removing expired order from the store")
-			err := v.OrderStore.Delete(order)
-			if err != nil {
-				log.Errorf("OrderStore.Delete error: %v", err)
-			}
-		} else {
-			v.OrderStore.Put(order)
-		}
+		v.OrderStore.Put(order)
 	}
+
+	log.Debugf("Updated %v expired orders in stores", len(expiringOrders))
 }
 
 func (v *Vega) NotifySubscribers() {

@@ -41,7 +41,7 @@ type Resolvers interface {
 	MarketDepth_buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	MarketDepth_sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	MarketDepth_lastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error)
-	Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error)
+	Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error)
 	Mutation_orderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 
 	Order_price(ctx context.Context, obj *msg.Order) (string, error)
@@ -52,6 +52,7 @@ type Resolvers interface {
 	Order_remaining(ctx context.Context, obj *msg.Order) (string, error)
 
 	Order_timestamp(ctx context.Context, obj *msg.Order) (string, error)
+	Order_datetime(ctx context.Context, obj *msg.Order) (string, error)
 	Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
 
 	Party_orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
@@ -84,6 +85,7 @@ type Resolvers interface {
 	Trade_price(ctx context.Context, obj *msg.Trade) (string, error)
 	Trade_size(ctx context.Context, obj *msg.Trade) (string, error)
 	Trade_timestamp(ctx context.Context, obj *msg.Trade) (string, error)
+	Trade_datetime(ctx context.Context, obj *msg.Trade) (string, error)
 	Vega_markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
 	Vega_parties(ctx context.Context, obj *Vega, name *string) ([]Party, error)
 }
@@ -123,7 +125,7 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error)
 }
 type MutationResolver interface {
-	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error)
+	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error)
 	OrderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 }
 type OrderResolver interface {
@@ -135,6 +137,7 @@ type OrderResolver interface {
 	Remaining(ctx context.Context, obj *msg.Order) (string, error)
 
 	Timestamp(ctx context.Context, obj *msg.Order) (string, error)
+	Datetime(ctx context.Context, obj *msg.Order) (string, error)
 	Status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
 }
 type PartyResolver interface {
@@ -175,6 +178,7 @@ type TradeResolver interface {
 	Price(ctx context.Context, obj *msg.Trade) (string, error)
 	Size(ctx context.Context, obj *msg.Trade) (string, error)
 	Timestamp(ctx context.Context, obj *msg.Trade) (string, error)
+	Datetime(ctx context.Context, obj *msg.Trade) (string, error)
 }
 type VegaResolver interface {
 	Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
@@ -241,8 +245,8 @@ func (s shortMapper) MarketDepth_lastTrade(ctx context.Context, obj *msg.MarketD
 	return s.r.MarketDepth().LastTrade(ctx, obj)
 }
 
-func (s shortMapper) Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType) (PreConsensus, error) {
-	return s.r.Mutation().OrderCreate(ctx, market, party, price, size, side, type_)
+func (s shortMapper) Mutation_orderCreate(ctx context.Context, market string, party string, price string, size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error) {
+	return s.r.Mutation().OrderCreate(ctx, market, party, price, size, side, type_, expiration)
 }
 
 func (s shortMapper) Mutation_orderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error) {
@@ -275,6 +279,10 @@ func (s shortMapper) Order_remaining(ctx context.Context, obj *msg.Order) (strin
 
 func (s shortMapper) Order_timestamp(ctx context.Context, obj *msg.Order) (string, error) {
 	return s.r.Order().Timestamp(ctx, obj)
+}
+
+func (s shortMapper) Order_datetime(ctx context.Context, obj *msg.Order) (string, error) {
+	return s.r.Order().Datetime(ctx, obj)
 }
 
 func (s shortMapper) Order_status(ctx context.Context, obj *msg.Order) (OrderStatus, error) {
@@ -383,6 +391,10 @@ func (s shortMapper) Trade_size(ctx context.Context, obj *msg.Trade) (string, er
 
 func (s shortMapper) Trade_timestamp(ctx context.Context, obj *msg.Trade) (string, error) {
 	return s.r.Trade().Timestamp(ctx, obj)
+}
+
+func (s shortMapper) Trade_datetime(ctx context.Context, obj *msg.Trade) (string, error) {
+	return s.r.Trade().Datetime(ctx, obj)
 }
 
 func (s shortMapper) Vega_markets(ctx context.Context, obj *Vega, name *string) ([]Market, error) {
@@ -1299,6 +1311,21 @@ func (ec *executionContext) _Mutation_orderCreate(ctx context.Context, field gra
 		}
 	}
 	args["type"] = arg5
+	var arg6 *string
+	if tmp, ok := field.Args["expiration"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg6 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["expiration"] = arg6
 	rctx := graphql.GetResolverContext(ctx)
 	rctx.Object = "Mutation"
 	rctx.Args = args
@@ -1306,7 +1333,7 @@ func (ec *executionContext) _Mutation_orderCreate(ctx context.Context, field gra
 	rctx.PushField(field.Alias)
 	defer rctx.Pop()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return ec.resolvers.Mutation_orderCreate(ctx, args["market"].(string), args["party"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType))
+		return ec.resolvers.Mutation_orderCreate(ctx, args["market"].(string), args["party"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1402,6 +1429,8 @@ func (ec *executionContext) _Order(ctx context.Context, sel []query.Selection, o
 			out.Values[i] = ec._Order_party(ctx, field, obj)
 		case "timestamp":
 			out.Values[i] = ec._Order_timestamp(ctx, field, obj)
+		case "datetime":
+			out.Values[i] = ec._Order_datetime(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._Order_status(ctx, field, obj)
 		case "reference":
@@ -1633,6 +1662,36 @@ func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.
 
 		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
 			return ec.resolvers.Order_timestamp(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
+}
+
+func (ec *executionContext) _Order_datetime(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Order",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Order_datetime(ctx, obj)
 		})
 		if err != nil {
 			ec.Error(ctx, err)
@@ -2744,6 +2803,8 @@ func (ec *executionContext) _Trade(ctx context.Context, sel []query.Selection, o
 			out.Values[i] = ec._Trade_size(ctx, field, obj)
 		case "timestamp":
 			out.Values[i] = ec._Trade_timestamp(ctx, field, obj)
+		case "datetime":
+			out.Values[i] = ec._Trade_datetime(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2922,6 +2983,36 @@ func (ec *executionContext) _Trade_timestamp(ctx context.Context, field graphql.
 
 		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
 			return ec.resolvers.Trade_timestamp(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
+}
+
+func (ec *executionContext) _Trade_datetime(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Trade",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Trade_datetime(ctx, obj)
 		})
 		if err != nil {
 			ec.Error(ctx, err)
@@ -4432,8 +4523,8 @@ schema {
 type Mutation {
     
     # Send a create order request into VEGA network, this does not immediately create the order.
-    # It validates and sends the request out for consensus. Price and Size will be converted to uint64 internally.
-    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!): PreConsensus!
+    # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
+    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensus!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
@@ -4632,8 +4723,11 @@ type Order {
     # The trader who place the order (probably stored internally as the trader's public key)
     party: String!
 
-    # If the order was added to the book or uncrossed at any point, the timestamp when that was done
+    # Unix epoch+nanoseconds for when the order was created
     timestamp: String!
+
+    # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
+    datetime: String!
 
     # The status of an order, for example 'Active'
     status: OrderStatus!
@@ -4666,8 +4760,11 @@ type Trade {
     # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
     size: String!
 
-    # When the trade occured, probably the timestamp of the agressive order
+    # Unix epoch+nanoseconds for when the trade occured
     timestamp: String!
+
+    # ISO-8601 RFC3339+Nano formatted data and time for when the trade occured (timestamp)
+    datetime: String!
 }
 
 # Valid order types, these determine what happens when an order is added to the book

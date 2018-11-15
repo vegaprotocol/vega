@@ -155,7 +155,7 @@ const orderStoreDir = "../tmp/orderstore-api"
 //}
 //
 //func TestTradeService_GetCandlesChart(t *testing.T) {
-//	var market = ServiceTestMarket
+//	var market = "testMarket"
 //	const genesisTimeStr = "2018-07-09T12:00:00Z"
 //	genesisT, _ := time.Parse(time.RFC3339, genesisTimeStr)
 //
@@ -174,38 +174,36 @@ const orderStoreDir = "../tmp/orderstore-api"
 //
 //	vega := &core.Vega{}
 //	vega.State = &core.State{}
-//	vega.State.Height = 6 * 60
+//	vega.State.Timestamp = nowT.UnixNano()
 //
 //	tradeService.Init(vega, &tradeStore)
-//	sinceInBlocks := uint64(60)
+//	sinceSeconds := uint64(since.Unix())
+//	currentSecond := uint64(vega.State.Timestamp) / uint64(time.Second)
 //
-//	tradeStore.On("GetCandles", market, sinceInBlocks, uint64(vega.State.Height), interval).Return(msg.Candles{
+//	openBlockNumber := sinceSeconds
+//	tradeStore.On("GetCandles", market, sinceSeconds, currentSecond, interval).Return(msg.Candles{
 //		Candles: []*msg.Candle{
-//			{High: 112, Low: 109, Open: 110, Close: 112, Volume: 10598},
-//			{High: 114, Low: 111, Open: 111, Close: 112, Volume: 6360},
-//			{High: 119, Low: 113, Open: 113, Close: 117, Volume: 17892},
-//			{High: 117, Low: 116, Open: 116, Close: 116, Volume: 3061},
-//			{High: 124, Low: 115, Open: 115, Close: 124, Volume: 9613},
+//			{High: 112, Low: 109, Open: 110, Close: 112, Volume: 10598, OpenBlockNumber: openBlockNumber + 0},
+//			{High: 114, Low: 111, Open: 111, Close: 112, Volume: 6360, OpenBlockNumber: openBlockNumber + uint64(1 * 60)},
+//			{High: 119, Low: 113, Open: 113, Close: 117, Volume: 17892, OpenBlockNumber: openBlockNumber + uint64(2 * 60)},
+//			{High: 117, Low: 116, Open: 116, Close: 116, Volume: 3061, OpenBlockNumber: openBlockNumber + uint64(3 * 60)},
+//			{High: 124, Low: 115, Open: 115, Close: 124, Volume: 9613, OpenBlockNumber: openBlockNumber + uint64(4 * 60)},
 //		},
 //	}, nil).Once()
 //
-//	candles, err := tradeService.GetCandlesChart(ctx, market, since, interval)
+//
+//	candles, err := tradeService.GetCandles(ctx, market, since, interval)
 //
 //	assert.Nil(t, err)
 //	assert.NotNil(t, candles)
 //	assert.Equal(t, 5, len(candles.Candles))
 //
-//	assert.Equal(t, "2018-07-09T12:01:00Z", candles.Candles[0].Date)
-//	assert.Equal(t, "2018-07-09T12:02:00Z", candles.Candles[1].Date)
-//	assert.Equal(t, "2018-07-09T12:03:00Z", candles.Candles[2].Date)
-//	assert.Equal(t, "2018-07-09T12:04:00Z", candles.Candles[3].Date)
-//	assert.Equal(t, "2018-07-09T12:05:00Z", candles.Candles[4].Date)
+//	assert.Equal(t, "2018-07-09T13:01:00+01:00", candles.Candles[0].Date)
+//	assert.Equal(t, "2018-07-09T13:02:00+01:00", candles.Candles[1].Date)
+//	assert.Equal(t, "2018-07-09T13:03:00+01:00", candles.Candles[2].Date)
+//	assert.Equal(t, "2018-07-09T13:04:00+01:00", candles.Candles[3].Date)
+//	assert.Equal(t, "2018-07-09T13:05:00+01:00", candles.Candles[4].Date)
 //}
-
-
-func TestTradeService_GetPositionsByParty(t *testing.T) {
-
-}
 
 func FlushOrderStore() {
 	err := os.RemoveAll(orderStoreDir)

@@ -246,7 +246,13 @@ type NodeInfo struct {
 
 	// ASCIIText fields
 	Moniker string   `json:"moniker"` // arbitrary moniker
-	Other   []string `json:"other"`   // other application specific data
+	Other   DefaultNodeInfoOther `json:"other"`   // other application specific data
+}
+
+// DefaultNodeInfoOther is the misc. applcation specific data
+type DefaultNodeInfoOther struct {
+	TxIndex    string `json:"tx_index"`
+	RPCAddress string `json:"rpc_address"`
 }
 
 // PartSetHeader defines the total number of pieces in a PartSet and the Merkle

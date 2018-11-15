@@ -11,6 +11,7 @@ import (
 	"github.com/satori/go.uuid"
 	"fmt"
 	"vega/filters"
+	"vega/vegatime"
 )
 
 type resolverRoot struct {
@@ -315,6 +316,10 @@ func (r *MyOrderResolver) Timestamp(ctx context.Context, obj *msg.Order) (string
 func (r *MyOrderResolver) Status(ctx context.Context, obj *msg.Order) (OrderStatus, error) {
 	return OrderStatus(obj.Status.String()), nil
 }
+func (r *MyOrderResolver) Datetime(ctx context.Context, obj *msg.Order) (string, error) {
+	vegaTimestamp := vegatime.Stamp(obj.Timestamp)
+	return vegaTimestamp.Rfc3339Nano(), nil
+}
 
 // END: Order Resolver
 
@@ -336,6 +341,10 @@ func (r *MyTradeResolver) Size(ctx context.Context, obj *msg.Trade) (string, err
 }
 func (r *MyTradeResolver) Timestamp(ctx context.Context, obj *msg.Trade) (string, error) {
 	return strconv.FormatUint(obj.Timestamp, 10), nil
+}
+func (r *MyTradeResolver) Datetime(ctx context.Context, obj *msg.Trade) (string, error) {
+	vegaTimestamp := vegatime.Stamp(obj.Timestamp)
+	return vegaTimestamp.Rfc3339Nano(), nil
 }
 
 // END: Trade Resolver
@@ -453,7 +462,7 @@ func (r *MyPositionResolver) direction(val int64) (ValueDirection) {
 type MyMutationResolver resolverRoot
 
 func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, party string, price string,
-	size string, side Side, type_ OrderType) (PreConsensus, error) {
+	size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error) {
 	order := &msg.Order{}
 	res := PreConsensus{}
 
@@ -484,6 +493,21 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	if err != nil {
 		return res, err
 	}
+
+	// GTT must have an expiration value
+	if order.Type == msg.Order_GTT && expiration != nil {
+
+		// Validate RFC3339 with no milli or nanosecond (@matt has chosen this strategy, good enough until unix epoch timestamp)
+		layout := "2006-01-02T15:04:05Z"
+		_, err := time.Parse(layout, *expiration)
+		if err != nil {
+			return res, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+		}
+
+		// move to pure timestamps or convert an RFC format shortly
+		order.ExpirationDatetime = *expiration
+	}
+
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	accepted, reference, err := r.orderService.CreateOrder(ctx, order)
 	if err != nil {
@@ -593,7 +617,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 	go func(events chan msg.Candle) {
 		var pos uint64 = 0
-		blockNow := r.tradeService.GetLatestBlock()
+		blockNow := r.tradeService.GetCurrentTimestamp(ctx)
 		candleTime := ""
 		for {
 			candle, blocktime, err := r.tradeService.GetCandleSinceBlock(ctx, market, blockNow)
