@@ -35,9 +35,10 @@ type Vega struct {
 	riskEngine     risk.RiskEngine
 	OrderStore     datastore.OrderStore
 	TradeStore     datastore.TradeStore
+	CandleStore	   datastore.CandleStore
 }
 
-func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.TradeStore) *Vega {
+func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.TradeStore, candleStore datastore.CandleStore) *Vega {
 
 	// Initialise matching engine
 	matchingEngine := matching.NewMatchingEngine(config.LogPriceLevels)
@@ -60,6 +61,7 @@ func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.
 		State:          NewState(),
 		OrderStore:     orderStore,
 		TradeStore:     tradeStore,
+		CandleStore:    candleStore,
 	}
 }
 

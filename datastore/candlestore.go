@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -8,23 +9,20 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
+	"vega/log"
+	"sync"
 )
 
 type candleStore struct {
-	market          string
 	persistentStore *badger.DB
-	tradesBuffer    []*msg.Trade
+
+	subscribers map[uint64] chan<- msg.Candle
+	newCandle *msg.Candle
+	subscriberId uint64
+	mu sync.Mutex
 }
 
-type CandleStore interface {
-	AddTrade(trade *msg.Trade)
-	Generate(currentTimeAccessor VegaTimeAccessor) error
-	GetCandles(market string, sinceTimestamp uint64, interval string) []*msg.Candle
-	Close()
-}
-
-func NewCandleStore(market string) candleStore {
-	dir := "./candleStore"
+func NewCandleStore(dir string) CandleStore {
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
@@ -32,20 +30,103 @@ func NewCandleStore(market string) candleStore {
 	if err != nil {
 		fmt.Printf(err.Error())
 	}
-	return candleStore{market, db, nil}
+	return &candleStore{persistentStore: db}
 }
 
-func (cp *candleStore) Close() {
-	defer cp.persistentStore.Close()
+func (c *candleStore) Subscribe(candleCh chan<- msg.Candle) uint64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.subscribers == nil {
+		log.Debugf("CandleStore -> Subscribe: Creating subscriber chan map")
+		c.subscribers = make(map[uint64] chan<- msg.Candle)
+	}
+
+	c.subscriberId = c.subscriberId+1
+	c.subscribers[c.subscriberId] = candleCh
+	log.Debugf("CandleStore -> Subscribe: Candle subscriber added: %d", c.subscriberId)
+	return c.subscriberId
 }
 
-func (cp *candleStore) AddTrade(trade *msg.Trade) {
-	cp.tradesBuffer = append(cp.tradesBuffer, trade)
+func (c *candleStore) Unsubscribe(id uint64) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.subscribers == nil || len(c.subscribers) == 0 {
+		log.Debugf("CandleStore -> Unsubscribe: No subscribers connected")
+		return nil
+	}
+
+	if _, exists := c.subscribers[id]; exists {
+		delete(c.subscribers, id)
+		log.Debugf("CandleStore -> Unsubscribe: Subscriber removed: %v", id)
+		return nil
+	}
+	return errors.New(fmt.Sprintf("CandleStore subscriber does not exist with id: %d", id))
 }
 
-func (cs *candleStore) GetCandles(market string, sinceTimestamp uint64, interval string) []*msg.Candle {
+func (c *candleStore) Notify() error {
+
+	if c.subscribers == nil || len(c.subscribers) == 0 {
+		log.Debugf("CandleStore -> Notify: No subscribers connected")
+		return nil
+	}
+
+	if c.newCandle == nil {
+		// Only publish when we have items
+		log.Debugf("CandleStore -> Notify: No new candle")
+		return nil
+	}
+
+	c.mu.Lock()
+	item := c.newCandle
+	c.newCandle = nil
+	c.mu.Unlock()
+
+	// iterate over items in buffer and push to observers
+	var ok bool
+	for id, sub := range c.subscribers {
+		select {
+		case sub <- *item:
+			ok = true
+			break
+		default:
+			ok = false
+		}
+		if ok{
+			log.Debugf("Candles state updated")
+		} else {
+			log.Infof("Candles state could not been updated for subscriber %d", id)
+		}
+	}
+	return nil
+}
+
+func (c *candleStore) queueEvent(candle msg.Candle) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.subscribers == nil || len(c.subscribers) == 0 {
+		log.Debugf("CandleStore -> queueEvent: No subscribers connected")
+		return nil
+	}
+
+	if c.newCandle == nil {
+		c.newCandle = &candle
+	}
+
+	log.Debugf("CandleStore -> queueEvent: Adding order to buffer: %+v", c)
+	//c.buffer = append(c.buffer, o)
+	return nil
+}
+
+func (c *candleStore) Close() {
+	defer c.persistentStore.Close()
+}
+
+func (c *candleStore) GetCandles(market string, sinceTimestamp uint64, interval string) []*msg.Candle {
 	fetchKey := generateFetchKey(market, sinceTimestamp, interval)
-	it :=  cs.persistentStore.NewTransaction(false).NewIterator(badger.DefaultIteratorOptions)
+	it :=  c.persistentStore.NewTransaction(false).NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 	prefix := []byte(fmt.Sprintf("M:%s_I:%s_T:", market, interval))
 
@@ -71,50 +152,13 @@ func (cs *candleStore) GetCandles(market string, sinceTimestamp uint64, interval
 	return candles
 }
 
-// this should act as a separate slow go routine triggered after block is committed
-func (cp *candleStore) Generate(currentTimeAccessor VegaTimeAccessor) error {
-
-	// in case there is no trading activity on this market, generate empty candles based on historical values
-	if len(cp.tradesBuffer) == 0 {
-		if err := cp.generateEmptyCandles(currentTimeAccessor); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	// generate/update  candles for each trade in the buffer
-	for idx := range cp.tradesBuffer {
-		if err := cp.generateCandles(cp.tradesBuffer[idx]); err != nil {
-			return err
-		}
-	}
-
-	// Flush the buffer
-	cp.tradesBuffer = nil
-
-	return nil
-}
-
-// THIS WILL BE REMOVED IT IS JUST MOCK FOR TESTING FOR NOW
-type VegaTimeAccessor interface {
-	AccessVegaTime() int64
-}
-
-type vegaTimeAccessor struct {
-	currentVegaTime int64
-}
-
-func (a vegaTimeAccessor) AccessVegaTime() int64 {
-	return a.currentVegaTime
-}
-
-func (cp *candleStore) generateCandles(trade *msg.Trade) error {
+func (c *candleStore) GenerateCandles(trade *msg.Trade) error {
 
 	//given trade generate appropriate timestamps and badger keys for each interval
-	candleTimestamps, badgerKeys := generateCandleParamsForTimestamp(cp.market, trade.Timestamp)
+	candleTimestamps, badgerKeys := generateCandleParamsForTimestamp(trade.Market, trade.Timestamp)
 
 	// for each trade generate candle keys and run update on each record
-	txn := cp.persistentStore.NewTransaction(true)
+	txn := c.persistentStore.NewTransaction(true)
 	for interval, badgerKey := range badgerKeys {
 
 		item, err := txn.Get(badgerKey)
@@ -168,15 +212,13 @@ func (cp *candleStore) generateCandles(trade *msg.Trade) error {
 }
 
 
-func (cp *candleStore) generateEmptyCandles(currentTimeAccessor VegaTimeAccessor) error {
-	// if key is empty we need to take vegatime and update candles if necessary FOR ALL MARKETS
-	currentVegaTime := currentTimeAccessor.AccessVegaTime()
+func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) error {
 
 	// generate keys for this timestamp
-	candleTimestamp, candleKeys := generateCandleParamsForTimestamp(cp.market, uint64(currentVegaTime))
+	candleTimestamp, candleKeys := generateCandleParamsForTimestamp(market, timestamp)
 
 	// if key does not exist seek most recent values, create empty candle with those close value and insert
-	txn := cp.persistentStore.NewTransaction(true)
+	txn := c.persistentStore.NewTransaction(true)
 
 	// for all candle intervals
 	for interval, key := range candleKeys {

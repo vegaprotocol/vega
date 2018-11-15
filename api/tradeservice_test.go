@@ -208,6 +208,7 @@ func TestTradeService_GetPositionsByParty(t *testing.T) {
 }
 
 func FlushOrderStore() {
+	fmt.Printf("Flushing order store\n")
 	err := os.RemoveAll(orderStoreDir)
 	if err != nil {
 		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
@@ -215,6 +216,7 @@ func FlushOrderStore() {
 }
 
 func FlushTradeStore() {
+	fmt.Printf("Flushing trade store\n")
 	err := os.RemoveAll(tradeStoreDir)
 	if err != nil {
 		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
@@ -241,7 +243,7 @@ func TestPositions(t *testing.T) {
 	defer tradeStore.Close()
 
 	config := core.GetConfig()
-	vega := core.New(config, orderStore, tradeStore)
+	vega := core.New(config, orderStore, tradeStore, nil)
 	vega.InitialiseMarkets()
 
 	tradeService.Init(vega, tradeStore)

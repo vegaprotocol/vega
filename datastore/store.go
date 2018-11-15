@@ -62,6 +62,20 @@ type OrderStore interface {
 	GetMarketDepth(market string) (*msg.MarketDepth, error)
 }
 
+type CandleStore interface {
+
+	Subscribe(candleCh chan<- msg.Candle) uint64
+	Unsubscribe(id uint64) error
+	Notify() error
+
+	Close()
+
+	GetCandles(market string, sinceTimestamp uint64, interval string) []*msg.Candle
+	GenerateCandles(trade *msg.Trade) error
+	GenerateEmptyCandles(market string, timestamp uint64) error
+}
+
+
 //type PartyStore interface {
 //	Post(party string) error
 //	Put(party string) error

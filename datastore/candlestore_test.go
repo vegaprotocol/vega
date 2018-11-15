@@ -9,18 +9,6 @@ import (
 	"time"
 )
 
-func TestCandleGenerator_AddTrade(t *testing.T) {
-	trade := &msg.Trade{Id: "1", Price: uint64(100), Size: uint64(100), Timestamp: uint64(1542106874000000000)}
-	testMarket := "testMarket"
-
-	candleStore := NewCandleStore(testMarket)
-	defer candleStore.Close()
-
-	candleStore.AddTrade(trade)
-
-	assert.Equal(t, 1, len(candleStore.tradesBuffer))
-}
-
 func flushCandleStore() {
 	err := os.RemoveAll("./candleStore")
 	if err != nil {
@@ -50,13 +38,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	}
 
 	for idx := range trades {
-		candleStore.AddTrade(trades[idx])
+		candleStore.GenerateCandles(trades[idx])
 	}
-
-	assert.Equal(t, 4, len(candleStore.tradesBuffer))
-
-	vegaTimeAccessor := vegaTimeAccessor{}
-	candleStore.Generate(vegaTimeAccessor)
 
 	// test for 1 minute intervals
 
@@ -103,8 +86,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 
 	//------------------- generate empty candles-------------------------//
 
-	vegaTimeAccessor.currentVegaTime = int64(t0) + int64(2 * time.Minute)
-	candleStore.Generate(vegaTimeAccessor)
+	currentVegaTime := uint64(t0) + uint64(2 * time.Minute)
+	candleStore.GenerateEmptyCandles(testMarket, currentVegaTime)
 	candles = candleStore.GetCandles(testMarket, t0, "1m")
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
@@ -159,8 +142,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 
 	assert.Equal(t, 0, len(candles))
 
-	vegaTimeAccessor.currentVegaTime = int64(t0) + int64(17 * time.Minute)
-	candleStore.Generate(vegaTimeAccessor)
+	currentVegaTime = uint64(t0) + uint64(17 * time.Minute)
+	candleStore.GenerateEmptyCandles(testMarket, currentVegaTime)
 
 	candles = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), "15m")
 	fmt.Printf("Candles fetched for t0 and 15m: %+v\n", candles)
