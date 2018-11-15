@@ -11,7 +11,7 @@ import (
 
 const tradeStoreDir = "../tmp/tradestore"
 
-func flushTradeStore() {
+func FlushTradeStore() {
 	err := os.RemoveAll(tradeStoreDir)
 	if err != nil {
 		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
@@ -19,8 +19,8 @@ func flushTradeStore() {
 }
 
 func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
-	flushTradeStore()
-	flushOrderStore()
+	FlushTradeStore()
+	FlushOrderStore()
 	var newOrderStore = NewOrderStore(orderStoreDir)
 	defer newOrderStore.Close()
 	var newTradeStore = NewTradeStore(tradeStoreDir)
@@ -58,8 +58,8 @@ func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
 }
 
 func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
-	flushTradeStore()
-	flushOrderStore()
+	FlushTradeStore()
+	FlushOrderStore()
 	var newOrderStore = NewOrderStore(orderStoreDir)
 	defer newOrderStore.Close()
 	var newTradeStore = NewTradeStore(tradeStoreDir)

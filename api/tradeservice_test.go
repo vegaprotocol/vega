@@ -11,6 +11,7 @@ import (
 	"vega/log"
 	"vega/msg"
 	"github.com/stretchr/testify/assert"
+	"os"
 )
 
 // this runs just once as first
@@ -206,6 +207,21 @@ func TestTradeService_GetPositionsByParty(t *testing.T) {
 
 }
 
+func FlushOrderStore() {
+	err := os.RemoveAll(orderStoreDir)
+	if err != nil {
+		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
+	}
+}
+
+func FlushTradeStore() {
+	err := os.RemoveAll(tradeStoreDir)
+	if err != nil {
+		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
+	}
+}
+
+
 func TestPositions(t *testing.T) {
 	testMarket := "BTC/DEC18"
 	testPartyA := "testPartyA"
@@ -217,6 +233,8 @@ func TestPositions(t *testing.T) {
 	//storage := &datastore.MemoryStoreProvider{}
 	//storage.Init([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 
+	FlushOrderStore()
+	FlushTradeStore()
 	orderStore := datastore.NewOrderStore(orderStoreDir)
 	tradeStore := datastore.NewTradeStore(tradeStoreDir)
 	defer orderStore.Close()
