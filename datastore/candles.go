@@ -24,7 +24,7 @@ type CandleStore interface {
 }
 
 func NewCandleStore(market string) candleStore {
-	dir := "./candleStore"
+	dir := "../tmp/candlestore"
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
