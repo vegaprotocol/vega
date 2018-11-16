@@ -72,13 +72,27 @@ func (_m *CandleStore) Notify() error {
 	return r0
 }
 
-// Subscribe provides a mock function with given fields: candleCh
-func (_m *CandleStore) Subscribe(candleCh chan<- msg.Candle) uint64 {
-	ret := _m.Called(candleCh)
+// QueueEvent provides a mock function with given fields: candle, interval
+func (_m *CandleStore) QueueEvent(candle msg.Candle, interval string) error {
+	ret := _m.Called(candle, interval)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(msg.Candle, string) error); ok {
+		r0 = rf(candle, interval)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Subscribe provides a mock function with given fields: internalTransport
+func (_m *CandleStore) Subscribe(internalTransport map[string]chan msg.Candle) uint64 {
+	ret := _m.Called(internalTransport)
 
 	var r0 uint64
-	if rf, ok := ret.Get(0).(func(chan<- msg.Candle) uint64); ok {
-		r0 = rf(candleCh)
+	if rf, ok := ret.Get(0).(func(map[string]chan msg.Candle) uint64); ok {
+		r0 = rf(internalTransport)
 	} else {
 		r0 = ret.Get(0).(uint64)
 	}
