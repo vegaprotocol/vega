@@ -16,8 +16,8 @@ import (
 type candleStore struct {
 	persistentStore *badger.DB
 
-	subscribers map[uint64] chan<- msg.Candle
-	newCandle *msg.Candle
+	subscribers map[uint64] map[string]chan msg.Candle
+	buffer map[string]msg.Candle
 	subscriberId uint64
 	mu sync.Mutex
 }
@@ -30,20 +30,20 @@ func NewCandleStore(dir string) CandleStore {
 	if err != nil {
 		fmt.Printf(err.Error())
 	}
-	return &candleStore{persistentStore: db}
+	return &candleStore{persistentStore: db, buffer: make(map[string]msg.Candle)}
 }
 
-func (c *candleStore) Subscribe(candleCh chan<- msg.Candle) uint64 {
+func (c *candleStore) Subscribe(internalTransport map[string]chan msg.Candle) uint64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if c.subscribers == nil {
 		log.Debugf("CandleStore -> Subscribe: Creating subscriber chan map")
-		c.subscribers = make(map[uint64] chan<- msg.Candle)
+		c.subscribers = make(map[uint64] map[string]chan msg.Candle)
 	}
 
 	c.subscriberId = c.subscriberId+1
-	c.subscribers[c.subscriberId] = candleCh
+	c.subscribers[c.subscriberId] = internalTransport
 	log.Debugf("CandleStore -> Subscribe: Candle subscriber added: %d", c.subscriberId)
 	return c.subscriberId
 }
@@ -72,37 +72,32 @@ func (c *candleStore) Notify() error {
 		return nil
 	}
 
-	if c.newCandle == nil {
+	if c.buffer == nil {
 		// Only publish when we have items
 		log.Debugf("CandleStore -> Notify: No new candle")
 		return nil
 	}
 
 	c.mu.Lock()
-	item := c.newCandle
-	c.newCandle = nil
+	intervalsToCandlesMap := c.buffer
 	c.mu.Unlock()
 
-	// iterate over items in buffer and push to observers
-	var ok bool
-	for id, sub := range c.subscribers {
-		select {
-		case sub <- *item:
-			ok = true
-			break
-		default:
-			ok = false
-		}
-		if ok{
-			log.Debugf("Candles state updated")
-		} else {
-			log.Infof("Candles state could not been updated for subscriber %d", id)
+	// update candle for each interval for each subscriber
+	for id, internalTransport := range c.subscribers {
+		for interval, candleForUpdate := range intervalsToCandlesMap {
+			select {
+			case internalTransport[interval] <- candleForUpdate:
+				log.Debugf("Candle updated for interval: ", interval)
+				break
+			default:
+				log.Infof("Candles state could not been updated for subscriber %d", id)
+			}
 		}
 	}
 	return nil
 }
 
-func (c *candleStore) queueEvent(candle msg.Candle) error {
+func (c *candleStore) QueueEvent(candle msg.Candle, interval string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -111,12 +106,9 @@ func (c *candleStore) queueEvent(candle msg.Candle) error {
 		return nil
 	}
 
-	if c.newCandle == nil {
-		c.newCandle = &candle
-	}
+	c.buffer[interval] = candle
 
-	log.Debugf("CandleStore -> queueEvent: Adding order to buffer: %+v", c)
-	//c.buffer = append(c.buffer, o)
+	log.Debugf("CandleStore -> queueEvent: Adding candle to buffer of intervals at: %s", interval)
 	return nil
 }
 
