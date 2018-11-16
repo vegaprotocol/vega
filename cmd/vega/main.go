@@ -45,11 +45,13 @@ func main() {
 
 	orderStoreDataDir := "tmp/orderstore"
 	tradeStoreDataDir := "tmp/tradestore"
+	candleStoreDataDir := "tmp/candlestore"
 	orderStore := datastore.NewOrderStore(orderStoreDataDir)
 	tradeStore := datastore.NewTradeStore(tradeStoreDataDir)
+	candleStore := datastore.NewCandleStore(candleStoreDataDir)
 
 	// VEGA core
-	vega := core.New(config, orderStore, tradeStore)
+	vega := core.New(config, orderStore, tradeStore, candleStore)
 	vega.InitialiseMarkets()
 
 	// Initialise concrete consumer services

@@ -121,23 +121,23 @@ func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRe
 		return nil, errors.New("Since date is missing")
 	}
 
-	since, err := time.Parse(time.RFC3339, request.Since)
-	if err != nil {
-		return nil, err
-	}
+	//since, err := time.Parse(time.RFC3339, request.Since)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	interval := request.Interval
 	if interval < 2 {
 		interval = 2
 	}
-	res, err := h.TradeService.GetCandles(ctx, market, since, interval)
-	if err != nil {
-		return nil, err
-	}
+	//res, err := h.TradeService.GetCandles(ctx, market, since, interval)
+	//if err != nil {
+	//	return nil, err
+	//}
 	var response = &api.TradeCandlesResponse{}
-	if len(res.Candles) > 0 {
-		response.Candles = res.Candles
-	}
+	//if len(res.Candles) > 0 {
+	//	response.Candles = res.Candles
+	//}
 	return response, nil
 }
 

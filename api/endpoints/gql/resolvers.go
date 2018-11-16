@@ -196,15 +196,15 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 		return nil, errors.New("last must be equal to or greater than 1")
 	}
 
-	res, err := r.tradeService.GetLastCandles(ctx, market.Name, uint64(last), uint64(interval))
-	if err != nil {
-		return nil, err
-	}
+	//res, err := r.tradeService.GetLastCandles(ctx, market.Name, uint64(last), uint64(interval))
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	valCandles := make([]msg.Candle, 0)
-	for _, v := range res.Candles {
-		valCandles = append(valCandles, *v)
-	}
+	//for _, v := range res.Candles {
+	//	valCandles = append(valCandles, *v)
+	//}
 
 	return valCandles, nil
 }
@@ -369,10 +369,10 @@ func (r *MyCandleResolver) Volume(ctx context.Context, obj *msg.Candle) (string,
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 func (r *MyCandleResolver) OpenBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
-	return strconv.FormatUint(obj.OpenBlockNumber, 10), nil
+	return "0", nil //strconv.FormatUint(obj.OpenBlockNumber, 10), nil
 }
 func (r *MyCandleResolver) CloseBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
-	return strconv.FormatUint(obj.CloseBlockNumber, 10), nil
+	return "0", nil //strconv.FormatUint(obj.CloseBlockNumber, 10), nil
 }
 
 // END: Candle Resolver
@@ -615,37 +615,37 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 		log.Debugf("Candles subscriber closed connection: %s", ref)
 	}(id)
 
-	go func(events chan msg.Candle) {
-		var pos uint64 = 0
-		blockNow := r.tradeService.GetCurrentTimestamp(ctx)
-		candleTime := ""
-		for {
-			candle, blocktime, err := r.tradeService.GetCandleSinceBlock(ctx, market, blockNow)
-			if err != nil {
-				log.Errorf("candle calculating latest candle for subscriber: %v", err)
-			}
-			if pos == 0 {
-				candleDuration := time.Duration(int(interval)) * time.Second
-				candleTime = blocktime.Add(candleDuration).Format(time.RFC3339)
-			}
-			candle.Date = candleTime
-			pos++
-			if pos == uint64(interval) {
-				blockNow = r.tradeService.GetLatestBlock()
-				pos = 0
-			}
-			if candle != nil {
-				events <- *candle
-			} else {
-				log.Errorf("candle was nil for market %s and interval %d", market, interval)
-			}
-			if connected {
-				time.Sleep(1 * time.Second)
-			} else {
-				return
-			}
-		}
-	}(events)
+	//go func(events chan msg.Candle) {
+	//	var pos uint64 = 0
+	//	blockNow := r.tradeService.GetCurrentTimestamp(ctx)
+	//	candleTime := ""
+	//	for {
+	//		candle, blocktime, err := r.tradeService.GetCandleSinceBlock(ctx, market, blockNow)
+	//		if err != nil {
+	//			log.Errorf("candle calculating latest candle for subscriber: %v", err)
+	//		}
+	//		if pos == 0 {
+	//			candleDuration := time.Duration(int(interval)) * time.Second
+	//			candleTime = blocktime.Add(candleDuration).Format(time.RFC3339)
+	//		}
+	//		candle.Date = candleTime
+	//		pos++
+	//		if pos == uint64(interval) {
+	//			blockNow = r.tradeService.GetLatestBlock()
+	//			pos = 0
+	//		}
+	//		if candle != nil {
+	//			events <- *candle
+	//		} else {
+	//			log.Errorf("candle was nil for market %s and interval %d", market, interval)
+	//		}
+	//		if connected {
+	//			time.Sleep(1 * time.Second)
+	//		} else {
+	//			return
+	//		}
+	//	}
+	//}(events)
 
 	return events, nil
 }

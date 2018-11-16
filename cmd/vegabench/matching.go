@@ -27,7 +27,7 @@ func BenchmarkMatching(
 
 	config := core.GetConfig()
 
-	vega := core.New(config, &mocks.OrderStore{}, &mocks.TradeStore{})
+	vega := core.New(config, &mocks.OrderStore{}, &mocks.TradeStore{}, &mocks.CandleStore{})
 	vega.InitialiseMarkets()
 
 	timestamp := uint64(0)

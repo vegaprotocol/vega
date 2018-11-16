@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-const tradeStoreDir = "../tmp/tradestore"
+const tradeStoreDir = "../tmp/tradestore-test"
 
 func FlushTradeStore() {
 	err := os.RemoveAll(tradeStoreDir)

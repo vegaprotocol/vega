@@ -523,7 +523,7 @@ func (ec *executionContext) _Candle_date(ctx context.Context, field graphql.Coll
 	rctx.Field = field
 	rctx.PushField(field.Alias)
 	defer rctx.Pop()
-	res := obj.Date
+	res := ""
 	return graphql.MarshalString(res)
 }
 
