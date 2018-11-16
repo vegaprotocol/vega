@@ -25,13 +25,13 @@ func NewExecutableSchema(resolvers ResolverRoot) graphql.ExecutableSchema {
 }
 
 type Resolvers interface {
+	Candle_timestamp(ctx context.Context, obj *msg.Candle) (string, error)
+	Candle_datetime(ctx context.Context, obj *msg.Candle) (string, error)
 	Candle_high(ctx context.Context, obj *msg.Candle) (string, error)
 	Candle_low(ctx context.Context, obj *msg.Candle) (string, error)
 	Candle_open(ctx context.Context, obj *msg.Candle) (string, error)
 	Candle_close(ctx context.Context, obj *msg.Candle) (string, error)
 	Candle_volume(ctx context.Context, obj *msg.Candle) (string, error)
-	Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
-	Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 
 	Market_orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
 	Market_trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
@@ -105,13 +105,13 @@ type ResolverRoot interface {
 	Vega() VegaResolver
 }
 type CandleResolver interface {
+	Timestamp(ctx context.Context, obj *msg.Candle) (string, error)
+	Datetime(ctx context.Context, obj *msg.Candle) (string, error)
 	High(ctx context.Context, obj *msg.Candle) (string, error)
 	Low(ctx context.Context, obj *msg.Candle) (string, error)
 	Open(ctx context.Context, obj *msg.Candle) (string, error)
 	Close(ctx context.Context, obj *msg.Candle) (string, error)
 	Volume(ctx context.Context, obj *msg.Candle) (string, error)
-	OpenBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
-	CloseBlockNumber(ctx context.Context, obj *msg.Candle) (string, error)
 }
 type MarketResolver interface {
 	Orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
@@ -189,6 +189,14 @@ type shortMapper struct {
 	r ResolverRoot
 }
 
+func (s shortMapper) Candle_timestamp(ctx context.Context, obj *msg.Candle) (string, error) {
+	return s.r.Candle().Timestamp(ctx, obj)
+}
+
+func (s shortMapper) Candle_datetime(ctx context.Context, obj *msg.Candle) (string, error) {
+	return s.r.Candle().Datetime(ctx, obj)
+}
+
 func (s shortMapper) Candle_high(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().High(ctx, obj)
 }
@@ -207,14 +215,6 @@ func (s shortMapper) Candle_close(ctx context.Context, obj *msg.Candle) (string,
 
 func (s shortMapper) Candle_volume(ctx context.Context, obj *msg.Candle) (string, error) {
 	return s.r.Candle().Volume(ctx, obj)
-}
-
-func (s shortMapper) Candle_openBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
-	return s.r.Candle().OpenBlockNumber(ctx, obj)
-}
-
-func (s shortMapper) Candle_closeBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
-	return s.r.Candle().CloseBlockNumber(ctx, obj)
 }
 
 func (s shortMapper) Market_orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error) {
@@ -492,8 +492,10 @@ func (ec *executionContext) _Candle(ctx context.Context, sel []query.Selection, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Candle")
-		case "date":
-			out.Values[i] = ec._Candle_date(ctx, field, obj)
+		case "timestamp":
+			out.Values[i] = ec._Candle_timestamp(ctx, field, obj)
+		case "datetime":
+			out.Values[i] = ec._Candle_datetime(ctx, field, obj)
 		case "high":
 			out.Values[i] = ec._Candle_high(ctx, field, obj)
 		case "low":
@@ -504,10 +506,8 @@ func (ec *executionContext) _Candle(ctx context.Context, sel []query.Selection, 
 			out.Values[i] = ec._Candle_close(ctx, field, obj)
 		case "volume":
 			out.Values[i] = ec._Candle_volume(ctx, field, obj)
-		case "openBlockNumber":
-			out.Values[i] = ec._Candle_openBlockNumber(ctx, field, obj)
-		case "closeBlockNumber":
-			out.Values[i] = ec._Candle_closeBlockNumber(ctx, field, obj)
+		case "interval":
+			out.Values[i] = ec._Candle_interval(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -516,15 +516,64 @@ func (ec *executionContext) _Candle(ctx context.Context, sel []query.Selection, 
 	return out
 }
 
-func (ec *executionContext) _Candle_date(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Candle"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	res := ""
-	return graphql.MarshalString(res)
+func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_timestamp(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
+}
+
+func (ec *executionContext) _Candle_datetime(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Candle",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Candle_datetime(ctx, obj)
+		})
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
 }
 
 func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
@@ -677,64 +726,15 @@ func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.Co
 	})
 }
 
-func (ec *executionContext) _Candle_openBlockNumber(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
-	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Object: "Candle",
-		Args:   nil,
-		Field:  field,
-	})
-	return graphql.Defer(func() (ret graphql.Marshaler) {
-		defer func() {
-			if r := recover(); r != nil {
-				userErr := ec.Recover(ctx, r)
-				ec.Error(ctx, userErr)
-				ret = graphql.Null
-			}
-		}()
-
-		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Candle_openBlockNumber(ctx, obj)
-		})
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-		if resTmp == nil {
-			return graphql.Null
-		}
-		res := resTmp.(string)
-		return graphql.MarshalString(res)
-	})
-}
-
-func (ec *executionContext) _Candle_closeBlockNumber(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
-	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Object: "Candle",
-		Args:   nil,
-		Field:  field,
-	})
-	return graphql.Defer(func() (ret graphql.Marshaler) {
-		defer func() {
-			if r := recover(); r != nil {
-				userErr := ec.Recover(ctx, r)
-				ec.Error(ctx, userErr)
-				ret = graphql.Null
-			}
-		}()
-
-		resTmp, err := ec.ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Candle_closeBlockNumber(ctx, obj)
-		})
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-		if resTmp == nil {
-			return graphql.Null
-		}
-		res := resTmp.(string)
-		return graphql.MarshalString(res)
-	})
+func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Candle"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	res := obj.Interval
+	return graphql.MarshalString(res)
 }
 
 var marketImplementors = []string{"Market"}
@@ -4623,9 +4623,12 @@ type PriceLevel {
 
 # Candle stick representation of trading
 type Candle {
+    
+    # Unix epoch+nanoseconds for when the candle ocurred
+    timestamp: String!
 
-    # The date and time for the candlestick
-    date: DateTime!
+    # ISO-8601 RFC3339+Nano formatted data and time for the candle
+    datetime: String!
 
     # High price (uint64)
     high: String!
@@ -4642,11 +4645,8 @@ type Candle {
     # Volume price (uint64)
     volume: String!
 
-    # The block number of the opening trade (uint64)
-    openBlockNumber: String!
-
-    # The block number of the closing trade (uint64)
-    closeBlockNumber: String!
+    # Interval price (string)
+    interval: String!
 }
 
 # Represents a party on Vega, could be an ethereum wallet address in the future

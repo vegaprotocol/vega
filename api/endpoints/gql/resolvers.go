@@ -364,6 +364,12 @@ func (r *MyCandleResolver) Close(ctx context.Context, obj *msg.Candle) (string, 
 func (r *MyCandleResolver) Volume(ctx context.Context, obj *msg.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
+func (r *MyCandleResolver) Datetime(ctx context.Context, obj *msg.Candle) (string, error) {
+	return vegatime.Stamp(obj.Timestamp).Rfc3339Nano(), nil
+}
+func (r *MyCandleResolver) Timestamp(ctx context.Context, obj *msg.Candle) (string, error) {
+	return strconv.FormatUint(obj.Timestamp, 10), nil
+}
 // END: Candle Resolver
 
 // BEGIN: Price Level Resolver

@@ -113,9 +113,12 @@ type PriceLevel {
 
 # Candle stick representation of trading
 type Candle {
+    
+    # Unix epoch+nanoseconds for when the candle ocurred
+    timestamp: String!
 
-    # The date and time for the candlestick
-    date: DateTime!
+    # ISO-8601 RFC3339+Nano formatted data and time for the candle
+    datetime: String!
 
     # High price (uint64)
     high: String!
