@@ -198,9 +198,6 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	for _, v := range candles {
 		valCandles = append(valCandles, *v)
 	}
-	//for _, v := range res.Candles {
-	//	valCandles = append(valCandles, *v)
-	//}
 
 	return valCandles, nil
 }
