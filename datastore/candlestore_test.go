@@ -215,12 +215,12 @@ func TestCandleStore_QueueNotify(t *testing.T) {
 	timestamp, _ := time.Parse(time.RFC3339, "2018-11-13T11:01:14Z")
 	t0 := timestamp.UnixNano()
 
-	candle1m := NewCandle(uint64(t0), 100, 100)
-	candle5m := NewCandle(uint64(t0), 100, 100)
-	candle15m := NewCandle(uint64(t0), 100, 100)
-	candle1h := NewCandle(uint64(t0), 100, 100)
-	candle6h := NewCandle(uint64(t0), 100, 100)
-	candle1d := NewCandle(uint64(t0), 100, 100)
+	candle1m := NewCandle(uint64(t0), 100, 100, "1m")
+	candle5m := NewCandle(uint64(t0), 100, 100, "5m")
+	candle15m := NewCandle(uint64(t0), 100, 100, "15m")
+	candle1h := NewCandle(uint64(t0), 100, 100, "1h")
+	candle6h := NewCandle(uint64(t0), 100, 100, "6h")
+	candle1d := NewCandle(uint64(t0), 100, 100, "1d")
 
 	candleStore.QueueEvent(*candle1m, "1m")
 	candleStore.QueueEvent(*candle5m, "5m")
@@ -229,15 +229,40 @@ func TestCandleStore_QueueNotify(t *testing.T) {
 	candleStore.QueueEvent(*candle6h, "6h")
 	candleStore.QueueEvent(*candle1d, "1d")
 
-	assert.Nil(t, internalTransport["1m"])
-	assert.Nil(t, internalTransport["5m"])
-	assert.Nil(t, internalTransport["15m"])
-	assert.Nil(t, internalTransport["1d"])
-	assert.Nil(t, internalTransport["6h"])
-	assert.Nil(t, internalTransport["1d"])
+	assert.Equal(t, true, isTransportEmpty(internalTransport["1m"]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport["5m"]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport["15m"]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport["1h"]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport["6h"]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport["1d"]))
 
 	candleStore.Notify()
 
-	//assert.Equal(t, internalTransport["1m"])
+	candle := <- internalTransport["1m"]
+	assert.Equal(t, candle.Interval, "1m")
 
+	candle = <- internalTransport["5m"]
+	assert.Equal(t, candle.Interval, "5m")
+
+	candle = <- internalTransport["15m"]
+	assert.Equal(t, candle.Interval, "15m")
+
+	candle = <- internalTransport["1h"]
+	assert.Equal(t, candle.Interval, "1h")
+
+	candle = <- internalTransport["6h"]
+	assert.Equal(t, candle.Interval, "6h")
+
+	candle = <- internalTransport["1d"]
+	assert.Equal(t, candle.Interval, "1d")
+
+}
+
+func isTransportEmpty(transport chan msg.Candle) bool {
+	select {
+	case  <- transport:
+		return false
+	default:
+		return true
+	}
 }

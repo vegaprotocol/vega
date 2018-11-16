@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 	"vega/log"
-	"github.com/satori/go.uuid"
 	"fmt"
 	"vega/filters"
 )
@@ -16,7 +15,7 @@ import (
 type resolverRoot struct {
 	orderService api.OrderService
 	tradeService api.TradeService
-
+	candleService api.CandleService
 }
 
 func NewResolverRoot(orderService api.OrderService, tradeService api.TradeService) *resolverRoot {
@@ -187,21 +186,15 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (msg.Marke
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	last int, interval int) ([]msg.Candle, error) {
 
-	// Validate params
-	if interval < 2 {
-		return nil, errors.New("interval must be equal to or greater than 2")
-	}
-	if last < 1 {
-		return nil, errors.New("last must be equal to or greater than 1")
-	}
-
-	res, err := r.tradeService.GetLastCandles(ctx, market.Name, uint64(last), uint64(interval))
+	defaultInterval := "1m"
+	defaultTime := time.Now()
+	candles, err := r.candleService.GetCandles(ctx, market.Name, defaultTime, defaultInterval)
 	if err != nil {
 		return nil, err
 	}
 
 	valCandles := make([]msg.Candle, 0)
-	for _, v := range res.Candles {
+	for _, v := range candles {
 		valCandles = append(valCandles, *v)
 	}
 
@@ -359,13 +352,6 @@ func (r *MyCandleResolver) Close(ctx context.Context, obj *msg.Candle) (string, 
 func (r *MyCandleResolver) Volume(ctx context.Context, obj *msg.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
-func (r *MyCandleResolver) OpenBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
-	return strconv.FormatUint(obj.OpenBlockNumber, 10), nil
-}
-func (r *MyCandleResolver) CloseBlockNumber(ctx context.Context, obj *msg.Candle) (string, error) {
-	return strconv.FormatUint(obj.CloseBlockNumber, 10), nil
-}
-
 // END: Candle Resolver
 
 // BEGIN: Price Level Resolver
@@ -571,59 +557,18 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 }
 
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error) {
-	events := make(chan msg.Candle, 0)
-	connected := true
-
-	if interval < 2 {
-		return nil, errors.New("interval must be equal to or greater than 2")
-	}
+	// Validate market
 	err := r.validateMarket(ctx, &market)
 	if err != nil {
 		return nil, err
 	}
 
-	id := uuid.NewV4().String()
-	log.Debugf("Candles subscriber connected: %s", id)
+	// Validate interval
+	defaultInterval := "1m"
 
-	go func(ref string) {
-		<-ctx.Done()
-		connected = false
-		log.Debugf("Candles subscriber closed connection: %s", ref)
-	}(id)
-
-	go func(events chan msg.Candle) {
-		var pos uint64 = 0
-		blockNow := r.tradeService.GetLatestBlock()
-		candleTime := ""
-		for {
-			candle, blocktime, err := r.tradeService.GetCandleSinceBlock(ctx, market, blockNow)
-			if err != nil {
-				log.Errorf("candle calculating latest candle for subscriber: %v", err)
-			}
-			if pos == 0 {
-				candleDuration := time.Duration(int(interval)) * time.Second
-				candleTime = blocktime.Add(candleDuration).Format(time.RFC3339)
-			}
-			candle.Date = candleTime
-			pos++
-			if pos == uint64(interval) {
-				blockNow = r.tradeService.GetLatestBlock()
-				pos = 0
-			}
-			if candle != nil {
-				events <- *candle
-			} else {
-				log.Errorf("candle was nil for market %s and interval %d", market, interval)
-			}
-			if connected {
-				time.Sleep(1 * time.Second)
-			} else {
-				return
-			}
-		}
-	}(events)
-
-	return events, nil
+	c, ref := r.candleService.ObserveCandles(ctx, &market, &defaultInterval)
+	log.Debugf("GraphQL Candle Interval %s -> New subscriber: %d", defaultInterval, ref)
+	return c, nil
 }
 
 func (r *MySubscriptionResolver) validateMarket(ctx context.Context, market *string) error {

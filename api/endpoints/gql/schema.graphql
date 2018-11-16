@@ -132,11 +132,8 @@ type Candle {
     # Volume price (uint64)
     volume: String!
 
-    # The block number of the opening trade (uint64)
-    openBlockNumber: String!
-
-    # The block number of the closing trade (uint64)
-    closeBlockNumber: String!
+    # Interval price (string)
+    interval: String!
 }
 
 # Represents a party on Vega, could be an ethereum wallet address in the future

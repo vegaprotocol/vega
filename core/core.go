@@ -143,11 +143,11 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%d", order.Id, idx)
 			if order.Side == msg.Side_Buy {
-				trade.BuyerOrderId = order.Id
-				trade.SellerOrderId = confirmation.PassiveOrdersAffected[idx].Id
+				trade.BuyOrder = order.Id
+				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
 			} else {
-				trade.SellerOrderId = order.Id
-				trade.BuyerOrderId = confirmation.PassiveOrdersAffected[idx].Id
+				trade.SellOrder = order.Id
+				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
 			if err := v.TradeStore.Post(trade); err != nil {

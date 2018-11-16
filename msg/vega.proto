@@ -82,6 +82,7 @@ message Candle {
     uint64 open = 4;
     uint64 close = 5;
     uint64 volume = 6;
+    string interval = 7;
 }
 
 message Candles {

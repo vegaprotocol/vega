@@ -6,12 +6,12 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"os"
 	"vega/core"
 	"vega/datastore"
 	"vega/log"
 	"vega/msg"
-	"github.com/stretchr/testify/assert"
-	"os"
 )
 
 // this runs just once as first
@@ -21,7 +21,6 @@ func init() {
 
 const tradeStoreDir = "../tmp/tradestore-api"
 const orderStoreDir = "../tmp/orderstore-api"
-
 
 //func TestNewTradeService(t *testing.T) {
 //	var newTradeService = NewTradeService()
@@ -202,7 +201,6 @@ const orderStoreDir = "../tmp/orderstore-api"
 //	assert.Equal(t, "2018-07-09T12:05:00Z", candles.Candles[4].Date)
 //}
 
-
 func TestTradeService_GetPositionsByParty(t *testing.T) {
 
 }
@@ -222,7 +220,6 @@ func FlushTradeStore() {
 		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
 	}
 }
-
 
 func TestPositions(t *testing.T) {
 	testMarket := "BTC/DEC18"
@@ -253,29 +250,29 @@ func TestPositions(t *testing.T) {
 	tradeId := fmt.Sprintf("%d", rand.Intn(1000000000000))
 
 	aggressiveOrder := &msg.Order{
-			Id:     aggressiveOrderId,
-			Market: testMarket,
-			Party:  testPartyA,
-			Side:   msg.Side_Buy,
+		Id:     aggressiveOrderId,
+		Market: testMarket,
+		Party:  testPartyA,
+		Side:   msg.Side_Buy,
 	}
 	passiveOrder := &msg.Order{
-			Id:     passiveOrderId,
-			Market: testMarket,
-			Party:  testPartyB,
-			Side:   msg.Side_Sell,
+		Id:     passiveOrderId,
+		Market: testMarket,
+		Party:  testPartyB,
+		Side:   msg.Side_Sell,
 	}
 
 	trade := &msg.Trade{
-			Id:        tradeId,
-			Price:     100,
-			Market:    testMarket,
-			Size:      500,
-			Timestamp: 0,
-			Buyer:     testPartyA,
-			Seller:    testPartyB,
-			Aggressor: msg.Side_Buy,
-			BuyerOrderId: aggressiveOrderId,
-			SellerOrderId: passiveOrderId,
+		Id:        tradeId,
+		Price:     100,
+		Market:    testMarket,
+		Size:      500,
+		Timestamp: 0,
+		Buyer:     testPartyA,
+		Seller:    testPartyB,
+		Aggressor: msg.Side_Buy,
+		BuyOrder:  aggressiveOrderId,
+		SellOrder: passiveOrderId,
 	}
 
 	err := vega.OrderStore.Post(passiveOrder)
@@ -290,30 +287,30 @@ func TestPositions(t *testing.T) {
 	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 
 	aggressiveOrder = &msg.Order{
-			Id:     aggressiveOrderId,
-			Market: testMarket,
-			Party:  testPartyA,
-			Side:   msg.Side_Buy,
+		Id:     aggressiveOrderId,
+		Market: testMarket,
+		Party:  testPartyA,
+		Side:   msg.Side_Buy,
 	}
 
 	passiveOrder = &msg.Order{
-			Id:     passiveOrderId,
-			Market: testMarket,
-			Party:  testPartyB,
-			Side:   msg.Side_Sell,
+		Id:     passiveOrderId,
+		Market: testMarket,
+		Party:  testPartyB,
+		Side:   msg.Side_Sell,
 	}
 
 	trade = &msg.Trade{
-			Id:        tradeId,
-			Price:     100,
-			Market:    testMarket,
-			Size:      500,
-			Timestamp: 0,
-			Buyer:     testPartyA,
-			Seller:    testPartyB,
-			Aggressor: msg.Side_Buy,
-			BuyerOrderId: aggressiveOrderId,
-			SellerOrderId: passiveOrderId,
+		Id:        tradeId,
+		Price:     100,
+		Market:    testMarket,
+		Size:      500,
+		Timestamp: 0,
+		Buyer:     testPartyA,
+		Seller:    testPartyB,
+		Aggressor: msg.Side_Buy,
+		BuyOrder:  aggressiveOrderId,
+		SellOrder: passiveOrderId,
 	}
 
 	err = vega.OrderStore.Post(passiveOrder)
@@ -358,29 +355,29 @@ func TestPositions(t *testing.T) {
 	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	aggressiveOrder = &msg.Order{
-			Id:     aggressiveOrderId,
-			Market: testMarket,
-			Party:  "partyC",
-			Side:   msg.Side_Buy,
+		Id:     aggressiveOrderId,
+		Market: testMarket,
+		Party:  "partyC",
+		Side:   msg.Side_Buy,
 	}
 	passiveOrder = &msg.Order{
-			Id:     passiveOrderId,
-			Market: testMarket,
-			Party:  "partyD",
-			Side:   msg.Side_Sell,
+		Id:     passiveOrderId,
+		Market: testMarket,
+		Party:  "partyD",
+		Side:   msg.Side_Sell,
 	}
 
 	trade = &msg.Trade{
-			Id:        tradeId,
-			Price:     110,
-			Market:    testMarket,
-			Size:      1,
-			Timestamp: 0,
-			Buyer:     "partyC",
-			Seller:    "partyD",
-			Aggressor: msg.Side_Buy,
-			BuyerOrderId: aggressiveOrderId,
-			SellerOrderId: passiveOrderId,
+		Id:        tradeId,
+		Price:     110,
+		Market:    testMarket,
+		Size:      1,
+		Timestamp: 0,
+		Buyer:     "partyC",
+		Seller:    "partyD",
+		Aggressor: msg.Side_Buy,
+		BuyOrder:  aggressiveOrderId,
+		SellOrder: passiveOrderId,
 	}
 
 	err = vega.OrderStore.Post(passiveOrder)
@@ -425,36 +422,35 @@ func TestPositions(t *testing.T) {
 		assert.Equal(t, int64(10608), val.MinimumMargin)
 	}
 
-
 	// close 90% of position at 110
 	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	aggressiveOrder = &msg.Order{
-			Id:     aggressiveOrderId,
-			Market: testMarket,
-			Party:  testPartyA,
-			Side:   msg.Side_Sell,
+		Id:     aggressiveOrderId,
+		Market: testMarket,
+		Party:  testPartyA,
+		Side:   msg.Side_Sell,
 	}
 
 	passiveOrder = &msg.Order{
-			Id:     passiveOrderId,
-			Market: testMarket,
-			Party:  testPartyB,
-			Side:   msg.Side_Buy,
+		Id:     passiveOrderId,
+		Market: testMarket,
+		Party:  testPartyB,
+		Side:   msg.Side_Buy,
 	}
 
 	trade = &msg.Trade{
-			Id:        tradeId,
-			Price:     110,
-			Market:    testMarket,
-			Size:      900,
-			Timestamp: 0,
-			Buyer:     testPartyB,
-			Seller:    testPartyA,
-			Aggressor: msg.Side_Sell,
-			BuyerOrderId: passiveOrderId,
-			SellerOrderId: aggressiveOrderId,
+		Id:        tradeId,
+		Price:     110,
+		Market:    testMarket,
+		Size:      900,
+		Timestamp: 0,
+		Buyer:     testPartyB,
+		Seller:    testPartyA,
+		Aggressor: msg.Side_Sell,
+		BuyOrder:  passiveOrderId,
+		SellOrder: aggressiveOrderId,
 	}
 
 	err = vega.OrderStore.Post(passiveOrder)
@@ -499,29 +495,29 @@ func TestPositions(t *testing.T) {
 	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	aggressiveOrder = &msg.Order{
-			Id:     aggressiveOrderId,
-			Market: testMarket,
-			Party:  testPartyA,
-			Side:   msg.Side_Sell,
+		Id:     aggressiveOrderId,
+		Market: testMarket,
+		Party:  testPartyA,
+		Side:   msg.Side_Sell,
 	}
 	passiveOrder = &msg.Order{
-			Id:     passiveOrderId,
-			Market: testMarket,
-			Party:  testPartyB,
-			Side:   msg.Side_Buy,
+		Id:     passiveOrderId,
+		Market: testMarket,
+		Party:  testPartyB,
+		Side:   msg.Side_Buy,
 	}
 
 	trade = &msg.Trade{
-			Id:        tradeId,
-			Price:     110,
-			Market:    testMarket,
-			Size:      100,
-			Timestamp: 0,
-			Buyer:     testPartyB,
-			Seller:    testPartyA,
-			Aggressor: msg.Side_Sell,
-			BuyerOrderId: passiveOrderId,
-			SellerOrderId: aggressiveOrderId,
+		Id:        tradeId,
+		Price:     110,
+		Market:    testMarket,
+		Size:      100,
+		Timestamp: 0,
+		Buyer:     testPartyB,
+		Seller:    testPartyA,
+		Aggressor: msg.Side_Sell,
+		BuyOrder:  passiveOrderId,
+		SellOrder: aggressiveOrderId,
 	}
 
 	err = vega.OrderStore.Post(passiveOrder)

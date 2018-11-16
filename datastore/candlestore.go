@@ -36,6 +36,7 @@ func NewCandleStore(dir string) CandleStore {
 func (c *candleStore) Subscribe(internalTransport map[string]chan msg.Candle) uint64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.initialiseInternalTransport(internalTransport)
 
 	if c.subscribers == nil {
 		log.Debugf("CandleStore -> Subscribe: Creating subscriber chan map")
@@ -46,6 +47,15 @@ func (c *candleStore) Subscribe(internalTransport map[string]chan msg.Candle) ui
 	c.subscribers[c.subscriberId] = internalTransport
 	log.Debugf("CandleStore -> Subscribe: Candle subscriber added: %d", c.subscriberId)
 	return c.subscriberId
+}
+
+func (c *candleStore) initialiseInternalTransport(internalTransport map[string]chan msg.Candle) {
+	internalTransport["1m"] = make(chan msg.Candle, 1)
+	internalTransport["5m"] = make(chan msg.Candle, 1)
+	internalTransport["15m"] = make(chan msg.Candle, 1)
+	internalTransport["1h"] = make(chan msg.Candle, 1)
+	internalTransport["6h"] = make(chan msg.Candle, 1)
+	internalTransport["1d"] = make(chan msg.Candle, 1)
 }
 
 func (c *candleStore) Unsubscribe(id uint64) error {
@@ -84,13 +94,15 @@ func (c *candleStore) Notify() error {
 
 	// update candle for each interval for each subscriber
 	for id, internalTransport := range c.subscribers {
+		fmt.Printf("internalTransport %+v\n", internalTransport)
 		for interval, candleForUpdate := range intervalsToCandlesMap {
+			fmt.Printf("Interval %s, candleForUpdate %+v\n", interval, candleForUpdate)
 			select {
 			case internalTransport[interval] <- candleForUpdate:
-				log.Debugf("Candle updated for interval: ", interval)
+				log.Debugf("Candle updated for interval: %s", interval)
 				break
 			default:
-				log.Infof("Candles state could not been updated for subscriber %d", id)
+				log.Infof("Candles state could not been updated for subscriber %d at interval %s", id, interval)
 			}
 		}
 	}
@@ -159,7 +171,7 @@ func (c *candleStore) GenerateCandles(trade *msg.Trade) error {
 		if err == badger.ErrKeyNotFound {
 			fmt.Printf("KEY DOES NOT EXIST, %s\n", badgerKey)
 			candleTimestamp := candleTimestamps[interval]
-			candle := NewCandle(uint64(candleTimestamp), trade.Price, trade.Size)
+			candle := NewCandle(uint64(candleTimestamp), trade.Price, trade.Size, interval)
 			candleBuf, err := proto.Marshal(candle)
 			if err != nil {
 				return err
@@ -169,6 +181,7 @@ func (c *candleStore) GenerateCandles(trade *msg.Trade) error {
 				return err
 			}
 			fmt.Printf("Candle inserted %+v\n", candle)
+			c.QueueEvent(*candle, interval)
 		}
 
 		// if key exists, update candle with this trade
@@ -193,6 +206,8 @@ func (c *candleStore) GenerateCandles(trade *msg.Trade) error {
 				return err
 			}
 			fmt.Printf("Candle updated and inserted %+v\n", candleForUpdate)
+
+			c.QueueEvent(candleForUpdate, interval)
 		}
 	}
 
@@ -240,7 +255,7 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 
 			// generate new candle with extracted close price
 			candleTimestamp := candleTimestamp[interval]
-			newCandle := NewCandle(uint64(candleTimestamp), previousCandle.Close, 0)
+			newCandle := NewCandle(uint64(candleTimestamp), previousCandle.Close, 0, interval)
 			candleBuf, err := proto.Marshal(newCandle)
 			if err != nil {
 				return err
@@ -253,6 +268,7 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 				return err
 			}
 			//fmt.Printf("inserted\n")
+			c.QueueEvent(*newCandle, interval)
 		}
 		//if present do nothing
 		//fmt.Printf("candle for %s is present at key %s\n", interval, string(key))
@@ -265,9 +281,9 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 	return nil
 }
 
-func NewCandle(timestamp, openPrice, size uint64) *msg.Candle {
+func NewCandle(timestamp, openPrice, size uint64, interval string) *msg.Candle {
 	//TODO: get candle form pool of candles
-	return &msg.Candle{Timestamp: timestamp, Open: openPrice, Low: openPrice, High: openPrice, Close:openPrice, Volume: size}
+	return &msg.Candle{Timestamp: timestamp, Open: openPrice, Low: openPrice, High: openPrice, Close:openPrice, Volume: size, Interval: interval}
 }
 
 func UpdateCandle(candle *msg.Candle, trade *msg.Trade) {

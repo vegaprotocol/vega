@@ -16,7 +16,7 @@ type CandleService interface {
 	Stop()
 	AddTrade(trade *msg.Trade)
 	Generate(ctx context.Context, market string) error
-	ObserveCandles(ctx context.Context, market *string, party *string, interval *string) (candleCh <-chan msg.Candle, ref uint64)
+	ObserveCandles(ctx context.Context, market *string, interval *string) (candleCh <-chan msg.Candle, ref uint64)
 	GetCandles(ctx context.Context, market string, since time.Time, interval string) (candles []*msg.Candle, err error)
 }
 
@@ -69,16 +69,19 @@ func (c *candleService) Generate(ctx context.Context, market string) error {
 		}
 	}
 
+	// Notify all subscribers
+	c.candleStore.Notify()
+
 	// Flush the buffer
 	c.tradesBuffer[market] = nil
 
 	return nil
 }
 
-func (c *candleService) ObserveCandles(ctx context.Context, market *string, party *string, interval *string) (candleCh <-chan msg.Candle, ref uint64) {
-	candleCh = make(chan msg.Candle)
+func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *string) (<-chan msg.Candle, uint64) {
+	candleCh := make(chan msg.Candle)
 	internalTransport := make(map[string]chan msg.Candle, 0)
-	ref = c.candleStore.Subscribe(internalTransport)
+	ref := c.candleStore.Subscribe(internalTransport)
 
 	go func(id uint64) {
 		<-ctx.Done()

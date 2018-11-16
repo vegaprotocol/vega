@@ -1,12 +1,12 @@
 package datastore
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 	"vega/filters"
 	"vega/msg"
-	"os"
-	"fmt"
 )
 
 const tradeStoreDir = "../tmp/tradestore"
@@ -33,14 +33,14 @@ func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
 	queryFilters := &filters.TradeQueryFilters{}
 	queryFilters.Last = &last
 
-	// Expect 3 trades with descending trade-ids 
+	// Expect 3 trades with descending trade-ids
 	trades, err := newTradeStore.GetByParty(testPartyA, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, "trade-id-6", trades[0].Id)
 	assert.Equal(t, "trade-id-5", trades[1].Id)
 	assert.Equal(t, "trade-id-4", trades[2].Id)
-	
+
 	// Want last 3 trades (timestamp descending) and skip 2
 	last = uint64(3)
 	skip := uint64(2)
@@ -163,81 +163,81 @@ func populateStores(t *testing.T, orderStore OrderStore, tradeStore TradeStore) 
 	}
 
 	trade1 := &msg.Trade{
-		Id:            "trade-id-1",
-		Price:         100,
-		Size:          100,
-		Market:        testMarket,
-		Buyer:         testPartyB,
-		Seller:        testPartyA,
-		Aggressor:     msg.Side_Sell,
-		Timestamp:     1,
-		BuyerOrderId:  orderB.Id,
-		SellerOrderId: orderA.Id,
+		Id:        "trade-id-1",
+		Price:     100,
+		Size:      100,
+		Market:    testMarket,
+		Buyer:     testPartyB,
+		Seller:    testPartyA,
+		Aggressor: msg.Side_Sell,
+		Timestamp: 1,
+		BuyOrder:  orderB.Id,
+		SellOrder: orderA.Id,
 	}
 
 	trade2 := &msg.Trade{
-		Id:            "trade-id-2",
-		Price:         100,
-		Size:          100,
-		Market:        testMarket,
-		Buyer:         testPartyB,
-		Seller:        testPartyA,
-		Aggressor:     msg.Side_Sell,
-		Timestamp:     1,
-		BuyerOrderId:  orderB.Id,
-		SellerOrderId: orderA.Id,
+		Id:        "trade-id-2",
+		Price:     100,
+		Size:      100,
+		Market:    testMarket,
+		Buyer:     testPartyB,
+		Seller:    testPartyA,
+		Aggressor: msg.Side_Sell,
+		Timestamp: 1,
+		BuyOrder:  orderB.Id,
+		SellOrder: orderA.Id,
 	}
 
 	trade3 := &msg.Trade{
-		Id:            "trade-id-3",
-		Price:         100,
-		Size:          100,
-		Market:        testMarket,
-		Buyer:         testPartyB,
-		Seller:        testPartyA,
-		Aggressor:     msg.Side_Sell,
-		Timestamp:     1,
-		BuyerOrderId:  orderB.Id,
-		SellerOrderId: orderA.Id,
+		Id:        "trade-id-3",
+		Price:     100,
+		Size:      100,
+		Market:    testMarket,
+		Buyer:     testPartyB,
+		Seller:    testPartyA,
+		Aggressor: msg.Side_Sell,
+		Timestamp: 1,
+		BuyOrder:  orderB.Id,
+		SellOrder: orderA.Id,
 	}
 
 	trade4 := &msg.Trade{
-		Id:            "trade-id-4",
-		Price:         100,
-		Size:          100,
-		Market:        testMarket,
-		Buyer:         testPartyB,
-		Seller:        testPartyA,
-		Aggressor:     msg.Side_Sell,
-		Timestamp:     1,
-		BuyerOrderId:  orderB.Id,
-		SellerOrderId: orderA.Id,
+		Id:        "trade-id-4",
+		Price:     100,
+		Size:      100,
+		Market:    testMarket,
+		Buyer:     testPartyB,
+		Seller:    testPartyA,
+		Aggressor: msg.Side_Sell,
+		Timestamp: 1,
+		BuyOrder:  orderB.Id,
+		SellOrder: orderA.Id,
 	}
 
 	trade5 := &msg.Trade{
-		Id:            "trade-id-5",
-		Price:         100,
-		Size:          100,
-		Market:        testMarket,
-		Buyer:         testPartyB,
-		Seller:        testPartyA,
-		Aggressor:     msg.Side_Sell,
-		Timestamp:     1,
-		BuyerOrderId:  orderB.Id,
-		SellerOrderId: orderA.Id,
+		Id:        "trade-id-5",
+		Price:     100,
+		Size:      100,
+		Market:    testMarket,
+		Buyer:     testPartyB,
+		Seller:    testPartyA,
+		Aggressor: msg.Side_Sell,
+		Timestamp: 1,
+		BuyOrder:  orderB.Id,
+		SellOrder: orderA.Id,
 	}
 
 	trade6 := &msg.Trade{
-		Id:            "trade-id-6",
-		Price:         100,
-		Size:          100,
-		Market:        testMarket,
-		Buyer:         testPartyB,
-		Seller:        testPartyA,
-		Aggressor:     msg.Side_Sell,
-		Timestamp:     1,
-		BuyerOrderId:  orderB.Id,
-		SellerOrderId: orderA.Id,
+		Id:        "trade-id-6",
+		Price:     100,
+		Size:      100,
+		Market:    testMarket,
+		Buyer:     testPartyB,
+		Seller:    testPartyA,
+		Aggressor: msg.Side_Sell,
+		Timestamp: 1,
+		BuyOrder:  orderB.Id,
+		SellOrder: orderA.Id,
 	}
 
 	// Add orders
