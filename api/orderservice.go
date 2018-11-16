@@ -10,7 +10,7 @@ import (
 	"vega/filters"
 	"vega/log"
 	"vega/msg"
-	"vega/vegatime"
+	"fmt"
 )
 
 type OrderService interface {
@@ -68,13 +68,14 @@ func (p *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 	if order.Type == msg.Order_GTT {
 		expirationDateTime, err := time.Parse(time.RFC3339, order.ExpirationDatetime)
 		if err != nil {
-			return false, "", errors.New("invalid expiration datetime")
+			return false, "", errors.New("invalid expiration datetime format")
 		}
-		expirationTimestamp := vegatime.NewVegaTimeConverter(p.app).TimeToBlock(expirationDateTime)
-		if expirationTimestamp <= uint64(p.app.State.Height) {
-			return false, "", errors.New("invalid expiration datetime")
+
+		expirationTimestamp := expirationDateTime.UnixNano()
+		if expirationTimestamp <= p.app.State.Timestamp  {
+			return false, "", errors.New("invalid expiration datetime error")
 		}
-		order.ExpirationTimestamp = expirationTimestamp
+		order.ExpirationTimestamp = uint64(expirationTimestamp)
 	}
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
@@ -113,18 +114,16 @@ func (p *orderService) AmendOrder(ctx context.Context, amendment *msg.Amendment)
 		return false, errors.New("order is not active")
 	}
 
-	// if order is GTT convert datetime to blockchain timestamp
+	// if order is GTT convert datetime to block chain timestamp
 	if amendment.ExpirationDatetime != "" {
 		expirationDateTime, err := time.Parse(time.RFC3339, amendment.ExpirationDatetime)
 		if err != nil {
+			return false, errors.New("invalid format expiration datetime")
+		}
+		if expirationDateTime.Before(p.app.State.Datetime) || expirationDateTime.Equal(p.app.State.Datetime) {
 			return false, errors.New("invalid expiration datetime")
 		}
-
-		expirationTimestamp := vegatime.NewVegaTimeConverter(p.app).TimeToBlock(expirationDateTime)
-		if expirationTimestamp <= uint64(p.app.State.Height) {
-			return false, errors.New("invalid expiration datetime")
-		}
-		amendment.ExpirationTimestamp = expirationTimestamp
+		amendment.ExpirationTimestamp = uint64(expirationDateTime.UnixNano())
 	}
 
 	// Send edit request by consensus
@@ -260,15 +259,9 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 
 	p.app.Statistics.CurrentTime = time.Now().UTC().Format(time.RFC3339)
 	p.app.Statistics.GenesisTime = p.app.GetGenesisTime().Format(time.RFC3339)
-	vtc := vegatime.NewVegaTimeConverter(p.app)
-	p.app.Statistics.VegaTime = vtc.BlockToTime(uint64(p.app.State.Height)).Format(time.RFC3339)
-	p.app.Statistics.BlockHeight = uint64(p.app.State.Height)
 
-	//parties, err := p.app.PartyStore.GetAllParties()
-	//if err == nil {
-	//	p.app.Statistics.TotalParties = uint64(len(parties))
-	//	p.app.Statistics.Parties = parties
-	//}
+	p.app.Statistics.VegaTime = fmt.Sprintf("%s [%d]", p.app.State.Datetime.Format(time.RFC3339), p.app.State.Timestamp)
+	p.app.Statistics.BlockHeight = uint64(p.app.State.Height)
 
 	// Unconfirmed TX count == current transaction backlog length
 	backlogLength, err := p.blockchain.GetUnconfirmedTxCount(ctx)
@@ -279,10 +272,9 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 		log.Errorf(rpcErr, "unconfirmed-tx-count", err)
 		return p.app.Statistics, err
 	}
-	//log.Debugf("Statistics: Tendermint unconfirmed tx count: %+v", backlogLength)
 	p.app.Statistics.BacklogLength = uint64(backlogLength)
 
-	// Net info provides peer stats etc (blockchain network info)
+	// Net info provides peer stats etc (block chain network info)
 	netInfo, err := p.blockchain.GetNetworkInfo(ctx)
 	if err != nil {
 		if err.Error() == refused {
@@ -291,7 +283,6 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 		log.Errorf(rpcErr, "net-info", err)
 		return p.app.Statistics, err
 	}
-	//log.Debugf("Statistics: Tendermint net-info: %+v", netInfo)
 	p.app.Statistics.TotalPeers = uint64(netInfo.NPeers)
 
 
@@ -299,7 +290,5 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 }
 
 func (p *orderService) GetCurrentTime(ctx context.Context) (time.Time, error) {
-	converter := vegatime.NewVegaTimeConverter(p.app)
-	currentTime := converter.BlockToTime(p.app.GetChainHeight())
-	return currentTime, nil
+	return p.app.State.Datetime, nil
 }

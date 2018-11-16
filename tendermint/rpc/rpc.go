@@ -455,7 +455,7 @@ func (c *Client) readLoop() {
 		ch, exists := c.results[resp.ID]
 		c.mu.RUnlock()
 		if !exists {
-			log.Infof("Received unexpected response ID: %d", resp.ID)
+			log.Infof("Unexpected json-rpc response: %d [ %s ]", resp.ID, string(resp.Result))
 			c.Close()
 			return
 		}

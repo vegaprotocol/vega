@@ -8,16 +8,47 @@ import (
 	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
 	"github.com/golang/protobuf/proto"
+	"fmt"
 )
 
 type Blockchain struct {
 	types.BaseApplication
 	vega *core.Vega
+	previousTimestamp int64
 }
 
 func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 	return &Blockchain{vega: vegaApp}
 }
+
+func (app *Blockchain) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
+	log.Debugf(fmt.Sprintf("Begin block time report (%d txs):", beginBlock.Header.NumTxs))
+	log.Debugf("------------------------")
+	log.Debugf(fmt.Sprintf("Gossip time: %v", beginBlock.Header.Time))
+	log.Debugf(fmt.Sprintf("Unix epoch+nano: %d", beginBlock.Header.Time.UnixNano()))
+	log.Debugf("------------------------")
+
+	// We need to cache the last timestamp so we can distribute trades
+	// in a block evenly between last timestamp and current timestamp
+	if app.vega.State.Timestamp > 0 {
+		app.previousTimestamp = app.vega.State.Timestamp
+	}
+
+	// Store the timestamp info that we receive from the block chain provider (Tendermint)
+	app.vega.State.Datetime = beginBlock.Header.Time
+	app.vega.State.Timestamp = beginBlock.Header.Time.UnixNano()
+
+	// Ensure we always set app.previousTimestamp it'll be 0 on the first block
+	if app.previousTimestamp < 1 {
+		app.previousTimestamp = app.vega.State.Timestamp
+	}
+	return types.ResponseBeginBlock{}
+}
+
+//func (app *Blockchain) EndBlock(endBlock types.RequestEndBlock) types.ResponseEndBlock {
+//	//fmt.Println(fmt.Sprintf("%v", endBlock))
+//	return types.ResponseEndBlock{}
+//}
 
 // Mempool Connection
 //
@@ -224,7 +255,6 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 // the job of the Handshake.
 //
 func (app *Blockchain) Commit() types.ResponseCommit {
-
 	app.vega.RemoveExpiringOrdersAtTimestamp(uint64(app.vega.State.Height))
 
 	// Using a memdb - just return the big endian size of the db

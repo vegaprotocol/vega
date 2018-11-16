@@ -9,12 +9,9 @@ import (
 	"time"
 )
 
-const (
-	candleStoreDir = "./candleStore"
-)
+const candleStoreDir string = "../tmp/candlestore-test"
 
-
-func flushCandleStore() {
+func FlushCandleStore() {
 	err := os.RemoveAll(candleStoreDir)
 	if err != nil {
 		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
@@ -22,8 +19,7 @@ func flushCandleStore() {
 }
 
 func TestCandleGenerator_Generate(t *testing.T) {
-
-	flushCandleStore()
+	FlushCandleStore()
 	candleStore := NewCandleStore(candleStoreDir)
 	defer candleStore.Close()
 
@@ -177,7 +173,7 @@ func TestGetMapOfIntervalsToTimestamps(t *testing.T) {
 }
 
 func TestCandleStore_SubscribeUnsubscribe(t *testing.T) {
-	flushCandleStore()
+	FlushCandleStore()
 	candleStore := NewCandleStore(candleStoreDir)
 	defer candleStore.Close()
 
@@ -205,7 +201,7 @@ func TestCandleStore_SubscribeUnsubscribe(t *testing.T) {
 }
 
 func TestCandleStore_QueueNotify(t *testing.T) {
-	flushCandleStore()
+	FlushCandleStore()
 	candleStore := NewCandleStore(candleStoreDir)
 	defer candleStore.Close()
 

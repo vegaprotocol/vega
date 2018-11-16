@@ -13,8 +13,8 @@ schema {
 type Mutation {
     
     # Send a create order request into VEGA network, this does not immediately create the order.
-    # It validates and sends the request out for consensus. Price and Size will be converted to uint64 internally.
-    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!): PreConsensus!
+    # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
+    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensus!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
@@ -210,8 +210,11 @@ type Order {
     # The trader who place the order (probably stored internally as the trader's public key)
     party: String!
 
-    # If the order was added to the book or uncrossed at any point, the timestamp when that was done
+    # Unix epoch+nanoseconds for when the order was created
     timestamp: String!
+
+    # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
+    datetime: String!
 
     # The status of an order, for example 'Active'
     status: OrderStatus!
@@ -244,8 +247,11 @@ type Trade {
     # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
     size: String!
 
-    # When the trade occured, probably the timestamp of the agressive order
+    # Unix epoch+nanoseconds for when the trade occured
     timestamp: String!
+
+    # ISO-8601 RFC3339+Nano formatted data and time for when the trade occured (timestamp)
+    datetime: String!
 }
 
 # Valid order types, these determine what happens when an order is added to the book

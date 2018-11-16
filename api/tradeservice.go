@@ -21,6 +21,7 @@ type TradeService interface {
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
 
 	GetLatestBlock() (blockNow uint64)
+	GetCurrentTimestamp(ctx context.Context) uint64
 
 	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
 	ObservePositions(ctx context.Context, party string) (positions <-chan msg.MarketPosition, ref uint64)
@@ -37,8 +38,6 @@ func NewTradeService() TradeService {
 
 func (t *tradeService) Init(app *core.Vega, tradeStore datastore.TradeStore) {
 	t.app = app
-	//dataDir := "./tradeStore"
-	//t.tradeStore = datastore.NewTradeStore(dataDir)
 	t.tradeStore = tradeStore
 }
 
@@ -83,6 +82,10 @@ func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id str
 func (t *tradeService) GetLatestBlock() uint64 {
 	height := t.app.GetChainHeight()
 	return uint64(height)
+}
+
+func (t *tradeService) GetCurrentTimestamp(ctx context.Context) uint64 {
+	return t.app.GetCurrentTimestamp()
 }
 
 func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, uint64) {

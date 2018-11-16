@@ -23,7 +23,7 @@ const testMarket = "market"
 const testParty = "party"
 const testPartyA = "partyA"
 const testPartyB = "partyB"
-const orderStoreDir = "../tmp/orderstore"
+const orderStoreDir = "../tmp/orderstore-test"
 //
 // this runs just once as first
 func init() {
