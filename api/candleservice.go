@@ -8,6 +8,7 @@ import (
 	"vega/core"
 	"vega/datastore"
 	"vega/msg"
+	"vega/log"
 )
 
 type CandleService interface {
@@ -76,8 +77,28 @@ func (c *candleService) Generate(ctx context.Context, market string) error {
 
 func (c *candleService) ObserveCandles(ctx context.Context, market *string, party *string, interval *string) (candleCh <-chan msg.Candle, ref uint64) {
 	candleCh = make(chan msg.Candle)
-	internal := make(chan msg.Candle)
-	ref = c.candleStore.Subscribe(internal)
+	internalTransport := make(map[string]chan msg.Candle, 0)
+	ref = c.candleStore.Subscribe(internalTransport)
+
+	go func(id uint64) {
+		<-ctx.Done()
+		log.Debugf("CandleService -> Subscriber closed connection: %d", id)
+		err := c.candleStore.Unsubscribe(id)
+		if err != nil {
+			log.Errorf("Error un-subscribing when context.Done() on CandleService for id: %d", id)
+		}
+	}(ref)
+
+	go func(internalTransport map[string]chan msg.Candle) {
+		var tempCandle msg.Candle
+		for v := range internalTransport[*interval] {
+			tempCandle = v
+			candleCh <- tempCandle
+		}
+		log.Debugf("CandleService -> Channel for subscriber %d has been closed", ref)
+	}(internalTransport)
+
+
 	return candleCh, ref
 }
 

@@ -19,9 +19,8 @@ func FlushCandleStore() {
 }
 
 func TestCandleGenerator_Generate(t *testing.T) {
-	testMarket := candleStoreDir
 	FlushCandleStore()
-	candleStore := NewCandleStore(testMarket)
+	candleStore := NewCandleStore(candleStoreDir)
 	defer candleStore.Close()
 
 	// t0 = 2018-11-13T11:01:14Z
@@ -171,4 +170,70 @@ func TestGetMapOfIntervalsToTimestamps(t *testing.T) {
 	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps["1h"])
 	assert.Equal(t, t0 - int64(5 * time.Hour + time.Minute + 14 * time.Second), timestamps["6h"])
 	assert.Equal(t, t0 - int64(11 * time.Hour + time.Minute + 14 * time.Second), timestamps["1d"])
+}
+
+func TestCandleStore_SubscribeUnsubscribe(t *testing.T) {
+	FlushCandleStore()
+	candleStore := NewCandleStore(candleStoreDir)
+	defer candleStore.Close()
+
+	internalTransport := make(map[string]chan msg.Candle, 0)
+	ref := candleStore.Subscribe(internalTransport)
+	assert.Equal(t, uint64(1), ref)
+
+	ref = candleStore.Subscribe(internalTransport)
+	assert.Equal(t, uint64(2), ref)
+
+	fmt.Printf("Unsubscribing\n")
+	err := candleStore.Unsubscribe(1)
+	assert.Nil(t, err)
+
+	err = candleStore.Unsubscribe(1)
+	assert.Equal(t, "CandleStore subscriber does not exist with id: 1", err.Error())
+
+	err = candleStore.Unsubscribe(2)
+	assert.Nil(t, err)
+
+	fmt.Printf("Totally empty\n")
+
+	err = candleStore.Unsubscribe(2)
+	assert.Nil(t, err)
+}
+
+func TestCandleStore_QueueNotify(t *testing.T) {
+	FlushCandleStore()
+	candleStore := NewCandleStore(candleStoreDir)
+	defer candleStore.Close()
+
+	internalTransport := make(map[string]chan msg.Candle, 0)
+	_ = candleStore.Subscribe(internalTransport)
+
+	timestamp, _ := time.Parse(time.RFC3339, "2018-11-13T11:01:14Z")
+	t0 := timestamp.UnixNano()
+
+	candle1m := NewCandle(uint64(t0), 100, 100)
+	candle5m := NewCandle(uint64(t0), 100, 100)
+	candle15m := NewCandle(uint64(t0), 100, 100)
+	candle1h := NewCandle(uint64(t0), 100, 100)
+	candle6h := NewCandle(uint64(t0), 100, 100)
+	candle1d := NewCandle(uint64(t0), 100, 100)
+
+	candleStore.QueueEvent(*candle1m, "1m")
+	candleStore.QueueEvent(*candle5m, "5m")
+	candleStore.QueueEvent(*candle15m, "15m")
+	candleStore.QueueEvent(*candle1h, "1h")
+	candleStore.QueueEvent(*candle6h, "6h")
+	candleStore.QueueEvent(*candle1d, "1d")
+
+	assert.Nil(t, internalTransport["1m"])
+	assert.Nil(t, internalTransport["5m"])
+	assert.Nil(t, internalTransport["15m"])
+	assert.Nil(t, internalTransport["1d"])
+	assert.Nil(t, internalTransport["6h"])
+	assert.Nil(t, internalTransport["1d"])
+
+	candleStore.Notify()
+
+	//assert.Equal(t, internalTransport["1m"])
+
 }

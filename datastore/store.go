@@ -64,9 +64,10 @@ type OrderStore interface {
 
 type CandleStore interface {
 
-	Subscribe(candleCh chan<- msg.Candle) uint64
+	Subscribe(internalTransport map[string]chan msg.Candle) uint64
 	Unsubscribe(id uint64) error
 	Notify() error
+	QueueEvent(candle msg.Candle, interval string) error
 
 	Close()
 
