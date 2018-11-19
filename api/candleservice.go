@@ -3,12 +3,10 @@ package api
 import (
 	"context"
 	"errors"
-	"time"
-
 	"vega/core"
 	"vega/datastore"
-	"vega/msg"
 	"vega/log"
+	"vega/msg"
 )
 
 type CandleService interface {
@@ -16,14 +14,14 @@ type CandleService interface {
 	Stop()
 	AddTrade(trade *msg.Trade)
 	Generate(ctx context.Context, market string) error
-	ObserveCandles(ctx context.Context, market *string, interval *string) (candleCh <-chan msg.Candle, ref uint64)
-	GetCandles(ctx context.Context, market string, since time.Time, interval string) (candles []*msg.Candle, err error)
+	ObserveCandles(ctx context.Context, market *string, interval *msg.Interval) (candleCh <-chan msg.Candle, ref uint64)
+	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval msg.Interval) (candles []*msg.Candle, err error)
 }
 
 type candleService struct {
-	app        *core.Vega
+	app          *core.Vega
 	tradesBuffer map[string][]*msg.Trade
-	candleStore datastore.CandleStore
+	candleStore  datastore.CandleStore
 }
 
 func NewCandleService() CandleService {
@@ -52,11 +50,9 @@ func (c *candleService) Generate(ctx context.Context, market string) error {
 		return errors.New("Market not found")
 	}
 
-	// TODO: change to c.app.timestamp
-	currentTime := uint64(time.Now().UnixNano())
 	// in case there is no trading activity on this market, generate empty candles based on historical values
 	if len(c.tradesBuffer) == 0 {
-		if err := c.candleStore.GenerateEmptyCandles(market, uint64(currentTime)); err != nil {
+		if err := c.candleStore.GenerateEmptyCandles(market, c.app.GetCurrentTimestamp()); err != nil {
 			return err
 		}
 		return nil
@@ -78,9 +74,9 @@ func (c *candleService) Generate(ctx context.Context, market string) error {
 	return nil
 }
 
-func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *string) (<-chan msg.Candle, uint64) {
+func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *msg.Interval) (<-chan msg.Candle, uint64) {
 	candleCh := make(chan msg.Candle)
-	internalTransport := make(map[string]chan msg.Candle, 0)
+	internalTransport := make(map[msg.Interval]chan msg.Candle, 0)
 	ref := c.candleStore.Subscribe(internalTransport)
 
 	go func(id uint64) {
@@ -92,7 +88,7 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 		}
 	}(ref)
 
-	go func(internalTransport map[string]chan msg.Candle) {
+	go func(internalTransport map[msg.Interval]chan msg.Candle) {
 		var tempCandle msg.Candle
 		for v := range internalTransport[*interval] {
 			tempCandle = v
@@ -101,14 +97,14 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 		log.Debugf("CandleService -> Channel for subscriber %d has been closed", ref)
 	}(internalTransport)
 
-
 	return candleCh, ref
 }
 
-func (c *candleService) GetCandles(ctx context.Context, market string, sinceTimestamp time.Time, interval string) (candles []*msg.Candle, err error) {
+func (c *candleService) GetCandles(ctx context.Context, market string,
+	sinceTimestamp uint64, interval msg.Interval) (candles []*msg.Candle, err error) {
 	// sinceTimestamp must be valid and not older than market genesis timestamp,
 
 	// interval check if from range of valid intervals
 
-	return c.candleStore.GetCandles(market, uint64(sinceTimestamp.UnixNano()), interval), nil
+	return c.candleStore.GetCandles(market, sinceTimestamp, interval), nil
 }

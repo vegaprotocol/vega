@@ -43,11 +43,11 @@ func (_m *CandleStore) GenerateEmptyCandles(market string, timestamp uint64) err
 }
 
 // GetCandles provides a mock function with given fields: market, sinceTimestamp, interval
-func (_m *CandleStore) GetCandles(market string, sinceTimestamp uint64, interval string) []*msg.Candle {
+func (_m *CandleStore) GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle {
 	ret := _m.Called(market, sinceTimestamp, interval)
 
 	var r0 []*msg.Candle
-	if rf, ok := ret.Get(0).(func(string, uint64, string) []*msg.Candle); ok {
+	if rf, ok := ret.Get(0).(func(string, uint64, msg.Interval) []*msg.Candle); ok {
 		r0 = rf(market, sinceTimestamp, interval)
 	} else {
 		if ret.Get(0) != nil {
@@ -73,11 +73,11 @@ func (_m *CandleStore) Notify() error {
 }
 
 // QueueEvent provides a mock function with given fields: candle, interval
-func (_m *CandleStore) QueueEvent(candle msg.Candle, interval string) error {
+func (_m *CandleStore) QueueEvent(candle msg.Candle, interval msg.Interval) error {
 	ret := _m.Called(candle, interval)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(msg.Candle, string) error); ok {
+	if rf, ok := ret.Get(0).(func(msg.Candle, msg.Interval) error); ok {
 		r0 = rf(candle, interval)
 	} else {
 		r0 = ret.Error(0)
@@ -87,11 +87,11 @@ func (_m *CandleStore) QueueEvent(candle msg.Candle, interval string) error {
 }
 
 // Subscribe provides a mock function with given fields: internalTransport
-func (_m *CandleStore) Subscribe(internalTransport map[string]chan msg.Candle) uint64 {
+func (_m *CandleStore) Subscribe(internalTransport map[msg.Interval]chan msg.Candle) uint64 {
 	ret := _m.Called(internalTransport)
 
 	var r0 uint64
-	if rf, ok := ret.Get(0).(func(map[string]chan msg.Candle) uint64); ok {
+	if rf, ok := ret.Get(0).(func(map[msg.Interval]chan msg.Candle) uint64); ok {
 		r0 = rf(internalTransport)
 	} else {
 		r0 = ret.Get(0).(uint64)

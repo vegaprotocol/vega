@@ -4,6 +4,8 @@ package vega;
 option go_package = "msg";
 enum Side { Buy = 0; Sell = 1; }
 
+enum Interval { I1M = 0; I5M = 1; I15M = 2; I1H = 3; I6H = 4; I1D = 5; }
+
 message Market {
     string name = 1;
 }
@@ -76,16 +78,13 @@ message MarketData {
 
 message Candle {
     uint64 timestamp = 1;
-    uint64 high = 2;
-    uint64 low = 3;
-    uint64 open = 4;
-    uint64 close = 5;
-    uint64 volume = 6;
-    string interval = 7;
-}
-
-message Candles {
-    repeated Candle candles = 1;
+    string datetime = 2;
+    uint64 high = 3;
+    uint64 low = 4;
+    uint64 open = 5;
+    uint64 close = 6;
+    uint64 volume = 7;
+    Interval interval = 8;
 }
 
 message PriceLevel {

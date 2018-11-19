@@ -16,12 +16,14 @@ import (
 type graphServer struct {
 	orderService api.OrderService
 	tradeService api.TradeService
+	candleService api.CandleService
 }
 
-func NewGraphQLServer(orderService api.OrderService, tradeService api.TradeService) *graphServer {
+func NewGraphQLServer(orderService api.OrderService, tradeService api.TradeService, candleService api.CandleService) *graphServer {
 	return &graphServer{
 		orderService: orderService,
 		tradeService: tradeService,
+		candleService: candleService,
 	}
 }
 

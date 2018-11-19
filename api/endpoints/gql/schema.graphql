@@ -136,7 +136,7 @@ type Candle {
     volume: String!
 
     # Interval price (string)
-    interval: String!
+    interval: Interval!
 }
 
 # Represents a party on Vega, could be an ethereum wallet address in the future
@@ -407,4 +407,13 @@ input OrderFilter {
     # Status filters
     status: OrderStatus # matches all orders with exact status value
     status_neq: OrderStatus # matches all orders with different status to value
+}
+
+enum Interval {
+    I1M
+    I5M
+    I15M
+    I1H
+    I6H
+    I1D
 }

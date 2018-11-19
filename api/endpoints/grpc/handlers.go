@@ -13,6 +13,7 @@ import (
 type Handlers struct {
 	OrderService api.OrderService
 	TradeService api.TradeService
+	CandleService api.CandleService
 }
 
 // If no limit is provided at the gRPC API level, the system will use this limit instead.
@@ -111,33 +112,23 @@ func (h *Handlers) OrderByMarketAndId(ctx context.Context, request *api.OrderByM
 
 // TradeCandles returns trade open/close/volume data for the given time period and interval.
 // It will fill in any tradeless intervals with zero based candles. Since time period must be in RFC3339 string format.
-func (h *Handlers) TradeCandles(ctx context.Context, request *api.TradeCandlesRequest) (*api.TradeCandlesResponse, error) {
+func (h *Handlers) Candles(ctx context.Context, request *api.CandlesRequest) (*api.CandlesResponse, error) {
 	market := request.Market
 	if market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
 
-	if request.Since == "" {
+	if request.SinceTimestamp == 0 {
 		return nil, errors.New("Since date is missing")
 	}
 
-	//since, err := time.Parse(time.RFC3339, request.Since)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	interval := request.Interval
-	if interval < 2 {
-		interval = 2
+	candles, err := h.CandleService.GetCandles(ctx, market, request.SinceTimestamp, request.Interval)
+	if err != nil {
+		return nil, err
 	}
-	//res, err := h.TradeService.GetCandles(ctx, market, since, interval)
-	//if err != nil {
-	//	return nil, err
-	//}
-	var response = &api.TradeCandlesResponse{}
-	//if len(res.Candles) > 0 {
-	//	response.Candles = res.Candles
-	//}
+
+	response := &api.CandlesResponse{}
+	response.Candles = candles
 	return response, nil
 }
 

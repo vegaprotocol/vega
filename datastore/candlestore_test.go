@@ -44,7 +44,7 @@ func TestCandleGenerator_Generate(t *testing.T) {
 
 	// test for 1 minute intervals
 
-	candles := candleStore.GetCandles(testMarket, t0, "1m")
+	candles := candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
 	assert.Equal(t, 2, len(candles))
@@ -63,7 +63,7 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[1].Close)
 	assert.Equal(t, uint64(200), candles[1].Volume)
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), "1m")
+	candles = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I1M)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -74,7 +74,7 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(200), candles[0].Volume)
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), "5m")
+	candles = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I5M)
 	fmt.Printf("Candles fetched for t0 and 5m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -89,7 +89,7 @@ func TestCandleGenerator_Generate(t *testing.T) {
 
 	currentVegaTime := uint64(t0) + uint64(2 * time.Minute)
 	candleStore.GenerateEmptyCandles(testMarket, currentVegaTime)
-	candles = candleStore.GetCandles(testMarket, t0, "1m")
+	candles = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
 	assert.Equal(t, 3, len(candles))
@@ -115,7 +115,7 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(0), candles[2].Volume)
 
 
-	candles = candleStore.GetCandles(testMarket, t0, "5m")
+	candles = candleStore.GetCandles(testMarket, t0, msg.Interval_I5M)
 	fmt.Printf("Candles fetched for t0 and 5m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -126,7 +126,7 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(2 * time.Minute), "15m")
+	candles = candleStore.GetCandles(testMarket, t0 + uint64(2 * time.Minute), msg.Interval_I15M)
 	fmt.Printf("Candles fetched for t0 and 15m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -138,7 +138,7 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), "15m")
+	candles = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), msg.Interval_I15M)
 	fmt.Printf("Candles fetched for t0 and 15m: %+v\n", candles)
 
 	assert.Equal(t, 0, len(candles))
@@ -146,7 +146,7 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	currentVegaTime = uint64(t0) + uint64(17 * time.Minute)
 	candleStore.GenerateEmptyCandles(testMarket, currentVegaTime)
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), "15m")
+	candles = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), msg.Interval_I15M)
 	fmt.Printf("Candles fetched for t0 and 15m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -164,12 +164,12 @@ func TestGetMapOfIntervalsToTimestamps(t *testing.T) {
 	fmt.Printf("%d", timestamp.UnixNano())
 
 	timestamps := getMapOfIntervalsToTimestamps(timestamp.UnixNano())
-	assert.Equal(t, t0 - int64(14 * time.Second), timestamps["1m"])
-	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps["5m"])
-	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps["15m"])
-	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps["1h"])
-	assert.Equal(t, t0 - int64(5 * time.Hour + time.Minute + 14 * time.Second), timestamps["6h"])
-	assert.Equal(t, t0 - int64(11 * time.Hour + time.Minute + 14 * time.Second), timestamps["1d"])
+	assert.Equal(t, t0 - int64(14 * time.Second), timestamps[msg.Interval_I1M])
+	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I5M])
+	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I15M])
+	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I1H])
+	assert.Equal(t, t0 - int64(5 * time.Hour + time.Minute + 14 * time.Second), timestamps[msg.Interval_I6H])
+	assert.Equal(t, t0 - int64(11 * time.Hour + time.Minute + 14 * time.Second), timestamps[msg.Interval_I1D])
 }
 
 func TestCandleStore_SubscribeUnsubscribe(t *testing.T) {
@@ -177,7 +177,7 @@ func TestCandleStore_SubscribeUnsubscribe(t *testing.T) {
 	candleStore := NewCandleStore(candleStoreDir)
 	defer candleStore.Close()
 
-	internalTransport := make(map[string]chan msg.Candle, 0)
+	internalTransport := make(map[msg.Interval]chan msg.Candle, 0)
 	ref := candleStore.Subscribe(internalTransport)
 	assert.Equal(t, uint64(1), ref)
 
@@ -205,52 +205,52 @@ func TestCandleStore_QueueNotify(t *testing.T) {
 	candleStore := NewCandleStore(candleStoreDir)
 	defer candleStore.Close()
 
-	internalTransport := make(map[string]chan msg.Candle, 0)
+	internalTransport := make(map[msg.Interval]chan msg.Candle, 0)
 	_ = candleStore.Subscribe(internalTransport)
 
 	timestamp, _ := time.Parse(time.RFC3339, "2018-11-13T11:01:14Z")
 	t0 := timestamp.UnixNano()
 
-	candle1m := NewCandle(uint64(t0), 100, 100, "1m")
-	candle5m := NewCandle(uint64(t0), 100, 100, "5m")
-	candle15m := NewCandle(uint64(t0), 100, 100, "15m")
-	candle1h := NewCandle(uint64(t0), 100, 100, "1h")
-	candle6h := NewCandle(uint64(t0), 100, 100, "6h")
-	candle1d := NewCandle(uint64(t0), 100, 100, "1d")
+	candle1m := NewCandle(uint64(t0), 100, 100, msg.Interval_I1M)
+	candle5m := NewCandle(uint64(t0), 100, 100, msg.Interval_I5M)
+	candle15m := NewCandle(uint64(t0), 100, 100, msg.Interval_I15M)
+	candle1h := NewCandle(uint64(t0), 100, 100, msg.Interval_I1H)
+	candle6h := NewCandle(uint64(t0), 100, 100, msg.Interval_I6H)
+	candle1d := NewCandle(uint64(t0), 100, 100, msg.Interval_I1D)
 
-	candleStore.QueueEvent(*candle1m, "1m")
-	candleStore.QueueEvent(*candle5m, "5m")
-	candleStore.QueueEvent(*candle15m, "15m")
-	candleStore.QueueEvent(*candle1h, "1h")
-	candleStore.QueueEvent(*candle6h, "6h")
-	candleStore.QueueEvent(*candle1d, "1d")
+	candleStore.QueueEvent(*candle1m, msg.Interval_I1M)
+	candleStore.QueueEvent(*candle5m, msg.Interval_I5M)
+	candleStore.QueueEvent(*candle15m, msg.Interval_I15M)
+	candleStore.QueueEvent(*candle1h, msg.Interval_I1H)
+	candleStore.QueueEvent(*candle6h, msg.Interval_I6H)
+	candleStore.QueueEvent(*candle1d, msg.Interval_I1D)
 
-	assert.Equal(t, true, isTransportEmpty(internalTransport["1m"]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport["5m"]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport["15m"]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport["1h"]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport["6h"]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport["1d"]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I1M]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I5M]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I15M]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I1H]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I6H]))
+	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I1D]))
 
 	candleStore.Notify()
 
-	candle := <- internalTransport["1m"]
-	assert.Equal(t, candle.Interval, "1m")
+	candle := <- internalTransport[msg.Interval_I1M]
+	assert.Equal(t, candle.Interval, msg.Interval_I1M)
 
-	candle = <- internalTransport["5m"]
-	assert.Equal(t, candle.Interval, "5m")
+	candle = <- internalTransport[msg.Interval_I5M]
+	assert.Equal(t, candle.Interval, msg.Interval_I5M)
 
-	candle = <- internalTransport["15m"]
-	assert.Equal(t, candle.Interval, "15m")
+	candle = <- internalTransport[msg.Interval_I15M]
+	assert.Equal(t, candle.Interval, msg.Interval_I15M)
 
-	candle = <- internalTransport["1h"]
-	assert.Equal(t, candle.Interval, "1h")
+	candle = <- internalTransport[msg.Interval_I1H]
+	assert.Equal(t, candle.Interval, msg.Interval_I1H)
 
-	candle = <- internalTransport["6h"]
-	assert.Equal(t, candle.Interval, "6h")
+	candle = <- internalTransport[msg.Interval_I6H]
+	assert.Equal(t, candle.Interval, msg.Interval_I6H)
 
-	candle = <- internalTransport["1d"]
-	assert.Equal(t, candle.Interval, "1d")
+	candle = <- internalTransport[msg.Interval_I1D]
+	assert.Equal(t, candle.Interval, msg.Interval_I1D)
 
 }
 

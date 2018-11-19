@@ -16,8 +16,8 @@ import (
 type candleStore struct {
 	persistentStore *badger.DB
 
-	subscribers map[uint64] map[string]chan msg.Candle
-	buffer map[string]msg.Candle
+	subscribers map[uint64] map[msg.Interval]chan msg.Candle
+	buffer map[msg.Interval]msg.Candle
 	subscriberId uint64
 	mu sync.Mutex
 }
@@ -30,17 +30,17 @@ func NewCandleStore(dir string) CandleStore {
 	if err != nil {
 		fmt.Printf(err.Error())
 	}
-	return &candleStore{persistentStore: db, buffer: make(map[string]msg.Candle)}
+	return &candleStore{persistentStore: db, buffer: make(map[msg.Interval]msg.Candle)}
 }
 
-func (c *candleStore) Subscribe(internalTransport map[string]chan msg.Candle) uint64 {
+func (c *candleStore) Subscribe(internalTransport map[msg.Interval]chan msg.Candle) uint64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.initialiseInternalTransport(internalTransport)
 
 	if c.subscribers == nil {
 		log.Debugf("CandleStore -> Subscribe: Creating subscriber chan map")
-		c.subscribers = make(map[uint64] map[string]chan msg.Candle)
+		c.subscribers = make(map[uint64] map[msg.Interval]chan msg.Candle)
 	}
 
 	c.subscriberId = c.subscriberId+1
@@ -49,13 +49,13 @@ func (c *candleStore) Subscribe(internalTransport map[string]chan msg.Candle) ui
 	return c.subscriberId
 }
 
-func (c *candleStore) initialiseInternalTransport(internalTransport map[string]chan msg.Candle) {
-	internalTransport["1m"] = make(chan msg.Candle, 1)
-	internalTransport["5m"] = make(chan msg.Candle, 1)
-	internalTransport["15m"] = make(chan msg.Candle, 1)
-	internalTransport["1h"] = make(chan msg.Candle, 1)
-	internalTransport["6h"] = make(chan msg.Candle, 1)
-	internalTransport["1d"] = make(chan msg.Candle, 1)
+func (c *candleStore) initialiseInternalTransport(internalTransport map[msg.Interval]chan msg.Candle) {
+	internalTransport[msg.Interval_I1M] = make(chan msg.Candle, 1)
+	internalTransport[msg.Interval_I5M] = make(chan msg.Candle, 1)
+	internalTransport[msg.Interval_I15M] = make(chan msg.Candle, 1)
+	internalTransport[msg.Interval_I1H] = make(chan msg.Candle, 1)
+	internalTransport[msg.Interval_I6H] = make(chan msg.Candle, 1)
+	internalTransport[msg.Interval_I1D] = make(chan msg.Candle, 1)
 }
 
 func (c *candleStore) Unsubscribe(id uint64) error {
@@ -109,7 +109,7 @@ func (c *candleStore) Notify() error {
 	return nil
 }
 
-func (c *candleStore) QueueEvent(candle msg.Candle, interval string) error {
+func (c *candleStore) QueueEvent(candle msg.Candle, interval msg.Interval) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -128,7 +128,7 @@ func (c *candleStore) Close() {
 	defer c.persistentStore.Close()
 }
 
-func (c *candleStore) GetCandles(market string, sinceTimestamp uint64, interval string) []*msg.Candle {
+func (c *candleStore) GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle {
 	fetchKey := generateFetchKey(market, sinceTimestamp, interval)
 	it :=  c.persistentStore.NewTransaction(false).NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
@@ -281,7 +281,7 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 	return nil
 }
 
-func NewCandle(timestamp, openPrice, size uint64, interval string) *msg.Candle {
+func NewCandle(timestamp, openPrice, size uint64, interval msg.Interval) *msg.Candle {
 	//TODO: get candle form pool of candles
 	return &msg.Candle{Timestamp: timestamp, Open: openPrice, Low: openPrice, High: openPrice, Close:openPrice, Volume: size, Interval: interval}
 }
@@ -300,57 +300,69 @@ func UpdateCandle(candle *msg.Candle, trade *msg.Trade) {
 	candle.Volume += trade.Size
 }
 
-func generateCandleParamsForTimestamp(market string, timestamp uint64) (map[string]int64, map[string][]byte) {
-	keys := make(map[string][]byte)
+func generateCandleParamsForTimestamp(market string, timestamp uint64) (map[msg.Interval]int64, map[msg.Interval][]byte) {
+	keys := make(map[msg.Interval][]byte)
 	timestamps := getMapOfIntervalsToTimestamps(int64(timestamp))
 
 	for key, val := range timestamps {
-		keys[key] = []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, key, val))
+		keys[key] = []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, key.String(), val))
 	}
 
-	return timestamps,keys
+	return timestamps, keys
 }
 
-func getMapOfIntervalsToTimestamps(timestamp int64) map[string]int64 {
-	timestamps := make(map[string]int64)
+func getMapOfIntervalsToTimestamps(timestamp int64) map[msg.Interval]int64 {
+	timestamps := make(map[msg.Interval]int64)
 	seconds := timestamp / int64(time.Second)
 	nano := timestamp % seconds
-	t := time.Unix(int64(seconds), nano)
+	t := time.Unix(seconds, nano)
 	// round floor
-	timestamps["1m"] = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location()).UnixNano()
-	timestamps["5m"] = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location()).UnixNano()
-	timestamps["15m"] = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location()).UnixNano()
-	timestamps["1h"] = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location()).UnixNano()
-	timestamps["6h"] = time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location()).UnixNano()
-	timestamps["1d"] = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).UnixNano()
+	timestamps[msg.Interval_I1M] =
+		time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location()).UnixNano()
+
+	timestamps[msg.Interval_I5M] =
+	 	time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location()).UnixNano()
+
+	timestamps[msg.Interval_I15M] =
+	 	time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location()).UnixNano()
+
+	timestamps[msg.Interval_I1H] =
+	 	time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location()).UnixNano()
+
+	timestamps[msg.Interval_I6H] =
+	 	time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location()).UnixNano()
+
+	timestamps[msg.Interval_I1D] =
+	 	time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).UnixNano()
+
 	return timestamps
 }
 
-func generateFetchKey(market string, sinceTimestsamp uint64, interval string) []byte {
+func generateFetchKey(market string, sinceTimestsamp uint64, interval msg.Interval) []byte {
 	seconds := sinceTimestsamp / uint64(time.Second)
 	nano := sinceTimestsamp % seconds
 	t := time.Unix(int64(seconds), int64(nano))
-	fmt.Printf("\n\n")
+
 	// round floor
 	switch interval {
-	case "1m":
+	case msg.Interval_I1M:
 		roundedToMinute := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval, roundedToMinute.UnixNano()))
-	case "5m":
+		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedToMinute.UnixNano()))
+	case msg.Interval_I5M:
 		roundedTo5Minutes := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval, roundedTo5Minutes.UnixNano()))
-	case "15m":
+		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedTo5Minutes.UnixNano()))
+	case msg.Interval_I15M:
 		roundedTo15Minutes := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval, roundedTo15Minutes.UnixNano()))
-	case "1h":
+		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedTo15Minutes.UnixNano()))
+	case msg.Interval_I1H:
 		roundedTo1Hour := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval, roundedTo1Hour.UnixNano()))
-	case "6h":
+		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedTo1Hour.UnixNano()))
+	case msg.Interval_I6H:
 		roundedTo6Hour := time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval, roundedTo6Hour.UnixNano()))
-	case "1d":
+		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedTo6Hour.UnixNano()))
+	case msg.Interval_I1D:
 		roundedToDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval, roundedToDay.UnixNano()))
+		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedToDay.UnixNano()))
 	}
 	return nil
 }

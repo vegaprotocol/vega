@@ -67,43 +67,6 @@
         ]
       }
     },
-    "/candles": {
-      "get": {
-        "operationId": "TradeCandles",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/grpcTradeCandlesResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "market",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "since",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "interval",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
     "/createOrder": {
       "post": {
         "operationId": "CreateOrder",
@@ -372,6 +335,17 @@
       ],
       "default": "GTC"
     },
+    "grpcCandlesResponse": {
+      "type": "object",
+      "properties": {
+        "candles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaCandle"
+          }
+        }
+      }
+    },
     "grpcMarketDepthResponse": {
       "type": "object",
       "properties": {
@@ -468,17 +442,6 @@
         }
       }
     },
-    "grpcTradeCandlesResponse": {
-      "type": "object",
-      "properties": {
-        "candles": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaCandle"
-          }
-        }
-      }
-    },
     "grpcTradesByMarketResponse": {
       "type": "object",
       "properties": {
@@ -539,7 +502,11 @@
     "vegaCandle": {
       "type": "object",
       "properties": {
-        "date": {
+        "timestamp": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "datetime": {
           "type": "string"
         },
         "high": {
@@ -562,15 +529,22 @@
           "type": "string",
           "format": "uint64"
         },
-        "openBlockNumber": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "closeBlockNumber": {
-          "type": "string",
-          "format": "uint64"
+        "interval": {
+          "$ref": "#/definitions/vegaInterval"
         }
       }
+    },
+    "vegaInterval": {
+      "type": "string",
+      "enum": [
+        "I1M",
+        "I5M",
+        "I15M",
+        "I1H",
+        "I6H",
+        "I1D"
+      ],
+      "default": "I1M"
     },
     "vegaMarketPosition": {
       "type": "object",
@@ -703,6 +677,9 @@
         "currentTime": {
           "type": "string"
         },
+        "vegaTime": {
+          "type": "string"
+        },
         "status": {
           "$ref": "#/definitions/vegaAppStatus"
         },
@@ -746,9 +723,6 @@
         "appVersion": {
           "type": "string"
         },
-        "vegaTime": {
-          "type": "string"
-        },
         "Parties": {
           "type": "array",
           "items": {
@@ -782,6 +756,12 @@
         },
         "aggressor": {
           "$ref": "#/definitions/vegaSide"
+        },
+        "buyOrder": {
+          "type": "string"
+        },
+        "sellOrder": {
+          "type": "string"
         },
         "timestamp": {
           "type": "string",

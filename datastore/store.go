@@ -64,14 +64,14 @@ type OrderStore interface {
 
 type CandleStore interface {
 
-	Subscribe(internalTransport map[string]chan msg.Candle) uint64
+	Subscribe(internalTransport map[msg.Interval]chan msg.Candle) uint64
 	Unsubscribe(id uint64) error
 	Notify() error
-	QueueEvent(candle msg.Candle, interval string) error
+	QueueEvent(candle msg.Candle, interval msg.Interval) error
 
 	Close()
 
-	GetCandles(market string, sinceTimestamp uint64, interval string) []*msg.Candle
+	GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle
 	GenerateCandles(trade *msg.Trade) error
 	GenerateEmptyCandles(market string, timestamp uint64) error
 }

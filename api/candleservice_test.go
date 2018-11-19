@@ -40,9 +40,9 @@ func TestCandleService_Generate(t *testing.T) {
 
 	// t0 = 2018-11-13T11:01:14Z
 	t0 := uint64(1542106874000000000)
-	t0Seconds := int64(1542106874)
-	t0NanoSeconds := int64(000000000)
-	t0stamp := time.Unix(t0Seconds, t0NanoSeconds)
+	//t0Seconds := int64(1542106874)
+	//t0NanoSeconds := int64(000000000)
+	//t0stamp := time.Unix(t0Seconds, t0NanoSeconds)
 
 	var trades = []*msg.Trade{
 		{Id: "1", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0},
@@ -59,7 +59,7 @@ func TestCandleService_Generate(t *testing.T) {
 	candleService.Generate(ctx, testMarket)
 
 	// test for 1 minute intervals
-	candles, err := candleService.GetCandles(ctx, testMarket, t0stamp, "1m")
+	candles, err := candleService.GetCandles(ctx, testMarket, t0, msg.Interval_I1M)
 	assert.Nil(t, err)
 
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
@@ -96,32 +96,32 @@ func TestCandleService_ObserveCandles(t *testing.T) {
 
 	candleService.Init(vega, candleStore)
 
-	interval1m := "1m"
+	interval1m := msg.Interval_I1M
 	candlesSubscription1m, ref := candleService.ObserveCandles(ctx, &testMarket, &interval1m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1m))
 	assert.Equal(t, uint64(1), ref)
 
-	interval5m := "5m"
+	interval5m := msg.Interval_I5M
 	candlesSubscription5m, ref := candleService.ObserveCandles(ctx, &testMarket, &interval5m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription5m))
 	assert.Equal(t, uint64(2), ref)
 
-	interval15m := "15m"
+	interval15m := msg.Interval_I15M
 	candlesSubscription15m, ref := candleService.ObserveCandles(ctx, &testMarket, &interval15m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription15m))
 	assert.Equal(t, uint64(3), ref)
 
-	interval1h := "1h"
+	interval1h := msg.Interval_I1H
 	candlesSubscription1h, ref := candleService.ObserveCandles(ctx, &testMarket, &interval1h)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1h))
 	assert.Equal(t, uint64(4), ref)
 
-	interval6h := "6h"
+	interval6h := msg.Interval_I6H
 	candlesSubscription6h, ref := candleService.ObserveCandles(ctx, &testMarket, &interval6h)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription6h))
 	assert.Equal(t, uint64(5), ref)
 
-	interval1d := "1d"
+	interval1d := msg.Interval_I1D
 	candlesSubscription1d, ref := candleService.ObserveCandles(ctx, &testMarket, &interval1d)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1d))
 	assert.Equal(t, uint64(6), ref)
@@ -136,37 +136,37 @@ func TestCandleService_ObserveCandles(t *testing.T) {
 				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
 				assert.Equal(t, t0 - uint64(14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
-				assert.Equal(t, "1m", candle.Interval)
+				assert.Equal(t, msg.Interval_I1M, candle.Interval)
 
 			case candle := <- candlesSubscription5m:
 				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
 				assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
-				assert.Equal(t, "5m", candle.Interval)
+				assert.Equal(t, msg.Interval_I5M, candle.Interval)
 
 			case candle := <- candlesSubscription15m:
 				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
 				assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
-				assert.Equal(t, "15m", candle.Interval)
+				assert.Equal(t, msg.Interval_I15M, candle.Interval)
 
 			case candle := <- candlesSubscription1h:
 				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
 				assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
-				assert.Equal(t, "1h", candle.Interval)
+				assert.Equal(t, msg.Interval_I1H, candle.Interval)
 
 			case candle := <- candlesSubscription6h:
 				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
 				assert.Equal(t, t0 - uint64(5 * time.Hour + time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
-				assert.Equal(t, "6h", candle.Interval)
+				assert.Equal(t, msg.Interval_I6H, candle.Interval)
 
 			case candle := <- candlesSubscription1d:
 				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
 				assert.Equal(t, t0 - uint64(11 * time.Hour + time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
-				assert.Equal(t, "1d", candle.Interval)
+				assert.Equal(t, msg.Interval_I1D, candle.Interval)
 			}
 		}
 	}()

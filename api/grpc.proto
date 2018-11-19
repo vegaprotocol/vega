@@ -13,7 +13,7 @@ service trading {
     rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
     rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
     rpc Markets(MarketsRequest) returns (MarketsResponse);
-    rpc TradeCandles(TradeCandlesRequest) returns (TradeCandlesResponse);
+    rpc Candles(CandlesRequest) returns (CandlesResponse);
     rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
     rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
     rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
@@ -62,13 +62,13 @@ message MarketsResponse {
     repeated string markets = 1;
 }
 
-message TradeCandlesRequest {
+message CandlesRequest {
     string market = 1;
-    string since = 2;
-    uint64 interval = 3;
+    uint64 sinceTimestamp = 2;
+    vega.Interval interval = 3;
 }
 
-message TradeCandlesResponse {
+message CandlesResponse {
     repeated vega.Candle candles = 1;
 }
 

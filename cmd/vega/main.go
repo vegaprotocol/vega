@@ -57,12 +57,14 @@ func main() {
 	// Initialise concrete consumer services
 	orderService := api.NewOrderService()
 	tradeService := api.NewTradeService()
+	candleService := api.NewCandleService()
 	orderService.Init(vega, orderStore)
 	tradeService.Init(vega, tradeStore)
+	candleService.Init(vega, candleStore)
 
 	// GRPC server
 	// Port 3002
-	grpcServer := grpc.NewGRPCServer(orderService, tradeService)
+	grpcServer := grpc.NewGRPCServer(orderService, tradeService, candleService)
 	go grpcServer.Start()
 
 	// REST<>GRPC (gRPC proxy) server
@@ -72,7 +74,7 @@ func main() {
 
 	// GraphQL server (using new production quality gQL)
 	// Port 3004
-	graphServer := gql.NewGraphQLServer(orderService, tradeService)
+	graphServer := gql.NewGraphQLServer(orderService, tradeService, candleService)
 	go graphServer.Start()
 
 	// ABCI socket server
@@ -83,6 +85,7 @@ func main() {
 
 	orderService.Stop()
 	tradeService.Stop()
+	candleService.Stop()
 }
 
 func initLogger(levelStr string) error {

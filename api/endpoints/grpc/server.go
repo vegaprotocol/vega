@@ -11,12 +11,14 @@ import (
 type grpcServer struct {
 	orderService api.OrderService
 	tradeService api.TradeService
+	candleService api.CandleService
 }
 
-func NewGRPCServer(orderService api.OrderService, tradeService api.TradeService) *grpcServer {
+func NewGRPCServer(orderService api.OrderService, tradeService api.TradeService, candleService api.CandleService) *grpcServer {
 	return &grpcServer{
 		orderService: orderService,
 		tradeService: tradeService,
+		candleService: candleService,
 	}
 }
 
@@ -32,6 +34,7 @@ func (g *grpcServer) Start() {
 	var handlers = &Handlers{
 		OrderService: g.orderService,
 		TradeService: g.tradeService,
+		CandleService: g.candleService,
 	}
 	grpcServer := grpc.NewServer()
 	api.RegisterTradingServer(grpcServer, handlers)

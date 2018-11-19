@@ -187,8 +187,8 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (msg.Marke
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	last int, interval int) ([]msg.Candle, error) {
 
-	defaultInterval := "1m"
-	defaultTime := time.Now()
+	defaultInterval := msg.Interval_I1M
+	defaultTime := uint64(time.Now().UnixNano())
 	candles, err := r.candleService.GetCandles(ctx, market.Name, defaultTime, defaultInterval)
 	if err != nil {
 		return nil, err
