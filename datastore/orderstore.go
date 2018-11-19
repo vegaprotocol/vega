@@ -280,7 +280,6 @@ func (os *orderStore) Post(order *msg.Order) error {
 
 func (os *orderStore) PostBatch(batch []*msg.Order) error {
 
-
 	wb := os.badger.db.NewWriteBatch()
 	defer wb.Cancel()
 

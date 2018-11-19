@@ -22,8 +22,8 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Id_neq != nil {
-		id := *queryFilters.Id_neq
+	if queryFilters.IDNeq != nil {
+		id := *queryFilters.IDNeq
 		holder.IdFilter = &filters.QueryFilter{
 			Neq: id,
 		}
@@ -35,9 +35,9 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Market_neq != nil {
+	if queryFilters.MarketNeq != nil {
 		holder.MarketFilter = &filters.QueryFilter{
-			Neq: *queryFilters.Market_neq,
+			Neq: *queryFilters.MarketNeq,
 		}
 		foundFilter = true
 	}
@@ -47,9 +47,9 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Party_neq != nil {
+	if queryFilters.PartyNeq != nil {
 		holder.PartyFilter = &filters.QueryFilter{
-			Neq: *queryFilters.Party_neq,
+			Neq: *queryFilters.PartyNeq,
 		}
 		foundFilter = true
 	}
@@ -59,9 +59,9 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Side_neq != nil {
+	if queryFilters.SideNeq != nil {
 		holder.SideFilter = &filters.QueryFilter{
-			Neq: queryFilters.Side_neq,
+			Neq: queryFilters.SideNeq,
 		}
 		foundFilter = true
 	}
@@ -75,8 +75,8 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Price_neq != nil {
-		price, err := safeStringUint64(*queryFilters.Price_neq)
+	if queryFilters.PriceNeq != nil {
+		price, err := safeStringUint64(*queryFilters.PriceNeq)
 		if err != nil {
 			return false, err
 		}
@@ -85,12 +85,12 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Price_from != nil && queryFilters.Price_to != nil {
-		lower, err := safeStringUint64(*queryFilters.Price_from)
+	if queryFilters.PriceFrom != nil && queryFilters.PriceTo != nil {
+		lower, err := safeStringUint64(*queryFilters.PriceFrom)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*queryFilters.Price_to)
+		upper, err := safeStringUint64(*queryFilters.PriceTo)
 		if err != nil {
 			return false, err
 		}
@@ -113,8 +113,8 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Size_neq != nil {
-		size, err := safeStringUint64(*queryFilters.Size_neq)
+	if queryFilters.SizeNeq != nil {
+		size, err := safeStringUint64(*queryFilters.SizeNeq)
 		if err != nil {
 			return false, err
 		}
@@ -123,12 +123,12 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Size_from != nil && queryFilters.Size_to != nil {
-		lower, err := safeStringUint64(*queryFilters.Size_from)
+	if queryFilters.SizeFrom != nil && queryFilters.SizeTo != nil {
+		lower, err := safeStringUint64(*queryFilters.SizeFrom)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*queryFilters.Size_to)
+		upper, err := safeStringUint64(*queryFilters.SizeTo)
 		if err != nil {
 			return false, err
 		}
@@ -151,8 +151,8 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Remaining_neq != nil {
-		remaining, err := safeStringUint64(*queryFilters.Remaining_neq)
+	if queryFilters.RemainingNeq != nil {
+		remaining, err := safeStringUint64(*queryFilters.RemainingNeq)
 		if err != nil {
 			return false, err
 		}
@@ -161,12 +161,12 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Remaining_from != nil && queryFilters.Remaining_to != nil {
-		lower, err := safeStringUint64(*queryFilters.Remaining_from)
+	if queryFilters.RemainingFrom != nil && queryFilters.RemainingTo != nil {
+		lower, err := safeStringUint64(*queryFilters.RemainingFrom)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*queryFilters.Remaining_to)
+		upper, err := safeStringUint64(*queryFilters.RemainingTo)
 		if err != nil {
 			return false, err
 		}
@@ -189,8 +189,8 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Type_neq != nil {
-		orderType, err := parseOrderType(queryFilters.Type_neq)
+	if queryFilters.TypeNeq != nil {
+		orderType, err := parseOrderType(queryFilters.TypeNeq)
 		if err != nil {
 			return false, err
 		}
@@ -209,8 +209,8 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Timestamp_neq != nil {
-		timestamp, err := safeStringUint64(*queryFilters.Timestamp_neq)
+	if queryFilters.TimestampNeq != nil {
+		timestamp, err := safeStringUint64(*queryFilters.TimestampNeq)
 		if err != nil {
 			return false, err
 		}
@@ -219,12 +219,12 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Timestamp_from != nil && queryFilters.Timestamp_to != nil {
-		lower, err := safeStringUint64(*queryFilters.Timestamp_from)
+	if queryFilters.TimestampFrom != nil && queryFilters.TimestampTo != nil {
+		lower, err := safeStringUint64(*queryFilters.TimestampFrom)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*queryFilters.Timestamp_to)
+		upper, err := safeStringUint64(*queryFilters.TimestampTo)
 		if err != nil {
 			return false, err
 		}
@@ -247,8 +247,8 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Status_neq != nil {
-		orderStatus, err := parseOrderStatus(queryFilters.Status_neq)
+	if queryFilters.StatusNeq != nil {
+		orderStatus, err := parseOrderStatus(queryFilters.StatusNeq)
 		if err != nil {
 			return false, err
 		}
@@ -280,8 +280,8 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Id_neq != nil {
-		id := *queryFilters.Id_neq
+	if queryFilters.IDNeq != nil {
+		id := *queryFilters.IDNeq
 		holder.IdFilter = &filters.QueryFilter{
 			Neq: id,
 		}
@@ -293,9 +293,9 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Market_neq != nil {
+	if queryFilters.MarketNeq != nil {
 		holder.MarketFilter = &filters.QueryFilter{
-			Neq: queryFilters.Market_neq,
+			Neq: queryFilters.MarketNeq,
 		}
 		foundFilter = true
 	}
@@ -309,8 +309,8 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Price_neq != nil {
-		price, err := safeStringUint64(*queryFilters.Price_neq)
+	if queryFilters.PriceNeq != nil {
+		price, err := safeStringUint64(*queryFilters.PriceNeq)
 		if err != nil {
 			return false, err
 		}
@@ -319,12 +319,12 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Price_from != nil && queryFilters.Price_to != nil {
-		lower, err := safeStringUint64(*queryFilters.Price_from)
+	if queryFilters.PriceFrom != nil && queryFilters.PriceTo != nil {
+		lower, err := safeStringUint64(*queryFilters.PriceFrom)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*queryFilters.Price_to)
+		upper, err := safeStringUint64(*queryFilters.PriceTo)
 		if err != nil {
 			return false, err
 		}
@@ -347,8 +347,8 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Size_neq != nil {
-		size, err := safeStringUint64(*queryFilters.Size_neq)
+	if queryFilters.SizeNeq != nil {
+		size, err := safeStringUint64(*queryFilters.SizeNeq)
 		if err != nil {
 			return false, err
 		}
@@ -357,12 +357,12 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Size_from != nil && queryFilters.Size_to != nil {
-		lower, err := safeStringUint64(*queryFilters.Size_from)
+	if queryFilters.SizeFrom != nil && queryFilters.SizeTo != nil {
+		lower, err := safeStringUint64(*queryFilters.SizeFrom)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*queryFilters.Size_to)
+		upper, err := safeStringUint64(*queryFilters.SizeTo)
 		if err != nil {
 			return false, err
 		}
@@ -381,9 +381,9 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Buyer_neq != nil {
+	if queryFilters.BuyerNeq != nil {
 		holder.BuyerFilter = &filters.QueryFilter{
-			Neq: queryFilters.Buyer_neq,
+			Neq: queryFilters.BuyerNeq,
 		}
 		foundFilter = true
 	}
@@ -393,9 +393,9 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Seller_neq != nil {
+	if queryFilters.SellerNeq != nil {
 		holder.SellerFilter = &filters.QueryFilter{
-			Neq: queryFilters.Seller_neq,
+			Neq: queryFilters.SellerNeq,
 		}
 		foundFilter = true
 	}
@@ -405,9 +405,9 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Aggressor_neq != nil {
+	if queryFilters.AggressorNeq != nil {
 		holder.AggressorFilter = &filters.QueryFilter{
-			Neq: queryFilters.Aggressor_neq,
+			Neq: queryFilters.AggressorNeq,
 		}
 		foundFilter = true
 	}
@@ -421,8 +421,8 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Timestamp_neq != nil {
-		timestamp, err := safeStringUint64(*queryFilters.Timestamp_neq)
+	if queryFilters.TimestampNeq != nil {
+		timestamp, err := safeStringUint64(*queryFilters.TimestampNeq)
 		if err != nil {
 			return false, err
 		}
@@ -431,12 +431,12 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		}
 		foundFilter = true
 	}
-	if queryFilters.Timestamp_from != nil && queryFilters.Timestamp_to != nil {
-		lower, err := safeStringUint64(*queryFilters.Timestamp_from)
+	if queryFilters.TimestampFrom != nil && queryFilters.TimestampTo != nil {
+		lower, err := safeStringUint64(*queryFilters.TimestampFrom)
 		if err != nil {
 			return false, err
 		}
-		upper, err := safeStringUint64(*queryFilters.Timestamp_to)
+		upper, err := safeStringUint64(*queryFilters.TimestampTo)
 		if err != nil {
 			return false, err
 		}
