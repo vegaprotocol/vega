@@ -103,7 +103,7 @@ func (re *riskEngine) Assess(riskFactor *RiskFactor) error {
 	stdout, err := cmd.Output()
 	log.Debugf("python stdout: %s\n", stdout)
 	if err != nil {
-		log.Errorf("error calling out to python", err.Error())
+		log.Infof("error calling out to python", err.Error())
 		// SHORT|LONG
 		stdout = []byte("0.00553|0.00550")
 	}
@@ -117,13 +117,13 @@ func (re *riskEngine) Assess(riskFactor *RiskFactor) error {
 	// Currently the risk script spec is to just print the int64 value '0.00553' on stdout
 	riskFactorShort, err := strconv.ParseFloat(s[shortIndex], 64)
 	if err != nil {
-		log.Errorf(err.Error())
+		log.Errorf("error calculating short risk factor", err.Error())
 		return err
 	}
 
 	riskFactorLong, err := strconv.ParseFloat(s[longIndex], 64)
 	if err != nil {
-		log.Errorf(err.Error())
+		log.Errorf("error calculating long risk factor", err.Error())
 		return err
 	}
 
