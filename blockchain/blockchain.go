@@ -8,7 +8,6 @@ import (
 	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
 	"github.com/golang/protobuf/proto"
-	"fmt"
 )
 
 type Blockchain struct {
@@ -22,11 +21,11 @@ func NewBlockchain(vegaApp *core.Vega) *Blockchain {
 }
 
 func (app *Blockchain) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
-	log.Debugf(fmt.Sprintf("Begin block time report (%d txs):", beginBlock.Header.NumTxs))
-	log.Debugf("------------------------")
-	log.Debugf(fmt.Sprintf("Gossip time: %v", beginBlock.Header.Time))
-	log.Debugf(fmt.Sprintf("Unix epoch+nano: %d", beginBlock.Header.Time.UnixNano()))
-	log.Debugf("------------------------")
+	//log.Debugf(fmt.Sprintf("Begin block time report (%d txs):", beginBlock.Header.NumTxs))
+	//log.Debugf("------------------------")
+	//log.Debugf(fmt.Sprintf("Gossip time: %v", beginBlock.Header.Time))
+	//log.Debugf(fmt.Sprintf("Unix epoch+nano: %d", beginBlock.Header.Time.UnixNano()))
+	//log.Debugf("------------------------")
 
 	// We need to cache the last timestamp so we can distribute trades
 	// in a block evenly between last timestamp and current timestamp
@@ -75,7 +74,7 @@ func (app *Blockchain) BeginBlock(beginBlock types.RequestBeginBlock) types.Resp
 //
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
-	log.Debugf("CheckTx: %s", string(tx))
+	//log.Debugf("CheckTx: %s", string(tx))
 	return types.ResponseCheckTx{Code: code.CodeTypeOK}
 }
 
@@ -112,7 +111,7 @@ var tx_per_block uint64
 // root of the data returned by the DeliverTx requests, or both]
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	txLength := len(tx)
-	log.Debugf("DeliverTx: %s [%v]", string(tx), txLength)
+	//log.Debugf("DeliverTx: %s [%v]", string(tx), txLength)
 	tx_per_block++
 
 	if app.vega.Statistics.Status == msg.AppStatus_CHAIN_NOT_FOUND {
@@ -127,7 +126,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	// Decode payload and command
 	value, cmd, err := VegaTxDecode(tx)
 	if err != nil {
-		log.Errorf("Invalid tx: %s", string(tx))
+		log.Errorf("Invalid tx when decoding DeliverTx payload")
 		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 	}
 
