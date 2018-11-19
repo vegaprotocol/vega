@@ -367,6 +367,15 @@ func (r *MyCandleResolver) Datetime(ctx context.Context, obj *msg.Candle) (strin
 func (r *MyCandleResolver) Timestamp(ctx context.Context, obj *msg.Candle) (string, error) {
 	return strconv.FormatUint(obj.Timestamp, 10), nil
 }
+func (r *MyCandleResolver) Interval(ctx context.Context, obj *msg.Candle) (Interval, error) {
+	interval := Interval(obj.Interval.String())
+	if interval.IsValid() {
+		return interval, nil
+	} else {
+		log.Errorf("Interval conv from proto to gql type failed (%s is not valid) fall back to default", interval)
+		return IntervalI15M, nil
+	}
+}
 // END: Candle Resolver
 
 // BEGIN: Price Level Resolver
@@ -586,18 +595,41 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	return c, nil
 }
 
-func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error) {
+func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan msg.Candle, error) {
 	// Validate market
 	err := r.validateMarket(ctx, &market)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate interval
-	defaultInterval := "1m"
+	pbInterval := msg.Interval_I15M
+	switch interval {
+	case IntervalI15M:
+		pbInterval = msg.Interval_I15M
+		break
+	case IntervalI1D:
+		pbInterval = msg.Interval_I1D
+		break
+	case IntervalI1H:
+		pbInterval = msg.Interval_I1H
+		break
+	case IntervalI1M:
+		pbInterval = msg.Interval_I1M
+		break
+	case IntervalI5M:
+		pbInterval = msg.Interval_I5M
+		break
+	case IntervalI6H:
+		pbInterval = msg.Interval_I6H
+		break
+	default:
+		log.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
+		pbInterval = msg.Interval_I15M
+		break
+	}
 
-	c, ref := r.candleService.ObserveCandles(ctx, &market, &defaultInterval)
-	log.Debugf("GraphQL Candle Interval %s -> New subscriber: %d", defaultInterval, ref)
+	c, ref := r.candleService.ObserveCandles(ctx, &market, &pbInterval)
+	log.Debugf("GraphQL Candle Interval %s -> New subscriber: %d", pbInterval.String(), ref)
 	return c, nil
 }
 

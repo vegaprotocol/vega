@@ -94,6 +94,46 @@ type Vega struct {
 	Parties []Party  `json:"parties"`
 }
 
+type Interval string
+
+const (
+	IntervalI1M  Interval = "I1M"
+	IntervalI5M  Interval = "I5M"
+	IntervalI15M Interval = "I15M"
+	IntervalI1H  Interval = "I1H"
+	IntervalI6H  Interval = "I6H"
+	IntervalI1D  Interval = "I1D"
+)
+
+func (e Interval) IsValid() bool {
+	switch e {
+	case IntervalI1M, IntervalI5M, IntervalI15M, IntervalI1H, IntervalI6H, IntervalI1D:
+		return true
+	}
+	return false
+}
+
+func (e Interval) String() string {
+	return string(e)
+}
+
+func (e *Interval) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Interval(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Interval", str)
+	}
+	return nil
+}
+
+func (e Interval) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type OrderStatus string
 
 const (

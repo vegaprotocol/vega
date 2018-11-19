@@ -130,7 +130,7 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		Candles     func(childComplexity int, market string, interval int) int
+		Candles     func(childComplexity int, market string, interval Interval) int
 		Orders      func(childComplexity int, market *string, party *string) int
 		Trades      func(childComplexity int, market *string, party *string) int
 		Positions   func(childComplexity int, party string) int
@@ -157,12 +157,13 @@ type ComplexityRoot struct {
 
 type CandleResolver interface {
 	Timestamp(ctx context.Context, obj *msg.Candle) (string, error)
-	Datetime(ctx context.Context, obj *msg.Candle) (string, error)
+
 	High(ctx context.Context, obj *msg.Candle) (string, error)
 	Low(ctx context.Context, obj *msg.Candle) (string, error)
 	Open(ctx context.Context, obj *msg.Candle) (string, error)
 	Close(ctx context.Context, obj *msg.Candle) (string, error)
 	Volume(ctx context.Context, obj *msg.Candle) (string, error)
+	Interval(ctx context.Context, obj *msg.Candle) (Interval, error)
 }
 type MarketResolver interface {
 	Orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
@@ -216,7 +217,7 @@ type QueryResolver interface {
 	Vega(ctx context.Context) (Vega, error)
 }
 type SubscriptionResolver interface {
-	Candles(ctx context.Context, market string, interval int) (<-chan msg.Candle, error)
+	Candles(ctx context.Context, market string, interval Interval) (<-chan msg.Candle, error)
 	Orders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, error)
 	Trades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, error)
 	Positions(ctx context.Context, party string) (<-chan msg.MarketPosition, error)
@@ -579,10 +580,10 @@ func field_Subscription_candles_args(rawArgs map[string]interface{}) (map[string
 		}
 	}
 	args["market"] = arg0
-	var arg1 int
+	var arg1 Interval
 	if tmp, ok := rawArgs["interval"]; ok {
 		var err error
-		arg1, err = graphql.UnmarshalInt(tmp)
+		err = (&arg1).UnmarshalGQL(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1163,7 +1164,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Candles(childComplexity, args["market"].(string), args["interval"].(int)), true
+		return e.complexity.Subscription.Candles(childComplexity, args["market"].(string), args["interval"].(Interval)), true
 
 	case "Subscription.orders":
 		if e.complexity.Subscription.Orders == nil {
@@ -1400,14 +1401,10 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 				wg.Done()
 			}(i, field)
 		case "datetime":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Candle_datetime(ctx, field, obj)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
-				wg.Done()
-			}(i, field)
+			out.Values[i] = ec._Candle_datetime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "high":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -1454,10 +1451,14 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 				wg.Done()
 			}(i, field)
 		case "interval":
-			out.Values[i] = ec._Candle_interval(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Candle_interval(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1509,7 +1510,7 @@ func (ec *executionContext) _Candle_datetime(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Candle().Datetime(rctx, obj)
+		return obj.Datetime, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1671,7 +1672,7 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Interval, nil
+		return ec.resolvers.Candle().Interval(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -1679,10 +1680,10 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(Interval)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
+	return res
 }
 
 var marketImplementors = []string{"Market"}
@@ -3737,7 +3738,7 @@ func (ec *executionContext) _Subscription_candles(ctx context.Context, field gra
 	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
 	//          and Tracer stack
 	rctx := ctx
-	results, err := ec.resolvers.Subscription().Candles(rctx, args["market"].(string), args["interval"].(int))
+	results, err := ec.resolvers.Subscription().Candles(rctx, args["market"].(string), args["interval"].(Interval))
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -6594,7 +6595,7 @@ type Query {
 
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
 type Subscription {
-    candles(market: String!, interval: Int!): Candle!
+    candles(market: String!, interval: Interval!): Candle!
     orders(market: String, party: String): [Order!]
     trades(market: String, party: String): [Trade!]
     positions(party: String!): Position!
@@ -6698,7 +6699,7 @@ type Candle {
     volume: String!
 
     # Interval price (string)
-    interval: String!
+    interval: Interval!
 }
 
 # Represents a party on Vega, could be an ethereum wallet address in the future
@@ -6969,5 +6970,14 @@ input OrderFilter {
     # Status filters
     status: OrderStatus # matches all orders with exact status value
     status_neq: OrderStatus # matches all orders with different status to value
+}
+
+enum Interval {
+    I1M
+    I5M
+    I15M
+    I1H
+    I6H
+    I1D
 }`},
 )
