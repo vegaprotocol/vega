@@ -21,3 +21,11 @@
 [[constraint]]
   branch = "master"
   name = "github.com/tav/golly"
+
+[[override]]
+  name = "github.com/dgraph-io/badger"
+  version = "=1.5.3"
+
+[[constraint]]
+  name = "github.com/99designs/gqlgen"
+  branch = "master"

@@ -2,12 +2,64 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:e01086935f642472413e883e513819cafef51d02ae57ea7b9ebcf7bb061bebfa"
+  name = "github.com/99designs/gqlgen"
+  packages = [
+    "complexity",
+    "graphql",
+    "graphql/introspection",
+    "handler",
+  ]
+  pruneopts = "UT"
+  revision = "f7932b40ee0f75b35428af917cd05193b7f3414f"
+
+[[projects]]
+  branch = "master"
+  digest = "1:b02e5e3f836f077a3249d1dfe3c57d305e007f71a98f2e69c170a2dd8d2b266c"
+  name = "github.com/AndreasBriese/bbloom"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "343706a395b76e5ca5c7dca46a5d937b48febc74"
+
+[[projects]]
+  digest = "1:cc306cae16c310ca360eaee3e563109e251832a3f6a13b26bf39cc6a43c7c9f6"
+  name = "github.com/agnivade/levenshtein"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "834b435c3df04fba060c8d74a40d849ab2c4a090"
+  version = "v1.0.1"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "UT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:e69eed3a095cfa14010241bec50ed52af765480899ac95ffd5687f35091f9e09"
+  name = "github.com/dgraph-io/badger"
+  packages = [
+    ".",
+    "options",
+    "protos",
+    "skl",
+    "table",
+    "y",
+  ]
+  pruneopts = "UT"
+  revision = "391b6d3b93e6014fe8c2971fcc0c1266e47dbbd9"
+  version = "v1.5.3"
+
+[[projects]]
+  branch = "master"
+  digest = "1:8583eab935e3d99d3a7ac489cd2ee7c8e95eecd7c64ab1fc8382746dacaf8563"
+  name = "github.com/dgryski/go-farm"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2de33835d10275975374b37b2dcfd22c9020a1f5"
 
 [[projects]]
   digest = "1:d0309acc14b09c713e2fd1283be859c8e03f5f40c69e221410a0f652742b139c"
@@ -77,7 +129,7 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:4df19d38aa8efc5648954a56630305d0c4ad9bd22531c31f9617b110bc12d00e"
+  digest = "1:99c4a4b2301712e9faf199c3bd00b1e27004fbd461fce9e462b6e4ffc3a92d62"
   name = "github.com/grpc-ecosystem/grpc-gateway"
   packages = [
     "runtime",
@@ -85,8 +137,19 @@
     "utilities",
   ]
   pruneopts = "UT"
-  revision = "92583770e3f01b09a0d3e9bdf64321d8bebd48f2"
-  version = "v1.4.1"
+  revision = "aeab1d96e0f1368d243e2e5f526aa29d495517bb"
+  version = "v1.5.1"
+
+[[projects]]
+  digest = "1:8ec8d88c248041a6df5f6574b87bc00e7e0b493881dad2e7ef47b11dc69093b5"
+  name = "github.com/hashicorp/golang-lru"
+  packages = [
+    ".",
+    "simplelru",
+  ]
+  pruneopts = "UT"
+  revision = "20f1fb78b0740ba8c3cb143a61e86ba5c8669768"
+  version = "v0.5.0"
 
 [[projects]]
   branch = "master"
@@ -156,16 +219,16 @@
   revision = "ad032321f11e5b62ecc9a59a20765225830531c0"
 
 [[projects]]
-  digest = "1:10b3a599325740c84a7c81f3f3cb2e1fdb70b3ea01b7fa28495567a2519df431"
+  digest = "1:ad9c4c1a4e7875330b1f62906f2830f043a23edb5db997e3a5ac5d3e6eadf80a"
   name = "github.com/tendermint/go-amino"
   packages = ["."]
   pruneopts = "UT"
-  revision = "6dcc6ddc143e116455c94b25c1004c99e0d0ca12"
-  version = "v0.14.0"
+  revision = "dc14acf9ef15f85828bfbc561ed9dd9d2a284885"
+  version = "v0.14.1"
 
 [[projects]]
   branch = "master"
-  digest = "1:ae192773cf2b784157b70a06c3de9b410ae1acc0d6d9a2cdfceef91bba6dca9f"
+  digest = "1:35d25eafefeda188d1a6b3a337fe45b195a06b7dc2efa6ff829ff7a7bf9470f4"
   name = "github.com/tendermint/tendermint"
   packages = [
     "abci/example/code",
@@ -177,7 +240,7 @@
     "libs/log",
   ]
   pruneopts = "UT"
-  revision = "c086d0a34102bd42873d20445673ea1d18a539cd"
+  revision = "22dcc92232cd04ce7381043e09d85dd536ae3b96"
 
 [[projects]]
   digest = "1:4d6d38eb1b9f0449249cee69554d62d580676460ebe8e5a1a829f9737c00cf36"
@@ -191,21 +254,20 @@
   version = "v0.9.0"
 
 [[projects]]
-  digest = "1:eab957401876e949db82999e5b0e6fcc2e98b47dc0118961343cc8f3874f2619"
-  name = "github.com/vektah/gqlgen"
+  branch = "master"
+  digest = "1:533289d85a4799d4a31edf100f597126d3ac68983a00e6e6b6bee5f4a1cbe37f"
+  name = "github.com/vektah/gqlparser"
   packages = [
-    "graphql",
-    "handler",
-    "neelance/common",
-    "neelance/errors",
-    "neelance/introspection",
-    "neelance/query",
-    "neelance/schema",
-    "neelance/validation",
+    ".",
+    "ast",
+    "gqlerror",
+    "lexer",
+    "parser",
+    "validator",
+    "validator/rules",
   ]
   pruneopts = "UT"
-  revision = "381b34691fd93829e50ba8821412dc3467ec4821"
-  version = "0.3.0"
+  revision = "6f09700b13a33a80c5dc33117b8177aff00d906c"
 
 [[projects]]
   digest = "1:3c1a69cdae3501bf75e76d0d86dc6f2b0a7421bc205c0cb7b96b19eed464a34d"
@@ -254,6 +316,14 @@
   revision = "292b43bbf7cb8d35ddf40f8d5100ef3837cced3f"
 
 [[projects]]
+  branch = "master"
+  digest = "1:a62e80faf19c93dcbd7954a26fdb51acbfcb4b7161966adf1de531e593c4834a"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "93218def8b18e66adbdab3eca8ec334700329f1f"
+
+[[projects]]
   digest = "1:7509ba4347d1f8de6ae9be8818b0cd1abc3deeffe28aeaf4be6d4b6b5178d9ca"
   name = "golang.org/x/text"
   packages = [
@@ -282,7 +352,7 @@
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "UT"
-  revision = "5fc9ac5403620be16bcdb0c8e7644b1178472c3b"
+  revision = "b5d43981345bdb2c233eb4bf3277847b48c6fdc6"
 
 [[projects]]
   digest = "1:4515e3030c440845b046354fd5d57671238428b820deebce2e9dabb5cd3c51ac"
@@ -322,6 +392,10 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/99designs/gqlgen/graphql",
+    "github.com/99designs/gqlgen/graphql/introspection",
+    "github.com/99designs/gqlgen/handler",
+    "github.com/dgraph-io/badger",
     "github.com/gogo/protobuf/gogoproto",
     "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
@@ -339,11 +413,8 @@
     "github.com/tendermint/tendermint/abci/server",
     "github.com/tendermint/tendermint/abci/types",
     "github.com/tendermint/tmlibs/common",
-    "github.com/vektah/gqlgen/graphql",
-    "github.com/vektah/gqlgen/handler",
-    "github.com/vektah/gqlgen/neelance/introspection",
-    "github.com/vektah/gqlgen/neelance/query",
-    "github.com/vektah/gqlgen/neelance/schema",
+    "github.com/vektah/gqlparser",
+    "github.com/vektah/gqlparser/ast",
     "go.uber.org/zap",
     "go.uber.org/zap/zapcore",
     "golang.org/x/net/context",

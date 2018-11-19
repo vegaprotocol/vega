@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
-	"github.com/vektah/gqlgen/handler"
+	"github.com/99designs/gqlgen/handler"
 	"net/http"
 	"vega/api"
 	"vega/log"
@@ -40,9 +40,12 @@ func (g *graphServer) Start() {
 	log.Infof("Starting GraphQL based server on port %d...\n", port)
 	var addr = fmt.Sprintf(":%d", port)
 	var resolverRoot = NewResolverRoot(g.orderService, g.tradeService)
+	var config = Config {
+		Resolvers: resolverRoot,
+	}
 	http.Handle("/", cors.Handler(handler.Playground("VEGA", "/query")))
 	http.Handle("/query", cors.Handler(handler.GraphQL(
-		NewExecutableSchema(resolverRoot),
+		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(upgrader),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			log.Errorf("GraphQL error: %v", err)
