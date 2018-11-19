@@ -103,32 +103,33 @@ func (re *riskEngine) Assess(riskFactor *RiskFactor) error {
 	stdout, err := cmd.Output()
 	log.Debugf("python stdout: %s\n", stdout)
 	if err != nil {
-		log.Errorf("error calling out to python", err.Error())
+		log.Infof("error calling out to python", err.Error())
 		// SHORT|LONG
 		stdout = []byte("0.00553|0.00550")
 	}
 
 	s := strings.Split(string(stdout), "|")
 	if len(s) != 2 {
-		log.Errorf("unable to get risk factor, length of items = %d", len(s))
+		log.Infof("Could not get risk factors from python model -> using defaults [%d]", len(s))
 		return errors.New("unable to get risk factor")
 	}
 
 	// Currently the risk script spec is to just print the int64 value '0.00553' on stdout
 	riskFactorShort, err := strconv.ParseFloat(s[shortIndex], 64)
 	if err != nil {
-		println(err.Error())
+		log.Errorf("error calculating short risk factor", err.Error())
 		return err
 	}
 
 	riskFactorLong, err := strconv.ParseFloat(s[longIndex], 64)
 	if err != nil {
-		println(err.Error())
+		log.Errorf("error calculating long risk factor", err.Error())
 		return err
 	}
 
 	riskFactor.Short = riskFactorShort
 	riskFactor.Long = riskFactorLong
+	
 	log.Debugf("Risk Factors obtained from risk model: ")
 	log.Debugf("Short: %f", riskFactor.Short)
 	log.Debugf("Long: %f", riskFactor.Long)
