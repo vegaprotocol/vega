@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 	"time"
-	
+
 	"vega/core"
 	"vega/datastore"
 	"vega/log"

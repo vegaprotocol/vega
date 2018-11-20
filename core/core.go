@@ -9,6 +9,8 @@ import (
 	"vega/matching"
 	"vega/msg"
 	"vega/risk"
+	"vega/api"
+	"context"
 )
 
 const (
@@ -35,6 +37,7 @@ type Vega struct {
 	OrderStore     datastore.OrderStore
 	TradeStore     datastore.TradeStore
 	CandleStore	   datastore.CandleStore
+	CandleService  api.CandleService
 }
 
 func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.TradeStore, candleStore datastore.CandleStore) *Vega {
@@ -304,4 +307,12 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 func (v *Vega) NotifySubscribers() {
 	v.OrderStore.Notify()
 	v.TradeStore.Notify()
+}
+
+func (v *Vega) GenerateCandles(ctx context.Context) {
+	// TODO: for each market
+	if err := v.CandleService.Generate(context.Background(), "BTC/DEC18"); err != nil {
+		fmt.Printf("Candle generation error occured %+v", err)
+	}
+	v.CandleStore.Notify()
 }

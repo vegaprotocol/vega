@@ -65,7 +65,7 @@ type ComplexityRoot struct {
 		Orders  func(childComplexity int, where *OrderFilter, skip *int, first *int, last *int) int
 		Trades  func(childComplexity int, where *TradeFilter, skip *int, first *int, last *int) int
 		Depth   func(childComplexity int) int
-		Candles func(childComplexity int, last int, interval int) int
+		Candles func(childComplexity int, sinceTimestamp int, interval Interval) int
 	}
 
 	MarketDepth struct {
@@ -169,7 +169,7 @@ type MarketResolver interface {
 	Orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
 	Trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
 	Depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
-	Candles(ctx context.Context, obj *Market, last int, interval int) ([]msg.Candle, error)
+	Candles(ctx context.Context, obj *Market, sinceTimestamp int, interval Interval) ([]msg.Candle, error)
 }
 type MarketDepthResolver interface {
 	Buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
@@ -364,18 +364,18 @@ func field_Market_trades_args(rawArgs map[string]interface{}) (map[string]interf
 func field_Market_candles_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 int
-	if tmp, ok := rawArgs["last"]; ok {
+	if tmp, ok := rawArgs["sinceTimestamp"]; ok {
 		var err error
 		arg0, err = graphql.UnmarshalInt(tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["last"] = arg0
-	var arg1 int
+	args["sinceTimestamp"] = arg0
+	var arg1 Interval
 	if tmp, ok := rawArgs["interval"]; ok {
 		var err error
-		arg1, err = graphql.UnmarshalInt(tmp)
+		err = (&arg1).UnmarshalGQL(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -878,7 +878,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.Candles(childComplexity, args["last"].(int), args["interval"].(int)), true
+		return e.complexity.Market.Candles(childComplexity, args["sinceTimestamp"].(int), args["interval"].(Interval)), true
 
 	case "MarketDepth.name":
 		if e.complexity.MarketDepth.Name == nil {
@@ -1944,7 +1944,7 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Candles(rctx, obj, args["last"].(int), args["interval"].(int))
+		return ec.resolvers.Market().Candles(rctx, obj, args["sinceTimestamp"].(int), args["interval"].(Interval))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -6638,7 +6638,7 @@ type Market {
     depth: MarketDepth!
 
     # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
-    candles (last: Int!, interval: Int!): [Candle!]
+    candles (sinceTimestamp: Int!, interval: Interval!): [Candle!]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.

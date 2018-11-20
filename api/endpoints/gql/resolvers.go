@@ -19,10 +19,11 @@ type resolverRoot struct {
 	candleService api.CandleService
 }
 
-func NewResolverRoot(orderService api.OrderService, tradeService api.TradeService) *resolverRoot {
+func NewResolverRoot(orderService api.OrderService, tradeService api.TradeService, candleService api.CandleService) *resolverRoot {
 	return &resolverRoot{
 		orderService: orderService,
 		tradeService: tradeService,
+		candleService: candleService,
 	}
 }
 
@@ -185,11 +186,28 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (msg.Marke
 }
 
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
-	last int, interval int) ([]msg.Candle, error) {
+	sinceTimestamp int, interval Interval) ([]msg.Candle, error) {
 
-	defaultInterval := msg.Interval_I1M
-	defaultTime := uint64(time.Now().UnixNano())
-	candles, err := r.candleService.GetCandles(ctx, market.Name, defaultTime, defaultInterval)
+	var pbInterval msg.Interval
+	switch interval {
+	case IntervalI15M:
+		pbInterval = msg.Interval_I15M
+	case IntervalI1D:
+		pbInterval = msg.Interval_I1D
+	case IntervalI1H:
+		pbInterval = msg.Interval_I1H
+	case IntervalI1M:
+		pbInterval = msg.Interval_I1M
+	case IntervalI5M:
+		pbInterval = msg.Interval_I5M
+	case IntervalI6H:
+		pbInterval = msg.Interval_I6H
+	default:
+		log.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
+		pbInterval = msg.Interval_I15M
+	}
+
+	candles, err := r.candleService.GetCandles(ctx, market.Name, uint64(sinceTimestamp), pbInterval)
 	if err != nil {
 		return nil, err
 	}
@@ -602,7 +620,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 		return nil, err
 	}
 
-	pbInterval := msg.Interval_I15M
+	var pbInterval msg.Interval
 	switch interval {
 		case IntervalI15M:
 			pbInterval = msg.Interval_I15M

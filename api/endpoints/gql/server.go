@@ -41,7 +41,7 @@ func (g *graphServer) Start() {
 	var port = 3004
 	log.Infof("Starting GraphQL based server on port %d...\n", port)
 	var addr = fmt.Sprintf(":%d", port)
-	var resolverRoot = NewResolverRoot(g.orderService, g.tradeService)
+	var resolverRoot = NewResolverRoot(g.orderService, g.tradeService, g.candleService)
 	var config = Config {
 		Resolvers: resolverRoot,
 	}

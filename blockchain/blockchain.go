@@ -263,6 +263,7 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 	app.vega.State.Height += 1
 
 	app.vega.NotifySubscribers()
+	go app.vega.GenerateCandles()
 
 	app.vega.Statistics.OrdersPerSecond = uint64(current_ob)
 	app.vega.Statistics.TradesPerSecond = uint64(current_tb)

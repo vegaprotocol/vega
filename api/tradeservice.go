@@ -20,9 +20,6 @@ type TradeService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
 
-	GetLatestBlock() (blockNow uint64)
-	GetCurrentTimestamp(ctx context.Context) uint64
-
 	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
 	ObservePositions(ctx context.Context, party string) (positions <-chan msg.MarketPosition, ref uint64)
 }
@@ -75,17 +72,6 @@ func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id str
 		return &msg.Trade{}, err
 	}
 	return trade, err
-}
-
-// GetLatestBlock is a helper function for now that will allow the caller to provide a sinceBlock to the GetCandleSinceBlock
-// function. TODO when we have the VEGA time package we can do all kinds of fantastic block->real time ops without this call
-func (t *tradeService) GetLatestBlock() uint64 {
-	height := t.app.GetChainHeight()
-	return uint64(height)
-}
-
-func (t *tradeService) GetCurrentTimestamp(ctx context.Context) uint64 {
-	return t.app.GetCurrentTimestamp()
 }
 
 func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, uint64) {
