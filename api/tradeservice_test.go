@@ -3,15 +3,16 @@ package api
 import (
 	"context"
 	"fmt"
-	"math/rand"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 	"os"
+	"testing"
+	"time"
+	
 	"vega/core"
 	"vega/datastore"
 	"vega/log"
 	"vega/msg"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // this runs just once as first
@@ -228,8 +229,18 @@ func TestPositions(t *testing.T) {
 	var ctx = context.Background()
 	var tradeService = NewTradeService()
 
-	//storage := &datastore.MemoryStoreProvider{}
-	//storage.Init([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
+	timestamp := time.Now().UnixNano()
+	sequenceNumber := int64(0)
+
+	getOrderId := func (timestamp int64) string {
+		sequenceNumber++
+		return fmt.Sprintf("V%d-%d", timestamp, sequenceNumber)
+	}
+
+	getTradeId := func (timestamp int64) string {
+		sequenceNumber++
+		return fmt.Sprintf("V%d-%d-%d", timestamp, sequenceNumber, 1)
+	}
 
 	FlushOrderStore()
 	FlushTradeStore()
@@ -244,25 +255,26 @@ func TestPositions(t *testing.T) {
 
 	tradeService.Init(vega, tradeStore)
 
-	passiveOrderId := fmt.Sprintf("%d", rand.Intn(1000000000000))
-	aggressiveOrderId := fmt.Sprintf("%d", rand.Intn(1000000000000))
-	tradeId := fmt.Sprintf("%d", rand.Intn(1000000000000))
-
 	aggressiveOrder := &msg.Order{
-		Id:     aggressiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  testPartyA,
 		Side:   msg.Side_Buy,
 	}
+
+	sequenceNumber++
+
 	passiveOrder := &msg.Order{
-		Id:     passiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  testPartyB,
 		Side:   msg.Side_Sell,
 	}
 
+	sequenceNumber++
+
 	trade := &msg.Trade{
-		Id:        tradeId,
+		Id:        getTradeId(timestamp),
 		Price:     100,
 		Market:    testMarket,
 		Size:      500,
@@ -270,8 +282,8 @@ func TestPositions(t *testing.T) {
 		Buyer:     testPartyA,
 		Seller:    testPartyB,
 		Aggressor: msg.Side_Buy,
-		BuyOrder:  aggressiveOrderId,
-		SellOrder: passiveOrderId,
+		BuyOrder:  aggressiveOrder.Id,
+		SellOrder: passiveOrder.Id,
 	}
 
 	err := vega.OrderStore.Post(passiveOrder)
@@ -281,26 +293,22 @@ func TestPositions(t *testing.T) {
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
 
-	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
-	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
-	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
-
 	aggressiveOrder = &msg.Order{
-		Id:     aggressiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  testPartyA,
 		Side:   msg.Side_Buy,
 	}
 
 	passiveOrder = &msg.Order{
-		Id:     passiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  testPartyB,
 		Side:   msg.Side_Sell,
 	}
 
 	trade = &msg.Trade{
-		Id:        tradeId,
+		Id:        getTradeId(timestamp),
 		Price:     100,
 		Market:    testMarket,
 		Size:      500,
@@ -308,8 +316,8 @@ func TestPositions(t *testing.T) {
 		Buyer:     testPartyA,
 		Seller:    testPartyB,
 		Aggressor: msg.Side_Buy,
-		BuyOrder:  aggressiveOrderId,
-		SellOrder: passiveOrderId,
+		BuyOrder:  aggressiveOrder.Id,
+		SellOrder: passiveOrder.Id,
 	}
 
 	err = vega.OrderStore.Post(passiveOrder)
@@ -350,24 +358,21 @@ func TestPositions(t *testing.T) {
 	}
 
 	// market moves by 10 up what is the PNL?
-	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
-	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
-	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	aggressiveOrder = &msg.Order{
-		Id:     aggressiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  "partyC",
 		Side:   msg.Side_Buy,
 	}
 	passiveOrder = &msg.Order{
-		Id:     passiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  "partyD",
 		Side:   msg.Side_Sell,
 	}
 
 	trade = &msg.Trade{
-		Id:        tradeId,
+		Id:        getTradeId(timestamp),
 		Price:     110,
 		Market:    testMarket,
 		Size:      1,
@@ -375,8 +380,8 @@ func TestPositions(t *testing.T) {
 		Buyer:     "partyC",
 		Seller:    "partyD",
 		Aggressor: msg.Side_Buy,
-		BuyOrder:  aggressiveOrderId,
-		SellOrder: passiveOrderId,
+		BuyOrder:  aggressiveOrder.Id,
+		SellOrder: passiveOrder.Id,
 	}
 
 	err = vega.OrderStore.Post(passiveOrder)
@@ -387,8 +392,8 @@ func TestPositions(t *testing.T) {
 	assert.Nil(t, err)
 
 	// current mark price for testMarket should be 110, the PNL for partyA and partyB should change
-	//markPrice, err := vega.TradeStore.GetMarkPrice(testMarket)
-	//assert.Equal(t, uint64(110), markPrice)
+	markPrice, err := vega.TradeStore.GetMarkPrice(testMarket)
+	assert.Equal(t, uint64(110), markPrice)
 	assert.Nil(t, err)
 
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)
@@ -422,25 +427,22 @@ func TestPositions(t *testing.T) {
 	}
 
 	// close 90% of position at 110
-	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
-	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
-	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	aggressiveOrder = &msg.Order{
-		Id:     aggressiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  testPartyA,
 		Side:   msg.Side_Sell,
 	}
 
 	passiveOrder = &msg.Order{
-		Id:     passiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  testPartyB,
 		Side:   msg.Side_Buy,
 	}
 
 	trade = &msg.Trade{
-		Id:        tradeId,
+		Id:        getTradeId(timestamp),
 		Price:     110,
 		Market:    testMarket,
 		Size:      900,
@@ -448,8 +450,8 @@ func TestPositions(t *testing.T) {
 		Buyer:     testPartyB,
 		Seller:    testPartyA,
 		Aggressor: msg.Side_Sell,
-		BuyOrder:  passiveOrderId,
-		SellOrder: aggressiveOrderId,
+		BuyOrder:  aggressiveOrder.Id,
+		SellOrder: passiveOrder.Id,
 	}
 
 	err = vega.OrderStore.Post(passiveOrder)
@@ -490,24 +492,21 @@ func TestPositions(t *testing.T) {
 	}
 
 	// close remaining 10% of position at 110
-	passiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
-	aggressiveOrderId = fmt.Sprintf("%d", rand.Intn(1000000000000))
-	tradeId = fmt.Sprintf("%d", rand.Intn(1000000000000))
 	aggressiveOrder = &msg.Order{
-		Id:     aggressiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  testPartyA,
 		Side:   msg.Side_Sell,
 	}
 	passiveOrder = &msg.Order{
-		Id:     passiveOrderId,
+		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  testPartyB,
 		Side:   msg.Side_Buy,
 	}
 
 	trade = &msg.Trade{
-		Id:        tradeId,
+		Id:        getTradeId(timestamp),
 		Price:     110,
 		Market:    testMarket,
 		Size:      100,
@@ -515,8 +514,8 @@ func TestPositions(t *testing.T) {
 		Buyer:     testPartyB,
 		Seller:    testPartyA,
 		Aggressor: msg.Side_Sell,
-		BuyOrder:  passiveOrderId,
-		SellOrder: aggressiveOrderId,
+		BuyOrder:  aggressiveOrder.Id,
+		SellOrder: passiveOrder.Id,
 	}
 
 	err = vega.OrderStore.Post(passiveOrder)

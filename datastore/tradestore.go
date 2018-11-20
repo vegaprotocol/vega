@@ -317,13 +317,14 @@ func (ts *tradeStore) Delete(trade *msg.Trade) error {
 }
 
 func (ts *tradeStore) GetMarkPrice(market string) (uint64, error) {
-	last := uint64(1)
+	//last := uint64(1)
 	f := &filters.TradeQueryFilters{}
-	f.Last = &last
+	//f.Last = &last
 	recentTrade, err := ts.GetByMarket(market, f)
 	if err != nil {
 		return 0, err
 	}
+	fmt.Printf("recentTrade: %+v\n", recentTrade)
 	if len(recentTrade) == 0 {
 		return 0, fmt.Errorf("NO TRADES")
 	}

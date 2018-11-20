@@ -6972,12 +6972,13 @@ input OrderFilter {
     status_neq: OrderStatus # matches all orders with different status to value
 }
 
+# The interval for trade candles when subscribing via VEGA graphql, default is I15M
 enum Interval {
-    I1M
-    I5M
-    I15M
-    I1H
-    I6H
-    I1D
+    I1M # 1 minute interval
+    I5M # 5 minute interval
+    I15M # 15 minute interval (default)
+    I1H # 1 hour interval
+    I6H # 6 hour interval
+    I1D # 1 day interval
 }`},
 )

@@ -1,6 +1,9 @@
 package datastore
 
-import "vega/msg"
+import (
+	"vega/msg"
+	"fmt"
+)
 
 type MarketBucket struct {
 	Buys                []*msg.Trade
@@ -13,6 +16,8 @@ type MarketBucket struct {
 func (ts *tradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
 	marketBuckets := make(map[string]*MarketBucket, 0)
 	tradesByTimestamp, err := ts.GetByParty(party, nil)
+
+	fmt.Printf("tradesByTimestamp: %+v\n", tradesByTimestamp)
 	if err != nil {
 		return marketBuckets
 	}
@@ -30,5 +35,6 @@ func (ts *tradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBuc
 			marketBuckets[trade.Market].SellVolume += int64(tradesByTimestamp[idx].Size)
 		}
 	}
+	fmt.Printf("marketBuckets: %+v\n", marketBuckets)
 	return marketBuckets
 }
