@@ -604,28 +604,21 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 	pbInterval := msg.Interval_I15M
 	switch interval {
-	case IntervalI15M:
-		pbInterval = msg.Interval_I15M
-		break
-	case IntervalI1D:
-		pbInterval = msg.Interval_I1D
-		break
-	case IntervalI1H:
-		pbInterval = msg.Interval_I1H
-		break
-	case IntervalI1M:
-		pbInterval = msg.Interval_I1M
-		break
-	case IntervalI5M:
-		pbInterval = msg.Interval_I5M
-		break
-	case IntervalI6H:
-		pbInterval = msg.Interval_I6H
-		break
-	default:
-		log.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
-		pbInterval = msg.Interval_I15M
-		break
+		case IntervalI15M:
+			pbInterval = msg.Interval_I15M
+		case IntervalI1D:
+			pbInterval = msg.Interval_I1D
+		case IntervalI1H:
+			pbInterval = msg.Interval_I1H
+		case IntervalI1M:
+			pbInterval = msg.Interval_I1M
+		case IntervalI5M:
+			pbInterval = msg.Interval_I5M
+		case IntervalI6H:
+			pbInterval = msg.Interval_I6H
+		default:
+			log.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
+			pbInterval = msg.Interval_I15M
 	}
 
 	c, ref := r.candleService.ObserveCandles(ctx, &market, &pbInterval)
