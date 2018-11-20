@@ -61,7 +61,6 @@ func main() {
 	orderService.Init(vega, orderStore)
 	tradeService.Init(vega, tradeStore)
 	candleService.Init(vega, candleStore)
-	vega.CandleService = candleService
 
 	// GRPC server
 	// Port 3002

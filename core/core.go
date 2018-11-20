@@ -9,8 +9,7 @@ import (
 	"vega/matching"
 	"vega/msg"
 	"vega/risk"
-	"vega/api"
-	"context"
+	"errors"
 )
 
 const (
@@ -37,7 +36,8 @@ type Vega struct {
 	OrderStore     datastore.OrderStore
 	TradeStore     datastore.TradeStore
 	CandleStore	   datastore.CandleStore
-	CandleService  api.CandleService
+	tradesBuffer   map[string][]*msg.Trade
+
 }
 
 func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.TradeStore, candleStore datastore.CandleStore) *Vega {
@@ -48,6 +48,9 @@ func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.
 	// Initialise risk engine
 	riskEngine := risk.New()
 
+	// tradesBuffer for candles
+	tradesBuffer := make(map[string][]*msg.Trade, 0)
+	
 	// todo: version from commit hash, app version incrementing
 	statistics := &msg.Statistics{}
 	statistics.Status = msg.AppStatus_APP_DISCONNECTED
@@ -64,6 +67,7 @@ func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.
 		OrderStore:     orderStore,
 		TradeStore:     tradeStore,
 		CandleStore:    candleStore,
+		tradesBuffer:   tradesBuffer,
 	}
 }
 
@@ -116,10 +120,10 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// ------------------------------------------------//
 	// 2) --------------- RISK ENGINE -----------------//
 
-	// Call out to risk engine calculation every N blocks
-	//if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
-	//	v.riskEngine.RecalculateRisk()
-	//}
+	//Call out to risk engine calculation every N blocks
+	if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
+		v.riskEngine.RecalculateRisk()
+	}
 
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
@@ -160,6 +164,9 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 				// Note: writing to store should not prevent flow to other engines
 				log.Errorf("TradeStore.Post error: %+v", err)
 			}
+
+			// Save to trade buffer for generating candles etc
+			v.tradesBuffer[trade.Market] = append(v.tradesBuffer[trade.Market], trade)
 
 			v.Statistics.LastTrade = trade
 		}
@@ -309,10 +316,36 @@ func (v *Vega) NotifySubscribers() {
 	v.TradeStore.Notify()
 }
 
-func (v *Vega) GenerateCandles(ctx context.Context) {
-	// TODO: for each market
-	if err := v.CandleService.Generate(context.Background(), "BTC/DEC18"); err != nil {
-		fmt.Printf("Candle generation error occured %+v", err)
+// this should act as a separate slow go routine triggered after block is committed
+func (v *Vega) GenerateCandles() error {
+
+	// todo: generate/range over all markets!
+	market := marketName
+
+	if _, ok := v.tradesBuffer[market]; !ok {
+		return errors.New("Market not found")
 	}
+
+	// in case there is no trading activity on this market, generate empty candles based on historical values
+	if len(v.tradesBuffer) == 0 {
+		if err := v.CandleStore.GenerateEmptyCandles(market, v.GetCurrentTimestamp()); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// generate/update  candles for each trade in the buffer
+	for idx := range v.tradesBuffer[market] {
+		if err := v.CandleStore.GenerateCandles(v.tradesBuffer[market][idx]); err != nil {
+			return err
+		}
+	}
+
+	// Notify all subscribers
 	v.CandleStore.Notify()
+
+	// Flush the buffer
+	v.tradesBuffer[market] = nil
+
+	return nil
 }

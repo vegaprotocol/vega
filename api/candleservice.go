@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"vega/core"
 	"vega/datastore"
 	"vega/log"
@@ -12,8 +11,8 @@ import (
 type CandleService interface {
 	Init(app *core.Vega, candleStore datastore.CandleStore)
 	Stop()
-	AddTrade(trade *msg.Trade)
-	Generate(ctx context.Context, market string) error
+	//AddTrade(trade *msg.Trade)
+	//Generate(ctx context.Context, market string) error
 	ObserveCandles(ctx context.Context, market *string, interval *msg.Interval) (candleCh <-chan msg.Candle, ref uint64)
 	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval msg.Interval) (candles []*msg.Candle, err error)
 }
@@ -30,49 +29,47 @@ func NewCandleService() CandleService {
 
 func (c *candleService) Init(app *core.Vega, candleStore datastore.CandleStore) {
 	c.app = app
-	//dataDir := "./tradeStore"
-	//t.candleStore = datastore.NewCandleStore(dataDir)
 	c.candleStore = candleStore
-	c.tradesBuffer = make(map[string][]*msg.Trade, 0)
+//	c.tradesBuffer = make(map[string][]*msg.Trade, 0)
 }
 
 func (c *candleService) Stop() {
 	c.candleStore.Close()
 }
 
-func (c *candleService) AddTrade(trade *msg.Trade) {
-	c.tradesBuffer[trade.Market] = append(c.tradesBuffer[trade.Market], trade)
-}
-
-// this should act as a separate slow go routine triggered after block is committed
-func (c *candleService) Generate(ctx context.Context, market string) error {
-	if _, ok := c.tradesBuffer[market]; !ok {
-		return errors.New("Market not found")
-	}
-
-	// in case there is no trading activity on this market, generate empty candles based on historical values
-	if len(c.tradesBuffer) == 0 {
-		if err := c.candleStore.GenerateEmptyCandles(market, c.app.GetCurrentTimestamp()); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	// generate/update  candles for each trade in the buffer
-	for idx := range c.tradesBuffer[market] {
-		if err := c.candleStore.GenerateCandles(c.tradesBuffer[market][idx]); err != nil {
-			return err
-		}
-	}
-
-	// Notify all subscribers
-	c.candleStore.Notify()
-
-	// Flush the buffer
-	c.tradesBuffer[market] = nil
-
-	return nil
-}
+//func (c *candleService) AddTrade(trade *msg.Trade) {
+//	c.tradesBuffer[trade.Market] = append(c.tradesBuffer[trade.Market], trade)
+//}
+//
+//// this should act as a separate slow go routine triggered after block is committed
+//func (c *candleService) Generate(ctx context.Context, market string) error {
+//	if _, ok := c.tradesBuffer[market]; !ok {
+//		return errors.New("Market not found")
+//	}
+//
+//	// in case there is no trading activity on this market, generate empty candles based on historical values
+//	if len(c.tradesBuffer) == 0 {
+//		if err := c.candleStore.GenerateEmptyCandles(market, c.app.GetCurrentTimestamp()); err != nil {
+//			return err
+//		}
+//		return nil
+//	}
+//
+//	// generate/update  candles for each trade in the buffer
+//	for idx := range c.tradesBuffer[market] {
+//		if err := c.candleStore.GenerateCandles(c.tradesBuffer[market][idx]); err != nil {
+//			return err
+//		}
+//	}
+//
+//	// Notify all subscribers
+//	c.candleStore.Notify()
+//
+//	// Flush the buffer
+//	c.tradesBuffer[market] = nil
+//
+//	return nil
+//}
 
 func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *msg.Interval) (<-chan msg.Candle, uint64) {
 	candleCh := make(chan msg.Candle)

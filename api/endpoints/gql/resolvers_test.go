@@ -70,6 +70,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	ctx := context.Background()
 	mockTradeService := &mocks.TradeService{}
 	mockOrderService := &mocks.OrderService{}
+	mockCandleService := &mocks.CandleService{}
 
 	mockOrderService.On("GetMarkets", ctx).Return(
 		[]string {"BTC/DEC18"}, nil,
@@ -77,10 +78,12 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 
 	var tradeService api.TradeService
 	var orderService api.OrderService
+	var candleService api.CandleService
 	tradeService = mockTradeService
 	orderService = mockOrderService
+	candleService = mockCandleService
 
-	root := NewResolverRoot(orderService, tradeService)
+	root := NewResolverRoot(orderService, tradeService, candleService)
 	assert.NotNil(t, root)
 	vegaResolver := root.Vega()
 	assert.NotNil(t, vegaResolver)
@@ -125,6 +128,8 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	ctx := context.Background()
 	mockTradeService := &mocks.TradeService{}
 	mockOrderService := &mocks.OrderService{}
+	mockCandleService := &mocks.CandleService{}
+
 	btcDec18 := "BTC/DEC18"
 	mockOrderService.On("GetMarkets", ctx).Return(
 		[]string{"testMarket", btcDec18}, nil,
@@ -138,10 +143,12 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 
 	var tradeService api.TradeService
 	var orderService api.OrderService
+	var candleService api.CandleService
 	tradeService = mockTradeService
 	orderService = mockOrderService
-
-	root := NewResolverRoot(orderService, tradeService)
+	candleService = mockCandleService
+	
+	root := NewResolverRoot(orderService, tradeService, candleService)
 	assert.NotNil(t, root)
 	marketResolver := root.Market()
 	assert.NotNil(t, marketResolver)
@@ -190,7 +197,9 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 func buildTestResolverRoot() *resolverRoot {
 	var tradeService api.TradeService
 	var orderService api.OrderService
+	var candleService api.CandleService
 	tradeService = &mocks.TradeService{}
 	orderService = &mocks.OrderService{}
-	return NewResolverRoot(orderService, tradeService)
+	candleService = &mocks.CandleService{}
+	return NewResolverRoot(orderService, tradeService, candleService)
 }
