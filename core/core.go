@@ -9,7 +9,6 @@ import (
 	"vega/matching"
 	"vega/msg"
 	"vega/risk"
-	"errors"
 )
 
 const (
@@ -165,6 +164,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 				log.Errorf("TradeStore.Post error: %+v", err)
 			}
 
+			fmt.Printf("Addding trade\n")
 			// Save to trade buffer for generating candles etc
 			v.tradesBuffer[trade.Market] = append(v.tradesBuffer[trade.Market], trade)
 
@@ -318,16 +318,21 @@ func (v *Vega) NotifySubscribers() {
 
 // this should act as a separate slow go routine triggered after block is committed
 func (v *Vega) GenerateCandles() error {
+	fmt.Printf("GenerateCandles called\n")
 
 	// todo: generate/range over all markets!
 	market := marketName
 
 	if _, ok := v.tradesBuffer[market]; !ok {
-		return errors.New("Market not found")
+		v.tradesBuffer[market] = nil
+		fmt.Printf("Market not found\n")
 	}
 
+	fmt.Printf("tradesBuffer %+v\n", v.tradesBuffer)
+
 	// in case there is no trading activity on this market, generate empty candles based on historical values
-	if len(v.tradesBuffer) == 0 {
+	if len(v.tradesBuffer[market]) == 0 {
+		fmt.Printf("Empty candles... \n")
 		if err := v.CandleStore.GenerateEmptyCandles(market, v.GetCurrentTimestamp()); err != nil {
 			return err
 		}
@@ -335,6 +340,7 @@ func (v *Vega) GenerateCandles() error {
 	}
 
 	// generate/update  candles for each trade in the buffer
+	fmt.Printf("State of the buffer ... %+v\n", v.tradesBuffer)
 	for idx := range v.tradesBuffer[market] {
 		if err := v.CandleStore.GenerateCandles(v.tradesBuffer[market][idx]); err != nil {
 			return err

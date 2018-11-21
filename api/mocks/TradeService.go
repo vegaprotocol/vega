@@ -105,34 +105,6 @@ func (_m *TradeService) GetByPartyAndId(ctx context.Context, party string, id st
 	return r0, r1
 }
 
-// GetCurrentTimestamp provides a mock function with given fields: ctx
-func (_m *TradeService) GetCurrentTimestamp(ctx context.Context) uint64 {
-	ret := _m.Called(ctx)
-
-	var r0 uint64
-	if rf, ok := ret.Get(0).(func(context.Context) uint64); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Get(0).(uint64)
-	}
-
-	return r0
-}
-
-// GetLatestBlock provides a mock function with given fields:
-func (_m *TradeService) GetLatestBlock() uint64 {
-	ret := _m.Called()
-
-	var r0 uint64
-	if rf, ok := ret.Get(0).(func() uint64); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(uint64)
-	}
-
-	return r0
-}
-
 // GetPositionsByParty provides a mock function with given fields: ctx, party
 func (_m *TradeService) GetPositionsByParty(ctx context.Context, party string) ([]*msg.MarketPosition, error) {
 	ret := _m.Called(ctx, party)

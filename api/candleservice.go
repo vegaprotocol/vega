@@ -6,6 +6,7 @@ import (
 	"vega/datastore"
 	"vega/log"
 	"vega/msg"
+	"fmt"
 )
 
 type CandleService interface {
@@ -72,6 +73,7 @@ func (c *candleService) Stop() {
 //}
 
 func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *msg.Interval) (<-chan msg.Candle, uint64) {
+	fmt.Printf("\n\n\nObserveCandles called\n")
 	candleCh := make(chan msg.Candle)
 	internalTransport := make(map[msg.Interval]chan msg.Candle, 0)
 	ref := c.candleStore.Subscribe(internalTransport)
@@ -87,13 +89,17 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 
 	go func(internalTransport map[msg.Interval]chan msg.Candle) {
 		var tempCandle msg.Candle
+		fmt.Printf("listening at internalTransport channel interval %+v\n", *interval)
 		for v := range internalTransport[*interval] {
+			fmt.Printf("value from internalTransport %+v\n", v)
 			tempCandle = v
 			candleCh <- tempCandle
 		}
 		log.Debugf("CandleService -> Channel for subscriber %d has been closed", ref)
+		fmt.Printf("closed channel\n")
 	}(internalTransport)
 
+	fmt.Printf("returning candleCh %+v and ref %d\n", candleCh, ref)
 	return candleCh, ref
 }
 

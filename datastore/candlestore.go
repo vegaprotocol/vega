@@ -11,6 +11,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"vega/log"
 	"sync"
+	"vega/vegatime"
 )
 
 type candleStore struct {
@@ -118,6 +119,7 @@ func (c *candleStore) QueueEvent(candle msg.Candle, interval msg.Interval) error
 		return nil
 	}
 
+	fmt.Printf("Adding new candle to the subscribers buffer %+v\n", candle)
 	c.buffer[interval] = candle
 
 	log.Debugf("CandleStore -> queueEvent: Adding candle to buffer of intervals at: %s", interval)
@@ -227,12 +229,16 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 	// if key does not exist seek most recent values, create empty candle with those close value and insert
 	txn := c.persistentStore.NewTransaction(true)
 
+
+	var generated bool
 	// for all candle intervals
 	for interval, key := range candleKeys {
 
 		// if key does not exist, seek most recent value
 		_, err := txn.Get(key)
 		if err == badger.ErrKeyNotFound {
+
+			fmt.Printf("New candle should be created at interval %+v timestamp %+v\n", interval, candleTimestamp[interval])
 
 			prefixForMostRecent := append([]byte(string(key)[:len(string(key))-19]), 0xFF)
 			options := badger.DefaultIteratorOptions
@@ -267,8 +273,10 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 			if err := txn.Set(key, candleBuf); err != nil {
 				return err
 			}
-			//fmt.Printf("inserted\n")
+			fmt.Printf("\n\nINSERTED\n\n")
 			c.QueueEvent(*newCandle, interval)
+
+			generated = true
 		}
 		//if present do nothing
 		//fmt.Printf("candle for %s is present at key %s\n", interval, string(key))
@@ -278,12 +286,17 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 		return err
 	}
 
+	if generated {
+		c.Notify()
+	}
+
 	return nil
 }
 
 func NewCandle(timestamp, openPrice, size uint64, interval msg.Interval) *msg.Candle {
 	//TODO: get candle form pool of candles
-	return &msg.Candle{Timestamp: timestamp, Open: openPrice, Low: openPrice, High: openPrice, Close:openPrice, Volume: size, Interval: interval}
+	datetime := vegatime.Stamp(timestamp).Rfc3339()
+	return &msg.Candle{Timestamp: timestamp, Datetime: datetime, Open: openPrice, Low: openPrice, High: openPrice, Close:openPrice, Volume: size, Interval: interval}
 }
 
 func UpdateCandle(candle *msg.Candle, trade *msg.Trade) {

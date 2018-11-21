@@ -641,6 +641,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 	c, ref := r.candleService.ObserveCandles(ctx, &market, &pbInterval)
 	log.Debugf("GraphQL Candle Interval %s -> New subscriber: %d", pbInterval.String(), ref)
+	log.Infof("GraphQL Candle Interval %s -> New subscriber: %d", pbInterval.String(), ref)
 	return c, nil
 }
 
