@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"vega/log"
 	"vega/msg"
@@ -13,6 +12,9 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 )
+
+var supportedIntervals = [6]msg.Interval{
+	msg.Interval_I1M, msg.Interval_I5M, msg.Interval_I15M, msg.Interval_I1H, msg.Interval_I6H, msg.Interval_I1D,}
 
 type candleStore struct {
 	badger *badgerStore
@@ -145,6 +147,7 @@ func (c *candleStore) GetCandles(market string, sinceTimestamp uint64, interval 
 			fmt.Printf(err.Error())
 			continue
 		}
+
 		var newCandle msg.Candle
 		if err := proto.Unmarshal(value, &newCandle); err != nil {
 			fmt.Printf(err.Error())
@@ -298,32 +301,11 @@ func (c *candleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent
 	return &previousCandle, nil
 }
 
-func NewCandle(timestamp, openPrice, size uint64, interval msg.Interval) *msg.Candle {
-	//TODO: get candle form pool of candles
-	datetime := vegatime.Stamp(timestamp).Rfc3339()
-	return &msg.Candle{Timestamp: timestamp, Datetime: datetime, Open: openPrice, Close: openPrice,
-		Low: openPrice, High: openPrice, Volume: size, Interval: interval}
-}
-
-func UpdateCandle(candle *msg.Candle, trade *msg.Trade) {
-	// always overwrite close price
-	candle.Close = trade.Price
-	// set minimum
-	if trade.Price < candle.Low {
-		candle.Low = trade.Price
-	}
-	// set maximum
-	if trade.Price > candle.High {
-		candle.High = trade.Price
-	}
-	candle.Volume += trade.Size
-}
-
 func (c *candleStore) generateKeysForTimestamp(market string, timestamp uint64) (map[msg.Interval][]byte, map[msg.Interval]uint64) {
 	keys := make(map[msg.Interval][]byte)
 	roundedTimestamps := getMapOfIntervalsToRoundedTimestamps(timestamp)
 
-	for interval, roundedTimestamp := range roundedTimestamps  {
+	for interval, roundedTimestamp := range roundedTimestamps {
 		keys[interval] = c.badger.candleKey(market, interval, roundedTimestamp)
 	}
 
@@ -332,28 +314,12 @@ func (c *candleStore) generateKeysForTimestamp(market string, timestamp uint64) 
 
 func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[msg.Interval]uint64 {
 	// round timetamp to nearest minute, 5minute, 15 minute, hour, 6hours, 1 day intervals and return a map of rounded timestamps
-
 	timestamps := make(map[msg.Interval]uint64)
-	t := vegatime.Stamp(timestamp).Datetime()
 
 	// round floor by integer division
-	timestamps[msg.Interval_I1M] =
-		uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location()).UnixNano())
-
-	timestamps[msg.Interval_I5M] =
-		uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location()).UnixNano())
-
-	timestamps[msg.Interval_I15M] =
-		uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location()).UnixNano())
-
-	timestamps[msg.Interval_I1H] =
-		uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location()).UnixNano())
-
-	timestamps[msg.Interval_I6H] =
-		uint64(time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location()).UnixNano())
-
-	timestamps[msg.Interval_I1D] =
-		uint64(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).UnixNano())
+	for _, interval := range supportedIntervals {
+		timestamps[interval] = vegatime.Stamp(timestamp).RoundToNearest(interval).UnixNano()
+	}
 
 	return timestamps
 }
@@ -384,4 +350,25 @@ func (c *candleStore) generateFetchKey(market string, interval msg.Interval, sin
 		return c.badger.candleKey(market, interval, timestampRoundedToDay)
 	}
 	return nil
+}
+
+func NewCandle(timestamp, openPrice, size uint64, interval msg.Interval) *msg.Candle {
+	//TODO: get candle form pool of candles
+	datetime := vegatime.Stamp(timestamp).Rfc3339()
+	return &msg.Candle{Timestamp: timestamp, Datetime: datetime, Open: openPrice, Close: openPrice,
+		Low: openPrice, High: openPrice, Volume: size, Interval: interval}
+}
+
+func UpdateCandle(candle *msg.Candle, trade *msg.Trade) {
+	// always overwrite close price
+	candle.Close = trade.Price
+	// set minimum
+	if trade.Price < candle.Low {
+		candle.Low = trade.Price
+	}
+	// set maximum
+	if trade.Price > candle.High {
+		candle.High = trade.Price
+	}
+	candle.Volume += trade.Size
 }

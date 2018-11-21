@@ -6,14 +6,11 @@ import (
 	"vega/datastore"
 	"vega/log"
 	"vega/msg"
-	"fmt"
 )
 
 type CandleService interface {
 	Init(app *core.Vega, candleStore datastore.CandleStore)
 	Stop()
-	//AddTrade(trade *msg.Trade)
-	//Generate(ctx context.Context, market string) error
 	ObserveCandles(ctx context.Context, market *string, interval *msg.Interval) (candleCh <-chan msg.Candle, ref uint64)
 	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval msg.Interval) (candles []*msg.Candle, err error)
 }
@@ -31,49 +28,13 @@ func NewCandleService() CandleService {
 func (c *candleService) Init(app *core.Vega, candleStore datastore.CandleStore) {
 	c.app = app
 	c.candleStore = candleStore
-//	c.tradesBuffer = make(map[string][]*msg.Trade, 0)
 }
 
 func (c *candleService) Stop() {
 	c.candleStore.Close()
 }
 
-//func (c *candleService) AddTrade(trade *msg.Trade) {
-//	c.tradesBuffer[trade.Market] = append(c.tradesBuffer[trade.Market], trade)
-//}
-//
-//// this should act as a separate slow go routine triggered after block is committed
-//func (c *candleService) Generate(ctx context.Context, market string) error {
-//	if _, ok := c.tradesBuffer[market]; !ok {
-//		return errors.New("Market not found")
-//	}
-//
-//	// in case there is no trading activity on this market, generate empty candles based on historical values
-//	if len(c.tradesBuffer) == 0 {
-//		if err := c.candleStore.GenerateEmptyCandles(market, c.app.GetCurrentTimestamp()); err != nil {
-//			return err
-//		}
-//		return nil
-//	}
-//
-//	// generate/update  candles for each trade in the buffer
-//	for idx := range c.tradesBuffer[market] {
-//		if err := c.candleStore.GenerateCandles(c.tradesBuffer[market][idx]); err != nil {
-//			return err
-//		}
-//	}
-//
-//	// Notify all subscribers
-//	c.candleStore.Notify()
-//
-//	// Flush the buffer
-//	c.tradesBuffer[market] = nil
-//
-//	return nil
-//}
-
 func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *msg.Interval) (<-chan msg.Candle, uint64) {
-	fmt.Printf("\n\n\nObserveCandles called\n")
 	candleCh := make(chan msg.Candle)
 	internalTransport := make(map[msg.Interval]chan msg.Candle, 0)
 	ref := c.candleStore.Subscribe(internalTransport)
@@ -89,22 +50,19 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 
 	go func(internalTransport map[msg.Interval]chan msg.Candle) {
 		var tempCandle msg.Candle
-		fmt.Printf("listening at internalTransport channel interval %+v\n", *interval)
 		for v := range internalTransport[*interval] {
-			fmt.Printf("value from internalTransport %+v\n", v)
 			tempCandle = v
 			candleCh <- tempCandle
 		}
 		log.Debugf("CandleService -> Channel for subscriber %d has been closed", ref)
-		fmt.Printf("closed channel\n")
 	}(internalTransport)
 
-	fmt.Printf("returning candleCh %+v and ref %d\n", candleCh, ref)
 	return candleCh, ref
 }
 
 func (c *candleService) GetCandles(ctx context.Context, market string,
 	sinceTimestamp uint64, interval msg.Interval) (candles []*msg.Candle, err error) {
+
 	// sinceTimestamp must be valid and not older than market genesis timestamp,
 
 	// interval check if from range of valid intervals
