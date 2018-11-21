@@ -3,24 +3,24 @@ package datastore
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
+	"vega/log"
 	"vega/msg"
+	"vega/vegatime"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
-	"vega/log"
-	"sync"
-	"vega/vegatime"
 )
 
 type candleStore struct {
-	persistentStore *badger.DB
+	badger *badgerStore
 
-	subscribers map[uint64] map[msg.Interval]chan msg.Candle
-	buffer map[msg.Interval]msg.Candle
+	subscribers  map[uint64]map[msg.Interval]chan msg.Candle
+	buffer       map[msg.Interval]msg.Candle
 	subscriberId uint64
-	mu sync.Mutex
+	mu           sync.Mutex
 }
 
 func NewCandleStore(dir string) CandleStore {
@@ -31,7 +31,8 @@ func NewCandleStore(dir string) CandleStore {
 	if err != nil {
 		fmt.Printf(err.Error())
 	}
-	return &candleStore{persistentStore: db, buffer: make(map[msg.Interval]msg.Candle)}
+	bs := badgerStore{db: db}
+	return &candleStore{badger: &bs, buffer: make(map[msg.Interval]msg.Candle)}
 }
 
 func (c *candleStore) Subscribe(internalTransport map[msg.Interval]chan msg.Candle) uint64 {
@@ -41,10 +42,10 @@ func (c *candleStore) Subscribe(internalTransport map[msg.Interval]chan msg.Cand
 
 	if c.subscribers == nil {
 		log.Debugf("CandleStore -> Subscribe: Creating subscriber chan map")
-		c.subscribers = make(map[uint64] map[msg.Interval]chan msg.Candle)
+		c.subscribers = make(map[uint64]map[msg.Interval]chan msg.Candle)
 	}
 
-	c.subscriberId = c.subscriberId+1
+	c.subscriberId = c.subscriberId + 1
 	c.subscribers[c.subscriberId] = internalTransport
 	log.Debugf("CandleStore -> Subscribe: Candle subscriber added: %d", c.subscriberId)
 	return c.subscriberId
@@ -95,9 +96,7 @@ func (c *candleStore) Notify() error {
 
 	// update candle for each interval for each subscriber
 	for id, internalTransport := range c.subscribers {
-		fmt.Printf("internalTransport %+v\n", internalTransport)
 		for interval, candleForUpdate := range intervalsToCandlesMap {
-			fmt.Printf("Interval %s, candleForUpdate %+v\n", interval, candleForUpdate)
 			select {
 			case internalTransport[interval] <- candleForUpdate:
 				log.Debugf("Candle updated for interval: %s", interval)
@@ -127,17 +126,16 @@ func (c *candleStore) QueueEvent(candle msg.Candle, interval msg.Interval) error
 }
 
 func (c *candleStore) Close() {
-	defer c.persistentStore.Close()
+	defer c.badger.db.Close()
 }
 
 func (c *candleStore) GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle {
-	fetchKey := generateFetchKey(market, sinceTimestamp, interval)
-	it :=  c.persistentStore.NewTransaction(false).NewIterator(badger.DefaultIteratorOptions)
-	defer it.Close()
-	prefix := []byte(fmt.Sprintf("M:%s_I:%s_T:", market, interval))
 
-	fmt.Printf("prefix %s\n", fmt.Sprintf("M:%s_I:%s_T:", market, interval))
-	fmt.Printf("fetchkey %s\n", string(fetchKey))
+	// generate fetch key for the candles
+	fetchKey := c.generateFetchKey(market, interval, sinceTimestamp)
+	prefix, _ := c.badger.candlePrefix(market, interval, false)
+	it := c.badger.getIterator(c.badger.db.NewTransaction(false), false)
+	defer it.Close()
 
 	var candles []*msg.Candle
 	for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {
@@ -161,19 +159,17 @@ func (c *candleStore) GetCandles(market string, sinceTimestamp uint64, interval 
 func (c *candleStore) GenerateCandles(trade *msg.Trade) error {
 
 	//given trade generate appropriate timestamps and badger keys for each interval
-	candleTimestamps, badgerKeys := generateCandleParamsForTimestamp(trade.Market, trade.Timestamp)
+	badgerKeys, candleTimestamps := c.generateKeysForTimestamp(trade.Market, trade.Timestamp)
 
 	// for each trade generate candle keys and run update on each record
-	txn := c.persistentStore.NewTransaction(true)
+	txn := c.badger.db.NewTransaction(true)
 	for interval, badgerKey := range badgerKeys {
 
 		item, err := txn.Get(badgerKey)
 
 		// if key does not exist, insert candle for this timestamp
 		if err == badger.ErrKeyNotFound {
-			fmt.Printf("KEY DOES NOT EXIST, %s\n", badgerKey)
-			candleTimestamp := candleTimestamps[interval]
-			candle := NewCandle(uint64(candleTimestamp), trade.Price, trade.Size, interval)
+			candle := NewCandle(uint64(candleTimestamps[interval]), trade.Price, trade.Size, interval)
 			candleBuf, err := proto.Marshal(candle)
 			if err != nil {
 				return err
@@ -182,17 +178,19 @@ func (c *candleStore) GenerateCandles(trade *msg.Trade) error {
 			if err = txn.Set(badgerKey, candleBuf); err != nil {
 				return err
 			}
-			fmt.Printf("Candle inserted %+v\n", candle)
+
+			log.Debugf("New Candle inserted %+v at \n", candle, string(badgerKey))
+
 			c.QueueEvent(*candle, interval)
 		}
 
 		// if key exists, update candle with this trade
 		if err == nil {
-			// umarshal fetched candle
+
+			// unmarshal fetched candle
 			var candleForUpdate msg.Candle
 			itemCopy, err := item.ValueCopy(nil)
 			proto.Unmarshal(itemCopy, &candleForUpdate)
-			fmt.Printf("Candle fetched %+v\n", candleForUpdate)
 
 			// update fetched candle with new trade
 			UpdateCandle(&candleForUpdate, trade)
@@ -207,7 +205,8 @@ func (c *candleStore) GenerateCandles(trade *msg.Trade) error {
 			if err = txn.Set(badgerKey, candleBuf); err != nil {
 				return err
 			}
-			fmt.Printf("Candle updated and inserted %+v\n", candleForUpdate)
+
+			log.Debugf("Candle fetched, updated and inserted %+v at \n", candleForUpdate, string(badgerKey))
 
 			c.QueueEvent(candleForUpdate, interval)
 		}
@@ -216,21 +215,20 @@ func (c *candleStore) GenerateCandles(trade *msg.Trade) error {
 	if err := txn.Commit(); err != nil {
 		return err
 	}
-	fmt.Printf("All good for trade %+v\n", trade)
 	return nil
 }
 
-
 func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) error {
 
+	// flag to track if any new candle was generated used to notify observers of candle store
+	var generated bool
+
 	// generate keys for this timestamp
-	candleTimestamp, candleKeys := generateCandleParamsForTimestamp(market, timestamp)
+	candleKeys, candleTimestamp := c.generateKeysForTimestamp(market, timestamp)
 
 	// if key does not exist seek most recent values, create empty candle with those close value and insert
-	txn := c.persistentStore.NewTransaction(true)
+	txn := c.badger.db.NewTransaction(true)
 
-
-	var generated bool
 	// for all candle intervals
 	for interval, key := range candleKeys {
 
@@ -238,28 +236,14 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 		_, err := txn.Get(key)
 		if err == badger.ErrKeyNotFound {
 
-			fmt.Printf("New candle should be created at interval %+v timestamp %+v\n", interval, candleTimestamp[interval])
-
-			prefixForMostRecent := append([]byte(string(key)[:len(string(key))-19]), 0xFF)
-			options := badger.DefaultIteratorOptions
-			options.Reverse = true
-			it := txn.NewIterator(options)
-			it.Seek(prefixForMostRecent)
-			item := it.Item()
-			it.Close()
-			value, err := item.ValueCopy(nil)
-			fmt.Printf("previousKey %+v\n", string(item.KeyCopy(nil)))
+			// find most recent candle
+			prefixForMostRecent, _ := c.badger.candlePrefix(market, interval, true)
+			previousCandle, err := c.fetchMostRecentCandle(txn, prefixForMostRecent)
 			if err != nil {
 				return err
 			}
 
-			// extract close price from previous candle
-			var previousCandle msg.Candle
-			proto.Unmarshal(value, &previousCandle)
-
-			fmt.Printf("previousCandle %+v\n", previousCandle)
-
-			// generate new candle with extracted close price
+			// generate new candle based on the extracted close price
 			candleTimestamp := candleTimestamp[interval]
 			newCandle := NewCandle(uint64(candleTimestamp), previousCandle.Close, 0, interval)
 			candleBuf, err := proto.Marshal(newCandle)
@@ -267,25 +251,23 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 				return err
 			}
 
-			fmt.Printf("newCandle %+v\n", newCandle)
-
-			// push new candle to the
+			// push new candle to badger
 			if err := txn.Set(key, candleBuf); err != nil {
 				return err
 			}
-			fmt.Printf("\n\nINSERTED\n\n")
+
+			// push new candle onto the gql buffer for updates
 			c.QueueEvent(*newCandle, interval)
 
 			generated = true
 		}
-		//if present do nothing
-		//fmt.Printf("candle for %s is present at key %s\n", interval, string(key))
 	}
 
 	if err := txn.Commit(); err != nil {
 		return err
 	}
 
+	// if any of the candles were updated push stacked changes and update the suppliers
 	if generated {
 		c.Notify()
 	}
@@ -293,10 +275,34 @@ func (c *candleStore) GenerateEmptyCandles(market string, timestamp uint64) erro
 	return nil
 }
 
+func (c *candleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []byte) (*msg.Candle, error) {
+	var previousCandle msg.Candle
+
+	// set iterator to reverse in order to fetch most recent
+	options := badger.DefaultIteratorOptions
+	options.Reverse = true
+
+	it := txn.NewIterator(options)
+	it.Seek(prefixForMostRecent)
+	defer it.Close()
+
+	item := it.Item()
+
+	value, err := item.ValueCopy(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	proto.Unmarshal(value, &previousCandle)
+
+	return &previousCandle, nil
+}
+
 func NewCandle(timestamp, openPrice, size uint64, interval msg.Interval) *msg.Candle {
 	//TODO: get candle form pool of candles
 	datetime := vegatime.Stamp(timestamp).Rfc3339()
-	return &msg.Candle{Timestamp: timestamp, Datetime: datetime, Open: openPrice, Low: openPrice, High: openPrice, Close:openPrice, Volume: size, Interval: interval}
+	return &msg.Candle{Timestamp: timestamp, Datetime: datetime, Open: openPrice, Close: openPrice,
+		Low: openPrice, High: openPrice, Volume: size, Interval: interval}
 }
 
 func UpdateCandle(candle *msg.Candle, trade *msg.Trade) {
@@ -313,69 +319,69 @@ func UpdateCandle(candle *msg.Candle, trade *msg.Trade) {
 	candle.Volume += trade.Size
 }
 
-func generateCandleParamsForTimestamp(market string, timestamp uint64) (map[msg.Interval]int64, map[msg.Interval][]byte) {
+func (c *candleStore) generateKeysForTimestamp(market string, timestamp uint64) (map[msg.Interval][]byte, map[msg.Interval]uint64) {
 	keys := make(map[msg.Interval][]byte)
-	timestamps := getMapOfIntervalsToTimestamps(int64(timestamp))
+	roundedTimestamps := getMapOfIntervalsToRoundedTimestamps(timestamp)
 
-	for key, val := range timestamps {
-		keys[key] = []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, key.String(), val))
+	for interval, roundedTimestamp := range roundedTimestamps  {
+		keys[interval] = c.badger.candleKey(market, interval, roundedTimestamp)
 	}
 
-	return timestamps, keys
+	return keys, roundedTimestamps
 }
 
-func getMapOfIntervalsToTimestamps(timestamp int64) map[msg.Interval]int64 {
-	timestamps := make(map[msg.Interval]int64)
-	seconds := timestamp / int64(time.Second)
-	nano := timestamp % seconds
-	t := time.Unix(seconds, nano)
-	// round floor
+func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[msg.Interval]uint64 {
+	// round timetamp to nearest minute, 5minute, 15 minute, hour, 6hours, 1 day intervals and return a map of rounded timestamps
+
+	timestamps := make(map[msg.Interval]uint64)
+	t := vegatime.Stamp(timestamp).Datetime()
+
+	// round floor by integer division
 	timestamps[msg.Interval_I1M] =
-		time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location()).UnixNano()
+		uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location()).UnixNano())
 
 	timestamps[msg.Interval_I5M] =
-	 	time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location()).UnixNano()
+		uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location()).UnixNano())
 
 	timestamps[msg.Interval_I15M] =
-	 	time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location()).UnixNano()
+		uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location()).UnixNano())
 
 	timestamps[msg.Interval_I1H] =
-	 	time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location()).UnixNano()
+		uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location()).UnixNano())
 
 	timestamps[msg.Interval_I6H] =
-	 	time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location()).UnixNano()
+		uint64(time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location()).UnixNano())
 
 	timestamps[msg.Interval_I1D] =
-	 	time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).UnixNano()
+		uint64(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).UnixNano())
 
 	return timestamps
 }
 
-func generateFetchKey(market string, sinceTimestsamp uint64, interval msg.Interval) []byte {
-	seconds := sinceTimestsamp / uint64(time.Second)
-	nano := sinceTimestsamp % seconds
-	t := time.Unix(int64(seconds), int64(nano))
+func (c *candleStore) generateFetchKey(market string, interval msg.Interval, sinceTimestsamp uint64) []byte {
 
-	// round floor
+	// returns valid key for market, interval and timestamp
+	// round floor by integer division
+
 	switch interval {
 	case msg.Interval_I1M:
-		roundedToMinute := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedToMinute.UnixNano()))
+		timestampRoundedToMinute := vegatime.Stamp(sinceTimestsamp).RoundToNearest(interval).UnixNano()
+		return c.badger.candleKey(market, interval, timestampRoundedToMinute)
 	case msg.Interval_I5M:
-		roundedTo5Minutes := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedTo5Minutes.UnixNano()))
+		timestampRoundedTo5Minutes := vegatime.Stamp(sinceTimestsamp).RoundToNearest(interval).UnixNano()
+		return c.badger.candleKey(market, interval, timestampRoundedTo5Minutes)
 	case msg.Interval_I15M:
-		roundedTo15Minutes := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedTo15Minutes.UnixNano()))
+		timestampRoundedTo15Minutes := vegatime.Stamp(sinceTimestsamp).RoundToNearest(interval).UnixNano()
+		return c.badger.candleKey(market, interval, timestampRoundedTo15Minutes)
 	case msg.Interval_I1H:
-		roundedTo1Hour := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedTo1Hour.UnixNano()))
+		timestampRoundedTo1Hour := vegatime.Stamp(sinceTimestsamp).RoundToNearest(interval).UnixNano()
+		return c.badger.candleKey(market, interval, timestampRoundedTo1Hour)
 	case msg.Interval_I6H:
-		roundedTo6Hour := time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedTo6Hour.UnixNano()))
+		timestampRoundedTo6Hour := vegatime.Stamp(sinceTimestsamp).RoundToNearest(interval).UnixNano()
+		return c.badger.candleKey(market, interval, timestampRoundedTo6Hour)
 	case msg.Interval_I1D:
-		roundedToDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-		return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), roundedToDay.UnixNano()))
+		timestampRoundedToDay := vegatime.Stamp(sinceTimestsamp).RoundToNearest(interval).UnixNano()
+		return c.badger.candleKey(market, interval, timestampRoundedToDay)
 	}
 	return nil
 }

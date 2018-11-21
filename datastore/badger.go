@@ -3,6 +3,7 @@ package datastore
 import (
 	"fmt"
 	"github.com/dgraph-io/badger"
+	"vega/msg"
 )
 
 type badgerStore struct {
@@ -43,4 +44,17 @@ func (bs *badgerStore) getPrefix(modifier string, prefix string, descending bool
 		keyPrefix = append(keyPrefix, 0xFF)
 	}
 	return keyPrefix, validForPrefix
+}
+
+func (bs *badgerStore) candlePrefix(market string, interval msg.Interval, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	validForPrefix = []byte(fmt.Sprintf("M:%s_I:%s_T:", market, interval))
+	keyPrefix = validForPrefix
+	if descending {
+		keyPrefix = append(keyPrefix, 0xFF)
+	}
+	return keyPrefix, validForPrefix
+}
+
+func (bs *badgerStore) candleKey(market string, interval msg.Interval, timestamp uint64) []byte {
+	return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), timestamp))
 }

@@ -160,16 +160,16 @@ func TestCandleGenerator_Generate(t *testing.T) {
 
 func TestGetMapOfIntervalsToTimestamps(t *testing.T) {
 	timestamp, _ := time.Parse(time.RFC3339, "2018-11-13T11:01:14Z")
-	t0 := timestamp.UnixNano()
+	t0 := uint64(timestamp.UnixNano())
 	fmt.Printf("%d", timestamp.UnixNano())
 
-	timestamps := getMapOfIntervalsToTimestamps(timestamp.UnixNano())
-	assert.Equal(t, t0 - int64(14 * time.Second), timestamps[msg.Interval_I1M])
-	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I5M])
-	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I15M])
-	assert.Equal(t, t0 - int64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I1H])
-	assert.Equal(t, t0 - int64(5 * time.Hour + time.Minute + 14 * time.Second), timestamps[msg.Interval_I6H])
-	assert.Equal(t, t0 - int64(11 * time.Hour + time.Minute + 14 * time.Second), timestamps[msg.Interval_I1D])
+	timestamps := getMapOfIntervalsToRoundedTimestamps(uint64(timestamp.UnixNano()))
+	assert.Equal(t, t0 - uint64(14 * time.Second), timestamps[msg.Interval_I1M])
+	assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I5M])
+	assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I15M])
+	assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I1H])
+	assert.Equal(t, t0 - uint64(5 * time.Hour + time.Minute + 14 * time.Second), timestamps[msg.Interval_I6H])
+	assert.Equal(t, t0 - uint64(11 * time.Hour + time.Minute + 14 * time.Second), timestamps[msg.Interval_I1D])
 }
 
 func TestCandleStore_SubscribeUnsubscribe(t *testing.T) {
