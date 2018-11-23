@@ -150,7 +150,7 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 		}
 	}
 
-	fmt.Printf("trades fetched %d\n", len(result))
+	//fmt.Printf("trades fetched %d\n", len(result))
 	return result, nil
 }
 

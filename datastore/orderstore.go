@@ -149,7 +149,7 @@ func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQuer
 		}
 	}
 
-	fmt.Printf("order fetched %d\n", len(result))
+	log.Debugf("order fetched %d\n", len(result))
 
 	return result, nil
 }

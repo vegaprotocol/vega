@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"vega/filters"
+	"vega/log"
 	"vega/msg"
-	"fmt"
 )
 
 func applyTradeFilters(trade *msg.Trade, queryFilters *filters.TradeQueryFilters) bool {
@@ -74,8 +74,8 @@ func applyOrderFilters(order *msg.Order, queryFilters *filters.OrderQueryFilters
 	ok := true
 	count := 0
 
-	fmt.Printf("analyse order: %+v\n", order)
-	fmt.Printf("applyOrderFilters queryFilter: %+v\n", queryFilters)
+	log.Debugf("analyse order: %+v\n", order)
+	log.Debugf("applyOrderFilters queryFilter: %+v\n", queryFilters)
 
 	if queryFilters.IdFilter != nil {
 		ok = queryFilters.IdFilter.ApplyFilters(order.Id)
@@ -144,7 +144,7 @@ func applyOrderFilters(order *msg.Order, queryFilters *filters.OrderQueryFilters
 		}
 	}
 
-	fmt.Printf("applyOrderFilters OK: %+v\n", ok)
+	log.Debugf("applyOrderFilters OK: %+v\n", ok)
 
 	if queryFilters.Operator == filters.QueryFilterOperatorAnd {
 		// If we AND all the queryFilters the counts should match
