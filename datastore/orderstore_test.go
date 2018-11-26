@@ -71,7 +71,7 @@ func TestMemStore_PostAndGetNewOrder(t *testing.T) {
 
 	o, err := newOrderStore.GetByMarketAndId("testMarket", order.Id)
 	assert.Nil(t, err)
-	assert.Equal(t, order, o)
+	assert.Equal(t, order.Id, o.Id)
 }
 
 // Doesn't make sense
@@ -156,11 +156,10 @@ func TestMemStore_PutNoneExistentOrder(t *testing.T) {
 	}
 
 	err := newOrderStore.Put(order)
-	assert.Nil(t, err)
+	assert.NotEqual(t, nil, err)
 
-	o, err := newOrderStore.GetByMarketAndId(testMarket, order.Id)
-	assert.Nil(t, err)
-	assert.Equal(t, order, o)
+	_, err = newOrderStore.GetByMarketAndId(testMarket, order.Id)
+	assert.NotEqual(t, nil, err)
 }
 
 //
@@ -734,11 +733,11 @@ func TestMemOrderStore_Parties(t *testing.T) {
 
 	orderAtPartyA, err := newOrderStore.GetByPartyAndId(testPartyA, passiveOrder.Id)
 	assert.Nil(t, err)
-	assert.Equal(t, passiveOrder, orderAtPartyA)
+	assert.Equal(t, passiveOrder.Id, orderAtPartyA.Id)
 
 	orderAtPartyB, err := newOrderStore.GetByPartyAndId(testPartyB, aggressiveOrder.Id)
 	assert.Nil(t, err)
-	assert.Equal(t, aggressiveOrder, orderAtPartyB)
+	assert.Equal(t, aggressiveOrder.Id, orderAtPartyB.Id)
 
 	//tradesAtPartyA, err := newTradeStore.GetByParty(testPartyA, nil)
 	//assert.Nil(t, err)
@@ -760,7 +759,7 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	assert.Nil(t, err)
 	orderAtPartyB, err = newOrderStore.GetByPartyAndId(testPartyB, aggressiveOrder.Id)
 	assert.Nil(t, err)
-	assert.Equal(t, updatedAggressiveOrder, orderAtPartyB)
+	assert.Equal(t, updatedAggressiveOrder.Id, orderAtPartyB.Id)
 
 	// delete trade from trade store, parties should be updated
 	//err = newTradeStore.Delete(trade)
@@ -1496,5 +1495,5 @@ func TestMemStore_GetOrderByReference(t *testing.T) {
 	fetchedOrder, err := newOrderStore.GetByParty(testPartyA, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(fetchedOrder))
-	assert.Equal(t, order, fetchedOrder[0])
+	assert.Equal(t, order.Id, fetchedOrder[0].Id)
 }

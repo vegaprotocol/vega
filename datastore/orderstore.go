@@ -9,6 +9,7 @@ import (
 	"vega/filters"
 
 	"github.com/dgraph-io/badger"
+	"github.com/gogo/protobuf/proto"
 )
 
 // orderStore should implement OrderStore interface.
@@ -141,31 +142,33 @@ func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQuer
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		item := it.Item()
 		orderBuf, _ := item.ValueCopy(nil)
-
 		var order msg.Order
-		order.XXX_Unmarshal(orderBuf)
+		if err := proto.Unmarshal(orderBuf, &order); err != nil {
+			log.Errorf("Unmarshal failed %s", err.Error())
+		}
 		if filter.apply(&order) {
 			result = append(result, &order)
 		}
+		if filter.isFull() {
+			break
+		}
 	}
-
-	log.Debugf("order fetched %d\n", len(result))
 
 	return result, nil
 }
 
 // Get retrieves an order for a given market and id.
-func (os *orderStore) GetByMarketAndId(market string, id string) (*msg.Order, error) {
+func (os *orderStore) GetByMarketAndId(market string, Id string) (*msg.Order, error) {
 	var order msg.Order
 	txn := os.badger.db.NewTransaction(false)
-	marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", market, id))
+	marketKey := os.badger.orderMarketKey(market, Id)
 	item, err := txn.Get(marketKey)
 	if err != nil {
 		return nil, err
 	}
-
-	orderBf, _ := item.ValueCopy(nil)
-	if err := order.XXX_Unmarshal(orderBf); err != nil {
+	orderBuf, _ := item.ValueCopy(nil)
+	if err := proto.Unmarshal(orderBuf, &order); err != nil {
+		log.Errorf("Unmarshal failed %s", err.Error())
 		return nil, err
 	}
 	return &order, nil
@@ -192,25 +195,27 @@ func (os *orderStore) GetByParty(party string, queryFilters *filters.OrderQueryF
 			// todo return or just log this - check with maks?
 			return nil, errors.New(fmt.Sprintf("order with key %s does not exist in badger store", string(marketKey)))
 		}
-
 		orderBuf, _ := orderItem.ValueCopy(nil)
 		var order msg.Order
-		order.XXX_Unmarshal(orderBuf)
+		if err := proto.Unmarshal(orderBuf, &order); err != nil {
+			log.Errorf("Unmarshal faixxxxxled %s", err.Error())
+			return nil, err
+		}
 		if filter.apply(&order) {
 			result = append(result, &order)
 		}
+		if filter.isFull() {
+			break
+		}
 	}
-
-	fmt.Printf("order fetched %d\n", len(result))
-
 	return result, nil
 }
 
 // Get retrieves an order for a given market and id.
-func (m *orderStore) GetByPartyAndId(party string, id string) (*msg.Order, error) {
+func (os *orderStore) GetByPartyAndId(party string, Id string) (*msg.Order, error) {
 	var order msg.Order
-	err := m.badger.db.View(func(txn *badger.Txn) error {
-		partyKey := []byte(fmt.Sprintf("P:%s_ID:%s", party, id))
+	err := os.badger.db.View(func(txn *badger.Txn) error {
+		partyKey := os.badger.orderPartyKey(party, Id)
 		marketKeyItem, err := txn.Get(partyKey)
 		if err != nil {
 			return err
@@ -219,18 +224,19 @@ func (m *orderStore) GetByPartyAndId(party string, id string) (*msg.Order, error
 		if err != nil {
 			return err
 		}
-		fmt.Printf("marketKey %s\n", string(marketKey))
 		orderItem, err := txn.Get(marketKey)
 		if err != nil {
 			return err
 		}
-
 		orderBuf, err := orderItem.ValueCopy(nil)
 		if err != nil {
-			fmt.Printf("ORDER %s DOES NOT EXIST\n", string(marketKey))
+			log.Errorf("ORDER %s DOES NOT EXIST\n", string(marketKey))
 			return err
 		}
-		order.XXX_Unmarshal(orderBuf)
+		if err := proto.Unmarshal(orderBuf, &order); err != nil {
+			log.Errorf("Unmarshal failed %s", err.Error())
+			return err
+		}
 		return nil
 	})
 
@@ -242,13 +248,16 @@ func (m *orderStore) GetByPartyAndId(party string, id string) (*msg.Order, error
 }
 
 func (os *orderStore) Post(order *msg.Order) error {
-
 	txn := os.badger.db.NewTransaction(true)
 	insertAtomically := func(txn *badger.Txn) error {
-		orderBuf, _ := order.XXX_Marshal(nil, true)
-		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
-		idKey := []byte(fmt.Sprintf("ID:%s", order.Id))
-		partyKey := []byte(fmt.Sprintf("P:%s_ID:%s", order.Party, order.Id))
+		orderBuf, err := proto.Marshal(order)
+		if err != nil {
+			log.Errorf("Marshal failed %s", err.Error())
+			return err
+		}
+		marketKey := os.badger.orderMarketKey(order.Market, order.Id)
+		idKey := os.badger.orderIdKey(order.Id)
+		partyKey := os.badger.orderPartyKey(order.Party, order.Id)
 		if err := txn.Set(marketKey, orderBuf); err != nil {
 			return err
 		}
@@ -285,10 +294,13 @@ func (os *orderStore) PostBatch(batch []*msg.Order) error {
 
 	insertBatchAtomically := func() error {
 		for idx := range batch{
-			orderBuf, _ := batch[idx].XXX_Marshal(nil, true)
-			marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", batch[idx].Market, batch[idx].Id))
-			idKey := []byte(fmt.Sprintf("ID:%s", batch[idx].Id))
-			partyKey := []byte(fmt.Sprintf("P:%s_ID:%s", batch[idx].Party, batch[idx].Id))
+			orderBuf, err := proto.Marshal(batch[idx])
+			if err != nil {
+				log.Errorf("Marshal failed %s", err.Error())
+			}
+			marketKey := os.badger.orderMarketKey(batch[idx].Market, batch[idx].Id)
+			idKey := os.badger.orderIdKey(batch[idx].Id)
+			partyKey := os.badger.orderPartyKey(batch[idx].Party, batch[idx].Id)
 			if err := wb.Set(marketKey, orderBuf, 0); err != nil {
 				return err
 			}
@@ -327,29 +339,48 @@ func (os *orderStore) PostBatch(batch []*msg.Order) error {
 func (os *orderStore) Put(order *msg.Order) error {
 
 	var currentOrder msg.Order
-	os.badger.db.View(func(txn *badger.Txn) error {
-		partyKey := fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id)
-		item, err := txn.Get([]byte(partyKey))
+	err := os.badger.db.View(func(txn *badger.Txn) error {
+		partyKey := os.badger.orderPartyKey(order.Party, order.Id)
+		marketKeyItem, err := txn.Get(partyKey)
 		if err != nil {
 			return err
 		}
-		orderBuf, err := item.ValueCopy(nil)
-		currentOrder.XXX_Unmarshal(orderBuf)
+		marketKey, err := marketKeyItem.ValueCopy(nil)
 		if err != nil {
 			return err
 		}
+		orderItem, err := txn.Get(marketKey)
+		if err != nil {
+			return err
+		}
+		orderBuf, err := orderItem.ValueCopy(nil)
+		if err != nil {
+			log.Errorf("ORDER %s DOES NOT EXIST\n", string(marketKey))
+			return err
+		}
+		if err := proto.Unmarshal(orderBuf, &currentOrder); err != nil {
+			log.Errorf("Unmarshal failed %s", err.Error())
+			return err
+		}
+
 		return nil
 	})
+	if  err != nil {
+		fmt.Printf("Failed to fetch current order %s\n", err.Error())
+		return err
+	}
 
-	err := os.badger.db.Update(func(txn *badger.Txn) error {
-		orderBuf, _ := order.XXX_Marshal(nil, true)
-		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
+	err = os.badger.db.Update(func(txn *badger.Txn) error {
+		orderBuf, err := proto.Marshal(order)
+		if err != nil {
+			return err
+		}
+		marketKey := os.badger.orderMarketKey(order.Market, order.Id)
 		txn.Set(marketKey, orderBuf)
 		return	nil
 	})
-
 	if err != nil {
-		return err
+		fmt.Printf("Failed to update current order %s\n", err.Error())
 	}
 
 	remainingDelta := currentOrder.Remaining - order.Remaining
@@ -369,9 +400,9 @@ func (os *orderStore) Delete(order *msg.Order) error {
 
 	txn := os.badger.db.NewTransaction(true)
 	deleteAtomically := func() error {
-		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", order.Market, order.Id))
-		idKey := []byte(fmt.Sprintf("ID:%s", order.Id))
-		partyKey := []byte(fmt.Sprintf("P:%s_ID:%s", order.Party, order.Id))
+		marketKey := os.badger.orderMarketKey(order.Market, order.Id)
+		idKey := os.badger.orderIdKey(order.Id)
+		partyKey := os.badger.orderPartyKey(order.Party, order.Id)
 		if err := txn.Delete(marketKey); err != nil {
 			return err
 		}
@@ -430,4 +461,11 @@ func (f *OrderFilter) apply(order *msg.Order) (include bool) {
 		f.found++
 	}
 	return include
+}
+
+func (f *OrderFilter) isFull() bool {
+	if f.queryFilter.HasLast() && f.found == *f.queryFilter.Last {
+		return true
+	}
+	return false
 }

@@ -8,6 +8,7 @@ import (
 	"vega/filters"
 	"vega/msg"
 	"github.com/dgraph-io/badger"
+	"github.com/gogo/protobuf/proto"
 )
 
 // tradeStore should implement TradeStore interface.
@@ -71,7 +72,7 @@ func (ts *tradeStore) Unsubscribe(id uint64) error {
 func (ts *tradeStore) Notify() error {
 
 	if ts.subscribers == nil || len(ts.subscribers) == 0 {
-		//log.Debugf("TradeStore -> Notify: No subscribers connected")
+		log.Debugf("TradeStore -> Notify: No subscribers connected")
 		return nil
 	}
 
@@ -111,7 +112,7 @@ func (ts *tradeStore) queueEvent(t msg.Trade) error {
 	defer ts.mu.Unlock()
 
 	if ts.subscribers == nil || len(ts.subscribers) == 0 {
-		//log.Debugf("TradeStore -> queueEvent: No subscribers connected")
+		log.Debugf("TradeStore -> queueEvent: No subscribers connected")
 		return nil
 	}
 
@@ -141,12 +142,15 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		item := it.Item()
 		tradeBuf, _ := item.ValueCopy(nil)
-
 		var trade msg.Trade
-		trade.XXX_Unmarshal(tradeBuf)
-		fmt.Printf("trade: %+v\n", trade)
+		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
+			log.Errorf("Failed to unmarshal %s", err.Error())
+		}
 		if filter.apply(&trade) {
 			result = append(result, &trade)
+		}
+		if filter.isFull() {
+			break
 		}
 	}
 
@@ -155,18 +159,17 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 }
 
 // GetByMarketAndId retrieves a trade for a given id.
-func (ts *tradeStore) GetByMarketAndId(market string, id string) (*msg.Trade, error) {
-	var trade msg.Trade
+func (ts *tradeStore) GetByMarketAndId(market string, Id string) (*msg.Trade, error) {
 	txn := ts.badger.db.NewTransaction(false)
-	marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", market, id))
-
+	marketKey := ts.badger.tradeMarketKey(market, Id)
 	item, err := txn.Get(marketKey)
 	if err != nil {
 		return nil, err
 	}
-
 	tradeBuf, _ := item.ValueCopy(nil)
-	if err := trade.XXX_Unmarshal(tradeBuf); err != nil {
+	var trade msg.Trade
+	if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
+		log.Errorf("Failed to unmarshal %s", err.Error())
 		return nil, err
 	}
 	return &trade, err
@@ -190,15 +193,18 @@ func (ts *tradeStore) GetByParty(party string, queryFilters *filters.TradeQueryF
 		marketKey, _ := marketKeyItem.ValueCopy(nil)
 		tradeItem, err := txn.Get(marketKey)
 		if err != nil {
-			fmt.Printf("TRADE %s DOES NOT EXIST", string(marketKey))
+			log.Infof("TRADE %s DOES NOT EXIST", string(marketKey))
 		}
-
 		tradeBuf, _ := tradeItem.ValueCopy(nil)
-
 		var trade msg.Trade
-		trade.XXX_Unmarshal(tradeBuf)
+		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
+			log.Errorf("Failed to unmarshal %s", err.Error())
+		}
 		if filter.apply(&trade) {
 			result = append(result, &trade)
+		}
+		if filter.isFull() {
+			break
 		}
 	}
 	
@@ -206,10 +212,10 @@ func (ts *tradeStore) GetByParty(party string, queryFilters *filters.TradeQueryF
 }
 
 // GetByPartyAndId retrieves a trade for a given id.
-func (ts *tradeStore) GetByPartyAndId(party string, id string) (*msg.Trade, error) {
+func (ts *tradeStore) GetByPartyAndId(party string, Id string) (*msg.Trade, error) {
 	var trade msg.Trade
 	err := ts.badger.db.View(func(txn *badger.Txn) error {
-		partyKey := []byte(fmt.Sprintf("P:%s_ID:%s", party, id))
+		partyKey := ts.badger.tradePartyKey(party, Id)
 		marketKeyItem, err := txn.Get(partyKey)
 		if err != nil {
 			return err
@@ -218,7 +224,6 @@ func (ts *tradeStore) GetByPartyAndId(party string, id string) (*msg.Trade, erro
 		if err != nil {
 			return err
 		}
-		fmt.Printf("marketKey %s\n", string(marketKey))
 		tradeItem, err := txn.Get(marketKey)
 		if err != nil {
 			return err
@@ -229,7 +234,10 @@ func (ts *tradeStore) GetByPartyAndId(party string, id string) (*msg.Trade, erro
 			fmt.Printf("TRADE %s DOES NOT EXIST\n", string(marketKey))
 			return err
 		}
-		trade.XXX_Unmarshal(tradeBuf)
+		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
+			log.Errorf("Failed to unmarshal %s", err.Error())
+			return err
+		}
 		return nil
 	})
 
@@ -246,12 +254,15 @@ func (ts *tradeStore) Post(trade *msg.Trade) error {
 
 	txn := ts.badger.db.NewTransaction(true)
 	insertAtomically := func(txn *badger.Txn) error {
-		orderBuf, _ := trade.XXX_Marshal(nil, true)
-		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", trade.Market, trade.Id))
-		idKey := []byte(fmt.Sprintf("ID:%s", trade.Id))
-		partyBuyerKey := []byte(fmt.Sprintf("P:%s_ID:%s", trade.Buyer, trade.Id))
-		partySellerKey := []byte(fmt.Sprintf("P:%s_ID:%s", trade.Seller, trade.Id))
-		if err := txn.Set(marketKey, orderBuf); err != nil {
+		tradeBuf, err := proto.Marshal(trade)
+		if err != nil {
+			return err
+		}
+		marketKey := ts.badger.tradeMarketKey(trade.Market, trade.Id)
+		idKey := ts.badger.tradeIdKey(trade.Id)
+		partyBuyerKey := ts.badger.tradePartyKey(trade.Buyer, trade.Id)
+		partySellerKey := ts.badger.tradePartyKey(trade.Seller, trade.Id)
+		if err := txn.Set(marketKey, tradeBuf); err != nil {
 			return err
 		}
 		if err := txn.Set(idKey, marketKey); err != nil {
@@ -285,10 +296,10 @@ func (ts *tradeStore) Delete(trade *msg.Trade) error {
 
 	txn := ts.badger.db.NewTransaction(true)
 	deleteAtomically := func() error {
-		marketKey := []byte(fmt.Sprintf("M:%s_ID:%s", trade.Market, trade.Id))
-		idKey := []byte(fmt.Sprintf("ID:%s", trade.Id))
-		partyBuyerKey := []byte(fmt.Sprintf("P:%s_ID:%s", trade.Buyer, trade.Id))
-		partySellerKey := []byte(fmt.Sprintf("P:%s_ID:%s", trade.Seller, trade.Id))
+		marketKey := ts.badger.tradeMarketKey(trade.Market, trade.Id)
+		idKey := ts.badger.tradeIdKey(trade.Id)
+		partyBuyerKey := ts.badger.tradePartyKey(trade.Buyer, trade.Id)
+		partySellerKey := ts.badger.tradePartyKey(trade.Seller, trade.Id)
 		if err := txn.Delete(marketKey); err != nil {
 			return err
 		}
@@ -364,4 +375,11 @@ func (f *TradeFilter) apply(trade *msg.Trade) (include bool) {
 		f.found++
 	}
 	return include
+}
+
+func (f *TradeFilter) isFull() bool {
+	if f.queryFilter.HasLast() && f.found == *f.queryFilter.Last {
+		return true
+	}
+	return false
 }

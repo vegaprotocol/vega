@@ -58,3 +58,27 @@ func (bs *badgerStore) candlePrefix(market string, interval msg.Interval, descen
 func (bs *badgerStore) candleKey(market string, interval msg.Interval, timestamp uint64) []byte {
 	return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), timestamp))
 }
+
+func (bs *badgerStore) orderMarketKey(market string, Id string) []byte {
+	return []byte(fmt.Sprintf("M:%s_ID:%s", market, Id))
+}
+
+func (bs *badgerStore) orderIdKey(Id string) []byte {
+	return []byte(fmt.Sprintf("ID:%s", Id))
+}
+
+func (bs *badgerStore) orderPartyKey(party string, Id string) []byte {
+	return []byte(fmt.Sprintf("P:%s_ID:%s", party, Id))
+}
+
+func (bs *badgerStore) tradeMarketKey(market string, Id string) []byte {
+	return []byte(fmt.Sprintf("M:%s_ID:%s", market, Id))
+}
+
+func (bs *badgerStore) tradeIdKey(Id string) []byte {
+	return []byte(fmt.Sprintf("ID:%s", Id))
+}
+
+func (bs *badgerStore) tradePartyKey(party, Id string) []byte {
+	return []byte(fmt.Sprintf("P:%s_ID:%s", party, Id))
+}
