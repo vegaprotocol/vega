@@ -35,7 +35,7 @@ type TradeStore interface {
 	GetTradesBySideBuckets(party string) map[string]*MarketBucket
 
 	// Trades relating to the given orderId for a particular market
-	GetByMarketAndOrderId(market string, orderId string) ([]Trade, error)
+	//GetByMarketAndOrderId(market string, orderId string) ([]Trade, error)
 }
 
 type OrderStore interface {
