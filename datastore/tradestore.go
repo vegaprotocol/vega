@@ -25,6 +25,7 @@ func NewTradeStore(dir string) TradeStore {
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
+	//opts.SyncWrites = true
 	db, err := badger.Open(opts)
 	if err != nil {
 		log.Fatalf(err.Error())

@@ -28,6 +28,7 @@ func NewOrderStore(dir string) OrderStore {
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
+	//opts.SyncWrites = true
 	db, err := badger.Open(opts)
 	if err != nil {
 		log.Fatalf(err.Error())
@@ -333,7 +334,6 @@ func (os *orderStore) PostBatch(batch []*msg.Order) error {
 
 	return nil
 }
-
 
 // Put updates an existing order in the memory store.
 func (os *orderStore) Put(order *msg.Order) error {

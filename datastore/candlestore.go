@@ -29,6 +29,7 @@ func NewCandleStore(dir string) CandleStore {
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
+	//opts.SyncWrites = true
 	db, err := badger.Open(opts)
 	if err != nil {
 		fmt.Printf(err.Error())
