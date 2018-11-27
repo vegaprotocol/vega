@@ -18,7 +18,8 @@ type orderStore struct {
 	orderBookDepth MarketDepthManager
 
 	subscribers map[uint64] chan<- []msg.Order
-	buffer []msg.Order
+	buffer []*msg.Order
+	putBuffer map[string]*msg.Order
 	subscriberId uint64
 	mu sync.Mutex
 }
@@ -28,7 +29,7 @@ func NewOrderStore(dir string) OrderStore {
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
-	//opts.SyncWrites = true
+	opts.SyncWrites = true
 	db, err := badger.Open(opts)
 	if err != nil {
 		log.Fatalf(err.Error())
@@ -73,7 +74,20 @@ func (m *orderStore) Unsubscribe(id uint64) error {
 	return errors.New(fmt.Sprintf("OrderStore subscriber does not exist with id: %d", id))
 }
 
-func (m *orderStore) Notify() error {
+func (m *orderStore) Commit() error {
+	m.mu.Lock()
+	fmt.Printf("state of the buffer %+v\n", m.buffer)
+	items := m.buffer
+	m.buffer = nil
+	m.putBuffer = nil
+	m.mu.Unlock()
+
+	m.PostBatch(items)
+	m.Notify(items)
+	return nil
+}
+
+func (m *orderStore) Notify(items []*msg.Order) error {
 
 	if m.subscribers == nil || len(m.subscribers) == 0 {
 		//log.Debugf("OrderStore -> Notify: No subscribers connected")
@@ -85,17 +99,17 @@ func (m *orderStore) Notify() error {
 		log.Debugf("OrderStore -> Notify: No orders in buffer")
 		return nil
 	}
-	
-	m.mu.Lock()
-	items := m.buffer
-	m.buffer = nil
-	m.mu.Unlock()
 
 	// iterate over items in buffer and push to observers
+	payload := make([]msg.Order, 0)
+	for _, order := range items {
+		payload = append(payload, *order)
+	}
+
 	var ok bool
 	for id, sub := range m.subscribers {
 		select {
-		case sub <- items:
+		case sub <- payload:
 			ok = true
 			break
 		default:
@@ -114,17 +128,22 @@ func (m *orderStore) queueEvent(o msg.Order) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if m.subscribers == nil || len(m.subscribers) == 0 {
-		//log.Debugf("OrderStore -> queueEvent: No subscribers connected")
-		return nil
-	}
+	//if m.subscribers == nil || len(m.subscribers) == 0 {
+	//	//log.Debugf("OrderStore -> queueEvent: No subscribers connected")
+	//	return nil
+	//}
 
 	if m.buffer == nil {
-		m.buffer = make([]msg.Order, 0)
+		m.buffer = make([]*msg.Order, 0)
+	}
+
+	if m.putBuffer == nil {
+		m.putBuffer = make(map[string]*msg.Order, 0)
 	}
 
 	log.Debugf("OrderStore -> queueEvent: Adding order to buffer: %+v", o)
-	m.buffer = append(m.buffer, o)
+	m.buffer = append(m.buffer, &o)
+	m.putBuffer[o.Id] = &o
 	return nil
 }
 
@@ -249,40 +268,40 @@ func (os *orderStore) GetByPartyAndId(party string, Id string) (*msg.Order, erro
 }
 
 func (os *orderStore) Post(order *msg.Order) error {
-	txn := os.badger.db.NewTransaction(true)
-	insertAtomically := func(txn *badger.Txn) error {
-		orderBuf, err := proto.Marshal(order)
-		if err != nil {
-			log.Errorf("Marshal failed %s", err.Error())
-			return err
-		}
-		marketKey := os.badger.orderMarketKey(order.Market, order.Id)
-		idKey := os.badger.orderIdKey(order.Id)
-		partyKey := os.badger.orderPartyKey(order.Party, order.Id)
-		if err := txn.Set(marketKey, orderBuf); err != nil {
-			return err
-		}
-		if err := txn.Set(idKey, marketKey); err != nil {
-			return err
-		}
-		if err := txn.Set(partyKey, marketKey); err != nil {
-			return err
-		}
-		return	nil
-	}
-
-	if err := insertAtomically(txn); err != nil {
-		return err
-	}
-
-	if err := txn.Commit(); err != nil {
-		txn.Discard()
-		return err
-	}
-
-	if order.Remaining != uint64(0) {
-		os.orderBookDepth.updateWithRemaining(order)
-	}
+	//txn := os.badger.db.NewTransaction(true)
+	//insertAtomically := func(txn *badger.Txn) error {
+	//	orderBuf, err := proto.Marshal(order)
+	//	if err != nil {
+	//		log.Errorf("Marshal failed %s", err.Error())
+	//		return err
+	//	}
+	//	marketKey := os.badger.orderMarketKey(order.Market, order.Id)
+	//	idKey := os.badger.orderIdKey(order.Id)
+	//	partyKey := os.badger.orderPartyKey(order.Party, order.Id)
+	//	if err := txn.Set(marketKey, orderBuf); err != nil {
+	//		return err
+	//	}
+	//	if err := txn.Set(idKey, marketKey); err != nil {
+	//		return err
+	//	}
+	//	if err := txn.Set(partyKey, marketKey); err != nil {
+	//		return err
+	//	}
+	//	return	nil
+	//}
+	//
+	//if err := insertAtomically(txn); err != nil {
+	//	return err
+	//}
+	//
+	//if err := txn.Commit(); err != nil {
+	//	txn.Discard()
+	//	return err
+	//}
+	//
+	//if order.Remaining != uint64(0) {
+	//	os.orderBookDepth.updateWithRemaining(order)
+	//}
 
 	os.queueEvent(*order)
 	return nil
@@ -294,7 +313,7 @@ func (os *orderStore) PostBatch(batch []*msg.Order) error {
 	defer wb.Cancel()
 
 	insertBatchAtomically := func() error {
-		for idx := range batch{
+		for idx := range batch {
 			orderBuf, err := proto.Marshal(batch[idx])
 			if err != nil {
 				log.Errorf("Marshal failed %s", err.Error())
@@ -328,59 +347,68 @@ func (os *orderStore) PostBatch(batch []*msg.Order) error {
 		}
 	}
 
-	for idx := range batch {
-		os.queueEvent(*batch[idx])
-	}
+	//for idx := range batch {
+	//	os.queueEvent(batch[idx])
+	//}
 
 	return nil
 }
 
 // Put updates an existing order in the memory store.
 func (os *orderStore) Put(order *msg.Order) error {
-
 	var currentOrder msg.Order
-	err := os.badger.db.View(func(txn *badger.Txn) error {
-		partyKey := os.badger.orderPartyKey(order.Party, order.Id)
-		marketKeyItem, err := txn.Get(partyKey)
-		if err != nil {
-			return err
-		}
-		marketKey, err := marketKeyItem.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
-		orderItem, err := txn.Get(marketKey)
-		if err != nil {
-			return err
-		}
-		orderBuf, err := orderItem.ValueCopy(nil)
-		if err != nil {
-			log.Errorf("ORDER %s DOES NOT EXIST\n", string(marketKey))
-			return err
-		}
-		if err := proto.Unmarshal(orderBuf, &currentOrder); err != nil {
-			log.Errorf("Unmarshal failed %s", err.Error())
-			return err
-		}
+	var recordExistsInBuffer bool
 
-		return nil
-	})
-	if  err != nil {
-		fmt.Printf("Failed to fetch current order %s\n", err.Error())
-		return err
+
+	if _, ok := os.putBuffer[order.Id]; ok {
+		os.putBuffer[order.Id] = order
+		recordExistsInBuffer = true
 	}
 
-	err = os.badger.db.Update(func(txn *badger.Txn) error {
-		orderBuf, err := proto.Marshal(order)
-		if err != nil {
+	if !recordExistsInBuffer {
+		err := os.badger.db.View(func(txn *badger.Txn) error {
+			partyKey := os.badger.orderPartyKey(order.Party, order.Id)
+			marketKeyItem, err := txn.Get(partyKey)
+			if err != nil {
+				return err
+			}
+			marketKey, err := marketKeyItem.ValueCopy(nil)
+			if err != nil {
+				return err
+			}
+			orderItem, err := txn.Get(marketKey)
+			if err != nil {
+				return err
+			}
+			orderBuf, err := orderItem.ValueCopy(nil)
+			if err != nil {
+				log.Errorf("ORDER %s DOES NOT EXIST\n", string(marketKey))
+				return err
+			}
+			if err := proto.Unmarshal(orderBuf, &currentOrder); err != nil {
+				log.Errorf("Unmarshal failed %s", err.Error())
+				return err
+			}
+
+			return nil
+		})
+		if  err != nil {
+			fmt.Printf("Failed to fetch current order %s\n", err.Error())
 			return err
 		}
-		marketKey := os.badger.orderMarketKey(order.Market, order.Id)
-		txn.Set(marketKey, orderBuf)
-		return	nil
-	})
-	if err != nil {
-		fmt.Printf("Failed to update current order %s\n", err.Error())
+
+		err = os.badger.db.Update(func(txn *badger.Txn) error {
+			orderBuf, err := proto.Marshal(order)
+			if err != nil {
+				return err
+			}
+			marketKey := os.badger.orderMarketKey(order.Market, order.Id)
+			txn.Set(marketKey, orderBuf)
+			return	nil
+		})
+		if err != nil {
+			fmt.Printf("Failed to update current order %s\n", err.Error())
+		}
 	}
 
 	remainingDelta := currentOrder.Remaining - order.Remaining

@@ -104,7 +104,6 @@ func (ts *tradeStore) Notify() error {
 			log.Infof("Trades state could not been updated for subscriber %id", id)
 		}
 	}
-
 	return nil
 }
 
