@@ -224,6 +224,9 @@ type Order {
 
     # The external reference (if available) for the order
     reference: String!
+
+    # Trades relating to this order
+    trades: [Trade!]
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market

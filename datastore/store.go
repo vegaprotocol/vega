@@ -33,6 +33,9 @@ type TradeStore interface {
 	GetMarkPrice(market string) (uint64, error)
 	// Returns map of market name to market buckets
 	GetTradesBySideBuckets(party string) map[string]*MarketBucket
+
+	// Trades relating to the given orderId for a particular market
+	GetByMarketAndOrderId(market string, orderId string) ([]Trade, error)
 }
 
 type OrderStore interface {
