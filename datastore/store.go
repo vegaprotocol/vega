@@ -42,7 +42,8 @@ type OrderStore interface {
 
 	Subscribe(orders chan<- []msg.Order) uint64
 	Unsubscribe(id uint64) error
-	Notify() error
+	Notify(items []*msg.Order) error
+	Commit() error
 
 	Close()
 

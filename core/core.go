@@ -120,9 +120,9 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// 2) --------------- RISK ENGINE -----------------//
 
 	//Call out to risk engine calculation every N blocks
-	if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
-		v.riskEngine.RecalculateRisk()
-	}
+	//if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
+	//	v.riskEngine.RecalculateRisk()
+	//}
 
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
@@ -311,7 +311,7 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 }
 
 func (v *Vega) NotifySubscribers() {
-	v.OrderStore.Notify()
+	v.OrderStore.Commit()
 	v.TradeStore.Notify()
 }
 
