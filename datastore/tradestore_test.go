@@ -259,4 +259,7 @@ func populateStores(t *testing.T, orderStore OrderStore, tradeStore TradeStore) 
 	assert.Nil(t, err)
 	err = tradeStore.Post(trade6)
 	assert.Nil(t, err)
+
+	orderStore.Commit()
+	tradeStore.Commit()
 }

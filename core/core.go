@@ -310,9 +310,9 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 	log.Debugf("Updated %v expired orders in stores", len(expiringOrders))
 }
 
-func (v *Vega) NotifySubscribers() {
+func (v *Vega) Commit() {
 	v.OrderStore.Commit()
-	v.TradeStore.Notify()
+	v.TradeStore.Commit()
 }
 
 // this should act as a separate slow go routine triggered after block is committed

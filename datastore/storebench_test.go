@@ -203,9 +203,9 @@ func BenchmarkBatchInsertToBadger(b *testing.B) {
 	//stateOrders, _ := newOrderStore.GetByMarket2(testMarket, nil)
 	//fmt.Printf("state %d\n", len(stateOrders))
 
-	var batchedOrders []*msg.Order
+	var batchedOrders []msg.Order
 	for i := 0; i < b.N; i++ {
-		order := &msg.Order{
+		order := msg.Order{
 			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
 			Market: testMarket,
 			Party:  testPartyA,

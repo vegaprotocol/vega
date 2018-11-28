@@ -327,6 +327,9 @@ func TestPositions(t *testing.T) {
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
 
+	vega.OrderStore.Commit()
+	vega.TradeStore.Commit()
+
 	// two trades of 500 contracts done at the same price of 100
 	positions, err := tradeService.GetPositionsByParty(ctx, testPartyA)
 	assert.Nil(t, err)
@@ -390,6 +393,9 @@ func TestPositions(t *testing.T) {
 	assert.Nil(t, err)
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
+
+	vega.OrderStore.Commit()
+	vega.TradeStore.Commit()
 
 	// current mark price for testMarket should be 110, the PNL for partyA and partyB should change
 	markPrice, err := vega.TradeStore.GetMarkPrice(testMarket)
@@ -461,6 +467,9 @@ func TestPositions(t *testing.T) {
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
 
+	vega.OrderStore.Commit()
+	vega.TradeStore.Commit()
+
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)
 	assert.Nil(t, err)
 
@@ -525,6 +534,9 @@ func TestPositions(t *testing.T) {
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
 
+	vega.OrderStore.Commit()
+	vega.TradeStore.Commit()
+	
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)
 	assert.Nil(t, err)
 
