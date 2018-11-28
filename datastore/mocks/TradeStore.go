@@ -16,6 +16,20 @@ func (_m *TradeStore) Close() {
 	_m.Called()
 }
 
+// Commit provides a mock function with given fields:
+func (_m *TradeStore) Commit() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Delete provides a mock function with given fields: trade
 func (_m *TradeStore) Delete(trade *msg.Trade) error {
 	ret := _m.Called(trade)
@@ -228,13 +242,13 @@ func (_m *TradeStore) GetTradesBySideBuckets(party string) map[string]*datastore
 	return r0
 }
 
-// Notify provides a mock function with given fields:
-func (_m *TradeStore) Notify() error {
-	ret := _m.Called()
+// Notify provides a mock function with given fields: items
+func (_m *TradeStore) Notify(items []msg.Trade) error {
+	ret := _m.Called(items)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func([]msg.Trade) error); ok {
+		r0 = rf(items)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -249,6 +263,20 @@ func (_m *TradeStore) Post(trade *msg.Trade) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*msg.Trade) error); ok {
 		r0 = rf(trade)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// PostBatch provides a mock function with given fields: batch
+func (_m *TradeStore) PostBatch(batch []msg.Trade) error {
+	ret := _m.Called(batch)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func([]msg.Trade) error); ok {
+		r0 = rf(batch)
 	} else {
 		r0 = ret.Error(0)
 	}
