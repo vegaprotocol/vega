@@ -35,7 +35,7 @@ type Vega struct {
 	OrderStore     datastore.OrderStore
 	TradeStore     datastore.TradeStore
 	CandleStore	   datastore.CandleStore
-	tradesBuffer   map[string][]*msg.Trade
+	//tradesBuffer   map[string][]*msg.Trade
 
 }
 
@@ -48,7 +48,7 @@ func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.
 	riskEngine := risk.New()
 
 	// tradesBuffer for candles
-	tradesBuffer := make(map[string][]*msg.Trade, 0)
+	//tradesBuffer := make(map[string][]*msg.Trade, 0)
 	
 	// todo: version from commit hash, app version incrementing
 	statistics := &msg.Statistics{}
@@ -66,7 +66,7 @@ func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.
 		OrderStore:     orderStore,
 		TradeStore:     tradeStore,
 		CandleStore:    candleStore,
-		tradesBuffer:   tradesBuffer,
+		//tradesBuffer:   tradesBuffer,
 	}
 }
 
@@ -165,7 +165,8 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			}
 
 			// Save to trade buffer for generating candles etc
-			v.tradesBuffer[trade.Market] = append(v.tradesBuffer[trade.Market], trade)
+			//v.tradesBuffer[trade.Market] = append(v.tradesBuffer[trade.Market], trade)
+			v.AddTradeToCandleBuffer(trade)
 
 			v.Statistics.LastTrade = trade
 		}
@@ -315,37 +316,48 @@ func (v *Vega) Commit() {
 	v.TradeStore.Commit()
 }
 
+func (v *Vega) StartCandleBuffer() {
+	market := marketName
+	v.CandleStore.StartNewBuffer(market, v.GetCurrentTimestamp())
+}
+
+func (v * Vega) AddTradeToCandleBuffer(trade *msg.Trade) {
+	market := marketName
+	v.CandleStore.AddTradeToBuffer(market, *trade)
+}
+
 // this should act as a separate slow go routine triggered after block is committed
 func (v *Vega) GenerateCandles() error {
 
 	// todo: generate/range over all markets!
 	market := marketName
+	v.CandleStore.GenerateCandlesFromBuffer(market)
 
-	if _, ok := v.tradesBuffer[market]; !ok {
-		v.tradesBuffer[market] = nil
-		log.Errorf("Market not found\n")
-	}
-
-	// in case there is no trading activity on this market, generate empty candles based on historical values
-	if len(v.tradesBuffer[market]) == 0 {
-		if err := v.CandleStore.GenerateEmptyCandles(market, v.GetCurrentTimestamp()); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	// generate/update  candles for each trade in the buffer
-	for idx := range v.tradesBuffer[market] {
-		if err := v.CandleStore.GenerateCandles(v.tradesBuffer[market][idx]); err != nil {
-			return err
-		}
-	}
+	//if _, ok := v.tradesBuffer[market]; !ok {
+	//	v.tradesBuffer[market] = nil
+	//	log.Errorf("Market not found\n")
+	//}
+	//
+	//// in case there is no trading activity on this market, generate empty candles based on historical values
+	//if len(v.tradesBuffer[market]) == 0 {
+	//	if err := v.CandleStore.GenerateEmptyCandles(market, v.GetCurrentTimestamp()); err != nil {
+	//		return err
+	//	}
+	//	return nil
+	//}
+	//
+	//// generate/update  candles for each trade in the buffer
+	//for idx := range v.tradesBuffer[market] {
+	//	if err := v.CandleStore.GenerateCandlesFromBuffer(v.tradesBuffer[market][idx]); err != nil {
+	//		return err
+	//	}
+	//}
 
 	// Notify all subscribers
 	v.CandleStore.Notify()
 
 	// Flush the buffer
-	v.tradesBuffer[market] = nil
+	//v.tradesBuffer[market] = nil
 
 	return nil
 }

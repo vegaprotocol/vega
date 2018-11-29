@@ -53,7 +53,7 @@ func FlushCandleStore() {
 //	}
 //
 //	for idx := range trades {
-//		candleService.AddTrade(trades[idx])
+//		candleService.AddTradeToBuffer(trades[idx])
 //	}
 //
 //	candleService.Generate(ctx, testMarket)
@@ -177,7 +177,7 @@ func TestCandleService_ObserveCandles(t *testing.T) {
 	//}
 	////
 	//for idx := range trades {
-	//	candleService.AddTrade(trades[idx])
+	//	candleService.AddTradeToBuffer(trades[idx])
 	//}
 	//
 	//candleService.Generate(ctx, testMarket)

@@ -84,8 +84,12 @@ type CandleStore interface {
 	Close()
 
 	GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle
-	GenerateCandles(trade *msg.Trade) error
-	GenerateEmptyCandles(market string, timestamp uint64) error
+
+	StartNewBuffer(market string, timestamp uint64)
+	AddTradeToBuffer(market string, trade msg.Trade) error
+	GenerateCandlesFromBuffer(market string) error
+	//GenerateCandlesFromBuffer(trade *msg.Trade) error
+	//GenerateEmptyCandles(market string, timestamp uint64) error
 }
 
 

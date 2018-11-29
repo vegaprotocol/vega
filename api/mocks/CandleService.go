@@ -12,7 +12,7 @@ type CandleService struct {
 	mock.Mock
 }
 
-// AddTrade provides a mock function with given fields: trade
+// AddTradeToBuffer provides a mock function with given fields: trade
 func (_m *CandleService) AddTrade(trade *msg.Trade) {
 	_m.Called(trade)
 }

@@ -9,18 +9,13 @@ type CandleStore struct {
 	mock.Mock
 }
 
-// Close provides a mock function with given fields:
-func (_m *CandleStore) Close() {
-	_m.Called()
-}
-
-// GenerateCandles provides a mock function with given fields: trade
-func (_m *CandleStore) GenerateCandles(trade *msg.Trade) error {
-	ret := _m.Called(trade)
+// AddTradeToBuffer provides a mock function with given fields: market, trade
+func (_m *CandleStore) AddTradeToBuffer(market string, trade msg.Trade) error {
+	ret := _m.Called(market, trade)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*msg.Trade) error); ok {
-		r0 = rf(trade)
+	if rf, ok := ret.Get(0).(func(string, msg.Trade) error); ok {
+		r0 = rf(market, trade)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -28,13 +23,18 @@ func (_m *CandleStore) GenerateCandles(trade *msg.Trade) error {
 	return r0
 }
 
-// GenerateEmptyCandles provides a mock function with given fields: market, timestamp
-func (_m *CandleStore) GenerateEmptyCandles(market string, timestamp uint64) error {
-	ret := _m.Called(market, timestamp)
+// Close provides a mock function with given fields:
+func (_m *CandleStore) Close() {
+	_m.Called()
+}
+
+// GenerateCandlesFromBuffer provides a mock function with given fields: market
+func (_m *CandleStore) GenerateCandlesFromBuffer(market string) error {
+	ret := _m.Called(market)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, uint64) error); ok {
-		r0 = rf(market, timestamp)
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(market)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -84,6 +84,11 @@ func (_m *CandleStore) QueueEvent(candle msg.Candle, interval msg.Interval) erro
 	}
 
 	return r0
+}
+
+// StartNewBuffer provides a mock function with given fields: market, timestamp
+func (_m *CandleStore) StartNewBuffer(market string, timestamp uint64) {
+	_m.Called(market, timestamp)
 }
 
 // Subscribe provides a mock function with given fields: internalTransport

@@ -38,11 +38,12 @@ func TestCandleGenerator_Generate(t *testing.T) {
 		{Id: "4", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute + 20 * time.Second)},
 	}
 
+	candleStore.StartNewBuffer(testMarket, t0)
 	for idx := range trades {
-		candleStore.GenerateCandles(trades[idx])
+		candleStore.AddTradeToBuffer(trades[idx].Market, *trades[idx])
 	}
-
-	// test for 1 minute intervals
+	candleStore.GenerateCandlesFromBuffer(testMarket)
+	fmt.Printf("Candles GenerateCandlesFromBuffer\n")
 
 	candles := candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
@@ -85,10 +86,14 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
+
+	fmt.Printf("\n\nALL GOOD MAN\n\n")
 	//------------------- generate empty candles-------------------------//
 
 	currentVegaTime := uint64(t0) + uint64(2 * time.Minute)
-	candleStore.GenerateEmptyCandles(testMarket, currentVegaTime)
+	candleStore.StartNewBuffer(testMarket, currentVegaTime)
+	candleStore.GenerateCandlesFromBuffer(testMarket)
+
 	candles = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
@@ -144,7 +149,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, 0, len(candles))
 
 	currentVegaTime = uint64(t0) + uint64(17 * time.Minute)
-	candleStore.GenerateEmptyCandles(testMarket, currentVegaTime)
+	candleStore.StartNewBuffer(testMarket, currentVegaTime)
+	candleStore.GenerateCandlesFromBuffer(testMarket)
 
 	candles = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), msg.Interval_I15M)
 	fmt.Printf("Candles fetched for t0 and 15m: %+v\n", candles)

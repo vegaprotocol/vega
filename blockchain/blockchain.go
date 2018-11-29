@@ -41,6 +41,9 @@ func (app *Blockchain) BeginBlock(beginBlock types.RequestBeginBlock) types.Resp
 	if app.previousTimestamp < 1 {
 		app.previousTimestamp = app.vega.State.Timestamp
 	}
+
+	app.vega.StartCandleBuffer()
+
 	return types.ResponseBeginBlock{}
 }
 
