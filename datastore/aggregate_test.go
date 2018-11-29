@@ -530,6 +530,8 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		newOrderStore.Post(orders[idx])
 	}
 
+	newOrderStore.Commit()
+
 	marketDepth, _ := newOrderStore.GetMarketDepth(testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
@@ -682,6 +684,8 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	for idx, _ := range orders {
 		newOrderStore.Post(orders[idx])
 	}
+
+	newOrderStore.Commit()
 
 	marketDepth, _ := newOrderStore.GetMarketDepth(testMarket)
 

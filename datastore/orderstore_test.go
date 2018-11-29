@@ -69,6 +69,8 @@ func TestMemStore_PostAndGetNewOrder(t *testing.T) {
 	err := newOrderStore.Post(order)
 	assert.Nil(t, err)
 
+	newOrderStore.Commit()
+
 	o, err := newOrderStore.GetByMarketAndId("testMarket", order.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, order.Id, o.Id)
@@ -455,6 +457,8 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 			assert.Nil(t, err)
 		}
 
+		newOrderStore.Commit()
+
 		filters := &filters.OrderQueryFilters{}
 		filters.First = &tt.inLimit
 		orders, err := newOrderStore.GetByMarket(tt.inMarket, filters)
@@ -721,6 +725,7 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	err = newOrderStore.Post(aggressiveOrder)
 	assert.Nil(t, err)
 
+	newOrderStore.Commit()
 	//err = newTradeStore.Post(trade)
 
 	ordersAtPartyA, err := newOrderStore.GetByParty(testPartyA, nil)
@@ -924,6 +929,8 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 	assert.Nil(t, err)
 	err = newOrderStore.Post(order4)
 	assert.Nil(t, err)
+
+	newOrderStore.Commit()
 
 	orderFilters := &filters.OrderQueryFilters{
 		MarketFilter: &filters.QueryFilter{Eq: testMarket},
@@ -1468,6 +1475,7 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 //
 //
 func TestMemStore_GetOrderByReference(t *testing.T) {
+	FlushOrderStore()
 	var newOrderStore = NewOrderStore(orderStoreDir)
 	defer newOrderStore.Close()
 
@@ -1488,6 +1496,8 @@ func TestMemStore_GetOrderByReference(t *testing.T) {
 	err := newOrderStore.Post(order)
 	assert.Nil(t, err)
 
+	newOrderStore.Commit()
+
 	orderFilters := &filters.OrderQueryFilters{
 		ReferenceFilter: &filters.QueryFilter{ Eq: "123123-34334343-1231231"},
 	}
@@ -1496,4 +1506,61 @@ func TestMemStore_GetOrderByReference(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(fetchedOrder))
 	assert.Equal(t, order.Id, fetchedOrder[0].Id)
+}
+
+
+func TestMemStore_InsertBatchOrders(t *testing.T) {
+	FlushOrderStore()
+	var newOrderStore = NewOrderStore(orderStoreDir)
+	defer newOrderStore.Close()
+
+	order1 := &msg.Order{
+		Id:         "d41d8cd98f00b204e9800998ecf8427b",
+		Market:     testMarket,
+		Party:      testPartyA,
+		Side:       msg.Side_Buy,
+		Price:      100,
+		Size:       1000,
+		Remaining:  0,
+		Type:       msg.Order_GTC,
+		Timestamp:  0,
+		Status:     msg.Order_Active,
+		Reference:  "123123-34334343-1231231",
+	}
+
+	order2 := &msg.Order{
+		Id:         "d41d8cd98f00b204e9800998ecf8427c",
+		Market:     testMarket,
+		Party:      testPartyA,
+		Side:       msg.Side_Buy,
+		Price:      100,
+		Size:       1000,
+		Remaining:  0,
+		Type:       msg.Order_GTC,
+		Timestamp:  0,
+		Status:     msg.Order_Active,
+		Reference:  "123123-34334343-1231232",
+	}
+
+	err := newOrderStore.Post(order1)
+	assert.Nil(t, err)
+
+	err = newOrderStore.Post(order2)
+	assert.Nil(t, err)
+
+	orderFilters := &filters.OrderQueryFilters{
+		ReferenceFilter: &filters.QueryFilter{ Eq: "123123-34334343-1231231"},
+	}
+
+	fetchedOrder, err := newOrderStore.GetByParty(testPartyA, orderFilters)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(fetchedOrder))
+
+	newOrderStore.Commit()
+
+	fetchedOrder, err = newOrderStore.GetByParty(testPartyA, orderFilters)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(fetchedOrder))
+	assert.Equal(t, order1.Id, fetchedOrder[0].Id)
+
 }

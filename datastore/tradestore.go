@@ -14,9 +14,9 @@ import (
 // tradeStore should implement TradeStore interface.
 type tradeStore struct {
 	badger *badgerStore
+	buffer []msg.Trade
 
 	subscribers map[uint64] chan<- []msg.Trade
-	buffer []msg.Trade
 	subscriberId uint64
 	mu sync.Mutex
 }
@@ -25,13 +25,13 @@ func NewTradeStore(dir string) TradeStore {
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
-	//opts.SyncWrites = true
+	opts.SyncWrites = true
 	db, err := badger.Open(opts)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 	bs := badgerStore{db: db}
-	return &tradeStore{badger: &bs}
+	return &tradeStore{badger: &bs,  buffer: make([]msg.Trade, 0), subscribers: make(map[uint64] chan<- []msg.Trade)}
 }
 
 func (ts *tradeStore) Close() {
@@ -42,13 +42,9 @@ func (ts *tradeStore) Subscribe(trades chan<- []msg.Trade) uint64 {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	if ts.subscribers == nil {
-		log.Debugf("TradeStore -> Subscribe: Creating subscriber chan map")
-		ts.subscribers = make(map[uint64] chan<- []msg.Trade)
-	}
-
 	ts.subscriberId = ts.subscriberId+1
 	ts.subscribers[ts.subscriberId] = trades
+
 	log.Debugf("TradeStore -> Subscribe: Trade subscriber added: %d", ts.subscriberId)
 	return ts.subscriberId
 }
@@ -57,7 +53,7 @@ func (ts *tradeStore) Unsubscribe(id uint64) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	if ts.subscribers == nil || len(ts.subscribers) == 0 {
+	if len(ts.subscribers) == 0 {
 		log.Debugf("TradeStore -> Unsubscribe: No subscribers connected")
 		return nil
 	}
@@ -70,23 +66,29 @@ func (ts *tradeStore) Unsubscribe(id uint64) error {
 	return errors.New(fmt.Sprintf("TradeStore subscriber does not exist with id: %d", id))
 }
 
-func (ts *tradeStore) Notify() error {
+func (ts *tradeStore) Commit() error {
+	ts.mu.Lock()
+	items := ts.buffer
+	ts.buffer = make([]msg.Trade, 0)
+	ts.mu.Unlock()
 
-	if ts.subscribers == nil || len(ts.subscribers) == 0 {
+	ts.PostBatch(items)
+	ts.Notify(items)
+	return nil
+}
+
+func (ts *tradeStore) Notify(items []msg.Trade) error {
+
+	if len(ts.subscribers) == 0 {
 		log.Debugf("TradeStore -> Notify: No subscribers connected")
 		return nil
 	}
 
-	if ts.buffer == nil || len(ts.buffer) == 0 {
+	if len(ts.buffer) == 0 {
 		// Only publish when we have items
 		log.Debugf("TradeStore -> Notify: No trades in buffer")
 		return nil
 	}
-
-	ts.mu.Lock()
-	items := ts.buffer
-	ts.buffer = nil
-	ts.mu.Unlock()
 
 	// iterate over items in buffer and push to observers
 	var ok bool
@@ -104,25 +106,16 @@ func (ts *tradeStore) Notify() error {
 			log.Infof("Trades state could not been updated for subscriber %id", id)
 		}
 	}
-
 	return nil
 }
 
-func (ts *tradeStore) queueEvent(t msg.Trade) error {
+func (ts *tradeStore) addToBuffer(t msg.Trade) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	if ts.subscribers == nil || len(ts.subscribers) == 0 {
-		log.Debugf("TradeStore -> queueEvent: No subscribers connected")
-		return nil
-	}
-
-	if ts.buffer == nil {
-		ts.buffer = make([]msg.Trade, 0)
-	}
-
-	log.Debugf("TradeStore -> queueEvent: Adding trade to buffer: %+v", t)
 	ts.buffer = append(ts.buffer, t)
+
+	log.Debugf("TradeStore -> addToBuffer: Adding trade to buffer: %+v", t)
 	return nil
 }
 
@@ -154,8 +147,6 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 			break
 		}
 	}
-
-	//fmt.Printf("trades fetched %d\n", len(result))
 	return result, nil
 }
 
@@ -232,7 +223,7 @@ func (ts *tradeStore) GetByPartyAndId(party string, Id string) (*msg.Trade, erro
 
 		tradeBuf, err := tradeItem.ValueCopy(nil)
 		if err != nil {
-			fmt.Printf("TRADE %s DOES NOT EXIST\n", string(marketKey))
+			log.Errorf("TRADE %s DOES NOT EXIST\n", string(marketKey))
 			return err
 		}
 		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
@@ -279,43 +270,50 @@ func (ts *tradeStore) GetByMarketAndOrderId(market string, orderId string) ([]*m
 
 // Post creates a new trade in the memory store.
 func (ts *tradeStore) Post(trade *msg.Trade) error {
+	ts.addToBuffer(*trade)
+	return nil
+}
 
-	txn := ts.badger.db.NewTransaction(true)
-	insertAtomically := func(txn *badger.Txn) error {
-		tradeBuf, err := proto.Marshal(trade)
-		if err != nil {
-			return err
+func (ts *tradeStore) PostBatch(batch []msg.Trade) error {
+	wb := ts.badger.db.NewWriteBatch()
+	defer wb.Cancel()
+
+	insertBatchAtomically := func() error {
+		for idx := range batch {
+			tradeBuf, err := proto.Marshal(&batch[idx])
+			if err != nil {
+				log.Errorf("Marshal failed %s", err.Error())
+			}
+			marketKey := ts.badger.tradeMarketKey(batch[idx].Market, batch[idx].Id)
+			idKey := ts.badger.tradeIdKey(batch[idx].Id)
+			buyerPartyKey := ts.badger.tradePartyKey(batch[idx].Buyer, batch[idx].Id)
+			sellerPartyKey := ts.badger.tradePartyKey(batch[idx].Seller, batch[idx].Id)
+			if err := wb.Set(marketKey, tradeBuf, 0); err != nil {
+				return err
+			}
+			if err := wb.Set(idKey, marketKey, 0); err != nil {
+				return err
+			}
+			if err := wb.Set(buyerPartyKey, marketKey, 0); err != nil {
+				return err
+			}
+			if err := wb.Set(sellerPartyKey, marketKey, 0); err != nil {
+				return err
+			}
 		}
-		marketKey := ts.badger.tradeMarketKey(trade.Market, trade.Id)
-		idKey := ts.badger.tradeIdKey(trade.Id)
-		partyBuyerKey := ts.badger.tradePartyKey(trade.Buyer, trade.Id)
-		partySellerKey := ts.badger.tradePartyKey(trade.Seller, trade.Id)
-		if err := txn.Set(marketKey, tradeBuf); err != nil {
-			return err
-		}
-		if err := txn.Set(idKey, marketKey); err != nil {
-			return err
-		}
-		if err := txn.Set(partyBuyerKey, marketKey); err != nil {
-			return err
-		}
-		if err := txn.Set(partySellerKey, marketKey); err != nil {
-			return err
-		}
-		return	nil
+		return nil
 	}
 
-	if err := insertAtomically(txn); err != nil {
-		txn.Discard()
-		return err
+	if err := insertBatchAtomically(); err == nil {
+		if err := wb.Flush(); err != nil {
+			log.Errorf("failed to flush batch %+v \n", err)
+		}
+		// implement retry mechanism
+	} else {
+		wb.Cancel()
+		// implement retry mechanism
 	}
 
-	if err := txn.Commit(); err != nil {
-		txn.Discard()
-		return err
-	}
-
-	ts.queueEvent(*trade)
 	return nil
 }
 
@@ -363,7 +361,7 @@ func (ts *tradeStore) GetMarkPrice(market string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Printf("recentTrade: %+v\n", recentTrade)
+	log.Debugf("recentTrade: %+v\n", recentTrade)
 	if len(recentTrade) == 0 {
 		return 0, fmt.Errorf("NO TRADES")
 	}

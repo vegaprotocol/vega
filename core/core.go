@@ -120,9 +120,9 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// 2) --------------- RISK ENGINE -----------------//
 
 	//Call out to risk engine calculation every N blocks
-	if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
-		v.riskEngine.RecalculateRisk()
-	}
+	//if order.Timestamp%v.Config.RiskCalculationFrequency == 0 {
+	//	v.riskEngine.RecalculateRisk()
+	//}
 
 	// -----------------------------------------------//
 	//-------------------- STORES --------------------//
@@ -310,9 +310,9 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 	log.Debugf("Updated %v expired orders in stores", len(expiringOrders))
 }
 
-func (v *Vega) NotifySubscribers() {
-	v.OrderStore.Notify()
-	v.TradeStore.Notify()
+func (v *Vega) Commit() {
+	v.OrderStore.Commit()
+	v.TradeStore.Commit()
 }
 
 // this should act as a separate slow go routine triggered after block is committed

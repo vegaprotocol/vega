@@ -6,12 +6,21 @@ import (
 )
 
 type TradeStore interface {
-
+	// Close database
+	Close()
 	Subscribe(trades chan<- []msg.Trade) uint64
 	Unsubscribe(id uint64) error
-	Notify() error
+	// Notifies all subscribers with buffer content
+	Notify(items []msg.Trade) error
+	// Makes copy of internal buffer and calls Notify and PostBatch, cleans internal buffer
+	Commit() error
+	// Post adds trade to the internal buffer
+	Post(trade *msg.Trade) error
+	// PostBatch inserts all trades from the batch to database
+	PostBatch(batch []msg.Trade) error
+	// Removes a trade from the store.
+	Delete(trade *msg.Trade) error
 
-	Close()
 
 	// GetByMarket retrieves trades for a given market.
 	GetByMarket(market string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
@@ -21,10 +30,6 @@ type TradeStore interface {
 	GetByParty(party string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (*msg.Trade, error)
-	// Post creates a new trade in the store.
-	Post(trade *msg.Trade) error
-	// Removes a trade from the store.
-	Delete(trade *msg.Trade) error
 	// Aggregates trades into candles
 	GetCandles(market string, sinceBlock, currentBlock, interval uint64) ([]*msg.Candle, error)
 	// Aggregate trades into a single candle from currentBlock for interval
@@ -39,12 +44,23 @@ type TradeStore interface {
 }
 
 type OrderStore interface {
-
+	// Close database
+	Close()
 	Subscribe(orders chan<- []msg.Order) uint64
 	Unsubscribe(id uint64) error
-	Notify() error
+	// Notifies all subscribers with buffer content
+	Notify(items []msg.Order) error
+	// Makes copy of internal buffer and calls Notify and PostBatch, cleans internal buffer
+	Commit() error
+	// Post adds trade to the internal buffer
+	Post(order *msg.Order) error
+	// PostBatch inserts all trades from the batch to database
+	PostBatch(batch []msg.Order) error
+	// Put updates an existing order in the store, either it is in buffer in database
+	Put(order *msg.Order) error
+	// Removes an order from the store.
+	Delete(order *msg.Order) error
 
-	Close()
 
 	// GetByMarket retrieves all orders for a given market.
 	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
@@ -54,13 +70,6 @@ type OrderStore interface {
 	GetByParty(party string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (*msg.Order, error)
-	// Post creates a new order in the store.
-	Post(order *msg.Order) error
-	PostBatch(batch []*msg.Order) error
-	// Put updates an existing order in the store.
-	Put(order *msg.Order) error
-	// Removes an order from the store.
-	Delete(order *msg.Order) error
 	// Returns Order Book Depth for a market
 	GetMarketDepth(market string) (*msg.MarketDepth, error)
 }
