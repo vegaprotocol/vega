@@ -96,6 +96,8 @@ type TradeQueryFilters struct {
 	SellerFilter    *QueryFilter
 	AggressorFilter *QueryFilter
 	TimestampFilter *QueryFilter
+	BuyOrderFilter  *QueryFilter
+	SellOrderFilter *QueryFilter
 }
 
 func (o *TradeQueryFilters) Count() int {
@@ -122,6 +124,12 @@ func (o *TradeQueryFilters) Count() int {
 		len++
 	}
 	if o.TimestampFilter != nil {
+		len++
+	}
+	if o.BuyOrderFilter != nil {
+		len++
+	}
+	if o.SellOrderFilter != nil {
 		len++
 	}
 	return len
