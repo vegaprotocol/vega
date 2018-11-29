@@ -226,7 +226,7 @@ type Order {
     reference: String!
 
     # Trades relating to this order
-    trades: [Trade!]
+    trades: [Trade]
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market

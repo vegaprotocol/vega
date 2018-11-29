@@ -18,7 +18,38 @@ func FlushTradeStore() {
 	}
 }
 
-func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
+func resetBadger() {
+	FlushTradeStore()
+	FlushOrderStore()
+}
+
+func TestTradeStore_GetByMarketAndOrderId(t *testing.T) {
+	resetBadger()
+	
+	var newOrderStore = NewOrderStore(orderStoreDir)
+	defer newOrderStore.Close()
+	var newTradeStore = NewTradeStore(tradeStoreDir)
+	defer newTradeStore.Close()
+
+	populateStores(t, newOrderStore, newTradeStore)
+
+	trades, err := newTradeStore.GetByMarketAndOrderId(testMarket,"d41d8cd98f00b204e9800998ecf9999a")
+
+	assert.Nil(t, err)
+	assert.Equal(t, 6, len(trades))
+	assert.Equal(t, "trade-id-1", trades[0].Id)
+	assert.Equal(t, "trade-id-2", trades[1].Id)
+	assert.Equal(t, "trade-id-3", trades[2].Id)
+	assert.Equal(t, "trade-id-4", trades[3].Id)
+	assert.Equal(t, "trade-id-5", trades[4].Id)
+	assert.Equal(t, "trade-id-6", trades[5].Id)
+}
+
+
+
+
+
+func TestTradeStore_GetByPartyWithPagination(t *testing.T) {
 	FlushTradeStore()
 	FlushOrderStore()
 	var newOrderStore = NewOrderStore(orderStoreDir)
@@ -57,7 +88,7 @@ func TestMemTradeStore_GetByPartyWithPagination(t *testing.T) {
 	assert.Equal(t, "trade-id-2", trades[2].Id)
 }
 
-func TestMemTradeStore_GetByMarketWithPagination(t *testing.T) {
+func TestTradeStore_GetByMarketWithPagination(t *testing.T) {
 	FlushTradeStore()
 	FlushOrderStore()
 	var newOrderStore = NewOrderStore(orderStoreDir)

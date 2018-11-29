@@ -76,6 +76,29 @@ func (_m *TradeStore) GetByMarketAndId(market string, id string) (*msg.Trade, er
 	return r0, r1
 }
 
+// GetByMarketAndOrderId provides a mock function with given fields: market, orderId
+func (_m *TradeStore) GetByMarketAndOrderId(market string, orderId string) ([]*msg.Trade, error) {
+	ret := _m.Called(market, orderId)
+
+	var r0 []*msg.Trade
+	if rf, ok := ret.Get(0).(func(string, string) []*msg.Trade); ok {
+		r0 = rf(market, orderId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*msg.Trade)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(market, orderId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByParty provides a mock function with given fields: party, params
 func (_m *TradeStore) GetByParty(party string, params *filters.TradeQueryFilters) ([]*msg.Trade, error) {
 	ret := _m.Called(party, params)

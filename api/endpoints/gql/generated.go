@@ -93,6 +93,7 @@ type ComplexityRoot struct {
 		Datetime  func(childComplexity int) int
 		Status    func(childComplexity int) int
 		Reference func(childComplexity int) int
+		Trades    func(childComplexity int) int
 	}
 
 	Party struct {
@@ -191,6 +192,8 @@ type OrderResolver interface {
 	Timestamp(ctx context.Context, obj *msg.Order) (string, error)
 	Datetime(ctx context.Context, obj *msg.Order) (string, error)
 	Status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
+
+	Trades(ctx context.Context, obj *msg.Order) ([]*msg.Trade, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
@@ -1015,6 +1018,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.Reference(childComplexity), true
+
+	case "Order.trades":
+		if e.complexity.Order.Trades == nil {
+			break
+		}
+
+		return e.complexity.Order.Trades(childComplexity), true
 
 	case "Party.name":
 		if e.complexity.Party.Name == nil {
@@ -2425,6 +2435,12 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "trades":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Order_trades(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2759,6 +2775,67 @@ func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Order",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().Trades(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*msg.Trade)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+
+				return ec._Trade(ctx, field.Selections, res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
 }
 
 var partyImplementors = []string{"Party"}
@@ -6787,6 +6864,9 @@ type Order {
 
     # The external reference (if available) for the order
     reference: String!
+
+    # Trades relating to this order
+    trades: [Trade]
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
