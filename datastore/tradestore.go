@@ -109,13 +109,13 @@ func (ts *tradeStore) Notify(items []msg.Trade) error {
 	return nil
 }
 
-func (ts *tradeStore) queueEvent(t msg.Trade) error {
+func (ts *tradeStore) addToBuffer(t msg.Trade) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
 	ts.buffer = append(ts.buffer, t)
 
-	log.Debugf("TradeStore -> queueEvent: Adding trade to buffer: %+v", t)
+	log.Debugf("TradeStore -> addToBuffer: Adding trade to buffer: %+v", t)
 	return nil
 }
 
@@ -147,8 +147,6 @@ func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQuer
 			break
 		}
 	}
-
-	//fmt.Printf("trades fetched %d\n", len(result))
 	return result, nil
 }
 
@@ -225,7 +223,7 @@ func (ts *tradeStore) GetByPartyAndId(party string, Id string) (*msg.Trade, erro
 
 		tradeBuf, err := tradeItem.ValueCopy(nil)
 		if err != nil {
-			fmt.Printf("TRADE %s DOES NOT EXIST\n", string(marketKey))
+			log.Errorf("TRADE %s DOES NOT EXIST\n", string(marketKey))
 			return err
 		}
 		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
@@ -245,7 +243,7 @@ func (ts *tradeStore) GetByPartyAndId(party string, Id string) (*msg.Trade, erro
 
 // Post creates a new trade in the memory store.
 func (ts *tradeStore) Post(trade *msg.Trade) error {
-	ts.queueEvent(*trade)
+	ts.addToBuffer(*trade)
 	return nil
 }
 
@@ -336,7 +334,7 @@ func (ts *tradeStore) GetMarkPrice(market string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Printf("recentTrade: %+v\n", recentTrade)
+	log.Debugf("recentTrade: %+v\n", recentTrade)
 	if len(recentTrade) == 0 {
 		return 0, fmt.Errorf("NO TRADES")
 	}
