@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const candleStoreDir string = "../tmp/candlestore-test"
+const candleStoreDir = "../tmp/candlestore-test"
 
 func FlushCandleStore() {
 	err := os.RemoveAll(candleStoreDir)
@@ -183,11 +183,12 @@ func TestCandleStore_SubscribeUnsubscribe(t *testing.T) {
 	candleStore := NewCandleStore(candleStoreDir)
 	defer candleStore.Close()
 
-	internalTransport := make(map[msg.Interval]chan msg.Candle, 0)
-	ref := candleStore.Subscribe(internalTransport)
+	var internalTransport1 InternalTransport
+	ref := candleStore.Subscribe(testMarket, &internalTransport1)
 	assert.Equal(t, uint64(1), ref)
 
-	ref = candleStore.Subscribe(internalTransport)
+	var internalTransport2 InternalTransport
+	ref = candleStore.Subscribe(testMarket, &internalTransport2)
 	assert.Equal(t, uint64(2), ref)
 
 	fmt.Printf("Unsubscribing\n")
@@ -204,67 +205,4 @@ func TestCandleStore_SubscribeUnsubscribe(t *testing.T) {
 
 	err = candleStore.Unsubscribe(2)
 	assert.Nil(t, err)
-}
-
-func TestCandleStore_QueueNotify(t *testing.T) {
-	FlushCandleStore()
-	candleStore := NewCandleStore(candleStoreDir)
-	defer candleStore.Close()
-
-	internalTransport := make(map[msg.Interval]chan msg.Candle, 0)
-	_ = candleStore.Subscribe(internalTransport)
-
-	timestamp, _ := time.Parse(time.RFC3339, "2018-11-13T11:01:14Z")
-	t0 := timestamp.UnixNano()
-
-	candle1m := NewCandle(uint64(t0), 100, 100, msg.Interval_I1M)
-	candle5m := NewCandle(uint64(t0), 100, 100, msg.Interval_I5M)
-	candle15m := NewCandle(uint64(t0), 100, 100, msg.Interval_I15M)
-	candle1h := NewCandle(uint64(t0), 100, 100, msg.Interval_I1H)
-	candle6h := NewCandle(uint64(t0), 100, 100, msg.Interval_I6H)
-	candle1d := NewCandle(uint64(t0), 100, 100, msg.Interval_I1D)
-
-	candleStore.QueueEvent(*candle1m, msg.Interval_I1M)
-	candleStore.QueueEvent(*candle5m, msg.Interval_I5M)
-	candleStore.QueueEvent(*candle15m, msg.Interval_I15M)
-	candleStore.QueueEvent(*candle1h, msg.Interval_I1H)
-	candleStore.QueueEvent(*candle6h, msg.Interval_I6H)
-	candleStore.QueueEvent(*candle1d, msg.Interval_I1D)
-
-	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I1M]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I5M]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I15M]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I1H]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I6H]))
-	assert.Equal(t, true, isTransportEmpty(internalTransport[msg.Interval_I1D]))
-
-	candleStore.Notify()
-
-	candle := <- internalTransport[msg.Interval_I1M]
-	assert.Equal(t, candle.Interval, msg.Interval_I1M)
-
-	candle = <- internalTransport[msg.Interval_I5M]
-	assert.Equal(t, candle.Interval, msg.Interval_I5M)
-
-	candle = <- internalTransport[msg.Interval_I15M]
-	assert.Equal(t, candle.Interval, msg.Interval_I15M)
-
-	candle = <- internalTransport[msg.Interval_I1H]
-	assert.Equal(t, candle.Interval, msg.Interval_I1H)
-
-	candle = <- internalTransport[msg.Interval_I6H]
-	assert.Equal(t, candle.Interval, msg.Interval_I6H)
-
-	candle = <- internalTransport[msg.Interval_I1D]
-	assert.Equal(t, candle.Interval, msg.Interval_I1D)
-
-}
-
-func isTransportEmpty(transport chan msg.Candle) bool {
-	select {
-	case  <- transport:
-		return false
-	default:
-		return true
-	}
 }

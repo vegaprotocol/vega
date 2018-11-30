@@ -19,7 +19,7 @@ import (
 //	"fmt"
 //)
 //
-const testMarket = "market"
+const testMarket = "Market"
 const testParty = "party"
 const testPartyA = "partyA"
 const testPartyB = "partyB"
@@ -104,7 +104,7 @@ func TestMemStore_PostAndGetNewOrder(t *testing.T) {
 //		},
 //	}
 //	err := newOrderStore.Post(order)
-//	assert.Error(t, err, "market does not exist")
+//	assert.Error(t, err, "Market does not exist")
 //}
 //
 //func TestMemStore_PostPutAndGetExistingOrder(t *testing.T) {
@@ -177,7 +177,7 @@ func TestMemStore_PutNoneExistentOrder(t *testing.T) {
 //		},
 //	}
 //	err := newOrderStore.Put(order)
-//	assert.Error(t, err, "market does not exist")
+//	assert.Error(t, err, "Market does not exist")
 //}
 //
 //func TestMemStore_PostAndDeleteOrder(t *testing.T) {
@@ -219,7 +219,7 @@ func TestMemStore_PutNoneExistentOrder(t *testing.T) {
 //		},
 //	}
 //	err := newOrderStore.Delete(order)
-//	assert.Error(t, err, "market does not exist")
+//	assert.Error(t, err, "Market does not exist")
 //}
 //
 //func TestMemStore_GetOrderForNoneExistentMarket(t *testing.T) {
@@ -227,7 +227,7 @@ func TestMemStore_PutNoneExistentOrder(t *testing.T) {
 //	var newOrderStore = NewOrderStore(&memStore)
 //	defer newOrderStore.Close()
 //	_, err := newOrderStore.GetByMarketAndId("UNKNOWN", "ID")
-//	assert.Error(t, err, "market does not exist")
+//	assert.Error(t, err, "Market does not exist")
 //}
 //
 //func TestMemStore_PostAndGetTrade(t *testing.T) {
@@ -473,7 +473,7 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 //	var newOrderStore = NewOrderStore(&memStore)
 //	defer newOrderStore.Close()
 //	o, err := newOrderStore.GetByMarket("UNKNOWN", nil)
-//	assert.Error(t, err, "market does not exist")
+//	assert.Error(t, err, "Market does not exist")
 //	assert.Nil(t, o)
 //}
 //
@@ -551,7 +551,7 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 //	var memStore = NewMemStore([]string{testMarket}, []string{testParty})
 //	var newTradeStore = NewTradeStore(&memStore)
 //	o, err := newTradeStore.GetByMarket("UNKNOWN", nil)
-//	assert.Error(t, err, "market does not exist")
+//	assert.Error(t, err, "Market does not exist")
 //	assert.Nil(t, o)
 //}
 //
@@ -640,13 +640,13 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 //	}
 //
 //	err := newTradeStore.Put(trade)
-//	assert.Error(t, err, "market does not exist")
+//	assert.Error(t, err, "Market does not exist")
 //
 //	_, err = newTradeStore.GetByMarketAndId("UNKNOWN", "ID")
-//	assert.Error(t, err, "market does not exist")
+//	assert.Error(t, err, "Market does not exist")
 //
 //	err = newTradeStore.Delete(trade)
-//	assert.Error(t, err, "market does not exist")
+//	assert.Error(t, err, "Market does not exist")
 //
 //}
 //

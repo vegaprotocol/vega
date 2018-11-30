@@ -117,7 +117,7 @@ func (m *orderStore) queueEvent(o msg.Order) {
 	m.buffer = append(m.buffer, o)
 	m.mu.Unlock()
 
-	log.Debugf("OrderStore -> queueEvent: Adding order to buffer: %+v", o)
+	log.Debugf("OrderStore -> QueueEvent: Adding order to buffer: %+v", o)
 }
 
 func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
@@ -150,7 +150,7 @@ func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQuer
 	return result, nil
 }
 
-// Get retrieves an order for a given market and id.
+// Get retrieves an order for a given Market and id.
 func (os *orderStore) GetByMarketAndId(market string, Id string) (*msg.Order, error) {
 	var order msg.Order
 	txn := os.badger.db.NewTransaction(false)
@@ -204,7 +204,7 @@ func (os *orderStore) GetByParty(party string, queryFilters *filters.OrderQueryF
 	return result, nil
 }
 
-// Get retrieves an order for a given market and id.
+// Get retrieves an order for a given Market and id.
 func (os *orderStore) GetByPartyAndId(party string, Id string) (*msg.Order, error) {
 	var order msg.Order
 	err := os.badger.db.View(func(txn *badger.Txn) error {
@@ -393,6 +393,34 @@ func (os *orderStore) Delete(order *msg.Order) error {
 	os.orderBookDepth.removeWithRemaining(order)
 
 	return nil
+}
+
+func (m *orderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
+
+	// get from store, recalculate accumulated volume and respond
+	buy := m.orderBookDepth.getBuySide()
+	sell := m.orderBookDepth.getSellSide()
+
+	// recalculate accumulated volume
+	for idx := range buy {
+		if idx == 0 {
+			buy[idx].CumulativeVolume = buy[idx].Volume
+			continue
+		}
+		buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
+	}
+
+	for idx := range m.orderBookDepth.getSellSide() {
+		if idx == 0 {
+			sell[idx].CumulativeVolume = sell[idx].Volume
+			continue
+		}
+		sell[idx].CumulativeVolume = sell[idx-1].CumulativeVolume + sell[idx].Volume
+	}
+
+	orderBookDepth := msg.MarketDepth{Name: market, Buy: buy, Sell: sell}
+
+	return &orderBookDepth, nil
 }
 
 type OrderFilter struct {

@@ -82,7 +82,8 @@ func FlushCandleStore() {
 //}
 
 func TestCandleService_ObserveCandles(t *testing.T) {
-	testMarket := "BTC/DEC18"
+	MarketBTC := "BTC/DEC18"
+	MarketETH := "ETH/APR19"
 	var ctx = context.Background()
 	var candleService = NewCandleService()
 
@@ -97,34 +98,65 @@ func TestCandleService_ObserveCandles(t *testing.T) {
 	candleService.Init(vega, candleStore)
 
 	interval1m := msg.Interval_I1M
-	candlesSubscription1m, ref := candleService.ObserveCandles(ctx, &testMarket, &interval1m)
-	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1m))
+	interval5m := msg.Interval_I5M
+	interval15m := msg.Interval_I15M
+	interval1h := msg.Interval_I1H
+	interval6h := msg.Interval_I6H
+	interval1d := msg.Interval_I1D
+
+	// -------- BTC MARKET SUBSCRIPTIONS -----
+
+	candlesSubscription1m_BTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval1m)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1m_BTC))
 	assert.Equal(t, uint64(1), ref)
 
-	interval5m := msg.Interval_I5M
-	candlesSubscription5m, ref := candleService.ObserveCandles(ctx, &testMarket, &interval5m)
-	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription5m))
+	candlesSubscription5m_BTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval5m)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription5m_BTC))
 	assert.Equal(t, uint64(2), ref)
 
-	interval15m := msg.Interval_I15M
-	candlesSubscription15m, ref := candleService.ObserveCandles(ctx, &testMarket, &interval15m)
-	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription15m))
+	candlesSubscription15m_BTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval15m)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription15m_BTC))
 	assert.Equal(t, uint64(3), ref)
 
-	interval1h := msg.Interval_I1H
-	candlesSubscription1h, ref := candleService.ObserveCandles(ctx, &testMarket, &interval1h)
-	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1h))
+	candlesSubscription1h_BTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval1h)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1h_BTC))
 	assert.Equal(t, uint64(4), ref)
 
-	interval6h := msg.Interval_I6H
-	candlesSubscription6h, ref := candleService.ObserveCandles(ctx, &testMarket, &interval6h)
-	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription6h))
+	candlesSubscription6h_BTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval6h)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription6h_BTC))
 	assert.Equal(t, uint64(5), ref)
 
-	interval1d := msg.Interval_I1D
-	candlesSubscription1d, ref := candleService.ObserveCandles(ctx, &testMarket, &interval1d)
-	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1d))
+	candlesSubscription1d_BTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval1d)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1d_BTC))
 	assert.Equal(t, uint64(6), ref)
+
+
+	// -------- ETH MARKET SUBSCRIPTIONS -----
+
+	candlesSubscription1m_ETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval1m)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1m_ETH))
+	assert.Equal(t, uint64(7), ref)
+
+	candlesSubscription5m_ETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval5m)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription5m_ETH))
+	assert.Equal(t, uint64(8), ref)
+
+	candlesSubscription15m_ETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval15m)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription15m_ETH))
+	assert.Equal(t, uint64(9), ref)
+
+	candlesSubscription1h_ETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval1h)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1h_ETH))
+	assert.Equal(t, uint64(10), ref)
+
+	candlesSubscription6h_ETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval6h)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription6h_ETH))
+	assert.Equal(t, uint64(11), ref)
+
+	candlesSubscription1d_ETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval1d)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1d_ETH))
+	assert.Equal(t, uint64(12), ref)
+
 
 	// t0 = 2018-11-13T11:01:14Z
 	t0 := uint64(1542106874000000000)
@@ -132,55 +164,99 @@ func TestCandleService_ObserveCandles(t *testing.T) {
 	go func() {
 		for {
 			select {
-			case candle := <- candlesSubscription1m:
-				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
+			case candle := <- candlesSubscription1m_BTC:
+				fmt.Printf("RECEIVED CANDLE BTC %+v\n", candle)
 				assert.Equal(t, t0 - uint64(14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
 				assert.Equal(t, msg.Interval_I1M, candle.Interval)
 
-			case candle := <- candlesSubscription5m:
-				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
+			case candle := <- candlesSubscription5m_BTC:
+				fmt.Printf("RECEIVED CANDLE BTC %+v\n", candle)
 				assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
 				assert.Equal(t, msg.Interval_I5M, candle.Interval)
 
-			case candle := <- candlesSubscription15m:
-				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
+			case candle := <- candlesSubscription15m_BTC:
+				fmt.Printf("RECEIVED CANDLE BTC %+v\n", candle)
 				assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
 				assert.Equal(t, msg.Interval_I15M, candle.Interval)
 
-			case candle := <- candlesSubscription1h:
-				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
+			case candle := <- candlesSubscription1h_BTC:
+				fmt.Printf("RECEIVED CANDLE BTC %+v\n", candle)
 				assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
 				assert.Equal(t, msg.Interval_I1H, candle.Interval)
 
-			case candle := <- candlesSubscription6h:
-				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
+			case candle := <- candlesSubscription6h_BTC:
+				fmt.Printf("RECEIVED CANDLE BTC %+v\n", candle)
 				assert.Equal(t, t0 - uint64(5 * time.Hour + time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
 				assert.Equal(t, msg.Interval_I6H, candle.Interval)
 
-			case candle := <- candlesSubscription1d:
-				fmt.Printf("RECEIVED CANDLE %+v\n", candle)
+			case candle := <- candlesSubscription1d_BTC:
+				fmt.Printf("RECEIVED CANDLE BTC %+v\n", candle)
 				assert.Equal(t, t0 - uint64(11 * time.Hour + time.Minute + 14 * time.Second), candle.Timestamp)
 				assert.Equal(t, uint64(200), candle.Volume)
 				assert.Equal(t, msg.Interval_I1D, candle.Interval)
+
+			case candle := <- candlesSubscription1m_ETH:
+				fmt.Printf("RECEIVED CANDLE ETH %+v\n", candle)
+				assert.Equal(t, t0 - uint64(14 * time.Second), candle.Timestamp)
+				assert.Equal(t, uint64(200), candle.Volume)
+				assert.Equal(t, msg.Interval_I1M, candle.Interval)
+
+			case candle := <- candlesSubscription5m_ETH:
+				fmt.Printf("RECEIVED CANDLE ETH %+v\n", candle)
+				assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), candle.Timestamp)
+				assert.Equal(t, uint64(200), candle.Volume)
+				assert.Equal(t, msg.Interval_I5M, candle.Interval)
+
+			case candle := <- candlesSubscription15m_ETH:
+				fmt.Printf("RECEIVED CANDLE ETH %+v\n", candle)
+				assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), candle.Timestamp)
+				assert.Equal(t, uint64(200), candle.Volume)
+				assert.Equal(t, msg.Interval_I15M, candle.Interval)
+
+			case candle := <- candlesSubscription1h_ETH:
+				fmt.Printf("RECEIVED CANDLE ETH %+v\n", candle)
+				assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), candle.Timestamp)
+				assert.Equal(t, uint64(200), candle.Volume)
+				assert.Equal(t, msg.Interval_I1H, candle.Interval)
+
+			case candle := <- candlesSubscription6h_ETH:
+				fmt.Printf("RECEIVED CANDLE ETH %+v\n", candle)
+				assert.Equal(t, t0 - uint64(5 * time.Hour + time.Minute + 14 * time.Second), candle.Timestamp)
+				assert.Equal(t, uint64(200), candle.Volume)
+				assert.Equal(t, msg.Interval_I6H, candle.Interval)
+
+			case candle := <- candlesSubscription1d_ETH:
+				fmt.Printf("RECEIVED CANDLE ETH %+v\n", candle)
+				assert.Equal(t, t0 - uint64(11 * time.Hour + time.Minute + 14 * time.Second), candle.Timestamp)
+				assert.Equal(t, uint64(200), candle.Volume)
+				assert.Equal(t, msg.Interval_I1D, candle.Interval)
+
 			}
 		}
 	}()
 
-	//var trades = []*msg.Trade{
-	//	{Id: "1", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0},
-	//	{Id: "2", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(20 * time.Second)},
-	//}
-	////
-	//for idx := range trades {
-	//	candleService.AddTradeToBuffer(trades[idx])
-	//}
+	var trades = []*msg.Trade{
+		{Id: "1", Market: MarketBTC, Price: uint64(100), Size: uint64(100), Timestamp: t0},
+		{Id: "2", Market: MarketETH, Price: uint64(100), Size: uint64(100), Timestamp: t0},
+		{Id: "3", Market: MarketBTC, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(20 * time.Second)},
+		{Id: "4", Market: MarketETH, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(20 * time.Second)},
+	}
 	//
-	//candleService.Generate(ctx, testMarket)
+	candleStore.StartNewBuffer(MarketBTC, t0)
+	candleStore.StartNewBuffer(MarketETH, t0)
+	for idx := range trades {
+		candleStore.AddTradeToBuffer(trades[idx].Market, *trades[idx])
+	}
+	candleStore.GenerateCandlesFromBuffer(MarketBTC)
+	candleStore.GenerateCandlesFromBuffer(MarketETH)
+
+	time.Sleep(1*time.Second)
+	fmt.Printf("End of test\n")
 }
 
 func isSubscriptionEmpty(transport <-chan msg.Candle) bool {

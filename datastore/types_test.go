@@ -11,7 +11,7 @@ package datastore
 //
 //	in := &msg.Order{
 //		Id:         "d41d8cd98f00b204e9800998ecf8427e",
-//		Market:     "market",
+//		Market:     "Market",
 //		Party:      "party",
 //		Side:       1,
 //		Price:      10,
@@ -24,7 +24,7 @@ package datastore
 //	out := &Order{
 //		Order: msg.Order{
 //			Id:         "d41d8cd98f00b204e9800998ecf8427e",
-//			Market:     "market",
+//			Market:     "Market",
 //			Party:      "party",
 //			Side:       1,
 //			Price:      10,
@@ -44,7 +44,7 @@ package datastore
 //	in := &Order{
 //		Order: msg.Order{
 //			Id:         "d41d8cd98f00b204e9800998ecf8427e",
-//			Market:     "market",
+//			Market:     "Market",
 //			Party:      "party",
 //			Side:       1,
 //			Price:      10,
@@ -57,7 +57,7 @@ package datastore
 //
 //	out := &msg.Order{
 //		Id:         "d41d8cd98f00b204e9800998ecf8427e",
-//		Market:     "market",
+//		Market:     "Market",
 //		Party:      "party",
 //		Side:       1,
 //		Price:      10,
@@ -74,7 +74,7 @@ package datastore
 //func TestTradeModelFromProtoMessage(t *testing.T) {
 //	in := &msg.Trade{
 //		Id:        "d41d8cd98f00b204e9800998ecf8427e",
-//		Market:    "market",
+//		Market:    "Market",
 //		Price:     50,
 //		Size:      1000,
 //		Buyer:     "buyer",
@@ -86,7 +86,7 @@ package datastore
 //	out := &Trade{
 //		Trade: msg.Trade{
 //			Id:        "d41d8cd98f00b204e9800998ecf8427e",
-//			Market:    "market",
+//			Market:    "Market",
 //			Price:     50,
 //			Size:      1000,
 //			Buyer:     "buyer",
@@ -106,7 +106,7 @@ package datastore
 //	in := &Trade{
 //		Trade: msg.Trade{
 //			Id:        "d41d8cd98f00b204e9800998ecf8427e",
-//			Market:    "market",
+//			Market:    "Market",
 //			Price:     50,
 //			Size:      1000,
 //			Buyer:     "buyer",
@@ -120,7 +120,7 @@ package datastore
 //
 //	out := &msg.Trade{
 //		Id:        "d41d8cd98f00b204e9800998ecf8427e",
-//		Market:    "market",
+//		Market:    "Market",
 //		Price:     50,
 //		Size:      1000,
 //		Buyer:     "buyer",

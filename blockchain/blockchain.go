@@ -257,7 +257,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 // the job of the Handshake.
 //
 func (app *Blockchain) Commit() types.ResponseCommit {
-	app.vega.RemoveExpiringOrdersAtTimestamp(uint64(app.vega.State.Height))
+	app.vega.RemoveExpiringOrdersAtTimestamp(uint64(app.vega.State.Timestamp))
 
 	// Using a memdb - just return the big endian size of the db
 	appHash := make([]byte, 8)

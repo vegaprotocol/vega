@@ -22,7 +22,7 @@ type TradeStore interface {
 	Delete(trade *msg.Trade) error
 
 
-	// GetByMarket retrieves trades for a given market.
+	// GetByMarket retrieves trades for a given Market.
 	GetByMarket(market string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByMarketAndId(market string, id string) (*msg.Trade, error)
@@ -30,17 +30,13 @@ type TradeStore interface {
 	GetByParty(party string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (*msg.Trade, error)
-	// Aggregates trades into candles
-	GetCandles(market string, sinceBlock, currentBlock, interval uint64) ([]*msg.Candle, error)
-	// Aggregate trades into a single candle from currentBlock for interval
-	GetCandle(market string, sinceBlock, currentBlock uint64) (*msg.Candle, error)
-	// Returns current market price
+	// Returns current Market price
 	GetMarkPrice(market string) (uint64, error)
-	// Returns map of market name to market buckets
+	// Returns map of Market name to Market buckets
 	GetTradesBySideBuckets(party string) map[string]*MarketBucket
 
-	// Trades relating to the given orderId for a particular market
-	//GetByMarketAndOrderId(market string, orderId string) ([]Trade, error)
+	// Trades relating to the given orderId for a particular Market
+	//GetByMarketAndOrderId(Market string, orderId string) ([]Trade, error)
 }
 
 type OrderStore interface {
@@ -62,34 +58,31 @@ type OrderStore interface {
 	Delete(order *msg.Order) error
 
 
-	// GetByMarket retrieves all orders for a given market.
+	// GetByMarket retrieves all orders for a given Market.
 	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
-	// Get retrieves an order for a given market and id.
+	// Get retrieves an order for a given Market and id.
 	GetByMarketAndId(market string, id string) (*msg.Order, error)
 	// GetByParty retrieves trades for a given party.
 	GetByParty(party string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (*msg.Order, error)
-	// Returns Order Book Depth for a market
+	// Returns Order Book Depth for a Market
 	GetMarketDepth(market string) (*msg.MarketDepth, error)
 }
 
 type CandleStore interface {
 
-	Subscribe(internalTransport map[msg.Interval]chan msg.Candle) uint64
+	Close()
+	Subscribe(market string, iT *InternalTransport) uint64
 	Unsubscribe(id uint64) error
 	Notify() error
-	QueueEvent(candle msg.Candle, interval msg.Interval) error
-
-	Close()
-
-	GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle
+	//QueueEvent(candle msg.Candle, interval msg.Interval) error
 
 	StartNewBuffer(market string, timestamp uint64)
 	AddTradeToBuffer(market string, trade msg.Trade) error
 	GenerateCandlesFromBuffer(market string) error
-	//GenerateCandlesFromBuffer(trade *msg.Trade) error
-	//GenerateEmptyCandles(market string, timestamp uint64) error
+
+	GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle
 }
 
 

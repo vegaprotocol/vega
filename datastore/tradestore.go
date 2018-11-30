@@ -115,11 +115,11 @@ func (ts *tradeStore) queueEvent(t msg.Trade) error {
 
 	ts.buffer = append(ts.buffer, t)
 
-	log.Debugf("TradeStore -> queueEvent: Adding trade to buffer: %+v", t)
+	log.Debugf("TradeStore -> QueueEvent: Adding trade to buffer: %+v", t)
 	return nil
 }
 
-// GetByMarket retrieves all trades for a given market.
+// GetByMarket retrieves all trades for a given Market.
 func (ts *tradeStore) GetByMarket(market string, queryFilters *filters.TradeQueryFilters) ([]*msg.Trade, error) {
 	var result []*msg.Trade
 	if queryFilters == nil {
