@@ -63,13 +63,25 @@ func (ts *tradeStore) Unsubscribe(id uint64) error {
 }
 
 func (ts *tradeStore) Commit() error {
+	if len(ts.buffer) == 0 {
+		// Only publish when we have items
+		log.Debugf("TradeStore -> Commit: buffer empty")
+		return nil
+	}
+
 	ts.mu.Lock()
 	items := ts.buffer
 	ts.buffer = make([]msg.Trade, 0)
 	ts.mu.Unlock()
 
-	ts.PostBatch(items)
-	ts.Notify(items)
+	err := ts.PostBatch(items)
+	if err != nil {
+		return err
+	}
+	err = ts.Notify(items)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -77,12 +89,6 @@ func (ts *tradeStore) Notify(items []msg.Trade) error {
 
 	if len(ts.subscribers) == 0 {
 		log.Debugf("TradeStore -> Notify: No subscribers connected")
-		return nil
-	}
-
-	if len(ts.buffer) == 0 {
-		// Only publish when we have items
-		log.Debugf("TradeStore -> Notify: No trades in buffer")
 		return nil
 	}
 
@@ -97,9 +103,9 @@ func (ts *tradeStore) Notify(items []msg.Trade) error {
 			ok = false
 		}
 		if ok{
-			log.Debugf("Trades state updated")
+			log.Debugf("TradeStore -> send on channel success for subscriber %d", id)
 		} else {
-			log.Infof("Trades state could not been updated for subscriber %id", id)
+			log.Infof("TradeStore -> channel could not been updated for subscriber %d", id)
 		}
 	}
 	return nil
@@ -107,9 +113,8 @@ func (ts *tradeStore) Notify(items []msg.Trade) error {
 
 func (ts *tradeStore) addToBuffer(t msg.Trade) error {
 	ts.mu.Lock()
-	defer ts.mu.Unlock()
-
 	ts.buffer = append(ts.buffer, t)
+	ts.mu.Unlock()
 
 	log.Debugf("TradeStore -> addToBuffer: Adding trade to buffer: %+v", t)
 	return nil

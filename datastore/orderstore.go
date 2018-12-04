@@ -67,28 +67,33 @@ func (m *orderStore) Unsubscribe(id uint64) error {
 }
 
 func (m *orderStore) Commit() error {
+	if len(m.buffer) == 0 {
+		// Only commit when we have items
+		log.Debugf("OrderStore -> Commit: Buffer empty")
+		return nil
+	}
+
 	m.mu.Lock()
 	items := m.buffer
 	m.buffer = make([]msg.Order, 0)
 	m.mu.Unlock()
 
-	m.PostBatch(items)
-	m.Notify(items)
+	err := m.PostBatch(items)
+	if err != nil {
+		return err
+	}
+	err = m.Notify(items)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (m *orderStore) Notify(items []msg.Order) error {
-
-	if len(m.subscribers) == 0 {
+	if m.subscribers == nil || len(m.subscribers) == 0 {
 		log.Debugf("OrderStore -> Notify: No subscribers connected")
 		return nil
 	}
-
-	if len(m.buffer) == 0 {
-		log.Debugf("OrderStore -> Notify: No orders in buffer")
-		return nil
-	}
-
 	var ok bool
 	for id, sub := range m.subscribers {
 		select {
@@ -99,9 +104,9 @@ func (m *orderStore) Notify(items []msg.Order) error {
 			ok = false
 		}
 		if ok {
-			log.Debugf("Orders state updated")
+			log.Debugf("OrderStore -> send on channel success for subscriber %d", id)
 		} else {
-			log.Infof("Orders state could not been updated for subscriber %d", id)
+			log.Infof("OrderStore -> channel could not been updated for subscriber %d", id)
 		}
 	}
 	return nil
