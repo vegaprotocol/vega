@@ -536,7 +536,7 @@ func TestPositions(t *testing.T) {
 
 	vega.OrderStore.Commit()
 	vega.TradeStore.Commit()
-
+	
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)
 	assert.Nil(t, err)
 

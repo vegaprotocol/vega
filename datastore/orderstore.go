@@ -112,12 +112,12 @@ func (m *orderStore) Notify(items []msg.Order) error {
 	return nil
 }
 
-func (m *orderStore) queueEvent(o msg.Order) {
+func (m *orderStore) addToBuffer(o msg.Order) {
 	m.mu.Lock()
 	m.buffer = append(m.buffer, o)
 	m.mu.Unlock()
 
-	log.Debugf("OrderStore -> QueueEvent: Adding order to buffer: %+v", o)
+	log.Debugf("OrderStore -> addToBuffer: Adding order to buffer: %+v", o)
 }
 
 func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
@@ -241,7 +241,7 @@ func (os *orderStore) GetByPartyAndId(party string, Id string) (*msg.Order, erro
 }
 
 func (os *orderStore) Post(order *msg.Order) error {
-	os.queueEvent(*order)
+	os.addToBuffer(*order)
 	return nil
 }
 
@@ -305,15 +305,7 @@ func (os *orderStore) Put(order *msg.Order) error {
 
 	if !recordExistsInBuffer {
 		err := os.badger.db.View(func(txn *badger.Txn) error {
-			partyKey := os.badger.orderPartyKey(order.Party, order.Id)
-			marketKeyItem, err := txn.Get(partyKey)
-			if err != nil {
-				return err
-			}
-			marketKey, err := marketKeyItem.ValueCopy(nil)
-			if err != nil {
-				return err
-			}
+			marketKey := os.badger.orderMarketKey(order.Market, order.Id)
 			orderItem, err := txn.Get(marketKey)
 			if err != nil {
 				return err
@@ -327,11 +319,10 @@ func (os *orderStore) Put(order *msg.Order) error {
 				log.Errorf("Unmarshal failed %s", err.Error())
 				return err
 			}
-
 			return nil
 		})
 		if err != nil {
-			fmt.Printf("Failed to fetch current order %s\n", err.Error())
+			log.Errorf("Failed to fetch current order %s\n", err.Error())
 			return err
 		}
 
@@ -345,7 +336,7 @@ func (os *orderStore) Put(order *msg.Order) error {
 			return nil
 		})
 		if err != nil {
-			fmt.Printf("Failed to update current order %s\n", err.Error())
+			log.Errorf("Failed to update current order %s\n", err.Error())
 		}
 	}
 
@@ -356,7 +347,7 @@ func (os *orderStore) Put(order *msg.Order) error {
 		os.orderBookDepth.updateWithRemainingDelta(order, remainingDelta)
 	}
 
-	os.queueEvent(*order)
+	os.addToBuffer(*order)
 	return nil
 }
 

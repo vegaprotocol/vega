@@ -35,8 +35,8 @@ type TradeStore interface {
 	// Returns map of Market name to Market buckets
 	GetTradesBySideBuckets(party string) map[string]*MarketBucket
 
-	// Trades relating to the given orderId for a particular Market
-	//GetByMarketAndOrderId(Market string, orderId string) ([]Trade, error)
+	// Trades relating to the given orderId for a particular market
+	GetByMarketAndOrderId(market string, orderId string) ([]*msg.Trade, error)
 }
 
 type OrderStore interface {
@@ -66,7 +66,7 @@ type OrderStore interface {
 	GetByParty(party string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
 	// Get retrieves a trade for a given id.
 	GetByPartyAndId(party string, id string) (*msg.Order, error)
-	// Returns Order Book Depth for a Market
+	// Returns Order Book Depth for a market
 	GetMarketDepth(market string) (*msg.MarketDepth, error)
 }
 
