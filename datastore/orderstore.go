@@ -25,12 +25,7 @@ type orderStore struct {
 }
 
 func NewOrderStore(dir string) OrderStore {
-
-	opts := badger.DefaultOptions
-	opts.Dir = dir
-	opts.ValueDir = dir
-	opts.SyncWrites = true
-	db, err := badger.Open(opts)
+	db, err := badger.Open(customBadgerOptions(dir))
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

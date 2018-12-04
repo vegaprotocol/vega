@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/dgraph-io/badger"
 	"vega/msg"
+	"github.com/dgraph-io/badger/options"
 )
 
 type badgerStore struct {
@@ -16,6 +17,16 @@ func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Ite
 	} else {
 		return bs.ascendingIterator(txn)
 	}
+}
+
+func customBadgerOptions(dir string) badger.Options {
+	opts := badger.DefaultOptions
+	opts.Dir = dir
+	opts.ValueDir = dir
+	opts.SyncWrites = false
+	opts.ValueLogLoadingMode = options.FileIO
+	opts.TableLoadingMode = options.FileIO
+	return opts
 }
 
 func (bs *badgerStore) descendingIterator(txn *badger.Txn) *badger.Iterator {

@@ -360,8 +360,6 @@ func (c *Client) call(ctx context.Context, method string, params opts, resp inte
 	// be closed.
 	select {
 	case c.pending <- req:
-		log.Debugf("Made %s call\n", method)
-
 		ch := make(chan *response, 1)
 		c.mu.Lock()
 		c.results[id] = ch

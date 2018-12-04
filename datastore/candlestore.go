@@ -31,11 +31,7 @@ type InternalTransport struct {
 }
 
 func NewCandleStore(dir string) CandleStore {
-	opts := badger.DefaultOptions
-	opts.Dir = dir
-	opts.ValueDir = dir
-	opts.SyncWrites = true
-	db, err := badger.Open(opts)
+	db, err := badger.Open(customBadgerOptions(dir))
 	if err != nil {
 		fmt.Printf(err.Error())
 	}

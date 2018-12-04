@@ -22,11 +22,7 @@ type tradeStore struct {
 }
 
 func NewTradeStore(dir string) TradeStore {
-	opts := badger.DefaultOptions
-	opts.Dir = dir
-	opts.ValueDir = dir
-	opts.SyncWrites = true
-	db, err := badger.Open(opts)
+	db, err := badger.Open(customBadgerOptions(dir))
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
