@@ -8,6 +8,221 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
+func TestOrderBookDepth_TryToBreakIt(t *testing.T) {
+	var newOrderStore = NewOrderStore("../tmp/orderstore")
+	defer newOrderStore.Close()
+
+	firstBatchOfOrders := []*msg.Order{
+		{
+			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side: msg.Side_Buy,
+			Market: testMarket,
+			Party: testPartyA,
+			Price: 111,
+			Remaining: 100,
+		},
+		{
+			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side: msg.Side_Buy,
+			Market: testMarket,
+			Party: testPartyA,
+			Price: 112,
+			Remaining: 100,
+		},
+		{
+			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side: msg.Side_Buy,
+			Market: testMarket,
+			Party: testPartyA,
+			Price: 112,
+			Remaining: 100,
+		},
+		{
+			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side: msg.Side_Buy,
+			Market: testMarket,
+			Party: testPartyA,
+			Price: 113,
+			Remaining: 100,
+		},
+	}
+
+	for idx, _ := range firstBatchOfOrders {
+		newOrderStore.Post(firstBatchOfOrders[idx])
+	}
+
+	newOrderStore.Commit()
+
+	marketDepth, _ := newOrderStore.GetMarketDepth(testMarket)
+
+	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
+	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Buy[0].NumberOfOrders)
+	assert.Equal(t, uint64(100), marketDepth.Buy[0].CumulativeVolume)
+
+	assert.Equal(t, uint64(112), marketDepth.Buy[1].Price)
+	assert.Equal(t, uint64(200), marketDepth.Buy[1].Volume)
+	assert.Equal(t, uint64(2), marketDepth.Buy[1].NumberOfOrders)
+	assert.Equal(t, uint64(300), marketDepth.Buy[1].CumulativeVolume)
+
+	assert.Equal(t, uint64(111), marketDepth.Buy[2].Price)
+	assert.Equal(t, uint64(100), marketDepth.Buy[2].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
+	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
+
+	secondBatchOforders := []*msg.Order{
+		{
+			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side: msg.Side_Buy,
+			Market: testMarket,
+			Party: testPartyA,
+			Price: 111,
+			Remaining: 100,
+		},
+		{
+			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side: msg.Side_Buy,
+			Market: testMarket,
+			Party: testPartyA,
+			Price: 112,
+			Remaining: 100,
+		},
+		{
+			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side: msg.Side_Buy,
+			Market: testMarket,
+			Party: testPartyA,
+			Price: 112,
+			Remaining: 100,
+		},
+		{
+			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
+			Side: msg.Side_Buy,
+			Market: testMarket,
+			Party: testPartyA,
+			Price: 113,
+			Remaining: 100,
+		},
+	}
+
+	for idx, _ := range secondBatchOforders {
+		newOrderStore.Post(secondBatchOforders[idx])
+	}
+
+	// No commit - should remain unchanged
+
+	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+
+	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
+	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Buy[0].NumberOfOrders)
+	assert.Equal(t, uint64(100), marketDepth.Buy[0].CumulativeVolume)
+
+	assert.Equal(t, uint64(112), marketDepth.Buy[1].Price)
+	assert.Equal(t, uint64(200), marketDepth.Buy[1].Volume)
+	assert.Equal(t, uint64(2), marketDepth.Buy[1].NumberOfOrders)
+	assert.Equal(t, uint64(300), marketDepth.Buy[1].CumulativeVolume)
+
+	assert.Equal(t, uint64(111), marketDepth.Buy[2].Price)
+	assert.Equal(t, uint64(100), marketDepth.Buy[2].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
+	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
+
+
+	// COMMIT OK, double the values
+
+	newOrderStore.Commit()
+
+	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+
+	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
+	assert.Equal(t, uint64(200), marketDepth.Buy[0].Volume)
+	assert.Equal(t, uint64(2), marketDepth.Buy[0].NumberOfOrders)
+	assert.Equal(t, uint64(200), marketDepth.Buy[0].CumulativeVolume)
+
+	assert.Equal(t, uint64(112), marketDepth.Buy[1].Price)
+	assert.Equal(t, uint64(400), marketDepth.Buy[1].Volume)
+	assert.Equal(t, uint64(4), marketDepth.Buy[1].NumberOfOrders)
+	assert.Equal(t, uint64(600), marketDepth.Buy[1].CumulativeVolume)
+
+	assert.Equal(t, uint64(111), marketDepth.Buy[2].Price)
+	assert.Equal(t, uint64(200), marketDepth.Buy[2].Volume)
+	assert.Equal(t, uint64(2), marketDepth.Buy[2].NumberOfOrders)
+	assert.Equal(t, uint64(800), marketDepth.Buy[2].CumulativeVolume)
+
+
+	// OK REMOVE
+
+	firstBatchOfOrders[0].Remaining = 0
+	firstBatchOfOrders[1].Remaining = firstBatchOfOrders[1].Remaining - 50
+	firstBatchOfOrders[2].Remaining = firstBatchOfOrders[2].Remaining - 80
+	firstBatchOfOrders[3].Remaining = firstBatchOfOrders[3].Remaining - 100
+
+	for idx, _ := range firstBatchOfOrders {
+		newOrderStore.Put(firstBatchOfOrders[idx])
+	}
+
+	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+
+
+	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
+	assert.Equal(t, uint64(200-100), marketDepth.Buy[0].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Buy[0].NumberOfOrders)
+	assert.Equal(t, uint64(200-100), marketDepth.Buy[0].CumulativeVolume)
+
+	assert.Equal(t, uint64(112), marketDepth.Buy[1].Price)
+	assert.Equal(t, uint64(400-50-80), marketDepth.Buy[1].Volume)
+	assert.Equal(t, uint64(4), marketDepth.Buy[1].NumberOfOrders)
+	assert.Equal(t, uint64(600-100-50-80), marketDepth.Buy[1].CumulativeVolume)
+
+	assert.Equal(t, uint64(111), marketDepth.Buy[2].Price)
+	assert.Equal(t, uint64(200-100), marketDepth.Buy[2].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
+	assert.Equal(t, uint64(800-100-50-80-100), marketDepth.Buy[2].CumulativeVolume)
+
+
+	// OK REMOVE ALL FROM THE FIRST BATCH
+	firstBatchOfOrders[1].Remaining = firstBatchOfOrders[1].Remaining - 50
+	firstBatchOfOrders[2].Remaining = firstBatchOfOrders[2].Remaining - 20
+	newOrderStore.Put(firstBatchOfOrders[1])
+	newOrderStore.Put(firstBatchOfOrders[2])
+
+
+	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+
+
+	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
+	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Buy[0].NumberOfOrders)
+	assert.Equal(t, uint64(100), marketDepth.Buy[0].CumulativeVolume)
+
+	assert.Equal(t, uint64(112), marketDepth.Buy[1].Price)
+	assert.Equal(t, uint64(200), marketDepth.Buy[1].Volume)
+	assert.Equal(t, uint64(2), marketDepth.Buy[1].NumberOfOrders)
+	assert.Equal(t, uint64(300), marketDepth.Buy[1].CumulativeVolume)
+
+	assert.Equal(t, uint64(111), marketDepth.Buy[2].Price)
+	assert.Equal(t, uint64(100), marketDepth.Buy[2].Volume)
+	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
+	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
+
+	// OK REMOVE ALL FROM THE SECOND BATCH TOO MUCH
+	secondBatchOforders[0].Remaining = secondBatchOforders[0].Remaining - 300
+	secondBatchOforders[1].Remaining = 0
+	secondBatchOforders[2].Status = msg.Order_Cancelled
+	secondBatchOforders[3].Status = msg.Order_Expired
+
+	for idx, _ := range secondBatchOforders {
+		newOrderStore.Put(secondBatchOforders[idx])
+	}
+
+	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+
+	assert.Equal(t, 0, len(marketDepth.Buy))
+}
+
+
 func TestOrderBookDepth_All(t *testing.T){
 
 	var marketDepth MarketDepth
@@ -289,8 +504,6 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	}
 
 	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
-
-	fmt.Printf("marketDepth %+v\n", marketDepth.Buy)
 
 	assert.Equal(t, uint64(112), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(50), marketDepth.Buy[0].Volume)

@@ -399,7 +399,7 @@ func (m *orderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
 		buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
 	}
 
-	for idx := range m.orderBookDepth.getSellSide() {
+	for idx := range sell {
 		if idx == 0 {
 			sell[idx].CumulativeVolume = sell[idx].Volume
 			continue

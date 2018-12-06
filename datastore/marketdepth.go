@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"vega/msg"
-
 )
 
 type MarketDepth struct {
@@ -97,6 +96,14 @@ func (md *MarketDepth) DecreaseByTradedVolume(order *msg.Order, tradedVolume uin
 			}
 
 			if priceLevel.Price == order.Price {
+
+				// Smart trick to check overflow, remove level which goes negative
+				if md.Buy[idx].Volume - order.Remaining > md.Buy[idx].Volume {
+					copy(md.Buy[idx:], md.Buy[idx+1:])
+					md.Buy = md.Buy[:len(md.Buy)-1]
+					return
+				}
+
 				// update price level
 				md.Buy[idx].Volume -= tradedVolume
 				if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
@@ -105,8 +112,7 @@ func (md *MarketDepth) DecreaseByTradedVolume(order *msg.Order, tradedVolume uin
 				}
 				// updated - job done
 
-				// safeguard - shouldn't happen but if volume for gets negative remove price level
-				if md.Buy[idx].Volume <= 0 {
+				if md.Buy[idx].NumberOfOrders == 0 {
 					copy(md.Buy[idx:], md.Buy[idx+1:])
 					md.Buy = md.Buy[:len(md.Buy)-1]
 				}
@@ -124,6 +130,14 @@ func (md *MarketDepth) DecreaseByTradedVolume(order *msg.Order, tradedVolume uin
 			}
 
 			if priceLevel.Price == order.Price {
+
+				// Smart trick to check overflow, remove level which goes negative
+				if md.Sell[idx].Volume - order.Remaining > md.Sell[idx].Volume {
+					copy(md.Sell[idx:], md.Sell[idx+1:])
+					md.Sell = md.Sell[:len(md.Sell)-1]
+					return
+				}
+
 				// update price level
 				md.Sell[idx].Volume -= tradedVolume
 				if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
@@ -132,8 +146,8 @@ func (md *MarketDepth) DecreaseByTradedVolume(order *msg.Order, tradedVolume uin
 				}
 				// updated - job done
 
-				// safeguard - shouldn't happen but if volume for gets negative remove price level
-				if md.Sell[idx].Volume <= 0 {
+				// safeguard -  negative volume shouldn't happen but if volume for gets negative remove price level
+				if md.Sell[idx].NumberOfOrders == 0 || md.Sell[idx].Volume <= 0 {
 					copy(md.Sell[idx:], md.Sell[idx+1:])
 					md.Sell = md.Sell[:len(md.Sell)-1]
 				}
