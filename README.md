@@ -37,6 +37,16 @@ mkdir ./tmp/candlestore
 mkdir ./tmp/tradestore
 ```
 
+Next we initialise Tendermint and update config:
+
+```
+# initialize tendermint
+tendermint init
+
+# edit config.toml files and replace all references to port 266** to 466**
+nano ~/.tendermint/config/config.toml
+```
+
 Finally, we start Vega like this:
 
 ```
