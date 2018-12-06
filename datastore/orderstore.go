@@ -277,7 +277,8 @@ func (os *orderStore) PostBatch(batch []msg.Order) error {
 		}
 	} else {
 		wb.Cancel()
-		// implement retry mechanism
+		// TODO: implement retry mechanism
+		return nil
 	}
 
 	for idx := range batch {
@@ -342,12 +343,6 @@ func (os *orderStore) Put(order *msg.Order) error {
 	}
 
 	os.orderBookDepth.DecreaseByTradedVolume(order, orderBeforeUpdate.Remaining - order.Remaining)
-
-	//if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
-	//	os.orderBookDepth.removeWithRemaining(order)
-	//} else {
-	//	os.orderBookDepth.DecreaseByTradedVolume(order, tradedVolume)
-	//}
 
 	os.addToBuffer(*order)
 	return nil
