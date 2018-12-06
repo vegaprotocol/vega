@@ -39,6 +39,53 @@ type TradeStore interface {
 	GetByMarketAndOrderId(market string, orderId string) ([]*msg.Trade, error)
 }
 
+type StoreObserver interface {
+}
+
+type OrderStoreNew interface {
+	Subscribe(orders chan<- []msg.Order) uint64
+	Unsubscribe(id uint64) error
+	Notify() error
+
+	// Init sets up the store and any underlying storage requirements.
+	Init()
+
+	// Put updates an order in the store, with the ability
+	// to queue the operation to be committed later.
+	Post(order msg.Order, enqueue bool) error
+
+	// Put updates an order in the store, with the ability
+	// to queue the operation to be committed later.
+	Put(order msg.Order, enqueue bool) error
+
+	// Removes an order from the store, with the ability
+	// to queue the operation to be committed later.
+	Delete(order *msg.Order, enqueue bool) error
+
+	// Commit typically saves any operations that are queued to underlying storage medium,
+	// if supported by underlying storage implementation.
+	Commit()
+	
+	// Clear typically clears any operations queued in a buffer that would be
+	// written down to the underlying storage mechanism using Commit()
+	Clear()
+
+	// Close can be called to clean up and close any storage
+	// connections held by the underlying storage mechanism.
+	Close()
+	
+	// GetByMarket retrieves all orders for a given Market.
+	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
+	// Get retrieves an order for a given Market and id.
+	GetByMarketAndId(market string, id string) (*msg.Order, error)
+	// GetByParty retrieves trades for a given party.
+	GetByParty(party string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
+	// Get retrieves a trade for a given id.
+	GetByPartyAndId(party string, id string) (*msg.Order, error)
+	// Returns Order Book Depth for a market
+	GetMarketDepth(market string) (*msg.MarketDepth, error)
+}
+
 type OrderStore interface {
 	// Close database
 	Close()
