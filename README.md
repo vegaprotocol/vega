@@ -21,18 +21,30 @@ Once you've got it, do a `dep ensure`. The proper version of each dependency wil
 
 ### Installing and Running Tendermint
 
-We're using Tendermint for distributing transactions across multiple nodes.
+We're using Tendermint (please use v0.26.0) for distributing transactions across multiple nodes.
 
 Install docs are here: http://tendermint.readthedocs.io/projects/tools/en/master/install.html
 
-Once you've built Tendermint, start Vega like this:
+We recommend downloding a pre-built binary for your architecture rather than compiling from source.
+
+Once you've built Tendermint, we need to create several directories for persisting data (in future releases this will be configurable):
+
+```
+cd <vega_binary_dir>
+mkdir ./tmp
+mkdir ./tmp/orderstore
+mkdir ./tmp/candlestore
+mkdir ./tmp/tradestore
+```
+
+Finally, we start Vega like this:
 
 ```
 # initialize tendermint
 tendermint init
 
 # run vega with the chain and http server
-vega --chain
+vega
 
 # start creating blocks with Tendermint
 tendermint node
@@ -41,8 +53,9 @@ tendermint node
 At this point, you've got:
 
 * a Vega blockchain TCP socket open on port 46658, connected to Tendermint
+* a stub GraphQL API running on [http://localhost:3002/](http://localhost:3004) including 'Playground' to test out queries/mutations/subscriptions
 * a stub REST API running on [http://localhost:3001](http://localhost:3001)
-* a stub Server Sent Events (SSE) API pushing events out at http://localhost:3002/events/orders
+* a stub GRPC API running on [http://localhost:3002/](http://localhost:3001)
 
 Tips:
 
@@ -52,12 +65,13 @@ Tips:
 
 Do a `dep ensure -add github.com/foo/bar` to add to the manifest.
 
-### Deploying
+### Deploying to dev-net & test-net
 
-Deployments are automated using Capistrano. Currently the `staging` environment points at Dave's `x.constructiveproof.com` servers. A few commands to note:
+Generally speaking, testing can be done against a local Tendermint and Vega binary, and deployments to our 'live' nets should be performed carefully. For example: Test-net needs to be up and running for investor demos. 
 
-* `cap staging vega:full_reset` will build the `vega` binary locally, stop tendermint and vega, upload the binary, blow away all previous chain data, and restart vega and tendermint on all staging servers.
+Deployments are automated using Capistrano. ***Important:*** state management of dev-net and test-net should be performed using the capistrano scripts in the ***reset-service*** repo and not from the trading-core.
 
-* `cap staging:reset_app_servers` resets everything but does not build and upload the latest binary.
+* `cap devnet vega:build` will build the `vega` binary locally.
+* `cap devnet vega:upload` will upload the `vega` binary to the remote server specified in capistrano config.
 
-TODO: A better deploy process wouldn't be tied to Dave's account on those servers. This is currently in progress.
+TODO: A better deploy process not including capistrano, driven from CI
