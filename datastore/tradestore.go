@@ -116,7 +116,7 @@ func (ts *tradeStore) addToBuffer(t msg.Trade) error {
 	ts.buffer = append(ts.buffer, t)
 	ts.mu.Unlock()
 
-	log.Debugf("TradeStore -> addToBuffer: Adding trade to buffer: %+v", t)
+//	log.Debugf("TradeStore -> addToBuffer: Adding trade to buffer: %+v", t)
 	return nil
 }
 
@@ -362,7 +362,7 @@ func (ts *tradeStore) GetMarkPrice(market string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	log.Debugf("recentTrade: %+v\n", recentTrade)
+	//log.Debugf("recentTrade: %+v\n", recentTrade)
 	if len(recentTrade) == 0 {
 		return 0, fmt.Errorf("NO TRADES")
 	}

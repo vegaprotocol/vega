@@ -1,18 +1,15 @@
 package matching
 
 import (
-	"fmt"
-
 	"vega/log"
 	"vega/msg"
 )
 
 func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {
 	if orderMessage.Market != b.name {
-		log.Infof(fmt.Sprintf(
-			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
+		log.Errorf("Market ID mismatch: orderMessage.Market: %s, book.ID: %s",
 			orderMessage.Market,
-			b.name))
+			b.name)
 		return msg.OrderError_INVALID_MARKET_ID
 	}
 
@@ -25,8 +22,7 @@ func (b OrderBook) validateOrder(orderMessage *msg.Order) msg.OrderError {
 	}
 
 	// if order is GTT, validate timestamp and convert to block number
-	if orderMessage.Type == msg.Order_GTT &&
-		(orderMessage.ExpirationDatetime == "" || orderMessage.ExpirationTimestamp == 0) {
+	if orderMessage.Type == msg.Order_GTT && orderMessage.ExpirationTimestamp == 0 {
 		return msg.OrderError_INVALID_EXPIRATION_DATETIME
 	}
 

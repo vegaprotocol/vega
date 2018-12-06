@@ -105,7 +105,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	order.Id = fmt.Sprintf("V%d-%d", v.State.Height, v.State.Size)
 	order.Timestamp = uint64(v.State.Timestamp)
 
-	log.Infof("SubmitOrder: %+v", order)
+	//log.Infof("SubmitOrder: %+v", order)
 
 	// -----------------------------------------------//
 	//----------------- MATCHING ENGINE --------------//
@@ -301,14 +301,15 @@ func (v *Vega) OrderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, m
 
 
 func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
+	log.Debugf("Core: Begin removing expiring orders from matching engine")
 	expiringOrders := v.matchingEngine.RemoveExpiringOrders(timestamp)
-	log.Debugf("Removed %v expired orders from matching engine, now update stores", len(expiringOrders))
+	log.Debugf("Core: Removed %v expired orders from matching engine, now update stores", len(expiringOrders))
 
 	for _, order := range expiringOrders {
 		v.OrderStore.Put(order)
 	}
 
-	log.Debugf("Updated %v expired orders in stores", len(expiringOrders))
+	log.Debugf("Core: Updated %v expired orders in stores", len(expiringOrders))
 }
 
 func (v *Vega) Commit() {

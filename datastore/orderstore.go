@@ -117,7 +117,7 @@ func (m *orderStore) addToBuffer(o msg.Order) {
 	m.buffer = append(m.buffer, o)
 	m.mu.Unlock()
 
-	log.Debugf("OrderStore -> addToBuffer: Adding order to buffer: %+v", o)
+//	log.Debugf("OrderStore -> addToBuffer: Adding order to buffer: %+v", o)
 }
 
 func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {

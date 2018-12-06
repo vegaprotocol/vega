@@ -15,7 +15,7 @@ type OrderBook struct {
 	config          *Config
 	latestTimestamp uint64
 
-	expiryTable map[uint64][]*msg.Order
+	expiringOrders []*msg.Order  // keep a list of all expiring trades, these will be in timestamp ascending order.
 }
 
 // Create an order book with a given name
@@ -25,11 +25,11 @@ func NewBook(name string, config *Config) *OrderBook {
 		buy:    &OrderBookSide{prorataMode: config.ProrataMode},
 		sell:   &OrderBookSide{prorataMode: config.ProrataMode},
 		config: config,
-		expiryTable: make(map[uint64][]*msg.Order, 0),
+		expiringOrders: make([]*msg.Order, 0),
 	}
 }
 
-// Cancel an order that is active on an orderbook. Market and Order ID are validated, however the order must match
+// Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
 func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
@@ -116,13 +116,9 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	// if order is persistent type add to order book to the correct side
 	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
 
-		// if order type GTT append order to expiryTable at expiration timestamp
+		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
 		if order.Type == msg.Order_GTT {
-			if _, ok := b.expiryTable[order.ExpirationTimestamp]; !ok {
-				b.expiryTable[order.ExpirationTimestamp] = []*msg.Order{order}
-			} else {
-				b.expiryTable[order.ExpirationTimestamp] = append(b.expiryTable[order.ExpirationTimestamp], order)
-			}
+			b.expiringOrders = append(b.expiringOrders, order)
 		}
 
 		b.getSide(order.Side).addOrder(order, order.Side)
@@ -164,17 +160,30 @@ func (b *OrderBook) RemoveOrder(order *msg.Order) error {
 	return err
 }
 
+// RemoveExpiredOrders removes any GTT orders that will expire on or before the expiration timestamp (epoch+nano).
+// expirationTimestamp must be of the format unix epoch seconds with nanoseconds e.g. 1544010789803472469.
+// RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
+// matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
 func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []*msg.Order {
 	var expiredOrders []*msg.Order
-	if _, ok := b.expiryTable[expirationTimestamp]; ok {
-		for idx := range b.expiryTable[expirationTimestamp] {
-			b.RemoveOrder(b.expiryTable[expirationTimestamp][idx])
+	var pendingOrders []*msg.Order
 
-			b.expiryTable[expirationTimestamp][idx].Status = msg.Order_Expired
-			expiredOrders = append(expiredOrders, b.expiryTable[expirationTimestamp][idx])
+	// linear scan of our expiring orders, prune any that have expired
+	for _, or := range b.expiringOrders {
+		if or.ExpirationTimestamp <= expirationTimestamp {
+			b.RemoveOrder(or)                              // order is removed from the book
+			or.Status = msg.Order_Expired                  // order is marked as expired for storage
+			expiredOrders = append(expiredOrders, or)
+		} else {
+			pendingOrders = append(pendingOrders, or)      // order is pending expiry (future)
 		}
-		delete(b.expiryTable, expirationTimestamp)
 	}
+
+	log.Debugf("Matching: Removed %d orders that expired, %d remaining on book", len(expiredOrders), len(pendingOrders))
+	
+	// update our list of GTT orders pending expiry, ready for next run.
+	b.expiringOrders = nil
+	b.expiringOrders = pendingOrders
 	return expiredOrders
 }
 

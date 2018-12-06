@@ -8,6 +8,7 @@ import (
 	"vega/msg"
 
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 // this runs just once as first
@@ -20,6 +21,173 @@ type aggressiveOrderScenario struct {
 	aggressiveOrder               *msg.Order
 	expectedPassiveOrdersAffected []msg.Order
 	expectedTrades                []msg.Trade
+}
+
+func getCurrentUtcTimestampNano() uint64 {
+	return uint64(time.Now().UTC().UnixNano())
+}
+
+func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
+	market := "expiringOrderBookTest"
+	party := "clay-davis"
+	book := NewBook(market, ProrataModeConfig())
+	currentTimestamp := getCurrentUtcTimestampNano()
+	someTimeLater := currentTimestamp + (1000*1000)
+
+	order1 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     1,
+		Size:      1,
+		Remaining: 1,
+		Type:      msg.Order_GTT,
+		Timestamp: currentTimestamp,
+		ExpirationTimestamp: someTimeLater,
+		Id:        "1",
+	}
+	_, err := book.AddOrder(order1)
+	assert.Equal(t, err, msg.OrderError_NONE)
+
+	order2 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     3298,
+		Size:      99,
+		Remaining: 99,
+		Type:      msg.Order_GTT,
+		Timestamp: currentTimestamp,
+		ExpirationTimestamp: someTimeLater+1,
+		Id:        "2",
+	}
+	_, err = book.AddOrder(order2)
+	assert.Equal(t, err, msg.OrderError_NONE)
+
+	order3 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     771,
+		Size:      19,
+		Remaining: 19,
+		Type:      msg.Order_GTT,
+		Timestamp: currentTimestamp,
+		ExpirationTimestamp: someTimeLater,
+		Id:        "3",
+	}
+	_, err = book.AddOrder(order3)
+	assert.Equal(t, err, msg.OrderError_NONE)
+
+	order4 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     1000,
+		Size:      7,
+		Remaining: 7,
+		Type:      msg.Order_GTC,
+		Timestamp: currentTimestamp,
+		Id:        "4",
+	}
+	_, err = book.AddOrder(order4)
+	assert.Equal(t, err, msg.OrderError_NONE)
+
+	order5 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     199,
+		Size:      99999,
+		Remaining: 99999,
+		Type:      msg.Order_GTT,
+		Timestamp: currentTimestamp,
+		ExpirationTimestamp: someTimeLater,
+		Id:        "5",
+	}
+	_, err = book.AddOrder(order5)
+	assert.Equal(t, err, msg.OrderError_NONE)
+
+	order6 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     100,
+		Size:      100,
+		Remaining: 100,
+		Type:      msg.Order_GTC,
+		Timestamp: currentTimestamp,
+		Id:        "6",
+	}
+	_, err = book.AddOrder(order6)
+	assert.Equal(t, err, msg.OrderError_NONE)
+
+	order7 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     41,
+		Size:      9999,
+		Remaining: 9999,
+		Type:      msg.Order_GTT,
+		Timestamp: currentTimestamp,
+		ExpirationTimestamp: someTimeLater+9999,
+		Id:        "7",
+	}
+	_, err = book.AddOrder(order7)
+	assert.Equal(t, err, msg.OrderError_NONE)
+
+	order8 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     1,
+		Size:      1,
+		Remaining: 1,
+		Type:      msg.Order_GTT,
+		Timestamp: currentTimestamp,
+		ExpirationTimestamp: someTimeLater-9999,
+		Id:        "8",
+	}
+	_, err = book.AddOrder(order8)
+	assert.Equal(t, err, msg.OrderError_NONE)
+	
+	order9 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     65,
+		Size:      12,
+		Remaining: 12,
+		Type:      msg.Order_GTC,
+		Timestamp: currentTimestamp,
+		Id:        "9",
+	}
+	_, err = book.AddOrder(order9)
+	assert.Equal(t, err, msg.OrderError_NONE)
+	
+	order10 := &msg.Order{
+		Market:    market,
+		Party:     party,
+		Side:      msg.Side_Sell,
+		Price:     1,
+		Size:      1,
+		Remaining: 1,
+		Type:      msg.Order_GTT,
+		Timestamp: currentTimestamp,
+		ExpirationTimestamp: someTimeLater-1,
+		Id:        "10",
+	}
+	_, err = book.AddOrder(order10)
+	assert.Equal(t, err, msg.OrderError_NONE)
+
+	expired := book.RemoveExpiredOrders(someTimeLater)
+	assert.Len(t, expired, 5)
+	assert.Equal(t, "1", expired[0].Id)
+	assert.Equal(t, "3", expired[1].Id)
+	assert.Equal(t, "5", expired[2].Id)
+	assert.Equal(t, "8", expired[3].Id)
+	assert.Equal(t, "10", expired[4].Id)
 }
 
 //test for order validation

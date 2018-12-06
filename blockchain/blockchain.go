@@ -42,6 +42,10 @@ func (app *Blockchain) BeginBlock(beginBlock types.RequestBeginBlock) types.Resp
 		app.previousTimestamp = app.vega.State.Timestamp
 	}
 
+	// At the beginning of every new block we check for expiring GTT orders and clear them out
+	// of the matching engine trees, these orders are then passed to storage to be marked as EXPIRED.
+	app.vega.RemoveExpiringOrdersAtTimestamp(uint64(app.vega.State.Timestamp))
+
 	app.vega.StartCandleBuffer()
 
 	return types.ResponseBeginBlock{}
@@ -219,7 +223,6 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 			totaltx += itx
 		}
 		averageTx := totaltx / len(tx_averages)
-		log.Debugf("Stats: Current tx average size = %v bytes", averageTx)
 		app.vega.Statistics.AverageTxBytes = uint64(averageTx)
 
 		// MAX sample size for avg calculation is 5000 txs
@@ -257,7 +260,6 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 // the job of the Handshake.
 //
 func (app *Blockchain) Commit() types.ResponseCommit {
-	app.vega.RemoveExpiringOrdersAtTimestamp(uint64(app.vega.State.Timestamp))
 
 	// Using a memdb - just return the big endian size of the db
 	appHash := make([]byte, 8)
@@ -265,8 +267,10 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 	app.vega.State.AppHash = appHash
 	app.vega.State.Height += 1
 
+	log.Debugf("Blockchain: BEFORE commit/generate")
 	app.vega.Commit()
 	app.vega.GenerateCandles()
+	log.Debugf("Blockchain: AFTER commit/generate")
 
 	app.vega.Statistics.OrdersPerSecond = uint64(current_ob)
 	app.vega.Statistics.TradesPerSecond = uint64(current_tb)
