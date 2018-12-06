@@ -63,9 +63,9 @@ tendermint node
 At this point, you've got:
 
 * a Vega blockchain TCP socket open on port 46658, connected to Tendermint
-* a stub GraphQL API running on [http://localhost:3002/](http://localhost:3004) including 'Playground' to test out queries/mutations/subscriptions
-* a stub REST API running on [http://localhost:3001](http://localhost:3001)
-* a stub GRPC API running on [http://localhost:3002/](http://localhost:3001)
+* a stub GraphQL API running on [http://localhost:3004/](http://localhost:3004) including 'Playground' to test out queries/mutations/subscriptions
+* a stub REST API running on [http://localhost:3003](http://localhost:3003)
+* a stub gRPC API running on [http://localhost:3002/](http://localhost:3002)
 
 Tips:
 
