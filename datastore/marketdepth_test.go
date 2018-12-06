@@ -23,7 +23,7 @@ func TestOrderBookDepth_All(t *testing.T){
 	}
 
 	for _, elem := range ordersList {
-		marketDepth.updateWithRemaining(elem)
+		marketDepth.Add(elem)
 	}
 
 	assert.Equal(t, marketDepth.Buy[0].Price, uint64(116))
@@ -52,9 +52,13 @@ func TestOrderBookDepth_All(t *testing.T){
 	assert.Equal(t, marketDepth.Buy[4].CumulativeVolume, uint64(0))
 
 
-	marketDepth.updateWithRemainingDelta(&msg.Order{Side: msg.Side_Buy,Price: 111, Remaining: 50}, 50)
-	marketDepth.updateWithRemainingDelta(&msg.Order{Side: msg.Side_Buy,Price: 114, Remaining: 80}, 20)
-	marketDepth.removeWithRemaining(&msg.Order{Side: msg.Side_Buy,Price: 113, Remaining: 100})
+	//marketDepth.decreaseByDelta(&msg.Order{Side: msg.Side_Buy,Price: 111, Remaining: 50}, 50)
+	//marketDepth.decreaseByDelta(&msg.Order{Side: msg.Side_Buy,Price: 114, Remaining: 80}, 20)
+	//marketDepth.removeWithRemaining(&msg.Order{Side: msg.Side_Buy,Price: 113, Remaining: 100})
+
+	marketDepth.DecreaseByTradedVolume(&msg.Order{Side: msg.Side_Buy,Price: 111, Remaining: 50}, 50)
+	marketDepth.DecreaseByTradedVolume(&msg.Order{Side: msg.Side_Buy,Price: 114, Remaining: 80}, 20)
+	marketDepth.DecreaseByTradedVolume(&msg.Order{Side: msg.Side_Buy,Price: 113, Remaining: 100}, 100)
 
 	assert.Equal(t, marketDepth.Buy[0].Price, uint64(116))
 	assert.Equal(t, marketDepth.Buy[0].Volume, uint64(200))
@@ -91,7 +95,7 @@ func TestOrderBookDepth_All(t *testing.T){
 	}
 
 	for _, elem := range ordersList {
-		marketDepth.updateWithRemaining(elem)
+		marketDepth.Add(elem)
 	}
 
 	assert.Equal(t, marketDepth.Sell[0].Price, uint64(119))
@@ -119,9 +123,13 @@ func TestOrderBookDepth_All(t *testing.T){
 	assert.Equal(t, marketDepth.Sell[4].NumberOfOrders, uint64(2))
 	assert.Equal(t, marketDepth.Sell[4].CumulativeVolume, uint64(0))
 
-	marketDepth.updateWithRemainingDelta(&msg.Order{Side: msg.Side_Sell,Price: 119, Remaining: 100}, 50)
-	marketDepth.updateWithRemainingDelta(&msg.Order{Side: msg.Side_Sell,Price: 120, Remaining: 100}, 20)
-	marketDepth.removeWithRemaining(&msg.Order{Side: msg.Side_Sell,Price: 122, Remaining: 100})
+	//marketDepth.decreaseByDelta(&msg.Order{Side: msg.Side_Sell,Price: 119, Remaining: 100}, 50)
+	//marketDepth.decreaseByDelta(&msg.Order{Side: msg.Side_Sell,Price: 120, Remaining: 100}, 20)
+	//marketDepth.removeWithRemaining(&msg.Order{Side: msg.Side_Sell,Price: 122, Remaining: 100})
+
+	marketDepth.DecreaseByTradedVolume(&msg.Order{Side: msg.Side_Sell,Price: 119, Remaining: 100}, 50)
+	marketDepth.DecreaseByTradedVolume(&msg.Order{Side: msg.Side_Sell,Price: 120, Remaining: 100}, 20)
+	marketDepth.DecreaseByTradedVolume(&msg.Order{Side: msg.Side_Sell,Price: 122, Remaining: 100}, 100)
 
 	assert.Equal(t, marketDepth.Sell[0].Price, uint64(119))
 	assert.Equal(t, marketDepth.Sell[0].Volume, uint64(50))
@@ -274,7 +282,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 111,
-			Remaining: 0,
+			Remaining: 50,
 		},
 		&msg.Order{
 			Id:     orders[1].Id,
@@ -291,6 +299,8 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	}
 
 	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+
+	fmt.Printf("marketDepth %+v\n", marketDepth.Buy)
 
 	assert.Equal(t, uint64(112), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(50), marketDepth.Buy[0].Volume)
@@ -430,7 +440,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 111,
-			Remaining: 0,
+			Remaining: 50,
 		},
 		&msg.Order{
 			Id:     orders[1].Id,

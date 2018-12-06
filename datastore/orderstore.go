@@ -283,7 +283,7 @@ func (os *orderStore) PostBatch(batch []msg.Order) error {
 	for idx := range batch {
 		// Update orderBookDepth
 		if batch[idx].Remaining != uint64(0) {
-			os.orderBookDepth.updateWithRemaining(&batch[idx])
+			os.orderBookDepth.Add(&batch[idx])
 		}
 	}
 
@@ -292,12 +292,13 @@ func (os *orderStore) PostBatch(batch []msg.Order) error {
 
 // Put updates an existing order in the memory store.
 func (os *orderStore) Put(order *msg.Order) error {
-	var currentOrder msg.Order
+	var orderBeforeUpdate msg.Order
 	var recordExistsInBuffer bool
 
 	for idx := range os.buffer {
 		if os.buffer[idx].Id == order.Id {
-			currentOrder = os.buffer[idx]
+			orderBeforeUpdate = os.buffer[idx]
+			// replace with new updated order
 			os.buffer[idx] = *order
 			recordExistsInBuffer = true
 		}
@@ -315,7 +316,7 @@ func (os *orderStore) Put(order *msg.Order) error {
 				log.Errorf("ORDER %s DOES NOT EXIST\n", string(marketKey))
 				return err
 			}
-			if err := proto.Unmarshal(orderBuf, &currentOrder); err != nil {
+			if err := proto.Unmarshal(orderBuf, &orderBeforeUpdate); err != nil {
 				log.Errorf("Unmarshal failed %s", err.Error())
 				return err
 			}
@@ -340,12 +341,13 @@ func (os *orderStore) Put(order *msg.Order) error {
 		}
 	}
 
-	remainingDelta := currentOrder.Remaining - order.Remaining
-	if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
-		os.orderBookDepth.removeWithRemaining(order)
-	} else {
-		os.orderBookDepth.updateWithRemainingDelta(order, remainingDelta)
-	}
+	os.orderBookDepth.DecreaseByTradedVolume(order, orderBeforeUpdate.Remaining - order.Remaining)
+
+	//if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
+	//	os.orderBookDepth.removeWithRemaining(order)
+	//} else {
+	//	os.orderBookDepth.DecreaseByTradedVolume(order, tradedVolume)
+	//}
 
 	os.addToBuffer(*order)
 	return nil
@@ -381,7 +383,8 @@ func (os *orderStore) Delete(order *msg.Order) error {
 		return err
 	}
 
-	os.orderBookDepth.removeWithRemaining(order)
+	order.Status = msg.Order_Cancelled
+	os.orderBookDepth.DecreaseByTradedVolume(order, 0)
 
 	return nil
 }
