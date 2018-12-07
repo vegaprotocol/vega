@@ -112,7 +112,7 @@ func (md *MarketDepth) DecreaseByTradedVolume(order *msg.Order, tradedVolume uin
 				}
 				// updated - job done
 
-				if md.Buy[idx].NumberOfOrders == 0 {
+				if md.Buy[idx].NumberOfOrders == 0 || md.Buy[idx].Volume == 0 {
 					copy(md.Buy[idx:], md.Buy[idx+1:])
 					md.Buy = md.Buy[:len(md.Buy)-1]
 				}
