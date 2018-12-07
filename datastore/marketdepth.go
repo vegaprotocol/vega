@@ -159,56 +159,6 @@ func (md *MarketDepth) DecreaseByTradedVolume(order *msg.Order, tradedVolume uin
 	}
 }
 
-//func (md *MarketDepth) removeWithRemaining(order *msg.Order) {
-//	if order.Side == msg.Side_Buy {
-//		for idx, priceLevel := range md.Buy {
-//			if priceLevel.Price > order.Price {
-//				continue
-//			}
-//
-//			if priceLevel.Price == order.Price {
-//				// update price level
-//				md.Buy[idx].NumberOfOrders--
-//				md.Buy[idx].Volume -= order.Remaining
-//
-//				// remove empty price level
-//				if md.Buy[idx].NumberOfOrders == 0 || md.Buy[idx].Volume <= 0 {
-//					copy(md.Buy[idx:], md.Buy[idx+1:])
-//					md.Buy = md.Buy[:len(md.Buy)-1]
-//				}
-//				// updated - job done
-//				return
-//			}
-//		}
-//		// not found
-//		return
-//	}
-//
-//	if order.Side == msg.Side_Sell {
-//		for idx, priceLevel := range md.Sell {
-//			if priceLevel.Price < order.Price {
-//				continue
-//			}
-//
-//			if priceLevel.Price == order.Price {
-//				// update price level
-//				md.Sell[idx].NumberOfOrders--
-//				md.Sell[idx].Volume -= order.Remaining
-//
-//				// remove empty price level
-//				if md.Sell[idx].NumberOfOrders == 0 || md.Sell[idx].Volume <= 0 {
-//					copy(md.Sell[idx:], md.Sell[idx+1:])
-//					md.Sell = md.Sell[:len(md.Sell)-1]
-//				}
-//				// updated - job done
-//				return
-//			}
-//		}
-//		// not found
-//		return
-//	}
-//}
-
 func (md *MarketDepth) getBuySide() []*msg.PriceLevel {
 	return md.Buy
 }
