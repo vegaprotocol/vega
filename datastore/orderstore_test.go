@@ -147,22 +147,22 @@ func TestMemStore_PostAndGetNewOrder(t *testing.T) {
 //}
 //
 
-func TestMemStore_PutNoneExistentOrder(t *testing.T) {
-	FlushOrderStore()
-	newOrderStore := NewOrderStore(orderStoreDir)
-	defer newOrderStore.Close()
-	order := &msg.Order{
-		Id:     "45305210ff7a9bb9450b1833cc10368a",
-		Market: testMarket,
-		Party:  testParty,
-	}
-
-	err := newOrderStore.Put(order)
-	assert.NotEqual(t, nil, err)
-
-	_, err = newOrderStore.GetByMarketAndId(testMarket, order.Id)
-	assert.NotEqual(t, nil, err)
-}
+//func TestMemStore_PutNoneExistentOrder(t *testing.T) {
+//	FlushOrderStore()
+//	newOrderStore := NewOrderStore(orderStoreDir)
+//	defer newOrderStore.Close()
+//	order := &msg.Order{
+//		Id:     "45305210ff7a9bb9450b1833cc10368a",
+//		Market: testMarket,
+//		Party:  testParty,
+//	}
+//
+//	err := newOrderStore.Put(order)
+//	assert.NotEqual(t, nil, err)
+//
+//	_, err = newOrderStore.GetByMarketAndId(testMarket, order.Id)
+//	assert.NotEqual(t, nil, err)
+//}
 
 //
 //func TestMemStore_PutOrderToNoneExistentMarket(t *testing.T) {
@@ -778,21 +778,21 @@ func TestMemOrderStore_Parties(t *testing.T) {
 	//assert.Nil(t, err)
 	//assert.Equal(t, 0, len(tradesAtPartyB))
 
-	// delete order from trade store, parties should be updated
-	err = newOrderStore.Delete(passiveOrder)
-	assert.Nil(t, err)
-
-	ordersAtPartyA, err = newOrderStore.GetByParty(testPartyA, nil)
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(ordersAtPartyA))
-
-	// delete order from trade store, parties should be updated
-	err = newOrderStore.Delete(aggressiveOrder)
-	assert.Nil(t, err)
-
-	ordersAtPartyB, err = newOrderStore.GetByParty(testPartyB, nil)
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(ordersAtPartyB))
+	//// delete order from trade store, parties should be updated
+	//err = newOrderStore.Delete(passiveOrder)
+	//assert.Nil(t, err)
+	//
+	//ordersAtPartyA, err = newOrderStore.GetByParty(testPartyA, nil)
+	//assert.Nil(t, err)
+	//assert.Equal(t, 0, len(ordersAtPartyA))
+	//
+	//// delete order from trade store, parties should be updated
+	//err = newOrderStore.Delete(aggressiveOrder)
+	//assert.Nil(t, err)
+	//
+	//ordersAtPartyB, err = newOrderStore.GetByParty(testPartyB, nil)
+	//assert.Nil(t, err)
+	//	assert.Equal(t, 0, len(ordersAtPartyB))
 }
 //
 //func TestAddPartiesOnTheFly(t *testing.T) {

@@ -1,27 +1,56 @@
 package datastore
 
 import (
-	"errors"
 	"fmt"
+	"github.com/dgraph-io/badger"
+	"github.com/golang/protobuf/proto"
+	"github.com/pkg/errors"
 	"sync"
 	"vega/filters"
 	"vega/log"
 	"vega/msg"
-
-	"github.com/dgraph-io/badger"
-	"github.com/gogo/protobuf/proto"
 )
 
+type OrderStore interface {
+	Subscribe(orders chan<- []msg.Order) uint64
+	Unsubscribe(id uint64) error
+
+	// Post adds an order to the store, with the ability
+	// to queue the operation to be committed later.
+	Post(order *msg.Order) error
+
+	// Put updates an order in the store, with the ability
+	// to queue the operation to be committed later.
+	Put(order *msg.Order) error
+
+	// Commit typically saves any operations that are queued to underlying storage medium,
+	// if supported by underlying storage implementation.
+	Commit() error
+
+	// Close can be called to clean up and close any storage
+	// connections held by the underlying storage mechanism.
+	Close() error
+
+	// GetByMarket retrieves all orders for a given Market.
+	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
+	// Get retrieves an order for a given Market and id.
+	GetByMarketAndId(market string, id string) (*msg.Order, error)
+	// GetByParty retrieves trades for a given party.
+	GetByParty(party string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
+	// Get retrieves a trade for a given id.
+	GetByPartyAndId(party string, id string) (*msg.Order, error)
+	// Returns Order Book Depth for a market
+	GetMarketDepth(market string) (*msg.MarketDepth, error)
+}
+
 // orderStore should implement OrderStore interface.
-type orderStore struct {
+type badgerOrderStore struct {
 	badger         *badgerStore
+	subscribers    map[uint64]chan<- []msg.Order
+	subscriberId   uint64
 	orderBookDepth MarketDepthManager
-	buffer       []msg.Order
-
-	subscribers  map[uint64]chan<- []msg.Order
-	subscriberId uint64
-
-	mu           sync.Mutex
+	buffer         []msg.Order
+	mu             sync.Mutex
 }
 
 func NewOrderStore(dir string) OrderStore {
@@ -30,72 +59,54 @@ func NewOrderStore(dir string) OrderStore {
 		log.Fatalf(err.Error())
 	}
 	bs := badgerStore{db: db}
-	return &orderStore{badger: &bs, orderBookDepth: NewMarketDepthUpdaterGetter(),
-		buffer: make([]msg.Order, 0), subscribers: make(map[uint64]chan<- []msg.Order)}
+	return &badgerOrderStore{
+		badger:         &bs,
+		orderBookDepth: NewMarketDepthUpdaterGetter(),
+		subscribers:    make(map[uint64]chan<- []msg.Order),
+		buffer:         make([]msg.Order, 0),
+	}
 }
 
-func (os *orderStore) Close() {
-	os.badger.db.Close()
+func (os *badgerOrderStore) Subscribe(orders chan<- []msg.Order) uint64 {
+	os.mu.Lock()
+	defer os.mu.Unlock()
+
+	os.subscriberId = os.subscriberId + 1
+	os.subscribers[os.subscriberId] = orders
+
+	log.Debugf("OrderStore -> Subscribe: Order subscriber added: %d", os.subscriberId)
+	return os.subscriberId
 }
 
-func (m *orderStore) Subscribe(orders chan<- []msg.Order) uint64 {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (os *badgerOrderStore) Unsubscribe(id uint64) error {
+	os.mu.Lock()
+	defer os.mu.Unlock()
 
-	m.subscriberId = m.subscriberId + 1
-	m.subscribers[m.subscriberId] = orders
-
-	log.Debugf("OrderStore -> Subscribe: Order subscriber added: %d", m.subscriberId)
-	return m.subscriberId
-}
-
-func (m *orderStore) Unsubscribe(id uint64) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if len(m.subscribers) == 0 {
+	if len(os.subscribers) == 0 {
 		log.Debugf("OrderStore -> Unsubscribe: No subscribers connected")
 		return nil
 	}
 
-	if _, exists := m.subscribers[id]; exists {
-		delete(m.subscribers, id)
+	if _, exists := os.subscribers[id]; exists {
+		delete(os.subscribers, id)
 		log.Debugf("OrderStore -> Unsubscribe: Subscriber removed: %v", id)
 		return nil
 	}
 	return errors.New(fmt.Sprintf("OrderStore subscriber does not exist with id: %d", id))
 }
 
-func (m *orderStore) Commit() error {
-	if len(m.buffer) == 0 {
-		// Only commit when we have items
-		log.Debugf("OrderStore -> Commit: Buffer empty")
+func (os *badgerOrderStore) notify(items []msg.Order) error {
+	if len(items) == 0 {
 		return nil
 	}
 
-	m.mu.Lock()
-	items := m.buffer
-	m.buffer = make([]msg.Order, 0)
-	m.mu.Unlock()
-
-	err := m.PostBatch(items)
-	if err != nil {
-		return err
-	}
-	err = m.Notify(items)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *orderStore) Notify(items []msg.Order) error {
-	if m.subscribers == nil || len(m.subscribers) == 0 {
-		log.Debugf("OrderStore -> Notify: No subscribers connected")
+	if os.subscribers == nil || len(os.subscribers) == 0 {
+		log.Debugf("OrderStore: No subscribers connected")
 		return nil
 	}
+
 	var ok bool
-	for id, sub := range m.subscribers {
+	for id, sub := range os.subscribers {
 		select {
 		case sub <- items:
 			ok = true
@@ -104,40 +115,108 @@ func (m *orderStore) Notify(items []msg.Order) error {
 			ok = false
 		}
 		if ok {
-			log.Debugf("OrderStore -> send on channel success for subscriber %d", id)
+			log.Debugf("OrderStore: send on channel success for subscriber %d", id)
 		} else {
-			log.Infof("OrderStore -> channel could not been updated for subscriber %d", id)
+			log.Infof("OrderStore: channel could not been updated for subscriber %d", id)
 		}
 	}
 	return nil
 }
 
-func (m *orderStore) addToBuffer(o msg.Order) {
-	m.mu.Lock()
-	m.buffer = append(m.buffer, o)
-	m.mu.Unlock()
-
-//	log.Debugf("OrderStore -> addToBuffer: Adding order to buffer: %+v", o)
+func (os *badgerOrderStore) Post(order *msg.Order) error {
+	// With badger we always buffer for future batch insert via Commit()
+	os.addToBuffer(*order)
+	return nil
 }
 
-func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
+func (os *badgerOrderStore) Put(order *msg.Order) error {
+
+	var currentOrder msg.Order
+	var recordExistsInBuffer bool
+
+	for idx := range os.buffer {
+		if os.buffer[idx].Id == order.Id {
+			// we found an order in our write queue that matches
+			// the order being updated, swap for latest data
+			currentOrder = os.buffer[idx]
+			os.buffer[idx] = *order
+			recordExistsInBuffer = true
+			break
+		}
+	}
+
+	if !recordExistsInBuffer {
+		// We tried to update a record that is not in our buffer, validate it exists
+		// with a read transaction lookup and add to write queue if exists
+		if order.Status != msg.Order_Cancelled && order.Status != msg.Order_Expired && order.Remaining > 0 {
+			o, err := os.GetByMarketAndId(order.Market, order.Id)
+			if err != nil {
+				return err
+			}
+			currentOrder = *o
+		}
+		os.addToBuffer(*order)
+	}
+
+	if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
+		os.orderBookDepth.removeWithRemaining(order)
+	} else {
+		remainingDelta := currentOrder.Remaining - order.Remaining
+		os.orderBookDepth.updateWithRemainingDelta(order, remainingDelta)
+	}
+
+	return nil
+}
+
+func (os *badgerOrderStore) Commit() error {
+	if len(os.buffer) == 0 {
+		return nil
+	}
+
+	os.mu.Lock()
+	items := os.buffer
+	os.buffer = make([]msg.Order, 0)
+	os.mu.Unlock()
+
+	err := os.writeBatch(items)
+	if err != nil {
+		return err
+	}
+	err = os.notify(items)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (os *badgerOrderStore) Close() error {
+	// Close our connection to the badger database
+	// ensuring errors will be returned up the stack.
+	return os.badger.db.Close()
+}
+
+func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
 	var result []*msg.Order
 	if queryFilters == nil {
 		queryFilters = &filters.OrderQueryFilters{}
 	}
 
-	txn := os.badger.db.NewTransaction(false)
+	txn := os.badger.readTransaction()
+	defer txn.Discard()
+
 	filter := OrderFilter{queryFilter: queryFilters}
 	descending := filter.queryFilter.HasLast()
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
+
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		item := it.Item()
 		orderBuf, _ := item.ValueCopy(nil)
 		var order msg.Order
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			log.Errorf("Unmarshal failed %s", err.Error())
+			log.Errorf("unmarshal failed %s", err.Error())
+			return nil, err
 		}
 		if filter.apply(&order) {
 			result = append(result, &order)
@@ -150,11 +229,13 @@ func (os *orderStore) GetByMarket(market string, queryFilters *filters.OrderQuer
 	return result, nil
 }
 
-// Get retrieves an order for a given Market and id.
-func (os *orderStore) GetByMarketAndId(market string, Id string) (*msg.Order, error) {
+func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*msg.Order, error) {
 	var order msg.Order
-	txn := os.badger.db.NewTransaction(false)
-	marketKey := os.badger.orderMarketKey(market, Id)
+
+	txn := os.badger.readTransaction()
+	defer txn.Discard()
+
+	marketKey := os.badger.orderMarketKey(market, id)
 	item, err := txn.Get(marketKey)
 	if err != nil {
 		return nil, err
@@ -167,31 +248,34 @@ func (os *orderStore) GetByMarketAndId(market string, Id string) (*msg.Order, er
 	return &order, nil
 }
 
-func (os *orderStore) GetByParty(party string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
+func (os *badgerOrderStore) GetByParty(party string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
 	var result []*msg.Order
+
 	if queryFilters == nil {
 		queryFilters = &filters.OrderQueryFilters{}
 	}
 
-	txn := os.badger.db.NewTransaction(false)
+	txn := os.badger.readTransaction()
+	defer txn.Discard()
+
 	filter := OrderFilter{queryFilter: queryFilters}
 	descending := filter.queryFilter.HasLast()
-
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
+
 	partyPrefix, validForPrefix := os.badger.partyPrefix(party, descending)
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		marketKeyItem := it.Item()
 		marketKey, _ := marketKeyItem.ValueCopy(nil)
 		orderItem, err := txn.Get(marketKey)
 		if err != nil {
-			// todo return or just log this - check with maks?
-			return nil, errors.New(fmt.Sprintf("order with key %s does not exist in badger store", string(marketKey)))
+			log.Errorf("order with key %s does not exist in store", string(marketKey))
+			return nil, err
 		}
 		orderBuf, _ := orderItem.ValueCopy(nil)
 		var order msg.Order
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			log.Errorf("Unmarshal faixxxxxled %s", err.Error())
+			log.Errorf("unmarshal failed %s", err.Error())
 			return nil, err
 		}
 		if filter.apply(&order) {
@@ -204,11 +288,11 @@ func (os *orderStore) GetByParty(party string, queryFilters *filters.OrderQueryF
 	return result, nil
 }
 
-// Get retrieves an order for a given Market and id.
-func (os *orderStore) GetByPartyAndId(party string, Id string) (*msg.Order, error) {
+func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*msg.Order, error) {
 	var order msg.Order
+
 	err := os.badger.db.View(func(txn *badger.Txn) error {
-		partyKey := os.badger.orderPartyKey(party, Id)
+		partyKey := os.badger.orderPartyKey(party, id)
 		marketKeyItem, err := txn.Get(partyKey)
 		if err != nil {
 			return err
@@ -223,11 +307,10 @@ func (os *orderStore) GetByPartyAndId(party string, Id string) (*msg.Order, erro
 		}
 		orderBuf, err := orderItem.ValueCopy(nil)
 		if err != nil {
-			log.Errorf("ORDER %s DOES NOT EXIST\n", string(marketKey))
 			return err
 		}
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			log.Errorf("Unmarshal failed %s", err.Error())
+			log.Errorf("unmarshal failed %s", err.Error())
 			return err
 		}
 		return nil
@@ -240,12 +323,40 @@ func (os *orderStore) GetByPartyAndId(party string, Id string) (*msg.Order, erro
 	return &order, nil
 }
 
-func (os *orderStore) Post(order *msg.Order) error {
-	os.addToBuffer(*order)
-	return nil
+func (os *badgerOrderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
+	// get from store, recalculate accumulated volume and respond
+	buy := os.orderBookDepth.getBuySide()
+	sell := os.orderBookDepth.getSellSide()
+
+	// recalculate accumulated volume
+	for idx := range buy {
+		if idx == 0 {
+			buy[idx].CumulativeVolume = buy[idx].Volume
+			continue
+		}
+		buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
+	}
+
+	for idx := range os.orderBookDepth.getSellSide() {
+		if idx == 0 {
+			sell[idx].CumulativeVolume = sell[idx].Volume
+			continue
+		}
+		sell[idx].CumulativeVolume = sell[idx-1].CumulativeVolume + sell[idx].Volume
+	}
+
+	orderBookDepth := msg.MarketDepth{Name: market, Buy: buy, Sell: sell}
+
+	return &orderBookDepth, nil
 }
 
-func (os *orderStore) PostBatch(batch []msg.Order) error {
+func (os *badgerOrderStore) addToBuffer(o msg.Order) {
+	os.mu.Lock()
+	os.buffer = append(os.buffer, o)
+	os.mu.Unlock()
+}
+
+func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 
 	wb := os.badger.db.NewWriteBatch()
 	defer wb.Cancel()
@@ -254,7 +365,7 @@ func (os *orderStore) PostBatch(batch []msg.Order) error {
 		for idx := range batch {
 			orderBuf, err := proto.Marshal(&batch[idx])
 			if err != nil {
-				log.Errorf("Marshal failed %s", err.Error())
+				log.Errorf("marshal failed %s", err.Error())
 			}
 			marketKey := os.badger.orderMarketKey(batch[idx].Market, batch[idx].Id)
 			idKey := os.badger.orderIdKey(batch[idx].Id)
@@ -288,130 +399,6 @@ func (os *orderStore) PostBatch(batch []msg.Order) error {
 	}
 
 	return nil
-}
-
-// Put updates an existing order in the memory store.
-func (os *orderStore) Put(order *msg.Order) error {
-	var currentOrder msg.Order
-	var recordExistsInBuffer bool
-
-	for idx := range os.buffer {
-		if os.buffer[idx].Id == order.Id {
-			currentOrder = os.buffer[idx]
-			os.buffer[idx] = *order
-			recordExistsInBuffer = true
-		}
-	}
-
-	if !recordExistsInBuffer {
-		err := os.badger.db.View(func(txn *badger.Txn) error {
-			marketKey := os.badger.orderMarketKey(order.Market, order.Id)
-			orderItem, err := txn.Get(marketKey)
-			if err != nil {
-				return err
-			}
-			orderBuf, err := orderItem.ValueCopy(nil)
-			if err != nil {
-				log.Errorf("ORDER %s DOES NOT EXIST\n", string(marketKey))
-				return err
-			}
-			if err := proto.Unmarshal(orderBuf, &currentOrder); err != nil {
-				log.Errorf("Unmarshal failed %s", err.Error())
-				return err
-			}
-			return nil
-		})
-		if err != nil {
-			log.Errorf("Failed to fetch current order %s\n", err.Error())
-			return err
-		}
-
-		err = os.badger.db.Update(func(txn *badger.Txn) error {
-			orderBuf, err := proto.Marshal(order)
-			if err != nil {
-				return err
-			}
-			marketKey := os.badger.orderMarketKey(order.Market, order.Id)
-			txn.Set(marketKey, orderBuf)
-			return nil
-		})
-		if err != nil {
-			log.Errorf("Failed to update current order %s\n", err.Error())
-		}
-	}
-
-	remainingDelta := currentOrder.Remaining - order.Remaining
-	if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
-		os.orderBookDepth.removeWithRemaining(order)
-	} else {
-		os.orderBookDepth.updateWithRemainingDelta(order, remainingDelta)
-	}
-
-	os.addToBuffer(*order)
-	return nil
-}
-
-// Delete removes an order from the memory store.
-func (os *orderStore) Delete(order *msg.Order) error {
-
-	txn := os.badger.db.NewTransaction(true)
-	deleteAtomically := func() error {
-		marketKey := os.badger.orderMarketKey(order.Market, order.Id)
-		idKey := os.badger.orderIdKey(order.Id)
-		partyKey := os.badger.orderPartyKey(order.Party, order.Id)
-		if err := txn.Delete(marketKey); err != nil {
-			return err
-		}
-		if err := txn.Delete(idKey); err != nil {
-			return err
-		}
-		if err := txn.Delete(partyKey); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	if err := deleteAtomically(); err != nil {
-		txn.Discard()
-		return err
-	}
-
-	if err := txn.Commit(); err != nil {
-		txn.Discard()
-		return err
-	}
-
-	os.orderBookDepth.removeWithRemaining(order)
-
-	return nil
-}
-
-func (m *orderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
-
-	// get from store, recalculate accumulated volume and respond
-	buy := m.orderBookDepth.getBuySide()
-	sell := m.orderBookDepth.getSellSide()
-
-	// recalculate accumulated volume
-	for idx := range buy {
-		if idx == 0 {
-			buy[idx].CumulativeVolume = buy[idx].Volume
-			continue
-		}
-		buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
-	}
-
-	for idx := range m.orderBookDepth.getSellSide() {
-		if idx == 0 {
-			sell[idx].CumulativeVolume = sell[idx].Volume
-			continue
-		}
-		sell[idx].CumulativeVolume = sell[idx-1].CumulativeVolume + sell[idx].Volume
-	}
-
-	orderBookDepth := msg.MarketDepth{Name: market, Buy: buy, Sell: sell}
-
-	return &orderBookDepth, nil
 }
 
 type OrderFilter struct {

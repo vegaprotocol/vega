@@ -5,6 +5,7 @@ import (
 	"vega/msg"
 	"fmt"
 	"math/rand"
+	"github.com/dgraph-io/badger"
 )
 
 //type OrderB struct {
@@ -197,7 +198,18 @@ import (
 
 func BenchmarkBatchInsertToBadger(b *testing.B) {
 
-	var newOrderStore = NewOrderStore("./Data")
+	db, err := badger.Open(customBadgerOptions("./Data"))
+	if err != nil {
+		b.Fatalf("database could not be initialised: %s", err)
+	}
+	bs := badgerStore{db: db}
+	var newOrderStore = &badgerOrderStore{
+		badger:         &bs,
+		orderBookDepth: NewMarketDepthUpdaterGetter(),
+		subscribers:    make(map[uint64]chan<- []msg.Order),
+		buffer:         make([]msg.Order, 0),
+	}
+	
 	defer newOrderStore.Close()
 
 	//stateOrders, _ := newOrderStore.GetByMarket2(testMarket, nil)
@@ -216,7 +228,7 @@ func BenchmarkBatchInsertToBadger(b *testing.B) {
 		batchedOrders = append(batchedOrders, order)
 	}
 
-	_ = newOrderStore.PostBatch(batchedOrders)
+	_ = newOrderStore.writeBatch(batchedOrders)
 
 	//orders, _ := newOrderStore.GetByMarket2(testMarket, nil)
 	//fmt.Printf("inserted %d\n", len(orders) - len(stateOrders))

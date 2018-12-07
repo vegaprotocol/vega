@@ -11,12 +11,7 @@ type OrderStore struct {
 }
 
 // Close provides a mock function with given fields:
-func (_m *OrderStore) Close() {
-	_m.Called()
-}
-
-// Commit provides a mock function with given fields:
-func (_m *OrderStore) Commit() error {
+func (_m *OrderStore) Close() error {
 	ret := _m.Called()
 
 	var r0 error
@@ -29,13 +24,13 @@ func (_m *OrderStore) Commit() error {
 	return r0
 }
 
-// Delete provides a mock function with given fields: order
-func (_m *OrderStore) Delete(order *msg.Order) error {
-	ret := _m.Called(order)
+// Commit provides a mock function with given fields:
+func (_m *OrderStore) Commit() error {
+	ret := _m.Called()
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*msg.Order) error); ok {
-		r0 = rf(order)
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -158,20 +153,6 @@ func (_m *OrderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
 	return r0, r1
 }
 
-// Notify provides a mock function with given fields: items
-func (_m *OrderStore) Notify(items []msg.Order) error {
-	ret := _m.Called(items)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func([]msg.Order) error); ok {
-		r0 = rf(items)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Post provides a mock function with given fields: order
 func (_m *OrderStore) Post(order *msg.Order) error {
 	ret := _m.Called(order)
@@ -179,20 +160,6 @@ func (_m *OrderStore) Post(order *msg.Order) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*msg.Order) error); ok {
 		r0 = rf(order)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// PostBatch provides a mock function with given fields: batch
-func (_m *OrderStore) PostBatch(batch []msg.Order) error {
-	ret := _m.Called(batch)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func([]msg.Order) error); ok {
-		r0 = rf(batch)
 	} else {
 		r0 = ret.Error(0)
 	}

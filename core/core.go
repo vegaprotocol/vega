@@ -35,8 +35,6 @@ type Vega struct {
 	OrderStore     datastore.OrderStore
 	TradeStore     datastore.TradeStore
 	CandleStore	   datastore.CandleStore
-	//tradesBuffer   map[string][]*msg.Trade
-
 }
 
 func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.TradeStore, candleStore datastore.CandleStore) *Vega {
@@ -46,9 +44,6 @@ func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.
 
 	// Initialise risk engine
 	riskEngine := risk.New()
-
-	// tradesBuffer for candles
-	//tradesBuffer := make(map[string][]*msg.Trade, 0)
 	
 	// todo: version from commit hash, app version incrementing
 	statistics := &msg.Statistics{}
@@ -66,7 +61,6 @@ func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.
 		OrderStore:     orderStore,
 		TradeStore:     tradeStore,
 		CandleStore:    candleStore,
-		//tradesBuffer:   tradesBuffer,
 	}
 }
 
@@ -165,7 +159,6 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			}
 
 			// Save to trade buffer for generating candles etc
-			//v.tradesBuffer[trade.Market] = append(v.tradesBuffer[trade.Market], trade)
 			v.AddTradeToCandleBuffer(trade)
 
 			v.Statistics.LastTrade = trade
@@ -288,13 +281,16 @@ func (v *Vega) OrderCancelReplace(existingOrder, newOrder *msg.Order) (*msg.Orde
 
 func (v *Vega) OrderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 
-	err := v.matchingEngine.AmendOrder(newOrder)
-	if err != msg.OrderError_NONE {
-		fmt.Printf("err %+v\n", err)
-		return &msg.OrderConfirmation{}, err
+	errMsg := v.matchingEngine.AmendOrder(newOrder)
+	if errMsg != msg.OrderError_NONE {
+		log.Errorf("err %+v", errMsg)
+		return &msg.OrderConfirmation{}, errMsg
 	}
 
-	v.OrderStore.Put(newOrder)
+	err := v.OrderStore.Put(newOrder)
+	if err != nil {
+		log.Errorf("error updating order store for amend in place: %s - %s",  newOrder, err.Error())
+	}
 
 	return &msg.OrderConfirmation{}, msg.OrderError_NONE
 }
@@ -306,7 +302,10 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 	log.Debugf("Core: Removed %v expired orders from matching engine, now update stores", len(expiringOrders))
 
 	for _, order := range expiringOrders {
-		v.OrderStore.Put(order)
+		err := v.OrderStore.Put(order)
+		if err != nil {
+			log.Errorf("error updating order store for remove expiring: %s - %s", order, err.Error())
+		}
 	}
 
 	log.Debugf("Core: Updated %v expired orders in stores", len(expiringOrders))

@@ -23,7 +23,7 @@ func customBadgerOptions(dir string) badger.Options {
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
-	opts.SyncWrites = false
+	opts.SyncWrites = true
 	opts.ValueLogLoadingMode = options.FileIO
 	opts.TableLoadingMode = options.FileIO
 	return opts
@@ -64,6 +64,14 @@ func (bs *badgerStore) candlePrefix(market string, interval msg.Interval, descen
 		keyPrefix = append(keyPrefix, 0xFF)
 	}
 	return keyPrefix, validForPrefix
+}
+
+func (bs *badgerStore) readTransaction() *badger.Txn {
+	return bs.db.NewTransaction(false)
+}
+
+func (bs *badgerStore) writeTransaction() *badger.Txn {
+	return bs.db.NewTransaction(true)
 }
 
 func (bs *badgerStore) candleKey(market string, interval msg.Interval, timestamp uint64) []byte {

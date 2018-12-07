@@ -8,6 +8,7 @@ import (
 	"github.com/tendermint/tendermint/abci/example/code"
 	"github.com/tendermint/tendermint/abci/types"
 	"github.com/golang/protobuf/proto"
+	"vega/vegatime"
 )
 
 type Blockchain struct {
@@ -47,7 +48,7 @@ func (app *Blockchain) BeginBlock(beginBlock types.RequestBeginBlock) types.Resp
 	app.vega.RemoveExpiringOrdersAtTimestamp(uint64(app.vega.State.Timestamp))
 
 	app.vega.StartCandleBuffer()
-
+	
 	return types.ResponseBeginBlock{}
 }
 
@@ -149,15 +150,15 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 				return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 			}
 
-			log.Debugf("ABCI received a CREATE ORDER command after consensus")
+			//log.Debugf("ABCI received a CREATE ORDER command after consensus")
 
 			// Submit the create new order request to the Vega trading core
 			confirmationMessage, errorMessage := app.vega.SubmitOrder(order)
 			if confirmationMessage != nil {
-				log.Infof("ABCI order confirmation message:")
-				log.Infof("- aggressive order: %+v", confirmationMessage.Order)
-				log.Debugf("- trades: %+v", confirmationMessage.Trades)
-				log.Infof("- passive orders affected: %+v", confirmationMessage.PassiveOrdersAffected)
+				//log.Infof("ABCI order confirmation message:")
+				//log.Infof("- aggressive order: %+v", confirmationMessage.Order)
+				//log.Debugf("- trades: %+v", confirmationMessage.Trades)
+				//log.Infof("- passive orders affected: %+v", confirmationMessage.PassiveOrdersAffected)
 
 				current_tb += len(confirmationMessage.Trades)
 			}
@@ -289,7 +290,13 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 				totalob += itx
 			}
 			averageOb := totalob / len(ob_averages)
-			log.Debugf("Stats: Current orders/block average = %v", averageOb)
+			log.Debugf("Stats: Current orders/block average = %v (%v)", averageOb, app.vega.Statistics.TxPerBlock)
+
+			prevBlockstamp := vegatime.Stamp(app.previousTimestamp)
+
+			blockstamp := vegatime.Stamp(app.vega.State.Timestamp)
+
+			log.Debugf("Stats: Previous/Current timestamps = %v / %v", prevBlockstamp.Rfc3339Nano(), blockstamp.Rfc3339Nano())
 			app.vega.Statistics.AverageOrdersPerBlock = uint64(averageOb)
 
 			// MAX sample size for avg calculation is 5000 blocks
