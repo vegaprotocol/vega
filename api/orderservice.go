@@ -263,6 +263,9 @@ func (p *orderService) GetStatistics(ctx context.Context) (*msg.Statistics, erro
 	p.app.Statistics.VegaTime = fmt.Sprintf("%s [%d]", p.app.State.Datetime.Format(time.RFC3339), p.app.State.Timestamp)
 	p.app.Statistics.BlockHeight = uint64(p.app.State.Height)
 
+	totalParties := len(p.app.Statistics.Parties)
+	p.app.Statistics.TotalParties = uint64(totalParties)
+
 	// Unconfirmed TX count == current transaction backlog length
 	backlogLength, err := p.blockchain.GetUnconfirmedTxCount(ctx)
 	if err != nil {
