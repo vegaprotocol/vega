@@ -36,8 +36,8 @@ func (c *candleService) Stop() {
 
 func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *msg.Interval) (<-chan msg.Candle, uint64) {
 	candleCh := make(chan msg.Candle)
-	var iT datastore.InternalTransport
-	ref := c.candleStore.Subscribe(*market, &iT)
+	iT := datastore.InternalTransport{Market: *market, Interval: *interval, Transport: make(chan msg.Candle)}
+	ref := c.candleStore.Subscribe(&iT)
 
 	go func(id uint64) {
 		<-ctx.Done()
@@ -49,10 +49,8 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 	}(ref)
 
 	go func(iT *datastore.InternalTransport) {
-		var tempCandle msg.Candle
-		for v := range iT.Transport[*interval] {
-			tempCandle = v
-			candleCh <- tempCandle
+		for v := range iT.Transport {
+			candleCh <- v
 		}
 		log.Debugf("CandleService -> Channel for subscriber %d has been closed", ref)
 	}(&iT)

@@ -73,7 +73,7 @@ type OrderStore interface {
 type CandleStore interface {
 
 	Close()
-	Subscribe(market string, iT *InternalTransport) uint64
+	Subscribe(iT *InternalTransport) uint64
 	Unsubscribe(id uint64) error
 	Notify() error
 	//QueueEvent(candle msg.Candle, interval msg.Interval) error
