@@ -137,7 +137,7 @@ func (ts *badgerTradeStore) GetByMarket(market string, queryFilters *filters.Tra
 		queryFilters = &filters.TradeQueryFilters{}
 	}
 
-	txn := ts.badger.db.NewTransaction(false)
+	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
 	filter := TradeFilter{queryFilter: queryFilters}
@@ -168,7 +168,7 @@ func (ts *badgerTradeStore) GetByMarket(market string, queryFilters *filters.Tra
 func (ts *badgerTradeStore) GetByMarketAndId(market string, Id string) (*msg.Trade, error) {
 	var trade msg.Trade
 
-	txn := ts.badger.db.NewTransaction(false)
+	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
 	marketKey := ts.badger.tradeMarketKey(market, Id)
@@ -193,7 +193,7 @@ func (ts *badgerTradeStore) GetByParty(party string, queryFilters *filters.Trade
 		queryFilters = &filters.TradeQueryFilters{}
 	}
 
-	txn := ts.badger.db.NewTransaction(false)
+	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 	
 	filter := TradeFilter{queryFilter: queryFilters}
@@ -268,7 +268,7 @@ func (ts *badgerTradeStore) GetByMarketAndOrderId(market string, orderId string)
 	var result []*msg.Trade
 
 	queryFilters := &filters.TradeQueryFilters{}
-	txn := ts.badger.db.NewTransaction(false)
+	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
 	filter := TradeFilter{queryFilter: queryFilters}
