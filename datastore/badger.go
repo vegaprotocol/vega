@@ -23,7 +23,6 @@ func customBadgerOptions(dir string) badger.Options {
 	opts := badger.DefaultOptions
 	opts.Dir = dir
 	opts.ValueDir = dir
-	opts.SyncWrites = true
 	opts.ValueLogLoadingMode = options.FileIO
 	opts.TableLoadingMode = options.FileIO
 	return opts

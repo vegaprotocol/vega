@@ -131,14 +131,14 @@ func (os *badgerOrderStore) Post(order *msg.Order) error {
 
 func (os *badgerOrderStore) Put(order *msg.Order) error {
 
-	var currentOrder msg.Order
+	var orderBeforeUpdate msg.Order
 	var recordExistsInBuffer bool
 
 	for idx := range os.buffer {
 		if os.buffer[idx].Id == order.Id {
 			// we found an order in our write queue that matches
 			// the order being updated, swap for latest data
-			currentOrder = os.buffer[idx]
+			orderBeforeUpdate = os.buffer[idx]
 			os.buffer[idx] = *order
 			recordExistsInBuffer = true
 			break
@@ -148,21 +148,20 @@ func (os *badgerOrderStore) Put(order *msg.Order) error {
 	if !recordExistsInBuffer {
 		// We tried to update a record that is not in our buffer, validate it exists
 		// with a read transaction lookup and add to write queue if exists
-		if order.Status != msg.Order_Cancelled && order.Status != msg.Order_Expired && order.Remaining > 0 {
+		if order.Status != msg.Order_Cancelled && order.Status != msg.Order_Expired {
 			o, err := os.GetByMarketAndId(order.Market, order.Id)
 			if err != nil {
 				return err
 			}
-			currentOrder = *o
+			orderBeforeUpdate = *o
 		}
 		os.addToBuffer(*order)
 	}
 
-	if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
-		os.orderBookDepth.removeWithRemaining(order)
+	if order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
+		os.orderBookDepth.DecreaseByTradedVolume(order, 0)
 	} else {
-		remainingDelta := currentOrder.Remaining - order.Remaining
-		os.orderBookDepth.updateWithRemainingDelta(order, remainingDelta)
+		os.orderBookDepth.DecreaseByTradedVolume(order, orderBeforeUpdate.Remaining - order.Remaining)
 	}
 
 	return nil
@@ -337,7 +336,7 @@ func (os *badgerOrderStore) GetMarketDepth(market string) (*msg.MarketDepth, err
 		buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
 	}
 
-	for idx := range os.orderBookDepth.getSellSide() {
+	for idx := range sell {
 		if idx == 0 {
 			sell[idx].CumulativeVolume = sell[idx].Volume
 			continue
@@ -388,13 +387,14 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 		}
 	} else {
 		wb.Cancel()
-		// implement retry mechanism
+		// TODO: implement retry mechanism
+		return nil
 	}
 
 	for idx := range batch {
 		// Update orderBookDepth
 		if batch[idx].Remaining != uint64(0) {
-			os.orderBookDepth.updateWithRemaining(&batch[idx])
+			os.orderBookDepth.Add(&batch[idx])
 		}
 	}
 
