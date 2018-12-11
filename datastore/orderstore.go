@@ -35,9 +35,9 @@ type OrderStore interface {
 	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
 	// GetByMarketAndId retrieves an order for a given Market and id.
 	GetByMarketAndId(market string, id string) (*msg.Order, error)
-	// GetByParty retrieves trades for a given party.
+	// GetByParty retrieves orders for a given party.
 	GetByParty(party string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
-	// GetByPartyAndId retrieves a trade for a given Party and id.
+	// GetByPartyAndId retrieves an order for a given Party and id.
 	GetByPartyAndId(party string, id string) (*msg.Order, error)
 	
 	// GetMarketDepth calculates and returns order book depth for a given market.
@@ -71,7 +71,7 @@ func NewOrderStore(dir string) OrderStore {
 	}
 }
 
-// Subscribe to a stream of new or updated orders. The subscriber id will be returned as a uint64 value
+// Subscribe to a channel of new or updated orders. The subscriber id will be returned as a uint64 value
 // and must be retained for future reference and to unsubscribe.
 func (os *badgerOrderStore) Subscribe(orders chan<- []msg.Order) uint64 {
 	os.mu.Lock()
@@ -84,7 +84,7 @@ func (os *badgerOrderStore) Subscribe(orders chan<- []msg.Order) uint64 {
 	return os.subscriberId
 }
 
-// Unsubscribe from an orders stream. Provide the subscriber id you wish to stop receiving new events for.
+// Unsubscribe from an orders channel. Provide the subscriber id you wish to stop receiving new events for.
 func (os *badgerOrderStore) Unsubscribe(id uint64) error {
 	os.mu.Lock()
 	defer os.mu.Unlock()
@@ -235,7 +235,7 @@ func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*msg.Ord
 	return &order, nil
 }
 
-// GetByParty retrieves trades for a given party. Provide optional query filters to
+// GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *badgerOrderStore) GetByParty(party string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
 	var result []*msg.Order
@@ -388,7 +388,7 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 		for idx := range batch {
 			orderBuf, err := proto.Marshal(&batch[idx])
 			if err != nil {
-				log.Errorf("marshal failed %s", err.Error())
+				log.Errorf("marshal failed: %s", err.Error())
 			}
 			marketKey := os.badger.orderMarketKey(batch[idx].Market, batch[idx].Id)
 			idKey := os.badger.orderIdKey(batch[idx].Id)
