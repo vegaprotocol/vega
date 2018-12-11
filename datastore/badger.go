@@ -21,10 +21,15 @@ func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Ite
 
 func customBadgerOptions(dir string) badger.Options {
 	opts := badger.DefaultOptions
-	opts.Dir = dir
-	opts.ValueDir = dir
-	opts.ValueLogLoadingMode = options.FileIO
-	opts.TableLoadingMode = options.FileIO
+	opts.Dir, opts.ValueDir = dir, dir
+
+	opts.MaxTableSize  = 1 << 16
+	opts.NumMemtables  = 1
+	opts.NumCompactors = 2
+	//opts.NumLevelZeroTables = 1
+	//opts.NumLevelZeroTablesStall = 2
+
+	opts.TableLoadingMode, opts.ValueLogLoadingMode = options.FileIO, options.FileIO
 	return opts
 }
 
