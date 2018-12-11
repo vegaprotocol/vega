@@ -50,6 +50,7 @@ func New(config *Config,  orderStore datastore.OrderStore, tradeStore datastore.
 	statistics.Status = msg.AppStatus_APP_DISCONNECTED
 	statistics.AppVersionHash = config.AppVersionHash
 	statistics.AppVersion = config.AppVersion
+	statistics.Parties = make([]string, 0)
 
 	return &Vega{
 		Config:         config,
@@ -138,7 +139,12 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 			}
 		}
 	}
-	
+
+	// Quick way to store a list of parties for stats output (pre party store)
+	if !containsString(v.Statistics.Parties, order.Party) {
+		v.Statistics.Parties = append(v.Statistics.Parties, order.Party)
+	}
+
 	v.Statistics.LastOrder = order
 
 	if confirmation.Trades != nil {
@@ -360,4 +366,15 @@ func (v *Vega) GenerateCandles() error {
 	//v.tradesBuffer[market] = nil
 
 	return nil
+}
+
+
+func containsString(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+
+	_, ok := set[item]
+	return ok
 }
