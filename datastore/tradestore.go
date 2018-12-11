@@ -11,6 +11,40 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
+type TradeStore interface {
+	Subscribe(trades chan<- []msg.Trade) uint64
+	Unsubscribe(id uint64) error
+
+	// Notifies all subscribers with buffer content
+	Notify(items []msg.Trade) error
+	// Makes copy of internal buffer and calls Notify and PostBatch, cleans internal buffer
+	Commit() error
+	// Post adds trade to the internal buffer
+	Post(trade *msg.Trade) error
+	// PostBatch inserts all trades from the batch to database
+	PostBatch(batch []msg.Trade) error
+	// Removes a trade from the store.
+	Delete(trade *msg.Trade) error
+
+	// Close database
+	Close()
+
+	// GetByMarket retrieves trades for a given Market.
+	GetByMarket(market string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
+	// Get retrieves a trade for a given id.
+	GetByMarketAndId(market string, id string) (*msg.Trade, error)
+	// Trades relating to the given orderId for a particular market
+	GetByMarketAndOrderId(market string, orderId string) ([]*msg.Trade, error)
+	// GetByParty retrieves trades for a given party.
+	GetByParty(party string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
+	// Get retrieves a trade for a given id.
+	GetByPartyAndId(party string, id string) (*msg.Trade, error)
+	// Returns current Market price
+	GetMarkPrice(market string) (uint64, error)
+	// Returns map of Market name to Market buckets
+	GetTradesBySideBuckets(party string) map[string]*MarketBucket
+}
+
 // tradeStore should implement TradeStore interface.
 type tradeStore struct {
 	badger *badgerStore

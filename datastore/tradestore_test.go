@@ -1,12 +1,12 @@
 package datastore
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 	"vega/filters"
 	"vega/msg"
+	"vega/log"
 )
 
 const tradeStoreDir = "../tmp/tradestore-test"
@@ -14,7 +14,7 @@ const tradeStoreDir = "../tmp/tradestore-test"
 func FlushTradeStore() {
 	err := os.RemoveAll(tradeStoreDir)
 	if err != nil {
-		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
+		log.Errorf("error flushing trade store database: %s", err.Error())
 	}
 }
 
@@ -44,10 +44,6 @@ func TestTradeStore_GetByMarketAndOrderId(t *testing.T) {
 	assert.Equal(t, "trade-id-5", trades[4].Id)
 	assert.Equal(t, "trade-id-6", trades[5].Id)
 }
-
-
-
-
 
 func TestTradeStore_GetByPartyWithPagination(t *testing.T) {
 	FlushTradeStore()

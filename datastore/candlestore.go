@@ -13,6 +13,20 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
+type CandleStore interface {
+
+	Close()
+	Subscribe(market string, iT *InternalTransport) uint64
+	Unsubscribe(id uint64) error
+	Notify() error
+
+	StartNewBuffer(market string, timestamp uint64)
+	AddTradeToBuffer(market string, trade msg.Trade) error
+	GenerateCandlesFromBuffer(market string) error
+
+	GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle
+}
+
 var supportedIntervals = [6]msg.Interval{
 	msg.Interval_I1M, msg.Interval_I5M, msg.Interval_I15M, msg.Interval_I1H, msg.Interval_I6H, msg.Interval_I1D,}
 

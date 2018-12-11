@@ -5,7 +5,6 @@ import (
 	"vega/msg"
 	"github.com/stretchr/testify/assert"
 	"vega/log"
-	"fmt"
 	"vega/filters"
 	"os"
 )
@@ -23,7 +22,7 @@ func init() {
 func FlushOrderStore() {
 	err := os.RemoveAll(orderStoreDir)
 	if err != nil {
-		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
+		log.Errorf("error flushing order store database: %s", err.Error())
 	}
 }
 
@@ -128,8 +127,7 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 			outOrdersCount: 2,
 		},
 	}
-	for testIdx, tt := range tests {
-		fmt.Printf("TEST NUMBER #%d\n", testIdx+1)
+	for _, tt := range tests {
 		var newOrderStore = NewOrderStore(orderStoreDir)
 
 		for _, order := range tt.inOrders {
@@ -151,10 +149,8 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 func TestMemOrderStore_Parties(t *testing.T) {
 	FlushOrderStore()
 
-	// test when store is added they are added to parties map
 	var newOrderStore = NewOrderStore(orderStoreDir)
 	defer newOrderStore.Close()
-	//var newTradeStore = NewTradeStore(&memStore)
 
 	passiveOrder := &msg.Order{
 			Id:        "d41d8cd98f00b204e9800998ecf9999e",
@@ -270,7 +266,6 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 	orders, err := newOrderStore.GetByMarket(testMarket, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
-
 
 	// add orders
 	err = newOrderStore.Post(order1)
@@ -469,7 +464,6 @@ func TestMemStore_GetOrderByReference(t *testing.T) {
 	assert.Equal(t, order.Id, fetchedOrder[0].Id)
 }
 
-
 func TestMemStore_InsertBatchOrders(t *testing.T) {
 	FlushOrderStore()
 	var newOrderStore = NewOrderStore(orderStoreDir)
@@ -523,5 +517,4 @@ func TestMemStore_InsertBatchOrders(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(fetchedOrder))
 	assert.Equal(t, order1.Id, fetchedOrder[0].Id)
-
 }
