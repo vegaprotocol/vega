@@ -21,7 +21,7 @@ Once you've got it, do a `dep ensure`. The proper version of each dependency wil
 
 ### Installing and Running Tendermint
 
-We're using Tendermint (please use v0.26.0) for distributing transactions across multiple nodes.
+We're using Tendermint (use v0.27.0) for distributing transactions across multiple nodes.
 
 Install docs are here: http://tendermint.readthedocs.io/projects/tools/en/master/install.html
 

@@ -183,12 +183,12 @@ func TestCandleStore_SubscribeUnsubscribe(t *testing.T) {
 	candleStore := NewCandleStore(candleStoreDir)
 	defer candleStore.Close()
 
-	var internalTransport1 InternalTransport
-	ref := candleStore.Subscribe(testMarket, &internalTransport1)
+	internalTransport1 := &InternalTransport{testMarket, msg.Interval_I1M, make(chan msg.Candle)}
+	ref := candleStore.Subscribe(internalTransport1)
 	assert.Equal(t, uint64(1), ref)
 
-	var internalTransport2 InternalTransport
-	ref = candleStore.Subscribe(testMarket, &internalTransport2)
+	internalTransport2 := &InternalTransport{testMarket, msg.Interval_I1M, make(chan msg.Candle)}
+	ref = candleStore.Subscribe(internalTransport2)
 	assert.Equal(t, uint64(2), ref)
 
 	fmt.Printf("Unsubscribing\n")

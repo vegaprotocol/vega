@@ -14,9 +14,8 @@ import (
 )
 
 type CandleStore interface {
-
 	Close()
-	Subscribe(market string, iT *InternalTransport) uint64
+	Subscribe(iT *InternalTransport) uint64
 	Unsubscribe(id uint64) error
 	Notify() error
 
@@ -33,6 +32,7 @@ var supportedIntervals = [6]msg.Interval{
 type candleStore struct {
 	badger *badgerStore
 
+	NotifyQueue []QueueItem
 	subscribers  map[uint64]*InternalTransport
 	candleBuffer map[string]map[string]msg.Candle
 	subscriberId uint64
@@ -41,7 +41,13 @@ type candleStore struct {
 
 type InternalTransport struct {
 	Market    string
-	Transport map[msg.Interval]chan msg.Candle
+	Interval msg.Interval
+	Transport chan msg.Candle
+}
+
+type QueueItem struct {
+	Market string
+	Candle msg.Candle
 }
 
 func NewCandleStore(dir string) CandleStore {
@@ -53,30 +59,18 @@ func NewCandleStore(dir string) CandleStore {
 	return &candleStore{badger: &bs,
 		subscribers: make(map[uint64]*InternalTransport),
 		candleBuffer: make(map[string]map[string]msg.Candle),
+		NotifyQueue: make([]QueueItem, 0),
 	}
 }
 
-func (c *candleStore) Subscribe(market string, iT *InternalTransport) uint64 {
+func (c *candleStore) Subscribe(iT *InternalTransport) uint64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	c.initialiseInternalTransport(market, iT)
 
 	c.subscriberId = c.subscriberId + 1
 	c.subscribers[c.subscriberId] = iT
 	log.Debugf("CandleStore -> Subscribe: Candle subscriber added: %d", c.subscriberId)
 	return c.subscriberId
-}
-
-func (c *candleStore) initialiseInternalTransport(market string, iT *InternalTransport) {
-	iT.Market = market
-	iT.Transport = make(map[msg.Interval]chan msg.Candle, 6)
-	iT.Transport[msg.Interval_I1M] = make(chan msg.Candle, 1)
-	iT.Transport[msg.Interval_I5M] = make(chan msg.Candle, 1)
-	iT.Transport[msg.Interval_I15M] = make(chan msg.Candle, 1)
-	iT.Transport[msg.Interval_I1H] = make(chan msg.Candle, 1)
-	iT.Transport[msg.Interval_I6H] = make(chan msg.Candle, 1)
-	iT.Transport[msg.Interval_I1D] = make(chan msg.Candle, 1)
 }
 
 func (c *candleStore) Unsubscribe(id uint64) error {
@@ -96,6 +90,10 @@ func (c *candleStore) Unsubscribe(id uint64) error {
 	return errors.New(fmt.Sprintf("CandleStore subscriber does not exist with id: %d", id))
 }
 
+func (c *candleStore) QueueEvent(market string, candle msg.Candle) {
+	c.NotifyQueue = append(c.NotifyQueue, QueueItem{Market:market, Candle:candle})
+}
+
 func (c *candleStore) Notify() error {
 
 	if len(c.subscribers) == 0 {
@@ -103,18 +101,29 @@ func (c *candleStore) Notify() error {
 		return nil
 	}
 
-	// update candle for each interval for each subscriber
-	for id, iT := range c.subscribers {
-		for _, candleForUpdate := range c.candleBuffer[iT.Market] {
-			select {
-			case iT.Transport[candleForUpdate.Interval] <- candleForUpdate:
-				log.Debugf("Candle updated for interval: %s", candleForUpdate.Interval)
-				break
-			default:
-				log.Infof("Candles state could not been updated for subscriber %d at interval %s", id, candleForUpdate.Interval)
+	// update candle for each subscriber
+	for _, item := range c.NotifyQueue {
+		log.Infof("Propagating %+v", item.Candle)
+		for id, iT := range c.subscribers {
+			log.Infof("Doing update for subscriber %d subscribing %s", id, item.Candle.Interval)
+			// find candle with right interval
+			if item.Candle.Interval != iT.Interval {
+				continue
 			}
+
+			// try to place candle onto transport
+			select {
+			case iT.Transport <- item.Candle:
+				log.Infof("Candle updated for interval: %s", item.Candle.Interval)
+			default:
+				log.Infof("Candles state could not been updated for subscriber %d at interval %s", id, item.Candle.Interval)
+			}
+			break
 		}
 	}
+
+	c.NotifyQueue = make([]QueueItem, 0)
+
 	return nil
 }
 
@@ -219,14 +228,14 @@ func (c *candleStore) GenerateCandlesFromBuffer(market string) error {
 		if err == badger.ErrKeyNotFound {
 			insertNewCandle(writeBatch, badgerKey, candle)
 			log.Debugf("new Candle inserted %+v at %s \n", candle, string(badgerKey))
-			//c.QueueEvent(candle, candle.Interval)
+			c.QueueEvent(market, candle)
 		}
 		if err == nil && candle.Volume != uint64(0){
 			// update fetched candle with new trade
 			mergeCandles(candleDb, candle)
 			updateCandle(writeBatch, badgerKey, candleDb)
 			log.Debugf("candle updated %+v at \n", candleDb, string(badgerKey))
-			//c.QueueEvent(*candleDb, candleDb.Interval)
+			c.QueueEvent(market, candle)
 		}
 	}
 

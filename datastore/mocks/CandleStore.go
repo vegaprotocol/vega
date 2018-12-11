@@ -78,13 +78,13 @@ func (_m *CandleStore) StartNewBuffer(market string, timestamp uint64) {
 	_m.Called(market, timestamp)
 }
 
-// Subscribe provides a mock function with given fields: market, iT
-func (_m *CandleStore) Subscribe(market string, iT *datastore.InternalTransport) uint64 {
-	ret := _m.Called(market, iT)
+// Subscribe provides a mock function with given fields: iT
+func (_m *CandleStore) Subscribe(iT *datastore.InternalTransport) uint64 {
+	ret := _m.Called(iT)
 
 	var r0 uint64
-	if rf, ok := ret.Get(0).(func(string, *datastore.InternalTransport) uint64); ok {
-		r0 = rf(market, iT)
+	if rf, ok := ret.Get(0).(func(*datastore.InternalTransport) uint64); ok {
+		r0 = rf(iT)
 	} else {
 		r0 = ret.Get(0).(uint64)
 	}

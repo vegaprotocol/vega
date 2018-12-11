@@ -23,7 +23,7 @@ func customBadgerOptions(dir string) badger.Options {
 	opts := badger.DefaultOptions
 	opts.Dir, opts.ValueDir = dir, dir
 
-	opts.MaxTableSize  = 8 << 20
+	opts.MaxTableSize  = 4 << 20
 	opts.NumMemtables  = 1
 	opts.NumCompactors = 2
 	opts.NumLevelZeroTables = 1
