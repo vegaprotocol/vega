@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"vega/msg"
-
 )
 
 type MarketDepth struct {
@@ -12,9 +11,8 @@ type MarketDepth struct {
 }
 
 type MarketDepthManager interface {
-	updateWithRemaining(order *msg.Order)
-	updateWithRemainingDelta(order *msg.Order, remainingDelta uint64)
-	removeWithRemaining(order *msg.Order)
+	Add(order *msg.Order)
+	DecreaseByTradedVolume(order *msg.Order, tradedVolume uint64)
 	getBuySide() []*msg.PriceLevel
 	getSellSide() []*msg.PriceLevel
 }
@@ -24,8 +22,7 @@ func NewMarketDepthUpdaterGetter() MarketDepthManager {
 }
 
 // recalculate cumulative volume only once when fetching the MarketDepth
-
-func (md *MarketDepth) updateWithRemainingBuySide(order *msg.Order) {
+func (md *MarketDepth) addToBuySide(order *msg.Order) {
 	var at = -1
 
 	for idx, priceLevel := range md.Buy {
@@ -34,7 +31,7 @@ func (md *MarketDepth) updateWithRemainingBuySide(order *msg.Order) {
 		}
 
 		if priceLevel.Price == order.Price {
-			// update price level
+			// add to price level
 			md.Buy[idx].Volume += order.Remaining
 			md.Buy[idx].NumberOfOrders++
 			// updated - job done
@@ -54,7 +51,7 @@ func (md *MarketDepth) updateWithRemainingBuySide(order *msg.Order) {
 	md.Buy = append(md.Buy[:at], append([]*msg.PriceLevel{{Price: order.Price, Volume: order.Remaining, NumberOfOrders: 1}}, md.Buy[at:]...)...)
 }
 
-func (md *MarketDepth) updateWithRemainingSellSide(order *msg.Order) {
+func (md *MarketDepth) addToSellSide(order *msg.Order) {
 	var at = -1
 
 	for idx, priceLevel := range md.Sell {
@@ -63,7 +60,7 @@ func (md *MarketDepth) updateWithRemainingSellSide(order *msg.Order) {
 		}
 
 		if priceLevel.Price == order.Price {
-			// update price level
+			// add to price level
 			md.Sell[idx].Volume += order.Remaining
 			md.Sell[idx].NumberOfOrders++
 			// updated - job done
@@ -82,16 +79,16 @@ func (md *MarketDepth) updateWithRemainingSellSide(order *msg.Order) {
 	md.Sell = append(md.Sell[:at], append([]*msg.PriceLevel{{Price: order.Price, Volume: order.Remaining, NumberOfOrders: 1}}, md.Sell[at:]...)...)
 }
 
-func (md *MarketDepth) updateWithRemaining(order *msg.Order) {
+func (md *MarketDepth) Add(order *msg.Order) {
 	if order.Side == msg.Side_Buy {
-		md.updateWithRemainingBuySide(order)
+		md.addToBuySide(order)
 	}
 	if order.Side == msg.Side_Sell {
-		md.updateWithRemainingSellSide(order)
+		md.addToSellSide(order)
 	}
 }
 
-func (md *MarketDepth) updateWithRemainingDelta(order *msg.Order, remainingDelta uint64) {
+func (md *MarketDepth) DecreaseByTradedVolume(order *msg.Order, tradedVolume uint64) {
 	if order.Side == msg.Side_Buy {
 		for idx, priceLevel := range md.Buy {
 			if priceLevel.Price > order.Price {
@@ -99,12 +96,23 @@ func (md *MarketDepth) updateWithRemainingDelta(order *msg.Order, remainingDelta
 			}
 
 			if priceLevel.Price == order.Price {
+
+				// Smart trick to check overflow, remove level which goes negative
+				if md.Buy[idx].Volume - order.Remaining > md.Buy[idx].Volume {
+					copy(md.Buy[idx:], md.Buy[idx+1:])
+					md.Buy = md.Buy[:len(md.Buy)-1]
+					return
+				}
+
 				// update price level
-				md.Buy[idx].Volume -= remainingDelta
+				md.Buy[idx].Volume -= tradedVolume
+				if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
+					md.Buy[idx].NumberOfOrders--
+					md.Buy[idx].Volume -= order.Remaining
+				}
 				// updated - job done
 
-				// safeguard - shouldn't happen but if volume for gets negative remove price level
-				if md.Buy[idx].Volume <= 0 {
+				if md.Buy[idx].NumberOfOrders == 0 || md.Buy[idx].Volume == 0 {
 					copy(md.Buy[idx:], md.Buy[idx+1:])
 					md.Buy = md.Buy[:len(md.Buy)-1]
 				}
@@ -122,65 +130,27 @@ func (md *MarketDepth) updateWithRemainingDelta(order *msg.Order, remainingDelta
 			}
 
 			if priceLevel.Price == order.Price {
-				// update price level
-				md.Sell[idx].Volume -= remainingDelta
-				// updated - job done
 
-				// safeguard - shouldn't happen but if volume for gets negative remove price level
-				if md.Sell[idx].Volume <= 0 {
+				// Smart trick to check overflow, remove level which goes negative
+				if md.Sell[idx].Volume - order.Remaining > md.Sell[idx].Volume {
 					copy(md.Sell[idx:], md.Sell[idx+1:])
 					md.Sell = md.Sell[:len(md.Sell)-1]
+					return
 				}
-				return
-			}
-		}
-		// not found
-		return
-	}
-}
 
-func (md *MarketDepth) removeWithRemaining(order *msg.Order) {
-	if order.Side == msg.Side_Buy {
-		for idx, priceLevel := range md.Buy {
-			if priceLevel.Price > order.Price {
-				continue
-			}
-
-			if priceLevel.Price == order.Price {
 				// update price level
-				md.Buy[idx].NumberOfOrders--
-				md.Buy[idx].Volume -= order.Remaining
-
-				// remove empty price level
-				if md.Buy[idx].NumberOfOrders == 0 || md.Buy[idx].Volume <= 0 {
-					copy(md.Buy[idx:], md.Buy[idx+1:])
-					md.Buy = md.Buy[:len(md.Buy)-1]
+				md.Sell[idx].Volume -= tradedVolume
+				if order.Remaining == uint64(0) || order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
+					md.Sell[idx].NumberOfOrders--
+					md.Sell[idx].Volume -= order.Remaining
 				}
 				// updated - job done
-				return
-			}
-		}
-		// not found
-		return
-	}
 
-	if order.Side == msg.Side_Sell {
-		for idx, priceLevel := range md.Sell {
-			if priceLevel.Price < order.Price {
-				continue
-			}
-
-			if priceLevel.Price == order.Price {
-				// update price level
-				md.Sell[idx].NumberOfOrders--
-				md.Sell[idx].Volume -= order.Remaining
-
-				// remove empty price level
+				// safeguard -  negative volume shouldn't happen but if volume for gets negative remove price level
 				if md.Sell[idx].NumberOfOrders == 0 || md.Sell[idx].Volume <= 0 {
 					copy(md.Sell[idx:], md.Sell[idx+1:])
 					md.Sell = md.Sell[:len(md.Sell)-1]
 				}
-				// updated - job done
 				return
 			}
 		}

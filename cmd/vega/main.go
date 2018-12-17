@@ -12,6 +12,7 @@ import (
 	"vega/api/endpoints/gql"
 	"flag"
 	"vega/datastore"
+	"path/filepath"
 )
 
 func main() {
@@ -38,14 +39,17 @@ func main() {
 		config.AppVersionHash = appVersionHash
 	}
 
+	// Load the os executable file location
+	ex, err := os.Executable()
+	if err != nil {
+		log.Fatalf("Couldnt get location of vega binary: %s", err)
+	}
+	vegaPath := filepath.Dir(ex)
+	
 	// Storage Service provides read stores for consumer VEGA API
-	// Uses in memory storage (maps/slices etc), configurable in future
-	//storage := &datastore.MemoryStoreProvider{}
-	//storage.Init([]string{"BTC/DEC18"}, []string{})
-
-	orderStoreDataDir := "tmp/orderstore"
-	tradeStoreDataDir := "tmp/tradestore"
-	candleStoreDataDir := "tmp/candlestore"
+	orderStoreDataDir := vegaPath + "/tmp/orderstore"
+	tradeStoreDataDir := vegaPath + "/tmp/tradestore"
+	candleStoreDataDir := vegaPath + "/tmp/candlestore"
 	orderStore := datastore.NewOrderStore(orderStoreDataDir)
 	tradeStore := datastore.NewTradeStore(tradeStoreDataDir)
 	candleStore := datastore.NewCandleStore(candleStoreDataDir)

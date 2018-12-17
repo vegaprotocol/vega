@@ -12,7 +12,7 @@ type MarketBucket struct {
 	MinimumContractSize int64
 }
 
-func (ts *tradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
+func (ts *badgerTradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
 	marketBuckets := make(map[string]*MarketBucket, 0)
 	tradesByTimestamp, err := ts.GetByParty(party, nil)
 

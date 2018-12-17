@@ -21,11 +21,15 @@ func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Ite
 
 func customBadgerOptions(dir string) badger.Options {
 	opts := badger.DefaultOptions
-	opts.Dir = dir
-	opts.ValueDir = dir
-	opts.SyncWrites = false
-	opts.ValueLogLoadingMode = options.FileIO
-	opts.TableLoadingMode = options.FileIO
+	opts.Dir, opts.ValueDir = dir, dir
+
+	opts.MaxTableSize  = 32 << 20
+	opts.NumMemtables  = 1
+	opts.NumLevelZeroTables = 1
+	opts.NumLevelZeroTablesStall = 2
+	opts.NumCompactors = 2
+	
+	opts.TableLoadingMode, opts.ValueLogLoadingMode = options.FileIO, options.FileIO
 	return opts
 }
 
@@ -64,6 +68,14 @@ func (bs *badgerStore) candlePrefix(market string, interval msg.Interval, descen
 		keyPrefix = append(keyPrefix, 0xFF)
 	}
 	return keyPrefix, validForPrefix
+}
+
+func (bs *badgerStore) readTransaction() *badger.Txn {
+	return bs.db.NewTransaction(false)
+}
+
+func (bs *badgerStore) writeTransaction() *badger.Txn {
+	return bs.db.NewTransaction(true)
 }
 
 func (bs *badgerStore) candleKey(market string, interval msg.Interval, timestamp uint64) []byte {
