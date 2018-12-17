@@ -11,6 +11,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
+	"runtime"
 )
 
 var supportedIntervals = [6]msg.Interval{
@@ -82,7 +83,7 @@ func (c *candleStore) QueueEvent(market string, candle msg.Candle) {
 }
 
 func (c *candleStore) Notify() error {
-
+	PrintMemUsage()
 	if len(c.subscribers) == 0 {
 		log.Debugf("CandleStore -> Notify: No subscribers connected")
 		return nil
@@ -151,7 +152,7 @@ func (c *candleStore) AddTradeToBuffer(market string, trade msg.Trade) error {
 
 		// check if bufferKey is present in buffer
 		if candle, exists := c.candleBuffer[market][bufferKey]; exists {
-			// if exists update the value of the canle under bufferKey with trade data
+			// if exists update the value of the candle under bufferKey with trade data
 			updateCandle(&candle, &trade)
 			c.candleBuffer[market][bufferKey] = candle
 		} else {
@@ -221,8 +222,8 @@ func (c *candleStore) GenerateCandlesFromBuffer(market string) error {
 			// update fetched candle with new trade
 			mergeCandles(candleDb, candle)
 			updateCandle(writeBatch, badgerKey, candleDb)
-			log.Debugf("candle updated %+v at \n", candleDb, string(badgerKey))
-			c.QueueEvent(market, candle)
+			log.Debugf("candle updated %+v at %s \n", candleDb, string(badgerKey))
+			c.QueueEvent(market, *candleDb)
 		}
 	}
 
@@ -362,8 +363,14 @@ func updateCandle(candle *msg.Candle, trade *msg.Trade) {
 	// always overwrite close price
 	candle.Close = trade.Price
 
-	if candle.Open == uint64(0) {
+	// candle.Volume == uint64(0) in case this is new candle and first trading activity happens for that candle !!!!
+	// or candle.Open == uint64(0) in case there was no previous candle as this is a new market (aka also new trading activity for that candle)
+	// -> overwrite open price with new trade price (by default candle.Open price is set to previous candle close price)
+	// -> overwrite High and Low with new trade price (by default Low and High prices are set to candle open price which is set to previous candle close price)
+	if candle.Volume == uint64(0) || candle.Open == uint64(0) {
 		candle.Open = trade.Price
+		candle.High = trade.Price
+		candle.Low = trade.Price
 	}
 
 	// set minimum
@@ -394,4 +401,15 @@ func mergeCandles(candleFromDB *msg.Candle, candleUpdate msg.Candle) {
 	}
 
 	candleFromDB.Volume += candleUpdate.Volume
+}
+
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	fmt.Printf("\n\n\nAlloc = %v MiB\n\n\n", bToMb(m.Alloc))
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }
