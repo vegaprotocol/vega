@@ -21,65 +21,6 @@ func FlushCandleStore() {
 		fmt.Printf("UNABLE TO FLUSH DB: %s\n", err.Error())
 	}
 }
-//
-//func TestCandleService_Generate(t *testing.T) {
-//	testMarket := "BTC/DEC18"
-//
-//	var ctx = context.Background()
-//	var candleService = NewCandleService()
-//
-//	FlushCandleStore()
-//	candleStore := datastore.NewCandleStore(candleStoreDir)
-//	defer candleStore.Close()
-//
-//	config := core.GetConfig()
-//	vega := core.New(config, nil, nil, candleStore)
-//	vega.InitialiseMarkets()
-//
-//	candleService.Init(vega, candleStore)
-//
-//	// t0 = 2018-11-13T11:01:14Z
-//	t0 := uint64(1542106874000000000)
-//	//t0Seconds := int64(1542106874)
-//	//t0NanoSeconds := int64(000000000)
-//	//t0stamp := time.Unix(t0Seconds, t0NanoSeconds)
-//
-//	var trades = []*msg.Trade{
-//		{Id: "1", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0},
-//		{Id: "2", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(20 * time.Second)},
-//
-//		{Id: "3", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute)},
-//		{Id: "4", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute + 20 * time.Second)},
-//	}
-//
-//	for idx := range trades {
-//		candleService.AddTradeToBuffer(trades[idx])
-//	}
-//
-//	candleService.Generate(ctx, testMarket)
-//
-//	// test for 1 minute intervals
-//	candles, err := candleService.GetCandles(ctx, testMarket, t0, msg.Interval_I1M)
-//	assert.Nil(t, err)
-//
-//	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
-//
-//	assert.Equal(t, 2, len(candles))
-//	fmt.Printf("%s", time.Unix(1542106860,000000000).Format(time.RFC3339))
-//	assert.Equal(t, uint64(1542106860000000000), candles[0].Timestamp)
-//	assert.Equal(t, uint64(100), candles[0].High)
-//	assert.Equal(t, uint64(100), candles[0].Low)
-//	assert.Equal(t, uint64(100), candles[0].Open)
-//	assert.Equal(t, uint64(100), candles[0].Close)
-//	assert.Equal(t, uint64(200), candles[0].Volume)
-//
-//	assert.Equal(t, uint64(1542106920000000000), candles[1].Timestamp)
-//	assert.Equal(t, uint64(100), candles[1].High)
-//	assert.Equal(t, uint64(100), candles[1].Low)
-//	assert.Equal(t, uint64(100), candles[1].Open)
-//	assert.Equal(t, uint64(100), candles[1].Close)
-//	assert.Equal(t, uint64(200), candles[1].Volume)
-//}
 
 func TestCandleService_ObserveCandles(t *testing.T) {
 	MarketBTC := "BTC/DEC18"
@@ -266,4 +207,122 @@ func isSubscriptionEmpty(transport <-chan msg.Candle) bool {
 	default:
 		return true
 	}
+}
+
+func TestSubscriptionUpdates_MinMax(t *testing.T) {
+	MarketBTC := "BTC/DEC18"
+	var ctx= context.Background()
+	var candleService= NewCandleService()
+
+	FlushCandleStore()
+	candleStore := datastore.NewCandleStore(candleStoreDir)
+	defer candleStore.Close()
+
+	config := core.GetConfig()
+	vega := core.New(config, nil, nil, candleStore)
+	vega.InitialiseMarkets()
+
+	candleService.Init(vega, candleStore)
+
+	interval5m := msg.Interval_I5M
+
+	candlesSubscription5m_BTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval5m)
+	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription5m_BTC))
+	assert.Equal(t, uint64(1), ref)
+
+	// t0 = 2018-11-13T11:00:00Z
+	t0 := uint64(1542106800000000000)
+
+	// first update
+	var trades1 = []*msg.Trade{
+		{Id: "1", Market: MarketBTC, Price: uint64(100), Size: uint64(100), Timestamp: t0},
+		{Id: "2", Market: MarketBTC, Price: uint64(99), Size: uint64(100), Timestamp: t0 + uint64(10 * time.Second)},
+		{Id: "3", Market: MarketBTC, Price: uint64(108), Size: uint64(100), Timestamp: t0 + uint64(20 * time.Second)},
+		{Id: "4", Market: MarketBTC, Price: uint64(105), Size: uint64(100), Timestamp: t0 + uint64(30 * time.Second)},
+	}
+
+	// second update
+	var trades2 = []*msg.Trade{
+		{Id: "5", Market: MarketBTC, Price: uint64(110), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute)},
+		{Id: "6", Market: MarketBTC, Price: uint64(112), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute + 10 * time.Second)},
+		{Id: "7", Market: MarketBTC, Price: uint64(113), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute + 20 * time.Second)},
+		{Id: "8", Market: MarketBTC, Price: uint64(109), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute + 30 * time.Second)},
+	}
+
+	// third update
+	var trades3 = []*msg.Trade{
+		{Id: "9", Market: MarketBTC, Price: uint64(110), Size: uint64(100), Timestamp: t0 + uint64(2 * time.Minute)},
+		{Id: "10", Market: MarketBTC, Price: uint64(115), Size: uint64(100), Timestamp: t0 + uint64(2 * time.Minute + 10 * time.Second)},
+		{Id: "11", Market: MarketBTC, Price: uint64(90), Size: uint64(100), Timestamp: t0 + uint64(2 * time.Minute + 20 * time.Second)},
+		{Id: "12", Market: MarketBTC, Price: uint64(95), Size: uint64(100), Timestamp: t0 + uint64(2 * time.Minute + 30 * time.Second)},
+	}
+
+	listenToCandles := func(u1, u2, u3 *bool) {
+		for {
+			select {
+			case candle := <-candlesSubscription5m_BTC:
+				fmt.Printf("RECEIVED CANDLE BTC %+v\n", candle)
+				assert.Equal(t, t0, candle.Timestamp)
+				assert.Equal(t, msg.Interval_I5M, candle.Interval)
+
+				switch candle.Volume {
+				case uint64(400):
+					fmt.Printf("RECEIVED CANDLE UPDATE 1\n")
+					assert.Equal(t, uint64(100), candle.Open)
+					assert.Equal(t, uint64(99), candle.Low)
+					assert.Equal(t, uint64(108), candle.High)
+					assert.Equal(t, uint64(105), candle.Close)
+					*u1 = true
+
+				case uint64(800):
+					fmt.Printf("RECEIVED CANDLE UPDATE 2\n")
+					assert.Equal(t, uint64(100), candle.Open)
+					assert.Equal(t, uint64(99), candle.Low)
+					assert.Equal(t, uint64(113), candle.High)
+					assert.Equal(t, uint64(109), candle.Close)
+					*u2 = true
+
+				case uint64(1200):
+					fmt.Printf("RECEIVED CANDLE UPDATE 3\n")
+					assert.Equal(t, uint64(100), candle.Open)
+					assert.Equal(t, uint64(90), candle.Low)
+					assert.Equal(t, uint64(115), candle.High)
+					assert.Equal(t, uint64(95), candle.Close)
+					*u3 = true
+				}
+			}
+		}
+	}
+
+	var (
+		u1, u2, u3 = false, false, false
+	)
+	go listenToCandles(&u1, &u2, &u3)
+
+	// first update
+	candleStore.StartNewBuffer(MarketBTC, t0)
+	for idx := range trades1 {
+		candleStore.AddTradeToBuffer(trades1[idx].Market, *trades1[idx])
+	}
+	candleStore.GenerateCandlesFromBuffer(MarketBTC)
+
+	// second update
+	candleStore.StartNewBuffer(MarketBTC, t0 + uint64(1 * time.Minute))
+	for idx := range trades2 {
+		candleStore.AddTradeToBuffer(trades2[idx].Market, *trades2[idx])
+	}
+	candleStore.GenerateCandlesFromBuffer(MarketBTC)
+
+	// third update
+	candleStore.StartNewBuffer(MarketBTC, t0 + uint64(1 * time.Minute))
+	for idx := range trades3 {
+		candleStore.AddTradeToBuffer(trades3[idx].Market, *trades3[idx])
+	}
+	candleStore.GenerateCandlesFromBuffer(MarketBTC)
+
+	time.Sleep(3 * time.Second)
+	assert.True(t, u1)
+	assert.True(t, u2)
+	assert.True(t, u3)
+	fmt.Printf("End of test\n")
 }
