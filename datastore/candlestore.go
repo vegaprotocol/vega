@@ -11,7 +11,6 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
-	"runtime"
 )
 
 var supportedIntervals = [6]msg.Interval{
@@ -83,7 +82,6 @@ func (c *candleStore) QueueEvent(market string, candle msg.Candle) {
 }
 
 func (c *candleStore) Notify() error {
-	PrintMemUsage()
 	if len(c.subscribers) == 0 {
 		log.Debugf("CandleStore -> Notify: No subscribers connected")
 		return nil
@@ -401,15 +399,4 @@ func mergeCandles(candleFromDB *msg.Candle, candleUpdate msg.Candle) {
 	}
 
 	candleFromDB.Volume += candleUpdate.Volume
-}
-
-func PrintMemUsage() {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-	fmt.Printf("\n\n\nAlloc = %v MiB\n\n\n", bToMb(m.Alloc))
-}
-
-func bToMb(b uint64) uint64 {
-	return b / 1024 / 1024
 }
