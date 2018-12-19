@@ -360,7 +360,7 @@ func (v *Vega) GenerateCandles() error {
 	//}
 
 	// Notify all subscribers
-	v.CandleStore.Notify()
+	//v.CandleStore.Notify()
 
 	// Flush the buffer
 	//v.tradesBuffer[market] = nil

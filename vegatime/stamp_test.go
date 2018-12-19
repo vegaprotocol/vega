@@ -3,6 +3,8 @@ package vegatime
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"time"
+	"fmt"
 )
 
 func TestStamp_NanoSeconds(t *testing.T) {
@@ -73,3 +75,31 @@ func TestStamp_Rfc3339Nano(t *testing.T) {
 	}
 }
 
+func TestStamp_RoundToNearest(f *testing.T) {
+
+	 o := uint64(1544050879298 * 1000000)
+	 //i := uint64(1545158175835902621)
+	 i := uint64(1544050879298000000)
+
+	 fmt.Println(o)
+	 
+
+
+	 t := Stamp(i).Datetime()
+
+	n := time.Now()
+
+	j := uint64(t.UnixNano())
+	v := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location())
+	x := uint64(v.UnixNano())
+
+	d := 10/15 * 15
+	fmt.Println(t)
+	fmt.Println(j)
+	fmt.Println(n.UnixNano())
+
+	fmt.Println(v)
+	fmt.Println(x)
+	fmt.Println(d)
+
+}

@@ -13,30 +13,47 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
+// CandleStore provides a set of functions that can manipulate a candle store, it provides a way for
+// developers to create implementations of a CandleStore e.g. a RAM store or persistent store (badger)
 type CandleStore interface {
-	Close()
 	Subscribe(iT *InternalTransport) uint64
 	Unsubscribe(id uint64) error
-	Notify() error
-
+	
 	StartNewBuffer(market string, timestamp uint64)
 	AddTradeToBuffer(market string, trade msg.Trade) error
 	GenerateCandlesFromBuffer(market string) error
+	GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) ([]*msg.Candle, error)
 
-	GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle
+	// Close can be called to clean up and close any storage
+	// connections held by the underlying storage mechanism.
+	Close()
 }
 
+// Currently we support 6 interval durations for trading candles on VEGA, as follows:
 var supportedIntervals = [6]msg.Interval{
-	msg.Interval_I1M, msg.Interval_I5M, msg.Interval_I15M, msg.Interval_I1H, msg.Interval_I6H, msg.Interval_I1D,}
+	msg.Interval_I1M,   // 1 minute
+	msg.Interval_I5M,   // 5 minutes
+	msg.Interval_I15M,  // 15 minutes
+	msg.Interval_I1H,   // 1 hour
+	msg.Interval_I6H,   // 6 hours
+	msg.Interval_I1D,   // 1 day
+	
+	// Add intervals here as required...
+}
 
-type candleStore struct {
+// Monday, January 1, 2018 12:00:01 AM GMT+00:00
+const minSinceTimestamp uint64 = 1514764801000
+
+// badgerCandleStore is a package internal data struct that implements the CandleStore interface.
+type badgerCandleStore struct {
 	badger *badgerStore
 
-	NotifyQueue []QueueItem
 	subscribers  map[uint64]*InternalTransport
-	candleBuffer map[string]map[string]msg.Candle
 	subscriberId uint64
+	queue        []marketCandle
 	mu           sync.Mutex
+
+	candleBuffer map[string]map[string]msg.Candle
 }
 
 type InternalTransport struct {
@@ -45,7 +62,7 @@ type InternalTransport struct {
 	Transport chan msg.Candle
 }
 
-type QueueItem struct {
+type marketCandle struct {
 	Market string
 	Candle msg.Candle
 }
@@ -53,17 +70,17 @@ type QueueItem struct {
 func NewCandleStore(dir string) CandleStore {
 	db, err := badger.Open(customBadgerOptions(dir))
 	if err != nil {
-		fmt.Printf(err.Error())
+		log.Fatalf(err.Error())
 	}
 	bs := badgerStore{db: db}
-	return &candleStore{badger: &bs,
+	return &badgerCandleStore{badger: &bs,
 		subscribers: make(map[uint64]*InternalTransport),
 		candleBuffer: make(map[string]map[string]msg.Candle),
-		NotifyQueue: make([]QueueItem, 0),
+		queue: make([]marketCandle, 0),
 	}
 }
 
-func (c *candleStore) Subscribe(iT *InternalTransport) uint64 {
+func (c *badgerCandleStore) Subscribe(iT *InternalTransport) uint64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -73,7 +90,7 @@ func (c *candleStore) Subscribe(iT *InternalTransport) uint64 {
 	return c.subscriberId
 }
 
-func (c *candleStore) Unsubscribe(id uint64) error {
+func (c *badgerCandleStore) Unsubscribe(id uint64) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -90,72 +107,85 @@ func (c *candleStore) Unsubscribe(id uint64) error {
 	return errors.New(fmt.Sprintf("CandleStore subscriber does not exist with id: %d", id))
 }
 
-func (c *candleStore) QueueEvent(market string, candle msg.Candle) {
-	c.NotifyQueue = append(c.NotifyQueue, QueueItem{Market:market, Candle:candle})
+func (c *badgerCandleStore) QueueEvent(market string, candle msg.Candle) {
+	c.queue = append(c.queue, marketCandle{Market:market, Candle:candle})
 }
 
-func (c *candleStore) Notify() error {
+func (c *badgerCandleStore) notify() error {
 	if len(c.subscribers) == 0 {
 		log.Debugf("CandleStore -> Notify: No subscribers connected")
 		return nil
 	}
+	if len(c.queue) == 0 {
+		log.Debugf("CandleStore -> Notify: No candles in the queue")
+		return nil
+	}
 
-	// update candle for each subscriber
-	for _, item := range c.NotifyQueue {
-		log.Infof("Propagating %+v", item.Candle)
-		for id, iT := range c.subscribers {
-			log.Infof("Doing update for subscriber %d subscribing %s", id, item.Candle.Interval)
+	log.Debugf("%d candles in the notify queue for %d subscribers", len(c.queue), len(c.subscribers))
+
+	// update candle for each subscriber, only if there are candles in the queue
+	for id, iT := range c.subscribers {
+
+		log.Debugf("Candle subscriber %d (%s) ready to notify", id, iT.Market)
+
+		for _, item := range c.queue {
+
 			// find candle with right interval
 			if item.Candle.Interval != iT.Interval {
 				continue
 			}
 
+			log.Infof("Doing update for subscriber %d subscribing %s (%s)", id, iT.Interval, iT.Market)
+
 			// try to place candle onto transport
 			select {
 			case iT.Transport <- item.Candle:
-				log.Infof("Candle updated for interval: %s", item.Candle.Interval)
+				log.Infof("Candle updated for subscriber %d at interval: %s (%s)", id, item.Candle.Interval, iT.Market)
 			default:
-				log.Infof("Candles state could not been updated for subscriber %d at interval %s", id, item.Candle.Interval)
+				log.Infof("Candles state could not been updated for subscriber %d at interval %s (%s)", id, item.Candle.Interval, iT.Market)
 			}
 			break
 		}
+
+		log.Debugf("Candle subscriber %d (%s) notified for interval %s", id, iT.Market, iT.Interval)
 	}
 
-	c.NotifyQueue = make([]QueueItem, 0)
+
+	c.queue = make([]marketCandle, 0)
 
 	return nil
 }
 
-func (c *candleStore) Close() {
+
+func (c *badgerCandleStore) Close() {
 	defer c.badger.db.Close()
 }
 
-func (c *candleStore) StartNewBuffer(market string, timestamp uint64) {
+func (c *badgerCandleStore) StartNewBuffer(market string, timestamp uint64) {
 	roundedTimestamps := getMapOfIntervalsToRoundedTimestamps(timestamp)
-
-	// keep previous state
 	previousCandleBuffer := c.candleBuffer[market]
 
-	c.resetCandleBuffer(market);
+	c.resetCandleBuffer(market)
 
 	for _, interval := range supportedIntervals {
 		bufferKey := getBufferKey(roundedTimestamps[interval], interval)
 		lastClose := previousCandleBuffer[bufferKey].Close
 		if lastClose == uint64(0) {
 			prefixForMostRecent, _ := c.badger.candlePrefix(market, interval, true)
-			txn := c.badger.db.NewTransaction(true)
+			txn := c.badger.readTransaction()
 			previousCandle, err := c.fetchMostRecentCandle(txn, prefixForMostRecent)
 			if err != nil {
 				lastClose = 0
 			} else {
 				lastClose = previousCandle.Close
 			}
+			txn.Discard()
 		}
 		c.candleBuffer[market][bufferKey] = *newCandle(roundedTimestamps[interval], lastClose, 0, interval)
 	}
 }
 
-func (c *candleStore) AddTradeToBuffer(market string, trade msg.Trade) error {
+func (c *badgerCandleStore) AddTradeToBuffer(market string, trade msg.Trade) error {
 
 	for _, interval := range supportedIntervals {
 		roundedTradeTimestamp := vegatime.Stamp(trade.Timestamp).RoundToNearest(interval).UnixNano()
@@ -176,7 +206,7 @@ func (c *candleStore) AddTradeToBuffer(market string, trade msg.Trade) error {
 	return nil
 }
 
-func (c *candleStore) GenerateCandlesFromBuffer(market string) error {
+func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 
 	fetchCandle := func(txn *badger.Txn, badgerKey []byte) (*msg.Candle, error) {
 		item, err := txn.Get(badgerKey)
@@ -186,7 +216,11 @@ func (c *candleStore) GenerateCandlesFromBuffer(market string) error {
 		// unmarshal fetched candle
 		var candleFromDb msg.Candle
 		itemCopy, _ := item.ValueCopy(nil)
-		proto.Unmarshal(itemCopy, &candleFromDb)
+		err = proto.Unmarshal(itemCopy, &candleFromDb)
+		if err != nil {
+			log.Errorf("fetchCandle unmarshal failed: %s", err.Error())
+			return nil, err
+		}
 		return &candleFromDb, nil
 	}
 
@@ -218,37 +252,47 @@ func (c *candleStore) GenerateCandlesFromBuffer(market string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	readTxn := c.badger.db.NewTransaction(true)
+	readTxn := c.badger.readTransaction()
+	defer readTxn.Discard()
+
 	writeBatch := c.badger.db.NewWriteBatch()
 	defer writeBatch.Cancel()
+
 	for _, candle := range c.candleBuffer[market] {
 		badgerKey := c.badger.candleKey(market, candle.Interval, candle.Timestamp)
 		candleDb, err := fetchCandle(readTxn, badgerKey)
 		if err == badger.ErrKeyNotFound {
 			insertNewCandle(writeBatch, badgerKey, candle)
-			log.Debugf("new Candle inserted %+v at %s \n", candle, string(badgerKey))
+
+			log.Debugf("new candle inserted %+v at %s \n", candle, string(badgerKey))
+
 			c.QueueEvent(market, candle)
 		}
 		if err == nil && candle.Volume != uint64(0){
 			// update fetched candle with new trade
 			mergeCandles(candleDb, candle)
 			updateCandle(writeBatch, badgerKey, candleDb)
+			
 			log.Debugf("candle updated %+v at %s \n", candleDb, string(badgerKey))
+
 			c.QueueEvent(market, *candleDb)
 		}
 	}
 
 	if err := writeBatch.Flush(); err != nil {
-		writeBatch.Cancel()
 		return err
 	}
 
-	c.Notify()
-
+	// now push new updates to any observers
+	err := c.notify()
+	if err != nil {
+		return err
+	}
+	
 	return nil
 }
 
-func (c *candleStore) resetCandleBuffer(market string) {
+func (c *badgerCandleStore) resetCandleBuffer(market string) {
 	c.candleBuffer[market] = make(map[string]msg.Candle)
 }
 
@@ -256,7 +300,7 @@ func getBufferKey(timestamp uint64, interval msg.Interval) string {
 	return fmt.Sprintf("%d:%s", timestamp, interval.String())
 }
 
-func (c *candleStore) printCandleBuffer() {
+func (c *badgerCandleStore) printCandleBuffer() {
 	for market, val := range c.candleBuffer {
 		log.Debugf("Market = %s\n", market)
 		for bufferKey, candle := range val {
@@ -265,7 +309,7 @@ func (c *candleStore) printCandleBuffer() {
 	}
 }
 
-func (c *candleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []byte) (*msg.Candle, error) {
+func (c *badgerCandleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []byte) (*msg.Candle, error) {
 	var previousCandle msg.Candle
 
 	// set iterator to reverse in order to fetch most recent
@@ -277,22 +321,27 @@ func (c *candleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent
 	defer it.Close()
 
 	if !it.Valid() {
-		return nil, errors.New("no candles for this Market")
+		return nil, errors.New("no candles for this market")
 	}
-	item := it.Item()
 
+	item := it.Item()
 	value, err := item.ValueCopy(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	proto.Unmarshal(value, &previousCandle)
+	err = proto.Unmarshal(value, &previousCandle)
+	if err != nil {
+		log.Errorf("previous candle unmarshal failed %s", err.Error())
+		return nil, err
+	}
+
 	return &previousCandle, nil
 }
 
 
 func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[msg.Interval]uint64 {
-	// round timetamp to nearest minute, 5minute, 15 minute, hour, 6hours, 1 day intervals and return a map of rounded timestamps
+	// round timestamp to nearest minute, 5minute, 15 minute, hour, 6hours, 1 day intervals and return a map of rounded timestamps
 	timestamps := make(map[msg.Interval]uint64)
 
 	// round floor by integer division
@@ -303,12 +352,21 @@ func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[msg.Interval]uin
 	return timestamps
 }
 
-func (c *candleStore) GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle {
+func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) ([]*msg.Candle, error) {
+
+	// validate
+	if sinceTimestamp < minSinceTimestamp {
+		return nil, errors.New("invalid sinceTimestamp, ensure format is epoch+nanoseconds timestamp")
+	}
 
 	// generate fetch key for the candles
 	fetchKey := c.generateFetchKey(market, interval, sinceTimestamp)
 	prefix, _ := c.badger.candlePrefix(market, interval, false)
-	it := c.badger.getIterator(c.badger.db.NewTransaction(false), false)
+
+	txn := c.badger.readTransaction()
+	defer txn.Discard()
+	
+	it := c.badger.getIterator(txn, false)
 	defer it.Close()
 
 	var candles []*msg.Candle
@@ -316,22 +374,22 @@ func (c *candleStore) GetCandles(market string, sinceTimestamp uint64, interval 
 		item := it.Item()
 		value, err := item.ValueCopy(nil)
 		if err != nil {
-			fmt.Printf(err.Error())
+			log.Errorf("error getting candle value: %s", err)
 			continue
 		}
 
 		var newCandle msg.Candle
 		if err := proto.Unmarshal(value, &newCandle); err != nil {
-			fmt.Printf(err.Error())
+			log.Errorf("unmarshal failed %s", err.Error())
 			continue
 		}
 		candles = append(candles, &newCandle)
 	}
 
-	return candles
+	return candles, nil
 }
 
-func (c *candleStore) generateFetchKey(market string, interval msg.Interval, sinceTimestamp uint64) []byte {
+func (c *badgerCandleStore) generateFetchKey(market string, interval msg.Interval, sinceTimestamp uint64) []byte {
 	// returns valid key for Market, interval and timestamp
 	// round floor by integer division
 	switch interval {

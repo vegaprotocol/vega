@@ -65,5 +65,5 @@ func (c *candleService) GetCandles(ctx context.Context, market string,
 
 	// interval check if from range of valid intervals
 
-	return c.candleStore.GetCandles(market, sinceTimestamp, interval), nil
+	return c.candleStore.GetCandles(market, sinceTimestamp, interval)
 }

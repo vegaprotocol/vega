@@ -186,8 +186,9 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (msg.Marke
 }
 
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
-	sinceTimestamp int, interval Interval) ([]msg.Candle, error) {
+	sinceTimestampRaw string, interval Interval) ([]*msg.Candle, error) {
 
+	// Validate interval, map to protobuf enum
 	var pbInterval msg.Interval
 	switch interval {
 	case IntervalI15M:
@@ -207,17 +208,22 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 		pbInterval = msg.Interval_I15M
 	}
 
-	candles, err := r.candleService.GetCandles(ctx, market.Name, uint64(sinceTimestamp), pbInterval)
+	// Convert javascript string representation of int epoch+nano timestamp
+	sinceTimestamp, err := strconv.ParseUint(sinceTimestampRaw, 10, 64)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("error converting %s into a valid timestamp", sinceTimestampRaw))
+	}
+	if len(sinceTimestampRaw) < 19 {
+		return nil, errors.New("timestamp should be in epoch+nanoseconds format, eg. 1545158175835902621")
+	}
+
+	// Retrieve candles from store/service
+	candles, err := r.candleService.GetCandles(ctx, market.Name, sinceTimestamp, pbInterval)
 	if err != nil {
 		return nil, err
 	}
 
-	valCandles := make([]msg.Candle, 0)
-	for _, v := range candles {
-		valCandles = append(valCandles, *v)
-	}
-
-	return valCandles, nil
+	return candles, nil
 }
 
 // END: Market Resolver
@@ -621,12 +627,15 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 }
 
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan msg.Candle, error) {
-	// Validate market
+
+	// Validate market and interval
+	// ----------------------------
+	
 	err := r.validateMarket(ctx, &market)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	var pbInterval msg.Interval
 	switch interval {
 		case IntervalI15M:
@@ -646,9 +655,11 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 			pbInterval = msg.Interval_I15M
 	}
 
+	// Observe new candles for interval
+	// --------------------------------
+	
 	c, ref := r.candleService.ObserveCandles(ctx, &market, &pbInterval)
-	log.Debugf("GraphQL Candle Interval %s -> New subscriber: %d", pbInterval.String(), ref)
-	log.Infof("GraphQL Candle Interval %s -> New subscriber: %d", pbInterval.String(), ref)
+	log.Infof("GraphQL Candle Interval %s -> New subscriber for market %s: %d", pbInterval.String(), market, ref)
 	return c, nil
 }
 

@@ -356,7 +356,7 @@ func (os *badgerOrderStore) notify(items []msg.Order) error {
 	}
 
 	if os.subscribers == nil || len(os.subscribers) == 0 {
-		log.Debugf("OrderStore: No subscribers connected")
+		log.Debugf("OrderStore -> Notify: No subscribers connected")
 		return nil
 	}
 

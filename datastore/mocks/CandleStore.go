@@ -44,7 +44,7 @@ func (_m *CandleStore) GenerateCandlesFromBuffer(market string) error {
 }
 
 // GetCandles provides a mock function with given fields: market, sinceTimestamp, interval
-func (_m *CandleStore) GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) []*msg.Candle {
+func (_m *CandleStore) GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) ([]*msg.Candle, error) {
 	ret := _m.Called(market, sinceTimestamp, interval)
 
 	var r0 []*msg.Candle
@@ -56,21 +56,14 @@ func (_m *CandleStore) GetCandles(market string, sinceTimestamp uint64, interval
 		}
 	}
 
-	return r0
-}
-
-// Notify provides a mock function with given fields:
-func (_m *CandleStore) Notify() error {
-	ret := _m.Called()
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, uint64, msg.Interval) error); ok {
+		r1 = rf(market, sinceTimestamp, interval)
 	} else {
-		r0 = ret.Error(0)
+		r1 = ret.Error(1)
 	}
 
-	return r0
+	return r0, r1
 }
 
 // StartNewBuffer provides a mock function with given fields: market, timestamp
