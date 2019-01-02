@@ -45,8 +45,9 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 	fmt.Printf("Candles GenerateCandlesFromBuffer\n")
 
-	candles := candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err := candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
+	assert.Nil(t, err)
 
 	assert.Equal(t, 2, len(candles))
 	fmt.Printf("%s", time.Unix(1542106860,000000000).Format(time.RFC3339))
@@ -64,7 +65,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[1].Close)
 	assert.Equal(t, uint64(200), candles[1].Volume)
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I1M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -75,7 +77,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(200), candles[0].Volume)
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I5M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I5M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 5m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -94,7 +97,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	candleStore.StartNewBuffer(testMarket, currentVegaTime)
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 
-	candles = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
 	assert.Equal(t, 3, len(candles))
@@ -120,7 +124,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(0), candles[2].Volume)
 
 
-	candles = candleStore.GetCandles(testMarket, t0, msg.Interval_I5M)
+	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I5M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 5m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -131,7 +136,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(2 * time.Minute), msg.Interval_I15M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(2 * time.Minute), msg.Interval_I15M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 15m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -143,7 +149,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), msg.Interval_I15M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), msg.Interval_I15M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 15m: %+v\n", candles)
 
 	assert.Equal(t, 0, len(candles))
@@ -152,7 +159,8 @@ func TestCandleGenerator_Generate(t *testing.T) {
 	candleStore.StartNewBuffer(testMarket, currentVegaTime)
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), msg.Interval_I15M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), msg.Interval_I15M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 15m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -235,7 +243,8 @@ func TestCandleGenerator_PreviousCandleDerivedValues(t *testing.T) {
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 	fmt.Printf("Candles GenerateCandlesFromBuffer\n")
 
-	candles := candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err := candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
 	assert.Equal(t, 2, len(candles))
@@ -255,7 +264,8 @@ func TestCandleGenerator_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(109), candles[1].Close)
 	assert.Equal(t, uint64(400), candles[1].Volume)
 
-	candles = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I1M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -266,7 +276,8 @@ func TestCandleGenerator_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(109), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
-	candles = candleStore.GetCandles(testMarket, t0, msg.Interval_I5M)
+	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I5M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 5m: %+v\n", candles)
 
 	assert.Equal(t, 1, len(candles))
@@ -297,7 +308,8 @@ func TestCandleGenerator_PreviousCandleDerivedValues(t *testing.T) {
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 	fmt.Printf("Candles GenerateCandlesFromBuffer\n")
 
-	candles = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
 	assert.Equal(t, t0, candles[0].Timestamp)
@@ -348,7 +360,8 @@ func TestCandleGenerator_PreviousCandleDerivedValues(t *testing.T) {
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 	fmt.Printf("Candles GenerateCandlesFromBuffer\n")
 
-	candles = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	assert.Nil(t, err)
 	fmt.Printf("Candles fetched for t0 and 1m: %+v\n", candles)
 
 	assert.Equal(t, t0, candles[0].Timestamp)

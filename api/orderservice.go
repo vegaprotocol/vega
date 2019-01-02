@@ -28,7 +28,7 @@ type OrderService interface {
 	GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 
 	//GetMarkets(ctx context.Context) ([]string, error)
-	GetMarketDepth(ctx context.Context, market string) (marketDepth *msg.MarketDepth, err error)
+	GetMarketDepth(ctx context.Context, market string) (marketDepth msg.MarketDepth, err error)
 	ObserveMarketDepth(ctx context.Context, market string) (depth <-chan msg.MarketDepth, ref uint64)
 
 	GetStatistics(ctx context.Context) (*msg.Statistics, error)
@@ -178,7 +178,7 @@ func (p *orderService) GetByPartyAndId(ctx context.Context, market string, id st
 	return o, err
 }
 
-func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (orderBookDepth *msg.MarketDepth, err error) {
+func (p *orderService) GetMarketDepth(ctx context.Context, marketName string) (orderBookDepth msg.MarketDepth, err error) {
 	return p.orderStore.GetMarketDepth(marketName)
 }
 
@@ -197,14 +197,11 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 	}(ref, internal)
 
 	go func(id uint64) {
-
-		var validatedOrders []msg.Order
-
+		
 		// read internal channel
 		for v := range internal {
 
-			// reset temp slice
-			validatedOrders = nil
+			validatedOrders := make([]msg.Order, 0)
 			for _, item := range v {
 				if market != nil && item.Market != *market {
 					continue
@@ -214,7 +211,14 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 				}
 				validatedOrders = append(validatedOrders, item)
 			}
-			orders <- validatedOrders
+			//if len(validatedOrders) > 0 {
+			select {
+				case orders <- validatedOrders:
+					log.Debugf("OrderService -> Orders for subscriber %d sent successfully", ref)
+				default:
+					log.Debugf("OrderService -> Orders for subscriber %d not sent", ref)
+			}
+			//}
 		}
 		log.Debugf("OrderService -> Channel for subscriber %d has been closed", ref)
 	}(ref)
@@ -243,7 +247,12 @@ func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<
 			if err != nil {
 				log.Errorf("error calculating market depth", err)
 			} else {
-				depth <- *d
+				select {
+					case depth <- d:
+						log.Debugf("OrderService -> MarketDepth for subscriber %d sent successfully", ref)
+					default:
+						log.Debugf("OrderService -> MarketDepth for subscriber %d not sent", ref)
+				}
 			}
 
 		}

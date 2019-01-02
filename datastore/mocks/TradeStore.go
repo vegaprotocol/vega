@@ -30,20 +30,6 @@ func (_m *TradeStore) Commit() error {
 	return r0
 }
 
-// Delete provides a mock function with given fields: trade
-func (_m *TradeStore) Delete(trade *msg.Trade) error {
-	ret := _m.Called(trade)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*msg.Trade) error); ok {
-		r0 = rf(trade)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetByMarket provides a mock function with given fields: market, params
 func (_m *TradeStore) GetByMarket(market string, params *filters.TradeQueryFilters) ([]*msg.Trade, error) {
 	ret := _m.Called(market, params)
@@ -159,52 +145,6 @@ func (_m *TradeStore) GetByPartyAndId(party string, id string) (*msg.Trade, erro
 	return r0, r1
 }
 
-// GetCandle provides a mock function with given fields: market, sinceBlock, currentBlock
-func (_m *TradeStore) GetCandle(market string, sinceBlock uint64, currentBlock uint64) (*msg.Candle, error) {
-	ret := _m.Called(market, sinceBlock, currentBlock)
-
-	var r0 *msg.Candle
-	if rf, ok := ret.Get(0).(func(string, uint64, uint64) *msg.Candle); ok {
-		r0 = rf(market, sinceBlock, currentBlock)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*msg.Candle)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, uint64, uint64) error); ok {
-		r1 = rf(market, sinceBlock, currentBlock)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetCandles provides a mock function with given fields: market, sinceBlock, currentBlock, interval
-func (_m *TradeStore) GetCandles(market string, sinceBlock uint64, currentBlock uint64, interval uint64) ([]*msg.Candle, error) {
-	ret := _m.Called(market, sinceBlock, currentBlock, interval)
-
-	var r0 []*msg.Candle
-	if rf, ok := ret.Get(0).(func(string, uint64, uint64, uint64) []*msg.Candle); ok {
-		r0 = rf(market, sinceBlock, currentBlock, interval)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*msg.Candle)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, uint64, uint64, uint64) error); ok {
-		r1 = rf(market, sinceBlock, currentBlock, interval)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetMarkPrice provides a mock function with given fields: market
 func (_m *TradeStore) GetMarkPrice(market string) (uint64, error) {
 	ret := _m.Called(market)
@@ -242,20 +182,6 @@ func (_m *TradeStore) GetTradesBySideBuckets(party string) map[string]*datastore
 	return r0
 }
 
-// Notify provides a mock function with given fields: items
-func (_m *TradeStore) Notify(items []msg.Trade) error {
-	ret := _m.Called(items)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func([]msg.Trade) error); ok {
-		r0 = rf(items)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Post provides a mock function with given fields: trade
 func (_m *TradeStore) Post(trade *msg.Trade) error {
 	ret := _m.Called(trade)
@@ -263,20 +189,6 @@ func (_m *TradeStore) Post(trade *msg.Trade) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*msg.Trade) error); ok {
 		r0 = rf(trade)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// PostBatch provides a mock function with given fields: batch
-func (_m *TradeStore) PostBatch(batch []msg.Trade) error {
-	ret := _m.Called(batch)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func([]msg.Trade) error); ok {
-		r0 = rf(batch)
 	} else {
 		r0 = ret.Error(0)
 	}

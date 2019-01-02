@@ -99,9 +99,11 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 	}(ref, internal)
 
 	go func(id uint64) {
-		var validatedTrades []msg.Trade
+
 		for v := range internal {
-			validatedTrades = nil
+
+			validatedTrades := make([]msg.Trade, 0)
+
 			for _, item := range v {
 				if market != nil && item.Market != *market {
 					continue
@@ -109,10 +111,17 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 				if party != nil && (item.Seller != *party || item.Buyer != *party) {
 					continue
 				}
-
 				validatedTrades = append(validatedTrades, item)
 			}
-			trades <- validatedTrades
+
+			//if len(validatedTrades) > 0 {
+				select {
+					case trades <- validatedTrades:
+						log.Debugf("TradeService -> Trades for subscriber %d sent successfully", ref)
+					default:
+						log.Debugf("TradeService -> Trades for subscriber %d not sent", ref)
+				}
+			//}
 		}
 		log.Debugf("TradeService -> Channel for subscriber %d has been closed", ref)
 	}(ref)
@@ -141,7 +150,12 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 				log.Errorf("Error getting positions by party on TradeService for id: %d", id, err)
 			}
 			for _, marketPositions := range mapOfMarketPositions {
-				positions <- *marketPositions
+				select {
+					case positions <- *marketPositions:
+						log.Debugf("TradeService -> Positions for subscriber %d sent successfully", ref)
+					default:
+						log.Debugf("TradeService -> Positions for subscriber %d not sent", ref)
+				}
 			}
 		}
 		log.Debugf("TradeService -> Channel for positions subscriber %d has been closed", ref)
@@ -163,6 +177,8 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 		riskFactor                    float64
 		forwardRiskMargin             float64
 	)
+
+	log.Debugf("Total market buckets = %d", len(marketBuckets))
 
 	for market, marketBucket := range marketBuckets {
 		if marketBucket.BuyVolume > marketBucket.SellVolume {
@@ -239,6 +255,9 @@ func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context,
 	if err != nil {
 		log.Errorf("failed to obtain risk factors from risk engine for market: %s", market)
 	}
+
+	log.Debugf("Risk Factors = %v/%v", riskFactorLong, riskFactorShort)
+
 	var riskFactor float64
 	if openVolumeSign == 1 {
 		riskFactor = riskFactorLong

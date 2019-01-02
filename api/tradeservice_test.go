@@ -229,17 +229,17 @@ func TestPositions(t *testing.T) {
 	var ctx = context.Background()
 	var tradeService = NewTradeService()
 
-	timestamp := time.Now().UnixNano()
+	timestamp := time.Now()
 	sequenceNumber := int64(0)
 
-	getOrderId := func (timestamp int64) string {
+	getOrderId := func (timestamp time.Time) string {
 		sequenceNumber++
-		return fmt.Sprintf("V%d-%d", timestamp, sequenceNumber)
+		return fmt.Sprintf("V%d-%020d", timestamp.UnixNano(), sequenceNumber)
 	}
 
-	getTradeId := func (timestamp int64) string {
+	getTradeId := func (timestamp time.Time) string {
 		sequenceNumber++
-		return fmt.Sprintf("V%d-%d-%d", timestamp, sequenceNumber, 1)
+		return fmt.Sprintf("V%d-%020d-%020d", timestamp.UnixNano(), sequenceNumber, 1)
 	}
 
 	FlushOrderStore()
@@ -261,17 +261,12 @@ func TestPositions(t *testing.T) {
 		Party:  testPartyA,
 		Side:   msg.Side_Buy,
 	}
-
-	sequenceNumber++
-
 	passiveOrder := &msg.Order{
 		Id:     getOrderId(timestamp),
 		Market: testMarket,
 		Party:  testPartyB,
 		Side:   msg.Side_Sell,
 	}
-
-	sequenceNumber++
 
 	trade := &msg.Trade{
 		Id:        getTradeId(timestamp),
@@ -286,29 +281,28 @@ func TestPositions(t *testing.T) {
 		SellOrder: passiveOrder.Id,
 	}
 
-	err := vega.OrderStore.Post(passiveOrder)
+	err := vega.OrderStore.Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = vega.OrderStore.Post(aggressiveOrder)
+	err = vega.OrderStore.Post(*aggressiveOrder)
 	assert.Nil(t, err)
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
 
 	aggressiveOrder = &msg.Order{
-		Id:     getOrderId(timestamp),
+		Id:     getOrderId(timestamp.AddDate(0,6,0)),
 		Market: testMarket,
 		Party:  testPartyA,
 		Side:   msg.Side_Buy,
 	}
-
 	passiveOrder = &msg.Order{
-		Id:     getOrderId(timestamp),
+		Id:     getOrderId(timestamp.AddDate(0,6,0)),
 		Market: testMarket,
 		Party:  testPartyB,
 		Side:   msg.Side_Sell,
 	}
 
 	trade = &msg.Trade{
-		Id:        getTradeId(timestamp),
+		Id:        getTradeId(timestamp.AddDate(0,6,0)),
 		Price:     100,
 		Market:    testMarket,
 		Size:      500,
@@ -320,9 +314,9 @@ func TestPositions(t *testing.T) {
 		SellOrder: passiveOrder.Id,
 	}
 
-	err = vega.OrderStore.Post(passiveOrder)
+	err = vega.OrderStore.Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = vega.OrderStore.Post(aggressiveOrder)
+	err = vega.OrderStore.Post(*aggressiveOrder)
 	assert.Nil(t, err)
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
@@ -362,20 +356,20 @@ func TestPositions(t *testing.T) {
 
 	// market moves by 10 up what is the PNL?
 	aggressiveOrder = &msg.Order{
-		Id:     getOrderId(timestamp),
+		Id:     getOrderId(timestamp.AddDate(4,1,0)),
 		Market: testMarket,
 		Party:  "partyC",
 		Side:   msg.Side_Buy,
 	}
 	passiveOrder = &msg.Order{
-		Id:     getOrderId(timestamp),
+		Id:     getOrderId(timestamp.AddDate(4,1,0)),
 		Market: testMarket,
 		Party:  "partyD",
 		Side:   msg.Side_Sell,
 	}
 
 	trade = &msg.Trade{
-		Id:        getTradeId(timestamp),
+		Id:        getTradeId(timestamp.AddDate(4,1,0)),
 		Price:     110,
 		Market:    testMarket,
 		Size:      1,
@@ -387,9 +381,9 @@ func TestPositions(t *testing.T) {
 		SellOrder: passiveOrder.Id,
 	}
 
-	err = vega.OrderStore.Post(passiveOrder)
+	err = vega.OrderStore.Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = vega.OrderStore.Post(aggressiveOrder)
+	err = vega.OrderStore.Post(*aggressiveOrder)
 	assert.Nil(t, err)
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
@@ -434,21 +428,21 @@ func TestPositions(t *testing.T) {
 
 	// close 90% of position at 110
 	aggressiveOrder = &msg.Order{
-		Id:     getOrderId(timestamp),
+		Id:     getOrderId(timestamp.AddDate(10,6,0)),
 		Market: testMarket,
 		Party:  testPartyA,
 		Side:   msg.Side_Sell,
 	}
 
 	passiveOrder = &msg.Order{
-		Id:     getOrderId(timestamp),
+		Id:     getOrderId(timestamp.AddDate(10,6,0)),
 		Market: testMarket,
 		Party:  testPartyB,
 		Side:   msg.Side_Buy,
 	}
 
 	trade = &msg.Trade{
-		Id:        getTradeId(timestamp),
+		Id:        getTradeId(timestamp.AddDate(10,6,0)),
 		Price:     110,
 		Market:    testMarket,
 		Size:      900,
@@ -460,9 +454,9 @@ func TestPositions(t *testing.T) {
 		SellOrder: passiveOrder.Id,
 	}
 
-	err = vega.OrderStore.Post(passiveOrder)
+	err = vega.OrderStore.Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = vega.OrderStore.Post(aggressiveOrder)
+	err = vega.OrderStore.Post(*aggressiveOrder)
 	assert.Nil(t, err)
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
@@ -502,20 +496,20 @@ func TestPositions(t *testing.T) {
 
 	// close remaining 10% of position at 110
 	aggressiveOrder = &msg.Order{
-		Id:     getOrderId(timestamp),
+		Id:     getOrderId(timestamp.AddDate(10,7,0)),
 		Market: testMarket,
 		Party:  testPartyA,
 		Side:   msg.Side_Sell,
 	}
 	passiveOrder = &msg.Order{
-		Id:     getOrderId(timestamp),
+		Id:     getOrderId(timestamp.AddDate(10,7,0)),
 		Market: testMarket,
 		Party:  testPartyB,
 		Side:   msg.Side_Buy,
 	}
 
 	trade = &msg.Trade{
-		Id:        getTradeId(timestamp),
+		Id:        getTradeId(timestamp.AddDate(10,7,0)),
 		Price:     110,
 		Market:    testMarket,
 		Size:      100,
@@ -527,16 +521,16 @@ func TestPositions(t *testing.T) {
 		SellOrder: passiveOrder.Id,
 	}
 
-	err = vega.OrderStore.Post(passiveOrder)
+	err = vega.OrderStore.Post(*passiveOrder)
 	assert.Nil(t, err)
-	err = vega.OrderStore.Post(aggressiveOrder)
+	err = vega.OrderStore.Post(*aggressiveOrder)
 	assert.Nil(t, err)
 	err = vega.TradeStore.Post(trade)
 	assert.Nil(t, err)
 
 	vega.OrderStore.Commit()
 	vega.TradeStore.Commit()
-	
+
 	positions, err = tradeService.GetPositionsByParty(ctx, testPartyA)
 	assert.Nil(t, err)
 
@@ -558,7 +552,7 @@ func TestPositions(t *testing.T) {
 	for _, val := range positions {
 		fmt.Printf("%+v\n", val)
 		assert.Equal(t, testMarket, val.Market)
-
+	
 		assert.Equal(t, int64(1000), val.RealisedVolume)
 		assert.Equal(t, int64(-10000), val.RealisedPNL)
 		assert.Equal(t, int64(0), val.UnrealisedVolume)

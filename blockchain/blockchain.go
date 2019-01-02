@@ -15,10 +15,11 @@ type Blockchain struct {
 	types.BaseApplication
 	vega *core.Vega
 	previousTimestamp int64
+	blockTxns map[string]bool
 }
 
 func NewBlockchain(vegaApp *core.Vega) *Blockchain {
-	return &Blockchain{vega: vegaApp}
+	return &Blockchain{vega: vegaApp, blockTxns: make(map[string]bool, 0)}
 }
 
 func (app *Blockchain) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
@@ -83,7 +84,14 @@ func (app *Blockchain) BeginBlock(beginBlock types.RequestBeginBlock) types.Resp
 // FIXME: For the moment, just let everything through.
 func (app *Blockchain) CheckTx(tx []byte) types.ResponseCheckTx {
 	//log.Debugf("CheckTx: %s", string(tx))
-	return types.ResponseCheckTx{Code: code.CodeTypeOK}
+
+	txnHash := string(tx[0:36])
+	if _, exists := app.blockTxns[txnHash]; exists {
+		log.Debugf("Transaction already exists (CheckTx): %s", txnHash)
+		return types.ResponseCheckTx{Code: code.CodeTypeUnknownError}
+	} else {
+		return types.ResponseCheckTx{Code: code.CodeTypeOK}
+	}
 }
 
 var tx_averages []int
@@ -120,6 +128,14 @@ var tx_per_block uint64
 func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	txLength := len(tx)
 	//log.Debugf("DeliverTx: %s [%v]", string(tx), txLength)
+
+	txnHash := string(tx[0:36])
+	if _, exists := app.blockTxns[txnHash]; exists {
+		log.Debugf("Transaction already exists (DeliverTx): %s", txnHash)
+		return types.ResponseDeliverTx{Code: code.CodeTypeUnknownError}
+	}
+	app.blockTxns[txnHash] = true
+	
 	tx_per_block++
 
 	if app.vega.Statistics.Status == msg.AppStatus_CHAIN_NOT_FOUND {
@@ -150,15 +166,18 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 				return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError}
 			}
 
+			//log.Debugf("ABCI Order: %s", order)
+
+
 			//log.Debugf("ABCI received a CREATE ORDER command after consensus")
 
 			// Submit the create new order request to the Vega trading core
 			confirmationMessage, errorMessage := app.vega.SubmitOrder(order)
 			if confirmationMessage != nil {
-				//log.Infof("ABCI order confirmation message:")
-				//log.Infof("- aggressive order: %+v", confirmationMessage.Order)
-				//log.Debugf("- trades: %+v", confirmationMessage.Trades)
-				//log.Infof("- passive orders affected: %+v", confirmationMessage.PassiveOrdersAffected)
+			//	log.Infof("ABCI order confirmation message:")
+			//	log.Infof("- aggressive order: %+v", confirmationMessage.Order)
+			//	log.Debugf("- trades: %+v", confirmationMessage.Trades)
+			//	log.Infof("- passive orders affected: %+v", confirmationMessage.PassiveOrdersAffected)
 
 				current_tb += len(confirmationMessage.Trades)
 			}
@@ -166,6 +185,7 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 				log.Infof("ABCI order error message (create):")
 				log.Infof("- error: %+v", errorMessage.String())
 			}
+			confirmationMessage.Release()
 			current_ob++
 
 		case CancelOrderCommand:
@@ -308,6 +328,8 @@ func (app *Blockchain) Commit() types.ResponseCommit {
 
 	current_ob = 0
 	current_tb = 0
+
+	app.blockTxns = make(map[string]bool, 0)
 
 	return types.ResponseCommit{Data: appHash}
 }

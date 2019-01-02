@@ -9,7 +9,7 @@ type MatchingEngine interface {
 	CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError)
 	SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError)
 	DeleteOrder(order *msg.Order)
-	RemoveExpiringOrders(timestamp uint64) []*msg.Order
+	RemoveExpiringOrders(timestamp uint64) []msg.Order
 	AmendOrder(order *msg.Order) msg.OrderError
 }
 
@@ -63,8 +63,8 @@ func (me *matchingEngine) CancelOrder(order *msg.Order) (*msg.OrderCancellation,
 	return cancellationResult, msg.OrderError_NONE
 }
 
-func (me *matchingEngine) RemoveExpiringOrders(timestamp uint64) []*msg.Order {
-	var expiringOrders []*msg.Order
+func (me *matchingEngine) RemoveExpiringOrders(timestamp uint64) []msg.Order {
+	var expiringOrders []msg.Order
 	for _, market := range me.markets {
 		expiringOrders = append(expiringOrders, market.RemoveExpiredOrders(timestamp)...)
 	}

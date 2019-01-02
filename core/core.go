@@ -97,7 +97,7 @@ func (v *Vega) InitialiseMarkets() {
 
 func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 
-	order.Id = fmt.Sprintf("V%d-%d", v.State.Height, v.State.Size)
+	order.Id = fmt.Sprintf("V%020d-%020d", v.State.Height, v.State.Size)
 	order.Timestamp = uint64(v.State.Timestamp)
 
 	//log.Infof("SubmitOrder: %+v", order)
@@ -124,7 +124,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	// 3) save to stores
 
 	// insert aggressive remaining order
-	err := v.OrderStore.Post(order)
+	err := v.OrderStore.Post(*order)
 	if err != nil {
 		// Note: writing to store should not prevent flow to other engines
 		log.Errorf("OrderStore.Post error: %v", err)
@@ -133,7 +133,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 		// insert all passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			// Note: writing to store should not prevent flow to other engines
-			err := v.OrderStore.Put(order)
+			err := v.OrderStore.Put(*order)
 			if err != nil {
 				log.Errorf("OrderStore.Put error: %v", err)
 			}
@@ -150,7 +150,7 @@ func (v *Vega) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderE
 	if confirmation.Trades != nil {
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
-			trade.Id = fmt.Sprintf("%s-%d", order.Id, idx)
+			trade.Id = fmt.Sprintf("%s-%020d", order.Id, idx)
 			if order.Side == msg.Side_Buy {
 				trade.BuyOrder = order.Id
 				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
@@ -195,7 +195,7 @@ func (v *Vega) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderE
 	// 2) if OK update stores
 
 	// insert aggressive remaining order
-	err := v.OrderStore.Put(order)
+	err := v.OrderStore.Put(*order)
 	if err != nil {
 		// Note: writing to store should not prevent flow to other engines
 		log.Errorf("OrderStore.Put error: %v", err)
@@ -293,7 +293,7 @@ func (v *Vega) OrderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, m
 		return &msg.OrderConfirmation{}, errMsg
 	}
 
-	err := v.OrderStore.Put(newOrder)
+	err := v.OrderStore.Put(*newOrder)
 	if err != nil {
 		log.Errorf("error updating order store for amend in place: %s - %s",  newOrder, err.Error())
 	}

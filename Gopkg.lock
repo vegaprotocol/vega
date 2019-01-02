@@ -31,6 +31,22 @@
   version = "v1.0.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:d6afaeed1502aa28e80a4ed0981d570ad91b2579193404256ce672ed0a609e0d"
+  name = "github.com/beorn7/perks"
+  packages = ["quantile"]
+  pruneopts = "UT"
+  revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
+
+[[projects]]
+  branch = "master"
+  digest = "1:60cc66b985bda9455572040a8db1f3ac127846d45024e898376ebc6132a9bdc7"
+  name = "github.com/btcsuite/btcd"
+  packages = ["btcec"]
+  pruneopts = "UT"
+  revision = "7d2daa5bfef28c5e282571bc06416516936115ee"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -62,12 +78,16 @@
   revision = "2de33835d10275975374b37b2dcfd22c9020a1f5"
 
 [[projects]]
-  digest = "1:d0309acc14b09c713e2fd1283be859c8e03f5f40c69e221410a0f652742b139c"
+  digest = "1:fa30c0652956e159cdb97dcb2ef8b8db63ed668c02a5c3a40961c8f0641252fe"
   name = "github.com/go-kit/kit"
   packages = [
     "log",
     "log/level",
     "log/term",
+    "metrics",
+    "metrics/discard",
+    "metrics/internal/lv",
+    "metrics/prometheus",
   ]
   pruneopts = "UT"
   revision = "4dc7be5d2d12881735283bcab7352178e190fc71"
@@ -121,6 +141,14 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:4a0c6bb4805508a6287675fac876be2ac1182539ca8a32468d8128882e9d5009"
+  name = "github.com/golang/snappy"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
+
+[[projects]]
   digest = "1:7b5c6e2eeaa9ae5907c391a91c132abfd5c9e8a784a341b5625e750c67e6825d"
   name = "github.com/gorilla/websocket"
   packages = ["."]
@@ -153,11 +181,27 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:39b27d1381a30421f9813967a5866fba35dc1d4df43a6eefe3b7a5444cb07214"
+  name = "github.com/jmhodges/levigo"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c42d9e0ca023e2198120196f842701bb4c55d7b9"
+
+[[projects]]
+  branch = "master"
   digest = "1:a64e323dc06b73892e5bb5d040ced475c4645d456038333883f58934abbf6f72"
   name = "github.com/kr/logfmt"
   packages = ["."]
   pruneopts = "UT"
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
+
+[[projects]]
+  digest = "1:ff5ebae34cfbf047d505ee150de27e60570e8c394b3b8fdbb720ff6ac71985fc"
+  name = "github.com/matttproud/golang_protobuf_extensions"
+  packages = ["pbutil"]
+  pruneopts = "UT"
+  revision = "c12348ce28de40eed0136aa2b644d0ee0650e56c"
+  version = "v1.0.1"
 
 [[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
@@ -174,6 +218,58 @@
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:32c1cb4c09d4eb89294d52c2df910ad981aa8d47f06fee22f0112702cf5f4e53"
+  name = "github.com/prometheus/client_golang"
+  packages = [
+    "prometheus",
+    "prometheus/internal",
+    "prometheus/promhttp",
+  ]
+  pruneopts = "UT"
+  revision = "505eaef017263e299324067d40ca2c48f6a2cf50"
+  version = "v0.9.2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:0f37e09b3e92aaeda5991581311f8dbf38944b36a3edec61cc2d1991f527554a"
+  name = "github.com/prometheus/client_model"
+  packages = ["go"]
+  pruneopts = "UT"
+  revision = "5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f"
+
+[[projects]]
+  branch = "master"
+  digest = "1:2c02365877cbccca6b485963a65ba16bc35aceac63fe5ebf2d75120a3c701174"
+  name = "github.com/prometheus/common"
+  packages = [
+    "expfmt",
+    "internal/bitbucket.org/ww/goautoneg",
+    "model",
+  ]
+  pruneopts = "UT"
+  revision = "67670fe90761d7ff18ec1d640135e53b9198328f"
+
+[[projects]]
+  branch = "master"
+  digest = "1:63f209d7f053d0a418b5dc3b35f6778a1dc725307e8f2068de592bef1c056a41"
+  name = "github.com/prometheus/procfs"
+  packages = [
+    ".",
+    "internal/util",
+    "nfs",
+    "xfs",
+  ]
+  pruneopts = "UT"
+  revision = "1dc9a6cbc91aacc3e8b2d63db4d2e957a5394ac4"
+
+[[projects]]
+  digest = "1:c4556a44e350b50a490544d9b06e9fba9c286c21d6c0e47f54f3a9214597298c"
+  name = "github.com/rcrowley/go-metrics"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e2704e165165ec55d062f5919b4b29494e9fa790"
 
 [[projects]]
   digest = "1:b0c25f00bad20d783d259af2af8666969e2fc343fa0dc9efe52936bbd67fb758"
@@ -212,11 +308,39 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:59c674c1a51b95fccb9fc641f8b0ce20e4c018b36c74296faeb7e6ade3ea0be8"
+  name = "github.com/syndtr/goleveldb"
+  packages = [
+    "leveldb",
+    "leveldb/cache",
+    "leveldb/comparer",
+    "leveldb/errors",
+    "leveldb/filter",
+    "leveldb/iterator",
+    "leveldb/journal",
+    "leveldb/memdb",
+    "leveldb/opt",
+    "leveldb/storage",
+    "leveldb/table",
+    "leveldb/util",
+  ]
+  pruneopts = "UT"
+  revision = "b001fa50d6b27f3f0bb175a87d0cb55426d0a0ae"
+
+[[projects]]
+  branch = "master"
   digest = "1:36a78c8c2a5bb1702ba8b53808e30b25d47422e4db22217fb4a50c4472b6b494"
   name = "github.com/tav/golly"
   packages = ["process"]
   pruneopts = "UT"
   revision = "ad032321f11e5b62ecc9a59a20765225830531c0"
+
+[[projects]]
+  digest = "1:34a30b75b54e4b73090d0cafc7884950f020272e36813201ba3860822c46c6dd"
+  name = "github.com/tendermint/btcd"
+  packages = ["btcec"]
+  pruneopts = "UT"
+  revision = "e5840949ff4fff0c56f9b6a541e22b63581ea9df"
 
 [[projects]]
   digest = "1:ad9c4c1a4e7875330b1f62906f2830f043a23edb5db997e3a5ac5d3e6eadf80a"
@@ -228,16 +352,58 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:35d25eafefeda188d1a6b3a337fe45b195a06b7dc2efa6ff829ff7a7bf9470f4"
+  digest = "1:c015120ff98287b71bf211bc9aa2c6dddea36854a50f457977a94452253258d1"
   name = "github.com/tendermint/tendermint"
   packages = [
+    "abci/client",
     "abci/example/code",
+    "abci/example/kvstore",
     "abci/server",
     "abci/types",
+    "blockchain",
+    "config",
+    "consensus",
+    "consensus/types",
+    "crypto",
+    "crypto/ed25519",
+    "crypto/encoding/amino",
     "crypto/merkle",
+    "crypto/multisig",
+    "crypto/multisig/bitarray",
+    "crypto/secp256k1",
     "crypto/tmhash",
+    "evidence",
+    "libs/autofile",
+    "libs/clist",
     "libs/common",
+    "libs/db",
+    "libs/events",
+    "libs/fail",
+    "libs/flowrate",
     "libs/log",
+    "libs/pubsub",
+    "libs/pubsub/query",
+    "mempool",
+    "node",
+    "p2p",
+    "p2p/conn",
+    "p2p/pex",
+    "privval",
+    "proxy",
+    "rpc/client",
+    "rpc/core",
+    "rpc/core/types",
+    "rpc/grpc",
+    "rpc/lib/client",
+    "rpc/lib/server",
+    "rpc/lib/types",
+    "state",
+    "state/txindex",
+    "state/txindex/kv",
+    "state/txindex/null",
+    "types",
+    "types/time",
+    "version",
   ]
   pruneopts = "UT"
   revision = "22dcc92232cd04ce7381043e09d85dd536ae3b96"
@@ -301,7 +467,28 @@
   version = "v1.9.1"
 
 [[projects]]
-  digest = "1:448e521e3240f01d756f18a1b1be2f0005355e0cb464ccd5b4a8d9c3ec1b3931"
+  digest = "1:57c5d76c9bcf26315acbeae26e412c4c1a973926d27c2f7c2a05dd275e26bcc2"
+  name = "golang.org/x/crypto"
+  packages = [
+    "chacha20poly1305",
+    "curve25519",
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "hkdf",
+    "internal/chacha20",
+    "internal/subtle",
+    "nacl/box",
+    "nacl/secretbox",
+    "poly1305",
+    "ripemd160",
+    "salsa20/salsa",
+  ]
+  pruneopts = "UT"
+  revision = "3764759f34a542a3aef74d6b02e35be7ab893bba"
+  source = "github.com/tendermint/crypto"
+
+[[projects]]
+  digest = "1:04dda8391c3e2397daf254ac68003f30141c069b228d06baec8324a5f81dc1e9"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -310,6 +497,7 @@
     "http2/hpack",
     "idna",
     "internal/timeseries",
+    "netutil",
     "trace",
   ]
   pruneopts = "UT"
@@ -317,9 +505,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a62e80faf19c93dcbd7954a26fdb51acbfcb4b7161966adf1de531e593c4834a"
+  digest = "1:898233c830d6b1a883cfcd5ec9611656db6ecad9a007cb79f8377e5cef32d82f"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "cpu",
+    "unix",
+  ]
   pruneopts = "UT"
   revision = "93218def8b18e66adbdab3eca8ec334700329f1f"
 
@@ -396,6 +587,7 @@
     "github.com/99designs/gqlgen/graphql/introspection",
     "github.com/99designs/gqlgen/handler",
     "github.com/dgraph-io/badger",
+    "github.com/dgraph-io/badger/options",
     "github.com/gogo/protobuf/gogoproto",
     "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
@@ -412,6 +604,8 @@
     "github.com/tendermint/tendermint/abci/example/code",
     "github.com/tendermint/tendermint/abci/server",
     "github.com/tendermint/tendermint/abci/types",
+    "github.com/tendermint/tendermint/rpc/client",
+    "github.com/tendermint/tendermint/types",
     "github.com/tendermint/tmlibs/common",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",

@@ -15,7 +15,7 @@ type OrderBook struct {
 	config          *Config
 	latestTimestamp uint64
 
-	expiringOrders []*msg.Order  // keep a list of all expiring trades, these will be in timestamp ascending order.
+	expiringOrders []msg.Order  // keep a list of all expiring trades, these will be in timestamp ascending order.
 }
 
 // Create an order book with a given name
@@ -25,7 +25,7 @@ func NewBook(name string, config *Config) *OrderBook {
 		buy:    &OrderBookSide{prorataMode: config.ProrataMode},
 		sell:   &OrderBookSide{prorataMode: config.ProrataMode},
 		config: config,
-		expiringOrders: make([]*msg.Order, 0),
+		expiringOrders: make([]msg.Order, 0),
 	}
 }
 
@@ -118,7 +118,7 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
 		if order.Type == msg.Order_GTT {
-			b.expiringOrders = append(b.expiringOrders, order)
+			b.expiringOrders = append(b.expiringOrders, *order)
 		}
 
 		b.getSide(order.Side).addOrder(order, order.Side)
@@ -164,14 +164,14 @@ func (b *OrderBook) RemoveOrder(order *msg.Order) error {
 // expirationTimestamp must be of the format unix epoch seconds with nanoseconds e.g. 1544010789803472469.
 // RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
 // matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
-func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []*msg.Order {
-	var expiredOrders []*msg.Order
-	var pendingOrders []*msg.Order
+func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []msg.Order {
+	var expiredOrders []msg.Order
+	var pendingOrders []msg.Order
 
 	// linear scan of our expiring orders, prune any that have expired
 	for _, or := range b.expiringOrders {
 		if or.ExpirationTimestamp <= expirationTimestamp {
-			b.RemoveOrder(or)                              // order is removed from the book
+			b.RemoveOrder(&or)                              // order is removed from the book
 			or.Status = msg.Order_Expired                  // order is marked as expired for storage
 			expiredOrders = append(expiredOrders, or)
 		} else {

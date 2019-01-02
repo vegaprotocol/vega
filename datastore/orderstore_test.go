@@ -37,7 +37,7 @@ func TestMemStore_PostAndGetNewOrder(t *testing.T) {
 		Party:  "testParty",
 	}
 
-	err := newOrderStore.Post(order)
+	err := newOrderStore.Post(*order)
 	assert.Nil(t, err)
 
 	newOrderStore.Commit()
@@ -131,7 +131,7 @@ func TestMemStore_GetAllOrdersForMarket(t *testing.T) {
 		var newOrderStore = NewOrderStore(orderStoreDir)
 
 		for _, order := range tt.inOrders {
-			err := newOrderStore.Post(order)
+			err := newOrderStore.Post(*order)
 			assert.Nil(t, err)
 		}
 
@@ -166,10 +166,10 @@ func TestMemOrderStore_Parties(t *testing.T) {
 			Remaining: 100,
 	}
 
-	err := newOrderStore.Post(passiveOrder)
+	err := newOrderStore.Post(*passiveOrder)
 	assert.Nil(t, err)
 
-	err = newOrderStore.Post(aggressiveOrder)
+	err = newOrderStore.Post(*aggressiveOrder)
 	assert.Nil(t, err)
 
 	newOrderStore.Commit()
@@ -198,7 +198,7 @@ func TestMemOrderStore_Parties(t *testing.T) {
 			Remaining: 0,
 	}
 
-	err = newOrderStore.Put(updatedAggressiveOrder)
+	err = newOrderStore.Put(*updatedAggressiveOrder)
 	assert.Nil(t, err)
 	orderAtPartyB, err = newOrderStore.GetByPartyAndId(testPartyB, aggressiveOrder.Id)
 	assert.Nil(t, err)
@@ -268,13 +268,13 @@ func TestNewOrderStore_Filtering(t *testing.T) {
 	assert.Equal(t, 0, len(orders))
 
 	// add orders
-	err = newOrderStore.Post(order1)
+	err = newOrderStore.Post(*order1)
 	assert.Nil(t, err)
-	err = newOrderStore.Post(order2)
+	err = newOrderStore.Post(*order2)
 	assert.Nil(t, err)
-	err = newOrderStore.Post(order3)
+	err = newOrderStore.Post(*order3)
 	assert.Nil(t, err)
-	err = newOrderStore.Post(order4)
+	err = newOrderStore.Post(*order4)
 	assert.Nil(t, err)
 
 	newOrderStore.Commit()
@@ -449,7 +449,7 @@ func TestMemStore_GetOrderByReference(t *testing.T) {
 			Reference:  "123123-34334343-1231231",
 	}
 
-	err := newOrderStore.Post(order)
+	err := newOrderStore.Post(*order)
 	assert.Nil(t, err)
 
 	newOrderStore.Commit()
@@ -497,10 +497,10 @@ func TestMemStore_InsertBatchOrders(t *testing.T) {
 		Reference:  "123123-34334343-1231232",
 	}
 
-	err := newOrderStore.Post(order1)
+	err := newOrderStore.Post(*order1)
 	assert.Nil(t, err)
 
-	err = newOrderStore.Post(order2)
+	err = newOrderStore.Post(*order2)
 	assert.Nil(t, err)
 
 	orderFilters := &filters.OrderQueryFilters{

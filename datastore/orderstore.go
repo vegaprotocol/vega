@@ -17,11 +17,11 @@ type OrderStore interface {
 
 	// Post adds an order to the store, adds
 	// to queue the operation to be committed later.
-	Post(order *msg.Order) error
+	Post(order msg.Order) error
 
 	// Put updates an order in the store, adds
 	// to queue the operation to be committed later.
-	Put(order *msg.Order) error
+	Put(order msg.Order) error
 
 	// Commit typically saves any operations that are queued to underlying storage medium,
 	// if supported by underlying storage implementation.
@@ -41,7 +41,7 @@ type OrderStore interface {
 	GetByPartyAndId(party string, id string) (*msg.Order, error)
 	
 	// GetMarketDepth calculates and returns order book depth for a given market.
-	GetMarketDepth(market string) (*msg.MarketDepth, error)
+	GetMarketDepth(market string) (msg.MarketDepth, error)
 }
 
 // badgerOrderStore is a package internal data struct that implements the OrderStore interface.
@@ -104,15 +104,15 @@ func (os *badgerOrderStore) Unsubscribe(id uint64) error {
 
 // Post adds an order to the badger store, adds
 // to queue the operation to be committed later.
-func (os *badgerOrderStore) Post(order *msg.Order) error {
+func (os *badgerOrderStore) Post(order msg.Order) error {
 	// with badger we always buffer for future batch insert via Commit()
-	os.addToBuffer(*order)
+	os.addToBuffer(order)
 	return nil
 }
 
 // Put updates an order in the badger store, adds
 // to queue the operation to be committed later.
-func (os *badgerOrderStore) Put(order *msg.Order) error {
+func (os *badgerOrderStore) Put(order msg.Order) error {
 
 	var orderBeforeUpdate msg.Order
 	var recordExistsInBuffer bool
@@ -122,7 +122,7 @@ func (os *badgerOrderStore) Put(order *msg.Order) error {
 			// we found an order in our write queue that matches
 			// the order being updated, swap for latest data
 			orderBeforeUpdate = os.buffer[idx]
-			os.buffer[idx] = *order
+			os.buffer[idx] = order
 			recordExistsInBuffer = true
 			break
 		}
@@ -138,13 +138,13 @@ func (os *badgerOrderStore) Put(order *msg.Order) error {
 			}
 			orderBeforeUpdate = *o
 		}
-		os.addToBuffer(*order)
+		os.addToBuffer(order)
 	}
 
 	if order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
-		os.orderBookDepth.DecreaseByTradedVolume(order, 0)
+		os.orderBookDepth.DecreaseByTradedVolume(&order, 0)
 	} else {
-		os.orderBookDepth.DecreaseByTradedVolume(order, orderBeforeUpdate.Remaining - order.Remaining)
+		os.orderBookDepth.DecreaseByTradedVolume(&order, orderBeforeUpdate.Remaining - order.Remaining)
 	}
 
 	return nil
@@ -314,7 +314,7 @@ func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*msg.Order
 }
 
 // GetMarketDepth calculates and returns order book depth for a given market.
-func (os *badgerOrderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
+func (os *badgerOrderStore) GetMarketDepth(market string) (msg.MarketDepth, error) {
 	// load from store
 	buy := os.orderBookDepth.getBuySide()
 	sell := os.orderBookDepth.getSellSide()
@@ -339,7 +339,7 @@ func (os *badgerOrderStore) GetMarketDepth(market string) (*msg.MarketDepth, err
 
 	// return new re-calculated market depth for each side of order book
 	orderBookDepth := msg.MarketDepth{Name: market, Buy: buy, Sell: sell}
-	return &orderBookDepth, nil
+	return orderBookDepth, nil
 }
 
 // add an order to the write-batch/notify buffer.

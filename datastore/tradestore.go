@@ -301,14 +301,21 @@ func (ts *badgerTradeStore) Close() {
 
 // GetMarkPrice returns the current market price, for a requested market.
 func (ts *badgerTradeStore) GetMarkPrice(market string) (uint64, error) {
+
+	// We just need the very latest trade price
 	f := &filters.TradeQueryFilters{}
+	l := uint64(1)
+	f.Last = &l
+
 	recentTrade, err := ts.GetByMarket(market, f)
 	if err != nil {
 		return 0, err
 	}
+	
 	if len(recentTrade) == 0 {
 		return 0, errors.New("no trades available when getting market price")
 	}
+	
 	return recentTrade[0].Price, nil
 }
 

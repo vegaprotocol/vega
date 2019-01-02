@@ -48,8 +48,8 @@ func TestOrderBookDepth_TryToBreakIt(t *testing.T) {
 		},
 	}
 
-	for idx, _ := range firstBatchOfOrders {
-		newOrderStore.Post(firstBatchOfOrders[idx])
+	for idx := range firstBatchOfOrders {
+		newOrderStore.Post(*firstBatchOfOrders[idx])
 	}
 
 	newOrderStore.Commit()
@@ -106,8 +106,8 @@ func TestOrderBookDepth_TryToBreakIt(t *testing.T) {
 		},
 	}
 
-	for idx, _ := range secondBatchOforders {
-		newOrderStore.Post(secondBatchOforders[idx])
+	for idx := range secondBatchOforders {
+		newOrderStore.Post(*secondBatchOforders[idx])
 	}
 
 	// No commit - should remain unchanged
@@ -159,8 +159,8 @@ func TestOrderBookDepth_TryToBreakIt(t *testing.T) {
 	firstBatchOfOrders[2].Remaining = firstBatchOfOrders[2].Remaining - 80
 	firstBatchOfOrders[3].Remaining = firstBatchOfOrders[3].Remaining - 100
 
-	for idx, _ := range firstBatchOfOrders {
-		newOrderStore.Put(firstBatchOfOrders[idx])
+	for idx := range firstBatchOfOrders {
+		newOrderStore.Put(*firstBatchOfOrders[idx])
 	}
 
 	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
@@ -185,8 +185,8 @@ func TestOrderBookDepth_TryToBreakIt(t *testing.T) {
 	// OK REMOVE ALL FROM THE FIRST BATCH
 	firstBatchOfOrders[1].Remaining = firstBatchOfOrders[1].Remaining - 50
 	firstBatchOfOrders[2].Remaining = firstBatchOfOrders[2].Remaining - 20
-	newOrderStore.Put(firstBatchOfOrders[1])
-	newOrderStore.Put(firstBatchOfOrders[2])
+	newOrderStore.Put(*firstBatchOfOrders[1])
+	newOrderStore.Put(*firstBatchOfOrders[2])
 
 
 	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
@@ -213,8 +213,8 @@ func TestOrderBookDepth_TryToBreakIt(t *testing.T) {
 	secondBatchOforders[2].Status = msg.Order_Cancelled
 	secondBatchOforders[3].Status = msg.Order_Expired
 
-	for idx, _ := range secondBatchOforders {
-		newOrderStore.Put(secondBatchOforders[idx])
+	for idx := range secondBatchOforders {
+		newOrderStore.Put(*secondBatchOforders[idx])
 	}
 
 	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
@@ -411,8 +411,8 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		},
 	}
 
-	for idx, _ := range orders {
-		newOrderStore.Post(orders[idx])
+	for idx := range orders {
+		newOrderStore.Post(*orders[idx])
 	}
 
 	newOrderStore.Commit()
@@ -462,8 +462,8 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		},
 	}
 
-	for idx, _ := range ordersUpdate {
-		newOrderStore.Put(ordersUpdate[idx])
+	for idx := range ordersUpdate {
+		newOrderStore.Put(*ordersUpdate[idx])
 	}
 
 	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
@@ -534,8 +534,8 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 	}
 
-	for idx, _ := range orders {
-		newOrderStore.Post(orders[idx])
+	for idx := range orders {
+		newOrderStore.Post(*orders[idx])
 	}
 
 	newOrderStore.Commit()
@@ -585,8 +585,8 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 	}
 
-	for idx, _ := range ordersUpdate {
-		newOrderStore.Put(ordersUpdate[idx])
+	for idx := range ordersUpdate {
+		newOrderStore.Put(*ordersUpdate[idx])
 	}
 
 	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)

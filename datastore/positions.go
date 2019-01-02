@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"vega/msg"
+	"vega/log"
 )
 
 type MarketBucket struct {
@@ -13,6 +14,7 @@ type MarketBucket struct {
 }
 
 func (ts *badgerTradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
+
 	marketBuckets := make(map[string]*MarketBucket, 0)
 	tradesByTimestamp, err := ts.GetByParty(party, nil)
 
@@ -20,6 +22,8 @@ func (ts *badgerTradeStore) GetTradesBySideBuckets(party string) map[string]*Mar
 	if err != nil {
 		return marketBuckets
 	}
+
+	log.Debugf("Total trades by timestamp for party %s = %d", party, len(tradesByTimestamp))
 
 	for idx, trade := range tradesByTimestamp {
 		if _, ok := marketBuckets[trade.Market]; !ok {

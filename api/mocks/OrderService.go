@@ -198,16 +198,14 @@ func (_m *OrderService) GetCurrentTime(ctx context.Context) (time.Time, error) {
 }
 
 // GetMarketDepth provides a mock function with given fields: ctx, market
-func (_m *OrderService) GetMarketDepth(ctx context.Context, market string) (*msg.MarketDepth, error) {
+func (_m *OrderService) GetMarketDepth(ctx context.Context, market string) (msg.MarketDepth, error) {
 	ret := _m.Called(ctx, market)
 
-	var r0 *msg.MarketDepth
-	if rf, ok := ret.Get(0).(func(context.Context, string) *msg.MarketDepth); ok {
+	var r0 msg.MarketDepth
+	if rf, ok := ret.Get(0).(func(context.Context, string) msg.MarketDepth); ok {
 		r0 = rf(ctx, market)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*msg.MarketDepth)
-		}
+		r0 = ret.Get(0).(msg.MarketDepth)
 	}
 
 	var r1 error

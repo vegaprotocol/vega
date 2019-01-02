@@ -268,9 +268,9 @@ func populateStores(t *testing.T, orderStore OrderStore, tradeStore TradeStore) 
 	}
 
 	// Add orders
-	err := orderStore.Post(orderA)
+	err := orderStore.Post(*orderA)
 	assert.Nil(t, err)
-	err = orderStore.Post(orderB)
+	err = orderStore.Post(*orderB)
 	assert.Nil(t, err)
 
 	// Add trades

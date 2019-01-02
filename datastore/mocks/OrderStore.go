@@ -131,16 +131,14 @@ func (_m *OrderStore) GetByPartyAndId(party string, id string) (*msg.Order, erro
 }
 
 // GetMarketDepth provides a mock function with given fields: market
-func (_m *OrderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
+func (_m *OrderStore) GetMarketDepth(market string) (msg.MarketDepth, error) {
 	ret := _m.Called(market)
 
-	var r0 *msg.MarketDepth
-	if rf, ok := ret.Get(0).(func(string) *msg.MarketDepth); ok {
+	var r0 msg.MarketDepth
+	if rf, ok := ret.Get(0).(func(string) msg.MarketDepth); ok {
 		r0 = rf(market)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*msg.MarketDepth)
-		}
+		r0 = ret.Get(0).(msg.MarketDepth)
 	}
 
 	var r1 error
@@ -154,11 +152,11 @@ func (_m *OrderStore) GetMarketDepth(market string) (*msg.MarketDepth, error) {
 }
 
 // Post provides a mock function with given fields: order
-func (_m *OrderStore) Post(order *msg.Order) error {
+func (_m *OrderStore) Post(order msg.Order) error {
 	ret := _m.Called(order)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*msg.Order) error); ok {
+	if rf, ok := ret.Get(0).(func(msg.Order) error); ok {
 		r0 = rf(order)
 	} else {
 		r0 = ret.Error(0)
@@ -168,11 +166,11 @@ func (_m *OrderStore) Post(order *msg.Order) error {
 }
 
 // Put provides a mock function with given fields: order
-func (_m *OrderStore) Put(order *msg.Order) error {
+func (_m *OrderStore) Put(order msg.Order) error {
 	ret := _m.Called(order)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*msg.Order) error); ok {
+	if rf, ok := ret.Get(0).(func(msg.Order) error); ok {
 		r0 = rf(order)
 	} else {
 		r0 = ret.Error(0)

@@ -182,7 +182,7 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (msg.Marke
 		return msg.MarketDepth{}, err
 	}
 
-	return *depth, nil
+	return depth, nil
 }
 
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
@@ -616,7 +616,7 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 }
 
 func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error) {
-	// Validate market
+	// Validate market, and todo future Party (when party store exists)
 	err := r.validateMarket(ctx, &market)
 	if err != nil {
 		return nil, err
@@ -627,10 +627,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 }
 
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan msg.Candle, error) {
-
-	// Validate market and interval
-	// ----------------------------
-	
+	// Validate market, and todo future Party (when party store exists)
 	err := r.validateMarket(ctx, &market)
 	if err != nil {
 		return nil, err
