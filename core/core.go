@@ -308,6 +308,9 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 	log.Debugf("Core: Removed %v expired orders from matching engine, now update stores", len(expiringOrders))
 
 	for _, order := range expiringOrders {
+
+		log.Debugf("expiring order %s > %s", order.String(), order.Status)
+
 		err := v.OrderStore.Put(order)
 		if err != nil {
 			log.Errorf("error updating order store for remove expiring: %s - %s", order, err.Error())

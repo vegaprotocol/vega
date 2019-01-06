@@ -145,9 +145,15 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		}
 	}
 
-	for idx, _ := range impactedOrders {
+	for idx := range impactedOrders {
 		if impactedOrders[idx].Remaining == 0 {
 			impactedOrders[idx].Status = msg.Order_Filled
+
+			// Ensure any fully filled impacted GTT orders are removed
+			// from internal matching engine pending orders list
+			if impactedOrders[idx].Type == msg.Order_GTT {
+				b.removePendingGttOrder(*impactedOrders[idx])
+			}
 		}
 	}
 
@@ -201,6 +207,20 @@ func (b *OrderBook) getOppositeSide(orderSide msg.Side) *OrderBookSide {
 	} else {
 		return b.buy
 	}
+}
+
+func (b OrderBook) removePendingGttOrder(order msg.Order) bool {
+	found := -1
+	for idx, or := range b.expiringOrders {
+		if or.Id == order.Id {
+			found = idx
+		}
+	}
+	if found > -1 {
+		b.expiringOrders = append(b.expiringOrders[:found], b.expiringOrders[found+1:]...)
+		return true
+	}
+	return false
 }
 
 func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.Order) *msg.OrderConfirmation {

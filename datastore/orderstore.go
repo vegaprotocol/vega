@@ -49,7 +49,7 @@ type badgerOrderStore struct {
 	badger         *badgerStore
 	subscribers    map[uint64]chan<- []msg.Order
 	subscriberId   uint64
-	orderBookDepth MarketDepthManager
+	orderBookDepth DepthManager
 	buffer         []msg.Order
 	mu             sync.Mutex
 }
@@ -65,7 +65,7 @@ func NewOrderStore(dir string) OrderStore {
 	bs := badgerStore{db: db}
 	return &badgerOrderStore{
 		badger:         &bs,
-		orderBookDepth: NewMarketDepthUpdaterGetter(),
+		orderBookDepth: NewDepth(),
 		subscribers:    make(map[uint64]chan<- []msg.Order),
 		buffer:         make([]msg.Order, 0),
 	}
@@ -114,38 +114,38 @@ func (os *badgerOrderStore) Post(order msg.Order) error {
 // to queue the operation to be committed later.
 func (os *badgerOrderStore) Put(order msg.Order) error {
 
-	var orderBeforeUpdate msg.Order
-	var recordExistsInBuffer bool
+//	var orderBeforeUpdate msg.Order
+	//var recordExistsInBuffer bool
 
-	for idx := range os.buffer {
-		if os.buffer[idx].Id == order.Id {
+	//for idx := range os.buffer {
+	//	if os.buffer[idx].Id == order.Id {
 			// we found an order in our write queue that matches
 			// the order being updated, swap for latest data
-			orderBeforeUpdate = os.buffer[idx]
-			os.buffer[idx] = order
-			recordExistsInBuffer = true
-			break
-		}
-	}
+//			orderBeforeUpdate = os.buffer[idx]
+	//		os.buffer[idx] = order
+	//		recordExistsInBuffer = true
+	//		break
+	//	}
+	//}
 
-	if !recordExistsInBuffer {
+	//if !recordExistsInBuffer {
 		// we tried to update a record that is not in our buffer, validate it exists
 		// with a read transaction lookup and add to write queue if exists
-		if order.Status != msg.Order_Cancelled && order.Status != msg.Order_Expired {
-			o, err := os.GetByMarketAndId(order.Market, order.Id)
-			if err != nil {
-				return err
-			}
-			orderBeforeUpdate = *o
-		}
+		//if order.Status != msg.Order_Cancelled && order.Status != msg.Order_Expired {
+		//	o, err := os.GetByMarketAndId(order.Market, order.Id)
+		//	if err != nil {
+		//		return err
+		//	}
+		//	orderBeforeUpdate = *o
+		//}
 		os.addToBuffer(order)
-	}
-
-	if order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
-		os.orderBookDepth.DecreaseByTradedVolume(&order, 0)
-	} else {
-		os.orderBookDepth.DecreaseByTradedVolume(&order, orderBeforeUpdate.Remaining - order.Remaining)
-	}
+	//}
+	//
+	//if order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
+	//	os.orderBookDepth.DecreaseByTradedVolume(order, 0)
+	//} else {
+	//	os.orderBookDepth.DecreaseByTradedVolume(order, orderBeforeUpdate.Remaining - order.Remaining)
+	//}
 
 	return nil
 }
@@ -316,29 +316,37 @@ func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*msg.Order
 // GetMarketDepth calculates and returns order book depth for a given market.
 func (os *badgerOrderStore) GetMarketDepth(market string) (msg.MarketDepth, error) {
 	// load from store
-	buy := os.orderBookDepth.getBuySide()
-	sell := os.orderBookDepth.getSellSide()
+	buy := os.orderBookDepth.BuySide()
+	sell := os.orderBookDepth.SellSide()
+
+	var buyPtr []*msg.PriceLevel
+	var sellPtr []*msg.PriceLevel
 
 	// recalculate accumulated volume
 	// --- buy side ---
 	for idx := range buy {
 		if idx == 0 {
 			buy[idx].CumulativeVolume = buy[idx].Volume
+
+			buyPtr = append(buyPtr, &buy[idx].PriceLevel)
 			continue
 		}
 		buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
+		buyPtr = append(buyPtr, &buy[idx].PriceLevel)
 	}
 	// --- sell side ---
 	for idx := range sell {
 		if idx == 0 {
 			sell[idx].CumulativeVolume = sell[idx].Volume
+			sellPtr = append(sellPtr, &sell[idx].PriceLevel)
 			continue
 		}
 		sell[idx].CumulativeVolume = sell[idx-1].CumulativeVolume + sell[idx].Volume
+		sellPtr = append(sellPtr, &sell[idx].PriceLevel)
 	}
 
 	// return new re-calculated market depth for each side of order book
-	orderBookDepth := msg.MarketDepth{Name: market, Buy: buy, Sell: sell}
+	orderBookDepth := msg.MarketDepth{Name: market, Buy: buyPtr, Sell: sellPtr}
 	return orderBookDepth, nil
 }
 
@@ -384,6 +392,8 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 	wb := os.badger.db.NewWriteBatch()
 	defer wb.Cancel()
 
+	log.Debugf("length of batch = %d", len(batch))
+
 	insertBatchAtomically := func() error {
 		for idx := range batch {
 			orderBuf, err := proto.Marshal(&batch[idx])
@@ -419,9 +429,7 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 
 	// update order book depth
 	for idx := range batch {
-		if batch[idx].Remaining != uint64(0) {
-			os.orderBookDepth.Add(&batch[idx])
-		}
+		os.orderBookDepth.Update(batch[idx])
 	}
 
 	return nil
