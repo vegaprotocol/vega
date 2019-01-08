@@ -63,11 +63,14 @@ func NewOrderStore(dir string) OrderStore {
 		log.Fatalf(err.Error())
 	}
 	bs := badgerStore{db: db}
+	
+	// todo(cdm): dynamic market depth initialisation/creation/removal
 	depthMap := make(map[string]MarketDepth)
 	depthMap["BTC/DEC19"] = NewMarketDepth("BTC/DEC19")
+
 	return &badgerOrderStore{
 		badger:         &bs,
-		marketDepth   : make(map[string]MarketDepth),
+		marketDepth   : depthMap,
 		subscribers:    make(map[uint64]chan<- []msg.Order),
 		buffer:         make([]msg.Order, 0),
 	}
@@ -393,9 +396,7 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 
 	wb := os.badger.db.NewWriteBatch()
 	defer wb.Cancel()
-
-	log.Debugf("length of batch = %d", len(batch))
-
+	
 	insertBatchAtomically := func() error {
 		for idx := range batch {
 			orderBuf, err := proto.Marshal(&batch[idx])
@@ -431,7 +432,7 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 
 	// update order book depth
 	for idx := range batch {
-		os.marketDepth[batch[idx].Market].Update(batch[idx])
+		os.marketDepth["BTC/DEC19"].Update(batch[idx])
 	}
 
 	return nil

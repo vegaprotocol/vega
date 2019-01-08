@@ -7,7 +7,6 @@ import (
 	"vega/msg"
 
 	"github.com/stretchr/testify/assert"
-	"vega/core"
 )
 
 // this runs just once as first

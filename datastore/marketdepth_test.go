@@ -8,8 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
-func TestMarketDepth_TryToBreakIt(t *testing.T) {
+func TestMarketDepth_Hard(t *testing.T) {
 	var newOrderStore = NewOrderStore("../tmp/orderstore")
 	defer newOrderStore.Close()
 
@@ -194,7 +193,6 @@ func TestMarketDepth_TryToBreakIt(t *testing.T) {
 
 	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
 
-
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
 	assert.Equal(t, uint64(1), marketDepth.Buy[0].NumberOfOrders)
@@ -210,11 +208,8 @@ func TestMarketDepth_TryToBreakIt(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
 
-	fmt.Println("rem test A = ",	secondBatchOforders[0].Remaining )
 	// OK REMOVE ALL FROM THE SECOND BATCH TOO MUCH
 	secondBatchOforders[0].Remaining = secondBatchOforders[0].Remaining - uint64(100)
-
-	fmt.Println("rem test B = ",	secondBatchOforders[0].Remaining )
 
 	secondBatchOforders[1].Remaining = 0
 	secondBatchOforders[2].Status = msg.Order_Cancelled
@@ -232,7 +227,7 @@ func TestMarketDepth_TryToBreakIt(t *testing.T) {
 }
 
 
-func TestOrderBookDepth_All(t *testing.T){
+func TestOrderBookDepth_Soft(t *testing.T){
 
 	var marketDepth marketDepth
 
@@ -275,9 +270,6 @@ func TestOrderBookDepth_All(t *testing.T){
 	assert.Equal(t, marketDepth.Buy[4].NumberOfOrders, uint64(1))
 	assert.Equal(t, marketDepth.Buy[4].CumulativeVolume, uint64(0))
 
-
-
-
 	marketDepth.Update(msg.Order{Id: "03", Side: msg.Side_Buy, Price: 111, Remaining: 50})
 	marketDepth.Update(msg.Order{Id: "06", Side: msg.Side_Buy, Price: 114, Remaining: 80})
 	marketDepth.Update(msg.Order{Id: "05", Side: msg.Side_Buy, Price: 113, Remaining: 0})
@@ -292,7 +284,7 @@ func TestOrderBookDepth_All(t *testing.T){
 	assert.Equal(t, marketDepth.Buy[1].NumberOfOrders, uint64(1))
 	assert.Equal(t, marketDepth.Buy[1].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, uint64(111), marketDepth.Buy[2].Price)
+	assert.Equal(t, marketDepth.Buy[2].Price, uint64(111))
 	assert.Equal(t, marketDepth.Buy[2].Volume, uint64(150))
 	assert.Equal(t, marketDepth.Buy[2].NumberOfOrders, uint64(2))
 	assert.Equal(t, marketDepth.Buy[2].CumulativeVolume, uint64(0))
@@ -301,7 +293,6 @@ func TestOrderBookDepth_All(t *testing.T){
 	assert.Equal(t, marketDepth.Buy[3].Volume, uint64(100))
 	assert.Equal(t, marketDepth.Buy[3].NumberOfOrders, uint64(1))
 	assert.Equal(t, marketDepth.Buy[3].CumulativeVolume, uint64(0))
-
 
 	// test sell side
 	ordersList = []msg.Order{
@@ -371,8 +362,6 @@ func TestOrderBookDepth_All(t *testing.T){
 
 
 func TestOrderBookDepthBuySide(t *testing.T) {
-	// test orderbook depth
-
 	// Scenario:
 
 	// POST few orders to datastore
@@ -496,8 +485,6 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 }
 
 func TestOrderBookDepthSellSide(t *testing.T) {
-	// test orderbook depth
-
 	// Scenario:
 
 	// POST few orders to datastore
@@ -618,6 +605,34 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	assert.Equal(t, uint64(200), marketDepth.Sell[1].CumulativeVolume)
 
 	// 113 is removed
+	assert.Equal(t, 2, len(marketDepth.Sell))
+
+	invalidNewOrders := []*msg.Order{
+		{
+			Id:        "98",
+			Side:      msg.Side_Buy,
+			Market:    testMarket,
+			Party:     testPartyA,
+			Price:     1337,
+			Remaining: 0,
+		},
+		{
+			Id:        "99",
+			Side:      msg.Side_Sell,
+			Market:    testMarket,
+			Party:     testPartyA,
+			Price:     1337,
+			Remaining: 0,
+		},
+	}
+
+	for idx := range invalidNewOrders {
+		newOrderStore.Post(*invalidNewOrders[idx])
+	}
+	newOrderStore.Commit()
+
+	// 1337s did not get added to either side, they're invalid
+	assert.Equal(t, 0, len(marketDepth.Buy))
 	assert.Equal(t, 2, len(marketDepth.Sell))
 }
 

@@ -153,8 +153,9 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	marketResolver := root.Market()
 	assert.NotNil(t, marketResolver)
 
+	marketId := "BTC/DEC19"
 	market := &Market{
-		Name: btcDec18,
+		Name: marketId,
 	}
 
 	// DEPTH
@@ -162,7 +163,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	depth, err := marketResolver.Depth(ctx, market)
 	assert.Nil(t, err)
 	assert.NotNil(t, depth)
-	assert.Equal(t, btcDec18, depth.Name)
+	assert.Equal(t, marketId, depth.Name)
 
 	//mockOrderService.On("GetMarketDepth", ctx, btcDec18).Return(
 	//	nil, errors.New("phobos transport system overload"),
@@ -173,7 +174,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 
 	// ORDERS
 
-	mockOrderService.On("GetByMarket", ctx, btcDec18, &filters.OrderQueryFilters{}).Return(
+	mockOrderService.On("GetByMarket", ctx, marketId, &filters.OrderQueryFilters{}).Return(
 		[]*msg.Order{
 			&msg.Order{
 				Id: "order-id-1",
