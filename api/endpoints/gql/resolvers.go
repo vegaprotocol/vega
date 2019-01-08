@@ -89,12 +89,7 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 	}
 
 	// Todo(cdm): MarketStore --> check if market exists via dedicated marketstore...
-	//existing, err := r.orderService.GetMarkets(ctx)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	var existing = []string{"BTC/DEC18"}
+	var existing = []string{"BTC/DEC19"}
 	found := false
 	for _, m := range existing {
 		if *name == m {
@@ -661,16 +656,12 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 }
 
 func (r *MySubscriptionResolver) validateMarket(ctx context.Context, market *string) error {
-	// todo(cdm): change this when we have a marketservice/marketstore
 	if market != nil {
 		if len(*market) == 0 {
 			return errors.New("market must not be empty")
 		}
-		//markets, err := r.orderService.GetMarkets(ctx)
-		//if err != nil {
-		//	return err
-		//}
-		var markets = []string{"BTC/DEC18"}
+		// todo(cdm): change hard-coded list of markets when we have market service / market stores
+		var markets = []string{"BTC/DEC19"}
 		// Scan all markets for a match
 		found := false
 		for _, v := range markets {

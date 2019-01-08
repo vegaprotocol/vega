@@ -11,7 +11,7 @@ import (
 func TestVegaTxEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	order := &msg.Order{
 		Id:     "V9-120",
-		Market: "BTC/DEC18",
+		Market: "BTC/DEC19",
 		Party:  "PartyA",
 	}
 
@@ -29,7 +29,7 @@ func TestVegaTxEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "V9-120", resultOrder.Id)
-	assert.Equal(t, "BTC/DEC18", resultOrder.Market)
+	assert.Equal(t, "BTC/DEC19", resultOrder.Market)
 	assert.Equal(t, "PartyA", resultOrder.Party)
 }
 

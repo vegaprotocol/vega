@@ -28,7 +28,7 @@ const orderStoreDir = "../tmp/orderstore-api"
 //	assert.NotNil(t, newTradeService)
 //}
 
-//const ServiceTestMarket = "BTC/DEC18"
+//const ServiceTestMarket = "BTC/DEC19"
 
 //func TestTradeService_TestGetAllTradesOnMarket(t *testing.T) {
 //	var market = ServiceTestMarket
@@ -222,7 +222,7 @@ func FlushTradeStore() {
 }
 
 func TestPositions(t *testing.T) {
-	testMarket := "BTC/DEC18"
+	testMarket := "BTC/DEC19"
 	testPartyA := "testPartyA"
 	testPartyB := "testPartyB"
 

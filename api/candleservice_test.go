@@ -23,7 +23,7 @@ func FlushCandleStore() {
 }
 
 func TestCandleService_ObserveCandles(t *testing.T) {
-	MarketBTC := "BTC/DEC18"
+	MarketBTC := "BTC/DEC19"
 	MarketETH := "ETH/APR19"
 	var ctx = context.Background()
 	var candleService = NewCandleService()
@@ -210,7 +210,7 @@ func isSubscriptionEmpty(transport <-chan msg.Candle) bool {
 }
 
 func TestSubscriptionUpdates_MinMax(t *testing.T) {
-	MarketBTC := "BTC/DEC18"
+	MarketBTC := "BTC/DEC19"
 	var ctx= context.Background()
 	var candleService= NewCandleService()
 

@@ -73,7 +73,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	mockCandleService := &mocks.CandleService{}
 
 	mockOrderService.On("GetMarkets", ctx).Return(
-		[]string {"BTC/DEC18"}, nil,
+		[]string {"BTC/DEC19"}, nil,
 	).Times(3)
 
 	var tradeService api.TradeService
@@ -89,7 +89,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	assert.NotNil(t, vegaResolver)
 
 	vega := &Vega{}
-	name := "BTC/DEC18"
+	name := "BTC/DEC19"
 	markets, err := vegaResolver.Markets(ctx, vega, &name)
 	assert.Nil(t, err)
 	assert.NotNil(t, markets)
@@ -130,15 +130,14 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	mockOrderService := &mocks.OrderService{}
 	mockCandleService := &mocks.CandleService{}
 
-	btcDec18 := "BTC/DEC18"
 	mockOrderService.On("GetMarkets", ctx).Return(
-		[]string{"testMarket", btcDec18}, nil,
+		[]string{"testMarket", "BTC/DEC19"}, nil,
 	).Times(3)
 
 	depth := msg.MarketDepth{
-		Name: btcDec18,
+		Name: "BTC/DEC19",
 	}
-	mockOrderService.On("GetMarketDepth", ctx, btcDec18).Return(
+	mockOrderService.On("GetMarketDepth", ctx, "BTC/DEC19").Return(
 		depth, nil,
 	).Once()
 

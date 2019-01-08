@@ -80,11 +80,7 @@ func (h *Handlers) OrdersByParty(ctx context.Context, request *api.OrdersByParty
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
 func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (*api.MarketsResponse, error) {
-	//markets, err := h.OrderService.GetMarkets(ctx)
-	//if err != nil {
-	//	return nil, err
-	//}
-	var markets = []string{"BTC/DEC18"}
+	var markets = []string{"BTC/DEC19"}
 	var response = &api.MarketsResponse{}
 	if len(markets) > 0 {
 		response.Markets = markets

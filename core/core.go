@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	marketName               = "BTC/DEC18"
+	marketName               = "BTC/DEC19"
 	riskCalculationFrequency = 5
 )
 

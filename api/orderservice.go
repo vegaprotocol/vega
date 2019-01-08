@@ -5,11 +5,11 @@ import (
 	"github.com/pkg/errors"
 	"time"
 	"vega/blockchain"
-	"vega/core"
 	"vega/datastore"
 	"vega/filters"
 	"vega/log"
 	"vega/msg"
+	"vega/core"
 	"fmt"
 )
 
@@ -233,7 +233,7 @@ func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<
 
 	go func(id uint64, internal chan []msg.Order) {
 		<-ctx.Done()
-		log.Debugf("OrderService -> Depth closed connection: %d", id)
+		log.Debugf("OrderService -> marketDepth closed connection: %d", id)
 		err := p.orderStore.Unsubscribe(id)
 		if err != nil {
 			log.Errorf("Error un-subscribing depth when context.Done() on OrderService for id: %d", id)
@@ -249,9 +249,9 @@ func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<
 			} else {
 				select {
 					case depth <- d:
-						log.Debugf("OrderService -> MarketDepth for subscriber %d sent successfully", ref)
+						log.Debugf("OrderService -> marketDepth for subscriber %d sent successfully", ref)
 					default:
-						log.Debugf("OrderService -> MarketDepth for subscriber %d not sent", ref)
+						log.Debugf("OrderService -> marketDepth for subscriber %d not sent", ref)
 				}
 			}
 

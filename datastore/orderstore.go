@@ -49,7 +49,7 @@ type badgerOrderStore struct {
 	badger         *badgerStore
 	subscribers    map[uint64]chan<- []msg.Order
 	subscriberId   uint64
-	orderBookDepth DepthManager
+	marketDepth    map[string]MarketDepth
 	buffer         []msg.Order
 	mu             sync.Mutex
 }
@@ -63,9 +63,11 @@ func NewOrderStore(dir string) OrderStore {
 		log.Fatalf(err.Error())
 	}
 	bs := badgerStore{db: db}
+	depthMap := make(map[string]MarketDepth)
+	depthMap["BTC/DEC19"] = NewMarketDepth("BTC/DEC19")
 	return &badgerOrderStore{
 		badger:         &bs,
-		orderBookDepth: NewDepth(),
+		marketDepth   : make(map[string]MarketDepth),
 		subscribers:    make(map[uint64]chan<- []msg.Order),
 		buffer:         make([]msg.Order, 0),
 	}
@@ -316,8 +318,8 @@ func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*msg.Order
 // GetMarketDepth calculates and returns order book depth for a given market.
 func (os *badgerOrderStore) GetMarketDepth(market string) (msg.MarketDepth, error) {
 	// load from store
-	buy := os.orderBookDepth.BuySide()
-	sell := os.orderBookDepth.SellSide()
+	buy := os.marketDepth["BTC/DEC19"].BuySide()
+	sell := os.marketDepth["BTC/DEC19"].SellSide()
 
 	var buyPtr []*msg.PriceLevel
 	var sellPtr []*msg.PriceLevel
@@ -429,7 +431,7 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 
 	// update order book depth
 	for idx := range batch {
-		os.orderBookDepth.Update(batch[idx])
+		os.marketDepth[batch[idx].Market].Update(batch[idx])
 	}
 
 	return nil

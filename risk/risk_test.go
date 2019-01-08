@@ -7,6 +7,7 @@ import (
 	"vega/msg"
 
 	"github.com/stretchr/testify/assert"
+	"vega/core"
 )
 
 // this runs just once as first
@@ -16,7 +17,7 @@ func init() {
 
 func TestRiskEngine_AddNewMarket(t *testing.T) {
 	re := New()
-	newMarket := &msg.Market{Name: "BTC/DEC18"}
+	newMarket := &msg.Market{Name: "BTC/DEC19"}
 	re.AddNewMarket(newMarket)
 	riskFactorLong, riskFactorShort, err := re.GetRiskFactors(newMarket.Name)
 	assert.Nil(t, err)
@@ -26,7 +27,7 @@ func TestRiskEngine_AddNewMarket(t *testing.T) {
 
 func TestRiskEngine_CalibrateRiskModel(t *testing.T) {
 	re := New()
-	newMarket := &msg.Market{Name: "BTC/DEC18"}
+	newMarket := &msg.Market{Name: "BTC/DEC19"}
 	re.AddNewMarket(newMarket)
 	riskFactorLong, riskFactorShort, err := re.GetRiskFactors(newMarket.Name)
 	assert.Nil(t, err)
