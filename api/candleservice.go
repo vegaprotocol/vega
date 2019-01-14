@@ -50,7 +50,12 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 
 	go func(iT *datastore.InternalTransport) {
 		for v := range iT.Transport {
-			candleCh <- v
+			select {
+				case candleCh <- v:
+					log.Debugf("CandleService -> Candles for subscriber %d sent successfully", ref)
+				default:
+					log.Debugf("CandleService -> Candles for subscriber %d not sent", ref)
+			}
 		}
 		log.Debugf("CandleService -> Channel for subscriber %d has been closed", ref)
 	}(&iT)
