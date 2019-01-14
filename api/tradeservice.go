@@ -89,21 +89,21 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 	internal := make(chan []msg.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []msg.Trade) {
+	go func(id uint64, internal chan []msg.Trade, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		<-ctx.Done()
-		log.Debugf("TradeService -> Subscriber closed connection: %d", id)
+		log.Debugf("TradeService -> Subscriber closed connection: %d [%s]", id, ip)
 		err := t.tradeStore.Unsubscribe(id)
 		if err != nil {
-			log.Errorf("Error un-subscribing when context.Done() on TradeService for id: %d", id)
+			log.Errorf("Error un-subscribing when context.Done() on TradeService for subscriber %d [%s]: %s", id, ip, err)
 		}
-	}(ref, internal)
+	}(ref, internal, ctx)
 
-	go func(id uint64) {
-
+	go func(id uint64, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		for v := range internal {
-
+			
 			validatedTrades := make([]msg.Trade, 0)
-
 			for _, item := range v {
 				if market != nil && item.Market != *market {
 					continue
@@ -117,14 +117,14 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 			//if len(validatedTrades) > 0 {
 				select {
 					case trades <- validatedTrades:
-						log.Debugf("TradeService -> Trades for subscriber %d sent successfully", ref)
+						log.Debugf("TradeService -> Trades for subscriber %d [%s] sent successfully", ref, ip)
 					default:
-						log.Debugf("TradeService -> Trades for subscriber %d not sent", ref)
+						log.Debugf("TradeService -> Trades for subscriber %d [%s] not sent", ref, ip)
 				}
 			//}
 		}
-		log.Debugf("TradeService -> Channel for subscriber %d has been closed", ref)
-	}(ref)
+		log.Debugf("TradeService -> Channel for subscriber %d [%s] has been closed", ref, ip)
+	}(ref, ctx)
 
 	return trades, ref
 }
@@ -134,32 +134,34 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 	internal := make(chan []msg.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []msg.Trade) {
+	go func(id uint64, internal chan []msg.Trade, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		<-ctx.Done()
-		log.Debugf("TradeService -> Positions subscriber closed connection: %d", id)
+		log.Debugf("TradeService -> Positions subscriber closed connection: % [%s]", id, ip)
 		err := t.tradeStore.Unsubscribe(id)
 		if err != nil {
-			log.Errorf("Error un-subscribing positions when context.Done() on TradeService for id: %d", id, err)
+			log.Errorf("Error un-subscribing positions when context.Done() on TradeService for subscriber %d [%s]: %s", id, ip, err)
 		}
-	}(ref, internal)
+	}(ref, internal, ctx)
 
-	go func(id uint64) {
+	go func(id uint64, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		for range internal {
 			mapOfMarketPositions, err := t.GetPositionsByParty(ctx, party)
 			if err != nil {
-				log.Errorf("Error getting positions by party on TradeService for id: %d", id, err)
+				log.Errorf("Error getting positions by party on TradeService for subscriber %d [%s]: %s", id, ip, err)
 			}
 			for _, marketPositions := range mapOfMarketPositions {
 				select {
 					case positions <- *marketPositions:
-						log.Debugf("TradeService -> Positions for subscriber %d sent successfully", ref)
+						log.Debugf("TradeService -> Positions for subscriber %d [%s] sent successfully", ref, ip)
 					default:
-						log.Debugf("TradeService -> Positions for subscriber %d not sent", ref)
+						log.Debugf("TradeService -> Positions for subscriber %d [%s] not sent", ref, ip)
 				}
 			}
 		}
-		log.Debugf("TradeService -> Channel for positions subscriber %d has been closed", ref)
-	}(ref)
+		log.Debugf("TradeService -> Channel for positions subscriber %d [%s] has been closed", ref, ip)
+	}(ref, ctx)
 
 	return positions, ref
 }
@@ -246,6 +248,8 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 
 		positions = append(positions, marketPositions)
 	}
+	
+	log.Debugf("Positions calculated: %d", len(positions))
 
 	return positions, nil
 }

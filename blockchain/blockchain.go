@@ -180,12 +180,14 @@ func (app *Blockchain) DeliverTx(tx []byte) types.ResponseDeliverTx {
 			//	log.Infof("- passive orders affected: %+v", confirmationMessage.PassiveOrdersAffected)
 
 				current_tb += len(confirmationMessage.Trades)
+				
+				confirmationMessage.Release()
 			}
 			if errorMessage != msg.OrderError_NONE {
 				log.Infof("ABCI order error message (create):")
 				log.Infof("- error: %+v", errorMessage.String())
 			}
-			confirmationMessage.Release()
+
 			current_ob++
 
 		case CancelOrderCommand:

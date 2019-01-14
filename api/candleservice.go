@@ -39,26 +39,28 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 	iT := datastore.InternalTransport{Market: *market, Interval: *interval, Transport: make(chan msg.Candle)}
 	ref := c.candleStore.Subscribe(&iT)
 
-	go func(id uint64) {
+	go func(id uint64, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		<-ctx.Done()
-		log.Debugf("CandleService -> Subscriber closed connection: %d", id)
+		log.Debugf("CandleService -> Subscriber closed connection: %d [%s]", id, ip)
 		err := c.candleStore.Unsubscribe(id)
 		if err != nil {
-			log.Errorf("Error un-subscribing when context.Done() on CandleService for id: %d", id)
+			log.Errorf("Error un-subscribing when context.Done() on CandleService for id: %d [%s]", id, ip)
 		}
-	}(ref)
+	}(ref, ctx)
 
-	go func(iT *datastore.InternalTransport) {
+	go func(iT *datastore.InternalTransport, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		for v := range iT.Transport {
 			select {
 				case candleCh <- v:
-					log.Debugf("CandleService -> Candles for subscriber %d sent successfully", ref)
+					log.Debugf("CandleService -> Candles for subscriber %d [%s] sent successfully", ref, ip)
 				default:
-					log.Debugf("CandleService -> Candles for subscriber %d not sent", ref)
+					log.Debugf("CandleService -> Candles for subscriber %d [%s] not sent", ref, ip)
 			}
 		}
-		log.Debugf("CandleService -> Channel for subscriber %d has been closed", ref)
-	}(&iT)
+		log.Debugf("CandleService -> Channel for subscriber %d has been closed [%s]", ref, ip)
+	}(&iT, ctx)
 
 	return candleCh, ref
 }

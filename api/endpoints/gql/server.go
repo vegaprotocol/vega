@@ -11,6 +11,7 @@ import (
 	"vega/api"
 	"vega/log"
 	"runtime/debug"
+	"net"
 )
 
 type graphServer struct {
@@ -25,6 +26,38 @@ func NewGraphQLServer(orderService api.OrderService, tradeService api.TradeServi
 		tradeService: tradeService,
 		candleService: candleService,
 	}
+}
+
+func remoteAddrMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		found := false
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			log.Errorf("Middleware: %q is not splittable", r.RemoteAddr)
+		} else {
+			userIP := net.ParseIP(ip)
+			if userIP == nil {
+				log.Errorf("Middleware: %q is not IP:port", r.RemoteAddr)
+			} else {
+				found = true
+
+				// Only defined when site is accessed via non-anonymous proxy
+				// and takes precedence over RemoteAddr 
+				forward := r.Header.Get("X-Forwarded-For")
+				if forward != "" {
+					ip = forward
+				}
+			}
+		}
+
+		if found {
+			ctx := context.WithValue(r.Context(), "remote-ip-addr", ip)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
 }
 
 func (g *graphServer) Start() {
@@ -46,7 +79,7 @@ func (g *graphServer) Start() {
 		Resolvers: resolverRoot,
 	}
 	http.Handle("/", cors.Handler(handler.Playground("VEGA", "/query")))
-	http.Handle("/query", cors.Handler(handler.GraphQL(
+	http.Handle("/query", remoteAddrMiddleware(cors.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(upgrader),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
@@ -54,7 +87,7 @@ func (g *graphServer) Start() {
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
 		})),
-	))
+	)))
 
 	err := http.ListenAndServe(addr, nil)
 	log.Fatalf("Fatal error with GraphQL server: %v", err)

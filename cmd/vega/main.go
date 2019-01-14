@@ -13,9 +13,11 @@ import (
 	"flag"
 	"vega/datastore"
 	"path/filepath"
+	"github.com/pkg/profile"
 )
 
 func main() {
+
 	// Configuration and logging
 	config := core.GetConfig()
 
@@ -27,6 +29,11 @@ func main() {
 
 	if err := initLogger(logLevelFlag); err != nil {
 		log.Fatalf("%s", err)
+	}
+
+	// CPU profiler enabled when in debug mode
+	if logLevelFlag == "debug" {
+		defer profile.Start().Stop()
 	}
 
 	// todo read from something like gitlab

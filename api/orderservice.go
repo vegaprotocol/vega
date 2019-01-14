@@ -187,17 +187,18 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 	internal := make(chan []msg.Order)
 	ref := p.orderStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []msg.Order) {
+	go func(id uint64, internal chan []msg.Order, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		<-ctx.Done()
-		log.Debugf("OrderService -> Subscriber closed connection: %d", id)
+		log.Debugf("OrderService -> Subscriber closed connection: %d [%s]", id, ip)
 		err := p.orderStore.Unsubscribe(id)
 		if err != nil {
-			log.Errorf("Error un-subscribing when context.Done() on OrderService for id: %d", id)
+			log.Errorf("Error un-subscribing when context.Done() on OrderService for subscriber %d [%s]: %s", id, ip, err)
 		}
-	}(ref, internal)
+	}(ref, internal, ctx)
 
-	go func(id uint64) {
-		
+	go func(id uint64, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		// read internal channel
 		for v := range internal {
 
@@ -214,14 +215,14 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 			//if len(validatedOrders) > 0 {
 			select {
 				case orders <- validatedOrders:
-					log.Debugf("OrderService -> Orders for subscriber %d sent successfully", ref)
+					log.Debugf("OrderService -> Orders for subscriber %d [%s] sent successfully", ref, ip)
 				default:
-					log.Debugf("OrderService -> Orders for subscriber %d not sent", ref)
+					log.Debugf("OrderService -> Orders for subscriber %d [%s] not sent", ref, ip)
 			}
 			//}
 		}
-		log.Debugf("OrderService -> Channel for subscriber %d has been closed", ref)
-	}(ref)
+		log.Debugf("OrderService -> Channel for subscriber %d [%s] has been closed", ref, ip)
+	}(ref, ctx)
 
 	return orders, ref
 }
@@ -231,33 +232,33 @@ func (p *orderService) ObserveMarketDepth(ctx context.Context, market string) (<
 	internal := make(chan []msg.Order)
 	ref := p.orderStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []msg.Order) {
+	go func(id uint64, internal chan []msg.Order, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		<-ctx.Done()
-		log.Debugf("OrderService -> marketDepth closed connection: %d", id)
+		log.Debugf("OrderService -> marketDepth closed connection: %d [%s]", id, ip)
 		err := p.orderStore.Unsubscribe(id)
 		if err != nil {
-			log.Errorf("Error un-subscribing depth when context.Done() on OrderService for id: %d", id)
+			log.Errorf("Error un-subscribing depth when context.Done() on OrderService for subscriber %d [%s]: %s", id, ip, err)
 		}
-	}(ref, internal)
+	}(ref, internal, ctx)
 
-	go func(id uint64) {
+	go func(id uint64, ctx context.Context) {
+		ip := ipAddressFromContext(ctx)
 		for range internal {
-
 			d, err := p.orderStore.GetMarketDepth(market)
 			if err != nil {
-				log.Errorf("error calculating market depth", err)
+				log.Errorf("Error calculating market depth for subscriber %d [%s]: %s", ref, ip, err)
 			} else {
 				select {
 					case depth <- d:
-						log.Debugf("OrderService -> marketDepth for subscriber %d sent successfully", ref)
+						log.Debugf("OrderService -> marketDepth for subscriber %d [%s] sent successfully", ref, ip)
 					default:
-						log.Debugf("OrderService -> marketDepth for subscriber %d not sent", ref)
+						log.Debugf("OrderService -> marketDepth for subscriber %d [%s] not sent", ref, ip)
 				}
 			}
-
 		}
-		log.Debugf("OrderService -> Channel for depth subscriber %d has been closed", ref)
-	}(ref)
+		log.Debugf("OrderService -> Channel for depth subscriber %d [%s] has been closed", ref, ip)
+	}(ref, ctx)
 
 	return depth, ref
 }
