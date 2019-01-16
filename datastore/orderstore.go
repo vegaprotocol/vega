@@ -118,40 +118,7 @@ func (os *badgerOrderStore) Post(order msg.Order) error {
 // Put updates an order in the badger store, adds
 // to queue the operation to be committed later.
 func (os *badgerOrderStore) Put(order msg.Order) error {
-
-//	var orderBeforeUpdate msg.Order
-	//var recordExistsInBuffer bool
-
-	//for idx := range os.buffer {
-	//	if os.buffer[idx].Id == order.Id {
-			// we found an order in our write queue that matches
-			// the order being updated, swap for latest data
-//			orderBeforeUpdate = os.buffer[idx]
-	//		os.buffer[idx] = order
-	//		recordExistsInBuffer = true
-	//		break
-	//	}
-	//}
-
-	//if !recordExistsInBuffer {
-		// we tried to update a record that is not in our buffer, validate it exists
-		// with a read transaction lookup and add to write queue if exists
-		//if order.Status != msg.Order_Cancelled && order.Status != msg.Order_Expired {
-		//	o, err := os.GetByMarketAndId(order.Market, order.Id)
-		//	if err != nil {
-		//		return err
-		//	}
-		//	orderBeforeUpdate = *o
-		//}
-		os.addToBuffer(order)
-	//}
-	//
-	//if order.Status == msg.Order_Cancelled || order.Status == msg.Order_Expired {
-	//	os.orderBookDepth.DecreaseByTradedVolume(order, 0)
-	//} else {
-	//	os.orderBookDepth.DecreaseByTradedVolume(order, orderBeforeUpdate.Remaining - order.Remaining)
-	//}
-
+	os.addToBuffer(order)
 	return nil
 }
 
@@ -475,6 +442,9 @@ func (f *OrderFilter) apply(order *msg.Order) (include bool) {
 
 func (f *OrderFilter) isFull() bool {
 	if f.queryFilter.HasLast() && f.found == *f.queryFilter.Last {
+		return true
+	}
+	if f.queryFilter.HasFirst() && f.found == *f.queryFilter.First {
 		return true
 	}
 	return false
