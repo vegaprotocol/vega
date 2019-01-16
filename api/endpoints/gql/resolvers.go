@@ -2,27 +2,27 @@ package gql
 
 import (
 	"context"
-	"vega/api"
-	"vega/msg"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
-	"vega/log"
-	"fmt"
+	"vega/api"
 	"vega/filters"
+	"vega/log"
+	"vega/msg"
 	"vega/vegatime"
 )
 
 type resolverRoot struct {
-	orderService api.OrderService
-	tradeService api.TradeService
+	orderService  api.OrderService
+	tradeService  api.TradeService
 	candleService api.CandleService
 }
 
 func NewResolverRoot(orderService api.OrderService, tradeService api.TradeService, candleService api.CandleService) *resolverRoot {
 	return &resolverRoot{
-		orderService: orderService,
-		tradeService: tradeService,
+		orderService:  orderService,
+		tradeService:  tradeService,
 		candleService: candleService,
 	}
 }
@@ -64,8 +64,6 @@ func (r *resolverRoot) Subscription() SubscriptionResolver {
 	return (*MySubscriptionResolver)(r)
 }
 
-
-
 // BEGIN: Query Resolver
 
 type MyQueryResolver resolverRoot
@@ -76,8 +74,6 @@ func (r *MyQueryResolver) Vega(ctx context.Context) (Vega, error) {
 }
 
 // END: Query Resolver
-
-
 
 // BEGIN: Root Resolver
 
@@ -93,21 +89,48 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 	found := false
 	for _, m := range existing {
 		if *name == m {
-		   found = true
-		   break
-		} 
+			found = true
+			break
+		}
 	}
 	if !found {
 		return nil, errors.New(fmt.Sprintf("market %s does not exist", *name))
 	}
-	
+
 	var markets = make([]Market, 0)
 	var market = Market{
 		Name: *name,
 	}
 	markets = append(markets, market)
-	
+
 	return markets, nil
+}
+
+func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, name *string) (Market, error) {
+	var emptyResult Market
+
+	if name == nil {
+		return emptyResult, errors.New("all markets on VEGA query not implemented")
+	}
+
+	// Todo(cdm): MarketStore --> check if market exists via dedicated marketstore...
+	var existing = []string{"BTC/DEC19"}
+	found := false
+	for _, m := range existing {
+		if *name == m {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return emptyResult, errors.New(fmt.Sprintf("market %s does not exist", *name))
+	}
+
+	var market = Market{
+		Name: *name,
+	}
+
+	return market, nil
 }
 
 func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {
@@ -121,12 +144,11 @@ func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) (
 		Name: *name,
 	}
 	parties = append(parties, party)
-	
+
 	return parties, nil
 }
 
 // END: Root Resolver
-
 
 // BEGIN: Market Resolver
 
@@ -223,7 +245,6 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 
 // END: Market Resolver
 
-
 // BEGIN: Party Resolver
 
 type MyPartyResolver resolverRoot
@@ -259,7 +280,6 @@ func (r *MyPartyResolver) Positions(ctx context.Context, obj *Party) ([]msg.Mark
 }
 
 // END: Party Resolver
-
 
 // BEGIN: Market Depth Resolver
 
@@ -312,7 +332,7 @@ func (r *MyOrderResolver) Side(ctx context.Context, obj *msg.Order) (Side, error
 	return Side(obj.Side.String()), nil
 }
 func (r *MyOrderResolver) Market(ctx context.Context, obj *msg.Order) (Market, error) {
-	return Market {
+	return Market{
 		Name: obj.Market,
 	}, nil
 }
@@ -402,6 +422,7 @@ func (r *MyCandleResolver) Interval(ctx context.Context, obj *msg.Candle) (Inter
 		return IntervalI15M, nil
 	}
 }
+
 // END: Candle Resolver
 
 // BEGIN: Price Level Resolver
@@ -425,7 +446,6 @@ func (r *MyPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *msg.Pr
 }
 
 // END: Price Level Resolver
-
 
 // BEGIN: Position Resolver
 
@@ -455,11 +475,11 @@ func (r *MyPositionResolver) UnrealisedProfitDirection(ctx context.Context, obj 
 	return r.direction(obj.UnrealisedPNL), nil
 }
 
-func (r *MyPositionResolver) AverageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error)  {
+func (r *MyPositionResolver) AverageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error) {
 	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
 }
 
-func (r *MyPositionResolver) MinimumMargin(ctx context.Context, obj *msg.MarketPosition) (string, error)  {
+func (r *MyPositionResolver) MinimumMargin(ctx context.Context, obj *msg.MarketPosition) (string, error) {
 	return strconv.FormatInt(obj.MinimumMargin, 10), nil
 }
 
@@ -467,14 +487,14 @@ func (r *MyPositionResolver) Market(ctx context.Context, obj *msg.MarketPosition
 	return Market{Name: obj.Market}, nil
 }
 
-func (r *MyPositionResolver) absInt64Str(val int64) (string) {
+func (r *MyPositionResolver) absInt64Str(val int64) string {
 	if val < 0 {
-		return strconv.FormatInt(val * -1, 10)
+		return strconv.FormatInt(val*-1, 10)
 	}
 	return strconv.FormatInt(val, 10)
 }
 
-func (r *MyPositionResolver) direction(val int64) (ValueDirection) {
+func (r *MyPositionResolver) direction(val int64) ValueDirection {
 	if val < 0 {
 		return ValueDirectionNegative
 	}
@@ -482,7 +502,6 @@ func (r *MyPositionResolver) direction(val int64) (ValueDirection) {
 }
 
 // END: Position Resolver
-
 
 // BEGIN: Mutation Resolver
 
@@ -577,7 +596,6 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 
 // END: Mutation Resolver
 
-
 // BEGIN: Subscription Resolver
 
 type MySubscriptionResolver resolverRoot
@@ -627,29 +645,29 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var pbInterval msg.Interval
 	switch interval {
-		case IntervalI15M:
-			pbInterval = msg.Interval_I15M
-		case IntervalI1D:
-			pbInterval = msg.Interval_I1D
-		case IntervalI1H:
-			pbInterval = msg.Interval_I1H
-		case IntervalI1M:
-			pbInterval = msg.Interval_I1M
-		case IntervalI5M:
-			pbInterval = msg.Interval_I5M
-		case IntervalI6H:
-			pbInterval = msg.Interval_I6H
-		default:
-			log.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
-			pbInterval = msg.Interval_I15M
+	case IntervalI15M:
+		pbInterval = msg.Interval_I15M
+	case IntervalI1D:
+		pbInterval = msg.Interval_I1D
+	case IntervalI1H:
+		pbInterval = msg.Interval_I1H
+	case IntervalI1M:
+		pbInterval = msg.Interval_I1M
+	case IntervalI5M:
+		pbInterval = msg.Interval_I5M
+	case IntervalI6H:
+		pbInterval = msg.Interval_I6H
+	default:
+		log.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
+		pbInterval = msg.Interval_I15M
 	}
 
 	// Observe new candles for interval
 	// --------------------------------
-	
+
 	c, ref := r.candleService.ObserveCandles(ctx, &market, &pbInterval)
 	log.Infof("GraphQL Candle Interval %s -> New subscriber for market %s: %d", pbInterval.String(), market, ref)
 	return c, nil
@@ -678,5 +696,3 @@ func (r *MySubscriptionResolver) validateMarket(ctx context.Context, market *str
 }
 
 // END: Subscription Resolver
-
-

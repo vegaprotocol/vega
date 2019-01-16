@@ -3,10 +3,10 @@
 package gql
 
 import (
-	fmt "fmt"
-	io "io"
-	strconv "strconv"
-	msg "vega/msg"
+	"fmt"
+	"io"
+	"strconv"
+	"vega/msg"
 )
 
 type Market struct {
@@ -91,6 +91,7 @@ type TradeFilter struct {
 
 type Vega struct {
 	Markets []Market `json:"markets"`
+	Market  Market   `json:"market"`
 	Parties []Party  `json:"parties"`
 }
 

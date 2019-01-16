@@ -3,16 +3,16 @@
 package gql
 
 import (
-	bytes "bytes"
-	context "context"
-	strconv "strconv"
-	sync "sync"
-	msg "vega/msg"
+	"bytes"
+	"context"
+	"strconv"
+	"sync"
+	"vega/msg"
 
-	graphql "github.com/99designs/gqlgen/graphql"
-	introspection "github.com/99designs/gqlgen/graphql/introspection"
-	gqlparser "github.com/vektah/gqlparser"
-	ast "github.com/vektah/gqlparser/ast"
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/introspection"
+	"github.com/vektah/gqlparser"
+	"github.com/vektah/gqlparser/ast"
 )
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
@@ -152,6 +152,7 @@ type ComplexityRoot struct {
 
 	Vega struct {
 		Markets func(childComplexity int, name *string) int
+		Market  func(childComplexity int, name *string) int
 		Parties func(childComplexity int, name *string) int
 	}
 }
@@ -173,8 +174,6 @@ type MarketResolver interface {
 	Candles(ctx context.Context, obj *Market, sinceTimestamp string, interval Interval) ([]*msg.Candle, error)
 }
 type MarketDepthResolver interface {
-	Buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
-	Sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	LastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error)
 }
 type MutationResolver interface {
@@ -237,6 +236,7 @@ type TradeResolver interface {
 }
 type VegaResolver interface {
 	Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
+
 	Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error)
 }
 
@@ -695,6 +695,26 @@ func field_Subscription_marketDepth_args(rawArgs map[string]interface{}) (map[st
 }
 
 func field_Vega_markets_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["name"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+
+}
+
+func field_Vega_market_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["name"]; ok {
@@ -1298,6 +1318,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Vega.Markets(childComplexity, args["name"].(*string)), true
+
+	case "Vega.market":
+		if e.complexity.Vega.Market == nil {
+			break
+		}
+
+		args, err := field_Vega_market_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Vega.Market(childComplexity, args["name"].(*string)), true
 
 	case "Vega.parties":
 		if e.complexity.Vega.Parties == nil {
@@ -2023,17 +2055,9 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionS
 				invalid = true
 			}
 		case "buy":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._MarketDepth_buy(ctx, field, obj)
-				wg.Done()
-			}(i, field)
+			out.Values[i] = ec._MarketDepth_buy(ctx, field, obj)
 		case "sell":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._MarketDepth_sell(ctx, field, obj)
-				wg.Done()
-			}(i, field)
+			out.Values[i] = ec._MarketDepth_sell(ctx, field, obj)
 		case "lastTrade":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -2091,12 +2115,12 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketDepth().Buy(rctx, obj)
+		return obj.Buy, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]msg.PriceLevel)
+	res := resTmp.([]*msg.PriceLevel)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2112,7 +2136,7 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 		idx1 := idx1
 		rctx := &graphql.ResolverContext{
 			Index:  &idx1,
-			Result: &res[idx1],
+			Result: res[idx1],
 		}
 		ctx := graphql.WithResolverContext(ctx, rctx)
 		f := func(idx1 int) {
@@ -2121,7 +2145,14 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 			}
 			arr1[idx1] = func() graphql.Marshaler {
 
-				return ec._PriceLevel(ctx, field.Selections, &res[idx1])
+				if res[idx1] == nil {
+					if !ec.HasError(rctx) {
+						ec.Errorf(ctx, "must not be null")
+					}
+					return graphql.Null
+				}
+
+				return ec._PriceLevel(ctx, field.Selections, res[idx1])
 			}()
 		}
 		if isLen1 {
@@ -2148,12 +2179,12 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketDepth().Sell(rctx, obj)
+		return obj.Sell, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]msg.PriceLevel)
+	res := resTmp.([]*msg.PriceLevel)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2169,7 +2200,7 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 		idx1 := idx1
 		rctx := &graphql.ResolverContext{
 			Index:  &idx1,
-			Result: &res[idx1],
+			Result: res[idx1],
 		}
 		ctx := graphql.WithResolverContext(ctx, rctx)
 		f := func(idx1 int) {
@@ -2178,7 +2209,14 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 			}
 			arr1[idx1] = func() graphql.Marshaler {
 
-				return ec._PriceLevel(ctx, field.Selections, &res[idx1])
+				if res[idx1] == nil {
+					if !ec.HasError(rctx) {
+						ec.Errorf(ctx, "must not be null")
+					}
+					return graphql.Null
+				}
+
+				return ec._PriceLevel(ctx, field.Selections, res[idx1])
 			}()
 		}
 		if isLen1 {
@@ -3732,7 +3770,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.introspectType(args["name"].(string)), nil
+		return ec.introspectType(args["name"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -3761,7 +3799,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.introspectSchema(), nil
+		return ec.introspectSchema()
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4385,6 +4423,11 @@ func (ec *executionContext) _Vega(ctx context.Context, sel ast.SelectionSet, obj
 				out.Values[i] = ec._Vega_markets(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "market":
+			out.Values[i] = ec._Vega_market(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "parties":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -4463,6 +4506,40 @@ func (ec *executionContext) _Vega_markets(ctx context.Context, field graphql.Col
 	}
 	wg.Wait()
 	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Vega_market(ctx context.Context, field graphql.CollectedField, obj *Vega) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Vega_market_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Vega",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Market, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Market)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Market(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -6633,12 +6710,12 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}
 	return res
 }
 
-func (ec *executionContext) introspectSchema() *introspection.Schema {
-	return introspection.WrapSchema(parsedSchema)
+func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
+	return introspection.WrapSchema(parsedSchema), nil
 }
 
-func (ec *executionContext) introspectType(name string) *introspection.Type {
-	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name])
+func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
+	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
@@ -6696,8 +6773,11 @@ type PreConsensus {
 # VEGA the world's premier distributed derivatives trading platform
 type Vega {
     
-    # An instrument that is trading on the VEGA network
+    # One or more instruments that are trading on the VEGA network
     markets(name: String): [Market!]
+
+    # An instrument that is trading on the VEGA network
+    market(name: String): Market!
 
     # An entity that is trading on the VEGA network
     parties(name: String): [Party!]
