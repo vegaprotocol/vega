@@ -369,14 +369,6 @@ func (ts *badgerTradeStore) writeBatch(batch []msg.Trade) error {
 			idKey := ts.badger.tradeIdKey(batch[idx].Id)
 			buyerPartyKey := ts.badger.tradePartyKey(batch[idx].Buyer, batch[idx].Id)
 			sellerPartyKey := ts.badger.tradePartyKey(batch[idx].Seller, batch[idx].Id)
-			
-			//log.Debugf("-------------------------------------")
-			//log.Debugf("marketKey: %s", string(marketKey))
-			//log.Debugf("idKey: %s", string(idKey))
-			//log.Debugf("buyerPartyKey: %s", string(buyerPartyKey))
-			//log.Debugf("sellerPartyKey: %s", string(sellerPartyKey))
-			//log.Debugf("-------------------------------------")
-
 			if err := wb.Set(marketKey, tradeBuf, 0); err != nil {
 				return err
 			}
