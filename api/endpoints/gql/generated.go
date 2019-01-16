@@ -5,6 +5,7 @@ package gql
 import (
 	"bytes"
 	"context"
+	"errors"
 	"strconv"
 	"sync"
 	"vega/msg"
@@ -152,7 +153,7 @@ type ComplexityRoot struct {
 
 	Vega struct {
 		Markets func(childComplexity int, name *string) int
-		Market  func(childComplexity int, name *string) int
+		Market  func(childComplexity int, name string) int
 		Parties func(childComplexity int, name *string) int
 	}
 }
@@ -236,7 +237,7 @@ type TradeResolver interface {
 }
 type VegaResolver interface {
 	Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
-
+	Market(ctx context.Context, obj *Vega, name string) (*Market, error)
 	Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error)
 }
 
@@ -716,15 +717,10 @@ func field_Vega_markets_args(rawArgs map[string]interface{}) (map[string]interfa
 
 func field_Vega_market_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 *string
+	var arg0 string
 	if tmp, ok := rawArgs["name"]; ok {
 		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg0 = &ptr1
-		}
-
+		arg0, err = graphql.UnmarshalString(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1329,7 +1325,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Vega.Market(childComplexity, args["name"].(*string)), true
+		return e.complexity.Vega.Market(childComplexity, args["name"].(string)), true
 
 	case "Vega.parties":
 		if e.complexity.Vega.Parties == nil {
@@ -4424,10 +4420,11 @@ func (ec *executionContext) _Vega(ctx context.Context, sel ast.SelectionSet, obj
 				wg.Done()
 			}(i, field)
 		case "market":
-			out.Values[i] = ec._Vega_market(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Vega_market(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "parties":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -4527,19 +4524,20 @@ func (ec *executionContext) _Vega_market(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Market, nil
+		return ec.resolvers.Vega().Market(rctx, obj, args["name"].(string))
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(Market)
+	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	return ec._Market(ctx, field.Selections, &res)
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Market(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -4897,7 +4895,7 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.IsDeprecated, nil
+		return obj.IsDeprecated(), nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4924,15 +4922,19 @@ func (ec *executionContext) ___EnumValue_deprecationReason(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DeprecationReason, nil
+		return obj.DeprecationReason(), nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 var __FieldImplementors = []string{"__Field"}
@@ -5143,7 +5145,7 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.IsDeprecated, nil
+		return obj.IsDeprecated(), nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -5170,15 +5172,19 @@ func (ec *executionContext) ___Field_deprecationReason(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DeprecationReason, nil
+		return obj.DeprecationReason(), nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 var __InputValueImplementors = []string{"__InputValue"}
@@ -6711,10 +6717,16 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}
 }
 
 func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
+	if ec.DisableIntrospection {
+		return nil, errors.New("introspection disabled")
+	}
 	return introspection.WrapSchema(parsedSchema), nil
 }
 
 func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
+	if ec.DisableIntrospection {
+		return nil, errors.New("introspection disabled")
+	}
 	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
 }
 
@@ -6777,7 +6789,7 @@ type Vega {
     markets(name: String): [Market!]
 
     # An instrument that is trading on the VEGA network
-    market(name: String): Market!
+    market(name: String!): Market
 
     # An entity that is trading on the VEGA network
     parties(name: String): [Party!]

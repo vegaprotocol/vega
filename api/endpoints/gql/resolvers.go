@@ -106,31 +106,25 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 	return markets, nil
 }
 
-func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, name *string) (Market, error) {
-	var emptyResult Market
-
-	if name == nil {
-		return emptyResult, errors.New("all markets on VEGA query not implemented")
-	}
-
+func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, name string) (*Market, error) {
 	// Todo(cdm): MarketStore --> check if market exists via dedicated marketstore...
 	var existing = []string{"BTC/DEC19"}
 	found := false
 	for _, m := range existing {
-		if *name == m {
+		if name == m {
 			found = true
 			break
 		}
 	}
 	if !found {
-		return emptyResult, errors.New(fmt.Sprintf("market %s does not exist", *name))
+		return nil, errors.New(fmt.Sprintf("market %s does not exist", name))
 	}
 
 	var market = Market{
-		Name: *name,
+		Name: name,
 	}
 
-	return market, nil
+	return &market, nil
 }
 
 func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {

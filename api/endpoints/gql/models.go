@@ -91,7 +91,7 @@ type TradeFilter struct {
 
 type Vega struct {
 	Markets []Market `json:"markets"`
-	Market  Market   `json:"market"`
+	Market  *Market  `json:"market"`
 	Parties []Party  `json:"parties"`
 }
 

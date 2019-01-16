@@ -35,7 +35,9 @@ models:
         resolver: true
   Vega:
     fields:
-      markets:
+      market:
         resolver: true
+      markets:
+       resolver: true
       parties:
         resolver: true

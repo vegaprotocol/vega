@@ -56,7 +56,7 @@ type Vega {
     markets(name: String): [Market!]
 
     # An instrument that is trading on the VEGA network
-    market(name: String): Market!
+    market(name: String!): Market
 
     # An entity that is trading on the VEGA network
     parties(name: String): [Party!]
