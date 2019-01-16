@@ -4,26 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/rs/cors"
-	"github.com/99designs/gqlgen/handler"
+	"net"
 	"net/http"
+	"runtime/debug"
 	"vega/api"
 	"vega/log"
-	"runtime/debug"
-	"net"
+
+	"github.com/99designs/gqlgen/handler"
+	"github.com/gorilla/websocket"
+	"github.com/rs/cors"
 )
 
 type graphServer struct {
-	orderService api.OrderService
-	tradeService api.TradeService
+	orderService  api.OrderService
+	tradeService  api.TradeService
 	candleService api.CandleService
 }
 
 func NewGraphQLServer(orderService api.OrderService, tradeService api.TradeService, candleService api.CandleService) *graphServer {
 	return &graphServer{
-		orderService: orderService,
-		tradeService: tradeService,
+		orderService:  orderService,
+		tradeService:  tradeService,
 		candleService: candleService,
 	}
 }
@@ -43,7 +44,7 @@ func remoteAddrMiddleware(next http.Handler) http.Handler {
 				found = true
 
 				// Only defined when site is accessed via non-anonymous proxy
-				// and takes precedence over RemoteAddr 
+				// and takes precedence over RemoteAddr
 				forward := r.Header.Get("X-Forwarded-For")
 				if forward != "" {
 					ip = forward
@@ -75,7 +76,7 @@ func (g *graphServer) Start() {
 	log.Infof("Starting GraphQL based server on port %d...\n", port)
 	var addr = fmt.Sprintf(":%d", port)
 	var resolverRoot = NewResolverRoot(g.orderService, g.tradeService, g.candleService)
-	var config = Config {
+	var config = Config{
 		Resolvers: resolverRoot,
 	}
 	http.Handle("/", cors.Handler(handler.Playground("VEGA", "/query")))

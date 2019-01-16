@@ -52,8 +52,11 @@ type PreConsensus {
 # VEGA the world's premier distributed derivatives trading platform
 type Vega {
     
-    # An instrument that is trading on the VEGA network
+    # One or more instruments that are trading on the VEGA network
     markets(name: String): [Market!]
+
+    # An instrument that is trading on the VEGA network
+    market(name: String!): Market
 
     # An entity that is trading on the VEGA network
     parties(name: String): [Party!]
