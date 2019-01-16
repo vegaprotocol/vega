@@ -15,7 +15,7 @@ mkdir -p ~/go/src/vega
 git clone git@gitlab.com:vega-protocol/trading-core.git ~/go/src/vega
 ```
 
-Once you've got it, do a `dep ensure`. The proper version of each dependency will be downloaded.
+IMPORTANT: DEP ENSURE IS NOT CURRENTLY WORKING DO NOT 'dep ensure' ON TRADING-CORE, all dependencies are in the git repo alongside code in vendor folder.
 
 `build.sh` will create an executable called `vega` which you can run. Alternately, `go run cmd/vega/main.go` will run the checked-out code, just as you'd expect.
 
