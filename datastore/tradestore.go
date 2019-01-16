@@ -448,5 +448,8 @@ func (f *TradeFilter) isFull() bool {
 	if f.queryFilter.HasLast() && f.found == *f.queryFilter.Last {
 		return true
 	}
+	if f.queryFilter.HasFirst() && f.found == *f.queryFilter.First {
+		return true
+	}
 	return false
 }
