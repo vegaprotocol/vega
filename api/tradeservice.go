@@ -20,7 +20,8 @@ type TradeService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error)
 	GetByMarketAndOrderId(market string, orderId string) (trades []*msg.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
-	
+	GetByPartyAndOrderId(market string, orderId string) (trades []*msg.Trade, err error)
+
 	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
 	ObservePositions(ctx context.Context, party string) (positions <-chan msg.MarketPosition, ref uint64)
 }
@@ -75,13 +76,20 @@ func (t *tradeService) GetByMarketAndOrderId(market string, orderId string) (tra
 	return trades, err
 }
 
-
 func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error) {
 	trade, err = t.tradeStore.GetByPartyAndId(party, id)
 	if err != nil {
 		return &msg.Trade{}, err
 	}
 	return trade, err
+}
+
+func (t *tradeService) GetByPartyAndOrderId(market string, orderId string) (trades []*msg.Trade, err error) {
+	trades, err = t.tradeStore.GetByPartyAndOrderId(market, orderId)
+	if err != nil {
+		return nil, err
+	}
+	return trades, err
 }
 
 func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, uint64) {
@@ -108,12 +116,12 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 				if market != nil && item.Market != *market {
 					continue
 				}
-				if party != nil && (item.Seller != *party || item.Buyer != *party) {
+				if party != nil && (item.Seller != *party && item.Buyer != *party) {
 					continue
 				}
 				validatedTrades = append(validatedTrades, item)
 			}
-
+			
 			//if len(validatedTrades) > 0 {
 				select {
 					case trades <- validatedTrades:

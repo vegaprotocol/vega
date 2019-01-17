@@ -213,12 +213,12 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 				validatedOrders = append(validatedOrders, item)
 			}
 			//if len(validatedOrders) > 0 {
-			select {
-				case orders <- validatedOrders:
-					log.Debugf("OrderService -> Orders for subscriber %d [%s] sent successfully", ref, ip)
-				default:
-					log.Debugf("OrderService -> Orders for subscriber %d [%s] not sent", ref, ip)
-			}
+				select {
+					case orders <- validatedOrders:
+						log.Debugf("OrderService -> Orders for subscriber %d [%s] sent successfully", ref, ip)
+					default:
+						log.Debugf("OrderService -> Orders for subscriber %d [%s] not sent", ref, ip)
+				}
 			//}
 		}
 		log.Debugf("OrderService -> Channel for subscriber %d [%s] has been closed", ref, ip)

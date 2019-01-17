@@ -33,10 +33,12 @@ type TradeStore interface {
 	GetByMarketAndId(market string, id string) (*msg.Trade, error)
 	// GetBuMarketAndOrderId retrieves trades relating to the given market and order id.
 	GetByMarketAndOrderId(market string, orderId string) ([]*msg.Trade, error)
-	// GetByParty retrieves trades for a given party.
+	// GetByParty retrieves trades for a given party (buyer or seller).
 	GetByParty(party string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
-	// GetByPartyAndId retrieves a trade for a given party and id.
+	// GetByPartyAndId retrieves a trade for a given party (buyer or seller) and id.
 	GetByPartyAndId(party string, id string) (*msg.Trade, error)
+	// GetByPartyAndOrderId retrieves trades relating to the given party (buyer or seller) and order id.
+	GetByPartyAndOrderId(party string, orderId string) ([]*msg.Trade, error)
 	// GetMarkPrice returns the current market price.
 	GetMarkPrice(market string) (uint64, error)
 	
@@ -263,7 +265,7 @@ func (ts *badgerTradeStore) GetByPartyAndId(party string, Id string) (*msg.Trade
 	return &trade, nil
 }
 
-// GetBuMarketAndOrderId retrieves trades relating to the given market and order id.
+// GetByMarketAndOrderId retrieves trades relating to the given market and order id.
 func (ts *badgerTradeStore) GetByMarketAndOrderId(market string, orderId string) ([]*msg.Trade, error) {
 	var result []*msg.Trade
 
@@ -288,10 +290,54 @@ func (ts *badgerTradeStore) GetByMarketAndOrderId(market string, orderId string)
 		if filter.apply(&trade) && (trade.BuyOrder == orderId || trade.SellOrder == orderId) {
 			result = append(result, &trade)
 		}
+		if filter.isFull() {
+			break
+		}
 	}
 
 	return result, nil
 }
+
+// GetByPartyAndOrderId retrieves trades relating to the given party (buyer or seller) and order id.
+func (ts *badgerTradeStore) GetByPartyAndOrderId(party string, orderId string) ([]*msg.Trade, error) {
+	var result []*msg.Trade
+
+	queryFilters := &filters.TradeQueryFilters{}
+	txn := ts.badger.readTransaction()
+	defer txn.Discard()
+
+	filter := TradeFilter{queryFilter: queryFilters}
+	descending := filter.queryFilter.HasLast()
+	it := ts.badger.getIterator(txn, descending)
+	defer it.Close()
+
+	partyPrefix, validForPrefix := ts.badger.partyPrefix(party, descending)
+	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
+		marketKeyItem := it.Item()
+		marketKey, _ := marketKeyItem.ValueCopy(nil)
+		tradeItem, err := txn.Get(marketKey)
+		if err != nil {
+			log.Errorf("trade with key %s does not exist in store", string(marketKey))
+			return nil, err
+		}
+		tradeBuf, _ := tradeItem.ValueCopy(nil)
+		var trade msg.Trade
+		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
+			log.Errorf("unmarshal failed %s", err.Error())
+			return nil, err
+		}
+		// We don't support OR in filter query so we need to do the below logic to support related trades given orderId
+		if filter.apply(&trade) && (trade.BuyOrder == orderId || trade.SellOrder == orderId) {
+			result = append(result, &trade)
+		}
+		if filter.isFull() {
+			break
+		}
+	}
+	
+	return result, nil
+}
+
 
 // Close our connection to the badger database
 // ensuring errors will be returned up the stack.

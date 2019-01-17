@@ -333,7 +333,7 @@ func (r *MyOrderResolver) Datetime(ctx context.Context, obj *msg.Order) (string,
 	return vegaTimestamp.Rfc3339Nano(), nil
 }
 func (r *MyOrderResolver) Trades(ctx context.Context, obj *msg.Order) ([]*msg.Trade, error) {
-	relatedTrades, err := r.tradeService.GetByMarketAndOrderId(obj.Market, obj.Id)
+	relatedTrades, err := r.tradeService.GetByPartyAndOrderId(obj.Market, obj.Id)
 	if err != nil {
 		return nil, err
 	}
