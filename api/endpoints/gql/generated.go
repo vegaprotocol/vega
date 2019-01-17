@@ -155,6 +155,7 @@ type ComplexityRoot struct {
 		Markets func(childComplexity int, name *string) int
 		Market  func(childComplexity int, name string) int
 		Parties func(childComplexity int, name *string) int
+		Party   func(childComplexity int, name string) int
 	}
 }
 
@@ -239,6 +240,7 @@ type VegaResolver interface {
 	Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
 	Market(ctx context.Context, obj *Vega, name string) (*Market, error)
 	Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error)
+	Party(ctx context.Context, obj *Vega, name string) (*Party, error)
 }
 
 func field_Market_orders_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
@@ -741,6 +743,21 @@ func field_Vega_parties_args(rawArgs map[string]interface{}) (map[string]interfa
 			arg0 = &ptr1
 		}
 
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+
+}
+
+func field_Vega_party_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1338,6 +1355,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Vega.Parties(childComplexity, args["name"].(*string)), true
+
+	case "Vega.party":
+		if e.complexity.Vega.Party == nil {
+			break
+		}
+
+		args, err := field_Vega_party_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Vega.Party(childComplexity, args["name"].(string)), true
 
 	}
 	return 0, false
@@ -4431,6 +4460,12 @@ func (ec *executionContext) _Vega(ctx context.Context, sel ast.SelectionSet, obj
 				out.Values[i] = ec._Vega_parties(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "party":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Vega_party(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4601,6 +4636,41 @@ func (ec *executionContext) _Vega_parties(ctx context.Context, field graphql.Col
 	}
 	wg.Wait()
 	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Vega_party(ctx context.Context, field graphql.CollectedField, obj *Vega) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Vega_party_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Vega",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Vega().Party(rctx, obj, args["name"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Party)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Party(ctx, field.Selections, res)
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -6791,8 +6861,11 @@ type Vega {
     # An instrument that is trading on the VEGA network
     market(name: String!): Market
 
-    # An entity that is trading on the VEGA network
+    # One or more entities that are trading on the VEGA network
     parties(name: String): [Party!]
+
+    # An entity that is trading on the VEGA network
+    party(name: String!): Party
 }
 
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history

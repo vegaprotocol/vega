@@ -41,3 +41,5 @@ models:
        resolver: true
       parties:
         resolver: true
+      party:
+        resolver: true

@@ -142,6 +142,14 @@ func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) (
 	return parties, nil
 }
 
+func (r *MyVegaResolver) Party(ctx context.Context, obj *Vega, name string) (*Party, error) {
+	var party = Party{
+		Name: name,
+	}
+
+	return &party, nil
+}
+
 // END: Root Resolver
 
 // BEGIN: Market Resolver
