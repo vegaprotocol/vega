@@ -52,6 +52,10 @@ func (bs *badgerStore) marketPrefix(market string, descending bool) (keyPrefix [
 	return bs.getPrefix("M", market, descending)
 }
 
+func (bs *badgerStore) orderPrefix(order string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	return bs.getPrefix("O", order, descending)
+}
+
 func (bs *badgerStore) getPrefix(modifier string, prefix string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
 	validForPrefix = []byte(fmt.Sprintf("%s:%s_", modifier, prefix))
 	keyPrefix = validForPrefix
@@ -104,4 +108,8 @@ func (bs *badgerStore) tradeIdKey(Id string) []byte {
 
 func (bs *badgerStore) tradePartyKey(party, Id string) []byte {
 	return []byte(fmt.Sprintf("P:%s_ID:%s", party, Id))
+}
+
+func (bs *badgerStore) tradeOrderIdKey(orderId, Id string) []byte {
+	return []byte(fmt.Sprintf("O:%s_ID:%s", orderId, Id))
 }

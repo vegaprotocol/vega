@@ -153,6 +153,9 @@ type Party {
     # Orders relating to a party
     orders(where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
 
+    # Trades relating to a party (specifically where party is either buyer OR seller)
+    trades(where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
+
     # Trading positions relating to a party
     positions: [Position!]
 }

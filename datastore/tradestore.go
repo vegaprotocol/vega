@@ -31,14 +31,12 @@ type TradeStore interface {
 	GetByMarket(market string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
 	// GetByMarketAndId retrieves a trade for a given market and id.
 	GetByMarketAndId(market string, id string) (*msg.Trade, error)
-	// GetBuMarketAndOrderId retrieves trades relating to the given market and order id.
-	GetByMarketAndOrderId(market string, orderId string) ([]*msg.Trade, error)
 	// GetByParty retrieves trades for a given party (buyer or seller).
 	GetByParty(party string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
 	// GetByPartyAndId retrieves a trade for a given party (buyer or seller) and id.
 	GetByPartyAndId(party string, id string) (*msg.Trade, error)
-	// GetByPartyAndOrderId retrieves trades relating to the given party (buyer or seller) and order id.
-	GetByPartyAndOrderId(party string, orderId string) ([]*msg.Trade, error)
+	// GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
+	GetByOrderId(orderId string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
 	// GetMarkPrice returns the current market price.
 	GetMarkPrice(market string) (uint64, error)
 	
@@ -265,44 +263,11 @@ func (ts *badgerTradeStore) GetByPartyAndId(party string, Id string) (*msg.Trade
 	return &trade, nil
 }
 
-// GetByMarketAndOrderId retrieves trades relating to the given market and order id.
-func (ts *badgerTradeStore) GetByMarketAndOrderId(market string, orderId string) ([]*msg.Trade, error) {
+// GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
+// Provide optional query filters to refine the data set further (if required), any errors will be returned immediately.
+func (ts *badgerTradeStore) GetByOrderId(orderId string, queryFilters *filters.TradeQueryFilters) ([]*msg.Trade, error) {
 	var result []*msg.Trade
 
-	queryFilters := &filters.TradeQueryFilters{}
-	txn := ts.badger.readTransaction()
-	defer txn.Discard()
-
-	filter := TradeFilter{queryFilter: queryFilters}
-	descending := filter.queryFilter.HasLast()
-	it := ts.badger.getIterator(txn, descending)
-	defer it.Close()
-	
-	marketPrefix, validForPrefix := ts.badger.marketPrefix(market, descending)
-	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
-		item := it.Item()
-		tradeBuf, _ := item.ValueCopy(nil)
-		var trade msg.Trade
-		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
-			log.Errorf("unmarshal failed: %s", err.Error())
-		}
-		// We don't support OR in filter query so we need to do the below logic to support related trades given orderId
-		if filter.apply(&trade) && (trade.BuyOrder == orderId || trade.SellOrder == orderId) {
-			result = append(result, &trade)
-		}
-		if filter.isFull() {
-			break
-		}
-	}
-
-	return result, nil
-}
-
-// GetByPartyAndOrderId retrieves trades relating to the given party (buyer or seller) and order id.
-func (ts *badgerTradeStore) GetByPartyAndOrderId(party string, orderId string) ([]*msg.Trade, error) {
-	var result []*msg.Trade
-
-	queryFilters := &filters.TradeQueryFilters{}
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
@@ -311,8 +276,8 @@ func (ts *badgerTradeStore) GetByPartyAndOrderId(party string, orderId string) (
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	partyPrefix, validForPrefix := ts.badger.partyPrefix(party, descending)
-	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
+	orderPrefix, validForPrefix := ts.badger.orderPrefix(orderId, descending)
+	for it.Seek(orderPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		marketKeyItem := it.Item()
 		marketKey, _ := marketKeyItem.ValueCopy(nil)
 		tradeItem, err := txn.Get(marketKey)
@@ -326,8 +291,7 @@ func (ts *badgerTradeStore) GetByPartyAndOrderId(party string, orderId string) (
 			log.Errorf("unmarshal failed %s", err.Error())
 			return nil, err
 		}
-		// We don't support OR in filter query so we need to do the below logic to support related trades given orderId
-		if filter.apply(&trade) && (trade.BuyOrder == orderId || trade.SellOrder == orderId) {
+		if filter.apply(&trade) {
 			result = append(result, &trade)
 		}
 		if filter.isFull() {
@@ -411,16 +375,28 @@ func (ts *badgerTradeStore) writeBatch(batch []msg.Trade) error {
 			if err != nil {
 				log.Errorf("marshal failed %s", err.Error())
 			}
+
+			// Market Index
 			marketKey := ts.badger.tradeMarketKey(batch[idx].Market, batch[idx].Id)
+
+			// Trade Id index
 			idKey := ts.badger.tradeIdKey(batch[idx].Id)
+
+			// Party indexes (buyer and seller as parties)
 			buyerPartyKey := ts.badger.tradePartyKey(batch[idx].Buyer, batch[idx].Id)
 			sellerPartyKey := ts.badger.tradePartyKey(batch[idx].Seller, batch[idx].Id)
+
+			// OrderId indexes (relate to both buy and sell orders)
+			buyOrderKey := ts.badger.tradeOrderIdKey(batch[idx].BuyOrder, batch[idx].Id)
+			sellOrderKey := ts.badger.tradeOrderIdKey(batch[idx].SellOrder, batch[idx].Id)
 			
 			//log.Debugf("-------------------------------------")
 			//log.Debugf("marketKey: %s", string(marketKey))
 			//log.Debugf("idKey: %s", string(idKey))
 			//log.Debugf("buyerPartyKey: %s", string(buyerPartyKey))
 			//log.Debugf("sellerPartyKey: %s", string(sellerPartyKey))
+			//log.Debugf("buyOrderKey: %s", string(buyOrderKey))
+			//log.Debugf("sellOrderKey: %s", string(sellOrderKey))
 			//log.Debugf("-------------------------------------")
 
 			if err := wb.Set(marketKey, tradeBuf, 0); err != nil {
@@ -433,6 +409,12 @@ func (ts *badgerTradeStore) writeBatch(batch []msg.Trade) error {
 				return err
 			}
 			if err := wb.Set(sellerPartyKey, marketKey, 0); err != nil {
+				return err
+			}
+			if err := wb.Set(buyOrderKey, marketKey, 0); err != nil {
+				return err
+			}
+			if err := wb.Set(sellOrderKey, marketKey, 0); err != nil {
 				return err
 			}
 		}
@@ -466,7 +448,6 @@ func (f *TradeFilter) apply(trade *msg.Trade) (include bool) {
 	if f.queryFilter.First == nil && f.queryFilter.Last == nil && f.queryFilter.Skip == nil {
 		include = true
 	} else {
-
 		if f.queryFilter.HasFirst() && f.found < *f.queryFilter.First {
 			include = true
 		}
@@ -478,7 +459,6 @@ func (f *TradeFilter) apply(trade *msg.Trade) (include bool) {
 			return false
 		}
 	}
-
 	if !applyTradeFilters(trade, f.queryFilter) {
 		return false
 	}

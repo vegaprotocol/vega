@@ -54,14 +54,22 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		foundFilter = true
 	}
 	if queryFilters.Side != nil {
+		side, err := parseSide(queryFilters.Side)
+		if err != nil {
+			return false, err
+		}
 		holder.SideFilter = &filters.QueryFilter{
-			Eq: queryFilters.Side,
+			Eq: side,
 		}
 		foundFilter = true
 	}
 	if queryFilters.SideNeq != nil {
+		side, err := parseSide(queryFilters.SideNeq)
+		if err != nil {
+			return false, err
+		}
 		holder.SideFilter = &filters.QueryFilter{
-			Neq: queryFilters.SideNeq,
+			Neq: side,
 		}
 		foundFilter = true
 	}
@@ -289,13 +297,13 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 	}
 	if queryFilters.Market != nil {
 		holder.MarketFilter = &filters.QueryFilter{
-			Eq: queryFilters.Market,
+			Eq: *queryFilters.Market,
 		}
 		foundFilter = true
 	}
 	if queryFilters.MarketNeq != nil {
 		holder.MarketFilter = &filters.QueryFilter{
-			Neq: queryFilters.MarketNeq,
+			Neq: *queryFilters.MarketNeq,
 		}
 		foundFilter = true
 	}
@@ -377,37 +385,45 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 	}
 	if queryFilters.Buyer != nil {
 		holder.BuyerFilter = &filters.QueryFilter{
-			Eq: queryFilters.Buyer,
+			Eq: *queryFilters.Buyer,
 		}
 		foundFilter = true
 	}
 	if queryFilters.BuyerNeq != nil {
 		holder.BuyerFilter = &filters.QueryFilter{
-			Neq: queryFilters.BuyerNeq,
+			Neq: *queryFilters.BuyerNeq,
 		}
 		foundFilter = true
 	}
 	if queryFilters.Seller != nil {
 		holder.SellerFilter = &filters.QueryFilter{
-			Eq: queryFilters.Seller,
+			Eq: *queryFilters.Seller,
 		}
 		foundFilter = true
 	}
 	if queryFilters.SellerNeq != nil {
 		holder.SellerFilter = &filters.QueryFilter{
-			Neq: queryFilters.SellerNeq,
+			Neq: *queryFilters.SellerNeq,
 		}
 		foundFilter = true
 	}
 	if queryFilters.Aggressor != nil {
+		side, err := parseSide(queryFilters.Aggressor)
+		if err != nil {
+			return false, err
+		}
 		holder.AggressorFilter = &filters.QueryFilter{
-			Eq: queryFilters.Aggressor,
+			Eq: side,
 		}
 		foundFilter = true
 	}
 	if queryFilters.AggressorNeq != nil {
+		side, err := parseSide(queryFilters.AggressorNeq)
+		if err != nil {
+			return false, err
+		}
 		holder.AggressorFilter = &filters.QueryFilter{
-			Neq: queryFilters.AggressorNeq,
+			Neq: side,
 		}
 		foundFilter = true
 	}

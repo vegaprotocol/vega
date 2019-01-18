@@ -57,7 +57,6 @@ func parseSide(side *Side) (msg.Side, error) {
 	}
 }
 
-
 func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int) (queryFilters *filters.OrderQueryFilters, err error) {
 	if queryFilters == nil {
 		queryFilters = &filters.OrderQueryFilters{}
