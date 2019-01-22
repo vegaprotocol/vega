@@ -29,7 +29,7 @@ type AbciApplication struct {
 
 func NewAbciApplication(config *Config, execution execution.Engine, time vegatime.Service, stats *Stats) *AbciApplication {
 	service := NewAbciService(config, stats, execution)
-	processor := NewAbciProcessor(service)
+	processor := NewAbciProcessor(config, service)
 	return &AbciApplication{
 		Config: config,
 		Stats: stats,
