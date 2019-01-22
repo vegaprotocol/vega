@@ -321,8 +321,8 @@ func (v *Vega) RemoveExpiringOrdersAtTimestamp(timestamp uint64) {
 }
 
 func (v *Vega) Commit() {
-	v.OrderStore.Commit()
 	v.TradeStore.Commit()
+	v.OrderStore.Commit()
 }
 
 func (v *Vega) StartCandleBuffer() {

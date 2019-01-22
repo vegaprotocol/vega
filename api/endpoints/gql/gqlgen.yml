@@ -31,6 +31,8 @@ models:
     fields:
       orders:
         resolver: true
+      trades:
+        resolver: true
       positions:
         resolver: true
   Vega:

@@ -25,7 +25,7 @@ type OrderService interface {
 	GetByMarket(ctx context.Context, market string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
 	GetByParty(ctx context.Context, party string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
-	GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
+	GetByPartyAndId(ctx context.Context, party string, id string) (order *msg.Order, err error)
 
 	//GetMarkets(ctx context.Context) ([]string, error)
 	GetMarketDepth(ctx context.Context, market string) (marketDepth msg.MarketDepth, err error)
@@ -170,8 +170,8 @@ func (p *orderService) GetByMarketAndId(ctx context.Context, market string, id s
 	return o, err
 }
 
-func (p *orderService) GetByPartyAndId(ctx context.Context, market string, id string) (order *msg.Order, err error) {
-	o, err := p.orderStore.GetByPartyAndId(market, id)
+func (p *orderService) GetByPartyAndId(ctx context.Context, party string, id string) (order *msg.Order, err error) {
+	o, err := p.orderStore.GetByPartyAndId(party, id)
 	if err != nil {
 		return &msg.Order{}, err
 	}
@@ -212,14 +212,14 @@ func (p *orderService) ObserveOrders(ctx context.Context, market *string, party 
 				}
 				validatedOrders = append(validatedOrders, item)
 			}
-			//if len(validatedOrders) > 0 {
-			select {
-				case orders <- validatedOrders:
-					log.Debugf("OrderService -> Orders for subscriber %d [%s] sent successfully", ref, ip)
-				default:
-					log.Debugf("OrderService -> Orders for subscriber %d [%s] not sent", ref, ip)
+			if len(validatedOrders) > 0 {
+				select {
+					case orders <- validatedOrders:
+						log.Debugf("OrderService -> Orders for subscriber %d [%s] sent successfully", ref, ip)
+					default:
+						log.Debugf("OrderService -> Orders for subscriber %d [%s] not sent", ref, ip)
+				}
 			}
-			//}
 		}
 		log.Debugf("OrderService -> Channel for subscriber %d [%s] has been closed", ref, ip)
 	}(ref, ctx)

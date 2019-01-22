@@ -103,7 +103,6 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// uncross with opposite
 	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
-
 	if lastTradedPrice != 0 {
 		b.lastTradedPrice = lastTradedPrice
 	}
@@ -128,21 +127,14 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		}
 	}
 
-	// update order statuses based on the order types
-	if order.Type == msg.Order_FOK {
-		if order.Remaining == order.Size {
-			order.Status = msg.Order_Stopped
-		} else {
-			order.Status = msg.Order_Filled
-		}
+	// did we fully fill the originating order?
+	if order.Remaining == 0 {
+		order.Status = msg.Order_Filled
 	}
 
-	if order.Type == msg.Order_ENE {
-		if order.Remaining == order.Size {
-			order.Status = msg.Order_Stopped
-		} else {
-			order.Status = msg.Order_Filled
-		}
+	// update order statuses based on the order types if they didn't trade
+	if (order.Type == msg.Order_FOK || order.Type == msg.Order_ENE) && order.Remaining == order.Size {
+		order.Status = msg.Order_Stopped
 	}
 
 	for idx := range impactedOrders {

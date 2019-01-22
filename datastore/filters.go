@@ -57,7 +57,7 @@ func applyTradeFilters(trade *msg.Trade, queryFilters *filters.TradeQueryFilters
 			count++
 		}
 	}
-
+	
 	if queryFilters.Operator == filters.QueryFilterOperatorAnd {
 		// If we AND all the queryFilters the counts should match
 		// and if they do we have the exact match
@@ -72,9 +72,6 @@ func applyTradeFilters(trade *msg.Trade, queryFilters *filters.TradeQueryFilters
 func applyOrderFilters(order *msg.Order, queryFilters *filters.OrderQueryFilters) bool {
 	ok := true
 	count := 0
-
-	//log.Debugf("analyse order: %+v\n", order)
-	//log.Debugf("applyOrderFilters queryFilter: %+v\n", queryFilters)
 
 	if queryFilters.IdFilter != nil {
 		ok = queryFilters.IdFilter.ApplyFilters(order.Id)

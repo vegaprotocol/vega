@@ -3,17 +3,16 @@
 package gql
 
 import (
-	"bytes"
-	"context"
-	"errors"
-	"strconv"
-	"sync"
-	"vega/msg"
+	bytes "bytes"
+	context "context"
+	strconv "strconv"
+	sync "sync"
+	msg "vega/msg"
 
-	"github.com/99designs/gqlgen/graphql"
-	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/vektah/gqlparser"
-	"github.com/vektah/gqlparser/ast"
+	graphql "github.com/99designs/gqlgen/graphql"
+	introspection "github.com/99designs/gqlgen/graphql/introspection"
+	gqlparser "github.com/vektah/gqlparser"
+	ast "github.com/vektah/gqlparser/ast"
 )
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
@@ -100,6 +99,7 @@ type ComplexityRoot struct {
 	Party struct {
 		Name      func(childComplexity int) int
 		Orders    func(childComplexity int, where *OrderFilter, skip *int, first *int, last *int) int
+		Trades    func(childComplexity int, where *TradeFilter, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
 	}
 
@@ -176,6 +176,8 @@ type MarketResolver interface {
 	Candles(ctx context.Context, obj *Market, sinceTimestamp string, interval Interval) ([]*msg.Candle, error)
 }
 type MarketDepthResolver interface {
+	Buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
+	Sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
 	LastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error)
 }
 type MutationResolver interface {
@@ -198,6 +200,7 @@ type OrderResolver interface {
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
+	Trades(ctx context.Context, obj *Party, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
 	Positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error)
 }
 type PositionResolver interface {
@@ -506,6 +509,68 @@ func field_Party_orders_args(rawArgs map[string]interface{}) (map[string]interfa
 		var ptr1 OrderFilter
 		if tmp != nil {
 			ptr1, err = UnmarshalOrderFilter(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
+	return args, nil
+
+}
+
+func field_Party_trades_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 *TradeFilter
+	if tmp, ok := rawArgs["where"]; ok {
+		var err error
+		var ptr1 TradeFilter
+		if tmp != nil {
+			ptr1, err = UnmarshalTradeFilter(tmp)
 			arg0 = &ptr1
 		}
 
@@ -1077,6 +1142,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Orders(childComplexity, args["where"].(*OrderFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+
+	case "Party.trades":
+		if e.complexity.Party.Trades == nil {
+			break
+		}
+
+		args, err := field_Party_trades_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.Trades(childComplexity, args["where"].(*TradeFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Party.positions":
 		if e.complexity.Party.Positions == nil {
@@ -2080,9 +2157,17 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionS
 				invalid = true
 			}
 		case "buy":
-			out.Values[i] = ec._MarketDepth_buy(ctx, field, obj)
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._MarketDepth_buy(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "sell":
-			out.Values[i] = ec._MarketDepth_sell(ctx, field, obj)
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._MarketDepth_sell(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "lastTrade":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -2140,12 +2225,12 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Buy, nil
+		return ec.resolvers.MarketDepth().Buy(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*msg.PriceLevel)
+	res := resTmp.([]msg.PriceLevel)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2161,7 +2246,7 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 		idx1 := idx1
 		rctx := &graphql.ResolverContext{
 			Index:  &idx1,
-			Result: res[idx1],
+			Result: &res[idx1],
 		}
 		ctx := graphql.WithResolverContext(ctx, rctx)
 		f := func(idx1 int) {
@@ -2170,14 +2255,7 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 			}
 			arr1[idx1] = func() graphql.Marshaler {
 
-				if res[idx1] == nil {
-					if !ec.HasError(rctx) {
-						ec.Errorf(ctx, "must not be null")
-					}
-					return graphql.Null
-				}
-
-				return ec._PriceLevel(ctx, field.Selections, res[idx1])
+				return ec._PriceLevel(ctx, field.Selections, &res[idx1])
 			}()
 		}
 		if isLen1 {
@@ -2204,12 +2282,12 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Sell, nil
+		return ec.resolvers.MarketDepth().Sell(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*msg.PriceLevel)
+	res := resTmp.([]msg.PriceLevel)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2225,7 +2303,7 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 		idx1 := idx1
 		rctx := &graphql.ResolverContext{
 			Index:  &idx1,
-			Result: res[idx1],
+			Result: &res[idx1],
 		}
 		ctx := graphql.WithResolverContext(ctx, rctx)
 		f := func(idx1 int) {
@@ -2234,14 +2312,7 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 			}
 			arr1[idx1] = func() graphql.Marshaler {
 
-				if res[idx1] == nil {
-					if !ec.HasError(rctx) {
-						ec.Errorf(ctx, "must not be null")
-					}
-					return graphql.Null
-				}
-
-				return ec._PriceLevel(ctx, field.Selections, res[idx1])
+				return ec._PriceLevel(ctx, field.Selections, &res[idx1])
 			}()
 		}
 		if isLen1 {
@@ -2931,6 +3002,12 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				out.Values[i] = ec._Party_orders(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "trades":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Party_trades(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "positions":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -3025,6 +3102,69 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 			arr1[idx1] = func() graphql.Marshaler {
 
 				return ec._Order(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.CollectedField, obj *Party) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Party_trades_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Party",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().Trades(rctx, obj, args["where"].(*TradeFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]msg.Trade)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Trade(ctx, field.Selections, &res[idx1])
 			}()
 		}
 		if isLen1 {
@@ -3795,7 +3935,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.introspectType(args["name"].(string))
+		return ec.introspectType(args["name"].(string)), nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -3824,7 +3964,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.introspectSchema()
+		return ec.introspectSchema(), nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -6786,18 +6926,12 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}
 	return res
 }
 
-func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
-	if ec.DisableIntrospection {
-		return nil, errors.New("introspection disabled")
-	}
-	return introspection.WrapSchema(parsedSchema), nil
+func (ec *executionContext) introspectSchema() *introspection.Schema {
+	return introspection.WrapSchema(parsedSchema)
 }
 
-func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
-	if ec.DisableIntrospection {
-		return nil, errors.New("introspection disabled")
-	}
-	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
+func (ec *executionContext) introspectType(name string) *introspection.Type {
+	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name])
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
@@ -6955,6 +7089,9 @@ type Party {
 
     # Orders relating to a party
     orders(where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
+
+    # Trades relating to a party (specifically where party is either buyer OR seller)
+    trades(where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
 
     # Trading positions relating to a party
     positions: [Position!]

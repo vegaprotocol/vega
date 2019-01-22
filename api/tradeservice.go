@@ -13,16 +13,16 @@ import (
 type TradeService interface {
 	Init(app *core.Vega, tradeStore datastore.TradeStore)
 	Stop()
-	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []msg.Trade, ref uint64)
 
-	GetByMarket(ctx context.Context, market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
-	GetByParty(ctx context.Context, party string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
-	GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error)
-	GetByMarketAndOrderId(market string, orderId string) (trades []*msg.Trade, err error)
-	GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error)
-	
+	GetByMarket(market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
+	GetByParty(party string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
+	GetByOrderId(orderId string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error)
+	GetByMarketAndId(market string, id string) (trade *msg.Trade, err error)
+	GetByPartyAndId(party string, id string) (trade *msg.Trade, err error)
+
 	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
 	ObservePositions(ctx context.Context, party string) (positions <-chan msg.MarketPosition, ref uint64)
+	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []msg.Trade, ref uint64)
 }
 
 type tradeService struct {
@@ -43,7 +43,7 @@ func (t *tradeService) Stop() {
 	t.tradeStore.Close()
 }
 
-func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error) {
+func (t *tradeService) GetByMarket(market string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error) {
 	trades, err = t.tradeStore.GetByMarket(market, filters)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *
 	return trades, err
 }
 
-func (t *tradeService) GetByParty(ctx context.Context, party string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error) {
+func (t *tradeService) GetByParty(party string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error) {
 	trades, err = t.tradeStore.GetByParty(party, filters)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (t *tradeService) GetByParty(ctx context.Context, party string, filters *fi
 	return trades, err
 }
 
-func (t *tradeService) GetByMarketAndId(ctx context.Context, market string, id string) (trade *msg.Trade, err error) {
+func (t *tradeService) GetByMarketAndId(market string, id string) (trade *msg.Trade, err error) {
 	trade, err = t.tradeStore.GetByMarketAndId(market, id)
 	if err != nil {
 		return &msg.Trade{}, err
@@ -67,21 +67,20 @@ func (t *tradeService) GetByMarketAndId(ctx context.Context, market string, id s
 	return trade, err
 }
 
-func (t *tradeService) GetByMarketAndOrderId(market string, orderId string) (trades []*msg.Trade, err error) {
-	trades, err = t.tradeStore.GetByMarketAndOrderId(market, orderId)
-	if err != nil {
-		return nil, err
-	}
-	return trades, err
-}
-
-
-func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id string) (trade *msg.Trade, err error) {
+func (t *tradeService) GetByPartyAndId(party string, id string) (trade *msg.Trade, err error) {
 	trade, err = t.tradeStore.GetByPartyAndId(party, id)
 	if err != nil {
 		return &msg.Trade{}, err
 	}
 	return trade, err
+}
+
+func (t *tradeService) GetByOrderId(orderId string, filters *filters.TradeQueryFilters) (trades []*msg.Trade, err error) {
+	trades, err = t.tradeStore.GetByOrderId(orderId, filters)
+	if err != nil {
+		return nil, err
+	}
+	return trades, err
 }
 
 func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, uint64) {
@@ -108,20 +107,20 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 				if market != nil && item.Market != *market {
 					continue
 				}
-				if party != nil && (item.Seller != *party || item.Buyer != *party) {
+				if party != nil && (item.Seller != *party && item.Buyer != *party) {
 					continue
 				}
 				validatedTrades = append(validatedTrades, item)
 			}
-
-			//if len(validatedTrades) > 0 {
+			
+			if len(validatedTrades) > 0 {
 				select {
 					case trades <- validatedTrades:
 						log.Debugf("TradeService -> Trades for subscriber %d [%s] sent successfully", ref, ip)
 					default:
 						log.Debugf("TradeService -> Trades for subscriber %d [%s] not sent", ref, ip)
 				}
-			//}
+			}
 		}
 		log.Debugf("TradeService -> Channel for subscriber %d [%s] has been closed", ref, ip)
 	}(ref, ctx)
