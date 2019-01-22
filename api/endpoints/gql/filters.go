@@ -1,8 +1,8 @@
 package gql
 
 import (
-	"vega/filters"
 	"github.com/pkg/errors"
+	"vega/filters"
 )
 
 func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilters) (bool, error) {
@@ -30,24 +30,36 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 		foundFilter = true
 	}
 	if queryFilters.Market != nil {
+		// Todo(cdm): implement market-store/market-services validation lookup in nice-net
+		err := validateMarket(queryFilters.Market)
+		if err != nil {
+			return false, err
+		}
 		holder.MarketFilter = &filters.QueryFilter{
 			Eq: *queryFilters.Market,
 		}
 		foundFilter = true
 	}
 	if queryFilters.MarketNeq != nil {
+		// Todo(cdm): implement market-store/market-services validation lookup in nice-net
+		err := validateMarket(queryFilters.MarketNeq)
+		if err != nil {
+			return false, err
+		}
 		holder.MarketFilter = &filters.QueryFilter{
 			Neq: *queryFilters.MarketNeq,
 		}
 		foundFilter = true
 	}
 	if queryFilters.Party != nil {
+		// Todo(cdm): implement party-store/party-service validation in nice-net
 		holder.PartyFilter = &filters.QueryFilter{
 			Eq: *queryFilters.Party,
 		}
 		foundFilter = true
 	}
 	if queryFilters.PartyNeq != nil {
+		// Todo(cdm): implement party-store/party-service validation in nice-net
 		holder.PartyFilter = &filters.QueryFilter{
 			Neq: *queryFilters.PartyNeq,
 		}
@@ -248,7 +260,7 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filters.OrderQueryFilte
 	if queryFilters.Status != nil {
 		orderStatus, err := parseOrderStatus(queryFilters.Status)
 		if err != nil {
-			return false, err 
+			return false, err
 		}
 		holder.StatusFilter = &filters.QueryFilter{
 			Eq: orderStatus,
@@ -296,12 +308,26 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filters.TradeQueryFilte
 		foundFilter = true
 	}
 	if queryFilters.Market != nil {
+
+		// Todo(cdm): implement market-store/market-services validation lookup in nice-net
+		err := validateMarket(queryFilters.Market)
+		if err != nil {
+			return false, err
+		}
+
 		holder.MarketFilter = &filters.QueryFilter{
 			Eq: *queryFilters.Market,
 		}
 		foundFilter = true
 	}
 	if queryFilters.MarketNeq != nil {
+
+		// Todo(cdm): implement market-store/market-services validation lookup in nice-net
+		err := validateMarket(queryFilters.MarketNeq)
+		if err != nil {
+			return false, err
+		}
+
 		holder.MarketFilter = &filters.QueryFilter{
 			Neq: *queryFilters.MarketNeq,
 		}

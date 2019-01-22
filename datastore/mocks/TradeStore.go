@@ -76,13 +76,13 @@ func (_m *TradeStore) GetByMarketAndId(market string, id string) (*msg.Trade, er
 	return r0, r1
 }
 
-// GetByMarketAndOrderId provides a mock function with given fields: market, orderId
-func (_m *TradeStore) GetByMarketAndOrderId(market string, orderId string) ([]*msg.Trade, error) {
-	ret := _m.Called(market, orderId)
+// GetByOrderId provides a mock function with given fields: orderId, params
+func (_m *TradeStore) GetByOrderId(orderId string, params *filters.TradeQueryFilters) ([]*msg.Trade, error) {
+	ret := _m.Called(orderId, params)
 
 	var r0 []*msg.Trade
-	if rf, ok := ret.Get(0).(func(string, string) []*msg.Trade); ok {
-		r0 = rf(market, orderId)
+	if rf, ok := ret.Get(0).(func(string, *filters.TradeQueryFilters) []*msg.Trade); ok {
+		r0 = rf(orderId, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*msg.Trade)
@@ -90,8 +90,8 @@ func (_m *TradeStore) GetByMarketAndOrderId(market string, orderId string) ([]*m
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(market, orderId)
+	if rf, ok := ret.Get(1).(func(string, *filters.TradeQueryFilters) error); ok {
+		r1 = rf(orderId, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -138,29 +138,6 @@ func (_m *TradeStore) GetByPartyAndId(party string, id string) (*msg.Trade, erro
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string, string) error); ok {
 		r1 = rf(party, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetByPartyAndOrderId provides a mock function with given fields: party, orderId
-func (_m *TradeStore) GetByPartyAndOrderId(party string, orderId string) ([]*msg.Trade, error) {
-	ret := _m.Called(party, orderId)
-
-	var r0 []*msg.Trade
-	if rf, ok := ret.Get(0).(func(string, string) []*msg.Trade); ok {
-		r0 = rf(party, orderId)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*msg.Trade)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(party, orderId)
 	} else {
 		r1 = ret.Error(1)
 	}
