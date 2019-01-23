@@ -84,17 +84,10 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 		return nil, errors.New("all markets on VEGA query not implemented")
 	}
 
-	// Todo(cdm): MarketStore --> check if market exists via dedicated marketstore...
-	var existing = []string{"BTC/DEC19"}
-	found := false
-	for _, m := range existing {
-		if *name == m {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return nil, errors.New(fmt.Sprintf("market %s does not exist", *name))
+	// Todo(cdm): implement market-store/market-services validation lookup in nice-net
+	err := validateMarket(name)
+	if err != nil {
+		return nil, err
 	}
 
 	var markets = make([]Market, 0)
@@ -107,19 +100,12 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 }
 
 func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, name string) (*Market, error) {
-	// Todo(cdm): MarketStore --> check if market exists via dedicated marketstore...
-	var existing = []string{"BTC/DEC19"}
-	found := false
-	for _, m := range existing {
-		if name == m {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return nil, errors.New(fmt.Sprintf("market %s does not exist", name))
-	}
 
+	// Todo(cdm): implement market-store/market-services validation lookup in nice-net
+	err := validateMarket(&name)
+	if err != nil {
+		return nil, err
+	}
 	var market = Market{
 		Name: name,
 	}
@@ -132,7 +118,7 @@ func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) (
 		return nil, errors.New("all parties on VEGA query not implemented")
 	}
 
-	// Todo(cdm): PartyStore --> check if party exists...
+	// Todo(cdm): implement party-store/party-service validation in nice-net
 	var parties = make([]Party, 0)
 	var party = Party{
 		Name: *name,
@@ -623,7 +609,7 @@ type MySubscriptionResolver resolverRoot
 
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, error) {
 	// Validate market, and todo future Party (when party store exists)
-	err := r.validateMarket(ctx, market)
+	err := validateMarket(market)
 	if err != nil {
 		return nil, err
 	}
@@ -634,7 +620,7 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 
 func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, error) {
 	// Validate market, and todo future Party (when party store exists)
-	err := r.validateMarket(ctx, market)
+	err := validateMarket(market)
 	if err != nil {
 		return nil, err
 	}
@@ -651,7 +637,7 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 
 func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error) {
 	// Validate market, and todo future Party (when party store exists)
-	err := r.validateMarket(ctx, &market)
+	err := validateMarket(&market)
 	if err != nil {
 		return nil, err
 	}
@@ -662,7 +648,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan msg.Candle, error) {
 	// Validate market, and todo future Party (when party store exists)
-	err := r.validateMarket(ctx, &market)
+	err := validateMarket(&market)
 	if err != nil {
 		return nil, err
 	}
@@ -694,7 +680,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	return c, nil
 }
 
-func (r *MySubscriptionResolver) validateMarket(ctx context.Context, market *string) error {
+func validateMarket(market *string) error {
 	if market != nil {
 		if len(*market) == 0 {
 			return errors.New("market must not be empty")
