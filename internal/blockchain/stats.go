@@ -2,24 +2,24 @@ package blockchain
 
 type Stats struct {
 	height uint64
-	averageTxSize int
-	//averageTxPerBatch int       // Todo(cdm): calc average TX in batch in abci.go
+	averageTxSizeBytes int
+	averageTxPerBatch int
 	totalTxLastBatch int
 	totalOrdersLastBatch int
 	totalTradesLastBatch int
 	averageOrdersPerBatch int
-	//ordersPerSecond int
-	//tradesPerSecond int
+	//ordersPerSecond int        // --
+	//tradesPerSecond int        // todo(cdm): requires timing, devoid from blocks
 }
 
 func NewStats() *Stats {
 	return &Stats{
 		height: 0,
-		averageTxSize: -1,
-		//averageTxPerBatch: -1,    // Todo(cdm): calc average TX in batch in abci.go
-		totalTxLastBatch: -1,
-		totalOrdersLastBatch: -1,
-		totalTradesLastBatch: -1,
-		averageOrdersPerBatch: -1,
+		averageTxSizeBytes: 0,
+		averageTxPerBatch: 0,
+		totalTxLastBatch: 0,
+		totalOrdersLastBatch: 0,
+		totalTradesLastBatch: 0,
+		averageOrdersPerBatch: 0,
 	}
 }

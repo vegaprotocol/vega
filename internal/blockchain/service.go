@@ -6,6 +6,7 @@ import (
 	"vega/vegatime"
 	"vega/internal/execution"
 	"github.com/pkg/errors"
+	"fmt"
 )
 
 type Service interface {
@@ -31,6 +32,9 @@ type abciService struct {
 	ordersInBatchLengths []int
 	currentOrdersInBatch int
 	currentTradesInBatch int
+	totalBatches uint64
+	totalOrders  uint64
+	totalTrades  uint64
 }
 
 func NewAbciService(conf *Config, stats *Stats, ex execution.Engine) Service {
@@ -51,7 +55,7 @@ func (s *abciService) ValidateOrder(order *msg.Order) error {
 
 func (s *abciService) Commit() error {
 	s.log.Debug("AbciService: Commit")
-	
+
 	s.setBatchStats()
 	return nil
 }
@@ -60,6 +64,9 @@ func (s *abciService) SubmitOrder(order *msg.Order) error {
 	if s.logOrderSubmitDebug {
 		s.log.Debugf("AbciService: received a SUBMIT ORDER request: %s", order)
 	}
+
+	order.Id = fmt.Sprintf("V%010d-%010d", s.totalBatches, s.totalOrders)
+	order.Timestamp = s.currentTimestamp.UnixNano()
 	
 	// Submit the create order request to the execution engine
 	confirmationMessage, errorMessage := s.execution.SubmitOrder(order)
@@ -69,17 +76,21 @@ func (s *abciService) SubmitOrder(order *msg.Order) error {
 			s.log.Debugf("- aggressive order: %+v", confirmationMessage.Order)
 			s.log.Debugf("- trades: %+v", confirmationMessage.Trades)
 			s.log.Debugf("- passive orders affected: %+v", confirmationMessage.PassiveOrdersAffected)
+			s.totalTrades += uint64(len(confirmationMessage.Trades))
 		}
 
 		confirmationMessage.Release()
 	}
 
+	// increment total orders, even for failures so current ID strategy is valid.
+	s.totalOrders++
+
 	if errorMessage != msg.OrderError_NONE {
 		s.log.Errorf("ABCI order error message (create):")
-		s.log.Errorf("- error: %s", errorMessage.String())
+		s.log.Errorf("- error: %s", errorMessage)
 		return errors.New(errorMessage.String())
 	}
-	
+
 	return nil
 }
 
@@ -92,8 +103,8 @@ func (s *abciService) CancelOrder(order *msg.Order) error {
 	cancellationMessage, errorMessage := s.execution.CancelOrder(order)
 	if cancellationMessage != nil {
 		if s.logOrderCancelDebug {
-			s.log.Infof("ABCI order cancellation message:")
-			s.log.Infof("- cancelled order: %+v", cancellationMessage.Order)
+			s.log.Debugf("ABCI order cancellation message:")
+			s.log.Debugf("- cancelled order: %+v", cancellationMessage.Order)
 		}
 	}
 	if errorMessage != msg.OrderError_NONE {
@@ -128,7 +139,7 @@ func (s *abciService) AmendOrder(order *msg.Amendment) error {
 }
 
 func (s *abciService) setBatchStats() {
-
+	s.totalBatches++
 	s.totalOrdersLastBatch = s.currentOrdersInBatch
 	s.totalTradesLastBatch = s.currentTradesInBatch
 

@@ -4,6 +4,7 @@ coverage.html
 vega
 vega-*.log
 vegabench
+vegabin
 .idea/
 *.iws
 .testCoverage.txt

@@ -7,10 +7,13 @@ import (
 	"vega/internal/execution"
 )
 
-// Custom return codes for the abci application, any non-zero code is an error.
 const (
+	// Custom return codes for the abci application, any non-zero code is an error.
 	AbciTxnOK                uint32 = 0
 	AbciTxnValidationFailure uint32 = 51
+
+	// Maximum sample size for average calculation, used in statistics (average tx per block etc).
+	statsSampleSize = 5000
 )
 
 type AbciApplication struct {
@@ -23,6 +26,7 @@ type AbciApplication struct {
 	appHash   []byte
 	size      int64
 	txSizes   []int
+	txTotals  []int
 
 	time vegatime.Service
 }
@@ -42,7 +46,7 @@ func NewAbciApplication(config *Config, execution execution.Engine, time vegatim
 func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
 	// Notify the abci/blockchain service imp that the transactions block/batch has begun
 	if err := app.service.Begin(); err != nil {
-		 app.log.Errorf("Error on blockchain service begin: %s", err)
+		 app.log.Errorf("Abci: error on blockchain service begin: %s", err)
 	}
 
 	// We can log more gossiped time info (switchable in config)
@@ -92,7 +96,7 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 func (app *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
 	err := app.processor.Validate(txn)
 	if err != nil {
-		app.log.Errorf("Error validating (CheckTx): %s", err)
+		app.log.Errorf("Abci: error validating (CheckTx): %s", err)
 		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
 	}
 	return types.ResponseCheckTx{Code: AbciTxnOK}
@@ -127,7 +131,7 @@ func (app *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
 func (app *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
 	err := app.processor.Process(txn)
 	if err != nil {
-		app.log.Errorf("Error processing (DeliverTx): %s", err)
+		app.log.Errorf("Abci: error processing (DeliverTx): %s", err)
 		return types.ResponseDeliverTx{Code: AbciTxnValidationFailure}
 	}
 	txLength := len(txn)
@@ -168,30 +172,54 @@ func (app *AbciApplication) Commit() types.ResponseCommit {
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has completed
 	if err := app.service.Commit(); err != nil {
-		app.log.Errorf("Error on blockchain service commit: %s", err)
+		app.log.Errorf("Abci: error on blockchain service commit: %s", err)
 	}
 
-	app.totalTxLastBatch = 0
+	app.setBatchStats()
 	return types.ResponseCommit{Data: appHash}
 }
 
+// setBatchStats is used to calculate any statistics that should be
+// recorded once per batch, typically called from commit.
+func (app *AbciApplication) setBatchStats() {
+	// Calculate the average total txn per batch, over n blocks
+	if app.txTotals == nil {
+		app.txTotals = make([]int, 0)
+	}
+	app.txTotals = append(app.txTotals, app.totalTxLastBatch)
+	totalTx := 0
+	for _, itx := range app.txTotals {
+		totalTx += itx
+	}
+	averageTxTotal := totalTx / len(app.txTotals)
+	app.log.Debugf("Abci: current average txn total: %v per batch", averageTxTotal)
+	app.averageTxPerBatch = averageTxTotal
+	app.totalTxLastBatch = 0
+
+	// MAX sample size for avg calculation is defined as const.
+	if len(app.txTotals) == statsSampleSize {
+		app.txTotals = nil
+	}
+}
+
+// setTxStats is used to calculate any statistics that should be
+// recorded once per transaction delivery.
 func (app *AbciApplication) setTxStats(txLength int) {
 	app.totalTxLastBatch++
 	if app.txSizes == nil {
 		app.txSizes = make([]int, 0)
 	}
 	app.txSizes = append(app.txSizes, txLength)
-	
 	totalTx := 0
 	for _, itx := range app.txSizes {
 		totalTx += itx
 	}
-	averageTx := totalTx / len(app.txSizes)
-	app.log.Debugf("Current tx average size = %v bytes", averageTx)
-	app.averageTxSize = averageTx
+	averageTxBytes := totalTx / len(app.txSizes)
+	app.log.Debugf("Abci: current txn average size: %v bytes", averageTxBytes)
+	app.averageTxSizeBytes = averageTxBytes
 
-	// MAX sample size for avg calculation is 5000 txs
-	if len(app.txSizes) == 5000 {
+	// MAX sample size for avg calculation is defined as const.
+	if len(app.txSizes) == statsSampleSize {
 		app.txSizes = nil
 	}
 }

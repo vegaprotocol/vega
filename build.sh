@@ -9,6 +9,8 @@ echo -e "     \/     |______|  \_____| /_/    \_\ "
 echo -e "\n"
 echo -e "Building vega"
 go build ./cmd/vega
+echo -e "Building vegabin"
+go build ./cmd/vegabin
 echo -e "Building vegabench"
 go build ./cmd/vegabench
 echo -e "Done."

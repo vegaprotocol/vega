@@ -6,6 +6,10 @@ import (
 	"vega/internal/execution"
 	"fmt"
 	"vega/vegatime"
+	"vega/tendermint/rpc"
+	"vega/log"
+	"time"
+	"context"
 )
 
 type Server struct {
@@ -37,18 +41,18 @@ func (s *Server) Start() error {
 	}
 
 	//vega.Statistics.Status = msg.AppStatus_CHAIN_NOT_FOUND
-	//
-	//blockchainClient := NewClient()
-	//var genesis *rpc.Genesis
-	//for {
-	//	log.Infof("Attempting to retrieve Tendermint genesis time...")
-	//	genesis, err = blockchainClient.GetGenesisTime(context.Background())
-	//	if genesis != nil {
-	//		break
-	//	}
-	//	time.Sleep(5 * time.Second)
-	//}
-	//log.Infof("Genesis time set to: %+v\n", genesis.GenesisTime)
+
+	blockchainClient := NewClient()
+	var genesis *rpc.Genesis
+	for {
+		log.Infof("Attempting to retrieve Tendermint genesis time...")
+		genesis, err = blockchainClient.GetGenesisTime(context.Background())
+		if genesis != nil {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	log.Infof("Genesis time set to: %+v\n", genesis.GenesisTime)
 	//vega.SetGenesisTime(genesis.GenesisTime)
 	//vega.Statistics.Status = msg.AppStatus_APP_CONNECTED
 

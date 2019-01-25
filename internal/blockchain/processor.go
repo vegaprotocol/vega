@@ -51,7 +51,7 @@ func (p *abciProcessor) getOrderAmendment(payload []byte) (*msg.Amendment, error
 func (p *abciProcessor) Validate(payload []byte) error {
 	// Pre-validate (safety check)
  	if err, seen := p.hasSeen(payload); seen {
-		p.log.Errorf("AbciProcessor: txn payload already exists, %s", err)
+		p.log.Errorf("AbciProcessor: error %s", err)
 		return err
 	}
 	// Attempt to decode transaction payload
@@ -82,6 +82,15 @@ func (p *abciProcessor) Process(payload []byte) error {
 		p.log.Errorf("AbciProcessor: txn payload already exists, %s", err)
 		return err
 	}
+
+	// Add to map of seen payloads, hashes only exist in here if they are processed.
+	payloadHash, err := p.payloadHash(payload)
+	if err != nil {
+	  p.log.Errorf("AbciProcessor: payload hash error: %s", err)
+	  return err
+	}
+	p.seenPayloads[*payloadHash] = 0xF
+	
 	// Attempt to decode transaction payload
 	data, cmd, err := txDecode(payload)
 	if err != nil {
@@ -120,7 +129,6 @@ func (p *abciProcessor) Process(payload []byte) error {
 		//case FutureVegaCommand
 			// Note: Future valid VEGA commands here
 		default:
-			// todo structured logger
 			p.log.Errorf("Unknown command received: %s", cmd)
 			return errors.New(fmt.Sprintf("Unknown command received: %s", cmd))
 	}
@@ -160,11 +168,10 @@ func (p *abciProcessor) payloadHash(payload []byte) (*string, error) {
 // to the application core.
 func (p *abciProcessor) payloadExists(payloadHash *string) (error, bool) {
 	if _, exists := p.seenPayloads[*payloadHash]; exists {
-		err := errors.New(fmt.Sprintf("payload exists: %s", payloadHash))
+		err := errors.New(fmt.Sprintf("txn payload exists: %s", *payloadHash))
 		p.log.Errorf("AbciProcessor: %s", err)
 		return err, true
 	}
-	p.seenPayloads[*payloadHash] = 0xF
 	return nil, false
 }
 

@@ -16,6 +16,6 @@ func TestNewAbciApplication(t *testing.T) {
 	
 	chain := NewAbciApplication(config, ex, vt, stats)
 
-	assert.Equal(t, chain.height, int64(0))
+	assert.Equal(t, uint64(0), chain.height)
 }
 

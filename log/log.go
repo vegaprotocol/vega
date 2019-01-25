@@ -4,9 +4,9 @@ package log
 import (
 	"time"
 
-	"github.com/tav/golly/process"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"github.com/tav/golly/process"
 )
 
 var root *zap.Logger
@@ -112,7 +112,16 @@ func InitFileLogger(path string, lvl Level) error {
 	return setLogger(path, lvl)
 }
 
-func init() {
+//func init() {
+//	// Flush the logs before exiting the process.
+//	process.SetExitHandler(func() {
+//		if root != nil {
+//			root.Sync()
+//		}
+//	})
+//}
+
+func InitExitHandler() {
 	// Flush the logs before exiting the process.
 	process.SetExitHandler(func() {
 		if root != nil {

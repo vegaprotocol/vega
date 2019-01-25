@@ -10,6 +10,11 @@ message Market {
     string name = 1;
 }
 
+message Party {
+    string name = 1;
+    repeated MarketPosition positions = 2;
+}
+
 message Order {
     enum Type { GTC = 0; GTT = 1; ENE = 2; FOK = 3; }
     enum Status { Active = 0; Expired = 1; Cancelled = 2; Stopped = 3; Filled = 4; }

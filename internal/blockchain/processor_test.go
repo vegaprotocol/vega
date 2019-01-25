@@ -10,8 +10,8 @@ import (
 func TestDecodeInvalidPayload(t *testing.T) {
 	invalidBytes := []byte{10, 20, 30, 40}
 
-	processor := abciProcessor{}
-	decodeBytes, cmd, err := processor.txDecode(invalidBytes)
+	//processor := abciProcessor{}
+	decodeBytes, cmd, err := txDecode(invalidBytes)
 
 	t.Log(decodeBytes)
 	t.Log(cmd)
@@ -30,12 +30,12 @@ func TestEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	orderBytes, err := proto.Marshal(order)
 	assert.Nil(t, err)
 
-	client := NewClient()
-	resultBytes, err := client.txEncode(orderBytes, SubmitOrderCommand)
+	//client := NewClient()
+	resultBytes, err := txEncode(orderBytes, SubmitOrderCommand)
 	assert.Nil(t, err)
 
-	processor := abciProcessor{}
-	decodeBytes, cmd, err := processor.txDecode(resultBytes)
+	//processor := abciProcessor{}
+	decodeBytes, cmd, err := txDecode(resultBytes)
 	assert.Equal(t, SubmitOrderCommand, cmd)
 
 	resultOrder := &msg.Order{}

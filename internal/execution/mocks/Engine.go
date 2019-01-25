@@ -9,6 +9,52 @@ type Engine struct {
 	mock.Mock
 }
 
+// AmendOrder provides a mock function with given fields: order
+func (_m *Engine) AmendOrder(order *msg.Amendment) (*msg.OrderConfirmation, msg.OrderError) {
+	ret := _m.Called(order)
+
+	var r0 *msg.OrderConfirmation
+	if rf, ok := ret.Get(0).(func(*msg.Amendment) *msg.OrderConfirmation); ok {
+		r0 = rf(order)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*msg.OrderConfirmation)
+		}
+	}
+
+	var r1 msg.OrderError
+	if rf, ok := ret.Get(1).(func(*msg.Amendment) msg.OrderError); ok {
+		r1 = rf(order)
+	} else {
+		r1 = ret.Get(1).(msg.OrderError)
+	}
+
+	return r0, r1
+}
+
+// CancelOrder provides a mock function with given fields: order
+func (_m *Engine) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
+	ret := _m.Called(order)
+
+	var r0 *msg.OrderCancellation
+	if rf, ok := ret.Get(0).(func(*msg.Order) *msg.OrderCancellation); ok {
+		r0 = rf(order)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*msg.OrderCancellation)
+		}
+	}
+
+	var r1 msg.OrderError
+	if rf, ok := ret.Get(1).(func(*msg.Order) msg.OrderError); ok {
+		r1 = rf(order)
+	} else {
+		r1 = ret.Get(1).(msg.OrderError)
+	}
+
+	return r0, r1
+}
+
 // SubmitOrder provides a mock function with given fields: order
 func (_m *Engine) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	ret := _m.Called(order)
