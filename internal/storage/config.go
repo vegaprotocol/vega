@@ -5,7 +5,11 @@ import "vega/internal/logging"
 type Config struct {
 	log                logging.Logger
 	level              logging.Level
+	orderStoreDirPath  string
+	tradeStoreDirPath  string
 	logPartyStoreDebug bool
+	logOrderStoreDebug bool
+
 }
 
 func NewConfig() *Config {
@@ -16,6 +20,10 @@ func NewConfig() *Config {
 	return &Config{
 		log:                logger,
 		level:              level,
+		orderStoreDirPath: "../tmp/orderstore",
+		tradeStoreDirPath: "../tmp/tradestore",
 		logPartyStoreDebug: true,
+		logOrderStoreDebug: true,
+
 	}
 }

@@ -34,7 +34,11 @@ func (s Stamp) Rfc3339() string {
 	return unixUtc.Format(time.RFC3339)
 }
 
-func (s Stamp) UnixNano() uint64 {
+func (s Stamp) UnixNano() int64 {
+	return int64(s)
+}
+
+func (s Stamp) Uint64() uint64 {
 	return uint64(s)
 }
 

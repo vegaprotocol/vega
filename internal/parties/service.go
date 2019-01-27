@@ -6,41 +6,41 @@ import (
 
 //Service provides the interface for parties business logic.
 type Service interface {
-	// AddParty stores the given party.
-	AddParty(party *Party) error
-	// GetPartyByName searches for the given party by name.
-	GetPartyByName(name string) (*Party, error)
-	// GetAllParties returns all parties.
-	GetAllParties() ([]*Party, error)
+	// CreateParty stores the given party.
+	CreateParty(party *Party) error
+	// GetByName searches for the given party by name.
+	GetByName(name string) (*Party, error)
+	// GetAll returns all parties.
+	GetAll() ([]*Party, error)
 }
 
-type service struct {
+type partyService struct {
 	*Config
 	store storage.PartyStore
 }
 
-// NewService creates an adding service with the necessary dependencies
+// NewService creates a Parties service with the necessary dependencies
 func NewService(store storage.PartyStore) Service {
 	config := NewConfig()
-	return &service{
+	return &partyService{
 		config,
 		store,
 	}
 }
 
-// AddParty stores the given party.
-func (s *service) AddParty(party *Party) error {
+// CreateParty stores the given party.
+func (s *partyService) CreateParty(party *Party) error {
 	return s.store.Post(party)
 }
 
-// GetPartyByName searches for the given party by name.
-func (s *service) GetPartyByName(name string) (*Party, error) {
+// GetByName searches for the given party by name.
+func (s *partyService) GetByName(name string) (*Party, error) {
 	p, err := s.store.GetByName(name)
 	return p, err
 }
 
-// GetAllParties returns all parties.
-func (s *service) GetAllParties() ([]*Party, error) {
+// GetAll returns all parties.
+func (s *partyService) GetAll() ([]*Party, error) {
 	p, err := s.store.GetAll()
 	return p, err
 }

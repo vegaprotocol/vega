@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"time"
 	"github.com/tav/golly/process"
+	"context"
 )
 
 type Logger interface {
@@ -22,6 +23,11 @@ type Logger interface {
 	Infof(format string, args ...interface{})
 	Errorf(format string, args ...interface{})
 	Fatalf(format string, args ...interface{})
+
+	Debugw(msg string, args ...interface{})
+	Infow(msg string, args ...interface{})
+	Errorw(msg string, args ...interface{})
+	Fatalw(msg string, args ...interface{})
 }
 
 // A Level is a logging priority. Higher levels are more important.
@@ -111,6 +117,25 @@ func (l *logger) Infof(format string, args ...interface{}) {
 	l.root.Sugar().Infof(format, args...)
 }
 
+// Infow sets the message, adds structured arguments and sends them to the logger at InfoLevel.
+func (l *logger) Infow(msg string, args ...interface{}) {
+	l.root.Sugar().Infow(msg, args...)
+}
+
+// Debugw sets the message, adds structured arguments and sends them to the logger at DebugLevel.
+func (l *logger) Debugw(msg string, args ...interface{}) {
+	l.root.Sugar().Debugw(msg, args...)
+}
+
+// Errorw sets the message, adds structured arguments and sends them to the logger at ErrorLevel.
+func (l *logger) Errorw(msg string, args ...interface{}) {
+	l.root.Sugar().Errorw(msg, args...)
+}
+
+// Fatalw sets the message, adds structured arguments and sends them to the logger, before calling os.Exit(1).
+func (l *logger) Fatalw(msg string, args ...interface{}) {
+	l.root.Sugar().Fatalw(msg, args...)
+}
 
 func (l *logger) buildCfg(path string, lvl Level) (*zap.Logger, error) {
 	enc := zapcore.EncoderConfig{
@@ -156,4 +181,11 @@ func (l *logger) setLogger(path string, lvl Level) error {
 	})
 	l.root = l.root.WithOptions(wrap)
 	return nil
+}
+
+// IPAddressFromContext will attempt to access the 'remote-ip-addr' value
+// that we inject into a calling context via a pipelined handlers. Only
+// GraphQL API supported at present.
+func IPAddressFromContext(ctx context.Context) interface{} {
+	return ctx.Value("remote-ip-addr")
 }

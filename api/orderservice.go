@@ -16,6 +16,7 @@ import (
 type OrderService interface {
 	Init(vega *core.Vega, orderStore datastore.OrderStore)
 	Stop()
+
 	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []msg.Order, ref uint64)
 
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error)
