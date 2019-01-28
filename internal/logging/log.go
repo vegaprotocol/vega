@@ -10,7 +10,6 @@ import (
 
 type Logger interface {
 	AddExitHandler()
-
 	InitConsoleLogger(lvl Level) error
 	InitFileLogger(path string, lvl Level) error
 

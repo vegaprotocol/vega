@@ -56,10 +56,10 @@ type badgerTradeStore struct {
 // NewTradeStore is used to initialise and create a TradeStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files.
-func NewTradeStore(c *Config) TradeStore {
+func NewTradeStore(c *Config) (TradeStore, error) {
 	db, err := badger.Open(customBadgerOptions(c.tradeStoreDirPath))
 	if err != nil {
-		c.log.Fatalf(err.Error())
+		return nil, errors.Wrap(err, "error opening badger database for trades storage")
 	}
 	bs := badgerStore{db: db}
 	return &badgerTradeStore{
@@ -67,7 +67,7 @@ func NewTradeStore(c *Config) TradeStore {
 		badger: &bs,
 		buffer: make([]msg.Trade, 0),
 		subscribers: make(map[uint64]chan<- []msg.Trade),
-	}
+	}, nil
 }
 
 // Subscribe to a channel of new or updated trades. The subscriber id will be returned as a uint64 value

@@ -10,8 +10,9 @@ import (
 
 func TestMarketDepth_Hard(t *testing.T) {
 	config := defaultConfig()
-	var newOrderStore = NewOrderStore(config)
-	defer newOrderStore.Close()
+	orderStore, err := NewOrderStore(config)
+	assert.Nil(t, err)
+	defer orderStore.Close()
 
 	firstBatchOfOrders := []*msg.Order{
 		{
@@ -49,12 +50,12 @@ func TestMarketDepth_Hard(t *testing.T) {
 	}
 
 	for idx := range firstBatchOfOrders {
-		newOrderStore.Post(*firstBatchOfOrders[idx])
+		orderStore.Post(*firstBatchOfOrders[idx])
 	}
 
-	newOrderStore.Commit()
+	orderStore.Commit()
 
-	marketDepth, _ := newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ := orderStore.GetMarketDepth(testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -71,7 +72,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
 
-	secondBatchOforders := []*msg.Order{
+	secondBatchOfOrders := []*msg.Order{
 		{
 			Id: "05",
 			Side: msg.Side_Buy,
@@ -106,13 +107,13 @@ func TestMarketDepth_Hard(t *testing.T) {
 		},
 	}
 
-	for idx := range secondBatchOforders {
-		newOrderStore.Post(*secondBatchOforders[idx])
+	for idx := range secondBatchOfOrders {
+		orderStore.Post(*secondBatchOfOrders[idx])
 	}
 
 	// No commit - should remain unchanged
 
-	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -132,9 +133,9 @@ func TestMarketDepth_Hard(t *testing.T) {
 
 	// COMMIT OK, double the values
 
-	newOrderStore.Commit()
+	orderStore.Commit()
 
-	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(200), marketDepth.Buy[0].Volume)
@@ -160,12 +161,12 @@ func TestMarketDepth_Hard(t *testing.T) {
 	firstBatchOfOrders[3].Remaining = firstBatchOfOrders[3].Remaining - 100
 
 	for idx := range firstBatchOfOrders {
-		newOrderStore.Put(*firstBatchOfOrders[idx])
+		orderStore.Put(*firstBatchOfOrders[idx])
 	}
 
-	newOrderStore.Commit()
+	orderStore.Commit()
 
-	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
 
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
@@ -187,12 +188,12 @@ func TestMarketDepth_Hard(t *testing.T) {
 	// OK REMOVE ALL FROM THE FIRST BATCH
 	firstBatchOfOrders[1].Remaining = firstBatchOfOrders[1].Remaining - 50
 	firstBatchOfOrders[2].Remaining = firstBatchOfOrders[2].Remaining - 20
-	newOrderStore.Put(*firstBatchOfOrders[1])
-	newOrderStore.Put(*firstBatchOfOrders[2])
+	orderStore.Put(*firstBatchOfOrders[1])
+	orderStore.Put(*firstBatchOfOrders[2])
 
-	newOrderStore.Commit()
+	orderStore.Commit()
 
-	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -210,19 +211,19 @@ func TestMarketDepth_Hard(t *testing.T) {
 	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
 
 	// OK REMOVE ALL FROM THE SECOND BATCH TOO MUCH
-	secondBatchOforders[0].Remaining = secondBatchOforders[0].Remaining - uint64(100)
+	secondBatchOfOrders[0].Remaining = secondBatchOfOrders[0].Remaining - uint64(100)
 
-	secondBatchOforders[1].Remaining = 0
-	secondBatchOforders[2].Status = msg.Order_Cancelled
-	secondBatchOforders[3].Status = msg.Order_Expired
+	secondBatchOfOrders[1].Remaining = 0
+	secondBatchOfOrders[2].Status = msg.Order_Cancelled
+	secondBatchOfOrders[3].Status = msg.Order_Expired
 
-	for idx := range secondBatchOforders {
-		newOrderStore.Put(*secondBatchOforders[idx])
+	for idx := range secondBatchOfOrders {
+		orderStore.Put(*secondBatchOfOrders[idx])
 	}
 
-	newOrderStore.Commit()
+	orderStore.Commit()
 
-	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
 
 	assert.Equal(t, 0, len(marketDepth.Buy))
 }
@@ -376,8 +377,9 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	config := defaultConfig()
-	var newOrderStore = NewOrderStore(config)
-	defer newOrderStore.Close()
+	orderStore, err := NewOrderStore(config)
+	assert.Nil(t, err)
+	defer orderStore.Close()
 
 	orders := []*msg.Order{
 		{
@@ -415,12 +417,12 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	}
 
 	for idx := range orders {
-		newOrderStore.Post(*orders[idx])
+		orderStore.Post(*orders[idx])
 	}
 
-	newOrderStore.Commit()
+	orderStore.Commit()
 
-	marketDepth, _ := newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ := orderStore.GetMarketDepth(testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -466,12 +468,12 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	}
 
 	for idx := range ordersUpdate {
-		newOrderStore.Put(*ordersUpdate[idx])
+		orderStore.Put(*ordersUpdate[idx])
 	}
 
-	newOrderStore.Commit()
+	orderStore.Commit()
 	
-	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
 
 	// 113 is removed
 
@@ -500,8 +502,9 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	config := defaultConfig()
-	var newOrderStore = NewOrderStore(config)
-	defer newOrderStore.Close()
+	orderStore, err := NewOrderStore(config)
+	assert.Nil(t, err)
+	defer orderStore.Close()
 
 	orders := []*msg.Order{
 		{
@@ -539,12 +542,12 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	}
 
 	for idx := range orders {
-		newOrderStore.Post(*orders[idx])
+		orderStore.Post(*orders[idx])
 	}
 
-	newOrderStore.Commit()
+	orderStore.Commit()
 
-	marketDepth, _ := newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ := orderStore.GetMarketDepth(testMarket)
 
 	assert.Equal(t, uint64(111), marketDepth.Sell[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Sell[0].Volume)
@@ -590,12 +593,12 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	}
 
 	for idx := range ordersUpdate {
-		newOrderStore.Put(*ordersUpdate[idx])
+		orderStore.Put(*ordersUpdate[idx])
 	}
 	
-	newOrderStore.Commit()
+	orderStore.Commit()
 
-	marketDepth, _ = newOrderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
 
 	assert.Equal(t, uint64(111), marketDepth.Sell[0].Price)
 	assert.Equal(t, uint64(50), marketDepth.Sell[0].Volume)
@@ -630,9 +633,9 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	}
 
 	for idx := range invalidNewOrders {
-		newOrderStore.Post(*invalidNewOrders[idx])
+		orderStore.Post(*invalidNewOrders[idx])
 	}
-	newOrderStore.Commit()
+	orderStore.Commit()
 
 	// 1337s did not get added to either side, they're invalid
 	assert.Equal(t, 0, len(marketDepth.Buy))

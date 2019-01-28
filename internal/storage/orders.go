@@ -57,10 +57,10 @@ type badgerOrderStore struct {
 // NewOrderStore is used to initialise and create a OrderStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files.
-func NewOrderStore(c *Config) OrderStore {
+func NewOrderStore(c *Config) (OrderStore, error) {
 	db, err := badger.Open(customBadgerOptions(c.orderStoreDirPath))
 	if err != nil {
-		c.log.Fatalf(err.Error())
+		return nil, errors.Wrap(err, "error opening badger database for orders storage")
 	}
 	bs := badgerStore{db: db}
 	return &badgerOrderStore{
@@ -69,7 +69,7 @@ func NewOrderStore(c *Config) OrderStore {
 		depth:       make(map[string]MarketDepth, 0),
 		subscribers: make(map[uint64]chan<- []msg.Order),
 		buffer:      make([]msg.Order, 0),
-	}
+	}, nil
 }
 
 // Subscribe to a channel of new or updated orders. The subscriber id will be returned as a uint64 value
