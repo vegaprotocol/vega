@@ -1,13 +1,12 @@
 package storage
 
 import (
-	"vega/filters"
 	"fmt"
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"sync"
-	"vega/log"
+	"vega/filters"
 	"vega/msg"
 )
 
@@ -46,31 +45,30 @@ type OrderStore interface {
 
 // badgerOrderStore is a package internal data struct that implements the OrderStore interface.
 type badgerOrderStore struct {
-	badger         *badgerStore
-	config         *Config
-	subscribers    map[uint64]chan<- []msg.Order
-	subscriberId   uint64
-	buffer         []msg.Order
-	mu             sync.Mutex
-	depth          map[string]MarketDepth
+	*Config
+	badger       *badgerStore
+	subscribers  map[uint64]chan<- []msg.Order
+	subscriberId uint64
+	buffer       []msg.Order
+	mu           sync.Mutex
+	depth        map[string]MarketDepth
 }
 
 // NewOrderStore is used to initialise and create a OrderStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files.
-func NewOrderStore() OrderStore {
-	config := NewConfig()
-	db, err := badger.Open(customBadgerOptions(config.orderStoreDirPath))
+func NewOrderStore(c *Config) OrderStore {
+	db, err := badger.Open(customBadgerOptions(c.orderStoreDirPath))
 	if err != nil {
-		log.Fatalf(err.Error())
+		c.log.Fatalf(err.Error())
 	}
 	bs := badgerStore{db: db}
 	return &badgerOrderStore{
-		badger:         &bs,
-		config:         config,
-		depth:          make(map[string]MarketDepth, 0),
-		subscribers:    make(map[uint64]chan<- []msg.Order),
-		buffer:         make([]msg.Order, 0),
+		Config:      c,
+		badger:      &bs,
+		depth:       make(map[string]MarketDepth, 0),
+		subscribers: make(map[uint64]chan<- []msg.Order),
+		buffer:      make([]msg.Order, 0),
 	}
 }
 
@@ -83,7 +81,7 @@ func (os *badgerOrderStore) Subscribe(orders chan<- []msg.Order) uint64 {
 	os.subscriberId = os.subscriberId + 1
 	os.subscribers[os.subscriberId] = orders
 
-	log.Debugf("OrderStore -> Subscribe: Order subscriber added: %d", os.subscriberId)
+	os.log.Debugf("OrderStore -> Subscribe: Order subscriber added: %d", os.subscriberId)
 	return os.subscriberId
 }
 
@@ -93,13 +91,13 @@ func (os *badgerOrderStore) Unsubscribe(id uint64) error {
 	defer os.mu.Unlock()
 
 	if len(os.subscribers) == 0 {
-		log.Debugf("OrderStore -> Unsubscribe: No subscribers connected")
+		os.log.Debugf("OrderStore -> Unsubscribe: No subscribers connected")
 		return nil
 	}
 
 	if _, exists := os.subscribers[id]; exists {
 		delete(os.subscribers, id)
-		log.Debugf("OrderStore -> Unsubscribe: Subscriber removed: %v", id)
+		os.log.Debugf("OrderStore -> Unsubscribe: Subscriber removed: %v", id)
 		return nil
 	}
 	return errors.New(fmt.Sprintf("OrderStore subscriber does not exist with id: %d", id))
@@ -175,7 +173,7 @@ func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filters.Ord
 		orderBuf, _ := item.ValueCopy(nil)
 		var order msg.Order
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			log.Errorf("unmarshal failed %s", err.Error())
+			os.log.Errorf("unmarshal failed %s", err.Error())
 			return nil, err
 		}
 		if filter.apply(&order) {
@@ -203,7 +201,7 @@ func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*msg.Ord
 	}
 	orderBuf, _ := item.ValueCopy(nil)
 	if err := proto.Unmarshal(orderBuf, &order); err != nil {
-		log.Errorf("Unmarshal failed %s", err.Error())
+		os.log.Errorf("Unmarshal failed %s", err.Error())
 		return nil, err
 	}
 	return &order, nil
@@ -232,13 +230,13 @@ func (os *badgerOrderStore) GetByParty(party string, queryFilters *filters.Order
 		marketKey, _ := marketKeyItem.ValueCopy(nil)
 		orderItem, err := txn.Get(marketKey)
 		if err != nil {
-			log.Errorf("order with key %s does not exist in store", string(marketKey))
+			os.log.Errorf("order with key %s does not exist in store", string(marketKey))
 			return nil, err
 		}
 		orderBuf, _ := orderItem.ValueCopy(nil)
 		var order msg.Order
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			log.Errorf("unmarshal failed %s", err.Error())
+			os.log.Errorf("unmarshal failed %s", err.Error())
 			return nil, err
 		}
 		if filter.apply(&order) {
@@ -274,7 +272,7 @@ func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*msg.Order
 			return err
 		}
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			log.Errorf("unmarshal failed %s", err.Error())
+			os.log.Errorf("unmarshal failed %s", err.Error())
 			return err
 		}
 		return nil
@@ -344,7 +342,7 @@ func (os *badgerOrderStore) notify(items []msg.Order) error {
 	}
 
 	if os.subscribers == nil || len(os.subscribers) == 0 {
-		log.Debugf("OrderStore -> Notify: No subscribers connected")
+		os.log.Debugf("OrderStore -> Notify: No subscribers connected")
 		return nil
 	}
 
@@ -358,9 +356,9 @@ func (os *badgerOrderStore) notify(items []msg.Order) error {
 			ok = false
 		}
 		if ok {
-			log.Debugf("OrderStore: send on channel success for subscriber %d", id)
+			os.log.Debugf("OrderStore: send on channel success for subscriber %d", id)
 		} else {
-			log.Infof("OrderStore: channel could not been updated for subscriber %d", id)
+			os.log.Infof("OrderStore: channel could not been updated for subscriber %d", id)
 		}
 	}
 	return nil
@@ -376,7 +374,7 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 		for idx := range batch {
 			orderBuf, err := proto.Marshal(&batch[idx])
 			if err != nil {
-				log.Errorf("marshal failed: %s", err.Error())
+				os.log.Errorf("marshal failed: %s", err.Error())
 			}
 			marketKey := os.badger.orderMarketKey(batch[idx].Market, batch[idx].Id)
 			idKey := os.badger.orderIdKey(batch[idx].Id)
@@ -396,12 +394,12 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 	if err := insertBatchAtomically(); err == nil {
 		if err := wb.Flush(); err != nil {
 			// todo: can we handle flush errors in a similar way to below?
-			log.Errorf("failed to flush batch: %s", err)
+			os.log.Errorf("failed to flush batch: %s", err)
 		}
 	} else {
 		wb.Cancel()
 		// todo: retry mechanism, also handle badger txn too large errors
-		log.Errorf("failed to insert order batch atomically, %s", err)
+		os.log.Errorf("failed to insert order batch atomically, %s", err)
 		return nil
 	}
 
@@ -457,5 +455,3 @@ func (f *OrderFilter) isFull() bool {
 	}
 	return false
 }
-
-

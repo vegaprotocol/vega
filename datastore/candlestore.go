@@ -188,7 +188,7 @@ func (c *badgerCandleStore) StartNewBuffer(market string, timestamp uint64) {
 func (c *badgerCandleStore) AddTradeToBuffer(market string, trade msg.Trade) error {
 
 	for _, interval := range supportedIntervals {
-		roundedTradeTimestamp := vegatime.Stamp(trade.Timestamp).RoundToNearest(interval).UnixNano()
+		roundedTradeTimestamp := vegatime.Stamp(trade.Timestamp).RoundToNearest(interval).Uint64()
 		bufferKey := getBufferKey(roundedTradeTimestamp, interval)
 
 		// check if bufferKey is present in buffer
@@ -346,7 +346,7 @@ func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[msg.Interval]uin
 
 	// round floor by integer division
 	for _, interval := range supportedIntervals {
-		timestamps[interval] = vegatime.Stamp(timestamp).RoundToNearest(interval).UnixNano()
+		timestamps[interval] = vegatime.Stamp(timestamp).RoundToNearest(interval).Uint64()
 	}
 
 	return timestamps
@@ -394,22 +394,22 @@ func (c *badgerCandleStore) generateFetchKey(market string, interval msg.Interva
 	// round floor by integer division
 	switch interval {
 		case msg.Interval_I1M:
-			timestampRoundedToMinute := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).UnixNano()
+			timestampRoundedToMinute := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 			return c.badger.candleKey(market, interval, timestampRoundedToMinute)
 		case msg.Interval_I5M:
-			timestampRoundedTo5Minutes := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).UnixNano()
+			timestampRoundedTo5Minutes := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 			return c.badger.candleKey(market, interval, timestampRoundedTo5Minutes)
 		case msg.Interval_I15M:
-			timestampRoundedTo15Minutes := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).UnixNano()
+			timestampRoundedTo15Minutes := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 			return c.badger.candleKey(market, interval, timestampRoundedTo15Minutes)
 		case msg.Interval_I1H:
-			timestampRoundedTo1Hour := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).UnixNano()
+			timestampRoundedTo1Hour := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 			return c.badger.candleKey(market, interval, timestampRoundedTo1Hour)
 		case msg.Interval_I6H:
-			timestampRoundedTo6Hour := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).UnixNano()
+			timestampRoundedTo6Hour := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 			return c.badger.candleKey(market, interval, timestampRoundedTo6Hour)
 		case msg.Interval_I1D:
-			timestampRoundedToDay := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).UnixNano()
+			timestampRoundedToDay := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 			return c.badger.candleKey(market, interval, timestampRoundedToDay)
 	}
 	return nil

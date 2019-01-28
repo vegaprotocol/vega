@@ -103,8 +103,7 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 	return depth, ref
 }
 
-
 func (s *marketService) ObserveMarkets(ctx context.Context) (markets <-chan []msg.Market, ref uint64) {
-	 return nil, -1
+	 return nil, 0
 }
 

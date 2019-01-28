@@ -3,7 +3,7 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"vega/internal/parties"
+	"vega/msg"
 )
 
 // Store provides the data storage contract for parties.
@@ -13,7 +13,7 @@ type PartyStore interface {
 
 	// Post adds a party to the store, this adds
 	// to queue the operation to be committed later.
-	Post(party *parties.Party) error
+	Post(party *msg.Party) error
 
 	// Commit typically saves any operations that are queued to underlying storage,
 	// if supported by underlying storage implementation.
@@ -21,31 +21,31 @@ type PartyStore interface {
 
 	// Close can be called to clean up and close any storage
 	// connections held by the underlying storage mechanism.
-	Close()
+	Close() error
 
 	// GetByName searches for the given party by name in the underlying store.
-	GetByName(name string) (*parties.Party, error)
+	GetByName(name string) (*msg.Party, error)
 
 	// GetAll returns all parties in the underlying store.
-	GetAll() ([]*parties.Party, error)
+	GetAll() ([]*msg.Party, error)
 }
 
 // memPartyStore is used for memory/RAM based parties storage.
 type memPartyStore struct {
 	*Config
-	db map[string]parties.Party
+	db map[string]msg.Party
 }
 
 // NewStore returns a concrete implementation of a parties Store.
 func NewPartyStore(config *Config) PartyStore {
 	return &memPartyStore{
 		Config: config,
-		db:     make(map[string]parties.Party, 0),
+		db:     make(map[string]msg.Party, 0),
 	}
 }
 
 // Post saves a given party to the mem-store.
-func (ms *memPartyStore) Post(party *parties.Party) error {
+func (ms *memPartyStore) Post(party *msg.Party) error {
 	if _, exists := ms.db[party.Name]; exists {
 		return errors.New(fmt.Sprintf("party %s already exists in store", party.Name))
 	}
@@ -54,7 +54,7 @@ func (ms *memPartyStore) Post(party *parties.Party) error {
 }
 
 // GetByName searches for the given party by name in the mem-store.
-func (ms *memPartyStore) GetByName(name string) (*parties.Party, error) {
+func (ms *memPartyStore) GetByName(name string) (*msg.Party, error) {
 	if _, exists := ms.db[name]; !exists {
 		return nil, errors.New(fmt.Sprintf("party %s not found in store", name))
 	}
@@ -63,8 +63,8 @@ func (ms *memPartyStore) GetByName(name string) (*parties.Party, error) {
 }
 
 // GetAll returns all parties in the mem-store.
-func (ms *memPartyStore) GetAll() ([]*parties.Party, error) {
-	res := make([]*parties.Party, len(ms.db))
+func (ms *memPartyStore) GetAll() ([]*msg.Party, error) {
+	res := make([]*msg.Party, len(ms.db))
 	for _, v := range ms.db {
 		res = append(res, &v)
 	}
@@ -80,6 +80,7 @@ func (ms *memPartyStore) Commit() error {
 
 // Close can be called to clean up and close any storage
 // connections held by the underlying storage mechanism.
-func (ms *memPartyStore) Close() {
+func (ms *memPartyStore) Close() error {
 	// Not required with a mem-store implementation.
+	return nil
 }

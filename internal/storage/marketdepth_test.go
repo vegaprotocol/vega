@@ -9,7 +9,8 @@ import (
 )
 
 func TestMarketDepth_Hard(t *testing.T) {
-	var newOrderStore = NewOrderStore("../tmp/orderstore")
+	config := defaultConfig()
+	var newOrderStore = NewOrderStore(config)
 	defer newOrderStore.Close()
 
 	firstBatchOfOrders := []*msg.Order{
@@ -364,7 +365,7 @@ func TestOrderBookDepth_Soft(t *testing.T){
 func TestOrderBookDepthBuySide(t *testing.T) {
 	// Scenario:
 
-	// POST few orders to datastore
+	// POST few orders to storage
 	// call getMarketDepth and see if order book depth is OK
 
 	// create impacted orders and call PUT on them
@@ -374,7 +375,8 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	// call getMarketDepth and see if order book depth is OK
 
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
-	var newOrderStore = NewOrderStore("../tmp/orderstore")
+	config := defaultConfig()
+	var newOrderStore = NewOrderStore(config)
 	defer newOrderStore.Close()
 
 	orders := []*msg.Order{
@@ -487,7 +489,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 func TestOrderBookDepthSellSide(t *testing.T) {
 	// Scenario:
 
-	// POST few orders to datastore
+	// POST few orders to storage
 	// call getMarketDepth and see if order book depth is OK
 
 	// create impacted orders and call PUT on them
@@ -497,7 +499,8 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	// call getMarketDepth and see if order book depth is OK
 
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
-	var newOrderStore = NewOrderStore("../tmp/orderStore")
+	config := defaultConfig()
+	var newOrderStore = NewOrderStore(config)
 	defer newOrderStore.Close()
 
 	orders := []*msg.Order{

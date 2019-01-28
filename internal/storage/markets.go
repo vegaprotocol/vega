@@ -21,7 +21,7 @@ type MarketStore interface {
 
 	// Close can be called to clean up and close any storage
 	// connections held by the underlying storage mechanism.
-	Close()
+	Close() error
 
 	// GetByName searches for the given party by name in the underlying store.
 	GetByName(name string) (*msg.Market, error)
@@ -81,8 +81,9 @@ func (ms *memMarketStore) Commit() error {
 
 // Close can be called to clean up and close any storage
 // connections held by the underlying storage mechanism.
-func (ms *memMarketStore) Close() {
+func (ms *memMarketStore) Close() error {
 	// Not required with a mem-store implementation.
+	return nil
 }
 
 
