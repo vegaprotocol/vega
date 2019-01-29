@@ -24,6 +24,7 @@ func defaultConfig() *Config {
 	return &Config{
 		orderStoreDirPath: "./tmp/test-orderstore",
 		tradeStoreDirPath: "./tmp/test-tradestore",
+		candleStoreDirPath: "./tmp/test-candlestore",
 		log: logger,
 	}
 }
@@ -36,6 +37,10 @@ func flushStores(c *Config) {
 	err = os.RemoveAll(c.tradeStoreDirPath)
 	if err != nil {
 		c.log.Errorf("error flushing trade store: %s", err)
+	}
+	err = os.RemoveAll(c.candleStoreDirPath)
+	if err != nil {
+		c.log.Errorf("error flushing candle store: %s", err)
 	}
 }
 

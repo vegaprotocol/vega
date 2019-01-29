@@ -55,7 +55,7 @@ type badgerTradeStore struct {
 
 // NewTradeStore is used to initialise and create a TradeStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
-// use as the storage location on disk for any stored files.
+// use as the storage location on disk for any stored files via Config.
 func NewTradeStore(c *Config) (TradeStore, error) {
 	db, err := badger.Open(customBadgerOptions(c.tradeStoreDirPath))
 	if err != nil {
