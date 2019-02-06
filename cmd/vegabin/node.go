@@ -54,10 +54,6 @@ func (l *NodeCommand) Init(c *Cli) {
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
-
-
-
-
 	
 	logger := logging.NewLogger()
 

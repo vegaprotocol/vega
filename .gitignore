@@ -5,6 +5,7 @@ vega
 vega-*.log
 vegabench
 vegabin
+!vegabin/  
 .idea/
 *.iws
 .testCoverage.txt
