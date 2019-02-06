@@ -1,15 +1,14 @@
 package matching
 
 import (
-	"vega/log"
 	"vega/msg"
 
 	"github.com/pkg/errors"
 )
 
 type OrderBookSide struct {
+	*Config
 	levels      []*PriceLevel
-	prorataMode bool
 }
 
 func (s *OrderBookSide) addOrder(o *msg.Order, side msg.Side) {
@@ -113,7 +112,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
 			break
 		}
 	}
-	level := NewPriceLevel(price, s.prorataMode)
+	level := NewPriceLevel(s.Config, price)
 	if at == -1 {
 		s.levels = append(s.levels, level)
 		return level
@@ -149,7 +148,7 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 			}
 		}
 
-		log.Debugf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining)
+		s.log.Debugf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining)
 
 		if totalVolumeToFill <= agg.Remaining {
 			return trades, impactedOrders, 0

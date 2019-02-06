@@ -15,4 +15,3 @@ func (q *QueryFilterPaginated) HasLast() bool {
 func (q *QueryFilterPaginated) HasSkip() bool {
 	return q.Skip != nil && *q.Skip > uint64(0)
 }
-

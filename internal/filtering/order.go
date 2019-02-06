@@ -2,8 +2,8 @@ package filtering
 
 type OrderQueryFilters struct {
 	QueryFilterPaginated
-	Operator        QueryFilterOperator
-	Open            bool
+	Operator QueryFilterOperator
+	Open     bool
 
 	IdFilter        *QueryFilter
 	MarketFilter    *QueryFilter

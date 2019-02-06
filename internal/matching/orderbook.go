@@ -3,28 +3,26 @@ package matching
 import (
 	"fmt"
 
-	"vega/log"
 	"vega/msg"
 )
 
 type OrderBook struct {
+	*Config
 	name            string
 	buy             *OrderBookSide
 	sell            *OrderBookSide
 	lastTradedPrice uint64
-	config          *Config
 	latestTimestamp uint64
-
-	expiringOrders []msg.Order  // keep a list of all expiring trades, these will be in timestamp ascending order.
+	expiringOrders  []msg.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
 }
 
 // Create an order book with a given name
 func NewBook(name string, config *Config) *OrderBook {
 	return &OrderBook{
-		name:   name,
-		buy:    &OrderBookSide{prorataMode: config.ProrataMode},
-		sell:   &OrderBookSide{prorataMode: config.ProrataMode},
-		config: config,
+		name:           name,
+		buy:            &OrderBookSide{Config: config},
+		sell:           &OrderBookSide{Config: config},
+		Config:         config,
 		expiringOrders: make([]msg.Order, 0),
 	}
 }
@@ -35,7 +33,7 @@ func NewBook(name string, config *Config) *OrderBook {
 func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
 	// Validate Market
 	if order.Market != b.name {
-		log.Errorf(fmt.Sprintf(
+		b.log.Errorf(fmt.Sprintf(
 			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
 			order.Market,
 			b.name))
@@ -48,12 +46,12 @@ func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.O
 
 	if order.Side == msg.Side_Buy {
 		if err := b.buy.RemoveOrder(order); err != nil {
-			log.Errorf("Error removing (buy side): ", err)
+			b.log.Errorf("Error removing (buy side): ", err)
 			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	} else {
 		if err := b.sell.RemoveOrder(order); err != nil {
-			log.Errorf("Error removing (sell side): ", err)
+			b.log.Errorf("Error removing (sell side): ", err)
 			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	}
@@ -74,12 +72,12 @@ func (b *OrderBook) AmendOrder(order *msg.Order) msg.OrderError {
 
 	if order.Side == msg.Side_Buy {
 		if err := b.buy.amendOrder(order); err != msg.OrderError_NONE {
-			log.Errorf("Error amending (buy side): ", err)
+			b.log.Errorf("Error amending (buy side): ", err)
 			return err
 		}
 	} else {
 		if err := b.sell.amendOrder(order); err != msg.OrderError_NONE {
-			log.Errorf("Error amending (sell side): ", err)
+			b.log.Errorf("Error amending (sell side): ", err)
 			return err
 		}
 	}
@@ -97,7 +95,7 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		b.latestTimestamp = order.Timestamp
 	}
 
-	if b.config.LogPriceLevels {
+	if b.LogPriceLevelsDebug {
 		b.PrintState("Entry state:")
 	}
 
@@ -108,7 +106,7 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	}
 
 	// if state of the book changed show state
-	if b.config.LogPriceLevels && len(trades) != 0 {
+	if b.LogPriceLevelsDebug && len(trades) != 0 {
 		b.PrintState("After uncross state:")
 	}
 
@@ -122,7 +120,7 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 		b.getSide(order.Side).addOrder(order, order.Side)
 
-		if b.config.LogPriceLevels {
+		if b.LogPriceLevelsDebug {
 			b.PrintState("After addOrder state:")
 		}
 	}
@@ -169,16 +167,18 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []msg.Order 
 	// linear scan of our expiring orders, prune any that have expired
 	for _, or := range b.expiringOrders {
 		if or.ExpirationTimestamp <= expirationTimestamp {
-			b.RemoveOrder(&or)                              // order is removed from the book
-			or.Status = msg.Order_Expired                  // order is marked as expired for storage
+			b.RemoveOrder(&or)            // order is removed from the book
+			or.Status = msg.Order_Expired // order is marked as expired for storage
 			expiredOrders = append(expiredOrders, or)
 		} else {
-			pendingOrders = append(pendingOrders, or)      // order is pending expiry (future)
+			pendingOrders = append(pendingOrders, or) // order is pending expiry (future)
 		}
 	}
 
-	log.Debugf("Matching: Removed %d orders that expired, %d remaining on book", len(expiredOrders), len(pendingOrders))
-	
+	if b.LogRemovedOrdersDebug {
+		b.log.Debugf("Matching: Removed %d orders that expired, %d remaining on book", len(expiredOrders), len(pendingOrders))
+	}
+
 	// update our list of GTT orders pending expiry, ready for next run.
 	b.expiringOrders = nil
 	b.expiringOrders = pendingOrders
@@ -224,21 +224,21 @@ func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.O
 }
 
 func (b *OrderBook) PrintState(msg string) {
-	log.Debugf("\n%s\n", msg)
-	log.Debugf("------------------------------------------------------------\n")
-	log.Debugf("                        BUY SIDE                            \n")
+	b.log.Debugf("%s", msg)
+	b.log.Debug("------------------------------------------------------------")
+	b.log.Debug("                        BUY SIDE                            ")
 	for _, priceLevel := range b.buy.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print()
 		}
 	}
-	log.Debugf("------------------------------------------------------------\n")
-	log.Debugf("                        SELL SIDE                           \n")
+	b.log.Debug("------------------------------------------------------------")
+	b.log.Debug("                        SELL SIDE                           ")
 	for _, priceLevel := range b.sell.getLevels() {
 		if len(priceLevel.orders) > 0 {
 			priceLevel.print()
 		}
 	}
-	log.Debugf("------------------------------------------------------------\n")
+	b.log.Debug("------------------------------------------------------------")
 
 }

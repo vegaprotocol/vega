@@ -1,9 +1,8 @@
 package filtering
 
-
 type TradeQueryFilters struct {
 	QueryFilterPaginated
-	Operator        QueryFilterOperator
+	Operator QueryFilterOperator
 
 	IdFilter        *QueryFilter
 	MarketFilter    *QueryFilter
@@ -51,4 +50,3 @@ func (o *TradeQueryFilters) Count() int {
 	}
 	return total
 }
-

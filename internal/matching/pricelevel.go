@@ -4,24 +4,23 @@ import (
 	"fmt"
 	"math"
 
-	"vega/log"
 	"vega/msg"
 )
 
 type PriceLevel struct {
+	*Config
 	price             uint64
 	orders            []*msg.Order
 	volumeAtTimestamp map[uint64]uint64
 	volume            uint64
-	prorataMode       bool
 }
 
-func NewPriceLevel(price uint64, prorataMode bool) *PriceLevel {
+func NewPriceLevel(config *Config, price uint64) *PriceLevel {
 	return &PriceLevel{
+		Config:            config,
 		price:             price,
 		orders:            []*msg.Order{},
 		volumeAtTimestamp: make(map[uint64]uint64),
-		prorataMode:       prorataMode,
 	}
 }
 
@@ -148,7 +147,7 @@ func (l *PriceLevel) getVolumeAllocation(
 	agg, pass *msg.Order,
 	volumeToShare, initialVolumeAtTimestamp uint64) uint64 {
 
-		if l.prorataMode {
+	if l.ProRataMode {
 		weight := float64(pass.Remaining) / float64(initialVolumeAtTimestamp)
 		size := weight * float64(min(volumeToShare, initialVolumeAtTimestamp))
 		if size-math.Trunc(size) > 0 {
@@ -195,7 +194,7 @@ func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
 }
 
 func (l PriceLevel) print() {
-	log.Debugf("priceLevel: %d\n", l.price)
+	l.log.Debugf("priceLevel: %d\n", l.price)
 	for _, o := range l.orders {
 		var side string
 		if o.Side == msg.Side_Buy {
@@ -206,6 +205,6 @@ func (l PriceLevel) print() {
 
 		line := fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s",
 			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id)
-		log.Debugf("%s", line)
+		l.log.Debugf("%s", line)
 	}
 }

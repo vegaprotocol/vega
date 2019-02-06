@@ -4,17 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"vega/log"
 	"vega/msg"
 
 	"github.com/stretchr/testify/assert"
 	"time"
 )
-
-// this runs just once as first
-func init() {
-	log.InitConsoleLogger(log.DebugLevel)
-}
 
 // launch aggressiveOrder orders from both sides to fully clear the order book
 type aggressiveOrderScenario struct {
@@ -30,7 +24,7 @@ func getCurrentUtcTimestampNano() uint64 {
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	market := "expiringOrderBookTest"
 	party := "clay-davis"
-	book := NewBook(market, ProrataModeConfig())
+	book := NewBook(market, ProRataModeConfig())
 	currentTimestamp := getCurrentUtcTimestampNano()
 	someTimeLater := currentTimestamp + (1000*1000)
 
@@ -192,7 +186,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 //test for order validation
 func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	book.latestTimestamp = 10
 
 	invalidTimestampOrderMsg := &msg.Order{
@@ -226,7 +220,7 @@ func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
 }
 
 func TestOrderBook_RemoveOrder(t *testing.T) {
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
@@ -250,7 +244,7 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 }
 
 func TestOrderBook_AddOrder(t *testing.T) {
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 
 	const numberOfTimestamps = 3
 	m := make(map[int64][]*msg.Order, numberOfTimestamps)
@@ -1044,7 +1038,7 @@ func TestOrderBook_AddOrder(t *testing.T) {
 }
 
 func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "invalid",
 		Party:     "A",
@@ -1070,7 +1064,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	fmt.Println("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
@@ -1104,7 +1098,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	fmt.Println("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
@@ -1137,7 +1131,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	fmt.Println("BEGIN CANCELLING MARKET MISMATCH ORDER")
 
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market: "testOrderBook",
 		Id:     "123456",
@@ -1159,7 +1153,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	fmt.Println("BEGIN CANCELLING INVALID ORDER")
 
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market: "testOrderBook",
 		Id:     "id",
@@ -1198,9 +1192,8 @@ func expectOrder(t *testing.T, expectedOrder, order *msg.Order) {
 }
 
 func TestOrderBook_AmendOrder(t *testing.T) {
-	fmt.Println("BEGIN AMENDING ORDER")
-
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1213,10 +1206,13 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 
 	confirmation, err := book.AddOrder(newOrder)
 	if err != msg.OrderError_NONE {
-		fmt.Println(err)
+		t.Log(err)
 	}
-
-	fmt.Printf("confirmation : %+v", confirmation)
+	
+	assert.Equal(t, msg.OrderError_NONE, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, "123456", confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &msg.Order{
 		Market:    "testOrderBook",
@@ -1230,16 +1226,15 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 
 	err = book.AmendOrder(editedOrder)
 	if err != msg.OrderError_NONE {
-		fmt.Println(err)
+		t.Log(err)
 	}
-
+	
 	assert.Equal(t, msg.OrderError_NONE, err)
 }
 
 func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
-	fmt.Println("BEGIN AMENDING ORDER")
-
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1252,10 +1247,13 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 
 	confirmation, err := book.AddOrder(newOrder)
 	if err != msg.OrderError_NONE {
-		fmt.Println(err)
+		t.Log(err)
 	}
 
-	fmt.Printf("confirmation : %+v", confirmation)
+	assert.Equal(t, msg.OrderError_NONE, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, "123456", confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &msg.Order{
 		Market:    "testOrderBook",
@@ -1268,16 +1266,15 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	}
 	err = book.AmendOrder(editedOrder)
 	if err != msg.OrderError_INVALID_REMAINING_SIZE {
-		fmt.Println(err)
+		t.Log(err)
 	}
 
 	assert.Equal(t, msg.OrderError_INVALID_REMAINING_SIZE, err)
 }
 
 func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
-	fmt.Println("BEGIN AMENDING ORDER")
-
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1316,7 +1313,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	fmt.Println("BEGIN AMENDING ORDER")
 
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1330,10 +1327,13 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 
 	confirmation, err := book.AddOrder(newOrder)
 	if err != msg.OrderError_NONE {
-		fmt.Println(err)
+		t.Log(err)
 	}
 
-	fmt.Printf("confirmation : %+v", confirmation)
+	assert.Equal(t, msg.OrderError_NONE, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, "123456", confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &msg.Order{
 		Market:    "testOrderBook",
@@ -1348,16 +1348,15 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 
 	err = book.AmendOrder(editedOrder)
 	if err != msg.OrderError_ORDER_AMEND_FAILURE {
-		fmt.Println(err)
+		t.Log(err)
 	}
 
 	assert.Equal(t, msg.OrderError_ORDER_AMEND_FAILURE, err)
 }
 
 func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
-	fmt.Println("BEGIN AMENDING ORDER")
 
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1375,7 +1374,10 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	fmt.Printf("confirmation : %+v", confirmation)
+	assert.Equal(t, msg.OrderError_NONE, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, "123456", confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &msg.Order{
 		Market:    "testOrderBook",
@@ -1391,16 +1393,15 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 
 	err = book.AmendOrder(editedOrder)
 	if err != msg.OrderError_ORDER_OUT_OF_SEQUENCE {
-		fmt.Println(err)
+		t.Log(err)
 	}
 
 	assert.Equal(t, msg.OrderError_ORDER_OUT_OF_SEQUENCE, err)
 }
 
 func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
-	fmt.Println("BEGIN AMENDING ORDER")
 
-	book := NewBook("testOrderBook", ProrataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig())
 	newOrder := &msg.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1415,10 +1416,13 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 
 	confirmation, err := book.AddOrder(newOrder)
 	if err != msg.OrderError_NONE {
-		fmt.Println(err)
+		t.Log(err)
 	}
 
-	fmt.Printf("confirmation : %+v", confirmation)
+	assert.Equal(t, msg.OrderError_NONE, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, "123456", confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &msg.Order{
 		Market:    "testOrderBook",
@@ -1434,15 +1438,15 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 
 	err = book.AmendOrder(editedOrder)
 	if err != msg.OrderError_ORDER_AMEND_FAILURE {
-		fmt.Println(err)
+		t.Log(err)
 	}
 
 	assert.Equal(t, msg.OrderError_ORDER_AMEND_FAILURE, err)
 }
 
-// PRORATA MODE OFF which is a default config for vega ME
-func TestOrderBook_AddOrderProrataModeOff(t *testing.T) {
-	book := NewBook("testOrderBook", DefaultConfig())
+// ProRata mode OFF which is a default config for vega ME
+func TestOrderBook_AddOrderProRataModeOff(t *testing.T) {
+	book := NewBook("testOrderBook", NewConfig())
 
 	const numberOfTimestamps = 2
 	m := make(map[int64][]*msg.Order, numberOfTimestamps)
