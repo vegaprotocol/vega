@@ -92,6 +92,7 @@ func (g *graphServer) Start() {
 	logger.Infof("Starting GraphQL based server on port %d...\n", port)
 	addr := fmt.Sprintf("%s:%d", ip, port)
 	resolverRoot := NewResolverRoot(
+		g.Config,
 		g.orderService,
 		g.tradeService,
 		g.candleService,

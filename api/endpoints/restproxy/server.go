@@ -51,7 +51,7 @@ func (s *restProxyServer) Start() {
 		// CORS support
 		handler := cors.Default().Handler(mux)
 		// Gzip encoding support
-		handler = NewGzipHandler(handler.(http.HandlerFunc))
+		handler = NewGzipHandler(logger, handler.(http.HandlerFunc))
 		// Start http server on port specified
 		http.ListenAndServe(addr, handler)
 	}

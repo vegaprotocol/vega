@@ -1,21 +1,22 @@
 package storage
 
 import (
-	"vega/internal/logging"
 	"os"
+	"vega/internal/logging"
 )
 
 // Config provides package level settings, configuration and logging.
 type Config struct {
-	log                 logging.Logger
-	level               logging.Level
-	
-	OrderStoreDirPath   string
-	TradeStoreDirPath   string
-	CandleStoreDirPath  string
-	LogPartyStoreDebug  bool
-	LogOrderStoreDebug  bool
-	LogCandleStoreDebug bool
+	log   logging.Logger
+	level logging.Level
+
+	OrderStoreDirPath     string
+	TradeStoreDirPath     string
+	CandleStoreDirPath    string
+	LogPartyStoreDebug    bool
+	LogOrderStoreDebug    bool
+	LogCandleStoreDebug   bool
+	LogPositionStoreDebug bool
 }
 
 // NewConfig constructs a new Config instance with default parameters.
@@ -26,14 +27,15 @@ func NewConfig() *Config {
 	logger.InitConsoleLogger(level)
 	logger.AddExitHandler()
 	return &Config{
-		log:                 logger,
-		level:               level,
-		OrderStoreDirPath:   "../../tmp/orderstore",
-		TradeStoreDirPath:   "../../tmp/tradestore",
-		CandleStoreDirPath:  "../../tmp/candlestore",
-		LogPartyStoreDebug:  true,
-		LogOrderStoreDebug:  true,
-		LogCandleStoreDebug: false,
+		log:                   logger,
+		level:                 level,
+		OrderStoreDirPath:     "../../tmp/orderstore",
+		TradeStoreDirPath:     "../../tmp/tradestore",
+		CandleStoreDirPath:    "../../tmp/candlestore",
+		LogPartyStoreDebug:    true,
+		LogOrderStoreDebug:    true,
+		LogCandleStoreDebug:   false,
+		LogPositionStoreDebug: false,
 	}
 }
 
@@ -46,10 +48,11 @@ func NewTestConfig() *Config {
 	logger.AddExitHandler()
 	// Test configuration for badger stores
 	return &Config{
-		OrderStoreDirPath:  "./tmp/orderstore-test",
-		TradeStoreDirPath:  "./tmp/tradestore-test",
-		CandleStoreDirPath: "./tmp/candlestore-test",
-		log:                logger,
+		log:                   logger,
+		OrderStoreDirPath:     "./tmp/orderstore-test",
+		TradeStoreDirPath:     "./tmp/tradestore-test",
+		CandleStoreDirPath:    "./tmp/candlestore-test",
+		LogPositionStoreDebug: true,
 	}
 }
 

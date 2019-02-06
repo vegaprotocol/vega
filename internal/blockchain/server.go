@@ -6,7 +6,6 @@ import (
 	"time"
 	"vega/internal/execution"
 	"vega/internal/vegatime"
-	"vega/log"
 	"vega/tendermint/rpc"
 
 	"github.com/tendermint/tendermint/abci/server"
@@ -46,14 +45,14 @@ func (s *Server) Start() error {
 	blockchainClient := NewClient()
 	var genesis *rpc.Genesis
 	for {
-		log.Infof("Attempting to retrieve Tendermint genesis time...")
+		s.log.Infof("Attempting to retrieve Tendermint genesis time...")
 		genesis, err = blockchainClient.GetGenesisTime(context.Background())
 		if genesis != nil {
 			break
 		}
 		time.Sleep(5 * time.Second)
 	}
-	log.Infof("Genesis time set to: %+v\n", genesis.GenesisTime)
+	s.log.Infof("Genesis time set to: %+v\n", genesis.GenesisTime)
 	//vega.SetGenesisTime(genesis.GenesisTime)
 	//vega.Statistics.Status = msg.AppStatus_APP_CONNECTED
 

@@ -6,17 +6,20 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"vega/api"
+	"vega/msg"
+
 	"vega/internal/candles"
 	"vega/internal/filtering"
 	"vega/internal/markets"
 	"vega/internal/orders"
 	"vega/internal/trades"
 	"vega/internal/vegatime"
-	"vega/log"
-	"vega/msg"
 )
 
 type resolverRoot struct {
+	*api.Config
 	orderService  orders.Service
 	tradeService  trades.Service
 	timeService   vegatime.Service
@@ -24,10 +27,11 @@ type resolverRoot struct {
 	marketService markets.Service
 }
 
-func NewResolverRoot(orderService orders.Service, tradeService trades.Service, candleService candles.Service,
+func NewResolverRoot(config *api.Config, orderService orders.Service, tradeService trades.Service, candleService candles.Service,
 	timeService vegatime.Service, marketService markets.Service) *resolverRoot {
 
 	return &resolverRoot{
+		Config:        config,
 		timeService:   timeService,
 		orderService:  orderService,
 		tradeService:  tradeService,
@@ -218,7 +222,8 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	case IntervalI6H:
 		pbInterval = msg.Interval_I6H
 	default:
-		log.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
+		logger := *r.GetLogger()
+		logger.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
 		pbInterval = msg.Interval_I15M
 	}
 
@@ -434,7 +439,8 @@ func (r *MyCandleResolver) Interval(ctx context.Context, obj *msg.Candle) (Inter
 	if interval.IsValid() {
 		return interval, nil
 	} else {
-		log.Errorf("Interval conv from proto to gql type failed (%s is not valid) fall back to default", interval)
+		logger := *r.GetLogger()
+		logger.Errorf("Interval conv from proto to gql type failed (%s is not valid) fall back to default", interval)
 		return IntervalI15M, nil
 	}
 }
@@ -573,7 +579,8 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	accepted, reference, err := r.orderService.CreateOrder(ctx, order)
 	if err != nil {
-		log.Errorf("error creating order via rpc client and graph-ql", err)
+		logger := *r.GetLogger()
+		logger.Errorf("error creating order via rpc client and graph-ql", err)
 		return res, err
 	}
 
@@ -623,7 +630,8 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 		return nil, err
 	}
 	c, ref := r.orderService.ObserveOrders(ctx, market, party)
-	log.Debugf("GraphQL Orders -> New subscriber: %d", ref)
+	logger := *r.GetLogger()
+	logger.Debugf("GraphQL Orders -> New subscriber: %d", ref)
 	return c, nil
 }
 
@@ -634,13 +642,15 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 		return nil, err
 	}
 	c, ref := r.tradeService.ObserveTrades(ctx, market, party)
-	log.Debugf("GraphQL Trades -> New subscriber: %d", ref)
+	logger := *r.GetLogger()
+	logger.Debugf("GraphQL Trades -> New subscriber: %d", ref)
 	return c, nil
 }
 
 func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan msg.MarketPosition, error) {
 	c, ref := r.tradeService.ObservePositions(ctx, party)
-	log.Debugf("GraphQL Positions -> New subscriber: %d", ref)
+	logger := *r.GetLogger()
+	logger.Debugf("GraphQL Positions -> New subscriber: %d", ref)
 	return c, nil
 }
 
@@ -651,7 +661,8 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 		return nil, err
 	}
 	c, ref := r.marketService.ObserveDepth(ctx, market)
-	log.Debugf("GraphQL Market Depth -> New subscriber: %d", ref)
+	logger := *r.GetLogger()
+	logger.Debugf("GraphQL Market Depth -> New subscriber: %d", ref)
 	return c, nil
 }
 
@@ -661,6 +672,8 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	if err != nil {
 		return nil, err
 	}
+
+	logger := *r.GetLogger()
 
 	var pbInterval msg.Interval
 	switch interval {
@@ -677,7 +690,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	case IntervalI6H:
 		pbInterval = msg.Interval_I6H
 	default:
-		log.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
+		logger.Errorf("Invalid interval when subscribing to candles in gql (%s) falling back to default: I15M", interval.String())
 		pbInterval = msg.Interval_I15M
 	}
 
@@ -685,7 +698,8 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	// --------------------------------
 
 	c, ref := r.candleService.ObserveCandles(ctx, &market, &pbInterval)
-	log.Infof("GraphQL Candle Interval %s -> New subscriber for market %s: %d", pbInterval.String(), market, ref)
+
+	logger.Infof("GraphQL Candle Interval %s -> New subscriber for market %s: %d", pbInterval.String(), market, ref)
 	return c, nil
 }
 

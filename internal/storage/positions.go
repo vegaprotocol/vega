@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"vega/log"
 	"vega/msg"
 )
 
@@ -18,12 +17,13 @@ func (ts *badgerTradeStore) GetTradesBySideBuckets(party string) map[string]*Mar
 	marketBuckets := make(map[string]*MarketBucket, 0)
 	tradesByTimestamp, err := ts.GetByParty(party, nil)
 
-	//fmt.Printf("tradesByTimestamp: %+v\n", tradesByTimestamp)
 	if err != nil {
 		return marketBuckets
 	}
 
-	log.Debugf("Total trades by timestamp for party %s = %d", party, len(tradesByTimestamp))
+	if ts.LogPositionStoreDebug {
+		ts.log.Debugf("Total trades by timestamp for party %s = %d", party, len(tradesByTimestamp))
+	}
 
 	for idx, trade := range tradesByTimestamp {
 		if _, ok := marketBuckets[trade.Market]; !ok {
@@ -38,6 +38,6 @@ func (ts *badgerTradeStore) GetTradesBySideBuckets(party string) map[string]*Mar
 			marketBuckets[trade.Market].SellVolume += int64(tradesByTimestamp[idx].Size)
 		}
 	}
-	//fmt.Printf("marketBuckets: %+v\n", marketBuckets)
+
 	return marketBuckets
 }

@@ -9,10 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"vega/log"
-
 	"github.com/gorilla/websocket"
 	"strconv"
+	"vega/internal/logging"
 )
 
 const (
@@ -80,6 +79,7 @@ func (err rpcError) Error() string {
 // calling the Connect method, and then call the appropriate methods
 // corresponding to Tendermint's JSON-RPC API.
 type Client struct {
+	log              logging.Logger
 	Address          string        // Defaults to 127.0.0.1:46657
 	HandshakeTimeout time.Duration // Defaults to 10 seconds
 	WriteTimeout     time.Duration // Defaults to 30 seconds
@@ -95,7 +95,11 @@ type Client struct {
 
 // New provides a new Tendermint RPC Client can be used to interface with Tendermint abci server etc.
 func New() TendermintClient {
-	return &Client{}
+	level := logging.DebugLevel
+	logger := logging.NewLogger()
+	logger.InitConsoleLogger(level)
+	logger.AddExitHandler()
+	return &Client{log:logger}
 }
 
 // AddTransaction corresponds to the Tendermint BroadcastTxSync call. It adds
@@ -411,7 +415,7 @@ func (c *Client) closeWithError(err error) error {
 }
 
 func (c *Client) handleError(err error) {
-	log.Errorf("Got error: %s", err)
+	c.log.Errorf("Got error: %s", err)
 	c.mu.Lock()
 	c.closeWithError(err)
 	c.mu.Unlock()
@@ -453,7 +457,7 @@ func (c *Client) readLoop() {
 		ch, exists := c.results[resp.ID]
 		c.mu.RUnlock()
 		if !exists {
-			log.Infof("Unexpected json-rpc response: %d [ %s ]", resp.ID, string(resp.Result))
+			c.log.Infof("Unexpected json-rpc response: %d [ %s ]", resp.ID, string(resp.Result))
 			c.Close()
 			return
 		}

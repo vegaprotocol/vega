@@ -2,10 +2,10 @@ package restproxy
 
 import (
 	"compress/gzip"
-	"vega/log"
 	"net/http"
 	"strings"
 	"sync"
+	"vega/internal/logging"
 )
 
 type gzipResponseWriter struct {
@@ -63,7 +63,7 @@ func (gzr *gzipResponseWriter) Flush() {
 	}
 }
 
-func NewGzipHandler(fn http.HandlerFunc) http.HandlerFunc {
+func NewGzipHandler(logger logging.Logger, fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			fn(w, r)
@@ -81,7 +81,7 @@ func NewGzipHandler(fn http.HandlerFunc) http.HandlerFunc {
 			// StatusNotModified and StatusNoContent expect an empty body so don't close it.
 			if gzr.statusCode != http.StatusNotModified && gzr.statusCode != http.StatusNoContent {
 				if err := gzr.w.Close(); err != nil {
-					log.Errorf("Gzip error: %v", err)
+					logger.Errorf("Gzip error: %v", err)
 				}
 			}
 			pool.Put(gzr)

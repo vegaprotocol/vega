@@ -3,7 +3,6 @@ package execution
 import (
 	"fmt"
 
-	"vega/log"
 	"vega/msg"
 
 	"vega/internal/matching"
@@ -110,7 +109,7 @@ func (e *engine) AmendOrder(order *msg.Amendment) (*msg.OrderConfirmation, msg.O
 		return &msg.OrderConfirmation{}, msg.OrderError_INVALID_ORDER_REFERENCE
 	}
 
-	log.Debugf("Existing order found: %+v\n", existingOrder)
+	e.log.Debugf("Existing order found: %+v\n", existingOrder)
 
 	timestamp, _, err := e.time.GetTimeNow()
 	if err != nil {
@@ -169,7 +168,7 @@ func (e *engine) AmendOrder(order *msg.Amendment) (*msg.OrderConfirmation, msg.O
 		return e.orderAmendInPlace(newOrder)
 	}
 
-	log.Infof("Edit not allowed")
+	e.log.Infof("Edit not allowed")
 	return &msg.OrderConfirmation{}, msg.OrderError_EDIT_NOT_ALLOWED
 }
 
@@ -192,7 +191,7 @@ func (e *engine) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.Orde
 	err := e.orderStore.Put(*order)
 	if err != nil {
 		// Note: writing to store should not prevent flow to other engines
-		log.Errorf("OrderStore.Put error: %v", err)
+		e.log.Errorf("OrderStore.Put error: %v", err)
 	}
 
 	// ------------------------------------------------//
@@ -201,9 +200,9 @@ func (e *engine) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.Orde
 
 func (e engine) orderCancelReplace(existingOrder, newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	cancellationMessage, errMsg := e.CancelOrder(existingOrder)
-	log.Debugf("ExecutionEngine: cancellationMessage: %+v", cancellationMessage)
+	e.log.Debugf("ExecutionEngine: cancellationMessage: %+v", cancellationMessage)
 	if errMsg != msg.OrderError_NONE {
-		log.Errorf("Failed to cancel and replace order: %s -> %s (%s)", existingOrder, newOrder, errMsg)
+		e.log.Errorf("Failed to cancel and replace order: %s -> %s (%s)", existingOrder, newOrder, errMsg)
 		return &msg.OrderConfirmation{}, errMsg
 	}
 	return e.SubmitOrder(newOrder)
@@ -212,12 +211,12 @@ func (e engine) orderCancelReplace(existingOrder, newOrder *msg.Order) (*msg.Ord
 func (e *engine) orderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
 	errMsg := e.matching.AmendOrder(newOrder)
 	if errMsg != msg.OrderError_NONE {
-		log.Errorf("Failed to amend in place order: %s (%s)", newOrder, errMsg)
+		e.log.Errorf("Failed to amend in place order: %s (%s)", newOrder, errMsg)
 		return &msg.OrderConfirmation{}, errMsg
 	}
 	err := e.orderStore.Put(*newOrder)
 	if err != nil {
-		log.Errorf("Failed to update order store for amend in place: %s - %s", newOrder, err)
+		e.log.Errorf("Failed to update order store for amend in place: %s - %s", newOrder, err)
 	}
 	return &msg.OrderConfirmation{}, msg.OrderError_NONE
 }

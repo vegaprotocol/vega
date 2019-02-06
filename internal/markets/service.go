@@ -4,7 +4,6 @@ import (
 	"vega/internal/storage"
 	"vega/msg"
 	"context"
-	"vega/log"
 	"vega/internal/logging"
 )
 
@@ -75,10 +74,10 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 	go func(id uint64, internal chan []msg.Order, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
-		log.Debugf("MarketService -> depth closed connection: %d [%s]", id, ip)
+		s.log.Debugf("MarketService -> depth closed connection: %d [%s]", id, ip)
 		err := s.orderStore.Unsubscribe(id)
 		if err != nil {
-			log.Errorf("Error un-subscribing depth when context.Done() on MarketService for subscriber %d [%s]: %s", id, ip, err)
+			s.log.Errorf("Error un-subscribing depth when context.Done() on MarketService for subscriber %d [%s]: %s", id, ip, err)
 		}
 	}(ref, internal, ctx)
 
@@ -87,17 +86,17 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 		for range internal {
 			d, err := s.orderStore.GetMarketDepth(market)
 			if err != nil {
-				log.Errorf("Error calculating market depth for subscriber %d [%s]: %s", ref, ip, err)
+				s.log.Errorf("Error calculating market depth for subscriber %d [%s]: %s", ref, ip, err)
 			} else {
 				select {
 				case depth <- d:
-					log.Debugf("MarketService -> depth for subscriber %d [%s] sent successfully", ref, ip)
+					s.log.Debugf("MarketService -> depth for subscriber %d [%s] sent successfully", ref, ip)
 				default:
-					log.Debugf("MarketService -> depth for subscriber %d [%s] not sent", ref, ip)
+					s.log.Debugf("MarketService -> depth for subscriber %d [%s] not sent", ref, ip)
 				}
 			}
 		}
-		log.Debugf("MarketService -> Channel for depth subscriber %d [%s] has been closed", ref, ip)
+		s.log.Debugf("MarketService -> Channel for depth subscriber %d [%s] has been closed", ref, ip)
 	}(ref, ctx)
 
 	return depth, ref
