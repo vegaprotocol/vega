@@ -20,8 +20,8 @@ type partyService struct {
 	store storage.PartyStore
 }
 
-// NewService creates a Parties service with the necessary dependencies
-func NewService(store storage.PartyStore) Service {
+// NewPartyService creates a Parties service with the necessary dependencies
+func NewPartyService(store storage.PartyStore) Service {
 	config := NewConfig()
 	return &partyService{
 		config,

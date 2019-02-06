@@ -2,12 +2,14 @@ package storage
 
 import (
 	"fmt"
-	"github.com/dgraph-io/badger"
 	"sync"
-	"vega/filters"
+
+	"vega/internal/filtering"
 	"vega/msg"
-	"github.com/pkg/errors"
+
+	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
+	"github.com/pkg/errors"
 )
 
 type TradeStore interface {
@@ -27,15 +29,15 @@ type TradeStore interface {
 	Close()
 
 	// GetByMarket retrieves trades for a given market.
-	GetByMarket(market string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
+	GetByMarket(market string, params *filtering.TradeQueryFilters) ([]*msg.Trade, error)
 	// GetByMarketAndId retrieves a trade for a given market and id.
 	GetByMarketAndId(market string, id string) (*msg.Trade, error)
 	// GetByParty retrieves trades for a given party (buyer or seller).
-	GetByParty(party string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
+	GetByParty(party string, params *filtering.TradeQueryFilters) ([]*msg.Trade, error)
 	// GetByPartyAndId retrieves a trade for a given party (buyer or seller) and id.
 	GetByPartyAndId(party string, id string) (*msg.Trade, error)
 	// GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
-	GetByOrderId(orderId string, params *filters.TradeQueryFilters) ([]*msg.Trade, error)
+	GetByOrderId(orderId string, params *filtering.TradeQueryFilters) ([]*msg.Trade, error)
 	// GetMarkPrice returns the current market price.
 	GetMarkPrice(market string) (uint64, error)
 
@@ -57,15 +59,15 @@ type badgerTradeStore struct {
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
 func NewTradeStore(c *Config) (TradeStore, error) {
-	db, err := badger.Open(customBadgerOptions(c.tradeStoreDirPath))
+	db, err := badger.Open(customBadgerOptions(c.TradeStoreDirPath))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for trades storage")
 	}
 	bs := badgerStore{db: db}
 	return &badgerTradeStore{
-		Config: c,
-		badger: &bs,
-		buffer: make([]msg.Trade, 0),
+		Config:      c,
+		badger:      &bs,
+		buffer:      make([]msg.Trade, 0),
 		subscribers: make(map[uint64]chan<- []msg.Trade),
 	}, nil
 }
@@ -134,11 +136,11 @@ func (ts *badgerTradeStore) Commit() error {
 
 // GetByMarket retrieves trades for a given market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByMarket(market string, queryFilters *filters.TradeQueryFilters) ([]*msg.Trade, error) {
+func (ts *badgerTradeStore) GetByMarket(market string, queryFilters *filtering.TradeQueryFilters) ([]*msg.Trade, error) {
 	var result []*msg.Trade
 
 	if queryFilters == nil {
-		queryFilters = &filters.TradeQueryFilters{}
+		queryFilters = &filtering.TradeQueryFilters{}
 	}
 
 	txn := ts.badger.readTransaction()
@@ -190,11 +192,11 @@ func (ts *badgerTradeStore) GetByMarketAndId(market string, Id string) (*msg.Tra
 
 // GetByParty retrieves trades for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByParty(party string, queryFilters *filters.TradeQueryFilters) ([]*msg.Trade, error) {
+func (ts *badgerTradeStore) GetByParty(party string, queryFilters *filtering.TradeQueryFilters) ([]*msg.Trade, error) {
 	var result []*msg.Trade
 
 	if queryFilters == nil {
-		queryFilters = &filters.TradeQueryFilters{}
+		queryFilters = &filtering.TradeQueryFilters{}
 	}
 
 	txn := ts.badger.readTransaction()
@@ -269,7 +271,7 @@ func (ts *badgerTradeStore) GetByPartyAndId(party string, Id string) (*msg.Trade
 
 // GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
 // Provide optional query filters to refine the data set further (if required), any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByOrderId(orderId string, queryFilters *filters.TradeQueryFilters) ([]*msg.Trade, error) {
+func (ts *badgerTradeStore) GetByOrderId(orderId string, queryFilters *filtering.TradeQueryFilters) ([]*msg.Trade, error) {
 	var result []*msg.Trade
 
 	txn := ts.badger.readTransaction()
@@ -316,7 +318,7 @@ func (ts *badgerTradeStore) Close() {
 func (ts *badgerTradeStore) GetMarkPrice(market string) (uint64, error) {
 
 	// We just need the very latest trade price
-	f := &filters.TradeQueryFilters{}
+	f := &filtering.TradeQueryFilters{}
 	l := uint64(1)
 	f.Last = &l
 
@@ -441,7 +443,7 @@ func (ts *badgerTradeStore) writeBatch(batch []msg.Trade) error {
 // TradeFilter is the trade specific filter query data holder. It includes the raw filters
 // and helper methods that are used internally to apply and track filter state.
 type TradeFilter struct {
-	queryFilter *filters.TradeQueryFilters
+	queryFilter *filtering.TradeQueryFilters
 	skipped     uint64
 	found       uint64
 }

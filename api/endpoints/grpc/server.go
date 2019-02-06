@@ -3,19 +3,30 @@ package grpc
 import (
 	"fmt"
 	"net"
+	
 	"vega/api"
-	"vega/log"
+	"vega/internal/orders"
+	"vega/internal/trades"
+	"vega/internal/candles"
+	"vega/internal/vegatime"
+	"vega/internal/markets"
+
 	"google.golang.org/grpc"
 )
 
 type grpcServer struct {
-	orderService api.OrderService
-	tradeService api.TradeService
-	candleService api.CandleService
+	*api.Config
+	orderService orders.Service
+	tradeService trades.Service
+	candleService candles.Service
+	marketService markets.Service
+	timeService vegatime.Service
 }
 
-func NewGRPCServer(orderService api.OrderService, tradeService api.TradeService, candleService api.CandleService) *grpcServer {
+func NewGRPCServer(config *api.Config, orderService orders.Service,
+	tradeService trades.Service, candleService candles.Service) *grpcServer {
 	return &grpcServer{
+		Config: config,
 		orderService: orderService,
 		tradeService: tradeService,
 		candleService: candleService,
@@ -23,18 +34,22 @@ func NewGRPCServer(orderService api.OrderService, tradeService api.TradeService,
 }
 
 func (g *grpcServer) Start() {
-	var port = 3002
-	log.Infof("Starting GRPC based server on port %d...\n", port)
+	logger := *g.GetLogger()
+	port := g.GrpcServerPort
+	ip := g.GrpcServerIpAddress
+	logger.Infof("Starting GRPC based server on port %d...\n", port)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logger.Fatalf("failed to listen: %v", err)
 	}
 
 	var handlers = &Handlers{
 		OrderService: g.orderService,
 		TradeService: g.tradeService,
 		CandleService: g.candleService,
+		MarketService: g.marketService,
+		TimeService: g.timeService,
 	}
 	grpcServer := grpc.NewServer()
 	api.RegisterTradingServer(grpcServer, handlers)

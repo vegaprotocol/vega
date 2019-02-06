@@ -6,24 +6,33 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-	"vega/api"
-	"vega/filters"
+	"vega/internal/candles"
+	"vega/internal/filtering"
+	"vega/internal/markets"
+	"vega/internal/orders"
+	"vega/internal/trades"
+	"vega/internal/vegatime"
 	"vega/log"
 	"vega/msg"
-	"vega/vegatime"
 )
 
 type resolverRoot struct {
-	orderService  api.OrderService
-	tradeService  api.TradeService
-	candleService api.CandleService
+	orderService  orders.Service
+	tradeService  trades.Service
+	timeService   vegatime.Service
+	candleService candles.Service
+	marketService markets.Service
 }
 
-func NewResolverRoot(orderService api.OrderService, tradeService api.TradeService, candleService api.CandleService) *resolverRoot {
+func NewResolverRoot(orderService orders.Service, tradeService trades.Service, candleService candles.Service,
+	timeService vegatime.Service, marketService markets.Service) *resolverRoot {
+
 	return &resolverRoot{
+		timeService:   timeService,
 		orderService:  orderService,
 		tradeService:  tradeService,
 		candleService: candleService,
+		marketService: marketService,
 	}
 }
 
@@ -90,13 +99,13 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 		return nil, err
 	}
 
-	var markets = make([]Market, 0)
+	var m = make([]Market, 0)
 	var market = Market{
 		Name: *name,
 	}
-	markets = append(markets, market)
+	m = append(m, market)
 
-	return markets, nil
+	return m, nil
 }
 
 func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, name string) (*Market, error) {
@@ -149,12 +158,12 @@ func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 	if err != nil {
 		return nil, err
 	}
-	orders, err := r.orderService.GetByMarket(ctx, market.Name, queryFilters)
+	o, err := r.orderService.GetByMarket(ctx, market.Name, queryFilters)
 	if err != nil {
 		return nil, err
 	}
 	valOrders := make([]msg.Order, 0)
-	for _, v := range orders {
+	for _, v := range o {
 		valOrders = append(valOrders, *v)
 	}
 	return valOrders, nil
@@ -167,12 +176,12 @@ func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	if err != nil {
 		return nil, err
 	}
-	trades, err := r.tradeService.GetByMarket(market.Name, queryFilters)
+	t, err := r.tradeService.GetByMarket(market.Name, queryFilters)
 	if err != nil {
 		return nil, err
 	}
 	valTrades := make([]msg.Trade, 0)
-	for _, v := range trades {
+	for _, v := range t {
 		valTrades = append(valTrades, *v)
 	}
 	return valTrades, nil
@@ -182,7 +191,7 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (msg.Marke
 
 	// Look for market depth for the given market (will validate market internally)
 	// FYI: Market depth is also known as OrderBook depth within the matching-engine
-	depth, err := r.orderService.GetMarketDepth(ctx, market.Name)
+	depth, err := r.marketService.GetDepth(ctx, market.Name)
 	if err != nil {
 		return msg.MarketDepth{}, err
 	}
@@ -223,12 +232,12 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	}
 
 	// Retrieve candles from store/service
-	candles, err := r.candleService.GetCandles(ctx, market.Name, sinceTimestamp, pbInterval)
+	c, err := r.candleService.GetCandles(ctx, market.Name, sinceTimestamp, pbInterval)
 	if err != nil {
 		return nil, err
 	}
 
-	return candles, nil
+	return c, nil
 }
 
 // END: Market Resolver
@@ -244,12 +253,12 @@ func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 	if err != nil {
 		return nil, err
 	}
-	orders, err := r.orderService.GetByParty(ctx, party.Name, queryFilters)
+	o, err := r.orderService.GetByParty(ctx, party.Name, queryFilters)
 	if err != nil {
 		return nil, err
 	}
 	valOrders := make([]msg.Order, 0)
-	for _, v := range orders {
+	for _, v := range o {
 		valOrders = append(valOrders, *v)
 	}
 	return valOrders, nil
@@ -262,12 +271,12 @@ func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 	if err != nil {
 		return nil, err
 	}
-	trades, err := r.tradeService.GetByParty(party.Name, queryFilters)
+	t, err := r.tradeService.GetByParty(party.Name, queryFilters)
 	if err != nil {
 		return nil, err
 	}
 	valTrades := make([]msg.Trade, 0)
-	for _, v := range trades {
+	for _, v := range t {
 		valTrades = append(valTrades, *v)
 	}
 	return valTrades, nil
@@ -307,15 +316,15 @@ func (r *MyMarketDepthResolver) Sell(ctx context.Context, obj *msg.MarketDepth) 
 }
 
 func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error) {
-	queryFilters := &filters.TradeQueryFilters{}
+	queryFilters := &filtering.TradeQueryFilters{}
 	last := uint64(1)
 	queryFilters.Last = &last
-	trades, err := r.tradeService.GetByMarket(obj.Name, queryFilters)
+	t, err := r.tradeService.GetByMarket(obj.Name, queryFilters)
 	if err != nil {
 		return nil, err
 	}
-	if trades != nil && len(trades) > 0 && trades[0] != nil {
-		return trades[0], nil
+	if t != nil && len(t) > 0 && t[0] != nil {
+		return t[0], nil
 	}
 	// No trades found on the market yet (and no errors)
 	// this can happen at the beginning of a new market
@@ -359,7 +368,7 @@ func (r *MyOrderResolver) Datetime(ctx context.Context, obj *msg.Order) (string,
 	return vegaTimestamp.Rfc3339Nano(), nil
 }
 func (r *MyOrderResolver) Trades(ctx context.Context, obj *msg.Order) ([]*msg.Trade, error) {
-	f := filters.TradeQueryFilters{}
+	f := filtering.TradeQueryFilters{}
 	relatedTrades, err := r.tradeService.GetByOrderId(obj.Id, &f)
 	if err != nil {
 		return nil, err
@@ -641,7 +650,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	if err != nil {
 		return nil, err
 	}
-	c, ref := r.orderService.ObserveMarketDepth(ctx, market)
+	c, ref := r.marketService.ObserveDepth(ctx, market)
 	log.Debugf("GraphQL Market Depth -> New subscriber: %d", ref)
 	return c, nil
 }
@@ -686,10 +695,10 @@ func validateMarket(market *string) error {
 			return errors.New("market must not be empty")
 		}
 		// todo(cdm): change hard-coded list of markets when we have market service / market stores
-		var markets = []string{"BTC/DEC19"}
+		var m = []string{"BTC/DEC19"}
 		// Scan all markets for a match
 		found := false
-		for _, v := range markets {
+		for _, v := range m {
 			if v == *market {
 				found = true
 				break

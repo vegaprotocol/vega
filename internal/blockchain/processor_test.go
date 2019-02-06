@@ -30,11 +30,9 @@ func TestEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	orderBytes, err := proto.Marshal(order)
 	assert.Nil(t, err)
 
-	//client := NewClient()
 	resultBytes, err := txEncode(orderBytes, SubmitOrderCommand)
 	assert.Nil(t, err)
 
-	//processor := abciProcessor{}
 	decodeBytes, cmd, err := txDecode(resultBytes)
 	assert.Equal(t, SubmitOrderCommand, cmd)
 

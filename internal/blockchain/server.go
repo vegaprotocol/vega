@@ -1,27 +1,28 @@
 package blockchain
 
 import (
+	"context"
+	"fmt"
+	"time"
+	"vega/internal/execution"
+	"vega/internal/vegatime"
+	"vega/log"
+	"vega/tendermint/rpc"
+
 	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tmlibs/common"
-	"vega/internal/execution"
-	"fmt"
-	"vega/vegatime"
-	"vega/tendermint/rpc"
-	"vega/log"
-	"time"
-	"context"
 )
 
 type Server struct {
 	*Config
-	abci *AbciApplication
+	abci      *AbciApplication
 	execution execution.Engine
-	time vegatime.Service
+	time      vegatime.Service
 }
 
 func NewServer(ex execution.Engine, time vegatime.Service) *Server {
-	config := NewConfig()  // package specific config
-	stats := NewStats()    // package specific statistics
+	config := NewConfig() // package specific config
+	stats := NewStats()   // package specific statistics
 	app := NewAbciApplication(config, ex, time, stats)
 	return &Server{config, app, ex, time}
 }

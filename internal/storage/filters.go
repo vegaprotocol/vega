@@ -1,11 +1,11 @@
 package storage
 
 import (
-	"vega/filters"
+	"vega/internal/filtering"
 	"vega/msg"
 )
 
-func applyTradeFilters(trade *msg.Trade, queryFilters *filters.TradeQueryFilters) bool {
+func applyTradeFilters(trade *msg.Trade, queryFilters *filtering.TradeQueryFilters) bool {
 	ok := true
 	count := 0
 
@@ -58,7 +58,7 @@ func applyTradeFilters(trade *msg.Trade, queryFilters *filters.TradeQueryFilters
 		}
 	}
 
-	if queryFilters.Operator == filters.QueryFilterOperatorAnd {
+	if queryFilters.Operator == filtering.QueryFilterOperatorAnd {
 		// If we AND all the queryFilters the counts should match
 		// and if they do we have the exact match
 		return count == queryFilters.Count()
@@ -69,7 +69,7 @@ func applyTradeFilters(trade *msg.Trade, queryFilters *filters.TradeQueryFilters
 	}
 }
 
-func applyOrderFilters(order *msg.Order, queryFilters *filters.OrderQueryFilters) bool {
+func applyOrderFilters(order *msg.Order, queryFilters *filtering.OrderQueryFilters) bool {
 	ok := true
 	count := 0
 
@@ -140,7 +140,7 @@ func applyOrderFilters(order *msg.Order, queryFilters *filters.OrderQueryFilters
 		}
 	}
 
-	if queryFilters.Operator == filters.QueryFilterOperatorAnd {
+	if queryFilters.Operator == filtering.QueryFilterOperatorAnd {
 		// If we AND all the queryFilters the counts should match
 		// and if they do we have the exact match
 		return count == queryFilters.Count()

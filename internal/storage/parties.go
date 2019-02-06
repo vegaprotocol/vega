@@ -37,11 +37,11 @@ type memPartyStore struct {
 }
 
 // NewStore returns a concrete implementation of a parties Store.
-func NewPartyStore(config *Config) PartyStore {
+func NewPartyStore(config *Config) (PartyStore, error) {
 	return &memPartyStore{
 		Config: config,
 		db:     make(map[string]msg.Party, 0),
-	}
+	}, nil
 }
 
 // Post saves a given party to the mem-store.

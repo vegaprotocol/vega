@@ -1,28 +1,15 @@
 package execution
 
 import (
-	"vega/datastore"
-	"vega/internal/logging"
-	"vega/log"
-	"vega/matching"
-	"vega/msg"
-	"vega/vegatime"
 	"fmt"
+
+	"vega/log"
+	"vega/msg"
+
+	"vega/internal/matching"
+	"vega/internal/storage"
+	"vega/internal/vegatime"
 )
-
-type Config struct {
-	log logging.Logger
-}
-
-func NewConfig() *Config {
-	level := logging.DebugLevel
-	logger := logging.NewLogger()
-	logger.InitConsoleLogger(level)
-	logger.AddExitHandler()
-	return &Config{
-		log: logger,
-	}
-}
 
 type Engine interface {
 	SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError)
@@ -33,13 +20,13 @@ type Engine interface {
 type engine struct {
 	*Config
 	matching   matching.MatchingEngine
-	orderStore datastore.OrderStore
-	tradeStore datastore.TradeStore
+	orderStore storage.OrderStore
+	tradeStore storage.TradeStore
 	time       vegatime.Service
 }
 
-func NewEngine(matching matching.MatchingEngine, time vegatime.Service,
-	orderStore datastore.OrderStore, tradeStore datastore.TradeStore) Engine {
+func NewExecutionEngine(matching matching.MatchingEngine, time vegatime.Service,
+	orderStore storage.OrderStore, tradeStore storage.TradeStore) Engine {
 	config := NewConfig()
 	return &engine{
 		config,
@@ -109,7 +96,7 @@ func (e *engine) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	}
 
 	// 4) create or update risk record for this order party etc
-	
+
 	return confirmation, msg.OrderError_NONE
 }
 

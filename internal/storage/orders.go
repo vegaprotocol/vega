@@ -2,12 +2,14 @@ package storage
 
 import (
 	"fmt"
+	"sync"
+
+	"vega/internal/filtering"
+	"vega/msg"
+
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	"sync"
-	"vega/filters"
-	"vega/msg"
 )
 
 type OrderStore interface {
@@ -31,11 +33,11 @@ type OrderStore interface {
 	Close() error
 
 	// GetByMarket retrieves all orders for a given Market.
-	GetByMarket(market string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
+	GetByMarket(market string, filters *filtering.OrderQueryFilters) ([]*msg.Order, error)
 	// GetByMarketAndId retrieves an order for a given Market and id.
 	GetByMarketAndId(market string, id string) (*msg.Order, error)
 	// GetByParty retrieves orders for a given party.
-	GetByParty(party string, filters *filters.OrderQueryFilters) ([]*msg.Order, error)
+	GetByParty(party string, filters *filtering.OrderQueryFilters) ([]*msg.Order, error)
 	// GetByPartyAndId retrieves an order for a given Party and id.
 	GetByPartyAndId(party string, id string) (*msg.Order, error)
 
@@ -58,7 +60,7 @@ type badgerOrderStore struct {
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
 func NewOrderStore(c *Config) (OrderStore, error) {
-	db, err := badger.Open(customBadgerOptions(c.orderStoreDirPath))
+	db, err := badger.Open(customBadgerOptions(c.OrderStoreDirPath))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for orders storage")
 	}
@@ -153,10 +155,10 @@ func (os *badgerOrderStore) Close() error {
 
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
+func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filtering.OrderQueryFilters) ([]*msg.Order, error) {
 	var result []*msg.Order
 	if queryFilters == nil {
-		queryFilters = &filters.OrderQueryFilters{}
+		queryFilters = &filtering.OrderQueryFilters{}
 	}
 
 	txn := os.badger.readTransaction()
@@ -209,11 +211,11 @@ func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*msg.Ord
 
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *badgerOrderStore) GetByParty(party string, queryFilters *filters.OrderQueryFilters) ([]*msg.Order, error) {
+func (os *badgerOrderStore) GetByParty(party string, queryFilters *filtering.OrderQueryFilters) ([]*msg.Order, error) {
 	var result []*msg.Order
 
 	if queryFilters == nil {
-		queryFilters = &filters.OrderQueryFilters{}
+		queryFilters = &filtering.OrderQueryFilters{}
 	}
 
 	txn := os.badger.readTransaction()
@@ -414,7 +416,7 @@ func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
 // OrderFilter is the order specific filter query data holder. It includes the raw filters
 // and helper methods that are used internally to apply and track filter state.
 type OrderFilter struct {
-	queryFilter *filters.OrderQueryFilters
+	queryFilter *filtering.OrderQueryFilters
 	skipped     uint64
 	found       uint64
 }

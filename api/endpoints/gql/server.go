@@ -7,8 +7,13 @@ import (
 	"net"
 	"net/http"
 	"runtime/debug"
+
 	"vega/api"
-	"vega/log"
+	"vega/internal/candles"
+	"vega/internal/markets"
+	"vega/internal/orders"
+	"vega/internal/trades"
+	"vega/internal/vegatime"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
@@ -16,30 +21,37 @@ import (
 )
 
 type graphServer struct {
-	orderService  api.OrderService
-	tradeService  api.TradeService
-	candleService api.CandleService
+	*api.Config
+	timeService   vegatime.Service
+	orderService  orders.Service
+	tradeService  trades.Service
+	candleService candles.Service
+	marketService markets.Service
 }
 
-func NewGraphQLServer(orderService api.OrderService, tradeService api.TradeService, candleService api.CandleService) *graphServer {
+func NewGraphQLServer(config *api.Config, orderService orders.Service,
+	tradeService trades.Service, candleService candles.Service) *graphServer {
+
 	return &graphServer{
+		Config:        config,
 		orderService:  orderService,
 		tradeService:  tradeService,
 		candleService: candleService,
 	}
 }
 
-func remoteAddrMiddleware(next http.Handler) http.Handler {
+func (g *graphServer) remoteAddrMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		logger := *g.GetLogger()
 		found := false
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			log.Errorf("Middleware: %q is not splittable", r.RemoteAddr)
+			logger.Errorf("Middleware: %q is not splittable", r.RemoteAddr)
 		} else {
 			userIP := net.ParseIP(ip)
 			if userIP == nil {
-				log.Errorf("Middleware: %q is not IP:port", r.RemoteAddr)
+				logger.Errorf("Middleware: %q is not IP:port", r.RemoteAddr)
 			} else {
 				found = true
 
@@ -62,34 +74,44 @@ func remoteAddrMiddleware(next http.Handler) http.Handler {
 }
 
 func (g *graphServer) Start() {
-	// <--- CORS support - configure for production
-	var cors = cors.Default()
-	var upgrader = websocket.Upgrader{
+	logger := *g.GetLogger()
+
+	// <--- cors support - configure for production
+	var c = cors.Default()
+	var up = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
 	}
-	// CORS support - configure for production --->
-	var port = 3004
-	log.Infof("Starting GraphQL based server on port %d...\n", port)
-	var addr = fmt.Sprintf(":%d", port)
-	var resolverRoot = NewResolverRoot(g.orderService, g.tradeService, g.candleService)
+	// cors support - configure for production --->
+	
+	port := g.GrpcServerPort
+	ip := g.GrpcServerIpAddress
+	logger.Infof("Starting GraphQL based server on port %d...\n", port)
+	addr := fmt.Sprintf("%s:%d", ip, port)
+	resolverRoot := NewResolverRoot(
+		g.orderService,
+		g.tradeService,
+		g.candleService,
+		g.timeService,
+		g.marketService,
+	)
 	var config = Config{
 		Resolvers: resolverRoot,
 	}
-	http.Handle("/", cors.Handler(handler.Playground("VEGA", "/query")))
-	http.Handle("/query", remoteAddrMiddleware(cors.Handler(handler.GraphQL(
+	http.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
+	http.Handle("/query", g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
-		handler.WebsocketUpgrader(upgrader),
+		handler.WebsocketUpgrader(up),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
-			log.Errorf("GraphQL error: %v", err)
+			logger.Errorf("GraphQL error: %v", err)
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
 		})),
 	)))
 
 	err := http.ListenAndServe(addr, nil)
-	log.Fatalf("Fatal error with GraphQL server: %v", err)
+	logger.Fatalf("Fatal error with GraphQL server: %v", err)
 }

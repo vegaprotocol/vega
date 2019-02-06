@@ -9,14 +9,14 @@ import (
 )
 
 func TestStorage_NewTradeStore(t *testing.T) {
-	config := defaultConfig()
-	flushStores(config)
+	config := NewTestConfig()
+	FlushStores(config)
 
 	tradeStore, err := NewTradeStore(config)
 	assert.NotNil(t, tradeStore)
 	assert.Nil(t, err)
 
-	config.tradeStoreDirPath = ""
+	config.TradeStoreDirPath = ""
 	
 	tradeStore, err = NewTradeStore(config)
 	assert.Nil(t, tradeStore)
@@ -27,8 +27,8 @@ func TestStorage_NewTradeStore(t *testing.T) {
 }
 
 func TestStorage_GetTradesByOrderId(t *testing.T) {
-	config := defaultConfig()
-	flushStores(config)
+	config := NewTestConfig()
+	FlushStores(config)
 
 	orderStore, err := NewOrderStore(config)
 	assert.Nil(t, err)
@@ -54,8 +54,8 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 }
 
 func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
-	config := defaultConfig()
-	flushStores(config)
+	config := NewTestConfig()
+	FlushStores(config)
 
 	orderStore, err := NewOrderStore(config)
 	assert.Nil(t, err)
@@ -98,8 +98,8 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 }
 
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
-	config := defaultConfig()
-	flushStores(config)
+	config := NewTestConfig()
+	FlushStores(config)
 
 	orderStore, err := NewOrderStore(config)
 	assert.Nil(t, err)

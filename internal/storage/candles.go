@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"vega/log"
+	"vega/internal/vegatime"
 	"vega/msg"
-	"vega/vegatime"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
@@ -82,7 +81,7 @@ type marketCandle struct {
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
 func NewCandleStore(c *Config) (CandleStore, error) {
-	db, err := badger.Open(customBadgerOptions(c.candleStoreDirPath))
+	db, err := badger.Open(customBadgerOptions(c.CandleStoreDirPath))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}
@@ -104,7 +103,7 @@ func (c *badgerCandleStore) Subscribe(iT *InternalTransport) uint64 {
 
 	c.subscriberId = c.subscriberId + 1
 	c.subscribers[c.subscriberId] = iT
-	
+
 	c.log.Debugf("CandleStore -> Subscribe: Candle subscriber added: %d", c.subscriberId)
 	return c.subscriberId
 }
@@ -286,13 +285,13 @@ func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, int
 		item := it.Item()
 		value, err := item.ValueCopy(nil)
 		if err != nil {
-			log.Errorf("error getting candle value: %s", err)
+			c.log.Errorf("error getting candle value: %s", err)
 			continue
 		}
 
 		var newCandle msg.Candle
 		if err := proto.Unmarshal(value, &newCandle); err != nil {
-			log.Errorf("unmarshal failed %s", err.Error())
+			c.log.Errorf("unmarshal failed %s", err.Error())
 			continue
 		}
 		candles = append(candles, &newCandle)
@@ -387,7 +386,7 @@ func (c *badgerCandleStore) notify() error {
 		return nil
 	}
 
-	log.Debugf("%d candles in the notify queue for %d subscribers", len(c.queue), len(c.subscribers))
+	c.log.Debugf("%d candles in the notify queue for %d subscribers", len(c.queue), len(c.subscribers))
 
 	// update candle for each subscriber, only if there are candles in the queue
 	for id, iT := range c.subscribers {
@@ -413,7 +412,7 @@ func (c *badgerCandleStore) notify() error {
 			break
 		}
 
-		log.Debugf("Candle subscriber %d (%s) notified for interval %s", id, iT.Market, iT.Interval)
+		c.log.Debugf("Candle subscriber %d (%s) notified for interval %s", id, iT.Market, iT.Interval)
 	}
 
 	c.queue = make([]marketCandle, 0)

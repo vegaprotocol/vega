@@ -3,45 +3,50 @@ package restproxy
 import (
 	"context"
 	"fmt"
+	"net/http"
+
+	"vega/api"
+
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
-	"net/http"
-	"vega/api"
-	"vega/log"
 )
 
-type restProxyServer struct{}
+type restProxyServer struct {
+	*api.Config
+}
 
-func NewRestProxyServer() *restProxyServer {
-	return &restProxyServer{}
+func NewRestProxyServer(config *api.Config) *restProxyServer {
+	return &restProxyServer{
+		config,
+	}
 }
 
 func (s *restProxyServer) Start() {
-	var port = 3003
-	var addr = fmt.Sprintf(":%d", port)
-	log.Infof("Starting REST<>GRPC based HTTP server on port %d...\n", port)
+	logger := *s.GetLogger()
+	port := s.GrpcServerPort
+	ip := s.GrpcServerIpAddress
+	logger.Infof("Starting REST<>GRPC based HTTP server on port %d...\n", port)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	endpoint := "localhost:3002"
-	jsonpb := &JSONPb{
+	addr := fmt.Sprintf("%s:%d", ip, port)
+	jsonPB := &JSONPb{
 		EmitDefaults: true,
-		Indent:       "  ",
+		Indent:       "  ",      // format json output
 		OrigName:     true,
 	}
 
 	mux := runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonpb),
-		// This is necessary to get error details properly marshalled in unary requests.
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonPB),
 		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
 	)
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, endpoint, opts); err != nil {
-		log.Fatalf("Registering trading handler for rest proxy endpoints %+v", err)
+	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, addr, opts); err != nil {
+		logger.Fatalf("Registering trading handler for rest proxy endpoints %+v", err)
 	} else {
 		// CORS support
 		handler := cors.Default().Handler(mux)

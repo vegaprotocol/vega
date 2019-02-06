@@ -3,8 +3,8 @@ package blockchain
 import (
 	"encoding/binary"
 	"github.com/tendermint/tendermint/abci/types"
-	"vega/vegatime"
 	"vega/internal/execution"
+	"vega/internal/vegatime"
 )
 
 const (

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"vega/msg"
-	"vega/filters"
+	"vega/internal/filtering"
 )
 
 func safeStringUint64(input string) (uint64, error) {
@@ -57,15 +57,15 @@ func parseSide(side *Side) (msg.Side, error) {
 	}
 }
 
-func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int) (queryFilters *filters.OrderQueryFilters, err error) {
+func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int) (queryFilters *filtering.OrderQueryFilters, err error) {
 	if queryFilters == nil {
-		queryFilters = &filters.OrderQueryFilters{}
+		queryFilters = &filtering.OrderQueryFilters{}
 	}
 	if where != nil {
 		//log.Debugf("OrderFilters: %+v", where)
 
 		// AND default
-		queryFilters.Operator = filters.QueryFilterOperatorAnd
+		queryFilters.Operator = filtering.QueryFilterOperatorAnd
 		if where.OR != nil {
 			if where.AND != nil {
 				return nil, errors.New("combination of operators is not currently supported")
@@ -77,7 +77,7 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 				}
 			}
 			// If OR specified switch operator to OR inc outer filters
-			queryFilters.Operator = filters.QueryFilterOperatorOr
+			queryFilters.Operator = filtering.QueryFilterOperatorOr
 		} else if where.AND != nil {
 			for _, filter := range where.AND {
 				_, err := ParseOrderFilter(&filter, queryFilters)
@@ -114,9 +114,9 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 }
 
 
-func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int) (queryFilters *filters.TradeQueryFilters, err error) {
+func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int) (queryFilters *filtering.TradeQueryFilters, err error) {
 	if queryFilters == nil {
-		queryFilters = &filters.TradeQueryFilters{}
+		queryFilters = &filtering.TradeQueryFilters{}
 	}
 
 	// Parse 'where' and build query filters that will be used internally (if set)
@@ -124,7 +124,7 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 		//log.Debugf("TradeFilters: %+v", where)
 
 		// AND default
-		queryFilters.Operator = filters.QueryFilterOperatorAnd
+		queryFilters.Operator = filtering.QueryFilterOperatorAnd
 		if where.OR != nil {
 			if where.AND != nil {
 				return nil, errors.New("combination of operators is not currently supported")
@@ -136,7 +136,7 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 				}
 			}
 			// If OR specified switch operator to OR inc outer filters
-			queryFilters.Operator = filters.QueryFilterOperatorOr
+			queryFilters.Operator = filtering.QueryFilterOperatorOr
 		} else if where.AND != nil {
 			for _, filter := range where.AND {
 				_, err := ParseTradeFilter(&filter, queryFilters)

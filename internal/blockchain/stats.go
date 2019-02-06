@@ -23,3 +23,31 @@ func NewStats() *Stats {
 		averageOrdersPerBatch: 0,
 	}
 }
+
+func (s *Stats) Height() uint64 {
+	return s.height
+}
+
+func (s *Stats) AverageTxSizeBytes() int {
+	return s.averageTxSizeBytes
+}
+
+func (s *Stats) AverageTxPerBatch() int {
+	return s.averageTxPerBatch
+}
+
+func (s *Stats) TotalTxLastBatch() int {
+	return s.totalTxLastBatch
+}
+
+func (s *Stats) TotalOrdersLastBatch() int {
+	return s.totalOrdersLastBatch
+}
+
+func (s *Stats) TotalTradesLastBatch() int {
+	return s.totalTradesLastBatch
+}
+
+func (s *Stats) AverageOrdersPerBatch() int {
+	return s.averageOrdersPerBatch
+}

@@ -1,12 +1,13 @@
 package blockchain
 
 import (
-	"vega/msg"
-	"time"
-	"vega/vegatime"
-	"vega/internal/execution"
-	"github.com/pkg/errors"
 	"fmt"
+	"time"
+	"vega/internal/execution"
+	"vega/internal/vegatime"
+	"vega/msg"
+
+	"github.com/pkg/errors"
 )
 
 type Service interface {
@@ -32,9 +33,9 @@ type abciService struct {
 	ordersInBatchLengths []int
 	currentOrdersInBatch int
 	currentTradesInBatch int
-	totalBatches uint64
-	totalOrders  uint64
-	totalTrades  uint64
+	totalBatches         uint64
+	totalOrders          uint64
+	totalTrades          uint64
 }
 
 func NewAbciService(conf *Config, stats *Stats, ex execution.Engine) Service {
@@ -67,7 +68,7 @@ func (s *abciService) SubmitOrder(order *msg.Order) error {
 
 	order.Id = fmt.Sprintf("V%010d-%010d", s.totalBatches, s.totalOrders)
 	order.Timestamp = s.currentTimestamp.Uint64()
-	
+
 	// Submit the create order request to the execution engine
 	confirmationMessage, errorMessage := s.execution.SubmitOrder(order)
 	if confirmationMessage != nil {
@@ -120,7 +121,7 @@ func (s *abciService) AmendOrder(order *msg.Amendment) error {
 	if s.logOrderAmendDebug {
 		s.log.Debugf("AbciService: received a AMEND ORDER request")
 	}
-	
+
 	// Submit the Amendment new order request to the Vega trading core
 	confirmationMessage, errorMessage := s.execution.AmendOrder(order)
 	if confirmationMessage != nil {
@@ -134,7 +135,7 @@ func (s *abciService) AmendOrder(order *msg.Amendment) error {
 		s.log.Errorf("- error: %s", errorMessage.String())
 		return errors.New(errorMessage.String())
 	}
-	
+
 	return nil
 }
 
@@ -169,4 +170,3 @@ func (s *abciService) setBatchStats() {
 	s.currentOrdersInBatch = 0
 	s.currentTradesInBatch = 0
 }
-

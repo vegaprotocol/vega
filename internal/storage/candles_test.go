@@ -9,8 +9,8 @@ import (
 )
 
 func TestStorage_GenerateCandles(t *testing.T) {
-	config := defaultConfig()
-	flushStores(config)
+	config := NewTestConfig()
+	FlushStores(config)
 	candleStore, err := NewCandleStore(config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
@@ -173,8 +173,8 @@ func TestStorage_GetMapOfIntervalsToTimestamps(t *testing.T) {
 }
 
 func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
-	config := defaultConfig()
-	flushStores(config)
+	config := NewTestConfig()
+	FlushStores(config)
 	candleStore, err := NewCandleStore(config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
@@ -202,8 +202,8 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 
 
 func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
-	config := defaultConfig()
-	flushStores(config)
+	config := NewTestConfig()
+	FlushStores(config)
 	candleStore, err := NewCandleStore(config)
 	assert.Nil(t, err)
 	defer candleStore.Close()

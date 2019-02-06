@@ -2,38 +2,39 @@ package orders
 
 import (
 	"context"
-	"vega/filters"
-	"vega/msg"
-	"vega/internal/storage"
-	"vega/internal/blockchain"
 	"time"
-	"github.com/pkg/errors"
-	"vega/vegatime"
+
+	"vega/msg"
+
+	"vega/internal/blockchain"
+	"vega/internal/filtering"
 	"vega/internal/logging"
+	"vega/internal/storage"
+	"vega/internal/vegatime"
+
+	"github.com/pkg/errors"
 )
 
 type Service interface {
 	CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error)
 	AmendOrder(ctx context.Context, amendment *msg.Amendment) (success bool, err error)
 	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
-
-	GetByMarket(ctx context.Context, market string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
-	GetByParty(ctx context.Context, party string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error)
+	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*msg.Order, err error)
+	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*msg.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (order *msg.Order, err error)
-
 	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []msg.Order, ref uint64)
 }
 
 type orderService struct {
 	*Config
-	orderStore storage.OrderStore
-	blockchain blockchain.Client
+	orderStore  storage.OrderStore
+	blockchain  blockchain.Client
 	timeService vegatime.Service
 }
 
-// NewService creates an Orders service with the necessary dependencies
-func NewService(store storage.OrderStore, time vegatime.Service) Service {
+// NewOrderService creates an Orders service with the necessary dependencies
+func NewOrderService(store storage.OrderStore, time vegatime.Service) Service {
 	config := NewConfig()
 	client := blockchain.NewClient()
 	return &orderService{
@@ -63,7 +64,7 @@ func (s *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 			return false, "", err
 		}
 		expirationTimestamp := expirationDateTime.UnixNano()
-		if expirationTimestamp <= timeNow.UnixNano()  {
+		if expirationTimestamp <= timeNow.UnixNano() {
 			return false, "", errors.New("invalid expiration datetime error")
 		}
 		order.ExpirationTimestamp = uint64(expirationTimestamp)
@@ -126,7 +127,7 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *msg.Amendment)
 	return s.blockchain.AmendOrder(ctx, amendment)
 }
 
-func (s *orderService) GetByMarket(ctx context.Context, market string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error) {
+func (s *orderService) GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*msg.Order, err error) {
 	o, err := s.orderStore.GetByMarket(market, filters)
 	if err != nil {
 		return nil, err
@@ -142,7 +143,7 @@ func (s *orderService) GetByMarket(ctx context.Context, market string, filters *
 	return result, err
 }
 
-func (s *orderService) GetByParty(ctx context.Context, party string, filters *filters.OrderQueryFilters) (orders []*msg.Order, err error) {
+func (s *orderService) GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*msg.Order, err error) {
 	o, err := s.orderStore.GetByParty(party, filters)
 	if err != nil {
 		return nil, err

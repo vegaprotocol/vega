@@ -3,7 +3,6 @@ package api
 import (
 	"time"
 	"github.com/satori/go.uuid"
-	"context"
 )
 
 func unixTimestamp(datetime time.Time) uint64 {
@@ -12,8 +11,4 @@ func unixTimestamp(datetime time.Time) uint64 {
 
 func newGuid() string {
 	return uuid.NewV4().String()
-}
-
-func ipAddressFromContext(ctx context.Context) interface{} {
-	return ctx.Value("remote-ip-addr")
 }

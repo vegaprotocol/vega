@@ -1,14 +1,19 @@
 package gql
 
 import (
-	"testing"
-	"vega/api/mocks"
-	"vega/api"
-	"vega/msg"
-	"github.com/stretchr/testify/assert"
 	"context"
+	"testing"
+	"vega/msg"
 	"github.com/pkg/errors"
-	"vega/filters"
+	"github.com/stretchr/testify/assert"
+	"vega/internal/filtering"
+
+	mockTrade "vega/internal/trades/mocks"
+	mockMarket "vega/internal/markets/mocks"
+	mockOrder "vega/internal/orders/mocks"
+	mockCandle "vega/internal/candles/mocks"
+	mockTime "vega/internal/vegatime/mocks"
+	
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
@@ -65,25 +70,23 @@ func TestNewResolverRoot_QueryResolver(t *testing.T) {
 	assert.NotNil(t, vega)
 }
 
-
 func TestNewResolverRoot_VegaResolver(t *testing.T) {
+
 	ctx := context.Background()
-	mockTradeService := &mocks.TradeService{}
-	mockOrderService := &mocks.OrderService{}
-	mockCandleService := &mocks.CandleService{}
+
+	mockTradeService := &mockTrade.Service{}
+	mockOrderService := &mockOrder.Service{}
+	mockCandleService := &mockCandle.Service{}
+	mockMarketService := &mockMarket.Service{}
+	mockTimeService := &mockTime.Service{}
 
 	mockOrderService.On("GetMarkets", ctx).Return(
-		[]string {"BTC/DEC19"}, nil,
+		[]string{"BTC/DEC19"}, nil,
 	).Times(3)
 
-	var tradeService api.TradeService
-	var orderService api.OrderService
-	var candleService api.CandleService
-	tradeService = mockTradeService
-	orderService = mockOrderService
-	candleService = mockCandleService
-
-	root := NewResolverRoot(orderService, tradeService, candleService)
+	root := NewResolverRoot(mockOrderService, mockTradeService,
+		mockCandleService, mockTimeService, mockMarketService)
+	
 	assert.NotNil(t, root)
 	vegaResolver := root.Vega()
 	assert.NotNil(t, vegaResolver)
@@ -105,7 +108,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	assert.Nil(t, markets)
 
 	mockOrderService.On("GetMarkets", ctx).Return(
-		[]string {}, errors.New("proton drive not ready"),
+		[]string{}, errors.New("proton drive not ready"),
 	).Once()
 
 	name = "errorMarket"
@@ -123,12 +126,14 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	assert.Nil(t, parties)
 }
 
-
 func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	ctx := context.Background()
-	mockTradeService := &mocks.TradeService{}
-	mockOrderService := &mocks.OrderService{}
-	mockCandleService := &mocks.CandleService{}
+
+	mockTradeService := &mockTrade.Service{}
+	mockOrderService := &mockOrder.Service{}
+	mockCandleService := &mockCandle.Service{}
+	mockMarketService := &mockMarket.Service{}
+	mockTimeService := &mockTime.Service{}
 
 	mockOrderService.On("GetMarkets", ctx).Return(
 		[]string{"testMarket", "BTC/DEC19"}, nil,
@@ -140,15 +145,10 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	mockOrderService.On("GetMarketDepth", ctx, "BTC/DEC19").Return(
 		depth, nil,
 	).Once()
-
-	var tradeService api.TradeService
-	var orderService api.OrderService
-	var candleService api.CandleService
-	tradeService = mockTradeService
-	orderService = mockOrderService
-	candleService = mockCandleService
 	
-	root := NewResolverRoot(orderService, tradeService, candleService)
+	root := NewResolverRoot(mockOrderService, mockTradeService,
+		mockCandleService, mockTimeService, mockMarketService)
+
 	assert.NotNil(t, root)
 	marketResolver := root.Market()
 	assert.NotNil(t, marketResolver)
@@ -174,16 +174,16 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 
 	// ORDERS
 
-	mockOrderService.On("GetByMarket", ctx, marketId, &filters.OrderQueryFilters{}).Return(
+	mockOrderService.On("GetByMarket", ctx, marketId, &filtering.OrderQueryFilters{}).Return(
 		[]*msg.Order{
 			&msg.Order{
-				Id: "order-id-1",
-				Price: 1000,
+				Id:        "order-id-1",
+				Price:     1000,
 				Timestamp: 1,
 			},
 			&msg.Order{
-				Id: "order-id-2",
-				Price: 2000,
+				Id:        "order-id-2",
+				Price:     2000,
 				Timestamp: 2,
 			},
 		}, nil,
@@ -196,11 +196,13 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 }
 
 func buildTestResolverRoot() *resolverRoot {
-	var tradeService api.TradeService
-	var orderService api.OrderService
-	var candleService api.CandleService
-	tradeService = &mocks.TradeService{}
-	orderService = &mocks.OrderService{}
-	candleService = &mocks.CandleService{}
-	return NewResolverRoot(orderService, tradeService, candleService)
+
+	mockTradeService := &mockTrade.Service{}
+	mockOrderService := &mockOrder.Service{}
+	mockCandleService := &mockCandle.Service{}
+	mockMarketService := &mockMarket.Service{}
+	mockTimeService := &mockTime.Service{}
+
+	return NewResolverRoot(mockOrderService, mockTradeService,
+		mockCandleService, mockTimeService, mockMarketService)
 }

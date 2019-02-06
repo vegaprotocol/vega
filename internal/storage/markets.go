@@ -11,7 +11,7 @@ type MarketStore interface {
 	//Subscribe(markets chan<- []msg.Market) uint64
 	//Unsubscribe(id uint64) error
 
-	// Post adds a party to the store, this adds
+	// Post adds a market to the store, this adds
 	// to queue the operation to be committed later.
 	Post(party *msg.Market) error
 
@@ -23,7 +23,7 @@ type MarketStore interface {
 	// connections held by the underlying storage mechanism.
 	Close() error
 
-	// GetByName searches for the given party by name in the underlying store.
+	// GetByName searches for the given market by name in the underlying store.
 	GetByName(name string) (*msg.Market, error)
 
 	// GetAll returns all markets in the underlying store.
@@ -36,12 +36,12 @@ type memMarketStore struct {
 	db map[string]msg.Market
 }
 
-// NewStore returns a concrete implementation of a markets Store.
-func NewMarketStore(config *Config) MarketStore {
+// NewMarketStore returns a concrete implementation of MarketStore.
+func NewMarketStore(config *Config) (MarketStore, error) {
 	return &memMarketStore{
 		Config: config,
 		db:     make(map[string]msg.Market, 0),
-	}
+	}, nil
 }
 
 // Post saves a given market to the mem-store.

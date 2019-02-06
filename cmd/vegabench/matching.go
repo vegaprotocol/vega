@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-
-	"vega/core"
 	"vega/msg"
-	"vega/datastore/mocks"
+	"vega/internal/matching"
+	"vega/internal/execution"
+
+	mockVegaTime "vega/internal/vegatime/mocks"
+	mockStorage "vega/internal/storage/mocks"
 )
 
-const marketId = "TEST"
+const marketId = "BTC/JAN21"
 
 func BenchmarkMatching(
 	numberOfOrders int,
 	b *testing.B,
-	quiet bool,
-	blockSize int,
 	randSize bool,
 	reportInterval int) {
 
@@ -25,10 +25,16 @@ func BenchmarkMatching(
 		reportInterval = numberOfOrders
 	}
 
-	config := core.GetConfig()
+	timeService := &mockVegaTime.Service{}
+	orderStore := &mockStorage.OrderStore{}
+	tradeStore := &mockStorage.TradeStore{}
 
-	vega := core.New(config, &mocks.OrderStore{}, &mocks.TradeStore{}, &mocks.CandleStore{})
-	vega.InitialiseMarkets()
+	// Matching engine (todo) create these inside execution engine based on config
+	matchingEngine := matching.NewMatchingEngine(false)
+	matchingEngine.CreateMarket(marketId)
+
+	// Execution engine (broker operation of markets at runtime etc)
+	executionEngine := execution.NewExecutionEngine(matchingEngine, timeService, orderStore, tradeStore)
 
 	timestamp := uint64(0)
 	for k := 0; k < b.N; k++ {
@@ -52,11 +58,11 @@ func BenchmarkMatching(
 		order.Type = msg.Order_GTC
 		order.Timestamp = timestamp
 
-		oconfirm, oerr := vega.SubmitOrder(order)
-		if oerr == 0 {
-			oconfirm.Release()
+		oc, oe := executionEngine.SubmitOrder(order)
+		if oe == 0 {
+			oc.Release()
 		}
-		result, _ := vega.SubmitOrder(&msg.Order{
+		result, _ := executionEngine.SubmitOrder(&msg.Order{
 			Market:    marketId,
 			Party:     fmt.Sprintf("P%v", timestamp),
 			Side:      msg.Side(rand.Intn(2)),
