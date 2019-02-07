@@ -59,14 +59,19 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	if l.cli.Option.Debug {
 		level := logging.DebugLevel
-		logger.InitConsoleLogger(level)
+		err := logger.InitConsoleLogger(level)
+		if err != nil {
+			return err
+		}
 		logger.Infof("Starting up VEGA node with logging at DEBUG level")
 	} else {
 		level := logging.InfoLevel
-		logger.InitConsoleLogger(level)
+		err := logger.InitConsoleLogger(level)
+		if err != nil {
+			return err
+		}
 		logger.Infof("Starting up VEGA node with logging at INFO level")
 	}
-
 	logger.AddExitHandler()
 
 	//var logLevelFlag string

@@ -234,6 +234,7 @@ func (l *logger) setJsonLogger(lvl Level) error {
 		return err
 	}
 	if l.root == nil {
+		l.root = i
 		return nil
 	}
 	c := i.Core()
@@ -250,6 +251,7 @@ func (l *logger) setLogger(path string, lvl Level) error {
 		return err
 	}
 	if l.root == nil {
+		l.root = i
 		return nil
 	}
 	c := i.Core()
