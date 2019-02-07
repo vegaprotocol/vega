@@ -17,11 +17,9 @@ type Config struct {
 	ip string
 }
 
-func NewConfig() *Config {
+func NewConfig(logger logging.Logger) *Config {
 	level := logging.DebugLevel
-	logger := logging.NewLogger()
-	logger.InitConsoleLogger(level)
-	logger.AddExitHandler()
+	logger = logger.Named("blockchain")
 	return &Config{
 		log: logger,
 		level: level,

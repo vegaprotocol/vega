@@ -18,9 +18,7 @@ type matchingEngine struct {
 	config  *Config
 }
 
-func NewMatchingEngine(logPriceLevels bool) MatchingEngine {
-	config := NewConfig()
-	config.LogPriceLevelsDebug = logPriceLevels
+func NewMatchingEngine(config *Config) MatchingEngine {
 	return &matchingEngine{markets: make(map[string]*OrderBook), config: config}
 }
 

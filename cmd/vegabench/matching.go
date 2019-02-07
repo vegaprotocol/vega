@@ -10,6 +10,7 @@ import (
 
 	mockVegaTime "vega/internal/vegatime/mocks"
 	mockStorage "vega/internal/storage/mocks"
+	"vega/internal/logging"
 )
 
 const marketId = "BTC/JAN21"
@@ -29,12 +30,18 @@ func BenchmarkMatching(
 	orderStore := &mockStorage.OrderStore{}
 	tradeStore := &mockStorage.TradeStore{}
 
+	logger := logging.NewLogger()
+	logger.InitConsoleLogger(logging.DebugLevel)
+	logger.AddExitHandler()
+
 	// Matching engine (todo) create these inside execution engine based on config
-	matchingEngine := matching.NewMatchingEngine(false)
+	matchingConfig := matching.NewConfig(logger)
+	matchingEngine := matching.NewMatchingEngine(matchingConfig)
 	matchingEngine.CreateMarket(marketId)
 
 	// Execution engine (broker operation of markets at runtime etc)
-	executionEngine := execution.NewExecutionEngine(matchingEngine, timeService, orderStore, tradeStore)
+	eec := execution.NewConfig(logger)
+	executionEngine := execution.NewExecutionEngine(eec, matchingEngine, timeService, orderStore, tradeStore)
 
 	timestamp := uint64(0)
 	for k := 0; k < b.N; k++ {

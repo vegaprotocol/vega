@@ -24,9 +24,8 @@ type engine struct {
 	time       vegatime.Service
 }
 
-func NewExecutionEngine(matching matching.MatchingEngine, time vegatime.Service,
+func NewExecutionEngine(config *Config, matching matching.MatchingEngine, time vegatime.Service,
 	orderStore storage.OrderStore, tradeStore storage.TradeStore) Engine {
-	config := NewConfig()
 	return &engine{
 		config,
 		matching,

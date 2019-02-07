@@ -16,11 +16,9 @@ type Config struct {
 	RestProxyIpAddress string
 }
 
-func NewConfig() *Config {
+func NewConfig(logger logging.Logger) *Config {
 	level := logging.DebugLevel
-	logger := logging.NewLogger()
-	logger.InitConsoleLogger(level)
-	logger.AddExitHandler()
+	logger = logger.Named("api")
 	return &Config{
 		log: logger,
 		level: level,

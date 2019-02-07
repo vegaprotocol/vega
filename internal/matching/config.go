@@ -11,11 +11,10 @@ type Config struct {
 	LogRemovedOrdersDebug bool
 }
 
-func NewConfig() *Config {
+func NewConfig(logger logging.Logger) *Config {
 	level := logging.DebugLevel
-	logger := logging.NewLogger()
-	logger.InitConsoleLogger(level)
-	logger.AddExitHandler()
+	logger = logger.Named("matching")
+	
 	return &Config{
 		log: logger,
 		level: level,
@@ -26,14 +25,8 @@ func NewConfig() *Config {
 	}
 }
 
-//func DefaultConfig() *Config {
-//	conf := NewConfig()
-//	conf.ProRataMode = false
-//	return conf
-//}
-
-func ProRataModeConfig() *Config {
-	conf := NewConfig()
+func ProRataModeConfig(logger logging.Logger) *Config {
+	conf := NewConfig(logger)
 	conf.ProRataMode = true
 	return conf
 }

@@ -18,8 +18,7 @@ type candleService struct {
 	candleStore  storage.CandleStore
 }
 
-func NewCandleService(candleStore storage.CandleStore) Service {
-	config := NewConfig()
+func NewCandleService(config *Config, candleStore storage.CandleStore) Service {
 	return &candleService{
 		Config: config,
 		candleStore: candleStore,

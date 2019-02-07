@@ -19,8 +19,7 @@ type Server struct {
 	time      vegatime.Service
 }
 
-func NewServer(ex execution.Engine, time vegatime.Service) *Server {
-	config := NewConfig() // package specific config
+func NewServer(config *Config, ex execution.Engine, time vegatime.Service) *Server {
 	stats := NewStats()   // package specific statistics
 	app := NewAbciApplication(config, ex, time, stats)
 	return &Server{config, app, ex, time}

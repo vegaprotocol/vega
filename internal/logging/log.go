@@ -27,6 +27,8 @@ type Logger interface {
 	Infow(msg string, args ...interface{})
 	Errorw(msg string, args ...interface{})
 	Fatalw(msg string, args ...interface{})
+
+	Named(name string) Logger
 }
 
 // A Level is a logging priority. Higher levels are more important.
@@ -54,11 +56,19 @@ func NewLogger() Logger {
 	return &logger{}
 }
 
+func loggerFromExistingCore(root *zap.Logger, name string) Logger {
+	newCore := root.Named(name)
+	return &logger{root: newCore}
+}
+
 // InitConsoleLogger initialises a console logger configured with defaults for
 // use as the root logger. If a root logger already exists, it will be tee-d
 // together with the new console logger.
 func (l *logger) InitConsoleLogger(lvl Level) error {
-	return l.setLogger("stderr", lvl)
+
+	return l.setJsonLogger(lvl)
+	
+	//return l.setLogger("stderr", lvl)
 }
 
 // InitFileLogger initialises a file logger configured with defaults for use as
@@ -136,6 +146,59 @@ func (l *logger) Fatalw(msg string, args ...interface{}) {
 	l.root.Sugar().Fatalw(msg, args...)
 }
 
+// Named adds a nested name identifier to the current logger
+func (l *logger) Named(name string) Logger {
+	return loggerFromExistingCore(l.root, name)
+}
+
+
+func (l *logger) buildJsonCfg(lvl Level) (*zap.Logger, error) {
+	//"level": "debug",
+	//	"development": true,
+	//	"encoding": "console",
+	//	"encoderConfig": {
+	//"timeKey": "T",
+	//"levelKey": "L",
+	//"nameKey": "N",
+	//"callerKey": "C",
+	//"messageKey": "M",
+	//"stacktraceKey": "S",
+	//"lineEnding": "\n",
+	//"callerEncoder": "short",
+	//"durationEncoder": "string",
+	//"levelEncoder": "capital",
+	//"nameEncoder": "full",
+	//"timeEncoder": "iso8601"
+	//},
+	//"outputPaths": ["stdout"],
+	//"errorOutputPaths": ["stderr"]
+
+	enc := zapcore.EncoderConfig{
+		CallerKey:      "C",
+		LevelKey:       "L",
+		MessageKey:     "M",
+		NameKey:        "N",
+		StacktraceKey:  "S",
+		TimeKey:        "T",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeName:     zapcore.FullNameEncoder,
+	}
+	cfg := zap.Config{
+		Development:      true,
+		Encoding:         "console",
+		EncoderConfig:    enc,
+		ErrorOutputPaths: []string{"stdout"},
+		Level:            zap.NewAtomicLevelAt(zapcore.Level(lvl)),
+		OutputPaths:      []string{"stderr"},
+	}
+	return cfg.Build()
+
+}
+
 func (l *logger) buildCfg(path string, lvl Level) (*zap.Logger, error) {
 	enc := zapcore.EncoderConfig{
 		CallerKey:      "",
@@ -165,13 +228,28 @@ func (l *logger) encTime(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.Format("[2006-01-02 15:04:05.000]"))
 }
 
+func (l *logger) setJsonLogger(lvl Level) error {
+	i, err := l.buildJsonCfg(lvl)
+	if err != nil {
+		return err
+	}
+	if l.root == nil {
+		return nil
+	}
+	c := i.Core()
+	wrap := zap.WrapCore(func(r zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(r, c)
+	})
+	l.root = l.root.WithOptions(wrap)
+	return nil
+}
+
 func (l *logger) setLogger(path string, lvl Level) error {
 	i, err := l.buildCfg(path, lvl)
 	if err != nil {
 		return err
 	}
 	if l.root == nil {
-		l.root = i
 		return nil
 	}
 	c := i.Core()

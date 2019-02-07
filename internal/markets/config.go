@@ -7,11 +7,9 @@ type Config struct {
 	level logging.Level
 }
 
-func NewConfig() *Config {
+func NewConfig(logger logging.Logger) *Config {
 	level := logging.DebugLevel
-	logger := logging.NewLogger()
-	logger.InitConsoleLogger(level)
-	logger.AddExitHandler()
+	logger = logger.Named("markets")
 	return &Config{
 		log: logger,
 		level: level,

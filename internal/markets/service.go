@@ -30,8 +30,7 @@ type marketService struct {
 }
 
 // NewService creates an market service with the necessary dependencies
-func NewService(marketStore storage.MarketStore, orderStore storage.OrderStore) Service {
-	config := NewConfig()
+func NewService(config *Config, marketStore storage.MarketStore, orderStore storage.OrderStore) Service {
 	return &marketService{
 		config,
 		marketStore,

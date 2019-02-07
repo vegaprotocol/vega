@@ -21,11 +21,9 @@ type Config struct {
 
 // NewConfig constructs a new Config instance with default parameters.
 // This constructor is used by the vega application code.
-func NewConfig() *Config {
+func NewConfig(logger logging.Logger) *Config {
 	level := logging.DebugLevel
-	logger := logging.NewLogger()
-	logger.InitConsoleLogger(level)
-	logger.AddExitHandler()
+	logger = logger.Named("storage")
 	return &Config{
 		log:                   logger,
 		level:                 level,

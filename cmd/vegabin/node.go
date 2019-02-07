@@ -74,7 +74,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	////flag.BoolVar(&config.LogPriceLevels, "log_price_levels", false, "if true log price levels")
 	//flag.Parse()
 
-	storeConfig := storage.NewConfig()
+	storeConfig := storage.NewConfig(logger)
 
 	orderStore, err := storage.NewOrderStore(storeConfig)
 	if err != nil {
@@ -123,11 +123,14 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	orderService := orders.NewOrderService(orderStore, timeService)
 	tradeService := trades.NewTradeService(tradeStore, riskStore)
-	candleService := candles.NewCandleService(candleStore)
+
+	candlesConfig := candles.NewConfig(logger)
+	candleService := candles.NewCandleService(candlesConfig, candleStore)
+
 	//partyService := parties.NewService(partyStore)
 	//marketService := markets.NewService(marketStore)
 
-	apiConfig := api.NewConfig()
+	apiConfig := api.NewConfig(logger)
 
 	// gRPC server
 	// Port 3002
@@ -145,15 +148,18 @@ func (l *NodeCommand) runNode(args []string) error {
 	go graphServer.Start()
 
 	// Matching engine (todo) create these inside execution engine will be coupled to vega commands
-	matchingEngine := matching.NewMatchingEngine(false)
+	matchingConfig := matching.NewConfig(logger)
+	matchingEngine := matching.NewMatchingEngine(matchingConfig)
 	matchingEngine.CreateMarket("BTC/DEC19")
 
 	// Execution engine (broker operation of markets at runtime etc)
-	executionEngine := execution.NewExecutionEngine(matchingEngine, timeService, orderStore, tradeStore)
+	eec := execution.NewConfig(logger)
+	executionEngine := execution.NewExecutionEngine(eec, matchingEngine, timeService, orderStore, tradeStore)
 
 	// ABCI socket server
 	// Port 46658
-	socketServer := blockchain.NewServer(executionEngine, timeService)
+	blockchainConfig := blockchain.NewConfig(logger)
+	socketServer := blockchain.NewServer(blockchainConfig, executionEngine, timeService)
 	if err := socketServer.Start(); err != nil {
 		logger.Fatalf("ABCI socket server fatal error: %s", err)
 	}
