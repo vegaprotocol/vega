@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"vega/msg"
+	types "vega/proto"
 	"vega/internal/matching"
 	"vega/internal/execution"
 
@@ -55,28 +55,28 @@ func BenchmarkMatching(
 			size = 50
 		}
 
-		order := msg.OrderPool.Get().(*msg.Order)
+		order := types.OrderPool.Get().(*types.Order)
 		order.Market = marketId
 		order.Party = fmt.Sprintf("P%v", timestamp)
-		order.Side = msg.Side(rand.Intn(2))
+		order.Side = types.Side(rand.Intn(2))
 		order.Price = uint64(rand.Intn(100) + 50)
 		order.Size = size
 		order.Remaining = size
-		order.Type = msg.Order_GTC
+		order.Type = types.Order_GTC
 		order.Timestamp = timestamp
 
 		oc, oe := executionEngine.SubmitOrder(order)
 		if oe == 0 {
 			oc.Release()
 		}
-		result, _ := executionEngine.SubmitOrder(&msg.Order{
+		result, _ := executionEngine.SubmitOrder(&types.Order{
 			Market:    marketId,
 			Party:     fmt.Sprintf("P%v", timestamp),
-			Side:      msg.Side(rand.Intn(2)),
+			Side:      types.Side(rand.Intn(2)),
 			Price:     uint64(rand.Intn(100) + 50),
 			Size:      size,
 			Remaining: size,
-			Type:      msg.Order_GTC,
+			Type:      types.Order_GTC,
 			Timestamp: timestamp,
 		})
 		_ = result

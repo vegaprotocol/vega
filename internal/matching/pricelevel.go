@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"math"
 
-	"vega/msg"
+	types "vega/proto"
 )
 
 type PriceLevel struct {
 	*Config
 	price             uint64
-	orders            []*msg.Order
+	orders            []*types.Order
 	volumeAtTimestamp map[uint64]uint64
 	volume            uint64
 }
@@ -19,12 +19,12 @@ func NewPriceLevel(config *Config, price uint64) *PriceLevel {
 	return &PriceLevel{
 		Config:            config,
 		price:             price,
-		orders:            []*msg.Order{},
+		orders:            []*types.Order{},
 		volumeAtTimestamp: make(map[uint64]uint64),
 	}
 }
 
-func (l *PriceLevel) addOrder(o *msg.Order) {
+func (l *PriceLevel) addOrder(o *types.Order) {
 	// adjust volume by timestamp map for correct pro-rata calculation
 	l.increaseVolumeByTimestamp(o)
 	// add orders to slice of orders on this price level
@@ -39,7 +39,7 @@ func (l *PriceLevel) removeOrder(index int) {
 	l.orders = l.orders[:len(l.orders)-1]
 }
 
-func (l *PriceLevel) increaseVolumeByTimestamp(o *msg.Order) {
+func (l *PriceLevel) increaseVolumeByTimestamp(o *types.Order) {
 	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
 		l.volumeAtTimestamp[o.Timestamp] = vbt + o.Remaining
 	} else {
@@ -47,7 +47,7 @@ func (l *PriceLevel) increaseVolumeByTimestamp(o *msg.Order) {
 	}
 }
 
-func (l *PriceLevel) decreaseVolumeByTimestamp(o *msg.Order) {
+func (l *PriceLevel) decreaseVolumeByTimestamp(o *types.Order) {
 	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
 		if vbt <= o.Remaining {
 			delete(l.volumeAtTimestamp, o.Timestamp)
@@ -57,13 +57,13 @@ func (l *PriceLevel) decreaseVolumeByTimestamp(o *msg.Order) {
 	}
 }
 
-func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp uint64, trade *msg.Trade) {
+func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp uint64, trade *types.Trade) {
 	if vbt, exists := l.volumeAtTimestamp[currentTimestamp]; exists {
 		l.volumeAtTimestamp[currentTimestamp] = vbt - trade.Size
 	}
 }
 
-func (l *PriceLevel) uncross(agg *msg.Order) (filled bool, trades []*msg.Trade, impactedOrders []*msg.Order) {
+func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Trade, impactedOrders []*types.Order) {
 
 	var (
 		toRemove []int
@@ -144,7 +144,7 @@ func (l *PriceLevel) earliestTimestamp() uint64 {
 // with the same timestamp by their share of the total volume with the same price and timestamp. (NB: "normal"
 // trading would thus *always* increment the logical timestamp between trades.)
 func (l *PriceLevel) getVolumeAllocation(
-	agg, pass *msg.Order,
+	agg, pass *types.Order,
 	volumeToShare, initialVolumeAtTimestamp uint64) uint64 {
 
 	if l.ProRataMode {
@@ -168,9 +168,9 @@ func min(x, y uint64) uint64 {
 }
 
 // Creates a trade of a given size between two orders and updates the order details
-func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
-	var buyer, seller *msg.Order
-	if agg.Side == msg.Side_Buy {
+func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
+	var buyer, seller *types.Order
+	if agg.Side == types.Side_Buy {
 		buyer = agg
 		seller = pass
 	} else {
@@ -182,7 +182,7 @@ func newTrade(agg, pass *msg.Order, size uint64) *msg.Trade {
 		panic(fmt.Sprintf("agg.side == pass.side (agg: %v, pass: %v)", agg, pass))
 	}
 
-	trade := msg.TradePool.Get().(*msg.Trade)
+	trade := types.TradePool.Get().(*types.Trade)
 	trade.Market = agg.Market
 	trade.Price = pass.Price
 	trade.Size = size
@@ -197,7 +197,7 @@ func (l PriceLevel) print() {
 	l.log.Debugf("priceLevel: %d\n", l.price)
 	for _, o := range l.orders {
 		var side string
-		if o.Side == msg.Side_Buy {
+		if o.Side == types.Side_Buy {
 			side = "BUY"
 		} else {
 			side = "SELL"

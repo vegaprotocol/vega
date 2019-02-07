@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"vega/internal/vegatime"
-	"vega/msg"
+	types "vega/proto"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
@@ -26,13 +26,13 @@ type CandleStore interface {
 	StartNewBuffer(market string, timestamp uint64) error
 
 	// AddTradeToBuffer adds a trade to the trades buffer for the given market.
-	AddTradeToBuffer(market string, trade msg.Trade) error
+	AddTradeToBuffer(market string, trade types.Trade) error
 
 	// GenerateCandlesFromBuffer will generate all candles for a given market.
 	GenerateCandlesFromBuffer(market string) error
 
 	// GetCandles returns all candles at interval since timestamp for a market.
-	GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) ([]*msg.Candle, error)
+	GetCandles(market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error)
 
 	// Close can be called to clean up and close any storage
 	// connections held by the underlying storage mechanism.
@@ -40,13 +40,13 @@ type CandleStore interface {
 }
 
 // Currently we support 6 interval durations for trading candles on VEGA, as follows:
-var supportedIntervals = [6]msg.Interval{
-	msg.Interval_I1M,  // 1 minute
-	msg.Interval_I5M,  // 5 minutes
-	msg.Interval_I15M, // 15 minutes
-	msg.Interval_I1H,  // 1 hour
-	msg.Interval_I6H,  // 6 hours
-	msg.Interval_I1D,  // 1 day
+var supportedIntervals = [6]types.Interval{
+	types.Interval_I1M,  // 1 minute
+	types.Interval_I5M,  // 5 minutes
+	types.Interval_I15M, // 15 minutes
+	types.Interval_I1H,  // 1 hour
+	types.Interval_I6H,  // 6 hours
+	types.Interval_I1D,  // 1 day
 
 	// Add intervals here as required...
 }
@@ -58,7 +58,7 @@ const minSinceTimestamp uint64 = 1514764801000
 type badgerCandleStore struct {
 	*Config
 	badger       *badgerStore
-	candleBuffer map[string]map[string]msg.Candle
+	candleBuffer map[string]map[string]types.Candle
 	subscribers  map[uint64]*InternalTransport
 	subscriberId uint64
 	queue        []marketCandle
@@ -68,13 +68,13 @@ type badgerCandleStore struct {
 // InternalTransport provides a data structure that holds an internal channel for a market and interval.
 type InternalTransport struct {
 	Market    string
-	Interval  msg.Interval
-	Transport chan msg.Candle
+	Interval  types.Interval
+	Transport chan types.Candle
 }
 
 type marketCandle struct {
 	Market string
-	Candle msg.Candle
+	Candle types.Candle
 }
 
 // NewCandleStore is used to initialise and create a CandleStore, this implementation is currently
@@ -90,7 +90,7 @@ func NewCandleStore(c *Config) (CandleStore, error) {
 		Config:       c,
 		badger:       &bs,
 		subscribers:  make(map[uint64]*InternalTransport),
-		candleBuffer: make(map[string]map[string]msg.Candle),
+		candleBuffer: make(map[string]map[string]types.Candle),
 		queue:        make([]marketCandle, 0),
 	}, nil
 }
@@ -159,7 +159,7 @@ func (c *badgerCandleStore) StartNewBuffer(market string, timestamp uint64) erro
 }
 
 // AddTradeToBuffer adds a trade to the trades buffer for the given market.
-func (c *badgerCandleStore) AddTradeToBuffer(market string, trade msg.Trade) error {
+func (c *badgerCandleStore) AddTradeToBuffer(market string, trade types.Trade) error {
 
 	for _, interval := range supportedIntervals {
 		roundedTradeTimestamp := vegatime.Stamp(trade.Timestamp).RoundToNearest(interval).Uint64()
@@ -183,13 +183,13 @@ func (c *badgerCandleStore) AddTradeToBuffer(market string, trade msg.Trade) err
 // GenerateCandlesFromBuffer will generate all candles for a given market.
 func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 
-	fetchCandle := func(txn *badger.Txn, badgerKey []byte) (*msg.Candle, error) {
+	fetchCandle := func(txn *badger.Txn, badgerKey []byte) (*types.Candle, error) {
 		item, err := txn.Get(badgerKey)
 		if err != nil {
 			return nil, err
 		}
 		// unmarshal fetched candle
-		var candleFromDb msg.Candle
+		var candleFromDb types.Candle
 		itemCopy, _ := item.ValueCopy(nil)
 		err = proto.Unmarshal(itemCopy, &candleFromDb)
 		if err != nil {
@@ -198,7 +198,7 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 		return &candleFromDb, nil
 	}
 
-	insertNewCandle := func(wb *badger.WriteBatch, badgerKey []byte, candle msg.Candle) error {
+	insertNewCandle := func(wb *badger.WriteBatch, badgerKey []byte, candle types.Candle) error {
 		candleBuf, err := proto.Marshal(&candle)
 		if err != nil {
 			return err
@@ -209,7 +209,7 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 		return nil
 	}
 
-	updateCandle := func(wb *badger.WriteBatch, badgerKey []byte, candleDb *msg.Candle) error {
+	updateCandle := func(wb *badger.WriteBatch, badgerKey []byte, candleDb *types.Candle) error {
 		// marshal candle
 		candleBuf, err := proto.Marshal(candleDb)
 		if err != nil {
@@ -265,7 +265,7 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 }
 
 // GetCandles returns all candles at interval since timestamp for a market.
-func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, interval msg.Interval) ([]*msg.Candle, error) {
+func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error) {
 	if sinceTimestamp < minSinceTimestamp {
 		return nil, errors.New("invalid sinceTimestamp, ensure format is epoch+nanoseconds timestamp")
 	}
@@ -280,7 +280,7 @@ func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, int
 	it := c.badger.getIterator(txn, false)
 	defer it.Close()
 
-	var candles []*msg.Candle
+	var candles []*types.Candle
 	for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
 		value, err := item.ValueCopy(nil)
@@ -289,7 +289,7 @@ func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, int
 			continue
 		}
 
-		var newCandle msg.Candle
+		var newCandle types.Candle
 		if err := proto.Unmarshal(value, &newCandle); err != nil {
 			c.log.Errorf("unmarshal failed %s", err.Error())
 			continue
@@ -301,34 +301,34 @@ func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, int
 }
 
 // generateFetchKey calculates the correct badger key for the given market, interval and timestamp.
-func (c *badgerCandleStore) generateFetchKey(market string, interval msg.Interval, sinceTimestamp uint64) []byte {
+func (c *badgerCandleStore) generateFetchKey(market string, interval types.Interval, sinceTimestamp uint64) []byte {
 	// returns valid key for Market, interval and timestamp
 	// round floor by integer division
 	switch interval {
-	case msg.Interval_I1M:
+	case types.Interval_I1M:
 		timestampRoundedToMinute := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 		return c.badger.candleKey(market, interval, timestampRoundedToMinute)
-	case msg.Interval_I5M:
+	case types.Interval_I5M:
 		timestampRoundedTo5Minutes := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 		return c.badger.candleKey(market, interval, timestampRoundedTo5Minutes)
-	case msg.Interval_I15M:
+	case types.Interval_I15M:
 		timestampRoundedTo15Minutes := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 		return c.badger.candleKey(market, interval, timestampRoundedTo15Minutes)
-	case msg.Interval_I1H:
+	case types.Interval_I1H:
 		timestampRoundedTo1Hour := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 		return c.badger.candleKey(market, interval, timestampRoundedTo1Hour)
-	case msg.Interval_I6H:
+	case types.Interval_I6H:
 		timestampRoundedTo6Hour := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 		return c.badger.candleKey(market, interval, timestampRoundedTo6Hour)
-	case msg.Interval_I1D:
+	case types.Interval_I1D:
 		timestampRoundedToDay := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
 		return c.badger.candleKey(market, interval, timestampRoundedToDay)
 	}
 	return nil
 }
 
-func (c *badgerCandleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []byte) (*msg.Candle, error) {
-	var previousCandle msg.Candle
+func (c *badgerCandleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []byte) (*types.Candle, error) {
+	var previousCandle types.Candle
 
 	// set iterator to reverse in order to fetch most recent
 	options := badger.DefaultIteratorOptions
@@ -358,8 +358,8 @@ func (c *badgerCandleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMost
 
 // getMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,
 //  15 minute, hour, 6hours, 1 day intervals and return a map of rounded timestamps
-func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[msg.Interval]uint64 {
-	timestamps := make(map[msg.Interval]uint64)
+func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[types.Interval]uint64 {
+	timestamps := make(map[types.Interval]uint64)
 
 	// round floor by integer division
 	for _, interval := range supportedIntervals {
@@ -370,7 +370,7 @@ func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[msg.Interval]uin
 }
 
 // queueEvent appends a candle onto a queue for a market.
-func (c *badgerCandleStore) queueEvent(market string, candle msg.Candle) {
+func (c *badgerCandleStore) queueEvent(market string, candle types.Candle) {
 	c.queue = append(c.queue, marketCandle{Market: market, Candle: candle})
 }
 
@@ -422,11 +422,11 @@ func (c *badgerCandleStore) notify() error {
 
 // resetCandleBuffer does what it says on the tin :)
 func (c *badgerCandleStore) resetCandleBuffer(market string) {
-	c.candleBuffer[market] = make(map[string]msg.Candle)
+	c.candleBuffer[market] = make(map[string]types.Candle)
 }
 
 // getBufferKey returns the custom formatted buffer key for internal trade to timestamp mapping.
-func getBufferKey(timestamp uint64, interval msg.Interval) string {
+func getBufferKey(timestamp uint64, interval types.Interval) string {
 	return fmt.Sprintf("%d:%s", timestamp, interval.String())
 }
 
@@ -441,8 +441,8 @@ func (c *badgerCandleStore) printCandleBuffer() {
 }
 
 // newCandle constructs a new candle with minimum required parameters.
-func newCandle(timestamp, openPrice, size uint64, interval msg.Interval) *msg.Candle {
-	candle := msg.CandlePool.Get().(*msg.Candle)
+func newCandle(timestamp, openPrice, size uint64, interval types.Interval) *types.Candle {
+	candle := types.CandlePool.Get().(*types.Candle)
 	candle.Timestamp = timestamp
 	candle.Datetime = vegatime.Stamp(timestamp).Rfc3339()
 	candle.High = openPrice
@@ -455,7 +455,7 @@ func newCandle(timestamp, openPrice, size uint64, interval msg.Interval) *msg.Ca
 }
 
 // updateCandle will calculate and set volume, open, close etc based on the given Trade.
-func updateCandle(candle *msg.Candle, trade *msg.Trade) {
+func updateCandle(candle *types.Candle, trade *types.Trade) {
 	// always overwrite close price
 	candle.Close = trade.Price
 
@@ -483,7 +483,7 @@ func updateCandle(candle *msg.Candle, trade *msg.Trade) {
 }
 
 // mergeCandles is used to update an existing candle in the buffer.
-func mergeCandles(candleFromDB *msg.Candle, candleUpdate msg.Candle) {
+func mergeCandles(candleFromDB *types.Candle, candleUpdate types.Candle) {
 	// always overwrite close price
 	candleFromDB.Close = candleUpdate.Close
 

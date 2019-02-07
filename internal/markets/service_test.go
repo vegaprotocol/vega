@@ -5,7 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"vega/internal/storage/mocks"
-	"vega/msg"
+	types "vega/proto"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +19,7 @@ func TestMarketService_NewService(t *testing.T) {
 func TestMarketService_CreateMarket(t *testing.T) {
 	orderStore := &mocks.OrderStore{}
 	marketStore := &mocks.MarketStore{}
-	market := &msg.Market{Name: "BTC/DEC19"}
+	market := &types.Market{Name: "BTC/DEC19"}
 	marketStore.On("Post", market).Return(nil)
 
 	marketService := NewService(marketStore, orderStore)
@@ -31,7 +31,7 @@ func TestMarketService_CreateMarket(t *testing.T) {
 func TestMarketService_GetAll(t *testing.T) {
 	orderStore := &mocks.OrderStore{}
 	marketStore := &mocks.MarketStore{}
-	marketStore.On("GetAll").Return([]*msg.Market{
+	marketStore.On("GetAll").Return([]*types.Market{
 		{Name: "BTC/DEC19"},
 		{Name: "ETH/JUN19"},
 		{Name: "LTC/JAN20"},
@@ -51,7 +51,7 @@ func TestMarketService_GetAll(t *testing.T) {
 func TestMarketService_GetByName(t *testing.T) {
 	orderStore := &mocks.OrderStore{}
 	marketStore := &mocks.MarketStore{}
-	marketStore.On("GetByName", "BTC/DEC19").Return(&msg.Market{
+	marketStore.On("GetByName", "BTC/DEC19").Return(&types.Market{
 		Name: "BTC/DEC19",
 	}, nil).Once()
 	
@@ -64,13 +64,13 @@ func TestMarketService_GetByName(t *testing.T) {
 }
 
 func TestMarketService_GetDepth(t *testing.T) {
-	market := &msg.Market{Name: "BTC/DEC19"}
+	market := &types.Market{Name: "BTC/DEC19"}
 	orderStore := &mocks.OrderStore{}
-	orderStore.On("GetMarketDepth", market.Name).Return(msg.MarketDepth{
+	orderStore.On("GetMarketDepth", market.Name).Return(types.MarketDepth{
 		Name: market.Name,
 	}, nil)
 	marketStore := &mocks.MarketStore{}
-	marketStore.On("GetByName", market.Name).Return(&msg.Market{
+	marketStore.On("GetByName", market.Name).Return(&types.Market{
 		Name: market.Name,
 	}, nil).Once()
 	
@@ -82,7 +82,7 @@ func TestMarketService_GetDepth(t *testing.T) {
 
 
 func TestMarketService_GetDepthNonExistentMarket(t *testing.T) {
-	market := &msg.Market{Name: "BTC/DEC18"}
+	market := &types.Market{Name: "BTC/DEC18"}
 	orderStore := &mocks.OrderStore{}
 	orderStore.On("GetMarketDepth", "BTC/DEC18").Return(nil,
 		errors.New("market does not exist"))

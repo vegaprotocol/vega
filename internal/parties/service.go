@@ -2,17 +2,17 @@ package parties
 
 import (
 	"vega/internal/storage"
-	"vega/msg"
+	types "vega/proto"
 )
 
 //Service provides the interface for parties business logic.
 type Service interface {
 	// CreateParty stores the given party.
-	CreateParty(party *msg.Party) error
+	CreateParty(party *types.Party) error
 	// GetByName searches for the given party by name.
-	GetByName(name string) (*msg.Party, error)
+	GetByName(name string) (*types.Party, error)
 	// GetAll returns all parties.
-	GetAll() ([]*msg.Party, error)
+	GetAll() ([]*types.Party, error)
 }
 
 type partyService struct {
@@ -30,18 +30,18 @@ func NewPartyService(store storage.PartyStore) Service {
 }
 
 // CreateParty stores the given party.
-func (s *partyService) CreateParty(party *msg.Party) error {
+func (s *partyService) CreateParty(party *types.Party) error {
 	return s.store.Post(party)
 }
 
 // GetByName searches for the given party by name.
-func (s *partyService) GetByName(name string) (*msg.Party, error) {
+func (s *partyService) GetByName(name string) (*types.Party, error) {
 	p, err := s.store.GetByName(name)
 	return p, err
 }
 
 // GetAll returns all parties.
-func (s *partyService) GetAll() ([]*msg.Party, error) {
+func (s *partyService) GetAll() ([]*types.Party, error) {
 	p, err := s.store.GetAll()
 	return p, err
 }

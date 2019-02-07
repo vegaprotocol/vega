@@ -3,7 +3,7 @@ package gql
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
-	"vega/msg"
+	types "vega/proto"
 )
 
 func TestSafeStringUint64(t *testing.T) {
@@ -39,15 +39,15 @@ func TestParseOrderStatus(t *testing.T) {
 	active := OrderStatusActive
 	status, err := parseOrderStatus(&active)
 	assert.Nil(t, err)
-	assert.Equal(t, msg.Order_Active, status)
+	assert.Equal(t, types.Order_Active, status)
 	expired := OrderStatusExpired
 	status, err = parseOrderStatus(&expired)
 	assert.Nil(t, err)
-	assert.Equal(t, msg.Order_Expired, status)
+	assert.Equal(t, types.Order_Expired, status)
 	cancelled := OrderStatusCancelled
 	status, err = parseOrderStatus(&cancelled)
 	assert.Nil(t, err)
-	assert.Equal(t, msg.Order_Cancelled, status)
+	assert.Equal(t, types.Order_Cancelled, status)
 	unknown := OrderStatus("好候")
 	status, err = parseOrderStatus(&unknown)
 	assert.Error(t, err)
@@ -57,19 +57,19 @@ func TestParseOrderType(t *testing.T) {
 	fok := OrderTypeFok
 	orderType, err := parseOrderType(&fok)
 	assert.Nil(t, err)
-	assert.Equal(t, msg.Order_FOK, orderType)
+	assert.Equal(t, types.Order_FOK, orderType)
 	ene := OrderTypeEne
 	orderType, err = parseOrderType(&ene)
 	assert.Nil(t, err)
-	assert.Equal(t, msg.Order_ENE, orderType)
+	assert.Equal(t, types.Order_ENE, orderType)
 	gtt := OrderTypeGtt
 	orderType, err = parseOrderType(&gtt)
 	assert.Nil(t, err)
-	assert.Equal(t, msg.Order_GTT, orderType)
+	assert.Equal(t, types.Order_GTT, orderType)
 	gtc := OrderTypeGtc
 	orderType, err = parseOrderType(&gtc)
 	assert.Nil(t, err)
-	assert.Equal(t, msg.Order_GTC, orderType)
+	assert.Equal(t, types.Order_GTC, orderType)
 	unknown := OrderType("好到时候")
 	orderType, err = parseOrderType(&unknown)
 	assert.Error(t, err)
@@ -80,11 +80,11 @@ func TestParseSide(t *testing.T) {
 	buy := SideBuy
 	side, err := parseSide(&buy)
 	assert.Nil(t, err)
-	assert.Equal(t, msg.Side_Buy, side)
+	assert.Equal(t, types.Side_Buy, side)
 	sell := SideSell
 	side, err = parseSide(&sell)
 	assert.Nil(t, err)
-	assert.Equal(t, msg.Side_Sell, side)
+	assert.Equal(t, types.Side_Sell, side)
 	unknown := Side("好到时候")
 	side, err = parseSide(&unknown)
 	assert.Error(t, err)

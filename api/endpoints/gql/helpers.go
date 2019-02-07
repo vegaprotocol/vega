@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"fmt"
 	"github.com/pkg/errors"
-	"vega/msg"
+	types "vega/proto"
 	"vega/internal/filtering"
 )
 
@@ -16,44 +16,44 @@ func safeStringUint64(input string) (uint64, error) {
 	return 0, errors.New(fmt.Sprintf("Invalid input string for uint64 conversion %s", input))
 }
 
-func parseOrderType(orderType *OrderType) (msg.Order_Type, error) {
+func parseOrderType(orderType *OrderType) (types.Order_Type, error) {
 	switch *orderType {
 		case OrderTypeGtc:
-			return msg.Order_GTC, nil
+			return types.Order_GTC, nil
 		case OrderTypeGtt:
-			return msg.Order_GTT, nil
+			return types.Order_GTT, nil
 		case OrderTypeEne:
-			return msg.Order_ENE, nil
+			return types.Order_ENE, nil
 		case OrderTypeFok:
-			return msg.Order_FOK, nil
+			return types.Order_FOK, nil
 		default:
-			return msg.Order_GTC, errors.New(fmt.Sprintf("unknown type: %s", orderType.String()))
+			return types.Order_GTC, errors.New(fmt.Sprintf("unknown type: %s", orderType.String()))
 	}
 }
 
-func parseOrderStatus(orderStatus *OrderStatus) (msg.Order_Status, error) {
+func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 	switch *orderStatus {
 		case OrderStatusActive:
-			return msg.Order_Active, nil
+			return types.Order_Active, nil
 		case OrderStatusExpired:
-			return msg.Order_Expired, nil
+			return types.Order_Expired, nil
 		case OrderStatusCancelled:
-			return msg.Order_Cancelled, nil
+			return types.Order_Cancelled, nil
 		case OrderStatusFilled:
-			return msg.Order_Filled, nil
+			return types.Order_Filled, nil
 		default:
-			return msg.Order_Active, errors.New(fmt.Sprintf("unknown status: %s", orderStatus.String()))
+			return types.Order_Active, errors.New(fmt.Sprintf("unknown status: %s", orderStatus.String()))
 	}
 }
 
-func parseSide(side *Side) (msg.Side, error) {
+func parseSide(side *Side) (types.Side, error) {
 	switch *side {
 		case SideBuy:
-			return msg.Side_Buy, nil
+			return types.Side_Buy, nil
 		case SideSell:
-			return msg.Side_Sell, nil
+			return types.Side_Sell, nil
 		default:
-			return msg.Side_Buy, errors.New(fmt.Sprintf("unknown side: %s", side.String()))
+			return types.Side_Buy, errors.New(fmt.Sprintf("unknown side: %s", side.String()))
 	}
 }
 

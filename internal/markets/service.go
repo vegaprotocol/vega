@@ -2,7 +2,7 @@ package markets
 
 import (
 	"vega/internal/storage"
-	"vega/msg"
+	types "vega/proto"
 	"context"
 	"vega/internal/logging"
 )
@@ -10,17 +10,17 @@ import (
 //Service provides the interface for VEGA markets business logic.
 type Service interface {
 	// CreateMarket stores the given market.
-	CreateMarket(ctx context.Context, market *msg.Market) error
+	CreateMarket(ctx context.Context, market *types.Market) error
 	// GetByName searches for the given market by name.
-	GetByName(ctx context.Context, name string) (*msg.Market, error)
+	GetByName(ctx context.Context, name string) (*types.Market, error)
 	// GetAll returns all markets.
-	GetAll(ctx context.Context) ([]*msg.Market, error)
+	GetAll(ctx context.Context) ([]*types.Market, error)
 	// GetDepth returns the market depth for the given market.
-	GetDepth(ctx context.Context, market string) (marketDepth msg.MarketDepth, err error)
+	GetDepth(ctx context.Context, market string) (marketDepth types.MarketDepth, err error)
 	// ObserveMarket provides a way to listen to changes on VEGA markets.
-	ObserveMarkets(ctx context.Context) (markets <-chan []msg.Market, ref uint64)
+	ObserveMarkets(ctx context.Context) (markets <-chan []types.Market, ref uint64)
 	// ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
-	ObserveDepth(ctx context.Context, market string) (depth <-chan msg.MarketDepth, ref uint64)
+	ObserveDepth(ctx context.Context, market string) (depth <-chan types.MarketDepth, ref uint64)
 }
 
 type marketService struct {
@@ -39,38 +39,38 @@ func NewService(config *Config, marketStore storage.MarketStore, orderStore stor
 }
 
 // CreateMarket stores the given market.
-func (s *marketService) CreateMarket(ctx context.Context, party *msg.Market) error {
+func (s *marketService) CreateMarket(ctx context.Context, party *types.Market) error {
 	return s.marketStore.Post(party)
 }
 
 // GetByName searches for the given market by name.
-func (s *marketService) GetByName(ctx context.Context, name string) (*msg.Market, error) {
+func (s *marketService) GetByName(ctx context.Context, name string) (*types.Market, error) {
 	p, err := s.marketStore.GetByName(name)
 	return p, err
 }
 
 // GetAll returns all markets.
-func (s *marketService) GetAll(ctx context.Context) ([]*msg.Market, error) {
+func (s *marketService) GetAll(ctx context.Context) ([]*types.Market, error) {
 	p, err := s.marketStore.GetAll()
 	return p, err
 }
 
 // GetDepth returns the market depth for the given market.
-func (s *marketService) GetDepth(ctx context.Context, market string) (marketDepth msg.MarketDepth, err error) {
+func (s *marketService) GetDepth(ctx context.Context, market string) (marketDepth types.MarketDepth, err error) {
 	m, err := s.marketStore.GetByName(market)
 	if err != nil {
-		return msg.MarketDepth{}, err
+		return types.MarketDepth{}, err
 	}
 	return s.orderStore.GetMarketDepth(m.Name)
 }
 
 // ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
-func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, uint64) {
-	depth := make(chan msg.MarketDepth)
-	internal := make(chan []msg.Order)
+func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan types.MarketDepth, uint64) {
+	depth := make(chan types.MarketDepth)
+	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []msg.Order, ctx context.Context) {
+	go func(id uint64, internal chan []types.Order, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
 		s.log.Debugf("MarketService -> depth closed connection: %d [%s]", id, ip)
@@ -101,7 +101,7 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 	return depth, ref
 }
 
-func (s *marketService) ObserveMarkets(ctx context.Context) (markets <-chan []msg.Market, ref uint64) {
+func (s *marketService) ObserveMarkets(ctx context.Context) (markets <-chan []types.Market, ref uint64) {
 	 return nil, 0
 }
 

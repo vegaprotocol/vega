@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "msg/vega.proto";
+import "proto/vega.proto";
 
 package grpc;
 option go_package = "api";

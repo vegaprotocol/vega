@@ -2,8 +2,7 @@ package matching
 
 import (
 	"fmt"
-
-	"vega/msg"
+	types "vega/proto"
 )
 
 type OrderBook struct {
@@ -13,7 +12,7 @@ type OrderBook struct {
 	sell            *OrderBookSide
 	lastTradedPrice uint64
 	latestTimestamp uint64
-	expiringOrders  []msg.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
+	expiringOrders  []types.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
 }
 
 // Create an order book with a given name
@@ -23,71 +22,71 @@ func NewBook(name string, config *Config) *OrderBook {
 		buy:            &OrderBookSide{Config: config},
 		sell:           &OrderBookSide{Config: config},
 		Config:         config,
-		expiringOrders: make([]msg.Order, 0),
+		expiringOrders: make([]types.Order, 0),
 	}
 }
 
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
-func (b *OrderBook) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
+func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError) {
 	// Validate Market
 	if order.Market != b.name {
 		b.log.Errorf(fmt.Sprintf(
 			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
 			order.Market,
 			b.name))
-		return nil, msg.OrderError_INVALID_MARKET_ID
+		return nil, types.OrderError_INVALID_MARKET_ID
 	}
 	// Validate Order ID must be present
 	if order.Id == "" || len(order.Id) < 4 {
-		return nil, msg.OrderError_INVALID_ORDER_ID
+		return nil, types.OrderError_INVALID_ORDER_ID
 	}
 
-	if order.Side == msg.Side_Buy {
+	if order.Side == types.Side_Buy {
 		if err := b.buy.RemoveOrder(order); err != nil {
 			b.log.Errorf("Error removing (buy side): ", err)
-			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
+			return nil, types.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	} else {
 		if err := b.sell.RemoveOrder(order); err != nil {
 			b.log.Errorf("Error removing (sell side): ", err)
-			return nil, msg.OrderError_ORDER_REMOVAL_FAILURE
+			return nil, types.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	}
 
 	// Important, mark the order as cancelled (and no longer active)
-	order.Status = msg.Order_Cancelled
+	order.Status = types.Order_Cancelled
 
-	result := &msg.OrderCancellation{
+	result := &types.OrderCancellation{
 		Order: order,
 	}
-	return result, msg.OrderError_NONE
+	return result, types.OrderError_NONE
 }
 
-func (b *OrderBook) AmendOrder(order *msg.Order) msg.OrderError {
-	if err := b.validateOrder(order); err != msg.OrderError_NONE {
+func (b *OrderBook) AmendOrder(order *types.Order) types.OrderError {
+	if err := b.validateOrder(order); err != types.OrderError_NONE {
 		return err
 	}
 
-	if order.Side == msg.Side_Buy {
-		if err := b.buy.amendOrder(order); err != msg.OrderError_NONE {
+	if order.Side == types.Side_Buy {
+		if err := b.buy.amendOrder(order); err != types.OrderError_NONE {
 			b.log.Errorf("Error amending (buy side): ", err)
 			return err
 		}
 	} else {
-		if err := b.sell.amendOrder(order); err != msg.OrderError_NONE {
+		if err := b.sell.amendOrder(order); err != types.OrderError_NONE {
 			b.log.Errorf("Error amending (sell side): ", err)
 			return err
 		}
 	}
 
-	return msg.OrderError_NONE
+	return types.OrderError_NONE
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
-func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
-	if err := b.validateOrder(order); err != msg.OrderError_NONE {
+func (b *OrderBook) AddOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError) {
+	if err := b.validateOrder(order); err != types.OrderError_NONE {
 		return nil, err
 	}
 
@@ -111,10 +110,10 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 	}
 
 	// if order is persistent type add to order book to the correct side
-	if (order.Type == msg.Order_GTC || order.Type == msg.Order_GTT) && order.Remaining > 0 {
+	if (order.Type == types.Order_GTC || order.Type == types.Order_GTT) && order.Remaining > 0 {
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
-		if order.Type == msg.Order_GTT {
+		if order.Type == types.Order_GTT {
 			b.expiringOrders = append(b.expiringOrders, *order)
 		}
 
@@ -127,31 +126,31 @@ func (b *OrderBook) AddOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// did we fully fill the originating order?
 	if order.Remaining == 0 {
-		order.Status = msg.Order_Filled
+		order.Status = types.Order_Filled
 	}
 
 	// update order statuses based on the order types if they didn't trade
-	if (order.Type == msg.Order_FOK || order.Type == msg.Order_ENE) && order.Remaining == order.Size {
-		order.Status = msg.Order_Stopped
+	if (order.Type == types.Order_FOK || order.Type == types.Order_ENE) && order.Remaining == order.Size {
+		order.Status = types.Order_Stopped
 	}
 
 	for idx := range impactedOrders {
 		if impactedOrders[idx].Remaining == 0 {
-			impactedOrders[idx].Status = msg.Order_Filled
+			impactedOrders[idx].Status = types.Order_Filled
 
 			// Ensure any fully filled impacted GTT orders are removed
 			// from internal matching engine pending orders list
-			if impactedOrders[idx].Type == msg.Order_GTT {
+			if impactedOrders[idx].Type == types.Order_GTT {
 				b.removePendingGttOrder(*impactedOrders[idx])
 			}
 		}
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
-	return orderConfirmation, msg.OrderError_NONE
+	return orderConfirmation, types.OrderError_NONE
 }
 
-func (b *OrderBook) RemoveOrder(order *msg.Order) error {
+func (b *OrderBook) RemoveOrder(order *types.Order) error {
 	err := b.getSide(order.Side).RemoveOrder(order)
 	return err
 }
@@ -160,15 +159,15 @@ func (b *OrderBook) RemoveOrder(order *msg.Order) error {
 // expirationTimestamp must be of the format unix epoch seconds with nanoseconds e.g. 1544010789803472469.
 // RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
 // matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
-func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []msg.Order {
-	var expiredOrders []msg.Order
-	var pendingOrders []msg.Order
+func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []types.Order {
+	var expiredOrders []types.Order
+	var pendingOrders []types.Order
 
 	// linear scan of our expiring orders, prune any that have expired
 	for _, or := range b.expiringOrders {
 		if or.ExpirationTimestamp <= expirationTimestamp {
 			b.RemoveOrder(&or)            // order is removed from the book
-			or.Status = msg.Order_Expired // order is marked as expired for storage
+			or.Status = types.Order_Expired // order is marked as expired for storage
 			expiredOrders = append(expiredOrders, or)
 		} else {
 			pendingOrders = append(pendingOrders, or) // order is pending expiry (future)
@@ -185,23 +184,23 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []msg.Order 
 	return expiredOrders
 }
 
-func (b OrderBook) getSide(orderSide msg.Side) *OrderBookSide {
-	if orderSide == msg.Side_Buy {
+func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {
+	if orderSide == types.Side_Buy {
 		return b.buy
 	} else {
 		return b.sell
 	}
 }
 
-func (b *OrderBook) getOppositeSide(orderSide msg.Side) *OrderBookSide {
-	if orderSide == msg.Side_Buy {
+func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
+	if orderSide == types.Side_Buy {
 		return b.sell
 	} else {
 		return b.buy
 	}
 }
 
-func (b OrderBook) removePendingGttOrder(order msg.Order) bool {
+func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 	found := -1
 	for idx, or := range b.expiringOrders {
 		if or.Id == order.Id {
@@ -215,16 +214,16 @@ func (b OrderBook) removePendingGttOrder(order msg.Order) bool {
 	return false
 }
 
-func makeResponse(order *msg.Order, trades []*msg.Trade, impactedOrders []*msg.Order) *msg.OrderConfirmation {
-	confirm := msg.OrderConfirmationPool.Get().(*msg.OrderConfirmation)
+func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
+	confirm := types.OrderConfirmationPool.Get().(*types.OrderConfirmation)
 	confirm.Order = order
 	confirm.PassiveOrdersAffected = impactedOrders
 	confirm.Trades = trades
 	return confirm
 }
 
-func (b *OrderBook) PrintState(msg string) {
-	b.log.Debugf("%s", msg)
+func (b *OrderBook) PrintState(types string) {
+	b.log.Debugf("%s", types)
 	b.log.Debug("------------------------------------------------------------")
 	b.log.Debug("                        BUY SIDE                            ")
 	for _, priceLevel := range b.buy.getLevels() {

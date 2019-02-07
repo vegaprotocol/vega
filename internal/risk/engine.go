@@ -2,18 +2,18 @@ package risk
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
-	"vega/msg"
-	"fmt"
-	"path/filepath"
+	types "vega/proto"
 )
 
 type Engine interface {
-	AddNewMarket(market *msg.Market)
+	AddNewMarket(market *types.Market)
 	RecalculateRisk()
 	GetRiskFactors(marketName string) (float64, float64, error)
 }
@@ -21,24 +21,23 @@ type Engine interface {
 type riskEngine struct {
 	*Config
 	pyRiskModels map[string]string
-	riskFactors map[string]*msg.RiskFactor
+	riskFactors  map[string]*types.RiskFactor
 }
 
 func NewRiskEngine() Engine {
 	config := NewConfig()
 	return &riskEngine{
-		Config: config,
-		riskFactors: make(map[string]*msg.RiskFactor, 0),
+		Config:       config,
+		riskFactors:  make(map[string]*types.RiskFactor, 0),
 		pyRiskModels: make(map[string]string, 0),
-
 	}
 }
 
-func NewRiskFactor(market *msg.Market) *msg.RiskFactor {
-	return &msg.RiskFactor{Market: market.Name}
+func NewRiskFactor(market *types.Market) *types.RiskFactor {
+	return &types.RiskFactor{Market: market.Name}
 }
 
-func (re *riskEngine) AddNewMarket(market *msg.Market) {
+func (re *riskEngine) AddNewMarket(market *types.Market) {
 	// todo: will need to re-arch this when we have multiple markets/risk models/instrument definitions.
 	// todo: load the default for now for all markets (./risk-model.py)
 	re.pyRiskModels[market.Name] = re.PyRiskModelDefaultFileName
@@ -77,7 +76,7 @@ func (re riskEngine) RecalculateRisk() {
 	}
 }
 
-func (re *riskEngine) Assess(riskFactor *msg.RiskFactor) error {
+func (re *riskEngine) Assess(riskFactor *types.RiskFactor) error {
 	// Load the os executable file location
 	ex, err := os.Executable()
 	if err != nil {
@@ -138,4 +137,3 @@ func (re *riskEngine) Assess(riskFactor *msg.RiskFactor) error {
 
 	return nil
 }
-

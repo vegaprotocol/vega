@@ -2,7 +2,7 @@ package storage
 
 import (
 	"testing"
-	"vega/msg"
+	types "vega/proto"
 	"github.com/stretchr/testify/assert"
 	"fmt"
 	"time"
@@ -22,7 +22,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 
 	t.Log(fmt.Sprintf("t0 = %s", time.Unix(t0Seconds, t0NanoSeconds).Format(time.RFC3339)))
 
-	var trades = []*msg.Trade{
+	var trades = []*types.Trade{
 		{Id: "1", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0},
 		{Id: "2", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(20 * time.Second)},
 		{Id: "3", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute)},
@@ -35,7 +35,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	}
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 
-	candles, err := candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err := candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
 	assert.Nil(t, err)
 
@@ -55,7 +55,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[1].Close)
 	assert.Equal(t, uint64(200), candles[1].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), types.Interval_I1M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
 
@@ -67,7 +67,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(200), candles[0].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I5M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), types.Interval_I5M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 5m: %+v", candles))
 
@@ -85,7 +85,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	candleStore.StartNewBuffer(testMarket, currentVegaTime)
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 
-	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
 
@@ -112,7 +112,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(0), candles[2].Volume)
 
 
-	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I5M)
+	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I5M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 5m: %+v", candles))
 
@@ -124,7 +124,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(2 * time.Minute), msg.Interval_I15M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(2 * time.Minute), types.Interval_I15M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 15m: %+v", candles))
 
@@ -137,7 +137,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
 
-	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), msg.Interval_I15M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), types.Interval_I15M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 15m: %+v", candles))
 
@@ -147,7 +147,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	candleStore.StartNewBuffer(testMarket, currentVegaTime)
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 
-	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), msg.Interval_I15M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), types.Interval_I15M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 15m: %+v", candles))
 
@@ -164,12 +164,12 @@ func TestStorage_GetMapOfIntervalsToTimestamps(t *testing.T) {
 	timestamp, _ := time.Parse(time.RFC3339, "2018-11-13T11:01:14Z")
 	t0 := uint64(timestamp.UnixNano())
 	timestamps := getMapOfIntervalsToRoundedTimestamps(uint64(timestamp.UnixNano()))
-	assert.Equal(t, t0 - uint64(14 * time.Second), timestamps[msg.Interval_I1M])
-	assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I5M])
-	assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I15M])
-	assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), timestamps[msg.Interval_I1H])
-	assert.Equal(t, t0 - uint64(5 * time.Hour + time.Minute + 14 * time.Second), timestamps[msg.Interval_I6H])
-	assert.Equal(t, t0 - uint64(11 * time.Hour + time.Minute + 14 * time.Second), timestamps[msg.Interval_I1D])
+	assert.Equal(t, t0 - uint64(14 * time.Second), timestamps[types.Interval_I1M])
+	assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), timestamps[types.Interval_I5M])
+	assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), timestamps[types.Interval_I15M])
+	assert.Equal(t, t0 - uint64(time.Minute + 14 * time.Second), timestamps[types.Interval_I1H])
+	assert.Equal(t, t0 - uint64(5 * time.Hour + time.Minute + 14 * time.Second), timestamps[types.Interval_I6H])
+	assert.Equal(t, t0 - uint64(11 * time.Hour + time.Minute + 14 * time.Second), timestamps[types.Interval_I1D])
 }
 
 func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
@@ -179,11 +179,11 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
-	internalTransport1 := &InternalTransport{testMarket, msg.Interval_I1M, make(chan msg.Candle)}
+	internalTransport1 := &InternalTransport{testMarket, types.Interval_I1M, make(chan types.Candle)}
 	ref := candleStore.Subscribe(internalTransport1)
 	assert.Equal(t, uint64(1), ref)
 
-	internalTransport2 := &InternalTransport{testMarket, msg.Interval_I1M, make(chan msg.Candle)}
+	internalTransport2 := &InternalTransport{testMarket, types.Interval_I1M, make(chan types.Candle)}
 	ref = candleStore.Subscribe(internalTransport2)
 	assert.Equal(t, uint64(2), ref)
 
@@ -211,7 +211,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	// t0 = 2018-11-13T11:00:00Z
 	t0 := uint64(1542106800000000000)
 
-	var trades1 = []*msg.Trade{
+	var trades1 = []*types.Trade{
 		{Id: "1", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0},
 		{Id: "2", Market: testMarket, Price: uint64(99), Size: uint64(100), Timestamp: t0 + uint64(10 * time.Second)},
 		{Id: "3", Market: testMarket, Price: uint64(108), Size: uint64(100), Timestamp: t0 + uint64(20 * time.Second)},
@@ -228,7 +228,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	}
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 
-	candles, err := candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err := candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 	
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
@@ -251,7 +251,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(109), candles[1].Close)
 	assert.Equal(t, uint64(400), candles[1].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(1 * time.Minute), types.Interval_I1M)
 	assert.Nil(t, err)
 	
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
@@ -264,7 +264,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(109), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I5M)
+	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I5M)
 	assert.Nil(t, err)
 
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 5m: %+v", candles))
@@ -277,7 +277,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(109), candles[0].Close)
 	assert.Equal(t, uint64(800), candles[0].Volume)
 
-	var trades2 = []*msg.Trade{
+	var trades2 = []*types.Trade{
 		{Id: "9", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(2 * time.Minute + 10 * time.Second)},
 		{Id: "10", Market: testMarket, Price: uint64(99), Size: uint64(100), Timestamp: t0 + uint64(2 * time.Minute + 20 * time.Second)},
 		{Id: "11", Market: testMarket, Price: uint64(108), Size: uint64(100), Timestamp: t0 + uint64(2 * time.Minute + 30 * time.Second)},
@@ -294,7 +294,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	}
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 
-	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
@@ -327,7 +327,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(109), candles[3].Close)
 	assert.Equal(t, uint64(400), candles[3].Volume)
 
-	var trades3 = []*msg.Trade{
+	var trades3 = []*types.Trade{
 		{Id: "17", Market: testMarket, Price: uint64(95), Size: uint64(100), Timestamp: t0 + uint64(4 * time.Minute + 10 * time.Second)},
 		{Id: "18", Market: testMarket, Price: uint64(80), Size: uint64(100), Timestamp: t0 + uint64(4 * time.Minute + 20 * time.Second)},
 		{Id: "19", Market: testMarket, Price: uint64(120), Size: uint64(100), Timestamp: t0 + uint64(4 * time.Minute + 30 * time.Second)},
@@ -344,7 +344,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	}
 	candleStore.GenerateCandlesFromBuffer(testMarket)
 	
-	candles, err = candleStore.GetCandles(testMarket, t0, msg.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 	
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))

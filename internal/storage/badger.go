@@ -2,8 +2,10 @@ package storage
 
 import (
 	"fmt"
+
+	types "vega/proto"
+
 	"github.com/dgraph-io/badger"
-	"vega/msg"
 	"github.com/dgraph-io/badger/options"
 )
 
@@ -65,7 +67,7 @@ func (bs *badgerStore) getPrefix(modifier string, prefix string, descending bool
 	return keyPrefix, validForPrefix
 }
 
-func (bs *badgerStore) candlePrefix(market string, interval msg.Interval, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+func (bs *badgerStore) candlePrefix(market string, interval types.Interval, descending bool) (keyPrefix []byte, validForPrefix []byte) {
 	validForPrefix = []byte(fmt.Sprintf("M:%s_I:%s_T:", market, interval))
 	keyPrefix = validForPrefix
 	if descending {
@@ -82,7 +84,7 @@ func (bs *badgerStore) writeTransaction() *badger.Txn {
 	return bs.db.NewTransaction(true)
 }
 
-func (bs *badgerStore) candleKey(market string, interval msg.Interval, timestamp uint64) []byte {
+func (bs *badgerStore) candleKey(market string, interval types.Interval, timestamp uint64) []byte {
 	return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), timestamp))
 }
 

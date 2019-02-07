@@ -3,7 +3,7 @@ package execution
 import (
 	"fmt"
 
-	"vega/msg"
+	types "vega/proto"
 
 	"vega/internal/matching"
 	"vega/internal/storage"
@@ -11,9 +11,9 @@ import (
 )
 
 type Engine interface {
-	SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError)
-	CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError)
-	AmendOrder(order *msg.Amendment) (*msg.OrderConfirmation, msg.OrderError)
+	SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError)
+	CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError)
+	AmendOrder(order *types.Amendment) (*types.OrderConfirmation, types.OrderError)
 }
 
 type engine struct {
@@ -35,13 +35,13 @@ func NewExecutionEngine(config *Config, matching matching.MatchingEngine, time v
 	}
 }
 
-func (e *engine) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError) {
 	e.log.Debug("ExecutionEngine: Submit/create order")
 
 	// 1) submit order to matching engine
-	confirmation, errorMsg := e.matching.SubmitOrder(order)
-	if confirmation == nil || errorMsg != msg.OrderError_NONE {
-		return nil, errorMsg
+	confirmation, errortypes := e.matching.SubmitOrder(order)
+	if confirmation == nil || errortypes != types.OrderError_NONE {
+		return nil, errortypes
 	}
 
 	// 2) Call out to risk engine calculation every N blocks
@@ -74,7 +74,7 @@ func (e *engine) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
-			if order.Side == msg.Side_Buy {
+			if order.Side == types.Side_Buy {
 				trade.BuyOrder = order.Id
 				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
 			} else {
@@ -95,17 +95,17 @@ func (e *engine) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.Orde
 
 	// 4) create or update risk record for this order party etc
 
-	return confirmation, msg.OrderError_NONE
+	return confirmation, types.OrderError_NONE
 }
 
-func (e *engine) AmendOrder(order *msg.Amendment) (*msg.OrderConfirmation, msg.OrderError) {
+func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, types.OrderError) {
 	e.log.Debug("ExecutionEngine: Amend order")
 
 	// stores get me order with this reference
 	existingOrder, err := e.orderStore.GetByPartyAndId(order.Party, order.Id)
 	if err != nil {
-		e.log.Errorf("Error: %+v\n", msg.OrderError_INVALID_ORDER_REFERENCE)
-		return &msg.OrderConfirmation{}, msg.OrderError_INVALID_ORDER_REFERENCE
+		e.log.Errorf("Error: %+v\n", types.OrderError_INVALID_ORDER_REFERENCE)
+		return &types.OrderConfirmation{}, types.OrderError_INVALID_ORDER_REFERENCE
 	}
 
 	e.log.Debugf("Existing order found: %+v\n", existingOrder)
@@ -115,7 +115,7 @@ func (e *engine) AmendOrder(order *msg.Amendment) (*msg.OrderConfirmation, msg.O
 		e.log.Errorf("error getting current vega time: %s", err)
 	}
 
-	newOrder := msg.OrderPool.Get().(*msg.Order)
+	newOrder := types.OrderPool.Get().(*types.Order)
 	newOrder.Id = existingOrder.Id
 	newOrder.Market = existingOrder.Market
 	newOrder.Party = existingOrder.Party
@@ -150,7 +150,7 @@ func (e *engine) AmendOrder(order *msg.Amendment) (*msg.OrderConfirmation, msg.O
 		}
 	}
 
-	if newOrder.Type == msg.Order_GTT && order.ExpirationTimestamp != 0 && order.ExpirationDatetime != "" {
+	if newOrder.Type == types.Order_GTT && order.ExpirationTimestamp != 0 && order.ExpirationDatetime != "" {
 		newOrder.ExpirationTimestamp = order.ExpirationTimestamp
 		newOrder.ExpirationDatetime = order.ExpirationDatetime
 		expiryChange = true
@@ -168,18 +168,18 @@ func (e *engine) AmendOrder(order *msg.Amendment) (*msg.OrderConfirmation, msg.O
 	}
 
 	e.log.Infof("Edit not allowed")
-	return &msg.OrderConfirmation{}, msg.OrderError_EDIT_NOT_ALLOWED
+	return &types.OrderConfirmation{}, types.OrderError_EDIT_NOT_ALLOWED
 }
 
-func (e *engine) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
+func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError) {
 	e.log.Info("ExecutionEngine: Cancel order")
 
 	// -----------------------------------------------//
 	//----------------- MATCHING ENGINE --------------//
 	// 1) cancel order in matching engine
-	cancellation, errorMsg := e.matching.CancelOrder(order)
-	if cancellation == nil || errorMsg != msg.OrderError_NONE {
-		return nil, errorMsg
+	cancellation, errortypes := e.matching.CancelOrder(order)
+	if cancellation == nil || errortypes != types.OrderError_NONE {
+		return nil, errortypes
 	}
 
 	// -----------------------------------------------//
@@ -194,28 +194,28 @@ func (e *engine) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.Orde
 	}
 
 	// ------------------------------------------------//
-	return cancellation, msg.OrderError_NONE
+	return cancellation, types.OrderError_NONE
 }
 
-func (e engine) orderCancelReplace(existingOrder, newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
-	cancellationMessage, errMsg := e.CancelOrder(existingOrder)
+func (e engine) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, types.OrderError) {
+	cancellationMessage, errtypes := e.CancelOrder(existingOrder)
 	e.log.Debugf("ExecutionEngine: cancellationMessage: %+v", cancellationMessage)
-	if errMsg != msg.OrderError_NONE {
-		e.log.Errorf("Failed to cancel and replace order: %s -> %s (%s)", existingOrder, newOrder, errMsg)
-		return &msg.OrderConfirmation{}, errMsg
+	if errtypes != types.OrderError_NONE {
+		e.log.Errorf("Failed to cancel and replace order: %s -> %s (%s)", existingOrder, newOrder, errtypes)
+		return &types.OrderConfirmation{}, errtypes
 	}
 	return e.SubmitOrder(newOrder)
 }
 
-func (e *engine) orderAmendInPlace(newOrder *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
-	errMsg := e.matching.AmendOrder(newOrder)
-	if errMsg != msg.OrderError_NONE {
-		e.log.Errorf("Failed to amend in place order: %s (%s)", newOrder, errMsg)
-		return &msg.OrderConfirmation{}, errMsg
+func (e *engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, types.OrderError) {
+	errtypes := e.matching.AmendOrder(newOrder)
+	if errtypes != types.OrderError_NONE {
+		e.log.Errorf("Failed to amend in place order: %s (%s)", newOrder, errtypes)
+		return &types.OrderConfirmation{}, errtypes
 	}
 	err := e.orderStore.Put(*newOrder)
 	if err != nil {
 		e.log.Errorf("Failed to update order store for amend in place: %s - %s", newOrder, err)
 	}
-	return &msg.OrderConfirmation{}, msg.OrderError_NONE
+	return &types.OrderConfirmation{}, types.OrderError_NONE
 }

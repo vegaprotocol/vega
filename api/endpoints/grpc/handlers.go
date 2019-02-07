@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
+
 	"vega/api"
 	"vega/internal/candles"
 	"vega/internal/filtering"
@@ -11,7 +12,7 @@ import (
 	"vega/internal/orders"
 	"vega/internal/trades"
 	"vega/internal/vegatime"
-	"vega/msg"
+	types "vega/proto"
 
 	"github.com/pkg/errors"
 )
@@ -29,19 +30,19 @@ type Handlers struct {
 const defaultLimit = uint64(1000)
 
 // CreateOrder is used to request sending an order into the VEGA platform, via consensus.
-func (h *Handlers) CreateOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
+func (h *Handlers) CreateOrder(ctx context.Context, order *types.Order) (*api.OrderResponse, error) {
 	success, reference, err := h.OrderService.CreateOrder(ctx, order)
 	return &api.OrderResponse{Success: success, Reference: reference}, err
 }
 
 // CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
-func (h *Handlers) CancelOrder(ctx context.Context, order *msg.Order) (*api.OrderResponse, error) {
+func (h *Handlers) CancelOrder(ctx context.Context, order *types.Order) (*api.OrderResponse, error) {
 	success, err := h.OrderService.CancelOrder(ctx, order)
 	return &api.OrderResponse{Success: success}, err
 }
 
 // AmendOrder is used to request editing an order onto the VEGA platform, via consensus.
-func (h *Handlers) AmendOrder(ctx context.Context, amendment *msg.Amendment) (*api.OrderResponse, error) {
+func (h *Handlers) AmendOrder(ctx context.Context, amendment *types.Amendment) (*api.OrderResponse, error) {
 	success, err := h.OrderService.AmendOrder(ctx, amendment)
 	return &api.OrderResponse{Success: success}, err
 }
@@ -63,7 +64,7 @@ func (h *Handlers) OrdersByMarket(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var response = &api.OrdersByMarketResponse{}
 	if len(o) > 0 {
 		response.Orders = o
@@ -111,7 +112,7 @@ func (h *Handlers) Markets(ctx context.Context,
 }
 
 // OrdersByMarketAndId searches for the given order by Id and Market. If found it will return
-// an Order msg otherwise it will return an error.
+// an Order types otherwise it will return an error.
 func (h *Handlers) OrderByMarketAndId(ctx context.Context,
 	request *api.OrderByMarketAndIdRequest) (*api.OrderByMarketAndIdResponse, error) {
 
@@ -217,7 +218,7 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 	return response, nil
 }
 
-func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsRequest) (*msg.Statistics, error) {
+func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsRequest) (*types.Statistics, error) {
 	return nil, errors.New("Statistics endpoint deprecated")
 }
 

@@ -1,7 +1,7 @@
 package matching
 
 import (
-	"vega/msg"
+	types "vega/proto"
 
 	"github.com/pkg/errors"
 )
@@ -11,11 +11,11 @@ type OrderBookSide struct {
 	levels      []*PriceLevel
 }
 
-func (s *OrderBookSide) addOrder(o *msg.Order, side msg.Side) {
+func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
 	s.getPriceLevel(o.Price, side).addOrder(o)
 }
 
-func (s *OrderBookSide) amendOrder(orderAmended *msg.Order) msg.OrderError {
+func (s *OrderBookSide) amendOrder(orderAmended *types.Order) types.OrderError {
 	priceLevelIndex := -1
 	orderIndex := -1
 
@@ -33,26 +33,26 @@ func (s *OrderBookSide) amendOrder(orderAmended *msg.Order) msg.OrderError {
 	}
 
 	if priceLevelIndex == -1 || orderIndex == -1 {
-		return msg.OrderError_ORDER_NOT_FOUND
+		return types.OrderError_ORDER_NOT_FOUND
 	}
 
 	if s.levels[priceLevelIndex].orders[orderIndex].Party != orderAmended.Party {
-		return msg.OrderError_ORDER_AMEND_FAILURE
+		return types.OrderError_ORDER_AMEND_FAILURE
 	}
 
 	if s.levels[priceLevelIndex].orders[orderIndex].Size < orderAmended.Size {
-		return msg.OrderError_ORDER_AMEND_FAILURE
+		return types.OrderError_ORDER_AMEND_FAILURE
 	}
 
 	if s.levels[priceLevelIndex].orders[orderIndex].Reference != orderAmended.Reference {
-		return msg.OrderError_ORDER_AMEND_FAILURE
+		return types.OrderError_ORDER_AMEND_FAILURE
 	}
 
 	s.levels[priceLevelIndex].orders[orderIndex] = orderAmended
-	return msg.OrderError_NONE
+	return types.OrderError_NONE
 }
 
-func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
+func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 	// TODO: implement binary search on the slice
 	toDelete := -1
 	toRemove := -1
@@ -84,10 +84,10 @@ func (s *OrderBookSide) RemoveOrder(o *msg.Order) error {
 	return nil
 }
 
-func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
+func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
 	// TODO: implement binary search on the slice
 	at := -1
-	if side == msg.Side_Buy {
+	if side == types.Side_Buy {
 		// buy side levels should be ordered in descending
 		for i, level := range s.levels {
 			if level.price > price {
@@ -121,18 +121,18 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side msg.Side) *PriceLevel {
 	return level
 }
 
-func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uint64) {
+func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
 
 	var (
-		trades            []*msg.Trade
-		impactedOrders    []*msg.Order
+		trades            []*types.Trade
+		impactedOrders    []*types.Order
 		lastTradedPrice   uint64
 		totalVolumeToFill uint64
 	)
 
-	if agg.Type == msg.Order_FOK {
+	if agg.Type == types.Order_FOK {
 
-		if agg.Side == msg.Side_Sell {
+		if agg.Side == types.Side_Sell {
 			for _, level := range s.levels {
 				if level.price >= agg.Price {
 					totalVolumeToFill += level.volume
@@ -140,7 +140,7 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 			}
 		}
 
-		if agg.Side == msg.Side_Buy {
+		if agg.Side == types.Side_Buy {
 			for _, level := range s.levels {
 				if level.price <= agg.Price {
 					totalVolumeToFill += level.volume
@@ -155,7 +155,7 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 		}
 	}
 
-	if agg.Side == msg.Side_Sell {
+	if agg.Side == types.Side_Sell {
 		for _, level := range s.levels {
 			// buy side levels are ordered descending
 			if level.price >= agg.Price {
@@ -171,7 +171,7 @@ func (s *OrderBookSide) uncross(agg *msg.Order) ([]*msg.Trade, []*msg.Order, uin
 		}
 	}
 
-	if agg.Side == msg.Side_Buy {
+	if agg.Side == types.Side_Buy {
 		for _, level := range s.levels {
 			// sell side levels are ordered ascending
 			if level.price <= agg.Price {

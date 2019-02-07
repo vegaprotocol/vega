@@ -2,10 +2,10 @@ package storage
 
 import (
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"vega/filters"
-	"vega/msg"
 	"strings"
+	"testing"
+	"vega/internal/filtering"
+	types "vega/proto"
 )
 
 func TestStorage_NewTradeStore(t *testing.T) {
@@ -17,7 +17,7 @@ func TestStorage_NewTradeStore(t *testing.T) {
 	assert.Nil(t, err)
 
 	config.TradeStoreDirPath = ""
-	
+
 	tradeStore, err = NewTradeStore(config)
 	assert.Nil(t, tradeStore)
 	assert.NotNil(t, err)
@@ -40,7 +40,7 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 	defer tradeStore.Close()
 
 	insertTestData(t, orderStore, tradeStore)
-	queryFilters := &filters.TradeQueryFilters{}
+	queryFilters := &filtering.TradeQueryFilters{}
 	trades, err := tradeStore.GetByOrderId("d41d8cd98f00b204e9800998ecf9999a", queryFilters)
 
 	assert.Nil(t, err)
@@ -70,7 +70,7 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 
 	// Want last 3 trades (timestamp descending)
 	last := uint64(3)
-	queryFilters := &filters.TradeQueryFilters{}
+	queryFilters := &filtering.TradeQueryFilters{}
 	queryFilters.Last = &last
 
 	// Expect 3 trades with descending trade-ids
@@ -84,7 +84,7 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 	// Want last 3 trades (timestamp descending) and skip 2
 	last = uint64(3)
 	skip := uint64(2)
-	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters = &filtering.TradeQueryFilters{}
 	queryFilters.Last = &last
 	queryFilters.Skip = &skip
 
@@ -106,7 +106,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 
 	tradeStore, err := NewTradeStore(config)
 	assert.Nil(t, err)
-	
+
 	defer orderStore.Close()
 	defer tradeStore.Close()
 
@@ -119,7 +119,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 
 	// Want first 2 trades (timestamp ascending)
 	first := uint64(2)
-	queryFilters := &filters.TradeQueryFilters{}
+	queryFilters := &filtering.TradeQueryFilters{}
 	queryFilters.First = &first
 
 	trades, err = tradeStore.GetByMarket(testMarket, queryFilters)
@@ -130,7 +130,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 
 	// Want last 3 trades (timestamp descending)
 	last := uint64(3)
-	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters = &filtering.TradeQueryFilters{}
 	queryFilters.Last = &last
 
 	trades, err = tradeStore.GetByMarket(testMarket, queryFilters)
@@ -142,7 +142,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 
 	// Want first 2 trades after skipping 2
 	skip := uint64(2)
-	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters = &filtering.TradeQueryFilters{}
 	queryFilters.First = &first
 	queryFilters.Skip = &skip
 
@@ -153,7 +153,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	assert.Equal(t, "trade-id-4", trades[1].Id)
 
 	//Want last 3 trades after skipping 2
-	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters = &filtering.TradeQueryFilters{}
 	queryFilters.Last = &last
 	queryFilters.Skip = &skip
 
@@ -168,7 +168,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	// effectively skipping past the end of the set, so no
 	// trades should be available at that offset
 	skip = uint64(50)
-	queryFilters = &filters.TradeQueryFilters{}
+	queryFilters = &filtering.TradeQueryFilters{}
 	queryFilters.Last = &last
 	queryFilters.Skip = &skip
 
@@ -181,105 +181,105 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 func insertTestData(t *testing.T, orderStore OrderStore, tradeStore TradeStore) {
 
 	// Arrange seed orders & trades
-	orderA := &msg.Order{
+	orderA := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf9999a",
 		Market:    testMarket,
 		Party:     testPartyA,
-		Side:      msg.Side_Sell,
+		Side:      types.Side_Sell,
 		Price:     100,
 		Size:      1000,
 		Remaining: 1000,
-		Type:      msg.Order_GTC,
+		Type:      types.Order_GTC,
 		Timestamp: 0,
-		Status:    msg.Order_Active,
+		Status:    types.Order_Active,
 	}
 
-	orderB := &msg.Order{
+	orderB := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427h",
 		Market:    testMarket,
 		Party:     testPartyB,
-		Side:      msg.Side_Buy,
+		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      100,
 		Remaining: 100,
-		Type:      msg.Order_GTC,
+		Type:      types.Order_GTC,
 		Timestamp: 1,
-		Status:    msg.Order_Active,
+		Status:    types.Order_Active,
 	}
 
-	trade1 := &msg.Trade{
+	trade1 := &types.Trade{
 		Id:        "trade-id-1",
 		Price:     100,
 		Size:      100,
 		Market:    testMarket,
 		Buyer:     testPartyB,
 		Seller:    testPartyA,
-		Aggressor: msg.Side_Sell,
+		Aggressor: types.Side_Sell,
 		Timestamp: 1,
 		BuyOrder:  orderB.Id,
 		SellOrder: orderA.Id,
 	}
 
-	trade2 := &msg.Trade{
+	trade2 := &types.Trade{
 		Id:        "trade-id-2",
 		Price:     100,
 		Size:      100,
 		Market:    testMarket,
 		Buyer:     testPartyB,
 		Seller:    testPartyA,
-		Aggressor: msg.Side_Sell,
+		Aggressor: types.Side_Sell,
 		Timestamp: 1,
 		BuyOrder:  orderB.Id,
 		SellOrder: orderA.Id,
 	}
 
-	trade3 := &msg.Trade{
+	trade3 := &types.Trade{
 		Id:        "trade-id-3",
 		Price:     100,
 		Size:      100,
 		Market:    testMarket,
 		Buyer:     testPartyB,
 		Seller:    testPartyA,
-		Aggressor: msg.Side_Sell,
+		Aggressor: types.Side_Sell,
 		Timestamp: 1,
 		BuyOrder:  orderB.Id,
 		SellOrder: orderA.Id,
 	}
 
-	trade4 := &msg.Trade{
+	trade4 := &types.Trade{
 		Id:        "trade-id-4",
 		Price:     100,
 		Size:      100,
 		Market:    testMarket,
 		Buyer:     testPartyB,
 		Seller:    testPartyA,
-		Aggressor: msg.Side_Sell,
+		Aggressor: types.Side_Sell,
 		Timestamp: 1,
 		BuyOrder:  orderB.Id,
 		SellOrder: orderA.Id,
 	}
 
-	trade5 := &msg.Trade{
+	trade5 := &types.Trade{
 		Id:        "trade-id-5",
 		Price:     100,
 		Size:      100,
 		Market:    testMarket,
 		Buyer:     testPartyB,
 		Seller:    testPartyA,
-		Aggressor: msg.Side_Sell,
+		Aggressor: types.Side_Sell,
 		Timestamp: 1,
 		BuyOrder:  orderB.Id,
 		SellOrder: orderA.Id,
 	}
 
-	trade6 := &msg.Trade{
+	trade6 := &types.Trade{
 		Id:        "trade-id-6",
 		Price:     100,
 		Size:      100,
 		Market:    testMarket,
 		Buyer:     testPartyB,
 		Seller:    testPartyA,
-		Aggressor: msg.Side_Sell,
+		Aggressor: types.Side_Sell,
 		Timestamp: 1,
 		BuyOrder:  orderB.Id,
 		SellOrder: orderA.Id,
@@ -308,4 +308,3 @@ func insertTestData(t *testing.T, orderStore OrderStore, tradeStore TradeStore) 
 	orderStore.Commit()
 	tradeStore.Commit()
 }
-

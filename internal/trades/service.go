@@ -8,18 +8,18 @@ import (
 	"vega/internal/logging"
 	"vega/internal/storage"
 
-	"vega/msg"
+	types "vega/proto"
 )
 
 type Service interface {
-	GetByMarket(market string, filters *filtering.TradeQueryFilters) (trades []*msg.Trade, err error)
-	GetByParty(party string, filters *filtering.TradeQueryFilters) (trades []*msg.Trade, err error)
-	GetByOrderId(orderId string, filters *filtering.TradeQueryFilters) (trades []*msg.Trade, err error)
-	GetByMarketAndId(market string, id string) (trade *msg.Trade, err error)
-	GetByPartyAndId(party string, id string) (trade *msg.Trade, err error)
-	GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error)
-	ObservePositions(ctx context.Context, party string) (positions <-chan msg.MarketPosition, ref uint64)
-	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []msg.Trade, ref uint64)
+	GetByMarket(market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByParty(party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByOrderId(orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByMarketAndId(market string, id string) (trade *types.Trade, err error)
+	GetByPartyAndId(party string, id string) (trade *types.Trade, err error)
+	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
+	ObservePositions(ctx context.Context, party string) (positions <-chan types.MarketPosition, ref uint64)
+	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 }
 
 type tradeService struct {
@@ -37,7 +37,7 @@ func NewTradeService(tradeStore storage.TradeStore, riskStore storage.RiskStore)
 	}
 }
 
-func (t *tradeService) GetByMarket(market string, filters *filtering.TradeQueryFilters) (trades []*msg.Trade, err error) {
+func (t *tradeService) GetByMarket(market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
 	trades, err = t.tradeStore.GetByMarket(market, filters)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (t *tradeService) GetByMarket(market string, filters *filtering.TradeQueryF
 	return trades, err
 }
 
-func (t *tradeService) GetByParty(party string, filters *filtering.TradeQueryFilters) (trades []*msg.Trade, err error) {
+func (t *tradeService) GetByParty(party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
 	trades, err = t.tradeStore.GetByParty(party, filters)
 	if err != nil {
 		return nil, err
@@ -53,23 +53,23 @@ func (t *tradeService) GetByParty(party string, filters *filtering.TradeQueryFil
 	return trades, err
 }
 
-func (t *tradeService) GetByMarketAndId(market string, id string) (trade *msg.Trade, err error) {
+func (t *tradeService) GetByMarketAndId(market string, id string) (trade *types.Trade, err error) {
 	trade, err = t.tradeStore.GetByMarketAndId(market, id)
 	if err != nil {
-		return &msg.Trade{}, err
+		return &types.Trade{}, err
 	}
 	return trade, err
 }
 
-func (t *tradeService) GetByPartyAndId(party string, id string) (trade *msg.Trade, err error) {
+func (t *tradeService) GetByPartyAndId(party string, id string) (trade *types.Trade, err error) {
 	trade, err = t.tradeStore.GetByPartyAndId(party, id)
 	if err != nil {
-		return &msg.Trade{}, err
+		return &types.Trade{}, err
 	}
 	return trade, err
 }
 
-func (t *tradeService) GetByOrderId(orderId string, filters *filtering.TradeQueryFilters) (trades []*msg.Trade, err error) {
+func (t *tradeService) GetByOrderId(orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
 	trades, err = t.tradeStore.GetByOrderId(orderId, filters)
 	if err != nil {
 		return nil, err
@@ -77,12 +77,12 @@ func (t *tradeService) GetByOrderId(orderId string, filters *filtering.TradeQuer
 	return trades, err
 }
 
-func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, uint64) {
-	trades := make(chan []msg.Trade)
-	internal := make(chan []msg.Trade)
+func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []types.Trade, uint64) {
+	trades := make(chan []types.Trade)
+	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []msg.Trade, ctx context.Context) {
+	go func(id uint64, internal chan []types.Trade, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
 		t.log.Debugf("TradeService -> Subscriber closed connection: %d [%s]", id, ip)
@@ -96,7 +96,7 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 		ip := logging.IPAddressFromContext(ctx)
 		for v := range internal {
 
-			validatedTrades := make([]msg.Trade, 0)
+			validatedTrades := make([]types.Trade, 0)
 			for _, item := range v {
 				if market != nil && item.Market != *market {
 					continue
@@ -122,12 +122,12 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 	return trades, ref
 }
 
-func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-chan msg.MarketPosition, uint64) {
-	positions := make(chan msg.MarketPosition)
-	internal := make(chan []msg.Trade)
+func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-chan types.MarketPosition, uint64) {
+	positions := make(chan types.MarketPosition)
+	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []msg.Trade, ctx context.Context) {
+	go func(id uint64, internal chan []types.Trade, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
 		t.log.Debugf("TradeService -> Positions subscriber closed connection: % [%s]", id, ip)
@@ -159,7 +159,7 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 	return positions, ref
 }
 
-func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*msg.MarketPosition, err error) {
+func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error) {
 	marketBuckets := t.tradeStore.GetTradesBySideBuckets(party)
 
 	var (
@@ -222,7 +222,7 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 
 		riskFactor = t.getRiskFactorByMarketAndPositionSign(ctx, market, OpenVolumeSign)
 
-		marketPositions := &msg.MarketPosition{}
+		marketPositions := &types.MarketPosition{}
 		marketPositions.Market = market
 		marketPositions.RealisedVolume = int64(ClosedContracts)
 		marketPositions.UnrealisedVolume = int64(OpenContracts)

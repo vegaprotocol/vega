@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "msg";
+option go_package = "proto";
 enum Side { Buy = 0; Sell = 1; }
 
 enum Interval { I1M = 0; I5M = 1; I15M = 2; I1H = 3; I6H = 4; I1D = 5; }

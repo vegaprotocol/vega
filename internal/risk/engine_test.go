@@ -2,13 +2,13 @@ package risk
 
 import (
 	"testing"
-	"vega/msg"
+	types "vega/proto"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRiskEngine_AddNewMarket(t *testing.T) {
 	re := NewRiskEngine()
-	newMarket := &msg.Market{Name: "BTC/DEC19"}
+	newMarket := &types.Market{Name: "BTC/DEC19"}
 	re.AddNewMarket(newMarket)
 	riskFactorLong, riskFactorShort, err := re.GetRiskFactors(newMarket.Name)
 	assert.Nil(t, err)
@@ -18,7 +18,7 @@ func TestRiskEngine_AddNewMarket(t *testing.T) {
 
 func TestRiskEngine_CalibrateRiskModel(t *testing.T) {
 	re := NewRiskEngine()
-	newMarket := &msg.Market{Name: "BTC/DEC19"}
+	newMarket := &types.Market{Name: "BTC/DEC19"}
 	re.AddNewMarket(newMarket)
 	riskFactorLong, riskFactorShort, err := re.GetRiskFactors(newMarket.Name)
 	assert.Nil(t, err)

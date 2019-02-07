@@ -1,12 +1,10 @@
 package blockchain
 
 import (
-	"context"
 	"fmt"
-	"time"
+
 	"vega/internal/execution"
 	"vega/internal/vegatime"
-	"vega/tendermint/rpc"
 
 	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tmlibs/common"
@@ -20,7 +18,7 @@ type Server struct {
 }
 
 func NewServer(config *Config, ex execution.Engine, time vegatime.Service) *Server {
-	stats := NewStats()   // package specific statistics
+	stats := NewStats() // package specific statistics
 	app := NewAbciApplication(config, ex, time, stats)
 	return &Server{config, app, ex, time}
 }
@@ -40,18 +38,8 @@ func (s *Server) Start() error {
 	}
 
 	//vega.Statistics.Status = msg.AppStatus_CHAIN_NOT_FOUND
-
-	blockchainClient := NewClient()
-	var genesis *rpc.Genesis
-	for {
-		s.log.Infof("Attempting to retrieve Tendermint genesis time...")
-		genesis, err = blockchainClient.GetGenesisTime(context.Background())
-		if genesis != nil {
-			break
-		}
-		time.Sleep(5 * time.Second)
-	}
-	s.log.Infof("Genesis time set to: %+v\n", genesis.GenesisTime)
+	// todo(cdm): app comms to get status if chain replaying etc
+	// handshake stuff / security ensure app hashes match?
 	//vega.SetGenesisTime(genesis.GenesisTime)
 	//vega.Statistics.Status = msg.AppStatus_APP_CONNECTED
 

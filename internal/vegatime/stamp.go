@@ -2,7 +2,7 @@ package vegatime
 
 import (
 	"time"
-	"vega/msg"
+	types "vega/proto"
 )
 
 type Stamp uint64
@@ -46,20 +46,20 @@ func (s Stamp) Datetime() time.Time {
 	return time.Unix(s.Seconds(), s.NanoSeconds())
 }
 
-func (s Stamp) RoundToNearest(interval msg.Interval) Stamp {
+func (s Stamp) RoundToNearest(interval types.Interval) Stamp {
 	t := s.Datetime()
 	switch interval {
-	case msg.Interval_I1M:
+	case types.Interval_I1M:
 		return Stamp(uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location()).UnixNano()))
-	case msg.Interval_I5M:
+	case types.Interval_I5M:
 		return Stamp(uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/5)*5, 0, 0, t.Location()).UnixNano()))
-	case msg.Interval_I15M:
+	case types.Interval_I15M:
 		return Stamp(uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), (t.Minute()/15)*15, 0, 0, t.Location()).UnixNano()))
-	case msg.Interval_I1H:
+	case types.Interval_I1H:
 		return Stamp(uint64(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location()).UnixNano()))
-	case msg.Interval_I6H:
+	case types.Interval_I6H:
 		return Stamp(uint64(time.Date(t.Year(), t.Month(), t.Day(), (t.Hour()/6)*6, 0, 0, 0, t.Location()).UnixNano()))
-	case msg.Interval_I1D:
+	case types.Interval_I1D:
 		return Stamp(uint64(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).UnixNano()))
 	}
 

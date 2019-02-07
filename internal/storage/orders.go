@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"vega/internal/filtering"
-	"vega/msg"
+	types "vega/proto"
 
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
@@ -13,16 +13,16 @@ import (
 )
 
 type OrderStore interface {
-	Subscribe(orders chan<- []msg.Order) uint64
+	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
 
 	// Post adds an order to the store, adds
 	// to queue the operation to be committed later.
-	Post(order msg.Order) error
+	Post(order types.Order) error
 
 	// Put updates an order in the store, adds
 	// to queue the operation to be committed later.
-	Put(order msg.Order) error
+	Put(order types.Order) error
 
 	// Commit typically saves any operations that are queued to underlying storage medium,
 	// if supported by underlying storage implementation.
@@ -33,25 +33,25 @@ type OrderStore interface {
 	Close() error
 
 	// GetByMarket retrieves all orders for a given Market.
-	GetByMarket(market string, filters *filtering.OrderQueryFilters) ([]*msg.Order, error)
+	GetByMarket(market string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
 	// GetByMarketAndId retrieves an order for a given Market and id.
-	GetByMarketAndId(market string, id string) (*msg.Order, error)
+	GetByMarketAndId(market string, id string) (*types.Order, error)
 	// GetByParty retrieves orders for a given party.
-	GetByParty(party string, filters *filtering.OrderQueryFilters) ([]*msg.Order, error)
+	GetByParty(party string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
 	// GetByPartyAndId retrieves an order for a given Party and id.
-	GetByPartyAndId(party string, id string) (*msg.Order, error)
+	GetByPartyAndId(party string, id string) (*types.Order, error)
 
 	// GetMarketDepth calculates and returns depth of market for a given market.
-	GetMarketDepth(market string) (msg.MarketDepth, error)
+	GetMarketDepth(market string) (types.MarketDepth, error)
 }
 
 // badgerOrderStore is a package internal data struct that implements the OrderStore interface.
 type badgerOrderStore struct {
 	*Config
 	badger       *badgerStore
-	subscribers  map[uint64]chan<- []msg.Order
+	subscribers  map[uint64]chan<- []types.Order
 	subscriberId uint64
-	buffer       []msg.Order
+	buffer       []types.Order
 	mu           sync.Mutex
 	depth        map[string]MarketDepth
 }
@@ -69,14 +69,14 @@ func NewOrderStore(c *Config) (OrderStore, error) {
 		Config:      c,
 		badger:      &bs,
 		depth:       make(map[string]MarketDepth, 0),
-		subscribers: make(map[uint64]chan<- []msg.Order),
-		buffer:      make([]msg.Order, 0),
+		subscribers: make(map[uint64]chan<- []types.Order),
+		buffer:      make([]types.Order, 0),
 	}, nil
 }
 
 // Subscribe to a channel of new or updated orders. The subscriber id will be returned as a uint64 value
 // and must be retained for future reference and to unsubscribe.
-func (os *badgerOrderStore) Subscribe(orders chan<- []msg.Order) uint64 {
+func (os *badgerOrderStore) Subscribe(orders chan<- []types.Order) uint64 {
 	os.mu.Lock()
 	defer os.mu.Unlock()
 
@@ -107,7 +107,7 @@ func (os *badgerOrderStore) Unsubscribe(id uint64) error {
 
 // Post adds an order to the badger store, adds
 // to queue the operation to be committed later.
-func (os *badgerOrderStore) Post(order msg.Order) error {
+func (os *badgerOrderStore) Post(order types.Order) error {
 	// validate an order book (depth of market) exists for order market
 	if exists := os.depth[order.Market]; exists == nil {
 		os.depth[order.Market] = NewMarketDepth(order.Market)
@@ -119,7 +119,7 @@ func (os *badgerOrderStore) Post(order msg.Order) error {
 
 // Put updates an order in the badger store, adds
 // to queue the operation to be committed later.
-func (os *badgerOrderStore) Put(order msg.Order) error {
+func (os *badgerOrderStore) Put(order types.Order) error {
 	os.addToBuffer(order)
 	return nil
 }
@@ -133,7 +133,7 @@ func (os *badgerOrderStore) Commit() error {
 
 	os.mu.Lock()
 	items := os.buffer
-	os.buffer = make([]msg.Order, 0)
+	os.buffer = make([]types.Order, 0)
 	os.mu.Unlock()
 
 	err := os.writeBatch(items)
@@ -155,8 +155,8 @@ func (os *badgerOrderStore) Close() error {
 
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filtering.OrderQueryFilters) ([]*msg.Order, error) {
-	var result []*msg.Order
+func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
+	var result []*types.Order
 	if queryFilters == nil {
 		queryFilters = &filtering.OrderQueryFilters{}
 	}
@@ -173,7 +173,7 @@ func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filtering.O
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		item := it.Item()
 		orderBuf, _ := item.ValueCopy(nil)
-		var order msg.Order
+		var order types.Order
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
 			os.log.Errorf("unmarshal failed %s", err.Error())
 			return nil, err
@@ -190,8 +190,8 @@ func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filtering.O
 }
 
 // GetByMarketAndId retrieves an order for a given Market and id, any errors will be returned immediately.
-func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*msg.Order, error) {
-	var order msg.Order
+func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*types.Order, error) {
+	var order types.Order
 
 	txn := os.badger.readTransaction()
 	defer txn.Discard()
@@ -211,8 +211,8 @@ func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*msg.Ord
 
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *badgerOrderStore) GetByParty(party string, queryFilters *filtering.OrderQueryFilters) ([]*msg.Order, error) {
-	var result []*msg.Order
+func (os *badgerOrderStore) GetByParty(party string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
+	var result []*types.Order
 
 	if queryFilters == nil {
 		queryFilters = &filtering.OrderQueryFilters{}
@@ -236,7 +236,7 @@ func (os *badgerOrderStore) GetByParty(party string, queryFilters *filtering.Ord
 			return nil, err
 		}
 		orderBuf, _ := orderItem.ValueCopy(nil)
-		var order msg.Order
+		var order types.Order
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
 			os.log.Errorf("unmarshal failed %s", err.Error())
 			return nil, err
@@ -252,8 +252,8 @@ func (os *badgerOrderStore) GetByParty(party string, queryFilters *filtering.Ord
 }
 
 // GetByPartyAndId retrieves a trade for a given Party and id, any errors will be returned immediately.
-func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*msg.Order, error) {
-	var order msg.Order
+func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*types.Order, error) {
+	var order types.Order
 
 	err := os.badger.db.View(func(txn *badger.Txn) error {
 		partyKey := os.badger.orderPartyKey(party, id)
@@ -288,19 +288,19 @@ func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*msg.Order
 }
 
 // GetMarketDepth calculates and returns order book/depth of market for a given market.
-func (os *badgerOrderStore) GetMarketDepth(market string) (msg.MarketDepth, error) {
+func (os *badgerOrderStore) GetMarketDepth(market string) (types.MarketDepth, error) {
 
 	// validate
 	if exists := os.depth[market]; exists == nil {
-		return msg.MarketDepth{}, errors.New(fmt.Sprintf("market depth for %s does not exist", market))
+		return types.MarketDepth{}, errors.New(fmt.Sprintf("market depth for %s does not exist", market))
 	}
 
 	// load from store
 	buy := os.depth[market].BuySide()
 	sell := os.depth[market].SellSide()
 
-	var buyPtr []*msg.PriceLevel
-	var sellPtr []*msg.PriceLevel
+	var buyPtr []*types.PriceLevel
+	var sellPtr []*types.PriceLevel
 
 	// recalculate accumulated volume
 	// --- buy side ---
@@ -326,19 +326,19 @@ func (os *badgerOrderStore) GetMarketDepth(market string) (msg.MarketDepth, erro
 	}
 
 	// return new re-calculated market depth for each side of order book
-	orderBook := msg.MarketDepth{Name: market, Buy: buyPtr, Sell: sellPtr}
+	orderBook := types.MarketDepth{Name: market, Buy: buyPtr, Sell: sellPtr}
 	return orderBook, nil
 }
 
 // add an order to the write-batch/notify buffer.
-func (os *badgerOrderStore) addToBuffer(o msg.Order) {
+func (os *badgerOrderStore) addToBuffer(o types.Order) {
 	os.mu.Lock()
 	os.buffer = append(os.buffer, o)
 	os.mu.Unlock()
 }
 
 // notify any subscribers of order updates.
-func (os *badgerOrderStore) notify(items []msg.Order) error {
+func (os *badgerOrderStore) notify(items []types.Order) error {
 	if len(items) == 0 {
 		return nil
 	}
@@ -367,7 +367,7 @@ func (os *badgerOrderStore) notify(items []msg.Order) error {
 }
 
 // writeBatch flushes a batch of orders (create/update) to the underlying badger store.
-func (os *badgerOrderStore) writeBatch(batch []msg.Order) error {
+func (os *badgerOrderStore) writeBatch(batch []types.Order) error {
 
 	wb := os.badger.db.NewWriteBatch()
 	defer wb.Cancel()
@@ -421,7 +421,7 @@ type OrderFilter struct {
 	found       uint64
 }
 
-func (f *OrderFilter) apply(order *msg.Order) (include bool) {
+func (f *OrderFilter) apply(order *types.Order) (include bool) {
 	if f.queryFilter.First == nil && f.queryFilter.Last == nil && f.queryFilter.Skip == nil {
 		include = true
 	} else {

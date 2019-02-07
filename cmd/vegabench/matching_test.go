@@ -26,29 +26,29 @@ func BenchmarkMatching100Allocated(b *testing.B) {
 
 func BenchmarkMatching1000Allocated(b *testing.B) {
 	b.ReportAllocs()
-	BenchmarkMatching(1000, b, true, 0, true, 0)
+	BenchmarkMatching(1000, b, true, 0)
 }
 
 func BenchmarkMatching10000Allocated(b *testing.B) {
-	BenchmarkMatching(10000, b, true, 0, true, 0)
+	BenchmarkMatching(10000, b, true, 0)
 }
 
 func BenchmarkMatching100000Allocated(b *testing.B) {
-	BenchmarkMatching(100000, b, true, 0, true, 0)
+	BenchmarkMatching(100000, b, true, 0)
 }
 
 func BenchmarkMatching100Uniform(b *testing.B) {
-	BenchmarkMatching(100, b, true, 1, false, 0)
+	BenchmarkMatching(100, b, false, 0)
 }
 
 func BenchmarkMatching1000Uniform(b *testing.B) {
-	BenchmarkMatching(1000, b, true, 1, false, 0)
+	BenchmarkMatching(1000, b, false, 0)
 }
 
 func BenchmarkMatching10000Uniform(b *testing.B) {
-	BenchmarkMatching(10000, b, true, 1, false, 0)
+	BenchmarkMatching(10000, b, false, 0)
 }
 
 func BenchmarkMatching100000Uniform(b *testing.B) {
-	BenchmarkMatching(100000, b, true, 1, false, 0)
+	BenchmarkMatching(100000, b, false, 0)
 }

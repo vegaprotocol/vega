@@ -5,7 +5,8 @@ import (
 	"time"
 	"vega/internal/execution"
 	"vega/internal/vegatime"
-	"vega/msg"
+
+	types "vega/proto"
 
 	"github.com/pkg/errors"
 )
@@ -14,10 +15,10 @@ type Service interface {
 	Begin() error
 	Commit() error
 
-	SubmitOrder(order *msg.Order) error
-	CancelOrder(order *msg.Order) error
-	AmendOrder(order *msg.Amendment) error
-	ValidateOrder(order *msg.Order) error
+	SubmitOrder(order *types.Order) error
+	CancelOrder(order *types.Order) error
+	AmendOrder(order *types.Amendment) error
+	ValidateOrder(order *types.Order) error
 }
 
 type abciService struct {
@@ -48,7 +49,7 @@ func (s *abciService) Begin() error {
 	return nil
 }
 
-func (s *abciService) ValidateOrder(order *msg.Order) error {
+func (s *abciService) ValidateOrder(order *types.Order) error {
 	s.log.Debug("AbciService: Validating order")
 
 	return nil
@@ -61,7 +62,7 @@ func (s *abciService) Commit() error {
 	return nil
 }
 
-func (s *abciService) SubmitOrder(order *msg.Order) error {
+func (s *abciService) SubmitOrder(order *types.Order) error {
 	if s.logOrderSubmitDebug {
 		s.log.Debugf("AbciService: received a SUBMIT ORDER request: %s", order)
 	}
@@ -86,7 +87,7 @@ func (s *abciService) SubmitOrder(order *msg.Order) error {
 	// increment total orders, even for failures so current ID strategy is valid.
 	s.totalOrders++
 
-	if errorMessage != msg.OrderError_NONE {
+	if errorMessage != types.OrderError_NONE {
 		s.log.Errorf("ABCI order error message (create):")
 		s.log.Errorf("- error: %s", errorMessage)
 		return errors.New(errorMessage.String())
@@ -95,7 +96,7 @@ func (s *abciService) SubmitOrder(order *msg.Order) error {
 	return nil
 }
 
-func (s *abciService) CancelOrder(order *msg.Order) error {
+func (s *abciService) CancelOrder(order *types.Order) error {
 	if s.logOrderCancelDebug {
 		s.log.Debugf("AbciService: received a CANCEL ORDER request")
 	}
@@ -108,7 +109,7 @@ func (s *abciService) CancelOrder(order *msg.Order) error {
 			s.log.Debugf("- cancelled order: %+v", cancellationMessage.Order)
 		}
 	}
-	if errorMessage != msg.OrderError_NONE {
+	if errorMessage != types.OrderError_NONE {
 		s.log.Errorf("ABCI order error message (cancel):")
 		s.log.Errorf("- error: %s", errorMessage.String())
 		return errors.New(errorMessage.String())
@@ -117,7 +118,7 @@ func (s *abciService) CancelOrder(order *msg.Order) error {
 	return nil
 }
 
-func (s *abciService) AmendOrder(order *msg.Amendment) error {
+func (s *abciService) AmendOrder(order *types.Amendment) error {
 	if s.logOrderAmendDebug {
 		s.log.Debugf("AbciService: received a AMEND ORDER request")
 	}
@@ -130,7 +131,7 @@ func (s *abciService) AmendOrder(order *msg.Amendment) error {
 			s.log.Debugf("- cancelled order: %+v\n", confirmationMessage.Order)
 		}
 	}
-	if errorMessage != msg.OrderError_NONE {
+	if errorMessage != types.OrderError_NONE {
 		s.log.Errorf("AbciService: Amend order error from execution engine:")
 		s.log.Errorf("- error: %s", errorMessage.String())
 		return errors.New(errorMessage.String())

@@ -2,7 +2,7 @@ package matching
 
 import (
 	"testing"
-	"vega/msg"
+	types "vega/proto"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -10,27 +10,27 @@ import (
 func TestGetPriceLevel(t *testing.T) {
 	side := &OrderBookSide{}
 	assert.Equal(t, 0, len(side.levels))
-	side.getPriceLevel(100, msg.Side_Sell)
+	side.getPriceLevel(100, types.Side_Sell)
 	assert.Equal(t, 1, len(side.levels))
 
-	side.getPriceLevel(110, msg.Side_Sell)
+	side.getPriceLevel(110, types.Side_Sell)
 	assert.Equal(t, 2, len(side.levels))
 
-	side.getPriceLevel(100, msg.Side_Sell)
+	side.getPriceLevel(100, types.Side_Sell)
 	assert.Equal(t, 2, len(side.levels))
 }
 
 func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 	side := &OrderBookSide{}
-	l := side.getPriceLevel(100, msg.Side_Sell)
-	order := &msg.Order{
+	l := side.getPriceLevel(100, types.Side_Sell)
+	order := &types.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
-		Side:      msg.Side_Sell,
+		Side:      types.Side_Sell,
 		Price:     101,
 		Size:      100,
 		Remaining: 100,
-		Type:      msg.Order_GTC,
+		Type:      types.Order_GTC,
 		Timestamp: 0,
 	}
 
@@ -50,27 +50,27 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 
 func TestUncross(t *testing.T) {
 	side := &OrderBookSide{}
-	l := side.getPriceLevel(100, msg.Side_Sell)
-	passiveOrder := &msg.Order{
+	l := side.getPriceLevel(100, types.Side_Sell)
+	passiveOrder := &types.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
-		Side:      msg.Side_Sell,
+		Side:      types.Side_Sell,
 		Price:     101,
 		Size:      100,
 		Remaining: 100,
-		Type:      msg.Order_GTC,
+		Type:      types.Order_GTC,
 		Timestamp: 0,
 	}
 	l.addOrder(passiveOrder)
 
-	aggresiveOrder := &msg.Order{
+	aggresiveOrder := &types.Order{
 		Market:    "testOrderBook",
 		Party:     "B",
-		Side:      msg.Side_Buy,
+		Side:      types.Side_Buy,
 		Price:     101,
 		Size:      100,
 		Remaining: 100,
-		Type:      msg.Order_GTC,
+		Type:      types.Order_GTC,
 		Timestamp: 0,
 	}
 	filled, trades, impactedOrders := l.uncross(aggresiveOrder)

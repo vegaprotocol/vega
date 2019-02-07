@@ -2,10 +2,10 @@ package storage
 
 import (
 	"vega/internal/filtering"
-	"vega/msg"
+	types "vega/proto"
 )
 
-func applyTradeFilters(trade *msg.Trade, queryFilters *filtering.TradeQueryFilters) bool {
+func applyTradeFilters(trade *types.Trade, queryFilters *filtering.TradeQueryFilters) bool {
 	ok := true
 	count := 0
 
@@ -69,7 +69,7 @@ func applyTradeFilters(trade *msg.Trade, queryFilters *filtering.TradeQueryFilte
 	}
 }
 
-func applyOrderFilters(order *msg.Order, queryFilters *filtering.OrderQueryFilters) bool {
+func applyOrderFilters(order *types.Order, queryFilters *filtering.OrderQueryFilters) bool {
 	ok := true
 	count := 0
 

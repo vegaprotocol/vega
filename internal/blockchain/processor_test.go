@@ -4,13 +4,11 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"vega/msg"
+	types "vega/proto"
 )
 
 func TestDecodeInvalidPayload(t *testing.T) {
 	invalidBytes := []byte{10, 20, 30, 40}
-
-	//processor := abciProcessor{}
 	decodeBytes, cmd, err := txDecode(invalidBytes)
 
 	t.Log(decodeBytes)
@@ -21,7 +19,7 @@ func TestDecodeInvalidPayload(t *testing.T) {
 }
 
 func TestEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
-	order := &msg.Order{
+	order := &types.Order{
 		Id:     "V9-120",
 		Market: "BTC/DEC18",
 		Party:  "PartyA",
@@ -36,7 +34,7 @@ func TestEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	decodeBytes, cmd, err := txDecode(resultBytes)
 	assert.Equal(t, SubmitOrderCommand, cmd)
 
-	resultOrder := &msg.Order{}
+	resultOrder := &types.Order{}
 	err = proto.Unmarshal(decodeBytes, resultOrder)
 	assert.Nil(t, err)
 

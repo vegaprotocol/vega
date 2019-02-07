@@ -1,12 +1,12 @@
 package storage
 
 import (
-	"vega/msg"
+	types "vega/proto"
 )
 
 type MarketBucket struct {
-	Buys                []*msg.Trade
-	Sells               []*msg.Trade
+	Buys                []*types.Trade
+	Sells               []*types.Trade
 	BuyVolume           int64
 	SellVolume          int64
 	MinimumContractSize int64
@@ -27,7 +27,7 @@ func (ts *badgerTradeStore) GetTradesBySideBuckets(party string) map[string]*Mar
 
 	for idx, trade := range tradesByTimestamp {
 		if _, ok := marketBuckets[trade.Market]; !ok {
-			marketBuckets[trade.Market] = &MarketBucket{[]*msg.Trade{}, []*msg.Trade{}, 0, 0, 1}
+			marketBuckets[trade.Market] = &MarketBucket{[]*types.Trade{}, []*types.Trade{}, 0, 0, 1}
 		}
 		if trade.Buyer == party {
 			marketBuckets[trade.Market].Buys = append(marketBuckets[trade.Market].Buys, tradesByTimestamp[idx])

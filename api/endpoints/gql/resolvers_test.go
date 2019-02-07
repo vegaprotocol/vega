@@ -3,7 +3,7 @@ package gql
 import (
 	"context"
 	"testing"
-	"vega/msg"
+	types "vega/proto"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"vega/internal/filtering"
@@ -139,7 +139,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 		[]string{"testMarket", "BTC/DEC19"}, nil,
 	).Times(3)
 
-	depth := msg.MarketDepth{
+	depth := types.MarketDepth{
 		Name: "BTC/DEC19",
 	}
 	mockOrderService.On("GetMarketDepth", ctx, "BTC/DEC19").Return(
@@ -175,13 +175,13 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	// ORDERS
 
 	mockOrderService.On("GetByMarket", ctx, marketId, &filtering.OrderQueryFilters{}).Return(
-		[]*msg.Order{
-			&msg.Order{
+		[]*types.Order{
+			&types.Order{
 				Id:        "order-id-1",
 				Price:     1000,
 				Timestamp: 1,
 			},
-			&msg.Order{
+			&types.Order{
 				Id:        "order-id-2",
 				Price:     2000,
 				Timestamp: 2,

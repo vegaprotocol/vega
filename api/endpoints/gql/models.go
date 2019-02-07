@@ -6,15 +6,15 @@ import (
 	fmt "fmt"
 	io "io"
 	strconv "strconv"
-	msg "vega/msg"
+	types "vega/proto"
 )
 
 type Market struct {
 	Name    string          `json:"name"`
-	Orders  []msg.Order     `json:"orders"`
-	Trades  []msg.Trade     `json:"trades"`
-	Depth   msg.MarketDepth `json:"depth"`
-	Candles []*msg.Candle   `json:"candles"`
+	Orders  []types.Order     `json:"orders"`
+	Trades  []types.Trade     `json:"trades"`
+	Depth   types.MarketDepth `json:"depth"`
+	Candles []*types.Candle   `json:"candles"`
 }
 
 type OrderFilter struct {
@@ -53,9 +53,9 @@ type OrderFilter struct {
 
 type Party struct {
 	Name      string               `json:"name"`
-	Orders    []msg.Order          `json:"orders"`
-	Trades    []msg.Trade          `json:"trades"`
-	Positions []msg.MarketPosition `json:"positions"`
+	Orders    []types.Order          `json:"orders"`
+	Trades    []types.Trade          `json:"trades"`
+	Positions []types.MarketPosition `json:"positions"`
 }
 
 type PreConsensus struct {

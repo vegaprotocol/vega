@@ -2,12 +2,15 @@ package trades
 
 import (
 	"testing"
-	"github.com/stretchr/testify/assert"
+
+	"vega/internal/filtering"
 	"vega/internal/storage"
 	"vega/internal/storage/mocks"
-	"vega/msg"
-	"vega/internal/filtering"
+
+	types "vega/proto"
+
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 // storageConfig specifies that the badger files are kept in a different
@@ -24,7 +27,7 @@ func storageConfig() *storage.Config {
 func TestNewTradeService(t *testing.T) {
 	config := storageConfig()
 	storage.FlushStores(config)
-	
+
 	tradeStore, err := storage.NewTradeStore(config)
 	defer tradeStore.Close()
 	assert.Nil(t, err)
@@ -49,7 +52,7 @@ func TestTradeService_GetByMarket(t *testing.T) {
 	assert.NotNil(t, tradeService)
 
 	// Scenario 1: valid market has n trades
-	tradeStore.On("GetByMarket", market, &filtering.TradeQueryFilters{}).Return([]*msg.Trade{
+	tradeStore.On("GetByMarket", market, &filtering.TradeQueryFilters{}).Return([]*types.Trade{
 		{Id: "A", Market: market, Price: 100},
 		{Id: "B", Market: market, Price: 200},
 		{Id: "C", Market: market, Price: 300},
@@ -81,7 +84,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 	assert.NotNil(t, tradeService)
 
 	// Scenario 1: valid market has n trades
-	tradeStore.On("GetByParty", partyA, &filtering.TradeQueryFilters{}).Return([]*msg.Trade{
+	tradeStore.On("GetByParty", partyA, &filtering.TradeQueryFilters{}).Return([]*types.Trade{
 		{Id: "A", Buyer: partyA, Seller: partyB, Price: 100},
 		{Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
 	}, nil).Once()
@@ -101,8 +104,6 @@ func TestTradeService_GetByParty(t *testing.T) {
 	assert.Nil(t, tradeSet)
 }
 
-
-
 //func TestTradeService_GetAllTradesForOrderOnMarket(t *testing.T) {
 //	var market = ServiceTestMarket
 //	var orderId = "12345"
@@ -115,12 +116,12 @@ func TestTradeService_GetByParty(t *testing.T) {
 //	tradeService.Init(vega, &tradeStore)
 //
 //	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Trade{
-//		{Trade: msg.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
-//		{Trade: msg.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
-//		{Trade: msg.Trade{Id: "C", Market: market, Price: 3}, OrderId: orderId},
-//		{Trade: msg.Trade{Id: "D", Market: market, Price: 4}, OrderId: orderId},
-//		{Trade: msg.Trade{Id: "E", Market: market, Price: 5}, OrderId: orderId},
-//		{Trade: msg.Trade{Id: "F", Market: market, Price: 6}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "C", Market: market, Price: 3}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "D", Market: market, Price: 4}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "E", Market: market, Price: 5}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "F", Market: market, Price: 6}, OrderId: orderId},
 //	}, nil).Once()
 //
 //	var tradeSet, err = tradeService.GetTradesForOrder(ctx, market, orderId, datastore.GetParamsLimitDefault)
@@ -143,7 +144,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 //	orderService.Init(vega, &orderStore)
 //
 //	orderStore.On("Get", market, orderId).Return(datastore.Order{
-//		Order: msg.Order{Id: orderId, Market: market},
+//		Order: types.Order{Id: orderId, Market: market},
 //	}, nil)
 //
 //	var order, err = orderService.GetById(ctx, market, orderId)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"vega/msg"
+	types "vega/proto"
 
 	"vega/internal/blockchain"
 	"vega/internal/filtering"
@@ -16,14 +16,14 @@ import (
 )
 
 type Service interface {
-	CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error)
-	AmendOrder(ctx context.Context, amendment *msg.Amendment) (success bool, err error)
-	CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error)
-	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*msg.Order, err error)
-	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*msg.Order, err error)
-	GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error)
-	GetByPartyAndId(ctx context.Context, party string, id string) (order *msg.Order, err error)
-	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []msg.Order, ref uint64)
+	CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error)
+	AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error)
+	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
+	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
+	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
+	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
+	GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error)
+	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 }
 
 type orderService struct {
@@ -36,7 +36,14 @@ type orderService struct {
 // NewOrderService creates an Orders service with the necessary dependencies
 func NewOrderService(store storage.OrderStore, time vegatime.Service) Service {
 	config := NewConfig()
-	client := blockchain.NewClient()
+
+	// todo (cdm): come back and pass configs in including blockchain config
+	bcConfig := blockchain.NewConfig(config.log)
+	client, err := blockchain.NewClient(bcConfig)
+	if err != nil {
+		config.log.Fatalf("error creating blockchain client %s", err)
+	}
+
 	return &orderService{
 		config,
 		store,
@@ -45,15 +52,15 @@ func NewOrderService(store storage.OrderStore, time vegatime.Service) Service {
 	}
 }
 
-func (s *orderService) CreateOrder(ctx context.Context, order *msg.Order) (success bool, orderReference string, err error) {
+func (s *orderService) CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error) {
 	// Set defaults, prevent unwanted external manipulation
 	order.Remaining = order.Size
-	order.Status = msg.Order_Active
+	order.Status = types.Order_Active
 	order.Timestamp = 0
 	order.Reference = ""
 
 	// if order is GTT convert datetime to blockchain timestamp
-	if order.Type == msg.Order_GTT {
+	if order.Type == types.Order_GTT {
 		expirationDateTime, err := time.Parse(time.RFC3339, order.ExpirationDatetime)
 		if err != nil {
 			return false, "", errors.New("invalid expiration datetime format")
@@ -75,13 +82,13 @@ func (s *orderService) CreateOrder(ctx context.Context, order *msg.Order) (succe
 }
 
 // CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
-func (s *orderService) CancelOrder(ctx context.Context, order *msg.Order) (success bool, err error) {
+func (s *orderService) CancelOrder(ctx context.Context, order *types.Order) (success bool, err error) {
 	// Validate order exists using read store
 	o, err := s.orderStore.GetByMarketAndId(order.Market, order.Id)
 	if err != nil {
 		return false, err
 	}
-	if o.Status == msg.Order_Cancelled {
+	if o.Status == types.Order_Cancelled {
 		return false, errors.New("order has already been cancelled")
 	}
 	if o.Remaining == 0 {
@@ -94,7 +101,7 @@ func (s *orderService) CancelOrder(ctx context.Context, order *msg.Order) (succe
 	return s.blockchain.CancelOrder(ctx, o)
 }
 
-func (s *orderService) AmendOrder(ctx context.Context, amendment *msg.Amendment) (success bool, err error) {
+func (s *orderService) AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error) {
 
 	// Validate order exists using read store
 	o, err := s.orderStore.GetByPartyAndId(amendment.Party, amendment.Id)
@@ -102,7 +109,7 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *msg.Amendment)
 		return false, err
 	}
 
-	if o.Status != msg.Order_Active {
+	if o.Status != types.Order_Active {
 		return false, errors.New("order is not active")
 	}
 
@@ -127,15 +134,15 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *msg.Amendment)
 	return s.blockchain.AmendOrder(ctx, amendment)
 }
 
-func (s *orderService) GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*msg.Order, err error) {
+func (s *orderService) GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
 	o, err := s.orderStore.GetByMarket(market, filters)
 	if err != nil {
 		return nil, err
 	}
 	filterOpen := filters != nil && filters.Open == true
-	result := make([]*msg.Order, 0)
+	result := make([]*types.Order, 0)
 	for _, order := range o {
-		if filterOpen && (order.Remaining == 0 || order.Status != msg.Order_Active) {
+		if filterOpen && (order.Remaining == 0 || order.Status != types.Order_Active) {
 			continue
 		}
 		result = append(result, order)
@@ -143,15 +150,15 @@ func (s *orderService) GetByMarket(ctx context.Context, market string, filters *
 	return result, err
 }
 
-func (s *orderService) GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*msg.Order, err error) {
+func (s *orderService) GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
 	o, err := s.orderStore.GetByParty(party, filters)
 	if err != nil {
 		return nil, err
 	}
 	filterOpen := filters != nil && filters.Open == true
-	result := make([]*msg.Order, 0)
+	result := make([]*types.Order, 0)
 	for _, order := range o {
-		if filterOpen && (order.Remaining == 0 || order.Status != msg.Order_Active) {
+		if filterOpen && (order.Remaining == 0 || order.Status != types.Order_Active) {
 			continue
 		}
 		result = append(result, order)
@@ -159,28 +166,28 @@ func (s *orderService) GetByParty(ctx context.Context, party string, filters *fi
 	return result, err
 }
 
-func (s *orderService) GetByMarketAndId(ctx context.Context, market string, id string) (order *msg.Order, err error) {
+func (s *orderService) GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error) {
 	o, err := s.orderStore.GetByMarketAndId(market, id)
 	if err != nil {
-		return &msg.Order{}, err
+		return &types.Order{}, err
 	}
 	return o, err
 }
 
-func (s *orderService) GetByPartyAndId(ctx context.Context, party string, id string) (order *msg.Order, err error) {
+func (s *orderService) GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error) {
 	o, err := s.orderStore.GetByPartyAndId(party, id)
 	if err != nil {
-		return &msg.Order{}, err
+		return &types.Order{}, err
 	}
 	return o, err
 }
 
-func (s *orderService) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, uint64) {
-	orders := make(chan []msg.Order)
-	internal := make(chan []msg.Order)
+func (s *orderService) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan []types.Order, uint64) {
+	orders := make(chan []types.Order)
+	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []msg.Order, ctx context.Context) {
+	go func(id uint64, internal chan []types.Order, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
 		s.log.Debugf("OrderService -> Subscriber closed connection: %d [%s]", id, ip)
@@ -195,7 +202,7 @@ func (s *orderService) ObserveOrders(ctx context.Context, market *string, party 
 		// read internal channel
 		for v := range internal {
 
-			validatedOrders := make([]msg.Order, 0)
+			validatedOrders := make([]types.Order, 0)
 			for _, item := range v {
 				if market != nil && item.Market != *market {
 					continue

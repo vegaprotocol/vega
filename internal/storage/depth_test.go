@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"vega/msg"
+	types "vega/proto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,10 +14,10 @@ func TestMarketDepth_Hard(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	firstBatchOfOrders := []*msg.Order{
+	firstBatchOfOrders := []*types.Order{
 		{
 			Id: "01",
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 111,
@@ -25,7 +25,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 		},
 		{
 			Id: "02",
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -33,7 +33,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 		},
 		{
 			Id: "03",
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -41,7 +41,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 		},
 		{
 			Id: "04",
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 113,
@@ -72,10 +72,10 @@ func TestMarketDepth_Hard(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
 
-	secondBatchOfOrders := []*msg.Order{
+	secondBatchOfOrders := []*types.Order{
 		{
 			Id: "05",
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 111,
@@ -83,7 +83,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 		},
 		{
 			Id: "06",
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -91,7 +91,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 		},
 		{
 			Id: "07",
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -99,7 +99,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 		},
 		{
 			Id: "08",
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 113,
@@ -214,8 +214,8 @@ func TestMarketDepth_Hard(t *testing.T) {
 	secondBatchOfOrders[0].Remaining = secondBatchOfOrders[0].Remaining - uint64(100)
 
 	secondBatchOfOrders[1].Remaining = 0
-	secondBatchOfOrders[2].Status = msg.Order_Cancelled
-	secondBatchOfOrders[3].Status = msg.Order_Expired
+	secondBatchOfOrders[2].Status = types.Order_Cancelled
+	secondBatchOfOrders[3].Status = types.Order_Expired
 
 	for idx := range secondBatchOfOrders {
 		orderStore.Put(*secondBatchOfOrders[idx])
@@ -233,14 +233,14 @@ func TestOrderBookDepth_Soft(t *testing.T){
 
 	var marketDepth marketDepth
 
-	ordersList := []msg.Order{
-		{Id: "01", Side: msg.Side_Buy,Price: 116, Remaining: 100},
-		{Id: "02", Side: msg.Side_Buy,Price: 110, Remaining: 100},
-		{Id: "03", Side: msg.Side_Buy,Price: 111, Remaining: 100},
-		{Id: "04", Side: msg.Side_Buy,Price: 111, Remaining: 100},
-		{Id: "05", Side: msg.Side_Buy,Price: 113, Remaining: 100},
-		{Id: "06", Side: msg.Side_Buy,Price: 114, Remaining: 100},
-		{Id: "07", Side: msg.Side_Buy,Price: 116, Remaining: 100},
+	ordersList := []types.Order{
+		{Id: "01", Side: types.Side_Buy,Price: 116, Remaining: 100},
+		{Id: "02", Side: types.Side_Buy,Price: 110, Remaining: 100},
+		{Id: "03", Side: types.Side_Buy,Price: 111, Remaining: 100},
+		{Id: "04", Side: types.Side_Buy,Price: 111, Remaining: 100},
+		{Id: "05", Side: types.Side_Buy,Price: 113, Remaining: 100},
+		{Id: "06", Side: types.Side_Buy,Price: 114, Remaining: 100},
+		{Id: "07", Side: types.Side_Buy,Price: 116, Remaining: 100},
 	}
 
 	for _, elem := range ordersList {
@@ -272,9 +272,9 @@ func TestOrderBookDepth_Soft(t *testing.T){
 	assert.Equal(t, marketDepth.Buy[4].NumberOfOrders, uint64(1))
 	assert.Equal(t, marketDepth.Buy[4].CumulativeVolume, uint64(0))
 
-	marketDepth.Update(msg.Order{Id: "03", Side: msg.Side_Buy, Price: 111, Remaining: 50})
-	marketDepth.Update(msg.Order{Id: "06", Side: msg.Side_Buy, Price: 114, Remaining: 80})
-	marketDepth.Update(msg.Order{Id: "05", Side: msg.Side_Buy, Price: 113, Remaining: 0})
+	marketDepth.Update(types.Order{Id: "03", Side: types.Side_Buy, Price: 111, Remaining: 50})
+	marketDepth.Update(types.Order{Id: "06", Side: types.Side_Buy, Price: 114, Remaining: 80})
+	marketDepth.Update(types.Order{Id: "05", Side: types.Side_Buy, Price: 113, Remaining: 0})
 
 	assert.Equal(t, marketDepth.Buy[0].Price, uint64(116))
 	assert.Equal(t, marketDepth.Buy[0].Volume, uint64(200))
@@ -297,15 +297,15 @@ func TestOrderBookDepth_Soft(t *testing.T){
 	assert.Equal(t, marketDepth.Buy[3].CumulativeVolume, uint64(0))
 
 	// test sell side
-	ordersList = []msg.Order{
-		{Id: "10",Side: msg.Side_Sell,Price: 123, Remaining: 100},
-		{Id: "11",Side: msg.Side_Sell,Price: 119, Remaining: 100},
-		{Id: "12",Side: msg.Side_Sell,Price: 120, Remaining: 100},
-		{Id: "13",Side: msg.Side_Sell,Price: 120, Remaining: 100},
-		{Id: "14",Side: msg.Side_Sell,Price: 121, Remaining: 100},
-		{Id: "15",Side: msg.Side_Sell,Price: 121, Remaining: 100},
-		{Id: "16",Side: msg.Side_Sell,Price: 122, Remaining: 100},
-		{Id: "17",Side: msg.Side_Sell,Price: 123, Remaining: 100},
+	ordersList = []types.Order{
+		{Id: "10",Side: types.Side_Sell,Price: 123, Remaining: 100},
+		{Id: "11",Side: types.Side_Sell,Price: 119, Remaining: 100},
+		{Id: "12",Side: types.Side_Sell,Price: 120, Remaining: 100},
+		{Id: "13",Side: types.Side_Sell,Price: 120, Remaining: 100},
+		{Id: "14",Side: types.Side_Sell,Price: 121, Remaining: 100},
+		{Id: "15",Side: types.Side_Sell,Price: 121, Remaining: 100},
+		{Id: "16",Side: types.Side_Sell,Price: 122, Remaining: 100},
+		{Id: "17",Side: types.Side_Sell,Price: 123, Remaining: 100},
 	}
 
 	for _, elem := range ordersList {
@@ -337,9 +337,9 @@ func TestOrderBookDepth_Soft(t *testing.T){
 	assert.Equal(t, marketDepth.Sell[4].NumberOfOrders, uint64(2))
 	assert.Equal(t, marketDepth.Sell[4].CumulativeVolume, uint64(0))
 
-	marketDepth.Update(msg.Order{Id: "11",Side: msg.Side_Sell,Price: 119, Remaining: 50})
-	marketDepth.Update(msg.Order{Id: "12",Side: msg.Side_Sell,Price: 120, Remaining: 80})
-	marketDepth.Update(msg.Order{Id: "16",Side: msg.Side_Sell,Price: 122, Remaining: 0})
+	marketDepth.Update(types.Order{Id: "11",Side: types.Side_Sell,Price: 119, Remaining: 50})
+	marketDepth.Update(types.Order{Id: "12",Side: types.Side_Sell,Price: 120, Remaining: 80})
+	marketDepth.Update(types.Order{Id: "16",Side: types.Side_Sell,Price: 122, Remaining: 0})
 
 	assert.Equal(t, marketDepth.Sell[0].Price, uint64(119))
 	assert.Equal(t, marketDepth.Sell[0].Volume, uint64(50))
@@ -381,10 +381,10 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	orders := []*msg.Order{
+	orders := []*types.Order{
 		{
 			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 111,
@@ -392,7 +392,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		},
 		{
 			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -400,7 +400,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		},
 		{
 			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -408,7 +408,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		},
 		{
 			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 113,
@@ -439,10 +439,10 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
 
-	ordersUpdate := []*msg.Order{
+	ordersUpdate := []*types.Order{
 		{
 			Id:     orders[0].Id,
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 111,
@@ -450,7 +450,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		},
 		{
 			Id:     orders[2].Id,
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -458,12 +458,12 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 		},
 		{
 			Id:    orders[3].Id,
-			Side: msg.Side_Buy,
+			Side: types.Side_Buy,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 113,
 			Remaining: 80,
-			Status: msg.Order_Expired,
+			Status: types.Order_Expired,
 		},
 	}
 
@@ -506,10 +506,10 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	orders := []*msg.Order{
+	orders := []*types.Order{
 		{
 			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
-			Side: msg.Side_Sell,
+			Side: types.Side_Sell,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 111,
@@ -517,7 +517,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 		{
 			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
-			Side: msg.Side_Sell,
+			Side: types.Side_Sell,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -525,7 +525,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 		{
 			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
-			Side: msg.Side_Sell,
+			Side: types.Side_Sell,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -533,7 +533,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 		{
 			Id:     fmt.Sprintf("%d", rand.Intn(1000000000000)),
-			Side: msg.Side_Sell,
+			Side: types.Side_Sell,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 113,
@@ -564,10 +564,10 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Sell[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Sell[2].CumulativeVolume)
 
-	ordersUpdate := []*msg.Order{
+	ordersUpdate := []*types.Order{
 		{
 			Id:     orders[0].Id,
-			Side: msg.Side_Sell,
+			Side: types.Side_Sell,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 111,
@@ -575,7 +575,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 		{
 			Id:     orders[2].Id,
-			Side: msg.Side_Sell,
+			Side: types.Side_Sell,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 112,
@@ -583,12 +583,12 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 		{
 			Id:    orders[3].Id,
-			Side: msg.Side_Sell,
+			Side: types.Side_Sell,
 			Market: testMarket,
 			Party: testPartyA,
 			Price: 113,
 			Remaining: 80,
-			Status: msg.Order_Expired,
+			Status: types.Order_Expired,
 		},
 	}
 
@@ -613,10 +613,10 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	// 113 is removed
 	assert.Equal(t, 2, len(marketDepth.Sell))
 
-	invalidNewOrders := []*msg.Order{
+	invalidNewOrders := []*types.Order{
 		{
 			Id:        "98",
-			Side:      msg.Side_Buy,
+			Side:      types.Side_Buy,
 			Market:    testMarket,
 			Party:     testPartyA,
 			Price:     1337,
@@ -624,7 +624,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 		},
 		{
 			Id:        "99",
-			Side:      msg.Side_Sell,
+			Side:      types.Side_Sell,
 			Market:    testMarket,
 			Party:     testPartyA,
 			Price:     1337,

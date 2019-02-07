@@ -27,9 +27,9 @@ func NewConfig(logger logging.Logger) *Config {
 	return &Config{
 		log:                   logger,
 		level:                 level,
-		OrderStoreDirPath:     "../../tmp/orderstore",
-		TradeStoreDirPath:     "../../tmp/tradestore",
-		CandleStoreDirPath:    "../../tmp/candlestore",
+		OrderStoreDirPath:     "../../data/orderstore",
+		TradeStoreDirPath:     "../../data/tradestore",
+		CandleStoreDirPath:    "../../data/candlestore",
 		LogPartyStoreDebug:    true,
 		LogOrderStoreDebug:    true,
 		LogCandleStoreDebug:   false,

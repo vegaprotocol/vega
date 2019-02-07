@@ -3,7 +3,7 @@ package storage
 import (
 	"testing"
 	"strings"
-	"vega/msg"
+	types "vega/proto"
 	"vega/internal/filtering"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,7 +37,7 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 	orderStore, err := NewOrderStore(config)
 	defer orderStore.Close()
 
-	var order = &msg.Order{
+	var order = &types.Order{
 		Id:     "45305210ff7a9bb9450b1833cc10368a",
 		Market: "testMarket",
 		Party:  "testParty",
@@ -59,14 +59,14 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 
 	var tests = []struct {
 		inMarkets      []string
-		inOrders       []*msg.Order
+		inOrders       []*types.Order
 		inLimit        uint64
 		inMarket       string
 		outOrdersCount int
 	}{
 		{
 			inMarkets: []string{"testMarket1", "marketZ"},
-			inOrders: []*msg.Order{
+			inOrders: []*types.Order{
 				{
 						Id:     "d41d8cd98f00b204e9800998ecf8427e",
 						Market: "testMarket1",
@@ -89,7 +89,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 		},
 		{
 			inMarkets: []string{testMarket, "marketABC"},
-			inOrders: []*msg.Order{
+			inOrders: []*types.Order{
 				{
 						Id:     "d41d8cd98f00b204e9800998ecf8427e",
 						Market: testMarket,
@@ -112,7 +112,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 		},
 		{
 			inMarkets: []string{"marketXYZ"},
-			inOrders: []*msg.Order{
+			inOrders: []*types.Order{
 				{
 						Id:     "d41d8cd98f00b204e9800998ecf8427e",
 						Market: "marketXYZ",
@@ -163,14 +163,14 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	passiveOrder := &msg.Order{
+	passiveOrder := &types.Order{
 			Id:        "d41d8cd98f00b204e9800998ecf9999e",
 			Market:    testMarket,
 			Party:     testPartyA,
 			Remaining: 0,
 	}
 
-	aggressiveOrder := &msg.Order{
+	aggressiveOrder := &types.Order{
 			Id:        "d41d8cd98f00b204e9800998ecf8427e",
 			Market:    testMarket,
 			Party:     testPartyB,
@@ -202,7 +202,7 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	assert.Equal(t, aggressiveOrder.Id, orderAtPartyB.Id)
 
 	// update order, parties should also be updated as its a pointer
-	updatedAggressiveOrder := &msg.Order{
+	updatedAggressiveOrder := &types.Order{
 			Id:        "d41d8cd98f00b204e9800998ecf8427e",
 			Market:    testMarket,
 			Party:     testPartyB,
@@ -224,56 +224,56 @@ func TestStorage_OrderFiltration(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	order1 := &msg.Order{
+	order1 := &types.Order{
 			Id:         "d41d8cd98f00b204e9800998ecf9999a",
 			Market:     testMarket,
 			Party:      testPartyA,
-			Side:       msg.Side_Sell,
+			Side:       types.Side_Sell,
 			Price:      100,
 			Size:       1000,
 			Remaining:  0,
-			Type:       msg.Order_GTC,
+			Type:       types.Order_GTC,
 			Timestamp:  0,
-			Status:     msg.Order_Active,
+			Status:     types.Order_Active,
 	}
 
-	order2 := &msg.Order{
+	order2 := &types.Order{
 			Id:         "d41d8cd98f00b204e9800998ecf8427b",
 			Market:     testMarket,
 			Party:      testPartyB,
-			Side:       msg.Side_Buy,
+			Side:       types.Side_Buy,
 			Price:      110,
 			Size:       900,
 			Remaining:  0,
-			Type:       msg.Order_GTC,
+			Type:       types.Order_GTC,
 			Timestamp:  0,
-			Status:     msg.Order_Active,
+			Status:     types.Order_Active,
 	}
 
-	order3 := &msg.Order{
+	order3 := &types.Order{
 			Id:         "d41d8cd98f00b204e9800998ecf8427c",
 			Market:     testMarket,
 			Party:      testPartyA,
-			Side:       msg.Side_Buy,
+			Side:       types.Side_Buy,
 			Price:      1000,
 			Size:       1000,
 			Remaining:  1000,
-			Type:       msg.Order_GTC,
+			Type:       types.Order_GTC,
 			Timestamp:  1,
-			Status:     msg.Order_Cancelled,
+			Status:     types.Order_Cancelled,
 	}
 
-	order4 := &msg.Order{
+	order4 := &types.Order{
 			Id:         "d41d8cd98f00b204e9800998ecf8427d",
 			Market:     testMarket,
 			Party:      testPartyA,
-			Side:       msg.Side_Sell,
+			Side:       types.Side_Sell,
 			Price:      100,
 			Size:       100,
 			Remaining:  100,
-			Type:       msg.Order_GTC,
+			Type:       types.Order_GTC,
 			Timestamp:  1,
-			Status:     msg.Order_Active,
+			Status:     types.Order_Active,
 	}
 
 	// check if db empty
@@ -352,14 +352,14 @@ func TestStorage_OrderFiltration(t *testing.T) {
 	assert.Equal(t, 3, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
-		TypeFilter: &filtering.QueryFilter{Eq: msg.Order_GTC},
+		TypeFilter: &filtering.QueryFilter{Eq: types.Order_GTC},
 	}
 	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
-		TypeFilter: &filtering.QueryFilter{Neq: msg.Order_GTC},
+		TypeFilter: &filtering.QueryFilter{Neq: types.Order_GTC},
 	}
 	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
@@ -373,7 +373,7 @@ func TestStorage_OrderFiltration(t *testing.T) {
 	assert.Equal(t, 1, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
-		TypeFilter:  &filtering.QueryFilter{Neq: msg.Order_GTC},
+		TypeFilter:  &filtering.QueryFilter{Neq: types.Order_GTC},
 		PriceFilter: &filtering.QueryFilter{Eq: uint64(1000)},
 	}
 	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
@@ -409,28 +409,28 @@ func TestStorage_OrderFiltration(t *testing.T) {
 	assert.Equal(t, 4, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
-		StatusFilter: &filtering.QueryFilter{Eq: msg.Order_Active},
+		StatusFilter: &filtering.QueryFilter{Eq: types.Order_Active},
 	}
 	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
-		StatusFilter: &filtering.QueryFilter{Eq: msg.Order_Cancelled},
+		StatusFilter: &filtering.QueryFilter{Eq: types.Order_Cancelled},
 	}
 	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
-		StatusFilter: &filtering.QueryFilter{Eq: msg.Order_Expired},
+		StatusFilter: &filtering.QueryFilter{Eq: types.Order_Expired},
 	}
 	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
-		StatusFilter: &filtering.QueryFilter{Neq: msg.Order_Expired},
+		StatusFilter: &filtering.QueryFilter{Neq: types.Order_Expired},
 	}
 	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
@@ -451,17 +451,17 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 
-	order := &msg.Order{
+	order := &types.Order{
 			Id:         "d41d8cd98f00b204e9800998ecf8427b",
 			Market:     testMarket,
 			Party:      testPartyA,
-			Side:       msg.Side_Buy,
+			Side:       types.Side_Buy,
 			Price:      100,
 			Size:       1000,
 			Remaining:  0,
-			Type:       msg.Order_GTC,
+			Type:       types.Order_GTC,
 			Timestamp:  0,
-			Status:     msg.Order_Active,
+			Status:     types.Order_Active,
 			Reference:  "123123-34334343-1231231",
 	}
 
@@ -487,31 +487,31 @@ func TestStorage_InsertBatchOrders(t *testing.T) {
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
-	order1 := &msg.Order{
+	order1 := &types.Order{
 		Id:         "d41d8cd98f00b204e9800998ecf8427b",
 		Market:     testMarket,
 		Party:      testPartyA,
-		Side:       msg.Side_Buy,
+		Side:       types.Side_Buy,
 		Price:      100,
 		Size:       1000,
 		Remaining:  0,
-		Type:       msg.Order_GTC,
+		Type:       types.Order_GTC,
 		Timestamp:  0,
-		Status:     msg.Order_Active,
+		Status:     types.Order_Active,
 		Reference:  "123123-34334343-1231231",
 	}
 
-	order2 := &msg.Order{
+	order2 := &types.Order{
 		Id:         "d41d8cd98f00b204e9800998ecf8427c",
 		Market:     testMarket,
 		Party:      testPartyA,
-		Side:       msg.Side_Buy,
+		Side:       types.Side_Buy,
 		Price:      100,
 		Size:       1000,
 		Remaining:  0,
-		Type:       msg.Order_GTC,
+		Type:       types.Order_GTC,
 		Timestamp:  0,
-		Status:     msg.Order_Active,
+		Status:     types.Order_Active,
 		Reference:  "123123-34334343-1231232",
 	}
 

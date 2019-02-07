@@ -1,21 +1,21 @@
 package storage
 
 import (
-	"vega/msg"
+	types "vega/proto"
 )
 
 // Store provides the data storage contract for risk factors.
 type RiskStore interface {
-	//Subscribe(riskFactors chan<- []msg.RiskFactor) uint64
+	//Subscribe(riskFactors chan<- []types.RiskFactor) uint64
 	//Unsubscribe(id uint64) error
 
 	// Post adds a risk factor to the store, this adds
 	// to queue the operation to be committed later.
-	Post(risk *msg.RiskFactor) error
+	Post(risk *types.RiskFactor) error
 
 	// Put updates a risk factor in the store, adds
 	// to queue the operation to be committed later.
-	Put(risk *msg.RiskFactor) error
+	Put(risk *types.RiskFactor) error
 
 	// Commit typically saves any operations that are queued to underlying storage,
 	// if supported by underlying storage implementation.
@@ -26,7 +26,7 @@ type RiskStore interface {
 	Close() error
 
 	// GetByMarket searches for the given risk factor by market in the underlying store.
-	GetByMarket(market string) (*msg.RiskFactor, error)
+	GetByMarket(market string) (*types.RiskFactor, error)
 }
 
 // memMarketStore is used for memory/RAM based markets storage.
@@ -42,18 +42,18 @@ func NewRiskStore(config *Config) (RiskStore, error) {
 }
 
 // Post saves a given risk factor to the mem-store.
-func (ms *memRiskStore) Post(risk *msg.RiskFactor) error {
+func (ms *memRiskStore) Post(risk *types.RiskFactor) error {
 	return nil
 }
 
 // Put updates a given risk factor to the mem-store.
-func (ms *memRiskStore) Put(risk *msg.RiskFactor) error {
+func (ms *memRiskStore) Put(risk *types.RiskFactor) error {
 	return nil
 }
 
 // GetByMarket searches for the risk factors relating to the market param in the mem-store.
-func (ms *memRiskStore) GetByMarket(name string) (*msg.RiskFactor, error) {
-	return &msg.RiskFactor{
+func (ms *memRiskStore) GetByMarket(name string) (*types.RiskFactor, error) {
+	return &types.RiskFactor{
 		Market: name,
 		Long: 1,
 		Short: 1,

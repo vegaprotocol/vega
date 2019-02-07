@@ -6,7 +6,7 @@ package api
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import msg "vega/msg"
+import types "vega/proto"
 
 import (
 	context "golang.org/x/net/context"
@@ -117,7 +117,7 @@ func (m *OrdersByMarketRequest) GetParams() *OptionalParams {
 }
 
 type OrdersByMarketResponse struct {
-	Orders               []*msg.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	Orders               []*types.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -147,7 +147,7 @@ func (m *OrdersByMarketResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_OrdersByMarketResponse proto.InternalMessageInfo
 
-func (m *OrdersByMarketResponse) GetOrders() []*msg.Order {
+func (m *OrdersByMarketResponse) GetOrders() []*types.Order {
 	if m != nil {
 		return m.Orders
 	}
@@ -201,7 +201,7 @@ func (m *OrdersByPartyRequest) GetParams() *OptionalParams {
 }
 
 type OrdersByPartyResponse struct {
-	Orders               []*msg.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	Orders               []*types.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -231,7 +231,7 @@ func (m *OrdersByPartyResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_OrdersByPartyResponse proto.InternalMessageInfo
 
-func (m *OrdersByPartyResponse) GetOrders() []*msg.Order {
+func (m *OrdersByPartyResponse) GetOrders() []*types.Order {
 	if m != nil {
 		return m.Orders
 	}
@@ -285,7 +285,7 @@ func (m *OrderByMarketAndIdRequest) GetId() string {
 }
 
 type OrderByMarketAndIdResponse struct {
-	Order                *msg.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	Order                *types.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -315,7 +315,7 @@ func (m *OrderByMarketAndIdResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_OrderByMarketAndIdResponse proto.InternalMessageInfo
 
-func (m *OrderByMarketAndIdResponse) GetOrder() *msg.Order {
+func (m *OrderByMarketAndIdResponse) GetOrder() *types.Order {
 	if m != nil {
 		return m.Order
 	}
@@ -393,7 +393,7 @@ func (m *MarketsResponse) GetMarkets() []string {
 type CandlesRequest struct {
 	Market               string       `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
 	SinceTimestamp       uint64       `protobuf:"varint,2,opt,name=sinceTimestamp,proto3" json:"sinceTimestamp,omitempty"`
-	Interval             msg.Interval `protobuf:"varint,3,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
+	Interval             types.Interval `protobuf:"varint,3,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -437,15 +437,15 @@ func (m *CandlesRequest) GetSinceTimestamp() uint64 {
 	return 0
 }
 
-func (m *CandlesRequest) GetInterval() msg.Interval {
+func (m *CandlesRequest) GetInterval() types.Interval {
 	if m != nil {
 		return m.Interval
 	}
-	return msg.Interval_I1M
+	return types.Interval_I1M
 }
 
 type CandlesResponse struct {
-	Candles              []*msg.Candle `protobuf:"bytes,1,rep,name=candles,proto3" json:"candles,omitempty"`
+	Candles              []*types.Candle `protobuf:"bytes,1,rep,name=candles,proto3" json:"candles,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
 	XXX_sizecache        int32         `json:"-"`
@@ -475,7 +475,7 @@ func (m *CandlesResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CandlesResponse proto.InternalMessageInfo
 
-func (m *CandlesResponse) GetCandles() []*msg.Candle {
+func (m *CandlesResponse) GetCandles() []*types.Candle {
 	if m != nil {
 		return m.Candles
 	}
@@ -522,9 +522,9 @@ func (m *MarketDepthRequest) GetMarket() string {
 
 type MarketDepthResponse struct {
 	Name                 string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Buy                  []*msg.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
-	Sell                 []*msg.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
-	LastTrade            *msg.Trade        `protobuf:"bytes,4,opt,name=lastTrade,proto3" json:"lastTrade,omitempty"`
+	Buy                  []*types.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
+	Sell                 []*types.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
+	LastTrade            *types.Trade        `protobuf:"bytes,4,opt,name=lastTrade,proto3" json:"lastTrade,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -561,21 +561,21 @@ func (m *MarketDepthResponse) GetName() string {
 	return ""
 }
 
-func (m *MarketDepthResponse) GetBuy() []*msg.PriceLevel {
+func (m *MarketDepthResponse) GetBuy() []*types.PriceLevel {
 	if m != nil {
 		return m.Buy
 	}
 	return nil
 }
 
-func (m *MarketDepthResponse) GetSell() []*msg.PriceLevel {
+func (m *MarketDepthResponse) GetSell() []*types.PriceLevel {
 	if m != nil {
 		return m.Sell
 	}
 	return nil
 }
 
-func (m *MarketDepthResponse) GetLastTrade() *msg.Trade {
+func (m *MarketDepthResponse) GetLastTrade() *types.Trade {
 	if m != nil {
 		return m.LastTrade
 	}
@@ -629,7 +629,7 @@ func (m *TradesByMarketRequest) GetParams() *OptionalParams {
 }
 
 type TradesByMarketResponse struct {
-	Trades               []*msg.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
+	Trades               []*types.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -659,7 +659,7 @@ func (m *TradesByMarketResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_TradesByMarketResponse proto.InternalMessageInfo
 
-func (m *TradesByMarketResponse) GetTrades() []*msg.Trade {
+func (m *TradesByMarketResponse) GetTrades() []*types.Trade {
 	if m != nil {
 		return m.Trades
 	}
@@ -705,7 +705,7 @@ func (m *PositionsByPartyRequest) GetParty() string {
 }
 
 type PositionsByPartyResponse struct {
-	Positions            []*msg.MarketPosition `protobuf:"bytes,1,rep,name=positions,proto3" json:"positions,omitempty"`
+	Positions            []*types.MarketPosition `protobuf:"bytes,1,rep,name=positions,proto3" json:"positions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -735,7 +735,7 @@ func (m *PositionsByPartyResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_PositionsByPartyResponse proto.InternalMessageInfo
 
-func (m *PositionsByPartyResponse) GetPositions() []*msg.MarketPosition {
+func (m *PositionsByPartyResponse) GetPositions() []*types.MarketPosition {
 	if m != nil {
 		return m.Positions
 	}
@@ -914,9 +914,9 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TradingClient interface {
-	CreateOrder(ctx context.Context, in *msg.Order, opts ...grpc.CallOption) (*OrderResponse, error)
-	CancelOrder(ctx context.Context, in *msg.Order, opts ...grpc.CallOption) (*OrderResponse, error)
-	AmendOrder(ctx context.Context, in *msg.Amendment, opts ...grpc.CallOption) (*OrderResponse, error)
+	CreateOrder(ctx context.Context, in *types.Order, opts ...grpc.CallOption) (*OrderResponse, error)
+	CancelOrder(ctx context.Context, in *types.Order, opts ...grpc.CallOption) (*OrderResponse, error)
+	AmendOrder(ctx context.Context, in *types.Amendment, opts ...grpc.CallOption) (*OrderResponse, error)
 	OrdersByMarket(ctx context.Context, in *OrdersByMarketRequest, opts ...grpc.CallOption) (*OrdersByMarketResponse, error)
 	OrdersByParty(ctx context.Context, in *OrdersByPartyRequest, opts ...grpc.CallOption) (*OrdersByPartyResponse, error)
 	OrderByMarketAndId(ctx context.Context, in *OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*OrderByMarketAndIdResponse, error)
@@ -925,7 +925,7 @@ type TradingClient interface {
 	MarketDepth(ctx context.Context, in *MarketDepthRequest, opts ...grpc.CallOption) (*MarketDepthResponse, error)
 	TradesByMarket(ctx context.Context, in *TradesByMarketRequest, opts ...grpc.CallOption) (*TradesByMarketResponse, error)
 	PositionsByParty(ctx context.Context, in *PositionsByPartyRequest, opts ...grpc.CallOption) (*PositionsByPartyResponse, error)
-	Statistics(ctx context.Context, in *StatisticsRequest, opts ...grpc.CallOption) (*msg.Statistics, error)
+	Statistics(ctx context.Context, in *StatisticsRequest, opts ...grpc.CallOption) (*types.Statistics, error)
 	GetVegaTime(ctx context.Context, in *VegaTimeRequest, opts ...grpc.CallOption) (*VegaTimeResponse, error)
 }
 
@@ -937,7 +937,7 @@ func NewTradingClient(cc *grpc.ClientConn) TradingClient {
 	return &tradingClient{cc}
 }
 
-func (c *tradingClient) CreateOrder(ctx context.Context, in *msg.Order, opts ...grpc.CallOption) (*OrderResponse, error) {
+func (c *tradingClient) CreateOrder(ctx context.Context, in *types.Order, opts ...grpc.CallOption) (*OrderResponse, error) {
 	out := new(OrderResponse)
 	err := c.cc.Invoke(ctx, "/grpc.trading/CreateOrder", in, out, opts...)
 	if err != nil {
@@ -946,7 +946,7 @@ func (c *tradingClient) CreateOrder(ctx context.Context, in *msg.Order, opts ...
 	return out, nil
 }
 
-func (c *tradingClient) CancelOrder(ctx context.Context, in *msg.Order, opts ...grpc.CallOption) (*OrderResponse, error) {
+func (c *tradingClient) CancelOrder(ctx context.Context, in *types.Order, opts ...grpc.CallOption) (*OrderResponse, error) {
 	out := new(OrderResponse)
 	err := c.cc.Invoke(ctx, "/grpc.trading/CancelOrder", in, out, opts...)
 	if err != nil {
@@ -955,7 +955,7 @@ func (c *tradingClient) CancelOrder(ctx context.Context, in *msg.Order, opts ...
 	return out, nil
 }
 
-func (c *tradingClient) AmendOrder(ctx context.Context, in *msg.Amendment, opts ...grpc.CallOption) (*OrderResponse, error) {
+func (c *tradingClient) AmendOrder(ctx context.Context, in *types.Amendment, opts ...grpc.CallOption) (*OrderResponse, error) {
 	out := new(OrderResponse)
 	err := c.cc.Invoke(ctx, "/grpc.trading/AmendOrder", in, out, opts...)
 	if err != nil {
@@ -1036,8 +1036,8 @@ func (c *tradingClient) PositionsByParty(ctx context.Context, in *PositionsByPar
 	return out, nil
 }
 
-func (c *tradingClient) Statistics(ctx context.Context, in *StatisticsRequest, opts ...grpc.CallOption) (*msg.Statistics, error) {
-	out := new(msg.Statistics)
+func (c *tradingClient) Statistics(ctx context.Context, in *StatisticsRequest, opts ...grpc.CallOption) (*types.Statistics, error) {
+	out := new(types.Statistics)
 	err := c.cc.Invoke(ctx, "/grpc.trading/Statistics", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1056,9 +1056,9 @@ func (c *tradingClient) GetVegaTime(ctx context.Context, in *VegaTimeRequest, op
 
 // TradingServer is the server API for Trading service.
 type TradingServer interface {
-	CreateOrder(context.Context, *msg.Order) (*OrderResponse, error)
-	CancelOrder(context.Context, *msg.Order) (*OrderResponse, error)
-	AmendOrder(context.Context, *msg.Amendment) (*OrderResponse, error)
+	CreateOrder(context.Context, *types.Order) (*OrderResponse, error)
+	CancelOrder(context.Context, *types.Order) (*OrderResponse, error)
+	AmendOrder(context.Context, *types.Amendment) (*OrderResponse, error)
 	OrdersByMarket(context.Context, *OrdersByMarketRequest) (*OrdersByMarketResponse, error)
 	OrdersByParty(context.Context, *OrdersByPartyRequest) (*OrdersByPartyResponse, error)
 	OrderByMarketAndId(context.Context, *OrderByMarketAndIdRequest) (*OrderByMarketAndIdResponse, error)
@@ -1067,7 +1067,7 @@ type TradingServer interface {
 	MarketDepth(context.Context, *MarketDepthRequest) (*MarketDepthResponse, error)
 	TradesByMarket(context.Context, *TradesByMarketRequest) (*TradesByMarketResponse, error)
 	PositionsByParty(context.Context, *PositionsByPartyRequest) (*PositionsByPartyResponse, error)
-	Statistics(context.Context, *StatisticsRequest) (*msg.Statistics, error)
+	Statistics(context.Context, *StatisticsRequest) (*types.Statistics, error)
 	GetVegaTime(context.Context, *VegaTimeRequest) (*VegaTimeResponse, error)
 }
 
@@ -1076,7 +1076,7 @@ func RegisterTradingServer(s *grpc.Server, srv TradingServer) {
 }
 
 func _Trading_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(msg.Order)
+	in := new(types.Order)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1088,13 +1088,13 @@ func _Trading_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/grpc.trading/CreateOrder",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingServer).CreateOrder(ctx, req.(*msg.Order))
+		return srv.(TradingServer).CreateOrder(ctx, req.(*types.Order))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Trading_CancelOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(msg.Order)
+	in := new(types.Order)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1106,13 +1106,13 @@ func _Trading_CancelOrder_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/grpc.trading/CancelOrder",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingServer).CancelOrder(ctx, req.(*msg.Order))
+		return srv.(TradingServer).CancelOrder(ctx, req.(*types.Order))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Trading_AmendOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(msg.Amendment)
+	in := new(types.Amendment)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1124,7 +1124,7 @@ func _Trading_AmendOrder_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: "/grpc.trading/AmendOrder",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingServer).AmendOrder(ctx, req.(*msg.Amendment))
+		return srv.(TradingServer).AmendOrder(ctx, req.(*types.Amendment))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -1,34 +1,35 @@
 package blockchain
 
 import (
-	"github.com/pkg/errors"
-	"vega/msg"
-	"github.com/golang/protobuf/proto"
 	"fmt"
+
+	types "vega/proto"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/pkg/errors"
 )
 
 type Processor interface {
-	Process (payload []byte) error
-	Validate (payload []byte) error
+	Process(payload []byte) error
+	Validate(payload []byte) error
 }
 
 type abciProcessor struct {
 	*Config
-	
 	blockchainService Service
-	seenPayloads map[string]byte
+	seenPayloads      map[string]byte
 }
 
 func NewAbciProcessor(config *Config, blockchainService Service) Processor {
 	return &abciProcessor{
-		Config: config,
+		Config:            config,
 		blockchainService: blockchainService,
-		seenPayloads: make(map[string]byte, 0),
+		seenPayloads:      make(map[string]byte, 0),
 	}
 }
 
-func (p *abciProcessor) getOrder(payload []byte) (*msg.Order, error) {
-	order := msg.OrderPool.Get().(*msg.Order)
+func (p *abciProcessor) getOrder(payload []byte) (*types.Order, error) {
+	order := types.OrderPool.Get().(*types.Order)
 	err := proto.Unmarshal(payload, order)
 	if err != nil {
 		return nil, err
@@ -37,8 +38,8 @@ func (p *abciProcessor) getOrder(payload []byte) (*msg.Order, error) {
 }
 
 // todo remove this in favour of raw Order above?
-func (p *abciProcessor) getOrderAmendment(payload []byte) (*msg.Amendment, error) {
-	amendment := &msg.Amendment{}
+func (p *abciProcessor) getOrderAmendment(payload []byte) (*types.Amendment, error) {
+	amendment := &types.Amendment{}
 	err := proto.Unmarshal(payload, amendment)
 	if err != nil {
 		p.log.Errorf("Error: Decoding order to proto: ", err.Error())
@@ -50,7 +51,7 @@ func (p *abciProcessor) getOrderAmendment(payload []byte) (*msg.Amendment, error
 // Validate performs all validation on an incoming transaction payload.
 func (p *abciProcessor) Validate(payload []byte) error {
 	// Pre-validate (safety check)
- 	if err, seen := p.hasSeen(payload); seen {
+	if err, seen := p.hasSeen(payload); seen {
 		p.log.Errorf("AbciProcessor: error %s", err)
 		return err
 	}
@@ -62,11 +63,11 @@ func (p *abciProcessor) Validate(payload []byte) error {
 	}
 	// Ensure valid VEGA app command
 	switch cmd {
-		case
-			SubmitOrderCommand,
-			CancelOrderCommand,
-			AmendOrderCommand:       // Note: Future valid VEGA commands here
-			return nil
+	case
+		SubmitOrderCommand,
+		CancelOrderCommand,
+		AmendOrderCommand: // Note: Future valid VEGA commands here
+		return nil
 	}
 	return errors.New("Unknown command when validating payload")
 
@@ -86,11 +87,11 @@ func (p *abciProcessor) Process(payload []byte) error {
 	// Add to map of seen payloads, hashes only exist in here if they are processed.
 	payloadHash, err := p.payloadHash(payload)
 	if err != nil {
-	  p.log.Errorf("AbciProcessor: payload hash error: %s", err)
-	  return err
+		p.log.Errorf("AbciProcessor: payload hash error: %s", err)
+		return err
 	}
 	p.seenPayloads[*payloadHash] = 0xF
-	
+
 	// Attempt to decode transaction payload
 	data, cmd, err := txDecode(payload)
 	if err != nil {
@@ -99,38 +100,38 @@ func (p *abciProcessor) Process(payload []byte) error {
 	}
 	// Process known command types
 	switch cmd {
-		case SubmitOrderCommand:
-			order, err := p.getOrder(data)
-			if err != nil {
-				return err
-			}
-		    err = p.blockchainService.SubmitOrder(order)
-		    if err != nil {
-		    	return err
-			}
-		case CancelOrderCommand:
-			order, err := p.getOrder(data)
-			if err != nil {
-				return err
-			}
-			err = p.blockchainService.CancelOrder(order)
-			if err != nil {
-				return err
-			}
-		case AmendOrderCommand:
-			order, err := p.getOrderAmendment(data)
-			if err != nil {
-				return err
-			}
-			err = p.blockchainService.AmendOrder(order)
-			if err != nil {
-				return err
-			}
-		//case FutureVegaCommand
-			// Note: Future valid VEGA commands here
-		default:
-			p.log.Errorf("Unknown command received: %s", cmd)
-			return errors.New(fmt.Sprintf("Unknown command received: %s", cmd))
+	case SubmitOrderCommand:
+		order, err := p.getOrder(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.SubmitOrder(order)
+		if err != nil {
+			return err
+		}
+	case CancelOrderCommand:
+		order, err := p.getOrder(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.CancelOrder(order)
+		if err != nil {
+			return err
+		}
+	case AmendOrderCommand:
+		order, err := p.getOrderAmendment(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.AmendOrder(order)
+		if err != nil {
+			return err
+		}
+	//case FutureVegaCommand
+	// Note: Future valid VEGA commands here
+	default:
+		p.log.Errorf("Unknown command received: %s", cmd)
+		return errors.New(fmt.Sprintf("Unknown command received: %s", cmd))
 	}
 	return nil
 }
@@ -178,7 +179,7 @@ func (p *abciProcessor) payloadExists(payloadHash *string) (error, bool) {
 // txDecode is takes the raw payload bytes and decodes the contents using a pre-defined
 // strategy, we have a simple and efficient encoding at present. A partner encode function
 // can be found in the blockchain client.
-func txDecode (input []byte) (proto []byte, cmd Command, err error) {
+func txDecode(input []byte) (proto []byte, cmd Command, err error) {
 	// Input is typically the bytes that arrive in raw format after consensus is reached.
 	// Split the transaction dropping the unification bytes (uuid&pipe)
 	var value []byte
@@ -193,4 +194,3 @@ func txDecode (input []byte) (proto []byte, cmd Command, err error) {
 	}
 	return value, Command(cmdByte), nil
 }
-

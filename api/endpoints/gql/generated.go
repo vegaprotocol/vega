@@ -7,7 +7,7 @@ import (
 	context "context"
 	strconv "strconv"
 	sync "sync"
-	msg "vega/msg"
+	types "vega/proto"
 
 	graphql "github.com/99designs/gqlgen/graphql"
 	introspection "github.com/99designs/gqlgen/graphql/introspection"
@@ -160,84 +160,84 @@ type ComplexityRoot struct {
 }
 
 type CandleResolver interface {
-	Timestamp(ctx context.Context, obj *msg.Candle) (string, error)
+	Timestamp(ctx context.Context, obj *types.Candle) (string, error)
 
-	High(ctx context.Context, obj *msg.Candle) (string, error)
-	Low(ctx context.Context, obj *msg.Candle) (string, error)
-	Open(ctx context.Context, obj *msg.Candle) (string, error)
-	Close(ctx context.Context, obj *msg.Candle) (string, error)
-	Volume(ctx context.Context, obj *msg.Candle) (string, error)
-	Interval(ctx context.Context, obj *msg.Candle) (Interval, error)
+	High(ctx context.Context, obj *types.Candle) (string, error)
+	Low(ctx context.Context, obj *types.Candle) (string, error)
+	Open(ctx context.Context, obj *types.Candle) (string, error)
+	Close(ctx context.Context, obj *types.Candle) (string, error)
+	Volume(ctx context.Context, obj *types.Candle) (string, error)
+	Interval(ctx context.Context, obj *types.Candle) (Interval, error)
 }
 type MarketResolver interface {
-	Orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
-	Trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
-	Depth(ctx context.Context, obj *Market) (msg.MarketDepth, error)
-	Candles(ctx context.Context, obj *Market, sinceTimestamp string, interval Interval) ([]*msg.Candle, error)
+	Orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error)
+	Trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error)
+	Depth(ctx context.Context, obj *Market) (types.MarketDepth, error)
+	Candles(ctx context.Context, obj *Market, sinceTimestamp string, interval Interval) ([]*types.Candle, error)
 }
 type MarketDepthResolver interface {
-	Buy(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
-	Sell(ctx context.Context, obj *msg.MarketDepth) ([]msg.PriceLevel, error)
-	LastTrade(ctx context.Context, obj *msg.MarketDepth) (*msg.Trade, error)
+	Buy(ctx context.Context, obj *types.MarketDepth) ([]types.PriceLevel, error)
+	Sell(ctx context.Context, obj *types.MarketDepth) ([]types.PriceLevel, error)
+	LastTrade(ctx context.Context, obj *types.MarketDepth) (*types.Trade, error)
 }
 type MutationResolver interface {
 	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, typeArg OrderType, expiration *string) (PreConsensus, error)
 	OrderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error)
 }
 type OrderResolver interface {
-	Price(ctx context.Context, obj *msg.Order) (string, error)
-	Type(ctx context.Context, obj *msg.Order) (OrderType, error)
-	Side(ctx context.Context, obj *msg.Order) (Side, error)
-	Market(ctx context.Context, obj *msg.Order) (Market, error)
-	Size(ctx context.Context, obj *msg.Order) (string, error)
-	Remaining(ctx context.Context, obj *msg.Order) (string, error)
+	Price(ctx context.Context, obj *types.Order) (string, error)
+	Type(ctx context.Context, obj *types.Order) (OrderType, error)
+	Side(ctx context.Context, obj *types.Order) (Side, error)
+	Market(ctx context.Context, obj *types.Order) (Market, error)
+	Size(ctx context.Context, obj *types.Order) (string, error)
+	Remaining(ctx context.Context, obj *types.Order) (string, error)
 
-	Timestamp(ctx context.Context, obj *msg.Order) (string, error)
-	Datetime(ctx context.Context, obj *msg.Order) (string, error)
-	Status(ctx context.Context, obj *msg.Order) (OrderStatus, error)
+	Timestamp(ctx context.Context, obj *types.Order) (string, error)
+	Datetime(ctx context.Context, obj *types.Order) (string, error)
+	Status(ctx context.Context, obj *types.Order) (OrderStatus, error)
 
-	Trades(ctx context.Context, obj *msg.Order) ([]*msg.Trade, error)
+	Trades(ctx context.Context, obj *types.Order) ([]*types.Trade, error)
 }
 type PartyResolver interface {
-	Orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]msg.Order, error)
-	Trades(ctx context.Context, obj *Party, where *TradeFilter, skip *int, first *int, last *int) ([]msg.Trade, error)
-	Positions(ctx context.Context, obj *Party) ([]msg.MarketPosition, error)
+	Orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error)
+	Trades(ctx context.Context, obj *Party, where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error)
+	Positions(ctx context.Context, obj *Party) ([]types.MarketPosition, error)
 }
 type PositionResolver interface {
-	Market(ctx context.Context, obj *msg.MarketPosition) (Market, error)
-	RealisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error)
-	RealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error)
-	RealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
-	UnrealisedVolume(ctx context.Context, obj *msg.MarketPosition) (string, error)
-	UnrealisedProfitValue(ctx context.Context, obj *msg.MarketPosition) (string, error)
-	UnrealisedProfitDirection(ctx context.Context, obj *msg.MarketPosition) (ValueDirection, error)
-	AverageEntryPrice(ctx context.Context, obj *msg.MarketPosition) (string, error)
-	MinimumMargin(ctx context.Context, obj *msg.MarketPosition) (string, error)
+	Market(ctx context.Context, obj *types.MarketPosition) (Market, error)
+	RealisedVolume(ctx context.Context, obj *types.MarketPosition) (string, error)
+	RealisedProfitValue(ctx context.Context, obj *types.MarketPosition) (string, error)
+	RealisedProfitDirection(ctx context.Context, obj *types.MarketPosition) (ValueDirection, error)
+	UnrealisedVolume(ctx context.Context, obj *types.MarketPosition) (string, error)
+	UnrealisedProfitValue(ctx context.Context, obj *types.MarketPosition) (string, error)
+	UnrealisedProfitDirection(ctx context.Context, obj *types.MarketPosition) (ValueDirection, error)
+	AverageEntryPrice(ctx context.Context, obj *types.MarketPosition) (string, error)
+	MinimumMargin(ctx context.Context, obj *types.MarketPosition) (string, error)
 }
 type PriceLevelResolver interface {
-	Price(ctx context.Context, obj *msg.PriceLevel) (string, error)
-	Volume(ctx context.Context, obj *msg.PriceLevel) (string, error)
-	NumberOfOrders(ctx context.Context, obj *msg.PriceLevel) (string, error)
-	CumulativeVolume(ctx context.Context, obj *msg.PriceLevel) (string, error)
+	Price(ctx context.Context, obj *types.PriceLevel) (string, error)
+	Volume(ctx context.Context, obj *types.PriceLevel) (string, error)
+	NumberOfOrders(ctx context.Context, obj *types.PriceLevel) (string, error)
+	CumulativeVolume(ctx context.Context, obj *types.PriceLevel) (string, error)
 }
 type QueryResolver interface {
 	Vega(ctx context.Context) (Vega, error)
 }
 type SubscriptionResolver interface {
-	Candles(ctx context.Context, market string, interval Interval) (<-chan msg.Candle, error)
-	Orders(ctx context.Context, market *string, party *string) (<-chan []msg.Order, error)
-	Trades(ctx context.Context, market *string, party *string) (<-chan []msg.Trade, error)
-	Positions(ctx context.Context, party string) (<-chan msg.MarketPosition, error)
-	MarketDepth(ctx context.Context, market string) (<-chan msg.MarketDepth, error)
+	Candles(ctx context.Context, market string, interval Interval) (<-chan types.Candle, error)
+	Orders(ctx context.Context, market *string, party *string) (<-chan []types.Order, error)
+	Trades(ctx context.Context, market *string, party *string) (<-chan []types.Trade, error)
+	Positions(ctx context.Context, party string) (<-chan types.MarketPosition, error)
+	MarketDepth(ctx context.Context, market string) (<-chan types.MarketDepth, error)
 }
 type TradeResolver interface {
-	Market(ctx context.Context, obj *msg.Trade) (Market, error)
+	Market(ctx context.Context, obj *types.Trade) (Market, error)
 
-	Aggressor(ctx context.Context, obj *msg.Trade) (Side, error)
-	Price(ctx context.Context, obj *msg.Trade) (string, error)
-	Size(ctx context.Context, obj *msg.Trade) (string, error)
-	Timestamp(ctx context.Context, obj *msg.Trade) (string, error)
-	Datetime(ctx context.Context, obj *msg.Trade) (string, error)
+	Aggressor(ctx context.Context, obj *types.Trade) (Side, error)
+	Price(ctx context.Context, obj *types.Trade) (string, error)
+	Size(ctx context.Context, obj *types.Trade) (string, error)
+	Timestamp(ctx context.Context, obj *types.Trade) (string, error)
+	Datetime(ctx context.Context, obj *types.Trade) (string, error)
 }
 type VegaResolver interface {
 	Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
@@ -1523,7 +1523,7 @@ type executionContext struct {
 var candleImplementors = []string{"Candle"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, obj *msg.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, obj *types.Candle) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, candleImplementors)
 
 	var wg sync.WaitGroup
@@ -1615,7 +1615,7 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *types.Candle) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1642,7 +1642,7 @@ func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Candle_datetime(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle_datetime(ctx context.Context, field graphql.CollectedField, obj *types.Candle) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1669,7 +1669,7 @@ func (ec *executionContext) _Candle_datetime(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.CollectedField, obj *types.Candle) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1696,7 +1696,7 @@ func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.Coll
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.CollectedField, obj *types.Candle) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1723,7 +1723,7 @@ func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.Colle
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.CollectedField, obj *types.Candle) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1750,7 +1750,7 @@ func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.Coll
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.CollectedField, obj *types.Candle) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1777,7 +1777,7 @@ func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.Col
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.CollectedField, obj *types.Candle) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1804,7 +1804,7 @@ func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.Co
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.CollectedField, obj *msg.Candle) graphql.Marshaler {
+func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.CollectedField, obj *types.Candle) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -1939,7 +1939,7 @@ func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]msg.Order)
+	res := resTmp.([]types.Order)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2002,7 +2002,7 @@ func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]msg.Trade)
+	res := resTmp.([]types.Trade)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2062,7 +2062,7 @@ func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(msg.MarketDepth)
+	res := resTmp.(types.MarketDepth)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2093,7 +2093,7 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*msg.Candle)
+	res := resTmp.([]*types.Candle)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2139,7 +2139,7 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 var marketDepthImplementors = []string{"MarketDepth"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionSet, obj *msg.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionSet, obj *types.MarketDepth) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, marketDepthImplementors)
 
 	var wg sync.WaitGroup
@@ -2186,7 +2186,7 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionS
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _MarketDepth_name(ctx context.Context, field graphql.CollectedField, obj *msg.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) _MarketDepth_name(ctx context.Context, field graphql.CollectedField, obj *types.MarketDepth) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2213,7 +2213,7 @@ func (ec *executionContext) _MarketDepth_name(ctx context.Context, field graphql
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.CollectedField, obj *msg.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.CollectedField, obj *types.MarketDepth) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2230,7 +2230,7 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]msg.PriceLevel)
+	res := resTmp.([]types.PriceLevel)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2270,7 +2270,7 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql.CollectedField, obj *msg.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql.CollectedField, obj *types.MarketDepth) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2287,7 +2287,7 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]msg.PriceLevel)
+	res := resTmp.([]types.PriceLevel)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2327,7 +2327,7 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field graphql.CollectedField, obj *msg.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field graphql.CollectedField, obj *types.MarketDepth) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2344,7 +2344,7 @@ func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*msg.Trade)
+	res := resTmp.(*types.Trade)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -2465,7 +2465,7 @@ func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field gra
 var orderImplementors = []string{"Order"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *types.Order) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, orderImplementors)
 
 	var wg sync.WaitGroup
@@ -2591,7 +2591,7 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2618,7 +2618,7 @@ func (ec *executionContext) _Order_id(ctx context.Context, field graphql.Collect
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_price(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_price(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2645,7 +2645,7 @@ func (ec *executionContext) _Order_price(ctx context.Context, field graphql.Coll
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2672,7 +2672,7 @@ func (ec *executionContext) _Order_type(ctx context.Context, field graphql.Colle
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_side(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_side(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2699,7 +2699,7 @@ func (ec *executionContext) _Order_side(ctx context.Context, field graphql.Colle
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_market(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_market(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2727,7 +2727,7 @@ func (ec *executionContext) _Order_market(ctx context.Context, field graphql.Col
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_size(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_size(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2754,7 +2754,7 @@ func (ec *executionContext) _Order_size(ctx context.Context, field graphql.Colle
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_remaining(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_remaining(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2781,7 +2781,7 @@ func (ec *executionContext) _Order_remaining(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_party(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_party(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2808,7 +2808,7 @@ func (ec *executionContext) _Order_party(ctx context.Context, field graphql.Coll
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2835,7 +2835,7 @@ func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_datetime(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_datetime(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2862,7 +2862,7 @@ func (ec *executionContext) _Order_datetime(ctx context.Context, field graphql.C
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_status(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_status(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2889,7 +2889,7 @@ func (ec *executionContext) _Order_status(ctx context.Context, field graphql.Col
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2916,7 +2916,7 @@ func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.CollectedField, obj *msg.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.CollectedField, obj *types.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2933,7 +2933,7 @@ func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*msg.Trade)
+	res := resTmp.([]*types.Trade)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -3076,7 +3076,7 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]msg.Order)
+	res := resTmp.([]types.Order)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -3139,7 +3139,7 @@ func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]msg.Trade)
+	res := resTmp.([]types.Trade)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -3196,7 +3196,7 @@ func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]msg.MarketPosition)
+	res := resTmp.([]types.MarketPosition)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -3238,7 +3238,7 @@ func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.
 var positionImplementors = []string{"Position"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet, obj *types.MarketPosition) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, positionImplementors)
 
 	var wg sync.WaitGroup
@@ -3343,7 +3343,7 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *types.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3371,7 +3371,7 @@ func (ec *executionContext) _Position_market(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Position_realisedVolume(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position_realisedVolume(ctx context.Context, field graphql.CollectedField, obj *types.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3398,7 +3398,7 @@ func (ec *executionContext) _Position_realisedVolume(ctx context.Context, field 
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Position_realisedProfitValue(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position_realisedProfitValue(ctx context.Context, field graphql.CollectedField, obj *types.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3425,7 +3425,7 @@ func (ec *executionContext) _Position_realisedProfitValue(ctx context.Context, f
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Position_realisedProfitDirection(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position_realisedProfitDirection(ctx context.Context, field graphql.CollectedField, obj *types.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3452,7 +3452,7 @@ func (ec *executionContext) _Position_realisedProfitDirection(ctx context.Contex
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Position_unrealisedVolume(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position_unrealisedVolume(ctx context.Context, field graphql.CollectedField, obj *types.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3479,7 +3479,7 @@ func (ec *executionContext) _Position_unrealisedVolume(ctx context.Context, fiel
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Position_unrealisedProfitValue(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position_unrealisedProfitValue(ctx context.Context, field graphql.CollectedField, obj *types.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3506,7 +3506,7 @@ func (ec *executionContext) _Position_unrealisedProfitValue(ctx context.Context,
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Position_unrealisedProfitDirection(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position_unrealisedProfitDirection(ctx context.Context, field graphql.CollectedField, obj *types.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3533,7 +3533,7 @@ func (ec *executionContext) _Position_unrealisedProfitDirection(ctx context.Cont
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Position_averageEntryPrice(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position_averageEntryPrice(ctx context.Context, field graphql.CollectedField, obj *types.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3560,7 +3560,7 @@ func (ec *executionContext) _Position_averageEntryPrice(ctx context.Context, fie
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Position_minimumMargin(ctx context.Context, field graphql.CollectedField, obj *msg.MarketPosition) graphql.Marshaler {
+func (ec *executionContext) _Position_minimumMargin(ctx context.Context, field graphql.CollectedField, obj *types.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3678,7 +3678,7 @@ func (ec *executionContext) _PreConsensus_reference(ctx context.Context, field g
 var priceLevelImplementors = []string{"PriceLevel"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _PriceLevel(ctx context.Context, sel ast.SelectionSet, obj *msg.PriceLevel) graphql.Marshaler {
+func (ec *executionContext) _PriceLevel(ctx context.Context, sel ast.SelectionSet, obj *types.PriceLevel) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, priceLevelImplementors)
 
 	var wg sync.WaitGroup
@@ -3738,7 +3738,7 @@ func (ec *executionContext) _PriceLevel(ctx context.Context, sel ast.SelectionSe
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *msg.PriceLevel) graphql.Marshaler {
+func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *types.PriceLevel) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3765,7 +3765,7 @@ func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _PriceLevel_volume(ctx context.Context, field graphql.CollectedField, obj *msg.PriceLevel) graphql.Marshaler {
+func (ec *executionContext) _PriceLevel_volume(ctx context.Context, field graphql.CollectedField, obj *types.PriceLevel) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3792,7 +3792,7 @@ func (ec *executionContext) _PriceLevel_volume(ctx context.Context, field graphq
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, field graphql.CollectedField, obj *msg.PriceLevel) graphql.Marshaler {
+func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, field graphql.CollectedField, obj *types.PriceLevel) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3819,7 +3819,7 @@ func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, fiel
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _PriceLevel_cumulativeVolume(ctx context.Context, field graphql.CollectedField, obj *msg.PriceLevel) graphql.Marshaler {
+func (ec *executionContext) _PriceLevel_cumulativeVolume(ctx context.Context, field graphql.CollectedField, obj *types.PriceLevel) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4231,7 +4231,7 @@ func (ec *executionContext) _Subscription_marketDepth(ctx context.Context, field
 var tradeImplementors = []string{"Trade"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, obj *types.Trade) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, tradeImplementors)
 
 	var wg sync.WaitGroup
@@ -4324,7 +4324,7 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *types.Trade) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4351,7 +4351,7 @@ func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.Collect
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Trade_market(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_market(ctx context.Context, field graphql.CollectedField, obj *types.Trade) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4379,7 +4379,7 @@ func (ec *executionContext) _Trade_market(ctx context.Context, field graphql.Col
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.CollectedField, obj *types.Trade) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4406,7 +4406,7 @@ func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.Coll
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.CollectedField, obj *types.Trade) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4433,7 +4433,7 @@ func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.Col
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Trade_aggressor(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_aggressor(ctx context.Context, field graphql.CollectedField, obj *types.Trade) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4460,7 +4460,7 @@ func (ec *executionContext) _Trade_aggressor(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Trade_price(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_price(ctx context.Context, field graphql.CollectedField, obj *types.Trade) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4487,7 +4487,7 @@ func (ec *executionContext) _Trade_price(ctx context.Context, field graphql.Coll
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Trade_size(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_size(ctx context.Context, field graphql.CollectedField, obj *types.Trade) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4514,7 +4514,7 @@ func (ec *executionContext) _Trade_size(ctx context.Context, field graphql.Colle
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Trade_timestamp(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_timestamp(ctx context.Context, field graphql.CollectedField, obj *types.Trade) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4541,7 +4541,7 @@ func (ec *executionContext) _Trade_timestamp(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Trade_datetime(ctx context.Context, field graphql.CollectedField, obj *msg.Trade) graphql.Marshaler {
+func (ec *executionContext) _Trade_datetime(ctx context.Context, field graphql.CollectedField, obj *types.Trade) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{

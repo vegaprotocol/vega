@@ -6,17 +6,17 @@ model:
 
 models:
   Order:
-    model: vega/msg.Order
+    model: vega/proto.Order
   Trade:
-    model: vega/msg.Trade
+    model: vega/proto.Trade
   PriceLevel:
-    model: vega/msg.PriceLevel
+    model: vega/proto.PriceLevel
   MarketDepth:
-    model: vega/msg.MarketDepth
+    model: vega/proto.MarketDepth
   Candle:
-    model: vega/msg.Candle
+    model: vega/proto.Candle
   Position:
-    model: vega/msg.MarketPosition
+    model: vega/proto.MarketPosition
   Market:
     fields:
       orders:

@@ -1,16 +1,16 @@
 package matching
 
 import (
-	"vega/msg"
+	types "vega/proto"
 )
 
 type MatchingEngine interface {
 	CreateMarket(id string)
-	CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError)
-	SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError)
-	DeleteOrder(order *msg.Order)
-	RemoveExpiringOrders(timestamp uint64) []msg.Order
-	AmendOrder(order *msg.Order) msg.OrderError
+	CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError)
+	SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError)
+	DeleteOrder(order *types.Order)
+	RemoveExpiringOrders(timestamp uint64) []types.Order
+	AmendOrder(order *types.Order) types.OrderError
 }
 
 type matchingEngine struct {
@@ -29,49 +29,49 @@ func (me *matchingEngine) CreateMarket(marketName string) {
 	}
 }
 
-func (me *matchingEngine) SubmitOrder(order *msg.Order) (*msg.OrderConfirmation, msg.OrderError) {
+func (me *matchingEngine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError) {
 	market, exists := me.markets[order.Market]
 	if !exists {
-		return nil, msg.OrderError_INVALID_MARKET_ID
+		return nil, types.OrderError_INVALID_MARKET_ID
 	}
 
 	confirmationMessage, err := market.AddOrder(order)
-	if err != msg.OrderError_NONE {
+	if err != types.OrderError_NONE {
 		return nil, err
 	}
 
-	return confirmationMessage, msg.OrderError_NONE
+	return confirmationMessage, types.OrderError_NONE
 }
 
-func (me *matchingEngine) DeleteOrder(order *msg.Order) {
+func (me *matchingEngine) DeleteOrder(order *types.Order) {
 	if market, exists := me.markets[order.Market]; exists {
 		market.RemoveOrder(order)
 	}
 }
 
-func (me *matchingEngine) CancelOrder(order *msg.Order) (*msg.OrderCancellation, msg.OrderError) {
+func (me *matchingEngine) CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError) {
 	market, exists := me.markets[order.Market]
 	if !exists {
-		return nil, msg.OrderError_INVALID_MARKET_ID
+		return nil, types.OrderError_INVALID_MARKET_ID
 	}
 	cancellationResult, err :=	market.CancelOrder(order)
-	if err != msg.OrderError_NONE {
+	if err != types.OrderError_NONE {
 		return nil, err
 	}
-	return cancellationResult, msg.OrderError_NONE
+	return cancellationResult, types.OrderError_NONE
 }
 
-func (me *matchingEngine) RemoveExpiringOrders(timestamp uint64) []msg.Order {
-	var expiringOrders []msg.Order
+func (me *matchingEngine) RemoveExpiringOrders(timestamp uint64) []types.Order {
+	var expiringOrders []types.Order
 	for _, market := range me.markets {
 		expiringOrders = append(expiringOrders, market.RemoveExpiredOrders(timestamp)...)
 	}
 	return expiringOrders
 }
 
-func (me *matchingEngine) AmendOrder(order *msg.Order) msg.OrderError {
+func (me *matchingEngine) AmendOrder(order *types.Order) types.OrderError {
 	if market, exists := me.markets[order.Market]; exists {
 		return market.AmendOrder(order)
 	}
-	return msg.OrderError_INVALID_MARKET_ID
+	return types.OrderError_INVALID_MARKET_ID
 }
