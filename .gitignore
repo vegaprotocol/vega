@@ -12,3 +12,4 @@ vegabin
 log/capistrano.log
 .DS_Store
 tmp/
+data/
