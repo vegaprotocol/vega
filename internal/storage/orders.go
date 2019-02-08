@@ -60,6 +60,10 @@ type badgerOrderStore struct {
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
 func NewOrderStore(c *Config) (OrderStore, error) {
+	err := InitStoreDirectory(c.OrderStoreDirPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "error on init badger database for orders storage")
+	}
 	db, err := badger.Open(customBadgerOptions(c.OrderStoreDirPath))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for orders storage")

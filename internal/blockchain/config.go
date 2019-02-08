@@ -5,19 +5,19 @@ import (
 )
 
 type Config struct {
-	log logging.Logger
+	log   logging.Logger
 	level logging.Level
 
-	logTimeInfo bool
+	logTimeInfo         bool
 	logOrderSubmitDebug bool
-	logOrderAmendDebug bool
+	logOrderAmendDebug  bool
 	logOrderCancelDebug bool
 
-	ClientAddr string
+	ClientAddr     string
 	ClientEndpoint string
 
-	port int
-	ip string
+	ServerPort int
+	ServerAddr string
 }
 
 func NewConfig(logger logging.Logger) *Config {
@@ -25,14 +25,13 @@ func NewConfig(logger logging.Logger) *Config {
 	level := logging.DebugLevel
 	logger = logger.Named("blockchain")
 	return &Config{
-		log: logger,
-		level: level,
-		port: 46658,
-		ip: "localhost",
-		
-		ClientAddr: "tcp://0.0.0.0:26657",
-		ClientEndpoint: "/websocket",
-
+		log:                 logger,
+		level:               level,
+		ServerPort:          46658,
+		ServerAddr:          "localhost",
+		ClientAddr:          "tcp://0.0.0.0:46657",
+		ClientEndpoint:      "/websocket",
 		logOrderSubmitDebug: true,
+		logTimeInfo:         true,
 	}
 }

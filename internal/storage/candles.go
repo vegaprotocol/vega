@@ -81,6 +81,10 @@ type marketCandle struct {
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
 func NewCandleStore(c *Config) (CandleStore, error) {
+	err := InitStoreDirectory(c.CandleStoreDirPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "error on init badger database for candles storage")
+	}
 	db, err := badger.Open(customBadgerOptions(c.CandleStoreDirPath))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")

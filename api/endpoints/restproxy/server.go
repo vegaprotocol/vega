@@ -24,15 +24,14 @@ func NewRestProxyServer(config *api.Config) *restProxyServer {
 
 func (s *restProxyServer) Start() {
 	logger := *s.GetLogger()
-	port := s.GrpcServerPort
-	ip := s.GrpcServerIpAddress
-	logger.Infof("Starting REST<>GRPC based HTTP server on port %d...\n", port)
+	logger.Infof("Starting REST<>GRPC based HTTP server on port %d...\n", s.RestProxyServerPort)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	addr := fmt.Sprintf("%s:%d", ip, port)
+	restAddr := fmt.Sprintf("%s:%d", s.RestProxyIpAddress, s.RestProxyServerPort)
+	grpcAddr := fmt.Sprintf("%s:%d", s.GrpcServerIpAddress, s.GrpcServerPort)
 	jsonPB := &JSONPb{
 		EmitDefaults: true,
 		Indent:       "  ",      // format json output
@@ -45,7 +44,7 @@ func (s *restProxyServer) Start() {
 	)
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, addr, opts); err != nil {
+	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Fatalf("Registering trading handler for rest proxy endpoints %+v", err)
 	} else {
 		// CORS support
@@ -53,6 +52,6 @@ func (s *restProxyServer) Start() {
 		// Gzip encoding support
 		handler = NewGzipHandler(logger, handler.(http.HandlerFunc))
 		// Start http server on port specified
-		http.ListenAndServe(addr, handler)
+		http.ListenAndServe(restAddr, handler)
 	}
 }

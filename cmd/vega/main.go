@@ -1,139 +1,62 @@
-// cmd/vega/main.go
+// cmd/vegabin/main.go
 package main
 
 import (
+	"fmt"
 	"os"
-	"vega/api"
-	"vega/api/endpoints/grpc"
-	"vega/api/endpoints/restproxy"
-	"vega/blockchain"
-	"vega/core"
-	"vega/log"
-	"vega/api/endpoints/gql"
-	"flag"
-	"vega/datastore"
-	"path/filepath"
-	"github.com/pkg/profile"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
 
-	// Configuration and logging
-	config := core.GetConfig()
+	cli := NewCli()
+	cli.SetFlags()
 
-	// flags
-	var logLevelFlag string
-	flag.StringVar(&logLevelFlag, "log", "info", "pass log level: debug, info, error, fatal")
-	flag.BoolVar(&config.LogPriceLevels, "log_price_levels", false, "if true log price levels")
-	flag.Parse()
+	base := &command{cmd: cli.rootCmd, cli: cli}
+	base.Cmd().SilenceErrors = true
 
-	if err := initLogger(logLevelFlag); err != nil {
-		log.Fatalf("%s", err)
+	cli.AddCommand(base, &NodeCommand{})
+
+	if err := cli.Run(); err != nil {
+		// deal with ExitError, which should be recognize as error, and should
+		// not be exit with status 0.
+		if exitErr, ok := err.(ExitError); ok {
+			if exitErr.Status != "" {
+				fmt.Fprintln(os.Stderr, exitErr.Status)
+			}
+			if exitErr.Code == 0 {
+				// when get error with ExitError, code should not be 0.
+				exitErr.Code = 1
+			}
+			os.Exit(exitErr.Code)
+		}
+
+		// not ExitError, print error to os.Stderr, exit code 1.
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 
-	// CPU profiler enabled when in debug mode
-	if logLevelFlag == "debug" {
-		defer profile.Start().Stop()
-	}
-
-	// todo read from something like gitlab
-	config.AppVersion = "0.1.927"
-	config.AppVersionHash = "d6cd1e2bd19e03a81132a23b2025920577f84e37"
-	appVersion := os.Getenv("APP_VERSION")
-	appVersionHash := os.Getenv("APP_VERSION_HASH")
-	if appVersion != "" && appVersionHash != "" {
-		config.AppVersion = appVersion
-		config.AppVersionHash = appVersionHash
-	}
-
-	// Load the os executable file location
-	ex, err := os.Executable()
-	if err != nil {
-		log.Fatalf("Couldnt get location of vega binary: %s", err)
-	}
-	vegaPath := filepath.Dir(ex)
-	
-	// Storage Service provides read stores for consumer VEGA API
-	orderStoreDataDir := vegaPath + "/tmp/orderstore"
-	tradeStoreDataDir := vegaPath + "/tmp/tradestore"
-	candleStoreDataDir := vegaPath + "/tmp/candlestore"
-	orderStore := datastore.NewOrderStore(orderStoreDataDir)
-	tradeStore := datastore.NewTradeStore(tradeStoreDataDir)
-	candleStore := datastore.NewCandleStore(candleStoreDataDir)
-
-	// VEGA core
-	vega := core.New(config, orderStore, tradeStore, candleStore)
-	vega.InitialiseMarkets()
-
-	// Initialise concrete consumer services
-	orderService := api.NewOrderService()
-	tradeService := api.NewTradeService()
-	candleService := api.NewCandleService()
-	orderService.Init(vega, orderStore)
-	tradeService.Init(vega, tradeStore)
-	candleService.Init(vega, candleStore)
-
-	// GRPC server
-	// Port 3002
-	grpcServer := grpc.NewGRPCServer(orderService, tradeService, candleService)
-	go grpcServer.Start()
-
-	// REST<>GRPC (gRPC proxy) server
-	// Port 3003
-	restServer := restproxy.NewRestProxyServer()
-	go restServer.Start()
-
-	// GraphQL server (using new production quality gQL)
-	// Port 3004
-	graphServer := gql.NewGraphQLServer(orderService, tradeService, candleService)
-	go graphServer.Start()
-
-	// ABCI socket server
-	// Port 46658
-	if err := blockchain.Start(vega); err != nil {
-		log.Fatalf("%s", err)
-	}
-
-	orderService.Stop()
-	tradeService.Stop()
-	candleService.Stop()
+	var gracefulStop = make(chan os.Signal)
+	signal.Notify(gracefulStop, syscall.SIGTERM)
+	signal.Notify(gracefulStop, syscall.SIGINT)
+	go func() {
+		sig := <-gracefulStop
+		fmt.Printf("caught sig: %+v", sig)
+		fmt.Println("Wait for 2 second to finish processing")
+		time.Sleep(2*time.Second)
+		os.Exit(0)
+	}()
 }
 
-func initLogger(levelStr string) error {
-	level := parseLogLevel(levelStr)
-
-	//// Load the os executable file location
-	//ex, err := os.Executable()
-	//if err != nil {
-	//	return err
-	//}
-	//t := time.Now()
-	//logFileName := filepath.Dir(ex) + "/vega-" + t.Format("20060102150405") + ".log"
-	//fmt.Println(logFileName)
-	//
-	//_, err = os.Stat(logFileName)
-	//if err == nil {
-	//	err = os.Remove(logFileName)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-
-	//log.InitFileLogger(logFileName, level)
-	log.InitConsoleLogger(level)
-	return nil
+// ExitError defines exit error produce by cli commands.
+type ExitError struct {
+	Code   int
+	Status string
 }
 
-func parseLogLevel(level string) log.Level {
-	switch(level) {
-	case "debug":
-		return log.DebugLevel
-	case "info":
-		return log.InfoLevel
-	case "error":
-		return log.ErrorLevel
-	case "fatal":
-		return log.FatalLevel
-	}
-	return log.InfoLevel
+// Error implements the error interface.
+func (e ExitError) Error() string {
+	return fmt.Sprintf("Exit Code: %d, Status: %s", e.Code, e.Status)
 }

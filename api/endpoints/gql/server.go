@@ -87,8 +87,8 @@ func (g *graphServer) Start() {
 	}
 	// cors support - configure for production --->
 	
-	port := g.GrpcServerPort
-	ip := g.GrpcServerIpAddress
+	port := g.GraphQLServerPort
+	ip := g.GraphQLServerIpAddress
 	logger.Infof("Starting GraphQL based server on port %d...\n", port)
 	addr := fmt.Sprintf("%s:%d", ip, port)
 	resolverRoot := NewResolverRoot(

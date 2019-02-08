@@ -3,6 +3,8 @@ package storage
 import (
 	"os"
 	"vega/internal/logging"
+	"github.com/pkg/errors"
+	"fmt"
 )
 
 // Config provides package level settings, configuration and logging.
@@ -63,20 +65,39 @@ func FlushStores(c *Config) {
 		c.log.Errorf("error flushing order store: %s", err)
 	}
 	if _, err := os.Stat(c.OrderStoreDirPath); os.IsNotExist(err) {
-		os.MkdirAll(c.OrderStoreDirPath, os.ModePerm)
+		err = os.MkdirAll(c.OrderStoreDirPath, os.ModePerm)
+		if err != nil {
+			c.log.Errorf("error creating order store: %s", err)
+		}
 	}
 	err = os.RemoveAll(c.TradeStoreDirPath)
 	if err != nil {
 		c.log.Errorf("error flushing trade store: %s", err)
 	}
 	if _, err := os.Stat(c.TradeStoreDirPath); os.IsNotExist(err) {
-		os.MkdirAll(c.TradeStoreDirPath, os.ModePerm)
+		err = os.MkdirAll(c.TradeStoreDirPath, os.ModePerm)
+		if err != nil {
+			c.log.Errorf("error creating trade store: %s", err)
+		}
 	}
 	err = os.RemoveAll(c.CandleStoreDirPath)
 	if err != nil {
 		c.log.Errorf("error flushing candle store: %s", err)
 	}
 	if _, err := os.Stat(c.CandleStoreDirPath); os.IsNotExist(err) {
-		os.MkdirAll(c.CandleStoreDirPath, os.ModePerm)
+		err = os.MkdirAll(c.CandleStoreDirPath, os.ModePerm)
+		if err != nil {
+			c.log.Errorf("error creating candle store: %s", err)
+		}
 	}
+}
+
+func InitStoreDirectory(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err := os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("could not create directory path for badger data store: %s", path))
+		}
+	}
+	return nil
 }

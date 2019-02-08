@@ -26,7 +26,7 @@ func NewServer(config *Config, ex execution.Engine, time vegatime.Service) *Serv
 // Start configures and runs a new socket based ABCI tendermint blockchain
 // server for the VEGA application.
 func (s *Server) Start() error {
-	addr := fmt.Sprintf("%s:%d", s.ip, s.port)
+	addr := fmt.Sprintf("%s:%d", s.ServerAddr, s.ServerPort)
 	srv, err := server.NewServer(addr, "socket", s.abci)
 	if err != nil {
 		return err

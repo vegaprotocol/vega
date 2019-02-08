@@ -59,6 +59,10 @@ type badgerTradeStore struct {
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
 func NewTradeStore(c *Config) (TradeStore, error) {
+	err := InitStoreDirectory(c.TradeStoreDirPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "error on init badger database for trades storage")
+	}
 	db, err := badger.Open(customBadgerOptions(c.TradeStoreDirPath))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for trades storage")
