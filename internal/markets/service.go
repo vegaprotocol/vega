@@ -29,13 +29,13 @@ type marketService struct {
 	orderStore storage.OrderStore
 }
 
-// NewService creates an market service with the necessary dependencies
-func NewService(config *Config, marketStore storage.MarketStore, orderStore storage.OrderStore) Service {
+// NewMarketService creates an market service with the necessary dependencies
+func NewMarketService(config *Config, marketStore storage.MarketStore, orderStore storage.OrderStore) (Service, error) {
 	return &marketService{
 		config,
 		marketStore,
 		orderStore,
-	}
+	}, nil
 }
 
 // CreateMarket stores the given market.

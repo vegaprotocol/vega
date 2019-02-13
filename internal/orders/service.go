@@ -34,14 +34,14 @@ type orderService struct {
 }
 
 // NewOrderService creates an Orders service with the necessary dependencies
-func NewOrderService(store storage.OrderStore, time vegatime.Service) Service {
-	config := NewConfig()
+func NewOrderService(config *Config, store storage.OrderStore, time vegatime.Service) (Service, error) {
 
-	// todo (cdm): come back and pass configs in including blockchain config
+	// todo (cdm): come back and pass configs in including blockchain config or blockchain client
 	bcConfig := blockchain.NewConfig(config.log)
 	client, err := blockchain.NewClient(bcConfig)
 	if err != nil {
 		config.log.Fatalf("error creating blockchain client %s", err)
+		// todo(cdm): return this error or fatal?
 	}
 
 	return &orderService{
@@ -49,7 +49,7 @@ func NewOrderService(store storage.OrderStore, time vegatime.Service) Service {
 		store,
 		client,
 		time,
-	}
+	}, nil
 }
 
 func (s *orderService) CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error) {

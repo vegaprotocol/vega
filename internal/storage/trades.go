@@ -26,7 +26,7 @@ type TradeStore interface {
 
 	// Close can be called to clean up and close any storage
 	// connections held by the underlying storage mechanism.
-	Close()
+	Close() error 
 
 	// GetByMarket retrieves trades for a given market.
 	GetByMarket(market string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
@@ -314,8 +314,8 @@ func (ts *badgerTradeStore) GetByOrderId(orderId string, queryFilters *filtering
 
 // Close our connection to the badger database
 // ensuring errors will be returned up the stack.
-func (ts *badgerTradeStore) Close() {
-	ts.badger.db.Close()
+func (ts *badgerTradeStore) Close() error {
+	return ts.badger.db.Close()
 }
 
 // GetMarkPrice returns the current market price, for a requested market.

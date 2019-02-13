@@ -63,7 +63,7 @@ func (s *abciService) Commit() error {
 }
 
 func (s *abciService) SubmitOrder(order *types.Order) error {
-	if s.logOrderSubmitDebug {
+	if s.LogOrderSubmitDebug {
 		s.log.Debugf("AbciService: received a SUBMIT ORDER request: %s", order)
 	}
 
@@ -73,7 +73,7 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	// Submit the create order request to the execution engine
 	confirmationMessage, errorMessage := s.execution.SubmitOrder(order)
 	if confirmationMessage != nil {
-		if s.logOrderSubmitDebug {
+		if s.LogOrderSubmitDebug {
 			s.log.Debugf("Order confirmation message:")
 			s.log.Debugf("- aggressive order: %+v", confirmationMessage.Order)
 			s.log.Debugf("- trades: %+v", confirmationMessage.Trades)
@@ -97,14 +97,14 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 }
 
 func (s *abciService) CancelOrder(order *types.Order) error {
-	if s.logOrderCancelDebug {
+	if s.LogOrderCancelDebug {
 		s.log.Debugf("AbciService: received a CANCEL ORDER request")
 	}
 
 	// Submit the cancel new order request to the Vega trading core
 	cancellationMessage, errorMessage := s.execution.CancelOrder(order)
 	if cancellationMessage != nil {
-		if s.logOrderCancelDebug {
+		if s.LogOrderCancelDebug {
 			s.log.Debugf("ABCI order cancellation message:")
 			s.log.Debugf("- cancelled order: %+v", cancellationMessage.Order)
 		}
@@ -119,14 +119,14 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 }
 
 func (s *abciService) AmendOrder(order *types.Amendment) error {
-	if s.logOrderAmendDebug {
+	if s.LogOrderAmendDebug {
 		s.log.Debugf("AbciService: received a AMEND ORDER request")
 	}
 
 	// Submit the Amendment new order request to the Vega trading core
 	confirmationMessage, errorMessage := s.execution.AmendOrder(order)
 	if confirmationMessage != nil {
-		if s.logOrderAmendDebug {
+		if s.LogOrderAmendDebug {
 			s.log.Debugf("AbciService: Amend order from execution engine:")
 			s.log.Debugf("- cancelled order: %+v\n", confirmationMessage.Order)
 		}

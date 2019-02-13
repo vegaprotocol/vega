@@ -50,7 +50,7 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 	}
 
 	// We can log more gossiped time info (switchable in config)
-	if app.logTimeInfo {
+	if app.LogTimeDebug {
 		app.log.Infof("Begin block time report (%d txs):", beginBlock.Header.NumTxs)
 		app.log.Infof("------------------------")
 		app.log.Infof("Gossip time: %v", beginBlock.Header.Time)

@@ -4,34 +4,36 @@ import (
 	"vega/internal/logging"
 )
 
+// namedLogger is the identifier for package and should ideally match the package name
+// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
+const namedLogger = "blockchain"
+
 type Config struct {
 	log   logging.Logger
-	level logging.Level
+	Level logging.Level
 
-	logTimeInfo         bool
-	logOrderSubmitDebug bool
-	logOrderAmendDebug  bool
-	logOrderCancelDebug bool
+	LogTimeDebug        bool   `mapstructure:"time_debug"`
+	LogOrderSubmitDebug bool   `mapstructure:"order_submit_debug"`
+	LogOrderAmendDebug  bool   `mapstructure:"order_amend_debug"`
+	LogOrderCancelDebug bool   `mapstructure:"order_cancel_debug"`
 
-	ClientAddr     string
-	ClientEndpoint string
+	ClientAddr     string      `mapstructure:"client_addr"`
+	ClientEndpoint string      `mapstructure:"server_port"`
 
-	ServerPort int
-	ServerAddr string
+	ServerPort int             `mapstructure:"server_port"`
+	ServerAddr string          `mapstructure:"server_addr"`
 }
 
 func NewConfig(logger logging.Logger) *Config {
-
-	level := logging.DebugLevel
-	logger = logger.Named("blockchain")
+	logger = logger.Named(namedLogger)
 	return &Config{
 		log:                 logger,
-		level:               level,
+		Level:               logging.DebugLevel,
 		ServerPort:          46658,
 		ServerAddr:          "localhost",
-		ClientAddr:          "tcp://0.0.0.0:46657",
+		ClientAddr:          "tcp/://0.0.0.0:46657",
 		ClientEndpoint:      "/websocket",
-		logOrderSubmitDebug: true,
-		logTimeInfo:         true,
+		LogOrderSubmitDebug: true,
+		LogTimeDebug:        true,
 	}
 }

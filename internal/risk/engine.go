@@ -24,8 +24,7 @@ type riskEngine struct {
 	riskFactors  map[string]*types.RiskFactor
 }
 
-func NewRiskEngine() Engine {
-	config := NewConfig()
+func NewRiskEngine(config *Config) Engine {
 	return &riskEngine{
 		Config:       config,
 		riskFactors:  make(map[string]*types.RiskFactor, 0),

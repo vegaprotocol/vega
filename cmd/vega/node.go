@@ -1,30 +1,23 @@
 package main
 
 import (
-	"vega/api"
 	"vega/api/endpoints/gql"
 	"vega/api/endpoints/grpc"
 	"vega/api/endpoints/restproxy"
 	
 	"vega/internal/blockchain"
-	"vega/internal/candles"
 	"vega/internal/execution"
 	"vega/internal/logging"
 	"vega/internal/matching"
-	"vega/internal/orders"
-	"vega/internal/storage"
-	"vega/internal/trades"
-	"vega/internal/vegatime"
-
 	"github.com/spf13/cobra"
+	"vega/internal"
 )
 
 // NodeCommand use to implement 'node' command.
 type NodeCommand struct {
 	command
 
-	//username string
-	//password string
+	configPath string
 }
 
 // Init initialises the node command.
@@ -44,127 +37,96 @@ func (l *NodeCommand) Init(c *Cli) {
 	//	l.addFlags()
 }
 
-//// addFlags adds flags for specific command.
-//func (l *NodeCommand) addFlags() {
-//	flagSet := l.cmd.Flags()
-//
-//	flagSet.StringVarP(&l.username, "username", "u", "", "username for vega")
-//	flagSet.StringVarP(&l.password, "password", "p", "", "password for vega")
-//}
+// addFlags adds flags for specific command.
+func (l *NodeCommand) addFlags() {
+	flagSet := l.cmd.Flags()
+
+	flagSet.StringVarP(&l.configPath, "configPath", "cp", "", "file path to search for vega config file(s)")
+}
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
-	
+	// Set up the root logger
 	logger := logging.NewLogger()
-
-	if l.cli.Option.Debug {
-		level := logging.DebugLevel
-		err := logger.InitConsoleLogger(level)
-		if err != nil {
-			return err
-		}
-		logger.Infof("Starting up VEGA node with logging at DEBUG level")
-	} else {
-		level := logging.InfoLevel
-		err := logger.InitConsoleLogger(level)
-		if err != nil {
-			return err
-		}
-		logger.Infof("Starting up VEGA node with logging at INFO level")
+	defaultLevel := logging.InfoLevel
+	err := logger.InitConsoleLogger(defaultLevel)
+	if err != nil {
+		return err
 	}
 	logger.AddExitHandler()
 
-	//var logLevelFlag string
-	//flag.StringVar(&logLevelFlag, "log", "info", "pass log level: debug, info, error, fatal")
-	////flag.BoolVar(&config.LogPriceLevels, "log_price_levels", false, "if true log price levels")
-	//flag.Parse()
-
-	storeConfig := storage.NewConfig(logger)
-
-	orderStore, err := storage.NewOrderStore(storeConfig)
+	// Set up configuration and create a resolver
+	configPath := l.configPath
+	if configPath == "" {
+		configPath = "."
+	}
+	
+	//if l.cli.Option.Debug {
+	//	configPath = "." // When we run the cli in debug mode we can read in the config from cwd
+	//}
+	
+	conf, err := internal.NewConfig(logger) // VEGA config (holds all package level configs)
 	if err != nil {
-		// todo log fatal?
 		return err
 	}
-	defer orderStore.Close()
+	conf.ReadViperConfig(configPath)
+	//conf.ListenForChanges()
+	
+	resolver, err := internal.NewResolver(conf, &logger)
+	defer resolver.CloseStores()
 
-	tradeStore, err := storage.NewTradeStore(storeConfig)
+	// Resolve services for injection to servers/execution engine
+	orderService, err := resolver.ResolveOrderService()
 	if err != nil {
-		// todo log fatal?
 		return err
 	}
-	defer tradeStore.Close()
-
-	candleStore, err := storage.NewCandleStore(storeConfig)
+	tradeService, err := resolver.ResolveTradeService()
 	if err != nil {
-		// todo log fatal?
 		return err
 	}
-	defer candleStore.Close()
-
-	partyStore, err := storage.NewPartyStore(storeConfig)
+	candleService, err := resolver.ResolveCandleService()
 	if err != nil {
-		// todo log fatal?
 		return err
 	}
-	defer partyStore.Close()
-
-	marketStore, err := storage.NewMarketStore(storeConfig)
+	timeService, err := resolver.ResolveTimeService()
 	if err != nil {
-		// todo log fatal?
 		return err
 	}
-	defer marketStore.Close()
-
-	riskStore, err := storage.NewRiskStore(storeConfig)
+	orderStore, err := resolver.ResolveOrderStore()
 	if err != nil {
-		// todo log fatal?
 		return err
 	}
-	defer riskStore.Close()
-
-	vtc := vegatime.NewConfig()
-	timeService := vegatime.NewTimeService(vtc)
-
-	orderService := orders.NewOrderService(orderStore, timeService)
-	tradeService := trades.NewTradeService(tradeStore, riskStore)
-
-	candlesConfig := candles.NewConfig(logger)
-	candleService := candles.NewCandleService(candlesConfig, candleStore)
-
-	//partyService := parties.NewService(partyStore)
-	//marketService := markets.NewService(marketStore)
-
-	apiConfig := api.NewConfig(logger)
-
+	tradeStore, err := resolver.ResolveTradeStore()
+	if err != nil {
+		return err
+	}
+	
 	// gRPC server
-	// Port 3002
-	grpcServer := grpc.NewGRPCServer(apiConfig, orderService, tradeService, candleService)
+	grpcServer := grpc.NewGRPCServer(conf.API, orderService, tradeService, candleService)
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server
-	// Port 3003
-	restServer := restproxy.NewRestProxyServer(apiConfig)
+	restServer := restproxy.NewRestProxyServer(conf.API)
 	go restServer.Start()
 
 	// GraphQL server
-	// Port 3004
-	graphServer := gql.NewGraphQLServer(apiConfig, orderService, tradeService, candleService)
+	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService, candleService)
 	go graphServer.Start()
 
-	// Matching engine (todo) create these inside execution engine will be coupled to vega commands
-	matchingConfig := matching.NewConfig(logger)
-	matchingEngine := matching.NewMatchingEngine(matchingConfig)
+
+	// ---- New markets will be inside execution engine ---
+	// Matching engine
+	// todo(cdm): create these inside execution engine will be coupled to vega commands
+	matchingEngine := matching.NewMatchingEngine(conf.Matching)
 	matchingEngine.CreateMarket("BTC/DEC19")
+	// ---- New markets will be inside execution engine ---
+	// ----------------------------------------------------
 
 	// Execution engine (broker operation of markets at runtime etc)
-	eec := execution.NewConfig(logger)
-	executionEngine := execution.NewExecutionEngine(eec, matchingEngine, timeService, orderStore, tradeStore)
+	executionEngine := execution.NewExecutionEngine(conf.Execution, matchingEngine, timeService, orderStore, tradeStore)
 
-	// ABCI socket server
-	// Port 46658
-	blockchainConfig := blockchain.NewConfig(logger)
-	socketServer := blockchain.NewServer(blockchainConfig, executionEngine, timeService)
+	// ABCI<>blockchain server
+	socketServer := blockchain.NewServer(conf.Blockchain, executionEngine, timeService)
 	if err := socketServer.Start(); err != nil {
 		logger.Fatalf("ABCI socket server fatal error: %s", err)
 	}

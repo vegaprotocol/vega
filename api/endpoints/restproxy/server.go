@@ -34,7 +34,7 @@ func (s *restProxyServer) Start() {
 	grpcAddr := fmt.Sprintf("%s:%d", s.GrpcServerIpAddress, s.GrpcServerPort)
 	jsonPB := &JSONPb{
 		EmitDefaults: true,
-		Indent:       "  ",      // format json output
+		Indent:       "  ",      // formatted json output
 		OrigName:     true,
 	}
 

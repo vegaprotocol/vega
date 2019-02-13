@@ -1,0 +1,14 @@
+# This is a TOML config file.
+# For more information, see https://github.com/toml-lang/toml
+
+[blockchain]
+
+level = "debug"
+time_info = true
+order_submit_debug = true
+order_amend_debug = true
+order_cancel_debug = true
+client_addr = "tcp/://0.0.0.0:46657"
+client_endpoint = "/websocket"
+server_port = 46658
+server_addr = "localhost"

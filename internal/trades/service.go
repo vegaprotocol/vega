@@ -28,13 +28,12 @@ type tradeService struct {
 	riskStore  storage.RiskStore
 }
 
-func NewTradeService(tradeStore storage.TradeStore, riskStore storage.RiskStore) Service {
-	config := NewConfig()
+func NewTradeService(config *Config, tradeStore storage.TradeStore, riskStore storage.RiskStore) (Service, error) {
 	return &tradeService{
 		Config:     config,
 		tradeStore: tradeStore,
 		riskStore:  riskStore,
-	}
+	}, nil
 }
 
 func (t *tradeService) GetByMarket(market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {

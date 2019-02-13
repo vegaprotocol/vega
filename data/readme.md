@@ -1,1 +1,1 @@
-*** Please keep this directory empty for default database storage ***
+***Please keep this directory empty for run time database storage.***

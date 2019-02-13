@@ -19,7 +19,10 @@ type matchingEngine struct {
 }
 
 func NewMatchingEngine(config *Config) MatchingEngine {
-	return &matchingEngine{markets: make(map[string]*OrderBook), config: config}
+	return &matchingEngine{
+		markets: make(map[string]*OrderBook),
+		config:  config,
+	}
 }
 
 func (me *matchingEngine) CreateMarket(marketName string) {
@@ -54,7 +57,7 @@ func (me *matchingEngine) CancelOrder(order *types.Order) (*types.OrderCancellat
 	if !exists {
 		return nil, types.OrderError_INVALID_MARKET_ID
 	}
-	cancellationResult, err :=	market.CancelOrder(order)
+	cancellationResult, err := market.CancelOrder(order)
 	if err != types.OrderError_NONE {
 		return nil, err
 	}

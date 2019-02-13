@@ -7,6 +7,7 @@ import (
 
 	"vega/internal/storage"
 	"vega/internal/logging"
+	"github.com/pkg/errors"
 )
 
 type Service interface {
@@ -20,11 +21,17 @@ type candleService struct {
 	candleStore  storage.CandleStore
 }
 
-func NewCandleService(config *Config, candleStore storage.CandleStore) Service {
+func NewCandleService(config *Config, candleStore storage.CandleStore) (Service, error) {
+	if config == nil {
+		return nil, errors.New("candle config is nil when creating candle service instance.")
+	}
+	if candleStore == nil {
+		return nil, errors.New("candleStore instance is nil when creating candle service instance.")
+	}
 	return &candleService{
 		Config: config,
 		candleStore: candleStore,
-	}
+	}, nil
 }
 
 func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *types.Interval) (<-chan types.Candle, uint64) {
