@@ -34,9 +34,9 @@
 
 [Matching]
   Level = 0
+  ProRataMode = false
   LogPriceLevelsDebug = false
   LogRemovedOrdersDebug = false
-  ProRataMode = false
 
 [Orders]
   Level = 0
@@ -62,4 +62,4 @@
   Level = 0
 
 [Trades]
-  Level = -1
+  Level = 0

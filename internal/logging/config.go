@@ -1,8 +1,6 @@
 package logging
 
-
 type Config struct {
-
 }
 
 func NewConfig() *Config {

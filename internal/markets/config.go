@@ -7,15 +7,14 @@ import "vega/internal/logging"
 const namedLogger = "markets"
 
 type Config struct {
-	log logging.Logger
-	level logging.Level
+	log   logging.Logger
+	Level logging.Level
 }
 
 func NewConfig(logger logging.Logger) *Config {
-	level := logging.DebugLevel
 	logger = logger.Named(namedLogger)
 	return &Config{
-		log: logger,
-		level: level,
+		log:   logger,
+		Level: logging.InfoLevel,
 	}
 }

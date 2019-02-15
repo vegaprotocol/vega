@@ -23,7 +23,6 @@ type NodeCommand struct {
 // Init initialises the node command.
 func (l *NodeCommand) Init(c *Cli) {
 	l.cli = c
-
 	l.cmd = &cobra.Command{
 		Use:   "node",
 		Short: "Run a new Vega node",
@@ -34,7 +33,7 @@ func (l *NodeCommand) Init(c *Cli) {
 		},
 		Example: nodeExample(),
 	}
-	//	l.addFlags()
+	l.addFlags()
 }
 
 // addFlags adds flags for specific command.
@@ -60,18 +59,23 @@ func (l *NodeCommand) runNode(args []string) error {
 	if configPath == "" {
 		configPath = "."
 	}
-	
-	//if l.cli.Option.Debug {
-	//	configPath = "." // When we run the cli in debug mode we can read in the config from cwd
-	//}
-	
-	conf, err := internal.NewConfig(logger) // VEGA config (holds all package level configs)
+
+	// VEGA config (holds all package level configs)
+	conf, err := internal.NewConfig(logger)
 	if err != nil {
 		return err
 	}
-	conf.ReadViperConfig(configPath)
-	//conf.ListenForChanges()
-	
+	conf, err = conf.ReadConfigFromFile(configPath)
+	if err != nil {
+		// We revert to default configs if there are any errors in read/parse process
+		logger.Error("Error reading config from file, using defaults (%s)")
+		conf, err = conf.DefaultConfig()
+		if err != nil {
+			return err
+		}
+	}
+	conf.ListenForChanges()
+
 	resolver, err := internal.NewResolver(conf, &logger)
 	defer resolver.CloseStores()
 
@@ -130,6 +134,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err := socketServer.Start(); err != nil {
 		logger.Fatalf("ABCI socket server fatal error: %s", err)
 	}
+
 
 	return nil
 }

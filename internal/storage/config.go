@@ -14,31 +14,30 @@ const namedLogger = "storage"
 // Config provides package level settings, configuration and logging.
 type Config struct {
 	log   logging.Logger
-	level logging.Level
+	Level logging.Level
 
-	OrderStoreDirPath     string
-	TradeStoreDirPath     string
-	CandleStoreDirPath    string
-	LogPartyStoreDebug    bool
-	LogOrderStoreDebug    bool
-	LogCandleStoreDebug   bool
-	LogPositionStoreDebug bool
+	OrderStoreDirPath     string   `mapstructure:"order_store_path"`
+	TradeStoreDirPath     string   `mapstructure:"trade_store_path"`
+	CandleStoreDirPath    string   `mapstructure:"candle_store_path"`
+	//LogPartyStoreDebug    bool     `mapstructure:"party_store_debug"`
+	//LogOrderStoreDebug    bool     `mapstructure:"order_store_debug"`
+	//LogCandleStoreDebug   bool     `mapstructure:"candle_store_debug"`
+	LogPositionStoreDebug bool     `mapstructure:"position_store_debug"`
 }
 
 // NewConfig constructs a new Config instance with default parameters.
 // This constructor is used by the vega application code.
 func NewConfig(logger logging.Logger) *Config {
-	level := logging.DebugLevel
 	logger = logger.Named(namedLogger)
 	return &Config{
 		log:                   logger,
-		level:                 level,
+		Level:                 logging.InfoLevel,
 		OrderStoreDirPath:     "../../data/orderstore",
 		TradeStoreDirPath:     "../../data/tradestore",
 		CandleStoreDirPath:    "../../data/candlestore",
-		LogPartyStoreDebug:    true,
-		LogOrderStoreDebug:    true,
-		LogCandleStoreDebug:   false,
+		//LogPartyStoreDebug:    true,
+		//LogOrderStoreDebug:    true,
+		//LogCandleStoreDebug:   false,
 		LogPositionStoreDebug: false,
 	}
 }
