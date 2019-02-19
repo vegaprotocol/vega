@@ -35,11 +35,19 @@ dep: ## Get the dependencies
 	@dep ensure
 	@dep ensure -update
 
+install: proto ## install the binary in GOPATH/bin
+	@go install -v vega/cmd/vega
+
+proto: ## build proto definitions
+	@protoc --go_out=. ./proto/*.proto
+
 build: ## Build the binary file
 	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
 
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
+
+.PHONY: proto
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
