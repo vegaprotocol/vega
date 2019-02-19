@@ -124,7 +124,7 @@ func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, t
 	newOrder.Size = existingOrder.Size
 	newOrder.Remaining = existingOrder.Remaining
 	newOrder.Type = existingOrder.Type
-	newOrder.Timestamp = uint64(timestamp)
+	newOrder.Timestamp = timestamp.UnixNano()
 	newOrder.Status = existingOrder.Status
 	newOrder.ExpirationDatetime = existingOrder.ExpirationDatetime
 	newOrder.ExpirationTimestamp = existingOrder.ExpirationTimestamp

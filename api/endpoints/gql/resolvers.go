@@ -363,7 +363,7 @@ func (r *MyOrderResolver) Remaining(ctx context.Context, obj *types.Order) (stri
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 func (r *MyOrderResolver) Timestamp(ctx context.Context, obj *types.Order) (string, error) {
-	return strconv.FormatUint(obj.Timestamp, 10), nil
+	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 func (r *MyOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
 	return OrderStatus(obj.Status.String()), nil
@@ -400,7 +400,7 @@ func (r *MyTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, e
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 func (r *MyTradeResolver) Timestamp(ctx context.Context, obj *types.Trade) (string, error) {
-	return strconv.FormatUint(obj.Timestamp, 10), nil
+	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 func (r *MyTradeResolver) Datetime(ctx context.Context, obj *types.Trade) (string, error) {
 	vegaTimestamp := vegatime.Stamp(obj.Timestamp)
