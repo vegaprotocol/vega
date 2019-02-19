@@ -40,6 +40,12 @@ install: proto ## install the binary in GOPATH/bin
 proto: ## build proto definitions
 	@protoc --go_out=. ./proto/*.proto
 
+install: proto ## install the binary in GOPATH/bin
+	@go install -v vega/cmd/vega
+
+proto: ## build proto definitions
+	@protoc --go_out=. ./proto/*.proto
+
 build: ## Build the binary file
 	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
 
