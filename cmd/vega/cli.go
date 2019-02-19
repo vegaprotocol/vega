@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -11,28 +13,46 @@ type Option struct {
 
 type Cli struct {
 	Option
-	rootCmd   *cobra.Command
-	padding   int
+	rootCmd *cobra.Command
+	padding int
 }
 
-var aboutVega = `  
- __      __  ______    _____            
- \ \    / / |  ____|  / ____|     /\    
-  \ \  / /  | |__    | |  __     /  \   
-   \ \ \/   |  __|   | | |_ |   / /\ \  
-    \ \     | |____  | |__| |  / ____ \ 
+const (
+	defaultVersionHash = "dev"
+	defaultVersion     = "unknown"
+)
+
+var (
+	VersionHash = ""
+	Version     = ""
+)
+
+var aboutVega = `
+ __      __  ______    _____
+ \ \    / / |  ____|  / ____|     /\
+  \ \  / /  | |__    | |  __     /  \
+   \ \ \/   |  __|   | | |_ |   / /\ \
+    \ \     | |____  | |__| |  / ____ \
      \/     |______|  \_____| /_/    \_\
 
 `
 
 // NewCli creates an instance of 'Cli'.
 func NewCli() *Cli {
+	if len(VersionHash) <= 0 {
+		VersionHash = defaultVersionHash
+	}
+	if len(Version) <= 0 {
+		Version = defaultVersion
+	}
+
 	return &Cli{
 		rootCmd: &cobra.Command{
-			Use:   "vega",
-			Short: "Smart infrastructure for a better financial system.",
-			Long:  aboutVega,
+			Use:               "vega",
+			Short:             "Smart infrastructure for a better financial system.",
+			Long:              aboutVega,
 			DisableAutoGenTag: true,
+			Version:           fmt.Sprintf("%v (%v)", Version, VersionHash),
 		},
 		padding: 3,
 	}
@@ -69,4 +89,3 @@ func (c *Cli) SetFlags() *Cli {
 	//flags.BoolVar(&c.Option.TLS.VerifyRemote, "tlsverify", false, "Use TLS and verify remote")
 	return c
 }
-

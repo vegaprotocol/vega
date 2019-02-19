@@ -4,14 +4,14 @@ import (
 	"vega/api/endpoints/gql"
 	"vega/api/endpoints/grpc"
 	"vega/api/endpoints/restproxy"
-	
+	"vega/internal"
 	"vega/internal/blockchain"
 	"vega/internal/execution"
 	"vega/internal/logging"
 	"vega/internal/matching"
-	"github.com/spf13/cobra"
-	"vega/internal"
+
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 // NodeCommand use to implement 'node' command.
@@ -107,7 +107,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// gRPC server
 	grpcServer := grpc.NewGRPCServer(conf.API, orderService, tradeService, candleService)
 	go grpcServer.Start()
@@ -119,7 +119,6 @@ func (l *NodeCommand) runNode(args []string) error {
 	// GraphQL server
 	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService, candleService)
 	go graphServer.Start()
-
 
 	// ---- New markets will be inside execution engine ---
 	// Matching engine
@@ -138,7 +137,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		errors.Wrap(err, "ABCI socket server error")
 	}
-	
+
 	return nil
 }
 
