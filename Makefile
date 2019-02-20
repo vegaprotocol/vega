@@ -16,7 +16,7 @@ lint: ## Lint the files
 	@go get -u golang.org/x/lint/golint
 	@golint -set_exit_status ${PKG_LIST}
 
-test: ## Run unit tests
+test: deps ## Run unit tests
 	@go test -short ${PKG_LIST} -v
 
 race: ## Run data race detector
@@ -31,9 +31,8 @@ coverage: ## Generate global code coverage report
 coverhtml: ## Generate global code coverage report in HTML
 	./coverage.sh html;
 
-dep: ## Get the dependencies
-	@dep ensure
-	@dep ensure -update
+deps: ## Get the dependencies
+	@go mod download
 
 install: proto ## install the binary in GOPATH/bin
 	@go install -v vega/cmd/vega

@@ -1,4 +1,4 @@
-image: golang:1.10.1
+image: golang:1.11.5
 
 variables:
   BIN_NAME: vega
@@ -39,7 +39,7 @@ unit_tests:
 
 # FUTURE:
 # Requires custom GCC based docker image
-# 
+#
 # memory_sanitizer:
 #  stage: test
 #  script:
