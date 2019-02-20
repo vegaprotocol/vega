@@ -12,7 +12,7 @@ type OrderBook struct {
 	buy             *OrderBookSide
 	sell            *OrderBookSide
 	lastTradedPrice uint64
-	latestTimestamp uint64
+	latestTimestamp int64
 	expiringOrders  []types.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
 }
 
@@ -185,14 +185,14 @@ func (b *OrderBook) RemoveOrder(order *types.Order) error {
 // expirationTimestamp must be of the format unix epoch seconds with nanoseconds e.g. 1544010789803472469.
 // RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
 // matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
-func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []types.Order {
+func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order {
 	var expiredOrders []types.Order
 	var pendingOrders []types.Order
 
 	// linear scan of our expiring orders, prune any that have expired
 	for _, or := range b.expiringOrders {
 		if or.ExpirationTimestamp <= expirationTimestamp {
-			b.RemoveOrder(&or)            // order is removed from the book
+			b.RemoveOrder(&or)              // order is removed from the book
 			or.Status = types.Order_Expired // order is marked as expired for storage
 			expiredOrders = append(expiredOrders, or)
 		} else {

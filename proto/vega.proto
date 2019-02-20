@@ -32,10 +32,10 @@ message Order {
     uint64 size = 6;
     uint64 remaining = 7;
     Type type = 8;
-    uint64 timestamp = 9;
+    int64 timestamp = 9;
     Status status = 10;
     string expirationDatetime = 11;
-    uint64 expirationTimestamp = 12;
+    int64 expirationTimestamp = 12;
     string reference = 13;
 }
 
@@ -74,7 +74,7 @@ message Trade {
     Side aggressor = 7;
     string buyOrder = 8;
     string sellOrder = 9;
-    uint64 timestamp = 10;
+    int64 timestamp = 10;
 }
 
 message TradeSet {
@@ -158,5 +158,5 @@ message Amendment {
     uint64 price = 3;
     uint64 size = 4;
     string expirationDatetime = 5;
-    uint64 expirationTimestamp = 6;
+    int64 expirationTimestamp = 6;
 }
