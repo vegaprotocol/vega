@@ -1,11 +1,11 @@
-# Vega specific entries
+\0;95;0c# Vega specific entries
 cover.out
 coverage.html
-vega
+cmd/vega/vega
 vega-*.log
 vegabench
 vegabin
-!vegabin/  
+!vegabin/
 .idea/
 *.iws
 .testCoverage.txt
