@@ -44,6 +44,7 @@ require (
 	google.golang.org/grpc v1.18.0
 )
 
-replace github.com/dgraph-io/badger => github.com/dgraph-io/badger v1.5.5-0.20190214192501-3196cc1d7a5f
-
-replace github.com/golang/protobuf => github.com/golang/protobuf v1.2.1-0.20190205222052-c823c79ea157
+replace (
+	github.com/dgraph-io/badger => github.com/dgraph-io/badger v1.5.5-0.20190214192501-3196cc1d7a5f
+	github.com/golang/protobuf => github.com/golang/protobuf v1.2.1-0.20190205222052-c823c79ea157
+)
