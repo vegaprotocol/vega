@@ -73,10 +73,15 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 	go func(id uint64, internal chan []types.Order, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
-		s.log.Debugf("MarketService -> depth closed connection: %d [%s]", id, ip)
+		s.log.Debug("Market depth subscriber closed connection",
+			logging.Uint64("id", id),
+			logging.String("ip-address", ip))
 		err := s.orderStore.Unsubscribe(id)
 		if err != nil {
-			s.log.Errorf("Error un-subscribing depth when context.Done() on MarketService for subscriber %d [%s]: %s", id, ip, err)
+			s.log.Error("Failure un-subscribing market depth subscriber when context.Done()",
+				logging.Uint64("id", id),
+				logging.String("ip-address", ip),
+				logging.Error(err))
 		}
 	}(ref, internal, ctx)
 
@@ -85,17 +90,26 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 		for range internal {
 			d, err := s.orderStore.GetMarketDepth(market)
 			if err != nil {
-				s.log.Errorf("Error calculating market depth for subscriber %d [%s]: %s", ref, ip, err)
+				s.log.Error("Failure calculating market depth for subscriber",
+					logging.Uint64("ref", ref),
+					logging.String("ip-address", ip),
+					logging.Error(err))
 			} else {
 				select {
 				case depth <- d:
-					s.log.Debugf("MarketService -> depth for subscriber %d [%s] sent successfully", ref, ip)
+					s.log.Debug("Market depth for subscriber sent successfully",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 				default:
-					s.log.Debugf("MarketService -> depth for subscriber %d [%s] not sent", ref, ip)
+					s.log.Debug("Market depth for subscriber not sent",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 				}
 			}
 		}
-		s.log.Debugf("MarketService -> Channel for depth subscriber %d [%s] has been closed", ref, ip)
+		s.log.Debug("Market depth subscriber channel has been closed",
+			logging.Uint64("ref", ref),
+			logging.String("ip-address", ip))
 	}(ref, ctx)
 
 	return depth, ref

@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"vega/internal/logging"
 )
 
 // storageConfig specifies that the badger files are kept in a different
@@ -28,6 +29,9 @@ func TestNewTradeService(t *testing.T) {
 	config := storageConfig()
 	storage.FlushStores(config)
 
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+	
 	tradeStore, err := storage.NewTradeStore(config)
 	defer tradeStore.Close()
 	assert.Nil(t, err)
@@ -38,7 +42,9 @@ func TestNewTradeService(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeStore)
 
-	var newTradeService = NewTradeService(tradeStore, riskStore)
+	tradeConfig := NewConfig(logger)
+	newTradeService, err := NewTradeService(tradeConfig, tradeStore, riskStore)
+	assert.Nil(t, err)
 	assert.NotNil(t, newTradeService)
 }
 
@@ -46,9 +52,15 @@ func TestTradeService_GetByMarket(t *testing.T) {
 	market := "BTC/DEC19"
 	invalid := "LTC/DEC19"
 
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
 	tradeStore := &mocks.TradeStore{}
 	riskStore := &mocks.RiskStore{}
-	tradeService := NewTradeService(tradeStore, riskStore)
+
+	tradeConfig := NewConfig(logger)
+	tradeService, err := NewTradeService(tradeConfig, tradeStore, riskStore)
+	assert.Nil(t, err)
 	assert.NotNil(t, tradeService)
 
 	// Scenario 1: valid market has n trades
@@ -58,7 +70,7 @@ func TestTradeService_GetByMarket(t *testing.T) {
 		{Id: "C", Market: market, Price: 300},
 	}, nil).Once()
 
-	var tradeSet, err = tradeService.GetByMarket(market, &filtering.TradeQueryFilters{})
+	tradeSet, err := tradeService.GetByMarket(market, &filtering.TradeQueryFilters{})
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeSet)
 	assert.Equal(t, 3, len(tradeSet))
@@ -78,9 +90,14 @@ func TestTradeService_GetByParty(t *testing.T) {
 	partyB := "barney"
 	invalid := "chris"
 
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
 	tradeStore := &mocks.TradeStore{}
 	riskStore := &mocks.RiskStore{}
-	tradeService := NewTradeService(tradeStore, riskStore)
+	tradeConfig := NewConfig(logger)
+	tradeService, err := NewTradeService(tradeConfig, tradeStore, riskStore)
+	assert.Nil(t, err)
 	assert.NotNil(t, tradeService)
 
 	// Scenario 1: valid market has n trades
@@ -89,7 +106,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 		{Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
 	}, nil).Once()
 
-	var tradeSet, err = tradeService.GetByParty(partyA, &filtering.TradeQueryFilters{})
+	tradeSet, err := tradeService.GetByParty(partyA, &filtering.TradeQueryFilters{})
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeSet)
 	assert.Equal(t, 2, len(tradeSet))

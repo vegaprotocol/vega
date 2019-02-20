@@ -12,9 +12,8 @@ func TestNewAbciApplication(t *testing.T) {
 	ex := &execution.Engine{}
 	vt := vegatime.NewTimeService(nil)
 
-	logger := logging.NewLogger()
-	logger.InitConsoleLogger(logging.DebugLevel)
-	logger.AddExitHandler()
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
 
 	config := NewConfig(logger)
 	stats := NewStats()

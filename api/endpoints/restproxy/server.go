@@ -10,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
+	"vega/internal/logging"
 )
 
 type restProxyServer struct {
@@ -24,7 +25,10 @@ func NewRestProxyServer(config *api.Config) *restProxyServer {
 
 func (s *restProxyServer) Start() {
 	logger := *s.GetLogger()
-	logger.Infof("Starting REST<>GRPC based HTTP server on port %d...\n", s.RestProxyServerPort)
+
+	logger.Info("Starting REST<>GRPC based API",
+		logging.String("addr", s.RestProxyIpAddress),
+		logging.Int("port", s.RestProxyServerPort))
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -45,13 +49,16 @@ func (s *restProxyServer) Start() {
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 	if err := api.RegisterTradingHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
-		logger.Fatalf("Registering trading handler for rest proxy endpoints %+v", err)
+		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	} else {
 		// CORS support
 		handler := cors.Default().Handler(mux)
 		// Gzip encoding support
 		handler = NewGzipHandler(logger, handler.(http.HandlerFunc))
 		// Start http server on port specified
-		http.ListenAndServe(restAddr, handler)
+		err = http.ListenAndServe(restAddr, handler)
+		if err != nil {
+			logger.Panic("Failure serving REST proxy API", logging.Error(err))
+		}
 	}
 }

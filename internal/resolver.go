@@ -17,7 +17,6 @@ import (
 
 type Resolver struct {
 	config *Config
-	logger *logging.Logger
 
 	candleStore storage.CandleStore
 	orderStore  storage.OrderStore
@@ -39,28 +38,20 @@ type Resolver struct {
 }
 
 // NewResolver initialises an instance of the VEGA resolver, this provides access to services and stores to help
-// with a dependency graph. VEGA config and logger implementations are required and are used to provide run time
-// configuration and logging output throughout the application.
-func NewResolver(config *Config, logger *logging.Logger) (*Resolver, error) {
-	if logger == nil {
-		return nil, errors.New("logger instance is nil when calling NewResolver.")
-	}
+// with a dependency graph. VEGA config implementation is required.
+func NewResolver(config *Config) (*Resolver, error) {
 	if config == nil {
 		return nil, errors.New("config instance is nil when calling NewResolver.")
 	}
 	return &Resolver{
 		config: config,
-		logger: logger,
 	}, nil
 }
 
 // ResolveLogger returns a pointer to a singleton instance of the debug/error logger. This instance of a logger is
 // typically provided/injected into NewResolver at runtime.
 func (r *Resolver) ResolveLogger() (*logging.Logger, error) {
-	if r.logger == nil {
-		return nil, errors.New("logger instance is nil when trying to resolve logger.")
-	}
-	return r.logger, nil
+	return r.config.log, nil
 }
 
 // -------------- Services/ --------------
@@ -394,8 +385,7 @@ func (r *Resolver) CloseStores() {
 
 	r.stMu.Unlock()
 	if err != nil {
-		l := *r.logger
-		l.Errorw("error(s) when closing stores in resolver.", err.Error())
+		r.config.log.Error("error(s) when closing stores in resolver.") //err.Error())
 		//todo(cdm): improve this logging with structured logger changes soon, special log full error strings via wrap.
 	}
 }

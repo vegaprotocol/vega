@@ -9,6 +9,8 @@ import (
 	"vega/internal/storage"
 
 	types "vega/proto"
+	"github.com/pkg/errors"
+	"fmt"
 )
 
 type Service interface {
@@ -84,10 +86,15 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 	go func(id uint64, internal chan []types.Trade, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
-		t.log.Debugf("TradeService -> Subscriber closed connection: %d [%s]", id, ip)
+		t.log.Debug("Trades subscriber closed connection",
+			logging.Uint64("id", id),
+			logging.String("ip-address", ip))
 		err := t.tradeStore.Unsubscribe(id)
 		if err != nil {
-			t.log.Errorf("Error un-subscribing when context.Done() on TradeService for subscriber %d [%s]: %s", id, ip, err)
+			t.log.Error("Failure un-subscribing trades subscriber when context.Done()",
+				logging.Uint64("id", id),
+				logging.String("ip-address", ip),
+				logging.Error(err))
 		}
 	}(ref, internal, ctx)
 
@@ -109,13 +116,19 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 			if len(validatedTrades) > 0 {
 				select {
 				case trades <- validatedTrades:
-					t.log.Debugf("TradeService -> Trades for subscriber %d [%s] sent successfully", ref, ip)
+					t.log.Debug("Trades for subscriber sent successfully",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 				default:
-					t.log.Debugf("TradeService -> Trades for subscriber %d [%s] not sent", ref, ip)
+					t.log.Debug("Trades for subscriber not sent",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 				}
 			}
 		}
-		t.log.Debugf("TradeService -> Channel for subscriber %d [%s] has been closed", ref, ip)
+		t.log.Debug("Trades subscriber channel has been closed",
+			logging.Uint64("ref", ref),
+			logging.String("ip-address", ip))
 	}(ref, ctx)
 
 	return trades, ref
@@ -129,10 +142,15 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 	go func(id uint64, internal chan []types.Trade, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
-		t.log.Debugf("TradeService -> Positions subscriber closed connection: % [%s]", id, ip)
+		t.log.Debug("Positions subscriber closed connection",
+			logging.Uint64("id", id),
+			logging.String("ip-address", ip))
 		err := t.tradeStore.Unsubscribe(id)
 		if err != nil {
-			t.log.Errorf("Error un-subscribing positions when context.Done() on TradeService for subscriber %d [%s]: %s", id, ip, err)
+			t.log.Error("Failure un-subscribing positions subscriber when context.Done()",
+				logging.Uint64("id", id),
+				logging.String("ip-address", ip),
+				logging.Error(err))
 		}
 	}(ref, internal, ctx)
 
@@ -141,24 +159,38 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 		for range internal {
 			mapOfMarketPositions, err := t.GetPositionsByParty(ctx, party)
 			if err != nil {
-				t.log.Errorf("Error getting positions by party on TradeService for subscriber %d [%s]: %s", id, ip, err)
+				t.log.Error("Failed to get positions for subscriber (getPositionsByParty)",
+					logging.Uint64("id", id),
+					logging.Uint64("ref", ref),
+					logging.String("ip-address", ip),
+					logging.Error(err))
 			}
 			for _, marketPositions := range mapOfMarketPositions {
 				select {
 				case positions <- *marketPositions:
-					t.log.Debugf("TradeService -> Positions for subscriber %d [%s] sent successfully", ref, ip)
+					t.log.Debug("Positions for subscriber sent successfully",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 				default:
-					t.log.Debugf("TradeService -> Positions for subscriber %d [%s] not sent", ref, ip)
+					t.log.Debug("Positions for subscriber not sent",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 				}
 			}
 		}
-		t.log.Debugf("TradeService -> Channel for positions subscriber %d [%s] has been closed", ref, ip)
+		t.log.Debug("Positions subscriber channel has been closed",
+			logging.Uint64("ref", ref),
+			logging.String("ip-address", ip))
 	}(ref, ctx)
 
 	return positions, ref
 }
 
 func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error) {
+
+	t.log.Debug("Calculate positions for party",
+		logging.String("party-id", party))
+
 	marketBuckets := t.tradeStore.GetTradesBySideBuckets(party)
 
 	var (
@@ -172,7 +204,9 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 		forwardRiskMargin             float64
 	)
 
-	t.log.Debugf("Total market buckets = %d", len(marketBuckets))
+	t.log.Debug("Loaded market buckets for party",
+		logging.String("party-id", party),
+		logging.Int("total-buckets", len(marketBuckets)))
 
 	for market, marketBucket := range marketBuckets {
 		if marketBucket.BuyVolume > marketBucket.SellVolume {
@@ -219,7 +253,10 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 			continue
 		}
 
-		riskFactor = t.getRiskFactorByMarketAndPositionSign(ctx, market, OpenVolumeSign)
+		riskFactor, err = t.getRiskFactorByMarketAndPositionSign(ctx, market, OpenVolumeSign)
+		if err != nil {
+			return nil, err
+		}
 
 		marketPositions := &types.MarketPosition{}
 		marketPositions.Market = market
@@ -241,19 +278,21 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 		positions = append(positions, marketPositions)
 	}
 
-	t.log.Debugf("Positions calculated: %d", len(positions))
+	t.log.Debug("Positions for party calculated",
+		logging.String("party-id", party),
+		logging.Int("total-buckets", len(positions)))
 
 	return positions, nil
 }
 
-func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) float64 {
+func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) (float64, error) {
 	rf, err := t.riskStore.GetByMarket(market)
 	if err != nil {
-		t.log.Errorf("failed to obtain risk factors from risk engine for market: %s", market)
+		t.log.Error("Failed to obtain risk factors from risk engine",
+			logging.String("market-id", market))
+		return -1, errors.Wrap(err, fmt.Sprintf("Failed to obtain risk factors from risk engine for market: %s", market))
 	}
-
-	t.log.Debugf("Risk Factors = %v/%v", rf.Long, rf.Short)
-
+	
 	var riskFactor float64
 	if openVolumeSign == 1 {
 		riskFactor = rf.Long
@@ -267,7 +306,7 @@ func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context,
 		riskFactor = rf.Short
 	}
 
-	return riskFactor
+	return riskFactor, nil
 }
 
 func (t *tradeService) calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *storage.MarketBucket,

@@ -1,270 +1,224 @@
 package logging
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/tav/golly/process"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"time"
-	"github.com/tav/golly/process"
 	"context"
 )
-
-type Logger interface {
-	AddExitHandler()
-	InitConsoleLogger(lvl Level) error
-	InitFileLogger(path string, lvl Level) error
-
-	Debug(args ...interface{})
-	Info(args ...interface{})
-	Error(args ...interface{})
-	Fatal(args ...interface{})
-
-	Debugf(format string, args ...interface{})
-	Infof(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
-	Fatalf(format string, args ...interface{})
-
-	Debugw(msg string, args ...interface{})
-	Infow(msg string, args ...interface{})
-	Errorw(msg string, args ...interface{})
-	Fatalw(msg string, args ...interface{})
-
-	Named(name string) Logger
-}
 
 // A Level is a logging priority. Higher levels are more important.
 type Level int8
 
-// Logging levels.
+// Logging levels (matching zap core internals).
 const (
-	// DebugLevel logs are typically voluminous. Usually disabled in production.
+	// DebugLevel logs are typically voluminous, and are usually disabled in
+	// production.
 	DebugLevel Level = -1
 	// InfoLevel is the default logging priority.
 	InfoLevel Level = 0
+	// WarnLevel logs are more important than Info, but don't need individual
+	// human review.
+	WarnLevel Level = 1
 	// ErrorLevel logs are high-priority. If an application is running smoothly,
 	// it shouldn't generate any error-level logs.
 	ErrorLevel Level = 2
+	// PanicLevel logs a message, then panics.
+	PanicLevel Level = 4
 	// FatalLevel logs a message, then calls os.Exit(1).
 	FatalLevel Level = 5
 )
 
-type logger struct {
-	root *zap.Logger
-	id string
+type Logger struct {
+	*zap.Logger
+	config *zap.Config
+	name   string
 }
 
-func NewLogger() Logger {
-	return &logger{}
+func (log *Logger) Check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
+	return log.Check(lvl, msg)
 }
 
-func loggerFromExistingCore(root *zap.Logger, name string) Logger {
-	newCore := root.Named(name)
-	return &logger{root: newCore}
+func (log *Logger) Clone() *Logger {
+	newConfig := cloneConfig(log.config)
+	newLogger, err := newConfig.Build()
+	if err != nil {
+		panic(err)
+	}
+	return &Logger{
+		Logger: newLogger,
+		config: newConfig,
+	}
 }
 
-// InitConsoleLogger initialises a console logger configured with defaults for
-// use as the root logger. If a root logger already exists, it will be tee-d
-// together with the new console logger.
-func (l *logger) InitConsoleLogger(lvl Level) error {
-
-	return l.setJsonLogger(lvl)
-	
-	//return l.setLogger("stderr", lvl)
+func (log *Logger) GetLevel() zapcore.Level {
+	return log.config.Level.Level()
 }
 
-// InitFileLogger initialises a file logger configured with defaults for use as
-// the root logger. If a root logger already exists, it will be tee-d together
-// with the new file logger.
-func (l *logger) InitFileLogger(path string, lvl Level) error {
-	return l.setLogger(path, lvl)
+func (log *Logger) GetLevelString() string {
+	return log.config.Level.String()
+}
+
+func (log *Logger) GetName() string {
+	return log.name
+}
+
+func (log *Logger) Named(name string) *Logger {
+	c := log.Clone()
+	newName := ""
+	if log.name == "" {
+		newName = name
+	} else {
+		newName = fmt.Sprintf("%s.%s", log.name, name)
+	}
+	return &Logger{
+		Logger: c.Logger.Named(newName),
+		config: c.config,
+		name:   newName,
+	}
+}
+
+func New(core *zapcore.Core, cfg *zap.Config) *Logger {
+	logger := Logger{
+		Logger: zap.New(*core),
+		config: cfg,
+		name:   "",
+	}
+	return &logger
+}
+
+func (log *Logger) SetLevel(level zapcore.Level) {
+	oldLevel := log.config.Level.String()
+	log.config.Level.SetLevel(level)
+	if ce := log.Check(level, "Log level changed"); ce != nil {
+		ce.Write(
+			zap.String("old", oldLevel),
+			zap.String("new", level.String()),
+		)
+	}
+}
+
+func (log *Logger) With(fields ...zap.Field) *Logger {
+	c := log.Clone()
+	return &Logger{
+		Logger: c.Logger.With(fields...),
+		config: c.config,
+	}
 }
 
 // AddExitHandler flushes the logs before exiting the process. Useful when an
 // app shuts down so we store all logging possible.
-func (l *logger) AddExitHandler() {
+func (log *Logger) AddExitHandler() {
 	// Flush the logs before exiting the process.
 	process.SetExitHandler(func() {
-		if l.root != nil {
-			l.root.Sync()
+		if log.Logger != nil {
+			log.Logger.Sync()
 		}
 	})
 }
 
-// Debug sends the given arguments to the logger at DebugLevel.
-func (l *logger) Debug(args ...interface{}) {
-	l.root.Sugar().Debug(args)
-}
-// Info sends the given arguments to the logger at InfoLevel.
-func (l *logger) Info(args ...interface{}) {
-	l.root.Sugar().Info(args)
-}
-// Error sends the given arguments to the logger at ErrorLevel.
-func (l *logger) Error(args ...interface{}) {
-	l.root.Sugar().Error(args)
-}
-// Fatal sends the given arguments to the logger at FatalLevel.
-func (l *logger) Fatal(args ...interface{}) {
-	l.root.Sugar().Fatal(args)
-}
-
-// Debugf formats the given arguments and sends them to the logger at DebugLevel.
-func (l *logger) Debugf(format string, args ...interface{}) {
-	l.root.Sugar().Debugf(format, args...)
-}
-
-// Errorf formats the given arguments and sends them to the logger at ErrorLevel.
-func (l *logger) Errorf(format string, args ...interface{}) {
-	l.root.Sugar().Errorf(format, args...)
-}
-
-// Fatalf formats the given arguments and sends them to the logger, before calling os.Exit(1).
-func (l *logger) Fatalf(format string, args ...interface{}) {
-	l.root.Sugar().Fatalf(format, args...)
-}
-
-// Infof formats the given arguments and sends them to the logger at InfoLevel.
-func (l *logger) Infof(format string, args ...interface{}) {
-	l.root.Sugar().Infof(format, args...)
-}
-
-// Infow sets the message, adds structured arguments and sends them to the logger at InfoLevel.
-func (l *logger) Infow(msg string, args ...interface{}) {
-	l.root.Sugar().Infow(msg, args...)
-}
-
-// Debugw sets the message, adds structured arguments and sends them to the logger at DebugLevel.
-func (l *logger) Debugw(msg string, args ...interface{}) {
-	l.root.Sugar().Debugw(msg, args...)
-}
-
-// Errorw sets the message, adds structured arguments and sends them to the logger at ErrorLevel.
-func (l *logger) Errorw(msg string, args ...interface{}) {
-	l.root.Sugar().Errorw(msg, args...)
-}
-
-// Fatalw sets the message, adds structured arguments and sends them to the logger, before calling os.Exit(1).
-func (l *logger) Fatalw(msg string, args ...interface{}) {
-	l.root.Sugar().Fatalw(msg, args...)
-}
-
-// Named adds a nested name identifier to the current logger
-func (l *logger) Named(name string) Logger {
-	return loggerFromExistingCore(l.root, name)
-}
-
-
-func (l *logger) buildJsonCfg(lvl Level) (*zap.Logger, error) {
-	//"level": "debug",
-	//	"development": true,
-	//	"encoding": "console",
-	//	"encoderConfig": {
-	//"timeKey": "T",
-	//"levelKey": "L",
-	//"nameKey": "N",
-	//"callerKey": "C",
-	//"messageKey": "M",
-	//"stacktraceKey": "S",
-	//"lineEnding": "\n",
-	//"callerEncoder": "short",
-	//"durationEncoder": "string",
-	//"levelEncoder": "capital",
-	//"nameEncoder": "full",
-	//"timeEncoder": "iso8601"
-	//},
-	//"outputPaths": ["stdout"],
-	//"errorOutputPaths": ["stderr"]
-
-	enc := zapcore.EncoderConfig{
-		CallerKey:      "C",
-		LevelKey:       "L",
-		MessageKey:     "M",
-		NameKey:        "N",
-		StacktraceKey:  "S",
-		TimeKey:        "T",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-		EncodeDuration: zapcore.StringDurationEncoder,
-		EncodeLevel:    zapcore.CapitalLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeName:     zapcore.FullNameEncoder,
+func cloneConfig(cfg *zap.Config) *zap.Config {
+	c := zap.Config{
+		Level:             zap.NewAtomicLevelAt(cfg.Level.Level()),
+		Development:       cfg.Development,
+		DisableCaller:     cfg.DisableCaller,
+		DisableStacktrace: cfg.DisableStacktrace,
+		Sampling:          nil,
+		Encoding:          cfg.Encoding,
+		EncoderConfig:     cfg.EncoderConfig,
+		OutputPaths:       cfg.OutputPaths,
+		ErrorOutputPaths:  cfg.ErrorOutputPaths,
+		InitialFields:     make(map[string]interface{}),
 	}
-	cfg := zap.Config{
-		Development:      true,
-		Encoding:         "console",
-		EncoderConfig:    enc,
-		ErrorOutputPaths: []string{"stdout"},
-		Level:            zap.NewAtomicLevelAt(zapcore.Level(lvl)),
-		OutputPaths:      []string{"stderr"},
+	for k, v := range cfg.InitialFields {
+		c.InitialFields[k] = v
 	}
-	return cfg.Build()
-
+	if cfg.Sampling != nil {
+		c.Sampling = &zap.SamplingConfig{
+			Initial:    cfg.Sampling.Initial,
+			Thereafter: cfg.Sampling.Thereafter,
+		}
+	}
+	return &c
 }
 
-func (l *logger) buildCfg(path string, lvl Level) (*zap.Logger, error) {
-	enc := zapcore.EncoderConfig{
-		CallerKey:      "",
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-		EncodeDuration: zapcore.StringDurationEncoder,
-		EncodeLevel:    zapcore.CapitalColorLevelEncoder,
-		EncodeTime:     l.encTime,
-		LevelKey:       "L",
-		LineEnding:     zapcore.DefaultLineEnding,
-		MessageKey:     "M",
-		NameKey:        "N",
-		StacktraceKey:  "",
-		TimeKey:        "T",
+func NewLoggerFromEnv(env string) *Logger {
+	var encoderConfig zapcore.EncoderConfig
+	var encoder zapcore.Encoder
+	var config zap.Config
+	var level zapcore.Level
+	/*
+		Choices: (with "*" for default)
+		CallerEncoder: full*
+		DurationEncoder: nanos, seconds*, string
+		LevelEncoder: capital, capitalColor, color, lowercase*
+		NameEncoder: full*
+		TimeEncoder: epoch*, iso8601, millis, nanos
+	*/
+	switch env {
+	case "dev":
+		encoderConfig = zapcore.EncoderConfig{
+			CallerKey:      "C",
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeLevel:    zapcore.CapitalLevelEncoder,
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			LevelKey:       "L",
+			LineEnding:     "\n",
+			MessageKey:     "M",
+			NameKey:        "N",
+			TimeKey:        "T",
+		}
+		encoder = zapcore.NewConsoleEncoder(encoderConfig)
+		level = zapcore.Level(DebugLevel)
+		config = zap.Config{
+			Level:            zap.NewAtomicLevelAt(level),
+			Development:      true,
+			Encoding:         "console",
+			EncoderConfig:    encoderConfig,
+			OutputPaths:      []string{"stdout"},
+			ErrorOutputPaths: []string{"stderr"},
+		}
+	default:
+		encoderConfig = zapcore.EncoderConfig{
+			CallerKey:      "caller",
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+			EncodeDuration: zapcore.SecondsDurationEncoder,
+			EncodeLevel:    zapcore.LowercaseLevelEncoder,
+			EncodeName:     zapcore.FullNameEncoder,
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			LevelKey:       "level",
+			LineEnding:     "\n",
+			MessageKey:     "message",
+			NameKey:        "logger",
+			StacktraceKey:  "stacktrace",
+			TimeKey:        "@timestamp",
+		}
+		encoder = zapcore.NewJSONEncoder(encoderConfig)
+		level = zapcore.Level(InfoLevel)
+		config = zap.Config{
+			Level:            zap.NewAtomicLevelAt(level),
+			Development:      false,
+			Encoding:         "json",
+			EncoderConfig:    encoderConfig,
+			OutputPaths:      []string{"stdout"},
+			ErrorOutputPaths: []string{"stderr"},
+		}
 	}
-	cfg := zap.Config{
-		Development:      true,
-		Encoding:         "console",
-		EncoderConfig:    enc,
-		ErrorOutputPaths: []string{path},
-		Level:            zap.NewAtomicLevelAt(zapcore.Level(lvl)),
-		OutputPaths:      []string{path},
-	}
-	return cfg.Build()
-}
 
-func (l *logger) encTime(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-	enc.AppendString(t.Format("[2006-01-02 15:04:05.000]"))
-}
-
-func (l *logger) setJsonLogger(lvl Level) error {
-	i, err := l.buildJsonCfg(lvl)
-	if err != nil {
-		return err
-	}
-	if l.root == nil {
-		l.root = i
-		return nil
-	}
-	c := i.Core()
-	wrap := zap.WrapCore(func(r zapcore.Core) zapcore.Core {
-		return zapcore.NewTee(r, c)
-	})
-	l.root = l.root.WithOptions(wrap)
-	return nil
-}
-
-func (l *logger) setLogger(path string, lvl Level) error {
-	i, err := l.buildCfg(path, lvl)
-	if err != nil {
-		return err
-	}
-	if l.root == nil {
-		l.root = i
-		return nil
-	}
-	c := i.Core()
-	wrap := zap.WrapCore(func(r zapcore.Core) zapcore.Core {
-		return zapcore.NewTee(r, c)
-	})
-	l.root = l.root.WithOptions(wrap)
-	return nil
+	core := zapcore.NewCore(encoder, os.Stdout, level)
+	return New(&core, &config)
 }
 
 // IPAddressFromContext will attempt to access the 'remote-ip-addr' value
 // that we inject into a calling context via a pipelined handlers. Only
 // GraphQL API supported at present.
-func IPAddressFromContext(ctx context.Context) interface{} {
-	return ctx.Value("remote-ip-addr")
+func IPAddressFromContext(ctx context.Context) string {
+	if ctx.Value("remote-ip-addr") != nil {
+		return ctx.Value("remote-ip-addr").(string)
+	}
+	return ""
 }

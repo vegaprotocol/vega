@@ -8,6 +8,7 @@ import (
 
 	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tmlibs/common"
+	"vega/internal/logging"
 )
 
 type Server struct {
@@ -32,7 +33,10 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	s.log.Infof("Starting abci-blockchain server socket on %s", addr)
+	s.log.Info("Starting abci-blockchain socket server",
+		logging.String("addr", s.ServerAddr),
+		logging.Int("port", s.ServerPort))
+	
 	if err := srv.Start(); err != nil {
 		return err
 	}

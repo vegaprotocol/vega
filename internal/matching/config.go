@@ -7,7 +7,7 @@ import "vega/internal/logging"
 const namedLogger = "matching"
 
 type Config struct {
-	log   logging.Logger
+	log   *logging.Logger
 	Level logging.Level
 
 	ProRataMode           bool  `mapstructure:"pro_rata_mode"`
@@ -15,7 +15,7 @@ type Config struct {
 	LogRemovedOrdersDebug bool  `mapstructure:"removed_orders_debug"`
 }
 
-func NewConfig(logger logging.Logger) *Config {
+func NewConfig(logger *logging.Logger) *Config {
 	logger = logger.Named(namedLogger)
 	return &Config{
 		log:                   logger,
@@ -26,7 +26,7 @@ func NewConfig(logger logging.Logger) *Config {
 	}
 }
 
-func ProRataModeConfig(logger logging.Logger) *Config {
+func ProRataModeConfig(logger *logging.Logger) *Config {
 	conf := NewConfig(logger)
 	conf.ProRataMode = true
 	return conf

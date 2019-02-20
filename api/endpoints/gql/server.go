@@ -18,6 +18,7 @@ import (
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
+	"vega/internal/logging"
 )
 
 type graphServer struct {
@@ -47,11 +48,13 @@ func (g *graphServer) remoteAddrMiddleware(next http.Handler) http.Handler {
 		found := false
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			logger.Errorf("Middleware: %q is not splittable", r.RemoteAddr)
+			logger.Warn("Remote address is not splittable in middleware",
+				logging.String("remote-addr", r.RemoteAddr))
 		} else {
 			userIP := net.ParseIP(ip)
 			if userIP == nil {
-				logger.Errorf("Middleware: %q is not IP:port", r.RemoteAddr)
+				logger.Warn("Remote address is not IP:port format in middleware",
+					logging.String("remote-addr", r.RemoteAddr))
 			} else {
 				found = true
 
@@ -89,7 +92,9 @@ func (g *graphServer) Start() {
 	
 	port := g.GraphQLServerPort
 	ip := g.GraphQLServerIpAddress
-	logger.Infof("Starting GraphQL based server on port %d...\n", port)
+
+	logger.Info("Starting GraphQL based API", logging.String("addr", ip), logging.Int("port", port))
+
 	addr := fmt.Sprintf("%s:%d", ip, port)
 	resolverRoot := NewResolverRoot(
 		g.Config,
@@ -107,12 +112,15 @@ func (g *graphServer) Start() {
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
-			logger.Errorf("GraphQL error: %v", err)
+			logger.Warn("Recovering from error on graphQL handler",
+				logging.String("error", fmt.Sprintf("%s", err)))
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
 		})),
 	)))
 
 	err := http.ListenAndServe(addr, nil)
-	logger.Fatalf("Fatal error with GraphQL server: %v", err)
+	if err != nil {
+		logger.Panic("Failed to listen and serve on graphQL server", logging.Error(err))
+	}
 }

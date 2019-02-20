@@ -40,7 +40,7 @@ func NewOrderService(config *Config, store storage.OrderStore, time vegatime.Ser
 	bcConfig := blockchain.NewConfig(config.log)
 	client, err := blockchain.NewClient(bcConfig)
 	if err != nil {
-		config.log.Fatalf("error creating blockchain client %s", err)
+		config.log.Panic("Failure creating blockchain client in Order Service", logging.Error(err))
 		// todo(cdm): return this error or fatal?
 	}
 
@@ -67,7 +67,7 @@ func (s *orderService) CreateOrder(ctx context.Context, order *types.Order) (suc
 		}
 		timeNow, _, err := s.timeService.GetTimeNow()
 		if err != nil {
-			s.log.Errorf("error loading current time when creating order: %s", err)
+			s.log.Error("Failed to obtain current time when creating order in Order Service", logging.Error(err))
 			return false, "", err
 		}
 		expirationTimestamp := expirationDateTime.UnixNano()
@@ -121,7 +121,7 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *types.Amendmen
 		}
 		_, currentDateTime, err := s.timeService.GetTimeNow()
 		if err != nil {
-			s.log.Errorf("error loading current time when amending order: %s", err)
+			s.log.Error("Failed to obtain current time when amending order in Order Service", logging.Error(err))
 			return false, err
 		}
 		if expirationDateTime.Before(currentDateTime) || expirationDateTime.Equal(currentDateTime) {
@@ -190,10 +190,15 @@ func (s *orderService) ObserveOrders(ctx context.Context, market *string, party 
 	go func(id uint64, internal chan []types.Order, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
-		s.log.Debugf("OrderService -> Subscriber closed connection: %d [%s]", id, ip)
+		s.log.Debug("Orders subscriber closed connection",
+			logging.Uint64("id", id),
+			logging.String("ip-address", ip))
 		err := s.orderStore.Unsubscribe(id)
 		if err != nil {
-			s.log.Errorf("Error un-subscribing when context.Done() on OrderService for subscriber %d [%s]: %s", id, ip, err)
+			s.log.Error("Failure un-subscribing orders subscriber when context.Done()",
+				logging.Uint64("id", id),
+				logging.String("ip-address", ip),
+				logging.Error(err))
 		}
 	}(ref, internal, ctx)
 
@@ -215,13 +220,19 @@ func (s *orderService) ObserveOrders(ctx context.Context, market *string, party 
 			if len(validatedOrders) > 0 {
 				select {
 				case orders <- validatedOrders:
-					s.log.Debugf("OrderService -> Orders for subscriber %d [%s] sent successfully", ref, ip)
+					s.log.Debug("Orders for subscriber sent successfully",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 				default:
-					s.log.Debugf("OrderService -> Orders for subscriber %d [%s] not sent", ref, ip)
+					s.log.Debug("Orders for subscriber not sent",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 				}
 			}
 		}
-		s.log.Debugf("OrderService -> Channel for subscriber %d [%s] has been closed", ref, ip)
+		s.log.Debug("Orders subscriber channel has been closed",
+			logging.Uint64("ref", ref),
+			logging.String("ip-address", ip))
 	}(ref, ctx)
 
 	return orders, ref

@@ -11,6 +11,7 @@ import (
 	"vega/internal/matching"
 	"github.com/spf13/cobra"
 	"vega/internal"
+	"github.com/pkg/errors"
 )
 
 // NodeCommand use to implement 'node' command.
@@ -40,19 +41,21 @@ func (l *NodeCommand) Init(c *Cli) {
 func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
 
-	flagSet.StringVarP(&l.configPath, "configPath", "cp", "", "file path to search for vega config file(s)")
+	flagSet.StringVarP(&l.configPath, "configPath", "C", "", "file path to search for vega config file(s)")
 }
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
+
 	// Set up the root logger
-	logger := logging.NewLogger()
-	defaultLevel := logging.InfoLevel
-	err := logger.InitConsoleLogger(defaultLevel)
-	if err != nil {
-		return err
-	}
+	logger := logging.NewLoggerFromEnv("dev")
 	logger.AddExitHandler()
+
+	//defaultLevel := logging.InfoLevel
+	//err := logger.InitConsoleLogger(defaultLevel)
+	//if err != nil {
+	//	return err
+	//}
 
 	// Set up configuration and create a resolver
 	configPath := l.configPath
@@ -76,7 +79,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 	conf.ListenForChanges()
 
-	resolver, err := internal.NewResolver(conf, &logger)
+	resolver, err := internal.NewResolver(conf)
 	defer resolver.CloseStores()
 
 	// Resolve services for injection to servers/execution engine
@@ -131,11 +134,11 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	// ABCI<>blockchain server
 	socketServer := blockchain.NewServer(conf.Blockchain, executionEngine, timeService)
-	if err := socketServer.Start(); err != nil {
-		logger.Fatalf("ABCI socket server fatal error: %s", err)
+	socketServer.Start()
+	if err != nil {
+		errors.Wrap(err, "ABCI socket server error")
 	}
-
-
+	
 	return nil
 }
 

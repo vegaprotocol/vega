@@ -4,6 +4,7 @@ import (
 	types "vega/proto"
 
 	"github.com/pkg/errors"
+	"fmt"
 )
 
 type OrderBookSide struct {
@@ -148,7 +149,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			}
 		}
 
-		s.log.Debugf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining)
+		s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))
 
 		if totalVolumeToFill <= agg.Remaining {
 			return trades, impactedOrders, 0

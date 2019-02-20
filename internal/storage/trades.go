@@ -10,6 +10,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"vega/internal/logging"
 )
 
 type TradeStore interface {
@@ -85,7 +86,9 @@ func (ts *badgerTradeStore) Subscribe(trades chan<- []types.Trade) uint64 {
 	ts.subscriberId = ts.subscriberId + 1
 	ts.subscribers[ts.subscriberId] = trades
 
-	ts.log.Debugf("TradeStore -> Subscribe: Trade subscriber added: %d", ts.subscriberId)
+	ts.log.Debug("Trades subscriber added in order store",
+		logging.Uint64("subscriber-id", ts.subscriberId))
+
 	return ts.subscriberId
 }
 
@@ -95,16 +98,19 @@ func (ts *badgerTradeStore) Unsubscribe(id uint64) error {
 	defer ts.mu.Unlock()
 
 	if len(ts.subscribers) == 0 {
-		ts.log.Debugf("TradeStore -> Unsubscribe: No subscribers connected")
+		ts.log.Debug("Un-subscribe called in trade store, no subscribers connected",
+			logging.Uint64("subscriber-id", id))
 		return nil
 	}
 
 	if _, exists := ts.subscribers[id]; exists {
 		delete(ts.subscribers, id)
-		ts.log.Debugf("TradeStore -> Unsubscribe: Subscriber removed: %v", id)
+		ts.log.Debug("Un-subscribe called in trade store, subscriber removed",
+			logging.Uint64("subscriber-id", id))
 		return nil
 	}
-	return errors.New(fmt.Sprintf("TradeStore subscriber does not exist with id: %d", id))
+
+	return errors.New(fmt.Sprintf("Trades subscriber does not exist with id: %d", id))
 }
 
 // Post adds an trade to the badger store, adds
@@ -161,7 +167,11 @@ func (ts *badgerTradeStore) GetByMarket(market string, queryFilters *filtering.T
 		tradeBuf, _ := item.ValueCopy(nil)
 		var trade types.Trade
 		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
-			ts.log.Errorf("unmarshal failed: %s", err.Error())
+			ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarket)",
+				logging.Error(err),
+				logging.String("badger-key", string(item.Key())),
+				logging.String("raw-bytes", string(tradeBuf)))
+			
 			return nil, err
 		}
 		if filter.apply(&trade) {
@@ -188,7 +198,11 @@ func (ts *badgerTradeStore) GetByMarketAndId(market string, Id string) (*types.T
 	}
 	tradeBuf, _ := item.ValueCopy(nil)
 	if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
-		ts.log.Errorf("Failed to unmarshal %s", err.Error())
+		ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarketAndId)",
+			logging.Error(err),
+			logging.String("badger-key", string(item.Key())),
+			logging.String("raw-bytes", string(tradeBuf)))
+		
 		return nil, err
 	}
 	return &trade, err
@@ -217,13 +231,20 @@ func (ts *badgerTradeStore) GetByParty(party string, queryFilters *filtering.Tra
 		marketKey, _ := marketKeyItem.ValueCopy(nil)
 		tradeItem, err := txn.Get(marketKey)
 		if err != nil {
-			ts.log.Errorf("trade with key %s does not exist in store", string(marketKey))
+			ts.log.Error("Trade with key does not exist in trade store (getByParty)",
+				logging.String("badger-key", string(marketKey)),
+				logging.Error(err))
+
 			return nil, err
 		}
 		tradeBuf, _ := tradeItem.ValueCopy(nil)
 		var trade types.Trade
 		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
-			ts.log.Errorf("unmarshal failed %s", err.Error())
+			ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByParty)",
+				logging.Error(err),
+				logging.String("badger-key", string(marketKey)),
+				logging.String("raw-bytes", string(tradeBuf)))
+
 			return nil, err
 		}
 		if filter.apply(&trade) {
@@ -260,7 +281,11 @@ func (ts *badgerTradeStore) GetByPartyAndId(party string, Id string) (*types.Tra
 			return err
 		}
 		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
-			ts.log.Errorf("unmarshal failed %s", err.Error())
+			ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByPartyAndId)",
+				logging.Error(err),
+				logging.String("badger-key", string(marketKey)),
+				logging.String("raw-bytes", string(tradeBuf)))
+
 			return err
 		}
 		return nil
@@ -292,13 +317,20 @@ func (ts *badgerTradeStore) GetByOrderId(orderId string, queryFilters *filtering
 		marketKey, _ := marketKeyItem.ValueCopy(nil)
 		tradeItem, err := txn.Get(marketKey)
 		if err != nil {
-			ts.log.Errorf("trade with key %s does not exist in store", string(marketKey))
+			ts.log.Error("Trade with key does not exist in trade store (getByOrderId)",
+				logging.String("badger-key", string(marketKey)),
+				logging.Error(err))
+
 			return nil, err
 		}
 		tradeBuf, _ := tradeItem.ValueCopy(nil)
 		var trade types.Trade
 		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
-			ts.log.Errorf("unmarshal failed %s", err.Error())
+			ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByOrderId)",
+				logging.Error(err),
+				logging.String("badger-key", string(marketKey)),
+				logging.String("raw-bytes", string(tradeBuf)))
+			
 			return nil, err
 		}
 		if filter.apply(&trade) {
@@ -351,7 +383,7 @@ func (ts *badgerTradeStore) notify(items []types.Trade) error {
 		return nil
 	}
 	if len(ts.subscribers) == 0 {
-		ts.log.Debugf("TradeStore -> Notify: No subscribers connected")
+		ts.log.Debug("No subscribers connected in trade store")
 		return nil
 	}
 
@@ -365,9 +397,11 @@ func (ts *badgerTradeStore) notify(items []types.Trade) error {
 			ok = false
 		}
 		if ok {
-			ts.log.Debugf("TradeStore -> send on channel success for subscriber %d", id)
+			ts.log.Debug("Trades channel updated for subscriber successfully",
+				logging.Uint64("id", id))
 		} else {
-			ts.log.Infof("TradeStore -> channel could not been updated for subscriber %d", id)
+			ts.log.Debug("Trades channel could not be updated for subscriber",
+				logging.Uint64("id", id))
 		}
 	}
 	return nil
@@ -382,7 +416,9 @@ func (ts *badgerTradeStore) writeBatch(batch []types.Trade) error {
 		for idx := range batch {
 			tradeBuf, err := proto.Marshal(&batch[idx])
 			if err != nil {
-				ts.log.Errorf("marshal failed %s", err.Error())
+				ts.log.Error("Failed to marshal trade value to badger in trade store (writeBatch)",
+					logging.Error(err),
+					logging.Trade(batch[idx]))
 			}
 
 			// Market Index
@@ -398,15 +434,6 @@ func (ts *badgerTradeStore) writeBatch(batch []types.Trade) error {
 			// OrderId indexes (relate to both buy and sell orders)
 			buyOrderKey := ts.badger.tradeOrderIdKey(batch[idx].BuyOrder, batch[idx].Id)
 			sellOrderKey := ts.badger.tradeOrderIdKey(batch[idx].SellOrder, batch[idx].Id)
-
-			//ts.log.Debugf("-------------------------------------")
-			//ts.log.Debugf("marketKey: %s", string(marketKey))
-			//ts.log.Debugf("idKey: %s", string(idKey))
-			//ts.log.Debugf("buyerPartyKey: %s", string(buyerPartyKey))
-			//ts.log.Debugf("sellerPartyKey: %s", string(sellerPartyKey))
-			//ts.log.Debugf("buyOrderKey: %s", string(buyOrderKey))
-			//ts.log.Debugf("sellOrderKey: %s", string(sellOrderKey))
-			//ts.log.Debugf("-------------------------------------")
 
 			if err := wb.Set(marketKey, tradeBuf, 0); err != nil {
 				return err
@@ -433,12 +460,14 @@ func (ts *badgerTradeStore) writeBatch(batch []types.Trade) error {
 	if err := insertBatchAtomically(); err == nil {
 		if err := wb.Flush(); err != nil {
 			// todo: can we handle flush errors in a similar way to below?
-			ts.log.Errorf("failed to flush batch: %s", err)
+			ts.log.Error("Failed to flush batch of trades when calling writeBatch in badger trade store",
+				logging.Error(err))
 		}
 	} else {
 		wb.Cancel()
 		// todo: retry mechanism, also handle badger txn too large errors
-		ts.log.Errorf("failed to insert trade batch atomically, %s", err)
+		ts.log.Error("Failed to insert trade batch atomically when calling writeBatch in badger trade store",
+			logging.Error(err))
 	}
 
 	return nil

@@ -194,7 +194,7 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 }
 
 func (l PriceLevel) print() {
-	l.log.Debugf("priceLevel: %d\n", l.price)
+	l.log.Debug(fmt.Sprintf("priceLevel: %d\n", l.price))
 	for _, o := range l.orders {
 		var side string
 		if o.Side == types.Side_Buy {
@@ -203,8 +203,7 @@ func (l PriceLevel) print() {
 			side = "SELL"
 		}
 
-		line := fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s",
-			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id)
-		l.log.Debugf("%s", line)
+		l.log.Debug(fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s\n",
+			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id))
 	}
 }

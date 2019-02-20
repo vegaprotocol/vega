@@ -81,7 +81,7 @@ func NewGzipHandler(logger logging.Logger, fn http.HandlerFunc) http.HandlerFunc
 			// StatusNotModified and StatusNoContent expect an empty body so don't close it.
 			if gzr.statusCode != http.StatusNotModified && gzr.statusCode != http.StatusNoContent {
 				if err := gzr.w.Close(); err != nil {
-					logger.Errorf("Gzip error: %v", err)
+					logger.Error("Failed to Gzip output from REST proxy", logging.Error(err))
 				}
 			}
 			pool.Put(gzr)

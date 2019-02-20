@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/http/httputil"
 	"testing"
+	"vega/internal/logging"
 )
 
 func TestNoGzip(t *testing.T) {
@@ -15,8 +16,11 @@ func TestNoGzip(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
 	rec := httptest.NewRecorder()
-	NewGzipHandler(func(w http.ResponseWriter, r *http.Request) {
+	NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test"))
 	})(rec, req)
 
@@ -45,8 +49,11 @@ func TestGzip(t *testing.T) {
 	}
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
 	rec := httptest.NewRecorder()
-	NewGzipHandler(func(w http.ResponseWriter, r *http.Request) {
+	NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", "4")
 		w.Header().Set("Content-Type", "text/test")
 		w.Write([]byte("test"))
@@ -93,8 +100,11 @@ func TestNoBody(t *testing.T) {
 	}
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
 	rec := httptest.NewRecorder()
-	NewGzipHandler(func(w http.ResponseWriter, r *http.Request) {
+	NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})(rec, req)
 
@@ -126,11 +136,14 @@ func BenchmarkGzip(b *testing.B) {
 	}
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+	
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			rec := httptest.NewRecorder()
-			NewGzipHandler(func(w http.ResponseWriter, r *http.Request) {
+			NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
 				w.Write(body)
 			})(rec, req)
 

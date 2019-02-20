@@ -30,9 +30,8 @@ func BenchmarkMatching(
 	orderStore := &mockStorage.OrderStore{}
 	tradeStore := &mockStorage.TradeStore{}
 
-	logger := logging.NewLogger()
-	logger.InitConsoleLogger(logging.DebugLevel)
-	logger.AddExitHandler()
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
 
 	// Matching engine (todo) create these inside execution engine based on config
 	matchingConfig := matching.NewConfig(logger)

@@ -3,6 +3,7 @@ package matching
 import (
 	"fmt"
 	types "vega/proto"
+	"vega/internal/logging"
 )
 
 type OrderBook struct {
@@ -32,30 +33,42 @@ func NewBook(name string, config *Config) *OrderBook {
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError) {
 	// Validate Market
 	if order.Market != b.name {
-		b.log.Errorf(fmt.Sprintf(
-			"Market ID mismatch\norderMessage.Market: %v\nbook.ID: %v",
-			order.Market,
-			b.name))
+		b.log.Error("Market ID mismatch",
+			logging.Order(*order),
+			logging.String("order-book", b.name))
+
 		return nil, types.OrderError_INVALID_MARKET_ID
 	}
 	// Validate Order ID must be present
 	if order.Id == "" || len(order.Id) < 4 {
+		b.log.Error("Order ID missing or invalid",
+			logging.Order(*order),
+			logging.String("order-book", b.name))
+
 		return nil, types.OrderError_INVALID_ORDER_ID
 	}
 
 	if order.Side == types.Side_Buy {
 		if err := b.buy.RemoveOrder(order); err != nil {
-			b.log.Errorf("Error removing (buy side): ", err)
+			b.log.Error("Failed to remove order (buy side)",
+				logging.Order(*order),
+				logging.Error(err),
+				logging.String("order-book", b.name))
+
 			return nil, types.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	} else {
 		if err := b.sell.RemoveOrder(order); err != nil {
-			b.log.Errorf("Error removing (sell side): ", err)
+			b.log.Error("Failed to remove order (sell side)",
+				logging.Order(*order),
+				logging.Error(err),
+				logging.String("order-book", b.name))
+
 			return nil, types.OrderError_ORDER_REMOVAL_FAILURE
 		}
 	}
 
-	// Important, mark the order as cancelled (and no longer active)
+	// Important to mark the order as cancelled (and no longer active)
 	order.Status = types.Order_Cancelled
 
 	result := &types.OrderCancellation{
@@ -66,17 +79,30 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, t
 
 func (b *OrderBook) AmendOrder(order *types.Order) types.OrderError {
 	if err := b.validateOrder(order); err != types.OrderError_NONE {
+		b.log.Error("Order validation failure",
+			logging.Order(*order),
+			logging.String("error", err.String()),
+			logging.String("order-book", b.name))
+
 		return err
 	}
 
 	if order.Side == types.Side_Buy {
 		if err := b.buy.amendOrder(order); err != types.OrderError_NONE {
-			b.log.Errorf("Error amending (buy side): ", err)
+			b.log.Error("Failed to amend (buy side)",
+				logging.Order(*order),
+				logging.String("error", err.String()),
+				logging.String("order-book", b.name))
+			
 			return err
 		}
 	} else {
 		if err := b.sell.amendOrder(order); err != types.OrderError_NONE {
-			b.log.Errorf("Error amending (sell side): ", err)
+			b.log.Error("Failed to amend (sell side)",
+				logging.Order(*order),
+				logging.String("error", err.String()),
+				logging.String("order-book", b.name))
+
 			return err
 		}
 	}
@@ -84,7 +110,7 @@ func (b *OrderBook) AmendOrder(order *types.Order) types.OrderError {
 	return types.OrderError_NONE
 }
 
-// Add an order and attempt to uncross the book, returns a TradeSet protobufs message object
+// Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) AddOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError) {
 	if err := b.validateOrder(order); err != types.OrderError_NONE {
 		return nil, err
@@ -175,7 +201,10 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []types.Orde
 	}
 
 	if b.LogRemovedOrdersDebug {
-		b.log.Debugf("Matching: Removed %d orders that expired, %d remaining on book", len(expiredOrders), len(pendingOrders))
+		b.log.Debug("Removed expired orders from order book",
+			logging.String("order-book", b.name),
+			logging.Int("expired-orders", len(expiredOrders)),
+			logging.Int("remaining-orders", len(pendingOrders)))
 	}
 
 	// update our list of GTT orders pending expiry, ready for next run.
@@ -223,7 +252,7 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 }
 
 func (b *OrderBook) PrintState(types string) {
-	b.log.Debugf("%s", types)
+	b.log.Debug(fmt.Sprintf("%s", types))
 	b.log.Debug("------------------------------------------------------------")
 	b.log.Debug("                        BUY SIDE                            ")
 	for _, priceLevel := range b.buy.getLevels() {
@@ -239,5 +268,4 @@ func (b *OrderBook) PrintState(types string) {
 		}
 	}
 	b.log.Debug("------------------------------------------------------------")
-
 }

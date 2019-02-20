@@ -12,6 +12,7 @@ import (
 	"github.com/satori/go.uuid"
 
 	tmRPC "github.com/tendermint/tendermint/rpc/client"
+	"vega/internal/logging"
 )
 
 type Client interface {
@@ -141,8 +142,12 @@ func (b *client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (su
 		return false, err
 	}
 
-	// todo remove this once investigation into tm client complete
-	b.log.Debugf("BroadcastTxAsync response = %s %d %s %v", res.Log, res.Code, string(res.Data), res.Hash)
+	// todo remove this once investigation into tm client issues are complete
+	b.log.Debug("BroadcastTxAsync response",
+		logging.String("log", res.Log),
+		logging.Uint32("code", res.Code),
+		logging.String("data", string(res.Data)),
+		logging.String("hash", string(res.Hash)))
 
 	return true, nil
 }

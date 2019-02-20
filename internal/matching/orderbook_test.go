@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"time"
+	"vega/internal/logging"
 )
 
 // launch aggressiveOrder orders from both sides to fully clear the order book
@@ -24,7 +25,12 @@ func getCurrentUtcTimestampNano() uint64 {
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	market := "expiringOrderBookTest"
 	party := "clay-davis"
-	book := NewBook(market, ProRataModeConfig())
+
+
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	book := NewBook(market, ProRataModeConfig(logger))
 	currentTimestamp := getCurrentUtcTimestampNano()
 	someTimeLater := currentTimestamp + (1000*1000)
 
@@ -186,7 +192,11 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 //test for order validation
 func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
-	book := NewBook("testOrderBook", ProRataModeConfig())
+
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	book.latestTimestamp = 10
 
 	invalidTimestampOrdertypes := &types.Order{
@@ -220,7 +230,9 @@ func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
 }
 
 func TestOrderBook_RemoveOrder(t *testing.T) {
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
@@ -244,7 +256,10 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 }
 
 func TestOrderBook_AddOrder(t *testing.T) {
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+	
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 
 	const numberOfTimestamps = 3
 	m := make(map[int64][]*types.Order, numberOfTimestamps)
@@ -1038,7 +1053,11 @@ func TestOrderBook_AddOrder(t *testing.T) {
 }
 
 func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
-	book := NewBook("testOrderBook", ProRataModeConfig())
+
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market:    "invalid",
 		Party:     "A",
@@ -1061,10 +1080,13 @@ func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
 }
 
 func TestOrderBook_CancelSellOrder(t *testing.T) {
-	fmt.Println("BEGIN CANCELLING VALID ORDER")
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
@@ -1095,10 +1117,13 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 }
 
 func TestOrderBook_CancelBuyOrder(t *testing.T) {
-	fmt.Println("BEGIN CANCELLING VALID ORDER")
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
@@ -1129,9 +1154,12 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 }
 
 func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
-	fmt.Println("BEGIN CANCELLING MARKET MISMATCH ORDER")
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
 
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	logger.Debug("BEGIN CANCELLING MARKET MISMATCH ORDER")
+
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market: "testOrderBook",
 		Id:     "123456",
@@ -1151,9 +1179,12 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 }
 
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
-	fmt.Println("BEGIN CANCELLING INVALID ORDER")
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
 
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	logger.Debug("BEGIN CANCELLING INVALID ORDER")
+
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market: "testOrderBook",
 		Id:     "id",
@@ -1164,7 +1195,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 
 	_, err = book.CancelOrder(orderAdded)
 	if err != types.OrderError_NONE {
-		fmt.Println(err)
+		logger.Debug(err.String())
 	}
 
 	assert.Equal(t, types.OrderError_INVALID_ORDER_ID, err)
@@ -1192,8 +1223,10 @@ func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
 }
 
 func TestOrderBook_AmendOrder(t *testing.T) {
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
 	
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1233,8 +1266,10 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
-	
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1273,8 +1308,10 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
 	
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1311,9 +1348,12 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
-	fmt.Println("BEGIN AMENDING ORDER")
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
 
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	logger.Debug("BEGIN AMENDING ORDER")
+	
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1355,8 +1395,12 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
 
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	logger.Debug("BEGIN AMENDING OUT OF SEQUENCE ORDER")
+
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1400,8 +1444,12 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
 
-	book := NewBook("testOrderBook", ProRataModeConfig())
+	logger.Debug("BEGIN AMEND ORDER INVALID SIZE")
+
+	book := NewBook("testOrderBook", ProRataModeConfig(logger))
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1446,7 +1494,12 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 
 // ProRata mode OFF which is a default config for vega ME
 func TestOrderBook_AddOrderProRataModeOff(t *testing.T) {
-	book := NewBook("testOrderBook", NewConfig())
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	logger.Debug("BEGIN PRO-RATA MODE OFF")
+
+	book := NewBook("testOrderBook", NewConfig(logger))
 
 	const numberOfTimestamps = 2
 	m := make(map[int64][]*types.Order, numberOfTimestamps)

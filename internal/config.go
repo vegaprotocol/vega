@@ -19,11 +19,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"github.com/fsnotify/fsnotify"
+	"fmt"
 )
 
 // Config ties together all other application configuration types.
 type Config struct {
-	log        logging.Logger
+	log        *logging.Logger
 	API        *api.Config
 	Blockchain *blockchain.Config
 	Candles    *candles.Config
@@ -47,7 +48,7 @@ type Config struct {
 // NewConfig creates a top level configuration structure, this references all internal/sub-package configs and can
 // load the configurations from file, etc. Typically a root logger will be passed in at this point and fed to the
 // other sub-configs as required via DI.
-func NewConfig(logger logging.Logger) (*Config, error) {
+func NewConfig(logger *logging.Logger) (*Config, error) {
 	if logger == nil {
 		return nil, errors.New("logger instance is nil when calling NewConfig.")
 	}
@@ -112,10 +113,11 @@ func (c *Config) ListenForChanges() {
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		err := viper.Unmarshal(&c)
 		if err != nil {
-			// todo warn instead of info when log refactor complete
-			c.log.Infof("%s", errors.Wrap(err, "unable to decode into struct"))
+			c.log.Warn("Failed to unmarshal vega config to struct on config change",
+				logging.Error(errors.Wrap(err, "unable to decode into struct")))
 		}
-		c.log.Debugf("Vega config file changed:", e.Name)
+		c.log.Debug(fmt.Sprintf("Vega config file changed: %s", e.Name))
+		// todo: check and ensure all named loggers are updated, perhaps we need to broadcast down to sub-configs?
 	})
 }
 

@@ -1,7 +1,7 @@
 package risk
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	types "vega/proto"
+	"vega/internal/logging"
 )
 
 type Engine interface {
@@ -70,7 +71,7 @@ func (re riskEngine) GetRiskFactors(marketName string) (float64, float64, error)
 func (re riskEngine) RecalculateRisk() {
 	for marketName, _ := range re.riskFactors {
 		if err := re.Assess(re.riskFactors[marketName]); err != nil {
-			re.log.Errorf("error during risk assessment at market %s", marketName)
+			re.log.Error(fmt.Sprintf("error during risk assessment at market %s", marketName))
 		}
 	}
 }
@@ -82,12 +83,15 @@ func (re *riskEngine) Assess(riskFactor *types.RiskFactor) error {
 		return err
 	}
 
-	re.log.Debugf("executable at: %s", ex)
-	re.log.Debugf("Running risk calculations: ")
-	re.log.Debugf("sigma %f", re.getSigma())
-	re.log.Debugf("lambda %f", re.getLambda())
-	re.log.Debugf("interestRate %d", re.getInterestRate())
-	re.log.Debugf("calculationFrequency %d", re.getCalculationFrequency())
+	re.log.Debug("Assess risk for risk factor",
+		logging.String("market-id", riskFactor.Market),
+		logging.Float64("long", riskFactor.Long),
+		logging.Float64("short", riskFactor.Short),
+		logging.String("executable", ex),
+		logging.Float64("sigma", re.getSigma()),
+		logging.Float64("lambda", re.getLambda()),
+		logging.Int64("interestRate", re.getInterestRate()),
+		logging.Int64("calculationFrequency", re.getCalculationFrequency()))
 
 	// Using the vega binary location, we load the external risk script (risk-model.py)
 	// - users can specify either relative paths or absolute paths, via configuration.
@@ -96,13 +100,13 @@ func (re *riskEngine) Assess(riskFactor *types.RiskFactor) error {
 		pyPath = filepath.Dir(ex) + re.pyRiskModels[riskFactor.Market]
 	}
 
-	re.log.Debugf("pyPath: %s\n", pyPath)
+	re.log.Debug(fmt.Sprintf("pyPath: %s", pyPath))
 
 	cmd := exec.Command("python", pyPath)
 	stdout, err := cmd.Output()
-	re.log.Debugf("python stdout: %s\n", stdout)
+	re.log.Debug(fmt.Sprintf("python stdout: %s", stdout))
 	if err != nil {
-		re.log.Infof("error calling out to python", err.Error())
+		re.log.Error("Failure calling out to python, using defaults (0.00553|0.00550)", logging.Error(err))
 
 		// Fail-safe return canned byte array, :(
 		stdout = []byte("0.00553|0.00550")
@@ -110,29 +114,33 @@ func (re *riskEngine) Assess(riskFactor *types.RiskFactor) error {
 
 	s := strings.Split(string(stdout), "|")
 	if len(s) != 2 {
-		re.log.Infof("Could not get risk factors from python model -> using defaults [%d]", len(s))
+		re.log.Error(fmt.Sprintf("Could not get risk factors from python model -> using defaults [%d]", len(s)))
 		return errors.New("unable to get risk factor")
 	}
 
 	// Currently the risk script spec is to just print the int64 value '0.00553' on stdout
 	riskFactorShort, err := strconv.ParseFloat(s[re.PyRiskModelShortIndex], 64)
 	if err != nil {
-		re.log.Errorf("error calculating short risk factor", err.Error())
-		return err
+		return errors.Wrap(err, "Failure calculating short risk factor")
 	}
 
 	riskFactorLong, err := strconv.ParseFloat(s[re.PyRiskModelLongIndex], 64)
 	if err != nil {
-		re.log.Errorf("error calculating long risk factor", err.Error())
-		return err
+		return errors.Wrap(err, "Failure calculating long risk factor")
 	}
 
 	riskFactor.Short = riskFactorShort
 	riskFactor.Long = riskFactorLong
 
-	re.log.Debugf("Risk Factors obtained from risk model: ")
-	re.log.Debugf("Short: %f", riskFactor.Short)
-	re.log.Debugf("Long: %f", riskFactor.Long)
+	re.log.Debug("Risk Factors obtained from risk model",
+		logging.String("market-id", riskFactor.Market),
+		logging.Float64("long", riskFactor.Long),
+		logging.Float64("short", riskFactor.Short),
+		logging.String("executable", ex),
+		logging.Float64("sigma", re.getSigma()),
+		logging.Float64("lambda", re.getLambda()),
+		logging.Int64("interestRate", re.getInterestRate()),
+		logging.Int64("calculationFrequency", re.getCalculationFrequency()))
 
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 	types "vega/proto"
 
 	"github.com/pkg/errors"
+	"vega/internal/logging"
 )
 
 type Service interface {
@@ -64,7 +65,7 @@ func (s *abciService) Commit() error {
 
 func (s *abciService) SubmitOrder(order *types.Order) error {
 	if s.LogOrderSubmitDebug {
-		s.log.Debugf("AbciService: received a SUBMIT ORDER request: %s", order)
+		s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
 	}
 
 	order.Id = fmt.Sprintf("V%010d-%010d", s.totalBatches, s.totalOrders)
@@ -74,13 +75,15 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	confirmationMessage, errorMessage := s.execution.SubmitOrder(order)
 	if confirmationMessage != nil {
 		if s.LogOrderSubmitDebug {
-			s.log.Debugf("Order confirmation message:")
-			s.log.Debugf("- aggressive order: %+v", confirmationMessage.Order)
-			s.log.Debugf("- trades: %+v", confirmationMessage.Trades)
-			s.log.Debugf("- passive orders affected: %+v", confirmationMessage.PassiveOrdersAffected)
+			s.log.Debug("Order confirmed",
+				logging.Order(*order),
+				logging.OrderWithTag(*confirmationMessage.Order, "aggressive-order"),
+				logging.String("passive-trades", fmt.Sprintf("%+v", confirmationMessage.Trades)),
+			    logging.String("passive-orders", fmt.Sprintf("%+v", confirmationMessage.PassiveOrdersAffected)))
+
 			s.totalTrades += uint64(len(confirmationMessage.Trades))
 		}
-
+		
 		confirmationMessage.Release()
 	}
 
@@ -88,9 +91,11 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	s.totalOrders++
 
 	if errorMessage != types.OrderError_NONE {
-		s.log.Errorf("ABCI order error message (create):")
-		s.log.Errorf("- error: %s", errorMessage)
-		return errors.New(errorMessage.String())
+		errorMessageString := errorMessage.String()
+		s.log.Error("error message on creating order",
+			logging.Order(*order),
+			logging.String("error", errorMessageString))
+		return errors.New(errorMessageString)
 	}
 
 	return nil
@@ -98,21 +103,22 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 
 func (s *abciService) CancelOrder(order *types.Order) error {
 	if s.LogOrderCancelDebug {
-		s.log.Debugf("AbciService: received a CANCEL ORDER request")
+		s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
 	}
 
 	// Submit the cancel new order request to the Vega trading core
 	cancellationMessage, errorMessage := s.execution.CancelOrder(order)
 	if cancellationMessage != nil {
 		if s.LogOrderCancelDebug {
-			s.log.Debugf("ABCI order cancellation message:")
-			s.log.Debugf("- cancelled order: %+v", cancellationMessage.Order)
+			s.log.Debug("Order cancelled", logging.Order(*cancellationMessage.Order))
 		}
 	}
 	if errorMessage != types.OrderError_NONE {
-		s.log.Errorf("ABCI order error message (cancel):")
-		s.log.Errorf("- error: %s", errorMessage.String())
-		return errors.New(errorMessage.String())
+		errorMessageString := errorMessage.String()
+		s.log.Error("error message on cancelling order",
+			logging.Order(*order),
+			logging.String("error", errorMessageString))
+		return errors.New(errorMessageString)
 	}
 
 	return nil
@@ -120,21 +126,23 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 
 func (s *abciService) AmendOrder(order *types.Amendment) error {
 	if s.LogOrderAmendDebug {
-		s.log.Debugf("AbciService: received a AMEND ORDER request")
+		s.log.Debug("Blockchain service received a AMEND ORDER request",
+			logging.String("order", order.String()))
 	}
 
 	// Submit the Amendment new order request to the Vega trading core
 	confirmationMessage, errorMessage := s.execution.AmendOrder(order)
 	if confirmationMessage != nil {
 		if s.LogOrderAmendDebug {
-			s.log.Debugf("AbciService: Amend order from execution engine:")
-			s.log.Debugf("- cancelled order: %+v\n", confirmationMessage.Order)
+			s.log.Debug("Order amended", logging.String("order", order.String()))
 		}
 	}
 	if errorMessage != types.OrderError_NONE {
-		s.log.Errorf("AbciService: Amend order error from execution engine:")
-		s.log.Errorf("- error: %s", errorMessage.String())
-		return errors.New(errorMessage.String())
+		errorMessageString := errorMessage.String()
+		s.log.Error("error message on amending order",
+			logging.String("order", order.String()),
+			logging.String("error", errorMessageString))
+		return errors.New(errorMessageString)
 	}
 
 	return nil
@@ -166,7 +174,9 @@ func (s *abciService) setBatchStats() {
 		}
 	}
 
-	s.log.Debugf("AbciService: Average orders/batch = %v", s.averageOrdersPerBatch)
+	s.log.Debug("Blockchain service batch stats",
+		logging.Uint64("total-batches", s.totalBatches),
+		logging.Int("avg-orders-batch", s.averageOrdersPerBatch))
 
 	s.currentOrdersInBatch = 0
 	s.currentTradesInBatch = 0

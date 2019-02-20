@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	log logging.Logger
-	level logging.Level
+	log *logging.Logger
+	Level logging.Level
 
 	GraphQLServerPort int
 	GraphQLServerIpAddress string
@@ -16,12 +16,11 @@ type Config struct {
 	GrpcServerIpAddress string
 }
 
-func NewConfig(logger logging.Logger) *Config {
-	level := logging.DebugLevel
+func NewConfig(logger *logging.Logger) *Config {
 	logger = logger.Named("api")
 	return &Config{
 		log: logger,
-		level: level,
+		Level: logging.InfoLevel,
 
 		GraphQLServerIpAddress: "127.0.0.1",
 		GraphQLServerPort: 3004,
@@ -35,5 +34,5 @@ func NewConfig(logger logging.Logger) *Config {
 }
 
 func (c *Config) GetLogger() *logging.Logger {
-	return &c.log
+	return c.log
 }

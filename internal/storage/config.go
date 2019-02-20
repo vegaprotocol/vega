@@ -13,7 +13,7 @@ const namedLogger = "storage"
 
 // Config provides package level settings, configuration and logging.
 type Config struct {
-	log   logging.Logger
+	log   *logging.Logger
 	Level logging.Level
 
 	OrderStoreDirPath     string   `mapstructure:"order_store_path"`
@@ -27,7 +27,7 @@ type Config struct {
 
 // NewConfig constructs a new Config instance with default parameters.
 // This constructor is used by the vega application code.
-func NewConfig(logger logging.Logger) *Config {
+func NewConfig(logger *logging.Logger) *Config {
 	logger = logger.Named(namedLogger)
 	return &Config{
 		log:                   logger,
@@ -46,8 +46,7 @@ func NewConfig(logger logging.Logger) *Config {
 // This constructor is exclusively used in unit tests/integration tests
 func NewTestConfig() *Config {
 	// Test logger can be configured here, default to console not file etc.
-	logger := logging.NewLogger()
-	logger.InitConsoleLogger(logging.DebugLevel)
+	logger := logging.NewLoggerFromEnv("dev") // todo(cdm): add test env or some other config e.g file
 	logger.AddExitHandler()
 	// Test configuration for badger stores
 	return &Config{
@@ -65,32 +64,44 @@ func NewTestConfig() *Config {
 func FlushStores(c *Config) {
 	err := os.RemoveAll(c.OrderStoreDirPath)
 	if err != nil {
-		c.log.Errorf("error flushing order store: %s", err)
+		c.log.Error("Failed to flush the order store",
+			logging.String("path", c.OrderStoreDirPath),
+			logging.Error(err))
 	}
 	if _, err := os.Stat(c.OrderStoreDirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(c.OrderStoreDirPath, os.ModePerm)
 		if err != nil {
-			c.log.Errorf("error creating order store: %s", err)
+			c.log.Error("Failed to create the order store",
+				logging.String("path", c.OrderStoreDirPath),
+				logging.Error(err))
 		}
 	}
 	err = os.RemoveAll(c.TradeStoreDirPath)
 	if err != nil {
-		c.log.Errorf("error flushing trade store: %s", err)
+		c.log.Error("Failed to flush the trade store",
+			logging.String("path", c.TradeStoreDirPath),
+			logging.Error(err))
 	}
 	if _, err := os.Stat(c.TradeStoreDirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(c.TradeStoreDirPath, os.ModePerm)
 		if err != nil {
-			c.log.Errorf("error creating trade store: %s", err)
+			c.log.Error("Failed to create the trade store",
+				logging.String("path", c.TradeStoreDirPath),
+				logging.Error(err))
 		}
 	}
 	err = os.RemoveAll(c.CandleStoreDirPath)
 	if err != nil {
-		c.log.Errorf("error flushing candle store: %s", err)
+		c.log.Error("Failed to flush the candle store",
+			logging.String("path", c.CandleStoreDirPath),
+			logging.Error(err))
 	}
 	if _, err := os.Stat(c.CandleStoreDirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(c.CandleStoreDirPath, os.ModePerm)
 		if err != nil {
-			c.log.Errorf("error creating candle store: %s", err)
+			c.log.Error("Failed to create the candle store",
+				logging.String("path", c.TradeStoreDirPath),
+				logging.Error(err))
 		}
 	}
 }

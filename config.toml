@@ -12,8 +12,8 @@
 
 [Blockchain]
   Level = -1
-  ClientAddr = "tcp/://0.0.0.0:46657"
-  ClientEndpoint = "46658"
+  ClientAddr = "tcp/://0.0.0.0:26657"
+  ClientEndpoint = "26658"
   ServerAddr = "localhost"
   ServerPort = 46658
   LogOrderAmendDebug = true

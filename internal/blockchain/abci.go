@@ -5,6 +5,7 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 	"vega/internal/execution"
 	"vega/internal/vegatime"
+	"vega/internal/logging"
 )
 
 const (
@@ -46,16 +47,16 @@ func NewAbciApplication(config *Config, execution execution.Engine, time vegatim
 func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
 	// Notify the abci/blockchain service imp that the transactions block/batch has begun
 	if err := app.service.Begin(); err != nil {
-		 app.log.Errorf("Abci: error on blockchain service begin: %s", err)
+		 app.log.Panic("Failure on blockchain service begin", logging.Error(err))
 	}
 
 	// We can log more gossiped time info (switchable in config)
 	if app.LogTimeDebug {
-		app.log.Infof("Begin block time report (%d txs):", beginBlock.Header.NumTxs)
-		app.log.Infof("------------------------")
-		app.log.Infof("Gossip time: %v", beginBlock.Header.Time)
-		app.log.Infof("Unix epoch+nano: %d", beginBlock.Header.Time.UnixNano())
-		app.log.Infof("------------------------")
+		app.log.Debug("Block time for height",
+			logging.Int64("height", beginBlock.Header.Height),
+			logging.Int64("num-txs", beginBlock.Header.NumTxs),
+			logging.Int64("epoch-nano",  beginBlock.Header.Time.UnixNano()),
+			logging.String("time", beginBlock.Header.Time.String()))
 	}
 
 	// Set time provided by ABCI block header (consensus will have been reached on block time)
@@ -96,7 +97,7 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 func (app *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
 	err := app.processor.Validate(txn)
 	if err != nil {
-		app.log.Errorf("Abci: error validating (CheckTx): %s", err)
+		app.log.Error("Error when validating payload in CheckTx", logging.Error(err))
 		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
 	}
 	return types.ResponseCheckTx{Code: AbciTxnOK}
@@ -131,7 +132,7 @@ func (app *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
 func (app *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
 	err := app.processor.Process(txn)
 	if err != nil {
-		app.log.Errorf("Abci: error processing (DeliverTx): %s", err)
+		app.log.Error("Error when validating payload in DeliverTx", logging.Error(err))
 		return types.ResponseDeliverTx{Code: AbciTxnValidationFailure}
 	}
 	txLength := len(txn)
@@ -172,8 +173,10 @@ func (app *AbciApplication) Commit() types.ResponseCommit {
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has completed
 	if err := app.service.Commit(); err != nil {
-		app.log.Errorf("Abci: error on blockchain service commit: %s", err)
+		app.log.Error("Error on blockchain service Commit", logging.Error(err))
 	}
+
+	// todo: when an error happens on commit should we return a different response to ABCI?
 
 	app.setBatchStats()
 	return types.ResponseCommit{Data: appHash}
@@ -192,7 +195,11 @@ func (app *AbciApplication) setBatchStats() {
 		totalTx += itx
 	}
 	averageTxTotal := totalTx / len(app.txTotals)
-	app.log.Debugf("Abci: current average txn total: %v per batch", averageTxTotal)
+
+	app.log.Debug("Batch stats for height",
+		logging.Uint64("height", app.height),
+		logging.Int("average-tx-total", averageTxTotal))
+
 	app.averageTxPerBatch = averageTxTotal
 	app.totalTxLastBatch = 0
 
@@ -215,7 +222,11 @@ func (app *AbciApplication) setTxStats(txLength int) {
 		totalTx += itx
 	}
 	averageTxBytes := totalTx / len(app.txSizes)
-	app.log.Debugf("Abci: current txn average size: %v bytes", averageTxBytes)
+
+	app.log.Debug("Transaction stats for height",
+		logging.Uint64("height", app.height),
+		logging.Int("average-tx-bytes", averageTxBytes))
+
 	app.averageTxSizeBytes = averageTxBytes
 
 	// MAX sample size for avg calculation is defined as const.

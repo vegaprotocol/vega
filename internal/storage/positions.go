@@ -2,6 +2,7 @@ package storage
 
 import (
 	types "vega/proto"
+	"fmt"
 )
 
 type MarketBucket struct {
@@ -22,7 +23,7 @@ func (ts *badgerTradeStore) GetTradesBySideBuckets(party string) map[string]*Mar
 	}
 
 	if ts.LogPositionStoreDebug {
-		ts.log.Debugf("Total trades by timestamp for party %s = %d", party, len(tradesByTimestamp))
+		ts.log.Debug(fmt.Sprintf("Total trades by timestamp for party %s = %d", party, len(tradesByTimestamp)))
 	}
 
 	for idx, trade := range tradesByTimestamp {

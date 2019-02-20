@@ -10,6 +10,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"vega/internal/logging"
 )
 
 type OrderStore interface {
@@ -87,7 +88,9 @@ func (os *badgerOrderStore) Subscribe(orders chan<- []types.Order) uint64 {
 	os.subscriberId = os.subscriberId + 1
 	os.subscribers[os.subscriberId] = orders
 
-	os.log.Debugf("OrderStore -> Subscribe: Order subscriber added: %d", os.subscriberId)
+	os.log.Debug("Orders subscriber added in order store",
+		logging.Uint64("subscriber-id", os.subscriberId))
+
 	return os.subscriberId
 }
 
@@ -97,16 +100,19 @@ func (os *badgerOrderStore) Unsubscribe(id uint64) error {
 	defer os.mu.Unlock()
 
 	if len(os.subscribers) == 0 {
-		os.log.Debugf("OrderStore -> Unsubscribe: No subscribers connected")
+		os.log.Debug("Un-subscribe called in order store, no subscribers connected",
+			logging.Uint64("subscriber-id", id))
 		return nil
 	}
 
 	if _, exists := os.subscribers[id]; exists {
 		delete(os.subscribers, id)
-		os.log.Debugf("OrderStore -> Unsubscribe: Subscriber removed: %v", id)
+		os.log.Debug("Un-subscribe called in order store, subscriber removed",
+			logging.Uint64("subscriber-id", id))
 		return nil
 	}
-	return errors.New(fmt.Sprintf("OrderStore subscriber does not exist with id: %d", id))
+	
+	return errors.New(fmt.Sprintf("Orders subscriber does not exist with id: %d", id))
 }
 
 // Post adds an order to the badger store, adds
@@ -179,7 +185,11 @@ func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filtering.O
 		orderBuf, _ := item.ValueCopy(nil)
 		var order types.Order
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			os.log.Errorf("unmarshal failed %s", err.Error())
+			os.log.Error("Failed to unmarshal order value from badger in order store (getByMarket)",
+				logging.Error(err),
+				logging.String("badger-key", string(item.Key())),
+				logging.String("raw-bytes", string(orderBuf)))
+			
 			return nil, err
 		}
 		if filter.apply(&order) {
@@ -207,7 +217,10 @@ func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*types.O
 	}
 	orderBuf, _ := item.ValueCopy(nil)
 	if err := proto.Unmarshal(orderBuf, &order); err != nil {
-		os.log.Errorf("Unmarshal failed %s", err.Error())
+		os.log.Error("Failed to unmarshal order value from badger in order store (getByMarketAndId)",
+			logging.Error(err),
+			logging.String("badger-key", string(item.Key())),
+			logging.String("raw-bytes", string(orderBuf)))
 		return nil, err
 	}
 	return &order, nil
@@ -236,13 +249,19 @@ func (os *badgerOrderStore) GetByParty(party string, queryFilters *filtering.Ord
 		marketKey, _ := marketKeyItem.ValueCopy(nil)
 		orderItem, err := txn.Get(marketKey)
 		if err != nil {
-			os.log.Errorf("order with key %s does not exist in store", string(marketKey))
+			os.log.Error("Order with key does not exist in order store (getByParty)",
+				logging.String("badger-key", string(marketKey)),
+				logging.Error(err))
+
 			return nil, err
 		}
 		orderBuf, _ := orderItem.ValueCopy(nil)
 		var order types.Order
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			os.log.Errorf("unmarshal failed %s", err.Error())
+			os.log.Error("Failed to unmarshal order value from badger in order store (getByParty)",
+				logging.Error(err),
+				logging.String("badger-key", string(marketKey)),
+				logging.String("raw-bytes", string(orderBuf)))
 			return nil, err
 		}
 		if filter.apply(&order) {
@@ -278,7 +297,10 @@ func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*types.Ord
 			return err
 		}
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			os.log.Errorf("unmarshal failed %s", err.Error())
+			os.log.Error("Failed to unmarshal order value from badger in order store (getByPartyAndId)",
+				logging.Error(err),
+				logging.String("badger-key", string(marketKey)),
+				logging.String("raw-bytes", string(orderBuf)))
 			return err
 		}
 		return nil
@@ -348,7 +370,7 @@ func (os *badgerOrderStore) notify(items []types.Order) error {
 	}
 
 	if os.subscribers == nil || len(os.subscribers) == 0 {
-		os.log.Debugf("OrderStore -> Notify: No subscribers connected")
+		os.log.Debug("No subscribers connected in order store")
 		return nil
 	}
 
@@ -362,9 +384,11 @@ func (os *badgerOrderStore) notify(items []types.Order) error {
 			ok = false
 		}
 		if ok {
-			os.log.Debugf("OrderStore: send on channel success for subscriber %d", id)
+			os.log.Debug("Orders channel updated for subscriber successfully",
+				logging.Uint64("id", id))
 		} else {
-			os.log.Infof("OrderStore: channel could not been updated for subscriber %d", id)
+			os.log.Debug("Orders channel could not be updated for subscriber",
+				logging.Uint64("id", id))
 		}
 	}
 	return nil
@@ -380,7 +404,9 @@ func (os *badgerOrderStore) writeBatch(batch []types.Order) error {
 		for idx := range batch {
 			orderBuf, err := proto.Marshal(&batch[idx])
 			if err != nil {
-				os.log.Errorf("marshal failed: %s", err.Error())
+				os.log.Error("Failed to marshal order value to badger in order store (writeBatch)",
+					logging.Error(err),
+					logging.Order(batch[idx]))
 			}
 			marketKey := os.badger.orderMarketKey(batch[idx].Market, batch[idx].Id)
 			idKey := os.badger.orderIdKey(batch[idx].Id)
@@ -399,13 +425,18 @@ func (os *badgerOrderStore) writeBatch(batch []types.Order) error {
 	}
 	if err := insertBatchAtomically(); err == nil {
 		if err := wb.Flush(); err != nil {
+
 			// todo: can we handle flush errors in a similar way to below?
-			os.log.Errorf("failed to flush batch: %s", err)
+			os.log.Error("Failed to flush batch of orders when calling writeBatch in badger order store",
+				logging.Error(err))
 		}
 	} else {
 		wb.Cancel()
+
 		// todo: retry mechanism, also handle badger txn too large errors
-		os.log.Errorf("failed to insert order batch atomically, %s", err)
+		os.log.Error("Failed to insert order batch atomically when calling writeBatch in badger order store",
+			logging.Error(err))
+
 		return nil
 	}
 

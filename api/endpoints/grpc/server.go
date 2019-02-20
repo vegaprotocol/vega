@@ -12,6 +12,7 @@ import (
 	"vega/internal/markets"
 
 	"google.golang.org/grpc"
+	"vega/internal/logging"
 )
 
 type grpcServer struct {
@@ -35,15 +36,17 @@ func NewGRPCServer(config *api.Config, orderService orders.Service,
 
 func (g *grpcServer) Start() {
 	logger := *g.GetLogger()
-	port := g.GrpcServerPort
-	ip := g.GrpcServerIpAddress
-	logger.Infof("Starting GRPC based server on port %d...\n", port)
 
+	ip := g.GrpcServerIpAddress
+	port := g.GrpcServerPort
+
+	logger.Info("Starting gRPC based API", logging.String("addr", ip), logging.Int("port", port))
+	
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
-		logger.Fatalf("failed to listen: %v", err)
+		logger.Panic("Failure listening on gRPC port", logging.Int("port", port), logging.Error(err))
 	}
-
+	
 	var handlers = &Handlers{
 		OrderService: g.orderService,
 		TradeService: g.tradeService,
@@ -53,5 +56,8 @@ func (g *grpcServer) Start() {
 	}
 	grpcServer := grpc.NewServer()
 	api.RegisterTradingServer(grpcServer, handlers)
-	grpcServer.Serve(lis)
+	err = grpcServer.Serve(lis)
+	if err != nil {
+		logger.Panic("Failure serving gRPC API", logging.Error(err))
+	}
 }

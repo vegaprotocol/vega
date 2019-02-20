@@ -33,9 +33,12 @@ func TestCandleService_ObserveCandles(t *testing.T) {
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
-	logger := logging.NewLogger()
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
 	candleConfig := NewConfig(logger)
-	var candleService = NewCandleService(candleConfig, candleStore)
+	candleService, err := NewCandleService(candleConfig, candleStore)
+	assert.Nil(t, err)
 
 	interval1m := types.Interval_I1M
 	interval5m := types.Interval_I5M
@@ -213,13 +216,17 @@ func TestSubscriptionUpdates_MinMax(t *testing.T) {
 	var ctx= context.Background()
 	storeConfig := storageConfig()
 	storage.FlushStores(storeConfig)
-	candleStore, err :=storage.NewCandleStore(storeConfig)
+	candleStore, err := storage.NewCandleStore(storeConfig)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
-	logger := logging.NewLogger()
+
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
 	candleConfig := NewConfig(logger)
-	var candleService = NewCandleService(candleConfig, candleStore)
+	candleService, err := NewCandleService(candleConfig, candleStore)
+	assert.Nil(t, err)
 
 	interval5m := types.Interval_I5M
 

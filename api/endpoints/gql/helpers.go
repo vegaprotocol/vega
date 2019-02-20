@@ -62,7 +62,6 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 		queryFilters = &filtering.OrderQueryFilters{}
 	}
 	if where != nil {
-		//log.Debugf("OrderFilters: %+v", where)
 
 		// AND default
 		queryFilters.Operator = filtering.QueryFilterOperatorAnd
@@ -121,7 +120,6 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 
 	// Parse 'where' and build query filters that will be used internally (if set)
 	if where != nil {
-		//log.Debugf("TradeFilters: %+v", where)
 
 		// AND default
 		queryFilters.Operator = filtering.QueryFilterOperatorAnd

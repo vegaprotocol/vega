@@ -10,6 +10,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"vega/internal/logging"
 )
 
 // CandleStore provides a set of functions that can manipulate a candle store, it provides a way for
@@ -108,7 +109,9 @@ func (c *badgerCandleStore) Subscribe(iT *InternalTransport) uint64 {
 	c.subscriberId = c.subscriberId + 1
 	c.subscribers[c.subscriberId] = iT
 
-	c.log.Debugf("CandleStore -> Subscribe: Candle subscriber added: %d", c.subscriberId)
+	c.log.Debug("Candle subscriber added in candle store",
+		logging.Uint64("subscriber-id", c.subscriberId))
+
 	return c.subscriberId
 }
 
@@ -118,16 +121,25 @@ func (c *badgerCandleStore) Unsubscribe(id uint64) error {
 	defer c.mu.Unlock()
 
 	if len(c.subscribers) == 0 {
-		c.log.Debugf("CandleStore -> Unsubscribe: No subscribers connected")
+		c.log.Debug("Un-subscribe called in candle store, no subscribers connected",
+			logging.Uint64("subscriber-id", id))
+
 		return nil
 	}
 
 	if _, exists := c.subscribers[id]; exists {
 		delete(c.subscribers, id)
-		c.log.Debugf("CandleStore -> Unsubscribe: Subscriber removed: %v", id)
+
+		c.log.Debug("Un-subscribe called in candle store, subscriber removed",
+			logging.Uint64("subscriber-id", id))
+
 		return nil
 	}
-	return errors.New(fmt.Sprintf("CandleStore subscriber does not exist with id: %d", id))
+
+	c.log.Warn("Un-subscribe called in candle store, subscriber does not exist",
+		logging.Uint64("subscriber-id", id))
+
+	return errors.New(fmt.Sprintf("Candle store subscriber does not exist with id: %d", id))
 }
 
 // Close can be called to clean up and close any storage
@@ -180,7 +192,6 @@ func (c *badgerCandleStore) AddTradeToBuffer(market string, trade types.Trade) e
 		}
 	}
 
-	//c.printCandleBuffer()
 	return nil
 }
 
@@ -197,7 +208,12 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 		itemCopy, _ := item.ValueCopy(nil)
 		err = proto.Unmarshal(itemCopy, &candleFromDb)
 		if err != nil {
-			return nil, errors.Wrap(err, "fetchCandle unmarshal failed")
+			c.log.Error("Failed to unmarshal candle value from badger in candle store (fetchCandle)",
+				logging.Error(err),
+				logging.String("badger-key", string(item.Key())),
+				logging.String("raw-bytes", string(itemCopy)))
+
+			return nil, errors.Wrap(err, "failed to unmarshal from badger (fetchCandle)")
 		}
 		return &candleFromDb, nil
 	}
@@ -242,7 +258,10 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 		if err == badger.ErrKeyNotFound {
 			insertNewCandle(writeBatch, badgerKey, candle)
 
-			c.log.Debugf("new candle inserted %+v at %s", candle, string(badgerKey))
+			c.log.Debug("New candle inserted in candle store",
+				logging.Candle(candle),
+				logging.String("badger-key", string(badgerKey)))
+			
 			c.queueEvent(market, candle)
 		}
 		if err == nil && candle.Volume != uint64(0) {
@@ -250,7 +269,10 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 			mergeCandles(candleDb, candle)
 			updateCandle(writeBatch, badgerKey, candleDb)
 
-			c.log.Debugf("candle updated %+v at %s", candleDb, string(badgerKey))
+			c.log.Debug("Candle updated in candle store",
+				logging.Candle(*candleDb),
+				logging.String("badger-key", string(badgerKey)))
+
 			c.queueEvent(market, *candleDb)
 		}
 	}
@@ -289,13 +311,18 @@ func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, int
 		item := it.Item()
 		value, err := item.ValueCopy(nil)
 		if err != nil {
-			c.log.Errorf("error getting candle value: %s", err)
+			c.log.Error("Failure loading candle value from candle store (GetCandles)",
+				logging.String("badger-key", string(item.Key())),
+				logging.Error(err))
 			continue
 		}
 
 		var newCandle types.Candle
 		if err := proto.Unmarshal(value, &newCandle); err != nil {
-			c.log.Errorf("unmarshal failed %s", err.Error())
+			c.log.Error("Failed to unmarshal candle value from badger in candle store (GetCandles)",
+				logging.Error(err),
+				logging.String("badger-key", string(item.Key())),
+				logging.String("raw-bytes", string(value)))
 			continue
 		}
 		candles = append(candles, &newCandle)
@@ -382,21 +409,25 @@ func (c *badgerCandleStore) queueEvent(market string, candle types.Candle) {
 // subscribers or the queue is empty it will return with no work.
 func (c *badgerCandleStore) notify() error {
 	if len(c.subscribers) == 0 {
-		c.log.Debugf("CandleStore -> Notify: No subscribers connected")
+		c.log.Debug("No subscribers connected in candle store")
 		return nil
 	}
 	if len(c.queue) == 0 {
-		c.log.Debugf("CandleStore -> Notify: No candles in the queue")
+		c.log.Debug("No candles queued in candle store")
 		return nil
 	}
 
-	c.log.Debugf("%d candles in the notify queue for %d subscribers", len(c.queue), len(c.subscribers))
+	c.log.Debug("Candles in the subscription queue",
+		logging.Int("queue-length", len(c.queue)),
+		logging.Int("subscribers", len(c.subscribers)))
 
 	// update candle for each subscriber, only if there are candles in the queue
 	for id, iT := range c.subscribers {
 
-		c.log.Debugf("Candle subscriber %d (%s) ready to notify", id, iT.Market)
-
+		c.log.Debug("Candle subscriber ready to notify",
+			logging.Uint64("id", id),
+			logging.String("market", iT.Market))
+		
 		for _, item := range c.queue {
 
 			// find candle with right interval
@@ -404,19 +435,31 @@ func (c *badgerCandleStore) notify() error {
 				continue
 			}
 
-			c.log.Infof("Doing update for subscriber %d subscribing %s (%s)", id, iT.Interval, iT.Market)
+			c.log.Debug("About to update candle subscriber",
+				logging.Uint64("id", id),
+				logging.String("interval", iT.Interval.String()),
+				logging.String("market", iT.Market))
 
 			// try to place candle onto transport
 			select {
 			case iT.Transport <- item.Candle:
-				c.log.Infof("Candle updated for subscriber %d at interval: %s (%s)", id, item.Candle.Interval, iT.Market)
+				c.log.Debug("Candle updated for subscriber successfully",
+					logging.Uint64("id", id),
+					logging.String("interval", item.Candle.Interval.String()),
+					logging.String("market", item.Market))
 			default:
-				c.log.Infof("Candles state could not been updated for subscriber %d at interval %s (%s)", id, item.Candle.Interval, iT.Market)
+				c.log.Debug("Candle could not be updated for subscriber",
+					logging.Uint64("id", id),
+					logging.String("interval", item.Candle.Interval.String()),
+					logging.String("market", item.Market))
 			}
 			break
 		}
 
-		c.log.Debugf("Candle subscriber %d (%s) notified for interval %s", id, iT.Market, iT.Interval)
+		c.log.Debug("Candle subscriber notified",
+			logging.Uint64("id", id),
+			logging.String("interval", iT.Interval.String()),
+			logging.String("market", iT.Market))
 	}
 
 	c.queue = make([]marketCandle, 0)
@@ -432,16 +475,6 @@ func (c *badgerCandleStore) resetCandleBuffer(market string) {
 // getBufferKey returns the custom formatted buffer key for internal trade to timestamp mapping.
 func getBufferKey(timestamp uint64, interval types.Interval) string {
 	return fmt.Sprintf("%d:%s", timestamp, interval.String())
-}
-
-// printCandleBuffer is used for debugging the output of the generation methods.
-func (c *badgerCandleStore) printCandleBuffer() {
-	for market, val := range c.candleBuffer {
-		c.log.Debugf("Market: %s", market)
-		for bufferKey, candle := range val {
-			c.log.Debugf("BK=%s	T=%d	I=%+v	V=%d	H=%d	C=%d", bufferKey, candle.Timestamp, candle.Interval, candle.Volume, candle.High, candle.Low)
-		}
-	}
 }
 
 // newCandle constructs a new candle with minimum required parameters.

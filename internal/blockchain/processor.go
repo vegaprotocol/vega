@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"vega/internal/logging"
 )
 
 type Processor interface {
@@ -42,8 +43,7 @@ func (p *abciProcessor) getOrderAmendment(payload []byte) (*types.Amendment, err
 	amendment := &types.Amendment{}
 	err := proto.Unmarshal(payload, amendment)
 	if err != nil {
-		p.log.Errorf("Error: Decoding order to proto: ", err.Error())
-		return nil, err
+		return nil, errors.Wrap(err, "error decoding order to proto")
 	}
 	return amendment, nil
 }
@@ -52,14 +52,12 @@ func (p *abciProcessor) getOrderAmendment(payload []byte) (*types.Amendment, err
 func (p *abciProcessor) Validate(payload []byte) error {
 	// Pre-validate (safety check)
 	if err, seen := p.hasSeen(payload); seen {
-		p.log.Errorf("AbciProcessor: error %s", err)
-		return err
+		return errors.Wrap(err, "error during hasSeen (validate)")
 	}
 	// Attempt to decode transaction payload
 	_, cmd, err := txDecode(payload)
 	if err != nil {
-		p.log.Errorf("AbciProcessor: Decode failed when validating, %s", err)
-		return err
+		return errors.Wrap(err, "error decoding payload")
 	}
 	// Ensure valid VEGA app command
 	switch cmd {
@@ -80,23 +78,20 @@ func (p *abciProcessor) Validate(payload []byte) error {
 func (p *abciProcessor) Process(payload []byte) error {
 	// Pre-validate (safety check)
 	if err, seen := p.hasSeen(payload); seen {
-		p.log.Errorf("AbciProcessor: txn payload already exists, %s", err)
-		return err
+		return errors.Wrap(err, "error during hasSeen (process)")
 	}
 
 	// Add to map of seen payloads, hashes only exist in here if they are processed.
 	payloadHash, err := p.payloadHash(payload)
 	if err != nil {
-		p.log.Errorf("AbciProcessor: payload hash error: %s", err)
-		return err
+		return errors.Wrap(err, "error obtaining payload hash")
 	}
 	p.seenPayloads[*payloadHash] = 0xF
 
 	// Attempt to decode transaction payload
 	data, cmd, err := txDecode(payload)
 	if err != nil {
-		p.log.Errorf("AbciProcessor: Decode failed when processing, %s", err)
-		return err
+		return errors.Wrap(err, "error decoding payload")
 	}
 	// Process known command types
 	switch cmd {
@@ -130,7 +125,7 @@ func (p *abciProcessor) Process(payload []byte) error {
 	//case FutureVegaCommand
 	// Note: Future valid VEGA commands here
 	default:
-		p.log.Errorf("Unknown command received: %s", cmd)
+		p.log.Warn("Unknown command received", logging.String("command", string(cmd)))
 		return errors.New(fmt.Sprintf("Unknown command received: %s", cmd))
 	}
 	return nil
@@ -169,8 +164,8 @@ func (p *abciProcessor) payloadHash(payload []byte) (*string, error) {
 // to the application core.
 func (p *abciProcessor) payloadExists(payloadHash *string) (error, bool) {
 	if _, exists := p.seenPayloads[*payloadHash]; exists {
+		p.log.Warn("Transaction payload exists", logging.String("payload-hash", *payloadHash))
 		err := errors.New(fmt.Sprintf("txn payload exists: %s", *payloadHash))
-		p.log.Errorf("AbciProcessor: %s", err)
 		return err, true
 	}
 	return nil, false

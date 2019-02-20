@@ -42,10 +42,15 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		<-ctx.Done()
-		c.log.Debugf("CandleService -> Subscriber closed connection: %d [%s]", id, ip)
+		c.log.Debug("Candles subscriber closed connection",
+			logging.Uint64("id", id),
+			logging.String("ip-address", ip))
 		err := c.candleStore.Unsubscribe(id)
 		if err != nil {
-			c.log.Errorf("Error un-subscribing when context.Done() on CandleService for id: %d [%s]", id, ip)
+			c.log.Error("Failure un-subscribing candles subscriber when context.Done()",
+				logging.Uint64("id", id),
+				logging.String("ip-address", ip),
+				logging.Error(err))
 		}
 	}(ref, ctx)
 
@@ -54,12 +59,18 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 		for v := range iT.Transport {
 			select {
 				case candleCh <- v:
-					c.log.Debugf("CandleService -> Candles for subscriber %d [%s] sent successfully", ref, ip)
+					c.log.Debug("Candles for subscriber sent successfully",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 				default:
-					c.log.Debugf("CandleService -> Candles for subscriber %d [%s] not sent", ref, ip)
+					c.log.Debug("Candles for subscriber not sent",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip))
 			}
 		}
-		c.log.Debugf("CandleService -> Channel for subscriber %d has been closed [%s]", ref, ip)
+		c.log.Debug("Candles subscriber channel has been closed",
+			logging.Uint64("ref", ref),
+			logging.String("ip-address", ip))
 	}(&iT, ctx)
 
 	return candleCh, ref
@@ -68,8 +79,7 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 func (c *candleService) GetCandles(ctx context.Context, market string,
 	sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error) {
 
-	// sinceTimestamp must be valid and not older than market genesis timestamp,
-
+	// sinceTimestamp must be valid and not older than market genesis timestamp
 	// interval check if from range of valid intervals
 
 	return c.candleStore.GetCandles(market, sinceTimestamp, interval)

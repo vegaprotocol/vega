@@ -2,13 +2,16 @@ package matching
 
 import (
 	types "vega/proto"
+	"vega/internal/logging"
 )
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) types.OrderError {
 	if orderMessage.Market != b.name {
-		b.log.Errorf("Market ID mismatch: orderMessage.Market: %s, book.ID: %s",
-			orderMessage.Market,
-			b.name)
+		b.log.Error("Market ID mismatch",
+			logging.String("market", orderMessage.Market),
+			logging.String("order-book", b.name),
+			logging.Order(*orderMessage))
+
 		return types.OrderError_INVALID_MARKET_ID
 	}
 

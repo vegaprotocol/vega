@@ -8,6 +8,7 @@ import (
 	"vega/internal/matching"
 	"vega/internal/storage"
 	"vega/internal/vegatime"
+	"vega/internal/logging"
 )
 
 type Engine interface {
@@ -36,22 +37,28 @@ func NewExecutionEngine(config *Config, matching matching.MatchingEngine, time v
 }
 
 func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError) {
-	e.log.Debug("ExecutionEngine: Submit/create order")
+	e.log.Debug("Submit order", logging.Order(*order))
 
 	// 1) submit order to matching engine
-	confirmation, errortypes := e.matching.SubmitOrder(order)
-	if confirmation == nil || errortypes != types.OrderError_NONE {
-		return nil, errortypes
+	confirmation, submitError := e.matching.SubmitOrder(order)
+	if confirmation == nil || submitError != types.OrderError_NONE {
+		e.log.Error("Failure after submit order from matching engine",
+			logging.Order(*order),
+			logging.String("error", submitError.String()))
+
+		return nil, submitError
 	}
 
 	// 2) Call out to risk engine calculation every N blocks
+
 
 	// 3) save to stores
 	// insert aggressive remaining order
 	err := e.orderStore.Post(*order)
 	if err != nil {
 		// Note: writing to store should not prevent flow to other engines
-		e.log.Errorf("ExecutionEngine: order storage error: %s", err)
+		e.log.Error("Failure storing new order in execution engine (submit)", logging.Error(err))
+		// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
 	}
 	if confirmation.PassiveOrdersAffected != nil {
 		// insert all passive orders siting on the book
@@ -59,7 +66,8 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, type
 			// Note: writing to store should not prevent flow to other engines
 			err := e.orderStore.Put(*order)
 			if err != nil {
-				e.log.Errorf("ExecutionEngine: order storage update error: %s", err)
+				e.log.Error("Failure storing order update in execution engine (submit)", logging.Error(err))
+				// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160) 
 			}
 		}
 	}
@@ -83,13 +91,14 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, type
 			}
 
 			if err := e.tradeStore.Post(trade); err != nil {
-				// Note: writing to store should not prevent flow to other engines
-				e.log.Errorf("ExecutionEngine: trade storage error: %+v", err)
+				e.log.Error("Failure storing new trade in execution engine (submit)", logging.Error(err))
+				// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
 			}
 
 			// Save to trade buffer for generating candles etc
 			//v.AddTradeToCandleBuffer(trade)
 			//v.Statistics.LastTrade = trade
+			// todo add trades to candle buffer?
 		}
 	}
 
@@ -99,20 +108,25 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, type
 }
 
 func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, types.OrderError) {
-	e.log.Debug("ExecutionEngine: Amend order")
+	e.log.Debug("Amend order")
 
-	// stores get me order with this reference
 	existingOrder, err := e.orderStore.GetByPartyAndId(order.Party, order.Id)
 	if err != nil {
-		e.log.Errorf("Error: %+v\n", types.OrderError_INVALID_ORDER_REFERENCE)
+		e.log.Error("Invalid order reference",
+			logging.String("id", order.Id),
+			logging.String("party", order.Party),
+			logging.Error(err))
+
 		return &types.OrderConfirmation{}, types.OrderError_INVALID_ORDER_REFERENCE
 	}
-
-	e.log.Debugf("Existing order found: %+v\n", existingOrder)
+	
+	e.log.Debug("Existing order found", logging.Order(*existingOrder))
 
 	timestamp, _, err := e.time.GetTimeNow()
 	if err != nil {
-		e.log.Errorf("error getting current vega time: %s", err)
+		e.log.Error("Failed to obtain current vega time", logging.Error(err))
+		return &types.OrderConfirmation{}, types.OrderError_ORDER_AMEND_FAILURE
+		// todo: the above requires a new order error code to be added
 	}
 
 	newOrder := types.OrderPool.Get().(*types.Order)
@@ -167,30 +181,28 @@ func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, t
 		return e.orderAmendInPlace(newOrder)
 	}
 
-	e.log.Infof("Edit not allowed")
+	e.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
 	return &types.OrderConfirmation{}, types.OrderError_EDIT_NOT_ALLOWED
 }
 
 func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError) {
-	e.log.Info("ExecutionEngine: Cancel order")
+	e.log.Debug("Cancel order")
 
-	// -----------------------------------------------//
-	//----------------- MATCHING ENGINE --------------//
-	// 1) cancel order in matching engine
-	cancellation, errortypes := e.matching.CancelOrder(order)
-	if cancellation == nil || errortypes != types.OrderError_NONE {
-		return nil, errortypes
+	// Cancel order in matching engine
+	cancellation, cancelError := e.matching.CancelOrder(order)
+	if cancellation == nil || cancelError != types.OrderError_NONE {
+		e.log.Error("Failure after cancel order from matching engine",
+			logging.Order(*order),
+			logging.String("error", cancelError.String()))
+
+		return nil, cancelError
 	}
-
-	// -----------------------------------------------//
-	//-------------------- STORES --------------------//
-	// 2) if OK update stores
-
-	// insert aggressive remaining order
+	
+	// Update the order in our stores (will be marked as cancelled)
 	err := e.orderStore.Put(*order)
 	if err != nil {
-		// Note: writing to store should not prevent flow to other engines
-		e.log.Errorf("OrderStore.Put error: %v", err)
+		e.log.Error("Failure storing order update in execution engine (cancel)", logging.Error(err))
+		// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
 	}
 
 	// ------------------------------------------------//
@@ -198,24 +210,34 @@ func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, type
 }
 
 func (e engine) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, types.OrderError) {
-	cancellationMessage, errtypes := e.CancelOrder(existingOrder)
-	e.log.Debugf("ExecutionEngine: cancellationMessage: %+v", cancellationMessage)
-	if errtypes != types.OrderError_NONE {
-		e.log.Errorf("Failed to cancel and replace order: %s -> %s (%s)", existingOrder, newOrder, errtypes)
-		return &types.OrderConfirmation{}, errtypes
+	e.log.Debug("Cancel/replace order")
+
+	cancellation, cancelError := e.CancelOrder(existingOrder)
+	if cancellation == nil || cancelError != types.OrderError_NONE {
+		e.log.Error("Failure after cancel order from matching engine (cancel/replace)",
+			logging.OrderWithTag(*existingOrder,"existing-order"),
+			logging.OrderWithTag(*newOrder,"new-order"),
+			logging.String("error", cancelError.String()))
+
+		return &types.OrderConfirmation{}, cancelError
 	}
+
 	return e.SubmitOrder(newOrder)
 }
 
 func (e *engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, types.OrderError) {
-	errtypes := e.matching.AmendOrder(newOrder)
-	if errtypes != types.OrderError_NONE {
-		e.log.Errorf("Failed to amend in place order: %s (%s)", newOrder, errtypes)
-		return &types.OrderConfirmation{}, errtypes
+	amendError := e.matching.AmendOrder(newOrder)
+	if amendError != types.OrderError_NONE {
+		e.log.Error("Failure after amend order from matching engine (amend-in-place)",
+			logging.OrderWithTag(*newOrder,"new-order"),
+			logging.String("error", amendError.String()))
+
+		return &types.OrderConfirmation{}, amendError
 	}
 	err := e.orderStore.Put(*newOrder)
 	if err != nil {
-		e.log.Errorf("Failed to update order store for amend in place: %s - %s", newOrder, err)
+		e.log.Error("Failure storing order update in execution engine (amend-in-place)", logging.Error(err))
+		// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
 	}
 	return &types.OrderConfirmation{}, types.OrderError_NONE
 }

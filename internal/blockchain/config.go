@@ -9,7 +9,7 @@ import (
 const namedLogger = "blockchain"
 
 type Config struct {
-	log   logging.Logger
+	log   *logging.Logger
 	Level logging.Level
 
 	ClientAddr          string `mapstructure:"client_addr"`
@@ -22,7 +22,7 @@ type Config struct {
 	LogOrderCancelDebug bool   `mapstructure:"order_cancel_debug"`
 }
 
-func NewConfig(logger logging.Logger) *Config {
+func NewConfig(logger *logging.Logger) *Config {
 	logger = logger.Named(namedLogger)
 	return &Config{
 		log:                 logger,
