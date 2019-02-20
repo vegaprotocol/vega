@@ -1,8 +1,9 @@
 package internal
 
 import (
-	"vega/api"
+	"fmt"
 
+	"vega/api"
 	"vega/internal/blockchain"
 	"vega/internal/candles"
 	"vega/internal/execution"
@@ -16,10 +17,9 @@ import (
 	"vega/internal/trades"
 	"vega/internal/vegatime"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"github.com/fsnotify/fsnotify"
-	"fmt"
 )
 
 // Config ties together all other application configuration types.
@@ -29,7 +29,7 @@ type Config struct {
 	Blockchain *blockchain.Config
 	Candles    *candles.Config
 	//Collatoral collatoral.config         // As packages continue to be
-	Execution *execution.Config            // developed we add their config
+	Execution *execution.Config // developed we add their config
 	//Fees fees.config                     // options here see examples
 	//Governanace governance.config
 	Logging  *logging.Config
@@ -102,7 +102,7 @@ func (c *Config) ReadConfigFromFile(path string) (*Config, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decode into struct")
 	}
-	
+
 	return c, nil
 }
 

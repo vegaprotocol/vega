@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"vega/internal"
@@ -83,9 +82,8 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// generate a default configuration
-	l := logging.NewLogger()
-	l.InitConsoleLogger(logging.InfoLevel)
-	cfg, err := internal.NewConfig(l)
+	log := logging.NewLoggerFromEnv("dev")
+	cfg, err := internal.NewConfig(log)
 	if err != nil {
 		return err
 	}
@@ -103,7 +101,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	// write configuration to toml
 	buf := new(bytes.Buffer)
 	if err := toml.NewEncoder(buf).Encode(cfg); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// create the configuration file
