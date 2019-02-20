@@ -45,24 +45,39 @@ type Config struct {
 	Time    *vegatime.Config
 }
 
-// NewConfig creates a top level configuration structure, this references all internal/sub-package configs and can
-// load the configurations from file, etc. Typically a root logger will be passed in at this point and fed to the
-// other sub-configs as required via DI.
-func NewConfig(logger *logging.Logger) (*Config, error) {
+// NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
+// config level, if there is an error initialising any of the configs then this is returned.
+func DefaultConfig(logger *logging.Logger) (*Config, error) {
 	if logger == nil {
 		return nil, errors.New("logger instance is nil when calling NewConfig.")
 	}
-	return &Config{
+	c := &Config{
 		log: logger,
-	}, nil
+	}
+
+	c.Trades = trades.NewConfig(c.log)
+	c.Blockchain = blockchain.NewConfig(c.log)
+	c.Execution = execution.NewConfig(c.log)
+	c.Matching = matching.NewConfig(c.log)
+	c.API = api.NewConfig(c.log)
+	c.Orders = orders.NewConfig(c.log)
+	c.Time = vegatime.NewConfig(c.log)
+	c.Markets = markets.NewConfig(c.log)
+	c.Parties = parties.NewConfig(c.log)
+	c.Candles = candles.NewConfig(c.log)
+	c.Storage = storage.NewConfig(c.log)
+	c.Risk = risk.NewConfig(c.log)
+	c.Logging = logging.NewConfig()
+
+	return c, nil
 }
 
-// ReadViperConfig attempts to load the full vega configuration tree from file at the path specified (config.toml)
+// NewConfigFromFile attempts to load the full vega configuration tree from file at the path specified (config.toml)
 // If a path of '.' is specified the current working directory will be searched.
-func (c *Config) ReadConfigFromFile(path string) (*Config, error) {
+func ConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 
 	// Read in the default configuration for VEGA (defined in each sub-package config).
-	c, err := c.DefaultConfig()
+	c, err := DefaultConfig(logger)
 	if err != nil {
 		return nil, err
 	}
@@ -119,29 +134,4 @@ func (c *Config) ListenForChanges() {
 		c.log.Debug(fmt.Sprintf("Vega config file changed: %s", e.Name))
 		// todo: check and ensure all named loggers are updated, perhaps we need to broadcast down to sub-configs?
 	})
-}
-
-// DefaultConfig returns a set of default configs for all vega packages, as specified at the per package
-// config level, if there is an error initialising any of the configs then this is returned.
-func (c *Config) DefaultConfig() (*Config, error) {
-	nc, err := NewConfig(c.log)
-	if err != nil {
-		return nil, err
-	}
-
-	nc.Trades = trades.NewConfig(c.log)
-	nc.Blockchain = blockchain.NewConfig(c.log)
-	nc.Execution = execution.NewConfig(c.log)
-	nc.Matching = matching.NewConfig(c.log)
-	nc.API = api.NewConfig(c.log)
-	nc.Orders = orders.NewConfig(c.log)
-	nc.Time = vegatime.NewConfig(c.log)
-	nc.Markets = markets.NewConfig(c.log)
-	nc.Parties = parties.NewConfig(c.log)
-	nc.Candles = candles.NewConfig(c.log)
-	nc.Storage = storage.NewConfig(c.log)
-	nc.Risk = risk.NewConfig(c.log)
-	nc.Logging = logging.NewConfig()
-
-	return nc, nil
 }

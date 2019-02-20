@@ -8,15 +8,10 @@ import (
 	"vega/internal"
 	"vega/internal/fsutil"
 	"vega/internal/logging"
+	"vega/internal/storage"
 
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/cobra"
-)
-
-const (
-	candelStoreDataPath = "candlestore"
-	orderStoreDataPath  = "orderstore"
-	tradeStoreDataPath  = "tradestore"
 )
 
 type initCommand struct {
@@ -66,9 +61,9 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	fullCandelStorePath := filepath.Join(ic.rootPath, candelStoreDataPath)
-	fullOrderStorePath := filepath.Join(ic.rootPath, orderStoreDataPath)
-	fullTradeStorePath := filepath.Join(ic.rootPath, tradeStoreDataPath)
+	fullCandelStorePath := filepath.Join(ic.rootPath, storage.CandelStoreDataPath)
+	fullOrderStorePath := filepath.Join(ic.rootPath, storage.OrderStoreDataPath)
+	fullTradeStorePath := filepath.Join(ic.rootPath, storage.TradeStoreDataPath)
 
 	// create subfolders
 	if err := fsutil.EnsureDir(fullCandelStorePath); err != nil {
@@ -83,20 +78,10 @@ func (ic *initCommand) runInit(c *Cli) error {
 
 	// generate a default configuration
 	log := logging.NewLoggerFromEnv("dev")
-	cfg, err := internal.NewConfig(log)
+	cfg, err := internal.DefaultConfig(log)
 	if err != nil {
 		return err
 	}
-
-	cfg, err = cfg.DefaultConfig()
-	if err != nil {
-		return err
-	}
-
-	// updates paths
-	cfg.Storage.OrderStoreDirPath = fullOrderStorePath
-	cfg.Storage.TradeStoreDirPath = fullTradeStorePath
-	cfg.Storage.CandleStoreDirPath = fullCandelStorePath
 
 	// write configuration to toml
 	buf := new(bytes.Buffer)
@@ -113,6 +98,8 @@ func (ic *initCommand) runInit(c *Cli) error {
 	if _, err := f.WriteString(buf.String()); err != nil {
 		return err
 	}
+
+	fmt.Printf("configuration generated successfully in `%v`\n", ic.rootPath)
 
 	return nil
 }
