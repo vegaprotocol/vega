@@ -18,7 +18,7 @@ type Cli struct {
 }
 
 const (
-	defaultVersionHash = "dev"
+	defaultVersionHash = "unknown"
 	defaultVersion     = "unknown"
 )
 
