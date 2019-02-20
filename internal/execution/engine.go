@@ -72,12 +72,6 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, type
 		}
 	}
 
-	// Quick way to store a list of parties for stats output (pre party store)
-	//if !containsString(v.Statistics.Parties, order.Party) {
-	//	v.Statistics.Parties = append(v.Statistics.Parties, order.Party)
-	//}
-	//v.Statistics.LastOrder = order
-
 	if confirmation.Trades != nil {
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
@@ -97,8 +91,6 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, type
 
 			// Save to trade buffer for generating candles etc
 			//v.AddTradeToCandleBuffer(trade)
-			//v.Statistics.LastTrade = trade
-			// todo add trades to candle buffer?
 		}
 	}
 
