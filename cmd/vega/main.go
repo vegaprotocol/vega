@@ -18,6 +18,7 @@ func main() {
 	base.Cmd().SilenceErrors = true
 
 	cli.AddCommand(base, &NodeCommand{})
+	cli.AddCommand(base, &initCommand{})
 
 	if err := cli.Run(); err != nil {
 		// deal with ExitError, which should be recognize as error, and should
@@ -45,7 +46,7 @@ func main() {
 		sig := <-gracefulStop
 		fmt.Printf("caught sig: %+v", sig)
 		fmt.Println("Wait for 2 second to finish processing")
-		time.Sleep(2*time.Second)
+		time.Sleep(2 * time.Second)
 		os.Exit(0)
 	}()
 }
