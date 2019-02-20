@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	types "vega/proto"
-	"vega/internal/matching"
 	"vega/internal/execution"
+	"vega/internal/matching"
+	types "vega/proto"
 
-	mockVegaTime "vega/internal/vegatime/mocks"
-	mockStorage "vega/internal/storage/mocks"
 	"vega/internal/logging"
+	mockStorage "vega/internal/storage/mocks"
+	mockVegaTime "vega/internal/vegatime/mocks"
 )
 
 const marketId = "BTC/JAN21"
@@ -21,7 +21,7 @@ func BenchmarkMatching(
 	randSize bool,
 	reportInterval int) {
 
-		b.ReportAllocs()
+	b.ReportAllocs()
 	if reportInterval == 0 {
 		reportInterval = numberOfOrders
 	}
@@ -42,7 +42,7 @@ func BenchmarkMatching(
 	eec := execution.NewConfig(logger)
 	executionEngine := execution.NewExecutionEngine(eec, matchingEngine, timeService, orderStore, tradeStore)
 
-	timestamp := uint64(0)
+	var timestamp int64
 	for k := 0; k < b.N; k++ {
 		if rand.Intn(5) > 1 {
 			timestamp++
