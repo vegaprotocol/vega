@@ -1,4 +1,4 @@
-image: golang:1.10.1
+image: golang:1.11.5
 
 variables:
   BIN_NAME: vega
@@ -26,6 +26,7 @@ before_script:
   - ln -s ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds/${GO_PROJECT}
   - cd ${GOPATH}/src/${GO_PROJECT}
   - export ARTIFACTS_BIN=${ARTIFACTS_BIN}
+  - export GO111MODULE=on
 
 unit_tests:
   stage: test
@@ -39,7 +40,7 @@ unit_tests:
 
 # FUTURE:
 # Requires custom GCC based docker image
-# 
+#
 # memory_sanitizer:
 #  stage: test
 #  script:

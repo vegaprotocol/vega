@@ -16,7 +16,7 @@ lint: ## Lint the files
 	@go get -u golang.org/x/lint/golint
 	@golint -set_exit_status ${PKG_LIST}
 
-test: ## Run unit tests
+test: deps ## Run unit tests
 	@go test -short ${PKG_LIST} -v
 
 race: ## Run data race detector
@@ -31,15 +31,22 @@ coverage: ## Generate global code coverage report
 coverhtml: ## Generate global code coverage report in HTML
 	./coverage.sh html;
 
-dep: ## Get the dependencies
-	@dep ensure
-	@dep ensure -update
+deps: ## Get the dependencies
+	@go mod download
+
+install: proto ## install the binary in GOPATH/bin
+	@go install -v vega/cmd/vega
+
+proto: ## build proto definitions
+	@protoc --go_out=. ./proto/*.proto
 
 build: ## Build the binary file
 	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
 
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
+
+.PHONY: proto
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
