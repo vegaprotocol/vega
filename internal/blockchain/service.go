@@ -58,8 +58,14 @@ func (s *abciService) ValidateOrder(order *types.Order) error {
 
 func (s *abciService) Commit() error {
 	s.log.Debug("AbciService: Commit")
-
 	s.setBatchStats()
+
+	// Call out to run any data generation in the stores etc
+	err := s.execution.Generate()
+	if err != nil {
+		return errors.Wrap(err, "Failure generating data in execution engine (commit)")
+	}
+
 	return nil
 }
 

@@ -13,3 +13,4 @@ log/capistrano.log
 .DS_Store
 tmp/
 data/
+vendor/

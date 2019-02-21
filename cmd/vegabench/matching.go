@@ -29,6 +29,7 @@ func BenchmarkMatching(
 	timeService := &mockVegaTime.Service{}
 	orderStore := &mockStorage.OrderStore{}
 	tradeStore := &mockStorage.TradeStore{}
+	candleStore := &mockStorage.CandleStore{}
 
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
@@ -36,11 +37,16 @@ func BenchmarkMatching(
 	// Matching engine (todo) create these inside execution engine based on config
 	matchingConfig := matching.NewConfig(logger)
 	matchingEngine := matching.NewMatchingEngine(matchingConfig)
-	matchingEngine.CreateMarket(marketId)
+	err := matchingEngine.AddOrderBook("BTC/DEC19")
+	if err != nil {
+		logger.Error("Order book creation failure", logging.Error(err))
+		return
+	}
 
 	// Execution engine (broker operation of markets at runtime etc)
 	eec := execution.NewConfig(logger)
-	executionEngine := execution.NewExecutionEngine(eec, matchingEngine, timeService, orderStore, tradeStore)
+	executionEngine := execution.NewExecutionEngine(eec, matchingEngine,
+		timeService, orderStore, tradeStore, candleStore)
 
 	var timestamp int64
 	for k := 0; k < b.N; k++ {

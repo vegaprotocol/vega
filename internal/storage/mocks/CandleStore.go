@@ -10,13 +10,13 @@ type CandleStore struct {
 	mock.Mock
 }
 
-// AddTradeToBuffer provides a mock function with given fields: market, trade
-func (_m *CandleStore) AddTradeToBuffer(market string, trade proto.Trade) error {
-	ret := _m.Called(market, trade)
+// AddTradeToBuffer provides a mock function with given fields: trade
+func (_m *CandleStore) AddTradeToBuffer(trade proto.Trade) error {
+	ret := _m.Called(trade)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, proto.Trade) error); ok {
-		r0 = rf(market, trade)
+	if rf, ok := ret.Get(0).(func(proto.Trade) error); ok {
+		r0 = rf(trade)
 	} else {
 		r0 = ret.Error(0)
 	}

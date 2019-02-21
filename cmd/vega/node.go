@@ -107,6 +107,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		return err
 	}
+	candleStore, err := resolver.ResolveCandleStore()
+	if err != nil {
+		return err
+	}
 
 	// gRPC server
 	grpcServer := grpc.NewGRPCServer(conf.API, orderService, tradeService, candleService)
@@ -120,22 +124,22 @@ func (l *NodeCommand) runNode(args []string) error {
 	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService, candleService)
 	go graphServer.Start()
 
-	// ---- New markets will be inside execution engine ---
-	// Matching engine
-	// todo(cdm): create these inside execution engine will be coupled to vega commands
+	// Execution engine (broker operation at runtime etc)
 	matchingEngine := matching.NewMatchingEngine(conf.Matching)
-	matchingEngine.CreateMarket("BTC/DEC19")
-	// ---- New markets will be inside execution engine ---
-	// ----------------------------------------------------
-
-	// Execution engine (broker operation of markets at runtime etc)
-	executionEngine := execution.NewExecutionEngine(conf.Execution, matchingEngine, timeService, orderStore, tradeStore)
+	executionEngine := execution.NewExecutionEngine(
+		conf.Execution,
+		matchingEngine,
+		timeService,
+		orderStore, 
+		tradeStore,
+		candleStore,
+	)
 
 	// ABCI<>blockchain server
 	socketServer := blockchain.NewServer(conf.Blockchain, executionEngine, timeService)
-	socketServer.Start()
+	err = socketServer.Start()
 	if err != nil {
-		errors.Wrap(err, "ABCI socket server error")
+		return errors.Wrap(err, "ABCI socket server error")
 	}
 
 	return nil

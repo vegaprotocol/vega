@@ -1,11 +1,13 @@
 package matching
 
 import (
+	"fmt"
+	"github.com/pkg/errors"
 	types "vega/proto"
 )
 
-type MatchingEngine interface {
-	CreateMarket(id string)
+type Engine interface {
+	AddOrderBook(marketId string) error
 	CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError)
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError)
 	DeleteOrder(order *types.Order)
@@ -14,21 +16,24 @@ type MatchingEngine interface {
 }
 
 type matchingEngine struct {
+	*Config
 	markets map[string]*OrderBook
-	config  *Config
 }
 
-func NewMatchingEngine(config *Config) MatchingEngine {
+func NewMatchingEngine(config *Config) Engine {
 	return &matchingEngine{
+		Config:  config,
 		markets: make(map[string]*OrderBook),
-		config:  config,
 	}
 }
 
-func (me *matchingEngine) CreateMarket(marketName string) {
-	if _, exists := me.markets[marketName]; !exists {
-		book := NewBook(marketName, me.config)
-		me.markets[marketName] = book
+func (me *matchingEngine) AddOrderBook(marketId string) error {
+	if _, exists := me.markets[marketId]; !exists {
+		book := NewBook(marketId, me.Config)
+		me.markets[marketId] = book
+		return nil
+	} else {
+		return errors.New(fmt.Sprintf("Order book for market %s already exists in matching engine", marketId))
 	}
 }
 

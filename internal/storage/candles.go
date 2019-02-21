@@ -27,7 +27,7 @@ type CandleStore interface {
 	StartNewBuffer(market string, timestamp uint64) error
 
 	// AddTradeToBuffer adds a trade to the trades buffer for the given market.
-	AddTradeToBuffer(market string, trade types.Trade) error
+	AddTradeToBuffer(trade types.Trade) error
 
 	// GenerateCandlesFromBuffer will generate all candles for a given market.
 	GenerateCandlesFromBuffer(market string) error
@@ -149,16 +149,16 @@ func (c *badgerCandleStore) Close() error {
 }
 
 // StartNewBuffer creates a new trades buffer for the given market at timestamp.
-func (c *badgerCandleStore) StartNewBuffer(market string, timestamp uint64) error {
+func (c *badgerCandleStore) StartNewBuffer(marketId string, timestamp uint64) error {
 	roundedTimestamps := getMapOfIntervalsToRoundedTimestamps(timestamp)
-	previousCandleBuffer := c.candleBuffer[market]
-	c.resetCandleBuffer(market)
+	previousCandleBuffer := c.candleBuffer[marketId]
+	c.resetCandleBuffer(marketId)
 
 	for _, interval := range supportedIntervals {
 		bufferKey := getBufferKey(roundedTimestamps[interval], interval)
 		lastClose := previousCandleBuffer[bufferKey].Close
 		if lastClose == uint64(0) {
-			prefixForMostRecent, _ := c.badger.candlePrefix(market, interval, true)
+			prefixForMostRecent, _ := c.badger.candlePrefix(marketId, interval, true)
 			txn := c.badger.readTransaction()
 			previousCandle, err := c.fetchMostRecentCandle(txn, prefixForMostRecent)
 			if err != nil {
@@ -168,27 +168,31 @@ func (c *badgerCandleStore) StartNewBuffer(market string, timestamp uint64) erro
 			}
 			txn.Discard()
 		}
-		c.candleBuffer[market][bufferKey] = *newCandle(roundedTimestamps[interval], lastClose, 0, interval)
+		c.candleBuffer[marketId][bufferKey] = *newCandle(roundedTimestamps[interval], lastClose, 0, interval)
 	}
 
 	return nil
 }
 
 // AddTradeToBuffer adds a trade to the trades buffer for the given market.
-func (c *badgerCandleStore) AddTradeToBuffer(market string, trade types.Trade) error {
+func (c *badgerCandleStore) AddTradeToBuffer(trade types.Trade) error {
+	
+	if c.candleBuffer[trade.Market] == nil {
+		return errors.New(fmt.Sprintf("candle buffer does not exist for market %s", trade.Market))
+	}
 
 	for _, interval := range supportedIntervals {
 		roundedTradeTimestamp := vegatime.Stamp(trade.Timestamp).RoundToNearest(interval).Uint64()
 		bufferKey := getBufferKey(roundedTradeTimestamp, interval)
 
 		// check if bufferKey is present in buffer
-		if candle, exists := c.candleBuffer[market][bufferKey]; exists {
+		if candle, exists := c.candleBuffer[trade.Market][bufferKey]; exists {
 			// if exists update the value of the candle under bufferKey with trade data
 			updateCandle(&candle, &trade)
-			c.candleBuffer[market][bufferKey] = candle
+			c.candleBuffer[trade.Market][bufferKey] = candle
 		} else {
 			// if doesn't exist create new candle under this buffer key
-			c.candleBuffer[market][bufferKey] = *newCandle(roundedTradeTimestamp, trade.Price, trade.Size, candle.Interval)
+			c.candleBuffer[trade.Market][bufferKey] = *newCandle(roundedTradeTimestamp, trade.Price, trade.Size, candle.Interval)
 		}
 	}
 
@@ -196,7 +200,7 @@ func (c *badgerCandleStore) AddTradeToBuffer(market string, trade types.Trade) e
 }
 
 // GenerateCandlesFromBuffer will generate all candles for a given market.
-func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
+func (c *badgerCandleStore) GenerateCandlesFromBuffer(marketId string) error {
 
 	fetchCandle := func(txn *badger.Txn, badgerKey []byte) (*types.Candle, error) {
 		item, err := txn.Get(badgerKey)
@@ -230,13 +234,10 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 	}
 
 	updateCandle := func(wb *badger.WriteBatch, badgerKey []byte, candleDb *types.Candle) error {
-		// marshal candle
 		candleBuf, err := proto.Marshal(candleDb)
 		if err != nil {
 			return err
 		}
-
-		// push candle to badger
 		if err = wb.Set(badgerKey, candleBuf, 0); err != nil {
 			return err
 		}
@@ -252,28 +253,39 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(market string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, candle := range c.candleBuffer[market] {
-		badgerKey := c.badger.candleKey(market, candle.Interval, candle.Timestamp)
+	for _, candle := range c.candleBuffer[marketId] {
+		badgerKey := c.badger.candleKey(marketId, candle.Interval, candle.Timestamp)
 		candleDb, err := fetchCandle(readTxn, badgerKey)
 		if err == badger.ErrKeyNotFound {
-			insertNewCandle(writeBatch, badgerKey, candle)
-
-			c.log.Debug("New candle inserted in candle store",
-				logging.Candle(candle),
-				logging.String("badger-key", string(badgerKey)))
-			
-			c.queueEvent(market, candle)
+			err = insertNewCandle(writeBatch, badgerKey, candle)
+			if err != nil {
+				c.log.Error("Failed to insert new candle in candle store",
+					logging.Candle(candle),
+					logging.Error(err))
+			} else {
+				c.log.Debug("New candle inserted in candle store",
+					logging.Candle(candle),
+					logging.String("badger-key", string(badgerKey)))
+			}
+			c.queueEvent(marketId, candle)
 		}
 		if err == nil && candle.Volume != uint64(0) {
 			// update fetched candle with new trade
 			mergeCandles(candleDb, candle)
-			updateCandle(writeBatch, badgerKey, candleDb)
+			err = updateCandle(writeBatch, badgerKey, candleDb)
+			if err != nil {
+				c.log.Error("Failed to update candle in candle store",
+					logging.Candle(candle),
+					logging.CandleWithTag(*candleDb, "existing-candle"),
+					logging.Error(err))
+			} else {
+				c.log.Debug("Candle updated in candle store",
+					logging.Candle(candle),
+					logging.CandleWithTag(*candleDb, "existing-candle"),
+					logging.String("badger-key", string(badgerKey)))
+			}
 
-			c.log.Debug("Candle updated in candle store",
-				logging.Candle(*candleDb),
-				logging.String("badger-key", string(badgerKey)))
-
-			c.queueEvent(market, *candleDb)
+			c.queueEvent(marketId, *candleDb)
 		}
 	}
 
