@@ -5,31 +5,31 @@ import (
 )
 
 type Config struct {
-	log *logging.Logger
+	log   *logging.Logger
 	Level logging.Level
 
-	GraphQLServerPort int
+	GraphQLServerPort      int
 	GraphQLServerIpAddress string
-	RestProxyServerPort int
-	RestProxyIpAddress string
-	GrpcServerPort int
-	GrpcServerIpAddress string
+	RestProxyServerPort    int
+	RestProxyIpAddress     string
+	GrpcServerPort         int
+	GrpcServerIpAddress    string
 }
 
 func NewConfig(logger *logging.Logger) *Config {
 	logger = logger.Named("api")
 	return &Config{
-		log: logger,
+		log:   logger,
 		Level: logging.InfoLevel,
 
-		GraphQLServerIpAddress: "127.0.0.1",
-		GraphQLServerPort: 3004,
+		GraphQLServerIpAddress: "0.0.0.0",
+		GraphQLServerPort:      3004,
 
-		RestProxyIpAddress: "127.0.0.1",
+		RestProxyIpAddress:  "0.0.0.0",
 		RestProxyServerPort: 3003,
 
-		GrpcServerIpAddress: "127.0.0.1",
-		GrpcServerPort: 3002,
+		GrpcServerIpAddress: "0.0.0.0",
+		GrpcServerPort:      3002,
 	}
 }
 

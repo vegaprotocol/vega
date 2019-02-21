@@ -7,12 +7,16 @@ import (
 	"vega/internal"
 	"vega/internal/blockchain"
 	"vega/internal/execution"
+	"vega/internal/fsutil"
 	"vega/internal/logging"
 	"vega/internal/matching"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
+
+const configFileName = "config.toml"
 
 // NodeCommand use to implement 'node' command.
 type NodeCommand struct {
@@ -60,19 +64,15 @@ func (l *NodeCommand) runNode(args []string) error {
 	// Set up configuration and create a resolver
 	configPath := l.configPath
 	if configPath == "" {
-		configPath = "."
+		configPath = fsutil.DefaultRootDir()
 	}
 
 	// VEGA config (holds all package level configs)
-	conf, err := internal.NewConfig(logger)
-	if err != nil {
-		return err
-	}
-	conf, err = conf.ReadConfigFromFile(configPath)
+	conf, err := internal.ConfigFromFile(logger, configPath)
 	if err != nil {
 		// We revert to default configs if there are any errors in read/parse process
-		logger.Error("Error reading config from file, using defaults (%s)")
-		conf, err = conf.DefaultConfig()
+		logger.Error("Error reading config from file, using defaults", zap.Error(err))
+		conf, err = internal.DefaultConfig(logger)
 		if err != nil {
 			return err
 		}

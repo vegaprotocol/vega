@@ -37,12 +37,6 @@ deps: ## Get the dependencies
 	@go mod download
 
 install: proto ## install the binary in GOPATH/bin
-	@go install -v vega/cmd/vega
-
-proto: ## build proto definitions
-	@protoc --go_out=. ./proto/*.proto
-
-install: proto ## install the binary in GOPATH/bin
 	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" vega/cmd/vega
 
 proto: ## build proto definitions
