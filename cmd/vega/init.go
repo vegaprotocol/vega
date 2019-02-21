@@ -12,6 +12,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 type initCommand struct {
@@ -40,6 +41,8 @@ func (ic *initCommand) Init(c *Cli) {
 }
 
 func (ic *initCommand) runInit(c *Cli) error {
+	log := logging.NewLoggerFromEnv("dev")
+
 	rootPathExists, err := fsutil.Exists(ic.rootPath)
 	if err != nil {
 		if _, ok := err.(*fsutil.NotFound); !ok {
@@ -52,7 +55,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	if rootPathExists && ic.force {
-		fmt.Printf("removing existing configuration at: %v\n", ic.rootPath)
+		log.Info("removing existing configuration", zap.String("path", ic.rootPath))
 		os.RemoveAll(ic.rootPath)
 	}
 
@@ -77,7 +80,6 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// generate a default configuration
-	log := logging.NewLoggerFromEnv("dev")
 	cfg, err := internal.DefaultConfig(log)
 	if err != nil {
 		return err
@@ -99,7 +101,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	fmt.Printf("configuration generated successfully in `%v`\n", ic.rootPath)
+	log.Info("configuration generated successfully", zap.String("path", ic.rootPath))
 
 	return nil
 }
