@@ -56,7 +56,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 
 	if rootPathExists && ic.force {
 		log.Info("removing existing configuration", zap.String("path", ic.rootPath))
-		_ := os.RemoveAll(ic.rootPath) // ignore any errors here to force removal
+	    os.RemoveAll(ic.rootPath) // ignore any errors here to force removal
 	}
 
 	// create the root
