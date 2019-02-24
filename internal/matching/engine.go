@@ -11,7 +11,7 @@ type Engine interface {
 	CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError)
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError)
 	DeleteOrder(order *types.Order)
-	RemoveExpiringOrders(timestamp int64) []types.Order
+	RemoveExpiringOrders(timestamp uint64) []types.Order
 	AmendOrder(order *types.Order) types.OrderError
 }
 
@@ -69,7 +69,7 @@ func (me *matchingEngine) CancelOrder(order *types.Order) (*types.OrderCancellat
 	return cancellationResult, types.OrderError_NONE
 }
 
-func (me *matchingEngine) RemoveExpiringOrders(timestamp int64) []types.Order {
+func (me *matchingEngine) RemoveExpiringOrders(timestamp uint64) []types.Order {
 	var expiringOrders []types.Order
 	for _, market := range me.markets {
 		expiringOrders = append(expiringOrders, market.RemoveExpiredOrders(timestamp)...)

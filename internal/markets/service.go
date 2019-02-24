@@ -16,7 +16,7 @@ type Service interface {
 	// GetAll returns all markets.
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	// GetDepth returns the market depth for the given market.
-	GetDepth(ctx context.Context, market string) (marketDepth types.MarketDepth, err error)
+	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
 	// ObserveMarket provides a way to listen to changes on VEGA markets.
 	ObserveMarkets(ctx context.Context) (markets <-chan []types.Market, ref uint64)
 	// ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
@@ -56,10 +56,10 @@ func (s *marketService) GetAll(ctx context.Context) ([]*types.Market, error) {
 }
 
 // GetDepth returns the market depth for the given market.
-func (s *marketService) GetDepth(ctx context.Context, market string) (marketDepth types.MarketDepth, err error) {
+func (s *marketService) GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error) {
 	m, err := s.marketStore.GetByName(market)
 	if err != nil {
-		return types.MarketDepth{}, err
+		return nil, err
 	}
 	return s.orderStore.GetMarketDepth(m.Name)
 }
@@ -96,7 +96,7 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 					logging.Error(err))
 			} else {
 				select {
-				case depth <- d:
+				case depth <- *d:
 					s.log.Debug("Market depth for subscriber sent successfully",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip))

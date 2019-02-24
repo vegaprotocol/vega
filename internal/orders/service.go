@@ -74,7 +74,7 @@ func (s *orderService) CreateOrder(ctx context.Context, order *types.Order) (suc
 		if expirationTimestamp <= timeNow.UnixNano() {
 			return false, "", errors.New("invalid expiration datetime error")
 		}
-		order.ExpirationTimestamp = expirationTimestamp
+		order.ExpirationTimestamp = uint64(expirationTimestamp)
 	}
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
@@ -127,7 +127,7 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *types.Amendmen
 		if expirationDateTime.Before(currentDateTime) || expirationDateTime.Equal(currentDateTime) {
 			return false, errors.New("invalid expiration datetime")
 		}
-		amendment.ExpirationTimestamp = expirationDateTime.UnixNano()
+		amendment.ExpirationTimestamp = uint64(expirationDateTime.UnixNano())
 	}
 
 	// Send edit request by consensus

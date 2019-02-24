@@ -29,11 +29,14 @@ func TestStorage_GenerateCandles(t *testing.T) {
 		{Id: "4", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute + 20 * time.Second)},
 	}
 
-	candleStore.StartNewBuffer(testMarket, t0)
+	err = candleStore.StartNewBuffer(testMarket, t0)
+	assert.Nil(t, err)
 	for idx := range trades {
-		candleStore.AddTradeToBuffer(trades[idx].Market, *trades[idx])
+		err := candleStore.AddTradeToBuffer(*trades[idx])
+		assert.Nil(t, err)
 	}
-	candleStore.GenerateCandlesFromBuffer(testMarket)
+	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	assert.Nil(t, err)
 
 	candles, err := candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
@@ -82,9 +85,11 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	//------------------- generate empty candles-------------------------//
 
 	currentVegaTime := uint64(t0) + uint64(2 * time.Minute)
-	candleStore.StartNewBuffer(testMarket, currentVegaTime)
-	candleStore.GenerateCandlesFromBuffer(testMarket)
-
+	err = candleStore.StartNewBuffer(testMarket, currentVegaTime)
+	assert.Nil(t, err)
+	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	assert.Nil(t, err)
+	
 	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
@@ -144,8 +149,11 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, 0, len(candles))
 
 	currentVegaTime = uint64(t0) + uint64(17 * time.Minute)
-	candleStore.StartNewBuffer(testMarket, currentVegaTime)
-	candleStore.GenerateCandlesFromBuffer(testMarket)
+	err = candleStore.StartNewBuffer(testMarket, currentVegaTime)
+	assert.Nil(t, err)
+	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	assert.Nil(t, err)
+
 
 	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(17 * time.Minute), types.Interval_I15M)
 	assert.Nil(t, err)
@@ -191,7 +199,7 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 	assert.Nil(t, err)
 
 	err = candleStore.Unsubscribe(1)
-	assert.Equal(t, "CandleStore subscriber does not exist with id: 1", err.Error())
+	assert.Equal(t, "Candle store subscriber does not exist with id: 1", err.Error())
 
 	err = candleStore.Unsubscribe(2)
 	assert.Nil(t, err)
@@ -222,12 +230,15 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 		{Id: "8", Market: testMarket, Price: uint64(109), Size: uint64(100), Timestamp: t0 + uint64(1 * time.Minute + 30 * time.Second)},
 	}
 
-	candleStore.StartNewBuffer(testMarket, t0)
+	err = candleStore.StartNewBuffer(testMarket, t0)
+	assert.Nil(t, err)
 	for idx := range trades1 {
-		candleStore.AddTradeToBuffer(trades1[idx].Market, *trades1[idx])
+		err := candleStore.AddTradeToBuffer(*trades1[idx])
+		assert.Nil(t, err)
 	}
-	candleStore.GenerateCandlesFromBuffer(testMarket)
-
+	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	assert.Nil(t, err)
+	
 	candles, err := candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 	
@@ -288,11 +299,14 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 		{Id: "16", Market: testMarket, Price: uint64(109), Size: uint64(100), Timestamp: t0 + uint64(3 * time.Minute + 40 * time.Second)},
 	}
 
-	candleStore.StartNewBuffer(testMarket, t0 + uint64(2 * time.Minute))
+	err = candleStore.StartNewBuffer(testMarket, t0 + uint64(2 * time.Minute))
+	assert.Nil(t, err)
 	for idx := range trades2 {
-		candleStore.AddTradeToBuffer(trades2[idx].Market, *trades2[idx])
+		err := candleStore.AddTradeToBuffer(*trades2[idx])
+		assert.Nil(t, err)
 	}
-	candleStore.GenerateCandlesFromBuffer(testMarket)
+	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	assert.Nil(t, err)
 
 	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
@@ -338,11 +352,14 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 		{Id: "24", Market: testMarket, Price: uint64(101), Size: uint64(100), Timestamp: t0 + uint64(5 * time.Minute + 40 * time.Second)},
 	}
 
-	candleStore.StartNewBuffer(testMarket, t0 + uint64(4 * time.Minute))
+	err = candleStore.StartNewBuffer(testMarket, t0 + uint64(4 * time.Minute))
+	assert.Nil(t, err)
 	for idx := range trades3 {
-		candleStore.AddTradeToBuffer(trades3[idx].Market, *trades3[idx])
+		err := candleStore.AddTradeToBuffer(*trades3[idx])
+		assert.Nil(t, err)
 	}
-	candleStore.GenerateCandlesFromBuffer(testMarket)
+	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	assert.Nil(t, err)
 	
 	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)

@@ -1,40 +1,52 @@
 package storage
 
 import (
-	"os"
-	"vega/internal/logging"
-	"github.com/pkg/errors"
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"vega/internal/fsutil"
+	"vega/internal/logging"
+
+	"github.com/pkg/errors"
 )
 
-// namedLogger is the identifier for package and should ideally match the package name
-// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
-const namedLogger = "storage"
+const (
+	CandelStoreDataPath = "candlestore"
+	OrderStoreDataPath  = "orderstore"
+	TradeStoreDataPath  = "tradestore"
+
+	// namedLogger is the identifier for package and should ideally match the package name
+	// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
+	namedLogger = "storage"
+)
 
 // Config provides package level settings, configuration and logging.
 type Config struct {
 	log   *logging.Logger
 	Level logging.Level
 
-	OrderStoreDirPath     string   `mapstructure:"order_store_path"`
-	TradeStoreDirPath     string   `mapstructure:"trade_store_path"`
-	CandleStoreDirPath    string   `mapstructure:"candle_store_path"`
+	OrderStoreDirPath  string `mapstructure:"order_store_path"`
+	TradeStoreDirPath  string `mapstructure:"trade_store_path"`
+	CandleStoreDirPath string `mapstructure:"candle_store_path"`
 	//LogPartyStoreDebug    bool     `mapstructure:"party_store_debug"`
 	//LogOrderStoreDebug    bool     `mapstructure:"order_store_debug"`
 	//LogCandleStoreDebug   bool     `mapstructure:"candle_store_debug"`
-	LogPositionStoreDebug bool     `mapstructure:"position_store_debug"`
+	LogPositionStoreDebug bool `mapstructure:"position_store_debug"`
 }
 
 // NewConfig constructs a new Config instance with default parameters.
 // This constructor is used by the vega application code.
 func NewConfig(logger *logging.Logger) *Config {
 	logger = logger.Named(namedLogger)
+	rootpath := fsutil.DefaultRootDir()
+
 	return &Config{
-		log:                   logger,
-		Level:                 logging.InfoLevel,
-		OrderStoreDirPath:     "../../data/orderstore",
-		TradeStoreDirPath:     "../../data/tradestore",
-		CandleStoreDirPath:    "../../data/candlestore",
+		log:                logger,
+		Level:              logging.InfoLevel,
+		OrderStoreDirPath:  filepath.Join(rootpath, OrderStoreDataPath),
+		TradeStoreDirPath:  filepath.Join(rootpath, TradeStoreDataPath),
+		CandleStoreDirPath: filepath.Join(rootpath, CandelStoreDataPath),
 		//LogPartyStoreDebug:    true,
 		//LogOrderStoreDebug:    true,
 		//LogCandleStoreDebug:   false,

@@ -55,6 +55,20 @@ func (_m *Engine) CancelOrder(order *proto.Order) (*proto.OrderCancellation, pro
 	return r0, r1
 }
 
+// Generate provides a mock function with given fields:
+func (_m *Engine) Generate() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SubmitOrder provides a mock function with given fields: order
 func (_m *Engine) SubmitOrder(order *proto.Order) (*proto.OrderConfirmation, proto.OrderError) {
 	ret := _m.Called(order)

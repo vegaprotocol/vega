@@ -62,6 +62,5 @@ func (s Stamp) RoundToNearest(interval types.Interval) Stamp {
 	case types.Interval_I1D:
 		return Stamp(uint64(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).UnixNano()))
 	}
-
 	return s
 }

@@ -195,13 +195,13 @@ func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (types.MarketDepth, error) {
 
 	// Look for market depth for the given market (will validate market internally)
-	// FYI: Market depth is also known as OrderBook depth within the matching-engine
+	// Note: Market depth is also known as OrderBook depth within the matching-engine
 	depth, err := r.marketService.GetDepth(ctx, market.Name)
 	if err != nil {
 		return types.MarketDepth{}, err
 	}
 
-	return depth, nil
+	return *depth, nil
 }
 
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
@@ -365,7 +365,7 @@ func (r *MyOrderResolver) Remaining(ctx context.Context, obj *types.Order) (stri
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 func (r *MyOrderResolver) Timestamp(ctx context.Context, obj *types.Order) (string, error) {
-	return strconv.FormatInt(obj.Timestamp, 10), nil
+	return strconv.FormatUint(obj.Timestamp, 10), nil
 }
 func (r *MyOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
 	return OrderStatus(obj.Status.String()), nil
@@ -402,7 +402,7 @@ func (r *MyTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, e
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 func (r *MyTradeResolver) Timestamp(ctx context.Context, obj *types.Trade) (string, error) {
-	return strconv.FormatInt(obj.Timestamp, 10), nil
+	return strconv.FormatUint(obj.Timestamp, 10), nil
 }
 func (r *MyTradeResolver) Datetime(ctx context.Context, obj *types.Trade) (string, error) {
 	vegaTimestamp := vegatime.Stamp(obj.Timestamp)

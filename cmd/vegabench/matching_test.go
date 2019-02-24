@@ -5,23 +5,23 @@ import (
 )
 
 func BenchmarkMatching100(b *testing.B) {
-	BenchmarkMatching(100, b, true, 1, true, 0)
+	BenchmarkMatching(100, b, true, 1)
 }
 
 func BenchmarkMatching1000(b *testing.B) {
-	BenchmarkMatching(1000, b, true, 1, true, 0)
+	BenchmarkMatching(1000, b, true, 1)
 }
 
 func BenchmarkMatching10000(b *testing.B) {
-	BenchmarkMatching(10000, b, true, 1, true, 0)
+	BenchmarkMatching(10000, b, true, 1)
 }
 
 func BenchmarkMatching100000(b *testing.B) {
-	BenchmarkMatching(100000, b, true, 1, true, 0)
+	BenchmarkMatching(100000, b, true, 1)
 }
 
 func BenchmarkMatching100Allocated(b *testing.B) {
-	BenchmarkMatching(100, b, true, 0, true, 0)
+	BenchmarkMatching(100, b, true, 0)
 }
 
 func BenchmarkMatching1000Allocated(b *testing.B) {

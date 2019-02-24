@@ -72,14 +72,16 @@ func (_m *Service) GetByName(ctx context.Context, name string) (*proto.Market, e
 }
 
 // GetDepth provides a mock function with given fields: ctx, market
-func (_m *Service) GetDepth(ctx context.Context, market string) (proto.MarketDepth, error) {
+func (_m *Service) GetDepth(ctx context.Context, market string) (*proto.MarketDepth, error) {
 	ret := _m.Called(ctx, market)
 
-	var r0 proto.MarketDepth
-	if rf, ok := ret.Get(0).(func(context.Context, string) proto.MarketDepth); ok {
+	var r0 *proto.MarketDepth
+	if rf, ok := ret.Get(0).(func(context.Context, string) *proto.MarketDepth); ok {
 		r0 = rf(ctx, market)
 	} else {
-		r0 = ret.Get(0).(proto.MarketDepth)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*proto.MarketDepth)
+		}
 	}
 
 	var r1 error

@@ -43,7 +43,7 @@ type OrderStore interface {
 	GetByPartyAndId(party string, id string) (*types.Order, error)
 
 	// GetMarketDepth calculates and returns depth of market for a given market.
-	GetMarketDepth(market string) (types.MarketDepth, error)
+	GetMarketDepth(market string) (*types.MarketDepth, error)
 }
 
 // badgerOrderStore is a package internal data struct that implements the OrderStore interface.
@@ -314,11 +314,11 @@ func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*types.Ord
 }
 
 // GetMarketDepth calculates and returns order book/depth of market for a given market.
-func (os *badgerOrderStore) GetMarketDepth(market string) (types.MarketDepth, error) {
+func (os *badgerOrderStore) GetMarketDepth(market string) (*types.MarketDepth, error) {
 
 	// validate
 	if exists := os.depth[market]; exists == nil {
-		return types.MarketDepth{}, errors.New(fmt.Sprintf("market depth for %s does not exist", market))
+		return nil, errors.New(fmt.Sprintf("market depth for %s does not exist", market))
 	}
 
 	// load from store
@@ -352,7 +352,7 @@ func (os *badgerOrderStore) GetMarketDepth(market string) (types.MarketDepth, er
 	}
 
 	// return new re-calculated market depth for each side of order book
-	orderBook := types.MarketDepth{Name: market, Buy: buyPtr, Sell: sellPtr}
+	orderBook := &types.MarketDepth{Name: market, Buy: buyPtr, Sell: sellPtr}
 	return orderBook, nil
 }
 

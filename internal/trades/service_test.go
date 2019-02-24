@@ -113,13 +113,14 @@ func TestTradeService_GetByParty(t *testing.T) {
 	tradeStore.AssertExpectations(t)
 
 	// Scenario 2: invalid market returns an error
-	tradeStore.On("GetByMarket", invalid, &filtering.TradeQueryFilters{}).Return(nil,
+	tradeStore.On("GetByParty", invalid, &filtering.TradeQueryFilters{}).Return(nil,
 		errors.New("phobos communications link interrupted")).Once()
 
 	tradeSet, err = tradeService.GetByParty(invalid, &filtering.TradeQueryFilters{})
 	assert.NotNil(t, err)
 	assert.Nil(t, tradeSet)
 }
+
 
 //func TestTradeService_GetAllTradesForOrderOnMarket(t *testing.T) {
 //	var market = ServiceTestMarket

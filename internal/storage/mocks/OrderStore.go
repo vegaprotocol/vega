@@ -131,14 +131,16 @@ func (_m *OrderStore) GetByPartyAndId(party string, id string) (*proto.Order, er
 }
 
 // GetMarketDepth provides a mock function with given fields: market
-func (_m *OrderStore) GetMarketDepth(market string) (proto.MarketDepth, error) {
+func (_m *OrderStore) GetMarketDepth(market string) (*proto.MarketDepth, error) {
 	ret := _m.Called(market)
 
-	var r0 proto.MarketDepth
-	if rf, ok := ret.Get(0).(func(string) proto.MarketDepth); ok {
+	var r0 *proto.MarketDepth
+	if rf, ok := ret.Get(0).(func(string) *proto.MarketDepth); ok {
 		r0 = rf(market)
 	} else {
-		r0 = ret.Get(0).(proto.MarketDepth)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*proto.MarketDepth)
+		}
 	}
 
 	var r1 error

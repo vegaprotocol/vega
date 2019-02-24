@@ -2,6 +2,7 @@ package matching
 
 import (
 	"testing"
+	"vega/internal/logging"
 	types "vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -49,7 +50,11 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 }
 
 func TestUncross(t *testing.T) {
-	side := &OrderBookSide{}
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	conf := NewConfig(logger)
+	side := &OrderBookSide{Config: conf}
 	l := side.getPriceLevel(100, types.Side_Sell)
 	passiveOrder := &types.Order{
 		Market:    "testOrderBook",

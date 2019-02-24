@@ -68,7 +68,7 @@ func BenchmarkMatching(
 		order.Size = size
 		order.Remaining = size
 		order.Type = types.Order_GTC
-		order.Timestamp = timestamp
+		order.Timestamp = uint64(timestamp)
 
 		oc, oe := executionEngine.SubmitOrder(order)
 		if oe == 0 {
@@ -82,7 +82,7 @@ func BenchmarkMatching(
 			Size:      size,
 			Remaining: size,
 			Type:      types.Order_GTC,
-			Timestamp: timestamp,
+			Timestamp: uint64(timestamp),
 		})
 		_ = result
 
