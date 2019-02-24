@@ -46,10 +46,10 @@ func Exists(path string) (bool, error) {
 
 func CreateUnlessExists(path string) error {
 	if exists, _ := Exists(path); exists {
-		return fmt.Errorf("Directory `%v` already exists", path)
+		return fmt.Errorf("directory `%v` already exists", path)
 	}
 	if err := os.Mkdir(path, dirPerms); err != nil {
-		return fmt.Errorf("Could not create directory `%v` (%v)", path, err)
+		return fmt.Errorf("could not create directory `%v` (%v)", path, err)
 	}
 	return nil
 }

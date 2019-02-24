@@ -1,13 +1,14 @@
 package logging
 
 import (
+	"context"
 	"fmt"
 	"os"
 
-	"github.com/tav/golly/process"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"context"
+
+	"github.com/tav/golly/process"
 )
 
 // A Level is a logging priority. Higher levels are more important.

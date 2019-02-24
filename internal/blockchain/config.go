@@ -12,14 +12,14 @@ type Config struct {
 	log   *logging.Logger
 	Level logging.Level
 
-	ClientAddr          string `mapstructure:"client_addr"`
-	ClientEndpoint      string `mapstructure:"server_port"`
-	ServerPort          int    `mapstructure:"server_port"`
-	ServerAddr          string `mapstructure:"server_addr"`
-	LogTimeDebug        bool   `mapstructure:"time_debug"`
-	LogOrderSubmitDebug bool   `mapstructure:"order_submit_debug"`
-	LogOrderAmendDebug  bool   `mapstructure:"order_amend_debug"`
-	LogOrderCancelDebug bool   `mapstructure:"order_cancel_debug"`
+	ClientAddr          string
+	ClientEndpoint      string
+	ServerPort          int
+	ServerAddr          string
+	LogTimeDebug        bool
+	LogOrderSubmitDebug bool
+	LogOrderAmendDebug  bool
+	LogOrderCancelDebug bool
 }
 
 func NewConfig(logger *logging.Logger) *Config {

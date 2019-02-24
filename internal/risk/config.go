@@ -12,10 +12,10 @@ type Config struct {
 	
 	// If set to true, all python risk model files will be loaded via an absolute path.
 	// If set to false (default) all python risk model files will be loaded via relative path to the vega binary.
-	PyRiskModelAbsolutePath bool            `mapstructure:"absolute_path"`
-	PyRiskModelDefaultFileName string       `mapstructure:"default_file_name"`
-	PyRiskModelShortIndex int               `mapstructure:"short_index"`
-	PyRiskModelLongIndex int                `mapstructure:"long_index"`
+	PyRiskModelAbsolutePath bool
+	PyRiskModelDefaultFileName string
+	PyRiskModelShortIndex int
+	PyRiskModelLongIndex int
 }
 
 func NewConfig(logger *logging.Logger) *Config {

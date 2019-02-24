@@ -64,7 +64,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	fullCandleStorePath := filepath.Join(ic.rootPath, storage.CandelStoreDataPath)
+	fullCandleStorePath := filepath.Join(ic.rootPath, storage.CandleStoreDataPath)
 	fullOrderStorePath := filepath.Join(ic.rootPath, storage.OrderStoreDataPath)
 	fullTradeStorePath := filepath.Join(ic.rootPath, storage.TradeStoreDataPath)
 

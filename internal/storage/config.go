@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	CandelStoreDataPath = "candlestore"
+	CandleStoreDataPath = "candlestore"
 	OrderStoreDataPath  = "orderstore"
 	TradeStoreDataPath  = "tradestore"
 
@@ -26,13 +26,13 @@ type Config struct {
 	log   *logging.Logger
 	Level logging.Level
 
-	OrderStoreDirPath  string `mapstructure:"order_store_path"`
-	TradeStoreDirPath  string `mapstructure:"trade_store_path"`
-	CandleStoreDirPath string `mapstructure:"candle_store_path"`
-	//LogPartyStoreDebug    bool     `mapstructure:"party_store_debug"`
-	//LogOrderStoreDebug    bool     `mapstructure:"order_store_debug"`
-	//LogCandleStoreDebug   bool     `mapstructure:"candle_store_debug"`
-	LogPositionStoreDebug bool `mapstructure:"position_store_debug"`
+	OrderStoreDirPath  string
+	TradeStoreDirPath  string
+	CandleStoreDirPath string
+	//LogPartyStoreDebug    bool
+	//LogOrderStoreDebug    bool
+	//LogCandleStoreDebug   bool 
+	LogPositionStoreDebug bool
 }
 
 // NewConfig constructs a new Config instance with default parameters.
@@ -46,7 +46,7 @@ func NewConfig(logger *logging.Logger) *Config {
 		Level:              logging.InfoLevel,
 		OrderStoreDirPath:  filepath.Join(rootpath, OrderStoreDataPath),
 		TradeStoreDirPath:  filepath.Join(rootpath, TradeStoreDataPath),
-		CandleStoreDirPath: filepath.Join(rootpath, CandelStoreDataPath),
+		CandleStoreDirPath: filepath.Join(rootpath, CandleStoreDataPath),
 		//LogPartyStoreDebug:    true,
 		//LogOrderStoreDebug:    true,
 		//LogCandleStoreDebug:   false,
@@ -58,7 +58,7 @@ func NewConfig(logger *logging.Logger) *Config {
 // This constructor is exclusively used in unit tests/integration tests
 func NewTestConfig() *Config {
 	// Test logger can be configured here, default to console not file etc.
-	logger := logging.NewLoggerFromEnv("dev") // todo(cdm): add test env or some other config e.g file
+	logger := logging.NewLoggerFromEnv("dev")
 	logger.AddExitHandler()
 	// Test configuration for badger stores
 	return &Config{
