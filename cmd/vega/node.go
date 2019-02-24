@@ -7,7 +7,6 @@ import (
 	"vega/internal"
 	"vega/internal/blockchain"
 	"vega/internal/execution"
-	"vega/internal/fsutil"
 	"vega/internal/logging"
 	"vega/internal/matching"
 
@@ -15,8 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
-
-const configFileName = "config.toml"
 
 // NodeCommand use to implement 'node' command.
 type NodeCommand struct {
@@ -55,16 +52,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	logger := logging.NewLoggerFromEnv("dev")
 	logger.AddExitHandler()
 
-	//defaultLevel := logging.InfoLevel
-	//err := logger.InitConsoleLogger(defaultLevel)
-	//if err != nil {
-	//	return err
-	//}
-
 	// Set up configuration and create a resolver
 	configPath := l.configPath
 	if configPath == "" {
-		configPath = fsutil.DefaultRootDir()
+		configPath = DefaultVegaDir() // the root directory for vega config and data files
 	}
 
 	// VEGA config (holds all package level configs)
@@ -72,7 +63,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		// We revert to default configs if there are any errors in read/parse process
 		logger.Error("Error reading config from file, using defaults", zap.Error(err))
-		conf, err = internal.DefaultConfig(logger)
+		conf, err = internal.DefaultConfig(logger, DefaultVegaDir())
 		if err != nil {
 			return err
 		}

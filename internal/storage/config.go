@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"vega/internal/fsutil"
 	"vega/internal/logging"
 
 	"github.com/pkg/errors"
@@ -36,17 +35,18 @@ type Config struct {
 }
 
 // NewConfig constructs a new Config instance with default parameters.
-// This constructor is used by the vega application code.
-func NewConfig(logger *logging.Logger) *Config {
+// This constructor is used by the vega application code. Logger is a
+// pointer to a logging instance and defaultStoreDirPath is the root directory
+// where all storage directories are to be read from and written to.
+func NewConfig(logger *logging.Logger, defaultStoreDirPath string) *Config {
 	logger = logger.Named(namedLogger)
-	rootpath := fsutil.DefaultRootDir()
-
+	
 	return &Config{
 		log:                logger,
 		Level:              logging.InfoLevel,
-		OrderStoreDirPath:  filepath.Join(rootpath, OrderStoreDataPath),
-		TradeStoreDirPath:  filepath.Join(rootpath, TradeStoreDataPath),
-		CandleStoreDirPath: filepath.Join(rootpath, CandleStoreDataPath),
+		OrderStoreDirPath:  filepath.Join(defaultStoreDirPath, OrderStoreDataPath),
+		TradeStoreDirPath:  filepath.Join(defaultStoreDirPath, TradeStoreDataPath),
+		CandleStoreDirPath: filepath.Join(defaultStoreDirPath, CandleStoreDataPath),
 		//LogPartyStoreDebug:    true,
 		//LogOrderStoreDebug:    true,
 		//LogCandleStoreDebug:   false,

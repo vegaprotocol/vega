@@ -47,9 +47,12 @@ type Config struct {
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
-func DefaultConfig(logger *logging.Logger) (*Config, error) {
+func DefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Config, error) {
 	if logger == nil {
-		return nil, errors.New("logger instance is nil when calling NewConfig.")
+		return nil, errors.New("logger instance is nil when calling NewConfig")
+	}
+	if defaultStoreDirPath == "" {
+		return nil, errors.New("root storage directory is empty when calling NewConfig")
 	}
 	c := &Config{
 		log: logger,
@@ -65,7 +68,7 @@ func DefaultConfig(logger *logging.Logger) (*Config, error) {
 	c.Markets = markets.NewConfig(c.log)
 	c.Parties = parties.NewConfig(c.log)
 	c.Candles = candles.NewConfig(c.log)
-	c.Storage = storage.NewConfig(c.log)
+	c.Storage = storage.NewConfig(c.log, defaultStoreDirPath)
 	c.Risk = risk.NewConfig(c.log)
 	c.Logging = logging.NewConfig()
 
@@ -77,7 +80,7 @@ func DefaultConfig(logger *logging.Logger) (*Config, error) {
 func ConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 
 	// Read in the default configuration for VEGA (defined in each sub-package config).
-	c, err := DefaultConfig(logger)
+	c, err := DefaultConfig(logger, path)
 	if err != nil {
 		return nil, err
 	}

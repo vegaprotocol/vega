@@ -27,9 +27,9 @@ func NewConfig(logger *logging.Logger) *Config {
 	return &Config{
 		log:                 logger,
 		Level:               logging.InfoLevel,
-		ServerPort:          46658,
+		ServerPort:          26658,
 		ServerAddr:          "localhost",
-		ClientAddr:          "tcp/://0.0.0.0:46657",
+		ClientAddr:          "tcp://0.0.0.0:26657",
 		ClientEndpoint:      "/websocket",
 		LogOrderSubmitDebug: true,
 		LogTimeDebug:        true,

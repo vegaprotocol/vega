@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
 	"vega/internal"
-	"vega/internal/fsutil"
 	"vega/internal/logging"
 	"vega/internal/storage"
 
@@ -27,7 +27,7 @@ func (ic *initCommand) Init(c *Cli) {
 	ic.cmd = &cobra.Command{
 		Use:   "init",
 		Short: "Initialize a vega node",
-		Long:  "Generate the mininal configuration required for a vega node to start",
+		Long:  "Generate the minimal configuration required for a vega node to start",
 		// Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return ic.runInit(c)
@@ -35,7 +35,7 @@ func (ic *initCommand) Init(c *Cli) {
 	}
 
 	fs := ic.cmd.Flags()
-	fs.StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultRootDir(), "Path of the root directory in which the configuration will be located")
+	fs.StringVarP(&ic.rootPath, "root-path", "r", DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
 	fs.BoolVarP(&ic.force, "force", "f", false, "Erase exiting vega configuration at the specified path")
 
 }
@@ -43,9 +43,9 @@ func (ic *initCommand) Init(c *Cli) {
 func (ic *initCommand) runInit(c *Cli) error {
 	log := logging.NewLoggerFromEnv("dev")
 
-	rootPathExists, err := fsutil.Exists(ic.rootPath)
+	rootPathExists, err := Exists(ic.rootPath)
 	if err != nil {
-		if _, ok := err.(*fsutil.NotFound); !ok {
+		if _, ok := err.(*NotFound); !ok {
 			return err
 		}
 	}
@@ -56,11 +56,11 @@ func (ic *initCommand) runInit(c *Cli) error {
 
 	if rootPathExists && ic.force {
 		log.Info("removing existing configuration", zap.String("path", ic.rootPath))
-		return os.RemoveAll(ic.rootPath)
+		_ := os.RemoveAll(ic.rootPath) // ignore any errors here to force removal
 	}
 
 	// create the root
-	if err := fsutil.EnsureDir(ic.rootPath); err != nil {
+	if err := EnsureDir(ic.rootPath); err != nil {
 		return err
 	}
 
@@ -69,18 +69,18 @@ func (ic *initCommand) runInit(c *Cli) error {
 	fullTradeStorePath := filepath.Join(ic.rootPath, storage.TradeStoreDataPath)
 
 	// create sub-folders
-	if err := fsutil.EnsureDir(fullCandleStorePath); err != nil {
+	if err := EnsureDir(fullCandleStorePath); err != nil {
 		return err
 	}
-	if err := fsutil.EnsureDir(fullOrderStorePath); err != nil {
+	if err := EnsureDir(fullOrderStorePath); err != nil {
 		return err
 	}
-	if err := fsutil.EnsureDir(fullTradeStorePath); err != nil {
+	if err := EnsureDir(fullTradeStorePath); err != nil {
 		return err
 	}
 
 	// generate a default configuration
-	cfg, err := internal.DefaultConfig(log)
+	cfg, err := internal.DefaultConfig(log, ic.rootPath)
 	if err != nil {
 		return err
 	}

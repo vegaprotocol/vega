@@ -1,4 +1,4 @@
-package fsutil
+package main
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ const (
 	dirPerms = 0700
 )
 
-func DefaultRootDir() string {
+func DefaultVegaDir() string {
 	return os.ExpandEnv("$HOME/.vega")
 }
 
@@ -44,12 +44,12 @@ func Exists(path string) (bool, error) {
 	return false, err
 }
 
-func CreateUnlessExists(path string) error {
-	if exists, _ := Exists(path); exists {
-		return fmt.Errorf("directory `%v` already exists", path)
-	}
-	if err := os.Mkdir(path, dirPerms); err != nil {
-		return fmt.Errorf("could not create directory `%v` (%v)", path, err)
-	}
-	return nil
-}
+//func CreateUnlessExists(path string) error {
+//	if exists, _ := Exists(path); exists {
+//		return fmt.Errorf("directory `%v` already exists", path)
+//	}
+//	if err := os.Mkdir(path, dirPerms); err != nil {
+//		return fmt.Errorf("could not create directory `%v` (%v)", path, err)
+//	}
+//	return nil
+//}
