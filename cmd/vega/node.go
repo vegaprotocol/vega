@@ -89,6 +89,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		return err
 	}
+	marketService, err := resolver.ResolveMarketService()
+	if err != nil {
+		return err
+	}
 	timeService, err := resolver.ResolveTimeService()
 	if err != nil {
 		return err
@@ -112,7 +116,16 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	// gRPC server
-	grpcServer := grpc.NewGRPCServer(conf.API, stats, client, orderService, tradeService, candleService)
+	grpcServer := grpc.NewGRPCServer(
+		conf.API,
+		stats,
+		client,
+		timeService,
+		marketService,
+		orderService,
+		tradeService, 
+		candleService,
+	)
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server

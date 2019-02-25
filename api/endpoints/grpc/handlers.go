@@ -240,16 +240,23 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		return nil, errors.New("Internal error: statistics not available")
 	}
 
-	backlogLength, numPeers, genesisTime, err := h.getTendermintStats(ctx)
+	// Call out to tendermint via rpc client
+	backlogLength, numPeers, gt, err := h.getTendermintStats(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	// If the chain is replaying then genesis time can be nil
+	genesisTime := ""
+	if gt != nil {
+		genesisTime = gt.Format(time.RFC3339)
 	}
 
 	return &types.Statistics{
 		BlockHeight:           h.Stats.Blockchain.Height(),
 		BacklogLength:         uint64(backlogLength),
 		TotalPeers:            uint64(numPeers),
-		GenesisTime:           genesisTime.Format(time.RFC3339),
+		GenesisTime:           genesisTime,
 		CurrentTime:           time.Now().UTC().Format(time.RFC3339),
 		VegaTime:              epochTimeNano.Rfc3339(),
 		TxPerBlock:            uint64(h.Stats.Blockchain.AverageTxPerBatch()),
