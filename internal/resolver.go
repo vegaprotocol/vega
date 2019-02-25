@@ -404,12 +404,12 @@ func (r *Resolver) CloseStores() {
 // -------------- Blockchain/ -------------
 
 // ResolveBlockchainClient returns a pointer to a singleton instance of the (Tendermint) blockchain client.
-func (r *Resolver) ResolveBlockchainClient() (blockchain.Client, error) {
+func (r *Resolver) ResolveBlockchainClient() (*blockchain.Client, error) {
 	r.bcMu.Lock()
 	defer r.bcMu.Unlock()
 
 	if r.blockchainClient != nil {
-		return r.blockchainClient, nil
+		return &r.blockchainClient, nil
 	}
 
 	client, err := blockchain.NewClient(
@@ -420,7 +420,7 @@ func (r *Resolver) ResolveBlockchainClient() (blockchain.Client, error) {
 	}
 
 	r.blockchainClient = client
-	return r.blockchainClient, nil
+	return &r.blockchainClient, nil
 }
 
 // -------------- /Blockchain -------------

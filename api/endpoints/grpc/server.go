@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"vega/internal"
+	"vega/internal/blockchain"
 
 	"vega/api"
 	"vega/internal/orders"
@@ -19,6 +20,7 @@ import (
 type grpcServer struct {
 	*api.Config
 	stats *internal.Stats
+	client *blockchain.Client
 	orderService orders.Service
 	tradeService trades.Service
 	candleService candles.Service
@@ -26,11 +28,13 @@ type grpcServer struct {
 	timeService vegatime.Service
 }
 
-func NewGRPCServer(config *api.Config, stats *internal.Stats, orderService orders.Service,
-	tradeService trades.Service, candleService candles.Service) *grpcServer {
+func NewGRPCServer(config *api.Config, stats *internal.Stats, client *blockchain.Client,
+	orderService orders.Service, tradeService trades.Service, candleService candles.Service) *grpcServer {
+		
 	return &grpcServer{
 		Config: config,
 		stats: stats,
+		client: client,
 		orderService: orderService,
 		tradeService: tradeService,
 		candleService: candleService,

@@ -106,8 +106,13 @@ func (l *NodeCommand) runNode(args []string) error {
 		return err
 	}
 
+	client, err := resolver.ResolveBlockchainClient()
+	if err != nil {
+		return err
+	}
+
 	// gRPC server
-	grpcServer := grpc.NewGRPCServer(conf.API, stats, orderService, tradeService, candleService)
+	grpcServer := grpc.NewGRPCServer(conf.API, stats, client, orderService, tradeService, candleService)
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server
