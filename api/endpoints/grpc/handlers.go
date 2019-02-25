@@ -237,7 +237,7 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		TotalPeers:            0,
 		GenesisTime:           "N/A",
 		CurrentTime:           time.Now().UTC().Format(time.RFC3339),
-		VegaTime:              epochTimeNano.Rfc3339Nano(),
+		VegaTime:              epochTimeNano.Rfc3339(),
 		Status:                0,
 		TxPerBlock:            0,
 		AverageTxBytes:        0,
@@ -255,11 +255,11 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 }
 
 func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest) (*api.VegaTimeResponse, error) {
-	_, currentTime, err := h.TimeService.GetTimeNow()
+	epochTimeNano, _, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, err
 	}
 	var response = &api.VegaTimeResponse{}
-	response.Time = fmt.Sprintf("%s", currentTime.Format(time.RFC3339))
+	response.Time = fmt.Sprintf("%s", epochTimeNano.Rfc3339())
 	return response, nil
 }
