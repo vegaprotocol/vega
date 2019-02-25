@@ -3,7 +3,8 @@ package grpc
 import (
 	"fmt"
 	"net"
-	
+	"vega/internal"
+
 	"vega/api"
 	"vega/internal/orders"
 	"vega/internal/trades"
@@ -17,6 +18,7 @@ import (
 
 type grpcServer struct {
 	*api.Config
+	stats *internal.Stats
 	orderService orders.Service
 	tradeService trades.Service
 	candleService candles.Service
@@ -24,10 +26,11 @@ type grpcServer struct {
 	timeService vegatime.Service
 }
 
-func NewGRPCServer(config *api.Config, orderService orders.Service,
+func NewGRPCServer(config *api.Config, stats *internal.Stats, orderService orders.Service,
 	tradeService trades.Service, candleService candles.Service) *grpcServer {
 	return &grpcServer{
 		Config: config,
+		stats: stats,
 		orderService: orderService,
 		tradeService: tradeService,
 		candleService: candleService,
@@ -48,6 +51,7 @@ func (g *grpcServer) Start() {
 	}
 	
 	var handlers = &Handlers{
+		Stats: g.stats,
 		OrderService: g.orderService,
 		TradeService: g.tradeService,
 		CandleService: g.candleService,

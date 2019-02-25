@@ -67,15 +67,6 @@ func (_m *Service) GetTimeNow() (vegatime.Stamp, time.Time, error) {
 }
 
 // SetTimeNow provides a mock function with given fields: epochTimeNano
-func (_m *Service) SetTimeNow(epochTimeNano vegatime.Stamp) error {
-	ret := _m.Called(epochTimeNano)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(vegatime.Stamp) error); ok {
-		r0 = rf(epochTimeNano)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Service) SetTimeNow(epochTimeNano vegatime.Stamp) {
+	_m.Called(epochTimeNano)
 }

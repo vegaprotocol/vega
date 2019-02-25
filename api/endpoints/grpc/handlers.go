@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"vega/api"
+	"vega/internal"
 	"vega/internal/candles"
 	"vega/internal/filtering"
 	"vega/internal/markets"
@@ -18,6 +19,7 @@ import (
 )
 
 type Handlers struct {
+	Stats         *internal.Stats
 	TimeService   vegatime.Service
 	OrderService  orders.Service
 	TradeService  trades.Service
@@ -219,7 +221,37 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 }
 
 func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsRequest) (*types.Statistics, error) {
-	return nil, errors.New("Statistics endpoint deprecated")
+	// Call out to tendermint and related services to get related information for statistics
+	// We load read-only internal statistics through each package level statistics structs
+	epochTimeNano, _, err := h.TimeService.GetTimeNow()
+	if err != nil {
+		return nil, err
+	}
+	if h.Stats == nil || h.Stats.Blockchain == nil {
+		return nil, errors.New("internal error encountered: statistics not available")
+	}
+
+	return &types.Statistics{
+		BlockHeight:           h.Stats.Blockchain.Height(),
+		BacklogLength:         0,
+		TotalPeers:            0,
+		GenesisTime:           "N/A",
+		CurrentTime:           time.Now().UTC().Format(time.RFC3339),
+		VegaTime:              epochTimeNano.Rfc3339Nano(),
+		Status:                0,
+		TxPerBlock:            0,
+		AverageTxBytes:        0,
+		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
+		TradesPerSecond:       0,
+		OrdersPerSecond:       0,
+		LastTrade:             nil,
+		LastOrder:             nil,
+		TotalMarkets:          0,
+		TotalParties:          0,
+		AppVersionHash:        "N/A",
+		AppVersion:            "N/A",
+		Parties:               nil,
+	}, nil
 }
 
 func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest) (*api.VegaTimeResponse, error) {

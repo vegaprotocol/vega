@@ -73,6 +73,9 @@ func (l *NodeCommand) runNode(args []string) error {
 	resolver, err := internal.NewResolver(conf)
 	defer resolver.CloseStores()
 
+	// Statistics provider
+	stats := internal.NewStats(logger)
+
 	// Resolve services for injection to servers/execution engine
 	orderService, err := resolver.ResolveOrderService()
 	if err != nil {
@@ -104,7 +107,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	// gRPC server
-	grpcServer := grpc.NewGRPCServer(conf.API, orderService, tradeService, candleService)
+	grpcServer := grpc.NewGRPCServer(conf.API, stats, orderService, tradeService, candleService)
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server
@@ -127,7 +130,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 
 	// ABCI<>blockchain server
-	socketServer := blockchain.NewServer(conf.Blockchain, executionEngine, timeService)
+	socketServer := blockchain.NewServer(conf.Blockchain, stats.Blockchain, executionEngine, timeService)
 	err = socketServer.Start()
 	if err != nil {
 		return errors.Wrap(err, "ABCI socket server error")

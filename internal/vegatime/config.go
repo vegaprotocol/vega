@@ -19,3 +19,14 @@ func NewConfig(logger *logging.Logger) *Config {
 		Level: logging.InfoLevel,
 	}
 }
+
+// GetLogger returns a pointer to the current underlying logger for this package.
+func (c *Config) GetLogger() *logging.Logger {
+	return c.log
+}
+
+// UpdateLogger will set any new values on the underlying logging core. Useful when configs are
+// hot reloaded at run time. Currently we only check and refresh the logging level.
+func (c *Config) UpdateLogger() {
+	c.log.SetLevel(c.Level.ZapLevel())
+}

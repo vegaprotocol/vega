@@ -5,7 +5,7 @@ import (
 )
 
 type Service interface {
-	SetTimeNow(epochTimeNano Stamp) error
+	SetTimeNow(epochTimeNano Stamp)
 	GetTimeNow() (epochTimeNano Stamp, datetime time.Time, err error)
 	GetTimeLastBatch() (epochTimeNano Stamp, datetime time.Time, err error)
 }
@@ -22,7 +22,7 @@ func NewTimeService(conf *Config) Service {
 	return &timeService{config: conf}
 }
 
-func (s *timeService) SetTimeNow(epochTimeNano Stamp) error {
+func (s *timeService) SetTimeNow(epochTimeNano Stamp) {
 
 	// We need to cache the last timestamp so we can distribute trades
 	// in a block transaction evenly between last timestamp and current timestamp
@@ -40,8 +40,6 @@ func (s *timeService) SetTimeNow(epochTimeNano Stamp) error {
 	if s.previousTimestamp < 1 {
 		s.previousTimestamp = s.currentTimestamp
 	}
-
-	return nil
 }
 
 func (s *timeService) GetTimeNow() (epochTimeNano Stamp, datetime time.Time, err error) {

@@ -9,8 +9,7 @@ const namedLogger = "matching"
 type Config struct {
 	log   *logging.Logger
 	Level logging.Level
-
-	ProRataMode           bool
+	
 	LogPriceLevelsDebug   bool
 	LogRemovedOrdersDebug bool
 }
@@ -20,14 +19,19 @@ func NewConfig(logger *logging.Logger) *Config {
 	return &Config{
 		log:                   logger,
 		Level:                 logging.InfoLevel,
-		ProRataMode:           false,
 		LogPriceLevelsDebug:   false,
 		LogRemovedOrdersDebug: false,
 	}
 }
 
-func ProRataModeConfig(logger *logging.Logger) *Config {
-	conf := NewConfig(logger)
-	conf.ProRataMode = true
-	return conf
+// GetLogger returns a pointer to the current underlying logger for this package.
+func (c *Config) GetLogger() *logging.Logger {
+	return c.log
 }
+
+// UpdateLogger will set any new values on the underlying logging core. Useful when configs are
+// hot reloaded at run time. Currently we only check and refresh the logging level.
+func (c *Config) UpdateLogger() {
+	c.log.SetLevel(c.Level.ZapLevel())
+}
+

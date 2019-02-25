@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"fmt"
-
 	"vega/api"
 	"vega/internal/blockchain"
 	"vega/internal/candles"
@@ -29,7 +27,7 @@ type Config struct {
 	Blockchain *blockchain.Config
 	Candles    *candles.Config
 	//Collatoral collatoral.config         // As packages continue to be
-	Execution *execution.Config // developed we add their config
+	Execution *execution.Config            // developed we add their config
 	//Fees fees.config                     // options here see examples
 	//Governanace governance.config
 	Logging  *logging.Config
@@ -71,6 +69,7 @@ func DefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Config,
 	c.Storage = storage.NewConfig(c.log, defaultStoreDirPath)
 	c.Risk = risk.NewConfig(c.log)
 	c.Logging = logging.NewConfig()
+	// Any new package configs should be added here <>
 
 	return c, nil
 }
@@ -104,6 +103,7 @@ func ConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 	viper.SetDefault("Storage", c.Storage)
 	viper.SetDefault("Trades", c.Trades)
 	viper.SetDefault("Time", c.Time)
+	// Any new package configs should be added here <>
 
 	// Read in the configs from toml file and attempt to unmarshal into config struct.
 	viper.SetConfigName("config")
@@ -121,6 +121,9 @@ func ConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 		return nil, errors.Wrap(err, "unable to decode into struct")
 	}
 
+	// We need to call update logger on each config instance so that
+	// the zap core is updated to the new logging level.
+	c.updateLoggers()
 	return c, nil
 }
 
@@ -134,7 +137,32 @@ func (c *Config) ListenForChanges() {
 			c.log.Warn("Failed to unmarshal vega config to struct on config change",
 				logging.Error(errors.Wrap(err, "unable to decode into struct")))
 		}
-		c.log.Debug(fmt.Sprintf("Vega config file changed: %s", e.Name))
-		// todo: check and ensure all named loggers are updated, perhaps we need to broadcast down to sub-configs?
+		c.log.Debug("Vega config toml file changed, updating package level loggers",
+			logging.String("config-file", e.Name))
+
+		// We need to call update logger on each config instance so that
+		// the zap core is updated to the new logging level.
+		// ==> If the file changes we should hot reload.
+		c.updateLoggers()
 	})
 }
+
+func (c *Config) updateLoggers() {
+	// We need to call update logger on each config instance so that
+	// the zap core is updated to the new logging level.
+	c.Trades.UpdateLogger()
+	c.Blockchain.UpdateLogger()
+	c.Execution.UpdateLogger()
+	c.Matching.UpdateLogger()
+	c.API.UpdateLogger()
+	c.Orders.UpdateLogger()
+	c.Time.UpdateLogger()
+	c.Markets.UpdateLogger()
+	c.Parties.UpdateLogger()
+	c.Candles.UpdateLogger()
+	c.Storage.UpdateLogger()
+	c.Risk.UpdateLogger()
+	// Any new package configs with a logger should be added here <>
+}
+
+

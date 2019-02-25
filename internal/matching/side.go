@@ -10,6 +10,7 @@ import (
 type OrderBookSide struct {
 	*Config
 	levels      []*PriceLevel
+	proRataMode bool
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
@@ -113,7 +114,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 			break
 		}
 	}
-	level := NewPriceLevel(s.Config, price)
+	level := NewPriceLevel(s.Config, price, s.proRataMode)
 	if at == -1 {
 		s.levels = append(s.levels, level)
 		return level
