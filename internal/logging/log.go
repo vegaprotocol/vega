@@ -39,10 +39,6 @@ type Logger struct {
 	name   string
 }
 
-func (log *Logger) Check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
-	return log.Check(lvl, msg)
-}
-
 func (log *Logger) Clone() *Logger {
 	newConfig := cloneConfig(log.config)
 	newLogger, err := newConfig.Build()
