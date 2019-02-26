@@ -123,7 +123,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		timeService,
 		marketService,
 		orderService,
-		tradeService, 
+		tradeService,
 		candleService,
 	)
 	go grpcServer.Start()
@@ -133,7 +133,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	go restServer.Start()
 
 	// GraphQL server
-	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService, candleService)
+	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService, candleService, marketService, timeService)
 	go graphServer.Start()
 
 	// Execution engine (broker operation at runtime etc)
@@ -142,7 +142,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		conf.Execution,
 		matchingEngine,
 		timeService,
-		orderStore, 
+		orderStore,
 		tradeStore,
 		candleStore,
 	)

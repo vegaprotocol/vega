@@ -15,10 +15,11 @@ import (
 	"vega/internal/trades"
 	"vega/internal/vegatime"
 
+	"vega/internal/logging"
+
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
-	"vega/internal/logging"
 )
 
 type graphServer struct {
@@ -31,13 +32,15 @@ type graphServer struct {
 }
 
 func NewGraphQLServer(config *api.Config, orderService orders.Service,
-	tradeService trades.Service, candleService candles.Service) *graphServer {
+	tradeService trades.Service, candleService candles.Service, marketService markets.Service, timeService vegatime.Service) *graphServer {
 
 	return &graphServer{
 		Config:        config,
 		orderService:  orderService,
 		tradeService:  tradeService,
 		candleService: candleService,
+		timeService:   timeService,
+		marketService: marketService,
 	}
 }
 
@@ -89,7 +92,7 @@ func (g *graphServer) Start() {
 		},
 	}
 	// cors support - configure for production --->
-	
+
 	port := g.GraphQLServerPort
 	ip := g.GraphQLServerIpAddress
 
