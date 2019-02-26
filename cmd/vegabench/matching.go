@@ -11,9 +11,11 @@ import (
 	"vega/internal/logging"
 	mockStorage "vega/internal/storage/mocks"
 	mockVegaTime "vega/internal/vegatime/mocks"
+
+	"github.com/stretchr/testify/mock"
 )
 
-const marketId = "BTC/JAN21"
+const marketID = "BTC/DEC19"
 
 func BenchmarkMatching(
 	numberOfOrders int,
@@ -21,7 +23,11 @@ func BenchmarkMatching(
 	randSize bool,
 	reportInterval int) {
 
-	b.ReportAllocs()
+	times := 1
+	if b != nil {
+		b.ReportAllocs()
+		times = b.N
+	}
 	if reportInterval == 0 {
 		reportInterval = numberOfOrders
 	}
@@ -31,17 +37,21 @@ func BenchmarkMatching(
 	tradeStore := &mockStorage.TradeStore{}
 	candleStore := &mockStorage.CandleStore{}
 
+	// Refer to the proto package by its real name, not by its alias "types".
+	candleStore.On("AddTradeToBuffer", mock.AnythingOfType("proto.Trade")).Return(nil)
+
+	orderStore.On("Post", mock.AnythingOfType("proto.Order")).Return(nil)
+	orderStore.On("Put", mock.AnythingOfType("proto.Order")).Return(nil)
+
+	tradeStore.On("Post", mock.AnythingOfType("*proto.Trade")).Return(nil)
+
 	logger := logging.NewLoggerFromEnv("dev")
+	logger.SetLevel(logging.InfoLevel, false)
 	defer logger.Sync()
 
 	// Matching engine (todo) create these inside execution engine based on config
 	matchingConfig := matching.NewConfig(logger)
 	matchingEngine := matching.NewMatchingEngine(matchingConfig)
-	err := matchingEngine.AddOrderBook("BTC/DEC19")
-	if err != nil {
-		logger.Error("Order book creation failure", logging.Error(err))
-		return
-	}
 
 	// Execution engine (broker operation of markets at runtime etc)
 	eec := execution.NewConfig(logger)
@@ -49,7 +59,7 @@ func BenchmarkMatching(
 		timeService, orderStore, tradeStore, candleStore)
 
 	var timestamp int64
-	for k := 0; k < b.N; k++ {
+	for k := 0; k < times; k++ {
 		if rand.Intn(5) > 1 {
 			timestamp++
 		}
@@ -61,7 +71,7 @@ func BenchmarkMatching(
 		}
 
 		order := types.OrderPool.Get().(*types.Order)
-		order.Market = marketId
+		order.Market = marketID
 		order.Party = fmt.Sprintf("P%v", timestamp)
 		order.Side = types.Side(rand.Intn(2))
 		order.Price = uint64(rand.Intn(100) + 50)
@@ -75,7 +85,7 @@ func BenchmarkMatching(
 			oc.Release()
 		}
 		result, _ := executionEngine.SubmitOrder(&types.Order{
-			Market:    marketId,
+			Market:    marketID,
 			Party:     fmt.Sprintf("P%v", timestamp),
 			Side:      types.Side(rand.Intn(2)),
 			Price:     uint64(rand.Intn(100) + 50),
