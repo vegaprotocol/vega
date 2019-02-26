@@ -2,6 +2,7 @@ PROJECT_NAME := "vega"
 PKG := "./cmd/$(PROJECT_NAME)"
 PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
+PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 VERSION := $(shell git describe --tags)
 VERSION_HASH := $(shell git rev-parse HEAD)
 
@@ -10,7 +11,7 @@ $(info $$ARTIFACTS_BIN is unset. Setting it to ./$(PROJECT_NAME))
 ARTIFACTS_BIN := "./$(PROJECT_NAME)"
 endif
 
-.PHONY: all bench dep build clean test coverage coverhtml lint proto
+.PHONY: all bench dep build clean test coverage coverhtml lint
 
 all: build
 
@@ -43,8 +44,11 @@ deps: ## Get the dependencies
 install: proto ## install the binary in GOPATH/bin
 	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" vega/cmd/vega
 
-proto: ## build proto definitions
-	@protoc --go_out=. ./proto/*.proto
+proto: ${PROTOFILES} ## build proto definitions
+
+.PRECIOUS: proto/%.pb.go
+proto/%.pb.go: proto/%.proto
+	@protoc --go_out=. "$<"
 
 build: ## Build the binary file
 	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
