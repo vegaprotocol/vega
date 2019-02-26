@@ -6,17 +6,21 @@ VERSION := $(shell git describe --tags)
 VERSION_HASH := $(shell git rev-parse HEAD)
 
 ifndef ARTIFACTS_BIN ## environment variable override from gitlab-ci
-$(info $$ARTIFACTS_BIN is [${ARTIFACTS_BIN}])
+$(info $$ARTIFACTS_BIN is unset. Setting it to ./$(PROJECT_NAME))
 ARTIFACTS_BIN := "./$(PROJECT_NAME)"
 endif
 
-.PHONY: all dep build clean test coverage coverhtml lint
+.PHONY: all bench dep build clean test coverage coverhtml lint proto
 
 all: build
 
 lint: ## Lint the files
 	@go get -u golang.org/x/lint/golint
 	@golint -set_exit_status ${PKG_LIST}
+
+bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
+	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go install -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -v vega/cmd/vegabench
+	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
 
 test: deps ## Run unit tests
 	@go test -short ${PKG_LIST} -v
@@ -47,8 +51,6 @@ build: ## Build the binary file
 
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
-
-.PHONY: proto
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
