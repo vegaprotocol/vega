@@ -66,7 +66,7 @@ code_coverage_report:
 build_vega:
   stage: build
   script:
-    - make
+    - make cibuild
   artifacts:
     paths:
       - ${ARTIFACTS_DIR}

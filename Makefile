@@ -6,11 +6,6 @@ PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 VERSION := $(shell git describe --tags)
 VERSION_HASH := $(shell git rev-parse HEAD)
 
-ifndef ARTIFACTS_BIN ## environment variable override from gitlab-ci
-$(info $$ARTIFACTS_BIN is unset. Setting it to ./$(PROJECT_NAME))
-ARTIFACTS_BIN := "./$(PROJECT_NAME)"
-endif
-
 .PHONY: all bench dep build clean test coverage coverhtml lint
 
 all: build
@@ -42,7 +37,9 @@ deps: ## Get the dependencies
 	@go mod download
 
 install: proto ## install the binary in GOPATH/bin
+	@cat .asciiart.txt
 	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" vega/cmd/vega
+	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" vega/cmd/vegabench
 
 proto: ${PROTOFILES} ## build proto definitions
 
@@ -50,7 +47,8 @@ proto: ${PROTOFILES} ## build proto definitions
 proto/%.pb.go: proto/%.proto
 	@protoc --go_out=. "$<"
 
-build: ## Build the binary file
+cibuild: ## Build the binary file
+	@if test -z "$$ARTIFACTS_BIN" ; then echo "No ARTIFACTS_BIN" ; exit 1 ; fi
 	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
 
 clean: ## Remove previous build
