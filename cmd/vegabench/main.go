@@ -11,5 +11,5 @@ func main() {
 
 	flag.Parse()
 
-	BenchmarkMatching(*numberOfOrders, nil, *uniform, *reportInterval)
+	BenchmarkMatching(*numberOfOrders, nil, false, *uniform, *reportInterval)
 }
