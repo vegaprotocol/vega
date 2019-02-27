@@ -10,15 +10,17 @@ import (
 type PriceLevel struct {
 	*Config
 	price             uint64
+	proRataMode       bool
 	orders            []*types.Order
 	volumeAtTimestamp map[uint64]uint64
 	volume            uint64
 }
 
-func NewPriceLevel(config *Config, price uint64) *PriceLevel {
+func NewPriceLevel(config *Config, price uint64, proRataMode bool) *PriceLevel {
 	return &PriceLevel{
 		Config:            config,
 		price:             price,
+		proRataMode:       proRataMode,
 		orders:            []*types.Order{},
 		volumeAtTimestamp: make(map[uint64]uint64),
 	}
@@ -147,7 +149,7 @@ func (l *PriceLevel) getVolumeAllocation(
 	agg, pass *types.Order,
 	volumeToShare, initialVolumeAtTimestamp uint64) uint64 {
 
-	if l.ProRataMode {
+	if l.proRataMode {
 		weight := float64(pass.Remaining) / float64(initialVolumeAtTimestamp)
 		size := weight * float64(min(volumeToShare, initialVolumeAtTimestamp))
 		if size-math.Trunc(size) > 0 {

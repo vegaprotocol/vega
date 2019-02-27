@@ -9,10 +9,12 @@ import (
 	types "vega/proto"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
+
+	"vega/internal/logging"
 
 	tmRPC "github.com/tendermint/tendermint/rpc/client"
-	"vega/internal/logging"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type Client interface {
@@ -20,15 +22,14 @@ type Client interface {
 	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
 	AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error)
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
-
-	//GetStatus(ctx context.Context) (status *rpc.Status, err error)          // todo(cdm) revisit after stats refactor
-	//GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
-	//GetNetworkInfo(ctx context.Context) (netInfo *rpc.NetInfo, err error)
+	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) // todo(cdm) revisit after stats refactor
+	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
+	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
 }
 
 type client struct {
 	*Config
-	tmClient tmRPC.Client
+	tmClient *tmRPC.HTTP
 }
 
 func NewClient(config *Config) (Client, error) {
@@ -64,40 +65,21 @@ func (b *client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err
 	return res.Genesis.GenesisTime, nil
 }
 
-//func (b *client) GetStatus(ctx context.Context) (status *core_types.ResultStatus, err error) {
-//	res, err := b.tmClient.Status()
-//	if err != nil {
-//		return nil, err
-//	}
-//	return res, nil
-//}
-//
-//func (b *client) GetNetworkInfo(ctx context.Context) (netInfo *rpc.NetInfo, err error) {
-//	client, err := b.getRpcClient()
-//	if err != nil {
-//		return nil, err
-//	}
-//	netInfo, err = client.NetInfo(ctx)
-//	if err != nil {
-//		if !client.HasError() {
-//			b.releaseRpcClient(client)
-//		}
-//		return nil, err
-//	}
-//	if client != nil {
-//		b.releaseRpcClient(client)
-//	}
-//	return netInfo, nil
-//
-//}
-//
-//func (b *client) GetUnconfirmedTxCount(ctx context.Context) (count int, err error) {
-//	res, err := b.tmClient.ABCIQuery
-//	if err != nil {
-//		return nil, err
-//	}
-//	return res, nil
-//}
+func (b *client) GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) {
+	return b.tmClient.Status()
+}
+
+func (b *client) GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error) {
+	return b.tmClient.NetInfo()
+}
+
+func (b *client) GetUnconfirmedTxCount(ctx context.Context) (count int, err error) {
+	res, err := b.tmClient.NumUnconfirmedTxs()
+	if err != nil {
+		return 0, err
+	}
+	return res.N, err
+}
 
 func (b *client) sendOrderCommand(ctx context.Context, order *types.Order, cmd Command) (success bool, err error) {
 

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"sync"
+	"vega/internal/blockchain"
 
 	"vega/internal/candles"
 	"vega/internal/logging"
@@ -32,9 +33,12 @@ type Resolver struct {
 	partyService  parties.Service
 	timeService   vegatime.Service
 
+	blockchainClient blockchain.Client
+
 	stMu sync.Mutex // Thread safety for singletons
 	seMu sync.Mutex
 	tsMu sync.Mutex
+	bcMu sync.Mutex
 }
 
 // NewResolver initialises an instance of the VEGA resolver, this provides access to services and stores to help
@@ -156,11 +160,16 @@ func (r *Resolver) ResolveOrderService() (orders.Service, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error resolving vega-time service instance.")
 	}
+	client, err := r.ResolveBlockchainClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "error resolving blockchain client instance.")
+	}
 
 	orderService, err := orders.NewOrderService(
 		r.config.Orders,
 		orderStore,
 		timeService,
+		client,
 	)
 	if err != nil {
 		return nil, err
@@ -391,3 +400,27 @@ func (r *Resolver) CloseStores() {
 }
 
 // --------------- /Storage --------------
+
+// -------------- Blockchain/ -------------
+
+// ResolveBlockchainClient returns a pointer to a singleton instance of the (Tendermint) blockchain client.
+func (r *Resolver) ResolveBlockchainClient() (*blockchain.Client, error) {
+	r.bcMu.Lock()
+	defer r.bcMu.Unlock()
+
+	if r.blockchainClient != nil {
+		return &r.blockchainClient, nil
+	}
+
+	client, err := blockchain.NewClient(
+		r.config.Blockchain,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	r.blockchainClient = client
+	return &r.blockchainClient, nil
+}
+
+// -------------- /Blockchain -------------

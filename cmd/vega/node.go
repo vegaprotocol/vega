@@ -73,6 +73,9 @@ func (l *NodeCommand) runNode(args []string) error {
 	resolver, err := internal.NewResolver(conf)
 	defer resolver.CloseStores()
 
+	// Statistics provider
+	stats := internal.NewStats(logger)
+
 	// Resolve services for injection to servers/execution engine
 	orderService, err := resolver.ResolveOrderService()
 	if err != nil {
@@ -83,6 +86,10 @@ func (l *NodeCommand) runNode(args []string) error {
 		return err
 	}
 	candleService, err := resolver.ResolveCandleService()
+	if err != nil {
+		return err
+	}
+	marketService, err := resolver.ResolveMarketService()
 	if err != nil {
 		return err
 	}
@@ -103,8 +110,22 @@ func (l *NodeCommand) runNode(args []string) error {
 		return err
 	}
 
+	client, err := resolver.ResolveBlockchainClient()
+	if err != nil {
+		return err
+	}
+
 	// gRPC server
-	grpcServer := grpc.NewGRPCServer(conf.API, orderService, tradeService, candleService)
+	grpcServer := grpc.NewGRPCServer(
+		conf.API,
+		stats,
+		client,
+		timeService,
+		marketService,
+		orderService,
+		tradeService,
+		candleService,
+	)
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server
@@ -112,7 +133,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	go restServer.Start()
 
 	// GraphQL server
-	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService, candleService)
+	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService, candleService, marketService, timeService)
 	go graphServer.Start()
 
 	// Execution engine (broker operation at runtime etc)
@@ -121,13 +142,13 @@ func (l *NodeCommand) runNode(args []string) error {
 		conf.Execution,
 		matchingEngine,
 		timeService,
-		orderStore, 
+		orderStore,
 		tradeStore,
 		candleStore,
 	)
 
 	// ABCI<>blockchain server
-	socketServer := blockchain.NewServer(conf.Blockchain, executionEngine, timeService)
+	socketServer := blockchain.NewServer(conf.Blockchain, stats.Blockchain, executionEngine, timeService)
 	err = socketServer.Start()
 	if err != nil {
 		return errors.Wrap(err, "ABCI socket server error")

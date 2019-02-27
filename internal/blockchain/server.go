@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"vega/internal/execution"
+	"vega/internal/logging"
 	"vega/internal/vegatime"
 
 	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tmlibs/common"
-	"vega/internal/logging"
 )
 
 type Server struct {
@@ -18,9 +18,10 @@ type Server struct {
 	time      vegatime.Service
 }
 
-func NewServer(config *Config, ex execution.Engine, time vegatime.Service) *Server {
-	stats := NewStats() // package specific statistics
-	app := NewAbciApplication(config, ex, time, stats)
+// NewServer creates a new instance of the the blockchain server given configuration,
+// stats provider, time service and execution engine.
+func NewServer(config *Config, stats *Stats, ex execution.Engine, time vegatime.Service) *Server {
+	app := NewAbciApplication(config, stats, ex, time)
 	return &Server{config, app, ex, time}
 }
 
@@ -40,13 +41,7 @@ func (s *Server) Start() error {
 	if err := srv.Start(); err != nil {
 		return err
 	}
-
-	//vega.Statistics.Status = msg.AppStatus_CHAIN_NOT_FOUND
-	// todo(cdm): app comms to get status if chain replaying etc
-	// handshake stuff / security ensure app hashes match?
-	//vega.SetGenesisTime(genesis.GenesisTime)
-	//vega.Statistics.Status = msg.AppStatus_APP_CONNECTED
-
+	
 	// Wait forever
 	cmn.TrapSignal(func() {
 		srv.Stop()

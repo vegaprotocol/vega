@@ -3,9 +3,12 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
+	"vega/internal/blockchain"
 
 	"vega/api"
+	"vega/internal"
 	"vega/internal/candles"
 	"vega/internal/filtering"
 	"vega/internal/markets"
@@ -18,6 +21,8 @@ import (
 )
 
 type Handlers struct {
+	Client        *blockchain.Client
+	Stats         *internal.Stats
 	TimeService   vegatime.Service
 	OrderService  orders.Service
 	TradeService  trades.Service
@@ -100,13 +105,18 @@ func (h *Handlers) OrdersByParty(ctx context.Context,
 }
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
-func (h *Handlers) Markets(ctx context.Context,
-	request *api.MarketsRequest) (*api.MarketsResponse, error) {
-	var m = []string{"BTC/DEC19"}
-
+func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (*api.MarketsResponse, error) {
+	m, err := h.MarketService.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var response = &api.MarketsResponse{}
 	if len(m) > 0 {
-		response.Markets = m
+		var res []string
+		for _, mv := range m {
+			res = append(res, mv.Name)
+		}
+		response.Markets = res
 	}
 	return response, nil
 }
@@ -218,16 +228,96 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 	return response, nil
 }
 
+
 func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsRequest) (*types.Statistics, error) {
-	return nil, errors.New("Statistics endpoint deprecated")
+	// Call out to tendermint and related services to get related information for statistics
+	// We load read-only internal statistics through each package level statistics structs
+	epochTimeNano, _, err := h.TimeService.GetTimeNow()
+	if err != nil {
+		return nil, err
+	}
+	if h.Stats == nil || h.Stats.Blockchain == nil {
+		return nil, errors.New("Internal error: statistics not available")
+	}
+
+	// Call out to tendermint via rpc client
+	backlogLength, numPeers, gt, err := h.getTendermintStats(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the chain is replaying then genesis time can be nil
+	genesisTime := ""
+	if gt != nil {
+		genesisTime = gt.Format(time.RFC3339)
+	}
+
+	return &types.Statistics{
+		BlockHeight:           h.Stats.Blockchain.Height(),
+		BacklogLength:         uint64(backlogLength),
+		TotalPeers:            uint64(numPeers),
+		GenesisTime:           genesisTime,
+		CurrentTime:           time.Now().UTC().Format(time.RFC3339),
+		VegaTime:              epochTimeNano.Rfc3339(),
+		TxPerBlock:            uint64(h.Stats.Blockchain.AverageTxPerBatch()),
+		AverageTxBytes:        uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
+		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
+		TradesPerSecond:       uint64(h.Stats.Blockchain.TotalTradesLastBatch()),
+		OrdersPerSecond:       uint64(h.Stats.Blockchain.TotalOrdersLastBatch()),
+		Status:                types.AppStatus_CHAIN_NOT_FOUND, // todo
+		LastTrade:             nil,   // todo
+		LastOrder:             nil,   // todo
+		TotalMarkets:          0,     // todo
+		TotalParties:          0,     // todo
+		AppVersionHash:        "N/A", // todo
+		AppVersion:            "N/A", // todo
+		Parties:               nil,   // todo
+	}, nil
 }
 
 func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest) (*api.VegaTimeResponse, error) {
-	_, currentTime, err := h.TimeService.GetTimeNow()
+	epochTimeNano, _, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, err
 	}
 	var response = &api.VegaTimeResponse{}
-	response.Time = fmt.Sprintf("%s", currentTime.Format(time.RFC3339))
+	response.Time = fmt.Sprintf("%s", epochTimeNano.Rfc3339())
 	return response, nil
+}
+
+func (h *Handlers) getTendermintStats(ctx context.Context) (backlogLength int,
+	numPeers int, genesis *time.Time, err error)  {
+
+	refused := "connection refused"
+
+	// Unconfirmed TX count == current transaction backlog length
+	blockchainClient := *h.Client
+
+	backlogLength, err = blockchainClient.GetUnconfirmedTxCount(ctx)
+	if err != nil {
+		if strings.Contains(err.Error(), refused) {
+			return 0, 0, nil, nil
+		}
+		return 0, 0, nil, err
+	}
+
+	// Net info provides peer stats etc (block chain network info) == number of peers
+	netInfo, err := blockchainClient.GetNetworkInfo(ctx)
+	if err != nil {
+		if strings.Contains(err.Error(), refused) {
+			return backlogLength, 0, nil, nil
+		}
+		return backlogLength, 0, nil, err
+	}
+	
+	// Genesis retrieves the current genesis date/time for the blockchain
+	genesisTime, err := blockchainClient.GetGenesisTime(ctx)
+	if err != nil {
+		if strings.Contains(err.Error(), refused) {
+			return backlogLength, 0, nil, nil
+		}
+		return backlogLength, 0, nil, err
+	}
+
+	return backlogLength, netInfo.NPeers, &genesisTime, nil
 }

@@ -17,11 +17,11 @@ type OrderBook struct {
 }
 
 // Create an order book with a given name
-func NewBook(name string, config *Config) *OrderBook {
+func NewBook(config *Config, name string, proRataMode bool) *OrderBook {
 	return &OrderBook{
 		name:           name,
-		buy:            &OrderBookSide{Config: config},
-		sell:           &OrderBookSide{Config: config},
+		buy:            &OrderBookSide{Config: config, proRataMode: proRataMode},
+		sell:           &OrderBookSide{Config: config, proRataMode: proRataMode},
 		Config:         config,
 		expiringOrders: make([]types.Order, 0),
 	}

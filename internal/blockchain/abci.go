@@ -32,7 +32,7 @@ type AbciApplication struct {
 	time vegatime.Service
 }
 
-func NewAbciApplication(config *Config, execution execution.Engine, time vegatime.Service, stats *Stats) *AbciApplication {
+func NewAbciApplication(config *Config, stats *Stats, execution execution.Engine, time vegatime.Service) *AbciApplication {
 	service := NewAbciService(config, stats, execution)
 	processor := NewAbciProcessor(config, service)
 	return &AbciApplication{

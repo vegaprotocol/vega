@@ -33,6 +33,10 @@ const (
 	FatalLevel Level = 5
 )
 
+func (l *Level) ZapLevel() zapcore.Level {
+	return zapcore.Level(*l)
+}
+
 type Logger struct {
 	*zap.Logger
 	config *zap.Config
@@ -88,8 +92,11 @@ func New(core *zapcore.Core, cfg *zap.Config) *Logger {
 }
 
 func (log *Logger) SetLevel(level Level, notify bool) {
-	oldLevel := log.config.Level.String()
 	zaplevel := (zapcore.Level)(level)
+	if log.config.Level.Level() == zaplevel {
+		return
+	}
+	oldLevel := log.config.Level.String()
 	log.config.Level.SetLevel(zaplevel)
 	if notify {
 		if ce := log.Check(zaplevel, "Log level changed"); ce != nil {

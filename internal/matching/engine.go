@@ -29,7 +29,9 @@ func NewMatchingEngine(config *Config) Engine {
 
 func (me *matchingEngine) AddOrderBook(marketId string) error {
 	if _, exists := me.markets[marketId]; !exists {
-		book := NewBook(marketId, me.Config)
+		// ProRataMode is not usually enabled on a continuous trading order book,
+		// but when we get to discrete trading and auctions it’s possible.
+		book := NewBook(me.Config, marketId, false)
 		me.markets[marketId] = book
 		return nil
 	} else {
