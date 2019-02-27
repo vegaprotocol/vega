@@ -222,3 +222,23 @@ func IPAddressFromContext(ctx context.Context) string {
 	}
 	return ""
 }
+
+// Errorf implement badger interface
+func (log *Logger) Errorf(s string, args ...interface{}) {
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Errorf(s, args...)
+}
+
+// Warningf implement badger interface
+func (log *Logger) Warningf(s string, args ...interface{}) {
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Warnf(s, args...)
+}
+
+// Infof implement badger interface
+func (log *Logger) Infof(s string, args ...interface{}) {
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Infof(s, args...)
+}
+
+// Debugf implement badger interface
+func (log *Logger) Debugf(s string, args ...interface{}) {
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Debugf(s, args...)
+}

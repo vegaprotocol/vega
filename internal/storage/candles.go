@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"sync"
 
+	"vega/internal/logging"
 	"vega/internal/vegatime"
 	types "vega/proto"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"vega/internal/logging"
 )
 
 // CandleStore provides a set of functions that can manipulate a candle store, it provides a way for
@@ -86,7 +86,7 @@ func NewCandleStore(c *Config) (CandleStore, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")
 	}
-	db, err := badger.Open(customBadgerOptions(c.CandleStoreDirPath))
+	db, err := badger.Open(customBadgerOptions(c.CandleStoreDirPath, c.GetLogger()))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}
@@ -176,7 +176,7 @@ func (c *badgerCandleStore) StartNewBuffer(marketId string, timestamp uint64) er
 
 // AddTradeToBuffer adds a trade to the trades buffer for the given market.
 func (c *badgerCandleStore) AddTradeToBuffer(trade types.Trade) error {
-	
+
 	if c.candleBuffer[trade.Market] == nil {
 		return errors.New(fmt.Sprintf("candle buffer does not exist for market %s", trade.Market))
 	}
@@ -447,7 +447,7 @@ func (c *badgerCandleStore) notify() error {
 		c.log.Debug("Candle subscriber ready to notify",
 			logging.Uint64("id", id),
 			logging.String("market", iT.Market))
-		
+
 		for _, item := range c.queue {
 
 			// find candle with right interval
@@ -543,7 +543,7 @@ func updateCandle(candle *types.Candle, trade *types.Trade) {
 func mergeCandles(candleFromDB *types.Candle, candleUpdate types.Candle) {
 
 	fmt.Println(fmt.Sprintf("%+v - %+v", candleFromDB, candleUpdate))
-	
+
 	// always overwrite close price
 	candleFromDB.Close = candleUpdate.Close
 
