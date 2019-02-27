@@ -20,6 +20,7 @@ type NodeCommand struct {
 	command
 
 	configPath string
+	Log        *logging.Logger
 }
 
 // Init initialises the node command.
@@ -41,16 +42,11 @@ func (l *NodeCommand) Init(c *Cli) {
 // addFlags adds flags for specific command.
 func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
-
 	flagSet.StringVarP(&l.configPath, "configPath", "C", "", "file path to search for vega config file(s)")
 }
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
-
-	// Set up the root logger
-	logger := logging.NewLoggerFromEnv("dev")
-	logger.AddExitHandler()
 
 	// Set up configuration and create a resolver
 	configPath := l.configPath
@@ -59,11 +55,11 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	// VEGA config (holds all package level configs)
-	conf, err := internal.ConfigFromFile(logger, configPath)
+	conf, err := internal.ConfigFromFile(l.Log, configPath)
 	if err != nil {
 		// We revert to default configs if there are any errors in read/parse process
-		logger.Error("Error reading config from file, using defaults", zap.Error(err))
-		conf, err = internal.DefaultConfig(logger, DefaultVegaDir())
+		l.Log.Error("Error reading config from file, using defaults", zap.Error(err))
+		conf, err = internal.DefaultConfig(l.Log, DefaultVegaDir())
 		if err != nil {
 			return err
 		}
@@ -71,10 +67,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	conf.ListenForChanges()
 
 	resolver, err := internal.NewResolver(conf)
-	defer resolver.CloseStores()
+	defer l.Log.Info("closing stores", zap.Error(resolver.CloseStores()))
 
 	// Statistics provider
-	stats := internal.NewStats(logger)
+	stats := internal.NewStats(l.Log)
 
 	// Resolve services for injection to servers/execution engine
 	orderService, err := resolver.ResolveOrderService()
@@ -158,6 +154,9 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
+	defer l.Log.Info("closing blockchain server", zap.Error(socketServer.Stop()))
+
+	waitsig()
 
 	return nil
 }

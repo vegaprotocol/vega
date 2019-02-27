@@ -351,7 +351,7 @@ func (r *Resolver) ResolvePartyStore() (storage.PartyStore, error) {
 
 // CloseStores is a helper utility that aids in cleaning up the storage layer on application shutdown etc.
 // Typically run with defer, or at the end of the app lifecycle.
-func (r *Resolver) CloseStores() {
+func (r *Resolver) CloseStores() error {
 	var err error
 	r.stMu.Lock()
 
@@ -393,10 +393,10 @@ func (r *Resolver) CloseStores() {
 	}
 
 	r.stMu.Unlock()
-	if err != nil {
-		r.config.log.Error("error(s) when closing stores in resolver.") //err.Error())
-		//todo(cdm): improve this logging with structured logger changes soon, special log full error strings via wrap.
-	}
+
+	return err
+	//todo(cdm): improve this logging with structured logger changes soon, special log full error strings via wrap.
+
 }
 
 // --------------- /Storage --------------

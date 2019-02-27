@@ -20,6 +20,7 @@ type initCommand struct {
 
 	rootPath string
 	force    bool
+	Log      *logging.Logger
 }
 
 func (ic *initCommand) Init(c *Cli) {
@@ -28,7 +29,6 @@ func (ic *initCommand) Init(c *Cli) {
 		Use:   "init",
 		Short: "Initialize a vega node",
 		Long:  "Generate the minimal configuration required for a vega node to start",
-		// Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return ic.runInit(c)
 		},
@@ -41,8 +41,6 @@ func (ic *initCommand) Init(c *Cli) {
 }
 
 func (ic *initCommand) runInit(c *Cli) error {
-	log := logging.NewLoggerFromEnv("dev")
-
 	rootPathExists, err := Exists(ic.rootPath)
 	if err != nil {
 		if _, ok := err.(*NotFound); !ok {
@@ -55,8 +53,8 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	if rootPathExists && ic.force {
-		log.Info("removing existing configuration", zap.String("path", ic.rootPath))
-	    os.RemoveAll(ic.rootPath) // ignore any errors here to force removal
+		ic.Log.Info("removing existing configuration", zap.String("path", ic.rootPath))
+		os.RemoveAll(ic.rootPath) // ignore any errors here to force removal
 	}
 
 	// create the root
@@ -80,7 +78,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// generate a default configuration
-	cfg, err := internal.DefaultConfig(log, ic.rootPath)
+	cfg, err := internal.DefaultConfig(ic.Log, ic.rootPath)
 	if err != nil {
 		return err
 	}
@@ -101,7 +99,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	log.Info("configuration generated successfully", zap.String("path", ic.rootPath))
+	ic.Log.Info("configuration generated successfully", zap.String("path", ic.rootPath))
 
 	return nil
 }

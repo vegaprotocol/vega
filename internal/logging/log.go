@@ -7,8 +7,6 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/tav/golly/process"
 )
 
 // A Level is a logging priority. Higher levels are more important.
@@ -101,7 +99,7 @@ func (log *Logger) SetLevel(level zapcore.Level) {
 	}
 	oldLevel := log.config.Level.String()
 	log.config.Level.SetLevel(level)
-	log.Debug("Log level changed",	zap.String("old", oldLevel),
+	log.Debug("Log level changed", zap.String("old", oldLevel),
 		zap.String("new", level.String()))
 }
 
@@ -113,15 +111,13 @@ func (log *Logger) With(fields ...zap.Field) *Logger {
 	}
 }
 
-// AddExitHandler flushes the logs before exiting the process. Useful when an
-// app shuts down so we store all logging possible.
-func (log *Logger) AddExitHandler() {
-	// Flush the logs before exiting the process.
-	process.SetExitHandler(func() {
-		if log.Logger != nil {
-			log.Logger.Sync()
-		}
-	})
+// AtExit flushes the logs before exiting the process. Useful when an
+// app shuts down so we store all logging possible. This is meant to be used
+// with defer when initializing your logger
+func (log *Logger) AtExit() {
+	if log.Logger != nil {
+		log.Logger.Sync()
+	}
 }
 
 func cloneConfig(cfg *zap.Config) *zap.Config {

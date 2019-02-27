@@ -12,11 +12,11 @@ import (
 
 	"vega/internal/candles"
 	"vega/internal/filtering"
+	"vega/internal/logging"
 	"vega/internal/markets"
 	"vega/internal/orders"
 	"vega/internal/trades"
 	"vega/internal/vegatime"
-	"vega/internal/logging"
 )
 
 type resolverRoot struct {
