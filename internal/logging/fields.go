@@ -2,6 +2,7 @@ package logging
 
 import (
 	types "vega/proto"
+
 	"go.uber.org/zap"
 )
 
@@ -153,15 +154,3 @@ func Market(m types.Market) zap.Field {
 func Party(p types.Party) zap.Field {
 	return zap.String("party", p.String())
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -27,13 +27,6 @@ func NewServer(config *Config, stats *Stats, ex execution.Engine, time vegatime.
 	return &Server{config, app, ex, time, nil}
 }
 
-func (s *Server) Stop() error {
-	if s.srv != nil {
-		return s.srv.Stop()
-	}
-	return errors.New("server not started")
-}
-
 // Start configures and runs a new socket based ABCI tendermint blockchain
 // server for the VEGA application.
 func (s *Server) Start() error {
@@ -54,4 +47,11 @@ func (s *Server) Start() error {
 	s.srv = srv
 
 	return nil
+}
+
+func (s *Server) Stop() error {
+	if s.srv != nil {
+		return s.srv.Stop()
+	}
+	return errors.New("server not started")
 }

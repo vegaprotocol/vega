@@ -8,13 +8,11 @@ import (
 )
 
 func main() {
-
 	// Set up the root logger
 	log := logging.NewLoggerFromEnv("dev")
 	defer log.AtExit()
 
 	cli := NewCli()
-	cli.SetFlags()
 
 	base := &command{cmd: cli.rootCmd, cli: cli}
 	base.Cmd().SilenceErrors = true

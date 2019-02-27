@@ -67,7 +67,6 @@ func (l *NodeCommand) runNode(args []string) error {
 	conf.ListenForChanges()
 
 	resolver, err := internal.NewResolver(conf)
-	defer l.Log.Info("closing stores", zap.Error(resolver.CloseStores()))
 
 	// Statistics provider
 	stats := internal.NewStats(l.Log)
@@ -154,9 +153,15 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
-	defer l.Log.Info("closing blockchain server", zap.Error(socketServer.Stop()))
 
 	waitsig()
+
+	// cleanup
+	l.Log.Info("closing blockchain server", zap.Error(socketServer.Stop()))
+	l.Log.Info("closing rest proxy server", zap.Error(restServer.Stop()))
+	l.Log.Info("closing grpc server", zap.Error(grpcServer.Stop()))
+	l.Log.Info("closing gql server", zap.Error(graphServer.Stop()))
+	l.Log.Info("closing stores", zap.Error(resolver.CloseStores()))
 
 	return nil
 }
