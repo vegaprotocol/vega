@@ -27,7 +27,7 @@ type Config struct {
 	Blockchain *blockchain.Config
 	Candles    *candles.Config
 	//Collatoral collatoral.config         // As packages continue to be
-	Execution *execution.Config            // developed we add their config
+	Execution *execution.Config // developed we add their config
 	//Fees fees.config                     // options here see examples
 	//Governanace governance.config
 	Logging  *logging.Config
@@ -164,5 +164,3 @@ func (c *Config) updateLoggers() {
 	c.Risk.UpdateLogger()
 	// Any new package configs with a logger should be added here <>
 }
-
-

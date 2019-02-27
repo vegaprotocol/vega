@@ -1,15 +1,15 @@
 package restproxy
 
 import (
-"bytes"
-"encoding/json"
-"fmt"
-"io"
-"reflect"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"reflect"
 
-"github.com/gogo/protobuf/jsonpb"
-"github.com/gogo/protobuf/proto"
-"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/gogo/protobuf/proto"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 )
 
 // JSONPb is a runtime.Marshaler which marshals/unmarshals into/from

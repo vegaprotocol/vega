@@ -9,7 +9,7 @@ type Stamp uint64
 
 func (s Stamp) Seconds() int64 {
 	if s > 0 {
-		secs := uint64(s) / uint64(1000 * time.Millisecond)
+		secs := uint64(s) / uint64(1000*time.Millisecond)
 		return int64(secs)
 	}
 	return 0

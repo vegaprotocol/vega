@@ -55,8 +55,8 @@ func (ms *memRiskStore) Put(risk *types.RiskFactor) error {
 func (ms *memRiskStore) GetByMarket(name string) (*types.RiskFactor, error) {
 	return &types.RiskFactor{
 		Market: name,
-		Long: 1,
-		Short: 1,
+		Long:   1,
+		Short:  1,
 	}, nil
 }
 
@@ -73,5 +73,3 @@ func (ms *memRiskStore) Close() error {
 	// No work required with a mem-store implementation.
 	return nil
 }
-
-

@@ -2,7 +2,7 @@ package gql
 
 import (
 	"vega/internal/filtering"
-	
+
 	"github.com/pkg/errors"
 )
 

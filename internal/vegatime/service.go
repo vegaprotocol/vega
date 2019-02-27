@@ -33,7 +33,7 @@ func (s *timeService) SetTimeNow(epochTimeNano Stamp) {
 	// Convert unix epoch+nanoseconds into the current UTC date and time
 	// we could pass this in as a var but doing the conversion here isolates
 	// it to this method
-	s.currentDatetime  = epochTimeNano.Datetime().UTC()
+	s.currentDatetime = epochTimeNano.Datetime().UTC()
 	s.currentTimestamp = epochTimeNano
 
 	// Ensure we always set previousTimestamp it'll be 0 on the first block transaction

@@ -7,26 +7,26 @@ import "vega/internal/logging"
 const namedLogger = "risk"
 
 type Config struct {
-	log *logging.Logger
+	log   *logging.Logger
 	Level logging.Level
-	
+
 	// If set to true, all python risk model files will be loaded via an absolute path.
 	// If set to false (default) all python risk model files will be loaded via relative path to the vega binary.
-	PyRiskModelAbsolutePath bool
+	PyRiskModelAbsolutePath    bool
 	PyRiskModelDefaultFileName string
-	PyRiskModelShortIndex int
-	PyRiskModelLongIndex int
+	PyRiskModelShortIndex      int
+	PyRiskModelLongIndex       int
 }
 
 func NewConfig(logger *logging.Logger) *Config {
 	logger = logger.Named(namedLogger)
 	return &Config{
-		log: logger,
-		Level: logging.FatalLevel, //.InfoLevel,
+		log:                        logger,
+		Level:                      logging.FatalLevel, //.InfoLevel,
 		PyRiskModelDefaultFileName: "/risk-model.py",
-		PyRiskModelShortIndex: 0,
-		PyRiskModelLongIndex: 1,
-		PyRiskModelAbsolutePath: false,
+		PyRiskModelShortIndex:      0,
+		PyRiskModelLongIndex:       1,
+		PyRiskModelAbsolutePath:    false,
 	}
 }
 
