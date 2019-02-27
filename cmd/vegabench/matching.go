@@ -23,19 +23,25 @@ func BenchmarkMatching(
 	b *testing.B,
 	quiet bool,
 	randSize bool,
-	reportInterval int) {
+	reportDuration string) {
 
 	times := 1
 	if b != nil {
 		b.ReportAllocs()
 		times = b.N
 	}
-	if reportInterval == 0 {
-		reportInterval = numberOfOrders
+	duration, err := time.ParseDuration(reportDuration)
+	if err != nil {
+		panic(err)
 	}
+	durationNano := duration.Nanoseconds()
 
 	for k := 0; k < times; k++ {
 		totalElapsed := time.Duration(0)
+		// totalTrades := 0
+
+		periodElapsed := time.Duration(0)
+		// periodTrades := 0
 
 		timeService := &mockVegaTime.Service{}
 		orderStore := &mockStorage.OrderStore{}
@@ -91,14 +97,29 @@ func BenchmarkMatching(
 			if oe == 0 {
 				oc.Release()
 			}
-			totalElapsed += end.Sub(start)
+			timetaken := end.Sub(start)
+			totalElapsed += timetaken
+			periodElapsed += timetaken
+
+			if periodElapsed.Nanoseconds() > durationNano {
+				if !quiet {
+					fmt.Printf(
+						"(%5.2f%%) Elapsed = %s, average = %v\n",
+						float32(o)/float32(numberOfOrders)*100.0,
+						totalElapsed.Round(time.Second).String(),
+						totalElapsed/time.Duration(k*numberOfOrders+o),
+					)
+				}
+				periodElapsed = time.Duration(0)
+				// periodTrades = 0
+			}
 		}
 
 		if !quiet {
 			fmt.Printf(
-				"(n=%v) Elapsed = %v, average = %v\n",
+				"(n=%d) Elapsed = %s, average = %v\n",
 				numberOfOrders,
-				totalElapsed,
+				totalElapsed.Round(time.Second).String(),
 				totalElapsed/time.Duration(numberOfOrders))
 			// fmt.Printf(
 			// 	"(n=%v) %v %v\n",
