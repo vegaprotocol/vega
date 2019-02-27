@@ -1,3 +1,4 @@
+---
 type: google.api.Service
 config_version: 3
 
@@ -9,32 +10,32 @@ apis:
 
 http:
   rules:
-  - selector: grpc.trading.CreateOrder
-    post: '/createOrder'
-    body: "*"
-  - selector: grpc.trading.CancelOrder
-    post: '/cancelOrder'
-    body: "*"
-  - selector: grpc.trading.AmendOrder
-    post: '/amendOrder'
-    body: "*"
-  - selector: grpc.trading.OrdersByMarket
-    get: '/marketOrders'
-  - selector: grpc.trading.OrdersByParty
-    get: '/partyOrders'
-  - selector: grpc.trading.OrderByMarketAndId
-    get: '/marketOrder'
-  - selector: grpc.trading.Markets
-    get: '/markets'
-  - selector: grpc.trading.TradeCandles
-    get: '/candles'
-  - selector: grpc.trading.MarketDepth
-    get: '/marketDepth'
-  - selector: grpc.trading.TradesByMarket
-    get: '/marketTrades'
-  - selector: grpc.trading.PositionsByParty
-    get: '/partyPositions'
-  - selector: grpc.trading.Statistics
-    get: '/statistics'
-  - selector: grpc.trading.GetVegaTime
-    get: '/vegaTime'
+    - selector: grpc.trading.CreateOrder
+      post: '/createOrder'
+      body: "*"
+    - selector: grpc.trading.CancelOrder
+      post: '/cancelOrder'
+      body: "*"
+    - selector: grpc.trading.AmendOrder
+      post: '/amendOrder'
+      body: "*"
+    - selector: grpc.trading.OrdersByMarket
+      get: '/marketOrders'
+    - selector: grpc.trading.OrdersByParty
+      get: '/partyOrders'
+    - selector: grpc.trading.OrderByMarketAndId
+      get: '/marketOrder'
+    - selector: grpc.trading.Markets
+      get: '/markets'
+    - selector: grpc.trading.TradeCandles
+      get: '/candles'
+    - selector: grpc.trading.MarketDepth
+      get: '/marketDepth'
+    - selector: grpc.trading.TradesByMarket
+      get: '/marketTrades'
+    - selector: grpc.trading.PositionsByParty
+      get: '/partyPositions'
+    - selector: grpc.trading.Statistics
+      get: '/statistics'
+    - selector: grpc.trading.GetVegaTime
+      get: '/vegaTime'

@@ -1,3 +1,4 @@
+---
 schema: schema.graphql
 exec:
   filename: generated.go
@@ -40,7 +41,7 @@ models:
       market:
         resolver: true
       markets:
-       resolver: true
+        resolver: true
       parties:
         resolver: true
       party:
