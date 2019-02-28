@@ -2,9 +2,9 @@ package filtering
 
 import (
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
-
 
 func TestQueryFilter_ApplyEqualFilter(t *testing.T) {
 	queryFilter := &QueryFilter{}
@@ -64,7 +64,7 @@ func TestQueryFilter_ApplyNotEqualFilter(t *testing.T) {
 
 func TestQueryFilter_ApplyRangeFilter(t *testing.T) {
 	queryFilter := &QueryFilter{}
-	queryFilterRange := &QueryFilterRange{ Lower: uint64(10), Upper: uint64(40) }
+	queryFilterRange := &QueryFilterRange{Lower: uint64(10), Upper: uint64(40)}
 
 	x := struct {
 		A uint64
@@ -80,7 +80,7 @@ func TestQueryFilter_ApplyRangeFilter(t *testing.T) {
 
 	success := queryFilter.ApplyRangeFilter(x.A, queryFilterRange, "uint64")
 	failure := queryFilter.ApplyRangeFilter(y.B, queryFilterRange, "int")
-	
+
 	assert.Equal(t, true, success)
 	assert.Equal(t, false, failure)
 }
@@ -88,4 +88,3 @@ func TestQueryFilter_ApplyRangeFilter(t *testing.T) {
 func TestQueryFilter_ApplyFilters(t *testing.T) {
 	// todo(cdm)
 }
-

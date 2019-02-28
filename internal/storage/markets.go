@@ -87,5 +87,3 @@ func (ms *memMarketStore) Close() error {
 	// Not required with a mem-store implementation.
 	return nil
 }
-
-

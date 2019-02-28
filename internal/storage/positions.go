@@ -1,8 +1,9 @@
 package storage
 
 import (
-	types "vega/proto"
 	"fmt"
+
+	types "vega/proto"
 )
 
 type MarketBucket struct {

@@ -1,10 +1,11 @@
 package matching
 
 import (
+	"fmt"
+
 	types "vega/proto"
 
 	"github.com/pkg/errors"
-	"fmt"
 )
 
 type OrderBookSide struct {

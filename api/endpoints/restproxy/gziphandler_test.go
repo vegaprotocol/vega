@@ -138,7 +138,7 @@ func BenchmarkGzip(b *testing.B) {
 
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

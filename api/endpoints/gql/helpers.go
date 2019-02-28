@@ -1,11 +1,13 @@
 package gql
 
 import (
-	"strconv"
 	"fmt"
-	"github.com/pkg/errors"
-	types "vega/proto"
+	"strconv"
+
 	"vega/internal/filtering"
+	types "vega/proto"
+
+	"github.com/pkg/errors"
 )
 
 func safeStringUint64(input string) (uint64, error) {
@@ -18,42 +20,42 @@ func safeStringUint64(input string) (uint64, error) {
 
 func parseOrderType(orderType *OrderType) (types.Order_Type, error) {
 	switch *orderType {
-		case OrderTypeGtc:
-			return types.Order_GTC, nil
-		case OrderTypeGtt:
-			return types.Order_GTT, nil
-		case OrderTypeEne:
-			return types.Order_ENE, nil
-		case OrderTypeFok:
-			return types.Order_FOK, nil
-		default:
-			return types.Order_GTC, errors.New(fmt.Sprintf("unknown type: %s", orderType.String()))
+	case OrderTypeGtc:
+		return types.Order_GTC, nil
+	case OrderTypeGtt:
+		return types.Order_GTT, nil
+	case OrderTypeEne:
+		return types.Order_ENE, nil
+	case OrderTypeFok:
+		return types.Order_FOK, nil
+	default:
+		return types.Order_GTC, errors.New(fmt.Sprintf("unknown type: %s", orderType.String()))
 	}
 }
 
 func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {
 	switch *orderStatus {
-		case OrderStatusActive:
-			return types.Order_Active, nil
-		case OrderStatusExpired:
-			return types.Order_Expired, nil
-		case OrderStatusCancelled:
-			return types.Order_Cancelled, nil
-		case OrderStatusFilled:
-			return types.Order_Filled, nil
-		default:
-			return types.Order_Active, errors.New(fmt.Sprintf("unknown status: %s", orderStatus.String()))
+	case OrderStatusActive:
+		return types.Order_Active, nil
+	case OrderStatusExpired:
+		return types.Order_Expired, nil
+	case OrderStatusCancelled:
+		return types.Order_Cancelled, nil
+	case OrderStatusFilled:
+		return types.Order_Filled, nil
+	default:
+		return types.Order_Active, errors.New(fmt.Sprintf("unknown status: %s", orderStatus.String()))
 	}
 }
 
 func parseSide(side *Side) (types.Side, error) {
 	switch *side {
-		case SideBuy:
-			return types.Side_Buy, nil
-		case SideSell:
-			return types.Side_Sell, nil
-		default:
-			return types.Side_Buy, errors.New(fmt.Sprintf("unknown side: %s", side.String()))
+	case SideBuy:
+		return types.Side_Buy, nil
+	case SideSell:
+		return types.Side_Sell, nil
+	default:
+		return types.Side_Buy, errors.New(fmt.Sprintf("unknown side: %s", side.String()))
 	}
 }
 
@@ -111,7 +113,6 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 
 	return queryFilters, nil
 }
-
 
 func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int) (queryFilters *filtering.TradeQueryFilters, err error) {
 	if queryFilters == nil {

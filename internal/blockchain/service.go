@@ -85,11 +85,11 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 				logging.Order(*order),
 				logging.OrderWithTag(*confirmationMessage.Order, "aggressive-order"),
 				logging.String("passive-trades", fmt.Sprintf("%+v", confirmationMessage.Trades)),
-			    logging.String("passive-orders", fmt.Sprintf("%+v", confirmationMessage.PassiveOrdersAffected)))
+				logging.String("passive-orders", fmt.Sprintf("%+v", confirmationMessage.PassiveOrdersAffected)))
 
 			s.totalTrades += uint64(len(confirmationMessage.Trades))
 		}
-		
+
 		confirmationMessage.Release()
 	}
 

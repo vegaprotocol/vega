@@ -2,10 +2,12 @@ package blockchain
 
 import (
 	"encoding/binary"
-	"github.com/tendermint/tendermint/abci/types"
+
 	"vega/internal/execution"
-	"vega/internal/vegatime"
 	"vega/internal/logging"
+	"vega/internal/vegatime"
+
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 const (
@@ -36,18 +38,18 @@ func NewAbciApplication(config *Config, stats *Stats, execution execution.Engine
 	service := NewAbciService(config, stats, execution)
 	processor := NewAbciProcessor(config, service)
 	return &AbciApplication{
-		Config: config,
-		Stats: stats,
+		Config:    config,
+		Stats:     stats,
 		processor: processor,
-		service: service,
-		time: time,
+		service:   service,
+		time:      time,
 	}
 }
 
 func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
 	// Notify the abci/blockchain service imp that the transactions block/batch has begun
 	if err := app.service.Begin(); err != nil {
-		 app.log.Panic("Failure on blockchain service begin", logging.Error(err))
+		app.log.Panic("Failure on blockchain service begin", logging.Error(err))
 	}
 
 	// We can log more gossiped time info (switchable in config)
@@ -55,14 +57,14 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 		app.log.Debug("Block time for height",
 			logging.Int64("height", beginBlock.Header.Height),
 			logging.Int64("num-txs", beginBlock.Header.NumTxs),
-			logging.Int64("epoch-nano",  beginBlock.Header.Time.UnixNano()),
+			logging.Int64("epoch-nano", beginBlock.Header.Time.UnixNano()),
 			logging.String("time", beginBlock.Header.Time.String()))
 	}
 
 	// Set time provided by ABCI block header (consensus will have been reached on block time)
 	epochNow := beginBlock.Header.Time.UnixNano()
 	app.time.SetTimeNow(vegatime.Stamp(epochNow))
-	
+
 	return types.ResponseBeginBlock{}
 }
 
@@ -140,7 +142,6 @@ func (app *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
 	app.size += 1
 	return types.ResponseDeliverTx{Code: AbciTxnOK}
 }
-
 
 // Consensus Connection
 // Step 2: Commit the block and persist to disk.
@@ -234,5 +235,3 @@ func (app *AbciApplication) setTxStats(txLength int) {
 		app.txSizes = nil
 	}
 }
-
-

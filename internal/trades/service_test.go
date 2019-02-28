@@ -31,7 +31,7 @@ func TestNewTradeService(t *testing.T) {
 
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
-	
+
 	tradeStore, err := storage.NewTradeStore(config)
 	defer tradeStore.Close()
 	assert.Nil(t, err)
@@ -120,7 +120,6 @@ func TestTradeService_GetByParty(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Nil(t, tradeSet)
 }
-
 
 //func TestTradeService_GetAllTradesForOrderOnMarket(t *testing.T) {
 //	var market = ServiceTestMarket

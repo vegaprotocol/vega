@@ -1,15 +1,17 @@
 package storage
 
 import (
-	"testing"
 	"strings"
-	types "vega/proto"
+	"testing"
+
 	"vega/internal/filtering"
+	types "vega/proto"
+
 	"github.com/stretchr/testify/assert"
 )
 
 const testMarket = "market"
-const testParty  = "party"
+const testParty = "party"
 const testPartyA = "partyA"
 const testPartyB = "partyB"
 
@@ -68,19 +70,19 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 			inMarkets: []string{"testMarket1", "marketZ"},
 			inOrders: []*types.Order{
 				{
-						Id:     "d41d8cd98f00b204e9800998ecf8427e",
-						Market: "testMarket1",
-						Party:  testParty,
+					Id:     "d41d8cd98f00b204e9800998ecf8427e",
+					Market: "testMarket1",
+					Party:  testParty,
 				},
 				{
-						Id:     "ad2dc275947362c45893bbeb30fc3098",
-						Market: "marketZ",
-						Party:  testParty,
+					Id:     "ad2dc275947362c45893bbeb30fc3098",
+					Market: "marketZ",
+					Party:  testParty,
 				},
 				{
-						Id:     "4e8e41367997cfe705d62ea80592cbcc",
-						Market: "testMarket1",
-						Party:  testParty,
+					Id:     "4e8e41367997cfe705d62ea80592cbcc",
+					Market: "testMarket1",
+					Party:  testParty,
 				},
 			},
 			inLimit:        5000,
@@ -91,19 +93,19 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 			inMarkets: []string{testMarket, "marketABC"},
 			inOrders: []*types.Order{
 				{
-						Id:     "d41d8cd98f00b204e9800998ecf8427e",
-						Market: testMarket,
-						Party:  testParty,
+					Id:     "d41d8cd98f00b204e9800998ecf8427e",
+					Market: testMarket,
+					Party:  testParty,
 				},
 				{
-						Id:     "ad2dc275947362c45893bbeb30fc3098",
-						Market: "marketABC",
-						Party:  testParty,
+					Id:     "ad2dc275947362c45893bbeb30fc3098",
+					Market: "marketABC",
+					Party:  testParty,
 				},
 				{
-						Id:     "4e8e41367997cfe705d62ea80592cbcc",
-						Market: testMarket,
-						Party:  testParty,
+					Id:     "4e8e41367997cfe705d62ea80592cbcc",
+					Market: testMarket,
+					Party:  testParty,
 				},
 			},
 			inLimit:        5000,
@@ -114,19 +116,19 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 			inMarkets: []string{"marketXYZ"},
 			inOrders: []*types.Order{
 				{
-						Id:     "d41d8cd98f00b204e9800998ecf8427e",
-						Market: "marketXYZ",
-						Party:  testParty,
+					Id:     "d41d8cd98f00b204e9800998ecf8427e",
+					Market: "marketXYZ",
+					Party:  testParty,
 				},
 				{
-						Id:     "ad2dc275947362c45893bbeb30fc3098",
-						Market: "marketXYZ",
-						Party:  testParty,
+					Id:     "ad2dc275947362c45893bbeb30fc3098",
+					Market: "marketXYZ",
+					Party:  testParty,
 				},
 				{
-						Id:     "4e8e41367997cfe705d62ea80592cbcc",
-						Market: "marketXYZ",
-						Party:  testParty,
+					Id:     "4e8e41367997cfe705d62ea80592cbcc",
+					Market: "marketXYZ",
+					Party:  testParty,
 				},
 			},
 			inLimit:        2,
@@ -164,17 +166,17 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	defer orderStore.Close()
 
 	passiveOrder := &types.Order{
-			Id:        "d41d8cd98f00b204e9800998ecf9999e",
-			Market:    testMarket,
-			Party:     testPartyA,
-			Remaining: 0,
+		Id:        "d41d8cd98f00b204e9800998ecf9999e",
+		Market:    testMarket,
+		Party:     testPartyA,
+		Remaining: 0,
 	}
 
 	aggressiveOrder := &types.Order{
-			Id:        "d41d8cd98f00b204e9800998ecf8427e",
-			Market:    testMarket,
-			Party:     testPartyB,
-			Remaining: 100,
+		Id:        "d41d8cd98f00b204e9800998ecf8427e",
+		Market:    testMarket,
+		Party:     testPartyB,
+		Remaining: 100,
 	}
 
 	err = orderStore.Post(*passiveOrder)
@@ -203,10 +205,10 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 
 	// update order, parties should also be updated as its a pointer
 	updatedAggressiveOrder := &types.Order{
-			Id:        "d41d8cd98f00b204e9800998ecf8427e",
-			Market:    testMarket,
-			Party:     testPartyB,
-			Remaining: 0,
+		Id:        "d41d8cd98f00b204e9800998ecf8427e",
+		Market:    testMarket,
+		Party:     testPartyB,
+		Remaining: 0,
 	}
 
 	err = orderStore.Put(*updatedAggressiveOrder)
@@ -225,55 +227,55 @@ func TestStorage_OrderFiltration(t *testing.T) {
 	defer orderStore.Close()
 
 	order1 := &types.Order{
-			Id:         "d41d8cd98f00b204e9800998ecf9999a",
-			Market:     testMarket,
-			Party:      testPartyA,
-			Side:       types.Side_Sell,
-			Price:      100,
-			Size:       1000,
-			Remaining:  0,
-			Type:       types.Order_GTC,
-			Timestamp:  0,
-			Status:     types.Order_Active,
+		Id:        "d41d8cd98f00b204e9800998ecf9999a",
+		Market:    testMarket,
+		Party:     testPartyA,
+		Side:      types.Side_Sell,
+		Price:     100,
+		Size:      1000,
+		Remaining: 0,
+		Type:      types.Order_GTC,
+		Timestamp: 0,
+		Status:    types.Order_Active,
 	}
 
 	order2 := &types.Order{
-			Id:         "d41d8cd98f00b204e9800998ecf8427b",
-			Market:     testMarket,
-			Party:      testPartyB,
-			Side:       types.Side_Buy,
-			Price:      110,
-			Size:       900,
-			Remaining:  0,
-			Type:       types.Order_GTC,
-			Timestamp:  0,
-			Status:     types.Order_Active,
+		Id:        "d41d8cd98f00b204e9800998ecf8427b",
+		Market:    testMarket,
+		Party:     testPartyB,
+		Side:      types.Side_Buy,
+		Price:     110,
+		Size:      900,
+		Remaining: 0,
+		Type:      types.Order_GTC,
+		Timestamp: 0,
+		Status:    types.Order_Active,
 	}
 
 	order3 := &types.Order{
-			Id:         "d41d8cd98f00b204e9800998ecf8427c",
-			Market:     testMarket,
-			Party:      testPartyA,
-			Side:       types.Side_Buy,
-			Price:      1000,
-			Size:       1000,
-			Remaining:  1000,
-			Type:       types.Order_GTC,
-			Timestamp:  1,
-			Status:     types.Order_Cancelled,
+		Id:        "d41d8cd98f00b204e9800998ecf8427c",
+		Market:    testMarket,
+		Party:     testPartyA,
+		Side:      types.Side_Buy,
+		Price:     1000,
+		Size:      1000,
+		Remaining: 1000,
+		Type:      types.Order_GTC,
+		Timestamp: 1,
+		Status:    types.Order_Cancelled,
 	}
 
 	order4 := &types.Order{
-			Id:         "d41d8cd98f00b204e9800998ecf8427d",
-			Market:     testMarket,
-			Party:      testPartyA,
-			Side:       types.Side_Sell,
-			Price:      100,
-			Size:       100,
-			Remaining:  100,
-			Type:       types.Order_GTC,
-			Timestamp:  1,
-			Status:     types.Order_Active,
+		Id:        "d41d8cd98f00b204e9800998ecf8427d",
+		Market:    testMarket,
+		Party:     testPartyA,
+		Side:      types.Side_Sell,
+		Price:     100,
+		Size:      100,
+		Remaining: 100,
+		Type:      types.Order_GTC,
+		Timestamp: 1,
+		Status:    types.Order_Active,
 	}
 
 	// check if db empty
@@ -437,7 +439,7 @@ func TestStorage_OrderFiltration(t *testing.T) {
 	assert.Equal(t, 4, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
-		IdFilter: &filtering.QueryFilter{ Eq: "d41d8cd98f00b204e9800998ecf8427c"},
+		IdFilter: &filtering.QueryFilter{Eq: "d41d8cd98f00b204e9800998ecf8427c"},
 	}
 	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
 	assert.Nil(t, err)
@@ -452,17 +454,17 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	defer newOrderStore.Close()
 
 	order := &types.Order{
-			Id:         "d41d8cd98f00b204e9800998ecf8427b",
-			Market:     testMarket,
-			Party:      testPartyA,
-			Side:       types.Side_Buy,
-			Price:      100,
-			Size:       1000,
-			Remaining:  0,
-			Type:       types.Order_GTC,
-			Timestamp:  0,
-			Status:     types.Order_Active,
-			Reference:  "123123-34334343-1231231",
+		Id:        "d41d8cd98f00b204e9800998ecf8427b",
+		Market:    testMarket,
+		Party:     testPartyA,
+		Side:      types.Side_Buy,
+		Price:     100,
+		Size:      1000,
+		Remaining: 0,
+		Type:      types.Order_GTC,
+		Timestamp: 0,
+		Status:    types.Order_Active,
+		Reference: "123123-34334343-1231231",
 	}
 
 	err = newOrderStore.Post(*order)
@@ -471,7 +473,7 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	newOrderStore.Commit()
 
 	orderFilters := &filtering.OrderQueryFilters{
-		ReferenceFilter: &filtering.QueryFilter{ Eq: "123123-34334343-1231231"},
+		ReferenceFilter: &filtering.QueryFilter{Eq: "123123-34334343-1231231"},
 	}
 
 	fetchedOrder, err := newOrderStore.GetByParty(testPartyA, orderFilters)
@@ -488,31 +490,31 @@ func TestStorage_InsertBatchOrders(t *testing.T) {
 	defer orderStore.Close()
 
 	order1 := &types.Order{
-		Id:         "d41d8cd98f00b204e9800998ecf8427b",
-		Market:     testMarket,
-		Party:      testPartyA,
-		Side:       types.Side_Buy,
-		Price:      100,
-		Size:       1000,
-		Remaining:  0,
-		Type:       types.Order_GTC,
-		Timestamp:  0,
-		Status:     types.Order_Active,
-		Reference:  "123123-34334343-1231231",
+		Id:        "d41d8cd98f00b204e9800998ecf8427b",
+		Market:    testMarket,
+		Party:     testPartyA,
+		Side:      types.Side_Buy,
+		Price:     100,
+		Size:      1000,
+		Remaining: 0,
+		Type:      types.Order_GTC,
+		Timestamp: 0,
+		Status:    types.Order_Active,
+		Reference: "123123-34334343-1231231",
 	}
 
 	order2 := &types.Order{
-		Id:         "d41d8cd98f00b204e9800998ecf8427c",
-		Market:     testMarket,
-		Party:      testPartyA,
-		Side:       types.Side_Buy,
-		Price:      100,
-		Size:       1000,
-		Remaining:  0,
-		Type:       types.Order_GTC,
-		Timestamp:  0,
-		Status:     types.Order_Active,
-		Reference:  "123123-34334343-1231232",
+		Id:        "d41d8cd98f00b204e9800998ecf8427c",
+		Market:    testMarket,
+		Party:     testPartyA,
+		Side:      types.Side_Buy,
+		Price:     100,
+		Size:      1000,
+		Remaining: 0,
+		Type:      types.Order_GTC,
+		Timestamp: 0,
+		Status:    types.Order_Active,
+		Reference: "123123-34334343-1231232",
 	}
 
 	err = orderStore.Post(*order1)
@@ -522,7 +524,7 @@ func TestStorage_InsertBatchOrders(t *testing.T) {
 	assert.Nil(t, err)
 
 	orderFilters := &filtering.OrderQueryFilters{
-		ReferenceFilter: &filtering.QueryFilter{ Eq: "123123-34334343-1231231"},
+		ReferenceFilter: &filtering.QueryFilter{Eq: "123123-34334343-1231231"},
 	}
 
 	fetchedOrder, err := orderStore.GetByParty(testPartyA, orderFilters)

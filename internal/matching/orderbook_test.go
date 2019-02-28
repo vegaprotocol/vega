@@ -26,55 +26,54 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	market := "expiringOrderBookTest"
 	party := "clay-davis"
 
-
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
 	book := NewBook(NewConfig(logger), market, true)
 	currentTimestamp := getCurrentUtcTimestampNano()
-	someTimeLater := currentTimestamp + (1000*1000)
+	someTimeLater := currentTimestamp + (1000 * 1000)
 
 	order1 := &types.Order{
-		Market:    market,
-		Party:     party,
-		Side:      types.Side_Sell,
-		Price:     1,
-		Size:      1,
-		Remaining: 1,
-		Type:      types.Order_GTT,
-		Timestamp: currentTimestamp,
+		Market:              market,
+		Party:               party,
+		Side:                types.Side_Sell,
+		Price:               1,
+		Size:                1,
+		Remaining:           1,
+		Type:                types.Order_GTT,
+		Timestamp:           currentTimestamp,
 		ExpirationTimestamp: someTimeLater,
-		Id:        "1",
+		Id:                  "1",
 	}
 	_, err := book.AddOrder(order1)
 	assert.Equal(t, err, types.OrderError_NONE)
 
 	order2 := &types.Order{
-		Market:    market,
-		Party:     party,
-		Side:      types.Side_Sell,
-		Price:     3298,
-		Size:      99,
-		Remaining: 99,
-		Type:      types.Order_GTT,
-		Timestamp: currentTimestamp,
-		ExpirationTimestamp: someTimeLater+1,
-		Id:        "2",
+		Market:              market,
+		Party:               party,
+		Side:                types.Side_Sell,
+		Price:               3298,
+		Size:                99,
+		Remaining:           99,
+		Type:                types.Order_GTT,
+		Timestamp:           currentTimestamp,
+		ExpirationTimestamp: someTimeLater + 1,
+		Id:                  "2",
 	}
 	_, err = book.AddOrder(order2)
 	assert.Equal(t, err, types.OrderError_NONE)
 
 	order3 := &types.Order{
-		Market:    market,
-		Party:     party,
-		Side:      types.Side_Sell,
-		Price:     771,
-		Size:      19,
-		Remaining: 19,
-		Type:      types.Order_GTT,
-		Timestamp: currentTimestamp,
+		Market:              market,
+		Party:               party,
+		Side:                types.Side_Sell,
+		Price:               771,
+		Size:                19,
+		Remaining:           19,
+		Type:                types.Order_GTT,
+		Timestamp:           currentTimestamp,
 		ExpirationTimestamp: someTimeLater,
-		Id:        "3",
+		Id:                  "3",
 	}
 	_, err = book.AddOrder(order3)
 	assert.Equal(t, err, types.OrderError_NONE)
@@ -94,16 +93,16 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, types.OrderError_NONE)
 
 	order5 := &types.Order{
-		Market:    market,
-		Party:     party,
-		Side:      types.Side_Sell,
-		Price:     199,
-		Size:      99999,
-		Remaining: 99999,
-		Type:      types.Order_GTT,
-		Timestamp: currentTimestamp,
+		Market:              market,
+		Party:               party,
+		Side:                types.Side_Sell,
+		Price:               199,
+		Size:                99999,
+		Remaining:           99999,
+		Type:                types.Order_GTT,
+		Timestamp:           currentTimestamp,
 		ExpirationTimestamp: someTimeLater,
-		Id:        "5",
+		Id:                  "5",
 	}
 	_, err = book.AddOrder(order5)
 	assert.Equal(t, err, types.OrderError_NONE)
@@ -123,35 +122,35 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, err, types.OrderError_NONE)
 
 	order7 := &types.Order{
-		Market:    market,
-		Party:     party,
-		Side:      types.Side_Sell,
-		Price:     41,
-		Size:      9999,
-		Remaining: 9999,
-		Type:      types.Order_GTT,
-		Timestamp: currentTimestamp,
-		ExpirationTimestamp: someTimeLater+9999,
-		Id:        "7",
+		Market:              market,
+		Party:               party,
+		Side:                types.Side_Sell,
+		Price:               41,
+		Size:                9999,
+		Remaining:           9999,
+		Type:                types.Order_GTT,
+		Timestamp:           currentTimestamp,
+		ExpirationTimestamp: someTimeLater + 9999,
+		Id:                  "7",
 	}
 	_, err = book.AddOrder(order7)
 	assert.Equal(t, err, types.OrderError_NONE)
 
 	order8 := &types.Order{
-		Market:    market,
-		Party:     party,
-		Side:      types.Side_Sell,
-		Price:     1,
-		Size:      1,
-		Remaining: 1,
-		Type:      types.Order_GTT,
-		Timestamp: currentTimestamp,
-		ExpirationTimestamp: someTimeLater-9999,
-		Id:        "8",
+		Market:              market,
+		Party:               party,
+		Side:                types.Side_Sell,
+		Price:               1,
+		Size:                1,
+		Remaining:           1,
+		Type:                types.Order_GTT,
+		Timestamp:           currentTimestamp,
+		ExpirationTimestamp: someTimeLater - 9999,
+		Id:                  "8",
 	}
 	_, err = book.AddOrder(order8)
 	assert.Equal(t, err, types.OrderError_NONE)
-	
+
 	order9 := &types.Order{
 		Market:    market,
 		Party:     party,
@@ -165,18 +164,18 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	}
 	_, err = book.AddOrder(order9)
 	assert.Equal(t, err, types.OrderError_NONE)
-	
+
 	order10 := &types.Order{
-		Market:    market,
-		Party:     party,
-		Side:      types.Side_Sell,
-		Price:     1,
-		Size:      1,
-		Remaining: 1,
-		Type:      types.Order_GTT,
-		Timestamp: currentTimestamp,
-		ExpirationTimestamp: someTimeLater-1,
-		Id:        "10",
+		Market:              market,
+		Party:               party,
+		Side:                types.Side_Sell,
+		Price:               1,
+		Size:                1,
+		Remaining:           1,
+		Type:                types.Order_GTT,
+		Timestamp:           currentTimestamp,
+		ExpirationTimestamp: someTimeLater - 1,
+		Id:                  "10",
 	}
 	_, err = book.AddOrder(order10)
 	assert.Equal(t, err, types.OrderError_NONE)
@@ -258,7 +257,7 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 func TestOrderBook_AddOrder(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
-	
+
 	book := NewBook(NewConfig(logger), "testOrderBook", true)
 
 	const numberOfTimestamps = 3
@@ -1225,7 +1224,7 @@ func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
 func TestOrderBook_AmendOrder(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
-	
+
 	book := NewBook(NewConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
@@ -1241,7 +1240,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	if err != types.OrderError_NONE {
 		t.Log(err)
 	}
-	
+
 	assert.Equal(t, types.OrderError_NONE, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, "123456", confirmation.Order.Id)
@@ -1261,7 +1260,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	if err != types.OrderError_NONE {
 		t.Log(err)
 	}
-	
+
 	assert.Equal(t, types.OrderError_NONE, err)
 }
 
@@ -1310,7 +1309,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
-	
+
 	book := NewBook(NewConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
@@ -1352,7 +1351,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	defer logger.Sync()
 
 	logger.Debug("BEGIN AMENDING ORDER")
-	
+
 	book := NewBook(NewConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",

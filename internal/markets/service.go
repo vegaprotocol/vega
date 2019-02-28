@@ -1,10 +1,11 @@
 package markets
 
 import (
+	"context"
+
+	"vega/internal/logging"
 	"vega/internal/storage"
 	types "vega/proto"
-	"context"
-	"vega/internal/logging"
 )
 
 //Service provides the interface for VEGA markets business logic.
@@ -26,7 +27,7 @@ type Service interface {
 type marketService struct {
 	*Config
 	marketStore storage.MarketStore
-	orderStore storage.OrderStore
+	orderStore  storage.OrderStore
 }
 
 // NewMarketService creates an market service with the necessary dependencies
@@ -116,6 +117,5 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 }
 
 func (s *marketService) ObserveMarkets(ctx context.Context) (markets <-chan []types.Market, ref uint64) {
-	 return nil, 0
+	return nil, 0
 }
-

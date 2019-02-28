@@ -2,8 +2,9 @@ package matching
 
 import (
 	"fmt"
-	types "vega/proto"
+
 	"vega/internal/logging"
+	types "vega/proto"
 )
 
 type OrderBook struct {
@@ -93,7 +94,7 @@ func (b *OrderBook) AmendOrder(order *types.Order) types.OrderError {
 				logging.Order(*order),
 				logging.String("error", err.String()),
 				logging.String("order-book", b.name))
-			
+
 			return err
 		}
 	} else {

@@ -2,10 +2,12 @@ package blockchain
 
 import (
 	"testing"
-	"vega/internal/vegatime"
+
 	execution "vega/internal/execution/mocks"
-	"github.com/stretchr/testify/assert"
 	"vega/internal/logging"
+	"vega/internal/vegatime"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewAbciApplication(t *testing.T) {
