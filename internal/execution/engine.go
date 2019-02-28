@@ -303,14 +303,22 @@ func (e *engine) StartCandleBuffer() error {
 	return nil
 }
 
+// Generate creates any data (including storing state changes) in the underlying stores.
 func (e *engine) Generate() error {
 
-	// We need a buffer for all current markets on VEGA
 	for _, marketId := range e.markets {
-
+		// We need a buffer for all current markets on VEGA
 		err := e.candleStore.GenerateCandlesFromBuffer(marketId)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Failed to generate candles from buffer for market %s", marketId))
+		}
+		err = e.orderStore.Commit()
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Failed to commit orders for market %s", marketId))
+		}
+		err = e.tradeStore.Commit()
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Failed to commit trades for market %s", marketId))
 		}
 	}
 
