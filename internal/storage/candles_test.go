@@ -31,6 +31,8 @@ func TestStorage_GenerateCandles(t *testing.T) {
 		{Id: "4", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0 + uint64(1*time.Minute+20*time.Second)},
 	}
 
+	err = candleStore.StartNewBuffer(testMarket, t0)
+	assert.Nil(t, err)
 	for idx := range trades {
 		err := candleStore.AddTradeToBuffer(*trades[idx])
 		assert.Nil(t, err)
@@ -59,9 +61,6 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[1].Close)
 	assert.Equal(t, uint64(200), candles[1].Volume)
 
-
-
-
 	candles, err = candleStore.GetCandles(testMarket, t0+uint64(1*time.Minute), types.Interval_I1M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
@@ -86,8 +85,6 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
-
-
 	//------------------- generate empty candles-------------------------//
 	currentVegaTime := uint64(t0) + uint64(2*time.Minute)
 	err = candleStore.StartNewBuffer(testMarket, currentVegaTime)
@@ -95,7 +92,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	err = candleStore.GenerateCandlesFromBuffer(testMarket)
 	assert.Nil(t, err)
 
-	candles, err = candleStore.GetCandles(testMarket, t0 + uint64(2*time.Minute), types.Interval_I1M)
+	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
 
