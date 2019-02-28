@@ -57,6 +57,8 @@ func BenchmarkMatching(
 
 		tradeStore.On("Post", mock.AnythingOfType("*proto.Trade")).Return(nil)
 
+		marketStore.On("Post", mock.AnythingOfType("*proto.Market")).Return(nil)
+
 		logger := logging.NewLoggerFromEnv("dev")
 		logger.SetLevel(logging.InfoLevel, false)
 		defer logger.Sync()
