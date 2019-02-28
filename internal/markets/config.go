@@ -29,4 +29,3 @@ func (c *Config) GetLogger() *logging.Logger {
 func (c *Config) UpdateLogger() {
 	c.log.SetLevel(c.Level, true)
 }
-

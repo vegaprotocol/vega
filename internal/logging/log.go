@@ -7,8 +7,6 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/tav/golly/process"
 )
 
 // A Level is a logging priority. Higher levels are more important.
@@ -116,15 +114,13 @@ func (log *Logger) With(fields ...zap.Field) *Logger {
 	}
 }
 
-// AddExitHandler flushes the logs before exiting the process. Useful when an
-// app shuts down so we store all logging possible.
-func (log *Logger) AddExitHandler() {
-	// Flush the logs before exiting the process.
-	process.SetExitHandler(func() {
-		if log.Logger != nil {
-			log.Logger.Sync()
-		}
-	})
+// AtExit flushes the logs before exiting the process. Useful when an
+// app shuts down so we store all logging possible. This is meant to be used
+// with defer when initializing your logger
+func (log *Logger) AtExit() {
+	if log.Logger != nil {
+		log.Logger.Sync()
+	}
 }
 
 func cloneConfig(cfg *zap.Config) *zap.Config {
@@ -228,4 +224,24 @@ func IPAddressFromContext(ctx context.Context) string {
 		return ctx.Value("remote-ip-addr").(string)
 	}
 	return ""
+}
+
+// Errorf implement badger interface
+func (log *Logger) Errorf(s string, args ...interface{}) {
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Errorf(s, args...)
+}
+
+// Warningf implement badger interface
+func (log *Logger) Warningf(s string, args ...interface{}) {
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Warnf(s, args...)
+}
+
+// Infof implement badger interface
+func (log *Logger) Infof(s string, args ...interface{}) {
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Infof(s, args...)
+}
+
+// Debugf implement badger interface
+func (log *Logger) Debugf(s string, args ...interface{}) {
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Debugf(s, args...)
 }

@@ -9,7 +9,7 @@ const namedLogger = "matching"
 type Config struct {
 	log   *logging.Logger
 	Level logging.Level
-	
+
 	LogPriceLevelsDebug   bool
 	LogRemovedOrdersDebug bool
 }
@@ -34,4 +34,3 @@ func (c *Config) GetLogger() *logging.Logger {
 func (c *Config) UpdateLogger() {
 	c.log.SetLevel(c.Level, true)
 }
-

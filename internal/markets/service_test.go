@@ -2,12 +2,14 @@ package markets
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"vega/internal/logging"
 	"vega/internal/storage/mocks"
 	types "vega/proto"
+
 	"github.com/pkg/errors"
-	"vega/internal/logging"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMarketService_NewService(t *testing.T) {
@@ -109,7 +111,6 @@ func TestMarketService_GetDepth(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, depth)
 }
-
 
 func TestMarketService_GetDepthNonExistentMarket(t *testing.T) {
 	market := &types.Market{Name: "BTC/DEC18"}

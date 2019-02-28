@@ -24,8 +24,8 @@ type marketDepth struct {
 
 // MarketDepthLevel keeps information on the price level and a map of the remaining for each order at that level.
 type MarketDepthLevel struct {
-	types.PriceLevel              // price level details
-	orders map[string]uint64    // map of order.Id => remaining value
+	types.PriceLevel                   // price level details
+	orders           map[string]uint64 // map of order.Id => remaining value
 }
 
 // NewMarketDepth creates a new market depth implementation for the given market name. With multiple markets,
@@ -100,7 +100,7 @@ func (md *marketDepth) updateBuySide(order types.Order) {
 
 	depthLevel := MarketDepthLevel{
 		PriceLevel: types.PriceLevel{Price: order.Price, Volume: order.Remaining, NumberOfOrders: 1},
-		orders:     map[string]uint64{ order.Id: order.Remaining },
+		orders:     map[string]uint64{order.Id: order.Remaining},
 	}
 
 	if at == -1 {
@@ -144,8 +144,8 @@ func (md *marketDepth) updateSellSide(order types.Order) {
 				md.Sell[at].NumberOfOrders--
 				delete(md.Sell[at].orders, order.Id)
 			} else {
-			 	delta = md.Sell[at].orders[order.Id] - order.Remaining
-			 	md.Sell[at].orders[order.Id] = order.Remaining
+				delta = md.Sell[at].orders[order.Id] - order.Remaining
+				md.Sell[at].orders[order.Id] = order.Remaining
 				md.Sell[at].Volume -= delta
 			}
 		} else if !orderInvalid {
@@ -168,7 +168,7 @@ func (md *marketDepth) updateSellSide(order types.Order) {
 
 	depthLevel := MarketDepthLevel{
 		PriceLevel: types.PriceLevel{Price: order.Price, Volume: order.Remaining, NumberOfOrders: 1},
-		orders:     map[string]uint64{ order.Id: order.Remaining },
+		orders:     map[string]uint64{order.Id: order.Remaining},
 	}
 
 	if at == -1 {

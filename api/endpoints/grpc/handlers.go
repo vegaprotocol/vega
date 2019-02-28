@@ -228,7 +228,6 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 	return response, nil
 }
 
-
 func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsRequest) (*types.Statistics, error) {
 	// Call out to tendermint and related services to get related information for statistics
 	// We load read-only internal statistics through each package level statistics structs
@@ -265,13 +264,13 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		TradesPerSecond:       uint64(h.Stats.Blockchain.TotalTradesLastBatch()),
 		OrdersPerSecond:       uint64(h.Stats.Blockchain.TotalOrdersLastBatch()),
 		Status:                types.AppStatus_CHAIN_NOT_FOUND, // todo
-		LastTrade:             nil,   // todo
-		LastOrder:             nil,   // todo
-		TotalMarkets:          0,     // todo
-		TotalParties:          0,     // todo
-		AppVersionHash:        "N/A", // todo
-		AppVersion:            "N/A", // todo
-		Parties:               nil,   // todo
+		LastTrade:             nil,                             // todo
+		LastOrder:             nil,                             // todo
+		TotalMarkets:          0,                               // todo
+		TotalParties:          0,                               // todo
+		AppVersionHash:        "N/A",                           // todo
+		AppVersion:            "N/A",                           // todo
+		Parties:               nil,                             // todo
 	}, nil
 }
 
@@ -286,7 +285,7 @@ func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest
 }
 
 func (h *Handlers) getTendermintStats(ctx context.Context) (backlogLength int,
-	numPeers int, genesis *time.Time, err error)  {
+	numPeers int, genesis *time.Time, err error) {
 
 	refused := "connection refused"
 
@@ -309,7 +308,7 @@ func (h *Handlers) getTendermintStats(ctx context.Context) (backlogLength int,
 		}
 		return backlogLength, 0, nil, err
 	}
-	
+
 	// Genesis retrieves the current genesis date/time for the blockchain
 	genesisTime, err := blockchainClient.GetGenesisTime(ctx)
 	if err != nil {

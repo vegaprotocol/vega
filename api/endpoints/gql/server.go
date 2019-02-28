@@ -29,6 +29,7 @@ type graphServer struct {
 	tradeService  trades.Service
 	candleService candles.Service
 	marketService markets.Service
+	srv           *http.Server
 }
 
 func NewGraphQLServer(config *api.Config, orderService orders.Service,
@@ -110,8 +111,11 @@ func (g *graphServer) Start() {
 	var config = Config{
 		Resolvers: resolverRoot,
 	}
-	http.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
-	http.Handle("/query", g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
+
+	handlr := http.NewServeMux()
+
+	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
+	handlr.Handle("/query", g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
@@ -122,8 +126,20 @@ func (g *graphServer) Start() {
 		})),
 	)))
 
-	err := http.ListenAndServe(addr, nil)
-	if err != nil {
+	g.srv = &http.Server{
+		Addr:    addr,
+		Handler: handlr,
+	}
+
+	err := g.srv.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
 		logger.Panic("Failed to listen and serve on graphQL server", logging.Error(err))
 	}
+}
+
+func (g *graphServer) Stop() error {
+	if g.srv != nil {
+		return g.srv.Shutdown(context.Background())
+	}
+	return errors.New("Graphql server not started")
 }

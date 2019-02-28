@@ -3,10 +3,10 @@ package candles
 import (
 	"context"
 
+	"vega/internal/logging"
+	"vega/internal/storage"
 	types "vega/proto"
 
-	"vega/internal/storage"
-	"vega/internal/logging"
 	"github.com/pkg/errors"
 )
 
@@ -29,7 +29,7 @@ func NewCandleService(config *Config, candleStore storage.CandleStore) (Service,
 		return nil, errors.New("candleStore instance is nil when creating candle service instance.")
 	}
 	return &candleService{
-		Config: config,
+		Config:      config,
 		candleStore: candleStore,
 	}, nil
 }
@@ -58,14 +58,14 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 		ip := logging.IPAddressFromContext(ctx)
 		for v := range iT.Transport {
 			select {
-				case candleCh <- v:
-					c.log.Debug("Candles for subscriber sent successfully",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
-				default:
-					c.log.Debug("Candles for subscriber not sent",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
+			case candleCh <- v:
+				c.log.Debug("Candles for subscriber sent successfully",
+					logging.Uint64("ref", ref),
+					logging.String("ip-address", ip))
+			default:
+				c.log.Debug("Candles for subscriber not sent",
+					logging.Uint64("ref", ref),
+					logging.String("ip-address", ip))
 			}
 		}
 		c.log.Debug("Candles subscriber channel has been closed",

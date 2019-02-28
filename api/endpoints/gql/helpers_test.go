@@ -2,14 +2,16 @@ package gql
 
 import (
 	"testing"
-	"github.com/stretchr/testify/assert"
+
 	types "vega/proto"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSafeStringUint64(t *testing.T) {
 	var convTests = []struct {
-		in  string
-		out uint64
+		in          string
+		out         uint64
 		expectError bool
 	}{
 		{"-1", 0, true},
@@ -89,6 +91,3 @@ func TestParseSide(t *testing.T) {
 	side, err = parseSide(&unknown)
 	assert.Error(t, err)
 }
-
-
-

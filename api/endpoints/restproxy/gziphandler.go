@@ -43,7 +43,7 @@ func (gzr *gzipResponseWriter) Write(b []byte) (int, error) {
 	if _, ok := gzr.Header()["Content-Type"]; !ok {
 		// If no content type, apply sniffing algorithm to un-gzipped body.
 		gzr.ResponseWriter.Header().Set("Content-Type", http.DetectContentType(b))
-	}                    
+	}
 
 	if !gzr.headerWritten {
 		// This is exactly what Go would also do if it hasn't been written yet.

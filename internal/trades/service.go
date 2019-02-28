@@ -2,15 +2,15 @@ package trades
 
 import (
 	"context"
+	"fmt"
 	"math"
 
 	"vega/internal/filtering"
 	"vega/internal/logging"
 	"vega/internal/storage"
-
 	types "vega/proto"
+
 	"github.com/pkg/errors"
-	"fmt"
 )
 
 type Service interface {
@@ -292,7 +292,7 @@ func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context,
 			logging.String("market-id", market))
 		return -1, errors.Wrap(err, fmt.Sprintf("Failed to obtain risk factors from risk engine for market: %s", market))
 	}
-	
+
 	var riskFactor float64
 	if openVolumeSign == 1 {
 		riskFactor = rf.Long

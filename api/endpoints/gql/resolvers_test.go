@@ -3,19 +3,19 @@ package gql
 import (
 	"context"
 	"testing"
-	"vega/api"
-	"vega/internal/logging"
-	types "vega/proto"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-	"vega/internal/filtering"
 
-	mockTrade "vega/internal/trades/mocks"
+	"vega/api"
+	mockCandle "vega/internal/candles/mocks"
+	"vega/internal/filtering"
+	"vega/internal/logging"
 	mockMarket "vega/internal/markets/mocks"
 	mockOrder "vega/internal/orders/mocks"
-	mockCandle "vega/internal/candles/mocks"
+	mockTrade "vega/internal/trades/mocks"
 	mockTime "vega/internal/vegatime/mocks"
-	
+	types "vega/proto"
+
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
@@ -92,7 +92,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	config := api.NewConfig(logger)
 	root := NewResolverRoot(config, mockOrderService, mockTradeService,
 		mockCandleService, mockTimeService, mockMarketService)
-	
+
 	assert.NotNil(t, root)
 	vegaResolver := root.Vega()
 	assert.NotNil(t, vegaResolver)

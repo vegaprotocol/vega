@@ -1,7 +1,6 @@
 package risk
 
 import (
-	"github.com/pkg/errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,8 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	types "vega/proto"
 	"vega/internal/logging"
+	types "vega/proto"
+
+	"github.com/pkg/errors"
 )
 
 type Engine interface {

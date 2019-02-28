@@ -30,7 +30,7 @@ type Config struct {
 	CandleStoreDirPath string
 	//LogPartyStoreDebug    bool
 	//LogOrderStoreDebug    bool
-	//LogCandleStoreDebug   bool 
+	//LogCandleStoreDebug   bool
 	LogPositionStoreDebug bool
 }
 
@@ -40,7 +40,7 @@ type Config struct {
 // where all storage directories are to be read from and written to.
 func NewConfig(logger *logging.Logger, defaultStoreDirPath string) *Config {
 	logger = logger.Named(namedLogger)
-	
+
 	return &Config{
 		log:                logger,
 		Level:              logging.InfoLevel,
@@ -59,7 +59,6 @@ func NewConfig(logger *logging.Logger, defaultStoreDirPath string) *Config {
 func NewTestConfig() *Config {
 	// Test logger can be configured here, default to console not file etc.
 	logger := logging.NewLoggerFromEnv("dev")
-	logger.AddExitHandler()
 	// Test configuration for badger stores
 	return &Config{
 		log:                   logger,

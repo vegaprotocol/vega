@@ -10,7 +10,7 @@ import (
 )
 
 type Market struct {
-	Name    string          `json:"name"`
+	Name    string            `json:"name"`
 	Orders  []types.Order     `json:"orders"`
 	Trades  []types.Trade     `json:"trades"`
 	Depth   types.MarketDepth `json:"depth"`
@@ -52,7 +52,7 @@ type OrderFilter struct {
 }
 
 type Party struct {
-	Name      string               `json:"name"`
+	Name      string                 `json:"name"`
 	Orders    []types.Order          `json:"orders"`
 	Trades    []types.Trade          `json:"trades"`
 	Positions []types.MarketPosition `json:"positions"`

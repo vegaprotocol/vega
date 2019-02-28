@@ -1,8 +1,8 @@
 package matching
 
 import (
-	types "vega/proto"
 	"vega/internal/logging"
+	types "vega/proto"
 )
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) types.OrderError {

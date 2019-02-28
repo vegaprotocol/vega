@@ -9,14 +9,14 @@ import (
 const namedLogger = "trades"
 
 type Config struct {
-	log *logging.Logger
+	log   *logging.Logger
 	Level logging.Level
 }
 
 func NewConfig(logger *logging.Logger) *Config {
 	logger = logger.Named(namedLogger)
 	return &Config{
-		log: logger,
+		log:   logger,
 		Level: logging.InfoLevel,
 	}
 }

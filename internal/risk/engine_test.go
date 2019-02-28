@@ -2,9 +2,11 @@ package risk
 
 import (
 	"testing"
-	types "vega/proto"
-	"github.com/stretchr/testify/assert"
+
 	"vega/internal/logging"
+	types "vega/proto"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRiskEngine_AddNewMarket(t *testing.T) {
