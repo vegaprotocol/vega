@@ -30,6 +30,7 @@ func BenchmarkMatching(
 	orderStore := &mockStorage.OrderStore{}
 	tradeStore := &mockStorage.TradeStore{}
 	candleStore := &mockStorage.CandleStore{}
+	marketStore := &mockStorage.MarketStore{}
 
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
@@ -46,7 +47,7 @@ func BenchmarkMatching(
 	// Execution engine (broker operation of markets at runtime etc)
 	eec := execution.NewConfig(logger)
 	executionEngine := execution.NewExecutionEngine(eec, matchingEngine,
-		timeService, orderStore, tradeStore, candleStore)
+		timeService, orderStore, tradeStore, candleStore, marketStore)
 
 	var timestamp int64
 	for k := 0; k < b.N; k++ {

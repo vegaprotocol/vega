@@ -26,24 +26,42 @@ type engine struct {
 	orderStore  storage.OrderStore
 	tradeStore  storage.TradeStore
 	candleStore storage.CandleStore
+	marketStore storage.MarketStore
 	time        vegatime.Service
 }
 
-func NewExecutionEngine(executionConfig *Config, matchingEngine matching.Engine, time vegatime.Service,
-	orderStore storage.OrderStore, tradeStore storage.TradeStore, candleStore storage.CandleStore) Engine {
+func NewExecutionEngine(
+		executionConfig *Config,
+		matchingEngine matching.Engine,
+		time vegatime.Service,
+		orderStore storage.OrderStore,
+		tradeStore storage.TradeStore,
+		candleStore storage.CandleStore,
+		marketStore storage.MarketStore,
+	) Engine {
 	e := &engine{
 		Config:      executionConfig,
 		markets:     []string{"BTC/DEC19"},
 		matching:    matchingEngine,
 		orderStore:  orderStore,
 		tradeStore:  tradeStore,
+		marketStore: marketStore,
 		candleStore: candleStore,
 		time:        time,
 	}
 
 	// todo: existing markets are loaded via the marketStore as market proto types and can be added at runtime via TM
 	for _, marketId := range e.markets {
-		err := e.matching.AddOrderBook(marketId)
+		mkt := types.Market{
+			Name: marketId,
+		}
+		err := e.marketStore.Post(&mkt)
+		if err != nil {
+			e.log.Panic("Failed to add default market to market store",
+				logging.String("market-id", marketId),
+				logging.Error(err))
+		}
+		err = e.matching.AddOrderBook(marketId)
 		if err != nil {
 			e.log.Panic("Failed to add default order book(s) to matching engine",
 				logging.String("market-id", marketId),
