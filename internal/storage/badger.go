@@ -3,11 +3,14 @@ package storage
 import (
 	"fmt"
 
+	"vega/internal/logging"
 	types "vega/proto"
 
 	"github.com/dgraph-io/badger"
 	"github.com/dgraph-io/badger/options"
 )
+
+const badgerNamedLogger = "badger"
 
 type badgerStore struct {
 	db *badger.DB
@@ -21,17 +24,19 @@ func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Ite
 	}
 }
 
-func customBadgerOptions(dir string) badger.Options {
+func customBadgerOptions(dir string, log *logging.Logger) badger.Options {
 	opts := badger.DefaultOptions
 	opts.Dir, opts.ValueDir = dir, dir
 
-	opts.MaxTableSize  = 64 << 20
-	opts.NumMemtables  = 1
+	opts.MaxTableSize = 64 << 20
+	opts.NumMemtables = 1
 	opts.NumLevelZeroTables = 1
 	opts.NumLevelZeroTablesStall = 2
 	opts.NumCompactors = 2
 
 	opts.TableLoadingMode, opts.ValueLogLoadingMode = options.FileIO, options.FileIO
+	opts.Logger = log.Named(badgerNamedLogger)
+
 	return opts
 }
 
@@ -115,4 +120,3 @@ func (bs *badgerStore) tradePartyKey(party, Id string) []byte {
 func (bs *badgerStore) tradeOrderIdKey(orderId, Id string) []byte {
 	return []byte(fmt.Sprintf("O:%s_ID:%s", orderId, Id))
 }
-

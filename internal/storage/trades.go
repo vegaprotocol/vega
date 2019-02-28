@@ -5,12 +5,12 @@ import (
 	"sync"
 
 	"vega/internal/filtering"
+	"vega/internal/logging"
 	types "vega/proto"
 
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	"vega/internal/logging"
 )
 
 type TradeStore interface {
@@ -27,7 +27,7 @@ type TradeStore interface {
 
 	// Close can be called to clean up and close any storage
 	// connections held by the underlying storage mechanism.
-	Close() error 
+	Close() error
 
 	// GetByMarket retrieves trades for a given market.
 	GetByMarket(market string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
@@ -64,7 +64,7 @@ func NewTradeStore(c *Config) (TradeStore, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for trades storage")
 	}
-	db, err := badger.Open(customBadgerOptions(c.TradeStoreDirPath))
+	db, err := badger.Open(customBadgerOptions(c.TradeStoreDirPath, c.GetLogger()))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for trades storage")
 	}
@@ -171,7 +171,7 @@ func (ts *badgerTradeStore) GetByMarket(market string, queryFilters *filtering.T
 				logging.Error(err),
 				logging.String("badger-key", string(item.Key())),
 				logging.String("raw-bytes", string(tradeBuf)))
-			
+
 			return nil, err
 		}
 		if filter.apply(&trade) {
@@ -202,7 +202,7 @@ func (ts *badgerTradeStore) GetByMarketAndId(market string, Id string) (*types.T
 			logging.Error(err),
 			logging.String("badger-key", string(item.Key())),
 			logging.String("raw-bytes", string(tradeBuf)))
-		
+
 		return nil, err
 	}
 	return &trade, err
@@ -330,7 +330,7 @@ func (ts *badgerTradeStore) GetByOrderId(orderId string, queryFilters *filtering
 				logging.Error(err),
 				logging.String("badger-key", string(marketKey)),
 				logging.String("raw-bytes", string(tradeBuf)))
-			
+
 			return nil, err
 		}
 		if filter.apply(&trade) {
