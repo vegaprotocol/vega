@@ -23,8 +23,8 @@ type CandleStore interface {
 	// Unsubscribe from a candles channel. Provide the subscriber id you wish to stop receiving new events for.
 	Unsubscribe(id uint64) error
 
-	// StartNewBuffer creates a new trades buffer for the given market at timestamp.
-	StartNewBuffer(market string, timestamp uint64) error
+	// StartNewBuffer creates a new trades buffer for the given trade.
+	StartNewBuffer(marketId string, timestamp uint64) error
 
 	// AddTradeToBuffer adds a trade to the trades buffer for the given market.
 	AddTradeToBuffer(trade types.Trade) error
@@ -178,7 +178,14 @@ func (c *badgerCandleStore) StartNewBuffer(marketId string, timestamp uint64) er
 func (c *badgerCandleStore) AddTradeToBuffer(trade types.Trade) error {
 
 	if c.candleBuffer[trade.Market] == nil {
-		return errors.New(fmt.Sprintf("candle buffer does not exist for market %s", trade.Market))
+		c.log.Infof("Starting new candle buffer for market",
+			logging.String("market-id", trade.Market),
+			logging.Uint64("timestamp", trade.Timestamp))
+
+		err := c.StartNewBuffer(trade.Market, trade.Timestamp)
+		if err != nil {
+			return errors.Wrap(err, "Failed to start new buffer when adding trade to candle store")
+		}
 	}
 
 	for _, interval := range supportedIntervals {
@@ -256,17 +263,13 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(marketId string) error {
 	for _, candle := range c.candleBuffer[marketId] {
 		badgerKey := c.badger.candleKey(marketId, candle.Interval, candle.Timestamp)
 		candleDb, err := fetchCandle(readTxn, badgerKey)
-		fmt.Println(candleDb, err)
 		if err == badger.ErrKeyNotFound {
-			fmt.Println(1)
 			err := insertNewCandle(writeBatch, badgerKey, candle)
 			if err != nil {
-				fmt.Println(2)
 				c.log.Error("Failed to insert new candle in candle store",
 					logging.Candle(candle),
 					logging.Error(err))
 			} else {
-				fmt.Println(3)
 				c.log.Debug("New candle inserted in candle store",
 					logging.Candle(candle),
 					logging.String("badger-key", string(badgerKey)))
@@ -274,11 +277,8 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(marketId string) error {
 			c.queueEvent(marketId, candle)
 		}
 
-		fmt.Println(4, err, candle.Volume)
 		if err == nil && candle.Volume != uint64(0) {
-
-			fmt.Println(5)
-			// update fetched candle with new trade
+		// update fetched candle with new trade
 			mergeCandles(candleDb, candle)
 			err = updateCandle(writeBatch, badgerKey, candleDb)
 			if err != nil {
@@ -541,9 +541,7 @@ func updateCandle(candle *types.Candle, trade *types.Trade) {
 
 // mergeCandles is used to update an existing candle in the buffer.
 func mergeCandles(candleFromDB *types.Candle, candleUpdate types.Candle) {
-
-	fmt.Println(fmt.Sprintf("%+v - %+v", candleFromDB, candleUpdate))
-
+	
 	// always overwrite close price
 	candleFromDB.Close = candleUpdate.Close
 
