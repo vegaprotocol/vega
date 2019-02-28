@@ -47,6 +47,7 @@ func BenchmarkMatching(
 		orderStore := &mockStorage.OrderStore{}
 		tradeStore := &mockStorage.TradeStore{}
 		candleStore := &mockStorage.CandleStore{}
+		marketStore := &mockStorage.MarketStore{}
 
 		// Refer to the proto package by its real name, not by its alias "types".
 		candleStore.On("AddTradeToBuffer", mock.AnythingOfType("proto.Trade")).Return(nil)
@@ -67,7 +68,7 @@ func BenchmarkMatching(
 		// Execution engine (broker operation of markets at runtime etc)
 		eec := execution.NewConfig(logger)
 		executionEngine := execution.NewExecutionEngine(eec, matchingEngine,
-			timeService, orderStore, tradeStore, candleStore)
+			timeService, orderStore, tradeStore, candleStore, marketStore)
 
 		var timestamp int64
 		for o := 0; o < numberOfOrders; o++ {
