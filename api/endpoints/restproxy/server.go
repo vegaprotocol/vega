@@ -2,24 +2,27 @@ package restproxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"vega/api"
 
+	"vega/internal/logging"
+
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
-	"vega/internal/logging"
 )
 
 type restProxyServer struct {
 	*api.Config
+	srv *http.Server
 }
 
 func NewRestProxyServer(config *api.Config) *restProxyServer {
 	return &restProxyServer{
-		config,
+		config, nil,
 	}
 }
 
@@ -38,7 +41,7 @@ func (s *restProxyServer) Start() {
 	grpcAddr := fmt.Sprintf("%s:%d", s.GrpcServerIpAddress, s.GrpcServerPort)
 	jsonPB := &JSONPb{
 		EmitDefaults: true,
-		Indent:       "  ",      // formatted json output
+		Indent:       "  ", // formatted json output
 		OrigName:     true,
 	}
 
@@ -55,10 +58,21 @@ func (s *restProxyServer) Start() {
 		handler := cors.Default().Handler(mux)
 		// Gzip encoding support
 		handler = NewGzipHandler(logger, handler.(http.HandlerFunc))
+		s.srv = &http.Server{
+			Addr:    restAddr,
+			Handler: handler,
+		}
 		// Start http server on port specified
-		err = http.ListenAndServe(restAddr, handler)
-		if err != nil {
+		err = s.srv.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
 			logger.Panic("Failure serving REST proxy API", logging.Error(err))
 		}
 	}
+}
+
+func (s *restProxyServer) Stop() error {
+	if s.srv != nil {
+		return s.srv.Shutdown(context.Background())
+	}
+	return errors.New("Rest proxy server not started")
 }

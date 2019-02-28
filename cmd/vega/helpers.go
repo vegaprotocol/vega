@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -44,12 +46,11 @@ func Exists(path string) (bool, error) {
 	return false, err
 }
 
-//func CreateUnlessExists(path string) error {
-//	if exists, _ := Exists(path); exists {
-//		return fmt.Errorf("directory `%v` already exists", path)
-//	}
-//	if err := os.Mkdir(path, dirPerms); err != nil {
-//		return fmt.Errorf("could not create directory `%v` (%v)", path, err)
-//	}
-//	return nil
-//}
+func waitsig() {
+	var gracefulStop = make(chan os.Signal)
+	signal.Notify(gracefulStop, syscall.SIGTERM)
+	signal.Notify(gracefulStop, syscall.SIGINT)
+
+	sig := <-gracefulStop
+	fmt.Printf("caught sig: %+v\n", sig)
+}

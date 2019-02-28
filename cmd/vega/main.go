@@ -1,24 +1,28 @@
-// cmd/vegabin/main.go
 package main
 
 import (
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
+
+	"vega/internal/logging"
 )
 
 func main() {
+	// Set up the root logger
+	log := logging.NewLoggerFromEnv("dev")
+	defer log.AtExit()
 
 	cli := NewCli()
-	cli.SetFlags()
 
 	base := &command{cmd: cli.rootCmd, cli: cli}
 	base.Cmd().SilenceErrors = true
 
-	cli.AddCommand(base, &NodeCommand{})
-	cli.AddCommand(base, &initCommand{})
+	cli.AddCommand(base, &NodeCommand{
+		Log: log,
+	})
+	cli.AddCommand(base, &initCommand{
+		Log: log,
+	})
 
 	if err := cli.Run(); err != nil {
 		// deal with ExitError, which should be recognize as error, and should
@@ -38,17 +42,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-
-	var gracefulStop = make(chan os.Signal)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-	go func() {
-		sig := <-gracefulStop
-		fmt.Printf("caught sig: %+v", sig)
-		fmt.Println("Wait for 2 second to finish processing")
-		time.Sleep(2 * time.Second)
-		os.Exit(0)
-	}()
 }
 
 // ExitError defines exit error produce by cli commands.

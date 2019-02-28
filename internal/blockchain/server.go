@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"errors"
 	"fmt"
 
 	"vega/internal/execution"
@@ -8,7 +9,7 @@ import (
 	"vega/internal/vegatime"
 
 	"github.com/tendermint/tendermint/abci/server"
-	cmn "github.com/tendermint/tmlibs/common"
+	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
 type Server struct {
@@ -16,13 +17,14 @@ type Server struct {
 	abci      *AbciApplication
 	execution execution.Engine
 	time      vegatime.Service
+	srv       cmn.Service
 }
 
 // NewServer creates a new instance of the the blockchain server given configuration,
 // stats provider, time service and execution engine.
 func NewServer(config *Config, stats *Stats, ex execution.Engine, time vegatime.Service) *Server {
 	app := NewAbciApplication(config, stats, ex, time)
-	return &Server{config, app, ex, time}
+	return &Server{config, app, ex, time, nil}
 }
 
 // Start configures and runs a new socket based ABCI tendermint blockchain
@@ -37,14 +39,19 @@ func (s *Server) Start() error {
 	s.log.Info("Starting abci-blockchain socket server",
 		logging.String("addr", s.ServerAddr),
 		logging.Int("port", s.ServerPort))
-	
+
 	if err := srv.Start(); err != nil {
 		return err
 	}
-	
-	// Wait forever
-	cmn.TrapSignal(func() {
-		srv.Stop()
-	})
+
+	s.srv = srv
+
 	return nil
+}
+
+func (s *Server) Stop() error {
+	if s.srv != nil {
+		return s.srv.Stop()
+	}
+	return errors.New("server not started")
 }

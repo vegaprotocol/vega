@@ -5,12 +5,12 @@ import (
 	"sync"
 
 	"vega/internal/filtering"
+	"vega/internal/logging"
 	types "vega/proto"
 
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	"vega/internal/logging"
 )
 
 type OrderStore interface {
@@ -65,7 +65,7 @@ func NewOrderStore(c *Config) (OrderStore, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for orders storage")
 	}
-	db, err := badger.Open(customBadgerOptions(c.OrderStoreDirPath))
+	db, err := badger.Open(customBadgerOptions(c.OrderStoreDirPath, c.GetLogger()))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for orders storage")
 	}
@@ -111,7 +111,7 @@ func (os *badgerOrderStore) Unsubscribe(id uint64) error {
 			logging.Uint64("subscriber-id", id))
 		return nil
 	}
-	
+
 	return errors.New(fmt.Sprintf("Orders subscriber does not exist with id: %d", id))
 }
 
@@ -189,7 +189,7 @@ func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filtering.O
 				logging.Error(err),
 				logging.String("badger-key", string(item.Key())),
 				logging.String("raw-bytes", string(orderBuf)))
-			
+
 			return nil, err
 		}
 		if filter.apply(&order) {
