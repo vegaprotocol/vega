@@ -1,12 +1,12 @@
 # Vega specific entries
-cover.out
-coverage.html
+*.tmp
 cmd/vega/vega
 cmd/vegabench/vegabench
 vega-*.log
 .idea/
 *.iws
 .testCoverage.txt
+.testCoverage.html
 log/capistrano.log
 .DS_Store
 tmp/

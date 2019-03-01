@@ -1,37 +1,43 @@
 PROJECT_NAME := "vega"
 PKG := "./cmd/$(PROJECT_NAME)"
-PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 VERSION := $(shell git describe --tags)
 VERSION_HASH := $(shell git rev-parse HEAD)
 
-.PHONY: all bench dep build clean test coverage coverhtml lint
+.PHONY: all bench deps build clean test lint
 
 all: build
 
 lint: ## Lint the files
 	@go get -u golang.org/x/lint/golint
-	@golint -set_exit_status ${PKG_LIST}
+	@golint -set_exit_status ./...
 
 bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
-	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go install -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -v vega/cmd/vegabench
 	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
 
 test: deps ## Run unit tests
-	@go test -short ${PKG_LIST} -v
+	@go test ./...
 
 race: ## Run data race detector
-	@go test -race -short ${PKG_LIST}
+	@go test -race ./...
 
 msan: ## Run memory sanitizer
-	@go test -msan -short ${PKG_LIST}
+	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi
+	@env CC=clang go test -msan ./...
 
-coverage: ## Generate global code coverage report
-	./coverage.sh;
+.PHONY: .testCoverage.txt
+.testCoverage.txt:
+	@go test -covermode=count -coverprofile="$@" ./...
+	@go tool cover -func="$@"
 
-coverhtml: ## Generate global code coverage report in HTML
-	./coverage.sh html;
+coverage: .testCoverage.txt ## Generate global code coverage report
+
+.PHONY: .testCoverage.html
+.testCoverage.html: .testCoverage.txt
+	@go tool cover -html="$^" -o "$@"
+
+coveragehtml: .testCoverage.html ## Generate global code coverage report in HTML
 
 deps: ## Get the dependencies
 	@go mod download
