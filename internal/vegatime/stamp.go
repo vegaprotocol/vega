@@ -26,12 +26,12 @@ func (s Stamp) NanoSeconds() int64 {
 
 func (s Stamp) Rfc3339Nano() string {
 	unixUtc := time.Unix(s.Seconds(), s.NanoSeconds())
-	return unixUtc.Format(time.RFC3339Nano)
+	return unixUtc.UTC().Format(time.RFC3339Nano)
 }
 
 func (s Stamp) Rfc3339() string {
 	unixUtc := time.Unix(s.Seconds(), s.NanoSeconds())
-	return unixUtc.Format(time.RFC3339)
+	return unixUtc.UTC().Format(time.RFC3339)
 }
 
 func (s Stamp) UnixNano() int64 {
@@ -43,7 +43,7 @@ func (s Stamp) Uint64() uint64 {
 }
 
 func (s Stamp) Datetime() time.Time {
-	return time.Unix(s.Seconds(), s.NanoSeconds())
+	return time.Unix(s.Seconds(), s.NanoSeconds()).UTC()
 }
 
 func (s Stamp) RoundToNearest(interval types.Interval) Stamp {
