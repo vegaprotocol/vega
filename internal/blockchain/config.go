@@ -44,5 +44,5 @@ func (c *Config) GetLogger() *logging.Logger {
 // UpdateLogger will set any new values on the underlying logging core. Useful when configs are
 // hot reloaded at run time. Currently we only check and refresh the logging level.
 func (c *Config) UpdateLogger() {
-	c.log.SetLevel(c.Level.ZapLevel())
+	c.log.SetLevel(c.Level, true)
 }
