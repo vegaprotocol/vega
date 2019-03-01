@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"vega/internal/parties"
 
 	"vega/api"
 	types "vega/proto"
@@ -26,10 +27,11 @@ type resolverRoot struct {
 	timeService   vegatime.Service
 	candleService candles.Service
 	marketService markets.Service
+	partyService  parties.Service
 }
 
 func NewResolverRoot(config *api.Config, orderService orders.Service, tradeService trades.Service, candleService candles.Service,
-	timeService vegatime.Service, marketService markets.Service) *resolverRoot {
+	timeService vegatime.Service, marketService markets.Service, partyService parties.Service) *resolverRoot {
 
 	return &resolverRoot{
 		Config:        config,
@@ -38,6 +40,7 @@ func NewResolverRoot(config *api.Config, orderService orders.Service, tradeServi
 		tradeService:  tradeService,
 		candleService: candleService,
 		marketService: marketService,
+		partyService:  partyService,
 	}
 }
 
@@ -97,13 +100,10 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 	if name == nil {
 		return nil, errors.New("all markets on VEGA query not implemented")
 	}
-
-	// Todo(cdm): implement market-store/market-services validation lookup in nice-net
-	err := validateMarket(name)
+	err := validateMarket(ctx, name, r.marketService)
 	if err != nil {
 		return nil, err
 	}
-
 	var m = make([]Market, 0)
 	var market = Market{
 		Name: *name,
@@ -114,16 +114,13 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 }
 
 func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, name string) (*Market, error) {
-
-	// Todo(cdm): implement market-store/market-services validation lookup in nice-net
-	err := validateMarket(&name)
+	err := validateMarket(ctx, &name, r.marketService)
 	if err != nil {
 		return nil, err
 	}
 	var market = Market{
 		Name: name,
 	}
-
 	return &market, nil
 }
 
@@ -132,20 +129,22 @@ func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) (
 		return nil, errors.New("all parties on VEGA query not implemented")
 	}
 
-	// Todo(cdm): implement party-store/party-service validation in nice-net
-	var parties = make([]Party, 0)
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+	var p = make([]Party, 0)
 	var party = Party{
 		Name: *name,
 	}
-	parties = append(parties, party)
+	p = append(p, party)
 
-	return parties, nil
+	return p, nil
 }
 
 func (r *MyVegaResolver) Party(ctx context.Context, obj *Vega, name string) (*Party, error) {
 	var party = Party{
 		Name: name,
 	}
+
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	return &party, nil
 }
@@ -158,7 +157,10 @@ type MyMarketResolver resolverRoot
 
 func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 	where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error) {
-
+	err := validateMarket(ctx, &market.Name, r.marketService)
+	if err != nil {
+		return nil, err
+	}
 	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
 	if err != nil {
 		return nil, err
@@ -176,7 +178,10 @@ func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 
 func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error) {
-
+	err := validateMarket(ctx, &market.Name, r.marketService)
+	if err != nil {
+		return nil, err
+	}
 	queryFilters, err := buildTradeQueryFilters(where, skip, first, last)
 	if err != nil {
 		return nil, err
@@ -193,7 +198,14 @@ func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 }
 
 func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (types.MarketDepth, error) {
+	if market == nil {
+		return types.MarketDepth{}, errors.New("market missing or empty")
 
+	}
+	err := validateMarket(ctx, &market.Name, r.marketService)
+	if err != nil {
+		return types.MarketDepth{}, err
+	}
 	// Look for market depth for the given market (will validate market internally)
 	// Note: Market depth is also known as OrderBook depth within the matching-engine
 	depth, err := r.marketService.GetDepth(ctx, market.Name)
@@ -256,6 +268,8 @@ type MyPartyResolver resolverRoot
 func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 	where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error) {
 
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
 	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
 	if err != nil {
 		return nil, err
@@ -274,6 +288,8 @@ func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 	where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error) {
 
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
 	queryFilters, err := buildTradeQueryFilters(where, skip, first, last)
 	if err != nil {
 		return nil, err
@@ -290,6 +306,9 @@ func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 }
 
 func (r *MyPartyResolver) Positions(ctx context.Context, obj *Party) ([]types.MarketPosition, error) {
+
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
 	positions, err := r.tradeService.GetPositionsByParty(ctx, obj.Name)
 	if err != nil {
 		return nil, err
@@ -323,6 +342,10 @@ func (r *MyMarketDepthResolver) Sell(ctx context.Context, obj *types.MarketDepth
 }
 
 func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *types.MarketDepth) (*types.Trade, error) {
+	err := validateMarket(ctx, &obj.Name, r.marketService)
+	if err != nil {
+		return nil, err
+	}
 	queryFilters := &filtering.TradeQueryFilters{}
 	last := uint64(1)
 	queryFilters.Last = &last
@@ -548,13 +571,17 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 		return res, err
 	}
 	order.Size = s
-	if len(market) == 0 {
-		return res, errors.New("market missing or empty")
+	err = validateMarket(ctx, &market, r.marketService)
+	if err != nil {
+		return res, err
 	}
 	order.Market = market
 	if len(party) == 0 {
 		return res, errors.New("party missing or empty")
 	}
+
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
 	order.Party = party
 	order.Type, err = parseOrderType(&type_)
 	if err != nil {
@@ -597,8 +624,9 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	res := PreConsensus{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
-	if len(market) == 0 {
-		return res, errors.New("market missing or empty")
+	err := validateMarket(ctx, &market, r.marketService)
+	if err != nil {
+		return res, err
 	}
 	order.Market = market
 	if len(id) == 0 {
@@ -608,6 +636,9 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	if len(party) == 0 {
 		return res, errors.New("party missing or empty")
 	}
+
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
 	order.Party = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
@@ -627,11 +658,13 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 type MySubscriptionResolver resolverRoot
 
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []types.Order, error) {
-	// Validate market, and todo future Party (when party store exists)
-	err := validateMarket(market)
+	err := validateMarket(ctx, market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
+
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
 	c, ref := r.orderService.ObserveOrders(ctx, market, party)
 	logger := *r.GetLogger()
 	logger.Debug("Orders: new subscriber", logging.Uint64("ref", ref))
@@ -639,11 +672,13 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 }
 
 func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []types.Trade, error) {
-	// Validate market, and todo future Party (when party store exists)
-	err := validateMarket(market)
+	err := validateMarket(ctx, market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
+
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
 	c, ref := r.tradeService.ObserveTrades(ctx, market, party)
 	logger := *r.GetLogger()
 	logger.Debug("Trades: new subscriber", logging.Uint64("ref", ref))
@@ -651,6 +686,9 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 }
 
 func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan types.MarketPosition, error) {
+
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
 	c, ref := r.tradeService.ObservePositions(ctx, party)
 	logger := *r.GetLogger()
 	logger.Debug("Positions: new subscriber", logging.Uint64("ref", ref))
@@ -658,8 +696,7 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 }
 
 func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan types.MarketDepth, error) {
-	// Validate market, and todo future Party (when party store exists)
-	err := validateMarket(&market)
+	err := validateMarket(ctx, &market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -670,8 +707,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 }
 
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan types.Candle, error) {
-	// Validate market, and todo future Party (when party store exists)
-	err := validateMarket(&market)
+	err := validateMarket(ctx, &market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -711,26 +747,31 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	return c, nil
 }
 
-func validateMarket(market *string) error {
-	if market != nil {
-		if len(*market) == 0 {
+func validateMarket(ctx context.Context, marketId *string, marketService markets.Service) error {
+	if marketId != nil {
+		if len(*marketId) == 0 {
 			return errors.New("market must not be empty")
 		}
-		// todo(cdm): change hard-coded list of markets when we have market service / market stores
-		var m = []string{"BTC/DEC19"}
-		// Scan all markets for a match
-		found := false
-		for _, v := range m {
-			if v == *market {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return errors.New(fmt.Sprintf("market %s not found", *market))
+		_, err := marketService.GetByName(ctx, *marketId)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
+
+// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+//func validateParty(ctx context.Context, partyId *string, partyService parties.Service) error {
+//	if partyId != nil {
+//		if len(*partyId) == 0 {
+//			return errors.New("party must not be empty")
+//		}
+//		_, err := partyService.GetByName(*partyId)
+//		if err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
 
 // END: Subscription Resolver

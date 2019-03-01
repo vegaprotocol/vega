@@ -88,6 +88,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		return err
 	}
+	partyService, err := resolver.ResolvePartyService()
+	if err != nil {
+		return err
+	}
 	timeService, err := resolver.ResolveTimeService()
 	if err != nil {
 		return err
@@ -132,7 +136,8 @@ func (l *NodeCommand) runNode(args []string) error {
 	go restServer.Start()
 
 	// GraphQL server
-	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService, candleService, marketService, timeService)
+	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService,
+		candleService, marketService, partyService, timeService)
 	go graphServer.Start()
 
 	// Execution engine (broker operation at runtime etc)

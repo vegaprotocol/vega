@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"runtime/debug"
+	"vega/internal/parties"
 
 	"vega/api"
 	"vega/internal/candles"
@@ -29,11 +30,19 @@ type graphServer struct {
 	tradeService  trades.Service
 	candleService candles.Service
 	marketService markets.Service
+	partyService  parties.Service
 	srv           *http.Server
 }
 
-func NewGraphQLServer(config *api.Config, orderService orders.Service,
-	tradeService trades.Service, candleService candles.Service, marketService markets.Service, timeService vegatime.Service) *graphServer {
+func NewGraphQLServer(
+	config *api.Config,
+	orderService orders.Service,
+	tradeService trades.Service,
+	candleService candles.Service,
+	marketService markets.Service,
+	partyService parties.Service,
+	timeService vegatime.Service,
+) *graphServer {
 
 	return &graphServer{
 		Config:        config,
@@ -42,6 +51,7 @@ func NewGraphQLServer(config *api.Config, orderService orders.Service,
 		candleService: candleService,
 		timeService:   timeService,
 		marketService: marketService,
+		partyService:  partyService,
 	}
 }
 
@@ -107,6 +117,7 @@ func (g *graphServer) Start() {
 		g.candleService,
 		g.timeService,
 		g.marketService,
+		g.partyService,
 	)
 	var config = Config{
 		Resolvers: resolverRoot,

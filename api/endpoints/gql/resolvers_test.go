@@ -4,15 +4,18 @@ import (
 	"context"
 	"testing"
 
+	types "vega/proto"
+
 	"vega/api"
-	mockCandle "vega/internal/candles/mocks"
 	"vega/internal/filtering"
 	"vega/internal/logging"
+
+	mockCandle "vega/internal/candles/mocks"
 	mockMarket "vega/internal/markets/mocks"
 	mockOrder "vega/internal/orders/mocks"
+	mockParty "vega/internal/parties/mocks"
 	mockTrade "vega/internal/trades/mocks"
 	mockTime "vega/internal/vegatime/mocks"
-	types "vega/proto"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -80,7 +83,13 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	mockOrderService := &mockOrder.Service{}
 	mockCandleService := &mockCandle.Service{}
 	mockMarketService := &mockMarket.Service{}
+	mockPartyService := &mockParty.Service{}
 	mockTimeService := &mockTime.Service{}
+
+	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name:"BTC/DEC19"},
+		nil).On("GetByName", ctx, "ETH/USD18").Return(nil,
+			errors.New("market does not exist")).On("GetByName",
+				ctx, "errorMarket").Return(nil, errors.New("market does not exist"))
 
 	mockOrderService.On("GetMarkets", ctx).Return(
 		[]string{"BTC/DEC19"}, nil,
@@ -91,7 +100,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 
 	config := api.NewConfig(logger)
 	root := NewResolverRoot(config, mockOrderService, mockTradeService,
-		mockCandleService, mockTimeService, mockMarketService)
+		mockCandleService, mockTimeService, mockMarketService, mockPartyService)
 
 	assert.NotNil(t, root)
 	vegaResolver := root.Vega()
@@ -139,7 +148,14 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	mockOrderService := &mockOrder.Service{}
 	mockCandleService := &mockCandle.Service{}
 	mockMarketService := &mockMarket.Service{}
+	mockPartyService := &mockParty.Service{}
 	mockTimeService := &mockTime.Service{}
+
+
+	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name:"BTC/DEC19"},
+		nil).On("GetByName", ctx, "errorMarket").Return(nil,
+			errors.New("market does not exist"))
+
 
 	mockOrderService.On("GetMarkets", ctx).Return(
 		[]string{"testMarket", "BTC/DEC19"}, nil,
@@ -157,7 +173,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	config := api.NewConfig(logger)
 
 	root := NewResolverRoot(config, mockOrderService, mockTradeService,
-		mockCandleService, mockTimeService, mockMarketService)
+		mockCandleService, mockTimeService, mockMarketService, mockPartyService)
 
 	assert.NotNil(t, root)
 	marketResolver := root.Market()
@@ -169,7 +185,6 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	}
 
 	// DEPTH
-	// todo: Looks like this is incomplete - maybe JL WIP?
 	//depth, err := marketResolver.Depth(ctx, market)
 	//assert.Nil(t, err)
 	//assert.NotNil(t, depth)
@@ -186,12 +201,12 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 
 	mockOrderService.On("GetByMarket", ctx, marketId, &filtering.OrderQueryFilters{}).Return(
 		[]*types.Order{
-			&types.Order{
+			{
 				Id:        "order-id-1",
 				Price:     1000,
 				Timestamp: 1,
 			},
-			&types.Order{
+			{
 				Id:        "order-id-2",
 				Price:     2000,
 				Timestamp: 2,
@@ -211,6 +226,7 @@ func buildTestResolverRoot() *resolverRoot {
 	mockOrderService := &mockOrder.Service{}
 	mockCandleService := &mockCandle.Service{}
 	mockMarketService := &mockMarket.Service{}
+	mockPartyService := &mockParty.Service{}
 	mockTimeService := &mockTime.Service{}
 
 	logger := logging.NewLoggerFromEnv("dev")
@@ -218,5 +234,5 @@ func buildTestResolverRoot() *resolverRoot {
 	config := api.NewConfig(logger)
 
 	return NewResolverRoot(config, mockOrderService, mockTradeService,
-		mockCandleService, mockTimeService, mockMarketService)
+		mockCandleService, mockTimeService, mockMarketService, mockPartyService)
 }

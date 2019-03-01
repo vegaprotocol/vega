@@ -31,14 +31,14 @@ type engine struct {
 }
 
 func NewExecutionEngine(
-		executionConfig *Config,
-		matchingEngine matching.Engine,
-		time vegatime.Service,
-		orderStore storage.OrderStore,
-		tradeStore storage.TradeStore,
-		candleStore storage.CandleStore,
-		marketStore storage.MarketStore,
-	) Engine {
+	executionConfig *Config,
+	matchingEngine matching.Engine,
+	time vegatime.Service,
+	orderStore storage.OrderStore,
+	tradeStore storage.TradeStore,
+	candleStore storage.CandleStore,
+	marketStore storage.MarketStore,
+) Engine {
 	e := &engine{
 		Config:      executionConfig,
 		markets:     []string{"BTC/DEC19"},

@@ -31,36 +31,24 @@ func ParseOrderFilter(queryFilters *OrderFilter, holder *filtering.OrderQueryFil
 		foundFilter = true
 	}
 	if queryFilters.Market != nil {
-		// Todo(cdm): implement market-store/market-services validation lookup in nice-net
-		err := validateMarket(queryFilters.Market)
-		if err != nil {
-			return false, err
-		}
 		holder.MarketFilter = &filtering.QueryFilter{
 			Eq: *queryFilters.Market,
 		}
 		foundFilter = true
 	}
 	if queryFilters.MarketNeq != nil {
-		// Todo(cdm): implement market-store/market-services validation lookup in nice-net
-		err := validateMarket(queryFilters.MarketNeq)
-		if err != nil {
-			return false, err
-		}
 		holder.MarketFilter = &filtering.QueryFilter{
 			Neq: *queryFilters.MarketNeq,
 		}
 		foundFilter = true
 	}
 	if queryFilters.Party != nil {
-		// Todo(cdm): implement party-store/party-service validation in nice-net
 		holder.PartyFilter = &filtering.QueryFilter{
 			Eq: *queryFilters.Party,
 		}
 		foundFilter = true
 	}
 	if queryFilters.PartyNeq != nil {
-		// Todo(cdm): implement party-store/party-service validation in nice-net
 		holder.PartyFilter = &filtering.QueryFilter{
 			Neq: *queryFilters.PartyNeq,
 		}
@@ -309,26 +297,12 @@ func ParseTradeFilter(queryFilters *TradeFilter, holder *filtering.TradeQueryFil
 		foundFilter = true
 	}
 	if queryFilters.Market != nil {
-
-		// Todo(cdm): implement market-store/market-services validation lookup in nice-net
-		err := validateMarket(queryFilters.Market)
-		if err != nil {
-			return false, err
-		}
-
 		holder.MarketFilter = &filtering.QueryFilter{
 			Eq: *queryFilters.Market,
 		}
 		foundFilter = true
 	}
 	if queryFilters.MarketNeq != nil {
-
-		// Todo(cdm): implement market-store/market-services validation lookup in nice-net
-		err := validateMarket(queryFilters.MarketNeq)
-		if err != nil {
-			return false, err
-		}
-
 		holder.MarketFilter = &filtering.QueryFilter{
 			Neq: *queryFilters.MarketNeq,
 		}
