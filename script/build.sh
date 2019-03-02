@@ -9,9 +9,9 @@ echo -e "    \ \     | |____  | |__| |  / ____ \  "
 echo -e "     \/     |______|  \_____| /_/    \_\ "
 echo -e "\n"
 echo -e "Building vega"
-go build ./cmd/vega
+go build -o vega $GOPATH/src/vega/cmd/vega
 echo -e "Building vegabench"
-go build ./cmd/vegabench
+go build -o vegabench $GOPATH/src/vega/cmd/vegabench
 echo -e "Done."
 
 
