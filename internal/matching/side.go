@@ -56,7 +56,7 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) types.OrderError {
 }
 
 func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
-	// TODO: implement binary search on the slice
+	//todo: use binary search of expiring price levels (https://gitlab.com/vega-protocol/trading-core/issues/132)
 	toDelete := -1
 	toRemove := -1
 	for idx, priceLevel := range s.levels {
@@ -88,7 +88,7 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 }
 
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
-	// TODO: implement binary search on the slice
+	//todo: use binary search of price levels (gitlab.com/vega-protocol/trading-core/issues/90)
 	at := -1
 	if side == types.Side_Buy {
 		// buy side levels should be ordered in descending

@@ -127,7 +127,7 @@ func (app *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
 // have been rejected by the mempool, but may have been included in a block by
 // a Byzantine proposer.
 //
-// The block header will be updated (TODO) to include some commitment to the
+// The block header will be updated to include some commitment to the
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 //
@@ -177,7 +177,7 @@ func (app *AbciApplication) Commit() types.ResponseCommit {
 		app.log.Error("Error on blockchain service Commit", logging.Error(err))
 	}
 
-	// todo: when an error happens on commit should we return a different response to ABCI?
+	// todo: when an error happens on service commit should we return a different response to ABCI? (gitlab.com/vega-protocol/trading-core/issues/179)
 
 	app.setBatchStats()
 	return types.ResponseCommit{Data: appHash}

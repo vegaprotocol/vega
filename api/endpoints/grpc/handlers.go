@@ -251,6 +251,12 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		genesisTime = gt.Format(time.RFC3339)
 	}
 
+	// Load current markets details
+	m, err := h.MarketService.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &types.Statistics{
 		BlockHeight:           h.Stats.Blockchain.Height(),
 		BacklogLength:         uint64(backlogLength),
@@ -266,7 +272,7 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		Status:                types.AppStatus_CHAIN_NOT_FOUND, // todo
 		LastTrade:             nil,                             // todo
 		LastOrder:             nil,                             // todo
-		TotalMarkets:          0,                               // todo
+		TotalMarkets:          uint64(len(m)),
 		TotalParties:          0,                               // todo
 		AppVersionHash:        h.Stats.GetVersionHash(),
 		AppVersion:            h.Stats.GetVersion(),

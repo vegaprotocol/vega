@@ -84,7 +84,3 @@ func TestQueryFilter_ApplyRangeFilter(t *testing.T) {
 	assert.Equal(t, true, success)
 	assert.Equal(t, false, failure)
 }
-
-func TestQueryFilter_ApplyFilters(t *testing.T) {
-	// todo(cdm)
-}

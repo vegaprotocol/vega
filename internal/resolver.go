@@ -395,8 +395,6 @@ func (r *Resolver) CloseStores() error {
 	r.stMu.Unlock()
 
 	return err
-	//todo(cdm): improve this logging with structured logger changes soon, special log full error strings via wrap.
-
 }
 
 // --------------- /Storage --------------

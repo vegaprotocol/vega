@@ -136,7 +136,7 @@ func TestMarketService_GetDepthNonExistentMarket(t *testing.T) {
 }
 
 //func TestMarketService_ObserveMarkets(t *testing.T) {
-//	// todo(cdm) observing markets service test
+//	// todo: observing markets service test (gitlab.com/vega-protocol/trading-core/issues/166)
 //	assert.True(t, false)
 //}
 
@@ -153,7 +153,7 @@ func TestMarketService_GetDepthNonExistentMarket(t *testing.T) {
 //	assert.NotNil(t, marketService)
 //	assert.Nil(t, err)
 //
-//	// todo(cdm) observing market depth service test
+//	// todo: observing market depth service test (gitlab.com/vega-protocol/trading-core/issues/166)
 //	//ctx := context.Background()
 //	//context.WithCancel(ctx, func())
 //	//

@@ -9,9 +9,7 @@ import (
 	types "vega/proto"
 
 	"github.com/golang/protobuf/proto"
-	uuid "github.com/satori/go.uuid"
-
-	"vega/internal/logging"
+	"github.com/satori/go.uuid"
 
 	tmRPC "github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -119,17 +117,16 @@ func (b *client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (su
 	}
 
 	// Fire off the transaction for consensus
-	res, err := b.tmClient.BroadcastTxAsync(bytes)
+	_, err = b.tmClient.BroadcastTxAsync(bytes)
 	if err != nil {
 		return false, err
 	}
 
-	// todo remove this once investigation into tm client issues are complete
-	b.log.Debug("BroadcastTxAsync response",
-		logging.String("log", res.Log),
-		logging.Uint32("code", res.Code),
-		logging.String("data", string(res.Data)),
-		logging.String("hash", string(res.Hash)))
+	//b.log.Debug("BroadcastTxAsync response",
+	//	logging.String("log", res.Log),
+	//	logging.Uint32("code", res.Code),
+	//	logging.String("data", string(res.Data)),
+	//	logging.String("hash", string(res.Hash)))
 
 	return true, nil
 }

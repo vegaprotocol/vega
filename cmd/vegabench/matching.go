@@ -63,7 +63,7 @@ func BenchmarkMatching(
 		logger.SetLevel(logging.InfoLevel)
 		defer logger.Sync()
 
-		// Matching engine (todo) create these inside execution engine based on config
+		// Matching engine (trade matching)
 		matchingConfig := matching.NewDefaultConfig(logger)
 		matchingEngine := matching.NewMatchingEngine(matchingConfig)
 

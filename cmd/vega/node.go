@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 // NodeCommand use to implement 'node' command.
@@ -67,7 +66,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	conf, err := internal.NewConfigFromFile(l.Log, configPath)
 	if err != nil {
 		// We revert to default configs if there are any errors in read/parse process
-		l.Log.Error("Error reading config from file, using defaults", zap.Error(err))
+		l.Log.Error("Error reading config from file, using defaults", logging.Error(err))
 		defaultConf, err := internal.NewDefaultConfig(l.Log, defaultVegaDir())
 		if err != nil {
 			return err
@@ -172,12 +171,12 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	waitSig()
 
-	// cleanup
-	l.Log.Info("closing blockchain server", zap.Error(socketServer.Stop()))
-	l.Log.Info("closing rest proxy server", zap.Error(restServer.Stop()))
-	l.Log.Info("closing grpc server", zap.Error(grpcServer.Stop()))
-	l.Log.Info("closing gql server", zap.Error(graphServer.Stop()))
-	l.Log.Info("closing stores", zap.Error(resolver.CloseStores()))
+	// Clean up and close resources
+	l.Log.Info("Closing blockchain server", logging.Error(socketServer.Stop()))
+	l.Log.Info("Closing REST proxy server", logging.Error(restServer.Stop()))
+	l.Log.Info("Closing GRPC server", logging.Error(grpcServer.Stop()))
+	l.Log.Info("Closing GraphQL server", logging.Error(graphServer.Stop()))
+	l.Log.Info("Closing stores", logging.Error(resolver.CloseStores()))
 
 	return nil
 }

@@ -39,8 +39,8 @@ func NewRiskFactor(market *types.Market) *types.RiskFactor {
 }
 
 func (re *riskEngine) AddNewMarket(market *types.Market) {
-	// todo: will need to re-arch this when we have multiple markets/risk models/instrument definitions.
-	// todo: load the default for now for all markets (./risk-model.py)
+	// We will need to re-arch this when we have multiple markets/risk models/instrument definitions.
+	// Just load the default for now for all markets (./risk-model.py)
 	re.pyRiskModels[market.Name] = re.PyRiskModelDefaultFileName
 	re.riskFactors[market.Name] = NewRiskFactor(market)
 	re.Assess(re.riskFactors[market.Name])

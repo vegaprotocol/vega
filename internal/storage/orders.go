@@ -426,14 +426,14 @@ func (os *badgerOrderStore) writeBatch(batch []types.Order) error {
 	if err := insertBatchAtomically(); err == nil {
 		if err := wb.Flush(); err != nil {
 
-			// todo: can we handle flush errors in a similar way to below?
+			// todo: can we handle flush errors in a similar way to below? (gitlab.com/vega-protocol/trading-core/issues/118)
 			os.log.Error("Failed to flush batch of orders when calling writeBatch in badger order store",
 				logging.Error(err))
 		}
 	} else {
 		wb.Cancel()
 
-		// todo: retry mechanism, also handle badger txn too large errors
+		// todo: retry mechanism, also handle badger txn too large errors (gitlab.com/vega-protocol/trading-core/issues/118)
 		os.log.Error("Failed to insert order batch atomically when calling writeBatch in badger order store",
 			logging.Error(err))
 

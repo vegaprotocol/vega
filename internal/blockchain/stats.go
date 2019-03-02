@@ -9,7 +9,7 @@ type Stats struct {
 	totalTradesLastBatch  int
 	averageOrdersPerBatch int
 	//ordersPerSecond int        // --
-	//tradesPerSecond int        // todo(cdm): requires timing, devoid from blocks
+	//tradesPerSecond int        // requires timing, devoid from blocks
 }
 
 func NewStats() *Stats {

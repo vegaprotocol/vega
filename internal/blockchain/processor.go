@@ -64,12 +64,13 @@ func (p *abciProcessor) Validate(payload []byte) error {
 	case
 		SubmitOrderCommand,
 		CancelOrderCommand,
-		AmendOrderCommand: // Note: Future valid VEGA commands here
+		AmendOrderCommand:
+			// Add future valid VEGA commands here
 		return nil
 	}
 	return errors.New("Unknown command when validating payload")
 
-	// todo(cdm): More validation here using blockchain service methods
+	// todo: Validation required here using blockchain service (gitlab.com/vega-protocol/trading-core/issues/177)
 	//p.blockchainService.ValidateOrder()
 }
 

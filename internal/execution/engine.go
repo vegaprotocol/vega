@@ -50,7 +50,7 @@ func NewExecutionEngine(
 		time:        time,
 	}
 
-	// todo: existing markets are loaded via the marketStore as market proto types and can be added at runtime via TM
+	// existing markets are to be loaded via the marketStore as market proto types and can be added at runtime via TM
 	for _, marketId := range e.markets {
 		mkt := types.Market{
 			Name: marketId,
@@ -163,7 +163,7 @@ func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, t
 	if err != nil {
 		e.log.Error("Failed to obtain current vega time", logging.Error(err))
 		return &types.OrderConfirmation{}, types.OrderError_ORDER_AMEND_FAILURE
-		// todo: the above requires a new order error code to be added
+		// todo: new order error code required (gitlab.com/vega-protocol/trading-core/issues/178)
 	}
 
 	newOrder := types.OrderPool.Get().(*types.Order)
