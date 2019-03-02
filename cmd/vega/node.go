@@ -80,7 +80,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	resolver, err := internal.NewResolver(conf)
 
 	// Statistics provider
-	stats := internal.NewStats(l.Log)
+	stats := internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
 
 	// Resolve services for injection to servers/execution engine
 	orderService, err := resolver.ResolveOrderService()

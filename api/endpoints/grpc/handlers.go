@@ -268,8 +268,8 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		LastOrder:             nil,                             // todo
 		TotalMarkets:          0,                               // todo
 		TotalParties:          0,                               // todo
-		AppVersionHash:        "N/A",                           // todo
-		AppVersion:            "N/A",                           // todo
+		AppVersionHash:        h.Stats.GetVersionHash(),
+		AppVersion:            h.Stats.GetVersion(),
 		Parties:               nil,                             // todo
 	}, nil
 }
