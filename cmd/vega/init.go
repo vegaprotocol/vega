@@ -35,15 +35,15 @@ func (ic *initCommand) Init(c *Cli) {
 	}
 
 	fs := ic.cmd.Flags()
-	fs.StringVarP(&ic.rootPath, "root-path", "r", DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	fs.StringVarP(&ic.rootPath, "root-path", "r", defaultVegaDir(), "Path of the root directory in which the configuration will be located")
 	fs.BoolVarP(&ic.force, "force", "f", false, "Erase exiting vega configuration at the specified path")
 
 }
 
 func (ic *initCommand) runInit(c *Cli) error {
-	rootPathExists, err := Exists(ic.rootPath)
+	rootPathExists, err := pathExists(ic.rootPath)
 	if err != nil {
-		if _, ok := err.(*NotFound); !ok {
+		if _, ok := err.(*PathNotFound); !ok {
 			return err
 		}
 	}
@@ -58,7 +58,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// create the root
-	if err := EnsureDir(ic.rootPath); err != nil {
+	if err := ensureDir(ic.rootPath); err != nil {
 		return err
 	}
 
@@ -67,18 +67,18 @@ func (ic *initCommand) runInit(c *Cli) error {
 	fullTradeStorePath := filepath.Join(ic.rootPath, storage.TradeStoreDataPath)
 
 	// create sub-folders
-	if err := EnsureDir(fullCandleStorePath); err != nil {
+	if err := ensureDir(fullCandleStorePath); err != nil {
 		return err
 	}
-	if err := EnsureDir(fullOrderStorePath); err != nil {
+	if err := ensureDir(fullOrderStorePath); err != nil {
 		return err
 	}
-	if err := EnsureDir(fullTradeStorePath); err != nil {
+	if err := ensureDir(fullTradeStorePath); err != nil {
 		return err
 	}
 
 	// generate a default configuration
-	cfg, err := internal.DefaultConfig(ic.Log, ic.rootPath)
+	cfg, err := internal.NewDefaultConfig(ic.Log, ic.rootPath)
 	if err != nil {
 		return err
 	}

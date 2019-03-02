@@ -57,18 +57,18 @@ func (l *NodeCommand) runNode(args []string) error {
 		configPath = envConfigPath()
 		if configPath == "" {
 			// Default directory ($HOME/.vega)
-			configPath = DefaultVegaDir()
+			configPath = defaultVegaDir()
 		}
 	}
 
 	l.Log.Info("Config path", logging.String("config-path", configPath))
 
 	// VEGA config (holds all package level configs)
-	conf, err := internal.ConfigFromFile(l.Log, configPath)
+	conf, err := internal.NewConfigFromFile(l.Log, configPath)
 	if err != nil {
 		// We revert to default configs if there are any errors in read/parse process
 		l.Log.Error("Error reading config from file, using defaults", zap.Error(err))
-		defaultConf, err := internal.DefaultConfig(l.Log, DefaultVegaDir())
+		defaultConf, err := internal.NewDefaultConfig(l.Log, defaultVegaDir())
 		if err != nil {
 			return err
 		}
@@ -170,7 +170,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
-	waitsig()
+	waitSig()
 
 	// cleanup
 	l.Log.Info("closing blockchain server", zap.Error(socketServer.Stop()))

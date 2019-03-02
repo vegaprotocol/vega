@@ -46,7 +46,7 @@ type Config struct {
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
-func DefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Config, error) {
+func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Config, error) {
 	if logger == nil {
 		return nil, errors.New("logger instance is nil when calling NewConfig")
 	}
@@ -77,10 +77,10 @@ func DefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Config,
 
 // NewConfigFromFile attempts to load the full vega configuration tree from file at the path specified (config.toml)
 // If a path of '.' is specified the current working directory will be searched.
-func ConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
+func NewConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 
 	// Read in the default configuration for VEGA (defined in each sub-package config).
-	c, err := DefaultConfig(logger, path)
+	c, err := NewDefaultConfig(logger, path)
 	if err != nil {
 		return nil, err
 	}

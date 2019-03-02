@@ -12,12 +12,20 @@ const (
 	dirPerms = 0700
 )
 
-// DefaultVegaDir returns the location to vega config files and data files:
+type PathNotFound struct {
+	path string
+}
+
+func (err *PathNotFound) Error() string {
+	return fmt.Sprintf("not found: %s", err.path)
+}
+
+// defaultVegaDir returns the location to vega config files and data files:
 //	binary is in /usr/bin/ -> look for /etc/vega/config.toml
 //	binary is in /usr/local/vega/bin/ -> look for /usr/local/vega/etc/config.toml
 //	binary is in /usr/local/bin/ -> look for /usr/local/etc/vega/config.toml
 //	otherwise, look for $HOME/.vega/config.toml
-func DefaultVegaDir() string {
+func defaultVegaDir() string {
 	ex, err := os.Executable()
 	if err != nil {
 		panic(err)
@@ -35,7 +43,8 @@ func DefaultVegaDir() string {
 	return os.ExpandEnv("$HOME/.vega")
 }
 
-func EnsureDir(path string) error {
+// ensureDir will make sure a directory exists or is created at a given filesystem path.
+func ensureDir(path string) error {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -46,27 +55,20 @@ func EnsureDir(path string) error {
 	return nil
 }
 
-type NotFound struct {
-	path string
-}
-
-func (err *NotFound) Error() string {
-	return fmt.Sprintf("not found: %s", err.path)
-}
-
-// Exists returns whether a link exists at a given filesystem path.
-func Exists(path string) (bool, error) {
+// pathExists returns whether a link exists at a given filesystem path.
+func pathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil
 	}
 	if os.IsNotExist(err) {
-		return false, &NotFound{path}
+		return false, &PathNotFound{path}
 	}
 	return false, err
 }
 
-func waitsig() {
+// waitSig will wait for a sigterm or sigint interrupt.
+func waitSig() {
 	var gracefulStop = make(chan os.Signal)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
