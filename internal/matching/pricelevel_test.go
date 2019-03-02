@@ -53,7 +53,7 @@ func TestUncross(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	conf := NewConfig(logger)
+	conf := NewDefaultConfig(logger)
 	side := &OrderBookSide{Config: conf}
 	l := side.getPriceLevel(100, types.Side_Sell)
 	passiveOrder := &types.Order{

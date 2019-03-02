@@ -98,7 +98,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	config := api.NewConfig(logger)
+	config := api.NewDefaultConfig(logger)
 	root := NewResolverRoot(config, mockOrderService, mockTradeService,
 		mockCandleService, mockTimeService, mockMarketService, mockPartyService)
 
@@ -170,7 +170,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
-	config := api.NewConfig(logger)
+	config := api.NewDefaultConfig(logger)
 
 	root := NewResolverRoot(config, mockOrderService, mockTradeService,
 		mockCandleService, mockTimeService, mockMarketService, mockPartyService)
@@ -231,7 +231,7 @@ func buildTestResolverRoot() *resolverRoot {
 
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
-	config := api.NewConfig(logger)
+	config := api.NewDefaultConfig(logger)
 
 	return NewResolverRoot(config, mockOrderService, mockTradeService,
 		mockCandleService, mockTimeService, mockMarketService, mockPartyService)

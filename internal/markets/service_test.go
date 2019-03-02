@@ -19,7 +19,7 @@ func TestMarketService_NewService(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	marketConfig := NewConfig(logger)
+	marketConfig := NewDefaultConfig(logger)
 	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
 	assert.NotNil(t, marketService)
 	assert.Nil(t, err)
@@ -34,7 +34,7 @@ func TestMarketService_CreateMarket(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	marketConfig := NewConfig(logger)
+	marketConfig := NewDefaultConfig(logger)
 	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
 	assert.NotNil(t, marketService)
 	assert.Nil(t, err)
@@ -55,7 +55,7 @@ func TestMarketService_GetAll(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	marketConfig := NewConfig(logger)
+	marketConfig := NewDefaultConfig(logger)
 	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
 	assert.NotNil(t, marketService)
 	assert.Nil(t, err)
@@ -78,7 +78,7 @@ func TestMarketService_GetByName(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	marketConfig := NewConfig(logger)
+	marketConfig := NewDefaultConfig(logger)
 	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
 	assert.NotNil(t, marketService)
 	assert.Nil(t, err)
@@ -102,7 +102,7 @@ func TestMarketService_GetDepth(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	marketConfig := NewConfig(logger)
+	marketConfig := NewDefaultConfig(logger)
 	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
 	assert.NotNil(t, marketService)
 	assert.Nil(t, err)
@@ -125,7 +125,7 @@ func TestMarketService_GetDepthNonExistentMarket(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	marketConfig := NewConfig(logger)
+	marketConfig := NewDefaultConfig(logger)
 	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
 	assert.NotNil(t, marketService)
 	assert.Nil(t, err)

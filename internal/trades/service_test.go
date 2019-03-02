@@ -42,7 +42,7 @@ func TestNewTradeService(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeStore)
 
-	tradeConfig := NewConfig(logger)
+	tradeConfig := NewDefaultConfig(logger)
 	newTradeService, err := NewTradeService(tradeConfig, tradeStore, riskStore)
 	assert.Nil(t, err)
 	assert.NotNil(t, newTradeService)
@@ -58,7 +58,7 @@ func TestTradeService_GetByMarket(t *testing.T) {
 	tradeStore := &mocks.TradeStore{}
 	riskStore := &mocks.RiskStore{}
 
-	tradeConfig := NewConfig(logger)
+	tradeConfig := NewDefaultConfig(logger)
 	tradeService, err := NewTradeService(tradeConfig, tradeStore, riskStore)
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeService)
@@ -95,7 +95,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 
 	tradeStore := &mocks.TradeStore{}
 	riskStore := &mocks.RiskStore{}
-	tradeConfig := NewConfig(logger)
+	tradeConfig := NewDefaultConfig(logger)
 	tradeService, err := NewTradeService(tradeConfig, tradeStore, riskStore)
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeService)

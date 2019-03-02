@@ -64,11 +64,11 @@ func BenchmarkMatching(
 		defer logger.Sync()
 
 		// Matching engine (todo) create these inside execution engine based on config
-		matchingConfig := matching.NewConfig(logger)
+		matchingConfig := matching.NewDefaultConfig(logger)
 		matchingEngine := matching.NewMatchingEngine(matchingConfig)
 
 		// Execution engine (broker operation of markets at runtime etc)
-		eec := execution.NewConfig(logger)
+		eec := execution.NewDefaultConfig(logger)
 		executionEngine := execution.NewExecutionEngine(eec, matchingEngine,
 			timeService, orderStore, tradeStore, candleStore, marketStore)
 

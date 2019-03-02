@@ -17,7 +17,7 @@ func TestNewAbciApplication(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	config := NewConfig(logger)
+	config := NewDefaultConfig(logger)
 	stats := NewStats()
 	chain := NewAbciApplication(config, stats, ex, vt)
 	assert.Equal(t, uint64(0), chain.height)

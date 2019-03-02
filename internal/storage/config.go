@@ -38,7 +38,7 @@ type Config struct {
 // This constructor is used by the vega application code. Logger is a
 // pointer to a logging instance and defaultStoreDirPath is the root directory
 // where all storage directories are to be read from and written to.
-func NewConfig(logger *logging.Logger, defaultStoreDirPath string) *Config {
+func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) *Config {
 	logger = logger.Named(namedLogger)
 
 	return &Config{

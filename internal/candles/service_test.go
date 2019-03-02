@@ -38,7 +38,7 @@ func TestCandleService_ObserveCandles(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	candleConfig := NewConfig(logger)
+	candleConfig := NewDefaultConfig(logger)
 	candleService, err := NewCandleService(candleConfig, candleStore)
 	assert.Nil(t, err)
 
@@ -228,7 +228,7 @@ func TestSubscriptionUpdates_MinMax(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	candleConfig := NewConfig(logger)
+	candleConfig := NewDefaultConfig(logger)
 	candleService, err := NewCandleService(candleConfig, candleStore)
 	assert.Nil(t, err)
 

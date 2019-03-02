@@ -4,6 +4,10 @@ import (
 	"vega/internal/logging"
 )
 
+// namedLogger is the identifier for package and should ideally match the package name
+// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
+const namedLogger = "api"
+
 type Config struct {
 	log   *logging.Logger
 	Level logging.Level
@@ -16,8 +20,10 @@ type Config struct {
 	GrpcServerIpAddress    string
 }
 
-func NewConfig(logger *logging.Logger) *Config {
-	logger = logger.Named("api")
+// NewDefaultConfig creates an instance of the package specific configuration, given a
+// pointer to a logger instance to be used for logging within the package.
+func NewDefaultConfig(logger *logging.Logger) *Config {
+	logger = logger.Named(namedLogger)
 	return &Config{
 		log:   logger,
 		Level: logging.InfoLevel,

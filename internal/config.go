@@ -28,8 +28,8 @@ type Config struct {
 	Candles    *candles.Config
 	//Collatoral collatoral.config
 	Execution *execution.Config
-	//Fees fees.config
-	//Governanace governance.config
+	//Fees *fees.config
+	//Governanace *governance.config
 	Logging  *logging.Config
 	Markets  *markets.Config
 	Matching *matching.Config
@@ -57,19 +57,19 @@ func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Conf
 		log: logger,
 	}
 
-	c.Trades = trades.NewConfig(c.log)
-	c.Blockchain = blockchain.NewConfig(c.log)
-	c.Execution = execution.NewConfig(c.log)
-	c.Matching = matching.NewConfig(c.log)
-	c.API = api.NewConfig(c.log)
-	c.Orders = orders.NewConfig(c.log)
-	c.Time = vegatime.NewConfig(c.log)
-	c.Markets = markets.NewConfig(c.log)
-	c.Parties = parties.NewConfig(c.log)
-	c.Candles = candles.NewConfig(c.log)
-	c.Storage = storage.NewConfig(c.log, defaultStoreDirPath)
-	c.Risk = risk.NewConfig(c.log)
-	c.Logging = logging.NewConfig()
+	c.Trades = trades.NewDefaultConfig(c.log)
+	c.Blockchain = blockchain.NewDefaultConfig(c.log)
+	c.Execution = execution.NewDefaultConfig(c.log)
+	c.Matching = matching.NewDefaultConfig(c.log)
+	c.API = api.NewDefaultConfig(c.log)
+	c.Orders = orders.NewDefaultConfig(c.log)
+	c.Time = vegatime.NewDefaultConfig(c.log)
+	c.Markets = markets.NewDefaultConfig(c.log)
+	c.Parties = parties.NewDefaultConfig(c.log)
+	c.Candles = candles.NewDefaultConfig(c.log)
+	c.Storage = storage.NewDefaultConfig(c.log, defaultStoreDirPath)
+	c.Risk = risk.NewDefaultConfig(c.log)
+	c.Logging = logging.NewDefaultConfig()
 	// Any new package configs should be added here <>
 
 	return c, nil

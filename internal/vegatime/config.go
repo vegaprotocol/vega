@@ -12,7 +12,9 @@ type Config struct {
 	Level logging.Level
 }
 
-func NewConfig(logger *logging.Logger) *Config {
+// NewDefaultConfig creates an instance of the package specific configuration, given a
+// pointer to a logger instance to be used for logging within the package.
+func NewDefaultConfig(logger *logging.Logger) *Config {
 	logger = logger.Named(namedLogger)
 	return &Config{
 		log:   logger,

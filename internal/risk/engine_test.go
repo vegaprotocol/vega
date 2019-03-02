@@ -13,7 +13,7 @@ func TestRiskEngine_AddNewMarket(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	config := NewConfig(logger)
+	config := NewDefaultConfig(logger)
 	re := NewRiskEngine(config)
 	newMarket := &types.Market{Name: "BTC/DEC19"}
 	re.AddNewMarket(newMarket)
@@ -27,7 +27,7 @@ func TestRiskEngine_CalibrateRiskModel(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	config := NewConfig(logger)
+	config := NewDefaultConfig(logger)
 	re := NewRiskEngine(config)
 
 	newMarket := &types.Market{Name: "BTC/DEC19"}
