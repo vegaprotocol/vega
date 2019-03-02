@@ -21,7 +21,7 @@ import (
 )
 
 type Handlers struct {
-	Client        *blockchain.Client
+	Client        blockchain.Client
 	Stats         *internal.Stats
 	TimeService   vegatime.Service
 	OrderService  orders.Service
@@ -290,9 +290,7 @@ func (h *Handlers) getTendermintStats(ctx context.Context) (backlogLength int,
 	refused := "connection refused"
 
 	// Unconfirmed TX count == current transaction backlog length
-	blockchainClient := *h.Client
-
-	backlogLength, err = blockchainClient.GetUnconfirmedTxCount(ctx)
+	backlogLength, err = h.Client.GetUnconfirmedTxCount(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
 			return 0, 0, nil, nil
@@ -301,7 +299,7 @@ func (h *Handlers) getTendermintStats(ctx context.Context) (backlogLength int,
 	}
 
 	// Net info provides peer stats etc (block chain network info) == number of peers
-	netInfo, err := blockchainClient.GetNetworkInfo(ctx)
+	netInfo, err := h.Client.GetNetworkInfo(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
 			return backlogLength, 0, nil, nil
@@ -310,7 +308,7 @@ func (h *Handlers) getTendermintStats(ctx context.Context) (backlogLength int,
 	}
 
 	// Genesis retrieves the current genesis date/time for the blockchain
-	genesisTime, err := blockchainClient.GetGenesisTime(ctx)
+	genesisTime, err := h.Client.GetGenesisTime(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
 			return backlogLength, 0, nil, nil

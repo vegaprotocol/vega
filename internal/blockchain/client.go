@@ -22,7 +22,7 @@ type Client interface {
 	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
 	AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error)
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
-	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) // todo(cdm) revisit after stats refactor
+	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
 }

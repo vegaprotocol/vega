@@ -28,13 +28,13 @@ type Service interface {
 
 type orderService struct {
 	*Config
-	blockchain  *blockchain.Client
+	blockchain  blockchain.Client
 	orderStore  storage.OrderStore
 	timeService vegatime.Service
 }
 
 // NewOrderService creates an Orders service with the necessary dependencies
-func NewOrderService(config *Config, store storage.OrderStore, time vegatime.Service, client *blockchain.Client) (Service, error) {
+func NewOrderService(config *Config, store storage.OrderStore, time vegatime.Service, client blockchain.Client) (Service, error) {
 	if client == nil {
 		return nil, errors.New("blockchain client is nil when calling NewOrderService in OrderService")
 	}
@@ -72,8 +72,7 @@ func (s *orderService) CreateOrder(ctx context.Context, order *types.Order) (suc
 	}
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
-	bc := *s.blockchain
-	return bc.CreateOrder(ctx, order)
+	return s.blockchain.CreateOrder(ctx, order)
 }
 
 // CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
@@ -93,8 +92,7 @@ func (s *orderService) CancelOrder(ctx context.Context, order *types.Order) (suc
 		return false, errors.New("party mis-match cannot cancel order")
 	}
 	// Send cancellation request by consensus
-	bc := *s.blockchain
-	return bc.CancelOrder(ctx, o)
+	return s.blockchain.CancelOrder(ctx, o)
 }
 
 func (s *orderService) AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error) {
@@ -127,8 +125,7 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *types.Amendmen
 	}
 
 	// Send edit request by consensus
-	bc := *s.blockchain
-	return bc.AmendOrder(ctx, amendment)
+	return s.blockchain.AmendOrder(ctx, amendment)
 }
 
 func (s *orderService) GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {

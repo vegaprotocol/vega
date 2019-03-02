@@ -89,21 +89,12 @@ func New(core *zapcore.Core, cfg *zap.Config) *Logger {
 	return &logger
 }
 
-func (log *Logger) SetLevel(level Level, notify bool) {
-	zaplevel := (zapcore.Level)(level)
-	if log.config.Level.Level() == zaplevel {
+func (log *Logger) SetLevel(level Level) {
+	lvl := (zapcore.Level)(level)
+	if log.config.Level.Level() == lvl {
 		return
 	}
-	oldLevel := log.config.Level.String()
-	log.config.Level.SetLevel(zaplevel)
-	if notify {
-		if ce := log.Check(zaplevel, "Log level changed"); ce != nil {
-			ce.Write(
-				zap.String("old", oldLevel),
-				zap.String("new", zaplevel.String()),
-			)
-		}
-	}
+	log.config.Level.SetLevel(lvl)
 }
 
 func (log *Logger) With(fields ...zap.Field) *Logger {

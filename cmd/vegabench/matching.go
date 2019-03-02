@@ -60,7 +60,7 @@ func BenchmarkMatching(
 		marketStore.On("Post", mock.AnythingOfType("*proto.Market")).Return(nil)
 
 		logger := logging.NewLoggerFromEnv("dev")
-		logger.SetLevel(logging.InfoLevel, false)
+		logger.SetLevel(logging.InfoLevel)
 		defer logger.Sync()
 
 		// Matching engine (todo) create these inside execution engine based on config
