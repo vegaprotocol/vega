@@ -26,9 +26,9 @@ type Config struct {
 	API        *api.Config
 	Blockchain *blockchain.Config
 	Candles    *candles.Config
-	//Collatoral collatoral.config         // As packages continue to be
-	Execution *execution.Config // developed we add their config
-	//Fees fees.config                     // options here see examples
+	//Collatoral collatoral.config
+	Execution *execution.Config
+	//Fees fees.config
 	//Governanace governance.config
 	Logging  *logging.Config
 	Markets  *markets.Config
@@ -41,6 +41,7 @@ type Config struct {
 	Storage *storage.Config
 	Trades  *trades.Config
 	Time    *vegatime.Config
+	// Any new package configs should be added here <> (see examples above)
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
@@ -103,7 +104,7 @@ func ConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 	viper.SetDefault("Storage", c.Storage)
 	viper.SetDefault("Trades", c.Trades)
 	viper.SetDefault("Time", c.Time)
-	// Any new package configs should be added here <>
+	// Any new package configs should be added here <> (see examples above)
 
 	// Read in the configs from toml file and attempt to unmarshal into config struct.
 	viper.SetConfigName("config")
@@ -111,10 +112,11 @@ func ConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 		return nil, errors.New("config from file requires a path")
 	}
 	viper.AddConfigPath(path)
+
 	viper.AutomaticEnv()
 	err = viper.ReadInConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "error reading config from file")
+		return nil, err
 	}
 	err = viper.Unmarshal(&c)
 	if err != nil {

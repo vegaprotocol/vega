@@ -4,6 +4,7 @@ import (
 	"vega/api/endpoints/gql"
 	"vega/api/endpoints/grpc"
 	"vega/api/endpoints/restproxy"
+
 	"vega/internal"
 	"vega/internal/blockchain"
 	"vega/internal/execution"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -42,29 +44,38 @@ func (l *NodeCommand) Init(c *Cli) {
 // addFlags adds flags for specific command.
 func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
-	flagSet.StringVarP(&l.configPath, "configPath", "C", "", "file path to search for vega config file(s)")
+	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
 }
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
 
-	// Set up configuration and create a resolver
+	// Use configPath from args
 	configPath := l.configPath
 	if configPath == "" {
-		configPath = DefaultVegaDir() // the root directory for vega config and data files
+		// Use configPath from ENV
+		configPath = envConfigPath()
+		if configPath == "" {
+			// Default directory ($HOME/.vega)
+			configPath = DefaultVegaDir()
+		}
 	}
+
+	l.Log.Info("Config path", logging.String("config-path", configPath))
 
 	// VEGA config (holds all package level configs)
 	conf, err := internal.ConfigFromFile(l.Log, configPath)
 	if err != nil {
 		// We revert to default configs if there are any errors in read/parse process
 		l.Log.Error("Error reading config from file, using defaults", zap.Error(err))
-		conf, err = internal.DefaultConfig(l.Log, DefaultVegaDir())
+		defaultConf, err := internal.DefaultConfig(l.Log, DefaultVegaDir())
 		if err != nil {
 			return err
 		}
+		conf = defaultConf
+	} else {
+		conf.ListenForChanges()
 	}
-	conf.ListenForChanges()
 
 	resolver, err := internal.NewResolver(conf)
 
@@ -175,4 +186,13 @@ func (l *NodeCommand) runNode(args []string) error {
 func nodeExample() string {
 	return `$ vega node
 VEGA started successfully`
+}
+
+// envConfigPath attempts to look at ENV variable VEGA_CONFIG for the config.toml path
+func envConfigPath() string {
+	err := viper.BindEnv("config")
+	if err == nil {
+		return viper.GetString("config")
+	}
+	return ""
 }

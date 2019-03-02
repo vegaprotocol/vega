@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
-
+	"strings"
+	
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // Option uses to define the global options.
@@ -45,6 +47,12 @@ func NewCli() *Cli {
 	if len(Version) <= 0 {
 		Version = defaultVersion
 	}
+
+	// Prefix all VEGA environment variables to prevent collisions
+	viper.SetEnvPrefix("VEGA")
+	replacer := strings.NewReplacer(".", "_")
+	viper.SetEnvKeyReplacer(replacer)
+	viper.AutomaticEnv()
 
 	return &Cli{
 		rootCmd: &cobra.Command{
