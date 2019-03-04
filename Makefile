@@ -1,9 +1,28 @@
 PROJECT_NAME := "vega"
 PKG := "./cmd/$(PROJECT_NAME)"
-GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
-VERSION := $(shell git describe --tags)
-VERSION_HASH := $(shell git rev-parse HEAD)
+TAG := $(shell git describe --tags 2>/dev/null)
+
+# See https://docs.gitlab.com/ce/ci/variables/README.html for CI vars.
+ifeq ($(CI),)
+	# Not in CI
+	ifeq ($(TAG),)
+		# No tag, so make one
+		VERSION := dev-$(USER)
+	else
+		VERSION := dev-$(TAG)
+	endif
+	VERSION_HASH := $(shell git rev-parse HEAD | cut -b1-8)
+else
+	# In CI
+	ifeq ($(TAG),)
+		# No tag, so make one
+		VERSION := interim-$(CI_COMMIT_REF_SLUG)
+	else
+		VERSION := $(TAG)
+	endif
+	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
+endif
 
 .PHONY: all bench deps build clean test lint
 
@@ -44,6 +63,7 @@ deps: ## Get the dependencies
 
 install: proto ## install the binary in GOPATH/bin
 	@cat .asciiart.txt
+	@echo "Version: ${VERSION} (${VERSION_HASH})"
 	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" vega/cmd/vega
 	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" vega/cmd/vegabench
 
@@ -54,7 +74,8 @@ proto/%.pb.go: proto/%.proto
 	@protoc --go_out=. "$<"
 
 cibuild: ## Build the binary file
-	@if test -z "$$ARTIFACTS_BIN" ; then echo "No ARTIFACTS_BIN" ; exit 1 ; fi
+	@if test -z "$(ARTIFACTS_BIN)" ; then echo "No ARTIFACTS_BIN" ; exit 1 ; fi
+	@echo "Version: ${VERSION} (${VERSION_HASH})"
 	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
 
 clean: ## Remove previous build
