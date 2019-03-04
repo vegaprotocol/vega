@@ -14,7 +14,6 @@ cache:
     - /go/src/golang.org
     - /go/src/google.golang.org
     - /go/src/gopkg.in
-    - /go/pkg/mod
 
 stages:
   - test
@@ -30,12 +29,15 @@ before_script:
   - export ARTIFACTS_BIN=${ARTIFACTS_BIN}
   - export GO111MODULE=on
   - make deps
-  - ls ${GOPATH}/pkg/mod
 
 unit_tests:
   stage: test
   script:
     - make test
+  cache:
+    key: cache-key
+    paths:
+      - /go/pkg/mod
 
 #race_detector:
 #  stage: test
@@ -54,6 +56,8 @@ code_coverage:
   stage: test
   script:
     - make coverage
+  cache:
+    key: cache-key
 
 code_coverage_report:
   stage: test
