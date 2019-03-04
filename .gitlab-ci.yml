@@ -22,7 +22,7 @@ stages:
   - deploy
 
 before_script:
-  - ls ${GOPATH}
+  - echo ${GOPATH}
   - mkdir -p ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds
   - mkdir -p ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
