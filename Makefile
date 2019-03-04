@@ -73,11 +73,6 @@ proto: ${PROTOFILES} ## build proto definitions
 proto/%.pb.go: proto/%.proto
 	@protoc --go_out=. "$<"
 
-cibuild: ## Build the binary file
-	@if test -z "$(ARTIFACTS_BIN)" ; then echo "No ARTIFACTS_BIN" ; exit 1 ; fi
-	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -a -i -v -o $(ARTIFACTS_BIN) $(PKG)
-
 clean: ## Remove previous build
 	@rm -f ./vega{,bench} ./cmd/{vega/vega,vegabench/vegabench}
 
