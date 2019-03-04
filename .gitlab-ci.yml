@@ -18,12 +18,15 @@ cache:
     - ${PKGMOD_DIR}
 
 stages:
+  - deps
   - test
   - build
   - deploy
 
-before_script:
-  - make deps
+deps:
+  stage: deps
+  script:
+    - make deps
 
 unit_tests:
   stage: test
