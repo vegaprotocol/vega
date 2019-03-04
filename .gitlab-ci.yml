@@ -49,14 +49,7 @@ unit_tests:
 code_coverage:
   stage: test
   script:
-    - make coverage
-
-code_coverage_report:
-  stage: test
-  script:
-    - make coverhtml
-  only:
-    - master
+    - make coveragehtml
 
 #lint_code:
 #  stage: test
