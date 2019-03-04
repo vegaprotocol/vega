@@ -23,6 +23,11 @@ stages:
   - build
   - deploy
 
+before_script:
+  - mkdir -p "${BIN_DIR}" "${PKGMOD_DIR}" "${SRC_DIR}"
+  - find -maxdepth 1 -not -name . -and -not -name go -exec mv '{}' "${SRC_DIR}/" ';'
+  - cd "${SRC_DIR}"
+
 deps:
   stage: deps
   script:
