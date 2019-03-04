@@ -28,11 +28,16 @@ before_script:
   - cd ${GOPATH}/src/${GO_PROJECT}
   - export ARTIFACTS_BIN=${ARTIFACTS_BIN}
   - export GO111MODULE=on
+  - make deps
 
 unit_tests:
   stage: test
   script:
     - make test
+  cache:
+    key: cache-key
+    paths:
+      - /go/pkg/mod
 
 #race_detector:
 #  stage: test
@@ -51,6 +56,8 @@ code_coverage:
   stage: test
   script:
     - make coverage
+  cache:
+    key: cache-key
 
 code_coverage_report:
   stage: test

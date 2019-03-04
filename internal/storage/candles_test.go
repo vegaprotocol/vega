@@ -45,6 +45,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, 2, len(candles))
+
 	t.Log(fmt.Sprintf("%s", time.Unix(1542106860, 000000000).Format(time.RFC3339)))
 	assert.Equal(t, uint64(1542106860000000000), candles[0].Timestamp)
 	assert.Equal(t, uint64(100), candles[0].High)
@@ -85,7 +86,6 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
 	//------------------- generate empty candles-------------------------//
-
 	currentVegaTime := uint64(t0) + uint64(2*time.Minute)
 	err = candleStore.StartNewBuffer(testMarket, currentVegaTime)
 	assert.Nil(t, err)
@@ -95,6 +95,8 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
+
+	fmt.Println(" --- candles ", fmt.Sprintf("%+v", candles))
 
 	assert.Equal(t, 3, len(candles))
 	assert.Equal(t, uint64(1542106860000000000), candles[0].Timestamp)
