@@ -86,10 +86,10 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	mockPartyService := &mockParty.Service{}
 	mockTimeService := &mockTime.Service{}
 
-	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name:"BTC/DEC19"},
+	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name: "BTC/DEC19"},
 		nil).On("GetByName", ctx, "ETH/USD18").Return(nil,
-			errors.New("market does not exist")).On("GetByName",
-				ctx, "errorMarket").Return(nil, errors.New("market does not exist"))
+		errors.New("market does not exist")).On("GetByName",
+		ctx, "errorMarket").Return(nil, errors.New("market does not exist"))
 
 	mockOrderService.On("GetMarkets", ctx).Return(
 		[]string{"BTC/DEC19"}, nil,
@@ -151,11 +151,9 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	mockPartyService := &mockParty.Service{}
 	mockTimeService := &mockTime.Service{}
 
-
-	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name:"BTC/DEC19"},
+	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name: "BTC/DEC19"},
 		nil).On("GetByName", ctx, "errorMarket").Return(nil,
-			errors.New("market does not exist"))
-
+		errors.New("market does not exist"))
 
 	mockOrderService.On("GetMarkets", ctx).Return(
 		[]string{"testMarket", "BTC/DEC19"}, nil,

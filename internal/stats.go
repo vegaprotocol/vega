@@ -23,7 +23,7 @@ func NewStats(logger *logging.Logger, version string, versionHash string) *Stats
 }
 
 func (s *Stats) GetVersion() string {
-   return s.version
+	return s.version
 }
 
 func (s *Stats) GetVersionHash() string {

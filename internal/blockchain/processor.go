@@ -65,7 +65,7 @@ func (p *abciProcessor) Validate(payload []byte) error {
 		SubmitOrderCommand,
 		CancelOrderCommand,
 		AmendOrderCommand:
-			// Add future valid VEGA commands here
+		// Add future valid VEGA commands here
 		return nil
 	}
 	return errors.New("Unknown command when validating payload")

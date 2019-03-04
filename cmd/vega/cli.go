@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
-	
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -15,10 +15,10 @@ type Option struct {
 
 type Cli struct {
 	Option
-	rootCmd *cobra.Command
-	padding int
+	rootCmd     *cobra.Command
+	padding     int
 	versionHash string
-	version string
+	version     string
 }
 
 const (
@@ -64,8 +64,8 @@ func NewCli() *Cli {
 			DisableAutoGenTag: true,
 			Version:           fmt.Sprintf("%v (%v)", Version, VersionHash),
 		},
-		padding: 3,
-		version: Version,
+		padding:     3,
+		version:     Version,
 		versionHash: VersionHash,
 	}
 }
