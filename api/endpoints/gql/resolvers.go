@@ -20,6 +20,11 @@ import (
 	"vega/internal/vegatime"
 )
 
+var (
+	ErrNilMarket = errors.New("market missing or empty")
+	ErrNilParty  = errors.New("party missing or empty")
+)
+
 type resolverRoot struct {
 	*api.Config
 	orderService  orders.Service
@@ -157,6 +162,9 @@ type MyMarketResolver resolverRoot
 
 func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 	where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error) {
+	if market == nil {
+		return nil, ErrNilMarket
+	}
 	err := validateMarket(ctx, &market.Name, r.marketService)
 	if err != nil {
 		return nil, err
@@ -178,6 +186,9 @@ func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 
 func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error) {
+	if market == nil {
+		return nil, ErrNilMarket
+	}
 	err := validateMarket(ctx, &market.Name, r.marketService)
 	if err != nil {
 		return nil, err
@@ -199,7 +210,7 @@ func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 
 func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (types.MarketDepth, error) {
 	if market == nil {
-		return types.MarketDepth{}, errors.New("market missing or empty")
+		return types.MarketDepth{}, ErrNilMarket
 
 	}
 	err := validateMarket(ctx, &market.Name, r.marketService)
@@ -218,7 +229,10 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (types.Mar
 
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	sinceTimestampRaw string, interval Interval) ([]*types.Candle, error) {
+	if market == nil {
+		return nil, ErrNilMarket
 
+	}
 	// Validate interval, map to protobuf enum
 	var pbInterval types.Interval
 	switch interval {
@@ -267,8 +281,9 @@ type MyPartyResolver resolverRoot
 
 func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 	where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error) {
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+	if err := validateParty(ctx, party, r.partyService); err != nil {
+		return nil, err
+	}
 
 	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
 	if err != nil {
@@ -287,8 +302,9 @@ func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 
 func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 	where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error) {
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+	if err := validateParty(ctx, party, r.partyService); err != nil {
+		return nil, err
+	}
 
 	queryFilters, err := buildTradeQueryFilters(where, skip, first, last)
 	if err != nil {
@@ -306,8 +322,9 @@ func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 }
 
 func (r *MyPartyResolver) Positions(ctx context.Context, obj *Party) ([]types.MarketPosition, error) {
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+	if err := validateParty(ctx, obj, r.partyService); err != nil {
+		return nil, err
+	}
 
 	positions, err := r.tradeService.GetPositionsByParty(ctx, obj.Name)
 	if err != nil {
@@ -677,8 +694,6 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 		return nil, err
 	}
 
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
 	c, ref := r.tradeService.ObserveTrades(ctx, market, party)
 	logger := *r.GetLogger()
 	logger.Debug("Trades: new subscriber", logging.Uint64("ref", ref))
@@ -760,18 +775,19 @@ func validateMarket(ctx context.Context, marketId *string, marketService markets
 	return nil
 }
 
-// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-//func validateParty(ctx context.Context, partyId *string, partyService parties.Service) error {
-//	if partyId != nil {
-//		if len(*partyId) == 0 {
-//			return errors.New("party must not be empty")
-//		}
-//		_, err := partyService.GetByName(*partyId)
-//		if err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}
+func validateParty(ctx context.Context, party *Party, partyService parties.Service) error {
+	if party == nil {
+		return ErrNilParty
+	}
+	if len(party.Name) <= 0 {
+		return ErrNilParty
+	}
+	_, err := partyService.GetByName(party.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // END: Subscription Resolver
