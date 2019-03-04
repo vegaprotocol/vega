@@ -14,7 +14,7 @@ cache:
     - /go/src/golang.org
     - /go/src/google.golang.org
     - /go/src/gopkg.in
-    - $GOPATH/pkg/mod
+    - /go/pkg/mod
 
 stages:
   - test
@@ -22,6 +22,7 @@ stages:
   - deploy
 
 before_script:
+  - ls ${GOPATH}
   - mkdir -p ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds
   - mkdir -p ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
