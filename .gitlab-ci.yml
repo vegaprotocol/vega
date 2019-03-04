@@ -55,6 +55,8 @@ code_coverage:
   stage: test
   script:
     - make coveragehtml
+  only:
+    - /^(master|develop)$/
 
 #lint_code:
 #  stage: test
