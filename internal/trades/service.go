@@ -14,11 +14,11 @@ import (
 )
 
 type Service interface {
-	GetByMarket(market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByParty(party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByOrderId(orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByMarketAndId(market string, id string) (trade *types.Trade, err error)
-	GetByPartyAndId(party string, id string) (trade *types.Trade, err error)
+	GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error)
+	GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
 	ObservePositions(ctx context.Context, party string) (positions <-chan types.MarketPosition, ref uint64)
 	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
@@ -38,7 +38,7 @@ func NewTradeService(config *Config, tradeStore storage.TradeStore, riskStore st
 	}, nil
 }
 
-func (t *tradeService) GetByMarket(market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
+func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
 	trades, err = t.tradeStore.GetByMarket(market, filters)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (t *tradeService) GetByMarket(market string, filters *filtering.TradeQueryF
 	return trades, err
 }
 
-func (t *tradeService) GetByParty(party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
+func (t *tradeService) GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
 	trades, err = t.tradeStore.GetByParty(party, filters)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (t *tradeService) GetByParty(party string, filters *filtering.TradeQueryFil
 	return trades, err
 }
 
-func (t *tradeService) GetByMarketAndId(market string, id string) (trade *types.Trade, err error) {
+func (t *tradeService) GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
 	trade, err = t.tradeStore.GetByMarketAndId(market, id)
 	if err != nil {
 		return &types.Trade{}, err
@@ -62,7 +62,7 @@ func (t *tradeService) GetByMarketAndId(market string, id string) (trade *types.
 	return trade, err
 }
 
-func (t *tradeService) GetByPartyAndId(party string, id string) (trade *types.Trade, err error) {
+func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error) {
 	trade, err = t.tradeStore.GetByPartyAndId(party, id)
 	if err != nil {
 		return &types.Trade{}, err
@@ -70,7 +70,7 @@ func (t *tradeService) GetByPartyAndId(party string, id string) (trade *types.Tr
 	return trade, err
 }
 
-func (t *tradeService) GetByOrderId(orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
+func (t *tradeService) GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
 	trades, err = t.tradeStore.GetByOrderId(orderId, filters)
 	if err != nil {
 		return nil, err

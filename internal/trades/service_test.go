@@ -1,6 +1,7 @@
 package trades
 
 import (
+	"context"
 	"testing"
 
 	"vega/internal/filtering"
@@ -70,7 +71,7 @@ func TestTradeService_GetByMarket(t *testing.T) {
 		{Id: "C", Market: market, Price: 300},
 	}, nil).Once()
 
-	tradeSet, err := tradeService.GetByMarket(market, &filtering.TradeQueryFilters{})
+	tradeSet, err := tradeService.GetByMarket(context.Background(), market, &filtering.TradeQueryFilters{})
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeSet)
 	assert.Equal(t, 3, len(tradeSet))
@@ -80,7 +81,7 @@ func TestTradeService_GetByMarket(t *testing.T) {
 	tradeStore.On("GetByMarket", invalid, &filtering.TradeQueryFilters{}).Return(nil,
 		errors.New("phobos communications link interrupted")).Once()
 
-	tradeSet, err = tradeService.GetByMarket(invalid, &filtering.TradeQueryFilters{})
+	tradeSet, err = tradeService.GetByMarket(context.Background(), invalid, &filtering.TradeQueryFilters{})
 	assert.NotNil(t, err)
 	assert.Nil(t, tradeSet)
 }
@@ -106,7 +107,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 		{Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
 	}, nil).Once()
 
-	tradeSet, err := tradeService.GetByParty(partyA, &filtering.TradeQueryFilters{})
+	tradeSet, err := tradeService.GetByParty(context.Background(), partyA, &filtering.TradeQueryFilters{})
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeSet)
 	assert.Equal(t, 2, len(tradeSet))
@@ -116,7 +117,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 	tradeStore.On("GetByParty", invalid, &filtering.TradeQueryFilters{}).Return(nil,
 		errors.New("phobos communications link interrupted")).Once()
 
-	tradeSet, err = tradeService.GetByParty(invalid, &filtering.TradeQueryFilters{})
+	tradeSet, err = tradeService.GetByParty(context.Background(), invalid, &filtering.TradeQueryFilters{})
 	assert.NotNil(t, err)
 	assert.Nil(t, tradeSet)
 }

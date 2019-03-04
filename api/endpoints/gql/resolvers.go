@@ -186,7 +186,7 @@ func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	if err != nil {
 		return nil, err
 	}
-	t, err := r.tradeService.GetByMarket(market.Name, queryFilters)
+	t, err := r.tradeService.GetByMarket(ctx, market.Name, queryFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 	if err != nil {
 		return nil, err
 	}
-	t, err := r.tradeService.GetByParty(party.Name, queryFilters)
+	t, err := r.tradeService.GetByParty(ctx, party.Name, queryFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +349,7 @@ func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *types.Market
 	queryFilters := &filtering.TradeQueryFilters{}
 	last := uint64(1)
 	queryFilters.Last = &last
-	t, err := r.tradeService.GetByMarket(obj.Name, queryFilters)
+	t, err := r.tradeService.GetByMarket(ctx, obj.Name, queryFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -399,7 +399,7 @@ func (r *MyOrderResolver) Datetime(ctx context.Context, obj *types.Order) (strin
 }
 func (r *MyOrderResolver) Trades(ctx context.Context, obj *types.Order) ([]*types.Trade, error) {
 	f := filtering.TradeQueryFilters{}
-	relatedTrades, err := r.tradeService.GetByOrderId(obj.Id, &f)
+	relatedTrades, err := r.tradeService.GetByOrderId(ctx, obj.Id, &f)
 	if err != nil {
 		return nil, err
 	}

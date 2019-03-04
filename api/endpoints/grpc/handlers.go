@@ -179,7 +179,7 @@ func (h *Handlers) MarketDepth(ctx context.Context, request *api.MarketDepthRequ
 	queryFilters := &filtering.TradeQueryFilters{}
 	last := uint64(1)
 	queryFilters.Last = &last
-	t, err := h.TradeService.GetByMarket(request.Market, queryFilters)
+	t, err := h.TradeService.GetByMarket(ctx, request.Market, queryFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMark
 	f := &filtering.TradeQueryFilters{}
 	*f.Last = limit
 
-	t, err := h.TradeService.GetByMarket(request.Market, f)
+	t, err := h.TradeService.GetByMarket(ctx, request.Market, f)
 	if err != nil {
 		return nil, err
 	}
