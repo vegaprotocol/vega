@@ -22,7 +22,6 @@ stages:
   - deploy
 
 before_script:
-  - echo ${GOPATH}
   - mkdir -p ${GOPATH}/src/${GO_PROJECT} /go/src/_/builds
   - mkdir -p ${CI_PROJECT_DIR}/${ARTIFACTS_DIR}
   - cp -r ${CI_PROJECT_DIR}/* ${GOPATH}/src/${GO_PROJECT}/
@@ -30,6 +29,8 @@ before_script:
   - cd ${GOPATH}/src/${GO_PROJECT}
   - export ARTIFACTS_BIN=${ARTIFACTS_BIN}
   - export GO111MODULE=on
+  - make deps
+  - ls ${GOPATH}/pkg/mod
 
 unit_tests:
   stage: test
