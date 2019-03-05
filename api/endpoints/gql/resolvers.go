@@ -796,7 +796,7 @@ func validateParty(ctx context.Context, party *Party, partyService parties.Servi
 	if len(party.Name) <= 0 {
 		return ErrNilParty
 	}
-	_, err := partyService.GetByName(party.Name)
+	_, err := partyService.GetByName(ctx, party.Name)
 	if err != nil {
 		return err
 	}
