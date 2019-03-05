@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"runtime/debug"
+	"time"
 	"vega/internal/parties"
 
 	"vega/api"
@@ -18,6 +19,7 @@ import (
 
 	"vega/internal/logging"
 
+	graphql "github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
@@ -123,12 +125,32 @@ func (g *graphServer) Start() {
 		Resolvers: resolverRoot,
 	}
 
+	loggingMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
+		rc := graphql.GetResolverContext(ctx)
+		logfields := logFieldsGraphQLQuery(rc)
+		rlogger := logger.With(logfields...)
+		rlogger.Debug("GQL Start")
+		start := time.Now()
+		res, err = next(ctx)
+		end := time.Now()
+		if err != nil {
+			logfields = append(logfields, logging.String("error", err.Error()))
+		}
+		timetaken := end.Sub(start)
+		logfields = append(logfields, logging.Int64("duration_nano", timetaken.Nanoseconds()))
+
+		rlogger = logger.With(logfields...)
+		rlogger.Debug("GQL Finish")
+		return res, err
+	})
+
 	handlr := http.NewServeMux()
 
 	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
 	handlr.Handle("/query", g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
+		loggingMiddleware,
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			logger.Warn("Recovering from error on graphQL handler",
 				logging.String("error", fmt.Sprintf("%s", err)))
