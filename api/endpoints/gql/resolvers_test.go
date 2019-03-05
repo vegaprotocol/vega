@@ -483,6 +483,120 @@ func TestPartyResolver(t *testing.T) {
 
 }
 
+func TestMarketDepthResolver(t *testing.T) {
+	if datadir == nil || len(*datadir) <= 0 {
+		t.Fatal("missing vega.datadir argument")
+	}
+
+	ctx := context.Background()
+
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	tctx := buildResolver(t, logger)
+	defer tctx.Close()
+
+	marketDepthResolver := tctx.root.MarketDepth()
+	assert.NotNil(t, marketDepthResolver)
+
+	marketDepth := &types.MarketDepth{
+		Name: "BTC/DEC19",
+		Sell: []*types.PriceLevel{
+			{
+				Price:            100,
+				NumberOfOrders:   10,
+				Volume:           35,
+				CumulativeVolume: 55,
+			},
+			{
+				Price:            34,
+				NumberOfOrders:   123,
+				Volume:           56,
+				CumulativeVolume: 345,
+			},
+		},
+		Buy: []*types.PriceLevel{
+			{
+				Price:            100,
+				NumberOfOrders:   10,
+				Volume:           35,
+				CumulativeVolume: 55,
+			},
+			{
+				Price:            34,
+				NumberOfOrders:   123,
+				Volume:           56,
+				CumulativeVolume: 345,
+			},
+		},
+	}
+
+	t.Run("Get Buys prices level from MarketDepth", func(t *testing.T) {
+		pl, err := marketDepthResolver.Buy(ctx, marketDepth)
+		assert.NotNil(t, pl)
+		assert.Nil(t, err)
+		assert.Len(t, pl, len(marketDepth.Buy))
+	})
+
+	t.Run("Get Buys prices levels from MarketDepth with nil", func(t *testing.T) {
+		pl, err := marketDepthResolver.Buy(ctx, nil)
+		assert.Nil(t, pl)
+		assert.NotNil(t, err)
+		assert.Equal(t, err, ErrNilMarketDepth)
+	})
+
+	t.Run("Get Buys prices levels from MarketDepth with empty buys", func(t *testing.T) {
+		pl, err := marketDepthResolver.Buy(ctx, &types.MarketDepth{})
+		assert.NotNil(t, pl)
+		assert.Nil(t, err)
+		assert.Len(t, pl, 0)
+	})
+
+	t.Run("Get Sells prices level from MarketDepth", func(t *testing.T) {
+		pl, err := marketDepthResolver.Sell(ctx, marketDepth)
+		assert.NotNil(t, pl)
+		assert.Nil(t, err)
+		assert.Len(t, pl, len(marketDepth.Sell))
+	})
+
+	t.Run("Get Sells prices levels from MarketDepth with nil", func(t *testing.T) {
+		pl, err := marketDepthResolver.Sell(ctx, nil)
+		assert.Nil(t, pl)
+		assert.NotNil(t, err)
+		assert.Equal(t, err, ErrNilMarketDepth)
+	})
+
+	t.Run("Get Sells prices levels from MarketDepth with empty sells", func(t *testing.T) {
+		pl, err := marketDepthResolver.Sell(ctx, &types.MarketDepth{})
+		assert.NotNil(t, pl)
+		assert.Nil(t, err)
+		assert.Len(t, pl, 0)
+	})
+
+	t.Run("Get Last Trade", func(t *testing.T) {
+		lastrade, err := marketDepthResolver.LastTrade(ctx, marketDepth)
+		assert.NotNil(t, lastrade)
+		assert.Nil(t, err)
+	})
+
+	t.Run("Get Last trade with nil market depth", func(t *testing.T) {
+		lastrade, err := marketDepthResolver.LastTrade(ctx, nil)
+		assert.Nil(t, lastrade)
+		assert.NotNil(t, err)
+		assert.Equal(t, err, ErrNilMarketDepth)
+	})
+
+	t.Run("Get Last trade with unknown market", func(t *testing.T) {
+		unknowmkt := *marketDepth
+		unknowmkt.Name = "ETH/DEC99"
+		lastrade, err := marketDepthResolver.LastTrade(ctx, &unknowmkt)
+		assert.Nil(t, lastrade)
+		assert.NotNil(t, err)
+		assert.Equal(t, err.Error(), "market ETH/DEC99 not found in store")
+	})
+
+}
+
 func intptr(i int) *int {
 	return &i
 }

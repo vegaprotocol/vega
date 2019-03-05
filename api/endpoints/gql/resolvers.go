@@ -21,8 +21,9 @@ import (
 )
 
 var (
-	ErrNilMarket = errors.New("market missing or empty")
-	ErrNilParty  = errors.New("party missing or empty")
+	ErrNilMarket      = errors.New("market missing or empty")
+	ErrNilParty       = errors.New("party missing or empty")
+	ErrNilMarketDepth = errors.New("market depth missing or empty")
 )
 
 type resolverRoot struct {
@@ -344,21 +345,34 @@ func (r *MyPartyResolver) Positions(ctx context.Context, obj *Party) ([]types.Ma
 type MyMarketDepthResolver resolverRoot
 
 func (r *MyMarketDepthResolver) Buy(ctx context.Context, obj *types.MarketDepth) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
+	if obj == nil {
+		return nil, ErrNilMarketDepth
+	}
+	valBuyLevels := make([]types.PriceLevel, 0, len(obj.Buy))
 	for _, v := range obj.Buy {
-		valBuyLevels = append(valBuyLevels, *v)
+		if v != nil {
+			valBuyLevels = append(valBuyLevels, *v)
+		}
 	}
 	return valBuyLevels, nil
 }
 func (r *MyMarketDepthResolver) Sell(ctx context.Context, obj *types.MarketDepth) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
-	for _, v := range obj.Sell {
-		valBuyLevels = append(valBuyLevels, *v)
+	if obj == nil {
+		return nil, ErrNilMarketDepth
 	}
-	return valBuyLevels, nil
+	valSellLevels := make([]types.PriceLevel, 0, len(obj.Sell))
+	for _, v := range obj.Sell {
+		if v != nil {
+			valSellLevels = append(valSellLevels, *v)
+		}
+	}
+	return valSellLevels, nil
 }
 
 func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *types.MarketDepth) (*types.Trade, error) {
+	if obj == nil {
+		return nil, ErrNilMarketDepth
+	}
 	err := validateMarket(ctx, &obj.Name, r.marketService)
 	if err != nil {
 		return nil, err
