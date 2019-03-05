@@ -1,0 +1,46 @@
+package proto
+
+var (
+	ErrInvalidMarketID           = OrderError_INVALID_MARKET_ID
+	ErrInvalidOrderID            = OrderError_INVALID_ORDER_ID
+	ErrOrderOutOfSequence        = OrderError_ORDER_OUT_OF_SEQUENCE
+	ErrInvalidRemainingSize      = OrderError_INVALID_REMAINING_SIZE
+	ErrNonEmptyNewOrderID        = OrderError_NON_EMPTY_NEW_ORDER_ID
+	ErrOrderRemovalFailure       = OrderError_ORDER_REMOVAL_FAILURE
+	ErrInvalidExpirationDatetime = OrderError_INVALID_EXPIRATION_DATETIME
+	ErrInvalidOrderReference     = OrderError_INVALID_ORDER_REFERENCE
+	ErrEditNotAllowed            = OrderError_EDIT_NOT_ALLOWED
+	ErrOrderAmendFailure         = OrderError_ORDER_AMEND_FAILURE
+	ErrOrderNotFound             = OrderError_ORDER_NOT_FOUND
+)
+
+func (err OrderError) Error() string {
+	switch err {
+	case OrderError_NONE:
+		return "none"
+	case OrderError_INVALID_MARKET_ID:
+		return "OrderError: Invalid Market ID"
+	case OrderError_INVALID_ORDER_ID:
+		return "OrderError: Invalid Order ID"
+	case OrderError_ORDER_OUT_OF_SEQUENCE:
+		return "OrderError: Order Out Of Sequence"
+	case OrderError_INVALID_REMAINING_SIZE:
+		return "OrderError: Invalid Remaining Size"
+	case OrderError_NON_EMPTY_NEW_ORDER_ID:
+		return "OrderError: Non Empty New Order ID"
+	case OrderError_ORDER_REMOVAL_FAILURE:
+		return "OrderError: Order Removal Failure"
+	case OrderError_INVALID_EXPIRATION_DATETIME:
+		return "OrderError: Invalid Expiration Datetime"
+	case OrderError_INVALID_ORDER_REFERENCE:
+		return "OrderError: Invalid Order Reference"
+	case OrderError_EDIT_NOT_ALLOWED:
+		return "OrderError: Edit Not Allowed"
+	case OrderError_ORDER_AMEND_FAILURE:
+		return "OrderError: Order Amend Failure"
+	case OrderError_ORDER_NOT_FOUND:
+		return "OrderError: Order Not Found"
+	default:
+		return "invalid OrderError"
+	}
+}
