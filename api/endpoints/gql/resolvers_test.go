@@ -2,8 +2,8 @@ package gql
 
 import (
 	context "context"
-	"flag"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -23,13 +23,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var datadir = flag.String("vega.datadir", "", "directory containing badger data files")
+func datadir(t *testing.T) string {
+	d := os.Getenv("VEGA_TEST_DATADIR")
+	if len(d) <= 0 {
+		t.Fatal("missing VEGA_TEST_DATADIR env variable")
+	}
+	return d
+}
 
 func TestMarketResolver(t *testing.T) {
-	if datadir == nil || len(*datadir) <= 0 {
-		t.Fatal("missing vega.datadir argument")
-	}
-
 	ctx := context.Background()
 
 	logger := logging.NewLoggerFromEnv("dev")
@@ -279,10 +281,6 @@ func TestMarketResolver(t *testing.T) {
 }
 
 func TestPartyResolver(t *testing.T) {
-	if datadir == nil || len(*datadir) <= 0 {
-		t.Fatal("missing vega.datadir argument")
-	}
-
 	ctx := context.Background()
 
 	logger := logging.NewLoggerFromEnv("dev")
@@ -484,10 +482,6 @@ func TestPartyResolver(t *testing.T) {
 }
 
 func TestMarketDepthResolver(t *testing.T) {
-	if datadir == nil || len(*datadir) <= 0 {
-		t.Fatal("missing vega.datadir argument")
-	}
-
 	ctx := context.Background()
 
 	logger := logging.NewLoggerFromEnv("dev")
@@ -597,10 +591,6 @@ func TestMarketDepthResolver(t *testing.T) {
 }
 
 func TestOrdersResolver(t *testing.T) {
-	if datadir == nil || len(*datadir) <= 0 {
-		t.Fatal("missing vega.datadir argument")
-	}
-
 	ctx := context.Background()
 
 	logger := logging.NewLoggerFromEnv("dev")
@@ -664,7 +654,7 @@ func (tctx *testCtx) Close() {
 }
 
 func buildResolver(t *testing.T, logger *logging.Logger) *testCtx {
-	config, err := internal.NewDefaultConfig(logger, *datadir)
+	config, err := internal.NewDefaultConfig(logger, datadir(t))
 	assert.Nil(t, err)
 
 	// time service
