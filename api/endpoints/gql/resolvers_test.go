@@ -594,6 +594,42 @@ func TestMarketDepthResolver(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Equal(t, err.Error(), "market ETH/DEC99 not found in store")
 	})
+}
+
+func TestOrdersResolver(t *testing.T) {
+	if datadir == nil || len(*datadir) <= 0 {
+		t.Fatal("missing vega.datadir argument")
+	}
+
+	ctx := context.Background()
+
+	logger := logging.NewLoggerFromEnv("dev")
+	defer logger.Sync()
+
+	tctx := buildResolver(t, logger)
+	defer tctx.Close()
+
+	orderResolver := tctx.root.Order()
+	assert.NotNil(t, orderResolver)
+
+	order := &types.Order{
+		Id: "V0000000222-0000004093",
+	}
+
+	t.Run("Get Trades by order ID", func(t *testing.T) {
+		tr, err := orderResolver.Trades(ctx, order)
+		assert.NotNil(t, tr)
+		assert.Nil(t, err)
+		assert.Len(t, tr, 2)
+	})
+
+	t.Run("Get Trades by order ID empty ID", func(t *testing.T) {
+		order := *order
+		order.Id = ""
+		tr, err := orderResolver.Trades(ctx, &order)
+		assert.Nil(t, tr)
+		assert.Nil(t, err)
+	})
 
 }
 
