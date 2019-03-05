@@ -20,7 +20,7 @@ type Service interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
-	ObservePositions(ctx context.Context, party string) (positions <-chan types.MarketPosition, ref uint64)
+	ObservePositions(ctx context.Context, party string) (positions <-chan *types.MarketPosition, ref uint64)
 	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 }
 
@@ -134,8 +134,8 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 	return trades, ref
 }
 
-func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-chan types.MarketPosition, uint64) {
-	positions := make(chan types.MarketPosition)
+func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-chan *types.MarketPosition, uint64) {
+	positions := make(chan *types.MarketPosition)
 	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
@@ -166,8 +166,9 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 					logging.Error(err))
 			}
 			for _, marketPositions := range mapOfMarketPositions {
+				marketPositions := marketPositions
 				select {
-				case positions <- *marketPositions:
+				case positions <- marketPositions:
 					t.log.Debug("Positions for subscriber sent successfully",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip))

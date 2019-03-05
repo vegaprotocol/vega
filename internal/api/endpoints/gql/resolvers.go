@@ -100,9 +100,9 @@ func (r *resolverRoot) Subscription() SubscriptionResolver {
 
 type MyQueryResolver resolverRoot
 
-func (r *MyQueryResolver) Vega(ctx context.Context) (Vega, error) {
+func (r *MyQueryResolver) Vega(ctx context.Context) (*Vega, error) {
 	var vega = Vega{}
-	return vega, nil
+	return &vega, nil
 }
 
 // END: Query Resolver
@@ -212,23 +212,23 @@ func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	return valTrades, nil
 }
 
-func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (types.MarketDepth, error) {
+func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (*types.MarketDepth, error) {
 	if market == nil {
-		return types.MarketDepth{}, errors.New("market missing or empty")
+		return nil, errors.New("market missing or empty")
 
 	}
 	err := validateMarket(ctx, &market.Name, r.marketService)
 	if err != nil {
-		return types.MarketDepth{}, err
+		return nil, err
 	}
 	// Look for market depth for the given market (will validate market internally)
 	// Note: Market depth is also known as OrderBook depth within the matching-engine
 	depth, err := r.marketService.GetDepth(ctx, market.Name)
 	if err != nil {
-		return types.MarketDepth{}, err
+		return nil, err
 	}
 
-	return *depth, nil
+	return depth, nil
 }
 
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
@@ -391,8 +391,8 @@ func (r *MyOrderResolver) Type(ctx context.Context, obj *types.Order) (OrderType
 func (r *MyOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
 	return Side(obj.Side.String()), nil
 }
-func (r *MyOrderResolver) Market(ctx context.Context, obj *types.Order) (Market, error) {
-	return Market{
+func (r *MyOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market, error) {
+	return &Market{
 		Name: obj.Market,
 	}, nil
 }
@@ -427,8 +427,8 @@ func (r *MyOrderResolver) Trades(ctx context.Context, obj *types.Order) ([]*type
 
 type MyTradeResolver resolverRoot
 
-func (r *MyTradeResolver) Market(ctx context.Context, obj *types.Trade) (Market, error) {
-	return Market{Name: obj.Market}, nil
+func (r *MyTradeResolver) Market(ctx context.Context, obj *types.Trade) (*Market, error) {
+	return &Market{Name: obj.Market}, nil
 }
 func (r *MyTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side, error) {
 	return Side(obj.Aggressor.String()), nil
@@ -546,8 +546,8 @@ func (r *MyPositionResolver) MinimumMargin(ctx context.Context, obj *types.Marke
 	return strconv.FormatInt(obj.MinimumMargin, 10), nil
 }
 
-func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (Market, error) {
-	return Market{Name: obj.Market}, nil
+func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (*Market, error) {
+	return &Market{Name: obj.Market}, nil
 }
 
 func (r *MyPositionResolver) absInt64Str(val int64) string {
@@ -571,7 +571,7 @@ func (r *MyPositionResolver) direction(val int64) ValueDirection {
 type MyMutationResolver resolverRoot
 
 func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, party string, price string,
-	size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error) {
+	size string, side Side, type_ OrderType, expiration *string) (*PreConsensus, error) {
 	order := &types.Order{}
 	res := PreConsensus{}
 	if r.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
@@ -581,21 +581,21 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	p, err := safeStringUint64(price)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 	order.Price = p
 	s, err := safeStringUint64(size)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 	order.Size = s
 	err = validateMarket(ctx, &market, r.marketService)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 	order.Market = market
 	if len(party) == 0 {
-		return res, errors.New("party missing or empty")
+		return nil, errors.New("party missing or empty")
 	}
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
@@ -603,11 +603,11 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	order.Party = party
 	order.Type, err = parseOrderType(&type_)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 	order.Side, err = parseSide(&side)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 
 	// GTT must have an expiration value
@@ -617,7 +617,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 		layout := "2006-01-02T15:04:05Z"
 		_, err := time.Parse(layout, *expiration)
 		if err != nil {
-			return res, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
 		}
 
 		// move to pure timestamps or convert an RFC format shortly
@@ -629,15 +629,15 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	if err != nil {
 		logger := *r.GetLogger()
 		logger.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
-		return res, err
+		return nil, err
 	}
 
 	res.Accepted = accepted
 	res.Reference = reference
-	return res, nil
+	return &res, nil
 }
 
-func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error) {
+func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*PreConsensus, error) {
 	order := &types.Order{}
 	res := PreConsensus{}
 
@@ -648,15 +648,15 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
 	err := validateMarket(ctx, &market, r.marketService)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 	order.Market = market
 	if len(id) == 0 {
-		return res, errors.New("id missing or empty")
+		return nil, errors.New("id missing or empty")
 	}
 	order.Id = id
 	if len(party) == 0 {
-		return res, errors.New("party missing or empty")
+		return nil, errors.New("party missing or empty")
 	}
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
@@ -666,11 +666,11 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
 	accepted, err := r.orderService.CancelOrder(ctx, order)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 
 	res.Accepted = accepted
-	return res, nil
+	return &res, nil
 }
 
 // END: Mutation Resolver
@@ -707,7 +707,7 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan types.MarketPosition, error) {
+func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.MarketPosition, error) {
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
@@ -717,7 +717,7 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 	return c, nil
 }
 
-func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan types.MarketDepth, error) {
+func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan *types.MarketDepth, error) {
 	err := validateMarket(ctx, &market, r.marketService)
 	if err != nil {
 		return nil, err
@@ -728,7 +728,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	return c, nil
 }
 
-func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan types.Candle, error) {
+func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
 	err := validateMarket(ctx, &market, r.marketService)
 	if err != nil {
 		return nil, err

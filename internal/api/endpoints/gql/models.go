@@ -3,23 +3,24 @@
 package gql
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
-	fmt "fmt"
-	io "io"
-	strconv "strconv"
+	"fmt"
+	"io"
+	"strconv"
+
+	"vega/proto"
 )
 
 type Market struct {
 	Name    string            `json:"name"`
-	Orders  []types.Order     `json:"orders"`
-	Trades  []types.Trade     `json:"trades"`
-	Depth   types.MarketDepth `json:"depth"`
-	Candles []*types.Candle   `json:"candles"`
+	Orders  []proto.Order     `json:"orders"`
+	Trades  []proto.Trade     `json:"trades"`
+	Depth   proto.MarketDepth `json:"depth"`
+	Candles []*proto.Candle   `json:"candles"`
 }
 
 type OrderFilter struct {
-	AND           []OrderFilter `json:"AND"`
-	OR            []OrderFilter `json:"OR"`
+	And           []OrderFilter `json:"AND"`
+	Or            []OrderFilter `json:"OR"`
 	Open          *bool         `json:"open"`
 	ID            *string       `json:"id"`
 	IDNeq         *string       `json:"id_neq"`
@@ -53,9 +54,9 @@ type OrderFilter struct {
 
 type Party struct {
 	Name      string                 `json:"name"`
-	Orders    []types.Order          `json:"orders"`
-	Trades    []types.Trade          `json:"trades"`
-	Positions []types.MarketPosition `json:"positions"`
+	Orders    []proto.Order          `json:"orders"`
+	Trades    []proto.Trade          `json:"trades"`
+	Positions []proto.MarketPosition `json:"positions"`
 }
 
 type PreConsensus struct {
@@ -64,8 +65,8 @@ type PreConsensus struct {
 }
 
 type TradeFilter struct {
-	AND           []TradeFilter `json:"AND"`
-	OR            []TradeFilter `json:"OR"`
+	And           []TradeFilter `json:"AND"`
+	Or            []TradeFilter `json:"OR"`
 	ID            *string       `json:"id"`
 	IDNeq         *string       `json:"id_neq"`
 	Market        *string       `json:"market"`
@@ -108,6 +109,15 @@ const (
 	IntervalI1D  Interval = "I1D"
 )
 
+var AllInterval = []Interval{
+	IntervalI1M,
+	IntervalI5M,
+	IntervalI15M,
+	IntervalI1H,
+	IntervalI6H,
+	IntervalI1D,
+}
+
 func (e Interval) IsValid() bool {
 	switch e {
 	case IntervalI1M, IntervalI5M, IntervalI15M, IntervalI1H, IntervalI6H, IntervalI1D:
@@ -147,6 +157,14 @@ const (
 	OrderStatusFilled    OrderStatus = "Filled"
 )
 
+var AllOrderStatus = []OrderStatus{
+	OrderStatusActive,
+	OrderStatusCancelled,
+	OrderStatusExpired,
+	OrderStatusStopped,
+	OrderStatusFilled,
+}
+
 func (e OrderStatus) IsValid() bool {
 	switch e {
 	case OrderStatusActive, OrderStatusCancelled, OrderStatusExpired, OrderStatusStopped, OrderStatusFilled:
@@ -185,6 +203,13 @@ const (
 	OrderTypeGtt OrderType = "GTT"
 )
 
+var AllOrderType = []OrderType{
+	OrderTypeFok,
+	OrderTypeEne,
+	OrderTypeGtc,
+	OrderTypeGtt,
+}
+
 func (e OrderType) IsValid() bool {
 	switch e {
 	case OrderTypeFok, OrderTypeEne, OrderTypeGtc, OrderTypeGtt:
@@ -221,6 +246,11 @@ const (
 	SideSell Side = "Sell"
 )
 
+var AllSide = []Side{
+	SideBuy,
+	SideSell,
+}
+
 func (e Side) IsValid() bool {
 	switch e {
 	case SideBuy, SideSell:
@@ -256,6 +286,11 @@ const (
 	ValueDirectionPositive ValueDirection = "Positive"
 	ValueDirectionNegative ValueDirection = "Negative"
 )
+
+var AllValueDirection = []ValueDirection{
+	ValueDirectionPositive,
+	ValueDirectionNegative,
+}
 
 func (e ValueDirection) IsValid() bool {
 	switch e {

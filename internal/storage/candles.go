@@ -70,7 +70,7 @@ type badgerCandleStore struct {
 type InternalTransport struct {
 	Market    string
 	Interval  types.Interval
-	Transport chan types.Candle
+	Transport chan *types.Candle
 }
 
 type marketCandle struct {
@@ -449,7 +449,7 @@ func (c *badgerCandleStore) notify() error {
 			logging.String("market", iT.Market))
 
 		for _, item := range c.queue {
-
+			item := item
 			// find candle with right interval
 			if item.Candle.Interval != iT.Interval {
 				continue
@@ -462,7 +462,7 @@ func (c *badgerCandleStore) notify() error {
 
 			// try to place candle onto transport
 			select {
-			case iT.Transport <- item.Candle:
+			case iT.Transport <- &item.Candle:
 				c.log.Debug("Candle updated for subscriber successfully",
 					logging.Uint64("id", id),
 					logging.String("interval", item.Candle.Interval.String()),
