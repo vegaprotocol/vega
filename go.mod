@@ -1,7 +1,7 @@
 module vega
 
 require (
-	github.com/99designs/gqlgen v0.7.2
+	github.com/99designs/gqlgen v0.8.0
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
@@ -20,7 +20,6 @@ require (
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/gorilla/websocket v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.7.0
-	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmhodges/levigo v0.0.0-20161115193449-c42d9e0ca023 // indirect
 	github.com/pkg/errors v0.8.1
@@ -30,12 +29,12 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
+	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v0.0.0-20190203031304-2f17a3356c66 // indirect
 	github.com/tendermint/go-amino v0.14.1 // indirect
 	github.com/tendermint/tendermint v0.30.0
 	github.com/vektah/gqlparser v1.1.1
-	github.com/vektra/mockery v0.0.0-20181123154057-e78b021dcbb5 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1

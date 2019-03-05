@@ -207,7 +207,7 @@ func TestCandleService_ObserveCandles(t *testing.T) {
 	fmt.Printf("End of test\n")
 }
 
-func isSubscriptionEmpty(transport <-chan types.Candle) bool {
+func isSubscriptionEmpty(transport <-chan *types.Candle) bool {
 	select {
 	case <-transport:
 		return false

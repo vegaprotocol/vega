@@ -11,7 +11,7 @@ import (
 )
 
 type Service interface {
-	ObserveCandles(ctx context.Context, market *string, interval *types.Interval) (candleCh <-chan types.Candle, ref uint64)
+	ObserveCandles(ctx context.Context, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
 	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error)
 }
 
@@ -34,9 +34,9 @@ func NewCandleService(config *Config, candleStore storage.CandleStore) (Service,
 	}, nil
 }
 
-func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *types.Interval) (<-chan types.Candle, uint64) {
-	candleCh := make(chan types.Candle)
-	iT := storage.InternalTransport{Market: *market, Interval: *interval, Transport: make(chan types.Candle)}
+func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
+	candleCh := make(chan *types.Candle)
+	iT := storage.InternalTransport{Market: *market, Interval: *interval, Transport: make(chan *types.Candle)}
 	ref := c.candleStore.Subscribe(&iT)
 
 	go func(id uint64, ctx context.Context) {
