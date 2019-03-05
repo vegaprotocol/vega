@@ -117,7 +117,7 @@ func Uintptr(key string, val uintptr) zap.Field {
 
 // Error constructs a field with the given error value.
 func Error(val error) zap.Field {
-	return zap.String("error", val.Error())
+	return zap.Error(val)
 }
 
 // Candle constructs a field with the given VEGA candle proto value.
