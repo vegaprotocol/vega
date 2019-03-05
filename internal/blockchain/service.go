@@ -7,8 +7,9 @@ import (
 
 	types "vega/proto"
 
-	"github.com/pkg/errors"
 	"vega/internal/logging"
+
+	"github.com/pkg/errors"
 )
 
 type Service interface {
@@ -127,12 +128,11 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	// increment total orders, even for failures so current ID strategy is valid.
 	s.totalOrders++
 
-	if errorMessage != types.OrderError_NONE {
-		errorMessageString := errorMessage.String()
+	if errorMessage != nil {
 		s.log.Error("error message on creating order",
 			logging.Order(*order),
-			logging.String("error", errorMessageString))
-		return errors.New(errorMessageString)
+			logging.Error(errorMessage))
+		return errorMessage
 	}
 
 	s.log.Debug("ABCI service COMMIT completed")
@@ -151,12 +151,11 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 			s.log.Debug("Order cancelled", logging.Order(*cancellationMessage.Order))
 		}
 	}
-	if errorMessage != types.OrderError_NONE {
-		errorMessageString := errorMessage.String()
+	if errorMessage != nil {
 		s.log.Error("error message on cancelling order",
 			logging.Order(*order),
-			logging.String("error", errorMessageString))
-		return errors.New(errorMessageString)
+			logging.Error(errorMessage))
+		return errorMessage
 	}
 
 	return nil
@@ -175,12 +174,11 @@ func (s *abciService) AmendOrder(order *types.Amendment) error {
 			s.log.Debug("Order amended", logging.String("order", order.String()))
 		}
 	}
-	if errorMessage != types.OrderError_NONE {
-		errorMessageString := errorMessage.String()
+	if errorMessage != nil {
 		s.log.Error("error message on amending order",
 			logging.String("order", order.String()),
-			logging.String("error", errorMessageString))
-		return errors.New(errorMessageString)
+			logging.Error(errorMessage))
+		return errorMessage
 	}
 
 	return nil
