@@ -23,6 +23,7 @@ import (
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
+	"go.uber.org/zap"
 )
 
 type graphServer struct {
@@ -126,8 +127,9 @@ func (g *graphServer) Start() {
 	}
 
 	loggingMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
-		rc := graphql.GetResolverContext(ctx)
-		logfields := logFieldsGraphQLQuery(rc)
+		reqctx := graphql.GetRequestContext(ctx)
+		logfields := make([]zap.Field, 0)
+		logfields = append(logfields, logging.String("raw", reqctx.RawQuery))
 		rlogger := logger.With(logfields...)
 		rlogger.Debug("GQL Start")
 		start := time.Now()
