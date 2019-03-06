@@ -37,7 +37,7 @@ deps:
 unit_tests:
   stage: test
   script:
-    - echo "${VEGA_TEST_DATADIR}"
+    - ls -alR "${VEGA_TEST_DATADIR}"
     - make test
 
 #race_detector:
