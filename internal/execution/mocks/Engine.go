@@ -69,6 +69,20 @@ func (_m *Engine) Generate() error {
 	return r0
 }
 
+// Process provides a mock function with given fields:
+func (_m *Engine) Process() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SubmitOrder provides a mock function with given fields: order
 func (_m *Engine) SubmitOrder(order *proto.Order) (*proto.OrderConfirmation, proto.OrderError) {
 	ret := _m.Called(order)
