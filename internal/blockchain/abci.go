@@ -35,7 +35,7 @@ type AbciApplication struct {
 }
 
 func NewAbciApplication(config *Config, stats *Stats, execution execution.Engine, time vegatime.Service) *AbciApplication {
-	service := NewAbciService(config, stats, execution)
+	service := NewAbciService(config, stats, execution, time)
 	processor := NewAbciProcessor(config, service)
 	return &AbciApplication{
 		Config:    config,
@@ -47,11 +47,7 @@ func NewAbciApplication(config *Config, stats *Stats, execution execution.Engine
 }
 
 func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
-	// Notify the abci/blockchain service imp that the transactions block/batch has begun
-	if err := app.service.Begin(); err != nil {
-		app.log.Panic("Failure on blockchain service begin", logging.Error(err))
-	}
-
+	
 	// We can log more gossiped time info (switchable in config)
 	if app.LogTimeDebug {
 		app.log.Debug("Block time for height",
@@ -64,6 +60,11 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 	// Set time provided by ABCI block header (consensus will have been reached on block time)
 	epochNow := beginBlock.Header.Time.UnixNano()
 	app.time.SetTimeNow(vegatime.Stamp(epochNow))
+
+	// Notify the abci/blockchain service imp that the transactions block/batch has begun
+	if err := app.service.Begin(); err != nil {
+		app.log.Panic("Failure on blockchain service begin", logging.Error(err))
+	}
 
 	return types.ResponseBeginBlock{}
 }
