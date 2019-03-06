@@ -13,10 +13,22 @@ import (
 )
 
 type Engine interface {
+	// SubmitOrder takes a new order request and submits it to the execution engine, storing output etc.
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError)
+
+	// CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
 	CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError)
+
+	// AmendOrder take order amendment details and attempts to amend the order
+	// if it exists and is in a state to be edited.
 	AmendOrder(order *types.Amendment) (*types.OrderConfirmation, types.OrderError)
+
+	// Process any data updates (including state changes)
+	// e.g. removing expired orders from matching engine.
 	Generate() error
+
+	// Generate creates any data (including storing state changes) in the underlying stores.
+	Process() error
 }
 
 type engine struct {
@@ -30,6 +42,8 @@ type engine struct {
 	time        vegatime.Service
 }
 
+// NewExecutionEngine takes stores and engines and returns
+// a new execution engine to process new orders, etc.
 func NewExecutionEngine(
 	executionConfig *Config,
 	matchingEngine matching.Engine,
@@ -72,6 +86,7 @@ func NewExecutionEngine(
 	return e
 }
 
+// SubmitOrder takes a new order request and submits it to the execution engine, storing output etc.
 func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError) {
 	e.log.Debug("Submit order", logging.Order(*order))
 
@@ -144,6 +159,8 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, type
 	return confirmation, types.OrderError_NONE
 }
 
+// AmendOrder take order amendment details and attempts to amend the order
+// if it exists and is in a state to be edited.
 func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, types.OrderError) {
 	e.log.Debug("Amend order")
 
@@ -222,6 +239,7 @@ func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, t
 	return &types.OrderConfirmation{}, types.OrderError_EDIT_NOT_ALLOWED
 }
 
+// CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
 func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError) {
 	e.log.Debug("Cancel order")
 
@@ -299,6 +317,36 @@ func (e *engine) StartCandleBuffer() error {
 			return errors.Wrap(err, fmt.Sprintf("Failed to start new candle buffer for market %s", marketId))
 		}
 	}
+
+	return nil
+}
+
+// Process any data updates (including state changes)
+// e.g. removing expired orders from matching engine.
+func (e *engine) Process() error {
+	e.log.Debug("Removing expiring orders from matching engine")
+
+	epochTimeNano, _, err := e.time.GetTimeNow()
+	if err != nil {
+		return err
+	}
+
+	expiringOrders := e.matching.RemoveExpiringOrders(epochTimeNano.Uint64())
+
+	e.log.Debug("Removed expired orders from matching engine",
+		logging.Int("orders-removed", len(expiringOrders)))
+
+	for _, order := range expiringOrders {
+		err := e.orderStore.Put(order)
+		if err != nil {
+			e.log.Error("error updating store for remove expiring order",
+				logging.Order(order),
+				logging.Error(err))
+		}
+	}
+
+	e.log.Debug("Updated expired orders in stores",
+		logging.Int("orders-removed", len(expiringOrders)))
 
 	return nil
 }

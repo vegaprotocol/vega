@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"fmt"
-	"time"
 	"vega/internal/execution"
 	"vega/internal/vegatime"
 
@@ -26,11 +25,10 @@ type abciService struct {
 	*Config
 	*Stats
 
+	time              vegatime.Service
 	execution         execution.Engine
 	previousTimestamp vegatime.Stamp
 	currentTimestamp  vegatime.Stamp
-	previousDatetime  time.Time
-	currentDatetime   time.Time
 
 	ordersInBatchLengths []int
 	currentOrdersInBatch int
@@ -40,24 +38,57 @@ type abciService struct {
 	totalTrades          uint64
 }
 
-func NewAbciService(conf *Config, stats *Stats, ex execution.Engine) Service {
-	return &abciService{Config: conf, Stats: stats, execution: ex}
+func NewAbciService(conf *Config, stats *Stats, ex execution.Engine, timeService vegatime.Service) Service {
+	return &abciService{Config: conf, Stats: stats, execution: ex, time: timeService}
 }
 
 func (s *abciService) Begin() error {
-	s.log.Debug("AbciService: Begin")
+	s.log.Debug("ABCI service BEGIN starting")
+
+	// Load the latest consensus block time
+	epochTimeNano, _, err := s.time.GetTimeNow()
+	if err != nil {
+		return err
+	}
+
+	// We need to cache the last timestamp so we can distribute trades
+	// in a block evenly between last timestamp and current timestamp
+	if epochTimeNano > 0 {
+		s.previousTimestamp = epochTimeNano
+	}
+
+	// Store the timestamp info that we receive from the blockchain provider
+	s.currentTimestamp = epochTimeNano
+
+	// Ensure we always set app.previousTimestamp it'll be 0 on the first block
+	if s.previousTimestamp < 1 {
+		s.previousTimestamp = epochTimeNano
+	}
+
+	// Run any processing required in execution engine, e.g. check for expired orders
+	err = s.execution.Process()
+	if err != nil {
+		return err
+	}
+
+	s.log.Debug("ABCI service BEGIN completed",
+		logging.Uint64("current-timestamp", s.currentTimestamp.Uint64()),
+		logging.Uint64("previous-timestamp", s.previousTimestamp.Uint64()),
+		logging.String("current-datetime", s.currentTimestamp.Rfc3339Nano()),
+		logging.String("previous-datetime", s.previousTimestamp.Rfc3339Nano()),
+	)
 
 	return nil
 }
 
 func (s *abciService) ValidateOrder(order *types.Order) error {
-	s.log.Debug("AbciService: Validating order")
+	s.log.Debug("ABCI service validating order", logging.Order(*order))
 
 	return nil
 }
 
 func (s *abciService) Commit() error {
-	s.log.Debug("AbciService: Commit")
+	s.log.Debug("ABCI service COMMIT starting")
 	s.setBatchStats()
 
 	// Call out to run any data generation in the stores etc
@@ -104,6 +135,7 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 		return errors.New(errorMessageString)
 	}
 
+	s.log.Debug("ABCI service COMMIT completed")
 	return nil
 }
 
