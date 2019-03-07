@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-	"code.vegaprotocol.io/vega/internal/parties"
 
-	"code.vegaprotocol.io/vega/api"
 	types "code.vegaprotocol.io/vega/proto"
 
+	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/orders"
+	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 )

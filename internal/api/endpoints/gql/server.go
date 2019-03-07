@@ -8,18 +8,17 @@ import (
 	"net/http"
 	"runtime/debug"
 	"time"
-	"code.vegaprotocol.io/vega/internal/parties"
 
-	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/orders"
+	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
-	"code.vegaprotocol.io/vega/internal/logging"
-
-	graphql "github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"

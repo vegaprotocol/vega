@@ -3,17 +3,16 @@ package grpc
 import (
 	"fmt"
 	"net"
-	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/blockchain"
 
-	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
-
-	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"

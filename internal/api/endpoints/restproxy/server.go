@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/api"
-
+	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"

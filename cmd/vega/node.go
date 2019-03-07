@@ -1,11 +1,10 @@
 package main
 
 import (
-	"code.vegaprotocol.io/vega/api/endpoints/gql"
-	"code.vegaprotocol.io/vega/api/endpoints/grpc"
-	"code.vegaprotocol.io/vega/api/endpoints/restproxy"
-
 	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
+	"code.vegaprotocol.io/vega/internal/api/endpoints/grpc"
+	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
