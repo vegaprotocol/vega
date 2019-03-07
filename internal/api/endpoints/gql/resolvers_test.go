@@ -6,7 +6,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 
-	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 

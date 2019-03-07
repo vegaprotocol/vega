@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"code.vegaprotocol.io/vega/internal/blockchain"
 
-	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"

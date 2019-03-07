@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/execution"
