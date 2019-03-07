@@ -4,15 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"vega/internal/filtering"
-	"vega/internal/storage"
-	"vega/internal/storage/mocks"
+	"code.vegaprotocol.io/vega/internal/filtering"
+	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal/storage/mocks"
 
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 // storageConfig specifies that the badger files are kept in a different

@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"vega/internal/logging"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/logging"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
 )

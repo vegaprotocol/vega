@@ -3,9 +3,9 @@ package blockchain
 import (
 	"testing"
 
-	execution "vega/internal/execution/mocks"
-	"vega/internal/logging"
-	"vega/internal/vegatime"
+	execution "code.vegaprotocol.io/vega/internal/execution/mocks"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/stretchr/testify/assert"
 )

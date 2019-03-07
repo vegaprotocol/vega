@@ -3,7 +3,7 @@ package storage
 import (
 	"errors"
 	"fmt"
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Store provides the data storage contract for parties.

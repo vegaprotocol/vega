@@ -2,8 +2,8 @@ package parties
 
 import (
 	"context"
-	"vega/internal/storage"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/storage"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 //Service provides the interface for parties business logic.

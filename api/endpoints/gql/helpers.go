@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"vega/internal/filtering"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/filtering"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
 )

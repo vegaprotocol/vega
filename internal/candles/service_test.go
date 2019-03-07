@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 	"time"
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
-	"vega/internal/logging"
-	"vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -5,13 +5,13 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-	"vega/internal/execution"
-	"vega/internal/matching"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/matching"
+	types "code.vegaprotocol.io/vega/proto"
 
-	"vega/internal/logging"
-	mockStorage "vega/internal/storage/mocks"
-	mockVegaTime "vega/internal/vegatime/mocks"
+	"code.vegaprotocol.io/vega/internal/logging"
+	mockStorage "code.vegaprotocol.io/vega/internal/storage/mocks"
+	mockVegaTime "code.vegaprotocol.io/vega/internal/vegatime/mocks"
 
 	"github.com/stretchr/testify/mock"
 )

@@ -1,7 +1,7 @@
 package storage
 
 import (
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 // MarketDepth provides a way to update and read the current state of Depth of Market.

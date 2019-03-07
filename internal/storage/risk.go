@@ -1,7 +1,7 @@
 package storage
 
 import (
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Store provides the data storage contract for risk factors.

@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 // namedLogger is the identifier for package and should ideally match the package name

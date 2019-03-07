@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"vega/api"
+	"code.vegaprotocol.io/vega/api"
 
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"

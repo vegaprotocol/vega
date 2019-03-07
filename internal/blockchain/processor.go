@@ -3,11 +3,11 @@ package blockchain
 import (
 	"fmt"
 
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 type Processor interface {

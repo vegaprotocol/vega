@@ -2,16 +2,16 @@ package internal
 
 import (
 	"sync"
-	"vega/internal/blockchain"
+	"code.vegaprotocol.io/vega/internal/blockchain"
 
-	"vega/internal/candles"
-	"vega/internal/logging"
-	"vega/internal/markets"
-	"vega/internal/orders"
-	"vega/internal/parties"
-	"vega/internal/storage"
-	"vega/internal/trades"
-	"vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/orders"
+	"code.vegaprotocol.io/vega/internal/parties"
+	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal/trades"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/pkg/errors"
 )

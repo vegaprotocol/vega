@@ -3,8 +3,8 @@ package storage
 import (
 	"fmt"
 
-	"vega/internal/logging"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/logging"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger"
 	"github.com/dgraph-io/badger/options"

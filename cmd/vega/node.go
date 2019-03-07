@@ -1,15 +1,15 @@
 package main
 
 import (
-	"vega/api/endpoints/gql"
-	"vega/api/endpoints/grpc"
-	"vega/api/endpoints/restproxy"
+	"code.vegaprotocol.io/vega/api/endpoints/gql"
+	"code.vegaprotocol.io/vega/api/endpoints/grpc"
+	"code.vegaprotocol.io/vega/api/endpoints/restproxy"
 
-	"vega/internal"
-	"vega/internal/blockchain"
-	"vega/internal/execution"
-	"vega/internal/logging"
-	"vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/blockchain"
+	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/matching"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

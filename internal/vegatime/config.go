@@ -1,6 +1,6 @@
 package vegatime
 
-import "vega/internal/logging"
+import "code.vegaprotocol.io/vega/internal/logging"
 
 // namedLogger is the identifier for package and should ideally match the package name
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'. Note for readability

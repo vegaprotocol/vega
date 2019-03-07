@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"vega/internal/logging"
-	"vega/internal/storage/mocks"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/storage/mocks"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
 )

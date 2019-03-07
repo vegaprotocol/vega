@@ -5,12 +5,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
-	"vega/internal/logging"
-	"vega/internal/matching"
-	"vega/internal/storage"
-	"vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 )
 
 type Engine interface {

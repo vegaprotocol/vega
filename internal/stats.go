@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"vega/internal/blockchain"
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/blockchain"
+	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 // Stats ties together all other package level application stats types.

@@ -6,7 +6,7 @@ import (
 	fmt "fmt"
 	io "io"
 	strconv "strconv"
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type Market struct {

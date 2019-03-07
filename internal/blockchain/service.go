@@ -2,12 +2,12 @@ package blockchain
 
 import (
 	"fmt"
-	"vega/internal/execution"
-	"vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/pkg/errors"
 )

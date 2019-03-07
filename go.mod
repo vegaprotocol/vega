@@ -1,4 +1,4 @@
-module vega
+module code.vegaprotocol.io/vega
 
 require (
 	github.com/99designs/gqlgen v0.7.2

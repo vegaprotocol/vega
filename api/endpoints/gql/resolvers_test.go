@@ -4,18 +4,18 @@ import (
 	"context"
 	"testing"
 
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
-	"vega/api"
-	"vega/internal/filtering"
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/internal/filtering"
+	"code.vegaprotocol.io/vega/internal/logging"
 
-	mockCandle "vega/internal/candles/mocks"
-	mockMarket "vega/internal/markets/mocks"
-	mockOrder "vega/internal/orders/mocks"
-	mockParty "vega/internal/parties/mocks"
-	mockTrade "vega/internal/trades/mocks"
-	mockTime "vega/internal/vegatime/mocks"
+	mockCandle "code.vegaprotocol.io/vega/internal/candles/mocks"
+	mockMarket "code.vegaprotocol.io/vega/internal/markets/mocks"
+	mockOrder "code.vegaprotocol.io/vega/internal/orders/mocks"
+	mockParty "code.vegaprotocol.io/vega/internal/parties/mocks"
+	mockTrade "code.vegaprotocol.io/vega/internal/trades/mocks"
+	mockTime "code.vegaprotocol.io/vega/internal/vegatime/mocks"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

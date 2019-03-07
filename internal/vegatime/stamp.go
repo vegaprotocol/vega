@@ -2,7 +2,7 @@ package vegatime
 
 import (
 	"time"
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type Stamp uint64

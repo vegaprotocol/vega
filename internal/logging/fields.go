@@ -1,7 +1,7 @@
 package logging
 
 import (
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"go.uber.org/zap"
 )

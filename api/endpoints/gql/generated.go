@@ -7,7 +7,7 @@ import (
 	context "context"
 	strconv "strconv"
 	sync "sync"
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
 	graphql "github.com/99designs/gqlgen/graphql"
 	introspection "github.com/99designs/gqlgen/graphql/introspection"

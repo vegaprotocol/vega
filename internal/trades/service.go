@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math"
 
-	"vega/internal/filtering"
-	"vega/internal/logging"
-	"vega/internal/storage"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/filtering"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/storage"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
 )

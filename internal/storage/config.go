@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/pkg/errors"
 )

@@ -3,7 +3,7 @@ package parties
 import (
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 func TestConfig_GetLogger(t *testing.T) {

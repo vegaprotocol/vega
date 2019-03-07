@@ -4,7 +4,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 func TestDecodeInvalidPayload(t *testing.T) {

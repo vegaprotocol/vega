@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
-	"vega/internal/blockchain"
-	"vega/internal/filtering"
-	"vega/internal/logging"
-	"vega/internal/storage"
-	"vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/internal/blockchain"
+	"code.vegaprotocol.io/vega/internal/filtering"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/pkg/errors"
 )

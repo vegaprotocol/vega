@@ -3,9 +3,9 @@ package blockchain
 import (
 	"encoding/binary"
 
-	"vega/internal/execution"
-	"vega/internal/logging"
-	"vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/tendermint/tendermint/abci/types"
 )

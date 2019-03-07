@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type PriceLevel struct {

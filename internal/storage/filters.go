@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"vega/internal/filtering"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/filtering"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 func applyTradeFilters(trade *types.Trade, queryFilters *filtering.TradeQueryFilters) bool {

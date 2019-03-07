@@ -3,8 +3,8 @@ package risk
 import (
 	"testing"
 
-	"vega/internal/logging"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/logging"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
 )

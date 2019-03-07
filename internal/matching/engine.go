@@ -2,7 +2,7 @@ package matching
 
 import (
 	"fmt"
-	types "vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
 )

@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"net/http/httputil"
 	"testing"
-	"vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 func TestNoGzip(t *testing.T) {

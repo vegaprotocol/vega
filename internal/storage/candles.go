@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"vega/internal/logging"
-	"vega/internal/vegatime"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/vegatime"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"

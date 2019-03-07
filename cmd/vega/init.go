@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"vega/internal"
-	"vega/internal/logging"
-	"vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/storage"
 
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/cobra"

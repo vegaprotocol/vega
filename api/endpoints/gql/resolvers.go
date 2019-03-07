@@ -6,18 +6,18 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-	"vega/internal/parties"
+	"code.vegaprotocol.io/vega/internal/parties"
 
-	"vega/api"
-	types "vega/proto"
+	"code.vegaprotocol.io/vega/api"
+	types "code.vegaprotocol.io/vega/proto"
 
-	"vega/internal/candles"
-	"vega/internal/filtering"
-	"vega/internal/logging"
-	"vega/internal/markets"
-	"vega/internal/orders"
-	"vega/internal/trades"
-	"vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/filtering"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/orders"
+	"code.vegaprotocol.io/vega/internal/trades"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 )
 
 type resolverRoot struct {
