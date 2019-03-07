@@ -159,6 +159,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		orderService,
 		tradeService,
 		candleService,
+		appst,
 	)
 	go grpcServer.Start()
 
