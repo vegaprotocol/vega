@@ -128,28 +128,6 @@ func (l *NodeCommand) runNode(args []string) error {
 		return err
 	}
 
-	// gRPC server
-	grpcServer := grpc.NewGRPCServer(
-		conf.API,
-		stats,
-		client,
-		timeService,
-		marketService,
-		orderService,
-		tradeService,
-		candleService,
-	)
-	go grpcServer.Start()
-
-	// REST<>gRPC (gRPC proxy) server
-	restServer := restproxy.NewRestProxyServer(conf.API)
-	go restServer.Start()
-
-	// GraphQL server
-	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService,
-		candleService, marketService, partyService, timeService)
-	go graphServer.Start()
-
 	// Execution engine (broker operation at runtime etc)
 	matchingEngine := matching.NewMatchingEngine(conf.Matching)
 	executionEngine := execution.NewExecutionEngine(
@@ -169,17 +147,40 @@ func (l *NodeCommand) runNode(args []string) error {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
-	apst := appstatus.New(l.Log, client)
+	appst := appstatus.New(l.Log, client)
+
+	// gRPC server
+	grpcServer := grpc.NewGRPCServer(
+		conf.API,
+		stats,
+		client,
+		timeService,
+		marketService,
+		orderService,
+		tradeService,
+		candleService,
+	)
+	go grpcServer.Start()
+
+	// REST<>gRPC (gRPC proxy) server
+	restServer := restproxy.NewRestProxyServer(conf.API)
+	go restServer.Start()
+
+	// GraphQL server
+	graphServer := gql.NewGraphQLServer(
+		conf.API, orderService, tradeService, candleService, marketService,
+		partyService, timeService, appst)
+	go graphServer.Start()
 
 	waitSig()
 
 	// Clean up and close resources
-	l.Log.Info("Closing blockchain server", logging.Error(socketServer.Stop()))
 	l.Log.Info("Closing REST proxy server", logging.Error(restServer.Stop()))
 	l.Log.Info("Closing GRPC server", logging.Error(grpcServer.Stop()))
 	l.Log.Info("Closing GraphQL server", logging.Error(graphServer.Stop()))
+	l.Log.Info("Closing blockchain server", logging.Error(socketServer.Stop()))
 	l.Log.Info("Closing stores", logging.Error(resolver.CloseStores()))
-	apst.Stop()
+	appst.Stop()
 
 	return nil
 }

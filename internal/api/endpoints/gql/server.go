@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/appstatus"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
@@ -17,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/handler"
@@ -34,6 +36,7 @@ type graphServer struct {
 	marketService markets.Service
 	partyService  parties.Service
 	srv           *http.Server
+	appst         *appstatus.AppStatus
 }
 
 func NewGraphQLServer(
@@ -44,6 +47,7 @@ func NewGraphQLServer(
 	marketService markets.Service,
 	partyService parties.Service,
 	timeService vegatime.Service,
+	appst *appstatus.AppStatus,
 ) *graphServer {
 
 	return &graphServer{
@@ -54,9 +58,21 @@ func NewGraphQLServer(
 		timeService:   timeService,
 		marketService: marketService,
 		partyService:  partyService,
+		appst:         appst,
 	}
 }
 
+func (g *graphServer) appReadyMiddleware(next http.Handler) http.Handler {
+	appst := g.appst
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// only process request if the application is connected to the blockchain
+		// and ready to process transaction
+		if appst != nil && appst.Get() == proto.AppStatus_CONNECTED {
+			next.ServeHTTP(w, r)
+		}
+	})
+
+}
 func (g *graphServer) remoteAddrMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -148,7 +164,7 @@ func (g *graphServer) Start() {
 	handlr := http.NewServeMux()
 
 	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
-	handlr.Handle("/query", g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
+	handlr.Handle("/query", g.remoteAddrMiddleware(g.appReadyMiddleware(c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
@@ -158,7 +174,7 @@ func (g *graphServer) Start() {
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
 		})),
-	)))
+	))))
 
 	g.srv = &http.Server{
 		Addr:    addr,

@@ -10,12 +10,15 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 )
 
+// this is a var and not a const for testing purpose
+// this is set to a smaller duration during test
+var tickerDuration = 500 * time.Millisecond
+
 type AppStatus struct {
 	chainclt blockchain.Client
 	log      *logging.Logger
 	status   uint32
-
-	cancel func()
+	cancel   func()
 }
 
 func New(log *logging.Logger, clt blockchain.Client) *AppStatus {
@@ -40,13 +43,13 @@ func (as *AppStatus) Get() proto.AppStatus {
 }
 
 func (as *AppStatus) updateStatus(ctx context.Context) {
-	ticker := time.NewTicker(500 * time.Millisecond)
+	ticker := time.NewTicker(tickerDuration)
 	currentStatus := as.Get()
 	for {
 		select {
 		case <-ticker.C:
 			oldStatus := currentStatus
-			res, err := as.chainclt.Health()
+			_, err := as.chainclt.Health()
 			if currentStatus == proto.AppStatus_DISCONNECTED && err == nil {
 				// node is connected, now let's check if we are replaying
 				res, err := as.chainclt.GetStatus(context.Background())
@@ -57,7 +60,7 @@ func (as *AppStatus) updateStatus(ctx context.Context) {
 				}
 				if res.SyncInfo.CatchingUp {
 					currentStatus = proto.AppStatus_CHAIN_REPLAYING
-					as.set(proto.AppStatus_CONNECTED)
+					as.set(proto.AppStatus_CHAIN_REPLAYING)
 					continue
 				}
 				currentStatus = proto.AppStatus_CONNECTED
