@@ -31,14 +31,14 @@ func NewBook(config *Config, name string, proRataMode bool) *OrderBook {
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
-func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError) {
+func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, error) {
 	// Validate Market
 	if order.Market != b.name {
 		b.log.Error("Market ID mismatch",
 			logging.Order(*order),
 			logging.String("order-book", b.name))
 
-		return nil, types.OrderError_INVALID_MARKET_ID
+		return nil, types.ErrInvalidMarketID
 	}
 	// Validate Order ID must be present
 	if order.Id == "" || len(order.Id) < 4 {
@@ -46,7 +46,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, t
 			logging.Order(*order),
 			logging.String("order-book", b.name))
 
-		return nil, types.OrderError_INVALID_ORDER_ID
+		return nil, types.ErrInvalidOrderID
 	}
 
 	if order.Side == types.Side_Buy {
@@ -56,7 +56,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, t
 				logging.Error(err),
 				logging.String("order-book", b.name))
 
-			return nil, types.OrderError_ORDER_REMOVAL_FAILURE
+			return nil, types.ErrOrderRemovalFailure
 		}
 	} else {
 		if err := b.sell.RemoveOrder(order); err != nil {
@@ -65,7 +65,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, t
 				logging.Error(err),
 				logging.String("order-book", b.name))
 
-			return nil, types.OrderError_ORDER_REMOVAL_FAILURE
+			return nil, types.ErrOrderRemovalFailure
 		}
 	}
 
@@ -75,45 +75,45 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, t
 	result := &types.OrderCancellation{
 		Order: order,
 	}
-	return result, types.OrderError_NONE
+	return result, nil
 }
 
-func (b *OrderBook) AmendOrder(order *types.Order) types.OrderError {
-	if err := b.validateOrder(order); err != types.OrderError_NONE {
+func (b *OrderBook) AmendOrder(order *types.Order) error {
+	if err := b.validateOrder(order); err != nil {
 		b.log.Error("Order validation failure",
 			logging.Order(*order),
-			logging.String("error", err.String()),
+			logging.Error(err),
 			logging.String("order-book", b.name))
 
 		return err
 	}
 
 	if order.Side == types.Side_Buy {
-		if err := b.buy.amendOrder(order); err != types.OrderError_NONE {
+		if err := b.buy.amendOrder(order); err != nil {
 			b.log.Error("Failed to amend (buy side)",
 				logging.Order(*order),
-				logging.String("error", err.String()),
+				logging.Error(err),
 				logging.String("order-book", b.name))
 
 			return err
 		}
 	} else {
-		if err := b.sell.amendOrder(order); err != types.OrderError_NONE {
+		if err := b.sell.amendOrder(order); err != nil {
 			b.log.Error("Failed to amend (sell side)",
 				logging.Order(*order),
-				logging.String("error", err.String()),
+				logging.Error(err),
 				logging.String("order-book", b.name))
 
 			return err
 		}
 	}
 
-	return types.OrderError_NONE
+	return nil
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
-func (b *OrderBook) AddOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError) {
-	if err := b.validateOrder(order); err != types.OrderError_NONE {
+func (b *OrderBook) AddOrder(order *types.Order) (*types.OrderConfirmation, error) {
+	if err := b.validateOrder(order); err != nil {
 		return nil, err
 	}
 

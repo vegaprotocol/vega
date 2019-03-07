@@ -97,7 +97,7 @@ func BenchmarkMatching(
 			start := time.Now()
 			oc, oe := executionEngine.SubmitOrder(order)
 			end := time.Now()
-			if oe == 0 {
+			if oe == nil {
 				oc.Release()
 			}
 			timetaken := end.Sub(start)

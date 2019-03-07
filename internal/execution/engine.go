@@ -2,6 +2,7 @@ package execution
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 
 	types "vega/proto"
@@ -14,20 +15,18 @@ import (
 
 type Engine interface {
 	// SubmitOrder takes a new order request and submits it to the execution engine, storing output etc.
-	SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError)
-
+	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
 	// CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-	CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError)
-
+	CancelOrder(order *types.Order) (*types.OrderCancellation, error)
 	// AmendOrder take order amendment details and attempts to amend the order
 	// if it exists and is in a state to be edited.
-	AmendOrder(order *types.Amendment) (*types.OrderConfirmation, types.OrderError)
+	AmendOrder(order *types.Amendment) (*types.OrderConfirmation, error)
+
+	// Generate creates any data (including storing state changes) in the underlying stores.
+	Generate() error
 
 	// Process any data updates (including state changes)
 	// e.g. removing expired orders from matching engine.
-	Generate() error
-
-	// Generate creates any data (including storing state changes) in the underlying stores.
 	Process() error
 }
 
@@ -86,16 +85,15 @@ func NewExecutionEngine(
 	return e
 }
 
-// SubmitOrder takes a new order request and submits it to the execution engine, storing output etc.
-func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, types.OrderError) {
+func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Submit order", logging.Order(*order))
 
 	// 1) submit order to matching engine
 	confirmation, submitError := e.matching.SubmitOrder(order)
-	if confirmation == nil || submitError != types.OrderError_NONE {
+	if confirmation == nil || submitError != nil {
 		e.log.Error("Failure after submit order from matching engine",
 			logging.Order(*order),
-			logging.String("error", submitError.String()))
+			logging.Error(submitError))
 
 		return nil, submitError
 	}
@@ -156,12 +154,12 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, type
 
 	// 4) create or update risk record for this order party etc
 
-	return confirmation, types.OrderError_NONE
+	return confirmation, nil
 }
 
 // AmendOrder take order amendment details and attempts to amend the order
 // if it exists and is in a state to be edited.
-func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, types.OrderError) {
+func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
 
 	existingOrder, err := e.orderStore.GetByPartyAndId(order.Party, order.Id)
@@ -171,7 +169,7 @@ func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, t
 			logging.String("party", order.Party),
 			logging.Error(err))
 
-		return &types.OrderConfirmation{}, types.OrderError_INVALID_ORDER_REFERENCE
+		return &types.OrderConfirmation{}, types.ErrInvalidOrderReference
 	}
 
 	e.log.Debug("Existing order found", logging.Order(*existingOrder))
@@ -179,7 +177,7 @@ func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, t
 	timestamp, _, err := e.time.GetTimeNow()
 	if err != nil {
 		e.log.Error("Failed to obtain current vega time", logging.Error(err))
-		return &types.OrderConfirmation{}, types.OrderError_ORDER_AMEND_FAILURE
+		return &types.OrderConfirmation{}, types.ErrOrderAmendFailure
 		// todo: new order error code required (gitlab.com/vega-protocol/trading-core/issues/178)
 	}
 
@@ -236,19 +234,19 @@ func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, t
 	}
 
 	e.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
-	return &types.OrderConfirmation{}, types.OrderError_EDIT_NOT_ALLOWED
+	return &types.OrderConfirmation{}, types.ErrEditNotAllowed
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, types.OrderError) {
+func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, error) {
 	e.log.Debug("Cancel order")
 
 	// Cancel order in matching engine
 	cancellation, cancelError := e.matching.CancelOrder(order)
-	if cancellation == nil || cancelError != types.OrderError_NONE {
+	if cancellation == nil || cancelError != nil {
 		e.log.Error("Failure after cancel order from matching engine",
 			logging.Order(*order),
-			logging.String("error", cancelError.String()))
+			logging.Error(cancelError))
 
 		return nil, cancelError
 	}
@@ -262,18 +260,18 @@ func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, type
 		// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
 	}
 
-	return cancellation, types.OrderError_NONE
+	return cancellation, nil
 }
 
-func (e *engine) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, types.OrderError) {
+func (e *engine) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Cancel/replace order")
 
 	cancellation, cancelError := e.CancelOrder(existingOrder)
-	if cancellation == nil || cancelError != types.OrderError_NONE {
+	if cancellation == nil || cancelError != nil {
 		e.log.Error("Failure after cancel order from matching engine (cancel/replace)",
 			logging.OrderWithTag(*existingOrder, "existing-order"),
 			logging.OrderWithTag(*newOrder, "new-order"),
-			logging.String("error", cancelError.String()))
+			logging.Error(cancelError))
 
 		return &types.OrderConfirmation{}, cancelError
 	}
@@ -281,12 +279,12 @@ func (e *engine) orderCancelReplace(existingOrder, newOrder *types.Order) (*type
 	return e.SubmitOrder(newOrder)
 }
 
-func (e *engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, types.OrderError) {
+func (e *engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
 	amendError := e.matching.AmendOrder(newOrder)
-	if amendError != types.OrderError_NONE {
+	if amendError != nil {
 		e.log.Error("Failure after amend order from matching engine (amend-in-place)",
 			logging.OrderWithTag(*newOrder, "new-order"),
-			logging.String("error", amendError.String()))
+			logging.Error(amendError))
 
 		return &types.OrderConfirmation{}, amendError
 	}
@@ -297,7 +295,7 @@ func (e *engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 			logging.Error(err))
 		// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
 	}
-	return &types.OrderConfirmation{}, types.OrderError_NONE
+	return &types.OrderConfirmation{}, nil
 }
 
 func (e *engine) StartCandleBuffer() error {
@@ -347,7 +345,6 @@ func (e *engine) Process() error {
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
-
 
 	// We need to call start new candle buffer for every block with the current implementation.
 	// This ensures that empty candles are created for a timestamp and can fill up. We will

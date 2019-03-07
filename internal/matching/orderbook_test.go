@@ -6,9 +6,10 @@ import (
 
 	types "vega/proto"
 
-	"github.com/stretchr/testify/assert"
 	"time"
 	"vega/internal/logging"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // launch aggressiveOrder orders from both sides to fully clear the order book
@@ -1108,7 +1109,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	}
 
 	// Assert
-	assert.Equal(t, types.OrderError_NONE, err)
+	assert.Nil(t, err)
 	assert.Equal(t, "V1-1", res.Order.Id)
 	assert.Equal(t, types.Order_Cancelled, res.Order.Status)
 
@@ -1145,7 +1146,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	}
 
 	// Assert
-	assert.Equal(t, types.OrderError_NONE, err)
+	assert.Nil(t, err)
 	assert.Equal(t, "V1-1", res.Order.Id)
 	assert.Equal(t, types.Order_Cancelled, res.Order.Status)
 
@@ -1194,7 +1195,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 
 	_, err = book.CancelOrder(orderAdded)
 	if err != types.OrderError_NONE {
-		logger.Debug(err.String())
+		logger.Debug("error cancelling order", logging.Error(err))
 	}
 
 	assert.Equal(t, types.OrderError_INVALID_ORDER_ID, err)
@@ -1257,11 +1258,11 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	}
 
 	err = book.AmendOrder(editedOrder)
-	if err != types.OrderError_NONE {
+	if err != nil {
 		t.Log(err)
 	}
 
-	assert.Equal(t, types.OrderError_NONE, err)
+	assert.Nil(t, err)
 }
 
 func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {

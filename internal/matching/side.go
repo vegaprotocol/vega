@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	types "vega/proto"
-
-	"github.com/pkg/errors"
 )
 
 type OrderBookSide struct {
@@ -18,7 +16,7 @@ func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
 	s.getPriceLevel(o.Price, side).addOrder(o)
 }
 
-func (s *OrderBookSide) amendOrder(orderAmended *types.Order) types.OrderError {
+func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 	priceLevelIndex := -1
 	orderIndex := -1
 
@@ -36,23 +34,23 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) types.OrderError {
 	}
 
 	if priceLevelIndex == -1 || orderIndex == -1 {
-		return types.OrderError_ORDER_NOT_FOUND
+		return types.ErrOrderNotFound
 	}
 
 	if s.levels[priceLevelIndex].orders[orderIndex].Party != orderAmended.Party {
-		return types.OrderError_ORDER_AMEND_FAILURE
+		return types.ErrOrderAmendFailure
 	}
 
 	if s.levels[priceLevelIndex].orders[orderIndex].Size < orderAmended.Size {
-		return types.OrderError_ORDER_AMEND_FAILURE
+		return types.ErrOrderAmendFailure
 	}
 
 	if s.levels[priceLevelIndex].orders[orderIndex].Reference != orderAmended.Reference {
-		return types.OrderError_ORDER_AMEND_FAILURE
+		return types.ErrOrderAmendFailure
 	}
 
 	s.levels[priceLevelIndex].orders[orderIndex] = orderAmended
-	return types.OrderError_NONE
+	return nil
 }
 
 func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
@@ -82,7 +80,7 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 
 	}
 	if toRemove == -1 {
-		return errors.New("order not found")
+		return types.ErrOrderNotFound
 	}
 	return nil
 }
