@@ -7,9 +7,11 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/appstatus"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -20,6 +22,10 @@ import (
 	"code.vegaprotocol.io/vega/internal/vegatime"
 )
 
+var (
+	ErrChainNotConnected = errors.New("Chain not connected")
+)
+
 type resolverRoot struct {
 	*api.Config
 	orderService  orders.Service
@@ -28,10 +34,19 @@ type resolverRoot struct {
 	candleService candles.Service
 	marketService markets.Service
 	partyService  parties.Service
+	appst         *appstatus.AppStatus
 }
 
-func NewResolverRoot(config *api.Config, orderService orders.Service, tradeService trades.Service, candleService candles.Service,
-	timeService vegatime.Service, marketService markets.Service, partyService parties.Service) *resolverRoot {
+func NewResolverRoot(
+	config *api.Config,
+	orderService orders.Service,
+	tradeService trades.Service,
+	candleService candles.Service,
+	timeService vegatime.Service,
+	marketService markets.Service,
+	partyService parties.Service,
+	appst *appstatus.AppStatus,
+) *resolverRoot {
 
 	return &resolverRoot{
 		Config:        config,
@@ -41,6 +56,7 @@ func NewResolverRoot(config *api.Config, orderService orders.Service, tradeServi
 		candleService: candleService,
 		marketService: marketService,
 		partyService:  partyService,
+		appst:         appst,
 	}
 }
 
@@ -559,6 +575,9 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error) {
 	order := &types.Order{}
 	res := PreConsensus{}
+	if r.appst.Get() != proto.AppStatus_CONNECTED {
+		return res, ErrChainNotConnected
+	}
 
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	p, err := safeStringUint64(price)
@@ -622,6 +641,10 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (PreConsensus, error) {
 	order := &types.Order{}
 	res := PreConsensus{}
+
+	if r.appst.Get() != proto.AppStatus_CONNECTED {
+		return res, ErrChainNotConnected
+	}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
 	err := validateMarket(ctx, &market, r.marketService)

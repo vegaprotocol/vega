@@ -18,7 +18,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
-	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/handler"
@@ -62,17 +61,6 @@ func NewGraphQLServer(
 	}
 }
 
-func (g *graphServer) appReadyMiddleware(next http.Handler) http.Handler {
-	appst := g.appst
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// only process request if the application is connected to the blockchain
-		// and ready to process transaction
-		if appst != nil && appst.Get() == proto.AppStatus_CONNECTED {
-			next.ServeHTTP(w, r)
-		}
-	})
-
-}
 func (g *graphServer) remoteAddrMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -136,6 +124,7 @@ func (g *graphServer) Start() {
 		g.timeService,
 		g.marketService,
 		g.partyService,
+		g.appst,
 	)
 	var config = Config{
 		Resolvers: resolverRoot,
@@ -164,7 +153,7 @@ func (g *graphServer) Start() {
 	handlr := http.NewServeMux()
 
 	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
-	handlr.Handle("/query", g.remoteAddrMiddleware(g.appReadyMiddleware(c.Handler(handler.GraphQL(
+	handlr.Handle("/query", g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
@@ -174,7 +163,7 @@ func (g *graphServer) Start() {
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
 		})),
-	))))
+	)))
 
 	g.srv = &http.Server{
 		Addr:    addr,

@@ -7,6 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/appstatus"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 
@@ -85,6 +86,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	mockMarketService := &mockMarket.Service{}
 	mockPartyService := &mockParty.Service{}
 	mockTimeService := &mockTime.Service{}
+	appstatus := &appstatus.AppStatus{}
 
 	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name: "BTC/DEC19"},
 		nil).On("GetByName", ctx, "ETH/USD18").Return(nil,
@@ -100,7 +102,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 
 	config := api.NewDefaultConfig(logger)
 	root := NewResolverRoot(config, mockOrderService, mockTradeService,
-		mockCandleService, mockTimeService, mockMarketService, mockPartyService)
+		mockCandleService, mockTimeService, mockMarketService, mockPartyService, appstatus)
 
 	assert.NotNil(t, root)
 	vegaResolver := root.Vega()
@@ -150,6 +152,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	mockMarketService := &mockMarket.Service{}
 	mockPartyService := &mockParty.Service{}
 	mockTimeService := &mockTime.Service{}
+	appstatus := &appstatus.AppStatus{}
 
 	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name: "BTC/DEC19"},
 		nil).On("GetByName", ctx, "errorMarket").Return(nil,
@@ -171,7 +174,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	config := api.NewDefaultConfig(logger)
 
 	root := NewResolverRoot(config, mockOrderService, mockTradeService,
-		mockCandleService, mockTimeService, mockMarketService, mockPartyService)
+		mockCandleService, mockTimeService, mockMarketService, mockPartyService, appstatus)
 
 	assert.NotNil(t, root)
 	marketResolver := root.Market()
@@ -226,11 +229,12 @@ func buildTestResolverRoot() *resolverRoot {
 	mockMarketService := &mockMarket.Service{}
 	mockPartyService := &mockParty.Service{}
 	mockTimeService := &mockTime.Service{}
+	appstatus := &appstatus.AppStatus{}
 
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 	config := api.NewDefaultConfig(logger)
 
 	return NewResolverRoot(config, mockOrderService, mockTradeService,
-		mockCandleService, mockTimeService, mockMarketService, mockPartyService)
+		mockCandleService, mockTimeService, mockMarketService, mockPartyService, appstatus)
 }
