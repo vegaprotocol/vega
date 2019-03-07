@@ -270,9 +270,9 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
 		TradesPerSecond:       uint64(h.Stats.Blockchain.TotalTradesLastBatch()),
 		OrdersPerSecond:       uint64(h.Stats.Blockchain.TotalOrdersLastBatch()),
-		Status:                types.AppStatus_CHAIN_NOT_FOUND, // todo
-		LastTrade:             nil,                             // todo
-		LastOrder:             nil,                             // todo
+		Status:                types.AppStatus_DISCONNECTED, // todo
+		LastTrade:             nil,                          // todo
+		LastOrder:             nil,                          // todo
 		TotalMarkets:          uint64(len(m)),
 		TotalParties:          0, // todo
 		AppVersionHash:        h.Stats.GetVersionHash(),

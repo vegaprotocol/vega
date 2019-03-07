@@ -47,7 +47,7 @@ func NewAbciApplication(config *Config, stats *Stats, execution execution.Engine
 }
 
 func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
-	
+
 	// We can log more gossiped time info (switchable in config)
 	if app.LogTimeDebug {
 		app.log.Debug("Block time for height",

@@ -144,12 +144,9 @@ message Statistics {
 }
 
 enum AppStatus {
-    CHAIN_NOT_FOUND = 0;
-    CHAIN_ERROR = 1;
-    CHAIN_REPLAYING = 2;
-    APP_CONNECTED = 3;
-    APP_ERROR = 4;
-    APP_DISCONNECTED = 5;
+  DISCONNECTED = 0;
+  CHAIN_REPLAYING = 1;
+  CONNECTED = 2;
 }
 
 message Amendment {

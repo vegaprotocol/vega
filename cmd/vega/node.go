@@ -5,6 +5,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/grpc"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
+	"code.vegaprotocol.io/vega/internal/appstatus"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -168,6 +169,8 @@ func (l *NodeCommand) runNode(args []string) error {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
+	apst := appstatus.New(l.Log, client)
+
 	waitSig()
 
 	// Clean up and close resources
@@ -176,6 +179,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	l.Log.Info("Closing GRPC server", logging.Error(grpcServer.Stop()))
 	l.Log.Info("Closing GraphQL server", logging.Error(graphServer.Stop()))
 	l.Log.Info("Closing stores", logging.Error(resolver.CloseStores()))
+	apst.Stop()
 
 	return nil
 }
