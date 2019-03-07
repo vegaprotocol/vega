@@ -348,6 +348,15 @@ func (e *engine) Process() error {
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
 
+
+	// We need to call start new candle buffer for every block with the current implementation.
+	// This ensures that empty candles are created for a timestamp and can fill up. We will
+	// hopefully revisit candles in the future and improve the design.
+	err = e.StartCandleBuffer()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

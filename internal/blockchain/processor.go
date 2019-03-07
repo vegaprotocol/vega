@@ -38,7 +38,6 @@ func (p *abciProcessor) getOrder(payload []byte) (*types.Order, error) {
 	return order, nil
 }
 
-// todo remove this in favour of raw Order above?
 func (p *abciProcessor) getOrderAmendment(payload []byte) (*types.Amendment, error) {
 	amendment := &types.Amendment{}
 	err := proto.Unmarshal(payload, amendment)
