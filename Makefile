@@ -64,8 +64,8 @@ deps: ## Get the dependencies
 install: proto ## install the binary in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" vega/cmd/vega
-	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" vega/cmd/vegabench
+	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" ./cmd/vega
+	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" ./cmd/vegabench
 
 proto: ${PROTOFILES} ## build proto definitions
 
