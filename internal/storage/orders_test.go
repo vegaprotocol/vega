@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -150,7 +151,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 
 		f := &filtering.OrderQueryFilters{}
 		f.First = &tt.inLimit
-		orders, err := orderStore.GetByMarket(tt.inMarket, f)
+		orders, err := orderStore.GetByMarket(context.Background(), tt.inMarket, f)
 		assert.Nil(t, err)
 		assert.Equal(t, tt.outOrdersCount, len(orders))
 		orderStore.Close()
@@ -279,7 +280,7 @@ func TestStorage_OrderFiltration(t *testing.T) {
 	}
 
 	// check if db empty
-	orders, err := orderStore.GetByMarket(testMarket, nil)
+	orders, err := orderStore.GetByMarket(context.Background(), testMarket, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
@@ -299,7 +300,7 @@ func TestStorage_OrderFiltration(t *testing.T) {
 		MarketFilter: &filtering.QueryFilter{Eq: testMarket},
 		PartyFilter:  &filtering.QueryFilter{Eq: testPartyA},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
@@ -307,70 +308,70 @@ func TestStorage_OrderFiltration(t *testing.T) {
 	orderFilters = &filtering.OrderQueryFilters{
 		MarketFilter: &filtering.QueryFilter{Eq: testMarket},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		PriceFilter: &filtering.QueryFilter{FilterRange: &filtering.QueryFilterRange{Lower: uint64(150), Upper: uint64(1150)}, Kind: "uint64"},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		PriceFilter: &filtering.QueryFilter{FilterRange: &filtering.QueryFilterRange{Lower: uint64(99), Upper: uint64(200)}, Kind: "uint64"},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		RemainingFilter: &filtering.QueryFilter{FilterRange: &filtering.QueryFilterRange{Lower: uint64(1), Upper: uint64(10000)}, Kind: "uint64"},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		RemainingFilter: &filtering.QueryFilter{FilterRange: &filtering.QueryFilterRange{Lower: uint64(0), Upper: uint64(10000)}, Kind: "uint64"},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		SizeFilter: &filtering.QueryFilter{Eq: uint64(900)},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		SizeFilter: &filtering.QueryFilter{Neq: uint64(900)},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		TypeFilter: &filtering.QueryFilter{Eq: types.Order_GTC},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		TypeFilter: &filtering.QueryFilter{Neq: types.Order_GTC},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		PriceFilter: &filtering.QueryFilter{Eq: uint64(1000)},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
@@ -378,70 +379,70 @@ func TestStorage_OrderFiltration(t *testing.T) {
 		TypeFilter:  &filtering.QueryFilter{Neq: types.Order_GTC},
 		PriceFilter: &filtering.QueryFilter{Eq: uint64(1000)},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		TimestampFilter: &filtering.QueryFilter{Eq: uint64(1)},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		TimestampFilter: &filtering.QueryFilter{FilterRange: &filtering.QueryFilterRange{Lower: uint64(1), Upper: uint64(10)}, Kind: "uint64"},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		TimestampFilter: &filtering.QueryFilter{FilterRange: &filtering.QueryFilterRange{Lower: uint64(5), Upper: uint64(10)}, Kind: "uint64"},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		TimestampFilter: &filtering.QueryFilter{FilterRange: &filtering.QueryFilterRange{Lower: uint64(0), Upper: uint64(10)}, Kind: "uint64"},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		StatusFilter: &filtering.QueryFilter{Eq: types.Order_Active},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		StatusFilter: &filtering.QueryFilter{Eq: types.Order_Cancelled},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		StatusFilter: &filtering.QueryFilter{Eq: types.Order_Expired},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		StatusFilter: &filtering.QueryFilter{Neq: types.Order_Expired},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(orders))
 
 	orderFilters = &filtering.OrderQueryFilters{
 		IdFilter: &filtering.QueryFilter{Eq: "d41d8cd98f00b204e9800998ecf8427c"},
 	}
-	orders, err = orderStore.GetByMarket(testMarket, orderFilters)
+	orders, err = orderStore.GetByMarket(context.Background(), testMarket, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(orders))
 }

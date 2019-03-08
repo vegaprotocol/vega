@@ -129,7 +129,7 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *types.Amendmen
 }
 
 func (s *orderService) GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
-	o, err := s.orderStore.GetByMarket(market, filters)
+	o, err := s.orderStore.GetByMarket(ctx, market, filters)
 	if err != nil {
 		return nil, err
 	}

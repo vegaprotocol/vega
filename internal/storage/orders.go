@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -34,7 +35,7 @@ type OrderStore interface {
 	Close() error
 
 	// GetByMarket retrieves all orders for a given Market.
-	GetByMarket(market string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
+	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
 	// GetByMarketAndId retrieves an order for a given Market and id.
 	GetByMarketAndId(market string, id string) (*types.Order, error)
 	// GetByParty retrieves orders for a given party.
@@ -165,7 +166,7 @@ func (os *badgerOrderStore) Close() error {
 
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
+func (os *badgerOrderStore) GetByMarket(ctx context.Context, market string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
 	var result []*types.Order
 	if queryFilters == nil {
 		queryFilters = &filtering.OrderQueryFilters{}
@@ -181,22 +182,27 @@ func (os *badgerOrderStore) GetByMarket(market string, queryFilters *filtering.O
 
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
-		item := it.Item()
-		orderBuf, _ := item.ValueCopy(nil)
-		var order types.Order
-		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			os.log.Error("Failed to unmarshal order value from badger in order store (getByMarket)",
-				logging.Error(err),
-				logging.String("badger-key", string(item.Key())),
-				logging.String("raw-bytes", string(orderBuf)))
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			item := it.Item()
+			orderBuf, _ := item.ValueCopy(nil)
+			var order types.Order
+			if err := proto.Unmarshal(orderBuf, &order); err != nil {
+				os.log.Error("Failed to unmarshal order value from badger in order store (getByMarket)",
+					logging.Error(err),
+					logging.String("badger-key", string(item.Key())),
+					logging.String("raw-bytes", string(orderBuf)))
 
-			return nil, err
-		}
-		if filter.apply(&order) {
-			result = append(result, &order)
-		}
-		if filter.isFull() {
-			break
+				return nil, err
+			}
+			if filter.apply(&order) {
+				result = append(result, &order)
+			}
+			if filter.isFull() {
+				break
+			}
 		}
 	}
 

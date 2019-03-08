@@ -57,6 +57,15 @@ func NewGraphQLServer(
 	}
 }
 
+func (g *graphServer) timeoutMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		timeout := time.Duration(g.Config.Timeout) * time.Millisecond
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
+		defer cancel()
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func (g *graphServer) remoteAddrMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -148,7 +157,7 @@ func (g *graphServer) Start() {
 	handlr := http.NewServeMux()
 
 	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
-	handlr.Handle("/query", g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
+	handlr.Handle("/query", g.timeoutMiddleware(g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
@@ -158,7 +167,7 @@ func (g *graphServer) Start() {
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
 		})),
-	)))
+	))))
 
 	g.srv = &http.Server{
 		Addr:    addr,

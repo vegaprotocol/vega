@@ -9,8 +9,9 @@ import (
 const namedLogger = "api"
 
 type Config struct {
-	log   *logging.Logger
-	Level logging.Level
+	log     *logging.Logger
+	Level   logging.Level
+	Timeout int
 
 	GraphQLServerPort      int
 	GraphQLServerIpAddress string
