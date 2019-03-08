@@ -26,8 +26,9 @@ type Config struct {
 func NewDefaultConfig(logger *logging.Logger) *Config {
 	logger = logger.Named(namedLogger)
 	return &Config{
-		log:   logger,
-		Level: logging.InfoLevel,
+		log:     logger,
+		Level:   logging.InfoLevel,
+		Timeout: 5000,
 
 		GraphQLServerIpAddress: "0.0.0.0",
 		GraphQLServerPort:      3004,
