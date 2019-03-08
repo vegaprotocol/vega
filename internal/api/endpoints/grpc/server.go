@@ -6,11 +6,11 @@ import (
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/appstatus"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -29,7 +29,7 @@ type grpcServer struct {
 	marketService markets.Service
 	timeService   vegatime.Service
 	srv           *grpc.Server
-	appst         *appstatus.AppStatus
+	statusChecker *monitoring.Status
 }
 
 func NewGRPCServer(
@@ -41,7 +41,7 @@ func NewGRPCServer(
 	orderService orders.Service,
 	tradeService trades.Service,
 	candleService candles.Service,
-	appst *appstatus.AppStatus,
+	statusChecker *monitoring.Status,
 ) *grpcServer {
 
 	return &grpcServer{
@@ -53,7 +53,7 @@ func NewGRPCServer(
 		candleService: candleService,
 		timeService:   timeService,
 		marketService: marketService,
-		appst:         appst,
+		statusChecker: statusChecker,
 	}
 }
 
@@ -78,7 +78,7 @@ func (g *grpcServer) Start() {
 		CandleService: g.candleService,
 		MarketService: g.marketService,
 		TimeService:   g.timeService,
-		appst:         g.appst,
+		statusChecker: g.statusChecker,
 	}
 	g.srv = grpc.NewServer()
 	api.RegisterTradingServer(g.srv, handlers)

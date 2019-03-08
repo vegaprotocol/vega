@@ -5,11 +5,11 @@ import (
 	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/grpc"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
-	"code.vegaprotocol.io/vega/internal/appstatus"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal/monitoring"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -147,7 +147,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
-	appst := appstatus.New(l.Log, client)
+	statusChecker := monitoring.NewStatusChecker(l.Log, client)
 
 	// gRPC server
 	grpcServer := grpc.NewGRPCServer(
@@ -159,7 +159,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		orderService,
 		tradeService,
 		candleService,
-		appst,
+		statusChecker,
 	)
 	go grpcServer.Start()
 
@@ -169,8 +169,15 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	// GraphQL server
 	graphServer := gql.NewGraphQLServer(
-		conf.API, orderService, tradeService, candleService, marketService,
-		partyService, timeService, appst)
+		conf.API,
+		orderService,
+		tradeService,
+		candleService,
+		marketService,
+		partyService,
+		timeService,
+		statusChecker,
+	)
 	go graphServer.Start()
 
 	waitSig()
@@ -181,7 +188,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	l.Log.Info("Closing GraphQL server", logging.Error(graphServer.Stop()))
 	l.Log.Info("Closing blockchain server", logging.Error(socketServer.Stop()))
 	l.Log.Info("Closing stores", logging.Error(resolver.CloseStores()))
-	appst.Stop()
+	statusChecker.Stop()
 
 	return nil
 }

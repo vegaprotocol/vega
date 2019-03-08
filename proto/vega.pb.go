@@ -137,31 +137,31 @@ func (OrderError) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{2}
 }
 
-type AppStatus int32
+type ChainStatus int32
 
 const (
-	AppStatus_DISCONNECTED    AppStatus = 0
-	AppStatus_CHAIN_REPLAYING AppStatus = 1
-	AppStatus_CONNECTED       AppStatus = 2
+	ChainStatus_DISCONNECTED ChainStatus = 0
+	ChainStatus_REPLAYING    ChainStatus = 1
+	ChainStatus_CONNECTED    ChainStatus = 2
 )
 
-var AppStatus_name = map[int32]string{
+var ChainStatus_name = map[int32]string{
 	0: "DISCONNECTED",
-	1: "CHAIN_REPLAYING",
+	1: "REPLAYING",
 	2: "CONNECTED",
 }
 
-var AppStatus_value = map[string]int32{
+var ChainStatus_value = map[string]int32{
 	"DISCONNECTED":    0,
-	"CHAIN_REPLAYING": 1,
+	"REPLAYING": 1,
 	"CONNECTED":       2,
 }
 
-func (x AppStatus) String() string {
-	return proto.EnumName(AppStatus_name, int32(x))
+func (x ChainStatus) String() string {
+	return proto.EnumName(ChainStatus_name, int32(x))
 }
 
-func (AppStatus) EnumDescriptor() ([]byte, []int) {
+func (ChainStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{3}
 }
 
@@ -1112,7 +1112,7 @@ type Statistics struct {
 	GenesisTime           string    `protobuf:"bytes,4,opt,name=genesisTime,proto3" json:"genesisTime,omitempty"`
 	CurrentTime           string    `protobuf:"bytes,5,opt,name=currentTime,proto3" json:"currentTime,omitempty"`
 	VegaTime              string    `protobuf:"bytes,6,opt,name=vegaTime,proto3" json:"vegaTime,omitempty"`
-	Status                AppStatus `protobuf:"varint,7,opt,name=status,proto3,enum=vega.AppStatus" json:"status,omitempty"`
+	Status                ChainStatus `protobuf:"varint,7,opt,name=status,proto3,enum=vega.AppStatus" json:"status,omitempty"`
 	TxPerBlock            uint64    `protobuf:"varint,8,opt,name=txPerBlock,proto3" json:"txPerBlock,omitempty"`
 	AverageTxBytes        uint64    `protobuf:"varint,9,opt,name=averageTxBytes,proto3" json:"averageTxBytes,omitempty"`
 	AverageOrdersPerBlock uint64    `protobuf:"varint,10,opt,name=averageOrdersPerBlock,proto3" json:"averageOrdersPerBlock,omitempty"`
@@ -1197,11 +1197,11 @@ func (m *Statistics) GetVegaTime() string {
 	return ""
 }
 
-func (m *Statistics) GetStatus() AppStatus {
+func (m *Statistics) GetStatus() ChainStatus {
 	if m != nil {
 		return m.Status
 	}
-	return AppStatus_DISCONNECTED
+	return ChainStatus_DISCONNECTED
 }
 
 func (m *Statistics) GetTxPerBlock() uint64 {
@@ -1371,7 +1371,7 @@ func init() {
 	proto.RegisterEnum("vega.Side", Side_name, Side_value)
 	proto.RegisterEnum("vega.Interval", Interval_name, Interval_value)
 	proto.RegisterEnum("vega.OrderError", OrderError_name, OrderError_value)
-	proto.RegisterEnum("vega.AppStatus", AppStatus_name, AppStatus_value)
+	proto.RegisterEnum("vega.ChainStatus", ChainStatus_name, ChainStatus_value)
 	proto.RegisterEnum("vega.Order_Type", Order_Type_name, Order_Type_value)
 	proto.RegisterEnum("vega.Order_Status", Order_Status_name, Order_Status_value)
 	proto.RegisterType((*Market)(nil), "vega.Market")

@@ -1,17 +1,16 @@
 package gql
 
 import (
+	"code.vegaprotocol.io/vega/internal/monitoring"
 	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/appstatus"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -23,7 +22,7 @@ import (
 )
 
 var (
-	ErrChainNotConnected = errors.New("Chain not connected")
+	ErrChainNotConnected = errors.New("chain not connected")
 )
 
 type resolverRoot struct {
@@ -34,7 +33,7 @@ type resolverRoot struct {
 	candleService candles.Service
 	marketService markets.Service
 	partyService  parties.Service
-	appst         *appstatus.AppStatus
+	statusChecker *monitoring.Status
 }
 
 func NewResolverRoot(
@@ -45,7 +44,7 @@ func NewResolverRoot(
 	timeService vegatime.Service,
 	marketService markets.Service,
 	partyService parties.Service,
-	appst *appstatus.AppStatus,
+	statusChecker *monitoring.Status,
 ) *resolverRoot {
 
 	return &resolverRoot{
@@ -56,7 +55,7 @@ func NewResolverRoot(
 		candleService: candleService,
 		marketService: marketService,
 		partyService:  partyService,
-		appst:         appst,
+		statusChecker: statusChecker,
 	}
 }
 
@@ -575,7 +574,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	size string, side Side, type_ OrderType, expiration *string) (PreConsensus, error) {
 	order := &types.Order{}
 	res := PreConsensus{}
-	if r.appst.Get() != proto.AppStatus_CONNECTED {
+	if r.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
 		return res, ErrChainNotConnected
 	}
 
@@ -642,7 +641,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	order := &types.Order{}
 	res := PreConsensus{}
 
-	if r.appst.Get() != proto.AppStatus_CONNECTED {
+	if r.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
 		return res, ErrChainNotConnected
 	}
 
