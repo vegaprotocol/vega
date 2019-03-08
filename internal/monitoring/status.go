@@ -19,11 +19,11 @@ type Status struct {
 
 // ChainStatus provides the current status of the underlying blockchain provider, given a blockchain.Client.
 type ChainStatus struct {
-	log         *logging.Logger
-	interval    time.Duration
-	client      blockchain.Client
-	status      uint32
-	cancel      func()
+	log      *logging.Logger
+	interval time.Duration
+	client   blockchain.Client
+	status   uint32
+	cancel   func()
 }
 
 // NewStatusChecker creates a Status checker, currently this is limited to the underlying blockchain status, but
@@ -31,14 +31,14 @@ type ChainStatus struct {
 // immediately begin checking at an interval, currently defined internally and set to every 500 milliseconds.
 func NewStatusChecker(log *logging.Logger, clt blockchain.Client) *Status {
 	ctx, cancel := context.WithCancel(context.Background())
-		s := &Status{
-		log:    log,
+	s := &Status{
+		log: log,
 		Blockchain: &ChainStatus{
 			interval: 500 * time.Millisecond,
-			client: clt,
-			status: uint32(types.ChainStatus_DISCONNECTED),
-			cancel: cancel,
-			log:    log,
+			client:   clt,
+			status:   uint32(types.ChainStatus_DISCONNECTED),
+			cancel:   cancel,
+			log:      log,
 		},
 	}
 	go s.Blockchain.start(ctx)

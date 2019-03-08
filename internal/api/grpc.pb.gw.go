@@ -9,9 +9,9 @@ It translates gRPC into RESTful JSON APIs.
 package api
 
 import (
+	proto_0 "code.vegaprotocol.io/vega/proto"
 	"io"
 	"net/http"
-	proto_0 "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"

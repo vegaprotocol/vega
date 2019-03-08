@@ -1,10 +1,10 @@
 package blockchain
 
 import (
+	types "code.vegaprotocol.io/vega/proto"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 func TestDecodeInvalidPayload(t *testing.T) {

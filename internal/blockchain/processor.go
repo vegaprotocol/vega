@@ -5,9 +5,9 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 type Processor interface {

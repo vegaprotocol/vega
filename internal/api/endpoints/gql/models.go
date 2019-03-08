@@ -3,10 +3,10 @@
 package gql
 
 import (
+	types "code.vegaprotocol.io/vega/proto"
 	fmt "fmt"
 	io "io"
 	strconv "strconv"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 type Market struct {

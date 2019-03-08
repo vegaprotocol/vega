@@ -1,11 +1,11 @@
 package candles
 
 import (
+	types "code.vegaprotocol.io/vega/proto"
 	"context"
 	"fmt"
 	"testing"
 	"time"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"

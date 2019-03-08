@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"sync"
 	"code.vegaprotocol.io/vega/internal/blockchain"
+	"sync"
 
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"

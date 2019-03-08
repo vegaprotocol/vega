@@ -282,10 +282,10 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		OrdersPerSecond:       uint64(h.Stats.Blockchain.TotalOrdersLastBatch()),
 		Status:                h.statusChecker.Blockchain.Status(),
 		TotalMarkets:          uint64(len(m)),
-		TotalParties:          0,                            // todo
-		Parties:               nil,                          // todo
-		LastTrade:             nil,                          // todo
-		LastOrder:             nil,                          // todo
+		TotalParties:          0,   // todo
+		Parties:               nil, // todo
+		LastTrade:             nil, // todo
+		LastOrder:             nil, // todo
 		AppVersionHash:        h.Stats.GetVersionHash(),
 		AppVersion:            h.Stats.GetVersion(),
 	}, nil

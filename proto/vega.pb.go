@@ -152,9 +152,9 @@ var ChainStatus_name = map[int32]string{
 }
 
 var ChainStatus_value = map[string]int32{
-	"DISCONNECTED":    0,
-	"REPLAYING": 1,
-	"CONNECTED":       2,
+	"DISCONNECTED": 0,
+	"REPLAYING":    1,
+	"CONNECTED":    2,
 }
 
 func (x ChainStatus) String() string {
@@ -1106,28 +1106,28 @@ func (m *MarketPosition) GetMinimumMargin() int64 {
 }
 
 type Statistics struct {
-	BlockHeight           uint64    `protobuf:"varint,1,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
-	BacklogLength         uint64    `protobuf:"varint,2,opt,name=backlogLength,proto3" json:"backlogLength,omitempty"`
-	TotalPeers            uint64    `protobuf:"varint,3,opt,name=totalPeers,proto3" json:"totalPeers,omitempty"`
-	GenesisTime           string    `protobuf:"bytes,4,opt,name=genesisTime,proto3" json:"genesisTime,omitempty"`
-	CurrentTime           string    `protobuf:"bytes,5,opt,name=currentTime,proto3" json:"currentTime,omitempty"`
-	VegaTime              string    `protobuf:"bytes,6,opt,name=vegaTime,proto3" json:"vegaTime,omitempty"`
+	BlockHeight           uint64      `protobuf:"varint,1,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
+	BacklogLength         uint64      `protobuf:"varint,2,opt,name=backlogLength,proto3" json:"backlogLength,omitempty"`
+	TotalPeers            uint64      `protobuf:"varint,3,opt,name=totalPeers,proto3" json:"totalPeers,omitempty"`
+	GenesisTime           string      `protobuf:"bytes,4,opt,name=genesisTime,proto3" json:"genesisTime,omitempty"`
+	CurrentTime           string      `protobuf:"bytes,5,opt,name=currentTime,proto3" json:"currentTime,omitempty"`
+	VegaTime              string      `protobuf:"bytes,6,opt,name=vegaTime,proto3" json:"vegaTime,omitempty"`
 	Status                ChainStatus `protobuf:"varint,7,opt,name=status,proto3,enum=vega.AppStatus" json:"status,omitempty"`
-	TxPerBlock            uint64    `protobuf:"varint,8,opt,name=txPerBlock,proto3" json:"txPerBlock,omitempty"`
-	AverageTxBytes        uint64    `protobuf:"varint,9,opt,name=averageTxBytes,proto3" json:"averageTxBytes,omitempty"`
-	AverageOrdersPerBlock uint64    `protobuf:"varint,10,opt,name=averageOrdersPerBlock,proto3" json:"averageOrdersPerBlock,omitempty"`
-	TradesPerSecond       uint64    `protobuf:"varint,11,opt,name=tradesPerSecond,proto3" json:"tradesPerSecond,omitempty"`
-	OrdersPerSecond       uint64    `protobuf:"varint,12,opt,name=ordersPerSecond,proto3" json:"ordersPerSecond,omitempty"`
-	LastTrade             *Trade    `protobuf:"bytes,13,opt,name=lastTrade,proto3" json:"lastTrade,omitempty"`
-	LastOrder             *Order    `protobuf:"bytes,14,opt,name=lastOrder,proto3" json:"lastOrder,omitempty"`
-	TotalMarkets          uint64    `protobuf:"varint,15,opt,name=totalMarkets,proto3" json:"totalMarkets,omitempty"`
-	TotalParties          uint64    `protobuf:"varint,16,opt,name=totalParties,proto3" json:"totalParties,omitempty"`
-	AppVersionHash        string    `protobuf:"bytes,17,opt,name=appVersionHash,proto3" json:"appVersionHash,omitempty"`
-	AppVersion            string    `protobuf:"bytes,18,opt,name=appVersion,proto3" json:"appVersion,omitempty"`
-	Parties               []string  `protobuf:"bytes,19,rep,name=Parties,proto3" json:"Parties,omitempty"`
-	XXX_NoUnkeyedLiteral  struct{}  `json:"-"`
-	XXX_unrecognized      []byte    `json:"-"`
-	XXX_sizecache         int32     `json:"-"`
+	TxPerBlock            uint64      `protobuf:"varint,8,opt,name=txPerBlock,proto3" json:"txPerBlock,omitempty"`
+	AverageTxBytes        uint64      `protobuf:"varint,9,opt,name=averageTxBytes,proto3" json:"averageTxBytes,omitempty"`
+	AverageOrdersPerBlock uint64      `protobuf:"varint,10,opt,name=averageOrdersPerBlock,proto3" json:"averageOrdersPerBlock,omitempty"`
+	TradesPerSecond       uint64      `protobuf:"varint,11,opt,name=tradesPerSecond,proto3" json:"tradesPerSecond,omitempty"`
+	OrdersPerSecond       uint64      `protobuf:"varint,12,opt,name=ordersPerSecond,proto3" json:"ordersPerSecond,omitempty"`
+	LastTrade             *Trade      `protobuf:"bytes,13,opt,name=lastTrade,proto3" json:"lastTrade,omitempty"`
+	LastOrder             *Order      `protobuf:"bytes,14,opt,name=lastOrder,proto3" json:"lastOrder,omitempty"`
+	TotalMarkets          uint64      `protobuf:"varint,15,opt,name=totalMarkets,proto3" json:"totalMarkets,omitempty"`
+	TotalParties          uint64      `protobuf:"varint,16,opt,name=totalParties,proto3" json:"totalParties,omitempty"`
+	AppVersionHash        string      `protobuf:"bytes,17,opt,name=appVersionHash,proto3" json:"appVersionHash,omitempty"`
+	AppVersion            string      `protobuf:"bytes,18,opt,name=appVersion,proto3" json:"appVersion,omitempty"`
+	Parties               []string    `protobuf:"bytes,19,rep,name=Parties,proto3" json:"Parties,omitempty"`
+	XXX_NoUnkeyedLiteral  struct{}    `json:"-"`
+	XXX_unrecognized      []byte      `json:"-"`
+	XXX_sizecache         int32       `json:"-"`
 }
 
 func (m *Statistics) Reset()         { *m = Statistics{} }
