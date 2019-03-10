@@ -1,4 +1,4 @@
-#<img align="left" src="https://vegaprotocol.io/apple-touch-icon-72x72.png" height="36" style="padding: 0 10px 0 0;"> Vega 
+# Vega <img align="left" src="https://vegaprotocol.io/apple-touch-icon-72x72.png" height="36" style="padding: 0 10px 0 0;"> 
 
 A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
 
