@@ -21,7 +21,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 ## Links
 
 - For **updates**, see [CHANGELOG.md](CHANGELOG.md) for major updates, and
-  [releases](https://gitlab.com/vega-protocol/trading-core/wikis/Release-notes-(trading-core)) for a detailed version history.
+  [releases](https://gitlab.com/vega-protocol/trading-core/wikis/Release-notes) for a detailed version history.
 - For **architecture**, please read the design [documentation](ARCHITECTURE.md) to learn about the design for the system and it's architecture.
 - For **agile process**, please read the engineering [documentation](AGILE.md) or ask on #Engineering if you need further clarification.
 - Please [open an issue](https://gitlab.com/vegaprotocol/trading-core/issues/new) if anything is missing or unclear in this documentation.
