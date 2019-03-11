@@ -25,8 +25,8 @@ type MarketStore interface {
 	// connections held by the underlying storage mechanism.
 	Close() error
 
-	// GetByName searches for the given market by name in the underlying store.
-	GetByName(name string) (*types.Market, error)
+	// GetByID searches for the given market by id in the underlying store.
+	GetByID(name string) (*types.Market, error)
 
 	// GetAll returns all markets in the underlying store.
 	GetAll() ([]*types.Market, error)
@@ -48,19 +48,19 @@ func NewMarketStore(config *Config) (MarketStore, error) {
 
 // Post saves a given market to the mem-store.
 func (ms *memMarketStore) Post(market *types.Market) error {
-	if _, exists := ms.db[market.Name]; exists {
-		return errors.New(fmt.Sprintf("market %s already exists in store", market.Name))
+	if _, exists := ms.db[market.Id]; exists {
+		return errors.New(fmt.Sprintf("market %s already exists in store", market.Id))
 	}
-	ms.db[market.Name] = *market
+	ms.db[market.Id] = *market
 	return nil
 }
 
-// GetByName searches for the given market by name in the mem-store.
-func (ms *memMarketStore) GetByName(name string) (*types.Market, error) {
-	if _, exists := ms.db[name]; !exists {
-		return nil, errors.New(fmt.Sprintf("market %s not found in store", name))
+// GetByID searches for the given market by id in the mem-store.
+func (ms *memMarketStore) GetByID(id string) (*types.Market, error) {
+	if _, exists := ms.db[id]; !exists {
+		return nil, errors.New(fmt.Sprintf("market %s not found in store", id))
 	}
-	market := ms.db[name]
+	market := ms.db[id]
 	return &market, nil
 }
 

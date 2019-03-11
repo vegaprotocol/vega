@@ -70,7 +70,7 @@ func NewExecutionEngine(
 	// existing markets are to be loaded via the marketStore as market proto types and can be added at runtime via TM
 	for _, marketId := range e.markets {
 		mkt := types.Market{
-			Name: marketId,
+			Id: marketId,
 		}
 		err := e.marketStore.Post(&mkt)
 		if err != nil {
