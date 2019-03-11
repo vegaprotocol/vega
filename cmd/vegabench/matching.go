@@ -1,13 +1,14 @@
 package main
 
 import (
-	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/matching"
-	types "code.vegaprotocol.io/vega/proto"
 	"fmt"
 	"math/rand"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/matching"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	mockStorage "code.vegaprotocol.io/vega/internal/storage/mocks"
@@ -69,7 +70,7 @@ func BenchmarkMatching(
 		matchingEngine := matching.NewMatchingEngine(matchingConfig)
 
 		// Execution engine (broker operation of markets at runtime etc)
-		eec := execution.NewDefaultConfig(logger)
+		eec := execution.NewDefaultConfig(logger, "")
 		executionEngine := execution.NewExecutionEngine(eec, matchingEngine,
 			timeService, orderStore, tradeStore, candleStore, marketStore, partyStore)
 
