@@ -39,7 +39,7 @@ type OrderStore interface {
 	// GetByMarketAndId retrieves an order for a given Market and id.
 	GetByMarketAndId(market string, id string) (*types.Order, error)
 	// GetByParty retrieves orders for a given party.
-	GetByParty(party string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
+	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
 	// GetByPartyAndId retrieves an order for a given Party and id.
 	GetByPartyAndId(party string, id string) (*types.Order, error)
 
@@ -234,7 +234,7 @@ func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*types.O
 
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *badgerOrderStore) GetByParty(party string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
+func (os *badgerOrderStore) GetByParty(ctx context.Context, party string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
 	var result []*types.Order
 
 	if queryFilters == nil {
@@ -251,30 +251,35 @@ func (os *badgerOrderStore) GetByParty(party string, queryFilters *filtering.Ord
 
 	partyPrefix, validForPrefix := os.badger.partyPrefix(party, descending)
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
-		marketKeyItem := it.Item()
-		marketKey, _ := marketKeyItem.ValueCopy(nil)
-		orderItem, err := txn.Get(marketKey)
-		if err != nil {
-			os.log.Error("Order with key does not exist in order store (getByParty)",
-				logging.String("badger-key", string(marketKey)),
-				logging.Error(err))
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			marketKeyItem := it.Item()
+			marketKey, _ := marketKeyItem.ValueCopy(nil)
+			orderItem, err := txn.Get(marketKey)
+			if err != nil {
+				os.log.Error("Order with key does not exist in order store (getByParty)",
+					logging.String("badger-key", string(marketKey)),
+					logging.Error(err))
 
-			return nil, err
-		}
-		orderBuf, _ := orderItem.ValueCopy(nil)
-		var order types.Order
-		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			os.log.Error("Failed to unmarshal order value from badger in order store (getByParty)",
-				logging.Error(err),
-				logging.String("badger-key", string(marketKey)),
-				logging.String("raw-bytes", string(orderBuf)))
-			return nil, err
-		}
-		if filter.apply(&order) {
-			result = append(result, &order)
-		}
-		if filter.isFull() {
-			break
+				return nil, err
+			}
+			orderBuf, _ := orderItem.ValueCopy(nil)
+			var order types.Order
+			if err := proto.Unmarshal(orderBuf, &order); err != nil {
+				os.log.Error("Failed to unmarshal order value from badger in order store (getByParty)",
+					logging.Error(err),
+					logging.String("badger-key", string(marketKey)),
+					logging.String("raw-bytes", string(orderBuf)))
+				return nil, err
+			}
+			if filter.apply(&order) {
+				result = append(result, &order)
+			}
+			if filter.isFull() {
+				break
+			}
 		}
 	}
 	return result, nil

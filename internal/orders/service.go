@@ -145,7 +145,7 @@ func (s *orderService) GetByMarket(ctx context.Context, market string, filters *
 }
 
 func (s *orderService) GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
-	o, err := s.orderStore.GetByParty(party, filters)
+	o, err := s.orderStore.GetByParty(ctx, party, filters)
 	if err != nil {
 		return nil, err
 	}

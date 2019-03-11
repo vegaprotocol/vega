@@ -188,11 +188,11 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 
 	orderStore.Commit()
 
-	ordersAtPartyA, err := orderStore.GetByParty(testPartyA, nil)
+	ordersAtPartyA, err := orderStore.GetByParty(context.Background(), testPartyA, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(ordersAtPartyA))
 
-	ordersAtPartyB, err := orderStore.GetByParty(testPartyB, nil)
+	ordersAtPartyB, err := orderStore.GetByParty(context.Background(), testPartyB, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(ordersAtPartyB))
 
@@ -477,7 +477,7 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 		ReferenceFilter: &filtering.QueryFilter{Eq: "123123-34334343-1231231"},
 	}
 
-	fetchedOrder, err := newOrderStore.GetByParty(testPartyA, orderFilters)
+	fetchedOrder, err := newOrderStore.GetByParty(context.Background(), testPartyA, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(fetchedOrder))
 	assert.Equal(t, order.Id, fetchedOrder[0].Id)
@@ -528,13 +528,13 @@ func TestStorage_InsertBatchOrders(t *testing.T) {
 		ReferenceFilter: &filtering.QueryFilter{Eq: "123123-34334343-1231231"},
 	}
 
-	fetchedOrder, err := orderStore.GetByParty(testPartyA, orderFilters)
+	fetchedOrder, err := orderStore.GetByParty(context.Background(), testPartyA, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(fetchedOrder))
 
 	orderStore.Commit()
 
-	fetchedOrder, err = orderStore.GetByParty(testPartyA, orderFilters)
+	fetchedOrder, err = orderStore.GetByParty(context.Background(), testPartyA, orderFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(fetchedOrder))
 	assert.Equal(t, order1.Id, fetchedOrder[0].Id)

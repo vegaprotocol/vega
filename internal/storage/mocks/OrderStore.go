@@ -86,13 +86,13 @@ func (_m *OrderStore) GetByMarketAndId(market string, id string) (*proto.Order, 
 	return r0, r1
 }
 
-// GetByParty provides a mock function with given fields: party, filters
-func (_m *OrderStore) GetByParty(party string, filters *filtering.OrderQueryFilters) ([]*proto.Order, error) {
-	ret := _m.Called(party, filters)
+// GetByParty provides a mock function with given fields: ctx, party, filters
+func (_m *OrderStore) GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) ([]*proto.Order, error) {
+	ret := _m.Called(ctx, party, filters)
 
 	var r0 []*proto.Order
-	if rf, ok := ret.Get(0).(func(string, *filtering.OrderQueryFilters) []*proto.Order); ok {
-		r0 = rf(party, filters)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *filtering.OrderQueryFilters) []*proto.Order); ok {
+		r0 = rf(ctx, party, filters)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*proto.Order)
@@ -100,8 +100,8 @@ func (_m *OrderStore) GetByParty(party string, filters *filtering.OrderQueryFilt
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, *filtering.OrderQueryFilters) error); ok {
-		r1 = rf(party, filters)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *filtering.OrderQueryFilters) error); ok {
+		r1 = rf(ctx, party, filters)
 	} else {
 		r1 = ret.Error(1)
 	}
