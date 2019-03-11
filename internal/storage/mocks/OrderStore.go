@@ -63,13 +63,13 @@ func (_m *OrderStore) GetByMarket(ctx context.Context, market string, filters *f
 	return r0, r1
 }
 
-// GetByMarketAndId provides a mock function with given fields: market, id
-func (_m *OrderStore) GetByMarketAndId(market string, id string) (*proto.Order, error) {
-	ret := _m.Called(market, id)
+// GetByMarketAndId provides a mock function with given fields: ctx, market, id
+func (_m *OrderStore) GetByMarketAndId(ctx context.Context, market string, id string) (*proto.Order, error) {
+	ret := _m.Called(ctx, market, id)
 
 	var r0 *proto.Order
-	if rf, ok := ret.Get(0).(func(string, string) *proto.Order); ok {
-		r0 = rf(market, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *proto.Order); ok {
+		r0 = rf(ctx, market, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*proto.Order)
@@ -77,8 +77,8 @@ func (_m *OrderStore) GetByMarketAndId(market string, id string) (*proto.Order, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(market, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, market, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -109,13 +109,13 @@ func (_m *OrderStore) GetByParty(ctx context.Context, party string, filters *fil
 	return r0, r1
 }
 
-// GetByPartyAndId provides a mock function with given fields: party, id
-func (_m *OrderStore) GetByPartyAndId(party string, id string) (*proto.Order, error) {
-	ret := _m.Called(party, id)
+// GetByPartyAndId provides a mock function with given fields: ctx, party, id
+func (_m *OrderStore) GetByPartyAndId(ctx context.Context, party string, id string) (*proto.Order, error) {
+	ret := _m.Called(ctx, party, id)
 
 	var r0 *proto.Order
-	if rf, ok := ret.Get(0).(func(string, string) *proto.Order); ok {
-		r0 = rf(party, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *proto.Order); ok {
+		r0 = rf(ctx, party, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*proto.Order)
@@ -123,8 +123,8 @@ func (_m *OrderStore) GetByPartyAndId(party string, id string) (*proto.Order, er
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(party, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, party, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -132,13 +132,13 @@ func (_m *OrderStore) GetByPartyAndId(party string, id string) (*proto.Order, er
 	return r0, r1
 }
 
-// GetMarketDepth provides a mock function with given fields: market
-func (_m *OrderStore) GetMarketDepth(market string) (*proto.MarketDepth, error) {
-	ret := _m.Called(market)
+// GetMarketDepth provides a mock function with given fields: ctx, market
+func (_m *OrderStore) GetMarketDepth(ctx context.Context, market string) (*proto.MarketDepth, error) {
+	ret := _m.Called(ctx, market)
 
 	var r0 *proto.MarketDepth
-	if rf, ok := ret.Get(0).(func(string) *proto.MarketDepth); ok {
-		r0 = rf(market)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *proto.MarketDepth); ok {
+		r0 = rf(ctx, market)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*proto.MarketDepth)
@@ -146,8 +146,8 @@ func (_m *OrderStore) GetMarketDepth(market string) (*proto.MarketDepth, error) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(market)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, market)
 	} else {
 		r1 = ret.Error(1)
 	}

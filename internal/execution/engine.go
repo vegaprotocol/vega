@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -162,7 +163,8 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
 
-	existingOrder, err := e.orderStore.GetByPartyAndId(order.Party, order.Id)
+	ctx := context.TODO()
+	existingOrder, err := e.orderStore.GetByPartyAndId(ctx, order.Party, order.Id)
 	if err != nil {
 		e.log.Error("Invalid order reference",
 			logging.String("id", order.Id),

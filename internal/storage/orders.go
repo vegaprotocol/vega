@@ -37,14 +37,14 @@ type OrderStore interface {
 	// GetByMarket retrieves all orders for a given Market.
 	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
 	// GetByMarketAndId retrieves an order for a given Market and id.
-	GetByMarketAndId(market string, id string) (*types.Order, error)
+	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error)
 	// GetByParty retrieves orders for a given party.
 	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
 	// GetByPartyAndId retrieves an order for a given Party and id.
-	GetByPartyAndId(party string, id string) (*types.Order, error)
+	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error)
 
 	// GetMarketDepth calculates and returns depth of market for a given market.
-	GetMarketDepth(market string) (*types.MarketDepth, error)
+	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
 }
 
 // badgerOrderStore is a package internal data struct that implements the OrderStore interface.
@@ -210,7 +210,7 @@ func (os *badgerOrderStore) GetByMarket(ctx context.Context, market string, quer
 }
 
 // GetByMarketAndId retrieves an order for a given Market and id, any errors will be returned immediately.
-func (os *badgerOrderStore) GetByMarketAndId(market string, id string) (*types.Order, error) {
+func (os *badgerOrderStore) GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error) {
 	var order types.Order
 
 	txn := os.badger.readTransaction()
@@ -286,7 +286,7 @@ func (os *badgerOrderStore) GetByParty(ctx context.Context, party string, queryF
 }
 
 // GetByPartyAndId retrieves a trade for a given Party and id, any errors will be returned immediately.
-func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*types.Order, error) {
+func (os *badgerOrderStore) GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error) {
 	var order types.Order
 
 	err := os.badger.db.View(func(txn *badger.Txn) error {
@@ -325,7 +325,7 @@ func (os *badgerOrderStore) GetByPartyAndId(party string, id string) (*types.Ord
 }
 
 // GetMarketDepth calculates and returns order book/depth of market for a given market.
-func (os *badgerOrderStore) GetMarketDepth(market string) (*types.MarketDepth, error) {
+func (os *badgerOrderStore) GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error) {
 
 	// validate
 	if exists := os.depth[market]; exists == nil {
@@ -342,24 +342,34 @@ func (os *badgerOrderStore) GetMarketDepth(market string) (*types.MarketDepth, e
 	// recalculate accumulated volume
 	// --- buy side ---
 	for idx := range buy {
-		if idx == 0 {
-			buy[idx].CumulativeVolume = buy[idx].Volume
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			if idx == 0 {
+				buy[idx].CumulativeVolume = buy[idx].Volume
 
+				buyPtr = append(buyPtr, &buy[idx].PriceLevel)
+				continue
+			}
+			buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
 			buyPtr = append(buyPtr, &buy[idx].PriceLevel)
-			continue
 		}
-		buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
-		buyPtr = append(buyPtr, &buy[idx].PriceLevel)
 	}
 	// --- sell side ---
 	for idx := range sell {
-		if idx == 0 {
-			sell[idx].CumulativeVolume = sell[idx].Volume
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			if idx == 0 {
+				sell[idx].CumulativeVolume = sell[idx].Volume
+				sellPtr = append(sellPtr, &sell[idx].PriceLevel)
+				continue
+			}
+			sell[idx].CumulativeVolume = sell[idx-1].CumulativeVolume + sell[idx].Volume
 			sellPtr = append(sellPtr, &sell[idx].PriceLevel)
-			continue
 		}
-		sell[idx].CumulativeVolume = sell[idx-1].CumulativeVolume + sell[idx].Volume
-		sellPtr = append(sellPtr, &sell[idx].PriceLevel)
 	}
 
 	// return new re-calculated market depth for each side of order book

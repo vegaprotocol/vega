@@ -62,7 +62,7 @@ func (s *marketService) GetDepth(ctx context.Context, market string) (marketDept
 	if err != nil {
 		return nil, err
 	}
-	return s.orderStore.GetMarketDepth(m.Name)
+	return s.orderStore.GetMarketDepth(ctx, m.Name)
 }
 
 // ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
@@ -89,7 +89,7 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		for range internal {
-			d, err := s.orderStore.GetMarketDepth(market)
+			d, err := s.orderStore.GetMarketDepth(ctx, market)
 			if err != nil {
 				s.log.Error("Failure calculating market depth for subscriber",
 					logging.Uint64("ref", ref),

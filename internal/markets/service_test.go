@@ -91,7 +91,7 @@ func TestMarketService_GetByName(t *testing.T) {
 func TestMarketService_GetDepth(t *testing.T) {
 	market := &types.Market{Name: "BTC/DEC19"}
 	orderStore := &mocks.OrderStore{}
-	orderStore.On("GetMarketDepth", market.Name).Return(&types.MarketDepth{
+	orderStore.On("GetMarketDepth", context.Background(), market.Name).Return(&types.MarketDepth{
 		Name: market.Name,
 	}, nil)
 	marketStore := &mocks.MarketStore{}

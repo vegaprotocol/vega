@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -11,6 +12,7 @@ import (
 )
 
 func TestMarketDepth_Hard(t *testing.T) {
+	ctx := context.Background()
 	config := NewTestConfig()
 	orderStore, err := NewOrderStore(config)
 	assert.Nil(t, err)
@@ -57,7 +59,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 
 	orderStore.Commit()
 
-	marketDepth, _ := orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -115,7 +117,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 
 	// No commit - should remain unchanged
 
-	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -136,7 +138,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 
 	orderStore.Commit()
 
-	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(200), marketDepth.Buy[0].Volume)
@@ -166,7 +168,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 
 	orderStore.Commit()
 
-	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(200-100), marketDepth.Buy[0].Volume)
@@ -191,7 +193,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 
 	orderStore.Commit()
 
-	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -221,7 +223,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 
 	orderStore.Commit()
 
-	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, 0, len(marketDepth.Buy))
 }
@@ -371,6 +373,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	// call DELETE on orders
 	// call getMarketDepth and see if order book depth is OK
 
+	ctx := context.Background()
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	config := NewTestConfig()
 	orderStore, err := NewOrderStore(config)
@@ -418,7 +421,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 
 	orderStore.Commit()
 
-	marketDepth, _ := orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, uint64(113), marketDepth.Buy[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Buy[0].Volume)
@@ -469,7 +472,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 
 	orderStore.Commit()
 
-	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
 	// 113 is removed
 
@@ -496,6 +499,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	// call DELETE on orders
 	// call getMarketDepth and see if order book depth is OK
 
+	ctx := context.Background()
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	config := NewTestConfig()
 	orderStore, err := NewOrderStore(config)
@@ -543,7 +547,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 
 	orderStore.Commit()
 
-	marketDepth, _ := orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ := orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, uint64(111), marketDepth.Sell[0].Price)
 	assert.Equal(t, uint64(100), marketDepth.Sell[0].Volume)
@@ -594,7 +598,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 
 	orderStore.Commit()
 
-	marketDepth, _ = orderStore.GetMarketDepth(testMarket)
+	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, uint64(111), marketDepth.Sell[0].Price)
 	assert.Equal(t, uint64(50), marketDepth.Sell[0].Volume)

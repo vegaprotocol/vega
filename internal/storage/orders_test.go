@@ -51,7 +51,7 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 
 	orderStore.Commit()
 
-	o, err := orderStore.GetByMarketAndId("testMarket", order.Id)
+	o, err := orderStore.GetByMarketAndId(context.Background(), "testMarket", order.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, order.Id, o.Id)
 }
@@ -196,11 +196,11 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(ordersAtPartyB))
 
-	orderAtPartyA, err := orderStore.GetByPartyAndId(testPartyA, passiveOrder.Id)
+	orderAtPartyA, err := orderStore.GetByPartyAndId(context.Background(), testPartyA, passiveOrder.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, passiveOrder.Id, orderAtPartyA.Id)
 
-	orderAtPartyB, err := orderStore.GetByPartyAndId(testPartyB, aggressiveOrder.Id)
+	orderAtPartyB, err := orderStore.GetByPartyAndId(context.Background(), testPartyB, aggressiveOrder.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, aggressiveOrder.Id, orderAtPartyB.Id)
 
@@ -214,7 +214,7 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 
 	err = orderStore.Put(*updatedAggressiveOrder)
 	assert.Nil(t, err)
-	orderAtPartyB, err = orderStore.GetByPartyAndId(testPartyB, aggressiveOrder.Id)
+	orderAtPartyB, err = orderStore.GetByPartyAndId(context.Background(), testPartyB, aggressiveOrder.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, updatedAggressiveOrder.Id, orderAtPartyB.Id)
 }

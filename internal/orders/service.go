@@ -78,7 +78,7 @@ func (s *orderService) CreateOrder(ctx context.Context, order *types.Order) (suc
 // CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
 func (s *orderService) CancelOrder(ctx context.Context, order *types.Order) (success bool, err error) {
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByMarketAndId(order.Market, order.Id)
+	o, err := s.orderStore.GetByMarketAndId(ctx, order.Market, order.Id)
 	if err != nil {
 		return false, err
 	}
@@ -98,7 +98,7 @@ func (s *orderService) CancelOrder(ctx context.Context, order *types.Order) (suc
 func (s *orderService) AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error) {
 
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByPartyAndId(amendment.Party, amendment.Id)
+	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.Party, amendment.Id)
 	if err != nil {
 		return false, err
 	}
@@ -161,7 +161,7 @@ func (s *orderService) GetByParty(ctx context.Context, party string, filters *fi
 }
 
 func (s *orderService) GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error) {
-	o, err := s.orderStore.GetByMarketAndId(market, id)
+	o, err := s.orderStore.GetByMarketAndId(ctx, market, id)
 	if err != nil {
 		return &types.Order{}, err
 	}
@@ -169,7 +169,7 @@ func (s *orderService) GetByMarketAndId(ctx context.Context, market string, id s
 }
 
 func (s *orderService) GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error) {
-	o, err := s.orderStore.GetByPartyAndId(party, id)
+	o, err := s.orderStore.GetByPartyAndId(ctx, party, id)
 	if err != nil {
 		return &types.Order{}, err
 	}
