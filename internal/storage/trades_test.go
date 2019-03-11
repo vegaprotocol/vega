@@ -1,11 +1,11 @@
 package storage
 
 import (
+	"code.vegaprotocol.io/vega/internal/filtering"
+	types "code.vegaprotocol.io/vega/proto"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
-	"code.vegaprotocol.io/vega/internal/filtering"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 func TestStorage_NewTradeStore(t *testing.T) {

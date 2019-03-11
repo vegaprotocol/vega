@@ -4,10 +4,10 @@ package gql
 
 import (
 	bytes "bytes"
+	types "code.vegaprotocol.io/vega/proto"
 	context "context"
 	strconv "strconv"
 	sync "sync"
-	types "code.vegaprotocol.io/vega/proto"
 
 	graphql "github.com/99designs/gqlgen/graphql"
 	introspection "github.com/99designs/gqlgen/graphql/introspection"

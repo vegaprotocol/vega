@@ -1,9 +1,9 @@
 package matching
 
 import (
-	"testing"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 )

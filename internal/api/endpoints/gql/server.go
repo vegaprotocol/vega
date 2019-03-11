@@ -1,6 +1,7 @@
 package gql
 
 import (
+	"code.vegaprotocol.io/vega/internal/monitoring"
 	"context"
 	"errors"
 	"fmt"
@@ -34,6 +35,7 @@ type graphServer struct {
 	marketService markets.Service
 	partyService  parties.Service
 	srv           *http.Server
+	statusChecker *monitoring.Status
 }
 
 func NewGraphQLServer(
@@ -44,6 +46,7 @@ func NewGraphQLServer(
 	marketService markets.Service,
 	partyService parties.Service,
 	timeService vegatime.Service,
+	statusChecker *monitoring.Status,
 ) *graphServer {
 
 	return &graphServer{
@@ -54,6 +57,7 @@ func NewGraphQLServer(
 		timeService:   timeService,
 		marketService: marketService,
 		partyService:  partyService,
+		statusChecker: statusChecker,
 	}
 }
 
@@ -129,6 +133,7 @@ func (g *graphServer) Start() {
 		g.timeService,
 		g.marketService,
 		g.partyService,
+		g.statusChecker,
 	)
 	var config = Config{
 		Resolvers: resolverRoot,

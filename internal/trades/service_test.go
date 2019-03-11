@@ -10,9 +10,9 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 // storageConfig specifies that the badger files are kept in a different

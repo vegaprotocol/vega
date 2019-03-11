@@ -1,8 +1,8 @@
 package matching
 
 import (
-	"fmt"
 	types "code.vegaprotocol.io/vega/proto"
+	"fmt"
 
 	"github.com/pkg/errors"
 )

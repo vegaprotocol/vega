@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal/monitoring"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -127,28 +128,6 @@ func (l *NodeCommand) runNode(args []string) error {
 		return err
 	}
 
-	// gRPC server
-	grpcServer := grpc.NewGRPCServer(
-		conf.API,
-		stats,
-		client,
-		timeService,
-		marketService,
-		orderService,
-		tradeService,
-		candleService,
-	)
-	go grpcServer.Start()
-
-	// REST<>gRPC (gRPC proxy) server
-	restServer := restproxy.NewRestProxyServer(conf.API)
-	go restServer.Start()
-
-	// GraphQL server
-	graphServer := gql.NewGraphQLServer(conf.API, orderService, tradeService,
-		candleService, marketService, partyService, timeService)
-	go graphServer.Start()
-
 	// Execution engine (broker operation at runtime etc)
 	matchingEngine := matching.NewMatchingEngine(conf.Matching)
 	executionEngine := execution.NewExecutionEngine(
@@ -168,14 +147,48 @@ func (l *NodeCommand) runNode(args []string) error {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
+	statusChecker := monitoring.NewStatusChecker(l.Log, client)
+
+	// gRPC server
+	grpcServer := grpc.NewGRPCServer(
+		conf.API,
+		stats,
+		client,
+		timeService,
+		marketService,
+		orderService,
+		tradeService,
+		candleService,
+		statusChecker,
+	)
+	go grpcServer.Start()
+
+	// REST<>gRPC (gRPC proxy) server
+	restServer := restproxy.NewRestProxyServer(conf.API)
+	go restServer.Start()
+
+	// GraphQL server
+	graphServer := gql.NewGraphQLServer(
+		conf.API,
+		orderService,
+		tradeService,
+		candleService,
+		marketService,
+		partyService,
+		timeService,
+		statusChecker,
+	)
+	go graphServer.Start()
+
 	waitSig()
 
 	// Clean up and close resources
-	l.Log.Info("Closing blockchain server", logging.Error(socketServer.Stop()))
 	l.Log.Info("Closing REST proxy server", logging.Error(restServer.Stop()))
 	l.Log.Info("Closing GRPC server", logging.Error(grpcServer.Stop()))
 	l.Log.Info("Closing GraphQL server", logging.Error(graphServer.Stop()))
+	l.Log.Info("Closing blockchain server", logging.Error(socketServer.Stop()))
 	l.Log.Info("Closing stores", logging.Error(resolver.CloseStores()))
+	statusChecker.Stop()
 
 	return nil
 }

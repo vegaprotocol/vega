@@ -1,13 +1,13 @@
 package main
 
 import (
+	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/matching"
+	types "code.vegaprotocol.io/vega/proto"
 	"fmt"
 	"math/rand"
 	"testing"
 	"time"
-	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/matching"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	mockStorage "code.vegaprotocol.io/vega/internal/storage/mocks"

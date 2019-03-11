@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -21,6 +22,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var ErrChainNotConnected = errors.New("Chain not connected")
+
 type Handlers struct {
 	Client        blockchain.Client
 	Stats         *internal.Stats
@@ -29,6 +32,7 @@ type Handlers struct {
 	TradeService  trades.Service
 	CandleService candles.Service
 	MarketService markets.Service
+	statusChecker *monitoring.Status
 }
 
 // If no limit is provided at the gRPC API level, the system will use this limit instead.
@@ -37,12 +41,18 @@ const defaultLimit = uint64(1000)
 
 // CreateOrder is used to request sending an order into the VEGA platform, via consensus.
 func (h *Handlers) CreateOrder(ctx context.Context, order *types.Order) (*api.OrderResponse, error) {
+	if h.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
+		return nil, ErrChainNotConnected
+	}
 	success, reference, err := h.OrderService.CreateOrder(ctx, order)
 	return &api.OrderResponse{Success: success, Reference: reference}, err
 }
 
 // CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
 func (h *Handlers) CancelOrder(ctx context.Context, order *types.Order) (*api.OrderResponse, error) {
+	if h.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
+		return nil, ErrChainNotConnected
+	}
 	success, err := h.OrderService.CancelOrder(ctx, order)
 	return &api.OrderResponse{Success: success}, err
 }
@@ -270,14 +280,14 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
 		TradesPerSecond:       uint64(h.Stats.Blockchain.TotalTradesLastBatch()),
 		OrdersPerSecond:       uint64(h.Stats.Blockchain.TotalOrdersLastBatch()),
-		Status:                types.AppStatus_CHAIN_NOT_FOUND, // todo
-		LastTrade:             nil,                             // todo
-		LastOrder:             nil,                             // todo
+		Status:                h.statusChecker.Blockchain.Status(),
 		TotalMarkets:          uint64(len(m)),
-		TotalParties:          0, // todo
+		TotalParties:          0,   // todo
+		Parties:               nil, // todo
+		LastTrade:             nil, // todo
+		LastOrder:             nil, // todo
 		AppVersionHash:        h.Stats.GetVersionHash(),
 		AppVersion:            h.Stats.GetVersion(),
-		Parties:               nil, // todo
 	}, nil
 }
 

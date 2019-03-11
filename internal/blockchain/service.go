@@ -1,9 +1,9 @@
 package blockchain
 
 import (
-	"fmt"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
 

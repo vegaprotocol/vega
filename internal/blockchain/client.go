@@ -9,7 +9,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	tmRPC "github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -23,6 +23,7 @@ type Client interface {
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
+	Health() (*tmctypes.ResultHealth, error)
 }
 
 type client struct {
@@ -77,6 +78,10 @@ func (b *client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 		return 0, err
 	}
 	return res.N, err
+}
+
+func (b *client) Health() (*tmctypes.ResultHealth, error) {
+	return b.tmClient.Health()
 }
 
 func (b *client) sendOrderCommand(ctx context.Context, order *types.Order, cmd Command) (success bool, err error) {
