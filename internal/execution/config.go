@@ -1,6 +1,10 @@
 package execution
 
-import "code.vegaprotocol.io/vega/internal/logging"
+import (
+	"path/filepath"
+
+	"code.vegaprotocol.io/vega/internal/logging"
+)
 
 const (
 	// namedLogger is the identifier for package and should ideally match the package name
@@ -25,13 +29,13 @@ type Config struct {
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
-func NewDefaultConfig(logger *logging.Logger) *Config {
+func NewDefaultConfig(logger *logging.Logger, defaultConfigDirPath string) *Config {
 	logger = logger.Named(namedLogger)
 	return &Config{
 		log:   logger,
 		Level: logging.InfoLevel,
 		Markets: MarketConfig{
-			Path:    MarketConfigPath,
+			Path:    filepath.Join(defaultConfigDirPath, MarketConfigPath),
 			Configs: []string{DefaultMarketConfigName},
 		},
 	}
