@@ -779,6 +779,7 @@ func validateMarket(ctx context.Context, marketId *string, marketService markets
 		if len(*marketId) == 0 {
 			return nil, errors.New("market must not be empty")
 		}
+
 		mkt, err = marketService.GetByID(ctx, *marketId)
 		if err != nil {
 			return nil, err
