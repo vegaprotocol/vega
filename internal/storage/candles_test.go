@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 )
 
 func TestStorage_GenerateCandles(t *testing.T) {
+	ctx := context.Background()
 	config := NewTestConfig()
 	FlushStores(config)
 	candleStore, err := NewCandleStore(config)
@@ -40,7 +42,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	err = candleStore.GenerateCandlesFromBuffer(testMarket)
 	assert.Nil(t, err)
 
-	candles, err := candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
+	candles, err := candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
 	assert.Nil(t, err)
 
@@ -61,7 +63,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[1].Close)
 	assert.Equal(t, uint64(200), candles[1].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0+uint64(1*time.Minute), types.Interval_I1M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0+uint64(1*time.Minute), types.Interval_I1M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
 
@@ -73,7 +75,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(200), candles[0].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0+uint64(1*time.Minute), types.Interval_I5M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0+uint64(1*time.Minute), types.Interval_I5M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 5m: %+v", candles))
 
@@ -92,7 +94,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	err = candleStore.GenerateCandlesFromBuffer(testMarket)
 	assert.Nil(t, err)
 
-	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
 
@@ -120,7 +122,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[2].Close)
 	assert.Equal(t, uint64(0), candles[2].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I5M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I5M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 5m: %+v", candles))
 
@@ -132,7 +134,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0+uint64(2*time.Minute), types.Interval_I15M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0+uint64(2*time.Minute), types.Interval_I15M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 15m: %+v", candles))
 
@@ -144,7 +146,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0+uint64(17*time.Minute), types.Interval_I15M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0+uint64(17*time.Minute), types.Interval_I15M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 15m: %+v", candles))
 
@@ -156,7 +158,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	err = candleStore.GenerateCandlesFromBuffer(testMarket)
 	assert.Nil(t, err)
 
-	candles, err = candleStore.GetCandles(testMarket, t0+uint64(17*time.Minute), types.Interval_I15M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0+uint64(17*time.Minute), types.Interval_I15M)
 	assert.Nil(t, err)
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 15m: %+v", candles))
 
@@ -210,6 +212,7 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 }
 
 func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
+	ctx := context.Background()
 	config := NewTestConfig()
 	FlushStores(config)
 	candleStore, err := NewCandleStore(config)
@@ -239,7 +242,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	err = candleStore.GenerateCandlesFromBuffer(testMarket)
 	assert.Nil(t, err)
 
-	candles, err := candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
+	candles, err := candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
@@ -262,7 +265,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(109), candles[1].Close)
 	assert.Equal(t, uint64(400), candles[1].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0+uint64(1*time.Minute), types.Interval_I1M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0+uint64(1*time.Minute), types.Interval_I1M)
 	assert.Nil(t, err)
 
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
@@ -275,7 +278,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(109), candles[0].Close)
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
-	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I5M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I5M)
 	assert.Nil(t, err)
 
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 5m: %+v", candles))
@@ -308,7 +311,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	err = candleStore.GenerateCandlesFromBuffer(testMarket)
 	assert.Nil(t, err)
 
-	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))
@@ -361,7 +364,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	err = candleStore.GenerateCandlesFromBuffer(testMarket)
 	assert.Nil(t, err)
 
-	candles, err = candleStore.GetCandles(testMarket, t0, types.Interval_I1M)
+	candles, err = candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
 	assert.Nil(t, err)
 
 	t.Log(fmt.Sprintf("Candles fetched for t0 and 1m: %+v", candles))

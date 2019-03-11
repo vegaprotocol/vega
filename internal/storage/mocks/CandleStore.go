@@ -2,6 +2,7 @@
 
 package mocks
 
+import context "context"
 import mock "github.com/stretchr/testify/mock"
 import proto "code.vegaprotocol.io/vega/proto"
 import storage "code.vegaprotocol.io/vega/internal/storage"
@@ -53,13 +54,13 @@ func (_m *CandleStore) GenerateCandlesFromBuffer(market string) error {
 	return r0
 }
 
-// GetCandles provides a mock function with given fields: market, sinceTimestamp, interval
-func (_m *CandleStore) GetCandles(market string, sinceTimestamp uint64, interval proto.Interval) ([]*proto.Candle, error) {
-	ret := _m.Called(market, sinceTimestamp, interval)
+// GetCandles provides a mock function with given fields: ctx, market, sinceTimestamp, interval
+func (_m *CandleStore) GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval proto.Interval) ([]*proto.Candle, error) {
+	ret := _m.Called(ctx, market, sinceTimestamp, interval)
 
 	var r0 []*proto.Candle
-	if rf, ok := ret.Get(0).(func(string, uint64, proto.Interval) []*proto.Candle); ok {
-		r0 = rf(market, sinceTimestamp, interval)
+	if rf, ok := ret.Get(0).(func(context.Context, string, uint64, proto.Interval) []*proto.Candle); ok {
+		r0 = rf(ctx, market, sinceTimestamp, interval)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*proto.Candle)
@@ -67,8 +68,8 @@ func (_m *CandleStore) GetCandles(market string, sinceTimestamp uint64, interval
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, uint64, proto.Interval) error); ok {
-		r1 = rf(market, sinceTimestamp, interval)
+	if rf, ok := ret.Get(1).(func(context.Context, string, uint64, proto.Interval) error); ok {
+		r1 = rf(ctx, market, sinceTimestamp, interval)
 	} else {
 		r1 = ret.Error(1)
 	}

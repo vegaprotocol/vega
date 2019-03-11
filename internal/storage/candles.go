@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -33,7 +34,7 @@ type CandleStore interface {
 	GenerateCandlesFromBuffer(market string) error
 
 	// GetCandles returns all candles at interval since timestamp for a market.
-	GetCandles(market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error)
+	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error)
 
 	// Close can be called to clean up and close any storage
 	// connections held by the underlying storage mechanism.
@@ -311,7 +312,7 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(marketId string) error {
 }
 
 // GetCandles returns all candles at interval since timestamp for a market.
-func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error) {
+func (c *badgerCandleStore) GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error) {
 	if sinceTimestamp < minSinceTimestamp {
 		return nil, errors.New("invalid sinceTimestamp, ensure format is epoch+nanoseconds timestamp")
 	}
@@ -328,24 +329,29 @@ func (c *badgerCandleStore) GetCandles(market string, sinceTimestamp uint64, int
 
 	var candles []*types.Candle
 	for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {
-		item := it.Item()
-		value, err := item.ValueCopy(nil)
-		if err != nil {
-			c.log.Error("Failure loading candle value from candle store (GetCandles)",
-				logging.String("badger-key", string(item.Key())),
-				logging.Error(err))
-			continue
-		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			item := it.Item()
+			value, err := item.ValueCopy(nil)
+			if err != nil {
+				c.log.Error("Failure loading candle value from candle store (GetCandles)",
+					logging.String("badger-key", string(item.Key())),
+					logging.Error(err))
+				continue
+			}
 
-		var newCandle types.Candle
-		if err := proto.Unmarshal(value, &newCandle); err != nil {
-			c.log.Error("Failed to unmarshal candle value from badger in candle store (GetCandles)",
-				logging.Error(err),
-				logging.String("badger-key", string(item.Key())),
-				logging.String("raw-bytes", string(value)))
-			continue
+			var newCandle types.Candle
+			if err := proto.Unmarshal(value, &newCandle); err != nil {
+				c.log.Error("Failed to unmarshal candle value from badger in candle store (GetCandles)",
+					logging.Error(err),
+					logging.String("badger-key", string(item.Key())),
+					logging.String("raw-bytes", string(value)))
+				continue
+			}
+			candles = append(candles, &newCandle)
 		}
-		candles = append(candles, &newCandle)
 	}
 
 	return candles, nil
