@@ -2,13 +2,16 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/cobra"
@@ -77,6 +80,23 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
+	// create default market folder
+	fullDefaultMarketConfigPath :=
+		filepath.Join(ic.rootPath, execution.MarketConfigPath)
+
+	if err := ensureDir(fullDefaultMarketConfigPath); err != nil {
+		return err
+	}
+
+	// generate default market config
+	err = createDefaultMarket(
+		filepath.Join(
+			fullDefaultMarketConfigPath,
+			execution.DefaultMarketConfigName))
+	if err != nil {
+		return err
+	}
+
 	// generate a default configuration
 	cfg, err := internal.NewDefaultConfig(ic.Log, ic.rootPath)
 	if err != nil {
@@ -100,6 +120,61 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	ic.Log.Info("configuration generated successfully", zap.String("path", ic.rootPath))
+
+	return nil
+}
+
+func createDefaultMarket(confpath string) error {
+	defaultMarket := proto.Market{
+		Id: "BTC/DEC19",
+		TradableInstrument: &proto.TradableInstrument{
+			Instrument: &proto.Instrument{
+				Id:   "Crypto/BTCUSD/Futures/Dec19",
+				Code: "FX:BTCUSD/DEC19",
+				Name: "December 2019 BTC vs USD future",
+				Metadata: &proto.InstrumentMetadata{
+					Tags: []string{
+						"asset_class:fx/crypto",
+						"product:futures",
+					},
+				},
+				Product: &proto.Instrument_Future{
+					Future: &proto.Future{
+						Maturity: "2019-12-31",
+						Oracle: &proto.Future_EthereumEvent{
+							EthereumEvent: &proto.EthereumEvent{
+								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+								Event:      "price_changed",
+							},
+						},
+						Asset: "Ethereum/Ether",
+					},
+				},
+			},
+			RiskModel: &proto.TradableInstrument_BuiltinFutures{
+				BuiltinFutures: &proto.BuiltinFutures{
+					HistoricVolatility: 0.15,
+				},
+			},
+		},
+		TradingMode: &proto.Market_Continuous{
+			Continuous: &proto.ContinuousTrading{},
+		},
+	}
+
+	buf, err := json.MarshalIndent(&defaultMarket, "  ", "  ")
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(confpath)
+	if err != nil {
+		return err
+	}
+
+	if _, err := f.WriteString(string(buf)); err != nil {
+		return err
+	}
 
 	return nil
 }

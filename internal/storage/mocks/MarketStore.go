@@ -61,8 +61,8 @@ func (_m *MarketStore) GetAll() ([]*proto.Market, error) {
 	return r0, r1
 }
 
-// GetByName provides a mock function with given fields: name
-func (_m *MarketStore) GetByName(name string) (*proto.Market, error) {
+// GetByID provides a mock function with given fields: name
+func (_m *MarketStore) GetByID(name string) (*proto.Market, error) {
 	ret := _m.Called(name)
 
 	var r0 *proto.Market

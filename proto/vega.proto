@@ -9,8 +9,73 @@ enum Side { Buy = 0; Sell = 1; }
 
 enum Interval { I1M = 0; I5M = 1; I15M = 2; I1H = 3; I6H = 4; I1D = 5; }
 
+// here begin trading modes
+
+message ContinuousTrading {}
+
+message DiscreteTrading {
+  int64 duration = 1;
+}
+
+// here end trading modes
+
+// here begin products
+
+message Future {
+  string maturity = 1;
+  string asset = 2;
+  oneof oracle {
+   EthereumEvent ethereumEvent = 100;
+  }
+}
+
+// here end products
+
+// here begin oracles
+
+message EthereumEvent {
+  string contractID = 1;
+  string event = 2;
+}
+
+// here ends oracles
+
+message InstrumentMetadata {
+  repeated string tags = 1;
+}
+
+message Instrument {
+  string id = 1;
+  string code = 2;
+  string name = 3;
+  InstrumentMetadata metadata = 4;
+  oneof product {
+    Future future = 100;
+  }
+}
+
+// here start risk models
+
+message BuiltinFutures {
+  double historicVolatility = 1;
+}
+
+// here ends risk models
+
+message TradableInstrument {
+  Instrument instrument = 1;
+  oneof riskModel {
+    BuiltinFutures builtinFutures = 100;
+  }
+}
+
 message Market {
-    string name = 1;
+  string id = 1;
+  TradableInstrument tradableInstrument = 2;
+  oneof tradingMode {
+    ContinuousTrading continuous = 100;
+    DiscreteTrading discrete = 101;
+  }
 }
 
 message Party {
@@ -19,9 +84,9 @@ message Party {
 }
 
 message RiskFactor {
-    string market = 1;
-    double short = 2;
-   	double long = 3;
+  string market = 1;
+  double short = 2;
+  double long = 3;
 }
 
 message Order {
