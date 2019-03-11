@@ -62,9 +62,9 @@ To install Vega from source, the following software is required:
 
 ### Tendermint ###
 
-[Tendermint](https://tendermint.com/docs/introduction/what-is-tendermint.html) performs Byzantine Fault Tolerant (BFT) State Machine Replication (SMR) for arbitrary deterministic, finite state machines. Tendermint core is required for Vega nodes to communcate.
+[Tendermint](https://tendermint.com/docs/introduction/what-is-tendermint.html) performs Byzantine Fault Tolerant (BFT) State Machine Replication (SMR) for arbitrary deterministic, finite state machines. Tendermint core is required for Vega nodes to communicate.
 
-Note: We recommend downloading a pre-built core binary for your architecture rather than compiling from source, to save time. You can of course install from source if you wish, just make sure you grab the correct version.
+*We recommend downloading a pre-built core binary for your architecture rather than compiling from source, to save time. You can of course install from source if you wish, just make sure you grab the correct version.*
 
 Once installed check the version, this should match the required version (above):
 
@@ -164,7 +164,9 @@ Vega is initialised with a set of default configuration with the command `vega i
 
 ## Provisioning
 
-(coming soon)
+The provisioning of new markets is **coming soon**. 
+
+Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to APIs as the field `Market` in protobuf/rest/graphql requests.
 
 ## Trading
 
