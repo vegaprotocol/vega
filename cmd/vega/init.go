@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/BurntSushi/toml"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -162,7 +162,10 @@ func createDefaultMarket(confpath string) error {
 		},
 	}
 
-	buf, err := json.MarshalIndent(&defaultMarket, "  ", "  ")
+	m := jsonpb.Marshaler{
+		Indent: "  ",
+	}
+	buf, err := m.MarshalToString(&defaultMarket)
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,11 @@ package execution
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -33,7 +37,7 @@ type Engine interface {
 
 type engine struct {
 	*Config
-	markets     []string
+	markets     []types.Market
 	matching    matching.Engine
 	orderStore  storage.OrderStore
 	tradeStore  storage.TradeStore
@@ -57,7 +61,7 @@ func NewExecutionEngine(
 ) Engine {
 	e := &engine{
 		Config:      executionConfig,
-		markets:     []string{"BTC/DEC19"},
+		markets:     make([]types.Market, 0, len(executionConfig.Markets.Configs)),
 		matching:    matchingEngine,
 		candleStore: candleStore,
 		orderStore:  orderStore,
@@ -67,21 +71,42 @@ func NewExecutionEngine(
 		time:        time,
 	}
 
-	// existing markets are to be loaded via the marketStore as market proto types and can be added at runtime via TM
-	for _, marketId := range e.markets {
-		mkt := types.Market{
-			Id: marketId,
+	// loads markets from configuration
+	for _, v := range executionConfig.Markets.Configs {
+		path := filepath.Join(executionConfig.Markets.Path, v)
+		buf, err := ioutil.ReadFile(path)
+		if err != nil {
+			e.log.Panic("Unable to read market configuration",
+				logging.Error(err),
+				logging.String("config-path", path))
 		}
+
+		mkt := types.Market{}
+		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
+		if err != nil {
+			e.log.Panic("Unable to unmarshal market configuration",
+				logging.Error(err),
+				logging.String("config-path", path))
+		}
+		e.markets = append(e.markets, mkt)
+
+		e.log.Info("New market loaded from configuation",
+			logging.String("market-config", path),
+			logging.String("market-id", mkt.Id))
+	}
+
+	// existing markets are to be loaded via the marketStore as market proto types and can be added at runtime via TM
+	for _, mkt := range e.markets {
 		err := e.marketStore.Post(&mkt)
 		if err != nil {
 			e.log.Panic("Failed to add default market to market store",
-				logging.String("market-id", marketId),
+				logging.String("market-id", mkt.Id),
 				logging.Error(err))
 		}
-		err = e.matching.AddOrderBook(marketId)
+		err = e.matching.AddOrderBook(mkt.Id)
 		if err != nil {
 			e.log.Panic("Failed to add default order book(s) to matching engine",
-				logging.String("market-id", marketId),
+				logging.String("market-id", mkt.Id),
 				logging.Error(err))
 		}
 	}
@@ -310,12 +335,12 @@ func (e *engine) StartCandleBuffer() error {
 	}
 
 	// We need a buffer for all current markets on VEGA
-	for _, marketId := range e.markets {
-		e.log.Debug("Starting candle buffer for market", logging.String("market-id", marketId))
+	for _, mkt := range e.markets {
+		e.log.Debug("Starting candle buffer for market", logging.String("market-id", mkt.Id))
 
-		err := e.candleStore.StartNewBuffer(marketId, stamp.Uint64())
+		err := e.candleStore.StartNewBuffer(mkt.Id, stamp.Uint64())
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to start new candle buffer for market %s", marketId))
+			return errors.Wrap(err, fmt.Sprintf("Failed to start new candle buffer for market %s", mkt.Id))
 		}
 	}
 
@@ -363,19 +388,19 @@ func (e *engine) Process() error {
 // Generate creates any data (including storing state changes) in the underlying stores.
 func (e *engine) Generate() error {
 
-	for _, marketId := range e.markets {
+	for _, mkt := range e.markets {
 		// We need a buffer for all current markets on VEGA
-		err := e.candleStore.GenerateCandlesFromBuffer(marketId)
+		err := e.candleStore.GenerateCandlesFromBuffer(mkt.Id)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to generate candles from buffer for market %s", marketId))
+			return errors.Wrap(err, fmt.Sprintf("Failed to generate candles from buffer for market %s", mkt.Id))
 		}
 		err = e.orderStore.Commit()
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to commit orders for market %s", marketId))
+			return errors.Wrap(err, fmt.Sprintf("Failed to commit orders for market %s", mkt.Id))
 		}
 		err = e.tradeStore.Commit()
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to commit trades for market %s", marketId))
+			return errors.Wrap(err, fmt.Sprintf("Failed to commit trades for market %s", mkt.Id))
 		}
 	}
 
