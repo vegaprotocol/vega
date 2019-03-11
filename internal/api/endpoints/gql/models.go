@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 )
 
 type Market struct {

@@ -1,12 +1,13 @@
 package gql
 
 import (
-	"code.vegaprotocol.io/vega/internal/monitoring"
 	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"time"
+
+	"code.vegaprotocol.io/vega/internal/monitoring"
 
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -575,7 +576,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	order := &types.Order{}
 	res := PreConsensus{}
 	if r.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
-		return res, ErrChainNotConnected
+		return &res, ErrChainNotConnected
 	}
 
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
@@ -642,7 +643,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	res := PreConsensus{}
 
 	if r.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
-		return res, ErrChainNotConnected
+		return &res, ErrChainNotConnected
 	}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
