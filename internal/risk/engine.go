@@ -35,15 +35,15 @@ func NewRiskEngine(config *Config) Engine {
 }
 
 func NewRiskFactor(market *types.Market) *types.RiskFactor {
-	return &types.RiskFactor{Market: market.Name}
+	return &types.RiskFactor{Market: market.Id}
 }
 
 func (re *riskEngine) AddNewMarket(market *types.Market) {
 	// We will need to re-arch this when we have multiple markets/risk models/instrument definitions.
 	// Just load the default for now for all markets (./risk-model.py)
-	re.pyRiskModels[market.Name] = re.PyRiskModelDefaultFileName
-	re.riskFactors[market.Name] = NewRiskFactor(market)
-	re.Assess(re.riskFactors[market.Name])
+	re.pyRiskModels[market.Id] = re.PyRiskModelDefaultFileName
+	re.riskFactors[market.Id] = NewRiskFactor(market)
+	re.Assess(re.riskFactors[market.Id])
 }
 
 func (re riskEngine) getSigma() float64 {
