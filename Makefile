@@ -1,6 +1,7 @@
 PROJECT_NAME := "vega"
 PKG := "./cmd/$(PROJECT_NAME)"
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
+STORAGEMOCKFILES := $(shell find internal/storage -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 TAG := $(shell git describe --tags 2>/dev/null)
 
 # See https://docs.gitlab.com/ce/ci/variables/README.html for CI vars.
@@ -24,7 +25,7 @@ else
 	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
-.PHONY: all bench deps build clean test lint
+.PHONY: all bench deps build clean help test lint mocks
 
 all: build
 
@@ -40,6 +41,10 @@ test: deps ## Run unit tests
 
 race: ## Run data race detector
 	@go test -race ./...
+
+mocks: ## Make storage mocks
+	@if ! which mockery 1>/dev/null ; then echo "Need mockery (github.com/vektra/mockery)" ; exit 1 ; fi
+	@cd internal/storage ; mockery -all
 
 msan: ## Run memory sanitizer
 	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi
@@ -60,6 +65,11 @@ coveragehtml: .testCoverage.html ## Generate global code coverage report in HTML
 
 deps: ## Get the dependencies
 	@go mod download
+
+build: proto ## install the binaries in cmd/{progname}/
+	@echo "Version: ${VERSION} (${VERSION_HASH})"
+	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/vega/vega" ./cmd/vega
+	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/vegabench/vegabench" ./cmd/vegabench
 
 install: proto ## install the binary in GOPATH/bin
 	@cat .asciiart.txt
