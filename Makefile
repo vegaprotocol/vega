@@ -1,7 +1,6 @@
 PROJECT_NAME := "vega"
 PKG := "./cmd/$(PROJECT_NAME)"
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
-STORAGEMOCKFILES := $(shell find internal/storage -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 TAG := $(shell git describe --tags 2>/dev/null)
 
 # See https://docs.gitlab.com/ce/ci/variables/README.html for CI vars.
