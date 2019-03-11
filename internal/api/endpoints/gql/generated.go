@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"sync"
@@ -64,12 +65,21 @@ type ComplexityRoot struct {
 		Interval  func(childComplexity int) int
 	}
 
+	ContinuousTrading struct {
+		Void func(childComplexity int) int
+	}
+
+	DiscreteTrading struct {
+		Duration func(childComplexity int) int
+	}
+
 	Market struct {
-		Name    func(childComplexity int) int
-		Orders  func(childComplexity int, where *OrderFilter, skip *int, first *int, last *int) int
-		Trades  func(childComplexity int, where *TradeFilter, skip *int, first *int, last *int) int
-		Depth   func(childComplexity int) int
-		Candles func(childComplexity int, sinceTimestamp string, interval Interval) int
+		Name        func(childComplexity int) int
+		TradingMode func(childComplexity int) int
+		Orders      func(childComplexity int, where *OrderFilter, skip *int, first *int, last *int) int
+		Trades      func(childComplexity int, where *TradeFilter, skip *int, first *int, last *int) int
+		Depth       func(childComplexity int) int
+		Candles     func(childComplexity int, sinceTimestamp string, interval Interval) int
 	}
 
 	MarketDepth struct {
@@ -319,12 +329,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Candle.Interval(childComplexity), true
 
+	case "ContinuousTrading.Void":
+		if e.complexity.ContinuousTrading.Void == nil {
+			break
+		}
+
+		return e.complexity.ContinuousTrading.Void(childComplexity), true
+
+	case "DiscreteTrading.Duration":
+		if e.complexity.DiscreteTrading.Duration == nil {
+			break
+		}
+
+		return e.complexity.DiscreteTrading.Duration(childComplexity), true
+
 	case "Market.Name":
 		if e.complexity.Market.Name == nil {
 			break
 		}
 
 		return e.complexity.Market.Name(childComplexity), true
+
+	case "Market.TradingMode":
+		if e.complexity.Market.TradingMode == nil {
+			break
+		}
+
+		return e.complexity.Market.TradingMode(childComplexity), true
 
 	case "Market.Orders":
 		if e.complexity.Market.Orders == nil {
@@ -952,7 +983,7 @@ schema {
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
-    
+
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
     orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensus!
@@ -966,7 +997,7 @@ type Mutation {
 type Query {
     # Int64 not yet supported, strings are returned and will need to be handled by clients:
     # https://github.com/graphql-go/graphql/issues/257
-    
+
     # VEGA root query
     vega: Vega!
 }
@@ -992,7 +1023,7 @@ type PreConsensus {
 
 # VEGA the world's premier distributed derivatives trading platform
 type Vega {
-    
+
     # One or more instruments that are trading on the VEGA network
     markets(name: String): [Market!]
 
@@ -1006,11 +1037,22 @@ type Vega {
     party(name: String!): Party
 }
 
+type ContinuousTrading {
+  void: Boolean
+}
+type DiscreteTrading {
+  duration: Int
+}
+
+union TradingMode = ContinuousTrading | DiscreteTrading
+
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market {
-    
+
     # Market full name
     name: String!
+
+  tradingMode: TradingMode!
 
     # Orders on a market
     orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
@@ -1034,7 +1076,7 @@ type MarketDepth {
 
     # Buy side price levels (if available)
     buy: [PriceLevel!]
-    
+
     # Sell side price levels (if available)
     sell: [PriceLevel!]
 
@@ -1060,7 +1102,7 @@ type PriceLevel {
 
 # Candle stick representation of trading
 type Candle {
-    
+
     # Unix epoch+nanoseconds for when the candle ocurred
     timestamp: String!
 
@@ -1272,7 +1314,7 @@ input TradeFilter {
     # Market filters
     market: String # matches all trades with exact market value
     market_neq: String # matches all trades with different market to value
-    
+
     # Buyer filters
     buyer: String # matches all trades with exact buyer value
     buyer_neq: String # matches all trades with different buyer to value
@@ -1350,7 +1392,7 @@ input OrderFilter {
     # Type filters
     type: OrderType # matches all orders with exact type value
     type_neq: OrderType # matches all orders with different type to value
-    
+
     # Timestamp filters
     timestamp: String # matches all orders with exact timestamp value
     timestamp_neq: String # matches all orders with different timestamp to value
@@ -1370,7 +1412,8 @@ enum Interval {
     I1H # 1 hour interval
     I6H # 6 hour interval
     I1D # 1 day interval
-}`},
+}
+`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -2047,6 +2090,52 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInterval(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ContinuousTrading_void(ctx context.Context, field graphql.CollectedField, obj *ContinuousTrading) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ContinuousTrading",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Void, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DiscreteTrading_duration(ctx context.Context, field graphql.CollectedField, obj *DiscreteTrading) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DiscreteTrading",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Duration, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Market_name(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -2071,6 +2160,32 @@ func (ec *executionContext) _Market_name(ctx context.Context, field graphql.Coll
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_tradingMode(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Market",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TradingMode, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TradingMode)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradingMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
@@ -4944,6 +5059,23 @@ func (ec *executionContext) unmarshalInputTradeFilter(ctx context.Context, v int
 
 // region    ************************** interface.gotpl ***************************
 
+func (ec *executionContext) _TradingMode(ctx context.Context, sel ast.SelectionSet, obj *TradingMode) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case ContinuousTrading:
+		return ec._ContinuousTrading(ctx, sel, &obj)
+	case *ContinuousTrading:
+		return ec._ContinuousTrading(ctx, sel, obj)
+	case DiscreteTrading:
+		return ec._DiscreteTrading(ctx, sel, &obj)
+	case *DiscreteTrading:
+		return ec._DiscreteTrading(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -5073,6 +5205,54 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var continuousTradingImplementors = []string{"ContinuousTrading", "TradingMode"}
+
+func (ec *executionContext) _ContinuousTrading(ctx context.Context, sel ast.SelectionSet, obj *ContinuousTrading) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, continuousTradingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ContinuousTrading")
+		case "void":
+			out.Values[i] = ec._ContinuousTrading_void(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+var discreteTradingImplementors = []string{"DiscreteTrading", "TradingMode"}
+
+func (ec *executionContext) _DiscreteTrading(ctx context.Context, sel ast.SelectionSet, obj *DiscreteTrading) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, discreteTradingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DiscreteTrading")
+		case "duration":
+			out.Values[i] = ec._DiscreteTrading_duration(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
 var marketImplementors = []string{"Market"}
 
 func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, obj *Market) graphql.Marshaler {
@@ -5086,6 +5266,11 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = graphql.MarshalString("Market")
 		case "name":
 			out.Values[i] = ec._Market_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "tradingMode":
+			out.Values[i] = ec._Market_tradingMode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -6383,6 +6568,10 @@ func (ec *executionContext) marshalNTrade2codeᚗvegaprotocolᚗioᚋvegaᚋprot
 
 func (ec *executionContext) unmarshalNTradeFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradeFilter(ctx context.Context, v interface{}) (TradeFilter, error) {
 	return ec.unmarshalInputTradeFilter(ctx, v)
+}
+
+func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradingMode(ctx context.Context, sel ast.SelectionSet, v TradingMode) graphql.Marshaler {
+	return ec._TradingMode(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐValueDirection(ctx context.Context, v interface{}) (ValueDirection, error) {

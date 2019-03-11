@@ -11,7 +11,7 @@ schema {
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
-    
+
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
     orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensus!
@@ -25,7 +25,7 @@ type Mutation {
 type Query {
     # Int64 not yet supported, strings are returned and will need to be handled by clients:
     # https://github.com/graphql-go/graphql/issues/257
-    
+
     # VEGA root query
     vega: Vega!
 }
@@ -51,7 +51,7 @@ type PreConsensus {
 
 # VEGA the world's premier distributed derivatives trading platform
 type Vega {
-    
+
     # One or more instruments that are trading on the VEGA network
     markets(name: String): [Market!]
 
@@ -65,11 +65,22 @@ type Vega {
     party(name: String!): Party
 }
 
+type ContinuousTrading {
+  void: Boolean
+}
+type DiscreteTrading {
+  duration: Int
+}
+
+union TradingMode = ContinuousTrading | DiscreteTrading
+
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market {
-    
+
     # Market full name
     name: String!
+
+  tradingMode: TradingMode!
 
     # Orders on a market
     orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
@@ -93,7 +104,7 @@ type MarketDepth {
 
     # Buy side price levels (if available)
     buy: [PriceLevel!]
-    
+
     # Sell side price levels (if available)
     sell: [PriceLevel!]
 
@@ -119,7 +130,7 @@ type PriceLevel {
 
 # Candle stick representation of trading
 type Candle {
-    
+
     # Unix epoch+nanoseconds for when the candle ocurred
     timestamp: String!
 
@@ -331,7 +342,7 @@ input TradeFilter {
     # Market filters
     market: String # matches all trades with exact market value
     market_neq: String # matches all trades with different market to value
-    
+
     # Buyer filters
     buyer: String # matches all trades with exact buyer value
     buyer_neq: String # matches all trades with different buyer to value
@@ -409,7 +420,7 @@ input OrderFilter {
     # Type filters
     type: OrderType # matches all orders with exact type value
     type_neq: OrderType # matches all orders with different type to value
-    
+
     # Timestamp filters
     timestamp: String # matches all orders with exact timestamp value
     timestamp_neq: String # matches all orders with different timestamp to value

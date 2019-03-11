@@ -10,12 +10,29 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 )
 
+type TradingMode interface {
+	IsTradingMode()
+}
+
+type ContinuousTrading struct {
+	Void *bool `json:"void"`
+}
+
+func (ContinuousTrading) IsTradingMode() {}
+
+type DiscreteTrading struct {
+	Duration *int `json:"duration"`
+}
+
+func (DiscreteTrading) IsTradingMode() {}
+
 type Market struct {
-	Name    string            `json:"name"`
-	Orders  []proto.Order     `json:"orders"`
-	Trades  []proto.Trade     `json:"trades"`
-	Depth   proto.MarketDepth `json:"depth"`
-	Candles []*proto.Candle   `json:"candles"`
+	Name        string            `json:"name"`
+	TradingMode TradingMode       `json:"tradingMode"`
+	Orders      []proto.Order     `json:"orders"`
+	Trades      []proto.Trade     `json:"trades"`
+	Depth       proto.MarketDepth `json:"depth"`
+	Candles     []*proto.Candle   `json:"candles"`
 }
 
 type OrderFilter struct {
