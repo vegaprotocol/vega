@@ -49,13 +49,13 @@ func (_m *Service) GetAll(ctx context.Context) ([]*proto.Market, error) {
 	return r0, r1
 }
 
-// GetByName provides a mock function with given fields: ctx, name
-func (_m *Service) GetByName(ctx context.Context, name string) (*proto.Market, error) {
-	ret := _m.Called(ctx, name)
+// GetByID provides a mock function with given fields: ctx, id
+func (_m *Service) GetByID(ctx context.Context, id string) (*proto.Market, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *proto.Market
 	if rf, ok := ret.Get(0).(func(context.Context, string) *proto.Market); ok {
-		r0 = rf(ctx, name)
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*proto.Market)
@@ -64,7 +64,7 @@ func (_m *Service) GetByName(ctx context.Context, name string) (*proto.Market, e
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, name)
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
