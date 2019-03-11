@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -33,7 +34,7 @@ func (s *restProxyServer) Start() {
 		logging.Int("port", s.RestProxyServerPort))
 
 	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(s.Config.Timeout)*time.Millisecond)
 	defer cancel()
 
 	restAddr := fmt.Sprintf("%s:%d", s.RestProxyIpAddress, s.RestProxyServerPort)
