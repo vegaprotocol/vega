@@ -59,7 +59,7 @@ func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Conf
 
 	c.Trades = trades.NewDefaultConfig(c.log)
 	c.Blockchain = blockchain.NewDefaultConfig(c.log)
-	c.Execution = execution.NewDefaultConfig(c.log)
+	c.Execution = execution.NewDefaultConfig(c.log, defaultStoreDirPath)
 	c.Matching = matching.NewDefaultConfig(c.log)
 	c.API = api.NewDefaultConfig(c.log)
 	c.Orders = orders.NewDefaultConfig(c.log)
