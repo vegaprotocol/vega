@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -30,20 +31,20 @@ type TradeStore interface {
 	Close() error
 
 	// GetByMarket retrieves trades for a given market.
-	GetByMarket(market string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
+	GetByMarket(ctx context.Context, market string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
 	// GetByMarketAndId retrieves a trade for a given market and id.
-	GetByMarketAndId(market string, id string) (*types.Trade, error)
+	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Trade, error)
 	// GetByParty retrieves trades for a given party (buyer or seller).
-	GetByParty(party string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
+	GetByParty(ctx context.Context, party string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
 	// GetByPartyAndId retrieves a trade for a given party (buyer or seller) and id.
-	GetByPartyAndId(party string, id string) (*types.Trade, error)
+	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Trade, error)
 	// GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
-	GetByOrderId(orderId string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
+	GetByOrderId(ctx context.Context, orderId string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
 	// GetMarkPrice returns the current market price.
-	GetMarkPrice(market string) (uint64, error)
+	GetMarkPrice(ctx context.Context, market string) (uint64, error)
 
 	// GetTradesBySideBuckets retrieves a map of market name to market buckets.
-	GetTradesBySideBuckets(party string) map[string]*MarketBucket
+	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*MarketBucket
 }
 
 // badgerTradeStore is a package internal data struct that implements the TradeStore interface.
@@ -146,7 +147,7 @@ func (ts *badgerTradeStore) Commit() error {
 
 // GetByMarket retrieves trades for a given market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByMarket(market string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
+func (ts *badgerTradeStore) GetByMarket(ctx context.Context, market string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
 	var result []*types.Trade
 
 	if queryFilters == nil {
@@ -163,29 +164,34 @@ func (ts *badgerTradeStore) GetByMarket(market string, queryFilters *filtering.T
 
 	marketPrefix, validForPrefix := ts.badger.marketPrefix(market, descending)
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
-		item := it.Item()
-		tradeBuf, _ := item.ValueCopy(nil)
-		var trade types.Trade
-		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
-			ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarket)",
-				logging.Error(err),
-				logging.String("badger-key", string(item.Key())),
-				logging.String("raw-bytes", string(tradeBuf)))
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			item := it.Item()
+			tradeBuf, _ := item.ValueCopy(nil)
+			var trade types.Trade
+			if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
+				ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarket)",
+					logging.Error(err),
+					logging.String("badger-key", string(item.Key())),
+					logging.String("raw-bytes", string(tradeBuf)))
 
-			return nil, err
-		}
-		if filter.apply(&trade) {
-			result = append(result, &trade)
-		}
-		if filter.isFull() {
-			break
+				return nil, err
+			}
+			if filter.apply(&trade) {
+				result = append(result, &trade)
+			}
+			if filter.isFull() {
+				break
+			}
 		}
 	}
 	return result, nil
 }
 
 // GetByMarketAndId retrieves a trade for a given market and id, any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByMarketAndId(market string, Id string) (*types.Trade, error) {
+func (ts *badgerTradeStore) GetByMarketAndId(ctx context.Context, market string, Id string) (*types.Trade, error) {
 	var trade types.Trade
 
 	txn := ts.badger.readTransaction()
@@ -210,7 +216,7 @@ func (ts *badgerTradeStore) GetByMarketAndId(market string, Id string) (*types.T
 
 // GetByParty retrieves trades for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByParty(party string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
+func (ts *badgerTradeStore) GetByParty(ctx context.Context, party string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
 	var result []*types.Trade
 
 	if queryFilters == nil {
@@ -227,31 +233,36 @@ func (ts *badgerTradeStore) GetByParty(party string, queryFilters *filtering.Tra
 
 	partyPrefix, validForPrefix := ts.badger.partyPrefix(party, descending)
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
-		marketKeyItem := it.Item()
-		marketKey, _ := marketKeyItem.ValueCopy(nil)
-		tradeItem, err := txn.Get(marketKey)
-		if err != nil {
-			ts.log.Error("Trade with key does not exist in trade store (getByParty)",
-				logging.String("badger-key", string(marketKey)),
-				logging.Error(err))
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			marketKeyItem := it.Item()
+			marketKey, _ := marketKeyItem.ValueCopy(nil)
+			tradeItem, err := txn.Get(marketKey)
+			if err != nil {
+				ts.log.Error("Trade with key does not exist in trade store (getByParty)",
+					logging.String("badger-key", string(marketKey)),
+					logging.Error(err))
 
-			return nil, err
-		}
-		tradeBuf, _ := tradeItem.ValueCopy(nil)
-		var trade types.Trade
-		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
-			ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByParty)",
-				logging.Error(err),
-				logging.String("badger-key", string(marketKey)),
-				logging.String("raw-bytes", string(tradeBuf)))
+				return nil, err
+			}
+			tradeBuf, _ := tradeItem.ValueCopy(nil)
+			var trade types.Trade
+			if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
+				ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByParty)",
+					logging.Error(err),
+					logging.String("badger-key", string(marketKey)),
+					logging.String("raw-bytes", string(tradeBuf)))
 
-			return nil, err
-		}
-		if filter.apply(&trade) {
-			result = append(result, &trade)
-		}
-		if filter.isFull() {
-			break
+				return nil, err
+			}
+			if filter.apply(&trade) {
+				result = append(result, &trade)
+			}
+			if filter.isFull() {
+				break
+			}
 		}
 	}
 
@@ -259,7 +270,7 @@ func (ts *badgerTradeStore) GetByParty(party string, queryFilters *filtering.Tra
 }
 
 // GetByPartyAndId retrieves a trade for a given party and id.
-func (ts *badgerTradeStore) GetByPartyAndId(party string, Id string) (*types.Trade, error) {
+func (ts *badgerTradeStore) GetByPartyAndId(ctx context.Context, party string, Id string) (*types.Trade, error) {
 	var trade types.Trade
 	err := ts.badger.db.View(func(txn *badger.Txn) error {
 		partyKey := ts.badger.tradePartyKey(party, Id)
@@ -300,7 +311,7 @@ func (ts *badgerTradeStore) GetByPartyAndId(party string, Id string) (*types.Tra
 
 // GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
 // Provide optional query filters to refine the data set further (if required), any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByOrderId(orderId string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
+func (ts *badgerTradeStore) GetByOrderId(ctx context.Context, orderId string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
 	var result []*types.Trade
 
 	txn := ts.badger.readTransaction()
@@ -313,31 +324,36 @@ func (ts *badgerTradeStore) GetByOrderId(orderId string, queryFilters *filtering
 
 	orderPrefix, validForPrefix := ts.badger.orderPrefix(orderId, descending)
 	for it.Seek(orderPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
-		marketKeyItem := it.Item()
-		marketKey, _ := marketKeyItem.ValueCopy(nil)
-		tradeItem, err := txn.Get(marketKey)
-		if err != nil {
-			ts.log.Error("Trade with key does not exist in trade store (getByOrderId)",
-				logging.String("badger-key", string(marketKey)),
-				logging.Error(err))
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			marketKeyItem := it.Item()
+			marketKey, _ := marketKeyItem.ValueCopy(nil)
+			tradeItem, err := txn.Get(marketKey)
+			if err != nil {
+				ts.log.Error("Trade with key does not exist in trade store (getByOrderId)",
+					logging.String("badger-key", string(marketKey)),
+					logging.Error(err))
 
-			return nil, err
-		}
-		tradeBuf, _ := tradeItem.ValueCopy(nil)
-		var trade types.Trade
-		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
-			ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByOrderId)",
-				logging.Error(err),
-				logging.String("badger-key", string(marketKey)),
-				logging.String("raw-bytes", string(tradeBuf)))
+				return nil, err
+			}
+			tradeBuf, _ := tradeItem.ValueCopy(nil)
+			var trade types.Trade
+			if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
+				ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByOrderId)",
+					logging.Error(err),
+					logging.String("badger-key", string(marketKey)),
+					logging.String("raw-bytes", string(tradeBuf)))
 
-			return nil, err
-		}
-		if filter.apply(&trade) {
-			result = append(result, &trade)
-		}
-		if filter.isFull() {
-			break
+				return nil, err
+			}
+			if filter.apply(&trade) {
+				result = append(result, &trade)
+			}
+			if filter.isFull() {
+				break
+			}
 		}
 	}
 
@@ -351,14 +367,14 @@ func (ts *badgerTradeStore) Close() error {
 }
 
 // GetMarkPrice returns the current market price, for a requested market.
-func (ts *badgerTradeStore) GetMarkPrice(market string) (uint64, error) {
+func (ts *badgerTradeStore) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
 
 	// We just need the very latest trade price
 	f := &filtering.TradeQueryFilters{}
 	l := uint64(1)
 	f.Last = &l
 
-	recentTrade, err := ts.GetByMarket(market, f)
+	recentTrade, err := ts.GetByMarket(ctx, market, f)
 	if err != nil {
 		return 0, err
 	}

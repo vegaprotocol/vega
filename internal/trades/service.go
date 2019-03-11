@@ -39,7 +39,7 @@ func NewTradeService(config *Config, tradeStore storage.TradeStore, riskStore st
 }
 
 func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
-	trades, err = t.tradeStore.GetByMarket(market, filters)
+	trades, err = t.tradeStore.GetByMarket(ctx, market, filters)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *
 }
 
 func (t *tradeService) GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
-	trades, err = t.tradeStore.GetByParty(party, filters)
+	trades, err = t.tradeStore.GetByParty(ctx, party, filters)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (t *tradeService) GetByParty(ctx context.Context, party string, filters *fi
 }
 
 func (t *tradeService) GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
-	trade, err = t.tradeStore.GetByMarketAndId(market, id)
+	trade, err = t.tradeStore.GetByMarketAndId(ctx, market, id)
 	if err != nil {
 		return &types.Trade{}, err
 	}
@@ -63,7 +63,7 @@ func (t *tradeService) GetByMarketAndId(ctx context.Context, market string, id s
 }
 
 func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error) {
-	trade, err = t.tradeStore.GetByPartyAndId(party, id)
+	trade, err = t.tradeStore.GetByPartyAndId(ctx, party, id)
 	if err != nil {
 		return &types.Trade{}, err
 	}
@@ -71,7 +71,7 @@ func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id str
 }
 
 func (t *tradeService) GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
-	trades, err = t.tradeStore.GetByOrderId(orderId, filters)
+	trades, err = t.tradeStore.GetByOrderId(ctx, orderId, filters)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 	t.log.Debug("Calculate positions for party",
 		logging.String("party-id", party))
 
-	marketBuckets := t.tradeStore.GetTradesBySideBuckets(party)
+	marketBuckets := t.tradeStore.GetTradesBySideBuckets(ctx, party)
 
 	var (
 		OpenVolumeSign                int8
@@ -248,7 +248,7 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 				t.calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket, OpenContracts, ClosedContracts)
 		}
 
-		markPrice, _ = t.tradeStore.GetMarkPrice(market)
+		markPrice, _ = t.tradeStore.GetMarkPrice(ctx, market)
 		if markPrice == 0 {
 			continue
 		}

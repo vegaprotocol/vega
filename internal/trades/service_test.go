@@ -50,6 +50,8 @@ func TestNewTradeService(t *testing.T) {
 }
 
 func TestTradeService_GetByMarket(t *testing.T) {
+	ctx := context.Background()
+
 	market := "BTC/DEC19"
 	invalid := "LTC/DEC19"
 
@@ -65,28 +67,30 @@ func TestTradeService_GetByMarket(t *testing.T) {
 	assert.NotNil(t, tradeService)
 
 	// Scenario 1: valid market has n trades
-	tradeStore.On("GetByMarket", market, &filtering.TradeQueryFilters{}).Return([]*types.Trade{
+	tradeStore.On("GetByMarket", ctx, market, &filtering.TradeQueryFilters{}).Return([]*types.Trade{
 		{Id: "A", Market: market, Price: 100},
 		{Id: "B", Market: market, Price: 200},
 		{Id: "C", Market: market, Price: 300},
 	}, nil).Once()
 
-	tradeSet, err := tradeService.GetByMarket(context.Background(), market, &filtering.TradeQueryFilters{})
+	tradeSet, err := tradeService.GetByMarket(ctx, market, &filtering.TradeQueryFilters{})
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeSet)
 	assert.Equal(t, 3, len(tradeSet))
 	tradeStore.AssertExpectations(t)
 
 	// Scenario 2: invalid market returns an error
-	tradeStore.On("GetByMarket", invalid, &filtering.TradeQueryFilters{}).Return(nil,
+	tradeStore.On("GetByMarket", ctx, invalid, &filtering.TradeQueryFilters{}).Return(nil,
 		errors.New("phobos communications link interrupted")).Once()
 
-	tradeSet, err = tradeService.GetByMarket(context.Background(), invalid, &filtering.TradeQueryFilters{})
+	tradeSet, err = tradeService.GetByMarket(ctx, invalid, &filtering.TradeQueryFilters{})
 	assert.NotNil(t, err)
 	assert.Nil(t, tradeSet)
 }
 
 func TestTradeService_GetByParty(t *testing.T) {
+	ctx := context.Background()
+
 	partyA := "ramsey"
 	partyB := "barney"
 	invalid := "chris"
@@ -102,7 +106,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 	assert.NotNil(t, tradeService)
 
 	// Scenario 1: valid market has n trades
-	tradeStore.On("GetByParty", partyA, &filtering.TradeQueryFilters{}).Return([]*types.Trade{
+	tradeStore.On("GetByParty", ctx, partyA, &filtering.TradeQueryFilters{}).Return([]*types.Trade{
 		{Id: "A", Buyer: partyA, Seller: partyB, Price: 100},
 		{Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
 	}, nil).Once()
@@ -114,7 +118,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 	tradeStore.AssertExpectations(t)
 
 	// Scenario 2: invalid market returns an error
-	tradeStore.On("GetByParty", invalid, &filtering.TradeQueryFilters{}).Return(nil,
+	tradeStore.On("GetByParty", ctx, invalid, &filtering.TradeQueryFilters{}).Return(nil,
 		errors.New("phobos communications link interrupted")).Once()
 
 	tradeSet, err = tradeService.GetByParty(context.Background(), invalid, &filtering.TradeQueryFilters{})

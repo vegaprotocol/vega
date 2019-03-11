@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -14,10 +15,10 @@ type MarketBucket struct {
 	MinimumContractSize int64
 }
 
-func (ts *badgerTradeStore) GetTradesBySideBuckets(party string) map[string]*MarketBucket {
+func (ts *badgerTradeStore) GetTradesBySideBuckets(ctx context.Context, party string) map[string]*MarketBucket {
 
 	marketBuckets := make(map[string]*MarketBucket, 0)
-	tradesByTimestamp, err := ts.GetByParty(party, nil)
+	tradesByTimestamp, err := ts.GetByParty(ctx, party, nil)
 
 	if err != nil {
 		return marketBuckets

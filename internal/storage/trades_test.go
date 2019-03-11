@@ -1,11 +1,13 @@
 package storage
 
 import (
+	"context"
+	"strings"
+	"testing"
+
 	"code.vegaprotocol.io/vega/internal/filtering"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
 )
 
 func TestStorage_NewTradeStore(t *testing.T) {
@@ -41,7 +43,7 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 
 	insertTestData(t, orderStore, tradeStore)
 	queryFilters := &filtering.TradeQueryFilters{}
-	trades, err := tradeStore.GetByOrderId("d41d8cd98f00b204e9800998ecf9999a", queryFilters)
+	trades, err := tradeStore.GetByOrderId(context.Background(), "d41d8cd98f00b204e9800998ecf9999a", queryFilters)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(trades))
@@ -54,6 +56,7 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 }
 
 func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
+	ctx := context.Background()
 	config := NewTestConfig()
 	FlushStores(config)
 
@@ -74,7 +77,7 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 	queryFilters.Last = &last
 
 	// Expect 3 trades with descending trade-ids
-	trades, err := tradeStore.GetByParty(testPartyA, queryFilters)
+	trades, err := tradeStore.GetByParty(ctx, testPartyA, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, "trade-id-6", trades[0].Id)
@@ -89,7 +92,7 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 	queryFilters.Skip = &skip
 
 	// Expect 3 trades with descending trade-ids
-	trades, err = tradeStore.GetByParty(testPartyA, queryFilters)
+	trades, err = tradeStore.GetByParty(ctx, testPartyA, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, "trade-id-4", trades[0].Id)
@@ -98,6 +101,7 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 }
 
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
+	ctx := context.Background()
 	config := NewTestConfig()
 	FlushStores(config)
 
@@ -113,7 +117,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	insertTestData(t, orderStore, tradeStore)
 
 	// Expect 6 trades with no filtration/pagination
-	trades, err := tradeStore.GetByMarket(testMarket, nil)
+	trades, err := tradeStore.GetByMarket(ctx, testMarket, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(trades))
 
@@ -122,7 +126,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	queryFilters := &filtering.TradeQueryFilters{}
 	queryFilters.First = &first
 
-	trades, err = tradeStore.GetByMarket(testMarket, queryFilters)
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 	assert.Equal(t, "trade-id-1", trades[0].Id)
@@ -133,7 +137,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	queryFilters = &filtering.TradeQueryFilters{}
 	queryFilters.Last = &last
 
-	trades, err = tradeStore.GetByMarket(testMarket, queryFilters)
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, "trade-id-6", trades[0].Id)
@@ -146,7 +150,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	queryFilters.First = &first
 	queryFilters.Skip = &skip
 
-	trades, err = tradeStore.GetByMarket(testMarket, queryFilters)
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(trades))
 	assert.Equal(t, "trade-id-3", trades[0].Id)
@@ -157,7 +161,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	queryFilters.Last = &last
 	queryFilters.Skip = &skip
 
-	trades, err = tradeStore.GetByMarket(testMarket, queryFilters)
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(trades))
 	assert.Equal(t, "trade-id-4", trades[0].Id)
@@ -172,7 +176,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	queryFilters.Last = &last
 	queryFilters.Skip = &skip
 
-	trades, err = tradeStore.GetByMarket(testMarket, queryFilters)
+	trades, err = tradeStore.GetByMarket(ctx, testMarket, queryFilters)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(trades))
 

@@ -2,6 +2,7 @@
 
 package mocks
 
+import context "context"
 import filtering "code.vegaprotocol.io/vega/internal/filtering"
 import mock "github.com/stretchr/testify/mock"
 import proto "code.vegaprotocol.io/vega/proto"
@@ -40,13 +41,13 @@ func (_m *TradeStore) Commit() error {
 	return r0
 }
 
-// GetByMarket provides a mock function with given fields: market, params
-func (_m *TradeStore) GetByMarket(market string, params *filtering.TradeQueryFilters) ([]*proto.Trade, error) {
-	ret := _m.Called(market, params)
+// GetByMarket provides a mock function with given fields: ctx, market, params
+func (_m *TradeStore) GetByMarket(ctx context.Context, market string, params *filtering.TradeQueryFilters) ([]*proto.Trade, error) {
+	ret := _m.Called(ctx, market, params)
 
 	var r0 []*proto.Trade
-	if rf, ok := ret.Get(0).(func(string, *filtering.TradeQueryFilters) []*proto.Trade); ok {
-		r0 = rf(market, params)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *filtering.TradeQueryFilters) []*proto.Trade); ok {
+		r0 = rf(ctx, market, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*proto.Trade)
@@ -54,8 +55,8 @@ func (_m *TradeStore) GetByMarket(market string, params *filtering.TradeQueryFil
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, *filtering.TradeQueryFilters) error); ok {
-		r1 = rf(market, params)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *filtering.TradeQueryFilters) error); ok {
+		r1 = rf(ctx, market, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -63,13 +64,13 @@ func (_m *TradeStore) GetByMarket(market string, params *filtering.TradeQueryFil
 	return r0, r1
 }
 
-// GetByMarketAndId provides a mock function with given fields: market, id
-func (_m *TradeStore) GetByMarketAndId(market string, id string) (*proto.Trade, error) {
-	ret := _m.Called(market, id)
+// GetByMarketAndId provides a mock function with given fields: ctx, market, id
+func (_m *TradeStore) GetByMarketAndId(ctx context.Context, market string, id string) (*proto.Trade, error) {
+	ret := _m.Called(ctx, market, id)
 
 	var r0 *proto.Trade
-	if rf, ok := ret.Get(0).(func(string, string) *proto.Trade); ok {
-		r0 = rf(market, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *proto.Trade); ok {
+		r0 = rf(ctx, market, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*proto.Trade)
@@ -77,8 +78,8 @@ func (_m *TradeStore) GetByMarketAndId(market string, id string) (*proto.Trade, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(market, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, market, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -86,13 +87,13 @@ func (_m *TradeStore) GetByMarketAndId(market string, id string) (*proto.Trade, 
 	return r0, r1
 }
 
-// GetByOrderId provides a mock function with given fields: orderId, params
-func (_m *TradeStore) GetByOrderId(orderId string, params *filtering.TradeQueryFilters) ([]*proto.Trade, error) {
-	ret := _m.Called(orderId, params)
+// GetByOrderId provides a mock function with given fields: ctx, orderId, params
+func (_m *TradeStore) GetByOrderId(ctx context.Context, orderId string, params *filtering.TradeQueryFilters) ([]*proto.Trade, error) {
+	ret := _m.Called(ctx, orderId, params)
 
 	var r0 []*proto.Trade
-	if rf, ok := ret.Get(0).(func(string, *filtering.TradeQueryFilters) []*proto.Trade); ok {
-		r0 = rf(orderId, params)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *filtering.TradeQueryFilters) []*proto.Trade); ok {
+		r0 = rf(ctx, orderId, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*proto.Trade)
@@ -100,8 +101,8 @@ func (_m *TradeStore) GetByOrderId(orderId string, params *filtering.TradeQueryF
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, *filtering.TradeQueryFilters) error); ok {
-		r1 = rf(orderId, params)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *filtering.TradeQueryFilters) error); ok {
+		r1 = rf(ctx, orderId, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -109,13 +110,13 @@ func (_m *TradeStore) GetByOrderId(orderId string, params *filtering.TradeQueryF
 	return r0, r1
 }
 
-// GetByParty provides a mock function with given fields: party, params
-func (_m *TradeStore) GetByParty(party string, params *filtering.TradeQueryFilters) ([]*proto.Trade, error) {
-	ret := _m.Called(party, params)
+// GetByParty provides a mock function with given fields: ctx, party, params
+func (_m *TradeStore) GetByParty(ctx context.Context, party string, params *filtering.TradeQueryFilters) ([]*proto.Trade, error) {
+	ret := _m.Called(ctx, party, params)
 
 	var r0 []*proto.Trade
-	if rf, ok := ret.Get(0).(func(string, *filtering.TradeQueryFilters) []*proto.Trade); ok {
-		r0 = rf(party, params)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *filtering.TradeQueryFilters) []*proto.Trade); ok {
+		r0 = rf(ctx, party, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*proto.Trade)
@@ -123,8 +124,8 @@ func (_m *TradeStore) GetByParty(party string, params *filtering.TradeQueryFilte
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, *filtering.TradeQueryFilters) error); ok {
-		r1 = rf(party, params)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *filtering.TradeQueryFilters) error); ok {
+		r1 = rf(ctx, party, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -132,13 +133,13 @@ func (_m *TradeStore) GetByParty(party string, params *filtering.TradeQueryFilte
 	return r0, r1
 }
 
-// GetByPartyAndId provides a mock function with given fields: party, id
-func (_m *TradeStore) GetByPartyAndId(party string, id string) (*proto.Trade, error) {
-	ret := _m.Called(party, id)
+// GetByPartyAndId provides a mock function with given fields: ctx, party, id
+func (_m *TradeStore) GetByPartyAndId(ctx context.Context, party string, id string) (*proto.Trade, error) {
+	ret := _m.Called(ctx, party, id)
 
 	var r0 *proto.Trade
-	if rf, ok := ret.Get(0).(func(string, string) *proto.Trade); ok {
-		r0 = rf(party, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *proto.Trade); ok {
+		r0 = rf(ctx, party, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*proto.Trade)
@@ -146,8 +147,8 @@ func (_m *TradeStore) GetByPartyAndId(party string, id string) (*proto.Trade, er
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(party, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, party, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -155,20 +156,20 @@ func (_m *TradeStore) GetByPartyAndId(party string, id string) (*proto.Trade, er
 	return r0, r1
 }
 
-// GetMarkPrice provides a mock function with given fields: market
-func (_m *TradeStore) GetMarkPrice(market string) (uint64, error) {
-	ret := _m.Called(market)
+// GetMarkPrice provides a mock function with given fields: ctx, market
+func (_m *TradeStore) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
+	ret := _m.Called(ctx, market)
 
 	var r0 uint64
-	if rf, ok := ret.Get(0).(func(string) uint64); ok {
-		r0 = rf(market)
+	if rf, ok := ret.Get(0).(func(context.Context, string) uint64); ok {
+		r0 = rf(ctx, market)
 	} else {
 		r0 = ret.Get(0).(uint64)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(market)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, market)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -176,13 +177,13 @@ func (_m *TradeStore) GetMarkPrice(market string) (uint64, error) {
 	return r0, r1
 }
 
-// GetTradesBySideBuckets provides a mock function with given fields: party
-func (_m *TradeStore) GetTradesBySideBuckets(party string) map[string]*storage.MarketBucket {
-	ret := _m.Called(party)
+// GetTradesBySideBuckets provides a mock function with given fields: ctx, party
+func (_m *TradeStore) GetTradesBySideBuckets(ctx context.Context, party string) map[string]*storage.MarketBucket {
+	ret := _m.Called(ctx, party)
 
 	var r0 map[string]*storage.MarketBucket
-	if rf, ok := ret.Get(0).(func(string) map[string]*storage.MarketBucket); ok {
-		r0 = rf(party)
+	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*storage.MarketBucket); ok {
+		r0 = rf(ctx, party)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]*storage.MarketBucket)
