@@ -41,9 +41,14 @@ test: deps ## Run unit tests
 race: ## Run data race detector
 	@go test -race ./...
 
-mocks: ## Make storage mocks
+mocks: ## Make mocks
 	@if ! which mockery 1>/dev/null ; then echo "Need mockery (github.com/vektra/mockery)" ; exit 1 ; fi
-	@cd internal/storage ; mockery -all
+	@origdir="$$PWD" ; \
+	find . -type d -and -name mocks | while read -r dir ; do \
+		cd "$$(dirname "$$dir")" ; \
+		mockery -all ; \
+		cd "$$origdir" ; \
+	done
 
 msan: ## Run memory sanitizer
 	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi
