@@ -1,11 +1,13 @@
 package candles
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
+
+	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
@@ -217,6 +219,7 @@ func isSubscriptionEmpty(transport <-chan *types.Candle) bool {
 }
 
 func TestSubscriptionUpdates_MinMax(t *testing.T) {
+	var wg sync.WaitGroup
 	MarketBTC := "BTC/DEC19"
 	var ctx = context.Background()
 	storeConfig := storageConfig()
@@ -265,7 +268,8 @@ func TestSubscriptionUpdates_MinMax(t *testing.T) {
 		{Id: "12", Market: MarketBTC, Price: uint64(95), Size: uint64(100), Timestamp: t0 + uint64(2*time.Minute+30*time.Second)},
 	}
 
-	listenToCandles := func(u1, u2, u3 *bool) {
+	listenToCandles := func(wg *sync.WaitGroup, u1, u2, u3 *bool) {
+		defer wg.Done()
 		for {
 			select {
 			case candle := <-candlesSubscription5mBTC:
@@ -299,13 +303,17 @@ func TestSubscriptionUpdates_MinMax(t *testing.T) {
 					*u3 = true
 				}
 			}
+			if *u1 && *u2 && *u3 {
+				break
+			}
 		}
 	}
 
 	var (
 		u1, u2, u3 = false, false, false
 	)
-	go listenToCandles(&u1, &u2, &u3)
+	wg.Add(1)
+	go listenToCandles(&wg, &u1, &u2, &u3)
 
 	// first update
 	err = candleStore.StartNewBuffer(MarketBTC, t0)
@@ -337,7 +345,7 @@ func TestSubscriptionUpdates_MinMax(t *testing.T) {
 	err = candleStore.GenerateCandlesFromBuffer(MarketBTC)
 	assert.Nil(t, err)
 
-	time.Sleep(3 * time.Second)
+	wg.Wait()
 	assert.True(t, u1)
 	assert.True(t, u2)
 	assert.True(t, u3)
