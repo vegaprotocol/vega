@@ -67,11 +67,11 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 
 		// AND default
 		queryFilters.Operator = filtering.QueryFilterOperatorAnd
-		if where.OR != nil {
-			if where.AND != nil {
+		if where.Or != nil {
+			if where.And != nil {
 				return nil, errors.New("combination of operators is not currently supported")
 			}
-			for _, filter := range where.OR {
+			for _, filter := range where.Or {
 				_, err := ParseOrderFilter(&filter, queryFilters)
 				if err != nil {
 					return nil, err
@@ -79,8 +79,8 @@ func buildOrderQueryFilters(where *OrderFilter, skip *int, first *int, last *int
 			}
 			// If OR specified switch operator to OR inc outer filters
 			queryFilters.Operator = filtering.QueryFilterOperatorOr
-		} else if where.AND != nil {
-			for _, filter := range where.AND {
+		} else if where.And != nil {
+			for _, filter := range where.And {
 				_, err := ParseOrderFilter(&filter, queryFilters)
 				if err != nil {
 					return nil, err
@@ -124,11 +124,11 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 
 		// AND default
 		queryFilters.Operator = filtering.QueryFilterOperatorAnd
-		if where.OR != nil {
-			if where.AND != nil {
+		if where.Or != nil {
+			if where.And != nil {
 				return nil, errors.New("combination of operators is not currently supported")
 			}
-			for _, filter := range where.OR {
+			for _, filter := range where.Or {
 				_, err := ParseTradeFilter(&filter, queryFilters)
 				if err != nil {
 					return nil, err
@@ -136,8 +136,8 @@ func buildTradeQueryFilters(where *TradeFilter, skip *int, first *int, last *int
 			}
 			// If OR specified switch operator to OR inc outer filters
 			queryFilters.Operator = filtering.QueryFilterOperatorOr
-		} else if where.AND != nil {
-			for _, filter := range where.AND {
+		} else if where.And != nil {
+			for _, filter := range where.And {
 				_, err := ParseTradeFilter(&filter, queryFilters)
 				if err != nil {
 					return nil, err

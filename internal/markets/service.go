@@ -21,7 +21,7 @@ type Service interface {
 	// ObserveMarket provides a way to listen to changes on VEGA markets.
 	ObserveMarkets(ctx context.Context) (markets <-chan []types.Market, ref uint64)
 	// ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
-	ObserveDepth(ctx context.Context, market string) (depth <-chan types.MarketDepth, ref uint64)
+	ObserveDepth(ctx context.Context, market string) (depth <-chan *types.MarketDepth, ref uint64)
 }
 
 type marketService struct {
@@ -66,8 +66,8 @@ func (s *marketService) GetDepth(ctx context.Context, market string) (marketDept
 }
 
 // ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
-func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan types.MarketDepth, uint64) {
-	depth := make(chan types.MarketDepth)
+func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan *types.MarketDepth, uint64) {
+	depth := make(chan *types.MarketDepth)
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
@@ -97,7 +97,7 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 					logging.Error(err))
 			} else {
 				select {
-				case depth <- *d:
+				case depth <- d:
 					s.log.Debug("Market depth for subscriber sent successfully",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip))

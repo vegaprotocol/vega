@@ -190,11 +190,11 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
-	internalTransport1 := &InternalTransport{testMarket, types.Interval_I1M, make(chan types.Candle)}
+	internalTransport1 := &InternalTransport{testMarket, types.Interval_I1M, make(chan *types.Candle)}
 	ref := candleStore.Subscribe(internalTransport1)
 	assert.Equal(t, uint64(1), ref)
 
-	internalTransport2 := &InternalTransport{testMarket, types.Interval_I1M, make(chan types.Candle)}
+	internalTransport2 := &InternalTransport{testMarket, types.Interval_I1M, make(chan *types.Candle)}
 	ref = candleStore.Subscribe(internalTransport2)
 	assert.Equal(t, uint64(2), ref)
 

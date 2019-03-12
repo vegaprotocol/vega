@@ -7,17 +7,17 @@ model:
 
 models:
   Order:
-    model: vega/proto.Order
+    model: code.vegaprotocol.io/vega/proto.Order
   Trade:
-    model: vega/proto.Trade
+    model: code.vegaprotocol.io/vega/proto.Trade
   PriceLevel:
-    model: vega/proto.PriceLevel
+    model: code.vegaprotocol.io/vega/proto.PriceLevel
   MarketDepth:
-    model: vega/proto.MarketDepth
+    model: code.vegaprotocol.io/vega/proto.MarketDepth
   Candle:
-    model: vega/proto.Candle
+    model: code.vegaprotocol.io/vega/proto.Candle
   Position:
-    model: vega/proto.MarketPosition
+    model: code.vegaprotocol.io/vega/proto.MarketPosition
   Market:
     fields:
       orders:
