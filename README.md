@@ -7,13 +7,13 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 <img align="right" src="https://vegaprotocol.io/img/concept_header.svg" height="170" style="padding: 0 10px 0 0;">
 
 - Join a Vega network as a validator or non-concensus node. 
-- [Provision](#provisioning) new markets on a network (coming soon)
+- Provision new markets on a network (coming soon)
 - [Manage orders](#orders) (and [trade on a network](#trading))
 - [Configure a node](#configuration) (and it's [APIs](#apis))
-- Manage [authentication](#auth) with a network (coming soon) 
-- [Run scenario tests](#scenario-tests) (coming soon)
-- [Run benchmarks](#benchmarks) and test suites (coming soon)
-- Support [settlement](#settlement) in cryptocurrency (coming soon) 
+- Manage authentication with a network (coming soon) 
+- Run scenario tests (coming soon)
+- [Run benchmarks](#benchmarks) and test suites
+- Support settlement in cryptocurrency (coming soon) 
 
 [![Build Status](https://gitlab.com/vegaprotocol/trading-core/badges/master/pipeline.svgmaster)](https://gitlab.com/vegaprotocol/trading-core)
 [![coverage](https://gitlab.com/gitlab-org/gitlab-ce/badges/master/coverage.svg)](https://gitlab.com/vega-protocol/trading-core/commits/master)
@@ -35,15 +35,11 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
-- [APIs](#apis)
-- [Provisioning](#provisioning)
-- [Trading](#trading)
-- [Scenario tests](#scenario-tests)
+- [APIs](#apis)<!-- - [Provisioning](#provisioning)-->
+- [Trading](#trading)<!---[Scenario tests](#scenario-tests)--><!-- - [Settlement](#settlement)-->
 - [Benchmarks](#benchmarks)
-- [Scripts](#scripts)
 - [Releasing](#releasing)
 - [Troubleshooting & debugging](#troubleshooting--debugging)
-- [Resources](#resources)
 - [Credits](#credits)
 
 <!-- tocstop -->
@@ -158,9 +154,32 @@ vega version
 
 Vega is initialised with a set of default configuration with the command `vega init`. There are [plenty of options](/config.toml) to configure it. To override any of the defaults edit your `config.toml` typically found in the `~/.vega` directory:
 
+
+
 ## APIs
 
-(coming soon)
+In order for clients to communicate with Vega nodes we expose a set of APIs and methods for reading and writing data. Note: Most writes will typically require interaction with the blockchain and require consensus. 
+
+There are currently three protocols to communicate with the Vega APIs:
+
+### GraphQL
+
+[GraphQL](https://graphql.org/) is an open-source data query and manipulation language for APIs, and a runtime for fulfilling queries with existing data, originally developed at Facebook. The [Client UI](https://gitlab.com/vega-protocol/client) uses the GraphQL API to retrieve data including streaming of events.
+
+The GraphQL [schema](./internal/api/endpoints/gql/schema.graphql) defines the interop with Vega. Queries can be tested using the GraphQL playground app which is bundled with a node. The default port for the playground app is `3004` accessing 
+
+
+### gRPC
+
+gRPC is an open source remote procedure call (RPC) system initially developed at Google. In Vega the gRPC API features streaming of events in addition to standard procedure calls.
+
+
+### REST
+
+REST provides a standard between computer systems on the web, making it easier for systems to communicate with each other. It is arguably simpler to work with than gRPC and GraphQL. In Vega the REST API is a reverse proxy to the gRPC API, however it does not support streaming.
+
+
+
 
 ## Provisioning
 
@@ -172,15 +191,7 @@ Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to A
 
 (coming soon)
 
-## Scenario tests
-
-(coming soon)
-
 ## Benchmarks
-
-(coming soon)
-
-## Scripts
 
 (coming soon)
 
@@ -189,10 +200,6 @@ Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to A
 (coming soon)
 
 ## Troubleshooting & debugging
-
-(coming soon)
-
-## Resources
 
 (coming soon)
 
