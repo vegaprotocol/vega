@@ -120,3 +120,61 @@ func (bs *badgerStore) tradePartyKey(party, Id string) []byte {
 func (bs *badgerStore) tradeOrderIdKey(orderId, Id string) []byte {
 	return []byte(fmt.Sprintf("O:%s_ID:%s", orderId, Id))
 }
+
+// writeBatch writes an arbitrarily large map to a Barger store, using as many
+// transactions as necessary.
+//
+// Return values:
+// N, nil: The map was successfully committed, in N transactions.
+// 0, err: None of the map was committed.
+// N, err: The map was partially committed. The first N transactions were
+//         committed successfully, but an error was returned on the transaction
+//         number N+1.
+func (bs *badgerStore) writeBatch(kv map[string][]byte) (int, error) {
+	txns := make([]*badger.Txn, 0)
+	lastTxnIdx := 0
+
+	txns = append(txns, bs.writeTransaction())
+	defer txns[lastTxnIdx].Discard()
+
+	i := 0
+	for k, v := range kv {
+		// First attempt: put kv pair in current transaction
+		err := txns[lastTxnIdx].Set([]byte(k), v)
+		switch err {
+		case nil: // all is well
+		case badger.ErrTxnTooBig:
+			// Start a new transaction WITHOUT commiting any previous ones, in order
+			// to maintain atomicity.
+			txns = append(txns, bs.writeTransaction())
+			lastTxnIdx++
+			defer txns[lastTxnIdx].Discard()
+
+			// Second attempt: put kv pair in new transaction
+			err = txns[lastTxnIdx].Set([]byte(k), v)
+			if err != nil {
+				return 0, err
+				// All transactions will be discarded
+			}
+			i = 0
+		default:
+			return 0, err
+			// All transactions will be discarded
+		}
+		i++
+	}
+
+	// At this point, we have filled one or more transactions with the all the kv
+	// pairs, and we have commited none of the transactions.
+
+	for j, txn := range txns {
+		err := txn.Commit()
+		if err != nil {
+			// This is very bad. We committed some transactions, but have now failed
+			// to commit a transaction.
+			return j, err
+		}
+	}
+
+	return lastTxnIdx + 1, nil
+}
