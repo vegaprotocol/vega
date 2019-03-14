@@ -7,7 +7,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 <img align="right" src="https://vegaprotocol.io/img/concept_header.svg" height="170" style="padding: 0 10px 0 0;">
 
 - Join a Vega network as a validator or non-concensus node. 
-- Provision new markets on a network (coming soon)
+- [Provision](#provisioning) new markets on a network (coming soon)
 - [Manage orders]](#trading) (and [trade on a network](#trading))
 - [Configure a node](#configuration) (and it's [APIs](#apis))
 - Manage authentication with a network (coming soon) 
@@ -15,7 +15,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 - [Run benchmarks](#benchmarks) and test suites
 - Support settlement in cryptocurrency (coming soon) 
 
-[![Build Status](https://gitlab.com/vegaprotocol/trading-core/badges/master/pipeline.svgmaster)](https://gitlab.com/vegaprotocol/trading-core)
+[![Build Status](https://gitlab.com/vegaprotocol/trading-core/badges/master/pipeline.svg)](https://gitlab.com/vegaprotocol/trading-core)
 [![coverage](https://gitlab.com/gitlab-org/gitlab-ce/badges/master/coverage.svg)](https://gitlab.com/vega-protocol/trading-core/commits/master)
 
 ## Links
