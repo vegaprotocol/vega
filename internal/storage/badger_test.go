@@ -10,9 +10,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func tempDir(t *testing.T, prefix string) string {
+	baseTempDirs := []string{"/dev/shm", os.TempDir()}
+	for _, baseTempDir := range baseTempDirs {
+		_, err := os.Stat(baseTempDir)
+		if err == nil {
+			dir, err := ioutil.TempDir(baseTempDir, prefix)
+			require.NoError(t, err)
+			return dir
+			// Remember: defer os.RemoveAll(dir)
+		}
+	}
+	panic("Could not find a temp dir")
+}
+
 func runBadgerStoreTest(t *testing.T, opts *badger.Options, test func(t *testing.T, bs *badgerStore)) {
-	dir, err := ioutil.TempDir("/dev/shm", "badger-test")
-	require.NoError(t, err)
+	dir := tempDir(t, "badger-test")
 	defer os.RemoveAll(dir)
 
 	if opts == nil {
