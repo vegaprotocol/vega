@@ -8,7 +8,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 - Join a Vega network as a validator or non-concensus node. 
 - Provision new markets on a network (coming soon)
-- [Manage orders](#orders) (and [trade on a network](#trading))
+- [Manage orders]](#trading) (and [trade on a network](#trading))
 - [Configure a node](#configuration) (and it's [APIs](#apis))
 - Manage authentication with a network (coming soon) 
 - Run scenario tests (coming soon)
