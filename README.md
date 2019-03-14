@@ -197,12 +197,33 @@ Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to A
 
 ## Trading
 
-(coming soon)
+When trading derivatives on Vega, traders send messages to place buy or sell `orders` on a `market`, these are known as `aggressive` orders. If these `orders` match one or more corresponding opposite `passive` buy or sell `orders` already on the `order book`, then a set of `trades` will be generated. For more detailed information on trading terminology please see the [trading and protocol glossary](https://gitlab.com/vega-protocol/product/wikis/Trading-and-Protocol-Glossary) or speak with @barney/@tamlyn.
+
+There are several trading operations currently supported by Vega, these are as follows:
+
+### Submit order
+
+
+
+### Amend order
+
+
+
+### Cancel order
+
+
 
 ## Benchmarks
 
-(coming soon)
+TODO - @ashleyvega
 
 ## Troubleshooting & debugging
 
-(coming soon)
+The application has structured logging capability, the first port of call for a crash is probably the vega logs and tendermint logs which are available on the console if running locally or by multilog if running on test networks. Default testnet location for log files:
+
+* `/home/vega/log/vega/`
+* `/home/vega/log/tendermint/`
+
+Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `-1` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
+
+Debugging the application locally is also possible with [Delve](https://github.com/go-delve/delve).
