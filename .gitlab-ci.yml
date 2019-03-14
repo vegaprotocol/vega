@@ -11,6 +11,7 @@ variables:
   BIN_DIR: "${CI_PROJECT_DIR}/go/bin"
   SRC_DIR: "${CI_PROJECT_DIR}/go/src"
   PKGMOD_DIR: "${CI_PROJECT_DIR}/go/pkg/mod"
+  PATH: "${PATH}:${CI_PROJECT_DIR}/go/bin"
 
 cache:
   key: ${CI_COMMIT_REF_SLUG} # one cache per branch
