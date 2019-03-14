@@ -199,19 +199,118 @@ Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to A
 
 When trading derivatives on Vega, traders send messages to place buy or sell `orders` on a `market`, these are known as `aggressive` orders. If these `orders` match one or more corresponding opposite `passive` buy or sell `orders` already on the `order book`, then a set of `trades` will be generated. For more detailed information on trading terminology please see the [trading and protocol glossary](https://gitlab.com/vega-protocol/product/wikis/Trading-and-Protocol-Glossary) or speak with @barney/@tamlyn.
 
-There are several trading operations currently supported by Vega, these are as follows:
+There are several trading operations currently supported by Vega, using the gRPC API for examples, these are as follows:
 
 ### Submit order
 
+```
+rpc CreateOrder(vega.Order) returns (OrderResponse);
+```
 
+To submit a new order to the network, a caller can submit protobuf `order` messages and receive OrderResponses from the API. In the following example a trader wishes to `buy` a total of `500` contracts at price `100` on market ID `BTC/DEC19`:
+
+**Request**
+
+```
+message Order {
+	string id = "";
+    string market = "BTC/DEC19";
+    string party = "goldman";
+    Side side = Buy;
+    uint64 price = 100;
+    uint64 size = 500;
+    uint64 remaining = 500;
+    Type type = GTC;
+    uint64 timestamp = 0;
+    Status status = Active;
+    string expirationDatetime = "";
+    uint64 expirationTimestamp = 0;
+    string reference = "839db975-3eb2-4303-ab9c-c208405d79a1";
+}
+
+```
+**Response**
+
+```
+message OrderResponse {
+    bool success = true;
+    string reference = "839db975-3eb2-4303-ab9c-c208405d79a1";
+}
+
+```
+
+Submitted orders typically go via concensus so the OrderResponse will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
 
 ### Amend order
 
+```
+rpc AmendOrder(vega.Amendment) returns (OrderResponse);
+```
+
+To amend an existing order on the network, a caller can submit protobuf `Amendment` messages and receive OrderResponses from the API. In the following example a trader wishes to amend an existing order with ID `v10028123-99091233` with a total of `1000` contracts at price `400` on market ID `BTC/DEC19`:
+
+**Request**
+
+```
+message Amendment {
+    string id = "v10028123-99091233";
+    string party = "goldman";
+    uint64 price = "400";
+    uint64 size = "1000";
+    string expirationDatetime = "";
+    uint64 expirationTimestamp = 0;
+}
+
+```
+**Response**
+
+```
+message OrderResponse {
+    bool success = true;
+    string reference = "839db975-3eb2-4303-ab9c-c208405d79a1";
+}
+```
+
+Amendments typically go via concensus so the OrderResponse will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
 
 
 ### Cancel order
 
+```
+rpc CancelOrder(vega.Order) returns (OrderResponse);
+```
 
+To cancel an existing order, a trader can submit a protobuf `order` messages and receive OrderResponses from the API. In the following example a trader wishes to `cancel` an existing active `order` with ID `v1008973-9376433` on market ID `BTC/DEC19`:
+
+**Request**
+
+```
+message Order {
+	string id = "v1008973-9376433"
+    string market = "BTC/DEC19";
+    string party = "goldman";
+    Side side = Buy;
+    uint64 price = 100;
+    uint64 size = 500;
+    uint64 remaining = 500;
+    Type type = GTC;
+    uint64 timestamp = 0;
+    Status status = Active;
+    string expirationDatetime = "";
+    uint64 expirationTimestamp = 0;
+    string reference = "839db975-3eb2-4303-ab9c-c208405d79a1";
+}
+```
+**Response**
+
+```
+message OrderResponse {
+    bool success = true;
+    string reference = "839db975-3eb2-4303-ab9c-c208405d79a1";
+}
+```
+
+Cancellations typically go via concensus so the OrderResponse will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
 
 ## Benchmarks
 
