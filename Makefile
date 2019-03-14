@@ -30,7 +30,7 @@ all: build
 
 lint: ## Lint the files
 	@go get -u golang.org/x/lint/golint
-	@golint -set_exit_status ./...
+	@golint -set_exit_status ./... | true
 
 bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench

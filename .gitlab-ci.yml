@@ -55,10 +55,10 @@ code_coverage:
   only:
     - /^(master|develop)$/
 
-#lint_code:
-#  stage: test
-#  script:
-#    - make lint
+lint_code:
+  stage: test
+  script:
+    - make lint
 
 build_vega:
   stage: build
