@@ -6,10 +6,10 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 <img align="right" src="https://vegaprotocol.io/img/concept_header.svg" height="170" style="padding: 0 10px 0 0;">
 
-- Join a Vega network as a validator or non-concensus node.
+- Join a Vega network as a validator or non-consensus node.
 - [Provision](#provisioning) new markets on a network (coming soon)
 - [Manage orders]](#trading) (and [trade on a network](#trading))
-- [Configure a node](#configuration) (and it's [APIs](#apis))
+- [Configure a node](#configuration) (and its [APIs](#apis))
 - Manage authentication with a network (coming soon)
 - Run scenario tests (coming soon)
 - [Run benchmarks](#benchmarks) and test suites
@@ -22,8 +22,8 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 - For **updates**, see [CHANGELOG.md](CHANGELOG.md) for major updates, and
   [releases](https://gitlab.com/vega-protocol/trading-core/wikis/Release-notes) for a detailed version history.
-- For **architecture**, please read the design [documentation](ARCHITECTURE.md) to learn about the design for the system and it's architecture.
-- For **agile process**, please read the engineering [documentation](AGILE.md) or ask on #Engineering if you need further clarification.
+- For **architecture**, please read the design [documentation](ARCHITECTURE.md) to learn about the design for the system and its architecture.
+- For **agile process**, please read the engineering [documentation](AGILE.md) or ask on Slack channel `#Engineering` if you need further clarification.
 - Please [open an issue](https://gitlab.com/vegaprotocol/trading-core/issues/new) if anything is missing or unclear in this documentation.
 
 
@@ -60,7 +60,7 @@ To install Vega from source, the following software is required:
 
 *We recommend downloading a pre-built core binary for your architecture rather than compiling from source, to save time. You can of course install from source if you wish, just make sure you grab the correct version.*
 
-Once installed check the version, this should match the required version (above):
+Once installed, check the version. This should match the required version (above):
 
 ```bash
 # verify tendermint
@@ -104,7 +104,6 @@ go mod download
 
 Tip: this project uses go module based dependency management, we recommend checking out the source outside of your Go src directory.
 
-
 ### Global
 
 As a globally available command (installed in your Go path):
@@ -122,7 +121,6 @@ make build
 ```
 
 ## Usage
-
 
 Run a node:
 
@@ -162,7 +160,7 @@ Vega is initialised with a set of default configuration with the command `vega i
 
 ## APIs
 
-In order for clients to communicate with Vega nodes we expose a set of APIs and methods for reading and writing data. Note: Most writes will typically require interaction with the blockchain and require consensus.
+In order for clients to communicate with Vega nodes, we expose a set of APIs and methods for reading and writing data. Note: Most writes will typically require interaction with the blockchain and require consensus.
 
 There are currently three protocols to communicate with the Vega APIs:
 
@@ -190,7 +188,7 @@ The default port (configurable) for the REST API is `3003` and we use a reverse 
 
 The provisioning of new markets is **coming soon**.
 
-Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to APIs as the field `Market` in protobuf/rest/graphql requests.
+Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to APIs as the field `Market` in protobuf / REST / GraphQL requests.
 
 ## Trading
 
@@ -204,7 +202,7 @@ There are several trading operations currently supported by Vega, using the gRPC
 rpc CreateOrder(vega.Order) returns (OrderResponse);
 ```
 
-To submit a new order to the network, a caller can submit protobuf `order` messages and receive OrderResponses from the API. In the following example a trader wishes to `buy` a total of `500` contracts at price `100` on market ID `BTC/DEC19`:
+To submit a new order to the network, a caller can submit a protobuf `order` message and receive an `OrderResponse` from the API. In the following example a trader wishes to `buy` a total of `500` contracts at price `100` on market ID `BTC/DEC19`:
 
 **Request**
 
@@ -243,7 +241,7 @@ Submitted orders typically go via consensus so the `OrderResponse` will only ind
 rpc AmendOrder(vega.Amendment) returns (OrderResponse);
 ```
 
-To amend an existing order on the network, a caller can submit protobuf `Amendment` messages and receive OrderResponses from the API. In the following example a trader wishes to amend an existing order with ID `v10028123-99091233` with a total of `1000` contracts at price `400` on market ID `BTC/DEC19`:
+To amend an existing order on the network, a caller can submit a protobuf `Amendment` message and receive an `OrderResponse` from the API. In the following example a trader wishes to amend an existing order with ID `v10028123-99091233` with a total of `1000` contracts at price `400` on market ID `BTC/DEC19`:
 
 **Request**
 
@@ -276,7 +274,7 @@ Amendments typically go via consensus so the `OrderResponse` will only indicate 
 rpc CancelOrder(vega.Order) returns (OrderResponse);
 ```
 
-To cancel an existing order, a trader can submit a protobuf `order` messages and receive `OrderResponse`s from the API. In the following example a trader wishes to `cancel` an existing active `order` with ID `v1008973-9376433` on market ID `BTC/DEC19`:
+To cancel an existing order, a trader can submit a protobuf `order` message and receive an `OrderResponse` from the API. In the following example a trader wishes to `cancel` an existing active `order` with ID `v1008973-9376433` on market ID `BTC/DEC19`:
 
 **Request**
 
