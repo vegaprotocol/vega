@@ -10,9 +10,27 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 )
 
+type Oracle interface {
+	IsOracle()
+}
+
+type Product interface {
+	IsProduct()
+}
+
+type RiskModel interface {
+	IsRiskModel()
+}
+
 type TradingMode interface {
 	IsTradingMode()
 }
+
+type BuiltinFutures struct {
+	HistoricVolatility float64 `json:"historicVolatility"`
+}
+
+func (BuiltinFutures) IsRiskModel() {}
 
 type ContinuousTrading struct {
 	Void *bool `json:"void"`
@@ -26,13 +44,41 @@ type DiscreteTrading struct {
 
 func (DiscreteTrading) IsTradingMode() {}
 
+type EthereumEvent struct {
+	ContractID string `json:"contractId"`
+	Event      string `json:"event"`
+}
+
+func (EthereumEvent) IsOracle() {}
+
+type Future struct {
+	Maturity string `json:"maturity"`
+	Asset    string `json:"asset"`
+	Oracle   Oracle `json:"oracle"`
+}
+
+func (Future) IsProduct() {}
+
+type Instrument struct {
+	ID       string             `json:"id"`
+	Code     string             `json:"code"`
+	Name     string             `json:"name"`
+	Metadata InstrumentMetadata `json:"metadata"`
+	Product  Product            `json:"product"`
+}
+
+type InstrumentMetadata struct {
+	Tags []*string `json:"tags"`
+}
+
 type Market struct {
-	Name        string            `json:"name"`
-	TradingMode TradingMode       `json:"tradingMode"`
-	Orders      []proto.Order     `json:"orders"`
-	Trades      []proto.Trade     `json:"trades"`
-	Depth       proto.MarketDepth `json:"depth"`
-	Candles     []*proto.Candle   `json:"candles"`
+	ID                 string             `json:"id"`
+	TradableInstrument TradableInstrument `json:"tradableInstrument"`
+	TradingMode        TradingMode        `json:"tradingMode"`
+	Orders             []proto.Order      `json:"orders"`
+	Trades             []proto.Trade      `json:"trades"`
+	Depth              proto.MarketDepth  `json:"depth"`
+	Candles            []*proto.Candle    `json:"candles"`
 }
 
 type OrderFilter struct {
@@ -79,6 +125,11 @@ type Party struct {
 type PreConsensus struct {
 	Accepted  bool   `json:"accepted"`
 	Reference string `json:"reference"`
+}
+
+type TradableInstrument struct {
+	Instrument Instrument `json:"instrument"`
+	RiskModel  RiskModel  `json:"riskModel"`
 }
 
 type TradeFilter struct {

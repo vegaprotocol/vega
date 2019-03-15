@@ -7,19 +7,17 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/monitoring"
-
-	types "code.vegaprotocol.io/vega/proto"
-
 	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 var (
@@ -112,32 +110,36 @@ func (r *MyQueryResolver) Vega(ctx context.Context) (*Vega, error) {
 
 type MyVegaResolver resolverRoot
 
-func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error) {
-	if name == nil {
+func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, id *string) ([]Market, error) {
+	if id == nil {
 		return nil, errors.New("all markets on VEGA query not implemented")
 	}
-	err := validateMarket(ctx, name, r.marketService)
+	mkt, err := validateMarket(ctx, id, r.marketService)
 	if err != nil {
 		return nil, err
 	}
 	var m = make([]Market, 0)
-	var market = Market{
-		Name: *name,
+	market, err := MarketFromProto(mkt)
+	if err != nil {
+		r.GetLogger().Error("unable to convert market from proto", logging.Error(err))
+		return nil, err
 	}
-	m = append(m, market)
+	m = append(m, *market)
 
 	return m, nil
 }
 
-func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, name string) (*Market, error) {
-	err := validateMarket(ctx, &name, r.marketService)
+func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, id string) (*Market, error) {
+	mkt, err := validateMarket(ctx, &id, r.marketService)
 	if err != nil {
 		return nil, err
 	}
-	var market = Market{
-		Name: name,
+	market, err := MarketFromProto(mkt)
+	if err != nil {
+		r.GetLogger().Error("unable to convert market from proto", logging.Error(err))
+		return nil, err
 	}
-	return &market, nil
+	return market, nil
 }
 
 func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {
@@ -173,7 +175,7 @@ type MyMarketResolver resolverRoot
 
 func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 	where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error) {
-	err := validateMarket(ctx, &market.Name, r.marketService)
+	_, err := validateMarket(ctx, &market.ID, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +183,7 @@ func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 	if err != nil {
 		return nil, err
 	}
-	o, err := r.orderService.GetByMarket(ctx, market.Name, queryFilters)
+	o, err := r.orderService.GetByMarket(ctx, market.ID, queryFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +196,7 @@ func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 
 func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error) {
-	err := validateMarket(ctx, &market.Name, r.marketService)
+	_, err := validateMarket(ctx, &market.ID, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +204,7 @@ func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	if err != nil {
 		return nil, err
 	}
-	t, err := r.tradeService.GetByMarket(ctx, market.Name, queryFilters)
+	t, err := r.tradeService.GetByMarket(ctx, market.ID, queryFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -218,13 +220,13 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (*types.Ma
 		return nil, errors.New("market missing or empty")
 
 	}
-	err := validateMarket(ctx, &market.Name, r.marketService)
+	_, err := validateMarket(ctx, &market.ID, r.marketService)
 	if err != nil {
 		return nil, err
 	}
 	// Look for market depth for the given market (will validate market internally)
 	// Note: Market depth is also known as OrderBook depth within the matching-engine
-	depth, err := r.marketService.GetDepth(ctx, market.Name)
+	depth, err := r.marketService.GetDepth(ctx, market.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +269,7 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	}
 
 	// Retrieve candles from store/service
-	c, err := r.candleService.GetCandles(ctx, market.Name, sinceTimestamp, pbInterval)
+	c, err := r.candleService.GetCandles(ctx, market.ID, sinceTimestamp, pbInterval)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +360,7 @@ func (r *MyMarketDepthResolver) Sell(ctx context.Context, obj *types.MarketDepth
 }
 
 func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *types.MarketDepth) (*types.Trade, error) {
-	err := validateMarket(ctx, &obj.Name, r.marketService)
+	_, err := validateMarket(ctx, &obj.Name, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -394,7 +396,7 @@ func (r *MyOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, err
 }
 func (r *MyOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market, error) {
 	return &Market{
-		Name: obj.Market,
+		ID: obj.Market,
 	}, nil
 }
 func (r *MyOrderResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
@@ -429,7 +431,7 @@ func (r *MyOrderResolver) Trades(ctx context.Context, obj *types.Order) ([]*type
 type MyTradeResolver resolverRoot
 
 func (r *MyTradeResolver) Market(ctx context.Context, obj *types.Trade) (*Market, error) {
-	return &Market{Name: obj.Market}, nil
+	return &Market{ID: obj.Market}, nil
 }
 func (r *MyTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side, error) {
 	return Side(obj.Aggressor.String()), nil
@@ -548,7 +550,7 @@ func (r *MyPositionResolver) MinimumMargin(ctx context.Context, obj *types.Marke
 }
 
 func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (*Market, error) {
-	return &Market{Name: obj.Market}, nil
+	return &Market{ID: obj.Market}, nil
 }
 
 func (r *MyPositionResolver) absInt64Str(val int64) string {
@@ -590,7 +592,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 		return nil, err
 	}
 	order.Size = s
-	err = validateMarket(ctx, &market, r.marketService)
+	_, err = validateMarket(ctx, &market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -647,7 +649,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
-	err := validateMarket(ctx, &market, r.marketService)
+	_, err := validateMarket(ctx, &market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -681,7 +683,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 type MySubscriptionResolver resolverRoot
 
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []types.Order, error) {
-	err := validateMarket(ctx, market, r.marketService)
+	_, err := validateMarket(ctx, market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -695,7 +697,7 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 }
 
 func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []types.Trade, error) {
-	err := validateMarket(ctx, market, r.marketService)
+	_, err := validateMarket(ctx, market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -719,7 +721,7 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 }
 
 func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan *types.MarketDepth, error) {
-	err := validateMarket(ctx, &market, r.marketService)
+	_, err := validateMarket(ctx, &market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -730,7 +732,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 }
 
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
-	err := validateMarket(ctx, &market, r.marketService)
+	_, err := validateMarket(ctx, &market, r.marketService)
 	if err != nil {
 		return nil, err
 	}
@@ -770,17 +772,19 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	return c, nil
 }
 
-func validateMarket(ctx context.Context, marketId *string, marketService markets.Service) error {
+func validateMarket(ctx context.Context, marketId *string, marketService markets.Service) (*types.Market, error) {
+	var mkt *types.Market
+	var err error
 	if marketId != nil {
 		if len(*marketId) == 0 {
-			return errors.New("market must not be empty")
+			return nil, errors.New("market must not be empty")
 		}
-		_, err := marketService.GetByID(ctx, *marketId)
+		mkt, err = marketService.GetByID(ctx, *marketId)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return mkt, nil
 }
 
 // todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
