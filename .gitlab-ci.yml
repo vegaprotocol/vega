@@ -38,10 +38,10 @@ unit_tests:
   script:
     - make test
 
-#race_detector:
-#  stage: test
-#  script:
-#    - make race
+race_detector:
+ stage: test
+ script:
+   - make race
 
 # FUTURE:
 # Requires custom GCC based docker image
