@@ -192,7 +192,7 @@ Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to A
 
 ## Trading
 
-When trading derivatives on Vega, traders send messages to place buy or sell `orders` on a `market`, these are known as `aggressive` orders. If these `orders` match one or more corresponding opposite `passive` buy or sell `orders` already on the `order book`, then a set of `trades` will be generated. For more detailed information on trading terminology please see the [trading and protocol glossary](https://gitlab.com/vega-protocol/product/wikis/Trading-and-Protocol-Glossary) or speak with @barney/@tamlyn.
+When trading derivatives on Vega, traders send messages to place buy or sell `orders` on a `market`, these are known as `aggressive` orders. If these `orders` match one or more corresponding opposite `passive` buy or sell `orders` already on the `order book`, then a set of `trades` will be generated. For more detailed information on trading terminology please see the [trading and protocol glossary](https://gitlab.com/vega-protocol/product/wikis/Trading-and-Protocol-Glossary) or speak with @barnabee (Slack:`@barney`) or @tamlyn10 (Slack:`@tamlyn`).
 
 There are several trading operations currently supported by Vega, using the gRPC API for examples, these are as follows:
 
