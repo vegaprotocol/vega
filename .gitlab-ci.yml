@@ -1,5 +1,5 @@
 ---
-image: golang:1.11.5
+image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.5
 
 variables:
   CGO_ENABLED: "0"
@@ -43,13 +43,10 @@ unit_tests:
 #  script:
 #    - make race
 
-# FUTURE:
-# Requires custom GCC based docker image
-#
-# memory_sanitizer:
-#  stage: test
-#  script:
-#    - make msan
+memory_sanitizer:
+ stage: test
+ script:
+   - make msan
 
 code_coverage:
   stage: test
