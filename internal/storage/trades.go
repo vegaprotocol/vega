@@ -423,67 +423,55 @@ func (ts *badgerTradeStore) notify(items []types.Trade) error {
 	return nil
 }
 
+func (ts *badgerTradeStore) tradeBatchToMap(batch []types.Trade) (map[string][]byte, error) {
+	results := make(map[string][]byte)
+	for _, trade := range batch {
+		tradeBuf, err := proto.Marshal(&trade)
+		if err != nil {
+			return nil, err
+		}
+		// Market Index
+		marketKey := ts.badger.tradeMarketKey(trade.Market, trade.Id)
+		// Trade Id index
+		idKey := ts.badger.tradeIdKey(trade.Id)
+		// Party indexes (buyer and seller as parties)
+		buyerPartyKey := ts.badger.tradePartyKey(trade.Buyer, trade.Id)
+		sellerPartyKey := ts.badger.tradePartyKey(trade.Seller, trade.Id)
+		// OrderId indexes (relate to both buy and sell orders)
+		buyOrderKey := ts.badger.tradeOrderIdKey(trade.BuyOrder, trade.Id)
+		sellOrderKey := ts.badger.tradeOrderIdKey(trade.SellOrder, trade.Id)
+
+		results[string(marketKey)] = tradeBuf
+		results[string(idKey)] = marketKey
+		results[string(buyerPartyKey)] = marketKey
+		results[string(sellerPartyKey)] = marketKey
+		results[string(buyOrderKey)] = marketKey
+		results[string(sellOrderKey)] = marketKey
+	}
+	return results, nil
+}
+
 // writeBatch flushes a batch of trades to the underlying badger store.
 func (ts *badgerTradeStore) writeBatch(batch []types.Trade) error {
-	wb := ts.badger.db.NewWriteBatch()
-	defer wb.Cancel()
-
-	insertBatchAtomically := func() error {
-		for idx := range batch {
-			tradeBuf, err := proto.Marshal(&batch[idx])
-			if err != nil {
-				ts.log.Error("Failed to marshal trade value to badger in trade store (writeBatch)",
-					logging.Error(err),
-					logging.Trade(batch[idx]))
-			}
-
-			// Market Index
-			marketKey := ts.badger.tradeMarketKey(batch[idx].Market, batch[idx].Id)
-
-			// Trade Id index
-			idKey := ts.badger.tradeIdKey(batch[idx].Id)
-
-			// Party indexes (buyer and seller as parties)
-			buyerPartyKey := ts.badger.tradePartyKey(batch[idx].Buyer, batch[idx].Id)
-			sellerPartyKey := ts.badger.tradePartyKey(batch[idx].Seller, batch[idx].Id)
-
-			// OrderId indexes (relate to both buy and sell orders)
-			buyOrderKey := ts.badger.tradeOrderIdKey(batch[idx].BuyOrder, batch[idx].Id)
-			sellOrderKey := ts.badger.tradeOrderIdKey(batch[idx].SellOrder, batch[idx].Id)
-
-			if err := wb.Set(marketKey, tradeBuf, 0); err != nil {
-				return err
-			}
-			if err := wb.Set(idKey, marketKey, 0); err != nil {
-				return err
-			}
-			if err := wb.Set(buyerPartyKey, marketKey, 0); err != nil {
-				return err
-			}
-			if err := wb.Set(sellerPartyKey, marketKey, 0); err != nil {
-				return err
-			}
-			if err := wb.Set(buyOrderKey, marketKey, 0); err != nil {
-				return err
-			}
-			if err := wb.Set(sellOrderKey, marketKey, 0); err != nil {
-				return err
-			}
-		}
-		return nil
+	kv, err := ts.tradeBatchToMap(batch)
+	if err != nil {
+		ts.log.Error("Failed to marshal trades before writing batch",
+			logging.Error(err))
+		return err
 	}
 
-	if err := insertBatchAtomically(); err == nil {
-		if err := wb.Flush(); err != nil {
-			// todo: can we handle flush errors in a similar way to below? (gitlab.com/vega-protocol/trading-core/issues/118)
-			ts.log.Error("Failed to flush batch of trades when calling writeBatch in badger trade store",
+	b, err := ts.badger.writeBatch(kv)
+	if err != nil {
+		if b == 0 {
+			ts.log.Warn("Failed to insert trade batch; No records were committed, atomicity maintained",
 				logging.Error(err))
+			// TODO: Retry, in some circumstances.
+		} else {
+			ts.log.Error("Failed to insert trade batch; Some records were committed, atomicity lost",
+				logging.Error(err))
+			// TODO: Mark block dirty, panic node.
 		}
-	} else {
-		wb.Cancel()
-		// todo: retry mechanism, also handle badger txn too large errors (gitlab.com/vega-protocol/trading-core/issues/118)
-		ts.log.Error("Failed to insert trade batch atomically when calling writeBatch in badger trade store",
-			logging.Error(err))
+		return err
 	}
 
 	return nil

@@ -415,50 +415,44 @@ func (os *badgerOrderStore) notify(items []types.Order) error {
 	return nil
 }
 
+func (os *badgerOrderStore) orderBatchToMap(batch []types.Order) (map[string][]byte, error) {
+	results := make(map[string][]byte)
+	for _, order := range batch {
+		orderBuf, err := proto.Marshal(&order)
+		if err != nil {
+			return nil, err
+		}
+		marketKey := os.badger.orderMarketKey(order.Market, order.Id)
+		idKey := os.badger.orderIdKey(order.Id)
+		partyKey := os.badger.orderPartyKey(order.Party, order.Id)
+		results[string(marketKey)] = orderBuf
+		results[string(idKey)] = marketKey
+		results[string(partyKey)] = marketKey
+	}
+	return results, nil
+}
+
 // writeBatch flushes a batch of orders (create/update) to the underlying badger store.
 func (os *badgerOrderStore) writeBatch(batch []types.Order) error {
-
-	wb := os.badger.db.NewWriteBatch()
-	defer wb.Cancel()
-
-	insertBatchAtomically := func() error {
-		for idx := range batch {
-			orderBuf, err := proto.Marshal(&batch[idx])
-			if err != nil {
-				os.log.Error("Failed to marshal order value to badger in order store (writeBatch)",
-					logging.Error(err),
-					logging.Order(batch[idx]))
-			}
-			marketKey := os.badger.orderMarketKey(batch[idx].Market, batch[idx].Id)
-			idKey := os.badger.orderIdKey(batch[idx].Id)
-			partyKey := os.badger.orderPartyKey(batch[idx].Party, batch[idx].Id)
-			if err := wb.Set(marketKey, orderBuf, 0); err != nil {
-				return err
-			}
-			if err := wb.Set(idKey, marketKey, 0); err != nil {
-				return err
-			}
-			if err := wb.Set(partyKey, marketKey, 0); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	if err := insertBatchAtomically(); err == nil {
-		if err := wb.Flush(); err != nil {
-
-			// todo: can we handle flush errors in a similar way to below? (gitlab.com/vega-protocol/trading-core/issues/118)
-			os.log.Error("Failed to flush batch of orders when calling writeBatch in badger order store",
-				logging.Error(err))
-		}
-	} else {
-		wb.Cancel()
-
-		// todo: retry mechanism, also handle badger txn too large errors (gitlab.com/vega-protocol/trading-core/issues/118)
-		os.log.Error("Failed to insert order batch atomically when calling writeBatch in badger order store",
+	kv, err := os.orderBatchToMap(batch)
+	if err != nil {
+		os.log.Error("Failed to marshal orders before writing batch",
 			logging.Error(err))
+		return err
+	}
 
-		return nil
+	b, err := os.badger.writeBatch(kv)
+	if err != nil {
+		if b == 0 {
+			os.log.Warn("Failed to insert order batch; No records were committed, atomicity maintained",
+				logging.Error(err))
+			// TODO: Retry, in some circumstances.
+		} else {
+			os.log.Error("Failed to insert order batch; Some records were committed, atomicity lost",
+				logging.Error(err))
+			// TODO: Mark block dirty, panic node.
+		}
+		return err
 	}
 
 	// Depth of market updater
