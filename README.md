@@ -49,7 +49,6 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 ### Requirements
 
-
 To install Vega from source, the following software is required:
 
 * `Golang (Go) v1.11.5` - [Installation guide](https://golang.org/doc/install)
@@ -63,27 +62,27 @@ To install Vega from source, the following software is required:
 
 Once installed check the version, this should match the required version (above):
 
-```
+```bash
 # verify tendermint
 tendermint version
 ```
 
 Next, initialise Tendermint core:
 
-```
+```bash
 # initialize tendermint
 tendermint init
 ```
 Finally, start Tendermint:
 
-```
+```bash
 # start creating blocks with Tendermint
 tendermint node
 ```
 
 Optionally, if you're running a multi node network - configure the Tendermint node settings by editing `genesis.json` and `config.toml`:
 
-```
+```bash
 # Configure tendermint
 cd ~/.tendermint/config
 pico config.toml
@@ -94,9 +93,9 @@ Tip: to clear and reset chain data (back to genesis block), run `tendermint unsa
 
 ### Vega
 
-To install or build Vega core, the source code is required. To check out the code, please follow these steps (on a *nix system):
+To install or build Vega core, the source code is required. To check out the code, please follow these steps (on a \*nix system):
 
-```
+```bash
 mkdir -p ~/vega
 git clone git@gitlab.com:vega-protocol/trading-core.git ~/vega
 export GOMODULE111=on
@@ -110,7 +109,7 @@ Tip: this project uses go module based dependency management, we recommend check
 
 As a globally available command (installed in your Go path):
 
-```
+```bash
 make install
 ```
 
@@ -118,7 +117,7 @@ make install
 
 As a single `binary` in your project:
 
-```
+```bash
 make build
 ```
 
@@ -127,33 +126,33 @@ make build
 
 Run a node:
 
-```
+```bash
 vega node
 ```
 
 Initialise a node:
 
-```
+```bash
 vega init
 ```
 
 Help for a node:
 
-```
+```bash
 vega help
 ```
 
 Version for a node:
 
-```
-vega version
+```bash
+vega --version
 ```
 
 ## Configuration
 
 Vega is initialised with a set of default configuration with the command `vega init`. There are [plenty of options](/config.toml) to configure it. To override any of the defaults edit your `config.toml` typically found in the `~/.vega` directory. Example:
 
-```
+```toml
 [Matching]
   Level = 0
   ProRataMode = false
@@ -175,13 +174,11 @@ The GraphQL [schema](./internal/api/endpoints/gql/schema.graphql) defines the in
 
 Queries can be tested using the GraphQL playground app which is bundled with a node. The default port (configurable) for the playground app is `3004` accessing this in a web browser will show a web app for testing custom queries, mutations and subscriptions.
 
-
 ### gRPC
 
 gRPC is an open source remote procedure call (RPC) system initially developed at Google. In Vega the gRPC API features streaming of events in addition to standard procedure calls.
 
 The default port (configurable) for the gRPC API is `3005` and matches the [gRPC proto definition](./internal/api/grpc.proto).
-
 
 ### REST
 
@@ -227,8 +224,8 @@ message Order {
     uint64 expirationTimestamp = 0;
     string reference = "839db975-3eb2-4303-ab9c-c208405d79a1";
 }
-
 ```
+
 **Response**
 
 ```
@@ -236,10 +233,9 @@ message OrderResponse {
     bool success = true;
     string reference = "839db975-3eb2-4303-ab9c-c208405d79a1";
 }
-
 ```
 
-Submitted orders typically go via concensus so the OrderResponse will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
+Submitted orders typically go via consensus so the `OrderResponse` will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
 
 ### Amend order
 
@@ -260,8 +256,8 @@ message Amendment {
     string expirationDatetime = "";
     uint64 expirationTimestamp = 0;
 }
-
 ```
+
 **Response**
 
 ```
@@ -271,7 +267,7 @@ message OrderResponse {
 }
 ```
 
-Amendments typically go via concensus so the OrderResponse will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
+Amendments typically go via consensus so the `OrderResponse` will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
 
 
 ### Cancel order
@@ -280,7 +276,7 @@ Amendments typically go via concensus so the OrderResponse will only indicate th
 rpc CancelOrder(vega.Order) returns (OrderResponse);
 ```
 
-To cancel an existing order, a trader can submit a protobuf `order` messages and receive OrderResponses from the API. In the following example a trader wishes to `cancel` an existing active `order` with ID `v1008973-9376433` on market ID `BTC/DEC19`:
+To cancel an existing order, a trader can submit a protobuf `order` messages and receive `OrderResponse`s from the API. In the following example a trader wishes to `cancel` an existing active `order` with ID `v1008973-9376433` on market ID `BTC/DEC19`:
 
 **Request**
 
@@ -301,6 +297,7 @@ message Order {
     string reference = "839db975-3eb2-4303-ab9c-c208405d79a1";
 }
 ```
+
 **Response**
 
 ```
@@ -310,7 +307,7 @@ message OrderResponse {
 }
 ```
 
-Cancellations typically go via concensus so the OrderResponse will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
+Cancellations typically go via consensus so the `OrderResponse` will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
 
 ## Benchmarks
 
@@ -358,7 +355,7 @@ Output components:
 
 ## Troubleshooting & debugging
 
-The application has structured logging capability, the first port of call for a crash is probably the vega logs and tendermint logs which are available on the console if running locally or by multilog if running on test networks. Default testnet location for log files:
+The application has structured logging capability, the first port of call for a crash is probably the vega and tendermint logs which are available on the console if running locally or by `multilog` if running on test networks. Default testnet location for log files:
 
 * `/home/vega/log/vega/`
 * `/home/vega/log/tendermint/`
