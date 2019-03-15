@@ -6,14 +6,14 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 <img align="right" src="https://vegaprotocol.io/img/concept_header.svg" height="170" style="padding: 0 10px 0 0;">
 
-- Join a Vega network as a validator or non-concensus node. 
+- Join a Vega network as a validator or non-concensus node.
 - [Provision](#provisioning) new markets on a network (coming soon)
 - [Manage orders]](#trading) (and [trade on a network](#trading))
 - [Configure a node](#configuration) (and it's [APIs](#apis))
-- Manage authentication with a network (coming soon) 
+- Manage authentication with a network (coming soon)
 - Run scenario tests (coming soon)
 - [Run benchmarks](#benchmarks) and test suites
-- Support settlement in cryptocurrency (coming soon) 
+- Support settlement in cryptocurrency (coming soon)
 
 [![Build Status](https://gitlab.com/vegaprotocol/trading-core/badges/master/pipeline.svg)](https://gitlab.com/vegaprotocol/trading-core)
 [![coverage](https://gitlab.com/gitlab-org/gitlab-ce/badges/master/coverage.svg)](https://gitlab.com/vega-protocol/trading-core/commits/master)
@@ -86,7 +86,7 @@ Optionally, if you're running a multi node network - configure the Tendermint no
 ```
 # Configure tendermint
 cd ~/.tendermint/config
-pico config.toml 
+pico config.toml
 pico genesis.json
 ```
 
@@ -163,7 +163,7 @@ Vega is initialised with a set of default configuration with the command `vega i
 
 ## APIs
 
-In order for clients to communicate with Vega nodes we expose a set of APIs and methods for reading and writing data. Note: Most writes will typically require interaction with the blockchain and require consensus. 
+In order for clients to communicate with Vega nodes we expose a set of APIs and methods for reading and writing data. Note: Most writes will typically require interaction with the blockchain and require consensus.
 
 There are currently three protocols to communicate with the Vega APIs:
 
@@ -173,7 +173,7 @@ There are currently three protocols to communicate with the Vega APIs:
 
 The GraphQL [schema](./internal/api/endpoints/gql/schema.graphql) defines the interop with Vega. External clients will use this schema to communicate with Vega.
 
-Queries can be tested using the GraphQL playground app which is bundled with a node. The default port (configurable) for the playground app is `3004` accessing this in a web browser will show a web app for testing custom queries, mutations and subscriptions. 
+Queries can be tested using the GraphQL playground app which is bundled with a node. The default port (configurable) for the playground app is `3004` accessing this in a web browser will show a web app for testing custom queries, mutations and subscriptions.
 
 
 ### gRPC
@@ -187,11 +187,11 @@ The default port (configurable) for the gRPC API is `3005` and matches the [gRPC
 
 REST provides a standard between computer systems on the web, making it easier for systems to communicate with each other. It is arguably simpler to work with than gRPC and GraphQL. In Vega the REST API is a reverse proxy to the gRPC API, however it does not support streaming.
 
-The default port (configurable) for the REST API is `3003` and we use a reverse proxy to the gRPC API to deliver the REST API implementation. 
+The default port (configurable) for the REST API is `3003` and we use a reverse proxy to the gRPC API to deliver the REST API implementation.
 
 ## Provisioning
 
-The provisioning of new markets is **coming soon**. 
+The provisioning of new markets is **coming soon**.
 
 Vega supports a single fixed market with ID `BTC/DEC19` which can be passed to APIs as the field `Market` in protobuf/rest/graphql requests.
 
@@ -314,7 +314,47 @@ Cancellations typically go via concensus so the OrderResponse will only indicate
 
 ## Benchmarks
 
-TODO - @ashleyvega
+There are two ways to run benchmarks:
+* by using `go test -bench`; or
+* by running `vegabench`.
+
+To run benchmarks using `go test -bench`, run:
+```bash
+export GOMAXPROCS=4 # default 8
+go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
+# or simply: make bench
+```
+The output should look something like this:
+```
+BenchmarkMatching100-4  100  22525798 ns/op  13168713 B/op  24021 allocs/op
+```
+Output components:
+* `BenchmarkMatching100` - the name of the test
+* `-4` - the max number of processes (`$GOMAXPROCS`)
+* _number_ - the number of times `go` ran the test so that it took longer than `benchtime`
+* _number_ `ns/op` - average number of nanoseconds per operation
+* _number_ `B/op` - average number of bytes allocated per operation
+* _number_ `allocs/op` - average number of allocations per operation
+
+To run benchmarks using `vegabench`, run:
+```bash
+make build # generate the vegabench binary
+./cmd/vegabench/vegabench -orders 25000 -reportDuration 1s
+```
+For help with command arguments, run `vegabench --help`.
+
+The output should look something like this:
+```
+(25.93%) Elapsed = 1s, average = 154.273µs
+(54.10%) Elapsed = 2s, average = 147.961µs
+(82.48%) Elapsed = 3s, average = 145.549µs
+(n=25000) Elapsed = 4s, average = 143.386µs
+```
+Output components:
+* _percentage_ - how far through the test we are
+* `n=` _number_ - the total number of orders
+* `Elapsed =` _time duration_ - how much time has passed since the start of the test; One output line should be printed once every `reportDuration`
+* `average =` _time duration_ - running average (from beginning to now) time taken to match an order
 
 ## Troubleshooting & debugging
 
