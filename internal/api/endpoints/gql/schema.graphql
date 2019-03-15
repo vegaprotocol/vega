@@ -72,34 +72,76 @@ type DiscreteTrading {
   duration: Int
 }
 
-union TradingMode = ContinuousTrading | DiscreteTrading
+union TradingMode =
+ContinuousTrading
+| DiscreteTrading
+
+type BuiltinFutures {
+  historicVolatility: Float!
+}
+
+union RiskModel = BuiltinFutures
+
+type InstrumentMetadata {
+  tags: [String]!
+}
+
+type EthereumEvent {
+  contractId: String!
+  event: String!
+}
+
+union Oracle = EthereumEvent
+
+type Future {
+  maturity: String!
+  asset: String!
+  oracle: Oracle!
+}
+
+union Product = Future
+
+type Instrument {
+  id: String!
+  code: String!
+  name: String!
+  metadata: InstrumentMetadata!
+  product: Product!
+}
+
+type TradableInstrument {
+  instrument: Instrument!
+  riskModel: RiskModel!
+}
 
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market {
 
-    # Market full name
-    name: String!
+  # Market full name
+  id: String!
+
+  tradableInstrument: TradableInstrument!
 
   tradingMode: TradingMode!
 
-    # Orders on a market
-    orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
+  # Orders on a market
+  orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
 
-    # Trades on a market
-    trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
+  # Trades on a market
+  trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
 
-    # Current depth on the orderbook for this market
-    depth: MarketDepth!
+  # Current depth on the orderbook for this market
+  depth: MarketDepth!
 
-    # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
-    candles (sinceTimestamp: String!, interval: Interval!): [Candle]
+  # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
+  candles (sinceTimestamp: String!, interval: Interval!): [Candle]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
 # The depth of market measure provides an indication of the liquidity and depth for the instrument.
 type MarketDepth {
 
-    # Market name
+    # Market id
     name: String!
 
     # Buy side price levels (if available)
