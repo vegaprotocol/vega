@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/grpc"
@@ -147,7 +149,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
-	statusChecker := monitoring.NewStatusChecker(l.Log, client)
+	statusChecker := monitoring.NewStatusChecker(l.Log, client, 500*time.Millisecond)
 
 	// gRPC server
 	grpcServer := grpc.NewGRPCServer(

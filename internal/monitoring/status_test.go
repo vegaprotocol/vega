@@ -30,8 +30,7 @@ func TestAppStatus(t *testing.T) {
 		chainClient.On("Health").Return(nil, nil)
 		chainClient.On("GetStatus", mock.AnythingOfType("*context.emptyCtx")).Return(&statusRes, nil)
 
-		checker := NewStatusChecker(log, chainClient)
-		checker.Blockchain.interval = 1 * time.Nanosecond
+		checker := NewStatusChecker(log, chainClient, 1*time.Nanosecond)
 		time.Sleep(10 * time.Millisecond)
 		assert.Equal(t, types.ChainStatus_CONNECTED, checker.Blockchain.Status())
 
@@ -47,8 +46,7 @@ func TestAppStatus(t *testing.T) {
 		chainClient.On("Health").Return(nil, nil)
 		chainClient.On("GetStatus", mock.AnythingOfType("*context.emptyCtx")).Return(&statusRes2, nil)
 
-		checker := NewStatusChecker(log, chainClient)
-		checker.Blockchain.interval = 1 * time.Nanosecond
+		checker := NewStatusChecker(log, chainClient, 1*time.Nanosecond)
 		time.Sleep(10 * time.Millisecond)
 		assert.Equal(t, types.ChainStatus_REPLAYING, checker.Blockchain.Status())
 
@@ -60,8 +58,7 @@ func TestAppStatus(t *testing.T) {
 		chainClient := &mocks.Client{}
 		chainClient.On("Health").Return(nil, errors.New("err"))
 
-		checker := NewStatusChecker(log, chainClient)
-		checker.Blockchain.interval = 1 * time.Nanosecond
+		checker := NewStatusChecker(log, chainClient, 1*time.Nanosecond)
 
 		time.Sleep(10 * time.Millisecond)
 		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.Blockchain.Status())
@@ -77,8 +74,7 @@ func TestAppStatus(t *testing.T) {
 		chainClient.On("GetStatus",
 			mock.AnythingOfType("*context.emptyCtx")).Return(&statusRes, nil)
 
-		checker := NewStatusChecker(log, chainClient)
-		checker.Blockchain.interval = 1 * time.Nanosecond
+		checker := NewStatusChecker(log, chainClient, 1*time.Nanosecond)
 
 		time.Sleep(10 * time.Millisecond)
 		assert.Equal(t, types.ChainStatus_CONNECTED, checker.Blockchain.Status())
@@ -89,8 +85,7 @@ func TestAppStatus(t *testing.T) {
 		chainClient.On("GetStatus",
 			mock.AnythingOfType("*context.emptyCtx")).Return(&statusRes, nil)
 
-		// I found that we have to do this because we cant redefine Mock.On for a function mid test :(
-		checker.Blockchain.client = chainClient
+		checker.Blockchain.SetClient(chainClient)
 
 		time.Sleep(10 * time.Millisecond)
 		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.Blockchain.Status())

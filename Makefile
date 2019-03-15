@@ -39,14 +39,14 @@ test: deps ## Run unit tests
 	@go test ./...
 
 race: ## Run data race detector
-	@go test -race ./...
+	@env CGO_ENABLED=1 go test -race ./...
 
 mocks: ## Make mocks
-	@if ! which mockery 1>/dev/null ; then echo "Need mockery (github.com/vektra/mockery)" ; exit 1 ; fi
+	@if which mockery 1>/dev/null ; then echo "Ignoring mockery found on "'$$PATH'". Using go-run instead." ; fi
 	@origdir="$$PWD" ; \
 	find . -type d -and -name mocks | while read -r dir ; do \
 		cd "$$(dirname "$$dir")" ; \
-		mockery -all ; \
+		go run github.com/vektra/mockery/cmd/mockery -all ; \
 		cd "$$origdir" ; \
 	done
 
