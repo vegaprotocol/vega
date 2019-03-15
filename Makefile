@@ -52,7 +52,7 @@ mocks: ## Make mocks
 
 msan: ## Run memory sanitizer
 	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi
-	@env CC=clang go test -msan ./...
+	@env CC=clang CGO_ENABLED=1 go test -msan ./...
 
 .PHONY: .testCoverage.txt
 .testCoverage.txt:
