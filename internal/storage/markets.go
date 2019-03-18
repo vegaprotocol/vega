@@ -117,10 +117,44 @@ func (ms *badgerMarketStore) GetByID(id string) (*types.Market, error) {
 	return &market, nil
 }
 
-// GetAll returns all markets in the mem-store.
+// GetAll returns all markets in the badger store.
 func (ms *badgerMarketStore) GetAll() ([]*types.Market, error) {
-	out := []*types.Market{}
-	return out, nil
+	markets := []*types.Market{}
+	bufs := [][]byte{}
+	err := ms.badger.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 10
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+			buf, err := item.ValueCopy(nil)
+			if err != nil {
+				return err
+			}
+			bufs = append(bufs, buf)
+		}
+		return nil
+	})
+
+	if err != nil {
+		ms.log.Error("unable to get all markets", logging.Error(err))
+		return nil, err
+	}
+
+	for _, buf := range bufs {
+		mkt := types.Market{}
+		err := proto.Unmarshal(buf, &mkt)
+		if err != nil {
+			ms.log.Error("unable to unmarshal market from badger store",
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		markets = append(markets, &mkt)
+	}
+
+	return markets, nil
 }
 
 // Commit typically saves any operations that are queued to underlying storage,
