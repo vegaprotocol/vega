@@ -111,20 +111,33 @@ func (r *MyQueryResolver) Vega(ctx context.Context) (*Vega, error) {
 type MyVegaResolver resolverRoot
 
 func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, id *string) ([]Market, error) {
-	if id == nil {
-		return nil, errors.New("all markets on VEGA query not implemented")
+	var m = []Market{}
+	if id != nil {
+		mkt, err := validateMarket(ctx, id, r.marketService)
+		if err != nil {
+			return nil, err
+		}
+		market, err := MarketFromProto(mkt)
+		if err != nil {
+			r.GetLogger().Error("unable to convert market from proto", logging.Error(err))
+			return nil, err
+		}
+		m = append(m, *market)
+	} else {
+		pmkts, err := r.marketService.GetAll(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, pmarket := range pmkts {
+			market, err := MarketFromProto(pmarket)
+			if err != nil {
+				r.GetLogger().Error("unable to convert market from proto", logging.Error(err))
+				return nil, err
+			}
+			m = append(m, *market)
+		}
+
 	}
-	mkt, err := validateMarket(ctx, id, r.marketService)
-	if err != nil {
-		return nil, err
-	}
-	var m = make([]Market, 0)
-	market, err := MarketFromProto(mkt)
-	if err != nil {
-		r.GetLogger().Error("unable to convert market from proto", logging.Error(err))
-		return nil, err
-	}
-	m = append(m, *market)
 
 	return m, nil
 }
