@@ -89,6 +89,10 @@ func (bs *badgerStore) writeTransaction() *badger.Txn {
 	return bs.db.NewTransaction(true)
 }
 
+func (bs *badgerStore) marketKey(marketID string) []byte {
+	return []byte(fmt.Sprintf("MID:%v", marketID))
+}
+
 func (bs *badgerStore) candleKey(market string, interval types.Interval, timestamp uint64) []byte {
 	return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), timestamp))
 }

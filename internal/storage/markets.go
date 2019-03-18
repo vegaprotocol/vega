@@ -1,10 +1,11 @@
 package storage
 
 import (
-	"fmt"
-
+	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
+	"github.com/dgraph-io/badger"
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -33,57 +34,104 @@ type MarketStore interface {
 }
 
 // memMarketStore is used for memory/RAM based markets storage.
-type memMarketStore struct {
+type badgerMarketStore struct {
 	*Config
-	db map[string]types.Market
+	badger *badgerStore
 }
 
 // NewMarketStore returns a concrete implementation of MarketStore.
-func NewMarketStore(config *Config) (MarketStore, error) {
-	return &memMarketStore{
-		Config: config,
-		db:     make(map[string]types.Market, 0),
+func NewMarketStore(c *Config) (MarketStore, error) {
+	err := InitStoreDirectory(c.MarketStoreDirPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "error on init badger database for candles storage")
+	}
+	db, err := badger.Open(customBadgerOptions(c.MarketStoreDirPath, c.GetLogger()))
+	if err != nil {
+		return nil, errors.Wrap(err, "error opening badger database for candles storage")
+	}
+	bs := badgerStore{db: db}
+	return &badgerMarketStore{
+		Config: c,
+		badger: &bs,
 	}, nil
 }
 
 // Post saves a given market to the mem-store.
-func (ms *memMarketStore) Post(market *types.Market) error {
-	if _, exists := ms.db[market.Id]; exists {
-		return errors.New(fmt.Sprintf("market %s already exists in store", market.Id))
+func (ms *badgerMarketStore) Post(market *types.Market) error {
+	buf, err := proto.Marshal(market)
+	if err != nil {
+		ms.log.Error("unable to marshal market",
+			logging.Error(err),
+			logging.String("market-id", market.Id),
+		)
+		return err
 	}
-	ms.db[market.Id] = *market
-	return nil
+	marketKey := ms.badger.marketKey(market.Id)
+	err = ms.badger.db.Update(func(txn *badger.Txn) error {
+		err := txn.Set(marketKey, buf)
+		if err != nil {
+			ms.log.Error("unable to save market in badger",
+				logging.Error(err),
+				logging.String("market-id", market.Id),
+			)
+			return err
+		}
+		return nil
+	})
+
+	return err
 }
 
 // GetByID searches for the given market by id in the mem-store.
-func (ms *memMarketStore) GetByID(id string) (*types.Market, error) {
-	if _, exists := ms.db[id]; !exists {
-		return nil, errors.New(fmt.Sprintf("market %s not found in store", id))
+func (ms *badgerMarketStore) GetByID(id string) (*types.Market, error) {
+	market := types.Market{}
+	var buf []byte
+	marketKey := ms.badger.marketKey(id)
+	err := ms.badger.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(marketKey)
+		if err != nil {
+			return err
+		}
+		// fine to use value copy here, only one ID to get
+		buf, err = item.ValueCopy(nil)
+		return err
+	})
+
+	if err != nil {
+		ms.log.Error("unable to get market from badger store",
+			logging.Error(err),
+			logging.String("market-id", id),
+		)
+		return nil, err
 	}
-	market := ms.db[id]
+
+	err = proto.Unmarshal(buf, &market)
+	if err != nil {
+		ms.log.Error("unable to unmarshal market from badger store",
+			logging.Error(err),
+			logging.String("market-id", id),
+		)
+		return nil, err
+	}
 	return &market, nil
 }
 
 // GetAll returns all markets in the mem-store.
 // GetAll returns all markets in the mem-store.
-func (ms *memMarketStore) GetAll() ([]*types.Market, error) {
-	res := make([]*types.Market, len(ms.db))
-	for _, v := range ms.db {
-		res = append(res, &v)
-	}
-	return res, nil
+func (ms *badgerMarketStore) GetAll() ([]*types.Market, error) {
+	out := []*types.Market{}
+	return out, nil
 }
 
 // Commit typically saves any operations that are queued to underlying storage,
 // if supported by underlying storage implementation.
-func (ms *memMarketStore) Commit() error {
+func (ms *badgerMarketStore) Commit() error {
 	// Not required with a mem-store implementation.
 	return nil
 }
 
 // Close can be called to clean up and close any storage
 // connections held by the underlying storage mechanism.
-func (ms *memMarketStore) Close() error {
-	// Not required with a mem-store implementation.
-	return nil
+func (ms *badgerMarketStore) Close() error {
+	return ms.badger.db.Close()
 }

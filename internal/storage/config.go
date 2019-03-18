@@ -13,6 +13,7 @@ import (
 
 const (
 	CandleStoreDataPath = "candlestore"
+	MarketStoreDataPath = "marketstore"
 	OrderStoreDataPath  = "orderstore"
 	TradeStoreDataPath  = "tradestore"
 
@@ -29,6 +30,7 @@ type Config struct {
 	OrderStoreDirPath  string
 	TradeStoreDirPath  string
 	CandleStoreDirPath string
+	MarketStoreDirPath string
 	//LogPartyStoreDebug    bool
 	//LogOrderStoreDebug    bool
 	//LogCandleStoreDebug   bool
@@ -48,6 +50,7 @@ func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) *Confi
 		OrderStoreDirPath:  filepath.Join(defaultStoreDirPath, OrderStoreDataPath),
 		TradeStoreDirPath:  filepath.Join(defaultStoreDirPath, TradeStoreDataPath),
 		CandleStoreDirPath: filepath.Join(defaultStoreDirPath, CandleStoreDataPath),
+		MarketStoreDirPath: filepath.Join(defaultStoreDirPath, MarketStoreDataPath),
 		//LogPartyStoreDebug:    true,
 		//LogOrderStoreDebug:    true,
 		//LogCandleStoreDebug:   false,
@@ -95,6 +98,20 @@ func FlushStores(c *Config) {
 	}
 	if _, err := os.Stat(c.CandleStoreDirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(c.CandleStoreDirPath, os.ModePerm)
+		if err != nil {
+			c.log.Error("Failed to create the candle store",
+				logging.String("path", c.TradeStoreDirPath),
+				logging.Error(err))
+		}
+	}
+	err = os.RemoveAll(c.MarketStoreDirPath)
+	if err != nil {
+		c.log.Error("Failed to flush the candle store",
+			logging.String("path", c.MarketStoreDirPath),
+			logging.Error(err))
+	}
+	if _, err := os.Stat(c.MarketStoreDirPath); os.IsNotExist(err) {
+		err = os.MkdirAll(c.MarketStoreDirPath, os.ModePerm)
 		if err != nil {
 			c.log.Error("Failed to create the candle store",
 				logging.String("path", c.TradeStoreDirPath),
