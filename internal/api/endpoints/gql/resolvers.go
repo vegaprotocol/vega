@@ -575,7 +575,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	size string, side Side, type_ OrderType, expiration *string) (*PreConsensus, error) {
 	order := &types.Order{}
 	res := PreConsensus{}
-	if r.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
+	if r.statusChecker.Blockchain.Status() != types.AppStatus_CONNECTED {
 		return &res, ErrChainNotConnected
 	}
 
@@ -642,7 +642,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	order := &types.Order{}
 	res := PreConsensus{}
 
-	if r.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
+	if r.statusChecker.Blockchain.Status() != types.AppStatus_CONNECTED {
 		return &res, ErrChainNotConnected
 	}
 
