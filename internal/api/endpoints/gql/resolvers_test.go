@@ -120,12 +120,8 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, markets)
 
-	markets, err = vegaResolver.Markets(ctx, vega, nil)
-	assert.Error(t, err)
-	assert.Nil(t, markets)
-
 	mockOrderService.On("GetMarkets", ctx).Return(
-		[]string{}, errors.New("proton drive not ready"),
+		[]string{"ETH/USD18"}, errors.New("proton drive not ready"),
 	).Once()
 
 	name = "errorMarket"
