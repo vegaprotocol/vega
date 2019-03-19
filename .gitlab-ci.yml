@@ -1,5 +1,5 @@
 ---
-image: golang:1.11.5
+image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.5
 
 variables:
   CGO_ENABLED: "0"
@@ -38,18 +38,15 @@ unit_tests:
   script:
     - make test
 
-#race_detector:
-#  stage: test
-#  script:
-#    - make race
+race_detector:
+ stage: test
+ script:
+   - make race
 
-# FUTURE:
-# Requires custom GCC based docker image
-#
-# memory_sanitizer:
-#  stage: test
-#  script:
-#    - make msan
+memory_sanitizer:
+ stage: test
+ script:
+   - make msan
 
 code_coverage:
   stage: test
@@ -58,10 +55,11 @@ code_coverage:
   only:
     - /^(master|develop)$/
 
-#lint_code:
-#  stage: test
-#  script:
-#    - make lint
+lint_code:
+ stage: test
+ script:
+   - export PATH="${PATH}:${BIN_DIR}"
+   - make lint || true # Ignore lint failure for now (see #196)
 
 build_vega:
   stage: build
