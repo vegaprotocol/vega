@@ -285,16 +285,6 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		}
 	}
 
-	lastTrade := h.TradeService.GetLastTrade(ctx)
-	if lastTrade.Id == "" {
-		lastTrade = nil
-	}
-
-	lastOrder := h.OrderService.GetLastOrder(ctx)
-	if lastOrder.Id == "" {
-		lastOrder = nil
-	}
-
 	return &types.Statistics{
 		BlockHeight:           h.Stats.Blockchain.Height(),
 		BacklogLength:         uint64(backlogLength),
@@ -311,8 +301,6 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		TotalMarkets:          uint64(len(m)),
 		TotalParties:          uint64(len(p)),
 		Parties:               partyNames,
-		LastTrade:             lastTrade,
-		LastOrder:             lastOrder,
 		AppVersionHash:        h.Stats.GetVersionHash(),
 		AppVersion:            h.Stats.GetVersion(),
 	}, nil

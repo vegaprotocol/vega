@@ -45,9 +45,6 @@ type OrderStore interface {
 
 	// GetMarketDepth calculates and returns depth of market for a given market.
 	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
-
-	// GetLastOrder returns the last order submitted/updated on the vega network.
-	GetLastOrder(ctx context.Context) *types.Order
 }
 
 // badgerOrderStore is a package internal data struct that implements the OrderStore interface.
@@ -57,7 +54,6 @@ type badgerOrderStore struct {
 	subscribers  map[uint64]chan<- []types.Order
 	subscriberId uint64
 	buffer       []types.Order
-	lastOrder    types.Order
 	depth        map[string]MarketDepth
 	mu           sync.Mutex
 }
@@ -129,7 +125,6 @@ func (os *badgerOrderStore) Post(order types.Order) error {
 	}
 	// with badger we always buffer for future batch insert via Commit()
 	os.addToBuffer(order)
-	os.lastOrder = order
 	return nil
 }
 
@@ -327,11 +322,6 @@ func (os *badgerOrderStore) GetByPartyAndId(ctx context.Context, party string, i
 	}
 
 	return &order, nil
-}
-
-// GetLastOrder returns the last order submitted/updated on the vega network.
-func (os *badgerOrderStore) GetLastOrder(ctx context.Context) *types.Order {
-	return &os.lastOrder
 }
 
 // GetMarketDepth calculates and returns order book/depth of market for a given market.

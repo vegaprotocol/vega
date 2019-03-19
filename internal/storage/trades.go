@@ -45,9 +45,6 @@ type TradeStore interface {
 
 	// GetTradesBySideBuckets retrieves a map of market name to market buckets.
 	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*MarketBucket
-
-	// GetLastTrade returns the last trade created on the vega network.
-	GetLastTrade(ctx context.Context) *types.Trade
 }
 
 // badgerTradeStore is a package internal data struct that implements the TradeStore interface.
@@ -57,7 +54,6 @@ type badgerTradeStore struct {
 	subscribers  map[uint64]chan<- []types.Trade
 	subscriberId uint64
 	buffer       []types.Trade
-	lastTrade    types.Trade
 	mu           sync.Mutex
 }
 
@@ -123,7 +119,6 @@ func (ts *badgerTradeStore) Unsubscribe(id uint64) error {
 func (ts *badgerTradeStore) Post(trade *types.Trade) error {
 	// with badger we always buffer for future batch insert via Commit()
 	ts.addToBuffer(*trade)
-	ts.lastTrade = *trade
 	return nil
 }
 
@@ -384,12 +379,6 @@ func (ts *badgerTradeStore) GetMarkPrice(ctx context.Context, market string) (ui
 	}
 
 	return recentTrade[0].Price, nil
-}
-
-
-// GetLastTrade returns the last trade created on the vega network.
-func (ts *badgerTradeStore) GetLastTrade(ctx context.Context) *types.Trade {
-	return &ts.lastTrade
 }
 
 // Close our connection to the badger database
