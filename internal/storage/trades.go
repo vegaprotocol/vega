@@ -360,12 +360,6 @@ func (ts *badgerTradeStore) GetByOrderId(ctx context.Context, orderId string, qu
 	return result, nil
 }
 
-// Close our connection to the badger database
-// ensuring errors will be returned up the stack.
-func (ts *badgerTradeStore) Close() error {
-	return ts.badger.db.Close()
-}
-
 // GetMarkPrice returns the current market price, for a requested market.
 func (ts *badgerTradeStore) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
 
@@ -384,6 +378,12 @@ func (ts *badgerTradeStore) GetMarkPrice(ctx context.Context, market string) (ui
 	}
 
 	return recentTrade[0].Price, nil
+}
+
+// Close our connection to the badger database
+// ensuring errors will be returned up the stack.
+func (ts *badgerTradeStore) Close() error {
+	return ts.badger.db.Close()
 }
 
 // add a trade to the write-batch/notify buffer.

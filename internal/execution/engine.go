@@ -39,6 +39,7 @@ type engine struct {
 	tradeStore  storage.TradeStore
 	candleStore storage.CandleStore
 	marketStore storage.MarketStore
+	partyStore  storage.PartyStore
 	time        vegatime.Service
 }
 
@@ -52,15 +53,17 @@ func NewExecutionEngine(
 	tradeStore storage.TradeStore,
 	candleStore storage.CandleStore,
 	marketStore storage.MarketStore,
+	partyStore storage.PartyStore,
 ) Engine {
 	e := &engine{
 		Config:      executionConfig,
 		markets:     []string{"BTC/DEC19"},
 		matching:    matchingEngine,
+		candleStore: candleStore,
 		orderStore:  orderStore,
 		tradeStore:  tradeStore,
 		marketStore: marketStore,
-		candleStore: candleStore,
+		partyStore:  partyStore,
 		time:        time,
 	}
 
@@ -89,7 +92,17 @@ func NewExecutionEngine(
 func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Submit order", logging.Order(*order))
 
-	// 1) submit order to matching engine
+	// Verify and add new parties
+	party, _ := e.partyStore.GetByName(order.Party)
+	if party == nil {
+		p := &types.Party{Name: order.Party}
+		err := e.partyStore.Post(p)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Submit order to matching engine
 	confirmation, submitError := e.matching.SubmitOrder(order)
 	if confirmation == nil || submitError != nil {
 		e.log.Error("Failure after submit order from matching engine",
@@ -99,27 +112,20 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		return nil, submitError
 	}
 
-	// 2) Call out to risk engine calculation every N blocks
-	// Removed for now
-
-	// 3) save to stores
-	// insert aggressive remaining order
+	// Insert aggressive remaining order
 	err := e.orderStore.Post(*order)
 	if err != nil {
-		// Note: writing to store should not prevent flow to other engines
-		e.log.Error("Failure storing new order in execution engine (submit)", logging.Error(err))
-		// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
+		e.log.Panic("Failure storing new order in execution engine (submit)", logging.Error(err))
 	}
 	if confirmation.PassiveOrdersAffected != nil {
-		// insert all passive orders siting on the book
+		// Insert all passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			// Note: writing to store should not prevent flow to other engines
 			err := e.orderStore.Put(*order)
 			if err != nil {
-				e.log.Error("Failure storing order update in execution engine (submit)",
+				e.log.Panic("Failure storing order update in execution engine (submit)",
 					logging.Order(*order),
 					logging.Error(err))
-				// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
 			}
 		}
 	}
@@ -137,10 +143,9 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			}
 
 			if err := e.tradeStore.Post(trade); err != nil {
-				e.log.Error("Failure storing new trade in execution engine (submit)",
+				e.log.Panic("Failure storing new trade in execution engine (submit)",
 					logging.Trade(*trade),
 					logging.Error(err))
-				// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
 			}
 
 			// Save to trade buffer for generating candles etc
@@ -152,8 +157,6 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			}
 		}
 	}
-
-	// 4) create or update risk record for this order party etc
 
 	return confirmation, nil
 }
@@ -179,8 +182,7 @@ func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, e
 	timestamp, _, err := e.time.GetTimeNow()
 	if err != nil {
 		e.log.Error("Failed to obtain current vega time", logging.Error(err))
-		return &types.OrderConfirmation{}, types.ErrOrderAmendFailure
-		// todo: new order error code required (gitlab.com/vega-protocol/trading-core/issues/178)
+		return &types.OrderConfirmation{}, types.ErrVegaTimeFailure
 	}
 
 	newOrder := types.OrderPool.Get().(*types.Order)
@@ -246,7 +248,7 @@ func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, erro
 	// Cancel order in matching engine
 	cancellation, cancelError := e.matching.CancelOrder(order)
 	if cancellation == nil || cancelError != nil {
-		e.log.Error("Failure after cancel order from matching engine",
+		e.log.Panic("Failure after cancel order from matching engine",
 			logging.Order(*order),
 			logging.Error(cancelError))
 
@@ -256,10 +258,9 @@ func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, erro
 	// Update the order in our stores (will be marked as cancelled)
 	err := e.orderStore.Put(*order)
 	if err != nil {
-		e.log.Error("Failure storing order update in execution engine (cancel)",
+		e.log.Panic("Failure storing order update in execution engine (cancel)",
 			logging.Order(*order),
 			logging.Error(err))
-		// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
 	}
 
 	return cancellation, nil
@@ -339,7 +340,7 @@ func (e *engine) Process() error {
 	for _, order := range expiringOrders {
 		err := e.orderStore.Put(order)
 		if err != nil {
-			e.log.Error("error updating store for remove expiring order",
+			e.log.Panic("error updating store for remove expiring order",
 				logging.Order(order),
 				logging.Error(err))
 		}

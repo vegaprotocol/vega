@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
+	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
@@ -32,6 +33,7 @@ type Handlers struct {
 	TradeService  trades.Service
 	CandleService candles.Service
 	MarketService markets.Service
+	PartyService  parties.Service
 	statusChecker *monitoring.Status
 }
 
@@ -268,6 +270,21 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		return nil, err
 	}
 
+	// Load current parties details
+	p, err := h.PartyService.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract names for ease of reading in stats
+	partyNames := make([]string, 0, len(p))
+	for _, v := range p {
+		if v != nil {
+			pp := *v
+			partyNames = append(partyNames, pp.Name)
+		}
+	}
+
 	return &types.Statistics{
 		BlockHeight:           h.Stats.Blockchain.Height(),
 		BacklogLength:         uint64(backlogLength),
@@ -282,10 +299,8 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		OrdersPerSecond:       uint64(h.Stats.Blockchain.TotalOrdersLastBatch()),
 		Status:                h.statusChecker.Blockchain.Status(),
 		TotalMarkets:          uint64(len(m)),
-		TotalParties:          0,   // todo
-		Parties:               nil, // todo
-		LastTrade:             nil, // todo
-		LastOrder:             nil, // todo
+		TotalParties:          uint64(len(p)),
+		Parties:               partyNames,
 		AppVersionHash:        h.Stats.GetVersionHash(),
 		AppVersion:            h.Stats.GetVersion(),
 		TotalAmendOrder:       h.Stats.Blockchain.TotalAmendOrder(),
