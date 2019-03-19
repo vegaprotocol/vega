@@ -129,6 +129,7 @@ func (os *badgerOrderStore) Post(order types.Order) error {
 	}
 	// with badger we always buffer for future batch insert via Commit()
 	os.addToBuffer(order)
+	os.lastOrder = order
 	return nil
 }
 

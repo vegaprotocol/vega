@@ -123,6 +123,7 @@ func (ts *badgerTradeStore) Unsubscribe(id uint64) error {
 func (ts *badgerTradeStore) Post(trade *types.Trade) error {
 	// with badger we always buffer for future batch insert via Commit()
 	ts.addToBuffer(*trade)
+	ts.lastTrade = *trade
 	return nil
 }
 
