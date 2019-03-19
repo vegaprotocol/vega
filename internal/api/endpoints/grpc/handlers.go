@@ -277,9 +277,22 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 	}
 
 	// Extract names for ease of reading in stats
-	var partyNames []string
-	for _,v := range p {
-		partyNames = append(partyNames, v.Name)
+	partyNames := make([]string, 0)
+	for _, v := range p {
+		if v != nil {
+			pp := *v
+			partyNames = append(partyNames, pp.Name)
+		}
+	}
+
+	lastTrade := h.TradeService.GetLastTrade(ctx)
+	if lastTrade.Id == "" {
+		lastTrade = nil
+	}
+
+	lastOrder := h.OrderService.GetLastOrder(ctx)
+	if lastOrder.Id == "" {
+		lastOrder = nil
 	}
 
 	return &types.Statistics{
@@ -298,8 +311,8 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		TotalMarkets:          uint64(len(m)),
 		TotalParties:          uint64(len(p)),
 		Parties:               partyNames,
-		LastTrade:             h.TradeService.GetLastTrade(ctx),
-		LastOrder:             h.OrderService.GetLastOrder(ctx),
+		LastTrade:             lastTrade,
+		LastOrder:             lastOrder,
 		AppVersionHash:        h.Stats.GetVersionHash(),
 		AppVersion:            h.Stats.GetVersion(),
 	}, nil

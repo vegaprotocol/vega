@@ -93,13 +93,10 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	e.log.Debug("Submit order", logging.Order(*order))
 
 	// Verify and add new parties
-	party, err := e.partyStore.GetByName(order.Party)
-	if err != nil {
-		return nil, err
-	}
+	party, _ := e.partyStore.GetByName(order.Party)
 	if party == nil {
 		p := &types.Party{ Name: order.Party }
-		err = e.partyStore.Post(p)
+		err := e.partyStore.Post(p)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +113,7 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Insert aggressive remaining order
-	err = e.orderStore.Post(*order)
+	err := e.orderStore.Post(*order)
 	if err != nil {
 		e.log.Panic("Failure storing new order in execution engine (submit)", logging.Error(err))
 	}

@@ -64,9 +64,10 @@ func (ms *memPartyStore) GetByName(name string) (*types.Party, error) {
 
 // GetAll returns all parties in the mem-store.
 func (ms *memPartyStore) GetAll() ([]*types.Party, error) {
-	res := make([]*types.Party, len(ms.db))
-	for _, v := range ms.db {
-		res = append(res, &v)
+	res := make([]*types.Party, 0)
+	for k := range ms.db {
+		kv := ms.db[k]
+		res = append(res, &kv)
 	}
 	return res, nil
 }
