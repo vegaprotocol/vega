@@ -20,12 +20,13 @@ type Status struct {
 
 // ChainStatus provides the current status of the underlying blockchain provider, given a blockchain.Client.
 type ChainStatus struct {
-	log      *logging.Logger
-	interval time.Duration
-	client   blockchain.Client
-	clientMu sync.Mutex
-	status   uint32
-	cancel   func()
+	log               *logging.Logger
+	interval          time.Duration
+	client            blockchain.Client
+	clientMu          sync.Mutex
+	status            uint32
+	cancel            func()
+	onChainDisconnect func()
 }
 
 // NewStatusChecker creates a Status checker, currently this is limited to the underlying blockchain status, but
@@ -36,16 +37,21 @@ func NewStatusChecker(log *logging.Logger, clt blockchain.Client, interval time.
 	s := &Status{
 		log: log,
 		Blockchain: &ChainStatus{
-			interval: interval, // 500 * time.Millisecond,
-			client:   clt,
-			clientMu: sync.Mutex{},
-			status:   uint32(types.ChainStatus_DISCONNECTED),
-			cancel:   cancel,
-			log:      log,
+			interval:          interval, // 500 * time.Millisecond,
+			client:            clt,
+			clientMu:          sync.Mutex{},
+			status:            uint32(types.ChainStatus_DISCONNECTED),
+			cancel:            cancel,
+			log:               log,
+			onChainDisconnect: nil,
 		},
 	}
 	go s.Blockchain.start(ctx)
 	return s
+}
+
+func (s *Status) OnChainDisconnect(f func()) {
+	s.Blockchain.onChainDisconnect = f
 }
 
 // Stop the internal checker(s) from periodically calling their underlying providers
@@ -101,6 +107,14 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 	cs.log.Debug("Blockchain status updated",
 		logging.String("status-old", status.String()),
 		logging.String("status-new", newStatus.String()))
+
+	// if status changed top disconnect, we try to call the onChainDisconnect
+	// callback
+	if newStatus == types.ChainStatus_DISCONNECTED && cs.onChainDisconnect != nil {
+		cs.log.Info("Chain just went disconnected, triggering shutdown of the node")
+		cs.onChainDisconnect()
+	}
+
 	return newStatus
 }
 
