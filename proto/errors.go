@@ -5,7 +5,7 @@ var (
 	ErrInvalidOrderID            = OrderError_INVALID_ORDER_ID
 	ErrOrderOutOfSequence        = OrderError_ORDER_OUT_OF_SEQUENCE
 	ErrInvalidRemainingSize      = OrderError_INVALID_REMAINING_SIZE
-	ErrNonEmptyNewOrderID        = OrderError_NON_EMPTY_NEW_ORDER_ID
+	ErrVegaTimeFailure           = OrderError_TIME_FAILURE
 	ErrOrderRemovalFailure       = OrderError_ORDER_REMOVAL_FAILURE
 	ErrInvalidExpirationDatetime = OrderError_INVALID_EXPIRATION_DATETIME
 	ErrInvalidOrderReference     = OrderError_INVALID_ORDER_REFERENCE
@@ -26,8 +26,8 @@ func (err OrderError) Error() string {
 		return "OrderError: Order Out Of Sequence"
 	case OrderError_INVALID_REMAINING_SIZE:
 		return "OrderError: Invalid Remaining Size"
-	case OrderError_NON_EMPTY_NEW_ORDER_ID:
-		return "OrderError: Non Empty New Order ID"
+	case OrderError_TIME_FAILURE:
+		return "OrderError: Vega Time failure"
 	case OrderError_ORDER_REMOVAL_FAILURE:
 		return "OrderError: Order Removal Failure"
 	case OrderError_INVALID_EXPIRATION_DATETIME:

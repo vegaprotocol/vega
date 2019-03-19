@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"code.vegaprotocol.io/vega/internal/parties"
 	"context"
 	"fmt"
 	"strings"
@@ -32,6 +33,7 @@ type Handlers struct {
 	TradeService  trades.Service
 	CandleService candles.Service
 	MarketService markets.Service
+	PartyService  parties.Service
 	statusChecker *monitoring.Status
 }
 
@@ -268,6 +270,18 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		return nil, err
 	}
 
+	// Load current parties details
+	p, err := h.PartyService.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract names for ease of reading in stats
+	var partyNames []string
+	for _,v := range p {
+		partyNames = append(partyNames, v.Name)
+	}
+
 	return &types.Statistics{
 		BlockHeight:           h.Stats.Blockchain.Height(),
 		BacklogLength:         uint64(backlogLength),
@@ -282,10 +296,10 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		OrdersPerSecond:       uint64(h.Stats.Blockchain.TotalOrdersLastBatch()),
 		Status:                h.statusChecker.Blockchain.Status(),
 		TotalMarkets:          uint64(len(m)),
-		TotalParties:          0,   // todo
-		Parties:               nil, // todo
-		LastTrade:             nil, // todo
-		LastOrder:             nil, // todo
+		TotalParties:          uint64(len(p)),
+		Parties:               partyNames,
+		LastTrade:             h.TradeService.GetLastTrade(ctx),
+		LastOrder:             h.OrderService.GetLastOrder(ctx),
 		AppVersionHash:        h.Stats.GetVersionHash(),
 		AppVersion:            h.Stats.GetVersion(),
 	}, nil

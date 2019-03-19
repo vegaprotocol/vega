@@ -90,7 +90,7 @@ const (
 	OrderError_INVALID_ORDER_ID            OrderError = 2
 	OrderError_ORDER_OUT_OF_SEQUENCE       OrderError = 3
 	OrderError_INVALID_REMAINING_SIZE      OrderError = 4
-	OrderError_NON_EMPTY_NEW_ORDER_ID      OrderError = 5
+	OrderError_TIME_FAILURE                OrderError = 5
 	OrderError_ORDER_REMOVAL_FAILURE       OrderError = 6
 	OrderError_INVALID_EXPIRATION_DATETIME OrderError = 7
 	OrderError_INVALID_ORDER_REFERENCE     OrderError = 8

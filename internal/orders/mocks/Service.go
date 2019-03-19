@@ -175,6 +175,22 @@ func (_m *Service) GetByPartyAndId(ctx context.Context, party string, id string)
 	return r0, r1
 }
 
+// GetLastOrder provides a mock function with given fields: ctx
+func (_m *Service) GetLastOrder(ctx context.Context) *proto.Order {
+	ret := _m.Called(ctx)
+
+	var r0 *proto.Order
+	if rf, ok := ret.Get(0).(func(context.Context) *proto.Order); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*proto.Order)
+		}
+	}
+
+	return r0
+}
+
 // ObserveOrders provides a mock function with given fields: ctx, market, party
 func (_m *Service) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan []proto.Order, uint64) {
 	ret := _m.Called(ctx, market, party)

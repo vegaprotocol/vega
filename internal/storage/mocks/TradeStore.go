@@ -156,6 +156,22 @@ func (_m *TradeStore) GetByPartyAndId(ctx context.Context, party string, id stri
 	return r0, r1
 }
 
+// GetLastTrade provides a mock function with given fields: ctx
+func (_m *TradeStore) GetLastTrade(ctx context.Context) *proto.Trade {
+	ret := _m.Called(ctx)
+
+	var r0 *proto.Trade
+	if rf, ok := ret.Get(0).(func(context.Context) *proto.Trade); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*proto.Trade)
+		}
+	}
+
+	return r0
+}
+
 // GetMarkPrice provides a mock function with given fields: ctx, market
 func (_m *TradeStore) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
 	ret := _m.Called(ctx, market)

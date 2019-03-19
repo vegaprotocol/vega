@@ -19,6 +19,7 @@ type Service interface {
 	GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error)
+	GetLastTrade(ctx context.Context) (trade *types.Trade)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
 	ObservePositions(ctx context.Context, party string) (positions <-chan *types.MarketPosition, ref uint64)
 	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
@@ -76,6 +77,10 @@ func (t *tradeService) GetByOrderId(ctx context.Context, orderId string, filters
 		return nil, err
 	}
 	return trades, err
+}
+
+func (t *tradeService) GetLastTrade(ctx context.Context) (trade *types.Trade) {
+	return t.tradeStore.GetLastTrade(ctx)
 }
 
 func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []types.Trade, uint64) {

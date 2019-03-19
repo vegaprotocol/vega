@@ -23,6 +23,7 @@ type Service interface {
 	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error)
+	GetLastOrder(ctx context.Context) (order *types.Order)
 	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 }
 
@@ -174,6 +175,10 @@ func (s *orderService) GetByPartyAndId(ctx context.Context, party string, id str
 		return &types.Order{}, err
 	}
 	return o, err
+}
+
+func (s *orderService) GetLastOrder(ctx context.Context) (order *types.Order) {
+ 	return s.orderStore.GetLastOrder(ctx)
 }
 
 func (s *orderService) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan []types.Order, uint64) {
