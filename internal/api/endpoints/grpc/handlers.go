@@ -1,7 +1,6 @@
 package grpc
 
 import (
-	"code.vegaprotocol.io/vega/internal/parties"
 	"context"
 	"fmt"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
+	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
@@ -277,7 +277,7 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 	}
 
 	// Extract names for ease of reading in stats
-	partyNames := make([]string, 0)
+	partyNames := make([]string, 0, len(p))
 	for _, v := range p {
 		if v != nil {
 			pp := *v
