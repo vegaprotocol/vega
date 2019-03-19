@@ -54,8 +54,8 @@ type badgerOrderStore struct {
 	subscribers  map[uint64]chan<- []types.Order
 	subscriberId uint64
 	buffer       []types.Order
-	mu           sync.Mutex
 	depth        map[string]MarketDepth
+	mu           sync.Mutex
 }
 
 // NewOrderStore is used to initialise and create a OrderStore, this implementation is currently

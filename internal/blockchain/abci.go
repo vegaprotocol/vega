@@ -70,7 +70,6 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 }
 
 //func (app *Blockchain) EndBlock(endBlock types.RequestEndBlock) types.ResponseEndBlock {
-//	//fmt.Println(fmt.Sprintf("%v", endBlock))
 //	return types.ResponseEndBlock{}
 //}
 

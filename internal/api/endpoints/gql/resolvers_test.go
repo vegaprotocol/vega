@@ -7,9 +7,9 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/monitoring"
 
 	mockCandle "code.vegaprotocol.io/vega/internal/candles/mocks"
 	mockMarket "code.vegaprotocol.io/vega/internal/markets/mocks"

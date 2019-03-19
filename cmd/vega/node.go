@@ -124,6 +124,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		return err
 	}
+	partyStore, err := resolver.ResolvePartyStore()
+	if err != nil {
+		return err
+	}
 
 	client, err := resolver.ResolveBlockchainClient()
 	if err != nil {
@@ -140,6 +144,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		tradeStore,
 		candleStore,
 		marketStore,
+		partyStore,
 	)
 
 	// ABCI<>blockchain server
@@ -158,6 +163,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		client,
 		timeService,
 		marketService,
+		partyService,
 		orderService,
 		tradeService,
 		candleService,
