@@ -1,9 +1,10 @@
 package blockchain
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/vegatime"
-	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -102,6 +103,7 @@ func (s *abciService) Commit() error {
 }
 
 func (s *abciService) SubmitOrder(order *types.Order) error {
+	s.Stats.totalCreateOrder++
 	if s.LogOrderSubmitDebug {
 		s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
 	}
@@ -142,6 +144,7 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 }
 
 func (s *abciService) CancelOrder(order *types.Order) error {
+	s.Stats.totalCancelOrder++
 	if s.LogOrderCancelDebug {
 		s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
 	}
@@ -164,6 +167,7 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 }
 
 func (s *abciService) AmendOrder(order *types.Amendment) error {
+	s.Stats.totalAmendOrder++
 	if s.LogOrderAmendDebug {
 		s.log.Debug("Blockchain service received a AMEND ORDER request",
 			logging.String("order", order.String()))

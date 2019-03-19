@@ -141,6 +141,11 @@ message Statistics {
     string appVersionHash = 17;
     string appVersion = 18;
     repeated string Parties = 19;
+    uint64 totalAmendOrder = 20;
+    uint64 totalCancelOrder = 21;
+    uint64 totalCreateOrder = 22;
+    uint64 totalOrders = 23;
+    uint64 totalTrades = 24;
 }
 
 enum AppStatus {

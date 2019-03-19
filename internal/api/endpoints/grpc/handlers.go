@@ -288,6 +288,11 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		LastOrder:             nil, // todo
 		AppVersionHash:        h.Stats.GetVersionHash(),
 		AppVersion:            h.Stats.GetVersion(),
+		TotalAmendOrder:       h.Stats.Blockchain.TotalAmendOrder(),
+		TotalCancelOrder:      h.Stats.Blockchain.TotalCancelOrder(),
+		TotalCreateOrder:      h.Stats.Blockchain.TotalCreateOrder(),
+		TotalOrders:           h.Stats.Blockchain.TotalOrders(),
+		TotalTrades:           h.Stats.Blockchain.TotalTrades(),
 	}, nil
 }
 
