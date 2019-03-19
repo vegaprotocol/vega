@@ -124,6 +124,8 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 			s.currentTradesInBatch += len(confirmationMessage.Trades)
 			s.totalTrades += uint64(s.currentTradesInBatch)
 		}
+		s.Stats.totalOrders++
+		s.Stats.totalTrades += uint64(len(confirmationMessage.Trades))
 
 		s.currentOrdersInBatch++
 		confirmationMessage.Release()
