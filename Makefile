@@ -29,7 +29,7 @@ endif
 all: build
 
 lint: ## Lint the files
-	@go get -u golang.org/x/lint/golint
+	@go install golang.org/x/lint/golint
 	@golint -set_exit_status ./...
 
 bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
