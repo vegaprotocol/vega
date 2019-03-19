@@ -43,7 +43,7 @@ const defaultLimit = uint64(1000)
 
 // CreateOrder is used to request sending an order into the VEGA platform, via consensus.
 func (h *Handlers) CreateOrder(ctx context.Context, order *types.Order) (*api.OrderResponse, error) {
-	if h.statusChecker.Blockchain.Status() != types.AppStatus_CONNECTED {
+	if h.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
 	success, reference, err := h.OrderService.CreateOrder(ctx, order)
@@ -52,7 +52,7 @@ func (h *Handlers) CreateOrder(ctx context.Context, order *types.Order) (*api.Or
 
 // CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
 func (h *Handlers) CancelOrder(ctx context.Context, order *types.Order) (*api.OrderResponse, error) {
-	if h.statusChecker.Blockchain.Status() != types.AppStatus_CONNECTED {
+	if h.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
 	success, err := h.OrderService.CancelOrder(ctx, order)

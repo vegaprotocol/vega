@@ -32,7 +32,7 @@ func TestAppStatus(t *testing.T) {
 
 		checker := NewStatusChecker(log, chainClient, 1*time.Nanosecond)
 		time.Sleep(10 * time.Millisecond)
-		assert.Equal(t, types.AppStatus_CONNECTED, checker.Blockchain.Status())
+		assert.Equal(t, types.ChainStatus_CONNECTED, checker.Blockchain.Status())
 
 		checker.Blockchain.Stop()
 		checker.Stop()
@@ -48,7 +48,7 @@ func TestAppStatus(t *testing.T) {
 
 		checker := NewStatusChecker(log, chainClient, 1*time.Nanosecond)
 		time.Sleep(10 * time.Millisecond)
-		assert.Equal(t, types.AppStatus_CHAIN_REPLAYING, checker.Blockchain.Status())
+		assert.Equal(t, types.ChainStatus_REPLAYING, checker.Blockchain.Status())
 
 		checker.Blockchain.Stop()
 		checker.Stop()
@@ -61,7 +61,7 @@ func TestAppStatus(t *testing.T) {
 		checker := NewStatusChecker(log, chainClient, 1*time.Nanosecond)
 
 		time.Sleep(10 * time.Millisecond)
-		assert.Equal(t, types.AppStatus_DISCONNECTED, checker.Blockchain.Status())
+		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.Blockchain.Status())
 
 		checker.Blockchain.Stop()
 		checker.Stop()
@@ -77,7 +77,7 @@ func TestAppStatus(t *testing.T) {
 		checker := NewStatusChecker(log, chainClient, 1*time.Nanosecond)
 
 		time.Sleep(10 * time.Millisecond)
-		assert.Equal(t, types.AppStatus_CONNECTED, checker.Blockchain.Status())
+		assert.Equal(t, types.ChainStatus_CONNECTED, checker.Blockchain.Status())
 
 		chainClient = &mocks.Client{}
 		chainClient.On("Health").Return(nil,
@@ -88,7 +88,7 @@ func TestAppStatus(t *testing.T) {
 		checker.Blockchain.SetClient(chainClient)
 
 		time.Sleep(10 * time.Millisecond)
-		assert.Equal(t, types.AppStatus_DISCONNECTED, checker.Blockchain.Status())
+		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.Blockchain.Status())
 
 		checker.Blockchain.Stop()
 		checker.Stop()

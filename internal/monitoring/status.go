@@ -39,7 +39,7 @@ func NewStatusChecker(log *logging.Logger, clt blockchain.Client, interval time.
 			interval: interval, // 500 * time.Millisecond,
 			client:   clt,
 			clientMu: sync.Mutex{},
-			status:   uint32(types.AppStatus_DISCONNECTED),
+			status:   uint32(types.ChainStatus_DISCONNECTED),
 			cancel:   cancel,
 			log:      log,
 		},
@@ -56,8 +56,8 @@ func (s *Status) Stop() {
 
 // Status returns the current status of the underlying Blockchain connection.
 // Returned states are currently CONNECTED, REPLAYING or DISCONNECTED.
-func (cs *ChainStatus) Status() types.AppStatus {
-	return types.AppStatus(atomic.LoadUint32(&cs.status))
+func (cs *ChainStatus) Status() types.ChainStatus {
+	return types.ChainStatus(atomic.LoadUint32(&cs.status))
 }
 
 func (cs *ChainStatus) SetClient(clt blockchain.Client) {
@@ -67,16 +67,16 @@ func (cs *ChainStatus) SetClient(clt blockchain.Client) {
 	cs.client = clt
 }
 
-func (cs *ChainStatus) setStatus(status types.AppStatus) {
+func (cs *ChainStatus) setStatus(status types.ChainStatus) {
 	atomic.StoreUint32(&cs.status, uint32(status))
 }
 
-func (cs *ChainStatus) tick(status types.AppStatus) types.AppStatus {
+func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 	cs.clientMu.Lock()
 	defer cs.clientMu.Unlock()
 	newStatus := status
 	_, err := cs.client.Health()
-	if status == types.AppStatus_DISCONNECTED && err == nil {
+	if status == types.ChainStatus_DISCONNECTED && err == nil {
 		// node is connected, now let's check if we are replaying
 		res, err2 := cs.client.GetStatus(context.Background())
 		if err2 != nil {
@@ -85,12 +85,12 @@ func (cs *ChainStatus) tick(status types.AppStatus) types.AppStatus {
 			return status
 		}
 		if res.SyncInfo.CatchingUp {
-			newStatus = types.AppStatus_CHAIN_REPLAYING
+			newStatus = types.ChainStatus_REPLAYING
 		} else {
-			newStatus = types.AppStatus_CONNECTED
+			newStatus = types.ChainStatus_CONNECTED
 		}
-	} else if status == types.AppStatus_CONNECTED && err != nil {
-		newStatus = types.AppStatus_DISCONNECTED
+	} else if status == types.ChainStatus_CONNECTED && err != nil {
+		newStatus = types.ChainStatus_DISCONNECTED
 	}
 
 	if status == newStatus {
