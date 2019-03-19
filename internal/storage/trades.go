@@ -360,7 +360,6 @@ func (ts *badgerTradeStore) GetByOrderId(ctx context.Context, orderId string, qu
 	return result, nil
 }
 
-
 // GetMarkPrice returns the current market price, for a requested market.
 func (ts *badgerTradeStore) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
 

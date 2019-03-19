@@ -63,7 +63,7 @@ func NewExecutionEngine(
 		orderStore:  orderStore,
 		tradeStore:  tradeStore,
 		marketStore: marketStore,
-		partyStore: partyStore,
+		partyStore:  partyStore,
 		time:        time,
 	}
 
@@ -95,7 +95,7 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Verify and add new parties
 	party, _ := e.partyStore.GetByName(order.Party)
 	if party == nil {
-		p := &types.Party{ Name: order.Party }
+		p := &types.Party{Name: order.Party}
 		err := e.partyStore.Post(p)
 		if err != nil {
 			return nil, err
