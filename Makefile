@@ -92,7 +92,7 @@ proto/%.pb.go: proto/%.proto
 
 proto_check: ## proto: Check committed files match just-generated files
 	@touch proto/*.proto ; \
-	make proto 1>/dev/null ; \
+	make proto 1>/dev/null || exit 1 ; \
 	files="$$(git diff --name-only proto/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files:" $$files ; \
@@ -104,23 +104,23 @@ proto_check: ## proto: Check committed files match just-generated files
 grpc: internal/api/grpc.swagger.json internal/api/grpc.pb.gw.go internal/api/grpc.pb.go ## Generate gRPC files: grpc.swagger.json, grpc.pb.gw.go, grpc.pb.go
 
 internal/api/grpc.pb.go: internal/api/grpc.proto
-	@protoc -I$(GOPATH)/src -I. -Iinternal/api/ --go_out=plugins=grpc:. "$<" && \
+	@protoc -I. -Iinternal/api/ --go_out=plugins=grpc:. "$<" && \
 	sed --in-place -re 's/proto1 "proto"/proto1 "code.vegaprotocol.io\/vega\/proto"/' "$@"
 
 GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml:.
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
 internal/api/grpc.pb.gw.go: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
-	@protoc -I$(GOPATH)/src -I. -Iinternal/api/ --grpc-gateway_out=$(GRPC_CONF_OPT) "$<" && \
+	@protoc -I. -Iinternal/api/ --grpc-gateway_out=$(GRPC_CONF_OPT) "$<" && \
 	sed --in-place -re 's/proto_0 "proto"/proto_0 "code.vegaprotocol.io\/vega\/proto"/' "$@"
 
 # Generate Swagger documentation
 internal/api/grpc.swagger.json: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
-	@protoc -I$(GOPATH)/src -I. -Iinternal/api/ --swagger_out=$(GRPC_CONF_OPT) "$<"
+	@protoc -I. -Iinternal/api/ --swagger_out=$(GRPC_CONF_OPT) "$<"
 
 grpc_check: ## gRPC: Check committed files match just-generated files
 	@touch internal/api/*.proto ; \
-	make grpc 1>/dev/null ; \
+	make grpc 1>/dev/null || exit 1 ; \
 	files="$$(git diff --name-only internal/api/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files:" $$files ; \
