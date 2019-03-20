@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/grpc.proto",
+    "title": "internal/api/grpc.proto",
     "version": "version not set"
   },
   "schemes": [
@@ -20,7 +20,7 @@
         "operationId": "AmendOrder",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcOrderResponse"
             }
@@ -46,7 +46,7 @@
         "operationId": "CancelOrder",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcOrderResponse"
             }
@@ -72,7 +72,7 @@
         "operationId": "CreateOrder",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcOrderResponse"
             }
@@ -98,7 +98,7 @@
         "operationId": "MarketDepth",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcMarketDepthResponse"
             }
@@ -122,7 +122,7 @@
         "operationId": "OrderByMarketAndId",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcOrderByMarketAndIdResponse"
             }
@@ -152,7 +152,7 @@
         "operationId": "OrdersByMarket",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcOrdersByMarketResponse"
             }
@@ -183,7 +183,7 @@
         "operationId": "TradesByMarket",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcTradesByMarketResponse"
             }
@@ -214,7 +214,7 @@
         "operationId": "Markets",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcMarketsResponse"
             }
@@ -230,7 +230,7 @@
         "operationId": "OrdersByParty",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcOrdersByPartyResponse"
             }
@@ -261,7 +261,7 @@
         "operationId": "PositionsByParty",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcPositionsByPartyResponse"
             }
@@ -285,7 +285,7 @@
         "operationId": "Statistics",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/vegaStatistics"
             }
@@ -301,7 +301,7 @@
         "operationId": "GetVegaTime",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/grpcVegaTimeResponse"
             }
@@ -487,18 +487,6 @@
         }
       }
     },
-    "vegaAppStatus": {
-      "type": "string",
-      "enum": [
-        "CHAIN_NOT_FOUND",
-        "CHAIN_ERROR",
-        "CHAIN_REPLAYING",
-        "APP_CONNECTED",
-        "APP_ERROR",
-        "APP_DISCONNECTED"
-      ],
-      "default": "CHAIN_NOT_FOUND"
-    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -533,6 +521,15 @@
           "$ref": "#/definitions/vegaInterval"
         }
       }
+    },
+    "vegaChainStatus": {
+      "type": "string",
+      "enum": [
+        "DISCONNECTED",
+        "REPLAYING",
+        "CONNECTED"
+      ],
+      "default": "DISCONNECTED"
     },
     "vegaInterval": {
       "type": "string",
@@ -681,7 +678,7 @@
           "type": "string"
         },
         "status": {
-          "$ref": "#/definitions/vegaAppStatus"
+          "$ref": "#/definitions/vegaChainStatus"
         },
         "txPerBlock": {
           "type": "string",
@@ -702,12 +699,6 @@
         "ordersPerSecond": {
           "type": "string",
           "format": "uint64"
-        },
-        "lastTrade": {
-          "$ref": "#/definitions/vegaTrade"
-        },
-        "lastOrder": {
-          "$ref": "#/definitions/vegaOrder"
         },
         "totalMarkets": {
           "type": "string",
