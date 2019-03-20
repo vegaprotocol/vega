@@ -13,8 +13,14 @@ import (
 
 func TestMarketDepth_Hard(t *testing.T) {
 	ctx := context.Background()
+
 	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
 	orderStore, err := NewOrderStore(config, func() {})
+
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -375,8 +381,13 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 
 	ctx := context.Background()
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
-	config := NewTestConfig()
+
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
 	orderStore, err := NewOrderStore(config, func() {})
+
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -501,7 +512,11 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 
 	ctx := context.Background()
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
-	config := NewTestConfig()
+
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
 	orderStore, err := NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
