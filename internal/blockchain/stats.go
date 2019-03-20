@@ -1,5 +1,7 @@
 package blockchain
 
+import "sync/atomic"
+
 type Stats struct {
 	height                uint64
 	averageTxSizeBytes    int
@@ -10,6 +12,11 @@ type Stats struct {
 	averageOrdersPerBatch int
 	//ordersPerSecond int        // --
 	//tradesPerSecond int        // requires timing, devoid from blocks
+	totalAmendOrder  uint64
+	totalCancelOrder uint64
+	totalCreateOrder uint64
+	totalOrders      uint64
+	totalTrades      uint64
 }
 
 func NewStats() *Stats {
@@ -21,6 +28,11 @@ func NewStats() *Stats {
 		totalOrdersLastBatch:  0,
 		totalTradesLastBatch:  0,
 		averageOrdersPerBatch: 0,
+		totalAmendOrder:       0,
+		totalCancelOrder:      0,
+		totalCreateOrder:      0,
+		totalOrders:           0,
+		totalTrades:           0,
 	}
 }
 
@@ -50,4 +62,24 @@ func (s *Stats) TotalTradesLastBatch() int {
 
 func (s *Stats) AverageOrdersPerBatch() int {
 	return s.averageOrdersPerBatch
+}
+
+func (s *Stats) TotalAmendOrder() uint64 {
+	return atomic.LoadUint64(&s.totalAmendOrder)
+}
+
+func (s *Stats) TotalCancelOrder() uint64 {
+	return atomic.LoadUint64(&s.totalCancelOrder)
+}
+
+func (s *Stats) TotalCreateOrder() uint64 {
+	return atomic.LoadUint64(&s.totalCreateOrder)
+}
+
+func (s *Stats) TotalOrders() uint64 {
+	return atomic.LoadUint64(&s.totalOrders)
+}
+
+func (s *Stats) TotalTrades() uint64 {
+	return atomic.LoadUint64(&s.totalTrades)
 }
