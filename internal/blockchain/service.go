@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -103,7 +104,7 @@ func (s *abciService) Commit() error {
 }
 
 func (s *abciService) SubmitOrder(order *types.Order) error {
-	s.Stats.totalCreateOrder++
+	atomic.AddUint64(&s.Stats.totalCreateOrder, 1)
 	if s.LogOrderSubmitDebug {
 		s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
 	}
@@ -124,8 +125,8 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 			s.currentTradesInBatch += len(confirmationMessage.Trades)
 			s.totalTrades += uint64(s.currentTradesInBatch)
 		}
-		s.Stats.totalOrders++
-		s.Stats.totalTrades += uint64(len(confirmationMessage.Trades))
+		atomic.AddUint64(&s.Stats.totalOrders, 1)
+		atomic.AddUint64(&s.Stats.totalTrades, uint64(len(confirmationMessage.Trades)))
 
 		s.currentOrdersInBatch++
 		confirmationMessage.Release()
@@ -146,7 +147,7 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 }
 
 func (s *abciService) CancelOrder(order *types.Order) error {
-	s.Stats.totalCancelOrder++
+	atomic.AddUint64(&s.Stats.totalCancelOrder, 1)
 	if s.LogOrderCancelDebug {
 		s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
 	}
@@ -169,7 +170,7 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 }
 
 func (s *abciService) AmendOrder(order *types.Amendment) error {
-	s.Stats.totalAmendOrder++
+	atomic.AddUint64(&s.Stats.totalAmendOrder, 1)
 	if s.LogOrderAmendDebug {
 		s.log.Debug("Blockchain service received a AMEND ORDER request",
 			logging.String("order", order.String()))
