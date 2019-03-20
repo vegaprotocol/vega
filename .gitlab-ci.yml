@@ -61,6 +61,16 @@ lint_code:
    - export PATH="${PATH}:${BIN_DIR}"
    - make lint || true # Ignore lint failure for now (see #196)
 
+grpc_check:
+  stage: test
+  script:
+    - make grpc_check
+
+proto_check:
+  stage: test
+  script:
+    - make proto_check
+
 build_vega:
   stage: build
   script:
