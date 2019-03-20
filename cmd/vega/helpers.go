@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -68,11 +69,15 @@ func pathExists(path string) (bool, error) {
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.
-func waitSig() {
+func waitSig(ctx context.Context) {
 	var gracefulStop = make(chan os.Signal)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 
-	sig := <-gracefulStop
-	fmt.Printf("caught sig: %+v\n", sig)
+	select {
+	case sig := <-gracefulStop:
+		fmt.Printf("caught sig: %+v\n", sig)
+	case <-ctx.Done():
+		// nothing to do
+	}
 }

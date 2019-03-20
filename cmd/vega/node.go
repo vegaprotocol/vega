@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal"
@@ -155,6 +156,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	statusChecker := monitoring.NewStatusChecker(l.Log, client, 500*time.Millisecond)
+	// context used in waitSig to exit from the application
+	// not from the user inputs
+	ctx, cancel := context.WithCancel(context.Background())
+	statusChecker.OnChainDisconnect(cancel)
 
 	// gRPC server
 	grpcServer := grpc.NewGRPCServer(
@@ -188,7 +193,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	go graphServer.Start()
 
-	waitSig()
+	waitSig(ctx)
 
 	// Clean up and close resources
 	l.Log.Info("Closing REST proxy server", logging.Error(restServer.Stop()))
