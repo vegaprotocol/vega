@@ -96,6 +96,7 @@ proto_check: ## proto: Check committed files match just-generated files
 	files="$$(git diff --name-only proto/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files:" $$files ; \
+		test -n "$(CI)" && git diff proto/ ; \
 		exit 1 ; \
 	fi
 
@@ -124,6 +125,7 @@ grpc_check: ## gRPC: Check committed files match just-generated files
 	files="$$(git diff --name-only internal/api/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files:" $$files ; \
+		test -n "$(CI)" && git diff internal/api/ ; \
 		exit 1 ; \
 	fi
 
