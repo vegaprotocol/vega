@@ -13,7 +13,11 @@ import (
 
 func TestStorage_GenerateCandles(t *testing.T) {
 	ctx := context.Background()
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 	candleStore, err := NewCandleStore(config)
 	assert.Nil(t, err)
@@ -184,7 +188,11 @@ func TestStorage_GetMapOfIntervalsToTimestamps(t *testing.T) {
 }
 
 func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 	candleStore, err := NewCandleStore(config)
 	assert.Nil(t, err)
@@ -213,7 +221,11 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 
 func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	ctx := context.Background()
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 	candleStore, err := NewCandleStore(config)
 	assert.Nil(t, err)

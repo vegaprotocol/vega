@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 
@@ -51,21 +52,6 @@ func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) *Confi
 		//LogOrderStoreDebug:    true,
 		//LogCandleStoreDebug:   false,
 		LogPositionStoreDebug: false,
-	}
-}
-
-// NewTestConfig constructs a new Config instance with test parameters.
-// This constructor is exclusively used in unit tests/integration tests
-func NewTestConfig() *Config {
-	// Test logger can be configured here, default to console not file etc.
-	logger := logging.NewLoggerFromEnv("dev")
-	// Test configuration for badger stores
-	return &Config{
-		log:                   logger,
-		OrderStoreDirPath:     "./tmp/orderstore-test",
-		TradeStoreDirPath:     "./tmp/tradestore-test",
-		CandleStoreDirPath:    "./tmp/candlestore-test",
-		LogPositionStoreDebug: true,
 	}
 }
 
@@ -136,4 +122,56 @@ func (c *Config) GetLogger() *logging.Logger {
 // hot reloaded at run time. Currently we only check and refresh the logging level.
 func (c *Config) UpdateLogger() {
 	c.log.SetLevel(c.Level)
+}
+
+// NewTestConfig constructs a new Config instance with test parameters.
+// This constructor is exclusively used in unit tests/integration tests
+func NewTestConfig() (*Config, error) {
+	// Test logger can be configured here, default to console not file etc.
+	logger := logging.NewLoggerFromEnv("dev")
+	// Test configuration for badger stores
+	cfg := Config{
+		log:                   logger,
+		OrderStoreDirPath:     fmt.Sprintf("/tmp/vegatests/orderstore-%v", randSeq(5)),
+		TradeStoreDirPath:     fmt.Sprintf("/tmp/vegatests/tradestore-%v", randSeq(5)),
+		CandleStoreDirPath:    fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
+		LogPositionStoreDebug: true,
+	}
+
+	if err := ensureDir(cfg.CandleStoreDirPath); err != nil {
+		return nil, err
+	}
+	if err := ensureDir(cfg.OrderStoreDirPath); err != nil {
+		return nil, err
+	}
+	if err := ensureDir(cfg.TradeStoreDirPath); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
+}
+
+func ensureDir(path string) error {
+	const (
+		dirPerms = 0700
+	)
+
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return os.MkdirAll(path, dirPerms)
+		}
+		return err
+	}
+	return nil
+}
+
+var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(b)
 }

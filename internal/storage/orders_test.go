@@ -17,7 +17,11 @@ const testPartyA = "partyA"
 const testPartyB = "partyB"
 
 func TestStorage_NewOrderStore(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 
 	orderStore, err := NewOrderStore(config)
@@ -35,7 +39,11 @@ func TestStorage_NewOrderStore(t *testing.T) {
 }
 
 func TestStorage_PostAndGetNewOrder(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 	orderStore, err := NewOrderStore(config)
 	defer orderStore.Close()
@@ -57,7 +65,11 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 }
 
 func TestStorage_GetOrdersForMarket(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 
 	var tests = []struct {
@@ -159,10 +171,14 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 }
 
 func TestStorage_GetOrdersForParty(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 
-	var orderStore, err = NewOrderStore(config)
+	orderStore, err := NewOrderStore(config)
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -220,7 +236,11 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 }
 
 func TestStorage_OrderFiltration(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 
 	orderStore, err := NewOrderStore(config)
@@ -448,7 +468,11 @@ func TestStorage_OrderFiltration(t *testing.T) {
 }
 
 func TestStorage_GetOrderByReference(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 	newOrderStore, err := NewOrderStore(config)
 	assert.Nil(t, err)
@@ -484,7 +508,11 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 }
 
 func TestStorage_InsertBatchOrders(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 	orderStore, err := NewOrderStore(config)
 	assert.Nil(t, err)
