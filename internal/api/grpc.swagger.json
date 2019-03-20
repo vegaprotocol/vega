@@ -719,6 +719,26 @@
           "items": {
             "type": "string"
           }
+        },
+        "totalAmendOrder": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "totalCancelOrder": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "totalCreateOrder": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "totalOrders": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "totalTrades": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
