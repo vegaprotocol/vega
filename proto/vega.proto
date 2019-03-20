@@ -134,17 +134,23 @@ message Statistics {
     uint64 averageOrdersPerBlock = 10;
     uint64 tradesPerSecond = 11;
     uint64 ordersPerSecond = 12;
+
     uint64 totalMarkets = 13;
     uint64 totalParties = 14;
     string appVersionHash = 15;
     string appVersion = 16;
     repeated string Parties = 17;
+    uint64 totalAmendOrder = 18;
+    uint64 totalCancelOrder = 19;
+    uint64 totalCreateOrder = 20;
+    uint64 totalOrders = 21;
+    uint64 totalTrades = 22;
 }
 
 enum ChainStatus {
-  DISCONNECTED = 0;
-  REPLAYING = 1;
-  CONNECTED = 2;
+    DISCONNECTED = 0;
+    REPLAYING = 1;
+    CONNECTED = 2;
 }
 
 message Amendment {
