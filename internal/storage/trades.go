@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -169,6 +170,9 @@ func (ts *badgerTradeStore) GetByMarket(ctx context.Context, market string, quer
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
+	defer cancel()
+
 	marketPrefix, validForPrefix := ts.badger.marketPrefix(market, descending)
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
@@ -237,6 +241,9 @@ func (ts *badgerTradeStore) GetByParty(ctx context.Context, party string, queryF
 	descending := filter.queryFilter.HasLast()
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
+
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
+	defer cancel()
 
 	partyPrefix, validForPrefix := ts.badger.partyPrefix(party, descending)
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
@@ -328,6 +335,9 @@ func (ts *badgerTradeStore) GetByOrderId(ctx context.Context, orderId string, qu
 	descending := filter.queryFilter.HasLast()
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
+
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
+	defer cancel()
 
 	orderPrefix, validForPrefix := ts.badger.orderPrefix(orderId, descending)
 	for it.Seek(orderPrefix); it.ValidForPrefix(validForPrefix); it.Next() {

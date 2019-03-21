@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 
@@ -18,6 +19,8 @@ const (
 	// namedLogger is the identifier for package and should ideally match the package name
 	// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 	namedLogger = "storage"
+
+	defaultStorageAccessTimeout = 5
 )
 
 // Config provides package level settings, configuration and logging.
@@ -32,6 +35,7 @@ type Config struct {
 	//LogOrderStoreDebug    bool
 	//LogCandleStoreDebug   bool
 	LogPositionStoreDebug bool
+	Timeout               time.Duration
 }
 
 // NewConfig constructs a new Config instance with default parameters.
@@ -51,6 +55,7 @@ func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) *Confi
 		//LogOrderStoreDebug:    true,
 		//LogCandleStoreDebug:   false,
 		LogPositionStoreDebug: false,
+		Timeout:               defaultStorageAccessTimeout,
 	}
 }
 
@@ -66,6 +71,7 @@ func NewTestConfig() *Config {
 		TradeStoreDirPath:     "./tmp/tradestore-test",
 		CandleStoreDirPath:    "./tmp/candlestore-test",
 		LogPositionStoreDebug: true,
+		Timeout:               defaultStorageAccessTimeout,
 	}
 }
 

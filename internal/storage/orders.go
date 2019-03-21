@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -188,6 +189,9 @@ func (os *badgerOrderStore) GetByMarket(ctx context.Context, market string, quer
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
+	defer cancel()
+
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
@@ -256,6 +260,9 @@ func (os *badgerOrderStore) GetByParty(ctx context.Context, party string, queryF
 	descending := filter.queryFilter.HasLast()
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
+
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
+	defer cancel()
 
 	partyPrefix, validForPrefix := os.badger.partyPrefix(party, descending)
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
@@ -346,6 +353,9 @@ func (os *badgerOrderStore) GetMarketDepth(ctx context.Context, market string) (
 
 	var buyPtr []*types.PriceLevel
 	var sellPtr []*types.PriceLevel
+
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
+	defer cancel()
 
 	// recalculate accumulated volume
 	// --- buy side ---

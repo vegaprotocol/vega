@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -326,6 +327,9 @@ func (c *badgerCandleStore) GetCandles(ctx context.Context, market string, since
 
 	it := c.badger.getIterator(txn, false)
 	defer it.Close()
+
+	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout*time.Second)
+	defer cancel()
 
 	var candles []*types.Candle
 	for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {
