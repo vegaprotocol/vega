@@ -71,51 +71,48 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
-	go func(id uint64, ctx context.Context) {
+	go func() {
 		ip := logging.IPAddressFromContext(ctx)
-		// close channels, prevent sleeping routine consuming internal channel
-		defer func() {
-			close(internal)
-			close(depth)
-		}()
-		<-ctx.Done()
-		s.log.Debug("Market depth subscriber closed connection",
-			logging.Uint64("id", id),
-			logging.String("ip-address", ip))
-		err := s.orderStore.Unsubscribe(id)
-		if err != nil {
-			s.log.Error("Failure un-subscribing market depth subscriber when context.Done()",
-				logging.Uint64("id", id),
-				logging.String("ip-address", ip),
-				logging.Error(err))
-		}
-	}(ref, ctx)
-
-	go func(id uint64, ctx context.Context) {
-		ip := logging.IPAddressFromContext(ctx)
-		for range internal {
-			if d, err := s.orderStore.GetMarketDepth(ctx, market); err != nil {
-				s.log.Error("Failure calculating market depth for subscriber",
+		for {
+			select {
+			case <-ctx.Done():
+				// done
+				s.log.Debug(
+					"Market depth subscriber closed connection",
+					logging.Uint64("id", ref),
+					logging.String("ip-address", ip),
+				)
+				if err := s.orderStore.Unsubscribe(ref); err != nil {
+					s.log.Error(
+						"Failure un-subscribing market depth subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(internal)
+				close(depth)
+				return
+			case <-internal: // we don't need the orders, we just need to know there was a change
+				d, err := s.orderStore.GetMarketDepth(ctx, market)
+				if err != nil {
+					s.log.Error(
+						"Failure calculating market depth for subscriber",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+					continue
+				}
+				depth <- d
+				s.log.Debug(
+					"Market depth for subscriber sent successfully",
 					logging.Uint64("ref", ref),
 					logging.String("ip-address", ip),
-					logging.Error(err))
-			} else {
-				select {
-				case depth <- d:
-					s.log.Debug("Market depth for subscriber sent successfully",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
-				default:
-					s.log.Debug("Market depth for subscriber not sent",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
-				}
+				)
 			}
 		}
-		s.log.Debug("Market depth subscriber channel has been closed",
-			logging.Uint64("ref", ref),
-			logging.String("ip-address", ip))
-	}(ref, ctx)
+	}()
 
 	return depth, ref
 }

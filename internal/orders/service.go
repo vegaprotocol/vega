@@ -181,58 +181,58 @@ func (s *orderService) ObserveOrders(ctx context.Context, market *string, party 
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
-	go func(id uint64, ctx context.Context) {
+	go func() {
 		ip := logging.IPAddressFromContext(ctx)
-		// close the channels, to avoid sleeping goroutine
-		defer func() {
-			close(internal)
-			close(orders)
-		}()
-		<-ctx.Done()
-		s.log.Debug("Orders subscriber closed connection",
-			logging.Uint64("id", id),
-			logging.String("ip-address", ip))
-		err := s.orderStore.Unsubscribe(id)
-		if err != nil {
-			s.log.Error("Failure un-subscribing orders subscriber when context.Done()",
-				logging.Uint64("id", id),
-				logging.String("ip-address", ip),
-				logging.Error(err))
-		}
-	}(ref, ctx)
-
-	go func(id uint64, ctx context.Context) {
-		ip := logging.IPAddressFromContext(ctx)
-		// read internal channel
-		for v := range internal {
-
-			validatedOrders := make([]types.Order, 0)
-			for _, item := range v {
-				if market != nil && item.Market != *market {
+		for {
+			select {
+			case <-ctx.Done():
+				s.log.Debug(
+					"Orders subscriber closed connection",
+					logging.Uint64("id", ref),
+					logging.String("ip-address", ip),
+				)
+				// this error only happens when the subscriber reference doesn't exist
+				// so we can still safely close the channels
+				if err := s.orderStore.Unsubscribe(ref); err != nil {
+					s.log.Error(
+						"Failure un-subscribing orders subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(internal)
+				close(orders)
+				return
+			case v := <-internal:
+				// max cap for this slice is the length of the slice we read from the channel
+				validatedOrders := make([]types.Order, 0, len(v))
+				for _, item := range v {
+					// if market is not set, or equals item market and party is not set or equals item party
+					if (market == nil || item.Market == *market) && (party == nil || item.Party == *party) {
+						validatedOrders = append(validatedOrders, item)
+					}
+				}
+				if len(validatedOrders) == 0 {
 					continue
 				}
-				if party != nil && item.Party != *party {
-					continue
-				}
-				validatedOrders = append(validatedOrders, item)
-			}
-			if len(validatedOrders) > 0 {
 				select {
 				case orders <- validatedOrders:
-					s.log.Debug("Orders for subscriber sent successfully",
+					s.log.Debug(
+						"Orders for subscriber sent successfully",
 						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
+						logging.String("ip-address", ip),
+					)
 				default:
-					s.log.Debug("Orders for subscriber not sent",
+					s.log.Debug(
+						"Orders for subscriber not sent",
 						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
+						logging.String("ip-address", ip),
+					)
 				}
 			}
 		}
-		s.log.Debug("Orders subscriber channel has been closed",
-			logging.Uint64("ref", ref),
-			logging.String("ip-address", ip))
-	}(ref, ctx)
+	}()
 
 	return orders, ref
 }

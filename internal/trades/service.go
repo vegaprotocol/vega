@@ -83,58 +83,56 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, ctx context.Context) {
+	go func() {
 		ip := logging.IPAddressFromContext(ctx)
-		// close these channels, too
-		defer func() {
-			close(internal)
-			close(trades)
-		}()
-		<-ctx.Done()
-		t.log.Debug("Trades subscriber closed connection",
-			logging.Uint64("id", id),
-			logging.String("ip-address", ip))
-		err := t.tradeStore.Unsubscribe(id)
-		if err != nil {
-			t.log.Error("Failure un-subscribing trades subscriber when context.Done()",
-				logging.Uint64("id", id),
-				logging.String("ip-address", ip),
-				logging.Error(err))
-		}
-	}(ref, ctx)
-
-	go func(id uint64, ctx context.Context) {
-		ip := logging.IPAddressFromContext(ctx)
-		for v := range internal {
-
-			validatedTrades := make([]types.Trade, 0)
-			for _, item := range v {
-				if market != nil && item.Market != *market {
+		for {
+			select {
+			case <-ctx.Done():
+				t.log.Debug(
+					"Trades subscriber closed connection",
+					logging.Uint64("id", ref),
+					logging.String("ip-address", ip),
+				)
+				if err := t.tradeStore.Unsubscribe(ref); err != nil {
+					t.log.Error(
+						"Failure un-subscribing trades subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(internal)
+				close(trades)
+				return
+			case v := <-internal:
+				// max length of validated == length of data from channel
+				validatedTrades := make([]types.Trade, 0, len(v))
+				for _, item := range v {
+					// if market is nil or matches item market and party was nil, or matches seller or buyer
+					if (market == nil || item.Market == *market) && (party == nil || item.Seller == *party || item.Buyer == *party) {
+						validatedTrades = append(validatedTrades, item)
+					}
+				}
+				if len(validatedTrades) == 0 {
 					continue
 				}
-				if party != nil && (item.Seller != *party && item.Buyer != *party) {
-					continue
-				}
-				validatedTrades = append(validatedTrades, item)
-			}
-
-			if len(validatedTrades) > 0 {
 				select {
 				case trades <- validatedTrades:
-					t.log.Debug("Trades for subscriber sent successfully",
+					t.log.Debug(
+						"Trades for subscriber sent successfully",
 						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
+						logging.String("ip-address", ip),
+					)
 				default:
-					t.log.Debug("Trades for subscriber not sent",
+					t.log.Debug(
+						"Trades for subscriber not sent",
 						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
+						logging.String("ip-address", ip),
+					)
 				}
 			}
 		}
-		t.log.Debug("Trades subscriber channel has been closed",
-			logging.Uint64("ref", ref),
-			logging.String("ip-address", ip))
-	}(ref, ctx)
+	}()
 
 	return trades, ref
 }
@@ -144,55 +142,58 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, ctx context.Context) {
+	go func() {
 		ip := logging.IPAddressFromContext(ctx)
-		// close channels to avoid deadlock
-		defer func() {
-			close(internal)
-			close(positions)
-		}()
-		<-ctx.Done()
-		t.log.Debug("Positions subscriber closed connection",
-			logging.Uint64("id", id),
-			logging.String("ip-address", ip))
-		err := t.tradeStore.Unsubscribe(id)
-		if err != nil {
-			t.log.Error("Failure un-subscribing positions subscriber when context.Done()",
-				logging.Uint64("id", id),
-				logging.String("ip-address", ip),
-				logging.Error(err))
-		}
-	}(ref, ctx)
-
-	go func(id uint64, ctx context.Context) {
-		ip := logging.IPAddressFromContext(ctx)
-		for range internal {
-			mapOfMarketPositions, err := t.GetPositionsByParty(ctx, party)
-			if err != nil {
-				t.log.Error("Failed to get positions for subscriber (getPositionsByParty)",
-					logging.Uint64("id", id),
-					logging.Uint64("ref", ref),
+		for {
+			select {
+			case <-ctx.Done():
+				t.log.Debug(
+					"Positions subscriber closed connection",
+					logging.Uint64("id", ref),
 					logging.String("ip-address", ip),
-					logging.Error(err))
-			}
-			for _, marketPositions := range mapOfMarketPositions {
-				marketPositions := marketPositions
-				select {
-				case positions <- marketPositions:
-					t.log.Debug("Positions for subscriber sent successfully",
+				)
+				if err := t.tradeStore.Unsubscribe(ref); err != nil {
+					t.log.Error(
+						"Failure un-subscribing positions subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(internal)
+				close(positions)
+				return
+			case <-internal: // again, we're using this channel to detect state changes, the data itself isn't relevant
+				mapOfMarketPositions, err := t.GetPositionsByParty(ctx, party)
+				if err != nil {
+					t.log.Error(
+						"Failed to get positions for subscriber (getPositionsByParty)",
 						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
-				default:
-					t.log.Debug("Positions for subscriber not sent",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+					continue
+				}
+				for _, marketPositions := range mapOfMarketPositions {
+					marketPositions := marketPositions
+					select {
+					case positions <- marketPositions:
+						t.log.Debug(
+							"Positions for subscriber sent successfully",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+						)
+					default:
+						t.log.Debug(
+							"Positions for subscriber not sent",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+						)
+					}
 				}
 			}
 		}
-		t.log.Debug("Positions subscriber channel has been closed",
-			logging.Uint64("ref", ref),
-			logging.String("ip-address", ip))
-	}(ref, ctx)
+	}()
 
 	return positions, ref
 }

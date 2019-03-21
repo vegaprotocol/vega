@@ -36,48 +36,52 @@ func NewCandleService(config *Config, candleStore storage.CandleStore) (Service,
 
 func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
 	candleCh := make(chan *types.Candle)
-	iT := storage.InternalTransport{Market: *market, Interval: *interval, Transport: make(chan *types.Candle)}
+	iT := storage.InternalTransport{
+		Market:    *market,
+		Interval:  *interval,
+		Transport: make(chan *types.Candle),
+	}
 	ref := c.candleStore.Subscribe(&iT)
 
-	go func(id uint64, ctx context.Context) {
+	go func() {
 		ip := logging.IPAddressFromContext(ctx)
-		// close channels, if iT.Transport is never closed, the second routine
-		// consuming the Transport channel never returns - sleeping routine
-		defer func() {
-			close(iT.Transport)
-			close(candleCh)
-		}()
-		<-ctx.Done()
-		c.log.Debug("Candles subscriber closed connection",
-			logging.Uint64("id", id),
-			logging.String("ip-address", ip))
-		err := c.candleStore.Unsubscribe(id)
-		if err != nil {
-			c.log.Error("Failure un-subscribing candles subscriber when context.Done()",
-				logging.Uint64("id", id),
-				logging.String("ip-address", ip),
-				logging.Error(err))
-		}
-	}(ref, ctx)
-
-	go func(iT *storage.InternalTransport, ctx context.Context) {
-		ip := logging.IPAddressFromContext(ctx)
-		for v := range iT.Transport {
+		for {
 			select {
-			case candleCh <- v:
-				c.log.Debug("Candles for subscriber sent successfully",
-					logging.Uint64("ref", ref),
-					logging.String("ip-address", ip))
-			default:
-				c.log.Debug("Candles for subscriber not sent",
-					logging.Uint64("ref", ref),
-					logging.String("ip-address", ip))
+			case <-ctx.Done():
+				c.log.Debug(
+					"Candles subscriber closed connection",
+					logging.Uint64("id", ref),
+					logging.String("ip-address", ip),
+				)
+				if err := c.candleStore.Unsubscribe(ref); err != nil {
+					c.log.Error(
+						"Failure un-subscribing candles subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(iT.Transport)
+				close(candleCh)
+				return
+			case v := <-iT.Transport:
+				select {
+				case candleCh <- v:
+					c.log.Debug(
+						"Candles for subscriber sent successfully",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+					)
+				default:
+					c.log.Debug(
+						"Candles for subscriber not sent",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+					)
+				}
 			}
 		}
-		c.log.Debug("Candles subscriber channel has been closed",
-			logging.Uint64("ref", ref),
-			logging.String("ip-address", ip))
-	}(&iT, ctx)
+	}()
 
 	return candleCh, ref
 }
