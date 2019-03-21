@@ -150,13 +150,13 @@ func (_m *Service) GetPositionsByParty(ctx context.Context, party string) ([]*pr
 	return r0, r1
 }
 
-// ObservePositions provides a mock function with given fields: ctx, party
-func (_m *Service) ObservePositions(ctx context.Context, party string) (<-chan *proto.MarketPosition, uint64) {
-	ret := _m.Called(ctx, party)
+// ObservePositions provides a mock function with given fields: ctx, retries, party
+func (_m *Service) ObservePositions(ctx context.Context, retries int, party string) (<-chan *proto.MarketPosition, uint64) {
+	ret := _m.Called(ctx, retries, party)
 
 	var r0 <-chan *proto.MarketPosition
-	if rf, ok := ret.Get(0).(func(context.Context, string) <-chan *proto.MarketPosition); ok {
-		r0 = rf(ctx, party)
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) <-chan *proto.MarketPosition); ok {
+		r0 = rf(ctx, retries, party)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan *proto.MarketPosition)
@@ -164,8 +164,8 @@ func (_m *Service) ObservePositions(ctx context.Context, party string) (<-chan *
 	}
 
 	var r1 uint64
-	if rf, ok := ret.Get(1).(func(context.Context, string) uint64); ok {
-		r1 = rf(ctx, party)
+	if rf, ok := ret.Get(1).(func(context.Context, int, string) uint64); ok {
+		r1 = rf(ctx, retries, party)
 	} else {
 		r1 = ret.Get(1).(uint64)
 	}
@@ -173,13 +173,13 @@ func (_m *Service) ObservePositions(ctx context.Context, party string) (<-chan *
 	return r0, r1
 }
 
-// ObserveTrades provides a mock function with given fields: ctx, market, party
-func (_m *Service) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []proto.Trade, uint64) {
-	ret := _m.Called(ctx, market, party)
+// ObserveTrades provides a mock function with given fields: ctx, retries, market, party
+func (_m *Service) ObserveTrades(ctx context.Context, retries int, market *string, party *string) (<-chan []proto.Trade, uint64) {
+	ret := _m.Called(ctx, retries, market, party)
 
 	var r0 <-chan []proto.Trade
-	if rf, ok := ret.Get(0).(func(context.Context, *string, *string) <-chan []proto.Trade); ok {
-		r0 = rf(ctx, market, party)
+	if rf, ok := ret.Get(0).(func(context.Context, int, *string, *string) <-chan []proto.Trade); ok {
+		r0 = rf(ctx, retries, market, party)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan []proto.Trade)
@@ -187,8 +187,8 @@ func (_m *Service) ObserveTrades(ctx context.Context, market *string, party *str
 	}
 
 	var r1 uint64
-	if rf, ok := ret.Get(1).(func(context.Context, *string, *string) uint64); ok {
-		r1 = rf(ctx, market, party)
+	if rf, ok := ret.Get(1).(func(context.Context, int, *string, *string) uint64); ok {
+		r1 = rf(ctx, retries, market, party)
 	} else {
 		r1 = ret.Get(1).(uint64)
 	}

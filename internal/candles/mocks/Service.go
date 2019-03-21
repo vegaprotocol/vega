@@ -34,13 +34,13 @@ func (_m *Service) GetCandles(ctx context.Context, market string, sinceTimestamp
 	return r0, r1
 }
 
-// ObserveCandles provides a mock function with given fields: ctx, market, interval
-func (_m *Service) ObserveCandles(ctx context.Context, market *string, interval *proto.Interval) (<-chan *proto.Candle, uint64) {
-	ret := _m.Called(ctx, market, interval)
+// ObserveCandles provides a mock function with given fields: ctx, retries, market, interval
+func (_m *Service) ObserveCandles(ctx context.Context, retries int, market *string, interval *proto.Interval) (<-chan *proto.Candle, uint64) {
+	ret := _m.Called(ctx, retries, market, interval)
 
 	var r0 <-chan *proto.Candle
-	if rf, ok := ret.Get(0).(func(context.Context, *string, *proto.Interval) <-chan *proto.Candle); ok {
-		r0 = rf(ctx, market, interval)
+	if rf, ok := ret.Get(0).(func(context.Context, int, *string, *proto.Interval) <-chan *proto.Candle); ok {
+		r0 = rf(ctx, retries, market, interval)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan *proto.Candle)
@@ -48,8 +48,8 @@ func (_m *Service) ObserveCandles(ctx context.Context, market *string, interval 
 	}
 
 	var r1 uint64
-	if rf, ok := ret.Get(1).(func(context.Context, *string, *proto.Interval) uint64); ok {
-		r1 = rf(ctx, market, interval)
+	if rf, ok := ret.Get(1).(func(context.Context, int, *string, *proto.Interval) uint64); ok {
+		r1 = rf(ctx, retries, market, interval)
 	} else {
 		r1 = ret.Get(1).(uint64)
 	}

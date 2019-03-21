@@ -20,8 +20,8 @@ type Service interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
-	ObservePositions(ctx context.Context, party string) (positions <-chan *types.MarketPosition, ref uint64)
-	ObserveTrades(ctx context.Context, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
+	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
+	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 }
 
 type tradeService struct {
@@ -78,13 +78,16 @@ func (t *tradeService) GetByOrderId(ctx context.Context, orderId string, filters
 	return trades, err
 }
 
-func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party *string) (<-chan []types.Trade, uint64) {
+func (t *tradeService) ObserveTrades(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Trade, uint64) {
 	trades := make(chan []types.Trade)
 	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
+	retryCount := retries
 
 	go func() {
 		ip := logging.IPAddressFromContext(ctx)
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
 		for {
 			select {
 			case <-ctx.Done():
@@ -118,12 +121,23 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 				}
 				select {
 				case trades <- validatedTrades:
+					retryCount = retries
 					t.log.Debug(
 						"Trades for subscriber sent successfully",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
 					)
 				default:
+					retryCount--
+					if retryCount == 0 {
+						t.log.Warn(
+							"Trades subscriber has hit the retry limit",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+							logging.Int("retries", retries),
+						)
+						cfunc()
+					}
 					t.log.Debug(
 						"Trades for subscriber not sent",
 						logging.Uint64("ref", ref),
@@ -137,13 +151,16 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 	return trades, ref
 }
 
-func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-chan *types.MarketPosition, uint64) {
+func (t *tradeService) ObservePositions(ctx context.Context, retries int, party string) (<-chan *types.MarketPosition, uint64) {
 	positions := make(chan *types.MarketPosition)
 	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
+	retryCount := retries
 
 	go func() {
 		ip := logging.IPAddressFromContext(ctx)
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
 		for {
 			select {
 			case <-ctx.Done():
@@ -178,12 +195,23 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 					marketPositions := marketPositions
 					select {
 					case positions <- marketPositions:
+						retryCount = retries
 						t.log.Debug(
 							"Positions for subscriber sent successfully",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
 						)
 					default:
+						retryCount--
+						if retryCount == 0 {
+							t.log.Warn(
+								"Positions subscriber has hit the retry limit",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip),
+								logging.Int("retries", retries),
+							)
+							cfunc()
+						}
 						t.log.Debug(
 							"Positions for subscriber not sent",
 							logging.Uint64("ref", ref),

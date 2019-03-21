@@ -10,8 +10,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate mockery
 type Service interface {
-	ObserveCandles(ctx context.Context, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
+	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
 	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error)
 }
 
@@ -34,7 +35,7 @@ func NewCandleService(config *Config, candleStore storage.CandleStore) (Service,
 	}, nil
 }
 
-func (c *candleService) ObserveCandles(ctx context.Context, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
+func (c *candleService) ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
 	candleCh := make(chan *types.Candle)
 	iT := storage.InternalTransport{
 		Market:    *market,
@@ -42,8 +43,11 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 		Transport: make(chan *types.Candle),
 	}
 	ref := c.candleStore.Subscribe(&iT)
+	retryCount := retries
 
 	go func() {
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
 		ip := logging.IPAddressFromContext(ctx)
 		for {
 			select {
@@ -72,7 +76,20 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
 					)
+					// reset retry counter
+					retryCount = retries
 				default:
+					retryCount--
+					// no retries left?
+					if retryCount == 0 {
+						c.log.Warn(
+							"Candles subscriber ran out of retries",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+							logging.Int("retries", retries),
+						)
+						cfunc()
+					}
 					c.log.Debug(
 						"Candles for subscriber not sent",
 						logging.Uint64("ref", ref),

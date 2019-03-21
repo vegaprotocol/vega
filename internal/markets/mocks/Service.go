@@ -95,13 +95,13 @@ func (_m *Service) GetDepth(ctx context.Context, market string) (*proto.MarketDe
 	return r0, r1
 }
 
-// ObserveDepth provides a mock function with given fields: ctx, market
-func (_m *Service) ObserveDepth(ctx context.Context, market string) (<-chan *proto.MarketDepth, uint64) {
-	ret := _m.Called(ctx, market)
+// ObserveDepth provides a mock function with given fields: ctx, retries, market
+func (_m *Service) ObserveDepth(ctx context.Context, retries int, market string) (<-chan *proto.MarketDepth, uint64) {
+	ret := _m.Called(ctx, retries, market)
 
 	var r0 <-chan *proto.MarketDepth
-	if rf, ok := ret.Get(0).(func(context.Context, string) <-chan *proto.MarketDepth); ok {
-		r0 = rf(ctx, market)
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) <-chan *proto.MarketDepth); ok {
+		r0 = rf(ctx, retries, market)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan *proto.MarketDepth)
@@ -109,8 +109,8 @@ func (_m *Service) ObserveDepth(ctx context.Context, market string) (<-chan *pro
 	}
 
 	var r1 uint64
-	if rf, ok := ret.Get(1).(func(context.Context, string) uint64); ok {
-		r1 = rf(ctx, market)
+	if rf, ok := ret.Get(1).(func(context.Context, int, string) uint64); ok {
+		r1 = rf(ctx, retries, market)
 	} else {
 		r1 = ret.Get(1).(uint64)
 	}

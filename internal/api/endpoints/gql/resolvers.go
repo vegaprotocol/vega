@@ -688,7 +688,7 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	c, ref := r.orderService.ObserveOrders(ctx, market, party)
+	c, ref := r.orderService.ObserveOrders(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
 	logger := *r.GetLogger()
 	logger.Debug("Orders: new subscriber", logging.Uint64("ref", ref))
 	return c, nil
@@ -702,7 +702,7 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	c, ref := r.tradeService.ObserveTrades(ctx, market, party)
+	c, ref := r.tradeService.ObserveTrades(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
 	logger := *r.GetLogger()
 	logger.Debug("Trades: new subscriber", logging.Uint64("ref", ref))
 	return c, nil
@@ -712,7 +712,7 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	c, ref := r.tradeService.ObservePositions(ctx, party)
+	c, ref := r.tradeService.ObservePositions(ctx, r.Config.GraphQLSubscriptionRetries, party)
 	logger := *r.GetLogger()
 	logger.Debug("Positions: new subscriber", logging.Uint64("ref", ref))
 	return c, nil
@@ -723,7 +723,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	if err != nil {
 		return nil, err
 	}
-	c, ref := r.marketService.ObserveDepth(ctx, market)
+	c, ref := r.marketService.ObserveDepth(ctx, r.Config.GraphQLSubscriptionRetries, market)
 	logger := *r.GetLogger()
 	logger.Debug("Market Depth: new subscriber", logging.Uint64("ref", ref))
 	return c, nil
@@ -760,7 +760,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	// Observe new candles for interval
 	// --------------------------------
 
-	c, ref := r.candleService.ObserveCandles(ctx, &market, &pbInterval)
+	c, ref := r.candleService.ObserveCandles(ctx, r.Config.GraphQLSubscriptionRetries, &market, &pbInterval)
 
 	logger.Debug("Candles: New subscriber",
 		logging.String("interval", pbInterval.String()),

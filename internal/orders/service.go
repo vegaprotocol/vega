@@ -23,7 +23,7 @@ type Service interface {
 	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error)
-	ObserveOrders(ctx context.Context, market *string, party *string) (orders <-chan []types.Order, ref uint64)
+	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 }
 
 type orderService struct {
@@ -176,13 +176,16 @@ func (s *orderService) GetByPartyAndId(ctx context.Context, party string, id str
 	return o, err
 }
 
-func (s *orderService) ObserveOrders(ctx context.Context, market *string, party *string) (<-chan []types.Order, uint64) {
+func (s *orderService) ObserveOrders(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Order, uint64) {
 	orders := make(chan []types.Order)
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
+	retryCount := retries
 	go func() {
 		ip := logging.IPAddressFromContext(ctx)
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
 		for {
 			select {
 			case <-ctx.Done():
@@ -218,12 +221,24 @@ func (s *orderService) ObserveOrders(ctx context.Context, market *string, party 
 				}
 				select {
 				case orders <- validatedOrders:
+					retryCount = retries
 					s.log.Debug(
 						"Orders for subscriber sent successfully",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
 					)
 				default:
+					retryCount--
+					if retryCount == 0 {
+						s.log.Warn(
+							"Order subscriber has hit the retry limit",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+							logging.Int("retries", retries),
+						)
+						cfunc()
+					}
+					// retry counter here
 					s.log.Debug(
 						"Orders for subscriber not sent",
 						logging.Uint64("ref", ref),

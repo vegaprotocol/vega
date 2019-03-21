@@ -21,7 +21,7 @@ type Service interface {
 	// ObserveMarket provides a way to listen to changes on VEGA markets.
 	ObserveMarkets(ctx context.Context) (markets <-chan []types.Market, ref uint64)
 	// ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
-	ObserveDepth(ctx context.Context, market string) (depth <-chan *types.MarketDepth, ref uint64)
+	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
 }
 
 type marketService struct {
@@ -66,17 +66,19 @@ func (s *marketService) GetDepth(ctx context.Context, market string) (marketDept
 }
 
 // ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
-func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan *types.MarketDepth, uint64) {
+func (s *marketService) ObserveDepth(ctx context.Context, retries int, market string) (<-chan *types.MarketDepth, uint64) {
 	depth := make(chan *types.MarketDepth)
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
+	retryCount := retries
 	go func() {
 		ip := logging.IPAddressFromContext(ctx)
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
 		for {
 			select {
 			case <-ctx.Done():
-				// done
 				s.log.Debug(
 					"Market depth subscriber closed connection",
 					logging.Uint64("id", ref),
@@ -104,12 +106,26 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 					)
 					continue
 				}
-				depth <- d
-				s.log.Debug(
-					"Market depth for subscriber sent successfully",
-					logging.Uint64("ref", ref),
-					logging.String("ip-address", ip),
-				)
+				select {
+				case depth <- d:
+					retryCount = retries
+					s.log.Debug(
+						"Market depth for subscriber sent successfully",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+					)
+				default:
+					retryCount--
+					if retryCount == 0 {
+						s.log.Warn(
+							"Market depth subscriber has hit the retry limit",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+							logging.Int("retries", retries),
+						)
+						cfunc()
+					}
+				}
 			}
 		}
 	}()

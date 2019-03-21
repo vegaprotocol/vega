@@ -13,12 +13,14 @@ type Config struct {
 	Level   logging.Level
 	Timeout int
 
-	GraphQLServerPort      int
-	GraphQLServerIpAddress string
-	RestProxyServerPort    int
-	RestProxyIpAddress     string
-	GrpcServerPort         int
-	GrpcServerIpAddress    string
+	GraphQLServerPort          int
+	GraphQLServerIpAddress     string
+	GraphQLSubscriptionRetries int
+	RestProxyServerPort        int
+	RestProxyIpAddress         string
+	GrpcServerPort             int
+	GrpcServerIpAddress        string
+	GrpcSubscriptionRetries    int
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -30,14 +32,16 @@ func NewDefaultConfig(logger *logging.Logger) *Config {
 		Level:   logging.InfoLevel,
 		Timeout: 5000,
 
-		GraphQLServerIpAddress: "0.0.0.0",
-		GraphQLServerPort:      3004,
+		GraphQLServerIpAddress:     "0.0.0.0",
+		GraphQLServerPort:          3004,
+		GraphQLSubscriptionRetries: 3,
 
 		RestProxyIpAddress:  "0.0.0.0",
 		RestProxyServerPort: 3003,
 
-		GrpcServerIpAddress: "0.0.0.0",
-		GrpcServerPort:      3002,
+		GrpcServerIpAddress:     "0.0.0.0",
+		GrpcServerPort:          3002,
+		GrpcSubscriptionRetries: 3,
 	}
 }
 

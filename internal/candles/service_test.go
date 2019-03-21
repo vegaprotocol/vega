@@ -53,53 +53,53 @@ func TestCandleService_ObserveCandles(t *testing.T) {
 
 	// -------- BTC MARKET SUBSCRIPTIONS -----
 
-	candlesSubscription1mBTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval1m)
+	candlesSubscription1mBTC, ref := candleService.ObserveCandles(ctx, 0, &MarketBTC, &interval1m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1mBTC))
 	assert.Equal(t, uint64(1), ref)
 
-	candlesSubscription5mBTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval5m)
+	candlesSubscription5mBTC, ref := candleService.ObserveCandles(ctx, 0, &MarketBTC, &interval5m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription5mBTC))
 	assert.Equal(t, uint64(2), ref)
 
-	candlesSubscription15mBTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval15m)
+	candlesSubscription15mBTC, ref := candleService.ObserveCandles(ctx, 0, &MarketBTC, &interval15m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription15mBTC))
 	assert.Equal(t, uint64(3), ref)
 
-	candlesSubscription1hBTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval1h)
+	candlesSubscription1hBTC, ref := candleService.ObserveCandles(ctx, 0, &MarketBTC, &interval1h)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1hBTC))
 	assert.Equal(t, uint64(4), ref)
 
-	candlesSubscription6hBTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval6h)
+	candlesSubscription6hBTC, ref := candleService.ObserveCandles(ctx, 0, &MarketBTC, &interval6h)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription6hBTC))
 	assert.Equal(t, uint64(5), ref)
 
-	candlesSubscription1dBTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval1d)
+	candlesSubscription1dBTC, ref := candleService.ObserveCandles(ctx, 0, &MarketBTC, &interval1d)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1dBTC))
 	assert.Equal(t, uint64(6), ref)
 
 	// -------- ETH MARKET SUBSCRIPTIONS -----
 
-	candlesSubscription1mETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval1m)
+	candlesSubscription1mETH, ref := candleService.ObserveCandles(ctx, 0, &MarketETH, &interval1m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1mETH))
 	assert.Equal(t, uint64(7), ref)
 
-	candlesSubscription5mETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval5m)
+	candlesSubscription5mETH, ref := candleService.ObserveCandles(ctx, 0, &MarketETH, &interval5m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription5mETH))
 	assert.Equal(t, uint64(8), ref)
 
-	candlesSubscription15mETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval15m)
+	candlesSubscription15mETH, ref := candleService.ObserveCandles(ctx, 0, &MarketETH, &interval15m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription15mETH))
 	assert.Equal(t, uint64(9), ref)
 
-	candlesSubscription1hETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval1h)
+	candlesSubscription1hETH, ref := candleService.ObserveCandles(ctx, 0, &MarketETH, &interval1h)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1hETH))
 	assert.Equal(t, uint64(10), ref)
 
-	candlesSubscription6hETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval6h)
+	candlesSubscription6hETH, ref := candleService.ObserveCandles(ctx, 0, &MarketETH, &interval6h)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription6hETH))
 	assert.Equal(t, uint64(11), ref)
 
-	candlesSubscription1dETH, ref := candleService.ObserveCandles(ctx, &MarketETH, &interval1d)
+	candlesSubscription1dETH, ref := candleService.ObserveCandles(ctx, 0, &MarketETH, &interval1d)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription1dETH))
 	assert.Equal(t, uint64(12), ref)
 
@@ -237,7 +237,7 @@ func TestSubscriptionUpdates_MinMax(t *testing.T) {
 
 	interval5m := types.Interval_I5M
 
-	candlesSubscription5mBTC, ref := candleService.ObserveCandles(ctx, &MarketBTC, &interval5m)
+	candlesSubscription5mBTC, ref := candleService.ObserveCandles(ctx, 0, &MarketBTC, &interval5m)
 	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription5mBTC))
 	assert.Equal(t, uint64(1), ref)
 
