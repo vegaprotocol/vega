@@ -41,6 +41,12 @@ func (c *candleService) ObserveCandles(ctx context.Context, market *string, inte
 
 	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
+		// close channels, if iT.Transport is never closed, the second routine
+		// consuming the Transport channel never returns - sleeping routine
+		defer func() {
+			close(iT.Transport)
+			close(candleCh)
+		}()
 		<-ctx.Done()
 		c.log.Debug("Candles subscriber closed connection",
 			logging.Uint64("id", id),

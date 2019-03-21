@@ -83,8 +83,13 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []types.Trade, ctx context.Context) {
+	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
+		// close these channels, too
+		defer func() {
+			close(internal)
+			close(trades)
+		}()
 		<-ctx.Done()
 		t.log.Debug("Trades subscriber closed connection",
 			logging.Uint64("id", id),
@@ -96,7 +101,7 @@ func (t *tradeService) ObserveTrades(ctx context.Context, market *string, party 
 				logging.String("ip-address", ip),
 				logging.Error(err))
 		}
-	}(ref, internal, ctx)
+	}(ref, ctx)
 
 	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
@@ -139,8 +144,13 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []types.Trade, ctx context.Context) {
+	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
+		// close channels to avoid deadlock
+		defer func() {
+			close(internal)
+			close(positions)
+		}()
 		<-ctx.Done()
 		t.log.Debug("Positions subscriber closed connection",
 			logging.Uint64("id", id),
@@ -152,7 +162,7 @@ func (t *tradeService) ObservePositions(ctx context.Context, party string) (<-ch
 				logging.String("ip-address", ip),
 				logging.Error(err))
 		}
-	}(ref, internal, ctx)
+	}(ref, ctx)
 
 	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)

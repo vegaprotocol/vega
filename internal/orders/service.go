@@ -181,8 +181,13 @@ func (s *orderService) ObserveOrders(ctx context.Context, market *string, party 
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []types.Order, ctx context.Context) {
+	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
+		// close the channels, to avoid sleeping goroutine
+		defer func() {
+			close(internal)
+			close(orders)
+		}()
 		<-ctx.Done()
 		s.log.Debug("Orders subscriber closed connection",
 			logging.Uint64("id", id),
@@ -194,7 +199,7 @@ func (s *orderService) ObserveOrders(ctx context.Context, market *string, party 
 				logging.String("ip-address", ip),
 				logging.Error(err))
 		}
-	}(ref, internal, ctx)
+	}(ref, ctx)
 
 	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)

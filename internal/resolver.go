@@ -1,8 +1,10 @@
 package internal
 
 import (
-	"code.vegaprotocol.io/vega/internal/blockchain"
+	"strings"
 	"sync"
+
+	"code.vegaprotocol.io/vega/internal/blockchain"
 
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -15,6 +17,9 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+// internal type used in CloseStores
+type errStack []error
 
 type Resolver struct {
 	config *Config
@@ -352,49 +357,43 @@ func (r *Resolver) ResolvePartyStore() (storage.PartyStore, error) {
 // CloseStores is a helper utility that aids in cleaning up the storage layer on application shutdown etc.
 // Typically run with defer, or at the end of the app lifecycle.
 func (r *Resolver) CloseStores() error {
-	var err error
+	var werr errStack
 	r.stMu.Lock()
 
 	if r.candleStore != nil {
-		err = r.candleStore.Close()
-		if err != nil {
-			err = errors.Wrap(err, "error closing candle store in resolver.")
+		if err := r.candleStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing candle store in resolver."))
 		}
 	}
 	if r.riskStore != nil {
-		err = r.riskStore.Close()
-		if err != nil {
-			err = errors.Wrap(err, "error closing risk store in resolver.")
+		if err := r.riskStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing risk store in resolver."))
 		}
 	}
 	if r.tradeStore != nil {
-		err = r.tradeStore.Close()
-		if err != nil {
-			err = errors.Wrap(err, "error closing trade store in resolver.")
+		if err := r.tradeStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing trade store in resolver."))
 		}
 	}
 	if r.orderStore != nil {
-		err = r.orderStore.Close()
-		if err != nil {
-			err = errors.Wrap(err, "error closing order store in resolver.")
+		if err := r.orderStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing order store in resolver."))
 		}
 	}
 	if r.marketStore != nil {
-		err = r.marketStore.Close()
-		if err != nil {
-			err = errors.Wrap(err, "error closing market store in resolver.")
+		if err := r.marketStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing market store in resolver."))
 		}
 	}
 	if r.partyStore != nil {
-		err = r.partyStore.Close()
-		if err != nil {
-			err = errors.Wrap(err, "error closing party store in resolver.")
+		if err := r.partyStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing party store in resolver."))
 		}
 	}
 
 	r.stMu.Unlock()
 
-	return err
+	return werr
 }
 
 // --------------- /Storage --------------
@@ -422,3 +421,12 @@ func (r *Resolver) ResolveBlockchainClient() (blockchain.Client, error) {
 }
 
 // -------------- /Blockchain -------------
+
+// Error - implement the error interface on the errStack type
+func (e errStack) Error() string {
+	s := make([]string, 0, len(e))
+	for _, err := range e {
+		s = append(s, err.Error())
+	}
+	return strings.Join(s, "\n")
+}

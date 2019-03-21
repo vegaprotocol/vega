@@ -71,8 +71,13 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
-	go func(id uint64, internal chan []types.Order, ctx context.Context) {
+	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
+		// close channels, prevent sleeping routine consuming internal channel
+		defer func() {
+			close(internal)
+			close(depth)
+		}()
 		<-ctx.Done()
 		s.log.Debug("Market depth subscriber closed connection",
 			logging.Uint64("id", id),
@@ -84,13 +89,12 @@ func (s *marketService) ObserveDepth(ctx context.Context, market string) (<-chan
 				logging.String("ip-address", ip),
 				logging.Error(err))
 		}
-	}(ref, internal, ctx)
+	}(ref, ctx)
 
 	go func(id uint64, ctx context.Context) {
 		ip := logging.IPAddressFromContext(ctx)
 		for range internal {
-			d, err := s.orderStore.GetMarketDepth(ctx, market)
-			if err != nil {
+			if d, err := s.orderStore.GetMarketDepth(ctx, market); err != nil {
 				s.log.Error("Failure calculating market depth for subscriber",
 					logging.Uint64("ref", ref),
 					logging.String("ip-address", ip),
