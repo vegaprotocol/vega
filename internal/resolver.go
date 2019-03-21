@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/internal/blockchain"
-
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
