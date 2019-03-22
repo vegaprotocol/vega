@@ -12,6 +12,8 @@ type Market struct {
 	matching  *matching.OrderBook
 }
 
+// NewMarket create a new market using the marketcfg specification
+// and the configuration
 func NewMarket(cfg *Config, marketcfg *types.Market) *Market {
 	mkt := &Market{
 		Config:    cfg,
@@ -22,10 +24,12 @@ func NewMarket(cfg *Config, marketcfg *types.Market) *Market {
 	return mkt
 }
 
+// GetID returns the id of the given market
 func (m *Market) GetID() string {
 	return m.marketcfg.Id
 }
 
+// CancelOrder cancel the given order
 func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellation, error) {
 	// Validate Market
 	if order.Market != m.marketcfg.Id {
@@ -39,6 +43,7 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellation, erro
 	return m.matching.CancelOrder(order)
 }
 
+// SubmitOrder submits the given order
 func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	// Validate Market
 	if order.Market != m.marketcfg.Id {
@@ -52,6 +57,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	return m.matching.SubmitOrder(order)
 }
 
+// DeleteOrder delete the given order from the order book
 func (m *Market) DeleteOrder(order *types.Order) error {
 	// Validate Market
 	if order.Market != m.marketcfg.Id {
@@ -64,6 +70,7 @@ func (m *Market) DeleteOrder(order *types.Order) error {
 	return m.matching.DeleteOrder(order)
 }
 
+// AmendOrder amend an existing order from the order book
 func (m *Market) AmendOrder(order *types.Order) error {
 	// Validate Market
 	if order.Market != m.marketcfg.Id {
@@ -77,6 +84,7 @@ func (m *Market) AmendOrder(order *types.Order) error {
 	return m.matching.AmendOrder(order)
 }
 
+// RemoveExpiredOrders remove all expired orders from the order book
 func (m *Market) RemoveExpiredOrders(timestamp uint64) []types.Order {
 	return m.matching.RemoveExpiredOrders(timestamp)
 }
