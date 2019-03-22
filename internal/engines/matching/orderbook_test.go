@@ -3,11 +3,10 @@ package matching
 import (
 	"fmt"
 	"testing"
-
-	types "code.vegaprotocol.io/vega/proto"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"time"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +29,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	book := NewBook(NewDefaultConfig(logger), market, true)
+	book := NewOrderBook(NewDefaultConfig(logger), market, true)
 	currentTimestamp := getCurrentUtcTimestampNano()
 	someTimeLater := currentTimestamp + (1000 * 1000)
 
@@ -46,8 +45,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpirationTimestamp: someTimeLater,
 		Id:                  "1",
 	}
-	_, err := book.AddOrder(order1)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err := book.SubmitOrder(order1)
+	assert.Equal(t, err, nil)
 
 	order2 := &types.Order{
 		Market:              market,
@@ -61,8 +60,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpirationTimestamp: someTimeLater + 1,
 		Id:                  "2",
 	}
-	_, err = book.AddOrder(order2)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err = book.SubmitOrder(order2)
+	assert.Equal(t, err, nil)
 
 	order3 := &types.Order{
 		Market:              market,
@@ -76,8 +75,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpirationTimestamp: someTimeLater,
 		Id:                  "3",
 	}
-	_, err = book.AddOrder(order3)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err = book.SubmitOrder(order3)
+	assert.Equal(t, err, nil)
 
 	order4 := &types.Order{
 		Market:    market,
@@ -90,8 +89,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Timestamp: currentTimestamp,
 		Id:        "4",
 	}
-	_, err = book.AddOrder(order4)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err = book.SubmitOrder(order4)
+	assert.Equal(t, err, nil)
 
 	order5 := &types.Order{
 		Market:              market,
@@ -105,8 +104,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpirationTimestamp: someTimeLater,
 		Id:                  "5",
 	}
-	_, err = book.AddOrder(order5)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err = book.SubmitOrder(order5)
+	assert.Equal(t, err, nil)
 
 	order6 := &types.Order{
 		Market:    market,
@@ -119,8 +118,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Timestamp: currentTimestamp,
 		Id:        "6",
 	}
-	_, err = book.AddOrder(order6)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err = book.SubmitOrder(order6)
+	assert.Equal(t, err, nil)
 
 	order7 := &types.Order{
 		Market:              market,
@@ -134,8 +133,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpirationTimestamp: someTimeLater + 9999,
 		Id:                  "7",
 	}
-	_, err = book.AddOrder(order7)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err = book.SubmitOrder(order7)
+	assert.Equal(t, err, nil)
 
 	order8 := &types.Order{
 		Market:              market,
@@ -149,8 +148,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpirationTimestamp: someTimeLater - 9999,
 		Id:                  "8",
 	}
-	_, err = book.AddOrder(order8)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err = book.SubmitOrder(order8)
+	assert.Equal(t, err, nil)
 
 	order9 := &types.Order{
 		Market:    market,
@@ -163,8 +162,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Timestamp: currentTimestamp,
 		Id:        "9",
 	}
-	_, err = book.AddOrder(order9)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err = book.SubmitOrder(order9)
+	assert.Equal(t, err, nil)
 
 	order10 := &types.Order{
 		Market:              market,
@@ -178,8 +177,8 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpirationTimestamp: someTimeLater - 1,
 		Id:                  "10",
 	}
-	_, err = book.AddOrder(order10)
-	assert.Equal(t, err, types.OrderError_NONE)
+	_, err = book.SubmitOrder(order10)
+	assert.Equal(t, err, nil)
 
 	expired := book.RemoveExpiredOrders(someTimeLater)
 	assert.Len(t, expired, 5)
@@ -191,12 +190,12 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 }
 
 //test for order validation
-func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
+func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	book.latestTimestamp = 10
 
 	invalidTimestampOrdertypes := &types.Order{
@@ -210,7 +209,7 @@ func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
 		Timestamp: 0,
 		Id:        "id-number-one",
 	}
-	_, err := book.AddOrder(invalidTimestampOrdertypes)
+	_, err := book.SubmitOrder(invalidTimestampOrdertypes)
 	assert.Equal(t, types.OrderError_ORDER_OUT_OF_SEQUENCE, err)
 
 	book.latestTimestamp = 0
@@ -225,14 +224,14 @@ func TestOrderBook_AddOrder2WithValidation(t *testing.T) {
 		Timestamp: 0,
 		Id:        "id-number-one",
 	}
-	_, err = book.AddOrder(invalidRemainginSizeOrdertypes)
+	_, err = book.SubmitOrder(invalidRemainginSizeOrdertypes)
 	assert.Equal(t, types.OrderError_INVALID_REMAINING_SIZE, err)
 }
 
-func TestOrderBook_RemoveOrder(t *testing.T) {
+func TestOrderBook_DeleteOrder(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
@@ -245,9 +244,9 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 		Timestamp: 0,
 	}
 
-	book.AddOrder(newOrder)
+	book.SubmitOrder(newOrder)
 
-	err := book.RemoveOrder(newOrder)
+	err := book.DeleteOrder(newOrder)
 	if err != nil {
 		fmt.Println(err, "ORDER_NOT_FOUND")
 	}
@@ -255,11 +254,11 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 	book.PrintState("AFTER REMOVE ORDER")
 }
 
-func TestOrderBook_AddOrder(t *testing.T) {
+func TestOrderBook_SubmitOrder(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 
 	const numberOfTimestamps = 3
 	m := make(map[int64][]*types.Order, numberOfTimestamps)
@@ -395,10 +394,10 @@ func TestOrderBook_AddOrder(t *testing.T) {
 	timestamps := []int64{0, 1, 2}
 	for _, timestamp := range timestamps {
 		for index, _ := range m[timestamp] {
-			fmt.Println("tests calling book.AddOrder: ", m[timestamp][index])
-			confirmationtypes, err := book.AddOrder(m[timestamp][index])
+			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
+			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
 			// this should not return any errors
-			assert.Equal(t, types.OrderError_NONE, err)
+			assert.Equal(t, nil, err)
 			// this should not generate any trades
 			assert.Equal(t, 0, len(confirmationtypes.Trades))
 		}
@@ -1023,10 +1022,10 @@ func TestOrderBook_AddOrder(t *testing.T) {
 		fmt.Println("expectedTrades: ", s.expectedTrades)
 		fmt.Println()
 
-		confirmationtypes, err := book.AddOrder(s.aggressiveOrder)
+		confirmationtypes, err := book.SubmitOrder(s.aggressiveOrder)
 
 		//this should not return any errors
-		assert.Equal(t, types.OrderError_NONE, err)
+		assert.Equal(t, nil, err)
 
 		//this should not generate any trades
 		assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))
@@ -1052,12 +1051,12 @@ func TestOrderBook_AddOrder(t *testing.T) {
 	}
 }
 
-func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
+func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "invalid",
 		Party:     "A",
@@ -1070,8 +1069,8 @@ func TestOrderBook_AddOrderInvalidMarket(t *testing.T) {
 		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
 
-	_, err := book.AddOrder(newOrder)
-	if err != types.OrderError_NONE {
+	_, err := book.SubmitOrder(newOrder)
+	if err != nil {
 		fmt.Println(err)
 	}
 
@@ -1086,7 +1085,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
@@ -1099,12 +1098,12 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
+	confirmation, err := book.SubmitOrder(newOrder)
 	orderAdded := confirmation.Order
 
 	// Act
 	res, err := book.CancelOrder(orderAdded)
-	if err != types.OrderError_NONE {
+	if err != nil {
 		fmt.Println(err)
 	}
 
@@ -1123,7 +1122,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Party:     "A",
@@ -1136,12 +1135,12 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
+	confirmation, err := book.SubmitOrder(newOrder)
 	orderAdded := confirmation.Order
 
 	// Act
 	res, err := book.CancelOrder(orderAdded)
-	if err != types.OrderError_NONE {
+	if err != nil {
 		fmt.Println(err)
 	}
 
@@ -1159,23 +1158,23 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 
 	logger.Debug("BEGIN CANCELLING MARKET MISMATCH ORDER")
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market: "testOrderBook",
 		Id:     "123456",
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
+	confirmation, err := book.SubmitOrder(newOrder)
 	orderAdded := confirmation.Order
 
 	orderAdded.Market = "invalid" // Bad market, malformed?
 
 	_, err = book.CancelOrder(orderAdded)
-	if err != types.OrderError_NONE {
+	if err != nil {
 		fmt.Println(err)
 	}
 
-	assert.Equal(t, types.OrderError_INVALID_MARKET_ID, err)
+	assert.Equal(t, types.OrderError_ORDER_REMOVAL_FAILURE, err)
 }
 
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
@@ -1184,17 +1183,17 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 
 	logger.Debug("BEGIN CANCELLING INVALID ORDER")
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market: "testOrderBook",
 		Id:     "id",
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
+	confirmation, err := book.SubmitOrder(newOrder)
 	orderAdded := confirmation.Order
 
 	_, err = book.CancelOrder(orderAdded)
-	if err != types.OrderError_NONE {
+	if err != nil {
 		logger.Debug("error cancelling order", logging.Error(err))
 	}
 
@@ -1226,7 +1225,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1237,12 +1236,12 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 		Type:      types.Order_GTC,
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
-	if err != types.OrderError_NONE {
+	confirmation, err := book.SubmitOrder(newOrder)
+	if err != nil {
 		t.Log(err)
 	}
 
-	assert.Equal(t, types.OrderError_NONE, err)
+	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
@@ -1269,7 +1268,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1280,12 +1279,12 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 		Type:      types.Order_GTC,
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
-	if err != types.OrderError_NONE {
+	confirmation, err := book.SubmitOrder(newOrder)
+	if err != nil {
 		t.Log(err)
 	}
 
-	assert.Equal(t, types.OrderError_NONE, err)
+	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
@@ -1311,7 +1310,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1322,8 +1321,8 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 		Type:      types.Order_GTC,
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
-	if err != types.OrderError_NONE {
+	confirmation, err := book.SubmitOrder(newOrder)
+	if err != nil {
 		fmt.Println(err)
 	}
 
@@ -1353,7 +1352,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 
 	logger.Debug("BEGIN AMENDING ORDER")
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1365,12 +1364,12 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 		Type:      types.Order_GTC,
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
-	if err != types.OrderError_NONE {
+	confirmation, err := book.SubmitOrder(newOrder)
+	if err != nil {
 		t.Log(err)
 	}
 
-	assert.Equal(t, types.OrderError_NONE, err)
+	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
@@ -1400,7 +1399,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 
 	logger.Debug("BEGIN AMENDING OUT OF SEQUENCE ORDER")
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1413,12 +1412,12 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		Timestamp: 10,
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
-	if err != types.OrderError_NONE {
+	confirmation, err := book.SubmitOrder(newOrder)
+	if err != nil {
 		fmt.Println(err)
 	}
 
-	assert.Equal(t, types.OrderError_NONE, err)
+	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
@@ -1449,7 +1448,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 
 	logger.Debug("BEGIN AMEND ORDER INVALID SIZE")
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", true)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 	newOrder := &types.Order{
 		Market:    "testOrderBook",
 		Id:        "123456",
@@ -1462,12 +1461,12 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		Timestamp: 10,
 	}
 
-	confirmation, err := book.AddOrder(newOrder)
-	if err != types.OrderError_NONE {
+	confirmation, err := book.SubmitOrder(newOrder)
+	if err != nil {
 		t.Log(err)
 	}
 
-	assert.Equal(t, types.OrderError_NONE, err)
+	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
@@ -1493,13 +1492,13 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 }
 
 // ProRata mode OFF which is a default config for vega ME
-func TestOrderBook_AddOrderProRataModeOff(t *testing.T) {
+func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
 	logger.Debug("BEGIN PRO-RATA MODE OFF")
 
-	book := NewBook(NewDefaultConfig(logger), "testOrderBook", false)
+	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", false)
 
 	const numberOfTimestamps = 2
 	m := make(map[int64][]*types.Order, numberOfTimestamps)
@@ -1579,10 +1578,10 @@ func TestOrderBook_AddOrderProRataModeOff(t *testing.T) {
 	timestamps := []int64{0, 1}
 	for _, timestamp := range timestamps {
 		for index, _ := range m[timestamp] {
-			fmt.Println("tests calling book.AddOrder: ", m[timestamp][index])
-			confirmationtypes, err := book.AddOrder(m[timestamp][index])
+			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
+			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
 			// this should not return any errors
-			assert.Equal(t, types.OrderError_NONE, err)
+			assert.Equal(t, nil, err)
 			// this should not generate any trades
 			assert.Equal(t, 0, len(confirmationtypes.Trades))
 		}
@@ -1795,10 +1794,10 @@ func TestOrderBook_AddOrderProRataModeOff(t *testing.T) {
 		fmt.Println("expectedTrades: ", s.expectedTrades)
 		fmt.Println()
 
-		confirmationtypes, err := book.AddOrder(s.aggressiveOrder)
+		confirmationtypes, err := book.SubmitOrder(s.aggressiveOrder)
 
 		//this should not return any errors
-		assert.Equal(t, types.OrderError_NONE, err)
+		assert.Equal(t, nil, err)
 
 		//this should not generate any trades
 		assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))

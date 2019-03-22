@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/matching"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -66,12 +65,12 @@ func BenchmarkMatching(
 		defer logger.Sync()
 
 		// Matching engine (trade matching)
-		matchingConfig := matching.NewDefaultConfig(logger)
-		matchingEngine := matching.NewMatchingEngine(matchingConfig)
+		// matchingConfig := matching.NewDefaultConfig(logger)
+		// matchingEngine := matching.NewMatchingEngine(matchingConfig)
 
 		// Execution engine (broker operation of markets at runtime etc)
 		eec := execution.NewDefaultConfig(logger, "")
-		executionEngine := execution.NewExecutionEngine(eec, matchingEngine,
+		executionEngine := execution.NewExecutionEngine(eec,
 			timeService, orderStore, tradeStore, candleStore, marketStore, partyStore)
 
 		var timestamp int64
