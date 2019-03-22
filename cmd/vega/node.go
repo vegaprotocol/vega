@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/matching"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 
 	"github.com/pkg/errors"
@@ -136,10 +135,8 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	// Execution engine (broker operation at runtime etc)
-	matchingEngine := matching.NewMatchingEngine(conf.Matching)
 	executionEngine := execution.NewExecutionEngine(
 		conf.Execution,
-		matchingEngine,
 		timeService,
 		orderStore,
 		tradeStore,

@@ -9,7 +9,7 @@ import (
 
 type OrderBook struct {
 	*Config
-	name            string
+	marketID        string
 	buy             *OrderBookSide
 	sell            *OrderBookSide
 	lastTradedPrice uint64
@@ -18,9 +18,9 @@ type OrderBook struct {
 }
 
 // Create an order book with a given name
-func NewBook(config *Config, name string, proRataMode bool) *OrderBook {
+func NewOrderBook(config *Config, marketID string, proRataMode bool) *OrderBook {
 	return &OrderBook{
-		name:           name,
+		marketID:       marketID,
 		buy:            &OrderBookSide{Config: config, proRataMode: proRataMode},
 		sell:           &OrderBookSide{Config: config, proRataMode: proRataMode},
 		Config:         config,
@@ -32,19 +32,12 @@ func NewBook(config *Config, name string, proRataMode bool) *OrderBook {
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, error) {
-	// Validate Market
-	if order.Market != b.name {
-		b.log.Error("Market ID mismatch",
-			logging.Order(*order),
-			logging.String("order-book", b.name))
 
-		return nil, types.ErrInvalidMarketID
-	}
 	// Validate Order ID must be present
 	if order.Id == "" || len(order.Id) < 4 {
 		b.log.Error("Order ID missing or invalid",
 			logging.Order(*order),
-			logging.String("order-book", b.name))
+			logging.String("order-book", b.marketID))
 
 		return nil, types.ErrInvalidOrderID
 	}
@@ -54,7 +47,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, e
 			b.log.Error("Failed to remove order (buy side)",
 				logging.Order(*order),
 				logging.Error(err),
-				logging.String("order-book", b.name))
+				logging.String("order-book", b.marketID))
 
 			return nil, types.ErrOrderRemovalFailure
 		}
@@ -63,7 +56,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, e
 			b.log.Error("Failed to remove order (sell side)",
 				logging.Order(*order),
 				logging.Error(err),
-				logging.String("order-book", b.name))
+				logging.String("order-book", b.marketID))
 
 			return nil, types.ErrOrderRemovalFailure
 		}
@@ -83,7 +76,7 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 		b.log.Error("Order validation failure",
 			logging.Order(*order),
 			logging.Error(err),
-			logging.String("order-book", b.name))
+			logging.String("order-book", b.marketID))
 
 		return err
 	}
@@ -93,7 +86,7 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 			b.log.Error("Failed to amend (buy side)",
 				logging.Order(*order),
 				logging.Error(err),
-				logging.String("order-book", b.name))
+				logging.String("order-book", b.marketID))
 
 			return err
 		}
@@ -102,7 +95,7 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 			b.log.Error("Failed to amend (sell side)",
 				logging.Order(*order),
 				logging.Error(err),
-				logging.String("order-book", b.name))
+				logging.String("order-book", b.marketID))
 
 			return err
 		}
@@ -112,7 +105,7 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
-func (b *OrderBook) AddOrder(order *types.Order) (*types.OrderConfirmation, error) {
+func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	if err := b.validateOrder(order); err != nil {
 		return nil, err
 	}
@@ -174,10 +167,10 @@ func (b *OrderBook) AddOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
-	return orderConfirmation, types.OrderError_NONE
+	return orderConfirmation, nil
 }
 
-func (b *OrderBook) RemoveOrder(order *types.Order) error {
+func (b *OrderBook) DeleteOrder(order *types.Order) error {
 	err := b.getSide(order.Side).RemoveOrder(order)
 	return err
 }
@@ -193,7 +186,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []types.Orde
 	// linear scan of our expiring orders, prune any that have expired
 	for _, or := range b.expiringOrders {
 		if or.ExpirationTimestamp <= expirationTimestamp {
-			b.RemoveOrder(&or)              // order is removed from the book
+			b.DeleteOrder(&or)              // order is removed from the book
 			or.Status = types.Order_Expired // order is marked as expired for storage
 			expiredOrders = append(expiredOrders, or)
 		} else {
@@ -203,7 +196,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp uint64) []types.Orde
 
 	if b.LogRemovedOrdersDebug {
 		b.log.Debug("Removed expired orders from order book",
-			logging.String("order-book", b.name),
+			logging.String("order-book", b.marketID),
 			logging.Int("expired-orders", len(expiredOrders)),
 			logging.Int("remaining-orders", len(pendingOrders)))
 	}
