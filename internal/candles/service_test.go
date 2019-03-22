@@ -221,7 +221,8 @@ func isSubscriptionEmpty(transport <-chan *types.Candle) bool {
 func TestSubscriptionUpdates_MinMax(t *testing.T) {
 	var wg sync.WaitGroup
 	MarketBTC := "BTC/DEC19"
-	var ctx = context.Background()
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	storeConfig := storageConfig()
 	storage.FlushStores(storeConfig)
 	candleStore, err := storage.NewCandleStore(storeConfig)

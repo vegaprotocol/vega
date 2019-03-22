@@ -49,6 +49,7 @@ mocks: ## Make mocks
 		go run github.com/vektra/mockery/cmd/mockery -all ; \
 		cd "$$origdir" ; \
 	done
+	@go generate ./internal/...
 
 msan: ## Run memory sanitizer
 	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi

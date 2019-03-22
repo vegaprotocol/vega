@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery
 type Service interface {
 	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
 	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error)
