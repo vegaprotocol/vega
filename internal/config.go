@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/matching"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/risk"
@@ -30,9 +29,8 @@ type Config struct {
 	Execution *execution.Config
 	//Fees *fees.config
 	//Governanace *governance.config
-	Logging  *logging.Config
-	Markets  *markets.Config
-	Matching *matching.Config
+	Logging *logging.Config
+	Markets *markets.Config
 	//Monitoring monitoring.Config
 	Orders  *orders.Config
 	Parties *parties.Config
@@ -94,7 +92,6 @@ func NewConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 	//viper.SetDefault("Governance", c.Governance)
 	viper.SetDefault("Logging", c.Logging)
 	viper.SetDefault("Markets", c.Markets)
-	// viper.SetDefault("Matching", c.Matching)
 	//viper.SetDefault("Monitoring", c.Monitoring)
 	viper.SetDefault("Orders", c.Orders)
 	viper.SetDefault("Parties", c.Parties)
