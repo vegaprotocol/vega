@@ -74,7 +74,7 @@ func NewExecutionEngine(
 		}
 		err := e.marketStore.Post(&mkt)
 		if err != nil {
-			e.log.Panic("Failed to add default market to market store",
+			e.log.Error("Failed to add default market to market store",
 				logging.String("market-id", marketId),
 				logging.Error(err))
 		}
@@ -115,7 +115,7 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Insert aggressive remaining order
 	err := e.orderStore.Post(*order)
 	if err != nil {
-		e.log.Panic("Failure storing new order in execution engine (submit)", logging.Error(err))
+		e.log.Error("Failure storing new order in execution engine (submit)", logging.Error(err))
 	}
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert all passive orders siting on the book
@@ -123,7 +123,7 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// Note: writing to store should not prevent flow to other engines
 			err := e.orderStore.Put(*order)
 			if err != nil {
-				e.log.Panic("Failure storing order update in execution engine (submit)",
+				e.log.Error("Failure storing order update in execution engine (submit)",
 					logging.Order(*order),
 					logging.Error(err))
 			}
@@ -143,7 +143,7 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			}
 
 			if err := e.tradeStore.Post(trade); err != nil {
-				e.log.Panic("Failure storing new trade in execution engine (submit)",
+				e.log.Error("Failure storing new trade in execution engine (submit)",
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
@@ -258,7 +258,7 @@ func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, erro
 	// Update the order in our stores (will be marked as cancelled)
 	err := e.orderStore.Put(*order)
 	if err != nil {
-		e.log.Panic("Failure storing order update in execution engine (cancel)",
+		e.log.Error("Failure storing order update in execution engine (cancel)",
 			logging.Order(*order),
 			logging.Error(err))
 	}
@@ -340,7 +340,7 @@ func (e *engine) Process() error {
 	for _, order := range expiringOrders {
 		err := e.orderStore.Put(order)
 		if err != nil {
-			e.log.Panic("error updating store for remove expiring order",
+			e.log.Error("error updating store for remove expiring order",
 				logging.Order(order),
 				logging.Error(err))
 		}

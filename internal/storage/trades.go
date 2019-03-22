@@ -50,17 +50,18 @@ type TradeStore interface {
 // badgerTradeStore is a package internal data struct that implements the TradeStore interface.
 type badgerTradeStore struct {
 	*Config
-	badger       *badgerStore
-	subscribers  map[uint64]chan<- []types.Trade
-	subscriberId uint64
-	buffer       []types.Trade
-	mu           sync.Mutex
+	badger          *badgerStore
+	subscribers     map[uint64]chan<- []types.Trade
+	subscriberId    uint64
+	buffer          []types.Trade
+	mu              sync.Mutex
+	onCriticalError func()
 }
 
 // NewTradeStore is used to initialise and create a TradeStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewTradeStore(c *Config) (TradeStore, error) {
+func NewTradeStore(c *Config, onCriticalError func()) (TradeStore, error) {
 	err := InitStoreDirectory(c.TradeStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for trades storage")
@@ -71,10 +72,11 @@ func NewTradeStore(c *Config) (TradeStore, error) {
 	}
 	bs := badgerStore{db: db}
 	return &badgerTradeStore{
-		Config:      c,
-		badger:      &bs,
-		buffer:      make([]types.Trade, 0),
-		subscribers: make(map[uint64]chan<- []types.Trade),
+		Config:          c,
+		badger:          &bs,
+		buffer:          make([]types.Trade, 0),
+		subscribers:     make(map[uint64]chan<- []types.Trade),
+		onCriticalError: onCriticalError,
 	}, nil
 }
 
@@ -136,6 +138,11 @@ func (ts *badgerTradeStore) Commit() error {
 
 	err := ts.writeBatch(items)
 	if err != nil {
+		ts.log.Error(
+			"badger store error on write",
+			logging.Error(err),
+		)
+		ts.onCriticalError()
 		return err
 	}
 	err = ts.notify(items)

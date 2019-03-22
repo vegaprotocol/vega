@@ -14,7 +14,7 @@ import (
 func TestMarketDepth_Hard(t *testing.T) {
 	ctx := context.Background()
 	config := NewTestConfig()
-	orderStore, err := NewOrderStore(config)
+	orderStore, err := NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -376,7 +376,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	ctx := context.Background()
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	config := NewTestConfig()
-	orderStore, err := NewOrderStore(config)
+	orderStore, err := NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -502,7 +502,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	ctx := context.Background()
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 	config := NewTestConfig()
-	orderStore, err := NewOrderStore(config)
+	orderStore, err := NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 

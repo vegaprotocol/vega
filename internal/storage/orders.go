@@ -51,18 +51,19 @@ type OrderStore interface {
 // badgerOrderStore is a package internal data struct that implements the OrderStore interface.
 type badgerOrderStore struct {
 	*Config
-	badger       *badgerStore
-	subscribers  map[uint64]chan<- []types.Order
-	subscriberId uint64
-	buffer       []types.Order
-	depth        map[string]MarketDepth
-	mu           sync.Mutex
+	badger          *badgerStore
+	subscribers     map[uint64]chan<- []types.Order
+	subscriberId    uint64
+	buffer          []types.Order
+	depth           map[string]MarketDepth
+	mu              sync.Mutex
+	onCriticalError func()
 }
 
 // NewOrderStore is used to initialise and create a OrderStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewOrderStore(c *Config) (OrderStore, error) {
+func NewOrderStore(c *Config, onCriticalError func()) (OrderStore, error) {
 	err := InitStoreDirectory(c.OrderStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for orders storage")
@@ -73,11 +74,12 @@ func NewOrderStore(c *Config) (OrderStore, error) {
 	}
 	bs := badgerStore{db: db}
 	return &badgerOrderStore{
-		Config:      c,
-		badger:      &bs,
-		depth:       make(map[string]MarketDepth, 0),
-		subscribers: make(map[uint64]chan<- []types.Order),
-		buffer:      make([]types.Order, 0),
+		Config:          c,
+		badger:          &bs,
+		depth:           make(map[string]MarketDepth, 0),
+		subscribers:     make(map[uint64]chan<- []types.Order),
+		buffer:          make([]types.Order, 0),
+		onCriticalError: onCriticalError,
 	}, nil
 }
 
@@ -150,6 +152,11 @@ func (os *badgerOrderStore) Commit() error {
 
 	err := os.writeBatch(items)
 	if err != nil {
+		os.log.Error(
+			"unable to write batch in order badger store",
+			logging.Error(err),
+		)
+		os.onCriticalError()
 		return err
 	}
 	err = os.notify(items)
