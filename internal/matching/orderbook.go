@@ -31,7 +31,7 @@ func NewBook(config *Config, name string, proRataMode bool) *OrderBook {
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
-func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, error) {
+func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
 	if order.Market != b.name {
 		b.log.Error("Market ID mismatch",
@@ -72,7 +72,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellation, e
 	// Important to mark the order as cancelled (and no longer active)
 	order.Status = types.Order_Cancelled
 
-	result := &types.OrderCancellation{
+	result := &types.OrderCancellationConfirmation{
 		Order: order,
 	}
 	return result, nil

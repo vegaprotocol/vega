@@ -18,7 +18,7 @@ import (
 type Client interface {
 	CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error)
 	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
-	AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error)
+	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
@@ -46,7 +46,7 @@ func (b *client) CancelOrder(ctx context.Context, order *types.Order) (success b
 	return b.sendOrderCommand(ctx, order, CancelOrderCommand)
 }
 
-func (b *client) AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error) {
+func (b *client) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
 	return b.sendAmendmentCommand(ctx, amendment, AmendOrderCommand)
 }
 
@@ -98,7 +98,7 @@ func (b *client) sendOrderCommand(ctx context.Context, order *types.Order, cmd C
 	return b.sendCommand(ctx, bytes, cmd)
 }
 
-func (b *client) sendAmendmentCommand(ctx context.Context, amendment *types.Amendment, cmd Command) (success bool, err error) {
+func (b *client) sendAmendmentCommand(ctx context.Context, amendment *types.OrderAmendment, cmd Command) (success bool, err error) {
 
 	// Proto-buf marshall the incoming order to byte slice.
 	bytes, err := proto.Marshal(amendment)

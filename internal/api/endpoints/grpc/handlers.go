@@ -42,7 +42,7 @@ type Handlers struct {
 const defaultLimit = uint64(1000)
 
 // CreateOrder is used to request sending an order into the VEGA platform, via consensus.
-func (h *Handlers) CreateOrder(ctx context.Context, order *types.Order) (*api.OrderResponse, error) {
+func (h *Handlers) SubmitOrder(ctx context.Context, order *types.OrderSubmission) (*api.OrderResponse, error) {
 	if h.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
@@ -51,7 +51,7 @@ func (h *Handlers) CreateOrder(ctx context.Context, order *types.Order) (*api.Or
 }
 
 // CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
-func (h *Handlers) CancelOrder(ctx context.Context, order *types.Order) (*api.OrderResponse, error) {
+func (h *Handlers) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*api.OrderResponse, error) {
 	if h.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
@@ -60,7 +60,7 @@ func (h *Handlers) CancelOrder(ctx context.Context, order *types.Order) (*api.Or
 }
 
 // AmendOrder is used to request editing an order onto the VEGA platform, via consensus.
-func (h *Handlers) AmendOrder(ctx context.Context, amendment *types.Amendment) (*api.OrderResponse, error) {
+func (h *Handlers) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*api.OrderResponse, error) {
 	success, err := h.OrderService.AmendOrder(ctx, amendment)
 	return &api.OrderResponse{Success: success}, err
 }

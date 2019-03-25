@@ -32,7 +32,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/vegaAmendment"
+              "$ref": "#/definitions/vegaOrderAmendment"
             }
           }
         ],
@@ -58,33 +58,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/vegaOrder"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/createOrder": {
-      "post": {
-        "operationId": "CreateOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/vegaOrder"
+              "$ref": "#/definitions/vegaOrderCancellation"
             }
           }
         ],
@@ -461,32 +435,6 @@
         }
       }
     },
-    "vegaAmendment": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "party": {
-          "type": "string"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "expirationDatetime": {
-          "type": "string"
-        },
-        "expirationTimestamp": {
-          "type": "string",
-          "format": "uint64"
-        }
-      }
-    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -620,6 +568,46 @@
           "format": "uint64"
         },
         "reference": {
+          "type": "string"
+        }
+      }
+    },
+    "vegaOrderAmendment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "party": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "expirationDatetime": {
+          "type": "string"
+        },
+        "expirationTimestamp": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaOrderCancellation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string"
+        },
+        "party": {
           "type": "string"
         }
       }

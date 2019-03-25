@@ -14,18 +14,18 @@ type Service struct {
 }
 
 // AmendOrder provides a mock function with given fields: ctx, amendment
-func (_m *Service) AmendOrder(ctx context.Context, amendment *proto.Amendment) (bool, error) {
+func (_m *Service) AmendOrder(ctx context.Context, amendment *proto.OrderAmendment) (bool, error) {
 	ret := _m.Called(ctx, amendment)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *proto.Amendment) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *proto.OrderAmendment) bool); ok {
 		r0 = rf(ctx, amendment)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *proto.Amendment) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *proto.OrderAmendment) error); ok {
 		r1 = rf(ctx, amendment)
 	} else {
 		r1 = ret.Error(1)
@@ -35,18 +35,18 @@ func (_m *Service) AmendOrder(ctx context.Context, amendment *proto.Amendment) (
 }
 
 // CancelOrder provides a mock function with given fields: ctx, order
-func (_m *Service) CancelOrder(ctx context.Context, order *proto.Order) (bool, error) {
+func (_m *Service) CancelOrder(ctx context.Context, order *proto.OrderCancellation) (bool, error) {
 	ret := _m.Called(ctx, order)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *proto.Order) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *proto.OrderCancellation) bool); ok {
 		r0 = rf(ctx, order)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *proto.Order) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *proto.OrderCancellation) error); ok {
 		r1 = rf(ctx, order)
 	} else {
 		r1 = ret.Error(1)
@@ -56,25 +56,25 @@ func (_m *Service) CancelOrder(ctx context.Context, order *proto.Order) (bool, e
 }
 
 // CreateOrder provides a mock function with given fields: ctx, order
-func (_m *Service) CreateOrder(ctx context.Context, order *proto.Order) (bool, string, error) {
+func (_m *Service) CreateOrder(ctx context.Context, order *proto.OrderSubmission) (bool, string, error) {
 	ret := _m.Called(ctx, order)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *proto.Order) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *proto.OrderSubmission) bool); ok {
 		r0 = rf(ctx, order)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 string
-	if rf, ok := ret.Get(1).(func(context.Context, *proto.Order) string); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *proto.OrderSubmission) string); ok {
 		r1 = rf(ctx, order)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, *proto.Order) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, *proto.OrderSubmission) error); ok {
 		r2 = rf(ctx, order)
 	} else {
 		r2 = ret.Error(2)

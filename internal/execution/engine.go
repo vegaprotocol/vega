@@ -18,10 +18,10 @@ type Engine interface {
 	// SubmitOrder takes a new order request and submits it to the execution engine, storing output etc.
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
 	// CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-	CancelOrder(order *types.Order) (*types.OrderCancellation, error)
+	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	// AmendOrder take order amendment details and attempts to amend the order
 	// if it exists and is in a state to be edited.
-	AmendOrder(order *types.Amendment) (*types.OrderConfirmation, error)
+	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 
 	// Generate creates any data (including storing state changes) in the underlying stores.
 	Generate() error
@@ -163,7 +163,7 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 // AmendOrder take order amendment details and attempts to amend the order
 // if it exists and is in a state to be edited.
-func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, error) {
+func (e *engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
 
 	ctx := context.TODO()
@@ -242,7 +242,7 @@ func (e *engine) AmendOrder(order *types.Amendment) (*types.OrderConfirmation, e
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellation, error) {
+func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	e.log.Debug("Cancel order")
 
 	// Cancel order in matching engine

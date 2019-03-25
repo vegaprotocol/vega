@@ -38,8 +38,8 @@ func (p *abciProcessor) getOrder(payload []byte) (*types.Order, error) {
 	return order, nil
 }
 
-func (p *abciProcessor) getOrderAmendment(payload []byte) (*types.Amendment, error) {
-	amendment := &types.Amendment{}
+func (p *abciProcessor) getOrderAmendment(payload []byte) (*types.OrderAmendment, error) {
+	amendment := &types.OrderAmendment{}
 	err := proto.Unmarshal(payload, amendment)
 	if err != nil {
 		return nil, errors.Wrap(err, "error decoding order to proto")

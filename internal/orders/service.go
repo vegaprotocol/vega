@@ -16,9 +16,9 @@ import (
 )
 
 type Service interface {
-	CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error)
-	AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error)
-	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
+	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
+	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
@@ -46,9 +46,19 @@ func NewOrderService(config *Config, store storage.OrderStore, time vegatime.Ser
 	}, nil
 }
 
-func (s *orderService) CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error) {
+func (s *orderService) CreateOrder(ctx context.Context, orderSubmission *types.OrderSubmission) (success bool, orderReference string, err error) {
+	order := types.Order{
+		Id:                 orderSubmission.Id,
+		Party:              orderSubmission.Party,
+		Price:              orderSubmission.Price,
+		Size:               orderSubmission.Size,
+		Side:               orderSubmission.Side,
+		Type:               orderSubmission.Type,
+		ExpirationDatetime: orderSubmission.ExpirationDatetime,
+	}
+
 	// Set defaults, prevent unwanted external manipulation
-	order.Remaining = order.Size
+	order.Remaining = orderSubmission.Size
 	order.Status = types.Order_Active
 	order.Timestamp = 0
 	order.Reference = ""
@@ -72,13 +82,13 @@ func (s *orderService) CreateOrder(ctx context.Context, order *types.Order) (suc
 	}
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
-	return s.blockchain.CreateOrder(ctx, order)
+	return s.blockchain.CreateOrder(ctx, &order)
 }
 
 // CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
-func (s *orderService) CancelOrder(ctx context.Context, order *types.Order) (success bool, err error) {
+func (s *orderService) CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error) {
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByMarketAndId(ctx, order.Market, order.Id)
+	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketId, order.Id)
 	if err != nil {
 		return false, err
 	}
@@ -95,7 +105,7 @@ func (s *orderService) CancelOrder(ctx context.Context, order *types.Order) (suc
 	return s.blockchain.CancelOrder(ctx, o)
 }
 
-func (s *orderService) AmendOrder(ctx context.Context, amendment *types.Amendment) (success bool, err error) {
+func (s *orderService) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
 
 	// Validate order exists using read store
 	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.Party, amendment.Id)

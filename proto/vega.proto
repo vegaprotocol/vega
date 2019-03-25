@@ -1,7 +1,8 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "proto";
+option go_package = "code.vegaprotocol.io/vega/proto";
+
 enum Side { Buy = 0; Sell = 1; }
 
 enum Interval { I1M = 0; I5M = 1; I15M = 2; I1H = 3; I6H = 4; I1D = 5; }
@@ -22,24 +23,37 @@ message RiskFactor {
 }
 
 message Order {
-    enum Type { GTC = 0; GTT = 1; ENE = 2; FOK = 3; }
-    enum Status { Active = 0; Expired = 1; Cancelled = 2; Stopped = 3; Filled = 4; }
-    string id = 1;
-    string market = 2;
-    string party = 3;
-    Side side = 4;
-    uint64 price = 5;
-    uint64 size = 6;
-    uint64 remaining = 7;
-    Type type = 8;
-    uint64 timestamp = 9;
-    Status status = 10;
-    string expirationDatetime = 11;
-    uint64 expirationTimestamp = 12;
-    string reference = 13;
+  enum Type {
+    GTC = 0;
+    GTT = 1;
+    ENE = 2;
+    FOK = 3;
+  }
+
+  enum Status {
+    Active = 0;
+    Expired = 1;
+    Cancelled = 2;
+    Stopped = 3;
+    Filled = 4;
+  }
+
+  string id = 1;
+  string market = 2;
+  string party = 3;
+  Side side = 4;
+  uint64 price = 5;
+  uint64 size = 6;
+  uint64 remaining = 7;
+  Type type = 8;
+  uint64 timestamp = 9;
+  Status status = 10;
+  string expirationDatetime = 11;
+  uint64 expirationTimestamp = 12;
+  string reference = 13;
 }
 
-message OrderCancellation {
+message OrderCancellationConfirmation {
     Order order = 1;
 }
 
@@ -152,11 +166,28 @@ enum ChainStatus {
     CONNECTED = 2;
 }
 
-message Amendment {
+message OrderAmendment {
     string id = 1;
     string party = 2;
     uint64 price = 3;
     uint64 size = 4;
     string expirationDatetime = 5;
     uint64 expirationTimestamp = 6;
+}
+
+message OrderSubmission {
+  string id = 1;
+  string marketId = 2;
+  string party = 3;
+  uint64 price = 4;
+  uint64 size = 5;
+  Side side = 6;
+  Order.Type type = 7;
+  string expirationDatetime = 8;
+}
+
+message OrderCancellation {
+  string id = 1;
+  string marketId = 2;
+  string party = 3;
 }
