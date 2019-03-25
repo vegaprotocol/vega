@@ -3,6 +3,9 @@ syntax = "proto3";
 import "proto/vega.proto";
 
 package grpc;
+
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+
 option go_package = "api";
 
 service trading {
@@ -28,7 +31,7 @@ message OrderResponse {
 }
 
 message OrdersByMarketRequest {
-    string market = 1;
+    string market = 1 [(validator.field) = {msg_exists : true}];
     OptionalParams params = 2;
 }
 
@@ -37,7 +40,7 @@ message OrdersByMarketResponse {
 }
 
 message OrdersByPartyRequest {
-    string party = 1;
+    string party = 1 [(validator.field) = {msg_exists : true }];
     OptionalParams params = 2;
 }
 
@@ -46,8 +49,8 @@ message OrdersByPartyResponse {
 }
 
 message OrderByMarketAndIdRequest {
-    string market = 1;
-    string id = 2;
+    string market = 1 [(validator.field) = {msg_exists : true }];
+    string id = 2 [(validator.field) = {msg_exists : true}];
 }
 
 message OrderByMarketAndIdResponse {
@@ -63,8 +66,8 @@ message MarketsResponse {
 }
 
 message CandlesRequest {
-    string market = 1;
-    uint64 sinceTimestamp = 2;
+    string market = 1 [(validator.field) = {msg_exists : true}];
+    uint64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
     vega.Interval interval = 3;
 }
 
@@ -73,7 +76,7 @@ message CandlesResponse {
 }
 
 message MarketDepthRequest {
-    string market = 1;
+    string market = 1 [(validator.field) = {msg_exists: true}];
 }
 
 message MarketDepthResponse {
@@ -84,7 +87,7 @@ message MarketDepthResponse {
 }
 
 message TradesByMarketRequest {
-    string market = 1;
+    string market = 1 [(validator.field) = {msg_exists: true}];
     OptionalParams params = 2;
 }
 
@@ -93,7 +96,7 @@ message TradesByMarketResponse {
 }
 
 message PositionsByPartyRequest{
-    string party = 1;
+    string party = 1 [(validator.field) = {msg_exists: true}];
 }
 
 message PositionsByPartyResponse{
@@ -105,7 +108,7 @@ message StatisticsRequest {
 }
 
 message OptionalParams {
-    uint64 limit = 1;
+    uint64 limit = 1 [(validator.field) = {int_lt: 50}];
 }
 
 message VegaTimeRequest {
