@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package vega;
+import "github.com/mwitkow/go-proto-validators/validator.proto";
 option go_package = "proto";
 enum Side { Buy = 0; Sell = 1; }
 
@@ -11,7 +12,7 @@ message Market {
 }
 
 message Party {
-    string name = 1;
+    string name = 1 [(validator.field) = {msg_exists : true}];
     repeated MarketPosition positions = 2;
 }
 
@@ -153,10 +154,10 @@ enum ChainStatus {
 }
 
 message Amendment {
-    string id = 1;
-    string party = 2;
+    string id = 1 [(validator.field) = {msg_exists : true}];
+    string party = 2 [(validator.field) = {msg_exists : true}];
     uint64 price = 3;
-    uint64 size = 4;
+    uint64 size = 4 [(validator.field) = {int_gt: 0}];
     string expirationDatetime = 5;
     uint64 expirationTimestamp = 6;
 }

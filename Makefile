@@ -86,10 +86,14 @@ gqlgen: deps ## run gqlgen
 	@cd ./internal/api/endpoints/gql && go run github.com/99designs/gqlgen -c gqlgen.yml
 
 proto: ${PROTOFILES} ## build proto definitions
+	@which modvendor || go get github.com/EVODelavega/modvendor
+	@go mod vendor
+	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 $$2 "\n"$$1"/src";}' >> vendor/modules.txt
+	@modvendor -copy="**/*.proto"
 
 .PRECIOUS: proto/%.pb.go
 proto/%.pb.go: proto/%.proto
-	@protoc --go_out=. "$<"
+	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --go_out=. --govalidators_out=. "$<"
 
 proto_check: ## proto: Check committed files match just-generated files
 	@touch proto/*.proto ; \
@@ -106,7 +110,8 @@ proto_check: ## proto: Check committed files match just-generated files
 grpc: internal/api/grpc.swagger.json internal/api/grpc.pb.gw.go internal/api/grpc.pb.go ## Generate gRPC files: grpc.swagger.json, grpc.pb.gw.go, grpc.pb.go
 
 internal/api/grpc.pb.go: internal/api/grpc.proto
-	@protoc -I. -Iinternal/api/ --go_out=plugins=grpc:. "$<" && \
+	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. \
+		-Iinternal/api/ --go_out=plugins=grpc:. --govalidators_out=. "$<" && \
 	sed --in-place -re 's/proto1 "proto"/proto1 "code.vegaprotocol.io\/vega\/proto"/' "$@"
 
 GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml:.
