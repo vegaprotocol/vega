@@ -111,8 +111,8 @@ func (this *Statistics) Validate() error {
 	return nil
 }
 func (this *Amendment) Validate() error {
-	if !(this.Size_ > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size_))
+	if !(this.Size > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
 	}
 	return nil
 }
