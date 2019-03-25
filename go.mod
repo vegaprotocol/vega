@@ -21,6 +21,7 @@ require (
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/google/protobuf v3.7.0+incompatible // indirect
 	github.com/gorilla/websocket v1.4.0
+	github.com/goware/modvendor v0.0.0-20180827175348-07a105bce74a // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmhodges/levigo v0.0.0-20161115193449-c42d9e0ca023 // indirect
@@ -49,4 +50,5 @@ require (
 replace (
 	github.com/dgraph-io/badger => github.com/dgraph-io/badger v1.5.5-0.20190214192501-3196cc1d7a5f
 	github.com/golang/protobuf => github.com/golang/protobuf v1.2.1-0.20190205222052-c823c79ea157
+	github.com/goware/modvendor => github.com/EVODelavega/modvendor v0.0.0-20180827175348-07a105bce74a
 )
