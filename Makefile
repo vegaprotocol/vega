@@ -109,6 +109,7 @@ internal/api/grpc.pb.go: internal/api/grpc.proto
 	@protoc -I. -Iinternal/api/ --go_out=plugins=grpc,paths=source_relative:. "$<"
 
 GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml,paths=source_relative:.
+SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml:.
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
 internal/api/grpc.pb.gw.go: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
@@ -116,7 +117,7 @@ internal/api/grpc.pb.gw.go: internal/api/grpc.proto internal/api/grpc-rest-bindi
 
 # Generate Swagger documentation
 internal/api/grpc.swagger.json: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
-	@protoc -I. -Iinternal/api/ --swagger_out=$(GRPC_CONF_OPT) "$<"
+	@protoc -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
 grpc_check: ## gRPC: Check committed files match just-generated files
 	@touch internal/api/*.proto ; \
