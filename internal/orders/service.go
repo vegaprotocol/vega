@@ -49,6 +49,7 @@ func NewOrderService(config *Config, store storage.OrderStore, time vegatime.Ser
 func (s *orderService) CreateOrder(ctx context.Context, orderSubmission *types.OrderSubmission) (success bool, orderReference string, err error) {
 	order := types.Order{
 		Id:                 orderSubmission.Id,
+		Market:             orderSubmission.MarketId,
 		Party:              orderSubmission.Party,
 		Price:              orderSubmission.Price,
 		Size:               orderSubmission.Size,
