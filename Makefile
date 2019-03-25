@@ -85,11 +85,13 @@ install: proto ## install the binary in GOPATH/bin
 gqlgen: deps ## run gqlgen
 	@cd ./internal/api/endpoints/gql && go run github.com/99designs/gqlgen -c gqlgen.yml
 
-proto: ${PROTOFILES} ## build proto definitions
+pre_proto:
 	@which modvendor || go get github.com/EVODelavega/modvendor
 	@go mod vendor
-	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 $$2 "\n"$$1"/src";}' >> vendor/modules.txt
+	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
 	@modvendor -copy="**/*.proto"
+
+proto: pre_proto ${PROTOFILES} ## build proto definitions
 
 .PRECIOUS: proto/%.pb.go
 proto/%.pb.go: proto/%.proto
