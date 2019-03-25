@@ -91,7 +91,7 @@ pre_proto:
 	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
 	@modvendor -copy="**/*.proto"
 
-proto: pre_proto ${PROTOFILES} ## build proto definitions
+proto: | pre_proto ${PROTOFILES} ## build proto definitions
 
 .PRECIOUS: proto/%.pb.go
 proto/%.pb.go: proto/%.proto
