@@ -93,7 +93,7 @@ func (s *orderService) CreateOrder(ctx context.Context, orderSubmission *types.O
 	order.Reference = ""
 
 	if order.Type == types.Order_GTT {
-		t, err := s.makeOrderExpirationTS(order.ExpirationDatetime)
+		t, err := s.validateOrderExpirationTS(order.ExpirationDatetime)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return false, "", err
@@ -144,7 +144,7 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *types.OrderAme
 
 	// if order is GTT convert datetime to blockchain ts
 	if o.Type == types.Order_GTT {
-		t, err := s.makeOrderExpirationTS(amendment.ExpirationDatetime)
+		t, err := s.validateOrderExpirationTS(amendment.ExpirationDatetime)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return false, err
@@ -156,7 +156,7 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *types.OrderAme
 	return s.blockchain.AmendOrder(ctx, amendment)
 }
 
-func (s *orderService) makeOrderExpirationTS(expdt string) (time.Time, error) {
+func (s *orderService) validateOrderExpirationTS(expdt string) (time.Time, error) {
 	exp, err := time.Parse(time.RFC3339, expdt)
 	if err != nil {
 		return time.Time{}, ErrInvalidExpirationDTFmt
