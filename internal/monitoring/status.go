@@ -2,15 +2,20 @@ package monitoring
 
 import (
 	"context"
-	"sync"
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/logging"
-
 	types "code.vegaprotocol.io/vega/proto"
+
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/monitoring BlockchainClient
+type BlockchainClient interface {
+	Health() (*tmctypes.ResultHealth, error)
+	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
+}
 
 // Status holds a collection of monitoring services, for checking the state of internal or external resources.
 type Status struct {
@@ -22,8 +27,7 @@ type Status struct {
 type ChainStatus struct {
 	log               *logging.Logger
 	interval          time.Duration
-	client            blockchain.Client
-	clientMu          sync.Mutex
+	client            BlockchainClient
 	status            uint32
 	cancel            func()
 	onChainDisconnect func()
@@ -32,14 +36,13 @@ type ChainStatus struct {
 // NewStatusChecker creates a Status checker, currently this is limited to the underlying blockchain status, but
 // will be expanded over time to include other services. Once created, a go-routine will start up and
 // immediately begin checking at an interval, currently defined internally and set to every 500 milliseconds.
-func NewStatusChecker(log *logging.Logger, clt blockchain.Client, interval time.Duration) *Status {
+func NewStatusChecker(log *logging.Logger, clt BlockchainClient, interval time.Duration) *Status {
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &Status{
 		log: log,
 		Blockchain: &ChainStatus{
 			interval:          interval, // 500 * time.Millisecond,
 			client:            clt,
-			clientMu:          sync.Mutex{},
 			status:            uint32(types.ChainStatus_DISCONNECTED),
 			cancel:            cancel,
 			log:               log,
@@ -66,20 +69,11 @@ func (cs *ChainStatus) Status() types.ChainStatus {
 	return types.ChainStatus(atomic.LoadUint32(&cs.status))
 }
 
-func (cs *ChainStatus) SetClient(clt blockchain.Client) {
-	cs.clientMu.Lock()
-	defer cs.clientMu.Unlock()
-
-	cs.client = clt
-}
-
 func (cs *ChainStatus) setStatus(status types.ChainStatus) {
 	atomic.StoreUint32(&cs.status, uint32(status))
 }
 
 func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
-	cs.clientMu.Lock()
-	defer cs.clientMu.Unlock()
 	newStatus := status
 	_, err := cs.client.Health()
 	if status == types.ChainStatus_DISCONNECTED && err == nil {
