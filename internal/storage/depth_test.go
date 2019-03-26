@@ -14,7 +14,6 @@ import (
 func TestMarketDepth_Hard(t *testing.T) {
 	ctx := context.Background()
 
-	config := NewTestConfig()
 	config, err := NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)

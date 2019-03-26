@@ -178,7 +178,7 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 
 	FlushStores(config)
 
-	var orderStore, err = NewOrderStore(config, func() {})
+	orderStore, err := NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
