@@ -46,6 +46,7 @@ func testAmendOrderSuccess(t *testing.T) {
 		Market: "market",
 		Party:  arg.Party,
 		Status: proto.Order_Active,
+		Type:   proto.Order_GTT,
 	}
 	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(vegatime.Stamp(now.UnixNano()), now, nil)
@@ -70,6 +71,7 @@ func testAmendOrderExpired(t *testing.T) {
 		Market: "market",
 		Party:  arg.Party,
 		Status: proto.Order_Active,
+		Type:   proto.Order_GTT,
 	}
 	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(vegatime.Stamp(now.UnixNano()), now, nil)
