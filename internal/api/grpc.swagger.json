@@ -299,16 +299,6 @@
       ],
       "default": "Active"
     },
-    "OrderType": {
-      "type": "string",
-      "enum": [
-        "GTC",
-        "GTT",
-        "ENE",
-        "FOK"
-      ],
-      "default": "GTC"
-    },
     "grpcCandlesResponse": {
       "type": "object",
       "properties": {
@@ -551,7 +541,7 @@
           "format": "uint64"
         },
         "type": {
-          "$ref": "#/definitions/OrderType"
+          "$ref": "#/definitions/vegaOrderType"
         },
         "timestamp": {
           "type": "string",
@@ -611,6 +601,16 @@
           "type": "string"
         }
       }
+    },
+    "vegaOrderType": {
+      "type": "string",
+      "enum": [
+        "GTC",
+        "GTT",
+        "ENE",
+        "FOK"
+      ],
+      "default": "GTC"
     },
     "vegaPriceLevel": {
       "type": "object",
