@@ -30,7 +30,7 @@ func (m *Market) GetID() string {
 }
 
 // CancelOrder cancel the given order
-func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellation, error) {
+func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
 	if order.Market != m.marketcfg.Id {
 		m.log.Error("Market ID mismatch",
