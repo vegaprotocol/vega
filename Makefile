@@ -70,6 +70,11 @@ coveragehtml: .testCoverage.html ## Generate global code coverage report in HTML
 
 deps: ## Get the dependencies
 	@go mod download
+	@which modvendor 1>/dev/null || go get github.com/vegaprotocol/modvendor@v0.0.1
+	@which protoc-gen-govalidators 1>/dev/null || go get github.com/mwitkow/go-proto-validators/protoc-gen-govalidators@v0.0.0-20190212092829-1f388280e944
+	@go mod vendor
+	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
+	@modvendor -copy="**/*.proto"
 
 build: proto ## install the binaries in cmd/{progname}/
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
@@ -85,14 +90,7 @@ install: proto ## install the binary in GOPATH/bin
 gqlgen: deps ## run gqlgen
 	@cd ./internal/api/endpoints/gql && go run github.com/99designs/gqlgen -c gqlgen.yml
 
-pre_proto:
-	@which modvendor 1>/dev/null || go get github.com/vegaprotocol/modvendor@v0.0.1
-	@which protoc-gen-govalidators 1>/dev/null || go get github.com/mwitkow/go-proto-validators/protoc-gen-govalidators@v0.0.0-20190212092829-1f388280e944
-	@go mod vendor
-	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
-	@modvendor -copy="**/*.proto"
-
-proto: | pre_proto ${PROTOFILES} ## build proto definitions
+proto: | deps ${PROTOFILES} ## build proto definitions
 
 .PRECIOUS: proto/%.pb.go
 proto/%.pb.go: proto/%.proto
