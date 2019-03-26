@@ -33,7 +33,7 @@ func TestNewTradeService(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	tradeStore, err := storage.NewTradeStore(config)
+	tradeStore, err := storage.NewTradeStore(config, func() {})
 	defer tradeStore.Close()
 	assert.Nil(t, err)
 	assert.NotNil(t, tradeStore)

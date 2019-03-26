@@ -4,14 +4,14 @@ import "proto/vega.proto";
 
 package grpc;
 
+option go_package = "code.vegaprotocol.io/vega/internal/api";
+
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
-option go_package = "api";
-
 service trading {
-    rpc CreateOrder(vega.Order) returns (OrderResponse);
-    rpc CancelOrder(vega.Order) returns (OrderResponse);
-    rpc AmendOrder(vega.Amendment) returns (OrderResponse);
+    rpc SubmitOrder(vega.OrderSubmission) returns (OrderResponse);
+    rpc CancelOrder(vega.OrderCancellation) returns (OrderResponse);
+    rpc AmendOrder(vega.OrderAmendment) returns (OrderResponse);
     rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
     rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
     rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);

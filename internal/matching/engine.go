@@ -1,15 +1,16 @@
 package matching
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
 	"fmt"
+
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
 )
 
 type Engine interface {
 	AddOrderBook(marketId string) error
-	CancelOrder(order *types.Order) (*types.OrderCancellation, error)
+	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
 	DeleteOrder(order *types.Order)
 	RemoveExpiringOrders(timestamp uint64) []types.Order
@@ -60,7 +61,7 @@ func (me *matchingEngine) DeleteOrder(order *types.Order) {
 	}
 }
 
-func (me *matchingEngine) CancelOrder(order *types.Order) (*types.OrderCancellation, error) {
+func (me *matchingEngine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	market, exists := me.markets[order.Market]
 	if !exists {
 		return nil, types.ErrInvalidMarketID

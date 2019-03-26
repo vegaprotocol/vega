@@ -21,7 +21,8 @@ import (
 type errStack []error
 
 type Resolver struct {
-	config *Config
+	config          *Config
+	onCriticalError func()
 
 	candleStore storage.CandleStore
 	orderStore  storage.OrderStore
@@ -47,12 +48,13 @@ type Resolver struct {
 
 // NewResolver initialises an instance of the VEGA resolver, this provides access to services and stores to help
 // with a dependency graph. VEGA config implementation is required.
-func NewResolver(config *Config) (*Resolver, error) {
+func NewResolver(config *Config, onCriticalError func()) (*Resolver, error) {
 	if config == nil {
 		return nil, errors.New("config instance is nil when calling NewResolver.")
 	}
 	return &Resolver{
-		config: config,
+		config:          config,
+		onCriticalError: onCriticalError,
 	}, nil
 }
 
@@ -263,7 +265,7 @@ func (r *Resolver) ResolveOrderStore() (storage.OrderStore, error) {
 	}
 
 	orderStore, err := storage.NewOrderStore(
-		r.config.Storage,
+		r.config.Storage, r.onCriticalError,
 	)
 	if err != nil {
 		return nil, err
@@ -283,7 +285,7 @@ func (r *Resolver) ResolveTradeStore() (storage.TradeStore, error) {
 	}
 
 	tradeStore, err := storage.NewTradeStore(
-		r.config.Storage,
+		r.config.Storage, r.onCriticalError,
 	)
 	if err != nil {
 		return nil, err

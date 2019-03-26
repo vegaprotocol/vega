@@ -96,7 +96,7 @@ proto: | pre_proto ${PROTOFILES} ## build proto definitions
 
 .PRECIOUS: proto/%.pb.go
 proto/%.pb.go: proto/%.proto
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --go_out=. --govalidators_out=. "$<" && \
+	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --go_out=paths=source_relative:. --govalidators_out=paths=source_relative:. "$<" && \
 		sed --in-place -re 's/this\.Size_/this.Size/' proto/*validator.pb.go
 
 proto_check: deps ## proto: Check committed files match just-generated files
@@ -115,19 +115,18 @@ grpc: internal/api/grpc.swagger.json internal/api/grpc.pb.gw.go internal/api/grp
 
 internal/api/grpc.pb.go: internal/api/grpc.proto
 	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. \
-		-Iinternal/api/ --go_out=plugins=grpc:. --govalidators_out=. "$<" && \
-		sed --in-place -re 's/(proto1|_) "proto"/\1 "code.vegaprotocol.io\/vega\/proto"/' internal/api/*pb.go
+		-Iinternal/api/ --go_out=plugins=grpc,paths=source_relative:. --govalidators_out=paths=source_relative:. "$<"
 
-GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml:.
+GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml,paths=source_relative:.
+SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml:.
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
 internal/api/grpc.pb.gw.go: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
-	@protoc -I. -Iinternal/api/ --grpc-gateway_out=$(GRPC_CONF_OPT) "$<" && \
-	sed --in-place -re 's/(proto_0|_) "proto"/\1 "code.vegaprotocol.io\/vega\/proto"/p' "$@"
+	@protoc -I. -Iinternal/api/ --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
 
 # Generate Swagger documentation
 internal/api/grpc.swagger.json: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
-	@protoc -I. -Iinternal/api/ --swagger_out=$(GRPC_CONF_OPT) "$<"
+	@protoc -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
 grpc_check: ## gRPC: Check committed files match just-generated files
 	@touch internal/api/*.proto ; \

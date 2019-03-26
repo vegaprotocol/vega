@@ -11,11 +11,11 @@ type Engine struct {
 }
 
 // AmendOrder provides a mock function with given fields: order
-func (_m *Engine) AmendOrder(order *proto.Amendment) (*proto.OrderConfirmation, error) {
+func (_m *Engine) AmendOrder(order *proto.OrderAmendment) (*proto.OrderConfirmation, error) {
 	ret := _m.Called(order)
 
 	var r0 *proto.OrderConfirmation
-	if rf, ok := ret.Get(0).(func(*proto.Amendment) *proto.OrderConfirmation); ok {
+	if rf, ok := ret.Get(0).(func(*proto.OrderAmendment) *proto.OrderConfirmation); ok {
 		r0 = rf(order)
 	} else {
 		if ret.Get(0) != nil {
@@ -24,7 +24,7 @@ func (_m *Engine) AmendOrder(order *proto.Amendment) (*proto.OrderConfirmation, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*proto.Amendment) error); ok {
+	if rf, ok := ret.Get(1).(func(*proto.OrderAmendment) error); ok {
 		r1 = rf(order)
 	} else {
 		r1 = ret.Error(1)
@@ -34,15 +34,15 @@ func (_m *Engine) AmendOrder(order *proto.Amendment) (*proto.OrderConfirmation, 
 }
 
 // CancelOrder provides a mock function with given fields: order
-func (_m *Engine) CancelOrder(order *proto.Order) (*proto.OrderCancellation, error) {
+func (_m *Engine) CancelOrder(order *proto.Order) (*proto.OrderCancellationConfirmation, error) {
 	ret := _m.Called(order)
 
-	var r0 *proto.OrderCancellation
-	if rf, ok := ret.Get(0).(func(*proto.Order) *proto.OrderCancellation); ok {
+	var r0 *proto.OrderCancellationConfirmation
+	if rf, ok := ret.Get(0).(func(*proto.Order) *proto.OrderCancellationConfirmation); ok {
 		r0 = rf(order)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*proto.OrderCancellation)
+			r0 = ret.Get(0).(*proto.OrderCancellationConfirmation)
 		}
 	}
 

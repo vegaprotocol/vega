@@ -22,8 +22,8 @@ type Server struct {
 
 // NewServer creates a new instance of the the blockchain server given configuration,
 // stats provider, time service and execution engine.
-func NewServer(config *Config, stats *Stats, ex execution.Engine, time vegatime.Service) *Server {
-	app := NewAbciApplication(config, stats, ex, time)
+func NewServer(config *Config, stats *Stats, ex execution.Engine, time vegatime.Service, onCriticalError func()) *Server {
+	app := NewAbciApplication(config, stats, ex, time, onCriticalError)
 	return &Server{config, app, ex, time, nil}
 }
 

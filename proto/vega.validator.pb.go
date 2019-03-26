@@ -35,7 +35,7 @@ func (this *RiskFactor) Validate() error {
 func (this *Order) Validate() error {
 	return nil
 }
-func (this *OrderCancellation) Validate() error {
+func (this *OrderCancellationConfirmation) Validate() error {
 	if this.Order != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Order); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
@@ -110,9 +110,15 @@ func (this *MarketPosition) Validate() error {
 func (this *Statistics) Validate() error {
 	return nil
 }
-func (this *Amendment) Validate() error {
+func (this *OrderAmendment) Validate() error {
 	if !(this.Size > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
 	}
+	return nil
+}
+func (this *OrderSubmission) Validate() error {
+	return nil
+}
+func (this *OrderCancellation) Validate() error {
 	return nil
 }

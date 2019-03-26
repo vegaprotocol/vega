@@ -20,7 +20,7 @@ type Service interface {
 
 	SubmitOrder(order *types.Order) error
 	CancelOrder(order *types.Order) error
-	AmendOrder(order *types.Amendment) error
+	AmendOrder(order *types.OrderAmendment) error
 	ValidateOrder(order *types.Order) error
 }
 
@@ -169,7 +169,7 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 	return nil
 }
 
-func (s *abciService) AmendOrder(order *types.Amendment) error {
+func (s *abciService) AmendOrder(order *types.OrderAmendment) error {
 	atomic.AddUint64(&s.Stats.totalAmendOrder, 1)
 	if s.LogOrderAmendDebug {
 		s.log.Debug("Blockchain service received a AMEND ORDER request",

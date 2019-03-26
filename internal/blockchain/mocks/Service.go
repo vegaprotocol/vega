@@ -11,11 +11,11 @@ type Service struct {
 }
 
 // AmendOrder provides a mock function with given fields: order
-func (_m *Service) AmendOrder(order *proto.Amendment) error {
+func (_m *Service) AmendOrder(order *proto.OrderAmendment) error {
 	ret := _m.Called(order)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*proto.Amendment) error); ok {
+	if rf, ok := ret.Get(0).(func(*proto.OrderAmendment) error); ok {
 		r0 = rf(order)
 	} else {
 		r0 = ret.Error(0)

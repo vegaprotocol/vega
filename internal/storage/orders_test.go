@@ -20,13 +20,13 @@ func TestStorage_NewOrderStore(t *testing.T) {
 	config := NewTestConfig()
 	FlushStores(config)
 
-	orderStore, err := NewOrderStore(config)
+	orderStore, err := NewOrderStore(config, func() {})
 	assert.NotNil(t, orderStore)
 	assert.Nil(t, err)
 
 	config.OrderStoreDirPath = ""
 
-	orderStore, err = NewOrderStore(config)
+	orderStore, err = NewOrderStore(config, func() {})
 	assert.Nil(t, orderStore)
 	assert.NotNil(t, err)
 
@@ -37,7 +37,7 @@ func TestStorage_NewOrderStore(t *testing.T) {
 func TestStorage_PostAndGetNewOrder(t *testing.T) {
 	config := NewTestConfig()
 	FlushStores(config)
-	orderStore, err := NewOrderStore(config)
+	orderStore, err := NewOrderStore(config, func() {})
 	defer orderStore.Close()
 
 	var order = &types.Order{
@@ -139,7 +139,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		orderStore, err := NewOrderStore(config)
+		orderStore, err := NewOrderStore(config, func() {})
 		assert.Nil(t, err)
 
 		for _, order := range tt.inOrders {
@@ -162,7 +162,7 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	config := NewTestConfig()
 	FlushStores(config)
 
-	var orderStore, err = NewOrderStore(config)
+	var orderStore, err = NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -223,7 +223,7 @@ func TestStorage_OrderFiltration(t *testing.T) {
 	config := NewTestConfig()
 	FlushStores(config)
 
-	orderStore, err := NewOrderStore(config)
+	orderStore, err := NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -450,7 +450,7 @@ func TestStorage_OrderFiltration(t *testing.T) {
 func TestStorage_GetOrderByReference(t *testing.T) {
 	config := NewTestConfig()
 	FlushStores(config)
-	newOrderStore, err := NewOrderStore(config)
+	newOrderStore, err := NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 
@@ -486,7 +486,7 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 func TestStorage_InsertBatchOrders(t *testing.T) {
 	config := NewTestConfig()
 	FlushStores(config)
-	orderStore, err := NewOrderStore(config)
+	orderStore, err := NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 

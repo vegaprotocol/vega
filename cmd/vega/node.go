@@ -52,6 +52,11 @@ func (l *NodeCommand) addFlags() {
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
 
+	// context used in waitSig to exit from the application
+	// not from the user inputs
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Use configPath from args
 	configPath := l.configPath
 	if configPath == "" {
@@ -79,7 +84,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		conf.ListenForChanges()
 	}
 
-	resolver, err := internal.NewResolver(conf)
+	resolver, err := internal.NewResolver(conf, cancel)
 
 	// Statistics provider
 	stats := internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
@@ -149,16 +154,13 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 
 	// ABCI<>blockchain server
-	socketServer := blockchain.NewServer(conf.Blockchain, stats.Blockchain, executionEngine, timeService)
+	socketServer := blockchain.NewServer(conf.Blockchain, stats.Blockchain, executionEngine, timeService, cancel)
 	err = socketServer.Start()
 	if err != nil {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
 	statusChecker := monitoring.NewStatusChecker(l.Log, client, 500*time.Millisecond)
-	// context used in waitSig to exit from the application
-	// not from the user inputs
-	ctx, cancel := context.WithCancel(context.Background())
 	statusChecker.OnChainDisconnect(cancel)
 
 	// gRPC server

@@ -31,18 +31,20 @@ type AbciApplication struct {
 	txSizes   []int
 	txTotals  []int
 
-	time vegatime.Service
+	time            vegatime.Service
+	onCriticalError func()
 }
 
-func NewAbciApplication(config *Config, stats *Stats, execution execution.Engine, time vegatime.Service) *AbciApplication {
+func NewAbciApplication(config *Config, stats *Stats, execution execution.Engine, time vegatime.Service, onCriticalError func()) *AbciApplication {
 	service := NewAbciService(config, stats, execution, time)
 	processor := NewAbciProcessor(config, service)
 	return &AbciApplication{
-		Config:    config,
-		Stats:     stats,
-		processor: processor,
-		service:   service,
-		time:      time,
+		Config:          config,
+		Stats:           stats,
+		processor:       processor,
+		service:         service,
+		time:            time,
+		onCriticalError: onCriticalError,
 	}
 }
 
@@ -63,7 +65,8 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has begun
 	if err := app.service.Begin(); err != nil {
-		app.log.Panic("Failure on blockchain service begin", logging.Error(err))
+		app.log.Error("Failure on blockchain service begin", logging.Error(err))
+		app.onCriticalError()
 	}
 
 	return types.ResponseBeginBlock{}

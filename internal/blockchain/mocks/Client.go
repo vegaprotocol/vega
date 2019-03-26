@@ -14,18 +14,18 @@ type Client struct {
 }
 
 // AmendOrder provides a mock function with given fields: ctx, amendment
-func (_m *Client) AmendOrder(ctx context.Context, amendment *proto.Amendment) (bool, error) {
+func (_m *Client) AmendOrder(ctx context.Context, amendment *proto.OrderAmendment) (bool, error) {
 	ret := _m.Called(ctx, amendment)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *proto.Amendment) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *proto.OrderAmendment) bool); ok {
 		r0 = rf(ctx, amendment)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *proto.Amendment) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *proto.OrderAmendment) error); ok {
 		r1 = rf(ctx, amendment)
 	} else {
 		r1 = ret.Error(1)

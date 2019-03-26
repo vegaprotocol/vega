@@ -1,7 +1,6 @@
 package gql
 
 import (
-	"code.vegaprotocol.io/vega/internal/monitoring"
 	"context"
 	"errors"
 	"fmt"
@@ -14,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
@@ -59,15 +59,6 @@ func NewGraphQLServer(
 		partyService:  partyService,
 		statusChecker: statusChecker,
 	}
-}
-
-func (g *graphServer) timeoutMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		timeout := time.Duration(g.Config.Timeout) * time.Millisecond
-		ctx, cancel := context.WithTimeout(r.Context(), timeout)
-		defer cancel()
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
 }
 
 func (g *graphServer) remoteAddrMiddleware(next http.Handler) http.Handler {
@@ -162,7 +153,7 @@ func (g *graphServer) Start() {
 	handlr := http.NewServeMux()
 
 	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
-	handlr.Handle("/query", g.timeoutMiddleware(g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
+	handlr.Handle("/query", g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
@@ -172,7 +163,7 @@ func (g *graphServer) Start() {
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
 		})),
-	))))
+	)))
 
 	g.srv = &http.Server{
 		Addr:    addr,

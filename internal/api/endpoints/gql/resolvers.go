@@ -573,7 +573,7 @@ type MyMutationResolver resolverRoot
 
 func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, party string, price string,
 	size string, side Side, type_ OrderType, expiration *string) (*PreConsensus, error) {
-	order := &types.Order{}
+	order := &types.OrderSubmission{}
 	res := PreConsensus{}
 	if r.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
 		return &res, ErrChainNotConnected
@@ -594,7 +594,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	if err != nil {
 		return nil, err
 	}
-	order.Market = market
+	order.MarketId = market
 	if len(party) == 0 {
 		return nil, errors.New("party missing or empty")
 	}
@@ -639,7 +639,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 }
 
 func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*PreConsensus, error) {
-	order := &types.Order{}
+	order := &types.OrderCancellation{}
 	res := PreConsensus{}
 
 	if r.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
@@ -651,7 +651,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	if err != nil {
 		return nil, err
 	}
-	order.Market = market
+	order.MarketId = market
 	if len(id) == 0 {
 		return nil, errors.New("id missing or empty")
 	}
