@@ -99,7 +99,7 @@ proto/%.pb.go: proto/%.proto
 	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --go_out=. --govalidators_out=. "$<" && \
 		sed --in-place -re 's/this\.Size_/this.Size/' proto/*validator.pb.go
 
-proto_check: ## proto: Check committed files match just-generated files
+proto_check: deps ## proto: Check committed files match just-generated files
 	@touch proto/*.proto ; \
 	make proto 1>/dev/null || exit 1 ; \
 	files="$$(git diff --name-only proto/)" ; \
