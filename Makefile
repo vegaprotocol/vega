@@ -86,7 +86,7 @@ gqlgen: deps ## run gqlgen
 	@cd ./internal/api/endpoints/gql && go run github.com/99designs/gqlgen -c gqlgen.yml
 
 pre_proto:
-	@which modvendor 1>/dev/null || go get github.com/EVODelavega/modvendor@v0.0.0-20190325161303-a714b85df02e
+	@which modvendor 1>/dev/null || go get github.com/vegaprotocol/modvendor@v0.0.1
 	@which protoc-gen-govalidators 1>/dev/null || go get github.com/mwitkow/go-proto-validators/protoc-gen-govalidators@v0.0.0-20190212092829-1f388280e944
 	@go mod vendor
 	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt

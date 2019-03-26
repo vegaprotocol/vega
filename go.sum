@@ -173,6 +173,7 @@ github.com/tendermint/tendermint v0.30.0/go.mod h1:ymcPyWblXCplCPQjbOYbrF1fWnpsl
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/urfave/cli v1.20.0 h1:fDqGv3UG/4jbVl/QkFwEdddtEDjh/5Ov6X+0B/3bPaw=
 github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
+github.com/vegaprotocol/modvendor v0.0.1/go.mod h1:9dUls/VXrxQzwcpq/sNUw3ZjjYdvEtWB6y4/s7K7YtE=
 github.com/vektah/dataloaden v0.2.0/go.mod h1:vxM6NuRlgiR0M6wbVTJeKp9vQIs81ZMfCYO+4yq/jbE=
 github.com/vektah/gqlparser v1.1.0/go.mod h1:1ycwN7Ij5njmMkPPAOaRFY4rET2Enx7IkVv3vaXspKw=
 github.com/vektah/gqlparser v1.1.1 h1:0bZ+joDoDD429K9vTZntnLQZ8gjEdKlmiuuNpyewLfI=
