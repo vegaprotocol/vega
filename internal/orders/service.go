@@ -6,14 +6,34 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 
-	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/pkg/errors"
 )
+
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/time_service_mock.go -package newmocks code.vegaprotocol.io/vega/internal/orders TimeService
+type TimeService interface {
+	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/order_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/orders  OrderStore
+type OrderStore interface {
+	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error)
+	GetByPartyAndId(ctx context.Context, party, id string) (*types.Order, error)
+	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
+	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
+	Subscribe(orders chan<- []types.Order) uint64
+	Unsubscribe(id uint64) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/blockchain_mock.go -package newmocks code.vegaprotocol.io/vega/internal/orders  Blockchain
+type Blockchain interface {
+	CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error)
+	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
+	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
+}
 
 type Service interface {
 	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
@@ -28,21 +48,21 @@ type Service interface {
 
 type orderService struct {
 	*Config
-	blockchain  blockchain.Client
-	orderStore  storage.OrderStore
-	timeService vegatime.Service
+	blockchain  Blockchain
+	orderStore  OrderStore
+	timeService TimeService
 }
 
 // NewOrderService creates an Orders service with the necessary dependencies
-func NewOrderService(config *Config, store storage.OrderStore, time vegatime.Service, client blockchain.Client) (Service, error) {
+func NewOrderService(config *Config, store OrderStore, time TimeService, client Blockchain) (Service, error) {
 	if client == nil {
 		return nil, errors.New("blockchain client is nil when calling NewOrderService in OrderService")
 	}
 	return &orderService{
-		config,
-		client,
-		store,
-		time,
+		Config:      config,
+		blockchain:  client,
+		orderStore:  store,
+		timeService: time,
 	}, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/vegatime_mock.go -package newmocks code.vegaprotocol.io/vega/internal/vegatime Service
 type Service interface {
 	SetTimeNow(epochTimeNano Stamp)
 	GetTimeNow() (epochTimeNano Stamp, datetime time.Time, err error)

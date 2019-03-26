@@ -15,6 +15,7 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/blockchain_client_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain Client
 type Client interface {
 	CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error)
 	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
