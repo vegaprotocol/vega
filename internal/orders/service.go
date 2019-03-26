@@ -13,6 +13,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrInvalidExpirationDTFmt = errors.New("invalid expiration datetime format")
+	ErrInvalidExpirationDT    = errors.New("invalid expiration datetime")
+)
+
 //go:generate go run github.com/golang/mock/mockgen -destination newmocks/time_service_mock.go -package newmocks code.vegaprotocol.io/vega/internal/orders TimeService
 type TimeService interface {
 	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
@@ -87,22 +92,13 @@ func (s *orderService) CreateOrder(ctx context.Context, orderSubmission *types.O
 	order.Timestamp = 0
 	order.Reference = ""
 
-	// if order is GTT convert datetime to blockchain timestamp
 	if order.Type == types.Order_GTT {
-		expirationDateTime, err := time.Parse(time.RFC3339, order.ExpirationDatetime)
+		t, err := s.makeOrderExpirationTS(order.ExpirationDatetime)
 		if err != nil {
-			return false, "", errors.New("invalid expiration datetime format")
-		}
-		timeNow, _, err := s.timeService.GetTimeNow()
-		if err != nil {
-			s.log.Error("Failed to obtain current time when creating order in Order Service", logging.Error(err))
+			s.log.Error("unable to get expiration time", logging.Error(err))
 			return false, "", err
 		}
-		expirationTimestamp := expirationDateTime.UnixNano()
-		if expirationTimestamp <= timeNow.UnixNano() {
-			return false, "", errors.New("invalid expiration datetime error")
-		}
-		order.ExpirationTimestamp = uint64(expirationTimestamp)
+		order.ExpirationTimestamp = uint64(t.UnixNano())
 	}
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
@@ -146,25 +142,36 @@ func (s *orderService) AmendOrder(ctx context.Context, amendment *types.OrderAme
 		return false, errors.New("order is not active")
 	}
 
-	// if order is GTT convert datetime to block chain timestamp
-	if amendment.ExpirationDatetime != "" {
-		expirationDateTime, err := time.Parse(time.RFC3339, amendment.ExpirationDatetime)
+	// if order is GTT convert datetime to blockchain ts
+	if o.Type == types.Order_GTT {
+		t, err := s.makeOrderExpirationTS(amendment.ExpirationDatetime)
 		if err != nil {
-			return false, errors.New("invalid format expiration datetime")
-		}
-		_, currentDateTime, err := s.timeService.GetTimeNow()
-		if err != nil {
-			s.log.Error("Failed to obtain current time when amending order in Order Service", logging.Error(err))
+			s.log.Error("unable to get expiration time", logging.Error(err))
 			return false, err
 		}
-		if expirationDateTime.Before(currentDateTime) || expirationDateTime.Equal(currentDateTime) {
-			return false, errors.New("invalid expiration datetime")
-		}
-		amendment.ExpirationTimestamp = uint64(expirationDateTime.UnixNano())
+		amendment.ExpirationTimestamp = uint64(t.UnixNano())
 	}
 
 	// Send edit request by consensus
 	return s.blockchain.AmendOrder(ctx, amendment)
+}
+
+func (s *orderService) makeOrderExpirationTS(expdt string) (time.Time, error) {
+	exp, err := time.Parse(time.RFC3339, expdt)
+	if err != nil {
+		return time.Time{}, ErrInvalidExpirationDTFmt
+	}
+
+	_, now, err := s.timeService.GetTimeNow()
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if exp.Before(now) || exp.Equal(now) {
+		return time.Time{}, ErrInvalidExpirationDT
+	}
+
+	return exp, nil
 }
 
 func (s *orderService) GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
