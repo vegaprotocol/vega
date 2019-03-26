@@ -47,6 +47,9 @@ func NewOrderService(config *Config, store storage.OrderStore, time vegatime.Ser
 }
 
 func (s *orderService) CreateOrder(ctx context.Context, orderSubmission *types.OrderSubmission) (success bool, orderReference string, err error) {
+	if err := orderSubmission.Validate(); err != nil {
+		return false, "", errors.Wrap(err, "order validation failed")
+	}
 	order := types.Order{
 		Id:                 orderSubmission.Id,
 		Market:             orderSubmission.MarketId,
@@ -88,6 +91,9 @@ func (s *orderService) CreateOrder(ctx context.Context, orderSubmission *types.O
 
 // CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
 func (s *orderService) CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error) {
+	if err := order.Validate(); err != nil {
+		return false, errors.Wrap(err, "order cancellation validation failed")
+	}
 	// Validate order exists using read store
 	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketId, order.Id)
 	if err != nil {
@@ -107,7 +113,9 @@ func (s *orderService) CancelOrder(ctx context.Context, order *types.OrderCancel
 }
 
 func (s *orderService) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
-
+	if err := amendment.Validate(); err != nil {
+		return false, errors.Wrap(err, "order amendment validation failed")
+	}
 	// Validate order exists using read store
 	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.Party, amendment.Id)
 	if err != nil {
