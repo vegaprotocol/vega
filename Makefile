@@ -95,7 +95,7 @@ proto: | deps ${PROTOFILES} ## build proto definitions
 .PRECIOUS: proto/%.pb.go
 proto/%.pb.go: proto/%.proto
 	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --go_out=paths=source_relative:. --govalidators_out=paths=source_relative:. "$<" && \
-		sed --in-place -re 's/this\.Size_/this.Size/' proto/*validator.pb.go
+		sed -i -re 's/this\.Size_/this.Size/' proto/*validator.pb.go
 
 proto_check: deps ## proto: Check committed files match just-generated files
 	@touch proto/*.proto ; \
