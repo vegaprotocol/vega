@@ -126,7 +126,7 @@ internal/api/grpc.pb.gw.go: internal/api/grpc.proto internal/api/grpc-rest-bindi
 internal/api/grpc.swagger.json: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
 	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
-grpc_check: ## gRPC: Check committed files match just-generated files
+grpc_check: deps ## gRPC: Check committed files match just-generated files
 	@touch internal/api/*.proto ; \
 	make grpc 1>/dev/null || exit 1 ; \
 	files="$$(git diff --name-only internal/api/)" ; \
