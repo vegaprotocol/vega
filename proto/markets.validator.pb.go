@@ -3,9 +3,10 @@
 
 package proto
 
-+import (
+import (
 	fmt "fmt"
 	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
