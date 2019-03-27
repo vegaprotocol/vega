@@ -33,7 +33,7 @@ type BuiltinFutures struct {
 func (BuiltinFutures) IsRiskModel() {}
 
 type ContinuousTrading struct {
-	Void *bool `json:"void"`
+	TickSize *int `json:"tickSize"`
 }
 
 func (ContinuousTrading) IsTradingMode() {}
@@ -75,6 +75,7 @@ type Market struct {
 	ID                 string             `json:"id"`
 	TradableInstrument TradableInstrument `json:"tradableInstrument"`
 	TradingMode        TradingMode        `json:"tradingMode"`
+	DecimalPlaces      int                `json:"decimalPlaces"`
 	Orders             []proto.Order      `json:"orders"`
 	Trades             []proto.Trade      `json:"trades"`
 	Depth              proto.MarketDepth  `json:"depth"`

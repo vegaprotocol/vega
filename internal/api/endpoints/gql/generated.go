@@ -70,7 +70,7 @@ type ComplexityRoot struct {
 	}
 
 	ContinuousTrading struct {
-		Void func(childComplexity int) int
+		TickSize func(childComplexity int) int
 	}
 
 	DiscreteTrading struct {
@@ -104,6 +104,7 @@ type ComplexityRoot struct {
 		ID                 func(childComplexity int) int
 		TradableInstrument func(childComplexity int) int
 		TradingMode        func(childComplexity int) int
+		DecimalPlaces      func(childComplexity int) int
 		Orders             func(childComplexity int, where *OrderFilter, skip *int, first *int, last *int) int
 		Trades             func(childComplexity int, where *TradeFilter, skip *int, first *int, last *int) int
 		Depth              func(childComplexity int) int
@@ -369,12 +370,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Candle.Interval(childComplexity), true
 
-	case "ContinuousTrading.Void":
-		if e.complexity.ContinuousTrading.Void == nil {
+	case "ContinuousTrading.TickSize":
+		if e.complexity.ContinuousTrading.TickSize == nil {
 			break
 		}
 
-		return e.complexity.ContinuousTrading.Void(childComplexity), true
+		return e.complexity.ContinuousTrading.TickSize(childComplexity), true
 
 	case "DiscreteTrading.Duration":
 		if e.complexity.DiscreteTrading.Duration == nil {
@@ -480,6 +481,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.TradingMode(childComplexity), true
+
+	case "Market.DecimalPlaces":
+		if e.complexity.Market.DecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.Market.DecimalPlaces(childComplexity), true
 
 	case "Market.Orders":
 		if e.complexity.Market.Orders == nil {
@@ -1176,7 +1184,7 @@ type Vega {
 }
 
 type ContinuousTrading {
-  void: Boolean
+  tickSize: Int
 }
 type DiscreteTrading {
   duration: Int
@@ -1233,6 +1241,8 @@ type Market {
   tradableInstrument: TradableInstrument!
 
   tradingMode: TradingMode!
+
+  decimalPlaces: Int!
 
   # Orders on a market
   orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
@@ -2296,7 +2306,7 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInterval(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ContinuousTrading_void(ctx context.Context, field graphql.CollectedField, obj *ContinuousTrading) graphql.Marshaler {
+func (ec *executionContext) _ContinuousTrading_tickSize(ctx context.Context, field graphql.CollectedField, obj *ContinuousTrading) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -2308,15 +2318,15 @@ func (ec *executionContext) _ContinuousTrading_void(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Void, nil
+		return obj.TickSize, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DiscreteTrading_duration(ctx context.Context, field graphql.CollectedField, obj *DiscreteTrading) graphql.Marshaler {
@@ -2704,6 +2714,32 @@ func (ec *executionContext) _Market_tradingMode(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradingMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_decimalPlaces(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Market",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DecimalPlaces, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
@@ -5852,8 +5888,8 @@ func (ec *executionContext) _ContinuousTrading(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ContinuousTrading")
-		case "void":
-			out.Values[i] = ec._ContinuousTrading_void(ctx, field, obj)
+		case "tickSize":
+			out.Values[i] = ec._ContinuousTrading_tickSize(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6055,6 +6091,11 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "tradingMode":
 			out.Values[i] = ec._Market_tradingMode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "decimalPlaces":
+			out.Values[i] = ec._Market_decimalPlaces(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -7266,6 +7307,14 @@ func (ec *executionContext) marshalNInstrument2codeᚗvegaprotocolᚗioᚋvega�
 
 func (ec *executionContext) marshalNInstrumentMetadata2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v InstrumentMetadata) graphql.Marshaler {
 	return ec._InstrumentMetadata(ctx, sel, &v)
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	return graphql.MarshalInt(v)
 }
 
 func (ec *executionContext) unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInterval(ctx context.Context, v interface{}) (Interval, error) {

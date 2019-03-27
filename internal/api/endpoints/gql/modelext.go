@@ -191,8 +191,8 @@ func (m *Market) IntoProto() (*proto.Market, error) {
 }
 
 func ContinuousTradingFromProto(pct *proto.ContinuousTrading) (*ContinuousTrading, error) {
-	var b bool
-	return &ContinuousTrading{Void: &b}, nil
+	ts := int(pct.TickSize)
+	return &ContinuousTrading{TickSize: &ts}, nil
 }
 func DiscreteTradingFromProto(pdt *proto.DiscreteTrading) (*DiscreteTrading, error) {
 	dur := int(pdt.Duration)
@@ -353,6 +353,7 @@ func MarketFromProto(pmkt *proto.Market) (*Market, error) {
 	var err error
 	mkt := &Market{}
 	mkt.ID = pmkt.Id
+	mkt.DecimalPlaces = int(pmkt.DecimalPlaces)
 	mkt.TradingMode, err = TradingModeFromProto(pmkt.TradingMode)
 	if err != nil {
 		return nil, err
