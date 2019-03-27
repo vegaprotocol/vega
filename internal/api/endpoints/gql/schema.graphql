@@ -66,7 +66,7 @@ type Vega {
 }
 
 type ContinuousTrading {
-  void: Boolean
+  tickSize: Int
 }
 type DiscreteTrading {
   duration: Int
@@ -123,6 +123,8 @@ type Market {
   tradableInstrument: TradableInstrument!
 
   tradingMode: TradingMode!
+
+  decimalPlaces: Int!
 
   # Orders on a market
   orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
