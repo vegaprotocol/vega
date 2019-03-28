@@ -66,9 +66,8 @@ func (ms *memMarketStore) GetByName(name string) (*types.Market, error) {
 }
 
 // GetAll returns all markets in the mem-store.
-// GetAll returns all markets in the mem-store.
 func (ms *memMarketStore) GetAll() ([]*types.Market, error) {
-	res := make([]*types.Market, len(ms.db))
+	res := make([]*types.Market, 0, len(ms.db))
 	for _, v := range ms.db {
 		res = append(res, &v)
 	}
