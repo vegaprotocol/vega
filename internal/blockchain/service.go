@@ -3,8 +3,8 @@ package blockchain
 import (
 	"fmt"
 	"sync/atomic"
+	"time"
 
-	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -24,12 +24,26 @@ type Service interface {
 	ValidateOrder(order *types.Order) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/service_time_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ServiceTime
+type ServiceTime interface {
+	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/service_execution_engine_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ServiceExecutionEngine
+type ServiceExecutionEngine interface {
+	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
+	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
+	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
+	Generate() error
+	Process() error
+}
+
 type abciService struct {
 	*Config
 	*Stats
 
-	time              vegatime.Service
-	execution         execution.Engine
+	time              ServiceTime
+	execution         ServiceExecutionEngine
 	previousTimestamp vegatime.Stamp
 	currentTimestamp  vegatime.Stamp
 
@@ -41,8 +55,13 @@ type abciService struct {
 	totalTrades          uint64
 }
 
-func NewAbciService(conf *Config, stats *Stats, ex execution.Engine, timeService vegatime.Service) Service {
-	return &abciService{Config: conf, Stats: stats, execution: ex, time: timeService}
+func NewAbciService(conf *Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) Service {
+	return &abciService{
+		Config:    conf,
+		Stats:     stats,
+		execution: ex,
+		time:      timeService,
+	}
 }
 
 func (s *abciService) Begin() error {

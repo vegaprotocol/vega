@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
@@ -14,17 +13,18 @@ import (
 
 type Server struct {
 	*Config
-	abci      *AbciApplication
-	execution execution.Engine
-	time      vegatime.Service
-	srv       cmn.Service
+	abci *AbciApplication
+	time vegatime.Service
+	srv  cmn.Service
 }
 
-// NewServer creates a new instance of the the blockchain server given configuration,
-// stats provider, time service and execution engine.
-func NewServer(config *Config, stats *Stats, ex execution.Engine, time vegatime.Service, onCriticalError func()) *Server {
-	app := NewAbciApplication(config, stats, ex, time, onCriticalError)
-	return &Server{config, app, ex, time, nil}
+func NewServer(config *Config, stats *Stats, time vegatime.Service, app *AbciApplication) *Server {
+	return &Server{
+		Config: config,
+		abci:   app,
+		time:   time,
+		srv:    nil,
+	}
 }
 
 // Start configures and runs a new socket based ABCI tendermint blockchain

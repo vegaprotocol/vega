@@ -15,17 +15,24 @@ type Processor interface {
 	Validate(payload []byte) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/processor_service_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ProcessorService
+type ProcessorService interface {
+	SubmitOrder(order *types.Order) error
+	CancelOrder(order *types.Order) error
+	AmendOrder(order *types.OrderAmendment) error
+}
+
 type abciProcessor struct {
 	*Config
-	blockchainService Service
+	blockchainService ProcessorService
 	seenPayloads      map[string]byte
 }
 
-func NewAbciProcessor(config *Config, blockchainService Service) Processor {
+func NewAbciProcessor(config *Config, blockchainService ProcessorService) Processor {
 	return &abciProcessor{
 		Config:            config,
 		blockchainService: blockchainService,
-		seenPayloads:      make(map[string]byte, 0),
+		seenPayloads:      map[string]byte{},
 	}
 }
 

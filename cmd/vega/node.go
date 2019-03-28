@@ -154,7 +154,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 
 	// ABCI<>blockchain server
-	socketServer := blockchain.NewServer(conf.Blockchain, stats.Blockchain, executionEngine, timeService, cancel)
+	bcService := blockchain.NewAbciService(conf.Blockchain, stats.Blockchain, executionEngine, timeService)
+	bcProcessor := blockchain.NewAbciProcessor(conf.Blockchain, bcService)
+	bcApp := blockchain.NewAbciApplication(conf.Blockchain, stats.Blockchain, bcProcessor, bcService, timeService, cancel)
+	socketServer := blockchain.NewServer(conf.Blockchain, stats.Blockchain, timeService, bcApp)
 	err = socketServer.Start()
 	if err != nil {
 		return errors.Wrap(err, "ABCI socket server error")

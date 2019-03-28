@@ -3,7 +3,6 @@ package blockchain
 import (
 	"encoding/binary"
 
-	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
@@ -19,30 +18,45 @@ const (
 	statsSampleSize = 5000
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/application_service_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ApplicationService
+type ApplicationService interface {
+	Begin() error
+	Commit() error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/application_processor_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ApplicationProcessor
+type ApplicationProcessor interface {
+	Process(payload []byte) error
+	Validate(payload []byte) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/application_time_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ApplicationTime
+type ApplicationTime interface {
+	SetTimeNow(epochTimeNano vegatime.Stamp)
+}
+
 type AbciApplication struct {
 	types.BaseApplication
 	*Config
 	*Stats
 
-	processor Processor
-	service   Service
+	processor ApplicationProcessor
+	service   ApplicationService
 	appHash   []byte
 	size      int64
 	txSizes   []int
 	txTotals  []int
 
-	time            vegatime.Service
+	time            ApplicationTime
 	onCriticalError func()
 }
 
-func NewAbciApplication(config *Config, stats *Stats, execution execution.Engine, time vegatime.Service, onCriticalError func()) *AbciApplication {
-	service := NewAbciService(config, stats, execution, time)
-	processor := NewAbciProcessor(config, service)
+func NewAbciApplication(config *Config, stats *Stats, proc ApplicationProcessor, svc ApplicationService, time ApplicationTime, onCriticalError func()) *AbciApplication {
 	return &AbciApplication{
 		Config:          config,
 		Stats:           stats,
-		processor:       processor,
-		service:         service,
+		processor:       proc,
+		service:         svc,
 		time:            time,
 		onCriticalError: onCriticalError,
 	}
