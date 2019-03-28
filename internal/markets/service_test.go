@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets/newmocks"
 	"code.vegaprotocol.io/vega/internal/storage/mocks"
-	"code.vegaprotocol.io/vega/internal/storage/newmocks"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -15,104 +15,106 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMarketService_NewService(t *testing.T) {
-	orderStore := &mocks.OrderStore{}
-	marketStore := &mocks.MarketStore{}
+type testService struct {
+	Service
+	ctx    context.Context
+	cfunc  context.CancelFunc
+	log    *logging.Logger
+	ctrl   *gomock.Controller
+	order  *newmocks.MockOrderStore
+	market *newmocks.MockMarketStore
+}
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	marketConfig := NewDefaultConfig(logger)
-	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
-	assert.NotNil(t, marketService)
-	assert.Nil(t, err)
+func getTestService(t *testing.T) *testService {
+	ctrl := gomock.NewController(t)
+	order := newmocks.NewMockOrderStore(ctrl)
+	market := newmocks.NewMockMarketStore(ctrl)
+	log := logging.NewLoggerFromEnv("dev")
+	ctx, cfunc := context.WithCancel(context.Background())
+	svc, err := NewMarketService(
+		NewDefaultConfig(log),
+		market,
+		order,
+	)
+	assert.NoError(t, err)
+	return &testService{
+		Service: svc,
+		ctx:     ctx,
+		cfunc:   cfunc,
+		log:     log,
+		ctrl:    ctrl,
+		order:   order,
+		market:  market,
+	}
 }
 
 func TestMarketService_CreateMarket(t *testing.T) {
-	orderStore := &mocks.OrderStore{}
-	marketStore := &mocks.MarketStore{}
+	svc := getTestService(t)
+	defer svc.Finish()
 	market := &types.Market{Name: "BTC/DEC19"}
-	marketStore.On("Post", market).Return(nil)
+	svc.market.EXPECT().Post(market).Times(1).Return(nil)
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	marketConfig := NewDefaultConfig(logger)
-	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
-	assert.NotNil(t, marketService)
-	assert.Nil(t, err)
-
-	err = marketService.CreateMarket(context.Background(), market)
-	assert.Nil(t, err)
+	assert.NoError(t, svc.CreateMarket(svc.ctx, market))
 }
 
 func TestMarketService_GetAll(t *testing.T) {
-	orderStore := &mocks.OrderStore{}
-	marketStore := &mocks.MarketStore{}
-	marketStore.On("GetAll").Return([]*types.Market{
+	svc := getTestService(t)
+	defer svc.Finish()
+	markets := []*types.Market{
 		{Name: "BTC/DEC19"},
 		{Name: "ETH/JUN19"},
 		{Name: "LTC/JAN20"},
-	}, nil).Once()
+	}
+	svc.market.EXPECT().GetAll().Times(1).Return(markets, nil)
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	marketConfig := NewDefaultConfig(logger)
-	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
-	assert.NotNil(t, marketService)
-	assert.Nil(t, err)
-
-	markets, err := marketService.GetAll(context.Background())
-	assert.Nil(t, err)
-	assert.Len(t, markets, 3)
-	assert.Equal(t, "BTC/DEC19", markets[0].Name)
-	assert.Equal(t, "ETH/JUN19", markets[1].Name)
-	assert.Equal(t, "LTC/JAN20", markets[2].Name)
+	get, err := svc.GetAll(svc.ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, markets, get)
 }
 
 func TestMarketService_GetByName(t *testing.T) {
-	orderStore := &mocks.OrderStore{}
-	marketStore := &mocks.MarketStore{}
-	marketStore.On("GetByName", "BTC/DEC19").Return(&types.Market{
-		Name: "BTC/DEC19",
-	}, nil).Once()
-
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	marketConfig := NewDefaultConfig(logger)
-	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
-	assert.NotNil(t, marketService)
-	assert.Nil(t, err)
-
-	market, err := marketService.GetByName(context.Background(), "BTC/DEC19")
-	assert.Nil(t, err)
-	assert.Equal(t, "BTC/DEC19", market.Name)
+	svc := getTestService(t)
+	defer svc.Finish()
+	markets := map[string]*types.Market{
+		"BTC/DEC19": &types.Market{Name: "BTC/DEC19"},
+		"ETH/JUN19": &types.Market{Name: "ETH/JUN19"},
+		"LTC/JAN20": nil,
+	}
+	notFoundErr := errors.New("market not found")
+	svc.market.EXPECT().GetByName(gomock.Any()).Times(len(markets)).DoAndReturn(func(k string) (*types.Market, error) {
+		m, ok := markets[k]
+		assert.True(t, ok)
+		if m == nil {
+			return nil, notFoundErr
+		}
+		return m, nil
+	})
+	for k, exp := range markets {
+		market, err := svc.GetByName(svc.ctx, k)
+		if exp != nil {
+			assert.Equal(t, exp, market)
+			assert.NoError(t, err)
+		} else {
+			assert.Nil(t, market)
+			assert.Equal(t, notFoundErr, err)
+		}
+	}
 }
 
 func TestMarketService_GetDepth(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.Finish()
 	market := &types.Market{Name: "BTC/DEC19"}
-	orderStore := &mocks.OrderStore{}
-	orderStore.On("GetMarketDepth", context.Background(), market.Name).Return(&types.MarketDepth{
+	depth := &types.MarketDepth{
 		Name: market.Name,
-	}, nil)
-	marketStore := &mocks.MarketStore{}
-	marketStore.On("GetByName", market.Name).Return(&types.Market{
-		Name: market.Name,
-	}, nil).Once()
+	}
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
+	svc.market.EXPECT().GetByName(market.Name).Times(1).Return(market, nil)
+	svc.order.EXPECT().GetMarketDepth(svc.ctx, market.Name).Times(1).Return(depth, nil)
 
-	marketConfig := NewDefaultConfig(logger)
-	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
-	assert.NotNil(t, marketService)
-	assert.Nil(t, err)
-
-	depth, err := marketService.GetDepth(context.Background(), market.Name)
-	assert.Nil(t, err)
-	assert.NotNil(t, depth)
+	got, err := svc.GetDepth(svc.ctx, market.Name)
+	assert.NoError(t, err)
+	assert.Equal(t, depth, got)
 }
 
 func TestMarketService_GetDepthNonExistentMarket(t *testing.T) {
@@ -220,3 +222,9 @@ func testMarketObserveDepthSuccess(t *testing.T) {
 //
 //	assert.True(t, false)
 //}
+
+func (t *testService) Finish() {
+	t.cfunc()
+	t.log.Sync()
+	t.ctrl.Finish()
+}

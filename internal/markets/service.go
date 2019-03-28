@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -24,14 +23,28 @@ type Service interface {
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/market_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/markets MarketStore
+type MarketStore interface {
+	Post(party *types.Market) error
+	GetByName(name string) (*types.Market, error)
+	GetAll() ([]*types.Market, error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/order_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/markets OrderStore
+type OrderStore interface {
+	Subscribe(orders chan<- []types.Order) uint64
+	Unsubscribe(id uint64) error
+	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
+}
+
 type marketService struct {
 	*Config
-	marketStore storage.MarketStore
-	orderStore  storage.OrderStore
+	marketStore MarketStore
+	orderStore  OrderStore
 }
 
 // NewMarketService creates an market service with the necessary dependencies
-func NewMarketService(config *Config, marketStore storage.MarketStore, orderStore storage.OrderStore) (Service, error) {
+func NewMarketService(config *Config, marketStore MarketStore, orderStore OrderStore) (Service, error) {
 	return &marketService{
 		config,
 		marketStore,

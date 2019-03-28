@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage/newmocks"
+	"code.vegaprotocol.io/vega/internal/markets/newmocks"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
