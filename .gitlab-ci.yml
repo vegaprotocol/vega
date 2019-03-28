@@ -33,9 +33,9 @@ before_script:
 
 after_script:
   - cd "${CI_PROJECT_DIR}" || exit 1
+  - for d in ${PKGMOD_DIR} ${VENDOR_DIR} ; do echo "There are $(find "$d" | wc -l) files/dirs in $d" ; done
   - find "${SRC_DIR}" -maxdepth 1 -not -name src -exec mv '{}' ./ ';'
   - rmdir "${SRC_DIR}"
-  - for d in ${PKGMOD_DIR} ${VENDOR_DIR} ; do echo "There are $(find "$d" | wc -l) files/dirs in $d" ; done
 
 deps:
   stage: deps
