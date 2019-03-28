@@ -270,6 +270,32 @@
         ]
       }
     },
+    "/submitOrder": {
+      "post": {
+        "operationId": "SubmitOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/grpcOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/vegaOrderSubmission"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/vegaTime": {
       "get": {
         "operationId": "GetVegaTime",
@@ -598,6 +624,37 @@
           "type": "string"
         },
         "party": {
+          "type": "string"
+        }
+      }
+    },
+    "vegaOrderSubmission": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "marketId": {
+          "type": "string"
+        },
+        "party": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "side": {
+          "$ref": "#/definitions/vegaSide"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaOrderType"
+        },
+        "expirationDatetime": {
           "type": "string"
         }
       }

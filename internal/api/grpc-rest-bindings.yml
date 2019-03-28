@@ -10,8 +10,8 @@ apis:
 
 http:
   rules:
-    - selector: grpc.trading.CreateOrder
-      post: '/createOrder'
+    - selector: grpc.trading.SubmitOrder
+      post: '/submitOrder'
       body: "*"
     - selector: grpc.trading.CancelOrder
       post: '/cancelOrder'
