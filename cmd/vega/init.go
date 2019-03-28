@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"code.vegaprotocol.io/vega/internal"
@@ -16,6 +17,12 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+)
+
+const (
+	marketBTCDEC19 = "BTCDEC19.json"
+	marketETHJUN19 = "ETHJUN19.json"
+	marketEURMAR19 = "EURMAR20.json"
 )
 
 type initCommand struct {
@@ -93,10 +100,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// generate default market config
-	err = createDefaultMarket(
-		filepath.Join(
-			fullDefaultMarketConfigPath,
-			execution.DefaultMarketConfigName))
+	err = createDefaultMarkets(fullDefaultMarketConfigPath)
 	if err != nil {
 		return err
 	}
@@ -106,6 +110,10 @@ func (ic *initCommand) runInit(c *Cli) error {
 	if err != nil {
 		return err
 	}
+
+	// setup the defaults markets
+	cfg.Execution.Markets.Configs = []string{
+		marketBTCDEC19, marketETHJUN19, marketEURMAR19}
 
 	// write configuration to toml
 	buf := new(bytes.Buffer)
@@ -128,8 +136,8 @@ func (ic *initCommand) runInit(c *Cli) error {
 	return nil
 }
 
-func createDefaultMarket(confpath string) error {
-	defaultMarket := proto.Market{
+func createDefaultMarkets(confpath string) error {
+	mkt := proto.Market{
 		Id: "BTC/DEC19",
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
@@ -166,15 +174,35 @@ func createDefaultMarket(confpath string) error {
 		},
 	}
 
+	err := createDefaultMarket(&mkt, path.Join(confpath, marketBTCDEC19))
+	if err != nil {
+		return err
+	}
+	mkt.Id = "ETH/JUN19"
+	mkt.TradableInstrument.Instrument.Id = "Crypto/ETHUSD/Futures/Jun19"
+	mkt.TradableInstrument.Instrument.Code = "FX:ETHUSD/Jun19"
+	mkt.TradableInstrument.Instrument.Name = "June 2019 ETH vs USD future"
+	err = createDefaultMarket(&mkt, path.Join(confpath, marketETHJUN19))
+	if err != nil {
+		return err
+	}
+	mkt.Id = "EUR/MAR20"
+	mkt.TradableInstrument.Instrument.Id = "Fx/EURUSD/Futures/Mar20"
+	mkt.TradableInstrument.Instrument.Code = "FX:EURUSD/MAR20"
+	mkt.TradableInstrument.Instrument.Name = "March 2020 EUR vs USD future"
+	return createDefaultMarket(&mkt, path.Join(confpath, marketEURMAR19))
+}
+
+func createDefaultMarket(mkt *proto.Market, path string) error {
 	m := jsonpb.Marshaler{
 		Indent: "  ",
 	}
-	buf, err := m.MarshalToString(&defaultMarket)
+	buf, err := m.MarshalToString(mkt)
 	if err != nil {
 		return err
 	}
 
-	f, err := os.Create(confpath)
+	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
