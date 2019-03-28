@@ -5,87 +5,87 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage/mocks"
+	"code.vegaprotocol.io/vega/internal/parties/newmocks"
 	types "code.vegaprotocol.io/vega/proto"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPartyService_NewService(t *testing.T) {
-	partyStore := &mocks.PartyStore{}
+type testService struct {
+	Service
+	log   *logging.Logger
+	ctx   context.Context
+	cfunc context.CancelFunc
+	ctrl  *gomock.Controller
+	store *newmocks.MockPartyStore
+}
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	partyConfig := NewDefaultConfig(logger)
-	partyService, err := NewPartyService(partyConfig, partyStore)
-	assert.NotNil(t, partyService)
-	assert.Nil(t, err)
+func getTestService(t *testing.T) *testService {
+	ctrl := gomock.NewController(t)
+	store := newmocks.NewMockPartyStore(ctrl)
+	log := logging.NewLoggerFromEnv("dev")
+	ctx, cfunc := context.WithCancel(context.Background())
+	svc, err := NewPartyService(
+		NewDefaultConfig(log),
+		store,
+	)
+	assert.NoError(t, err)
+	return &testService{
+		Service: svc,
+		log:     log,
+		ctx:     ctx,
+		cfunc:   cfunc,
+		ctrl:    ctrl,
+		store:   store,
+	}
 }
 
 func TestPartyService_CreateParty(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.Finish()
 	p := &types.Party{Name: "Christina"}
 
-	partyStore := &mocks.PartyStore{}
-	partyStore.On("Post", p).Return(nil)
+	svc.store.EXPECT().Post(p).Times(1).Return(nil)
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	partyConfig := NewDefaultConfig(logger)
-	partyService, err := NewPartyService(partyConfig, partyStore)
-	assert.NotNil(t, partyService)
-	assert.Nil(t, err)
-
-	err = partyService.CreateParty(context.Background(), p)
-	assert.Nil(t, err)
+	assert.NoError(t, svc.CreateParty(svc.ctx, p))
 }
 
 func TestPartyService_GetAll(t *testing.T) {
-	partyStore := &mocks.PartyStore{}
+	svc := getTestService(t)
+	defer svc.Finish()
 
-	partyStore.On("GetAll").Return([]*types.Party{
+	expected := []*types.Party{
 		{Name: "Edd"},
 		{Name: "Barney"},
 		{Name: "Ramsey"},
 		{Name: "Jeremy"},
-	}, nil).Once()
+	}
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
+	svc.store.EXPECT().GetAll().Times(1).Return(expected, nil)
 
-	partyConfig := NewDefaultConfig(logger)
-	partyService, err := NewPartyService(partyConfig, partyStore)
-	assert.NotNil(t, partyService)
-	assert.Nil(t, err)
+	parties, err := svc.GetAll(svc.ctx)
 
-	parties, err := partyService.GetAll(context.Background())
-
-	assert.Len(t, parties, 4)
-	assert.Equal(t, "Edd", parties[0].Name)
-	assert.Equal(t, "Barney", parties[1].Name)
-	assert.Equal(t, "Ramsey", parties[2].Name)
-	assert.Equal(t, "Jeremy", parties[3].Name)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, parties)
 }
 
 func TestPartyService_GetByName(t *testing.T) {
-	partyStore := &mocks.PartyStore{}
+	svc := getTestService(t)
+	defer svc.Finish()
 
-	partyStore.On("GetByName", "Candida").Return(&types.Party{
+	expect := &types.Party{
 		Name: "Candida",
-	}, nil).Once()
+	}
+	svc.store.EXPECT().GetByName(expect.Name).Times(1).Return(expect, nil)
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
+	party, err := svc.GetByName(svc.ctx, expect.Name)
+	assert.NoError(t, err)
+	assert.Equal(t, expect, party)
+}
 
-	partyConfig := NewDefaultConfig(logger)
-	partyService, err := NewPartyService(partyConfig, partyStore)
-	assert.NotNil(t, partyService)
-	assert.Nil(t, err)
-
-	party, err := partyService.GetByName(context.Background(), "Candida")
-	assert.Nil(t, err)
-
-	assert.Equal(t, "Candida", party.Name)
-
+func (t *testService) Finish() {
+	t.log.Sync()
+	t.cfunc()
+	t.ctrl.Finish()
 }

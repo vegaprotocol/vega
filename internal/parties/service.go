@@ -1,9 +1,9 @@
 package parties
 
 import (
-	"code.vegaprotocol.io/vega/internal/storage"
-	types "code.vegaprotocol.io/vega/proto"
 	"context"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 //Service provides the interface for parties business logic.
@@ -16,16 +16,23 @@ type Service interface {
 	GetAll(ctx context.Context) ([]*types.Party, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/part_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/parties PartyStore
+type PartyStore interface {
+	Post(party *types.Party) error
+	GetByName(name string) (*types.Party, error)
+	GetAll() ([]*types.Party, error)
+}
+
 type partyService struct {
 	*Config
-	store storage.PartyStore
+	store PartyStore
 }
 
 // NewPartyService creates a Parties service with the necessary dependencies
-func NewPartyService(config *Config, store storage.PartyStore) (Service, error) {
+func NewPartyService(config *Config, store PartyStore) (Service, error) {
 	return &partyService{
-		config,
-		store,
+		Config: config,
+		store:  store,
 	}, nil
 }
 
@@ -36,12 +43,10 @@ func (s *partyService) CreateParty(ctx context.Context, party *types.Party) erro
 
 // GetByName searches for the given party by name.
 func (s *partyService) GetByName(ctx context.Context, name string) (*types.Party, error) {
-	p, err := s.store.GetByName(name)
-	return p, err
+	return s.store.GetByName(name)
 }
 
 // GetAll returns all parties.
 func (s *partyService) GetAll(ctx context.Context) ([]*types.Party, error) {
-	p, err := s.store.GetAll()
-	return p, err
+	return s.store.GetAll()
 }
