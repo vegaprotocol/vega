@@ -29,8 +29,8 @@ func runBadgerStoreTest(t *testing.T, opts *badger.Options, test func(t *testing
 	defer os.RemoveAll(dir)
 
 	if opts == nil {
-		opts = new(badger.Options)
-		*opts = badger.DefaultOptions
+		cpy := badger.DefaultOptions
+		opts = &cpy
 	}
 	opts.Dir, opts.ValueDir = dir, dir
 

@@ -6,14 +6,48 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/storage"
-	"code.vegaprotocol.io/vega/internal/storage/mocks"
+	"code.vegaprotocol.io/vega/internal/trades/newmocks"
 
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+type testService struct {
+	Service
+	ctx   context.Context
+	cfunc context.CancelFunc
+	log   *logging.Logger
+	ctrl  *gomock.Controller
+	trade *newmocks.MockTradeStore
+	risk  *newmocks.MockRiskStore
+}
+
+func getTestService(t *testing.T) *testService {
+	ctx, cfunc := context.WithCancel(context.Background())
+	ctrl := gomock.NewController(t)
+	trade := newmocks.NewMockTradeStore(ctrl)
+	risk := newmocks.NewMockRiskStore(ctrl)
+	log := logging.NewLoggerFromEnv("dev")
+	svc, err := NewTradeService(
+		NewDefaultConfig(log),
+		trade,
+		risk,
+	)
+	assert.NoError(t, err)
+	return &testService{
+		Service: svc,
+		ctx:     ctx,
+		cfunc:   cfunc,
+		log:     log,
+		ctrl:    ctrl,
+		trade:   trade,
+		risk:    risk,
+	}
+}
 
 // storageConfig specifies that the badger files are kept in a different
 // directory when the candle service tests run. This is useful as when
@@ -26,104 +60,75 @@ func storageConfig() *storage.Config {
 	return storeConfig
 }
 
-func TestNewTradeService(t *testing.T) {
-	config := storageConfig()
-	storage.FlushStores(config)
-
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	tradeStore, err := storage.NewTradeStore(config, func() {})
-	defer tradeStore.Close()
-	assert.Nil(t, err)
-	assert.NotNil(t, tradeStore)
-
-	riskStore, err := storage.NewRiskStore(config)
-	defer riskStore.Close()
-	assert.Nil(t, err)
-	assert.NotNil(t, tradeStore)
-
-	tradeConfig := NewDefaultConfig(logger)
-	newTradeService, err := NewTradeService(tradeConfig, tradeStore, riskStore)
-	assert.Nil(t, err)
-	assert.NotNil(t, newTradeService)
-}
-
-func TestTradeService_GetByMarket(t *testing.T) {
-	ctx := context.Background()
-
+func TestGetByMarket(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.Finish()
 	market := "BTC/DEC19"
 	invalid := "LTC/DEC19"
-
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	tradeStore := &mocks.TradeStore{}
-	riskStore := &mocks.RiskStore{}
-
-	tradeConfig := NewDefaultConfig(logger)
-	tradeService, err := NewTradeService(tradeConfig, tradeStore, riskStore)
-	assert.Nil(t, err)
-	assert.NotNil(t, tradeService)
-
-	// Scenario 1: valid market has n trades
-	tradeStore.On("GetByMarket", ctx, market, &filtering.TradeQueryFilters{}).Return([]*types.Trade{
+	expErr := errors.New("phobos communications link interrupted")
+	expect := []*types.Trade{
 		{Id: "A", Market: market, Price: 100},
 		{Id: "B", Market: market, Price: 200},
 		{Id: "C", Market: market, Price: 300},
-	}, nil).Once()
+	}
 
-	tradeSet, err := tradeService.GetByMarket(ctx, market, &filtering.TradeQueryFilters{})
-	assert.Nil(t, err)
-	assert.NotNil(t, tradeSet)
-	assert.Equal(t, 3, len(tradeSet))
-	tradeStore.AssertExpectations(t)
+	svc.trade.EXPECT().GetByMarket(svc.ctx, market, nil).Times(1).Return(expect, nil)
+	svc.trade.EXPECT().GetByMarket(svc.ctx, invalid, nil).Times(1).Return(nil, expErr)
 
-	// Scenario 2: invalid market returns an error
-	tradeStore.On("GetByMarket", ctx, invalid, &filtering.TradeQueryFilters{}).Return(nil,
-		errors.New("phobos communications link interrupted")).Once()
+	success, noErr := svc.GetByMarket(svc.ctx, market, nil)
+	assert.NoError(t, noErr)
+	assert.Equal(t, expect, success)
 
-	tradeSet, err = tradeService.GetByMarket(ctx, invalid, &filtering.TradeQueryFilters{})
-	assert.NotNil(t, err)
-	assert.Nil(t, tradeSet)
+	fail, err := svc.GetByMarket(svc.ctx, invalid, nil)
+	assert.Nil(t, fail)
+	assert.Equal(t, expErr, err)
 }
 
 func TestTradeService_GetByParty(t *testing.T) {
-	ctx := context.Background()
+	svc := getTestService(t)
+	defer svc.Finish()
+	expErr := errors.New("phobos communications link interrupted")
 
 	partyA := "ramsey"
 	partyB := "barney"
 	invalid := "chris"
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
+	expect := map[string][]*types.Trade{
+		partyA: []*types.Trade{
+			{Id: "A", Buyer: partyA, Seller: partyB, Price: 100},
+			{Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
+		},
+		partyB: []*types.Trade{
+			{Id: "C", Buyer: partyB, Seller: partyA, Price: 100},
+			{Id: "D", Buyer: partyA, Seller: partyB, Price: 200},
+		},
+		invalid: nil,
+	}
+	svc.trade.EXPECT().GetByParty(svc.ctx, gomock.Any(), nil).Times(len(expect)).DoAndReturn(func(_ context.Context, party string, _ *filtering.TradeQueryFilters) ([]*types.Trade, error) {
+		trades, ok := expect[party]
+		assert.True(t, ok)
+		if trades == nil {
+			return nil, expErr
+		}
+		return trades, nil
+	})
 
-	tradeStore := &mocks.TradeStore{}
-	riskStore := &mocks.RiskStore{}
-	tradeConfig := NewDefaultConfig(logger)
-	tradeService, err := NewTradeService(tradeConfig, tradeStore, riskStore)
-	assert.Nil(t, err)
-	assert.NotNil(t, tradeService)
+	for party, exp := range expect {
+		trades, err := svc.GetByParty(svc.ctx, party, nil)
+		if exp == nil {
+			assert.Nil(t, trades)
+			assert.Equal(t, expErr, err)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, exp, trades)
+		}
+	}
+}
 
-	// Scenario 1: valid market has n trades
-	tradeStore.On("GetByParty", ctx, partyA, &filtering.TradeQueryFilters{}).Return([]*types.Trade{
-		{Id: "A", Buyer: partyA, Seller: partyB, Price: 100},
-		{Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
-	}, nil).Once()
-
-	tradeSet, err := tradeService.GetByParty(context.Background(), partyA, &filtering.TradeQueryFilters{})
-	assert.Nil(t, err)
-	assert.NotNil(t, tradeSet)
-	assert.Equal(t, 2, len(tradeSet))
-	tradeStore.AssertExpectations(t)
-
-	// Scenario 2: invalid market returns an error
-	tradeStore.On("GetByParty", ctx, invalid, &filtering.TradeQueryFilters{}).Return(nil,
-		errors.New("phobos communications link interrupted")).Once()
-
-	tradeSet, err = tradeService.GetByParty(context.Background(), invalid, &filtering.TradeQueryFilters{})
-	assert.NotNil(t, err)
-	assert.Nil(t, tradeSet)
+func (t *testService) Finish() {
+	t.log.Sync()
+	t.cfunc()
+	t.ctrl.Finish()
 }
 
 //func TestTradeService_GetAllTradesForOrderOnMarket(t *testing.T) {

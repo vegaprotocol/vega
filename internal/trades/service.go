@@ -24,13 +24,31 @@ type Service interface {
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 }
 
-type tradeService struct {
-	*Config
-	tradeStore storage.TradeStore
-	riskStore  storage.RiskStore
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/trade_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/trades TradeStore
+type TradeStore interface {
+	GetByMarket(ctx context.Context, market string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
+	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Trade, error)
+	GetByParty(ctx context.Context, party string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
+	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Trade, error)
+	GetByOrderId(ctx context.Context, orderId string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
+	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*storage.MarketBucket
+	GetMarkPrice(ctx context.Context, market string) (uint64, error)
+	Subscribe(trades chan<- []types.Trade) uint64
+	Unsubscribe(id uint64) error
 }
 
-func NewTradeService(config *Config, tradeStore storage.TradeStore, riskStore storage.RiskStore) (Service, error) {
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/risk_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/trades RiskStore
+type RiskStore interface {
+	GetByMarket(market string) (*types.RiskFactor, error)
+}
+
+type tradeService struct {
+	*Config
+	tradeStore TradeStore
+	riskStore  RiskStore
+}
+
+func NewTradeService(config *Config, tradeStore TradeStore, riskStore RiskStore) (Service, error) {
 	return &tradeService{
 		Config:     config,
 		tradeStore: tradeStore,

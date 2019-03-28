@@ -1,13 +1,14 @@
 package restproxy
 
 import (
-	"code.vegaprotocol.io/vega/internal/logging"
 	"compress/gzip"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
 	"testing"
+
+	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 func TestNoGzip(t *testing.T) {
