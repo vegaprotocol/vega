@@ -1183,10 +1183,15 @@ type Vega {
     party(name: String!): Party
 }
 
+# A mode where Vega try to execute order as soon as they are received
 type ContinuousTrading {
+  # Size of an increment in price in terms of the quote currency (uint64)
   tickSize: Int
 }
+
+# Some non continuous trading mode
 type DiscreteTrading {
+  # Duration of the trading (uint64)
   duration: Int
 }
 
@@ -1195,40 +1200,71 @@ ContinuousTrading
 | DiscreteTrading
 
 type BuiltinFutures {
+  # The historic volatily of the future (float64)
   historicVolatility: Float!
 }
 
 union RiskModel = BuiltinFutures
 
+# A set of metadat to associate to an instruments
 type InstrumentMetadata {
+
+  # An arbitrary list of tags to associated to associate to the Instrument (string list)
   tags: [String]!
 }
 
+# An Ethereum oracle
 type EthereumEvent {
+
+  # The ID of the ethereum contract to use (string)
   contractId: String!
+
+  # Name of the Ethereum event to listen to. (string)
   event: String!
 }
 
 union Oracle = EthereumEvent
 
+# A Future product
 type Future {
+
+  # The maturity date of the product (string)
   maturity: String!
+
+  # The name of the asset (string)
   asset: String!
+
+  # The oracle used for this product (Oracle union)
   oracle: Oracle!
 }
 
 union Product = Future
 
+# Describe something that can be traded on Vega
 type Instrument {
+
+  # Uniquely identify an instrument accrods all instruments available on Vega (string)
   id: String!
+
+  # A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)
   code: String!
+
+  # Full and fairly descriptive name for the instrument
   name: String!
+
+  # Metadata for this instrument
   metadata: InstrumentMetadata!
+
+  # A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
   product: Product!
 }
 
+# A tradable instrument is a combination of an instrument and a risk model
 type TradableInstrument {
+  # An instance of or reference to a fully specified instrument.
   instrument: Instrument!
+
+  # A reference to a risk model that is valid for the instrument
   riskModel: RiskModel!
 }
 
@@ -1238,10 +1274,13 @@ type Market {
   # Market full name
   id: String!
 
+  # An instance of or reference to a tradable instrument.
   tradableInstrument: TradableInstrument!
 
+  # Definitions and required configuration for the trading mode
   tradingMode: TradingMode!
 
+  #  number of decimals places for price quotes, e.g. if quote currency is USD and decimal places is 2 then prices are quoted in integer numbers of cents. (uint64)
   decimalPlaces: Int!
 
   # Orders on a market
