@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 	"testing"
-	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -69,6 +68,7 @@ func getTestService(t *testing.T) *testService {
 func TestObserveCandles(t *testing.T) {
 	t.Run("Observe candles - empty subscriptions", testObserveCandleStoreEmpty)
 	t.Run("Observe candles - read values from channels", testObserveCandleStoreGetCandles)
+	t.Run("Observe candles - ensure retry limit behaves as expected", testObserveCandlesRetries)
 }
 
 func testObserveCandleStoreEmpty(t *testing.T) {
@@ -169,6 +169,51 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 	wg.Wait()
 }
 
+func testObserveCandlesRetries(t *testing.T) {
+	svc := getTestService(t)
+	// cancels context, syncs log, and finishes test controller
+	defer svc.Finish()
+	// wg ensuring unsubscribe was called when we expected it to be
+	wg := sync.WaitGroup{}
+	markets := []string{
+		"BTC/DEC19",
+		"ETH/APR19",
+	}
+	intervals := []types.Interval{
+		types.Interval_I1M,
+		types.Interval_I5M,
+		types.Interval_I15M,
+		types.Interval_I1H,
+		types.Interval_I6H,
+		types.Interval_I1D,
+	}
+	chWrite := func(ch chan<- *types.Candle) {
+		// an empty literal is all we need
+		ch <- &types.Candle{}
+	}
+	for f, market := range markets {
+		// set up expected calls
+		factor := f * len(intervals) // either 6 or len of intervals
+		for i, it := range intervals {
+			ref := uint64(i + 1 + factor)
+			wg.Add(1)
+			svc.store.EXPECT().Subscribe(itMatcher{market: market, interval: it}).Times(1).DoAndReturn(func(it *storage.InternalTransport) uint64 {
+				go chWrite(it.Transport)
+				return ref
+			})
+			// ensure the same reference is unsubscribed when context is cancelled
+			svc.store.EXPECT().Unsubscribe(ref).Times(1).Return(nil).Do(func(_ uint64) {
+				wg.Done()
+			})
+			// we're setting a retry limit here, ignore the channel, this is all about retries
+			_, id := svc.ObserveCandles(svc.ctx, 1, &market, &it)
+			assert.Equal(t, ref, id)
+		}
+	}
+	wg.Wait()
+	svc.cfunc() // cancel context, we've made all the calls we needed to make, let's wait for unsubscribe calls to complete
+}
+
 func isSubscriptionEmpty(transport <-chan *types.Candle) bool {
 	select {
 	case <-transport:
@@ -176,141 +221,6 @@ func isSubscriptionEmpty(transport <-chan *types.Candle) bool {
 	default:
 		return true
 	}
-}
-
-func TestSubscriptionUpdates_MinMax(t *testing.T) {
-	var wg sync.WaitGroup
-	MarketBTC := "BTC/DEC19"
-	ctx, cfunc := context.WithCancel(context.Background())
-	defer cfunc()
-	storeConfig := storageConfig()
-	storage.FlushStores(storeConfig)
-	candleStore, err := storage.NewCandleStore(storeConfig)
-	assert.Nil(t, err)
-	defer candleStore.Close()
-
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	candleConfig := NewDefaultConfig(logger)
-	candleService, err := NewCandleService(candleConfig, candleStore)
-	assert.Nil(t, err)
-
-	interval5m := types.Interval_I5M
-
-	candlesSubscription5mBTC, ref := candleService.ObserveCandles(ctx, 0, &MarketBTC, &interval5m)
-	assert.Equal(t, true, isSubscriptionEmpty(candlesSubscription5mBTC))
-	assert.Equal(t, uint64(1), ref)
-
-	// t0 = 2018-11-13T11:00:00Z
-	t0 := uint64(1542106800000000000)
-
-	// first update
-	var trades1 = []*types.Trade{
-		{Id: "1", Market: MarketBTC, Price: uint64(100), Size: uint64(100), Timestamp: t0},
-		{Id: "2", Market: MarketBTC, Price: uint64(99), Size: uint64(100), Timestamp: t0 + uint64(10*time.Second)},
-		{Id: "3", Market: MarketBTC, Price: uint64(108), Size: uint64(100), Timestamp: t0 + uint64(20*time.Second)},
-		{Id: "4", Market: MarketBTC, Price: uint64(105), Size: uint64(100), Timestamp: t0 + uint64(30*time.Second)},
-	}
-
-	// second update
-	var trades2 = []*types.Trade{
-		{Id: "5", Market: MarketBTC, Price: uint64(110), Size: uint64(100), Timestamp: t0 + uint64(1*time.Minute)},
-		{Id: "6", Market: MarketBTC, Price: uint64(112), Size: uint64(100), Timestamp: t0 + uint64(1*time.Minute+10*time.Second)},
-		{Id: "7", Market: MarketBTC, Price: uint64(113), Size: uint64(100), Timestamp: t0 + uint64(1*time.Minute+20*time.Second)},
-		{Id: "8", Market: MarketBTC, Price: uint64(109), Size: uint64(100), Timestamp: t0 + uint64(1*time.Minute+30*time.Second)},
-	}
-
-	// third update
-	var trades3 = []*types.Trade{
-		{Id: "9", Market: MarketBTC, Price: uint64(110), Size: uint64(100), Timestamp: t0 + uint64(2*time.Minute)},
-		{Id: "10", Market: MarketBTC, Price: uint64(115), Size: uint64(100), Timestamp: t0 + uint64(2*time.Minute+10*time.Second)},
-		{Id: "11", Market: MarketBTC, Price: uint64(90), Size: uint64(100), Timestamp: t0 + uint64(2*time.Minute+20*time.Second)},
-		{Id: "12", Market: MarketBTC, Price: uint64(95), Size: uint64(100), Timestamp: t0 + uint64(2*time.Minute+30*time.Second)},
-	}
-
-	listenToCandles := func(wg *sync.WaitGroup, u1, u2, u3 *bool) {
-		defer wg.Done()
-		for {
-			select {
-			case candle := <-candlesSubscription5mBTC:
-				fmt.Printf("RECEIVED CANDLE BTC %+v\n", candle)
-				assert.Equal(t, t0, candle.Timestamp)
-				assert.Equal(t, types.Interval_I5M, candle.Interval)
-
-				switch candle.Volume {
-				case uint64(400):
-					fmt.Printf("RECEIVED CANDLE UPDATE 1\n")
-					assert.Equal(t, uint64(100), candle.Open)
-					assert.Equal(t, uint64(99), candle.Low)
-					assert.Equal(t, uint64(108), candle.High)
-					assert.Equal(t, uint64(105), candle.Close)
-					*u1 = true
-
-				case uint64(800):
-					fmt.Printf("RECEIVED CANDLE UPDATE 2\n")
-					assert.Equal(t, uint64(100), candle.Open)
-					assert.Equal(t, uint64(99), candle.Low)
-					assert.Equal(t, uint64(113), candle.High)
-					assert.Equal(t, uint64(109), candle.Close)
-					*u2 = true
-
-				case uint64(1200):
-					fmt.Printf("RECEIVED CANDLE UPDATE 3\n")
-					assert.Equal(t, uint64(100), candle.Open)
-					assert.Equal(t, uint64(90), candle.Low)
-					assert.Equal(t, uint64(115), candle.High)
-					assert.Equal(t, uint64(95), candle.Close)
-					*u3 = true
-				}
-			}
-			if *u1 && *u2 && *u3 {
-				break
-			}
-		}
-	}
-
-	var (
-		u1, u2, u3 = false, false, false
-	)
-	wg.Add(1)
-	go listenToCandles(&wg, &u1, &u2, &u3)
-
-	// first update
-	err = candleStore.StartNewBuffer(MarketBTC, t0)
-	assert.Nil(t, err)
-	for idx := range trades1 {
-		err := candleStore.AddTradeToBuffer(*trades1[idx])
-		assert.Nil(t, err)
-	}
-	err = candleStore.GenerateCandlesFromBuffer(MarketBTC)
-	assert.Nil(t, err)
-
-	// second update
-	err = candleStore.StartNewBuffer(MarketBTC, t0+uint64(1*time.Minute))
-	assert.Nil(t, err)
-	for idx := range trades2 {
-		err := candleStore.AddTradeToBuffer(*trades2[idx])
-		assert.Nil(t, err)
-	}
-	err = candleStore.GenerateCandlesFromBuffer(MarketBTC)
-	assert.Nil(t, err)
-
-	// third update
-	err = candleStore.StartNewBuffer(MarketBTC, t0+uint64(1*time.Minute))
-	assert.Nil(t, err)
-	for idx := range trades3 {
-		err := candleStore.AddTradeToBuffer(*trades3[idx])
-		assert.Nil(t, err)
-	}
-	err = candleStore.GenerateCandlesFromBuffer(MarketBTC)
-	assert.Nil(t, err)
-
-	wg.Wait()
-	assert.True(t, u1)
-	assert.True(t, u2)
-	assert.True(t, u3)
-	fmt.Printf("End of test\n")
 }
 
 func (t *testService) Finish() {
