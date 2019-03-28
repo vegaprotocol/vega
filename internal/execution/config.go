@@ -10,10 +10,8 @@ import (
 const (
 	// namedLogger is the identifier for package and should ideally match the package name
 	// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
-	namedLogger = "execution"
-
-	MarketConfigPath        = "markets"
-	DefaultMarketConfigName = "BTCDEC19.json"
+	namedLogger      = "execution"
+	MarketConfigPath = "markets"
 )
 
 type MarketConfig struct {
@@ -38,7 +36,7 @@ func NewDefaultConfig(logger *logging.Logger, defaultConfigDirPath string) *Conf
 		Level: logging.InfoLevel,
 		Markets: MarketConfig{
 			Path:    filepath.Join(defaultConfigDirPath, MarketConfigPath),
-			Configs: []string{DefaultMarketConfigName},
+			Configs: []string{},
 		},
 		Engines: engines.NewDefaultConfig(logger),
 	}
