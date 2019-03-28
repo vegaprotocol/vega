@@ -7,23 +7,18 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/filtering"
+	"code.vegaprotocol.io/vega/internal/api/endpoints/gql/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 
-	mockCandle "code.vegaprotocol.io/vega/internal/candles/mocks"
-	mockMarket "code.vegaprotocol.io/vega/internal/markets/mocks"
-	mockOrder "code.vegaprotocol.io/vega/internal/orders/mocks"
-	mockParty "code.vegaprotocol.io/vega/internal/parties/mocks"
-	mockTrade "code.vegaprotocol.io/vega/internal/trades/mocks"
-	mockTime "code.vegaprotocol.io/vega/internal/vegatime/mocks"
-
+	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
-	root := buildTestResolverRoot()
+	root := buildTestResolverRoot(t)
+	defer root.Finish()
 	assert.NotNil(t, root)
 
 	partyResolver := root.Party()
@@ -64,7 +59,8 @@ func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
 }
 
 func TestNewResolverRoot_QueryResolver(t *testing.T) {
-	root := buildTestResolverRoot()
+	root := buildTestResolverRoot(t)
+	defer root.Finish()
 	assert.NotNil(t, root)
 
 	queryResolver := root.Query()
@@ -77,60 +73,45 @@ func TestNewResolverRoot_QueryResolver(t *testing.T) {
 }
 
 func TestNewResolverRoot_VegaResolver(t *testing.T) {
-
+	root := buildTestResolverRoot(t)
+	defer root.Finish()
 	ctx := context.Background()
 
-	mockTradeService := &mockTrade.Service{}
-	mockOrderService := &mockOrder.Service{}
-	mockCandleService := &mockCandle.Service{}
-	mockMarketService := &mockMarket.Service{}
-	mockPartyService := &mockParty.Service{}
-	mockTimeService := &mockTime.Service{}
-	statusChecker := &monitoring.Status{}
+	notExistsErr := errors.New("market does not exist")
+	markets := map[string]*types.Market{
+		"BTC/DEC19": &types.Market{
+			Name: "BTC/DEC19",
+		},
+		"ETH/USD18": nil,
+	}
 
-	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name: "BTC/DEC19"},
-		nil).On("GetByName", ctx, "ETH/USD18").Return(nil,
-		errors.New("market does not exist")).On("GetByName",
-		ctx, "errorMarket").Return(nil, errors.New("market does not exist"))
+	root.market.EXPECT().GetByName(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {
+		m, ok := markets[k]
+		assert.True(t, ok)
+		if m == nil {
+			return nil, notExistsErr
+		}
+		return m, nil
+	})
 
-	mockOrderService.On("GetMarkets", ctx).Return(
-		[]string{"BTC/DEC19"}, nil,
-	).Times(3)
-
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	config := api.NewDefaultConfig(logger)
-	root := NewResolverRoot(config, mockOrderService, mockTradeService,
-		mockCandleService, mockTimeService, mockMarketService, mockPartyService, statusChecker)
-
-	assert.NotNil(t, root)
 	vegaResolver := root.Vega()
 	assert.NotNil(t, vegaResolver)
 
 	vega := &Vega{}
 	name := "BTC/DEC19"
-	markets, err := vegaResolver.Markets(ctx, vega, &name)
+	vMarkets, err := vegaResolver.Markets(ctx, vega, &name)
 	assert.Nil(t, err)
-	assert.NotNil(t, markets)
-	assert.Len(t, markets, 1)
+	assert.NotNil(t, vMarkets)
+	assert.Len(t, vMarkets, 1)
 
 	name = "ETH/USD18"
-	markets, err = vegaResolver.Markets(ctx, vega, &name)
+	vMarkets, err = vegaResolver.Markets(ctx, vega, &name)
 	assert.Error(t, err)
-	assert.Nil(t, markets)
+	assert.Nil(t, vMarkets)
 
-	markets, err = vegaResolver.Markets(ctx, vega, nil)
+	vMarkets, err = vegaResolver.Markets(ctx, vega, nil)
 	assert.Error(t, err)
-	assert.Nil(t, markets)
-
-	mockOrderService.On("GetMarkets", ctx).Return(
-		[]string{}, errors.New("proton drive not ready"),
-	).Once()
-
-	name = "errorMarket"
-	markets, err = vegaResolver.Markets(ctx, vega, &name)
-	assert.NotNil(t, err)
+	assert.Nil(t, vMarkets)
 
 	name = "barney"
 	parties, err := vegaResolver.Parties(ctx, vega, &name)
@@ -144,76 +125,44 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 }
 
 func TestNewResolverRoot_MarketResolver(t *testing.T) {
+	root := buildTestResolverRoot(t)
+	defer root.Finish()
 	ctx := context.Background()
 
-	mockTradeService := &mockTrade.Service{}
-	mockOrderService := &mockOrder.Service{}
-	mockCandleService := &mockCandle.Service{}
-	mockMarketService := &mockMarket.Service{}
-	mockPartyService := &mockParty.Service{}
-	mockTimeService := &mockTime.Service{}
-	statusChecker := &monitoring.Status{}
-
-	mockMarketService.On("GetByName", ctx, "BTC/DEC19").Return(&types.Market{Name: "BTC/DEC19"},
-		nil).On("GetByName", ctx, "errorMarket").Return(nil,
-		errors.New("market does not exist"))
-
-	mockOrderService.On("GetMarkets", ctx).Return(
-		[]string{"testMarket", "BTC/DEC19"}, nil,
-	).Times(3)
-
-	depth := types.MarketDepth{
-		Name: "BTC/DEC19",
+	notExistsErr := errors.New("market does not exist")
+	markets := map[string]*types.Market{
+		"BTC/DEC19": &types.Market{
+			Name: "BTC/DEC19",
+		},
 	}
-	mockOrderService.On("GetMarketDepth", ctx, "BTC/DEC19").Return(
-		depth, nil,
-	).Once()
-
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-	config := api.NewDefaultConfig(logger)
-
-	root := NewResolverRoot(config, mockOrderService, mockTradeService,
-		mockCandleService, mockTimeService, mockMarketService, mockPartyService, statusChecker)
-
-	assert.NotNil(t, root)
-	marketResolver := root.Market()
-	assert.NotNil(t, marketResolver)
-
 	marketId := "BTC/DEC19"
 	market := &Market{
 		Name: marketId,
 	}
 
-	// DEPTH
-	//depth, err := marketResolver.Depth(ctx, market)
-	//assert.Nil(t, err)
-	//assert.NotNil(t, depth)
-	//assert.Equal(t, marketId, depth.Name)
-	//
-	//mockOrderService.On("GetMarketDepth", ctx, btcDec18).Return(
-	//	nil, errors.New("phobos transport system overload"),
-	//).Once()
-	//
-	//depth, err = marketResolver.Depth(ctx, market)
-	//assert.Error(t, err)
+	root.market.EXPECT().GetByName(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {
+		m, ok := markets[k]
+		assert.True(t, ok)
+		if m == nil {
+			return nil, notExistsErr
+		}
+		return m, nil
+	})
+	root.order.EXPECT().GetByMarket(gomock.Any(), marketId, gomock.Any()).Times(1).Return([]*types.Order{
+		{
+			Id:        "order-id-1",
+			Price:     1000,
+			Timestamp: 1,
+		},
+		{
+			Id:        "order-id-2",
+			Price:     2000,
+			Timestamp: 2,
+		},
+	}, nil)
 
-	// ORDERS
-
-	mockOrderService.On("GetByMarket", ctx, marketId, &filtering.OrderQueryFilters{}).Return(
-		[]*types.Order{
-			{
-				Id:        "order-id-1",
-				Price:     1000,
-				Timestamp: 1,
-			},
-			{
-				Id:        "order-id-2",
-				Price:     2000,
-				Timestamp: 2,
-			},
-		}, nil,
-	).Once()
+	marketResolver := root.Market()
+	assert.NotNil(t, marketResolver)
 
 	orders, err := marketResolver.Orders(ctx, market, nil, nil, nil, nil)
 	assert.NotNil(t, orders)
@@ -221,20 +170,45 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	assert.Len(t, orders, 2)
 }
 
-func buildTestResolverRoot() *resolverRoot {
+type testResolver struct {
+	*resolverRoot
+	log    *logging.Logger
+	ctrl   *gomock.Controller
+	order  *mocks.MockOrderService
+	trade  *mocks.MockTradeService
+	candle *mocks.MockCandleService
+	market *mocks.MockMarketService
+}
 
-	mockTradeService := &mockTrade.Service{}
-	mockOrderService := &mockOrder.Service{}
-	mockCandleService := &mockCandle.Service{}
-	mockMarketService := &mockMarket.Service{}
-	mockPartyService := &mockParty.Service{}
-	mockTimeService := &mockTime.Service{}
+func buildTestResolverRoot(t *testing.T) *testResolver {
+	ctrl := gomock.NewController(t)
+	log := logging.NewLoggerFromEnv("dev")
+	conf := api.NewDefaultConfig(log)
+	order := mocks.NewMockOrderService(ctrl)
+	trade := mocks.NewMockTradeService(ctrl)
+	candle := mocks.NewMockCandleService(ctrl)
+	market := mocks.NewMockMarketService(ctrl)
 	statusChecker := &monitoring.Status{}
+	resolver := NewResolverRoot(
+		conf,
+		order,
+		trade,
+		candle,
+		market,
+		statusChecker,
+	)
+	return &testResolver{
+		resolverRoot: resolver,
+		log:          log,
+		ctrl:         ctrl,
+		order:        order,
+		trade:        trade,
+		candle:       candle,
+		market:       market,
+	}
+}
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-	config := api.NewDefaultConfig(logger)
-
-	return NewResolverRoot(config, mockOrderService, mockTradeService,
-		mockCandleService, mockTimeService, mockMarketService, mockPartyService, statusChecker)
+func (t *testResolver) Finish() {
+	t.log.Sync()
+	t.ctrl.Finish()
 }

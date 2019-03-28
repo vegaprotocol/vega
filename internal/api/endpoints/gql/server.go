@@ -121,9 +121,7 @@ func (g *graphServer) Start() {
 		g.orderService,
 		g.tradeService,
 		g.candleService,
-		g.timeService,
 		g.marketService,
-		g.partyService,
 		g.statusChecker,
 	)
 	var config = Config{

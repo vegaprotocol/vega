@@ -12,13 +12,8 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/orders"
-	"code.vegaprotocol.io/vega/internal/parties"
-	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 )
 
@@ -26,36 +21,62 @@ var (
 	ErrChainNotConnected = errors.New("chain not connected")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql OrderService
+type OrderService interface {
+	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
+	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
+	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
+	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql TradeService
+type TradeService interface {
+	GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
+	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
+	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_candle_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql CandleService
+type CandleService interface {
+	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
+	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql MarketService
+type MarketService interface {
+	GetByName(ctx context.Context, name string) (*types.Market, error)
+	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
+	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
+}
+
 type resolverRoot struct {
 	*api.Config
-	orderService  orders.Service
-	tradeService  trades.Service
-	timeService   vegatime.Service
-	candleService candles.Service
-	marketService markets.Service
-	partyService  parties.Service
+	orderService  OrderService
+	tradeService  TradeService
+	candleService CandleService
+	marketService MarketService
 	statusChecker *monitoring.Status
 }
 
 func NewResolverRoot(
 	config *api.Config,
-	orderService orders.Service,
-	tradeService trades.Service,
-	candleService candles.Service,
-	timeService vegatime.Service,
-	marketService markets.Service,
-	partyService parties.Service,
+	orderService OrderService,
+	tradeService TradeService,
+	candleService CandleService,
+	marketService MarketService,
 	statusChecker *monitoring.Status,
 ) *resolverRoot {
 
 	return &resolverRoot{
 		Config:        config,
-		timeService:   timeService,
 		orderService:  orderService,
 		tradeService:  tradeService,
 		candleService: candleService,
 		marketService: marketService,
-		partyService:  partyService,
 		statusChecker: statusChecker,
 	}
 }
@@ -120,13 +141,11 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, name *string) (
 	if err != nil {
 		return nil, err
 	}
-	var m = make([]Market, 0)
-	var market = Market{
-		Name: *name,
-	}
-	m = append(m, market)
-
-	return m, nil
+	return []Market{
+		{
+			Name: *name,
+		},
+	}, nil
 }
 
 func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, name string) (*Market, error) {
@@ -770,7 +789,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	return c, nil
 }
 
-func validateMarket(ctx context.Context, marketId *string, marketService markets.Service) error {
+func validateMarket(ctx context.Context, marketId *string, marketService MarketService) error {
 	if marketId != nil {
 		if len(*marketId) == 0 {
 			return errors.New("market must not be empty")
