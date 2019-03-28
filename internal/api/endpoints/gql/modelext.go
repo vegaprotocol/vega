@@ -26,6 +26,7 @@ var (
 	ErrUnimplementedFuture             = errors.New("unimplemented future")
 	ErrNilInstrument                   = errors.New("nil instrument")
 	ErrUnimplementedInstrument         = errors.New("unimplemented instrument")
+	ErrNilDiscreteTradingDuration      = errors.New("nil discrete trading duration")
 )
 
 func (ct *ContinuousTrading) IntoProto() (*proto.Market_Continuous, error) {
@@ -34,7 +35,7 @@ func (ct *ContinuousTrading) IntoProto() (*proto.Market_Continuous, error) {
 
 func (dt *DiscreteTrading) IntoProto() (*proto.Market_Discrete, error) {
 	if dt.Duration == nil {
-		return nil, errors.New("nil discrete trading duration")
+		return nil, ErrNilDiscreteTradingDuration
 	}
 	return &proto.Market_Discrete{
 		Discrete: &proto.DiscreteTrading{
