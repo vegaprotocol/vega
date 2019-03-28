@@ -61,7 +61,7 @@ func TestAppStatus(t *testing.T) {
 			wg.Done()
 		})
 
-		checker := NewStatusChecker(log, blockchainClient, 50*time.Nanosecond)
+		checker := NewStatusChecker(log, blockchainClient, 10*time.Millisecond)
 		wg.Wait()
 		assert.Equal(t, types.ChainStatus_REPLAYING, checker.Blockchain.Status())
 
