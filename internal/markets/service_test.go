@@ -7,7 +7,6 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets/newmocks"
-	"code.vegaprotocol.io/vega/internal/storage/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -118,25 +117,15 @@ func TestMarketService_GetDepth(t *testing.T) {
 }
 
 func TestMarketService_GetDepthNonExistentMarket(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.Finish()
 	market := &types.Market{Name: "BTC/DEC18"}
-	orderStore := &mocks.OrderStore{}
-	orderStore.On("GetMarketDepth", "BTC/DEC18").Return(nil,
-		errors.New("market does not exist"))
+	notFoundErr := errors.New("market does not exist")
 
-	marketStore := &mocks.MarketStore{}
-	marketStore.On("GetByName", market.Name).Return(nil,
-		errors.New("market does not exist")).Once()
+	svc.market.EXPECT().GetByName(market.Name).Times(1).Return(nil, notFoundErr)
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	marketConfig := NewDefaultConfig(logger)
-	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
-	assert.NotNil(t, marketService)
-	assert.Nil(t, err)
-
-	depth, err := marketService.GetDepth(context.Background(), market.Name)
-	assert.NotNil(t, err)
+	depth, err := svc.GetDepth(svc.ctx, market.Name)
+	assert.Equal(t, notFoundErr, err)
 	assert.Nil(t, depth)
 }
 
@@ -145,11 +134,8 @@ func TestMarketObserveDepth(t *testing.T) {
 }
 
 func testMarketObserveDepthSuccess(t *testing.T) {
-	ctx, cfunc := context.WithCancel(context.Background())
-	defer cfunc()
-	mockCtrl := gomock.NewController(t)
-	marketStore := newmocks.NewMockMarketStore(mockCtrl)
-	orderStore := newmocks.NewMockOrderStore(mockCtrl)
+	svc := getTestService(t)
+	defer svc.Finish()
 	marketArg := "TSTmarket"
 	// empty slice on the internal channel
 	orders := []types.Order{}
@@ -161,67 +147,29 @@ func testMarketObserveDepthSuccess(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	logger := logging.NewLoggerFromEnv("dev")
-	defer logger.Sync()
-
-	conf := NewDefaultConfig(logger)
-	marketService, err := NewMarketService(conf, marketStore, orderStore)
-	assert.Nil(t, err)
-	// set up calls
-
 	// perform this write in a routine, somehow this doesn't work when we use an anonymous func in the Do argument
 	writeToChannel := func(ch chan<- []types.Order) {
 		ch <- orders
 	}
-	orderStore.EXPECT().Subscribe(gomock.Any()).Times(1).Return(uint64(1)).Do(func(ch chan<- []types.Order) {
+	svc.order.EXPECT().Subscribe(gomock.Any()).Times(1).Return(uint64(1)).Do(func(ch chan<- []types.Order) {
 		go writeToChannel(ch)
 	})
 
-	orderStore.EXPECT().GetMarketDepth(gomock.Any(), marketArg).Times(1).Return(&depth, nil)
+	svc.order.EXPECT().GetMarketDepth(gomock.Any(), marketArg).Times(1).Return(&depth, nil)
 	// waitgroup here ensures that unsubscribe was indeed called
-	orderStore.EXPECT().Unsubscribe(uint64(1)).Times(1).Return(nil).Do(func(_ uint64) {
+	svc.order.EXPECT().Unsubscribe(uint64(1)).Times(1).Return(nil).Do(func(_ uint64) {
 		wg.Done()
 	})
 
-	depthCh, ref := marketService.ObserveDepth(ctx, 0, marketArg)
+	depthCh, ref := svc.ObserveDepth(svc.ctx, 0, marketArg)
 	assert.Equal(t, uint64(1), ref) // should be returned straight from the orderStore mock
 	// whatever was in the channel, we're expecting that to be accessible here, too
 	chDepth := <-depthCh
 	// cancel context here, so we can check the unsubscribe call went through as expected
-	cfunc()
+	svc.cfunc()
 	assert.Equal(t, depth, *chDepth)
 	wg.Wait() // wait for unsubscribe call
-	// end mocks
-	mockCtrl.Finish()
 }
-
-//func TestMarketService_ObserveMarkets(t *testing.T) {
-//	// todo: observing markets service test (gitlab.com/vega-protocol/trading-core/issues/166)
-//	assert.True(t, false)
-//}
-
-//func TestMarketService_ObserveDepth(t *testing.T) {
-//
-//	orderStore := &mocks.OrderStore{}
-//	marketStore := &mocks.MarketStore{}
-//
-//	logger := logging.NewLoggerFromEnv("dev")
-//	defer logger.Sync()
-//
-//	marketConfig := NewConfig(logger)
-//	marketService, err := NewMarketService(marketConfig, marketStore, orderStore)
-//	assert.NotNil(t, marketService)
-//	assert.Nil(t, err)
-//
-//	// todo: observing market depth service test (gitlab.com/vega-protocol/trading-core/issues/166)
-//	//ctx := context.Background()
-//	//context.WithCancel(ctx, func())
-//	//
-//	//marketService.ObserveDepth(context.Background(), )
-//	//
-//
-//	assert.True(t, false)
-//}
 
 func (t *testService) Finish() {
 	t.cfunc()
