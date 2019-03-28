@@ -27,10 +27,14 @@ var (
 	ErrNilInstrument                   = errors.New("nil instrument")
 	ErrUnimplementedInstrument         = errors.New("unimplemented instrument")
 	ErrNilDiscreteTradingDuration      = errors.New("nil discrete trading duration")
+	ErrNilContinuousTradingTickSize    = errors.New("nil continuous trading ticksize")
 )
 
 func (ct *ContinuousTrading) IntoProto() (*proto.Market_Continuous, error) {
-	return &proto.Market_Continuous{Continuous: &proto.ContinuousTrading{}}, nil
+	if ct.TickSize == nil {
+		return nil, ErrNilContinuousTradingTickSize
+	}
+	return &proto.Market_Continuous{Continuous: &proto.ContinuousTrading{TickSize: uint64(*ct.TickSize)}}, nil
 }
 
 func (dt *DiscreteTrading) IntoProto() (*proto.Market_Discrete, error) {
