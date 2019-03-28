@@ -15,13 +15,20 @@ type Service interface {
 	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination newmocks/candle_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/candles CandleStore
+type CandleStore interface {
+	Subscribe(iT *storage.InternalTransport) uint64
+	Unsubscribe(id uint64) error
+	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error)
+}
+
 type candleService struct {
 	*Config
 	tradesBuffer map[string][]*types.Trade
-	candleStore  storage.CandleStore
+	candleStore  CandleStore
 }
 
-func NewCandleService(config *Config, candleStore storage.CandleStore) (Service, error) {
+func NewCandleService(config *Config, candleStore CandleStore) (Service, error) {
 	if config == nil {
 		return nil, errors.New("candle config is nil when creating candle service instance.")
 	}
