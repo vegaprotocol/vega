@@ -1,6 +1,7 @@
 PROJECT_NAME := "vega"
 PKG := "./cmd/$(PROJECT_NAME)"
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
+PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
 TAG := $(shell git describe --tags 2>/dev/null)
 
 # See https://docs.gitlab.com/ce/ci/variables/README.html for CI vars.
@@ -83,12 +84,17 @@ install: proto ## install the binary in GOPATH/bin
 gqlgen: deps ## run gqlgen
 	@cd ./internal/api/endpoints/gql && go run github.com/99designs/gqlgen -c gqlgen.yml
 
-proto: | deps ${PROTOFILES} ## build proto definitions
+proto: | deps ${PROTOFILES} ${PROTOVALFILES} ## build proto definitions
+
+.PRECIOUS: proto/%.validator.pb.go
+proto/%.validator.pb.go: proto/%.proto
+	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --govalidators_out=paths=source_relative:. "$<" && \
+	sed -i -re 's/this\.Size_/this.Size/' "$@" && \
+	./script/fix_imports.sh "$@"
 
 .PRECIOUS: proto/%.pb.go
 proto/%.pb.go: proto/%.proto
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --go_out=paths=source_relative:. --govalidators_out=paths=source_relative:. "$<" && \
-		sed -i -re 's/this\.Size_/this.Size/' proto/*validator.pb.go
+	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --go_out=paths=source_relative:. "$<"
 
 proto_check: deps ## proto: Check committed files match just-generated files
 	@touch proto/*.proto ; \
@@ -110,7 +116,8 @@ internal/api/grpc.pb.go: internal/api/grpc.proto
 
 internal/api/grpc.validator.pb.go: internal/api/grpc.proto
 	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. \
-		-Iinternal/api/ --govalidators_out=paths=source_relative:. "$<"
+		-Iinternal/api/ --govalidators_out=paths=source_relative:. "$<" && \
+	./script/fix_imports.sh "$@"
 
 GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml,paths=source_relative:.
 SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml:.

@@ -6,8 +6,9 @@ package api
 import (
 	fmt "fmt"
 	math "math"
-	proto "github.com/golang/protobuf/proto"
+
 	_ "code.vegaprotocol.io/vega/proto"
+	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
