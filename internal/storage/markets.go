@@ -9,30 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Store provides the data storage contract for markets.
-type MarketStore interface {
-	//Subscribe(markets chan<- []types.Market) uint64
-	//Unsubscribe(id uint64) error
-
-	// Post adds a market to the store, this adds
-	// to queue the operation to be committed later.
-	Post(party *types.Market) error
-
-	// Commit typically saves any operations that are queued to underlying storage,
-	// if supported by underlying storage implementation.
-	Commit() error
-
-	// Close can be called to clean up and close any storage
-	// connections held by the underlying storage mechanism.
-	Close() error
-
-	// GetByID searches for the given market by id in the underlying store.
-	GetByID(name string) (*types.Market, error)
-
-	// GetAll returns all markets in the underlying store.
-	GetAll() ([]*types.Market, error)
-}
-
 // Market is used for memory/RAM based markets storage.
 type Market struct {
 	*Config

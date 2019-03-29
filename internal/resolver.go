@@ -24,12 +24,12 @@ type Resolver struct {
 	config          *Config
 	onCriticalError func()
 
-	candleStore storage.CandleStore
-	orderStore  storage.OrderStore
-	marketStore storage.MarketStore
-	tradeStore  storage.TradeStore
-	partyStore  storage.PartyStore
-	riskStore   storage.RiskStore
+	candleStore *storage.Candle
+	orderStore  *storage.Order
+	marketStore *storage.Market
+	tradeStore  *storage.Trade
+	partyStore  *storage.Party
+	riskStore   *storage.Risk
 
 	candleService *candles.Svc
 	tradeService  *trades.Svc
@@ -236,7 +236,7 @@ func (r *Resolver) ResolveTimeService() (*vegatime.Svc, error) {
 // --------------- Storage/ --------------
 
 // ResolveCandleStore returns a pointer to a singleton instance of the candle store.
-func (r *Resolver) ResolveCandleStore() (storage.CandleStore, error) {
+func (r *Resolver) ResolveCandleStore() (*storage.Candle, error) {
 	r.stMu.Lock()
 	defer r.stMu.Unlock()
 
@@ -256,7 +256,7 @@ func (r *Resolver) ResolveCandleStore() (storage.CandleStore, error) {
 }
 
 // ResolveOrderStore returns a pointer to a singleton instance of the order store.
-func (r *Resolver) ResolveOrderStore() (storage.OrderStore, error) {
+func (r *Resolver) ResolveOrderStore() (*storage.Order, error) {
 	r.stMu.Lock()
 	defer r.stMu.Unlock()
 
@@ -276,7 +276,7 @@ func (r *Resolver) ResolveOrderStore() (storage.OrderStore, error) {
 }
 
 // ResolveTradeStore returns a pointer to a singleton instance of the trade store.
-func (r *Resolver) ResolveTradeStore() (storage.TradeStore, error) {
+func (r *Resolver) ResolveTradeStore() (*storage.Trade, error) {
 	r.stMu.Lock()
 	defer r.stMu.Unlock()
 
@@ -296,7 +296,7 @@ func (r *Resolver) ResolveTradeStore() (storage.TradeStore, error) {
 }
 
 // ResolveRiskStore returns a pointer to a singleton instance of the risk store.
-func (r *Resolver) ResolveRiskStore() (storage.RiskStore, error) {
+func (r *Resolver) ResolveRiskStore() (*storage.Risk, error) {
 	r.stMu.Lock()
 	defer r.stMu.Unlock()
 
@@ -316,7 +316,7 @@ func (r *Resolver) ResolveRiskStore() (storage.RiskStore, error) {
 }
 
 // ResolveMarketStore returns a pointer to a singleton instance of the market store.
-func (r *Resolver) ResolveMarketStore() (storage.MarketStore, error) {
+func (r *Resolver) ResolveMarketStore() (*storage.Market, error) {
 	r.stMu.Lock()
 	defer r.stMu.Unlock()
 
@@ -336,7 +336,7 @@ func (r *Resolver) ResolveMarketStore() (storage.MarketStore, error) {
 }
 
 // ResolvePartyStore returns a pointer to a singleton instance of the party store.
-func (r *Resolver) ResolvePartyStore() (storage.PartyStore, error) {
+func (r *Resolver) ResolvePartyStore() (*storage.Party, error) {
 	r.stMu.Lock()
 	defer r.stMu.Unlock()
 

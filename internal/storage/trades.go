@@ -15,39 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type TradeStore interface {
-	Subscribe(trades chan<- []types.Trade) uint64
-	Unsubscribe(id uint64) error
-
-	// Post adds a trade to the store, adds
-	// to queue the operation to be committed later.
-	Post(trade *types.Trade) error
-
-	// Commit typically saves any operations that are queued to underlying storage,
-	// if supported by underlying storage implementation.
-	Commit() error
-
-	// Close can be called to clean up and close any storage
-	// connections held by the underlying storage mechanism.
-	Close() error
-
-	// GetByMarket retrieves trades for a given market.
-	GetByMarket(ctx context.Context, market string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
-	// GetByMarketAndId retrieves a trade for a given market and id.
-	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Trade, error)
-	// GetByParty retrieves trades for a given party (buyer or seller).
-	GetByParty(ctx context.Context, party string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
-	// GetByPartyAndId retrieves a trade for a given party (buyer or seller) and id.
-	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Trade, error)
-	// GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
-	GetByOrderId(ctx context.Context, orderId string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
-	// GetMarkPrice returns the current market price.
-	GetMarkPrice(ctx context.Context, market string) (uint64, error)
-
-	// GetTradesBySideBuckets retrieves a map of market name to market buckets.
-	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*MarketBucket
-}
-
 // Trade is a package internal data struct that implements the TradeStore interface.
 type Trade struct {
 	*Config

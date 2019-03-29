@@ -199,7 +199,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 
 }
 
-func insertTestData(t *testing.T, orderStore storage.OrderStore, tradeStore storage.TradeStore) {
+func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage.Trade) {
 
 	// Arrange seed orders & trades
 	orderA := &types.Order{

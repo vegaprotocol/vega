@@ -7,30 +7,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// Store provides the data storage contract for parties.
-type PartyStore interface {
-	//Subscribe(parties chan<- []parties.Party) uint64
-	//Unsubscribe(id uint64) error
-
-	// Post adds a party to the store, this adds
-	// to queue the operation to be committed later.
-	Post(party *types.Party) error
-
-	// Commit typically saves any operations that are queued to underlying storage,
-	// if supported by underlying storage implementation.
-	Commit() error
-
-	// Close can be called to clean up and close any storage
-	// connections held by the underlying storage mechanism.
-	Close() error
-
-	// GetByName searches for the given party by name in the underlying store.
-	GetByName(name string) (*types.Party, error)
-
-	// GetAll returns all parties in the underlying store.
-	GetAll() ([]*types.Party, error)
-}
-
 // Party is used for memory/RAM based parties storage.
 type Party struct {
 	*Config

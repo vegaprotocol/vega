@@ -15,39 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type OrderStore interface {
-	Subscribe(orders chan<- []types.Order) uint64
-	Unsubscribe(id uint64) error
-
-	// Post adds an order to the store, adds
-	// to queue the operation to be committed later.
-	Post(order types.Order) error
-
-	// Put updates an order in the store, adds
-	// to queue the operation to be committed later.
-	Put(order types.Order) error
-
-	// Commit typically saves any operations that are queued to underlying storage medium,
-	// if supported by underlying storage implementation.
-	Commit() error
-
-	// Close can be called to clean up and close any storage
-	// connections held by the underlying storage mechanism.
-	Close() error
-
-	// GetByMarket retrieves all orders for a given Market.
-	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
-	// GetByMarketAndId retrieves an order for a given Market and id.
-	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error)
-	// GetByParty retrieves orders for a given party.
-	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
-	// GetByPartyAndId retrieves an order for a given Party and id.
-	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error)
-
-	// GetMarketDepth calculates and returns depth of market for a given market.
-	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
-}
-
 // Order is a package internal data struct that implements the OrderStore interface.
 type Order struct {
 	*Config
@@ -55,7 +22,7 @@ type Order struct {
 	subscribers     map[uint64]chan<- []types.Order
 	subscriberId    uint64
 	buffer          []types.Order
-	depth           map[string]MarketDepth
+	depth           map[string]*Depth
 	mu              sync.Mutex
 	onCriticalError func()
 }
@@ -76,9 +43,9 @@ func NewOrderStore(c *Config, onCriticalError func()) (*Order, error) {
 	return &Order{
 		Config:          c,
 		badger:          &bs,
-		depth:           make(map[string]MarketDepth, 0),
-		subscribers:     make(map[uint64]chan<- []types.Order),
-		buffer:          make([]types.Order, 0),
+		depth:           map[string]*Depth{},
+		subscribers:     map[uint64]chan<- []types.Order{},
+		buffer:          []types.Order{},
 		onCriticalError: onCriticalError,
 	}, nil
 }

@@ -15,33 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// CandleStore provides a set of functions that can manipulate a candle store, it provides a way for
-// developers to create implementations of a CandleStore e.g. a RAM store or persistent store (badger)
-type CandleStore interface {
-	// Subscribe to a channel of new or updated candles. The subscriber id will be returned as a uint64 value
-	// and must be retained for future reference and to unsubscribe.
-	Subscribe(iT *InternalTransport) uint64
-
-	// Unsubscribe from a candles channel. Provide the subscriber id you wish to stop receiving new events for.
-	Unsubscribe(id uint64) error
-
-	// StartNewBuffer creates a new trades buffer for the given trade.
-	StartNewBuffer(marketId string, timestamp uint64) error
-
-	// AddTradeToBuffer adds a trade to the trades buffer for the given market.
-	AddTradeToBuffer(trade types.Trade) error
-
-	// GenerateCandlesFromBuffer will generate all candles for a given market.
-	GenerateCandlesFromBuffer(market string) error
-
-	// GetCandles returns all candles at interval since timestamp for a market.
-	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error)
-
-	// Close can be called to clean up and close any storage
-	// connections held by the underlying storage mechanism.
-	Close() error
-}
-
 // Currently we support 6 interval durations for trading candles on VEGA, as follows:
 var supportedIntervals = [6]types.Interval{
 	types.Interval_I1M,  // 1 minute

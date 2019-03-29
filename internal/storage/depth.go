@@ -4,17 +4,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// MarketDepth provides a way to update and read the current state of Depth of Market.
-type MarketDepth interface {
-	// Update the market depth with the given order information. If the order already exists at a price level
-	// it will be updated. Note: The total cumulative volume for the market depth is calculated elsewhere.
-	Update(order types.Order)
-	// The buy side price levels (and additional information such as orders, remaining volumes) for the market.
-	BuySide() []MarketDepthLevel
-	// The sell side price levels (and additional information such as orders, remaining volumes) for the market.
-	SellSide() []MarketDepthLevel
-}
-
 // Depth stores the price levels on both buy side and sell side for a particular market.
 type Depth struct {
 	Name string
