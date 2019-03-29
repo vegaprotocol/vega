@@ -10,11 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Processor interface {
-	Process(payload []byte) error
-	Validate(payload []byte) error
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/processor_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ProcessorService
 type ProcessorService interface {
 	SubmitOrder(order *types.Order) error
@@ -22,21 +17,21 @@ type ProcessorService interface {
 	AmendOrder(order *types.OrderAmendment) error
 }
 
-type abciProcessor struct {
+type Processor struct {
 	*Config
 	blockchainService ProcessorService
 	seenPayloads      map[string]byte
 }
 
-func NewAbciProcessor(config *Config, blockchainService ProcessorService) Processor {
-	return &abciProcessor{
+func NewProcessor(config *Config, blockchainService ProcessorService) *Processor {
+	return &Processor{
 		Config:            config,
 		blockchainService: blockchainService,
 		seenPayloads:      map[string]byte{},
 	}
 }
 
-func (p *abciProcessor) getOrder(payload []byte) (*types.Order, error) {
+func (p *Processor) getOrder(payload []byte) (*types.Order, error) {
 	order := types.OrderPool.Get().(*types.Order)
 	err := proto.Unmarshal(payload, order)
 	if err != nil {
@@ -45,7 +40,7 @@ func (p *abciProcessor) getOrder(payload []byte) (*types.Order, error) {
 	return order, nil
 }
 
-func (p *abciProcessor) getOrderAmendment(payload []byte) (*types.OrderAmendment, error) {
+func (p *Processor) getOrderAmendment(payload []byte) (*types.OrderAmendment, error) {
 	amendment := &types.OrderAmendment{}
 	err := proto.Unmarshal(payload, amendment)
 	if err != nil {
@@ -55,7 +50,7 @@ func (p *abciProcessor) getOrderAmendment(payload []byte) (*types.OrderAmendment
 }
 
 // Validate performs all validation on an incoming transaction payload.
-func (p *abciProcessor) Validate(payload []byte) error {
+func (p *Processor) Validate(payload []byte) error {
 	// Pre-validate (safety check)
 	if err, seen := p.hasSeen(payload); seen {
 		return errors.Wrap(err, "error during hasSeen (validate)")
@@ -82,7 +77,7 @@ func (p *abciProcessor) Validate(payload []byte) error {
 
 // Process performs validation and then sends the command and data to
 // the underlying blockchain service handlers e.g. submit order, etc.
-func (p *abciProcessor) Process(payload []byte) error {
+func (p *Processor) Process(payload []byte) error {
 	// Pre-validate (safety check)
 	if err, seen := p.hasSeen(payload); seen {
 		return errors.Wrap(err, "error during hasSeen (process)")
@@ -139,7 +134,7 @@ func (p *abciProcessor) Process(payload []byte) error {
 }
 
 // hasSeen helper performs duplicate checking on an incoming transaction payload.
-func (p *abciProcessor) hasSeen(payload []byte) (error, bool) {
+func (p *Processor) hasSeen(payload []byte) (error, bool) {
 	// All vega transactions are prefixed with a unique hash, using
 	// this means we do not have to re-compute each time for seen keys
 	payloadHash, err := p.payloadHash(payload)
@@ -157,7 +152,7 @@ func (p *abciProcessor) hasSeen(payload []byte) (error, bool) {
 // payloadHash attempts to extract the unique hash at the start of all vega transactions.
 // This unique hash is required to make all payloads unique. We return an error if we cannot
 // extract this from the transaction payload or if we think it's malformed.
-func (p *abciProcessor) payloadHash(payload []byte) (*string, error) {
+func (p *Processor) payloadHash(payload []byte) (*string, error) {
 	if len(payload) < 36 {
 		return nil, errors.New("invalid length payload, must be greater than 37 bytes")
 	}
@@ -169,7 +164,7 @@ func (p *abciProcessor) payloadHash(payload []byte) (*string, error) {
 // recommended by tendermint team that an abci application has additional checking
 // just like this to ensure duplicate transaction payloads do not pass through
 // to the application core.
-func (p *abciProcessor) payloadExists(payloadHash *string) (error, bool) {
+func (p *Processor) payloadExists(payloadHash *string) (error, bool) {
 	if _, exists := p.seenPayloads[*payloadHash]; exists {
 		p.log.Warn("Transaction payload exists", logging.String("payload-hash", *payloadHash))
 		err := errors.New(fmt.Sprintf("txn payload exists: %s", *payloadHash))

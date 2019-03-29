@@ -34,7 +34,6 @@ type testService struct {
 	orderStore *mocks.MockOrderStore
 	timeSvc    *mocks.MockTimeService
 	block      *mocks.MockBlockchain
-	conf       *Config
 	svc        *Svc
 }
 
@@ -134,7 +133,7 @@ func getTestService(t *testing.T) *testService {
 	timeSvc := mocks.NewMockTimeService(ctrl)
 	block := mocks.NewMockBlockchain(ctrl)
 	conf := NewDefaultConfig(log)
-	svc, err := NewOrderService(conf, orderStore, timeSvc, block)
+	svc, err := NewService(conf, orderStore, timeSvc, block)
 	if err != nil {
 		t.Fatalf("Failed to get test service: %+v", err)
 	}

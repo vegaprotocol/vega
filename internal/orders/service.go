@@ -47,10 +47,10 @@ type Svc struct {
 	timeService TimeService
 }
 
-// NewOrderService creates an Orders service with the necessary dependencies
-func NewOrderService(config *Config, store OrderStore, time TimeService, client Blockchain) (*Svc, error) {
+// NewService creates an Orders service with the necessary dependencies
+func NewService(config *Config, store OrderStore, time TimeService, client Blockchain) (*Svc, error) {
 	if client == nil {
-		return nil, errors.New("blockchain client is nil when calling NewOrderService in OrderService")
+		return nil, errors.New("blockchain client is nil when calling NewService in OrderService")
 	}
 	return &Svc{
 		Config:      config,

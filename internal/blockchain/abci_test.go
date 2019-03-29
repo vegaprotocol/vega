@@ -30,7 +30,7 @@ func getTestApp(t *testing.T) *testApp {
 	errCb := func() {
 		ch <- struct{}{}
 	}
-	app := NewAbciApplication(
+	app := NewApplication(
 		NewDefaultConfig(log),
 		NewStats(),
 		proc,
@@ -49,7 +49,7 @@ func getTestApp(t *testing.T) *testApp {
 	}
 }
 
-func TestNewAbciApplication(t *testing.T) {
+func TestNewApplication(t *testing.T) {
 	app := getTestApp(t)
 	defer app.Finish()
 	assert.Equal(t, uint64(0), app.AbciApplication.stats.height)

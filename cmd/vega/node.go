@@ -140,7 +140,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	// Execution engine (broker operation at runtime etc)
-	executionEngine := execution.NewExecutionEngine(
+	executionEngine := execution.NewEngine(
 		conf.Execution,
 		timeService,
 		orderStore,
@@ -151,9 +151,9 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 
 	// ABCI<>blockchain server
-	bcService := blockchain.NewAbciService(conf.Blockchain, stats.Blockchain, executionEngine, timeService)
-	bcProcessor := blockchain.NewAbciProcessor(conf.Blockchain, bcService)
-	bcApp := blockchain.NewAbciApplication(conf.Blockchain, stats.Blockchain, bcProcessor, bcService, timeService, cancel)
+	bcService := blockchain.NewService(conf.Blockchain, stats.Blockchain, executionEngine, timeService)
+	bcProcessor := blockchain.NewProcessor(conf.Blockchain, bcService)
+	bcApp := blockchain.NewApplication(conf.Blockchain, stats.Blockchain, bcProcessor, bcService, timeService, cancel)
 	socketServer := blockchain.NewServer(conf.Blockchain, stats.Blockchain, bcApp)
 	err = socketServer.Start()
 	if err != nil {

@@ -54,7 +54,7 @@ type abciService struct {
 	totalTrades          uint64
 }
 
-func NewAbciService(conf *Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) Service {
+func NewService(conf *Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) Service {
 	return &abciService{
 		Config:    conf,
 		stats:     stats,

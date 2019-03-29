@@ -33,7 +33,7 @@ func getTestService(t *testing.T) *testService {
 	trade := mocks.NewMockTradeStore(ctrl)
 	risk := mocks.NewMockRiskStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
-	svc, err := trades.NewTradeService(
+	svc, err := trades.NewService(
 		trades.NewDefaultConfig(log),
 		trade,
 		risk,
@@ -140,7 +140,7 @@ func (t *testService) Finish() {
 //
 //	var ctx = context.Background()
 //	var tradeStore = mocks.TradeStore{}
-//	var tradeService = NewTradeService()
+//	var tradeService = NewService()
 //
 //	vega := &core.Vega{}
 //	tradeService.Init(vega, &tradeStore)

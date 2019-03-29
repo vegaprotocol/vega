@@ -37,7 +37,7 @@ type Svc struct {
 	riskStore  RiskStore
 }
 
-func NewTradeService(config *Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
+func NewService(config *Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
 	return &Svc{
 		Config:     config,
 		tradeStore: tradeStore,

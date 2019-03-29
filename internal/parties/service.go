@@ -18,8 +18,8 @@ type Svc struct {
 	store PartyStore
 }
 
-// NewPartyService creates a Parties service with the necessary dependencies
-func NewPartyService(config *Config, store PartyStore) (*Svc, error) {
+// NewService creates a Parties service with the necessary dependencies
+func NewService(config *Config, store PartyStore) (*Svc, error) {
 	return &Svc{
 		Config: config,
 		store:  store,

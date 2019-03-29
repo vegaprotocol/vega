@@ -38,7 +38,7 @@ func getTestService(t *testing.T) *testService {
 	store := mocks.NewMockCandleStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	// create service, pass in mocks, ignore error
-	svc, err := candles.NewCandleService(
+	svc, err := candles.NewService(
 		candles.NewDefaultConfig(log),
 		store,
 	)

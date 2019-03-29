@@ -80,7 +80,7 @@ func (r *Resolver) ResolveCandleService() (*candles.Svc, error) {
 		return nil, errors.Wrap(err, "error resolving candle store instance.")
 	}
 
-	candleService, err := candles.NewCandleService(
+	candleService, err := candles.NewService(
 		r.config.Candles,
 		candleStore,
 	)
@@ -110,7 +110,7 @@ func (r *Resolver) ResolveMarketService() (*markets.Svc, error) {
 		return nil, errors.Wrap(err, "error resolving order store instance.")
 	}
 
-	marketService, err := markets.NewMarketService(
+	marketService, err := markets.NewService(
 		r.config.Markets,
 		marketStore,
 		orderStore,
@@ -137,7 +137,7 @@ func (r *Resolver) ResolvePartyService() (*parties.Svc, error) {
 		return nil, errors.Wrap(err, "error resolving party store instance.")
 	}
 
-	partyService, err := parties.NewPartyService(
+	partyService, err := parties.NewService(
 		r.config.Parties,
 		partyStore,
 	)
@@ -171,7 +171,7 @@ func (r *Resolver) ResolveOrderService() (*orders.Svc, error) {
 		return nil, errors.Wrap(err, "error resolving blockchain client instance.")
 	}
 
-	orderService, err := orders.NewOrderService(
+	orderService, err := orders.NewService(
 		r.config.Orders,
 		orderStore,
 		timeService,
@@ -203,7 +203,7 @@ func (r *Resolver) ResolveTradeService() (*trades.Svc, error) {
 		return nil, errors.Wrap(err, "error resolving risk store instance.")
 	}
 
-	tradeService, err := trades.NewTradeService(
+	tradeService, err := trades.NewService(
 		r.config.Trades,
 		tradeStore,
 		riskStore,
@@ -225,7 +225,7 @@ func (r *Resolver) ResolveTimeService() (*vegatime.Svc, error) {
 		return r.timeService, nil
 	}
 
-	r.timeService = vegatime.NewTimeService(
+	r.timeService = vegatime.NewService(
 		r.config.Time,
 	)
 	return r.timeService, nil

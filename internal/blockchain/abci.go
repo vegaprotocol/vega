@@ -51,7 +51,7 @@ type AbciApplication struct {
 	onCriticalError func()
 }
 
-func NewAbciApplication(config *Config, stats *Stats, proc ApplicationProcessor, svc ApplicationService, time ApplicationTime, onCriticalError func()) *AbciApplication {
+func NewApplication(config *Config, stats *Stats, proc ApplicationProcessor, svc ApplicationService, time ApplicationTime, onCriticalError func()) *AbciApplication {
 	return &AbciApplication{
 		Config:          config,
 		stats:           stats,

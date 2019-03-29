@@ -12,7 +12,7 @@ type Svc struct {
 	currentDatetime   time.Time
 }
 
-func NewTimeService(conf *Config) *Svc {
+func NewService(conf *Config) *Svc {
 	return &Svc{config: conf}
 }
 

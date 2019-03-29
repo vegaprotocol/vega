@@ -64,7 +64,7 @@ type TimeService interface {
 	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
 }
 
-type ExecEngine struct {
+type Engine struct {
 	*Config
 	markets     map[string]*engines.Market
 	orderStore  OrderStore
@@ -75,9 +75,9 @@ type ExecEngine struct {
 	time        TimeService
 }
 
-// NewExecutionEngine takes stores and engines and returns
+// NewEngine takes stores and engines and returns
 // a new execution engine to process new orders, etc.
-func NewExecutionEngine(
+func NewEngine(
 	executionConfig *Config,
 	time TimeService,
 	orderStore OrderStore,
@@ -85,8 +85,8 @@ func NewExecutionEngine(
 	candleStore CandleStore,
 	marketStore MarketStore,
 	partyStore PartyStore,
-) *ExecEngine {
-	e := &ExecEngine{
+) *Engine {
+	e := &Engine{
 		Config:      executionConfig,
 		markets:     map[string]*engines.Market{},
 		candleStore: candleStore,
@@ -137,7 +137,7 @@ func NewExecutionEngine(
 	return e
 }
 
-func (e *ExecEngine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Submit order", logging.Order(*order))
 	mkt, ok := e.markets[order.Market]
 	if !ok {
@@ -215,7 +215,7 @@ func (e *ExecEngine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, 
 
 // AmendOrder take order amendment details and attempts to amend the order
 // if it exists and is in a state to be edited.
-func (e *ExecEngine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (e *Engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
 	ctx := context.TODO()
 	existingOrder, err := e.orderStore.GetByPartyAndId(ctx, order.Party, order.Id)
@@ -293,7 +293,7 @@ func (e *ExecEngine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfir
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *ExecEngine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	e.log.Debug("Cancel order")
 	mkt, ok := e.markets[order.Market]
 	if !ok {
@@ -321,7 +321,7 @@ func (e *ExecEngine) CancelOrder(order *types.Order) (*types.OrderCancellationCo
 	return cancellation, nil
 }
 
-func (e *ExecEngine) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, error) {
+func (e *Engine) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Cancel/replace order")
 
 	cancellation, cancelError := e.CancelOrder(existingOrder)
@@ -337,7 +337,7 @@ func (e *ExecEngine) orderCancelReplace(existingOrder, newOrder *types.Order) (*
 	return e.SubmitOrder(newOrder)
 }
 
-func (e *ExecEngine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
+func (e *Engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
 	mkt, ok := e.markets[newOrder.Market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
@@ -361,7 +361,7 @@ func (e *ExecEngine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfi
 	return &types.OrderConfirmation{}, nil
 }
 
-func (e *ExecEngine) StartCandleBuffer() error {
+func (e *Engine) StartCandleBuffer() error {
 
 	// Load current vega-time from the blockchain (via time service)
 	stamp, _, err := e.time.GetTimeNow()
@@ -387,7 +387,7 @@ func (e *ExecEngine) StartCandleBuffer() error {
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
-func (e *ExecEngine) Process() error {
+func (e *Engine) Process() error {
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	epochTimeNano, _, err := e.time.GetTimeNow()
@@ -428,7 +428,7 @@ func (e *ExecEngine) Process() error {
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.
-func (e *ExecEngine) Generate() error {
+func (e *Engine) Generate() error {
 
 	for _, mkt := range e.markets {
 		// We need a buffer for all current markets on VEGA

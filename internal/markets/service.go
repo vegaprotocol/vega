@@ -27,8 +27,8 @@ type Svc struct {
 	orderStore  OrderStore
 }
 
-// NewMarketService creates an market service with the necessary dependencies
-func NewMarketService(config *Config, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
+// NewService creates an market service with the necessary dependencies
+func NewService(config *Config, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
 	return &Svc{
 		config,
 		marketStore,

@@ -23,7 +23,7 @@ type Svc struct {
 	candleStore  CandleStore
 }
 
-func NewCandleService(config *Config, candleStore CandleStore) (*Svc, error) {
+func NewService(config *Config, candleStore CandleStore) (*Svc, error) {
 	if config == nil {
 		return nil, errors.New("candle config is nil when creating candle service instance.")
 	}

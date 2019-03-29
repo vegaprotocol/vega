@@ -31,7 +31,7 @@ func getTestService(t *testing.T) *testService {
 	market := mocks.NewMockMarketStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	ctx, cfunc := context.WithCancel(context.Background())
-	svc, err := markets.NewMarketService(
+	svc, err := markets.NewService(
 		markets.NewDefaultConfig(log),
 		market,
 		order,

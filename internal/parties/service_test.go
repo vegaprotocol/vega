@@ -27,7 +27,7 @@ func getTestService(t *testing.T) *testService {
 	store := mocks.NewMockPartyStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	ctx, cfunc := context.WithCancel(context.Background())
-	svc, err := parties.NewPartyService(
+	svc, err := parties.NewService(
 		parties.NewDefaultConfig(log),
 		store,
 	)
