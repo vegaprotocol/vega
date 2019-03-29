@@ -10,13 +10,13 @@ type Stats struct {
 	totalOrdersLastBatch  int
 	totalTradesLastBatch  int
 	averageOrdersPerBatch int
-	//ordersPerSecond int        // --
-	//tradesPerSecond int        // requires timing, devoid from blocks
-	totalAmendOrder  uint64
-	totalCancelOrder uint64
-	totalCreateOrder uint64
-	totalOrders      uint64
-	totalTrades      uint64
+	ordersPerSecond       uint64
+	tradesPerSecond       uint64
+	totalAmendOrder       uint64
+	totalCancelOrder      uint64
+	totalCreateOrder      uint64
+	totalOrders           uint64
+	totalTrades           uint64
 }
 
 func NewStats() *Stats {
@@ -82,4 +82,40 @@ func (s *Stats) TotalOrders() uint64 {
 
 func (s *Stats) TotalTrades() uint64 {
 	return atomic.LoadUint64(&s.totalTrades)
+}
+
+func (s *Stats) OrdersPerSecond() uint64 {
+	return atomic.LoadUint64(&s.ordersPerSecond)
+}
+
+func (s *Stats) TradesPerSecond() uint64 {
+	return atomic.LoadUint64(&s.tradesPerSecond)
+}
+
+func (s *Stats) addTotalAmendOrder(val uint64) uint64 {
+	return atomic.AddUint64(&s.totalAmendOrder, val)
+}
+
+func (s *Stats) addTotalCancelOrder(val uint64) uint64 {
+	return atomic.AddUint64(&s.totalCancelOrder, val)
+}
+
+func (s *Stats) addTotalCreateOrder(val uint64) uint64 {
+	return atomic.AddUint64(&s.totalCreateOrder, val)
+}
+
+func (s *Stats) addTotalOrders(val uint64) uint64 {
+	return atomic.AddUint64(&s.totalOrders, val)
+}
+
+func (s *Stats) addTotalTrades(val uint64) uint64 {
+	return atomic.AddUint64(&s.totalTrades, val)
+}
+
+func (s *Stats) setOrdersPerSecond(val uint64) {
+	atomic.StoreUint64(&s.ordersPerSecond, val)
+}
+
+func (s *Stats) setTradesPerSecond(val uint64) {
+	atomic.StoreUint64(&s.tradesPerSecond, val)
 }

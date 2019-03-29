@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -40,8 +39,8 @@ type ServiceExecutionEngine interface {
 
 type abciService struct {
 	*Config
-	*Stats
 
+	stats             *Stats
 	time              ServiceTime
 	execution         ServiceExecutionEngine
 	previousTimestamp vegatime.Stamp
@@ -58,7 +57,7 @@ type abciService struct {
 func NewAbciService(conf *Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) Service {
 	return &abciService{
 		Config:    conf,
-		Stats:     stats,
+		stats:     stats,
 		execution: ex,
 		time:      timeService,
 	}
@@ -123,7 +122,7 @@ func (s *abciService) Commit() error {
 }
 
 func (s *abciService) SubmitOrder(order *types.Order) error {
-	atomic.AddUint64(&s.Stats.totalCreateOrder, 1)
+	s.stats.addTotalCreateOrder(1)
 	if s.LogOrderSubmitDebug {
 		s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
 	}
@@ -144,8 +143,8 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 			s.currentTradesInBatch += len(confirmationMessage.Trades)
 			s.totalTrades += uint64(s.currentTradesInBatch)
 		}
-		atomic.AddUint64(&s.Stats.totalOrders, 1)
-		atomic.AddUint64(&s.Stats.totalTrades, uint64(len(confirmationMessage.Trades)))
+		s.stats.addTotalOrders(1)
+		s.stats.addTotalTrades(uint64(len(confirmationMessage.Trades)))
 
 		s.currentOrdersInBatch++
 		confirmationMessage.Release()
@@ -166,7 +165,7 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 }
 
 func (s *abciService) CancelOrder(order *types.Order) error {
-	atomic.AddUint64(&s.Stats.totalCancelOrder, 1)
+	s.stats.addTotalCancelOrder(1)
 	if s.LogOrderCancelDebug {
 		s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
 	}
@@ -189,7 +188,7 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 }
 
 func (s *abciService) AmendOrder(order *types.OrderAmendment) error {
-	atomic.AddUint64(&s.Stats.totalAmendOrder, 1)
+	s.stats.addTotalAmendOrder(1)
 	if s.LogOrderAmendDebug {
 		s.log.Debug("Blockchain service received a AMEND ORDER request",
 			logging.String("order", order.String()))
@@ -214,8 +213,8 @@ func (s *abciService) AmendOrder(order *types.OrderAmendment) error {
 
 func (s *abciService) setBatchStats() {
 	s.totalBatches++
-	s.totalOrdersLastBatch = s.currentOrdersInBatch
-	s.totalTradesLastBatch = s.currentTradesInBatch
+	s.stats.totalOrdersLastBatch = s.currentOrdersInBatch
+	s.stats.totalTradesLastBatch = s.currentTradesInBatch
 
 	// Calculate total orders per batch (per block) average
 	if s.currentOrdersInBatch > 0 {
@@ -229,7 +228,7 @@ func (s *abciService) setBatchStats() {
 			for _, itx := range s.ordersInBatchLengths {
 				totalOrders += itx
 			}
-			s.averageOrdersPerBatch = totalOrders / lenOrdersInBatch
+			s.stats.averageOrdersPerBatch = totalOrders / lenOrdersInBatch
 
 			// MAX sample size for avg calculation is 5000
 			if lenOrdersInBatch == 5000 {
@@ -238,9 +237,16 @@ func (s *abciService) setBatchStats() {
 		}
 	}
 
+	blockDuration := time.Duration(time.Now().UnixNano() - int64(s.currentTimestamp)).Seconds()
+	s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
+	s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
+
 	s.log.Debug("Blockchain service batch stats",
 		logging.Uint64("total-batches", s.totalBatches),
-		logging.Int("avg-orders-batch", s.averageOrdersPerBatch))
+		logging.Int("avg-orders-batch", s.stats.averageOrdersPerBatch),
+		logging.Uint64("orders-per-secs", s.stats.OrdersPerSecond()),
+		logging.Uint64("trades-per-secs", s.stats.TradesPerSecond()),
+	)
 
 	s.currentOrdersInBatch = 0
 	s.currentTradesInBatch = 0

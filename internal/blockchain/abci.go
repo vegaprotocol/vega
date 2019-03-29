@@ -38,8 +38,8 @@ type ApplicationTime interface {
 type AbciApplication struct {
 	types.BaseApplication
 	*Config
-	*Stats
 
+	stats     *Stats
 	processor ApplicationProcessor
 	service   ApplicationService
 	appHash   []byte
@@ -54,7 +54,7 @@ type AbciApplication struct {
 func NewAbciApplication(config *Config, stats *Stats, proc ApplicationProcessor, svc ApplicationService, time ApplicationTime, onCriticalError func()) *AbciApplication {
 	return &AbciApplication{
 		Config:          config,
-		Stats:           stats,
+		stats:           stats,
 		processor:       proc,
 		service:         svc,
 		time:            time,
@@ -187,7 +187,7 @@ func (app *AbciApplication) Commit() types.ResponseCommit {
 	appHash := make([]byte, 8)
 	binary.PutVarint(appHash, app.size)
 	app.appHash = appHash
-	app.height += 1
+	app.stats.height += 1
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has completed
 	if err := app.service.Commit(); err != nil {
@@ -207,7 +207,7 @@ func (app *AbciApplication) setBatchStats() {
 	if app.txTotals == nil {
 		app.txTotals = make([]int, 0)
 	}
-	app.txTotals = append(app.txTotals, app.totalTxLastBatch)
+	app.txTotals = append(app.txTotals, app.stats.totalTxLastBatch)
 	totalTx := 0
 	for _, itx := range app.txTotals {
 		totalTx += itx
@@ -215,11 +215,11 @@ func (app *AbciApplication) setBatchStats() {
 	averageTxTotal := totalTx / len(app.txTotals)
 
 	app.log.Debug("Batch stats for height",
-		logging.Uint64("height", app.height),
+		logging.Uint64("height", app.stats.height),
 		logging.Int("average-tx-total", averageTxTotal))
 
-	app.averageTxPerBatch = averageTxTotal
-	app.totalTxLastBatch = 0
+	app.stats.averageTxPerBatch = averageTxTotal
+	app.stats.totalTxLastBatch = 0
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(app.txTotals) == statsSampleSize {
@@ -230,7 +230,7 @@ func (app *AbciApplication) setBatchStats() {
 // setTxStats is used to calculate any statistics that should be
 // recorded once per transaction delivery.
 func (app *AbciApplication) setTxStats(txLength int) {
-	app.totalTxLastBatch++
+	app.stats.totalTxLastBatch++
 	if app.txSizes == nil {
 		app.txSizes = make([]int, 0)
 	}
@@ -242,10 +242,10 @@ func (app *AbciApplication) setTxStats(txLength int) {
 	averageTxBytes := totalTx / len(app.txSizes)
 
 	app.log.Debug("Transaction stats for height",
-		logging.Uint64("height", app.height),
+		logging.Uint64("height", app.stats.height),
 		logging.Int("average-tx-bytes", averageTxBytes))
 
-	app.averageTxSizeBytes = averageTxBytes
+	app.stats.averageTxSizeBytes = averageTxBytes
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(app.txSizes) == statsSampleSize {
