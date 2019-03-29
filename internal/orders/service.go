@@ -51,7 +51,7 @@ type Service interface {
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 }
 
-type OrderService struct {
+type Svc struct {
 	*Config
 	blockchain  Blockchain
 	orderStore  OrderStore
@@ -59,11 +59,11 @@ type OrderService struct {
 }
 
 // NewOrderService creates an Orders service with the necessary dependencies
-func NewOrderService(config *Config, store OrderStore, time TimeService, client Blockchain) (*OrderService, error) {
+func NewOrderService(config *Config, store OrderStore, time TimeService, client Blockchain) (*Svc, error) {
 	if client == nil {
 		return nil, errors.New("blockchain client is nil when calling NewOrderService in OrderService")
 	}
-	return &OrderService{
+	return &Svc{
 		Config:      config,
 		blockchain:  client,
 		orderStore:  store,
@@ -71,7 +71,7 @@ func NewOrderService(config *Config, store OrderStore, time TimeService, client 
 	}, nil
 }
 
-func (s *OrderService) CreateOrder(ctx context.Context, orderSubmission *types.OrderSubmission) (success bool, orderReference string, err error) {
+func (s *Svc) CreateOrder(ctx context.Context, orderSubmission *types.OrderSubmission) (success bool, orderReference string, err error) {
 	if err := orderSubmission.Validate(); err != nil {
 		return false, "", errors.Wrap(err, "order validation failed")
 	}
@@ -106,7 +106,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, orderSubmission *types.O
 }
 
 // CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
-func (s *OrderService) CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error) {
+func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error) {
 	if err := order.Validate(); err != nil {
 		return false, errors.Wrap(err, "order cancellation validation failed")
 	}
@@ -128,7 +128,7 @@ func (s *OrderService) CancelOrder(ctx context.Context, order *types.OrderCancel
 	return s.blockchain.CancelOrder(ctx, o)
 }
 
-func (s *OrderService) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
+func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
 	if err := amendment.Validate(); err != nil {
 		return false, errors.Wrap(err, "order amendment validation failed")
 	}
@@ -156,7 +156,7 @@ func (s *OrderService) AmendOrder(ctx context.Context, amendment *types.OrderAme
 	return s.blockchain.AmendOrder(ctx, amendment)
 }
 
-func (s *OrderService) validateOrderExpirationTS(expdt string) (time.Time, error) {
+func (s *Svc) validateOrderExpirationTS(expdt string) (time.Time, error) {
 	exp, err := time.Parse(time.RFC3339, expdt)
 	if err != nil {
 		return time.Time{}, ErrInvalidExpirationDTFmt
@@ -174,7 +174,7 @@ func (s *OrderService) validateOrderExpirationTS(expdt string) (time.Time, error
 	return exp, nil
 }
 
-func (s *OrderService) GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
+func (s *Svc) GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
 	o, err := s.orderStore.GetByMarket(ctx, market, filters)
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (s *OrderService) GetByMarket(ctx context.Context, market string, filters *
 	return result, err
 }
 
-func (s *OrderService) GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
+func (s *Svc) GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
 	o, err := s.orderStore.GetByParty(ctx, party, filters)
 	if err != nil {
 		return nil, err
@@ -206,7 +206,7 @@ func (s *OrderService) GetByParty(ctx context.Context, party string, filters *fi
 	return result, err
 }
 
-func (s *OrderService) GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error) {
+func (s *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error) {
 	o, err := s.orderStore.GetByMarketAndId(ctx, market, id)
 	if err != nil {
 		return &types.Order{}, err
@@ -214,7 +214,7 @@ func (s *OrderService) GetByMarketAndId(ctx context.Context, market string, id s
 	return o, err
 }
 
-func (s *OrderService) GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error) {
+func (s *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error) {
 	o, err := s.orderStore.GetByPartyAndId(ctx, party, id)
 	if err != nil {
 		return &types.Order{}, err
@@ -222,7 +222,7 @@ func (s *OrderService) GetByPartyAndId(ctx context.Context, party string, id str
 	return o, err
 }
 
-func (s *OrderService) ObserveOrders(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Order, uint64) {
+func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Order, uint64) {
 	orders := make(chan []types.Order)
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)

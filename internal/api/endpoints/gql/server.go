@@ -28,24 +28,24 @@ import (
 
 type graphServer struct {
 	*api.Config
-	timeService   vegatime.Service
-	orderService  orders.Service
-	tradeService  trades.Service
-	candleService candles.Service
-	marketService markets.Service
-	partyService  parties.Service
+	orderService  *orders.Svc
+	tradeService  *trades.Svc
+	candleService *candles.Svc
+	marketService *markets.Svc
+	partyService  *parties.Svc
+	timeService   *vegatime.Svc
 	srv           *http.Server
 	statusChecker *monitoring.Status
 }
 
 func NewGraphQLServer(
 	config *api.Config,
-	orderService orders.Service,
-	tradeService trades.Service,
-	candleService candles.Service,
-	marketService markets.Service,
-	partyService parties.Service,
-	timeService vegatime.Service,
+	orderService *orders.Svc,
+	tradeService *trades.Svc,
+	candleService *candles.Svc,
+	marketService *markets.Svc,
+	partyService *parties.Svc,
+	timeService *vegatime.Svc,
 	statusChecker *monitoring.Status,
 ) *graphServer {
 

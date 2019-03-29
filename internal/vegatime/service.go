@@ -11,7 +11,7 @@ type Service interface {
 	GetTimeLastBatch() (epochTimeNano Stamp, datetime time.Time, err error)
 }
 
-type timeService struct {
+type Svc struct {
 	config            *Config
 	previousTimestamp Stamp
 	currentTimestamp  Stamp
@@ -19,11 +19,11 @@ type timeService struct {
 	currentDatetime   time.Time
 }
 
-func NewTimeService(conf *Config) Service {
-	return &timeService{config: conf}
+func NewTimeService(conf *Config) *Svc {
+	return &Svc{config: conf}
 }
 
-func (s *timeService) SetTimeNow(epochTimeNano Stamp) {
+func (s *Svc) SetTimeNow(epochTimeNano Stamp) {
 
 	// We need to cache the last timestamp so we can distribute trades
 	// in a block transaction evenly between last timestamp and current timestamp
@@ -43,10 +43,10 @@ func (s *timeService) SetTimeNow(epochTimeNano Stamp) {
 	}
 }
 
-func (s *timeService) GetTimeNow() (epochTimeNano Stamp, datetime time.Time, err error) {
+func (s *Svc) GetTimeNow() (epochTimeNano Stamp, datetime time.Time, err error) {
 	return s.currentTimestamp, s.currentDatetime, nil
 }
 
-func (s *timeService) GetTimeLastBatch() (epochTimeNano Stamp, datetime time.Time, err error) {
+func (s *Svc) GetTimeLastBatch() (epochTimeNano Stamp, datetime time.Time, err error) {
 	return s.previousTimestamp, s.previousDatetime, nil
 }

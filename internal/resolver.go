@@ -31,12 +31,12 @@ type Resolver struct {
 	partyStore  storage.PartyStore
 	riskStore   storage.RiskStore
 
-	candleService candles.Service
-	tradeService  trades.Service
-	marketService markets.Service
-	orderService  orders.Service
-	partyService  parties.Service
-	timeService   vegatime.Service
+	candleService *candles.Svc
+	tradeService  *trades.Svc
+	marketService *markets.Svc
+	orderService  *orders.Svc
+	partyService  *parties.Svc
+	timeService   *vegatime.Svc
 
 	blockchainClient blockchain.Client
 
@@ -67,7 +67,7 @@ func (r *Resolver) ResolveLogger() (*logging.Logger, error) {
 // -------------- Services/ --------------
 
 // ResolveCandleService returns a pointer to a singleton instance of the candle service.
-func (r *Resolver) ResolveCandleService() (candles.Service, error) {
+func (r *Resolver) ResolveCandleService() (*candles.Svc, error) {
 	r.seMu.Lock()
 	defer r.seMu.Unlock()
 
@@ -93,7 +93,7 @@ func (r *Resolver) ResolveCandleService() (candles.Service, error) {
 }
 
 // ResolveMarketService returns a pointer to a singleton instance of the market service.
-func (r *Resolver) ResolveMarketService() (markets.Service, error) {
+func (r *Resolver) ResolveMarketService() (*markets.Svc, error) {
 	r.seMu.Lock()
 	defer r.seMu.Unlock()
 
@@ -124,7 +124,7 @@ func (r *Resolver) ResolveMarketService() (markets.Service, error) {
 }
 
 // ResolvePartyService returns a pointer to a singleton instance of the party service.
-func (r *Resolver) ResolvePartyService() (parties.Service, error) {
+func (r *Resolver) ResolvePartyService() (*parties.Svc, error) {
 	r.seMu.Lock()
 	defer r.seMu.Unlock()
 
@@ -150,7 +150,7 @@ func (r *Resolver) ResolvePartyService() (parties.Service, error) {
 }
 
 // ResolveOrderService returns a pointer to a singleton instance of the order service.
-func (r *Resolver) ResolveOrderService() (orders.Service, error) {
+func (r *Resolver) ResolveOrderService() (*orders.Svc, error) {
 	r.seMu.Lock()
 	defer r.seMu.Unlock()
 
@@ -186,7 +186,7 @@ func (r *Resolver) ResolveOrderService() (orders.Service, error) {
 }
 
 // ResolveTradeService returns a pointer to a singleton instance of the trade service.
-func (r *Resolver) ResolveTradeService() (trades.Service, error) {
+func (r *Resolver) ResolveTradeService() (*trades.Svc, error) {
 	r.seMu.Lock()
 	defer r.seMu.Unlock()
 
@@ -217,7 +217,7 @@ func (r *Resolver) ResolveTradeService() (trades.Service, error) {
 }
 
 // ResolveTimeService returns a pointer to a singleton instance of the VEGA time service.
-func (r *Resolver) ResolveTimeService() (vegatime.Service, error) {
+func (r *Resolver) ResolveTimeService() (*vegatime.Svc, error) {
 	r.tsMu.Lock()
 	defer r.tsMu.Unlock()
 

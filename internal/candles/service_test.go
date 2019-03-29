@@ -18,7 +18,7 @@ import (
 )
 
 type testService struct {
-	*candles.CandleService
+	*candles.Svc
 	ctx   context.Context
 	cfunc context.CancelFunc
 	ctrl  *gomock.Controller
@@ -46,12 +46,12 @@ func getTestService(t *testing.T) *testService {
 		t.Fatalf("Unexpected error getting candle service: %+v", err)
 	}
 	return &testService{
-		CandleService: svc,
-		ctx:           ctx,
-		cfunc:         cfunc,
-		ctrl:          ctrl,
-		store:         store,
-		log:           log,
+		Svc:   svc,
+		ctx:   ctx,
+		cfunc: cfunc,
+		ctrl:  ctrl,
+		store: store,
+		log:   log,
 	}
 }
 

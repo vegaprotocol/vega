@@ -22,26 +22,26 @@ type CandleStore interface {
 	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error)
 }
 
-type CandleService struct {
+type Svc struct {
 	*Config
 	tradesBuffer map[string][]*types.Trade
 	candleStore  CandleStore
 }
 
-func NewCandleService(config *Config, candleStore CandleStore) (*CandleService, error) {
+func NewCandleService(config *Config, candleStore CandleStore) (*Svc, error) {
 	if config == nil {
 		return nil, errors.New("candle config is nil when creating candle service instance.")
 	}
 	if candleStore == nil {
 		return nil, errors.New("candleStore instance is nil when creating candle service instance.")
 	}
-	return &CandleService{
+	return &Svc{
 		Config:      config,
 		candleStore: candleStore,
 	}, nil
 }
 
-func (c *CandleService) ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
+func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
 	candleCh := make(chan *types.Candle)
 	iT := storage.InternalTransport{
 		Market:    *market,
@@ -109,7 +109,7 @@ func (c *CandleService) ObserveCandles(ctx context.Context, retries int, market 
 	return candleCh, ref
 }
 
-func (c *CandleService) GetCandles(ctx context.Context, market string,
+func (c *Svc) GetCandles(ctx context.Context, market string,
 	sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error) {
 
 	// sinceTimestamp must be valid and not older than market genesis timestamp
