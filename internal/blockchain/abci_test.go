@@ -52,7 +52,7 @@ func getTestApp(t *testing.T) *testApp {
 func TestNewAbciApplication(t *testing.T) {
 	app := getTestApp(t)
 	defer app.Finish()
-	assert.Equal(t, uint64(0), app.AbciApplication.height)
+	assert.Equal(t, uint64(0), app.AbciApplication.stats.height)
 }
 
 func (t *testApp) Finish() {
