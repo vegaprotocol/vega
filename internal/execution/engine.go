@@ -141,6 +141,7 @@ func NewExecutionEngine(
 
 	// existing markets are to be loaded via the marketStore as market proto types and can be added at runtime via TM
 	for _, mkt := range protomarkets {
+		mkt := mkt
 		err := e.marketStore.Post(&mkt)
 		if err != nil {
 			e.log.Panic("Failed to add default market to market store",
