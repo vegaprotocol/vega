@@ -1,22 +1,64 @@
 package main
 
 import (
-	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/matching"
-	types "code.vegaprotocol.io/vega/proto"
 	"fmt"
 	"math/rand"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/logging"
-	mockStorage "code.vegaprotocol.io/vega/internal/storage/mocks"
-	mockVegaTime "code.vegaprotocol.io/vega/internal/vegatime/mocks"
+	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/matching"
+	types "code.vegaprotocol.io/vega/proto"
 
-	"github.com/stretchr/testify/mock"
+	"code.vegaprotocol.io/vega/internal/execution/mocks"
+	"code.vegaprotocol.io/vega/internal/logging"
+
+	"github.com/golang/mock/gomock"
 )
 
 const marketID = "BTC/DEC19"
+
+type execEngine struct {
+	execution.Engine
+	ctrl   *gomock.Controller
+	time   *mocks.MockTimeService
+	order  *mocks.MockOrderStore
+	trade  *mocks.MockTradeStore
+	candle *mocks.MockCandleStore
+	market *mocks.MockMarketStore
+	party  *mocks.MockPartyStore
+}
+
+func getExecEngine(b *testing.B, log *logging.Logger, me matching.Engine) *execEngine {
+	ctrl := gomock.NewController(b)
+	time := mocks.NewMockTimeService(ctrl)
+	order := mocks.NewMockOrderStore(ctrl)
+	trade := mocks.NewMockTradeStore(ctrl)
+	candle := mocks.NewMockCandleStore(ctrl)
+	market := mocks.NewMockMarketStore(ctrl)
+	party := mocks.NewMockPartyStore(ctrl)
+	conf := execution.NewDefaultConfig(log)
+	engine := execution.NewExecutionEngine(
+		conf,
+		me,
+		time,
+		order,
+		trade,
+		candle,
+		market,
+		party,
+	)
+	return &execEngine{
+		Engine: engine,
+		ctrl:   ctrl,
+		time:   time,
+		order:  order,
+		trade:  trade,
+		candle: candle,
+		market: market,
+		party:  party,
+	}
+}
 
 func BenchmarkMatching(
 	numberOfOrders int,
@@ -43,35 +85,20 @@ func BenchmarkMatching(
 		periodElapsed := time.Duration(0)
 		// periodTrades := 0
 
-		timeService := &mockVegaTime.Service{}
-		orderStore := &mockStorage.OrderStore{}
-		tradeStore := &mockStorage.TradeStore{}
-		candleStore := &mockStorage.CandleStore{}
-		marketStore := &mockStorage.MarketStore{}
-		partyStore := &mockStorage.PartyStore{}
-
-		// Refer to the proto package by its real name, not by its alias "types".
-		candleStore.On("AddTradeToBuffer", mock.AnythingOfType("proto.Trade")).Return(nil)
-
-		orderStore.On("Post", mock.AnythingOfType("proto.Order")).Return(nil)
-		orderStore.On("Put", mock.AnythingOfType("proto.Order")).Return(nil)
-
-		tradeStore.On("Post", mock.AnythingOfType("*proto.Trade")).Return(nil)
-
-		marketStore.On("Post", mock.AnythingOfType("*proto.Market")).Return(nil)
-
 		logger := logging.NewLoggerFromEnv("dev")
 		logger.SetLevel(logging.InfoLevel)
-		defer logger.Sync()
 
 		// Matching engine (trade matching)
 		matchingConfig := matching.NewDefaultConfig(logger)
 		matchingEngine := matching.NewMatchingEngine(matchingConfig)
 
 		// Execution engine (broker operation of markets at runtime etc)
-		eec := execution.NewDefaultConfig(logger)
-		executionEngine := execution.NewExecutionEngine(eec, matchingEngine,
-			timeService, orderStore, tradeStore, candleStore, marketStore, partyStore)
+		executionEngine := getExecEngine(b, logger, matchingEngine)
+		executionEngine.candle.EXPECT().AddTradeToBuffer(gomock.Any()).Return(nil)
+		executionEngine.order.EXPECT().Post(gomock.Any()).Return(nil)
+		executionEngine.order.EXPECT().Put(gomock.Any()).Return(nil)
+		executionEngine.trade.EXPECT().Post(gomock.Any()).Return(nil)
+		executionEngine.market.EXPECT().Post(gomock.Any()).Return(nil)
 
 		var timestamp int64
 		for o := 0; o < numberOfOrders; o++ {
@@ -131,5 +158,7 @@ func BenchmarkMatching(
 			// 	vega.GetMarketData(marketId),
 			// 	vega.GetMarketDepth(marketId))
 		}
+		executionEngine.ctrl.Finish() // finalise gomock controller
+		logger.Sync()
 	}
 }

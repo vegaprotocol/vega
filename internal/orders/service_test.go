@@ -35,7 +35,7 @@ type testService struct {
 	timeSvc    *newmocks.MockTimeService
 	block      *newmocks.MockBlockchain
 	conf       *Config
-	svc        Service
+	svc        *orderService
 }
 
 type orderMatcher struct {

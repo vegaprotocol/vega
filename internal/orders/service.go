@@ -59,7 +59,7 @@ type orderService struct {
 }
 
 // NewOrderService creates an Orders service with the necessary dependencies
-func NewOrderService(config *Config, store OrderStore, time TimeService, client Blockchain) (Service, error) {
+func NewOrderService(config *Config, store OrderStore, time TimeService, client Blockchain) (*orderService, error) {
 	if client == nil {
 		return nil, errors.New("blockchain client is nil when calling NewOrderService in OrderService")
 	}

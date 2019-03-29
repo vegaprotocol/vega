@@ -3,14 +3,13 @@ package execution
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/matching"
-	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 )
 
@@ -31,29 +30,75 @@ type Engine interface {
 	Process() error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/matching_engine_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution MatchingEngine
+type MatchingEngine interface {
+	AddOrderBook(marketId string) error
+	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
+	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
+	RemoveExpiringOrders(timestamp uint64) []types.Order
+	AmendOrder(order *types.Order) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution OrderStore
+type OrderStore interface {
+	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error)
+	Post(order types.Order) error
+	Put(order types.Order) error
+	Commit() error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution TradeStore
+type TradeStore interface {
+	Commit() error
+	Post(trade *types.Trade) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution CandleStore
+type CandleStore interface {
+	AddTradeToBuffer(trade types.Trade) error
+	GenerateCandlesFromBuffer(market string) error
+	StartNewBuffer(marketId string, timestamp uint64) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution MarketStore
+type MarketStore interface {
+	Post(party *types.Market) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution PartyStore
+type PartyStore interface {
+	GetByName(name string) (*types.Party, error)
+	Post(party *types.Party) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution TimeService
+type TimeService interface {
+	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
+}
+
 type engine struct {
 	*Config
 	markets     []string
-	matching    matching.Engine
-	orderStore  storage.OrderStore
-	tradeStore  storage.TradeStore
-	candleStore storage.CandleStore
-	marketStore storage.MarketStore
-	partyStore  storage.PartyStore
-	time        vegatime.Service
+	matching    MatchingEngine
+	orderStore  OrderStore
+	tradeStore  TradeStore
+	candleStore CandleStore
+	marketStore MarketStore
+	partyStore  PartyStore
+	time        TimeService
 }
 
 // NewExecutionEngine takes stores and engines and returns
 // a new execution engine to process new orders, etc.
 func NewExecutionEngine(
 	executionConfig *Config,
-	matchingEngine matching.Engine,
-	time vegatime.Service,
-	orderStore storage.OrderStore,
-	tradeStore storage.TradeStore,
-	candleStore storage.CandleStore,
-	marketStore storage.MarketStore,
-	partyStore storage.PartyStore,
+	matchingEngine MatchingEngine,
+	time TimeService,
+	orderStore OrderStore,
+	tradeStore TradeStore,
+	candleStore CandleStore,
+	marketStore MarketStore,
+	partyStore PartyStore,
 ) Engine {
 	e := &engine{
 		Config:      executionConfig,

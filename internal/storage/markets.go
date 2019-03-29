@@ -9,7 +9,6 @@ import (
 )
 
 // Store provides the data storage contract for markets.
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/market_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/storage MarketStore
 type MarketStore interface {
 	//Subscribe(markets chan<- []types.Market) uint64
 	//Unsubscribe(id uint64) error
