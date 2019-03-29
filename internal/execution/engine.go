@@ -81,7 +81,7 @@ type TimeService interface {
 	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
 }
 
-type engine struct {
+type ExecEngine struct {
 	*Config
 	markets     map[string]*engines.Market
 	orderStore  OrderStore
@@ -102,8 +102,8 @@ func NewExecutionEngine(
 	candleStore CandleStore,
 	marketStore MarketStore,
 	partyStore PartyStore,
-) Engine {
-	e := &engine{
+) *ExecEngine {
+	e := &ExecEngine{
 		Config:      executionConfig,
 		markets:     map[string]*engines.Market{},
 		candleStore: candleStore,
@@ -154,7 +154,7 @@ func NewExecutionEngine(
 	return e
 }
 
-func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+func (e *ExecEngine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Submit order", logging.Order(*order))
 	mkt, ok := e.markets[order.Market]
 	if !ok {
@@ -232,7 +232,7 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 // AmendOrder take order amendment details and attempts to amend the order
 // if it exists and is in a state to be edited.
-func (e *engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (e *ExecEngine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
 	ctx := context.TODO()
 	existingOrder, err := e.orderStore.GetByPartyAndId(ctx, order.Party, order.Id)
@@ -310,7 +310,7 @@ func (e *engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmati
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
+func (e *ExecEngine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	e.log.Debug("Cancel order")
 	mkt, ok := e.markets[order.Market]
 	if !ok {
@@ -338,7 +338,7 @@ func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	return cancellation, nil
 }
 
-func (e *engine) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, error) {
+func (e *ExecEngine) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Cancel/replace order")
 
 	cancellation, cancelError := e.CancelOrder(existingOrder)
@@ -354,7 +354,7 @@ func (e *engine) orderCancelReplace(existingOrder, newOrder *types.Order) (*type
 	return e.SubmitOrder(newOrder)
 }
 
-func (e *engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
+func (e *ExecEngine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
 	mkt, ok := e.markets[newOrder.Market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
@@ -378,7 +378,7 @@ func (e *engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 	return &types.OrderConfirmation{}, nil
 }
 
-func (e *engine) StartCandleBuffer() error {
+func (e *ExecEngine) StartCandleBuffer() error {
 
 	// Load current vega-time from the blockchain (via time service)
 	stamp, _, err := e.time.GetTimeNow()
@@ -404,7 +404,7 @@ func (e *engine) StartCandleBuffer() error {
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
-func (e *engine) Process() error {
+func (e *ExecEngine) Process() error {
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	epochTimeNano, _, err := e.time.GetTimeNow()
@@ -445,7 +445,7 @@ func (e *engine) Process() error {
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.
-func (e *engine) Generate() error {
+func (e *ExecEngine) Generate() error {
 
 	for _, mkt := range e.markets {
 		// We need a buffer for all current markets on VEGA

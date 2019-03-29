@@ -37,15 +37,15 @@ type OrderStore interface {
 	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
 }
 
-type marketService struct {
+type Svc struct {
 	*Config
 	marketStore MarketStore
 	orderStore  OrderStore
 }
 
 // NewMarketService creates an market service with the necessary dependencies
-func NewMarketService(config *Config, marketStore MarketStore, orderStore OrderStore) (Service, error) {
-	return &marketService{
+func NewMarketService(config *Config, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
+	return &Svc{
 		config,
 		marketStore,
 		orderStore,
@@ -53,24 +53,24 @@ func NewMarketService(config *Config, marketStore MarketStore, orderStore OrderS
 }
 
 // CreateMarket stores the given market.
-func (s *marketService) CreateMarket(ctx context.Context, party *types.Market) error {
+func (s *Svc) CreateMarket(ctx context.Context, party *types.Market) error {
 	return s.marketStore.Post(party)
 }
 
 // GetByID searches for the given market by name.
-func (s *marketService) GetByID(ctx context.Context, id string) (*types.Market, error) {
+func (s *Svc) GetByID(ctx context.Context, id string) (*types.Market, error) {
 	p, err := s.marketStore.GetByID(id)
 	return p, err
 }
 
 // GetAll returns all markets.
-func (s *marketService) GetAll(ctx context.Context) ([]*types.Market, error) {
+func (s *Svc) GetAll(ctx context.Context) ([]*types.Market, error) {
 	p, err := s.marketStore.GetAll()
 	return p, err
 }
 
 // GetDepth returns the market depth for the given market.
-func (s *marketService) GetDepth(ctx context.Context, marketID string) (marketDepth *types.MarketDepth, err error) {
+func (s *Svc) GetDepth(ctx context.Context, marketID string) (marketDepth *types.MarketDepth, err error) {
 	m, err := s.marketStore.GetByID(marketID)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (s *marketService) GetDepth(ctx context.Context, marketID string) (marketDe
 }
 
 // ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
-func (s *marketService) ObserveDepth(ctx context.Context, retries int, market string) (<-chan *types.MarketDepth, uint64) {
+func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-chan *types.MarketDepth, uint64) {
 	depth := make(chan *types.MarketDepth)
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
@@ -147,6 +147,6 @@ func (s *marketService) ObserveDepth(ctx context.Context, retries int, market st
 	return depth, ref
 }
 
-func (s *marketService) ObserveMarkets(ctx context.Context) (markets <-chan []types.Market, ref uint64) {
+func (s *Svc) ObserveMarkets(ctx context.Context) (markets <-chan []types.Market, ref uint64) {
 	return nil, 0
 }

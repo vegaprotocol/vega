@@ -1,4 +1,4 @@
-package trades
+package trades_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/trades/newmocks"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -17,7 +18,7 @@ import (
 )
 
 type testService struct {
-	Service
+	*trades.Svc
 	ctx   context.Context
 	cfunc context.CancelFunc
 	log   *logging.Logger
@@ -32,20 +33,20 @@ func getTestService(t *testing.T) *testService {
 	trade := newmocks.NewMockTradeStore(ctrl)
 	risk := newmocks.NewMockRiskStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
-	svc, err := NewTradeService(
-		NewDefaultConfig(log),
+	svc, err := trades.NewTradeService(
+		trades.NewDefaultConfig(log),
 		trade,
 		risk,
 	)
 	assert.NoError(t, err)
 	return &testService{
-		Service: svc,
-		ctx:     ctx,
-		cfunc:   cfunc,
-		log:     log,
-		ctrl:    ctrl,
-		trade:   trade,
-		risk:    risk,
+		Svc:   svc,
+		ctx:   ctx,
+		cfunc: cfunc,
+		log:   log,
+		ctrl:  ctrl,
+		trade: trade,
+		risk:  risk,
 	}
 }
 

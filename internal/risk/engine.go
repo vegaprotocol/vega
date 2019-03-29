@@ -20,14 +20,14 @@ type Engine interface {
 	GetRiskFactors(marketName string) (float64, float64, error)
 }
 
-type riskEngine struct {
+type RE struct {
 	*Config
 	pyRiskModels map[string]string
 	riskFactors  map[string]*types.RiskFactor
 }
 
-func NewRiskEngine(config *Config) Engine {
-	return &riskEngine{
+func NewRiskEngine(config *Config) *RE {
+	return &RE{
 		Config:       config,
 		riskFactors:  make(map[string]*types.RiskFactor, 0),
 		pyRiskModels: make(map[string]string, 0),
@@ -38,7 +38,7 @@ func NewRiskFactor(market *types.Market) *types.RiskFactor {
 	return &types.RiskFactor{Market: market.Id}
 }
 
-func (re *riskEngine) AddNewMarket(market *types.Market) {
+func (re *RE) AddNewMarket(market *types.Market) {
 	// We will need to re-arch this when we have multiple markets/risk models/instrument definitions.
 	// Just load the default for now for all markets (./risk-model.py)
 	re.pyRiskModels[market.Id] = re.PyRiskModelDefaultFileName
@@ -46,30 +46,30 @@ func (re *riskEngine) AddNewMarket(market *types.Market) {
 	re.Assess(re.riskFactors[market.Id])
 }
 
-func (re riskEngine) getSigma() float64 {
+func (re RE) getSigma() float64 {
 	return 0.8
 }
 
-func (re riskEngine) getLambda() float64 {
+func (re RE) getLambda() float64 {
 	return 0.01
 }
 
-func (re riskEngine) getInterestRate() int64 {
+func (re RE) getInterestRate() int64 {
 	return 0
 }
 
-func (re riskEngine) getCalculationFrequency() int64 {
+func (re RE) getCalculationFrequency() int64 {
 	return 5
 }
 
-func (re riskEngine) GetRiskFactors(marketName string) (float64, float64, error) {
+func (re RE) GetRiskFactors(marketName string) (float64, float64, error) {
 	if _, exist := re.riskFactors[marketName]; !exist {
 		return 0, 0, errors.New(fmt.Sprintf("risk factors for market %s do not exist", marketName))
 	}
 	return re.riskFactors[marketName].Long, re.riskFactors[marketName].Short, nil
 }
 
-func (re riskEngine) RecalculateRisk() {
+func (re RE) RecalculateRisk() {
 	for marketName, _ := range re.riskFactors {
 		if err := re.Assess(re.riskFactors[marketName]); err != nil {
 			re.log.Error(fmt.Sprintf("error during risk assessment at market %s", marketName))
@@ -77,7 +77,7 @@ func (re riskEngine) RecalculateRisk() {
 	}
 }
 
-func (re *riskEngine) Assess(riskFactor *types.RiskFactor) error {
+func (re *RE) Assess(riskFactor *types.RiskFactor) error {
 	// Load the os executable file location
 	ex, err := os.Executable()
 	if err != nil {

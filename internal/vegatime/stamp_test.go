@@ -1,8 +1,9 @@
-package vegatime
+package vegatime_test
 
 import (
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/vegatime"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +19,7 @@ func TestStamp_NanoSeconds(t *testing.T) {
 		{9542381868999935232, 999935232},
 	}
 	for _, tt := range tests {
-		x := Stamp(tt.input)
+		x := vegatime.Stamp(tt.input)
 		assert.Equal(t, tt.expected, x.NanoSeconds())
 	}
 }
@@ -35,7 +36,7 @@ func TestStamp_Seconds(t *testing.T) {
 		{9542381868999935232, 9542381868},
 	}
 	for _, tt := range tests {
-		x := Stamp(tt.input)
+		x := vegatime.Stamp(tt.input)
 		assert.Equal(t, tt.expected, x.Seconds())
 	}
 }
@@ -52,7 +53,7 @@ func TestStamp_Rfc3339(t *testing.T) {
 		{9542381868999935232, "2272-05-21T05:37:48Z"},
 	}
 	for _, tt := range tests {
-		x := Stamp(tt.input)
+		x := vegatime.Stamp(tt.input)
 		assert.Equal(t, tt.expected, x.Rfc3339())
 	}
 }
@@ -69,7 +70,7 @@ func TestStamp_Rfc3339Nano(t *testing.T) {
 		{9542381868999935232, "2272-05-21T05:37:48.999935232Z"},
 	}
 	for _, tt := range tests {
-		x := Stamp(tt.input)
+		x := vegatime.Stamp(tt.input)
 		assert.Equal(t, tt.expected, x.Rfc3339Nano())
 	}
 }

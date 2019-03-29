@@ -1,6 +1,6 @@
 // +build !race
 
-package markets
+package markets_test
 
 import (
 	"sync"

@@ -42,21 +42,21 @@ type RiskStore interface {
 	GetByMarket(market string) (*types.RiskFactor, error)
 }
 
-type tradeService struct {
+type Svc struct {
 	*Config
 	tradeStore TradeStore
 	riskStore  RiskStore
 }
 
-func NewTradeService(config *Config, tradeStore TradeStore, riskStore RiskStore) (Service, error) {
-	return &tradeService{
+func NewTradeService(config *Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
+	return &Svc{
 		Config:     config,
 		tradeStore: tradeStore,
 		riskStore:  riskStore,
 	}, nil
 }
 
-func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
+func (t *Svc) GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
 	trades, err = t.tradeStore.GetByMarket(ctx, market, filters)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (t *tradeService) GetByMarket(ctx context.Context, market string, filters *
 	return trades, err
 }
 
-func (t *tradeService) GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
+func (t *Svc) GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
 	trades, err = t.tradeStore.GetByParty(ctx, party, filters)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (t *tradeService) GetByParty(ctx context.Context, party string, filters *fi
 	return trades, err
 }
 
-func (t *tradeService) GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
+func (t *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
 	trade, err = t.tradeStore.GetByMarketAndId(ctx, market, id)
 	if err != nil {
 		return &types.Trade{}, err
@@ -80,7 +80,7 @@ func (t *tradeService) GetByMarketAndId(ctx context.Context, market string, id s
 	return trade, err
 }
 
-func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error) {
+func (t *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error) {
 	trade, err = t.tradeStore.GetByPartyAndId(ctx, party, id)
 	if err != nil {
 		return &types.Trade{}, err
@@ -88,7 +88,7 @@ func (t *tradeService) GetByPartyAndId(ctx context.Context, party string, id str
 	return trade, err
 }
 
-func (t *tradeService) GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
+func (t *Svc) GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
 	trades, err = t.tradeStore.GetByOrderId(ctx, orderId, filters)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (t *tradeService) GetByOrderId(ctx context.Context, orderId string, filters
 	return trades, err
 }
 
-func (t *tradeService) ObserveTrades(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Trade, uint64) {
+func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Trade, uint64) {
 	trades := make(chan []types.Trade)
 	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
@@ -169,7 +169,7 @@ func (t *tradeService) ObserveTrades(ctx context.Context, retries int, market *s
 	return trades, ref
 }
 
-func (t *tradeService) ObservePositions(ctx context.Context, retries int, party string) (<-chan *types.MarketPosition, uint64) {
+func (t *Svc) ObservePositions(ctx context.Context, retries int, party string) (<-chan *types.MarketPosition, uint64) {
 	positions := make(chan *types.MarketPosition)
 	internal := make(chan []types.Trade)
 	ref := t.tradeStore.Subscribe(internal)
@@ -244,7 +244,7 @@ func (t *tradeService) ObservePositions(ctx context.Context, retries int, party 
 	return positions, ref
 }
 
-func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error) {
+func (t *Svc) GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error) {
 
 	t.log.Debug("Calculate positions for party",
 		logging.String("party-id", party))
@@ -343,7 +343,7 @@ func (t *tradeService) GetPositionsByParty(ctx context.Context, party string) (p
 	return positions, nil
 }
 
-func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) (float64, error) {
+func (t *Svc) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) (float64, error) {
 	rf, err := t.riskStore.GetByMarket(market)
 	if err != nil {
 		t.log.Error("Failed to obtain risk factors from risk engine",
@@ -367,7 +367,7 @@ func (t *tradeService) getRiskFactorByMarketAndPositionSign(ctx context.Context,
 	return riskFactor, nil
 }
 
-func (t *tradeService) calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *storage.MarketBucket,
+func (t *Svc) calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *storage.MarketBucket,
 	OpenContracts, ClosedContracts int64) (float64, float64) {
 
 	var (
@@ -417,7 +417,7 @@ func (t *tradeService) calculateVolumeEntryPriceWeightedAveragesForLong(marketBu
 	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
 }
 
-func (t *tradeService) calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket *storage.MarketBucket,
+func (t *Svc) calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket *storage.MarketBucket,
 	OpenContracts, ClosedContracts int64) (float64, float64) {
 
 	var (
@@ -445,7 +445,7 @@ func (t *tradeService) calculateVolumeEntryPriceWeightedAveragesForNet(marketBuc
 	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
 }
 
-func (t *tradeService) calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket *storage.MarketBucket,
+func (t *Svc) calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket *storage.MarketBucket,
 	OpenContracts, ClosedContracts int64) (float64, float64) {
 
 	var (
