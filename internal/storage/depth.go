@@ -15,8 +15,8 @@ type MarketDepth interface {
 	SellSide() []MarketDepthLevel
 }
 
-// marketDepth stores the price levels on both buy side and sell side for a particular market.
-type marketDepth struct {
+// Depth stores the price levels on both buy side and sell side for a particular market.
+type Depth struct {
 	Name string
 	Buy  []MarketDepthLevel
 	Sell []MarketDepthLevel
@@ -30,13 +30,13 @@ type MarketDepthLevel struct {
 
 // NewMarketDepth creates a new market depth implementation for the given market name. With multiple markets,
 // this initialiser can be used to create a market depth structure 1:1 per market.
-func NewMarketDepth(name string) MarketDepth {
-	return &marketDepth{Name: name}
+func NewMarketDepth(name string) *Depth {
+	return &Depth{Name: name}
 }
 
 // Update the market depth with the given order information. If the order already exists at a price level
 // it will be updated. Note: The total cumulative volume for the market depth is calculated elsewhere.
-func (md *marketDepth) Update(order types.Order) {
+func (md *Depth) Update(order types.Order) {
 	if order.Side == types.Side_Buy {
 		md.updateBuySide(order)
 	} else {
@@ -46,7 +46,7 @@ func (md *marketDepth) Update(order types.Order) {
 
 // Called by Update to do the iteration over price levels and update the buy side of the market depth with
 // order information. We now use a map of orderId => remaining to no longer need a DB lookup elsewhere.
-func (md *marketDepth) updateBuySide(order types.Order) {
+func (md *Depth) updateBuySide(order types.Order) {
 	var at = -1
 	orderInvalid := md.isInvalid(order)
 
@@ -114,7 +114,7 @@ func (md *marketDepth) updateBuySide(order types.Order) {
 
 // Called by Update to do the iteration over price levels and update the sell side of the market depth with
 // order information. We now use a map of orderId => remaining to no longer need a DB lookup elsewhere.
-func (md *marketDepth) updateSellSide(order types.Order) {
+func (md *Depth) updateSellSide(order types.Order) {
 	var at = -1
 	orderInvalid := md.isInvalid(order)
 
@@ -181,18 +181,18 @@ func (md *marketDepth) updateSellSide(order types.Order) {
 }
 
 // The buy side price levels (and additional information such as orders, remaining volumes) for the market.
-func (md *marketDepth) BuySide() []MarketDepthLevel {
+func (md *Depth) BuySide() []MarketDepthLevel {
 	return md.Buy
 }
 
 // The sell side price levels (and additional information such as orders, remaining volumes) for the market.
-func (md *marketDepth) SellSide() []MarketDepthLevel {
+func (md *Depth) SellSide() []MarketDepthLevel {
 	return md.Sell
 }
 
 // Helper to check for orders that have zero remaining, or a status such as cancelled etc.
 // When calculating depth for a side they shouldn't be included (and removed if already exist).
 // A fresh order with zero remaining will never be added to a price level.
-func (md *marketDepth) isInvalid(order types.Order) bool {
+func (md *Depth) isInvalid(order types.Order) bool {
 	return order.Remaining == uint64(0) || order.Status == types.Order_Cancelled || order.Status == types.Order_Expired
 }

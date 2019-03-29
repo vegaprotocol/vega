@@ -1,4 +1,4 @@
-package storage
+package storage_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -14,11 +15,11 @@ import (
 func TestMarketDepth_Hard(t *testing.T) {
 	ctx := context.Background()
 
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	orderStore, err := NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrderStore(config, func() {})
 
 	assert.Nil(t, err)
 	defer orderStore.Close()
@@ -235,7 +236,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 
 func TestOrderBookDepth_Soft(t *testing.T) {
 
-	var marketDepth marketDepth
+	marketDepth := storage.NewMarketDepth("test")
 
 	ordersList := []types.Order{
 		{Id: "01", Side: types.Side_Buy, Price: 116, Remaining: 100},
@@ -251,54 +252,56 @@ func TestOrderBookDepth_Soft(t *testing.T) {
 		marketDepth.Update(elem)
 	}
 
-	assert.Equal(t, marketDepth.Buy[0].Price, uint64(116))
-	assert.Equal(t, marketDepth.Buy[0].Volume, uint64(200))
-	assert.Equal(t, marketDepth.Buy[0].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Buy[0].CumulativeVolume, uint64(0))
+	buy := marketDepth.BuySide()
+	assert.Equal(t, buy[0].Price, uint64(116))
+	assert.Equal(t, buy[0].Volume, uint64(200))
+	assert.Equal(t, buy[0].NumberOfOrders, uint64(2))
+	assert.Equal(t, buy[0].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Buy[1].Price, uint64(114))
-	assert.Equal(t, marketDepth.Buy[1].Volume, uint64(100))
-	assert.Equal(t, marketDepth.Buy[1].NumberOfOrders, uint64(1))
-	assert.Equal(t, marketDepth.Buy[1].CumulativeVolume, uint64(0))
+	assert.Equal(t, buy[1].Price, uint64(114))
+	assert.Equal(t, buy[1].Volume, uint64(100))
+	assert.Equal(t, buy[1].NumberOfOrders, uint64(1))
+	assert.Equal(t, buy[1].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Buy[2].Price, uint64(113))
-	assert.Equal(t, marketDepth.Buy[2].Volume, uint64(100))
-	assert.Equal(t, marketDepth.Buy[2].NumberOfOrders, uint64(1))
-	assert.Equal(t, marketDepth.Buy[2].CumulativeVolume, uint64(0))
+	assert.Equal(t, buy[2].Price, uint64(113))
+	assert.Equal(t, buy[2].Volume, uint64(100))
+	assert.Equal(t, buy[2].NumberOfOrders, uint64(1))
+	assert.Equal(t, buy[2].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Buy[3].Price, uint64(111))
-	assert.Equal(t, marketDepth.Buy[3].Volume, uint64(200))
-	assert.Equal(t, marketDepth.Buy[3].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Buy[3].CumulativeVolume, uint64(0))
+	assert.Equal(t, buy[3].Price, uint64(111))
+	assert.Equal(t, buy[3].Volume, uint64(200))
+	assert.Equal(t, buy[3].NumberOfOrders, uint64(2))
+	assert.Equal(t, buy[3].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Buy[4].Price, uint64(110))
-	assert.Equal(t, marketDepth.Buy[4].Volume, uint64(100))
-	assert.Equal(t, marketDepth.Buy[4].NumberOfOrders, uint64(1))
-	assert.Equal(t, marketDepth.Buy[4].CumulativeVolume, uint64(0))
+	assert.Equal(t, buy[4].Price, uint64(110))
+	assert.Equal(t, buy[4].Volume, uint64(100))
+	assert.Equal(t, buy[4].NumberOfOrders, uint64(1))
+	assert.Equal(t, buy[4].CumulativeVolume, uint64(0))
 
 	marketDepth.Update(types.Order{Id: "03", Side: types.Side_Buy, Price: 111, Remaining: 50})
 	marketDepth.Update(types.Order{Id: "06", Side: types.Side_Buy, Price: 114, Remaining: 80})
 	marketDepth.Update(types.Order{Id: "05", Side: types.Side_Buy, Price: 113, Remaining: 0})
 
-	assert.Equal(t, marketDepth.Buy[0].Price, uint64(116))
-	assert.Equal(t, marketDepth.Buy[0].Volume, uint64(200))
-	assert.Equal(t, marketDepth.Buy[0].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Buy[0].CumulativeVolume, uint64(0))
+	buy = marketDepth.BuySide()
+	assert.Equal(t, buy[0].Price, uint64(116))
+	assert.Equal(t, buy[0].Volume, uint64(200))
+	assert.Equal(t, buy[0].NumberOfOrders, uint64(2))
+	assert.Equal(t, buy[0].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Buy[1].Price, uint64(114))
-	assert.Equal(t, marketDepth.Buy[1].Volume, uint64(80))
-	assert.Equal(t, marketDepth.Buy[1].NumberOfOrders, uint64(1))
-	assert.Equal(t, marketDepth.Buy[1].CumulativeVolume, uint64(0))
+	assert.Equal(t, buy[1].Price, uint64(114))
+	assert.Equal(t, buy[1].Volume, uint64(80))
+	assert.Equal(t, buy[1].NumberOfOrders, uint64(1))
+	assert.Equal(t, buy[1].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Buy[2].Price, uint64(111))
-	assert.Equal(t, marketDepth.Buy[2].Volume, uint64(150))
-	assert.Equal(t, marketDepth.Buy[2].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Buy[2].CumulativeVolume, uint64(0))
+	assert.Equal(t, buy[2].Price, uint64(111))
+	assert.Equal(t, buy[2].Volume, uint64(150))
+	assert.Equal(t, buy[2].NumberOfOrders, uint64(2))
+	assert.Equal(t, buy[2].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Buy[3].Price, uint64(110))
-	assert.Equal(t, marketDepth.Buy[3].Volume, uint64(100))
-	assert.Equal(t, marketDepth.Buy[3].NumberOfOrders, uint64(1))
-	assert.Equal(t, marketDepth.Buy[3].CumulativeVolume, uint64(0))
+	assert.Equal(t, buy[3].Price, uint64(110))
+	assert.Equal(t, buy[3].Volume, uint64(100))
+	assert.Equal(t, buy[3].NumberOfOrders, uint64(1))
+	assert.Equal(t, buy[3].CumulativeVolume, uint64(0))
 
 	// test sell side
 	ordersList = []types.Order{
@@ -316,54 +319,56 @@ func TestOrderBookDepth_Soft(t *testing.T) {
 		marketDepth.Update(elem)
 	}
 
-	assert.Equal(t, marketDepth.Sell[0].Price, uint64(119))
-	assert.Equal(t, marketDepth.Sell[0].Volume, uint64(100))
-	assert.Equal(t, marketDepth.Sell[0].NumberOfOrders, uint64(1))
-	assert.Equal(t, marketDepth.Sell[0].CumulativeVolume, uint64(0))
+	sell := marketDepth.SellSide()
+	assert.Equal(t, sell[0].Price, uint64(119))
+	assert.Equal(t, sell[0].Volume, uint64(100))
+	assert.Equal(t, sell[0].NumberOfOrders, uint64(1))
+	assert.Equal(t, sell[0].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Sell[1].Price, uint64(120))
-	assert.Equal(t, marketDepth.Sell[1].Volume, uint64(200))
-	assert.Equal(t, marketDepth.Sell[1].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Sell[1].CumulativeVolume, uint64(0))
+	assert.Equal(t, sell[1].Price, uint64(120))
+	assert.Equal(t, sell[1].Volume, uint64(200))
+	assert.Equal(t, sell[1].NumberOfOrders, uint64(2))
+	assert.Equal(t, sell[1].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Sell[2].Price, uint64(121))
-	assert.Equal(t, marketDepth.Sell[2].Volume, uint64(200))
-	assert.Equal(t, marketDepth.Sell[2].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Sell[2].CumulativeVolume, uint64(0))
+	assert.Equal(t, sell[2].Price, uint64(121))
+	assert.Equal(t, sell[2].Volume, uint64(200))
+	assert.Equal(t, sell[2].NumberOfOrders, uint64(2))
+	assert.Equal(t, sell[2].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Sell[3].Price, uint64(122))
-	assert.Equal(t, marketDepth.Sell[3].Volume, uint64(100))
-	assert.Equal(t, marketDepth.Sell[3].NumberOfOrders, uint64(1))
-	assert.Equal(t, marketDepth.Sell[3].CumulativeVolume, uint64(0))
+	assert.Equal(t, sell[3].Price, uint64(122))
+	assert.Equal(t, sell[3].Volume, uint64(100))
+	assert.Equal(t, sell[3].NumberOfOrders, uint64(1))
+	assert.Equal(t, sell[3].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Sell[4].Price, uint64(123))
-	assert.Equal(t, marketDepth.Sell[4].Volume, uint64(200))
-	assert.Equal(t, marketDepth.Sell[4].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Sell[4].CumulativeVolume, uint64(0))
+	assert.Equal(t, sell[4].Price, uint64(123))
+	assert.Equal(t, sell[4].Volume, uint64(200))
+	assert.Equal(t, sell[4].NumberOfOrders, uint64(2))
+	assert.Equal(t, sell[4].CumulativeVolume, uint64(0))
 
 	marketDepth.Update(types.Order{Id: "11", Side: types.Side_Sell, Price: 119, Remaining: 50})
 	marketDepth.Update(types.Order{Id: "12", Side: types.Side_Sell, Price: 120, Remaining: 80})
 	marketDepth.Update(types.Order{Id: "16", Side: types.Side_Sell, Price: 122, Remaining: 0})
 
-	assert.Equal(t, marketDepth.Sell[0].Price, uint64(119))
-	assert.Equal(t, marketDepth.Sell[0].Volume, uint64(50))
-	assert.Equal(t, marketDepth.Sell[0].NumberOfOrders, uint64(1))
-	assert.Equal(t, marketDepth.Sell[0].CumulativeVolume, uint64(0))
+	sell = marketDepth.SellSide()
+	assert.Equal(t, sell[0].Price, uint64(119))
+	assert.Equal(t, sell[0].Volume, uint64(50))
+	assert.Equal(t, sell[0].NumberOfOrders, uint64(1))
+	assert.Equal(t, sell[0].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Sell[1].Price, uint64(120))
-	assert.Equal(t, marketDepth.Sell[1].Volume, uint64(180))
-	assert.Equal(t, marketDepth.Sell[1].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Sell[1].CumulativeVolume, uint64(0))
+	assert.Equal(t, sell[1].Price, uint64(120))
+	assert.Equal(t, sell[1].Volume, uint64(180))
+	assert.Equal(t, sell[1].NumberOfOrders, uint64(2))
+	assert.Equal(t, sell[1].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Sell[2].Price, uint64(121))
-	assert.Equal(t, marketDepth.Sell[2].Volume, uint64(200))
-	assert.Equal(t, marketDepth.Sell[2].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Sell[2].CumulativeVolume, uint64(0))
+	assert.Equal(t, sell[2].Price, uint64(121))
+	assert.Equal(t, sell[2].Volume, uint64(200))
+	assert.Equal(t, sell[2].NumberOfOrders, uint64(2))
+	assert.Equal(t, sell[2].CumulativeVolume, uint64(0))
 
-	assert.Equal(t, marketDepth.Sell[3].Price, uint64(123))
-	assert.Equal(t, marketDepth.Sell[3].Volume, uint64(200))
-	assert.Equal(t, marketDepth.Sell[3].NumberOfOrders, uint64(2))
-	assert.Equal(t, marketDepth.Sell[3].CumulativeVolume, uint64(0))
+	assert.Equal(t, sell[3].Price, uint64(123))
+	assert.Equal(t, sell[3].Volume, uint64(200))
+	assert.Equal(t, sell[3].NumberOfOrders, uint64(2))
+	assert.Equal(t, sell[3].CumulativeVolume, uint64(0))
 }
 
 func TestOrderBookDepthBuySide(t *testing.T) {
@@ -381,11 +386,11 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	ctx := context.Background()
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	orderStore, err := NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrderStore(config, func() {})
 
 	assert.Nil(t, err)
 	defer orderStore.Close()
@@ -512,11 +517,11 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	ctx := context.Background()
 	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	orderStore, err := NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 

@@ -1,4 +1,4 @@
-package storage
+package storage_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/filtering"
+	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -17,20 +18,20 @@ const testPartyA = "partyA"
 const testPartyB = "partyB"
 
 func TestStorage_NewOrderStore(t *testing.T) {
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
+	storage.FlushStores(config)
 
-	orderStore, err := NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrderStore(config, func() {})
 	assert.NotNil(t, orderStore)
 	assert.Nil(t, err)
 
 	config.OrderStoreDirPath = ""
 
-	orderStore, err = NewOrderStore(config, func() {})
+	orderStore, err = storage.NewOrderStore(config, func() {})
 	assert.Nil(t, orderStore)
 	assert.NotNil(t, err)
 
@@ -39,13 +40,13 @@ func TestStorage_NewOrderStore(t *testing.T) {
 }
 
 func TestStorage_PostAndGetNewOrder(t *testing.T) {
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
-	orderStore, err := NewOrderStore(config, func() {})
+	storage.FlushStores(config)
+	orderStore, err := storage.NewOrderStore(config, func() {})
 	defer orderStore.Close()
 
 	var order = &types.Order{
@@ -65,12 +66,12 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 }
 
 func TestStorage_GetOrdersForMarket(t *testing.T) {
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
+	storage.FlushStores(config)
 
 	var tests = []struct {
 		inMarkets      []string
@@ -151,7 +152,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		orderStore, err := NewOrderStore(config, func() {})
+		orderStore, err := storage.NewOrderStore(config, func() {})
 		assert.Nil(t, err)
 
 		for _, order := range tt.inOrders {
@@ -171,14 +172,14 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 }
 
 func TestStorage_GetOrdersForParty(t *testing.T) {
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
+	storage.FlushStores(config)
 
-	orderStore, err := NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -236,14 +237,14 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 }
 
 func TestStorage_OrderFiltration(t *testing.T) {
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
+	storage.FlushStores(config)
 
-	orderStore, err := NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -468,13 +469,13 @@ func TestStorage_OrderFiltration(t *testing.T) {
 }
 
 func TestStorage_GetOrderByReference(t *testing.T) {
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
-	newOrderStore, err := NewOrderStore(config, func() {})
+	storage.FlushStores(config)
+	newOrderStore, err := storage.NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 
@@ -508,13 +509,13 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 }
 
 func TestStorage_InsertBatchOrders(t *testing.T) {
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
-	orderStore, err := NewOrderStore(config, func() {})
+	storage.FlushStores(config)
+	orderStore, err := storage.NewOrderStore(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 

@@ -48,8 +48,8 @@ type TradeStore interface {
 	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*MarketBucket
 }
 
-// badgerTradeStore is a package internal data struct that implements the TradeStore interface.
-type badgerTradeStore struct {
+// Trade is a package internal data struct that implements the TradeStore interface.
+type Trade struct {
 	*Config
 	badger          *badgerStore
 	subscribers     map[uint64]chan<- []types.Trade
@@ -62,7 +62,7 @@ type badgerTradeStore struct {
 // NewTradeStore is used to initialise and create a TradeStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewTradeStore(c *Config, onCriticalError func()) (TradeStore, error) {
+func NewTradeStore(c *Config, onCriticalError func()) (*Trade, error) {
 	err := InitStoreDirectory(c.TradeStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for trades storage")
@@ -72,7 +72,7 @@ func NewTradeStore(c *Config, onCriticalError func()) (TradeStore, error) {
 		return nil, errors.Wrap(err, "error opening badger database for trades storage")
 	}
 	bs := badgerStore{db: db}
-	return &badgerTradeStore{
+	return &Trade{
 		Config:          c,
 		badger:          &bs,
 		buffer:          make([]types.Trade, 0),
@@ -83,7 +83,7 @@ func NewTradeStore(c *Config, onCriticalError func()) (TradeStore, error) {
 
 // Subscribe to a channel of new or updated trades. The subscriber id will be returned as a uint64 value
 // and must be retained for future reference and to unsubscribe.
-func (ts *badgerTradeStore) Subscribe(trades chan<- []types.Trade) uint64 {
+func (ts *Trade) Subscribe(trades chan<- []types.Trade) uint64 {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
@@ -97,7 +97,7 @@ func (ts *badgerTradeStore) Subscribe(trades chan<- []types.Trade) uint64 {
 }
 
 // Unsubscribe from an trades channel. Provide the subscriber id you wish to stop receiving new events for.
-func (ts *badgerTradeStore) Unsubscribe(id uint64) error {
+func (ts *Trade) Unsubscribe(id uint64) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
@@ -119,7 +119,7 @@ func (ts *badgerTradeStore) Unsubscribe(id uint64) error {
 
 // Post adds an trade to the badger store, adds
 // to queue the operation to be committed later.
-func (ts *badgerTradeStore) Post(trade *types.Trade) error {
+func (ts *Trade) Post(trade *types.Trade) error {
 	// with badger we always buffer for future batch insert via Commit()
 	ts.addToBuffer(*trade)
 	return nil
@@ -127,7 +127,7 @@ func (ts *badgerTradeStore) Post(trade *types.Trade) error {
 
 // Commit saves any operations that are queued to badger store, and includes all updates.
 // It will also call notify() to push updated data to any subscribers.
-func (ts *badgerTradeStore) Commit() error {
+func (ts *Trade) Commit() error {
 	if len(ts.buffer) == 0 {
 		return nil
 	}
@@ -155,7 +155,7 @@ func (ts *badgerTradeStore) Commit() error {
 
 // GetByMarket retrieves trades for a given market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByMarket(ctx context.Context, market string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
+func (ts *Trade) GetByMarket(ctx context.Context, market string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
 	var result []*types.Trade
 
 	if queryFilters == nil {
@@ -202,7 +202,7 @@ func (ts *badgerTradeStore) GetByMarket(ctx context.Context, market string, quer
 }
 
 // GetByMarketAndId retrieves a trade for a given market and id, any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByMarketAndId(ctx context.Context, market string, Id string) (*types.Trade, error) {
+func (ts *Trade) GetByMarketAndId(ctx context.Context, market string, Id string) (*types.Trade, error) {
 	var trade types.Trade
 
 	txn := ts.badger.readTransaction()
@@ -227,7 +227,7 @@ func (ts *badgerTradeStore) GetByMarketAndId(ctx context.Context, market string,
 
 // GetByParty retrieves trades for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByParty(ctx context.Context, party string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
+func (ts *Trade) GetByParty(ctx context.Context, party string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
 	var result []*types.Trade
 
 	if queryFilters == nil {
@@ -284,7 +284,7 @@ func (ts *badgerTradeStore) GetByParty(ctx context.Context, party string, queryF
 }
 
 // GetByPartyAndId retrieves a trade for a given party and id.
-func (ts *badgerTradeStore) GetByPartyAndId(ctx context.Context, party string, Id string) (*types.Trade, error) {
+func (ts *Trade) GetByPartyAndId(ctx context.Context, party string, Id string) (*types.Trade, error) {
 	var trade types.Trade
 	err := ts.badger.db.View(func(txn *badger.Txn) error {
 		partyKey := ts.badger.tradePartyKey(party, Id)
@@ -325,7 +325,7 @@ func (ts *badgerTradeStore) GetByPartyAndId(ctx context.Context, party string, I
 
 // GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
 // Provide optional query filters to refine the data set further (if required), any errors will be returned immediately.
-func (ts *badgerTradeStore) GetByOrderId(ctx context.Context, orderId string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
+func (ts *Trade) GetByOrderId(ctx context.Context, orderId string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
 	var result []*types.Trade
 
 	txn := ts.badger.readTransaction()
@@ -378,7 +378,7 @@ func (ts *badgerTradeStore) GetByOrderId(ctx context.Context, orderId string, qu
 }
 
 // GetMarkPrice returns the current market price, for a requested market.
-func (ts *badgerTradeStore) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
+func (ts *Trade) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
 
 	// We just need the very latest trade price
 	f := &filtering.TradeQueryFilters{}
@@ -399,19 +399,19 @@ func (ts *badgerTradeStore) GetMarkPrice(ctx context.Context, market string) (ui
 
 // Close our connection to the badger database
 // ensuring errors will be returned up the stack.
-func (ts *badgerTradeStore) Close() error {
+func (ts *Trade) Close() error {
 	return ts.badger.db.Close()
 }
 
 // add a trade to the write-batch/notify buffer.
-func (ts *badgerTradeStore) addToBuffer(t types.Trade) {
+func (ts *Trade) addToBuffer(t types.Trade) {
 	ts.mu.Lock()
 	ts.buffer = append(ts.buffer, t)
 	ts.mu.Unlock()
 }
 
 // notify any subscribers of trade updates.
-func (ts *badgerTradeStore) notify(items []types.Trade) error {
+func (ts *Trade) notify(items []types.Trade) error {
 	if len(items) == 0 {
 		return nil
 	}
@@ -440,7 +440,7 @@ func (ts *badgerTradeStore) notify(items []types.Trade) error {
 	return nil
 }
 
-func (ts *badgerTradeStore) tradeBatchToMap(batch []types.Trade) (map[string][]byte, error) {
+func (ts *Trade) tradeBatchToMap(batch []types.Trade) (map[string][]byte, error) {
 	results := make(map[string][]byte)
 	for _, trade := range batch {
 		tradeBuf, err := proto.Marshal(&trade)
@@ -469,7 +469,7 @@ func (ts *badgerTradeStore) tradeBatchToMap(batch []types.Trade) (map[string][]b
 }
 
 // writeBatch flushes a batch of trades to the underlying badger store.
-func (ts *badgerTradeStore) writeBatch(batch []types.Trade) error {
+func (ts *Trade) writeBatch(batch []types.Trade) error {
 	kv, err := ts.tradeBatchToMap(batch)
 	if err != nil {
 		ts.log.Error("Failed to marshal trades before writing batch",

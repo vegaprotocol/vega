@@ -33,14 +33,14 @@ type MarketStore interface {
 	GetAll() ([]*types.Market, error)
 }
 
-// memMarketStore is used for memory/RAM based markets storage.
-type badgerMarketStore struct {
+// Market is used for memory/RAM based markets storage.
+type Market struct {
 	*Config
 	badger *badgerStore
 }
 
 // NewMarketStore returns a concrete implementation of MarketStore.
-func NewMarketStore(c *Config) (MarketStore, error) {
+func NewMarketStore(c *Config) (*Market, error) {
 	err := InitStoreDirectory(c.MarketStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")
@@ -50,14 +50,14 @@ func NewMarketStore(c *Config) (MarketStore, error) {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}
 	bs := badgerStore{db: db}
-	return &badgerMarketStore{
+	return &Market{
 		Config: c,
 		badger: &bs,
 	}, nil
 }
 
 // Post saves a given market to the mem-store.
-func (ms *badgerMarketStore) Post(market *types.Market) error {
+func (ms *Market) Post(market *types.Market) error {
 	buf, err := proto.Marshal(market)
 	if err != nil {
 		ms.log.Error("unable to marshal market",
@@ -83,7 +83,7 @@ func (ms *badgerMarketStore) Post(market *types.Market) error {
 }
 
 // GetByID searches for the given market by id in the mem-store.
-func (ms *badgerMarketStore) GetByID(id string) (*types.Market, error) {
+func (ms *Market) GetByID(id string) (*types.Market, error) {
 	market := types.Market{}
 	var buf []byte
 	marketKey := ms.badger.marketKey(id)
@@ -117,7 +117,7 @@ func (ms *badgerMarketStore) GetByID(id string) (*types.Market, error) {
 }
 
 // GetAll returns all markets in the badger store.
-func (ms *badgerMarketStore) GetAll() ([]*types.Market, error) {
+func (ms *Market) GetAll() ([]*types.Market, error) {
 	markets := []*types.Market{}
 	bufs := [][]byte{}
 	err := ms.badger.db.View(func(txn *badger.Txn) error {
@@ -158,13 +158,13 @@ func (ms *badgerMarketStore) GetAll() ([]*types.Market, error) {
 
 // Commit typically saves any operations that are queued to underlying storage,
 // if supported by underlying storage implementation.
-func (ms *badgerMarketStore) Commit() error {
+func (ms *Market) Commit() error {
 	// Not required with a mem-store implementation.
 	return nil
 }
 
 // Close can be called to clean up and close any storage
 // connections held by the underlying storage mechanism.
-func (ms *badgerMarketStore) Close() error {
+func (ms *Market) Close() error {
 	return ms.badger.db.Close()
 }

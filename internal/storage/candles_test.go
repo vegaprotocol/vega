@@ -1,4 +1,4 @@
-package storage
+package storage_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -13,13 +14,13 @@ import (
 
 func TestStorage_GenerateCandles(t *testing.T) {
 	ctx := context.Background()
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
-	candleStore, err := NewCandleStore(config)
+	storage.FlushStores(config)
+	candleStore, err := storage.NewCandleStore(config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
@@ -178,7 +179,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 func TestStorage_GetMapOfIntervalsToTimestamps(t *testing.T) {
 	timestamp, _ := time.Parse(time.RFC3339, "2018-11-13T11:01:14Z")
 	t0 := uint64(timestamp.UnixNano())
-	timestamps := getMapOfIntervalsToRoundedTimestamps(uint64(timestamp.UnixNano()))
+	timestamps := storage.GetMapOfIntervalsToRoundedTimestamps(uint64(timestamp.UnixNano()))
 	assert.Equal(t, t0-uint64(14*time.Second), timestamps[types.Interval_I1M])
 	assert.Equal(t, t0-uint64(time.Minute+14*time.Second), timestamps[types.Interval_I5M])
 	assert.Equal(t, t0-uint64(time.Minute+14*time.Second), timestamps[types.Interval_I15M])
@@ -188,21 +189,21 @@ func TestStorage_GetMapOfIntervalsToTimestamps(t *testing.T) {
 }
 
 func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
-	candleStore, err := NewCandleStore(config)
+	storage.FlushStores(config)
+	candleStore, err := storage.NewCandleStore(config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
-	internalTransport1 := &InternalTransport{testMarket, types.Interval_I1M, make(chan *types.Candle)}
+	internalTransport1 := &storage.InternalTransport{testMarket, types.Interval_I1M, make(chan *types.Candle)}
 	ref := candleStore.Subscribe(internalTransport1)
 	assert.Equal(t, uint64(1), ref)
 
-	internalTransport2 := &InternalTransport{testMarket, types.Interval_I1M, make(chan *types.Candle)}
+	internalTransport2 := &storage.InternalTransport{testMarket, types.Interval_I1M, make(chan *types.Candle)}
 	ref = candleStore.Subscribe(internalTransport2)
 	assert.Equal(t, uint64(2), ref)
 
@@ -221,13 +222,13 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 
 func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	ctx := context.Background()
-	config, err := NewTestConfig()
+	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	FlushStores(config)
-	candleStore, err := NewCandleStore(config)
+	storage.FlushStores(config)
+	candleStore, err := storage.NewCandleStore(config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 

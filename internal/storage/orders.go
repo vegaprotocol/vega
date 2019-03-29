@@ -48,8 +48,8 @@ type OrderStore interface {
 	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
 }
 
-// badgerOrderStore is a package internal data struct that implements the OrderStore interface.
-type badgerOrderStore struct {
+// Order is a package internal data struct that implements the OrderStore interface.
+type Order struct {
 	*Config
 	badger          *badgerStore
 	subscribers     map[uint64]chan<- []types.Order
@@ -63,7 +63,7 @@ type badgerOrderStore struct {
 // NewOrderStore is used to initialise and create a OrderStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewOrderStore(c *Config, onCriticalError func()) (OrderStore, error) {
+func NewOrderStore(c *Config, onCriticalError func()) (*Order, error) {
 	err := InitStoreDirectory(c.OrderStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for orders storage")
@@ -73,7 +73,7 @@ func NewOrderStore(c *Config, onCriticalError func()) (OrderStore, error) {
 		return nil, errors.Wrap(err, "error opening badger database for orders storage")
 	}
 	bs := badgerStore{db: db}
-	return &badgerOrderStore{
+	return &Order{
 		Config:          c,
 		badger:          &bs,
 		depth:           make(map[string]MarketDepth, 0),
@@ -85,7 +85,7 @@ func NewOrderStore(c *Config, onCriticalError func()) (OrderStore, error) {
 
 // Subscribe to a channel of new or updated orders. The subscriber id will be returned as a uint64 value
 // and must be retained for future reference and to unsubscribe.
-func (os *badgerOrderStore) Subscribe(orders chan<- []types.Order) uint64 {
+func (os *Order) Subscribe(orders chan<- []types.Order) uint64 {
 	os.mu.Lock()
 	defer os.mu.Unlock()
 
@@ -99,7 +99,7 @@ func (os *badgerOrderStore) Subscribe(orders chan<- []types.Order) uint64 {
 }
 
 // Unsubscribe from an orders channel. Provide the subscriber id you wish to stop receiving new events for.
-func (os *badgerOrderStore) Unsubscribe(id uint64) error {
+func (os *Order) Unsubscribe(id uint64) error {
 	os.mu.Lock()
 	defer os.mu.Unlock()
 
@@ -121,7 +121,7 @@ func (os *badgerOrderStore) Unsubscribe(id uint64) error {
 
 // Post adds an order to the badger store, adds
 // to queue the operation to be committed later.
-func (os *badgerOrderStore) Post(order types.Order) error {
+func (os *Order) Post(order types.Order) error {
 	// validate an order book (depth of market) exists for order market
 	if exists := os.depth[order.Market]; exists == nil {
 		os.depth[order.Market] = NewMarketDepth(order.Market)
@@ -133,14 +133,14 @@ func (os *badgerOrderStore) Post(order types.Order) error {
 
 // Put updates an order in the badger store, adds
 // to queue the operation to be committed later.
-func (os *badgerOrderStore) Put(order types.Order) error {
+func (os *Order) Put(order types.Order) error {
 	os.addToBuffer(order)
 	return nil
 }
 
 // Commit saves any operations that are queued to badger store, and includes all updates.
 // It will also call notify() to push updated data to any subscribers.
-func (os *badgerOrderStore) Commit() error {
+func (os *Order) Commit() error {
 	if len(os.buffer) == 0 {
 		return nil
 	}
@@ -168,13 +168,13 @@ func (os *badgerOrderStore) Commit() error {
 
 // Close our connection to the badger database
 // ensuring errors will be returned up the stack.
-func (os *badgerOrderStore) Close() error {
+func (os *Order) Close() error {
 	return os.badger.db.Close()
 }
 
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *badgerOrderStore) GetByMarket(ctx context.Context, market string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
+func (os *Order) GetByMarket(ctx context.Context, market string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
 	var result []*types.Order
 	if queryFilters == nil {
 		queryFilters = &filtering.OrderQueryFilters{}
@@ -221,7 +221,7 @@ func (os *badgerOrderStore) GetByMarket(ctx context.Context, market string, quer
 }
 
 // GetByMarketAndId retrieves an order for a given Market and id, any errors will be returned immediately.
-func (os *badgerOrderStore) GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error) {
+func (os *Order) GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error) {
 	var order types.Order
 
 	txn := os.badger.readTransaction()
@@ -245,7 +245,7 @@ func (os *badgerOrderStore) GetByMarketAndId(ctx context.Context, market string,
 
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *badgerOrderStore) GetByParty(ctx context.Context, party string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
+func (os *Order) GetByParty(ctx context.Context, party string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
 	var result []*types.Order
 
 	if queryFilters == nil {
@@ -300,7 +300,7 @@ func (os *badgerOrderStore) GetByParty(ctx context.Context, party string, queryF
 }
 
 // GetByPartyAndId retrieves a trade for a given Party and id, any errors will be returned immediately.
-func (os *badgerOrderStore) GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error) {
+func (os *Order) GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error) {
 	var order types.Order
 
 	err := os.badger.db.View(func(txn *badger.Txn) error {
@@ -339,7 +339,7 @@ func (os *badgerOrderStore) GetByPartyAndId(ctx context.Context, party string, i
 }
 
 // GetMarketDepth calculates and returns order book/depth of market for a given market.
-func (os *badgerOrderStore) GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error) {
+func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error) {
 
 	// validate
 	if exists := os.depth[market]; exists == nil {
@@ -395,14 +395,14 @@ func (os *badgerOrderStore) GetMarketDepth(ctx context.Context, market string) (
 }
 
 // add an order to the write-batch/notify buffer.
-func (os *badgerOrderStore) addToBuffer(o types.Order) {
+func (os *Order) addToBuffer(o types.Order) {
 	os.mu.Lock()
 	os.buffer = append(os.buffer, o)
 	os.mu.Unlock()
 }
 
 // notify any subscribers of order updates.
-func (os *badgerOrderStore) notify(items []types.Order) error {
+func (os *Order) notify(items []types.Order) error {
 	if len(items) == 0 {
 		return nil
 	}
@@ -432,7 +432,7 @@ func (os *badgerOrderStore) notify(items []types.Order) error {
 	return nil
 }
 
-func (os *badgerOrderStore) orderBatchToMap(batch []types.Order) (map[string][]byte, error) {
+func (os *Order) orderBatchToMap(batch []types.Order) (map[string][]byte, error) {
 	results := make(map[string][]byte)
 	for _, order := range batch {
 		orderBuf, err := proto.Marshal(&order)
@@ -450,7 +450,7 @@ func (os *badgerOrderStore) orderBatchToMap(batch []types.Order) (map[string][]b
 }
 
 // writeBatch flushes a batch of orders (create/update) to the underlying badger store.
-func (os *badgerOrderStore) writeBatch(batch []types.Order) error {
+func (os *Order) writeBatch(batch []types.Order) error {
 	kv, err := os.orderBatchToMap(batch)
 	if err != nil {
 		os.log.Error("Failed to marshal orders before writing batch",

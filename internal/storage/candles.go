@@ -57,8 +57,8 @@ var supportedIntervals = [6]types.Interval{
 // Monday, January 1, 2018 12:00:01 AM GMT+00:00
 const minSinceTimestamp uint64 = 1514764801000
 
-// badgerCandleStore is a package internal data struct that implements the CandleStore interface.
-type badgerCandleStore struct {
+// Candle is a package internal data struct that implements the CandleStore interface.
+type Candle struct {
 	*Config
 	badger       *badgerStore
 	candleBuffer map[string]map[string]types.Candle
@@ -83,7 +83,7 @@ type marketCandle struct {
 // NewCandleStore is used to initialise and create a CandleStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewCandleStore(c *Config) (CandleStore, error) {
+func NewCandleStore(c *Config) (*Candle, error) {
 	err := InitStoreDirectory(c.CandleStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")
@@ -93,7 +93,7 @@ func NewCandleStore(c *Config) (CandleStore, error) {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}
 	bs := badgerStore{db: db}
-	return &badgerCandleStore{
+	return &Candle{
 		Config:       c,
 		badger:       &bs,
 		subscribers:  make(map[uint64]*InternalTransport),
@@ -104,7 +104,7 @@ func NewCandleStore(c *Config) (CandleStore, error) {
 
 // Subscribe to a channel of new or updated candles. The subscriber id will be returned as a uint64 value
 // and must be retained for future reference and to unsubscribe.
-func (c *badgerCandleStore) Subscribe(iT *InternalTransport) uint64 {
+func (c *Candle) Subscribe(iT *InternalTransport) uint64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -118,7 +118,7 @@ func (c *badgerCandleStore) Subscribe(iT *InternalTransport) uint64 {
 }
 
 // Unsubscribe from a candles channel. Provide the subscriber id you wish to stop receiving new events for.
-func (c *badgerCandleStore) Unsubscribe(id uint64) error {
+func (c *Candle) Unsubscribe(id uint64) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -146,13 +146,13 @@ func (c *badgerCandleStore) Unsubscribe(id uint64) error {
 
 // Close can be called to clean up and close any storage
 // connections held by the underlying storage mechanism.
-func (c *badgerCandleStore) Close() error {
+func (c *Candle) Close() error {
 	return c.badger.db.Close()
 }
 
 // StartNewBuffer creates a new trades buffer for the given market at timestamp.
-func (c *badgerCandleStore) StartNewBuffer(marketId string, timestamp uint64) error {
-	roundedTimestamps := getMapOfIntervalsToRoundedTimestamps(timestamp)
+func (c *Candle) StartNewBuffer(marketId string, timestamp uint64) error {
+	roundedTimestamps := GetMapOfIntervalsToRoundedTimestamps(timestamp)
 	previousCandleBuffer := c.candleBuffer[marketId]
 	c.resetCandleBuffer(marketId)
 
@@ -177,7 +177,7 @@ func (c *badgerCandleStore) StartNewBuffer(marketId string, timestamp uint64) er
 }
 
 // AddTradeToBuffer adds a trade to the trades buffer for the given market.
-func (c *badgerCandleStore) AddTradeToBuffer(trade types.Trade) error {
+func (c *Candle) AddTradeToBuffer(trade types.Trade) error {
 
 	if c.candleBuffer[trade.Market] == nil {
 		c.log.Info("Starting new candle buffer for market",
@@ -209,7 +209,7 @@ func (c *badgerCandleStore) AddTradeToBuffer(trade types.Trade) error {
 }
 
 // GenerateCandlesFromBuffer will generate all candles for a given market.
-func (c *badgerCandleStore) GenerateCandlesFromBuffer(marketId string) error {
+func (c *Candle) GenerateCandlesFromBuffer(marketId string) error {
 
 	fetchCandle := func(txn *badger.Txn, badgerKey []byte) (*types.Candle, error) {
 		item, err := txn.Get(badgerKey)
@@ -313,7 +313,7 @@ func (c *badgerCandleStore) GenerateCandlesFromBuffer(marketId string) error {
 }
 
 // GetCandles returns all candles at interval since timestamp for a market.
-func (c *badgerCandleStore) GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error) {
+func (c *Candle) GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error) {
 	if sinceTimestamp < minSinceTimestamp {
 		return nil, errors.New("invalid sinceTimestamp, ensure format is epoch+nanoseconds timestamp")
 	}
@@ -362,7 +362,7 @@ func (c *badgerCandleStore) GetCandles(ctx context.Context, market string, since
 }
 
 // generateFetchKey calculates the correct badger key for the given market, interval and timestamp.
-func (c *badgerCandleStore) generateFetchKey(market string, interval types.Interval, sinceTimestamp uint64) []byte {
+func (c *Candle) generateFetchKey(market string, interval types.Interval, sinceTimestamp uint64) []byte {
 	// returns valid key for Market, interval and timestamp
 	// round floor by integer division
 	switch interval {
@@ -388,7 +388,7 @@ func (c *badgerCandleStore) generateFetchKey(market string, interval types.Inter
 	return nil
 }
 
-func (c *badgerCandleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []byte) (*types.Candle, error) {
+func (c *Candle) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []byte) (*types.Candle, error) {
 	var previousCandle types.Candle
 
 	// set iterator to reverse in order to fetch most recent
@@ -417,9 +417,9 @@ func (c *badgerCandleStore) fetchMostRecentCandle(txn *badger.Txn, prefixForMost
 	return &previousCandle, nil
 }
 
-// getMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,
+// GetMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,
 //  15 minute, hour, 6hours, 1 day intervals and return a map of rounded timestamps
-func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[types.Interval]uint64 {
+func GetMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[types.Interval]uint64 {
 	timestamps := make(map[types.Interval]uint64)
 
 	// round floor by integer division
@@ -431,13 +431,13 @@ func getMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[types.Interval]u
 }
 
 // queueEvent appends a candle onto a queue for a market.
-func (c *badgerCandleStore) queueEvent(market string, candle types.Candle) {
+func (c *Candle) queueEvent(market string, candle types.Candle) {
 	c.queue = append(c.queue, marketCandle{Market: market, Candle: candle})
 }
 
 // notify sends out any candles in the buffer to subscribers. If there are no
 // subscribers or the queue is empty it will return with no work.
-func (c *badgerCandleStore) notify() error {
+func (c *Candle) notify() error {
 	if len(c.subscribers) == 0 {
 		c.log.Debug("No subscribers connected in candle store")
 		return nil
@@ -498,7 +498,7 @@ func (c *badgerCandleStore) notify() error {
 }
 
 // resetCandleBuffer does what it says on the tin :)
-func (c *badgerCandleStore) resetCandleBuffer(market string) {
+func (c *Candle) resetCandleBuffer(market string) {
 	c.candleBuffer[market] = make(map[string]types.Candle)
 }
 
