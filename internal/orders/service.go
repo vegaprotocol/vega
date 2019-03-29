@@ -40,17 +40,6 @@ type Blockchain interface {
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 }
 
-type Service interface {
-	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
-	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
-	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
-	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
-	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
-	GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error)
-	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
-}
-
 type Svc struct {
 	*Config
 	blockchain  Blockchain

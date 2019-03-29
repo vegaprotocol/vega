@@ -13,17 +13,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Service interface {
-	GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error)
-	GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error)
-	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
-	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
-	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination newmocks/trade_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/trades TradeStore
 type TradeStore interface {
 	GetByMarket(ctx context.Context, market string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
