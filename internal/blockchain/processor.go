@@ -15,7 +15,7 @@ type Processor interface {
 	Validate(payload []byte) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/processor_service_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ProcessorService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/processor_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ProcessorService
 type ProcessorService interface {
 	SubmitOrder(order *types.Order) error
 	CancelOrder(order *types.Order) error

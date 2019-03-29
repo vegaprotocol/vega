@@ -9,7 +9,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/candles"
-	"code.vegaprotocol.io/vega/internal/candles/newmocks"
+	"code.vegaprotocol.io/vega/internal/candles/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 
@@ -22,7 +22,7 @@ type testService struct {
 	ctx   context.Context
 	cfunc context.CancelFunc
 	ctrl  *gomock.Controller
-	store *newmocks.MockCandleStore
+	store *mocks.MockCandleStore
 	log   *logging.Logger
 }
 
@@ -35,7 +35,7 @@ type itMatcher struct {
 func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
-	store := newmocks.NewMockCandleStore(ctrl)
+	store := mocks.NewMockCandleStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	// create service, pass in mocks, ignore error
 	svc, err := candles.NewCandleService(

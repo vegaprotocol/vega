@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/trade_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/trades TradeStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/trades TradeStore
 type TradeStore interface {
 	GetByMarket(ctx context.Context, market string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Trade, error)
@@ -26,7 +26,7 @@ type TradeStore interface {
 	Unsubscribe(id uint64) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/risk_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/trades RiskStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/trades RiskStore
 type RiskStore interface {
 	GetByMarket(market string) (*types.RiskFactor, error)
 }

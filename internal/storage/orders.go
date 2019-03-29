@@ -317,48 +317,65 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	buy := os.depth[market].BuySide()
 	sell := os.depth[market].SellSide()
 
-	var buyPtr []*types.PriceLevel
-	var sellPtr []*types.PriceLevel
+	buyPtr := make([]*types.PriceLevel, 0, len(buy))
+	sellPtr := make([]*types.PriceLevel, 0, len(sell))
 
 	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
 	defer cancel()
+	// 2 routines, each can push one error on here, so buffer to avoid deadlock
+	errCh := make(chan error, 2)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
 
-	// recalculate accumulated volume
+	// recalculate accumulated volume, concurrently rather than sequentially
+	// make the most of the time we have
 	// --- buy side ---
-	for idx := range buy {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-			if idx == 0 {
-				buy[idx].CumulativeVolume = buy[idx].Volume
-
-				buyPtr = append(buyPtr, &buy[idx].PriceLevel)
-				continue
+	go func() {
+		defer wg.Done()
+		var cumulativeVolume uint64
+		for i, b := range buy {
+			select {
+			case <-ctx.Done():
+				errCh <- ctx.Err()
+				return
+			default:
+				// keep running total
+				cumulativeVolume += b.Volume
+				buy[i].CumulativeVolume = cumulativeVolume
+				buyPtr = append(buyPtr, &buy[i].PriceLevel)
 			}
-			buy[idx].CumulativeVolume = buy[idx-1].CumulativeVolume + buy[idx].Volume
-			buyPtr = append(buyPtr, &buy[idx].PriceLevel)
 		}
-	}
+	}()
 	// --- sell side ---
-	for idx := range sell {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-			if idx == 0 {
-				sell[idx].CumulativeVolume = sell[idx].Volume
-				sellPtr = append(sellPtr, &sell[idx].PriceLevel)
-				continue
+	go func() {
+		defer wg.Done()
+		var cumulativeVolume uint64
+		for i, s := range sell {
+			select {
+			case <-ctx.Done():
+				errCh <- ctx.Err()
+				return
+			default:
+				// keep running total
+				cumulativeVolume += s.Volume
+				sell[i].CumulativeVolume = cumulativeVolume
+				sellPtr = append(sellPtr, &sell[i].PriceLevel)
 			}
-			sell[idx].CumulativeVolume = sell[idx-1].CumulativeVolume + sell[idx].Volume
-			sellPtr = append(sellPtr, &sell[idx].PriceLevel)
 		}
+	}()
+	wg.Wait()
+	close(errCh)
+	// the second error is the same, they're both ctx.Err()
+	for err := range errCh {
+		return nil, err
 	}
 
 	// return new re-calculated market depth for each side of order book
-	orderBook := &types.MarketDepth{Name: market, Buy: buyPtr, Sell: sellPtr}
-	return orderBook, nil
+	return &types.MarketDepth{
+		Name: market,
+		Buy:  buyPtr,
+		Sell: sellPtr,
+	}, nil
 }
 
 // add an order to the write-batch/notify buffer.

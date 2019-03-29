@@ -23,12 +23,12 @@ type Service interface {
 	ValidateOrder(order *types.Order) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/service_time_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ServiceTime
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/service_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceTime
 type ServiceTime interface {
 	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/service_execution_engine_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ServiceExecutionEngine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/service_execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceExecutionEngine
 type ServiceExecutionEngine interface {
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)

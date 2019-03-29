@@ -7,7 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/markets/newmocks"
+	"code.vegaprotocol.io/vega/internal/markets/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -21,14 +21,14 @@ type testService struct {
 	cfunc  context.CancelFunc
 	log    *logging.Logger
 	ctrl   *gomock.Controller
-	order  *newmocks.MockOrderStore
-	market *newmocks.MockMarketStore
+	order  *mocks.MockOrderStore
+	market *mocks.MockMarketStore
 }
 
 func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
-	order := newmocks.NewMockOrderStore(ctrl)
-	market := newmocks.NewMockMarketStore(ctrl)
+	order := mocks.NewMockOrderStore(ctrl)
+	market := mocks.NewMockMarketStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := markets.NewMarketService(

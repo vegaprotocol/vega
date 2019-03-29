@@ -88,17 +88,23 @@ func (md *Depth) updateBuySide(order types.Order) {
 	}
 
 	depthLevel := MarketDepthLevel{
-		PriceLevel: types.PriceLevel{Price: order.Price, Volume: order.Remaining, NumberOfOrders: 1},
-		orders:     map[string]uint64{order.Id: order.Remaining},
+		PriceLevel: types.PriceLevel{
+			Price:          order.Price,
+			Volume:         order.Remaining,
+			NumberOfOrders: 1,
+		},
+		orders: map[string]uint64{
+			order.Id: order.Remaining,
+		},
 	}
 
 	if at == -1 {
 		// create a new MarketDepthLevel, non exist
 		md.Buy = append(md.Buy, depthLevel)
-	} else {
-		// create new MarketDepthLevel for price at at appropriate position in slice
-		md.Buy = append(md.Buy[:at], append([]MarketDepthLevel{depthLevel}, md.Buy[at:]...)...)
+		return
 	}
+	// create new MarketDepthLevel for price at at appropriate position in slice
+	md.Buy = append(md.Buy[:at], append([]MarketDepthLevel{depthLevel}, md.Buy[at:]...)...)
 }
 
 // Called by Update to do the iteration over price levels and update the sell side of the market depth with

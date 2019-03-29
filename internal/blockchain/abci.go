@@ -18,19 +18,19 @@ const (
 	statsSampleSize = 5000
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/application_service_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ApplicationService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationService
 type ApplicationService interface {
 	Begin() error
 	Commit() error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/application_processor_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ApplicationProcessor
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_processor_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationProcessor
 type ApplicationProcessor interface {
 	Process(payload []byte) error
 	Validate(payload []byte) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/application_time_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain ApplicationTime
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationTime
 type ApplicationTime interface {
 	SetTimeNow(epochTimeNano vegatime.Stamp)
 }

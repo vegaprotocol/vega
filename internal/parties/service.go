@@ -6,7 +6,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/part_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/parties PartyStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/part_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/parties PartyStore
 type PartyStore interface {
 	Post(party *types.Party) error
 	GetByName(name string) (*types.Party, error)

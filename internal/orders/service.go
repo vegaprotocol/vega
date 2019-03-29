@@ -18,12 +18,12 @@ var (
 	ErrInvalidExpirationDT    = errors.New("invalid expiration datetime")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/time_service_mock.go -package newmocks code.vegaprotocol.io/vega/internal/orders TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders TimeService
 type TimeService interface {
 	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/order_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/orders  OrderStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  OrderStore
 type OrderStore interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error)
 	GetByPartyAndId(ctx context.Context, party, id string) (*types.Order, error)
@@ -33,7 +33,7 @@ type OrderStore interface {
 	Unsubscribe(id uint64) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/blockchain_mock.go -package newmocks code.vegaprotocol.io/vega/internal/orders  Blockchain
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  Blockchain
 type Blockchain interface {
 	CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error)
 	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)

@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
-	"code.vegaprotocol.io/vega/internal/trades/newmocks"
+	"code.vegaprotocol.io/vega/internal/trades/mocks"
 
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -23,15 +23,15 @@ type testService struct {
 	cfunc context.CancelFunc
 	log   *logging.Logger
 	ctrl  *gomock.Controller
-	trade *newmocks.MockTradeStore
-	risk  *newmocks.MockRiskStore
+	trade *mocks.MockTradeStore
+	risk  *mocks.MockRiskStore
 }
 
 func getTestService(t *testing.T) *testService {
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
-	trade := newmocks.NewMockTradeStore(ctrl)
-	risk := newmocks.NewMockRiskStore(ctrl)
+	trade := mocks.NewMockTradeStore(ctrl)
+	risk := mocks.NewMockRiskStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	svc, err := trades.NewTradeService(
 		trades.NewDefaultConfig(log),

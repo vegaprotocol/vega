@@ -3,7 +3,7 @@ package blockchain
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/internal/blockchain/newmocks"
+	"code.vegaprotocol.io/vega/internal/blockchain/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/golang/mock/gomock"
@@ -15,16 +15,16 @@ type testApp struct {
 	errCh chan struct{}
 	ctrl  *gomock.Controller
 	log   *logging.Logger
-	proc  *newmocks.MockApplicationProcessor
-	time  *newmocks.MockApplicationTime
-	svc   *newmocks.MockApplicationService
+	proc  *mocks.MockApplicationProcessor
+	time  *mocks.MockApplicationTime
+	svc   *mocks.MockApplicationService
 }
 
 func getTestApp(t *testing.T) *testApp {
 	ctrl := gomock.NewController(t)
-	proc := newmocks.NewMockApplicationProcessor(ctrl)
-	svc := newmocks.NewMockApplicationService(ctrl)
-	time := newmocks.NewMockApplicationTime(ctrl)
+	proc := mocks.NewMockApplicationProcessor(ctrl)
+	svc := mocks.NewMockApplicationService(ctrl)
+	time := mocks.NewMockApplicationTime(ctrl)
 	log := logging.NewLoggerFromEnv("env")
 	ch := make(chan struct{}, 1)
 	errCb := func() {

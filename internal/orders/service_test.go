@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/orders/newmocks"
+	"code.vegaprotocol.io/vega/internal/orders/mocks"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -31,9 +31,9 @@ var (
 
 type testService struct {
 	ctrl       *gomock.Controller
-	orderStore *newmocks.MockOrderStore
-	timeSvc    *newmocks.MockTimeService
-	block      *newmocks.MockBlockchain
+	orderStore *mocks.MockOrderStore
+	timeSvc    *mocks.MockTimeService
+	block      *mocks.MockBlockchain
 	conf       *Config
 	svc        *Svc
 }
@@ -130,9 +130,9 @@ func testOrderBlockchainError(t *testing.T) {
 func getTestService(t *testing.T) *testService {
 	log := logging.NewLoggerFromEnv("dev")
 	ctrl := gomock.NewController(t)
-	orderStore := newmocks.NewMockOrderStore(ctrl)
-	timeSvc := newmocks.NewMockTimeService(ctrl)
-	block := newmocks.NewMockBlockchain(ctrl)
+	orderStore := mocks.NewMockOrderStore(ctrl)
+	timeSvc := mocks.NewMockTimeService(ctrl)
+	block := mocks.NewMockBlockchain(ctrl)
 	conf := NewDefaultConfig(log)
 	svc, err := NewOrderService(conf, orderStore, timeSvc, block)
 	if err != nil {

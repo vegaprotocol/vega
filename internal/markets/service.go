@@ -7,14 +7,14 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/market_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/markets MarketStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets MarketStore
 type MarketStore interface {
 	Post(party *types.Market) error
 	GetByID(name string) (*types.Market, error)
 	GetAll() ([]*types.Market, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/order_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/markets OrderStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets OrderStore
 type OrderStore interface {
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error

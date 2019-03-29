@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/parties"
-	"code.vegaprotocol.io/vega/internal/parties/newmocks"
+	"code.vegaprotocol.io/vega/internal/parties/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -19,12 +19,12 @@ type testService struct {
 	ctx   context.Context
 	cfunc context.CancelFunc
 	ctrl  *gomock.Controller
-	store *newmocks.MockPartyStore
+	store *mocks.MockPartyStore
 }
 
 func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
-	store := newmocks.NewMockPartyStore(ctrl)
+	store := mocks.NewMockPartyStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := parties.NewPartyService(
