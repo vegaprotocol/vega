@@ -18,23 +18,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/vegatime"
 )
 
-type Engine interface {
-	// SubmitOrder takes a new order request and submits it to the execution engine, storing output etc.
-	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
-	// CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
-	// AmendOrder take order amendment details and attempts to amend the order
-	// if it exists and is in a state to be edited.
-	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
-
-	// Generate creates any data (including storing state changes) in the underlying stores.
-	Generate() error
-
-	// Process any data updates (including state changes)
-	// e.g. removing expired orders from matching engine.
-	Process() error
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/matching_engine_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution MatchingEngine
 type MatchingEngine interface {
 	AddOrderBook(marketId string) error

@@ -10,11 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Service interface {
-	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
-	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error)
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination newmocks/candle_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/candles CandleStore
 type CandleStore interface {
 	Subscribe(iT *storage.InternalTransport) uint64
