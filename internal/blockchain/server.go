@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -14,15 +13,13 @@ import (
 type Server struct {
 	*Config
 	abci *AbciApplication
-	time vegatime.Service
 	srv  cmn.Service
 }
 
-func NewServer(config *Config, stats *Stats, time vegatime.Service, app *AbciApplication) *Server {
+func NewServer(config *Config, stats *Stats, app *AbciApplication) *Server {
 	return &Server{
 		Config: config,
 		abci:   app,
-		time:   time,
 		srv:    nil,
 	}
 }
