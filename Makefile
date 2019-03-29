@@ -30,13 +30,13 @@ all: build
 
 lint: ## Lint the files
 	@go install golang.org/x/lint/golint
-	@golint -set_exit_status ./...
+	@go list ./... | xargs -r golint -set_exit_status | sed -e "s#^$GOPATH/src/##"
 
 bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
 
 test: deps ## Run unit tests
-	@go test ./...
+	@go test -v ./...
 
 race: ## Run data race detector
 	@env CGO_ENABLED=1 go test -race ./...
@@ -46,7 +46,7 @@ mocks: ## Make mocks
 
 msan: ## Run memory sanitizer
 	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi
-	@env CC=clang CGO_ENABLED=1 go test -msan ./...
+	@env CC=clang CGO_ENABLED=1 go test -v -msan ./...
 
 .PHONY: .testCoverage.txt
 .testCoverage.txt:

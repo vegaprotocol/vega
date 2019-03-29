@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/matching"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/risk"
@@ -30,9 +29,8 @@ type Config struct {
 	Execution *execution.Config
 	//Fees *fees.config
 	//Governanace *governance.config
-	Logging  *logging.Config
-	Markets  *markets.Config
-	Matching *matching.Config
+	Logging *logging.Config
+	Markets *markets.Config
 	//Monitoring monitoring.Config
 	Orders  *orders.Config
 	Parties *parties.Config
@@ -59,8 +57,7 @@ func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Conf
 
 	c.Trades = trades.NewDefaultConfig(c.log)
 	c.Blockchain = blockchain.NewDefaultConfig(c.log)
-	c.Execution = execution.NewDefaultConfig(c.log)
-	c.Matching = matching.NewDefaultConfig(c.log)
+	c.Execution = execution.NewDefaultConfig(c.log, defaultStoreDirPath)
 	c.API = api.NewDefaultConfig(c.log)
 	c.Orders = orders.NewDefaultConfig(c.log)
 	c.Time = vegatime.NewDefaultConfig(c.log)
@@ -95,7 +92,6 @@ func NewConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 	//viper.SetDefault("Governance", c.Governance)
 	viper.SetDefault("Logging", c.Logging)
 	viper.SetDefault("Markets", c.Markets)
-	viper.SetDefault("Matching", c.Matching)
 	//viper.SetDefault("Monitoring", c.Monitoring)
 	viper.SetDefault("Orders", c.Orders)
 	viper.SetDefault("Parties", c.Parties)
@@ -155,7 +151,6 @@ func (c *Config) updateLoggers() {
 	c.Trades.UpdateLogger()
 	c.Blockchain.UpdateLogger()
 	c.Execution.UpdateLogger()
-	c.Matching.UpdateLogger()
 	c.API.UpdateLogger()
 	c.Orders.UpdateLogger()
 	c.Time.UpdateLogger()

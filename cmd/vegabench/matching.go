@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/matching"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/execution/mocks"
@@ -29,7 +28,7 @@ type execEngine struct {
 	party  *mocks.MockPartyStore
 }
 
-func getExecEngine(b *testing.B, log *logging.Logger, me matching.Engine) *execEngine {
+func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	ctrl := gomock.NewController(b)
 	time := mocks.NewMockTimeService(ctrl)
 	order := mocks.NewMockOrderStore(ctrl)
@@ -40,7 +39,6 @@ func getExecEngine(b *testing.B, log *logging.Logger, me matching.Engine) *execE
 	conf := execution.NewDefaultConfig(log)
 	engine := execution.NewExecutionEngine(
 		conf,
-		me,
 		time,
 		order,
 		trade,
@@ -89,11 +87,11 @@ func BenchmarkMatching(
 		logger.SetLevel(logging.InfoLevel)
 
 		// Matching engine (trade matching)
-		matchingConfig := matching.NewDefaultConfig(logger)
-		matchingEngine := matching.NewMatchingEngine(matchingConfig)
+		// matchingConfig := matching.NewDefaultConfig(logger)
+		// matchingEngine := matching.NewMatchingEngine(matchingConfig)
 
 		// Execution engine (broker operation of markets at runtime etc)
-		executionEngine := getExecEngine(b, logger, matchingEngine)
+		executionEngine := getExecEngine(b, logger)
 		executionEngine.candle.EXPECT().AddTradeToBuffer(gomock.Any()).Return(nil)
 		executionEngine.order.EXPECT().Post(gomock.Any()).Return(nil)
 		executionEngine.order.EXPECT().Put(gomock.Any()).Return(nil)

@@ -11,8 +11,8 @@ import (
 type Service interface {
 	// CreateMarket stores the given market.
 	CreateMarket(ctx context.Context, market *types.Market) error
-	// GetByName searches for the given market by name.
-	GetByName(ctx context.Context, name string) (*types.Market, error)
+	// GetByID searches for the given market by name.
+	GetByID(ctx context.Context, id string) (*types.Market, error)
 	// GetAll returns all markets.
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	// GetDepth returns the market depth for the given market.
@@ -26,7 +26,7 @@ type Service interface {
 //go:generate go run github.com/golang/mock/mockgen -destination newmocks/market_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/markets MarketStore
 type MarketStore interface {
 	Post(party *types.Market) error
-	GetByName(name string) (*types.Market, error)
+	GetByID(name string) (*types.Market, error)
 	GetAll() ([]*types.Market, error)
 }
 
@@ -57,9 +57,9 @@ func (s *marketService) CreateMarket(ctx context.Context, party *types.Market) e
 	return s.marketStore.Post(party)
 }
 
-// GetByName searches for the given market by name.
-func (s *marketService) GetByName(ctx context.Context, name string) (*types.Market, error) {
-	p, err := s.marketStore.GetByName(name)
+// GetByID searches for the given market by name.
+func (s *marketService) GetByID(ctx context.Context, id string) (*types.Market, error) {
+	p, err := s.marketStore.GetByID(id)
 	return p, err
 }
 
@@ -70,12 +70,13 @@ func (s *marketService) GetAll(ctx context.Context) ([]*types.Market, error) {
 }
 
 // GetDepth returns the market depth for the given market.
-func (s *marketService) GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error) {
-	m, err := s.marketStore.GetByName(market)
+func (s *marketService) GetDepth(ctx context.Context, marketID string) (marketDepth *types.MarketDepth, err error) {
+	m, err := s.marketStore.GetByID(marketID)
 	if err != nil {
 		return nil, err
 	}
-	return s.orderStore.GetMarketDepth(ctx, m.Name)
+
+	return s.orderStore.GetMarketDepth(ctx, m.Id)
 }
 
 // ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.

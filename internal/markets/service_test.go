@@ -50,7 +50,7 @@ func getTestService(t *testing.T) *testService {
 func TestMarketService_CreateMarket(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.Finish()
-	market := &types.Market{Name: "BTC/DEC19"}
+	market := &types.Market{Id: "BTC/DEC19"}
 	svc.market.EXPECT().Post(market).Times(1).Return(nil)
 
 	assert.NoError(t, svc.CreateMarket(svc.ctx, market))
@@ -60,9 +60,9 @@ func TestMarketService_GetAll(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.Finish()
 	markets := []*types.Market{
-		{Name: "BTC/DEC19"},
-		{Name: "ETH/JUN19"},
-		{Name: "LTC/JAN20"},
+		{Id: "BTC/DEC19"},
+		{Id: "ETH/JUN19"},
+		{Id: "LTC/JAN20"},
 	}
 	svc.market.EXPECT().GetAll().Times(1).Return(markets, nil)
 
@@ -71,16 +71,16 @@ func TestMarketService_GetAll(t *testing.T) {
 	assert.Equal(t, markets, get)
 }
 
-func TestMarketService_GetByName(t *testing.T) {
+func TestMarketService_GetByID(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.Finish()
 	markets := map[string]*types.Market{
-		"BTC/DEC19": &types.Market{Name: "BTC/DEC19"},
-		"ETH/JUN19": &types.Market{Name: "ETH/JUN19"},
+		"BTC/DEC19": &types.Market{Id: "BTC/DEC19"},
+		"ETH/JUN19": &types.Market{Id: "ETH/JUN19"},
 		"LTC/JAN20": nil,
 	}
 	notFoundErr := errors.New("market not found")
-	svc.market.EXPECT().GetByName(gomock.Any()).Times(len(markets)).DoAndReturn(func(k string) (*types.Market, error) {
+	svc.market.EXPECT().GetByID(gomock.Any()).Times(len(markets)).DoAndReturn(func(k string) (*types.Market, error) {
 		m, ok := markets[k]
 		assert.True(t, ok)
 		if m == nil {
@@ -89,7 +89,7 @@ func TestMarketService_GetByName(t *testing.T) {
 		return m, nil
 	})
 	for k, exp := range markets {
-		market, err := svc.GetByName(svc.ctx, k)
+		market, err := svc.GetByID(svc.ctx, k)
 		if exp != nil {
 			assert.Equal(t, exp, market)
 			assert.NoError(t, err)
@@ -103,15 +103,15 @@ func TestMarketService_GetByName(t *testing.T) {
 func TestMarketService_GetDepth(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.Finish()
-	market := &types.Market{Name: "BTC/DEC19"}
+	market := &types.Market{Id: "BTC/DEC19"}
 	depth := &types.MarketDepth{
-		Name: market.Name,
+		Name: market.Id,
 	}
 
-	svc.market.EXPECT().GetByName(market.Name).Times(1).Return(market, nil)
-	svc.order.EXPECT().GetMarketDepth(svc.ctx, market.Name).Times(1).Return(depth, nil)
+	svc.market.EXPECT().GetByID(market.Id).Times(1).Return(market, nil)
+	svc.order.EXPECT().GetMarketDepth(svc.ctx, market.Id).Times(1).Return(depth, nil)
 
-	got, err := svc.GetDepth(svc.ctx, market.Name)
+	got, err := svc.GetDepth(svc.ctx, market.Id)
 	assert.NoError(t, err)
 	assert.Equal(t, depth, got)
 }
@@ -119,12 +119,12 @@ func TestMarketService_GetDepth(t *testing.T) {
 func TestMarketService_GetDepthNonExistentMarket(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.Finish()
-	market := &types.Market{Name: "BTC/DEC18"}
+	market := &types.Market{Id: "BTC/DEC18"}
 	notFoundErr := errors.New("market does not exist")
 
-	svc.market.EXPECT().GetByName(market.Name).Times(1).Return(nil, notFoundErr)
+	svc.market.EXPECT().GetByID(market.Id).Times(1).Return(nil, notFoundErr)
 
-	depth, err := svc.GetDepth(svc.ctx, market.Name)
+	depth, err := svc.GetDepth(svc.ctx, market.Id)
 	assert.Equal(t, notFoundErr, err)
 	assert.Nil(t, depth)
 }

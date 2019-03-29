@@ -34,11 +34,12 @@ type itMatcher struct {
 // storageConfig specifies that the badger files are kept in a different
 // directory when the candle service tests run. This is useful as when
 // all the unit tests are run for the project they can be run in parallel.
-func storageConfig() *storage.Config {
-	storeConfig := storage.NewTestConfig()
-	storeConfig.CandleStoreDirPath = "../storage/tmp/candlestore-2m9d0"
-	storeConfig.OrderStoreDirPath = "../storage/tmp/orderstore-2m9d0"
-	storeConfig.TradeStoreDirPath = "../storage/tmp/tradestore-2m9d0"
+func storageConfig(t *testing.T) *storage.Config {
+	storeConfig, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+	storeConfig.LogPositionStoreDebug = false
 	return storeConfig
 }
 

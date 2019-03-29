@@ -76,7 +76,7 @@ func (cs *ChainStatus) setStatus(status types.ChainStatus) {
 func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 	newStatus := status
 	_, err := cs.client.Health()
-	if status == types.ChainStatus_DISCONNECTED && err == nil {
+	if (status == types.ChainStatus_DISCONNECTED || status == types.ChainStatus_REPLAYING) && err == nil {
 		// node is connected, now let's check if we are replaying
 		res, err2 := cs.client.GetStatus(context.Background())
 		if err2 != nil {
@@ -102,7 +102,7 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 		logging.String("status-old", status.String()),
 		logging.String("status-new", newStatus.String()))
 
-	// if status changed top disconnect, we try to call the onChainDisconnect
+	// if status changed to disconnect, we try to call the onChainDisconnect
 	// callback
 	if newStatus == types.ChainStatus_DISCONNECTED && cs.onChainDisconnect != nil {
 		cs.log.Info("Chain just went disconnected, triggering shutdown of the node")

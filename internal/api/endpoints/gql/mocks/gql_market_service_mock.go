@@ -34,17 +34,30 @@ func (m *MockMarketService) EXPECT() *MockMarketServiceMockRecorder {
 	return m.recorder
 }
 
-// GetByName mocks base method
-func (m *MockMarketService) GetByName(arg0 context.Context, arg1 string) (*proto.Market, error) {
-	ret := m.ctrl.Call(m, "GetByName", arg0, arg1)
+// GetAll mocks base method
+func (m *MockMarketService) GetAll(arg0 context.Context) ([]*proto.Market, error) {
+	ret := m.ctrl.Call(m, "GetAll", arg0)
+	ret0, _ := ret[0].([]*proto.Market)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAll indicates an expected call of GetAll
+func (mr *MockMarketServiceMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMarketService)(nil).GetAll), arg0)
+}
+
+// GetByID mocks base method
+func (m *MockMarketService) GetByID(arg0 context.Context, arg1 string) (*proto.Market, error) {
+	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
 	ret0, _ := ret[0].(*proto.Market)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByName indicates an expected call of GetByName
-func (mr *MockMarketServiceMockRecorder) GetByName(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByName", reflect.TypeOf((*MockMarketService)(nil).GetByName), arg0, arg1)
+// GetByID indicates an expected call of GetByID
+func (mr *MockMarketServiceMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMarketService)(nil).GetByID), arg0, arg1)
 }
 
 // GetDepth mocks base method

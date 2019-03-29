@@ -11,7 +11,11 @@ import (
 )
 
 func TestStorage_NewTradeStore(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 
 	tradeStore, err := NewTradeStore(config, func() {})
@@ -29,7 +33,11 @@ func TestStorage_NewTradeStore(t *testing.T) {
 }
 
 func TestStorage_GetTradesByOrderId(t *testing.T) {
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 
 	orderStore, err := NewOrderStore(config, func() {})
@@ -57,7 +65,11 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 
 func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 	ctx := context.Background()
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 
 	orderStore, err := NewOrderStore(config, func() {})
@@ -102,7 +114,11 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	ctx := context.Background()
-	config := NewTestConfig()
+	config, err := NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
 	FlushStores(config)
 
 	orderStore, err := NewOrderStore(config, func() {})

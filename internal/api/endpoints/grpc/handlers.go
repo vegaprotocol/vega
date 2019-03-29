@@ -127,7 +127,7 @@ func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (*a
 	if len(m) > 0 {
 		var res []string
 		for _, mv := range m {
-			res = append(res, mv.Name)
+			res = append(res, mv.Id)
 		}
 		response.Markets = res
 	}

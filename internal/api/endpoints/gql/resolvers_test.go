@@ -137,7 +137,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	}
 	marketId := "BTC/DEC19"
 	market := &Market{
-		Name: marketId,
+		ID: marketId,
 	}
 
 	root.market.EXPECT().GetByName(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {

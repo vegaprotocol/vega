@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"sync"
@@ -53,6 +54,10 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	BuiltinFutures struct {
+		HistoricVolatility func(childComplexity int) int
+	}
+
 	Candle struct {
 		Timestamp func(childComplexity int) int
 		Datetime  func(childComplexity int) int
@@ -64,12 +69,46 @@ type ComplexityRoot struct {
 		Interval  func(childComplexity int) int
 	}
 
+	ContinuousTrading struct {
+		TickSize func(childComplexity int) int
+	}
+
+	DiscreteTrading struct {
+		Duration func(childComplexity int) int
+	}
+
+	EthereumEvent struct {
+		ContractID func(childComplexity int) int
+		Event      func(childComplexity int) int
+	}
+
+	Future struct {
+		Maturity func(childComplexity int) int
+		Asset    func(childComplexity int) int
+		Oracle   func(childComplexity int) int
+	}
+
+	Instrument struct {
+		ID       func(childComplexity int) int
+		Code     func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Metadata func(childComplexity int) int
+		Product  func(childComplexity int) int
+	}
+
+	InstrumentMetadata struct {
+		Tags func(childComplexity int) int
+	}
+
 	Market struct {
-		Name    func(childComplexity int) int
-		Orders  func(childComplexity int, where *OrderFilter, skip *int, first *int, last *int) int
-		Trades  func(childComplexity int, where *TradeFilter, skip *int, first *int, last *int) int
-		Depth   func(childComplexity int) int
-		Candles func(childComplexity int, sinceTimestamp string, interval Interval) int
+		ID                 func(childComplexity int) int
+		TradableInstrument func(childComplexity int) int
+		TradingMode        func(childComplexity int) int
+		DecimalPlaces      func(childComplexity int) int
+		Orders             func(childComplexity int, where *OrderFilter, skip *int, first *int, last *int) int
+		Trades             func(childComplexity int, where *TradeFilter, skip *int, first *int, last *int) int
+		Depth              func(childComplexity int) int
+		Candles            func(childComplexity int, sinceTimestamp string, interval Interval) int
 	}
 
 	MarketDepth struct {
@@ -141,6 +180,11 @@ type ComplexityRoot struct {
 		Trades      func(childComplexity int, market *string, party *string) int
 		Positions   func(childComplexity int, party string) int
 		MarketDepth func(childComplexity int, market string) int
+	}
+
+	TradableInstrument struct {
+		Instrument func(childComplexity int) int
+		RiskModel  func(childComplexity int) int
 	}
 
 	Trade struct {
@@ -263,6 +307,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "BuiltinFutures.HistoricVolatility":
+		if e.complexity.BuiltinFutures.HistoricVolatility == nil {
+			break
+		}
+
+		return e.complexity.BuiltinFutures.HistoricVolatility(childComplexity), true
+
 	case "Candle.Timestamp":
 		if e.complexity.Candle.Timestamp == nil {
 			break
@@ -319,12 +370,124 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Candle.Interval(childComplexity), true
 
-	case "Market.Name":
-		if e.complexity.Market.Name == nil {
+	case "ContinuousTrading.TickSize":
+		if e.complexity.ContinuousTrading.TickSize == nil {
 			break
 		}
 
-		return e.complexity.Market.Name(childComplexity), true
+		return e.complexity.ContinuousTrading.TickSize(childComplexity), true
+
+	case "DiscreteTrading.Duration":
+		if e.complexity.DiscreteTrading.Duration == nil {
+			break
+		}
+
+		return e.complexity.DiscreteTrading.Duration(childComplexity), true
+
+	case "EthereumEvent.ContractID":
+		if e.complexity.EthereumEvent.ContractID == nil {
+			break
+		}
+
+		return e.complexity.EthereumEvent.ContractID(childComplexity), true
+
+	case "EthereumEvent.Event":
+		if e.complexity.EthereumEvent.Event == nil {
+			break
+		}
+
+		return e.complexity.EthereumEvent.Event(childComplexity), true
+
+	case "Future.Maturity":
+		if e.complexity.Future.Maturity == nil {
+			break
+		}
+
+		return e.complexity.Future.Maturity(childComplexity), true
+
+	case "Future.Asset":
+		if e.complexity.Future.Asset == nil {
+			break
+		}
+
+		return e.complexity.Future.Asset(childComplexity), true
+
+	case "Future.Oracle":
+		if e.complexity.Future.Oracle == nil {
+			break
+		}
+
+		return e.complexity.Future.Oracle(childComplexity), true
+
+	case "Instrument.ID":
+		if e.complexity.Instrument.ID == nil {
+			break
+		}
+
+		return e.complexity.Instrument.ID(childComplexity), true
+
+	case "Instrument.Code":
+		if e.complexity.Instrument.Code == nil {
+			break
+		}
+
+		return e.complexity.Instrument.Code(childComplexity), true
+
+	case "Instrument.Name":
+		if e.complexity.Instrument.Name == nil {
+			break
+		}
+
+		return e.complexity.Instrument.Name(childComplexity), true
+
+	case "Instrument.Metadata":
+		if e.complexity.Instrument.Metadata == nil {
+			break
+		}
+
+		return e.complexity.Instrument.Metadata(childComplexity), true
+
+	case "Instrument.Product":
+		if e.complexity.Instrument.Product == nil {
+			break
+		}
+
+		return e.complexity.Instrument.Product(childComplexity), true
+
+	case "InstrumentMetadata.Tags":
+		if e.complexity.InstrumentMetadata.Tags == nil {
+			break
+		}
+
+		return e.complexity.InstrumentMetadata.Tags(childComplexity), true
+
+	case "Market.ID":
+		if e.complexity.Market.ID == nil {
+			break
+		}
+
+		return e.complexity.Market.ID(childComplexity), true
+
+	case "Market.TradableInstrument":
+		if e.complexity.Market.TradableInstrument == nil {
+			break
+		}
+
+		return e.complexity.Market.TradableInstrument(childComplexity), true
+
+	case "Market.TradingMode":
+		if e.complexity.Market.TradingMode == nil {
+			break
+		}
+
+		return e.complexity.Market.TradingMode(childComplexity), true
+
+	case "Market.DecimalPlaces":
+		if e.complexity.Market.DecimalPlaces == nil {
+			break
+		}
+
+		return e.complexity.Market.DecimalPlaces(childComplexity), true
 
 	case "Market.Orders":
 		if e.complexity.Market.Orders == nil {
@@ -722,6 +885,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.MarketDepth(childComplexity, args["market"].(string)), true
 
+	case "TradableInstrument.Instrument":
+		if e.complexity.TradableInstrument.Instrument == nil {
+			break
+		}
+
+		return e.complexity.TradableInstrument.Instrument(childComplexity), true
+
+	case "TradableInstrument.RiskModel":
+		if e.complexity.TradableInstrument.RiskModel == nil {
+			break
+		}
+
+		return e.complexity.TradableInstrument.RiskModel(childComplexity), true
+
 	case "Trade.Id":
 		if e.complexity.Trade.Id == nil {
 			break
@@ -952,7 +1129,7 @@ schema {
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
-    
+
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
     orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensus!
@@ -966,7 +1143,7 @@ type Mutation {
 type Query {
     # Int64 not yet supported, strings are returned and will need to be handled by clients:
     # https://github.com/graphql-go/graphql/issues/257
-    
+
     # VEGA root query
     vega: Vega!
 }
@@ -992,7 +1169,7 @@ type PreConsensus {
 
 # VEGA the world's premier distributed derivatives trading platform
 type Vega {
-    
+
     # One or more instruments that are trading on the VEGA network
     markets(name: String): [Market!]
 
@@ -1006,35 +1183,129 @@ type Vega {
     party(name: String!): Party
 }
 
+# A mode where Vega try to execute order as soon as they are received
+type ContinuousTrading {
+  # Size of an increment in price in terms of the quote currency (uint64)
+  tickSize: Int
+}
+
+# Some non continuous trading mode
+type DiscreteTrading {
+  # Duration of the trading (uint64)
+  duration: Int
+}
+
+union TradingMode =
+ContinuousTrading
+| DiscreteTrading
+
+type BuiltinFutures {
+  # The historic volatily of the future (float64)
+  historicVolatility: Float!
+}
+
+union RiskModel = BuiltinFutures
+
+# A set of metadat to associate to an instruments
+type InstrumentMetadata {
+
+  # An arbitrary list of tags to associated to associate to the Instrument (string list)
+  tags: [String]!
+}
+
+# An Ethereum oracle
+type EthereumEvent {
+
+  # The ID of the ethereum contract to use (string)
+  contractId: String!
+
+  # Name of the Ethereum event to listen to. (string)
+  event: String!
+}
+
+union Oracle = EthereumEvent
+
+# A Future product
+type Future {
+
+  # The maturity date of the product (string)
+  maturity: String!
+
+  # The name of the asset (string)
+  asset: String!
+
+  # The oracle used for this product (Oracle union)
+  oracle: Oracle!
+}
+
+union Product = Future
+
+# Describe something that can be traded on Vega
+type Instrument {
+
+  # Uniquely identify an instrument accrods all instruments available on Vega (string)
+  id: String!
+
+  # A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)
+  code: String!
+
+  # Full and fairly descriptive name for the instrument
+  name: String!
+
+  # Metadata for this instrument
+  metadata: InstrumentMetadata!
+
+  # A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
+  product: Product!
+}
+
+# A tradable instrument is a combination of an instrument and a risk model
+type TradableInstrument {
+  # An instance of or reference to a fully specified instrument.
+  instrument: Instrument!
+
+  # A reference to a risk model that is valid for the instrument
+  riskModel: RiskModel!
+}
+
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market {
-    
-    # Market full name
-    name: String!
 
-    # Orders on a market
-    orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
+  # Market full name
+  id: String!
 
-    # Trades on a market
-    trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
+  # An instance of or reference to a tradable instrument.
+  tradableInstrument: TradableInstrument!
 
-    # Current depth on the orderbook for this market
-    depth: MarketDepth!
+  # Definitions and required configuration for the trading mode
+  tradingMode: TradingMode!
 
-    # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
-    candles (sinceTimestamp: String!, interval: Interval!): [Candle]
+  #  number of decimals places for price quotes, e.g. if quote currency is USD and decimal places is 2 then prices are quoted in integer numbers of cents. (uint64)
+  decimalPlaces: Int!
+
+  # Orders on a market
+  orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
+
+  # Trades on a market
+  trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
+
+  # Current depth on the orderbook for this market
+  depth: MarketDepth!
+
+  # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
+  candles (sinceTimestamp: String!, interval: Interval!): [Candle]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
 # The depth of market measure provides an indication of the liquidity and depth for the instrument.
 type MarketDepth {
 
-    # Market name
+    # Market id
     name: String!
 
     # Buy side price levels (if available)
     buy: [PriceLevel!]
-    
+
     # Sell side price levels (if available)
     sell: [PriceLevel!]
 
@@ -1060,7 +1331,7 @@ type PriceLevel {
 
 # Candle stick representation of trading
 type Candle {
-    
+
     # Unix epoch+nanoseconds for when the candle ocurred
     timestamp: String!
 
@@ -1272,7 +1543,7 @@ input TradeFilter {
     # Market filters
     market: String # matches all trades with exact market value
     market_neq: String # matches all trades with different market to value
-    
+
     # Buyer filters
     buyer: String # matches all trades with exact buyer value
     buyer_neq: String # matches all trades with different buyer to value
@@ -1350,7 +1621,7 @@ input OrderFilter {
     # Type filters
     type: OrderType # matches all orders with exact type value
     type_neq: OrderType # matches all orders with different type to value
-    
+
     # Timestamp filters
     timestamp: String # matches all orders with exact timestamp value
     timestamp_neq: String # matches all orders with different timestamp to value
@@ -1370,7 +1641,8 @@ enum Interval {
     I1H # 1 hour interval
     I6H # 6 hour interval
     I1D # 1 day interval
-}`},
+}
+`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -1839,6 +2111,32 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _BuiltinFutures_historicVolatility(ctx context.Context, field graphql.CollectedField, obj *BuiltinFutures) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "BuiltinFutures",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HistoricVolatility, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Candle) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -2047,11 +2345,239 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInterval(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Market_name(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+func (ec *executionContext) _ContinuousTrading_tickSize(ctx context.Context, field graphql.CollectedField, obj *ContinuousTrading) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Market",
+		Object: "ContinuousTrading",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TickSize, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DiscreteTrading_duration(ctx context.Context, field graphql.CollectedField, obj *DiscreteTrading) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "DiscreteTrading",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Duration, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumEvent_contractId(ctx context.Context, field graphql.CollectedField, obj *EthereumEvent) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "EthereumEvent",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContractID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EthereumEvent_event(ctx context.Context, field graphql.CollectedField, obj *EthereumEvent) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "EthereumEvent",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Event, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Future_maturity(ctx context.Context, field graphql.CollectedField, obj *Future) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Future",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Maturity, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Future_asset(ctx context.Context, field graphql.CollectedField, obj *Future) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Future",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Asset, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Future_oracle(ctx context.Context, field graphql.CollectedField, obj *Future) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Future",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Oracle, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Oracle)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNOracle2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOracle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.CollectedField, obj *Instrument) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Instrument",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Instrument_code(ctx context.Context, field graphql.CollectedField, obj *Instrument) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Instrument",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Code, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Instrument_name(ctx context.Context, field graphql.CollectedField, obj *Instrument) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Instrument",
 		Field:  field,
 		Args:   nil,
 	}
@@ -2071,6 +2597,188 @@ func (ec *executionContext) _Market_name(ctx context.Context, field graphql.Coll
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Instrument_metadata(ctx context.Context, field graphql.CollectedField, obj *Instrument) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Instrument",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Metadata, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(InstrumentMetadata)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInstrumentMetadata2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInstrumentMetadata(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Instrument_product(ctx context.Context, field graphql.CollectedField, obj *Instrument) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Instrument",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Product, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Product)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐProduct(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field graphql.CollectedField, obj *InstrumentMetadata) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "InstrumentMetadata",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tags, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_id(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Market",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_tradableInstrument(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Market",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TradableInstrument, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TradableInstrument)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTradableInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradableInstrument(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_tradingMode(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Market",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TradingMode, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TradingMode)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradingMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_decimalPlaces(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Market",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DecimalPlaces, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
@@ -3431,6 +4139,58 @@ func (ec *executionContext) _Subscription_marketDepth(ctx context.Context, field
 			w.Write([]byte{'}'})
 		})
 	}
+}
+
+func (ec *executionContext) _TradableInstrument_instrument(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "TradableInstrument",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Instrument, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Instrument)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInstrument(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TradableInstrument_riskModel(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "TradableInstrument",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RiskModel, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(RiskModel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐRiskModel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) graphql.Marshaler {
@@ -4944,9 +5704,92 @@ func (ec *executionContext) unmarshalInputTradeFilter(ctx context.Context, v int
 
 // region    ************************** interface.gotpl ***************************
 
+func (ec *executionContext) _Oracle(ctx context.Context, sel ast.SelectionSet, obj *Oracle) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case EthereumEvent:
+		return ec._EthereumEvent(ctx, sel, &obj)
+	case *EthereumEvent:
+		return ec._EthereumEvent(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, obj *Product) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case Future:
+		return ec._Future(ctx, sel, &obj)
+	case *Future:
+		return ec._Future(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _RiskModel(ctx context.Context, sel ast.SelectionSet, obj *RiskModel) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case BuiltinFutures:
+		return ec._BuiltinFutures(ctx, sel, &obj)
+	case *BuiltinFutures:
+		return ec._BuiltinFutures(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _TradingMode(ctx context.Context, sel ast.SelectionSet, obj *TradingMode) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case ContinuousTrading:
+		return ec._ContinuousTrading(ctx, sel, &obj)
+	case *ContinuousTrading:
+		return ec._ContinuousTrading(ctx, sel, obj)
+	case DiscreteTrading:
+		return ec._DiscreteTrading(ctx, sel, &obj)
+	case *DiscreteTrading:
+		return ec._DiscreteTrading(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var builtinFuturesImplementors = []string{"BuiltinFutures", "RiskModel"}
+
+func (ec *executionContext) _BuiltinFutures(ctx context.Context, sel ast.SelectionSet, obj *BuiltinFutures) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, builtinFuturesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BuiltinFutures")
+		case "historicVolatility":
+			out.Values[i] = ec._BuiltinFutures_historicVolatility(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
 
 var candleImplementors = []string{"Candle"}
 
@@ -5073,6 +5916,197 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var continuousTradingImplementors = []string{"ContinuousTrading", "TradingMode"}
+
+func (ec *executionContext) _ContinuousTrading(ctx context.Context, sel ast.SelectionSet, obj *ContinuousTrading) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, continuousTradingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ContinuousTrading")
+		case "tickSize":
+			out.Values[i] = ec._ContinuousTrading_tickSize(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+var discreteTradingImplementors = []string{"DiscreteTrading", "TradingMode"}
+
+func (ec *executionContext) _DiscreteTrading(ctx context.Context, sel ast.SelectionSet, obj *DiscreteTrading) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, discreteTradingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DiscreteTrading")
+		case "duration":
+			out.Values[i] = ec._DiscreteTrading_duration(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+var ethereumEventImplementors = []string{"EthereumEvent", "Oracle"}
+
+func (ec *executionContext) _EthereumEvent(ctx context.Context, sel ast.SelectionSet, obj *EthereumEvent) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, ethereumEventImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthereumEvent")
+		case "contractId":
+			out.Values[i] = ec._EthereumEvent_contractId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "event":
+			out.Values[i] = ec._EthereumEvent_event(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+var futureImplementors = []string{"Future", "Product"}
+
+func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, obj *Future) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, futureImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Future")
+		case "maturity":
+			out.Values[i] = ec._Future_maturity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "asset":
+			out.Values[i] = ec._Future_asset(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "oracle":
+			out.Values[i] = ec._Future_oracle(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+var instrumentImplementors = []string{"Instrument"}
+
+func (ec *executionContext) _Instrument(ctx context.Context, sel ast.SelectionSet, obj *Instrument) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, instrumentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Instrument")
+		case "id":
+			out.Values[i] = ec._Instrument_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "code":
+			out.Values[i] = ec._Instrument_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "name":
+			out.Values[i] = ec._Instrument_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "metadata":
+			out.Values[i] = ec._Instrument_metadata(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "product":
+			out.Values[i] = ec._Instrument_product(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+var instrumentMetadataImplementors = []string{"InstrumentMetadata"}
+
+func (ec *executionContext) _InstrumentMetadata(ctx context.Context, sel ast.SelectionSet, obj *InstrumentMetadata) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, instrumentMetadataImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InstrumentMetadata")
+		case "tags":
+			out.Values[i] = ec._InstrumentMetadata_tags(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
 var marketImplementors = []string{"Market"}
 
 func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, obj *Market) graphql.Marshaler {
@@ -5084,8 +6118,23 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Market")
-		case "name":
-			out.Values[i] = ec._Market_name(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._Market_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "tradableInstrument":
+			out.Values[i] = ec._Market_tradableInstrument(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "tradingMode":
+			out.Values[i] = ec._Market_tradingMode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "decimalPlaces":
+			out.Values[i] = ec._Market_decimalPlaces(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -5789,6 +6838,38 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	}
 }
 
+var tradableInstrumentImplementors = []string{"TradableInstrument"}
+
+func (ec *executionContext) _TradableInstrument(ctx context.Context, sel ast.SelectionSet, obj *TradableInstrument) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, tradableInstrumentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TradableInstrument")
+		case "instrument":
+			out.Values[i] = ec._TradableInstrument_instrument(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "riskModel":
+			out.Values[i] = ec._TradableInstrument_riskModel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
 var tradeImplementors = []string{"Trade"}
 
 func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, obj *proto.Trade) graphql.Marshaler {
@@ -6243,12 +7324,36 @@ func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._Candle(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	return graphql.UnmarshalFloat(v)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	return graphql.MarshalFloat(v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalID(v)
 }
 
 func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalID(v)
+}
+
+func (ec *executionContext) marshalNInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInstrument(ctx context.Context, sel ast.SelectionSet, v Instrument) graphql.Marshaler {
+	return ec._Instrument(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInstrumentMetadata2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v InstrumentMetadata) graphql.Marshaler {
+	return ec._InstrumentMetadata(ctx, sel, &v)
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	return graphql.MarshalInt(v)
 }
 
 func (ec *executionContext) unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐInterval(ctx context.Context, v interface{}) (Interval, error) {
@@ -6286,6 +7391,10 @@ func (ec *executionContext) marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋve
 		return graphql.Null
 	}
 	return ec._MarketDepth(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOracle2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOracle(ctx context.Context, sel ast.SelectionSet, v Oracle) graphql.Marshaler {
+	return ec._Oracle(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx context.Context, sel ast.SelectionSet, v proto.Order) graphql.Marshaler {
@@ -6360,6 +7469,14 @@ func (ec *executionContext) marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._PriceLevel(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐProduct(ctx context.Context, sel ast.SelectionSet, v Product) graphql.Marshaler {
+	return ec._Product(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐRiskModel(ctx context.Context, sel ast.SelectionSet, v RiskModel) graphql.Marshaler {
+	return ec._RiskModel(ctx, sel, &v)
+}
+
 func (ec *executionContext) unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
 	var res Side
 	return res, res.UnmarshalGQL(v)
@@ -6377,12 +7494,49 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return graphql.MarshalString(v)
 }
 
+func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTradableInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v TradableInstrument) graphql.Marshaler {
+	return ec._TradableInstrument(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNTrade2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx context.Context, sel ast.SelectionSet, v proto.Trade) graphql.Marshaler {
 	return ec._Trade(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalNTradeFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradeFilter(ctx context.Context, v interface{}) (TradeFilter, error) {
 	return ec.unmarshalInputTradeFilter(ctx, v)
+}
+
+func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradingMode(ctx context.Context, sel ast.SelectionSet, v TradingMode) graphql.Marshaler {
+	return ec._TradingMode(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐValueDirection(ctx context.Context, v interface{}) (ValueDirection, error) {

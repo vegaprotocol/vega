@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package vega;
+option go_package = "code.vegaprotocol.io/vega/proto";
+
+// here begin trading modes
+
+message ContinuousTrading {
+  uint64 tickSize = 1;
+}
+
+message DiscreteTrading {
+  int64 duration = 1;
+}
+
+// here end trading modes
+
+// here begin products
+
+message Future {
+  string maturity = 1;
+  string asset = 2;
+  oneof oracle {
+   EthereumEvent ethereumEvent = 100;
+  }
+}
+
+// here end products
+
+// here begin oracles
+
+message EthereumEvent {
+  string contractID = 1;
+  string event = 2;
+}
+
+// here ends oracles
+
+message InstrumentMetadata {
+  repeated string tags = 1;
+}
+
+message Instrument {
+  string id = 1;
+  string code = 2;
+  string name = 3;
+  InstrumentMetadata metadata = 4;
+  oneof product {
+    Future future = 100;
+  }
+}
+
+// here start risk models
+
+message BuiltinFutures {
+  double historicVolatility = 1;
+}
+
+// here ends risk models
+
+message TradableInstrument {
+  Instrument instrument = 1;
+  oneof riskModel {
+    BuiltinFutures builtinFutures = 100;
+  }
+}
+
+message Market {
+  string id = 1;
+  TradableInstrument tradableInstrument = 2;
+  uint64 decimalPlaces = 3;
+  oneof tradingMode {
+    ContinuousTrading continuous = 100;
+    DiscreteTrading discrete = 101;
+  }
+}

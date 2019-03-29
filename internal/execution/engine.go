@@ -3,12 +3,17 @@ package execution
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 
 	types "code.vegaprotocol.io/vega/proto"
 
+	"code.vegaprotocol.io/vega/internal/engines"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 )
@@ -78,8 +83,7 @@ type TimeService interface {
 
 type engine struct {
 	*Config
-	markets     []string
-	matching    MatchingEngine
+	markets     map[string]*engines.Market
 	orderStore  OrderStore
 	tradeStore  TradeStore
 	candleStore CandleStore
@@ -92,7 +96,6 @@ type engine struct {
 // a new execution engine to process new orders, etc.
 func NewExecutionEngine(
 	executionConfig *Config,
-	matchingEngine MatchingEngine,
 	time TimeService,
 	orderStore OrderStore,
 	tradeStore TradeStore,
@@ -102,8 +105,7 @@ func NewExecutionEngine(
 ) Engine {
 	e := &engine{
 		Config:      executionConfig,
-		markets:     []string{"BTC/DEC19"},
-		matching:    matchingEngine,
+		markets:     map[string]*engines.Market{},
 		candleStore: candleStore,
 		orderStore:  orderStore,
 		tradeStore:  tradeStore,
@@ -112,23 +114,40 @@ func NewExecutionEngine(
 		time:        time,
 	}
 
-	// existing markets are to be loaded via the marketStore as market proto types and can be added at runtime via TM
-	for _, marketId := range e.markets {
-		mkt := types.Market{
-			Name: marketId,
+	protomarkets := []types.Market{}
+	// loads markets from configuration
+	for _, v := range executionConfig.Markets.Configs {
+		path := filepath.Join(executionConfig.Markets.Path, v)
+		buf, err := ioutil.ReadFile(path)
+		if err != nil {
+			e.log.Panic("Unable to read market configuration",
+				logging.Error(err),
+				logging.String("config-path", path))
 		}
+
+		mkt := types.Market{}
+		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
+		if err != nil {
+			e.log.Panic("Unable to unmarshal market configuration",
+				logging.Error(err),
+				logging.String("config-path", path))
+		}
+		protomarkets = append(protomarkets, mkt)
+
+		e.log.Info("New market loaded from configuation",
+			logging.String("market-config", path),
+			logging.String("market-id", mkt.Id))
+	}
+
+	// existing markets are to be loaded via the marketStore as market proto types and can be added at runtime via TM
+	for _, mkt := range protomarkets {
 		err := e.marketStore.Post(&mkt)
 		if err != nil {
-			e.log.Error("Failed to add default market to market store",
-				logging.String("market-id", marketId),
-				logging.Error(err))
+			e.log.Panic("Failed to add default market to market store",
+				logging.String("market-id", mkt.Id),
+			)
 		}
-		err = e.matching.AddOrderBook(marketId)
-		if err != nil {
-			e.log.Panic("Failed to add default order book(s) to matching engine",
-				logging.String("market-id", marketId),
-				logging.Error(err))
-		}
+		e.markets[mkt.Id] = engines.NewMarket(executionConfig.Engines, &mkt)
 	}
 
 	return e
@@ -136,6 +155,10 @@ func NewExecutionEngine(
 
 func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Submit order", logging.Order(*order))
+	mkt, ok := e.markets[order.Market]
+	if !ok {
+		return nil, types.ErrInvalidMarketID
+	}
 
 	// Verify and add new parties
 	party, _ := e.partyStore.GetByName(order.Party)
@@ -148,7 +171,7 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Submit order to matching engine
-	confirmation, submitError := e.matching.SubmitOrder(order)
+	confirmation, submitError := mkt.SubmitOrder(order)
 	if confirmation == nil || submitError != nil {
 		e.log.Error("Failure after submit order from matching engine",
 			logging.Order(*order),
@@ -210,7 +233,6 @@ func (e *engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // if it exists and is in a state to be edited.
 func (e *engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
-
 	ctx := context.TODO()
 	existingOrder, err := e.orderStore.GetByPartyAndId(ctx, order.Party, order.Id)
 	if err != nil {
@@ -289,9 +311,13 @@ func (e *engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmati
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
 func (e *engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	e.log.Debug("Cancel order")
+	mkt, ok := e.markets[order.Market]
+	if !ok {
+		return nil, types.ErrInvalidMarketID
+	}
 
 	// Cancel order in matching engine
-	cancellation, cancelError := e.matching.CancelOrder(order)
+	cancellation, cancelError := mkt.CancelOrder(order)
 	if cancellation == nil || cancelError != nil {
 		e.log.Panic("Failure after cancel order from matching engine",
 			logging.Order(*order),
@@ -328,7 +354,12 @@ func (e *engine) orderCancelReplace(existingOrder, newOrder *types.Order) (*type
 }
 
 func (e *engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
-	amendError := e.matching.AmendOrder(newOrder)
+	mkt, ok := e.markets[newOrder.Market]
+	if !ok {
+		return nil, types.ErrInvalidMarketID
+	}
+
+	amendError := mkt.AmendOrder(newOrder)
 	if amendError != nil {
 		e.log.Error("Failure after amend order from matching engine (amend-in-place)",
 			logging.OrderWithTag(*newOrder, "new-order"),
@@ -355,12 +386,15 @@ func (e *engine) StartCandleBuffer() error {
 	}
 
 	// We need a buffer for all current markets on VEGA
-	for _, marketId := range e.markets {
-		e.log.Debug("Starting candle buffer for market", logging.String("market-id", marketId))
+	for _, mkt := range e.markets {
+		e.log.Debug(
+			"Starting candle buffer for market",
+			logging.String("market-id", mkt.GetID()),
+		)
 
-		err := e.candleStore.StartNewBuffer(marketId, stamp.Uint64())
+		err := e.candleStore.StartNewBuffer(mkt.GetID(), stamp.Uint64())
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to start new candle buffer for market %s", marketId))
+			return errors.Wrap(err, fmt.Sprintf("Failed to start new candle buffer for market %s", mkt.GetID()))
 		}
 	}
 
@@ -377,7 +411,11 @@ func (e *engine) Process() error {
 		return err
 	}
 
-	expiringOrders := e.matching.RemoveExpiringOrders(epochTimeNano.Uint64())
+	expiringOrders := []types.Order{}
+	for _, mkt := range e.markets {
+		expiringOrders = append(
+			expiringOrders, mkt.RemoveExpiredOrders(epochTimeNano.Uint64())...)
+	}
 
 	e.log.Debug("Removed expired orders from matching engine",
 		logging.Int("orders-removed", len(expiringOrders)))
@@ -408,19 +446,19 @@ func (e *engine) Process() error {
 // Generate creates any data (including storing state changes) in the underlying stores.
 func (e *engine) Generate() error {
 
-	for _, marketId := range e.markets {
+	for _, mkt := range e.markets {
 		// We need a buffer for all current markets on VEGA
-		err := e.candleStore.GenerateCandlesFromBuffer(marketId)
+		err := e.candleStore.GenerateCandlesFromBuffer(mkt.GetID())
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to generate candles from buffer for market %s", marketId))
+			return errors.Wrap(err, fmt.Sprintf("Failed to generate candles from buffer for market %s", mkt.GetID()))
 		}
 		err = e.orderStore.Commit()
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to commit orders for market %s", marketId))
+			return errors.Wrap(err, fmt.Sprintf("Failed to commit orders for market %s", mkt.GetID()))
 		}
 		err = e.tradeStore.Commit()
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to commit trades for market %s", marketId))
+			return errors.Wrap(err, fmt.Sprintf("Failed to commit trades for market %s", mkt.GetID()))
 		}
 	}
 

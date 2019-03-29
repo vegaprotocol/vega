@@ -9,19 +9,15 @@ enum Side { Buy = 0; Sell = 1; }
 
 enum Interval { I1M = 0; I5M = 1; I15M = 2; I1H = 3; I6H = 4; I1D = 5; }
 
-message Market {
-    string name = 1;
-}
-
 message Party {
     string name = 1 [(validator.field) = {msg_exists : true}];
     repeated MarketPosition positions = 2;
 }
 
 message RiskFactor {
-    string market = 1;
-    double short = 2;
-   	double long = 3;
+  string market = 1;
+  double short = 2;
+  double long = 3;
 }
 
 message Order {
