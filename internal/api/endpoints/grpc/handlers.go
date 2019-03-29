@@ -8,7 +8,6 @@ import (
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -16,6 +15,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 var ErrChainNotConnected = errors.New("Chain not connected")
@@ -57,8 +57,15 @@ type PartyService interface {
 	GetAll(ctx context.Context) ([]*types.Party, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc BlockchainClient
+type BlockchainClient interface {
+	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
+	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
+	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
+}
+
 type Handlers struct {
-	Client        blockchain.Client
+	Client        BlockchainClient
 	Stats         *internal.Stats
 	TimeService   VegaTime
 	OrderService  OrderService

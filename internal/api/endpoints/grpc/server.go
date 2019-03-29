@@ -24,7 +24,7 @@ import (
 type grpcServer struct {
 	*api.Config
 	stats         *internal.Stats
-	client        blockchain.Client
+	client        *blockchain.Client
 	orderService  *orders.Svc
 	tradeService  *trades.Svc
 	candleService *candles.Svc
@@ -38,7 +38,7 @@ type grpcServer struct {
 func NewGRPCServer(
 	config *api.Config,
 	stats *internal.Stats,
-	client blockchain.Client,
+	client *blockchain.Client,
 	timeService *vegatime.Svc,
 	marketService *markets.Svc,
 	partyService *parties.Svc,

@@ -15,24 +15,12 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination newmocks/blockchain_client_mock.go -package newmocks code.vegaprotocol.io/vega/internal/blockchain Client
-type Client interface {
-	CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error)
-	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
-	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
-	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
-	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
-	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
-	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
-	Health() (*tmctypes.ResultHealth, error)
-}
-
-type client struct {
+type Client struct {
 	*Config
 	tmClient *tmRPC.HTTP
 }
 
-func NewClient(config *Config) (Client, error) {
+func NewClient(config *Config) (*Client, error) {
 	if config.ClientAddr == "" {
 		return nil, errors.New("abci client addr is empty in config")
 	}
@@ -40,24 +28,24 @@ func NewClient(config *Config) (Client, error) {
 		return nil, errors.New("abci client websocket endpoint is empty in config")
 	}
 	cli := tmRPC.NewHTTP(config.ClientAddr, config.ClientEndpoint)
-	return &client{Config: config, tmClient: cli}, nil
+	return &Client{Config: config, tmClient: cli}, nil
 }
 
-func (b *client) CancelOrder(ctx context.Context, order *types.Order) (success bool, err error) {
+func (b *Client) CancelOrder(ctx context.Context, order *types.Order) (success bool, err error) {
 	return b.sendOrderCommand(ctx, order, CancelOrderCommand)
 }
 
-func (b *client) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
+func (b *Client) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
 	return b.sendAmendmentCommand(ctx, amendment, AmendOrderCommand)
 }
 
-func (b *client) CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error) {
+func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error) {
 	order.Reference = fmt.Sprintf("%s", uuid.NewV4())
 	success, err = b.sendOrderCommand(ctx, order, SubmitOrderCommand)
 	return success, order.Reference, err
 }
 
-func (b *client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
+func (b *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	res, err := b.tmClient.Genesis()
 	if err != nil {
 		return time.Now(), err
@@ -65,15 +53,15 @@ func (b *client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err
 	return res.Genesis.GenesisTime, nil
 }
 
-func (b *client) GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) {
+func (b *Client) GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) {
 	return b.tmClient.Status()
 }
 
-func (b *client) GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error) {
+func (b *Client) GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error) {
 	return b.tmClient.NetInfo()
 }
 
-func (b *client) GetUnconfirmedTxCount(ctx context.Context) (count int, err error) {
+func (b *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err error) {
 	res, err := b.tmClient.NumUnconfirmedTxs()
 	if err != nil {
 		return 0, err
@@ -81,11 +69,11 @@ func (b *client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 	return res.N, err
 }
 
-func (b *client) Health() (*tmctypes.ResultHealth, error) {
+func (b *Client) Health() (*tmctypes.ResultHealth, error) {
 	return b.tmClient.Health()
 }
 
-func (b *client) sendOrderCommand(ctx context.Context, order *types.Order, cmd Command) (success bool, err error) {
+func (b *Client) sendOrderCommand(ctx context.Context, order *types.Order, cmd Command) (success bool, err error) {
 
 	// Proto-buf marshall the incoming order to byte slice.
 	bytes, err := proto.Marshal(order)
@@ -99,7 +87,7 @@ func (b *client) sendOrderCommand(ctx context.Context, order *types.Order, cmd C
 	return b.sendCommand(ctx, bytes, cmd)
 }
 
-func (b *client) sendAmendmentCommand(ctx context.Context, amendment *types.OrderAmendment, cmd Command) (success bool, err error) {
+func (b *Client) sendAmendmentCommand(ctx context.Context, amendment *types.OrderAmendment, cmd Command) (success bool, err error) {
 
 	// Proto-buf marshall the incoming order to byte slice.
 	bytes, err := proto.Marshal(amendment)
@@ -113,7 +101,7 @@ func (b *client) sendAmendmentCommand(ctx context.Context, amendment *types.Orde
 	return b.sendCommand(ctx, bytes, cmd)
 }
 
-func (b *client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (success bool, err error) {
+func (b *Client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (success bool, err error) {
 
 	// Tendermint requires unique transactions so we pre-pend a guid + pipe to the byte array.
 	// It's split on arrival out of consensus along with a byte that represents command e.g. cancel order

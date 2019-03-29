@@ -38,7 +38,7 @@ type Resolver struct {
 	partyService  *parties.Svc
 	timeService   *vegatime.Svc
 
-	blockchainClient blockchain.Client
+	blockchainClient *blockchain.Client
 
 	stMu sync.Mutex // Thread safety for singletons
 	seMu sync.Mutex
@@ -402,7 +402,7 @@ func (r *Resolver) CloseStores() error {
 // -------------- Blockchain/ -------------
 
 // ResolveBlockchainClient returns a a singleton instance of the (Tendermint) blockchain client.
-func (r *Resolver) ResolveBlockchainClient() (blockchain.Client, error) {
+func (r *Resolver) ResolveBlockchainClient() (*blockchain.Client, error) {
 	r.bcMu.Lock()
 	defer r.bcMu.Unlock()
 
