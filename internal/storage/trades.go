@@ -26,10 +26,10 @@ type Trade struct {
 	onCriticalError func()
 }
 
-// NewTradeStore is used to initialise and create a TradeStore, this implementation is currently
+// NewTrades is used to initialise and create a TradeStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewTradeStore(c *Config, onCriticalError func()) (*Trade, error) {
+func NewTrades(c *Config, onCriticalError func()) (*Trade, error) {
 	err := InitStoreDirectory(c.TradeStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for trades storage")

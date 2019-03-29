@@ -15,8 +15,8 @@ type Market struct {
 	badger *badgerStore
 }
 
-// NewMarketStore returns a concrete implementation of MarketStore.
-func NewMarketStore(c *Config) (*Market, error) {
+// NewMarkets returns a concrete implementation of MarketStore.
+func NewMarkets(c *Config) (*Market, error) {
 	err := InitStoreDirectory(c.MarketStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")

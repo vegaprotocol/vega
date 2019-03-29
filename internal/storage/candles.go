@@ -53,10 +53,10 @@ type marketCandle struct {
 	Candle types.Candle
 }
 
-// NewCandleStore is used to initialise and create a CandleStore, this implementation is currently
+// NewCandles is used to initialise and create a CandleStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewCandleStore(c *Config) (*Candle, error) {
+func NewCandles(c *Config) (*Candle, error) {
 	err := InitStoreDirectory(c.CandleStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")

@@ -20,7 +20,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	}
 
 	storage.FlushStores(config)
-	candleStore, err := storage.NewCandleStore(config)
+	candleStore, err := storage.NewCandles(config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
@@ -195,7 +195,7 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 	}
 
 	storage.FlushStores(config)
-	candleStore, err := storage.NewCandleStore(config)
+	candleStore, err := storage.NewCandles(config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
@@ -228,7 +228,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	}
 
 	storage.FlushStores(config)
-	candleStore, err := storage.NewCandleStore(config)
+	candleStore, err := storage.NewCandles(config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 

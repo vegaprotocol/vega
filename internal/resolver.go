@@ -244,7 +244,7 @@ func (r *Resolver) ResolveCandleStore() (*storage.Candle, error) {
 		return r.candleStore, nil
 	}
 
-	candleStore, err := storage.NewCandleStore(
+	candleStore, err := storage.NewCandles(
 		r.config.Storage,
 	)
 	if err != nil {
@@ -264,7 +264,7 @@ func (r *Resolver) ResolveOrderStore() (*storage.Order, error) {
 		return r.orderStore, nil
 	}
 
-	orderStore, err := storage.NewOrderStore(
+	orderStore, err := storage.NewOrders(
 		r.config.Storage, r.onCriticalError,
 	)
 	if err != nil {
@@ -284,7 +284,7 @@ func (r *Resolver) ResolveTradeStore() (*storage.Trade, error) {
 		return r.tradeStore, nil
 	}
 
-	tradeStore, err := storage.NewTradeStore(
+	tradeStore, err := storage.NewTrades(
 		r.config.Storage, r.onCriticalError,
 	)
 	if err != nil {
@@ -304,7 +304,7 @@ func (r *Resolver) ResolveRiskStore() (*storage.Risk, error) {
 		return r.riskStore, nil
 	}
 
-	riskStore, err := storage.NewRiskStore(
+	riskStore, err := storage.NewRisks(
 		r.config.Storage,
 	)
 	if err != nil {
@@ -324,7 +324,7 @@ func (r *Resolver) ResolveMarketStore() (*storage.Market, error) {
 		return r.marketStore, nil
 	}
 
-	marketStore, err := storage.NewMarketStore(
+	marketStore, err := storage.NewMarkets(
 		r.config.Storage,
 	)
 	if err != nil {
@@ -344,7 +344,7 @@ func (r *Resolver) ResolvePartyStore() (*storage.Party, error) {
 		return r.partyStore, nil
 	}
 
-	partyStore, err := storage.NewPartyStore(
+	partyStore, err := storage.NewParties(
 		r.config.Storage,
 	)
 	if err != nil {

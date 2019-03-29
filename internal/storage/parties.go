@@ -14,7 +14,7 @@ type Party struct {
 }
 
 // NewStore returns a concrete implementation of a parties Store.
-func NewPartyStore(config *Config) (*Party, error) {
+func NewParties(config *Config) (*Party, error) {
 	return &Party{
 		Config: config,
 		db:     make(map[string]types.Party, 0),

@@ -9,8 +9,8 @@ type Risk struct {
 	*Config
 }
 
-// NewRiskStore returns a concrete implementation of RiskStore.
-func NewRiskStore(config *Config) (*Risk, error) {
+// NewRisks returns a concrete implementation of RiskStore.
+func NewRisks(config *Config) (*Risk, error) {
 	return &Risk{
 		Config: config,
 	}, nil

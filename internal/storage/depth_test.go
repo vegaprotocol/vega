@@ -19,7 +19,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	orderStore, err := storage.NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrders(config, func() {})
 
 	assert.Nil(t, err)
 	defer orderStore.Close()
@@ -390,7 +390,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	orderStore, err := storage.NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrders(config, func() {})
 
 	assert.Nil(t, err)
 	defer orderStore.Close()
@@ -521,7 +521,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	orderStore, err := storage.NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrders(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 

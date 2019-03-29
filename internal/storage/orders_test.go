@@ -17,7 +17,7 @@ const testParty = "party"
 const testPartyA = "partyA"
 const testPartyB = "partyB"
 
-func TestStorage_NewOrderStore(t *testing.T) {
+func TestStorage_NewOrders(t *testing.T) {
 	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
@@ -25,13 +25,13 @@ func TestStorage_NewOrderStore(t *testing.T) {
 
 	storage.FlushStores(config)
 
-	orderStore, err := storage.NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrders(config, func() {})
 	assert.NotNil(t, orderStore)
 	assert.Nil(t, err)
 
 	config.OrderStoreDirPath = ""
 
-	orderStore, err = storage.NewOrderStore(config, func() {})
+	orderStore, err = storage.NewOrders(config, func() {})
 	assert.Nil(t, orderStore)
 	assert.NotNil(t, err)
 
@@ -46,7 +46,7 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 	}
 
 	storage.FlushStores(config)
-	orderStore, err := storage.NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrders(config, func() {})
 	defer orderStore.Close()
 
 	var order = &types.Order{
@@ -152,7 +152,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		orderStore, err := storage.NewOrderStore(config, func() {})
+		orderStore, err := storage.NewOrders(config, func() {})
 		assert.Nil(t, err)
 
 		for _, order := range tt.inOrders {
@@ -179,7 +179,7 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 
 	storage.FlushStores(config)
 
-	orderStore, err := storage.NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrders(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -244,7 +244,7 @@ func TestStorage_OrderFiltration(t *testing.T) {
 
 	storage.FlushStores(config)
 
-	orderStore, err := storage.NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrders(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -475,7 +475,7 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	}
 
 	storage.FlushStores(config)
-	newOrderStore, err := storage.NewOrderStore(config, func() {})
+	newOrderStore, err := storage.NewOrders(config, func() {})
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 
@@ -515,7 +515,7 @@ func TestStorage_InsertBatchOrders(t *testing.T) {
 	}
 
 	storage.FlushStores(config)
-	orderStore, err := storage.NewOrderStore(config, func() {})
+	orderStore, err := storage.NewOrders(config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
