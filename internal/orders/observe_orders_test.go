@@ -20,6 +20,7 @@ func testObserveAllOrdersSuccess(t *testing.T) {
 	defer svc.ctrl.Finish()
 	ctx, cfunc := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
+	// channel used to indicate to subscriber routine that test is ready to read values from channel
 	ready := make(chan struct{})
 	done := make(chan struct{})
 	subRef := uint64(1)
