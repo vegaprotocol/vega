@@ -20,6 +20,7 @@ func testObserveAllOrdersSuccess(t *testing.T) {
 	defer svc.ctrl.Finish()
 	ctx, cfunc := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
+	ready := make(chan struct{})
 	done := make(chan struct{})
 	subRef := uint64(1)
 	orders := []proto.Order{
@@ -37,6 +38,7 @@ func testObserveAllOrdersSuccess(t *testing.T) {
 
 	wg.Add(1)
 	subscriber := func(ch chan<- []proto.Order) {
+		<-ready
 		defer wg.Done()
 		ch <- orders
 	}
@@ -48,8 +50,9 @@ func testObserveAllOrdersSuccess(t *testing.T) {
 	})
 	// all orders
 	ch, ref := svc.svc.ObserveOrders(ctx, 0, nil, nil)
-	assert.Equal(t, subRef, ref)
+	close(ready)
 	gotOrders := <-ch
+	assert.Equal(t, subRef, ref)
 
 	wg.Wait()
 	cfunc() // cancel context
@@ -65,6 +68,7 @@ func testObservePartialSuccess(t *testing.T) {
 	defer svc.ctrl.Finish()
 	ctx, cfunc := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
+	ready := make(chan struct{})
 	done := make(chan struct{})
 	subRef := uint64(1)
 	market, party := "market1", "party1"
@@ -83,6 +87,7 @@ func testObservePartialSuccess(t *testing.T) {
 
 	wg.Add(1)
 	subscriber := func(ch chan<- []proto.Order) {
+		<-ready
 		defer wg.Done()
 		ch <- orders
 	}
@@ -94,8 +99,9 @@ func testObservePartialSuccess(t *testing.T) {
 	})
 	// all orders
 	ch, ref := svc.svc.ObserveOrders(ctx, 0, &market, &party)
-	assert.Equal(t, subRef, ref)
+	close(ready)
 	gotOrders := <-ch
+	assert.Equal(t, subRef, ref)
 
 	wg.Wait()
 	cfunc() // cancel context
