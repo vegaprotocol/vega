@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/api"
@@ -72,6 +73,44 @@ func TestNewResolverRoot_QueryResolver(t *testing.T) {
 	assert.NotNil(t, vega)
 }
 
+func getTestMarket() *types.Market {
+	return &types.Market{
+		Id: "BTC/DEC19",
+		TradableInstrument: &proto.TradableInstrument{
+			Instrument: &proto.Instrument{
+				Id:   "Crypto/BTCUSD/Futures/Dec19",
+				Code: "FX:BTCUSD/DEC19",
+				Name: "December 2019 BTC vs USD future",
+				Metadata: &proto.InstrumentMetadata{
+					Tags: []string{
+						"asset_class:fx/crypto",
+						"product:futures",
+					},
+				},
+				Product: &proto.Instrument_Future{
+					Future: &proto.Future{
+						Maturity: "2019-12-31",
+						Oracle: &proto.Future_EthereumEvent{
+							EthereumEvent: &proto.EthereumEvent{
+								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+								Event:      "price_changed",
+							},
+						},
+						Asset: "Ethereum/Ether",
+					},
+				},
+			},
+			RiskModel: &proto.TradableInstrument_BuiltinFutures{
+				BuiltinFutures: &proto.BuiltinFutures{
+					HistoricVolatility: 0.15,
+				},
+			},
+		},
+		TradingMode: &proto.Market_Continuous{
+			Continuous: &proto.ContinuousTrading{},
+		},
+	}
+}
 func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
 	defer root.Finish()
@@ -79,13 +118,11 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 
 	notExistsErr := errors.New("market does not exist")
 	markets := map[string]*types.Market{
-		"BTC/DEC19": &types.Market{
-			Name: "BTC/DEC19",
-		},
+		"BTC/DEC19": getTestMarket(),
 		"ETH/USD18": nil,
 	}
 
-	root.market.EXPECT().GetByName(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {
+	root.market.EXPECT().GetByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {
 		m, ok := markets[k]
 		assert.True(t, ok)
 		if m == nil {
@@ -93,6 +130,10 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 		}
 		return m, nil
 	})
+	incompleteMarket := &types.Market{
+		Id: "foobar",
+	}
+	root.market.EXPECT().GetAll(gomock.Any()).Times(1).Return([]*types.Market{incompleteMarket}, nil)
 
 	vegaResolver := root.Vega()
 	assert.NotNil(t, vegaResolver)
@@ -132,7 +173,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	notExistsErr := errors.New("market does not exist")
 	markets := map[string]*types.Market{
 		"BTC/DEC19": &types.Market{
-			Name: "BTC/DEC19",
+			Id: "BTC/DEC19",
 		},
 	}
 	marketId := "BTC/DEC19"
@@ -140,7 +181,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 		ID: marketId,
 	}
 
-	root.market.EXPECT().GetByName(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {
+	root.market.EXPECT().GetByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {
 		m, ok := markets[k]
 		assert.True(t, ok)
 		if m == nil {

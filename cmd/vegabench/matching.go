@@ -36,7 +36,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	candle := mocks.NewMockCandleStore(ctrl)
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyStore(ctrl)
-	conf := execution.NewDefaultConfig(log)
+	conf := execution.NewDefaultConfig(log, "")
 	engine := execution.NewExecutionEngine(
 		conf,
 		time,
