@@ -141,6 +141,8 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 				Open:     ref,
 				Interval: it,
 			})
+			// avoid race by making sure we've got the channel and we can in fact read the data
+			ready := make(chan struct{})
 			wg.Add(1)
 			svc.store.EXPECT().Subscribe(itMatcher{market: market, interval: it}).Times(1).Return(ref).Do(func(it *storage.InternalTransport) {
 				candles, ok := expectedCandles[it.Market]
@@ -149,6 +151,7 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 					if c.Interval == it.Interval {
 						// ensure the candle is pushed onto the channel
 						go func(it *storage.InternalTransport) {
+							<-ready
 							it.Transport <- c
 						}(it)
 					}
@@ -159,9 +162,10 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 				wg.Done()
 			})
 			ch, id := svc.ObserveCandles(svc.ctx, 0, &market, &it)
+			close(ready)
+			c := <-ch
 			assert.Equal(t, ref, id)
 			// with a second wg, we could do this concurrently, but this is just a test...
-			c := <-ch
 			assert.Equal(t, it, c.Interval)
 			assert.Equal(t, ref, c.Open)
 		}
@@ -198,6 +202,7 @@ func testObserveCandlesRetries(t *testing.T) {
 		for i, it := range intervals {
 			ref := uint64(i + 1 + factor)
 			wg.Add(1)
+			// in this test, we're not using the ready channel, because our goal is specifically to write to a channel that isn't being read
 			svc.store.EXPECT().Subscribe(itMatcher{market: market, interval: it}).Times(1).DoAndReturn(func(it *storage.InternalTransport) uint64 {
 				go chWrite(it.Transport)
 				return ref
