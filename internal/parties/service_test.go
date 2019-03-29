@@ -1,10 +1,11 @@
-package parties
+package parties_test
 
 import (
 	"context"
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/parties/newmocks"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -13,7 +14,7 @@ import (
 )
 
 type testService struct {
-	Service
+	*parties.Svc
 	log   *logging.Logger
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -26,18 +27,18 @@ func getTestService(t *testing.T) *testService {
 	store := newmocks.NewMockPartyStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	ctx, cfunc := context.WithCancel(context.Background())
-	svc, err := NewPartyService(
-		NewDefaultConfig(log),
+	svc, err := parties.NewPartyService(
+		parties.NewDefaultConfig(log),
 		store,
 	)
 	assert.NoError(t, err)
 	return &testService{
-		Service: svc,
-		log:     log,
-		ctx:     ctx,
-		cfunc:   cfunc,
-		ctrl:    ctrl,
-		store:   store,
+		Svc:   svc,
+		log:   log,
+		ctx:   ctx,
+		cfunc: cfunc,
+		ctrl:  ctrl,
+		store: store,
 	}
 }
 

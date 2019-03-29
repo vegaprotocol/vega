@@ -1,9 +1,10 @@
-package parties
+package parties_test
 
 import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/parties"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,17 +12,17 @@ func TestConfig_GetLogger(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	partyConfig := NewDefaultConfig(logger)
+	partyConfig := parties.NewDefaultConfig(logger)
 	l := partyConfig.GetLogger()
 
-	assert.Equal(t, namedLogger, l.GetName())
+	assert.Equal(t, parties.NamedLogger, l.GetName())
 }
 
 func TestConfig_UpdateLogger(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	partyConfig := NewDefaultConfig(logger)
+	partyConfig := parties.NewDefaultConfig(logger)
 	partyConfig.UpdateLogger()
 
 	l := partyConfig.GetLogger()

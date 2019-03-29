@@ -1,9 +1,10 @@
 package grpc
 
 import (
-	"code.vegaprotocol.io/vega/internal/parties"
 	"fmt"
 	"net"
+
+	"code.vegaprotocol.io/vega/internal/parties"
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
@@ -24,12 +25,12 @@ type grpcServer struct {
 	*api.Config
 	stats         *internal.Stats
 	client        blockchain.Client
-	orderService  orders.Service
-	tradeService  trades.Service
-	candleService candles.Service
-	marketService markets.Service
-	partyService  parties.Service
-	timeService   vegatime.Service
+	orderService  *orders.Svc
+	tradeService  *trades.Svc
+	candleService *candles.Svc
+	marketService *markets.Svc
+	partyService  *parties.Svc
+	timeService   *vegatime.Svc
 	srv           *grpc.Server
 	statusChecker *monitoring.Status
 }
@@ -38,12 +39,12 @@ func NewGRPCServer(
 	config *api.Config,
 	stats *internal.Stats,
 	client blockchain.Client,
-	timeService vegatime.Service,
-	marketService markets.Service,
-	partyService parties.Service,
-	orderService orders.Service,
-	tradeService trades.Service,
-	candleService candles.Service,
+	timeService *vegatime.Svc,
+	marketService *markets.Svc,
+	partyService *parties.Svc,
+	orderService *orders.Svc,
+	tradeService *trades.Svc,
+	candleService *candles.Svc,
 	statusChecker *monitoring.Status,
 ) *grpcServer {
 

@@ -10,11 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Service interface {
-	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
-	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error)
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination newmocks/candle_store_mock.go -package newmocks code.vegaprotocol.io/vega/internal/candles CandleStore
 type CandleStore interface {
 	Subscribe(iT *storage.InternalTransport) uint64
@@ -22,26 +17,26 @@ type CandleStore interface {
 	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error)
 }
 
-type candleService struct {
+type Svc struct {
 	*Config
 	tradesBuffer map[string][]*types.Trade
 	candleStore  CandleStore
 }
 
-func NewCandleService(config *Config, candleStore CandleStore) (Service, error) {
+func NewCandleService(config *Config, candleStore CandleStore) (*Svc, error) {
 	if config == nil {
 		return nil, errors.New("candle config is nil when creating candle service instance.")
 	}
 	if candleStore == nil {
 		return nil, errors.New("candleStore instance is nil when creating candle service instance.")
 	}
-	return &candleService{
+	return &Svc{
 		Config:      config,
 		candleStore: candleStore,
 	}, nil
 }
 
-func (c *candleService) ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
+func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
 	candleCh := make(chan *types.Candle)
 	iT := storage.InternalTransport{
 		Market:    *market,
@@ -109,7 +104,7 @@ func (c *candleService) ObserveCandles(ctx context.Context, retries int, market 
 	return candleCh, ref
 }
 
-func (c *candleService) GetCandles(ctx context.Context, market string,
+func (c *Svc) GetCandles(ctx context.Context, market string,
 	sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error) {
 
 	// sinceTimestamp must be valid and not older than market genesis timestamp

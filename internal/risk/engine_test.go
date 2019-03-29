@@ -1,9 +1,10 @@
-package risk
+package risk_test
 
 import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/risk"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -13,8 +14,8 @@ func TestRiskEngine_AddNewMarket(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	config := NewDefaultConfig(logger)
-	re := NewRiskEngine(config)
+	config := risk.NewDefaultConfig(logger)
+	re := risk.NewRiskEngine(config)
 	newMarket := &types.Market{Id: "BTC/DEC19"}
 	re.AddNewMarket(newMarket)
 	riskFactorLong, riskFactorShort, err := re.GetRiskFactors(newMarket.Id)
@@ -27,8 +28,8 @@ func TestRiskEngine_CalibrateRiskModel(t *testing.T) {
 	logger := logging.NewLoggerFromEnv("dev")
 	defer logger.Sync()
 
-	config := NewDefaultConfig(logger)
-	re := NewRiskEngine(config)
+	config := risk.NewDefaultConfig(logger)
+	re := risk.NewRiskEngine(config)
 
 	newMarket := &types.Market{Id: "BTC/DEC19"}
 	re.AddNewMarket(newMarket)

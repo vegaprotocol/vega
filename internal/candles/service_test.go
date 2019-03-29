@@ -1,4 +1,4 @@
-package candles
+package candles_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 
+	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/candles/newmocks"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
@@ -17,7 +18,7 @@ import (
 )
 
 type testService struct {
-	Service
+	*candles.Svc
 	ctx   context.Context
 	cfunc context.CancelFunc
 	ctrl  *gomock.Controller
@@ -31,38 +32,26 @@ type itMatcher struct {
 	ref      uint64
 }
 
-// storageConfig specifies that the badger files are kept in a different
-// directory when the candle service tests run. This is useful as when
-// all the unit tests are run for the project they can be run in parallel.
-func storageConfig(t *testing.T) *storage.Config {
-	storeConfig, err := storage.NewTestConfig()
-	if err != nil {
-		t.Fatalf("unable to setup badger dirs: %v", err)
-	}
-	storeConfig.LogPositionStoreDebug = false
-	return storeConfig
-}
-
 func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	store := newmocks.NewMockCandleStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	// create service, pass in mocks, ignore error
-	svc, err := NewCandleService(
-		NewDefaultConfig(log),
+	svc, err := candles.NewCandleService(
+		candles.NewDefaultConfig(log),
 		store,
 	)
 	if err != nil {
 		t.Fatalf("Unexpected error getting candle service: %+v", err)
 	}
 	return &testService{
-		Service: svc,
-		ctx:     ctx,
-		cfunc:   cfunc,
-		ctrl:    ctrl,
-		store:   store,
-		log:     log,
+		Svc:   svc,
+		ctx:   ctx,
+		cfunc: cfunc,
+		ctrl:  ctrl,
+		store: store,
+		log:   log,
 	}
 }
 

@@ -9,13 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/blockchain"
-	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/filtering"
-	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/monitoring"
-	"code.vegaprotocol.io/vega/internal/orders"
-	"code.vegaprotocol.io/vega/internal/parties"
-	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -25,15 +20,52 @@ import (
 
 var ErrChainNotConnected = errors.New("Chain not connected")
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/vega_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc VegaTime
+type VegaTime interface {
+	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc OrderService
+type OrderService interface {
+	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
+	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
+	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
+	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
+	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc TradeService
+type TradeService interface {
+	GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc CandleService
+type CandleService interface {
+	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc MarketService
+type MarketService interface {
+	GetAll(ctx context.Context) ([]*types.Market, error)
+	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc PartyService
+type PartyService interface {
+	GetAll(ctx context.Context) ([]*types.Party, error)
+}
+
 type Handlers struct {
 	Client        blockchain.Client
 	Stats         *internal.Stats
-	TimeService   vegatime.Service
-	OrderService  orders.Service
-	TradeService  trades.Service
-	CandleService candles.Service
-	MarketService markets.Service
-	PartyService  parties.Service
+	TimeService   VegaTime
+	OrderService  OrderService
+	TradeService  TradeService
+	CandleService CandleService
+	MarketService MarketService
+	PartyService  PartyService
 	statusChecker *monitoring.Status
 }
 

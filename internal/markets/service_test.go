@@ -1,4 +1,4 @@
-package markets
+package markets_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/markets/newmocks"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -15,7 +16,7 @@ import (
 )
 
 type testService struct {
-	Service
+	*markets.Svc
 	ctx    context.Context
 	cfunc  context.CancelFunc
 	log    *logging.Logger
@@ -30,20 +31,20 @@ func getTestService(t *testing.T) *testService {
 	market := newmocks.NewMockMarketStore(ctrl)
 	log := logging.NewLoggerFromEnv("dev")
 	ctx, cfunc := context.WithCancel(context.Background())
-	svc, err := NewMarketService(
-		NewDefaultConfig(log),
+	svc, err := markets.NewMarketService(
+		markets.NewDefaultConfig(log),
 		market,
 		order,
 	)
 	assert.NoError(t, err)
 	return &testService{
-		Service: svc,
-		ctx:     ctx,
-		cfunc:   cfunc,
-		log:     log,
-		ctrl:    ctrl,
-		order:   order,
-		market:  market,
+		Svc:    svc,
+		ctx:    ctx,
+		cfunc:  cfunc,
+		log:    log,
+		ctrl:   ctrl,
+		order:  order,
+		market: market,
 	}
 }
 

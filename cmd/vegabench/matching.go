@@ -18,7 +18,7 @@ import (
 const marketID = "BTC/DEC19"
 
 type execEngine struct {
-	execution.Engine
+	*execution.ExecEngine
 	ctrl   *gomock.Controller
 	time   *mocks.MockTimeService
 	order  *mocks.MockOrderStore
@@ -47,14 +47,14 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 		party,
 	)
 	return &execEngine{
-		Engine: engine,
-		ctrl:   ctrl,
-		time:   time,
-		order:  order,
-		trade:  trade,
-		candle: candle,
-		market: market,
-		party:  party,
+		ExecEngine: engine,
+		ctrl:       ctrl,
+		time:       time,
+		order:      order,
+		trade:      trade,
+		candle:     candle,
+		market:     market,
+		party:      party,
 	}
 }
 
