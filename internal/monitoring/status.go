@@ -140,7 +140,7 @@ func (cs *ChainStatus) start(ctx context.Context) {
 				)
 
 				if cs.retriesCount <= 0 {
-					cs.log.Info("Chain is still disconnected, shuting down now",
+					cs.log.Info("Chain is still disconnected, shutting down now",
 						logging.Int("retries-count", int(cs.maxRetries)),
 					)
 					cs.onChainDisconnect()
