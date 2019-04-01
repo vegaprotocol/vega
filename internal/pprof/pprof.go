@@ -1,6 +1,7 @@
-package main
+package pprof
 
 import (
+	"errors"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -16,19 +17,58 @@ const (
 	pprofDir       = "pprof"
 	memprofileFile = "mem.pprof"
 	cpuprofileFile = "cpu.pprof"
+
+	namedLogger = "pprof"
 )
 
-type pprofhandler struct {
-	memprofilePath string
-	cpuprofilePath string
-	log            *logging.Logger
+var (
+	ErrNilPPROFConfiguration = errors.New("nil pprof configuration")
+)
+
+type Config struct {
+	log   *logging.Logger
+	Level logging.Level
+
+	Enabled     bool
+	Port        uint16
+	ProfilesDir string
 }
 
-func newpprof(log *logging.Logger, profileRootPath string) (*pprofhandler, error) {
-	p := &pprofhandler{
-		memprofilePath: filepath.Join(profileRootPath, pprofDir, memprofileFile),
-		cpuprofilePath: filepath.Join(profileRootPath, pprofDir, cpuprofileFile),
-		log:            log,
+type Pprofhandler struct {
+	*Config
+
+	memprofilePath string
+	cpuprofilePath string
+}
+
+// NewDefaultConfig create a new default configuration for the pprof handler
+func NewDefaultConfig(logger *logging.Logger) *Config {
+	logger = logger.Named(namedLogger)
+	return &Config{
+		log:         logger,
+		Level:       logging.InfoLevel,
+		Enabled:     false,
+		Port:        6060,
+		ProfilesDir: "/tmp",
+	}
+}
+
+// UpdateLogger will set any new values on the underlying logging core. Useful when configs are
+// hot reloaded at run time. Currently we only check and refresh the logging level.
+func (c *Config) UpdateLogger() {
+	c.log.SetLevel(c.Level)
+}
+
+// New creates a new pprof handler
+func New(config *Config) (*Pprofhandler, error) {
+	if config == nil {
+		config.log.Error("cannot start pprof", logging.Error(ErrNilPPROFConfiguration))
+		return nil, ErrNilPPROFConfiguration
+	}
+	p := &Pprofhandler{
+		Config:         config,
+		memprofilePath: filepath.Join(config.ProfilesDir, pprofDir, memprofileFile),
+		cpuprofilePath: filepath.Join(config.ProfilesDir, pprofDir, cpuprofileFile),
 	}
 
 	// start the pprof http server
@@ -37,7 +77,7 @@ func newpprof(log *logging.Logger, profileRootPath string) (*pprofhandler, error
 	}()
 
 	// start cpu and mem profilers
-	if err := fsutil.EnsureDir(filepath.Join(profileRootPath, pprofDir)); err != nil {
+	if err := fsutil.EnsureDir(filepath.Join(config.ProfilesDir, pprofDir)); err != nil {
 		p.log.Error("Could not create CPU profile file",
 			logging.String("path", p.cpuprofilePath),
 			logging.Error(err),
@@ -59,7 +99,7 @@ func newpprof(log *logging.Logger, profileRootPath string) (*pprofhandler, error
 }
 
 // Stop is meant to be use to stop the pprof profile, should be use with defer probably
-func (p *pprofhandler) Stop() error {
+func (p *Pprofhandler) Stop() error {
 	// stop cpu profile once the memory profile is written
 	defer pprof.StopCPUProfile()
 

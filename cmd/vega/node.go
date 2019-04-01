@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal"
@@ -10,8 +14,10 @@ import (
 	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
+	"code.vegaprotocol.io/vega/internal/pprof"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -65,35 +71,35 @@ func (l *NodeCommand) runNode(args []string) error {
 		configPath = envConfigPath()
 		if configPath == "" {
 			// Default directory ($HOME/.vega)
-			configPath = defaultVegaDir()
+			configPath = fsutil.DefaultVegaDir()
 		}
 	}
 
 	l.Log.Info("Config path", logging.String("config-path", configPath))
-
-	var pproffhandlr *pprofhandler
-	if l.withPPROF {
-		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
-		var err error
-		pproffhandlr, err = newpprof(l.Log, configPath)
-		if err != nil {
-			return err
-		}
-		defer pproffhandlr.Stop()
-	}
 
 	// VEGA config (holds all package level configs)
 	conf, err := internal.NewConfigFromFile(l.Log, configPath)
 	if err != nil {
 		// We revert to default configs if there are any errors in read/parse process
 		l.Log.Error("Error reading config from file, using defaults", logging.Error(err))
-		defaultConf, err := internal.NewDefaultConfig(l.Log, defaultVegaDir())
+		defaultConf, err := internal.NewDefaultConfig(l.Log, fsutil.DefaultVegaDir())
 		if err != nil {
 			return err
 		}
 		conf = defaultConf
 	} else {
 		conf.ListenForChanges()
+	}
+
+	var pproffhandlr *pprof.Pprofhandler
+	if flagProvided("--with-pprof") || conf.Pprof.Enabled {
+		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
+		var err error
+		pproffhandlr, err = pprof.New(conf.Pprof)
+		if err != nil {
+			return err
+		}
+		defer pproffhandlr.Stop()
 	}
 
 	resolver, err := internal.NewResolver(conf, cancel)
@@ -234,4 +240,28 @@ func envConfigPath() string {
 		return viper.GetString("config")
 	}
 	return ""
+}
+
+// waitSig will wait for a sigterm or sigint interrupt.
+func waitSig(ctx context.Context) {
+	var gracefulStop = make(chan os.Signal)
+	signal.Notify(gracefulStop, syscall.SIGTERM)
+	signal.Notify(gracefulStop, syscall.SIGINT)
+
+	select {
+	case sig := <-gracefulStop:
+		fmt.Printf("caught sig: %+v\n", sig)
+	case <-ctx.Done():
+		// nothing to do
+	}
+}
+
+func flagProvided(flag string) bool {
+	for _, v := range os.Args[1:] {
+		if v == flag {
+			return true
+		}
+	}
+
+	return false
 }

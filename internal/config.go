@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
+	"code.vegaprotocol.io/vega/internal/pprof"
 	"code.vegaprotocol.io/vega/internal/risk"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
@@ -40,6 +41,8 @@ type Config struct {
 	Trades  *trades.Config
 	Time    *vegatime.Config
 	// Any new package configs should be added here <> (see examples above)
+
+	Pprof *pprof.Config
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
@@ -66,6 +69,7 @@ func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Conf
 	c.Candles = candles.NewDefaultConfig(c.log)
 	c.Storage = storage.NewDefaultConfig(c.log, defaultStoreDirPath)
 	c.Risk = risk.NewDefaultConfig(c.log)
+	c.Pprof = pprof.NewDefaultConfig(c.log)
 	c.Logging = logging.NewDefaultConfig()
 	// Any new package configs should be added here <>
 
@@ -100,6 +104,7 @@ func NewConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 	viper.SetDefault("Storage", c.Storage)
 	viper.SetDefault("Trades", c.Trades)
 	viper.SetDefault("Time", c.Time)
+	viper.SetDefault("Pprof", c.Pprof)
 	// Any new package configs should be added here <> (see examples above)
 
 	// Read in the configs from toml file and attempt to unmarshal into config struct.
@@ -159,5 +164,6 @@ func (c *Config) updateLoggers() {
 	c.Candles.UpdateLogger()
 	c.Storage.UpdateLogger()
 	c.Risk.UpdateLogger()
+	c.Pprof.UpdateLogger()
 	// Any new package configs with a logger should be added here <>
 }
