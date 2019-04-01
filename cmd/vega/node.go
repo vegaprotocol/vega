@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal"
@@ -9,9 +10,16 @@ import (
 	"code.vegaprotocol.io/vega/internal/api/endpoints/grpc"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
 	"code.vegaprotocol.io/vega/internal/blockchain"
+	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/monitoring"
+	"code.vegaprotocol.io/vega/internal/orders"
+	"code.vegaprotocol.io/vega/internal/parties"
+	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal/trades"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -22,22 +30,49 @@ import (
 type NodeCommand struct {
 	command
 
+	ctx   context.Context
+	cfunc context.CancelFunc
+
+	candleStore *storage.Candle
+	orderStore  *storage.Order
+	marketStore *storage.Market
+	tradeStore  *storage.Trade
+	partyStore  *storage.Party
+	riskStore   *storage.Risk
+
+	candleService *candles.Svc
+	tradeService  *trades.Svc
+	marketService *markets.Svc
+	orderService  *orders.Svc
+	partyService  *parties.Svc
+	timeService   *vegatime.Svc
+
+	blockchainClient *blockchain.Client
+
 	configPath string
+	conf       *internal.Config
+	stats      *internal.Stats
 	Log        *logging.Logger
 }
+
+type errStack []error
 
 // Init initialises the node command.
 func (l *NodeCommand) Init(c *Cli) {
 	l.cli = c
 	l.cmd = &cobra.Command{
-		Use:   "node",
-		Short: "Run a new Vega node",
-		Long:  "Run a new Vega node as defined by config files",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "node",
+		Short:             "Run a new Vega node",
+		Long:              "Run a new Vega node as defined by config files",
+		Args:              cobra.MaximumNArgs(1),
+		PersistentPreRunE: l.persistentPre,
+		PreRunE:           l.preRun,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return l.runNode(args)
 		},
-		Example: nodeExample(),
+		PostRunE:          l.postRun,
+		PersistentPostRun: l.persistentPost,
+		Example:           nodeExample(),
 	}
 	l.addFlags()
 }
@@ -48,14 +83,12 @@ func (l *NodeCommand) addFlags() {
 	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
 }
 
-// runNode is the entry of node command.
-func (l *NodeCommand) runNode(args []string) error {
-
-	// context used in waitSig to exit from the application
-	// not from the user inputs
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) error {
+	// this shouldn't happen...
+	if l.cfunc != nil {
+		l.cfunc()
+	}
+	l.ctx, l.cfunc = context.WithCancel(context.Background())
 	// Use configPath from args
 	configPath := l.configPath
 	if configPath == "" {
@@ -74,135 +107,181 @@ func (l *NodeCommand) runNode(args []string) error {
 	if err != nil {
 		// We revert to default configs if there are any errors in read/parse process
 		l.Log.Error("Error reading config from file, using defaults", logging.Error(err))
-		defaultConf, err := internal.NewDefaultConfig(l.Log, defaultVegaDir())
-		if err != nil {
+		if conf, err = internal.NewDefaultConfig(l.Log, defaultVegaDir()); err != nil {
+			// cancel context here
+			l.cfunc()
 			return err
 		}
-		conf = defaultConf
 	} else {
 		conf.ListenForChanges()
 	}
+	// assign config vars
+	l.configPath, l.conf = configPath, conf
+	l.stats = internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
+	return nil
+}
 
-	resolver, err := internal.NewResolver(conf, cancel)
+func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
+	var werr errStack
+	if l.candleStore != nil {
+		if err := l.candleStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing candle store in command."))
+		}
+	}
+	if l.riskStore != nil {
+		if err := l.riskStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing risk store in command."))
+		}
+	}
+	if l.tradeStore != nil {
+		if err := l.tradeStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing trade store in command."))
+		}
+	}
+	if l.orderStore != nil {
+		if err := l.orderStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing order store in command."))
+		}
+	}
+	if l.marketStore != nil {
+		if err := l.marketStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing market store in command."))
+		}
+	}
+	if l.partyStore != nil {
+		if err := l.partyStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing party store in command."))
+		}
+	}
+	return werr
+}
 
-	// Statistics provider
-	stats := internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
+func (l *NodeCommand) persistentPost(_ *cobra.Command, _ []string) {
+	l.cfunc()
+}
 
-	// Resolve services for injection to servers/execution engine
-	orderService, err := resolver.ResolveOrderService()
-	if err != nil {
-		return err
+// we've already set everything up WRT arguments etc... just bootstrap the node
+func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
+	// ensure that context is cancelled if we return an error here
+	defer func() {
+		if err != nil {
+			l.cfunc()
+		}
+	}()
+	// set up storage
+	if l.candleStore, err = storage.NewCandles(l.conf.Storage); err != nil {
+		return
 	}
-	tradeService, err := resolver.ResolveTradeService()
-	if err != nil {
-		return err
+	if l.orderStore, err = storage.NewOrders(l.conf.Storage, l.cfunc); err != nil {
+		return
 	}
-	candleService, err := resolver.ResolveCandleService()
-	if err != nil {
-		return err
+	if l.tradeStore, err = storage.NewTrades(l.conf.Storage, l.cfunc); err != nil {
+		return
 	}
-	marketService, err := resolver.ResolveMarketService()
-	if err != nil {
-		return err
+	if l.riskStore, err = storage.NewRisks(l.conf.Storage); err != nil {
+		return
 	}
-	partyService, err := resolver.ResolvePartyService()
-	if err != nil {
-		return err
+	if l.marketStore, err = storage.NewMarkets(l.conf.Storage); err != nil {
+		return
 	}
-	timeService, err := resolver.ResolveTimeService()
-	if err != nil {
-		return err
+	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
+		return
 	}
-	orderStore, err := resolver.ResolveOrderStore()
-	if err != nil {
-		return err
+	// this doesn't fail
+	l.timeService = vegatime.NewService(l.conf.Time)
+	if l.blockchainClient, err = blockchain.NewClient(l.conf.Blockchain); err != nil {
+		return
 	}
-	tradeStore, err := resolver.ResolveTradeStore()
-	if err != nil {
-		return err
+	// start services
+	if l.candleService, err = candles.NewService(l.conf.Candles, l.candleStore); err != nil {
+		return
 	}
-	candleStore, err := resolver.ResolveCandleStore()
-	if err != nil {
-		return err
+	if l.orderService, err = orders.NewService(l.conf.Orders, l.orderStore, l.timeService, l.blockchainClient); err != nil {
+		return
 	}
-	marketStore, err := resolver.ResolveMarketStore()
-	if err != nil {
-		return err
+	if l.tradeService, err = trades.NewService(l.conf.Trades, l.tradeStore, l.riskStore); err != nil {
+		return
 	}
-	partyStore, err := resolver.ResolvePartyStore()
-	if err != nil {
-		return err
+	if l.marketService, err = markets.NewService(l.conf.Markets, l.marketStore, l.orderStore); err != nil {
+		return
 	}
+	// last assignment to err, no need to check here, if something went wrong, we'll know about it
+	l.partyService, err = parties.NewService(l.conf.Parties, l.partyStore)
+	return
+}
 
-	client, err := resolver.ResolveBlockchainClient()
-	if err != nil {
-		return err
-	}
-
+// runNode is the entry of node command.
+func (l *NodeCommand) runNode(args []string) error {
 	// Execution engine (broker operation at runtime etc)
 	executionEngine := execution.NewEngine(
-		conf.Execution,
-		timeService,
-		orderStore,
-		tradeStore,
-		candleStore,
-		marketStore,
-		partyStore,
+		l.conf.Execution,
+		l.timeService,
+		l.orderStore,
+		l.tradeStore,
+		l.candleStore,
+		l.marketStore,
+		l.partyStore,
 	)
 
 	// ABCI<>blockchain server
-	bcService := blockchain.NewService(conf.Blockchain, stats.Blockchain, executionEngine, timeService)
-	bcProcessor := blockchain.NewProcessor(conf.Blockchain, bcService)
-	bcApp := blockchain.NewApplication(conf.Blockchain, stats.Blockchain, bcProcessor, bcService, timeService, cancel)
-	socketServer := blockchain.NewServer(conf.Blockchain, stats.Blockchain, bcApp)
-	err = socketServer.Start()
-	if err != nil {
+	bcService := blockchain.NewService(l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
+	bcProcessor := blockchain.NewProcessor(l.conf.Blockchain, bcService)
+	bcApp := blockchain.NewApplication(
+		l.conf.Blockchain,
+		l.stats.Blockchain,
+		bcProcessor,
+		bcService,
+		l.timeService,
+		l.cfunc,
+	)
+	socketServer := blockchain.NewServer(l.conf.Blockchain, l.stats.Blockchain, bcApp)
+	if err := socketServer.Start(); err != nil {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
-	statusChecker := monitoring.NewStatusChecker(l.Log, client, 500*time.Millisecond)
-	statusChecker.OnChainDisconnect(cancel)
+	statusChecker := monitoring.NewStatusChecker(l.Log, l.blockchainClient, 500*time.Millisecond)
+	statusChecker.OnChainDisconnect(l.cfunc)
 
 	// gRPC server
 	grpcServer := grpc.NewGRPCServer(
-		conf.API,
-		stats,
-		client,
-		timeService,
-		marketService,
-		partyService,
-		orderService,
-		tradeService,
-		candleService,
+		l.conf.API,
+		l.stats,
+		l.blockchainClient,
+		l.timeService,
+		l.marketService,
+		l.partyService,
+		l.orderService,
+		l.tradeService,
+		l.candleService,
 		statusChecker,
 	)
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server
-	restServer := restproxy.NewRestProxyServer(conf.API)
+	restServer := restproxy.NewRestProxyServer(l.conf.API)
 	go restServer.Start()
 
 	// GraphQL server
 	graphServer := gql.NewGraphQLServer(
-		conf.API,
-		orderService,
-		tradeService,
-		candleService,
-		marketService,
-		partyService,
-		timeService,
+		l.conf.API,
+		l.orderService,
+		l.tradeService,
+		l.candleService,
+		l.marketService,
+		l.partyService,
+		l.timeService,
 		statusChecker,
 	)
 	go graphServer.Start()
 
-	waitSig(ctx)
+	waitSig(l.ctx)
+	l.cfunc()
 
 	// Clean up and close resources
 	l.Log.Info("Closing REST proxy server", logging.Error(restServer.Stop()))
 	l.Log.Info("Closing GRPC server", logging.Error(grpcServer.Stop()))
 	l.Log.Info("Closing GraphQL server", logging.Error(graphServer.Stop()))
 	l.Log.Info("Closing blockchain server", logging.Error(socketServer.Stop()))
-	l.Log.Info("Closing stores", logging.Error(resolver.CloseStores()))
 	statusChecker.Stop()
 
 	return nil
@@ -221,4 +300,13 @@ func envConfigPath() string {
 		return viper.GetString("config")
 	}
 	return ""
+}
+
+// Error - implement the error interface on the errStack type
+func (e errStack) Error() string {
+	s := make([]string, 0, len(e))
+	for _, err := range e {
+		s = append(s, err.Error())
+	}
+	return strings.Join(s, "\n")
 }
