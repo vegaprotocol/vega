@@ -1,4 +1,4 @@
-package monitoring
+package monitoring_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/monitoring/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -38,7 +39,7 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes, nil).Do(func(ctx context.Context) {
 			wg.Done()
 		})
-		checker := NewStatusChecker(log, blockchainClient, 50*time.Nanosecond)
+		checker := monitoring.NewStatusChecker(log, blockchainClient, 50*time.Nanosecond)
 		wg.Wait()
 		assert.Equal(t, types.ChainStatus_CONNECTED, checker.Blockchain.Status())
 
@@ -61,7 +62,7 @@ func TestAppStatus(t *testing.T) {
 			wg.Done()
 		})
 
-		checker := NewStatusChecker(log, blockchainClient, 10*time.Millisecond)
+		checker := monitoring.NewStatusChecker(log, blockchainClient, 10*time.Millisecond)
 		wg.Wait()
 		assert.Equal(t, types.ChainStatus_REPLAYING, checker.Blockchain.Status())
 
@@ -79,7 +80,7 @@ func TestAppStatus(t *testing.T) {
 			end <- struct{}{}
 		})
 
-		checker := NewStatusChecker(log, blockchainClient, 50*time.Nanosecond)
+		checker := monitoring.NewStatusChecker(log, blockchainClient, 50*time.Nanosecond)
 		<-end
 		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.Blockchain.Status())
 
@@ -108,7 +109,7 @@ func TestAppStatus(t *testing.T) {
 			wg.Done()
 		})
 
-		checker := NewStatusChecker(log, blockchainClient, 10*time.Millisecond)
+		checker := monitoring.NewStatusChecker(log, blockchainClient, 10*time.Millisecond)
 		wg.Wait()
 		// ensure status is CONNECTED
 		assert.Equal(t, types.ChainStatus_CONNECTED, checker.Blockchain.Status())
