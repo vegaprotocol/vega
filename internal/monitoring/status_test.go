@@ -6,7 +6,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
@@ -28,11 +27,8 @@ func TestAppStatus(t *testing.T) {
 		},
 	}
 
-	cfg := &Config{
-		log:                  log,
-		IntervalMilliseconds: 50 * time.Millisecond,
-		Retries:              5,
-	}
+	cfg := monitoring.NewDefaultConfig(log)
+	cfg.IntervalMilliseconds = 50
 
 	t.Run("Status = CONNECTED if client healthy + !catching up", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
