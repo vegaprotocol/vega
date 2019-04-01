@@ -1,4 +1,4 @@
-package gql
+package gql_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/gql/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
@@ -138,7 +139,7 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	vegaResolver := root.Vega()
 	assert.NotNil(t, vegaResolver)
 
-	vega := &Vega{}
+	vega := &gql.Vega{}
 	name := "BTC/DEC19"
 	vMarkets, err := vegaResolver.Markets(ctx, vega, &name)
 	assert.Nil(t, err)
@@ -177,7 +178,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 		},
 	}
 	marketId := "BTC/DEC19"
-	market := &Market{
+	market := &gql.Market{
 		ID: marketId,
 	}
 
@@ -211,8 +212,23 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	assert.Len(t, orders, 2)
 }
 
+type resolverRoot interface {
+	Query() gql.QueryResolver
+	Mutation() gql.MutationResolver
+	Candle() gql.CandleResolver
+	MarketDepth() gql.MarketDepthResolver
+	PriceLevel() gql.PriceLevelResolver
+	Market() gql.MarketResolver
+	Order() gql.OrderResolver
+	Trade() gql.TradeResolver
+	Vega() gql.VegaResolver
+	Position() gql.PositionResolver
+	Party() gql.PartyResolver
+	Subscription() gql.SubscriptionResolver
+}
+
 type testResolver struct {
-	*resolverRoot
+	resolverRoot
 	log    *logging.Logger
 	ctrl   *gomock.Controller
 	order  *mocks.MockOrderService
@@ -230,7 +246,7 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 	candle := mocks.NewMockCandleService(ctrl)
 	market := mocks.NewMockMarketService(ctrl)
 	statusChecker := &monitoring.Status{}
-	resolver := NewResolverRoot(
+	resolver := gql.NewResolverRoot(
 		conf,
 		order,
 		trade,
