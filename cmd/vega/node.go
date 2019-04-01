@@ -214,7 +214,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	go graphServer.Start()
 
-	waitSig(ctx)
+	waitSig(ctx, l.Log)
 
 	// Clean up and close resources
 	l.Log.Info("Closing REST proxy server", logging.Error(restServer.Stop()))
@@ -243,14 +243,14 @@ func envConfigPath() string {
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(ctx context.Context) {
+func waitSig(ctx context.Context, log *logging.Logger) {
 	var gracefulStop = make(chan os.Signal)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 
 	select {
 	case sig := <-gracefulStop:
-		fmt.Printf("caught sig: %+v\n", sig)
+		log.Info("caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
 	case <-ctx.Done():
 		// nothing to do
 	}
