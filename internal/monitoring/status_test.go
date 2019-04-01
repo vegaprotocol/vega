@@ -29,9 +29,9 @@ func TestAppStatus(t *testing.T) {
 	}
 
 	cfg := &Config{
-		log:      log,
-		Interval: 50 * time.Millisecond,
-		Retries:  5,
+		log:                  log,
+		IntervalMilliseconds: 50 * time.Millisecond,
+		Retries:              5,
 	}
 
 	t.Run("Status = CONNECTED if client healthy + !catching up", func(t *testing.T) {
@@ -45,7 +45,8 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes, nil).Do(func(ctx context.Context) {
 			wg.Done()
 		})
-		checker := NewStatusChecker(cfg, blockchainClient)
+
+		checker := monitoring.New(cfg, blockchainClient)
 
 		wg.Wait()
 		assert.Equal(t, types.ChainStatus_CONNECTED, checker.ChainStatus())
@@ -67,7 +68,9 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes2, nil).Do(func(ctx context.Context) {
 			wg.Done()
 		})
-		checker := NewStatusChecker(cfg, blockchainClient)
+
+		checker := monitoring.New(cfg, blockchainClient)
+
 		wg.Wait()
 		assert.Equal(t, types.ChainStatus_REPLAYING, checker.ChainStatus())
 
@@ -83,7 +86,7 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().Health().MinTimes(1).Return(nil, errors.New("err")).Do(func() {
 			end <- struct{}{}
 		})
-		checker := NewStatusChecker(cfg, blockchainClient)
+		checker := monitoring.New(cfg, blockchainClient)
 		<-end
 		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.ChainStatus())
 
@@ -110,9 +113,7 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes, nil).Do(func(ctx context.Context) {
 			wg.Done()
 		})
-
-		checker := monitoring.NewStatusChecker(cfg, blockchainClient)
-
+		checker := monitoring.New(cfg, blockchainClient)
 		wg.Wait()
 		// ensure status is CONNECTED
 		assert.Equal(t, types.ChainStatus_CONNECTED, checker.ChainStatus())
