@@ -105,7 +105,7 @@ func getTestMarket() *types.Market {
 		},
 	}
 }
-func TestNewResolverRoot_VegaResolver(t *testing.T) {
+func TestNewResolverRoot_Resolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
 	defer root.Finish()
 	ctx := context.Background()
