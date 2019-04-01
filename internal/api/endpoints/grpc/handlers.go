@@ -82,7 +82,7 @@ const defaultLimit = uint64(1000)
 
 // CreateOrder is used to request sending an order into the VEGA platform, via consensus.
 func (h *Handlers) SubmitOrder(ctx context.Context, order *types.OrderSubmission) (*api.OrderResponse, error) {
-	if h.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
+	if h.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
 	success, reference, err := h.OrderService.CreateOrder(ctx, order)
@@ -91,7 +91,7 @@ func (h *Handlers) SubmitOrder(ctx context.Context, order *types.OrderSubmission
 
 // CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
 func (h *Handlers) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*api.OrderResponse, error) {
-	if h.statusChecker.Blockchain.Status() != types.ChainStatus_CONNECTED {
+	if h.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
 	success, err := h.OrderService.CancelOrder(ctx, order)
@@ -336,7 +336,7 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
 		TradesPerSecond:       uint64(h.Stats.Blockchain.TradesPerSecond()),
 		OrdersPerSecond:       uint64(h.Stats.Blockchain.OrdersPerSecond()),
-		Status:                h.statusChecker.Blockchain.Status(),
+		Status:                h.statusChecker.ChainStatus(),
 		TotalMarkets:          uint64(len(m)),
 		TotalParties:          uint64(len(p)),
 		Parties:               partyNames,

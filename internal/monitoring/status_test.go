@@ -28,6 +28,12 @@ func TestAppStatus(t *testing.T) {
 		},
 	}
 
+	cfg := &Config{
+		log:      log,
+		Interval: 50 * time.Millisecond,
+		Retries:  5,
+	}
+
 	t.Run("Status = CONNECTED if client healthy + !catching up", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
@@ -39,11 +45,11 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes, nil).Do(func(ctx context.Context) {
 			wg.Done()
 		})
-		checker := monitoring.NewStatusChecker(log, blockchainClient, 50*time.Nanosecond)
-		wg.Wait()
-		assert.Equal(t, types.ChainStatus_CONNECTED, checker.Blockchain.Status())
+		checker := NewStatusChecker(cfg, blockchainClient)
 
-		checker.Blockchain.Stop()
+		wg.Wait()
+		assert.Equal(t, types.ChainStatus_CONNECTED, checker.ChainStatus())
+
 		checker.Stop()
 	})
 
@@ -61,12 +67,10 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes2, nil).Do(func(ctx context.Context) {
 			wg.Done()
 		})
-
-		checker := monitoring.NewStatusChecker(log, blockchainClient, 10*time.Millisecond)
+		checker := NewStatusChecker(cfg, blockchainClient)
 		wg.Wait()
-		assert.Equal(t, types.ChainStatus_REPLAYING, checker.Blockchain.Status())
+		assert.Equal(t, types.ChainStatus_REPLAYING, checker.ChainStatus())
 
-		checker.Blockchain.Stop()
 		checker.Stop()
 	})
 
@@ -79,12 +83,10 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().Health().MinTimes(1).Return(nil, errors.New("err")).Do(func() {
 			end <- struct{}{}
 		})
-
-		checker := monitoring.NewStatusChecker(log, blockchainClient, 50*time.Nanosecond)
+		checker := NewStatusChecker(cfg, blockchainClient)
 		<-end
-		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.Blockchain.Status())
+		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.ChainStatus())
 
-		checker.Blockchain.Stop()
 		checker.Stop()
 	})
 
@@ -109,16 +111,16 @@ func TestAppStatus(t *testing.T) {
 			wg.Done()
 		})
 
-		checker := monitoring.NewStatusChecker(log, blockchainClient, 10*time.Millisecond)
+		checker := monitoring.NewStatusChecker(cfg, blockchainClient)
+
 		wg.Wait()
 		// ensure status is CONNECTED
-		assert.Equal(t, types.ChainStatus_CONNECTED, checker.Blockchain.Status())
+		assert.Equal(t, types.ChainStatus_CONNECTED, checker.ChainStatus())
 		atomic.StoreUint32(&returnError, 1)
 		<-end
 		// ensure it's now disconnected
-		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.Blockchain.Status())
+		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.ChainStatus())
 
-		checker.Blockchain.Stop()
 		checker.Stop()
 
 	})

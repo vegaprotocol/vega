@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
@@ -179,7 +178,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
-	statusChecker := monitoring.NewStatusChecker(l.Log, client, 500*time.Millisecond)
+	statusChecker := monitoring.New(conf.Monitoring, client)
 	statusChecker.OnChainDisconnect(cancel)
 
 	// gRPC server

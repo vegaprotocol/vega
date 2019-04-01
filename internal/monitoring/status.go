@@ -19,48 +19,60 @@ type BlockchainClient interface {
 
 // Status holds a collection of monitoring services, for checking the state of internal or external resources.
 type Status struct {
-	log        *logging.Logger
-	Blockchain *ChainStatus
+	*Config
+
+	blockchain *ChainStatus
 }
 
 // ChainStatus provides the current status of the underlying blockchain provider, given a blockchain.Client.
 type ChainStatus struct {
-	log               *logging.Logger
-	interval          time.Duration
-	client            BlockchainClient
-	status            uint32
+	log          *logging.Logger
+	interval     time.Duration
+	client       BlockchainClient
+	status       uint32
+	starting     bool
+	maxRetries   uint8
+	retriesCount int
+
 	cancel            func()
 	onChainDisconnect func()
 }
 
-// NewStatusChecker creates a Status checker, currently this is limited to the underlying blockchain status, but
+// New creates a Status checker, currently this is limited to the underlying blockchain status, but
 // will be expanded over time to include other services. Once created, a go-routine will start up and
 // immediately begin checking at an interval, currently defined internally and set to every 500 milliseconds.
-func NewStatusChecker(log *logging.Logger, clt BlockchainClient, interval time.Duration) *Status {
+func New(conf *Config, clt BlockchainClient) *Status {
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &Status{
-		log: log,
-		Blockchain: &ChainStatus{
-			interval:          interval, // 500 * time.Millisecond,
+		Config: conf,
+		blockchain: &ChainStatus{
+			log:               conf.log,
+			interval:          conf.IntervalMilliseconds * time.Millisecond,
 			client:            clt,
 			status:            uint32(types.ChainStatus_DISCONNECTED),
+			starting:          true,
+			maxRetries:        conf.Retries,
+			retriesCount:      int(conf.Retries),
 			cancel:            cancel,
-			log:               log,
 			onChainDisconnect: nil,
 		},
 	}
-	go s.Blockchain.start(ctx)
+	go s.blockchain.start(ctx)
 	return s
 }
 
 func (s *Status) OnChainDisconnect(f func()) {
-	s.Blockchain.onChainDisconnect = f
+	s.blockchain.onChainDisconnect = f
 }
 
 // Stop the internal checker(s) from periodically calling their underlying providers
 // Note: currently the only way to start checking externally is to New up a new Status checker
 func (s *Status) Stop() {
-	s.Blockchain.Stop()
+	s.blockchain.Stop()
+}
+
+func (s *Status) ChainStatus() types.ChainStatus {
+	return s.blockchain.Status()
 }
 
 // Status returns the current status of the underlying Blockchain connection.
@@ -77,6 +89,8 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 	newStatus := status
 	_, err := cs.client.Health()
 	if (status == types.ChainStatus_DISCONNECTED || status == types.ChainStatus_REPLAYING) && err == nil {
+		cs.starting = false
+		cs.retriesCount = int(cs.maxRetries)
 		// node is connected, now let's check if we are replaying
 		res, err2 := cs.client.GetStatus(context.Background())
 		if err2 != nil {
@@ -93,21 +107,18 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 		newStatus = types.ChainStatus_DISCONNECTED
 	}
 
+	if status == types.ChainStatus_DISCONNECTED {
+		cs.retriesCount -= 1
+	}
+
 	if status == newStatus {
 		return status
 	}
 
 	cs.setStatus(newStatus)
-	cs.log.Debug("Blockchain status updated",
+	cs.log.Info("Blockchain status updated",
 		logging.String("status-old", status.String()),
 		logging.String("status-new", newStatus.String()))
-
-	// if status changed to disconnect, we try to call the onChainDisconnect
-	// callback
-	if newStatus == types.ChainStatus_DISCONNECTED && cs.onChainDisconnect != nil {
-		cs.log.Info("Chain just went disconnected, triggering shutdown of the node")
-		cs.onChainDisconnect()
-	}
 
 	return newStatus
 }
@@ -121,6 +132,20 @@ func (cs *ChainStatus) start(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			currentStatus = cs.tick(currentStatus)
+			// if status changed to disconnect, we try to call the onChainDisconnect
+			// callback
+			if currentStatus == types.ChainStatus_DISCONNECTED && cs.onChainDisconnect != nil && !cs.starting {
+				cs.log.Info("Chain is disconnected, we'll try to reconnect",
+					logging.Int("retries-left", cs.retriesCount),
+				)
+
+				if cs.retriesCount <= 0 {
+					cs.log.Info("Chain is still disconnected, shuting down now",
+						logging.Int("retries-count", int(cs.maxRetries)),
+					)
+					cs.onChainDisconnect()
+				}
+			}
 
 		case <-ctx.Done():
 			return
