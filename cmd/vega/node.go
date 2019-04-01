@@ -23,6 +23,7 @@ type NodeCommand struct {
 	command
 
 	configPath string
+	withPPROF  bool
 	Log        *logging.Logger
 }
 
@@ -46,6 +47,7 @@ func (l *NodeCommand) Init(c *Cli) {
 func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
 	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
+	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 }
 
 // runNode is the entry of node command.
@@ -68,6 +70,17 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	l.Log.Info("Config path", logging.String("config-path", configPath))
+
+	var pproffhandlr *pprofhandler
+	if l.withPPROF {
+		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
+		var err error
+		pproffhandlr, err = newpprof(l.Log, configPath)
+		if err != nil {
+			return err
+		}
+		defer pproffhandlr.Stop()
+	}
 
 	// VEGA config (holds all package level configs)
 	conf, err := internal.NewConfigFromFile(l.Log, configPath)
