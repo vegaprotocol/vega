@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/proto"
@@ -45,15 +46,15 @@ func (ic *initCommand) Init(c *Cli) {
 	}
 
 	fs := ic.cmd.Flags()
-	fs.StringVarP(&ic.rootPath, "root-path", "r", defaultVegaDir(), "Path of the root directory in which the configuration will be located")
+	fs.StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
 	fs.BoolVarP(&ic.force, "force", "f", false, "Erase exiting vega configuration at the specified path")
 
 }
 
 func (ic *initCommand) runInit(c *Cli) error {
-	rootPathExists, err := pathExists(ic.rootPath)
+	rootPathExists, err := fsutil.PathExists(ic.rootPath)
 	if err != nil {
-		if _, ok := err.(*PathNotFound); !ok {
+		if _, ok := err.(*fsutil.PathNotFound); !ok {
 			return err
 		}
 	}
@@ -68,7 +69,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// create the root
-	if err := ensureDir(ic.rootPath); err != nil {
+	if err := fsutil.EnsureDir(ic.rootPath); err != nil {
 		return err
 	}
 
@@ -78,16 +79,16 @@ func (ic *initCommand) runInit(c *Cli) error {
 	fullMarketStorePath := filepath.Join(ic.rootPath, storage.MarketStoreDataPath)
 
 	// create sub-folders
-	if err := ensureDir(fullCandleStorePath); err != nil {
+	if err := fsutil.EnsureDir(fullCandleStorePath); err != nil {
 		return err
 	}
-	if err := ensureDir(fullOrderStorePath); err != nil {
+	if err := fsutil.EnsureDir(fullOrderStorePath); err != nil {
 		return err
 	}
-	if err := ensureDir(fullTradeStorePath); err != nil {
+	if err := fsutil.EnsureDir(fullTradeStorePath); err != nil {
 		return err
 	}
-	if err := ensureDir(fullMarketStorePath); err != nil {
+	if err := fsutil.EnsureDir(fullMarketStorePath); err != nil {
 		return err
 	}
 
@@ -95,7 +96,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	fullDefaultMarketConfigPath :=
 		filepath.Join(ic.rootPath, execution.MarketConfigPath)
 
-	if err := ensureDir(fullDefaultMarketConfigPath); err != nil {
+	if err := fsutil.EnsureDir(fullDefaultMarketConfigPath); err != nil {
 		return err
 	}
 

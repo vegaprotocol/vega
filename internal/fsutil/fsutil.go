@@ -1,12 +1,9 @@
-package main
+package fsutil
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 )
 
 const (
@@ -26,7 +23,7 @@ func (err *PathNotFound) Error() string {
 //	binary is in /usr/local/vega/bin/ -> look for /usr/local/vega/etc/config.toml
 //	binary is in /usr/local/bin/ -> look for /usr/local/etc/vega/config.toml
 //	otherwise, look for $HOME/.vega/config.toml
-func defaultVegaDir() string {
+func DefaultVegaDir() string {
 	ex, err := os.Executable()
 	if err != nil {
 		panic(err)
@@ -45,7 +42,7 @@ func defaultVegaDir() string {
 }
 
 // ensureDir will make sure a directory exists or is created at a given filesystem path.
-func ensureDir(path string) error {
+func EnsureDir(path string) error {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -57,7 +54,7 @@ func ensureDir(path string) error {
 }
 
 // pathExists returns whether a link exists at a given filesystem path.
-func pathExists(path string) (bool, error) {
+func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil
@@ -66,18 +63,4 @@ func pathExists(path string) (bool, error) {
 		return false, &PathNotFound{path}
 	}
 	return false, err
-}
-
-// waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(ctx context.Context) {
-	var gracefulStop = make(chan os.Signal)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-
-	select {
-	case sig := <-gracefulStop:
-		fmt.Printf("caught sig: %+v\n", sig)
-	case <-ctx.Done():
-		// nothing to do
-	}
 }

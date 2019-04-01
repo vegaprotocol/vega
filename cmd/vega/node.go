@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
-	"time"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
@@ -51,6 +54,7 @@ type NodeCommand struct {
 	configPath string
 	conf       *internal.Config
 	stats      *internal.Stats
+	withPPROF  bool
 	Log        *logging.Logger
 }
 
@@ -78,6 +82,7 @@ func (l *NodeCommand) Init(c *Cli) {
 func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
 	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
+	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 }
 
 // runNode is the entry of node command.
@@ -111,7 +116,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
-	statusChecker := monitoring.NewStatusChecker(l.Log, l.blockchainClient, 500*time.Millisecond)
+	statusChecker := monitoring.New(l.conf.Monitoring, l.blockchainClient)
 	statusChecker.OnChainDisconnect(l.cfunc)
 
 	// gRPC server
@@ -146,7 +151,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	go graphServer.Start()
 
-	waitSig(l.ctx)
+	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
 	l.Log.Info("Closing REST proxy server", logging.Error(restServer.Stop()))
@@ -171,4 +176,28 @@ func envConfigPath() string {
 		return viper.GetString("config")
 	}
 	return ""
+}
+
+// waitSig will wait for a sigterm or sigint interrupt.
+func waitSig(ctx context.Context, log *logging.Logger) {
+	var gracefulStop = make(chan os.Signal)
+	signal.Notify(gracefulStop, syscall.SIGTERM)
+	signal.Notify(gracefulStop, syscall.SIGINT)
+
+	select {
+	case sig := <-gracefulStop:
+		log.Info("caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+	case <-ctx.Done():
+		// nothing to do
+	}
+}
+
+func flagProvided(flag string) bool {
+	for _, v := range os.Args[1:] {
+		if v == flag {
+			return true
+		}
+	}
+
+	return false
 }

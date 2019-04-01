@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/orders"
@@ -37,7 +38,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		configPath = envConfigPath()
 		if configPath == "" {
 			// Default directory ($HOME/.vega)
-			configPath = defaultVegaDir()
+			configPath = fsutil.DefaultVegaDir()
 		}
 	}
 
@@ -48,7 +49,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	if err != nil {
 		// We revert to default configs if there are any errors in read/parse process
 		l.Log.Error("Error reading config from file, using defaults", logging.Error(err))
-		if conf, err = internal.NewDefaultConfig(l.Log, defaultVegaDir()); err != nil {
+		if conf, err = internal.NewDefaultConfig(l.Log, fsutil.DefaultVegaDir()); err != nil {
 			// cancel context here
 			return err
 		}
