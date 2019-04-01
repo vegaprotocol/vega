@@ -22,7 +22,7 @@ type Config struct {
 func NewDefaultConfig(log *logging.Logger) *Config {
 	return &Config{
 		log:                  log.Named(namedLogger),
-		IntervalMilliseconds: 500, // this will 500*time.Milliseconds when instanciated
+		IntervalMilliseconds: 500, // this will be 500*time.Milliseconds when instanciated
 		Retries:              5,
 	}
 }
