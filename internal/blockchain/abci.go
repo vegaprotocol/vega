@@ -252,3 +252,8 @@ func (app *AbciApplication) setTxStats(txLength int) {
 		app.txSizes = nil
 	}
 }
+
+// Stats - expose unexported stats field, temp fix for testing
+func (app *AbciApplication) Stats() *Stats {
+	return app.stats
+}

@@ -1,8 +1,9 @@
-package blockchain
+package blockchain_test
 
 import (
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/blockchain/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
 
@@ -11,7 +12,7 @@ import (
 )
 
 type testApp struct {
-	*AbciApplication
+	*blockchain.AbciApplication
 	errCh chan struct{}
 	ctrl  *gomock.Controller
 	log   *logging.Logger
@@ -30,9 +31,9 @@ func getTestApp(t *testing.T) *testApp {
 	errCb := func() {
 		ch <- struct{}{}
 	}
-	app := NewApplication(
-		NewDefaultConfig(log),
-		NewStats(),
+	app := blockchain.NewApplication(
+		blockchain.NewDefaultConfig(log),
+		blockchain.NewStats(),
 		proc,
 		svc,
 		time,
@@ -52,7 +53,7 @@ func getTestApp(t *testing.T) *testApp {
 func TestNewApplication(t *testing.T) {
 	app := getTestApp(t)
 	defer app.Finish()
-	assert.Equal(t, uint64(0), app.AbciApplication.stats.height)
+	assert.NotNil(t, app.Stats())
 }
 
 func (t *testApp) Finish() {

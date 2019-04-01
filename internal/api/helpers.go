@@ -1,8 +1,9 @@
 package api
 
 import (
-	"github.com/satori/go.uuid"
 	"time"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 func unixTimestamp(datetime time.Time) uint64 {

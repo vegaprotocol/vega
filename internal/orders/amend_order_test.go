@@ -1,4 +1,4 @@
-package orders
+package orders_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	"code.vegaprotocol.io/vega/proto"
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,6 +31,8 @@ func TestAmendOrder(t *testing.T) {
 	t.Run("Amend order - expired", testAmendOrderExpired)
 	t.Run("Amend order - not active", testAmendOrderNotActive)
 	t.Run("Amend order - invalid payload", testAmendOrderInvalidPayload)
+	t.Run("Amend order - invalid format", testAmendOrderInvalidFormat)
+	t.Run("Amend order - time service error", testAmendOrderTimeSvcErr)
 }
 
 func testAmendOrderSuccess(t *testing.T) {
@@ -108,6 +111,51 @@ func testAmendOrderInvalidPayload(t *testing.T) {
 	arg.Size = 0
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
+
+	success, err := svc.svc.AmendOrder(context.Background(), &arg)
+	assert.False(t, success)
+	assert.Error(t, err)
+}
+
+func testAmendOrderInvalidFormat(t *testing.T) {
+	arg := amend
+	arg.ExpirationDatetime = "this is not a valid format at all"
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	order := proto.Order{
+		Id:     arg.Id,
+		Market: "market",
+		Party:  arg.Party,
+		Status: proto.Order_Active,
+		Type:   proto.Order_GTT,
+	}
+	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
+
+	success, err := svc.svc.AmendOrder(context.Background(), &arg)
+	assert.False(t, success)
+	assert.Error(t, err)
+}
+
+func testAmendOrderTimeSvcErr(t *testing.T) {
+	now := time.Now()
+	expires := now.Add(-2 * time.Hour)
+	expErr := errors.New("time service error")
+	arg := amend
+	arg.ExpirationDatetime = expires.Format(time.RFC3339)
+	arg.ExpirationTimestamp = uint64(time.Duration(expires.Unix()) * time.Second)
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	order := proto.Order{
+		Id:     arg.Id,
+		Market: "market",
+		Party:  arg.Party,
+		Status: proto.Order_Active,
+		Type:   proto.Order_GTT,
+	}
+	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
+	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(vegatime.Stamp(now.UnixNano()), now, expErr)
 
 	success, err := svc.svc.AmendOrder(context.Background(), &arg)
 	assert.False(t, success)

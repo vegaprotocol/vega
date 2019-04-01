@@ -1,8 +1,9 @@
-package gql
+package gql_test
 
 import (
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
 	"code.vegaprotocol.io/vega/proto"
 	"github.com/stretchr/testify/assert"
 )
@@ -10,15 +11,15 @@ import (
 func TestModelConverters(t *testing.T) {
 
 	t.Run("DiscreteTrading.IntoProto nil duration", func(t *testing.T) {
-		dt := &DiscreteTrading{}
+		dt := &gql.DiscreteTrading{}
 		pdt, err := dt.IntoProto()
 		assert.Nil(t, pdt)
 		assert.NotNil(t, err)
-		assert.Equal(t, ErrNilDiscreteTradingDuration, err)
+		assert.Equal(t, gql.ErrNilDiscreteTradingDuration, err)
 	})
 	t.Run("DiscreteTrading.IntoProto", func(t *testing.T) {
 
-		dt := &DiscreteTrading{Duration: intptr(123)}
+		dt := &gql.DiscreteTrading{Duration: intptr(123)}
 		pdt, err := dt.IntoProto()
 		assert.NotNil(t, pdt)
 		assert.Nil(t, err)
@@ -26,18 +27,18 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("Future.IntoProto nil oracle", func(t *testing.T) {
-		f := &Future{Maturity: "12/31/19", Asset: "Ethereum/Ether"}
+		f := &gql.Future{Maturity: "12/31/19", Asset: "Ethereum/Ether"}
 		pf, err := f.IntoProto()
 		assert.Nil(t, pf)
 		assert.NotNil(t, err)
-		assert.Equal(t, ErrNilOracle, err)
+		assert.Equal(t, gql.ErrNilOracle, err)
 	})
 
 	t.Run("Future.IntoProto", func(t *testing.T) {
-		f := &Future{
+		f := &gql.Future{
 			Maturity: "12/31/19",
 			Asset:    "Ethereum/Ether",
-			Oracle: &EthereumEvent{
+			Oracle: &gql.EthereumEvent{
 				ContractID: "asdas",
 				Event:      "aerasd",
 			},
@@ -48,7 +49,7 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("InstrumentMetadata.IntoProto", func(t *testing.T) {
-		im := InstrumentMetadata{Tags: []*string{stringptr("tag:1"), stringptr("tag:2")}}
+		im := gql.InstrumentMetadata{Tags: []*string{stringptr("tag:1"), stringptr("tag:2")}}
 		pim, err := im.IntoProto()
 		assert.Nil(t, err)
 		assert.NotNil(t, pim)
@@ -57,18 +58,18 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("Instrument.IntoProto nil product", func(t *testing.T) {
-		i := Instrument{}
+		i := gql.Instrument{}
 		pi, err := i.IntoProto()
 		assert.Nil(t, pi)
 		assert.NotNil(t, err)
-		assert.Equal(t, ErrNilProduct, err)
+		assert.Equal(t, gql.ErrNilProduct, err)
 	})
 
 	t.Run("Instrument.IntoProto ", func(t *testing.T) {
-		i := Instrument{Product: &Future{
+		i := gql.Instrument{Product: &gql.Future{
 			Maturity: "asdasdas",
 			Asset:    "Ethereum/Ether",
-			Oracle: &EthereumEvent{
+			Oracle: &gql.EthereumEvent{
 				ContractID: "asdas",
 				Event:      "aerasd",
 			},
@@ -79,38 +80,38 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("TradableInstrument.IntoProto nil inners types", func(t *testing.T) {
-		ti := TradableInstrument{}
+		ti := gql.TradableInstrument{}
 		pti, err := ti.IntoProto()
 		assert.Nil(t, pti)
 		assert.NotNil(t, err)
-		assert.Equal(t, ErrNilProduct, err)
+		assert.Equal(t, gql.ErrNilProduct, err)
 
-		ti.Instrument.Product = &Future{
+		ti.Instrument.Product = &gql.Future{
 			Maturity: "asdasdas",
 			Asset:    "Ethereum/Ether",
-			Oracle: &EthereumEvent{
+			Oracle: &gql.EthereumEvent{
 				ContractID: "asdas",
 				Event:      "aerasd",
 			}}
 		pti, err = ti.IntoProto()
 		assert.Nil(t, pti)
 		assert.NotNil(t, err)
-		assert.Equal(t, ErrNilRiskModel, err)
+		assert.Equal(t, gql.ErrNilRiskModel, err)
 	})
 
 	t.Run("TradableIstrument.IntoProto", func(t *testing.T) {
-		ti := TradableInstrument{
-			Instrument: Instrument{
-				Product: &Future{
+		ti := gql.TradableInstrument{
+			Instrument: gql.Instrument{
+				Product: &gql.Future{
 					Maturity: "asdasdas",
 					Asset:    "Ethereum/Ether",
-					Oracle: &EthereumEvent{
+					Oracle: &gql.EthereumEvent{
 						ContractID: "asdas",
 						Event:      "aerasd",
 					},
 				},
 			},
-			RiskModel: &BuiltinFutures{
+			RiskModel: &gql.BuiltinFutures{
 				HistoricVolatility: 42.42,
 			},
 		}
@@ -120,20 +121,20 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("Market.IntoProto", func(t *testing.T) {
-		mkt := Market{
-			TradingMode: &ContinuousTrading{TickSize: intptr(123)},
-			TradableInstrument: TradableInstrument{
-				Instrument: Instrument{
-					Product: &Future{
+		mkt := gql.Market{
+			TradingMode: &gql.ContinuousTrading{TickSize: intptr(123)},
+			TradableInstrument: gql.TradableInstrument{
+				Instrument: gql.Instrument{
+					Product: &gql.Future{
 						Maturity: "asdasdas",
 						Asset:    "Ethereum/Ether",
-						Oracle: &EthereumEvent{
+						Oracle: &gql.EthereumEvent{
 							ContractID: "asdas",
 							Event:      "aerasd",
 						},
 					},
 				},
-				RiskModel: &BuiltinFutures{
+				RiskModel: &gql.BuiltinFutures{
 					HistoricVolatility: 42.42,
 				},
 			},
@@ -145,17 +146,17 @@ func TestModelConverters(t *testing.T) {
 
 	t.Run("TradingModeFromProto unimplemented", func(t *testing.T) {
 		ptm := int(0)
-		tm, err := TradingModeFromProto(ptm)
+		tm, err := gql.TradingModeFromProto(ptm)
 		assert.Nil(t, tm)
 		assert.NotNil(t, err)
-		assert.Equal(t, ErrUnimplementedTradingMode, err)
+		assert.Equal(t, gql.ErrUnimplementedTradingMode, err)
 	})
 
 	t.Run("TradingModeFromProto nil", func(t *testing.T) {
-		tm, err := TradingModeFromProto(nil)
+		tm, err := gql.TradingModeFromProto(nil)
 		assert.Nil(t, tm)
 		assert.NotNil(t, err)
-		assert.Equal(t, ErrNilTradingMode, err)
+		assert.Equal(t, gql.ErrNilTradingMode, err)
 	})
 
 	t.Run("TradingModeFromProto Continuous", func(t *testing.T) {
@@ -164,10 +165,10 @@ func TestModelConverters(t *testing.T) {
 				TickSize: 42,
 			},
 		}
-		tm, err := TradingModeFromProto(ptm)
+		tm, err := gql.TradingModeFromProto(ptm)
 		assert.NotNil(t, tm)
 		assert.Nil(t, err)
-		_, ok := tm.(*ContinuousTrading)
+		_, ok := tm.(*gql.ContinuousTrading)
 		assert.True(t, ok)
 	})
 
@@ -177,25 +178,25 @@ func TestModelConverters(t *testing.T) {
 				Duration: 42,
 			},
 		}
-		tm, err := TradingModeFromProto(ptm)
+		tm, err := gql.TradingModeFromProto(ptm)
 		assert.NotNil(t, tm)
 		assert.Nil(t, err)
-		_, ok := tm.(*DiscreteTrading)
+		_, ok := tm.(*gql.DiscreteTrading)
 		assert.True(t, ok)
 	})
 
 	t.Run("InstrumentMetadataFromProto nil", func(t *testing.T) {
-		im, err := InstrumentMetadataFromProto(nil)
+		im, err := gql.InstrumentMetadataFromProto(nil)
 		assert.Nil(t, im)
 		assert.NotNil(t, err)
-		assert.Equal(t, ErrNilInstrumentMetadata, err)
+		assert.Equal(t, gql.ErrNilInstrumentMetadata, err)
 	})
 
 	t.Run("InstrumentMetadataFromProto", func(t *testing.T) {
 		pim := &proto.InstrumentMetadata{
 			Tags: []string{"tag:1", "tag:2"},
 		}
-		im, err := InstrumentMetadataFromProto(pim)
+		im, err := gql.InstrumentMetadataFromProto(pim)
 		assert.NotNil(t, im)
 		assert.Nil(t, err)
 		assert.Len(t, im.Tags, 2)
@@ -204,41 +205,41 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("EthereumEventFromproto nil", func(t *testing.T) {
-		ee, err := EthereumEventFromProto(nil)
+		ee, err := gql.EthereumEventFromProto(nil)
 		assert.Nil(t, ee)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrNilEthereumEvent)
+		assert.Equal(t, err, gql.ErrNilEthereumEvent)
 	})
 
 	t.Run("EthereumEventFromproto", func(t *testing.T) {
 		pee := &proto.EthereumEvent{}
-		ee, err := EthereumEventFromProto(pee)
+		ee, err := gql.EthereumEventFromProto(pee)
 		assert.NotNil(t, ee)
 		assert.Nil(t, err)
 	})
 
 	t.Run("OracleFromProto nil", func(t *testing.T) {
-		o, err := OracleFromProto(nil)
+		o, err := gql.OracleFromProto(nil)
 		assert.Nil(t, o)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrNilOracle)
+		assert.Equal(t, err, gql.ErrNilOracle)
 	})
 
 	t.Run("OracleFromProto unimplemented", func(t *testing.T) {
-		o, err := OracleFromProto(struct{}{})
+		o, err := gql.OracleFromProto(struct{}{})
 		assert.Nil(t, o)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrUnimplementedOracle)
+		assert.Equal(t, err, gql.ErrUnimplementedOracle)
 	})
 
 	t.Run("OracleFromProto EthereumEvent", func(t *testing.T) {
 		po := &proto.Future_EthereumEvent{
 			EthereumEvent: &proto.EthereumEvent{},
 		}
-		o, err := OracleFromProto(po)
+		o, err := gql.OracleFromProto(po)
 		assert.NotNil(t, o)
 		assert.Nil(t, err)
-		_, ok := o.(*EthereumEvent)
+		_, ok := o.(*gql.EthereumEvent)
 		assert.True(t, ok)
 	})
 
@@ -248,30 +249,30 @@ func TestModelConverters(t *testing.T) {
 				EthereumEvent: &proto.EthereumEvent{},
 			},
 		}
-		f, err := FutureFromProto(pf)
+		f, err := gql.FutureFromProto(pf)
 		assert.NotNil(t, f)
 		assert.Nil(t, err)
 	})
 
 	t.Run("FutureFromProto nil", func(t *testing.T) {
-		f, err := FutureFromProto(nil)
+		f, err := gql.FutureFromProto(nil)
 		assert.Nil(t, f)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrNilFuture)
+		assert.Equal(t, err, gql.ErrNilFuture)
 	})
 
 	t.Run("ProductFromProto nil", func(t *testing.T) {
-		p, err := ProductFromProto(nil)
+		p, err := gql.ProductFromProto(nil)
 		assert.Nil(t, p)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrNilProduct)
+		assert.Equal(t, err, gql.ErrNilProduct)
 	})
 
 	t.Run("ProductFromProto unimplemented", func(t *testing.T) {
-		p, err := ProductFromProto(struct{}{})
+		p, err := gql.ProductFromProto(struct{}{})
 		assert.Nil(t, p)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrUnimplementedProduct)
+		assert.Equal(t, err, gql.ErrUnimplementedProduct)
 	})
 
 	t.Run("ProductFromProto", func(t *testing.T) {
@@ -282,18 +283,18 @@ func TestModelConverters(t *testing.T) {
 				},
 			},
 		}
-		p, err := ProductFromProto(pp)
+		p, err := gql.ProductFromProto(pp)
 		assert.NotNil(t, p)
 		assert.Nil(t, err)
-		_, ok := p.(*Future)
+		_, ok := p.(*gql.Future)
 		assert.True(t, ok)
 	})
 
 	t.Run("InstrumentFromProto nil", func(t *testing.T) {
-		i, err := InstrumentFromProto(nil)
+		i, err := gql.InstrumentFromProto(nil)
 		assert.Nil(t, i)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrNilInstrument)
+		assert.Equal(t, err, gql.ErrNilInstrument)
 	})
 
 	t.Run("InstrumentFromProto", func(t *testing.T) {
@@ -307,23 +308,23 @@ func TestModelConverters(t *testing.T) {
 				},
 			},
 		}
-		i, err := InstrumentFromProto(pi)
+		i, err := gql.InstrumentFromProto(pi)
 		assert.NotNil(t, i)
 		assert.Nil(t, err)
 	})
 
 	t.Run("RiskModelFromProto nil", func(t *testing.T) {
-		rm, err := RiskModelFromProto(nil)
+		rm, err := gql.RiskModelFromProto(nil)
 		assert.Nil(t, rm)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrNilRiskModel)
+		assert.Equal(t, err, gql.ErrNilRiskModel)
 	})
 
 	t.Run("RiskModelFromProto unimplemented", func(t *testing.T) {
-		rm, err := RiskModelFromProto(struct{}{})
+		rm, err := gql.RiskModelFromProto(struct{}{})
 		assert.Nil(t, rm)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrUnimplementedRiskModel)
+		assert.Equal(t, err, gql.ErrUnimplementedRiskModel)
 	})
 
 	t.Run("RiskModelFromProto", func(t *testing.T) {
@@ -332,18 +333,18 @@ func TestModelConverters(t *testing.T) {
 				HistoricVolatility: 42.4,
 			},
 		}
-		rm, err := RiskModelFromProto(prm)
+		rm, err := gql.RiskModelFromProto(prm)
 		assert.NotNil(t, rm)
 		assert.Nil(t, err)
-		_, ok := rm.(*BuiltinFutures)
+		_, ok := rm.(*gql.BuiltinFutures)
 		assert.True(t, ok)
 	})
 
 	t.Run("TradableInstrumentFromProto nil", func(t *testing.T) {
-		ti, err := TradableInstrumentFromProto(nil)
+		ti, err := gql.TradableInstrumentFromProto(nil)
 		assert.Nil(t, ti)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrNilTradableInstrument)
+		assert.Equal(t, err, gql.ErrNilTradableInstrument)
 	})
 
 	t.Run("TradableInstrumentFromProto nil", func(t *testing.T) {
@@ -365,16 +366,16 @@ func TestModelConverters(t *testing.T) {
 			},
 		}
 
-		ti, err := TradableInstrumentFromProto(pti)
+		ti, err := gql.TradableInstrumentFromProto(pti)
 		assert.NotNil(t, ti)
 		assert.Nil(t, err)
 	})
 
 	t.Run("MarketFromProto nil", func(t *testing.T) {
-		m, err := MarketFromProto(nil)
+		m, err := gql.MarketFromProto(nil)
 		assert.Nil(t, m)
 		assert.NotNil(t, err)
-		assert.Equal(t, err, ErrNilMarket)
+		assert.Equal(t, err, gql.ErrNilMarket)
 	})
 
 	t.Run("MarketFromProto", func(t *testing.T) {
@@ -403,7 +404,7 @@ func TestModelConverters(t *testing.T) {
 			},
 		}
 
-		m, err := MarketFromProto(pm)
+		m, err := gql.MarketFromProto(pm)
 		assert.NotNil(t, m)
 		assert.Nil(t, err)
 	})
