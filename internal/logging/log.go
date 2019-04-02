@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -219,20 +220,20 @@ func IPAddressFromContext(ctx context.Context) string {
 
 // Errorf implement badger interface
 func (log *Logger) Errorf(s string, args ...interface{}) {
-	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Errorf(s, args...)
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Errorf(strings.TrimSpace(s), args...)
 }
 
 // Warningf implement badger interface
 func (log *Logger) Warningf(s string, args ...interface{}) {
-	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Warnf(s, args...)
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Warnf(strings.TrimSpace(s), args...)
 }
 
 // Infof implement badger interface
 func (log *Logger) Infof(s string, args ...interface{}) {
-	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Infof(s, args...)
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Infof(strings.TrimSpace(s), args...)
 }
 
 // Debugf implement badger interface
 func (log *Logger) Debugf(s string, args ...interface{}) {
-	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Debugf(s, args...)
+	log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Debugf(strings.TrimSpace(s), args...)
 }
