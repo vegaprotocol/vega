@@ -1,7 +1,6 @@
 package blockchain
 
 import (
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -46,9 +45,12 @@ func (s *Server) Start() error {
 	return nil
 }
 
-func (s *Server) Stop() error {
+func (s *Server) Stop() {
 	if s.srv != nil {
-		return s.srv.Stop()
+		s.log.Info("Stopping abci-blockchain socket server")
+		if err := s.srv.Stop(); err != nil {
+			s.log.Error("Failed to stop abci-blockchain socket server cleanly",
+				logging.Error(err))
+		}
 	}
-	return errors.New("server not started")
 }

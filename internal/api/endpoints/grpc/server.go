@@ -17,7 +17,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
-	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 )
 
@@ -94,10 +93,10 @@ func (g *grpcServer) Start() {
 	}
 }
 
-func (g *grpcServer) Stop() error {
+func (g *grpcServer) Stop() {
 	if g.srv != nil {
+		logger := *g.GetLogger()
+		logger.Info("Stopping gRPC based API")
 		g.srv.GracefulStop()
-		return nil
 	}
-	return errors.New("GRPC server not started")
 }

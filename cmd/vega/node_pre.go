@@ -42,7 +42,10 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		}
 	}
 
-	l.Log.Info("Config path", logging.String("config-path", configPath))
+	l.Log.Info("Starting Vega",
+		logging.String("config-path", configPath),
+		logging.String("version", Version),
+		logging.String("version-hash", VersionHash))
 
 	// VEGA config (holds all package level configs)
 	conf, err := internal.NewConfigFromFile(l.Log, configPath)
