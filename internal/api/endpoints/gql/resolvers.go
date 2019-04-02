@@ -278,7 +278,7 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (*types.Ma
 }
 
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
-	sinceTimestampRaw string, interval Interval) ([]*types.Candle, error) {
+	sinceRaw string, interval Interval) ([]*types.Candle, error) {
 
 	// Validate interval, map to protobuf enum
 	var pbInterval types.Interval
@@ -303,16 +303,23 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	}
 
 	// Convert javascript string representation of int epoch+nano timestamp
-	sinceTimestamp, err := strconv.ParseInt(sinceTimestampRaw, 10, 64)
+	/*
+		sinceTimestamp, err := strconv.ParseInt(sinceTimestampRaw, 10, 64)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("error converting %s into a valid timestamp", sinceTimestampRaw))
+		}
+		if len(sinceTimestampRaw) < 19 {
+			return nil, errors.New("timestamp should be in epoch+nanoseconds format, eg. 1545158175835902621")
+		}
+	*/
+
+	since, err := vegatime.Parse(sinceRaw)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error converting %s into a valid timestamp", sinceTimestampRaw))
-	}
-	if len(sinceTimestampRaw) < 19 {
-		return nil, errors.New("timestamp should be in epoch+nanoseconds format, eg. 1545158175835902621")
+		return nil, err
 	}
 
 	// Retrieve candles from store/service
-	c, err := r.candleService.GetCandles(ctx, market.ID, vegatime.UnixNano(sinceTimestamp), pbInterval)
+	c, err := r.candleService.GetCandles(ctx, market.ID, since, pbInterval)
 	if err != nil {
 		return nil, err
 	}
@@ -471,7 +478,7 @@ func (r *MyOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderSt
 	return OrderStatus(obj.Status.String()), nil
 }
 func (r *MyOrderResolver) Datetime(ctx context.Context, obj *types.Order) (string, error) {
-	return vegatime.UnixNano(obj.Timestamp).Format(time.RFC3339Nano), nil
+	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
 func (r *MyOrderResolver) Trades(ctx context.Context, obj *types.Order) ([]*types.Trade, error) {
 	relatedTrades, err := r.tradeService.GetByOrderId(ctx, obj.Id)
@@ -503,7 +510,7 @@ func (r *MyTradeResolver) Timestamp(ctx context.Context, obj *types.Trade) (stri
 	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 func (r *MyTradeResolver) Datetime(ctx context.Context, obj *types.Trade) (string, error) {
-	return vegatime.UnixNano(obj.Timestamp).Format(time.RFC3339Nano), nil
+	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
 
 // END: Trade Resolver
@@ -528,7 +535,7 @@ func (r *MyCandleResolver) Volume(ctx context.Context, obj *types.Candle) (strin
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 func (r *MyCandleResolver) Datetime(ctx context.Context, obj *types.Candle) (string, error) {
-	return vegatime.UnixNano(obj.Timestamp).Format(time.RFC3339Nano), nil
+	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
 func (r *MyCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (string, error) {
 	return strconv.FormatInt(obj.Timestamp, 10), nil
@@ -673,8 +680,9 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	if order.Type == types.Order_GTT && expiration != nil {
 
 		// Validate RFC3339 with no milli or nanosecond (@matt has chosen this strategy, good enough until unix epoch timestamp)
-		layout := "2006-01-02T15:04:05Z"
-		_, err := time.Parse(layout, *expiration)
+		//layout := "2006-01-02T15:04:05Z"
+		// _, err := time.Parse(layout, *expiration)
+		_, err := vegatime.Parse(*expiration)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
 		}

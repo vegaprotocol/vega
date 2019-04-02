@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/vegatime"
 	"code.vegaprotocol.io/vega/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -35,10 +36,10 @@ func TestAmendOrder(t *testing.T) {
 }
 
 func testAmendOrderSuccess(t *testing.T) {
-	now := time.Now()
+	now := vegatime.Now()
 	expires := now.Add(2 * time.Hour)
 	arg := amend
-	arg.ExpirationDatetime = expires.Format(time.RFC3339Nano)
+	arg.ExpirationDatetime = vegatime.Format(expires)
 	arg.ExpirationTimestamp = expires.UnixNano()
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -60,10 +61,10 @@ func testAmendOrderSuccess(t *testing.T) {
 }
 
 func testAmendOrderExpired(t *testing.T) {
-	now := time.Now()
+	now := vegatime.Now()
 	expires := now.Add(-2 * time.Hour)
 	arg := amend
-	arg.ExpirationDatetime = expires.Format(time.RFC3339)
+	arg.ExpirationDatetime = vegatime.Format(expires)
 	arg.ExpirationTimestamp = expires.UnixNano()
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -84,10 +85,10 @@ func testAmendOrderExpired(t *testing.T) {
 }
 
 func testAmendOrderNotActive(t *testing.T) {
-	now := time.Now()
+	now := vegatime.Now()
 	expires := now.Add(2 * time.Hour)
 	arg := amend
-	arg.ExpirationDatetime = expires.Format(time.RFC3339)
+	arg.ExpirationDatetime = vegatime.Format(expires)
 	arg.ExpirationTimestamp = expires.UnixNano()
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -137,11 +138,11 @@ func testAmendOrderInvalidFormat(t *testing.T) {
 }
 
 func testAmendOrderTimeSvcErr(t *testing.T) {
-	now := time.Now()
+	now := vegatime.Now()
 	expires := now.Add(-2 * time.Hour)
 	expErr := errors.New("time service error")
 	arg := amend
-	arg.ExpirationDatetime = expires.Format(time.RFC3339)
+	arg.ExpirationDatetime = vegatime.Format(expires)
 	arg.ExpirationTimestamp = expires.UnixNano()
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()

@@ -3,9 +3,9 @@ package matching
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +19,7 @@ type aggressiveOrderScenario struct {
 }
 
 func getCurrentUtcTimestampNano() int64 {
-	return time.Now().UTC().UnixNano()
+	return vegatime.Now().UnixNano()
 }
 
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {

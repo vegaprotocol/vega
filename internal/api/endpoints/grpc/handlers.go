@@ -296,7 +296,7 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 	// If the chain is replaying then genesis time can be nil
 	genesisTime := ""
 	if gt != nil {
-		genesisTime = gt.Format(time.RFC3339)
+		genesisTime = vegatime.Format(*gt)
 	}
 
 	// Load current markets details
@@ -325,8 +325,8 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		BacklogLength:         uint64(backlogLength),
 		TotalPeers:            uint64(numPeers),
 		GenesisTime:           genesisTime,
-		CurrentTime:           time.Now().UTC().Format(time.RFC3339),
-		VegaTime:              epochTime.Format(time.RFC3339),
+		CurrentTime:           vegatime.Format(vegatime.Now()),
+		VegaTime:              vegatime.Format(epochTime),
 		TxPerBlock:            uint64(h.Stats.Blockchain.AverageTxPerBatch()),
 		AverageTxBytes:        uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
 		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
@@ -352,7 +352,7 @@ func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest
 		return nil, err
 	}
 	var response = &api.VegaTimeResponse{}
-	response.Time = epochTime.Format(time.RFC3339)
+	response.Time = vegatime.Format(epochTime)
 	return response, nil
 }
 

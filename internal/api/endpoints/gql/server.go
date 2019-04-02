@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"runtime/debug"
-	"time"
 
 	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/candles"
@@ -135,9 +134,9 @@ func (g *graphServer) Start() {
 		logfields = append(logfields, logging.String("raw", reqctx.RawQuery))
 		rlogger := logger.With(logfields...)
 		rlogger.Debug("GQL Start")
-		start := time.Now()
+		start := vegatime.Now()
 		res, err = next(ctx)
-		end := time.Now()
+		end := vegatime.Now()
 		if err != nil {
 			logfields = append(logfields, logging.String("error", err.Error()))
 		}

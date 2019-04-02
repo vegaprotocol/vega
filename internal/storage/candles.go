@@ -488,7 +488,7 @@ func getBufferKey(timestamp time.Time, interval types.Interval) string {
 func newCandle(timestamp time.Time, openPrice, size uint64, interval types.Interval) *types.Candle {
 	candle := types.CandlePool.Get().(*types.Candle)
 	candle.Timestamp = timestamp.UnixNano()
-	candle.Datetime = timestamp.Format(time.RFC3339)
+	candle.Datetime = vegatime.Format(timestamp)
 	candle.High = openPrice
 	candle.Low = openPrice
 	candle.Open = openPrice

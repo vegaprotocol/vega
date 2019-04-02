@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/execution/mocks"
@@ -120,9 +121,9 @@ func BenchmarkMatching(
 			order.Type = types.Order_GTC
 			order.Timestamp = timestamp
 
-			start := time.Now()
+			start := vegatime.Now()
 			oc, oe := executionEngine.SubmitOrder(order)
-			end := time.Now()
+			end := vegatime.Now()
 			if oe == nil {
 				oc.Release()
 			}

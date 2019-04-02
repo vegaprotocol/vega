@@ -27,10 +27,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 
 	// t0 = 2018-11-13T11:01:14Z
 	t0 := vegatime.UnixNano(1542106874000000000)
-	t0Seconds := int64(1542106874)
-	t0NanoSeconds := int64(000000000)
-
-	t.Log(fmt.Sprintf("t0 = %s", time.Unix(t0Seconds, t0NanoSeconds).Format(time.RFC3339)))
+	t.Log(fmt.Sprintf("t0 = %s", vegatime.Format(t0)))
 
 	var trades = []*types.Trade{
 		{Id: "1", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.UnixNano()},
@@ -54,7 +51,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 
 	assert.Equal(t, 2, len(candles))
 
-	t.Log(fmt.Sprintf("%s", time.Unix(1542106860, 000000000).Format(time.RFC3339)))
+	t.Log(fmt.Sprintf("%s", vegatime.Format(time.Unix(1542106860, 000000000))))
 	assert.Equal(t, int64(1542106860000000000), candles[0].Timestamp)
 	assert.Equal(t, uint64(100), candles[0].High)
 	assert.Equal(t, uint64(100), candles[0].Low)
@@ -178,7 +175,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 }
 
 func TestStorage_GetMapOfIntervalsToTimestamps(t *testing.T) {
-	timestamp, _ := time.Parse(time.RFC3339, "2018-11-13T11:01:14Z")
+	timestamp, _ := vegatime.Parse("2018-11-13T11:01:14Z")
 	t0 := timestamp
 	timestamps := storage.GetMapOfIntervalsToRoundedTimestamps(timestamp)
 	assert.Equal(t, t0.Add(-14*time.Second), timestamps[types.Interval_I1M])
@@ -263,7 +260,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 
 	assert.Equal(t, 2, len(candles))
 
-	t.Log(fmt.Sprintf("%s", time.Unix(1542106860, 000000000).Format(time.RFC3339)))
+	t.Log(fmt.Sprintf("%s", vegatime.Format(time.Unix(1542106860, 000000000))))
 
 	assert.Equal(t, t0.UnixNano(), candles[0].Timestamp)
 	assert.Equal(t, uint64(108), candles[0].High)

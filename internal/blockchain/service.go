@@ -7,6 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/pkg/errors"
 )
@@ -93,8 +94,8 @@ func (s *abciService) Begin() error {
 	s.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),
 		logging.Int64("previous-timestamp", s.previousTimestamp.UnixNano()),
-		logging.String("current-datetime", s.currentTimestamp.Format(time.RFC3339Nano)),
-		logging.String("previous-datetime", s.previousTimestamp.Format(time.RFC3339Nano)),
+		logging.String("current-datetime", vegatime.Format(s.currentTimestamp)),
+		logging.String("previous-datetime", vegatime.Format(s.previousTimestamp)),
 	)
 
 	return nil
@@ -235,7 +236,7 @@ func (s *abciService) setBatchStats() {
 		}
 	}
 
-	blockDuration := time.Duration(time.Now().UnixNano() - s.currentTimestamp.UnixNano()).Seconds()
+	blockDuration := time.Duration(vegatime.Now().UnixNano() - s.currentTimestamp.UnixNano()).Seconds()
 	s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
 	s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
 

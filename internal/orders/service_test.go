@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/orders/mocks"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -49,12 +50,12 @@ func TestCreateOrder(t *testing.T) {
 
 func testOrderSuccess(t *testing.T) {
 	// now
-	now := time.Now()
+	now := vegatime.Now()
 	// expires 2 hours from now
 	expires := now.Add(time.Hour * 2)
 	orderRef := "order_reference"
 	order := orderSubmission
-	order.ExpirationDatetime = expires.Format(time.RFC3339Nano)
+	order.ExpirationDatetime = vegatime.Format(expires)
 	matcher := orderMatcher{
 		e: types.Order{
 			Id:                  order.Id,
@@ -80,11 +81,11 @@ func testOrderSuccess(t *testing.T) {
 
 func testOrderExpired(t *testing.T) {
 	// now
-	now := time.Now()
+	now := vegatime.Now()
 	//expired 2 hours ago
 	expires := now.Add(time.Hour * -2)
 	order := orderSubmission
-	order.ExpirationDatetime = expires.Format(time.RFC3339)
+	order.ExpirationDatetime = vegatime.Format(expires)
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
@@ -96,12 +97,12 @@ func testOrderExpired(t *testing.T) {
 
 func testOrderBlockchainError(t *testing.T) {
 	// now
-	now := time.Now()
+	now := vegatime.Now()
 	// expires 2 hours from now
 	expires := now.Add(time.Hour * 2)
 	bcErr := errors.New("blockchain error")
 	order := orderSubmission
-	order.ExpirationDatetime = expires.Format(time.RFC3339Nano)
+	order.ExpirationDatetime = vegatime.Format(expires)
 	matcher := orderMatcher{
 		e: types.Order{
 			Id:                  order.Id,

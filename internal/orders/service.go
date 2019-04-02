@@ -7,6 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/pkg/errors"
 )
@@ -144,7 +145,7 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 }
 
 func (s *Svc) validateOrderExpirationTS(expdt string) (time.Time, error) {
-	exp, err := time.Parse(time.RFC3339, expdt)
+	exp, err := vegatime.Parse(expdt)
 	if err != nil {
 		return time.Time{}, ErrInvalidExpirationDTFmt
 	}

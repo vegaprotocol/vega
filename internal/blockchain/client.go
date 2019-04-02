@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
@@ -48,9 +49,9 @@ func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (success b
 func (b *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	res, err := b.tmClient.Genesis()
 	if err != nil {
-		return time.Now(), err
+		return vegatime.Now(), err
 	}
-	return res.Genesis.GenesisTime, nil
+	return res.Genesis.GenesisTime.UTC(), nil
 }
 
 func (b *Client) GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) {
