@@ -18,8 +18,8 @@ type aggressiveOrderScenario struct {
 	expectedTrades                []types.Trade
 }
 
-func getCurrentUtcTimestampNano() uint64 {
-	return uint64(time.Now().UTC().UnixNano())
+func getCurrentUtcTimestampNano() int64 {
+	return time.Now().UTC().UnixNano()
 }
 
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {

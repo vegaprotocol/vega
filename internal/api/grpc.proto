@@ -67,7 +67,7 @@ message MarketsResponse {
 
 message CandlesRequest {
     string market = 1 [(validator.field) = {msg_exists : true}];
-    uint64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
+    int64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
     vega.Interval interval = 3;
 }
 

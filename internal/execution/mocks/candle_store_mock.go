@@ -8,6 +8,7 @@ import (
 	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+	time "time"
 )
 
 // MockCandleStore is a mock of CandleStore interface
@@ -62,7 +63,7 @@ func (mr *MockCandleStoreMockRecorder) GenerateCandlesFromBuffer(arg0 interface{
 }
 
 // StartNewBuffer mocks base method
-func (m *MockCandleStore) StartNewBuffer(arg0 string, arg1 uint64) error {
+func (m *MockCandleStore) StartNewBuffer(arg0 string, arg1 time.Time) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StartNewBuffer", arg0, arg1)
 	ret0, _ := ret[0].(error)

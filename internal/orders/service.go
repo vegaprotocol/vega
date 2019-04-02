@@ -7,7 +7,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/pkg/errors"
 )
@@ -19,7 +18,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders TimeService
 type TimeService interface {
-	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
+	GetTimeNow() (time.Time, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  OrderStore
@@ -86,7 +85,7 @@ func (s *Svc) CreateOrder(ctx context.Context, orderSubmission *types.OrderSubmi
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return false, "", err
 		}
-		order.ExpirationTimestamp = uint64(t.UnixNano())
+		order.ExpirationTimestamp = t.UnixNano()
 	}
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
@@ -137,7 +136,7 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return false, err
 		}
-		amendment.ExpirationTimestamp = uint64(t.UnixNano())
+		amendment.ExpirationTimestamp = t.UnixNano()
 	}
 
 	// Send edit request by consensus
@@ -150,7 +149,7 @@ func (s *Svc) validateOrderExpirationTS(expdt string) (time.Time, error) {
 		return time.Time{}, ErrInvalidExpirationDTFmt
 	}
 
-	_, now, err := s.timeService.GetTimeNow()
+	now, err := s.timeService.GetTimeNow()
 	if err != nil {
 		return time.Time{}, err
 	}

@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/orders/mocks"
-	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -55,7 +54,7 @@ func testOrderSuccess(t *testing.T) {
 	expires := now.Add(time.Hour * 2)
 	orderRef := "order_reference"
 	order := orderSubmission
-	order.ExpirationDatetime = expires.Format(time.RFC3339)
+	order.ExpirationDatetime = expires.Format(time.RFC3339Nano)
 	matcher := orderMatcher{
 		e: types.Order{
 			Id:                  order.Id,
@@ -66,12 +65,12 @@ func testOrderSuccess(t *testing.T) {
 			Side:                order.Side,
 			Type:                order.Type,
 			ExpirationDatetime:  order.ExpirationDatetime,
-			ExpirationTimestamp: uint64(time.Duration(expires.Unix()) * time.Second),
+			ExpirationTimestamp: expires.UnixNano(),
 		},
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(vegatime.Stamp(now.UnixNano()), now, nil)
+	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	svc.block.EXPECT().CreateOrder(gomock.Any(), matcher).Times(1).Return(true, orderRef, nil)
 	success, reference, err := svc.svc.CreateOrder(context.Background(), &order)
 	assert.True(t, success)
@@ -88,7 +87,7 @@ func testOrderExpired(t *testing.T) {
 	order.ExpirationDatetime = expires.Format(time.RFC3339)
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(vegatime.Stamp(now.UnixNano()), now, nil)
+	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	success, reference, err := svc.svc.CreateOrder(context.Background(), &order)
 	assert.False(t, success)
 	assert.Error(t, err)
@@ -102,7 +101,7 @@ func testOrderBlockchainError(t *testing.T) {
 	expires := now.Add(time.Hour * 2)
 	bcErr := errors.New("blockchain error")
 	order := orderSubmission
-	order.ExpirationDatetime = expires.Format(time.RFC3339)
+	order.ExpirationDatetime = expires.Format(time.RFC3339Nano)
 	matcher := orderMatcher{
 		e: types.Order{
 			Id:                  order.Id,
@@ -113,12 +112,12 @@ func testOrderBlockchainError(t *testing.T) {
 			Side:                order.Side,
 			Type:                order.Type,
 			ExpirationDatetime:  order.ExpirationDatetime,
-			ExpirationTimestamp: uint64(time.Duration(expires.Unix()) * time.Second),
+			ExpirationTimestamp: expires.UnixNano(),
 		},
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(vegatime.Stamp(now.UnixNano()), now, nil)
+	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	svc.block.EXPECT().CreateOrder(gomock.Any(), matcher).Times(1).Return(false, "", bcErr)
 	success, reference, err := svc.svc.CreateOrder(context.Background(), &order)
 	assert.False(t, success)

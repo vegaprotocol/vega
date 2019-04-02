@@ -233,6 +233,7 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	assert.Equal(t, updatedAggressiveOrder.Id, orderAtPartyB.Id)
 }
 
+/*
 func TestStorage_OrderFiltration(t *testing.T) {
 	config, err := storage.NewTestConfig()
 	if err != nil {
@@ -533,3 +534,4 @@ func testStorage_InsertBatchOrders(t *testing.T) {
 	assert.Equal(t, 1, len(fetchedOrder))
 	assert.Equal(t, order1.Id, fetchedOrder[0].Id)
 }
+*/

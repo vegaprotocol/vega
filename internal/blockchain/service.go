@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/vegatime"
-
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -25,7 +23,7 @@ type Service interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceTime
 type ServiceTime interface {
-	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
+	GetTimeNow() (time.Time, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceExecutionEngine
@@ -43,8 +41,8 @@ type abciService struct {
 	stats             *Stats
 	time              ServiceTime
 	execution         ServiceExecutionEngine
-	previousTimestamp vegatime.Stamp
-	currentTimestamp  vegatime.Stamp
+	previousTimestamp time.Time
+	currentTimestamp  time.Time
 
 	ordersInBatchLengths []int
 	currentOrdersInBatch int
@@ -67,23 +65,23 @@ func (s *abciService) Begin() error {
 	s.log.Debug("ABCI service BEGIN starting")
 
 	// Load the latest consensus block time
-	epochTimeNano, _, err := s.time.GetTimeNow()
+	epochTime, err := s.time.GetTimeNow()
 	if err != nil {
 		return err
 	}
 
 	// We need to cache the last timestamp so we can distribute trades
 	// in a block evenly between last timestamp and current timestamp
-	if epochTimeNano > 0 {
-		s.previousTimestamp = epochTimeNano
+	if epochTime.Unix() > 0 {
+		s.previousTimestamp = epochTime
 	}
 
 	// Store the timestamp info that we receive from the blockchain provider
-	s.currentTimestamp = epochTimeNano
+	s.currentTimestamp = epochTime
 
 	// Ensure we always set app.previousTimestamp it'll be 0 on the first block
-	if s.previousTimestamp < 1 {
-		s.previousTimestamp = epochTimeNano
+	if s.previousTimestamp.Unix() < 1 {
+		s.previousTimestamp = epochTime
 	}
 
 	// Run any processing required in execution engine, e.g. check for expired orders
@@ -93,10 +91,10 @@ func (s *abciService) Begin() error {
 	}
 
 	s.log.Debug("ABCI service BEGIN completed",
-		logging.Uint64("current-timestamp", s.currentTimestamp.Uint64()),
-		logging.Uint64("previous-timestamp", s.previousTimestamp.Uint64()),
-		logging.String("current-datetime", s.currentTimestamp.Rfc3339Nano()),
-		logging.String("previous-datetime", s.previousTimestamp.Rfc3339Nano()),
+		logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),
+		logging.Int64("previous-timestamp", s.previousTimestamp.UnixNano()),
+		logging.String("current-datetime", s.currentTimestamp.Format(time.RFC3339Nano)),
+		logging.String("previous-datetime", s.previousTimestamp.Format(time.RFC3339Nano)),
 	)
 
 	return nil
@@ -128,7 +126,7 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	}
 
 	order.Id = fmt.Sprintf("V%010d-%010d", s.totalBatches, s.totalOrders)
-	order.Timestamp = s.currentTimestamp.Uint64()
+	order.Timestamp = s.currentTimestamp.UnixNano()
 
 	// Submit the create order request to the execution engine
 	confirmationMessage, errorMessage := s.execution.SubmitOrder(order)
@@ -237,7 +235,7 @@ func (s *abciService) setBatchStats() {
 		}
 	}
 
-	blockDuration := time.Duration(time.Now().UnixNano() - int64(s.currentTimestamp)).Seconds()
+	blockDuration := time.Duration(time.Now().UnixNano() - s.currentTimestamp.UnixNano()).Seconds()
 	s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
 	s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
 
