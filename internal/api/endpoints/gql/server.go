@@ -174,9 +174,13 @@ func (g *graphServer) Start() {
 	}
 }
 
-func (g *graphServer) Stop() error {
+func (g *graphServer) Stop() {
 	if g.srv != nil {
-		return g.srv.Shutdown(context.Background())
+		logger := *g.GetLogger()
+		logger.Info("Stopping GraphQL based API")
+		if err := g.srv.Shutdown(context.Background()); err != nil {
+			logger.Error("Failed to stop GraphQL based API cleanly",
+				logging.Error(err))
+		}
 	}
-	return errors.New("Graphql server not started")
 }

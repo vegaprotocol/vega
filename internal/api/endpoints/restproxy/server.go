@@ -2,7 +2,6 @@ package restproxy
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -69,9 +68,14 @@ func (s *restProxyServer) Start() {
 	}
 }
 
-func (s *restProxyServer) Stop() error {
+func (s *restProxyServer) Stop() {
 	if s.srv != nil {
-		return s.srv.Shutdown(context.Background())
+		logger := *s.GetLogger()
+		logger.Info("Stopping REST<>GRPC based API")
+
+		if err := s.srv.Shutdown(context.Background()); err != nil {
+			logger.Error("Failed to stop REST<>GRPC based API cleanly",
+				logging.Error(err))
+		}
 	}
-	return errors.New("Rest proxy server not started")
 }

@@ -25,12 +25,12 @@ func main() {
 	})
 
 	if err := cli.Run(); err != nil {
-		// deal with ExitError, which should be recognize as error, and should
-		// not be exit with status 0.
+		// deal with ExitError, which should be recognized as error, and should
+		// not exit with status 0.
 		if exitErr, ok := err.(ExitError); ok {
-			if exitErr.Status != "" {
-				fmt.Fprintln(os.Stderr, exitErr.Status)
-			}
+			log.Error("Command returned an error",
+				logging.Int("code", exitErr.Code),
+				logging.String("status", exitErr.Status))
 			if exitErr.Code == 0 {
 				// when get error with ExitError, code should not be 0.
 				exitErr.Code = 1
@@ -39,7 +39,8 @@ func main() {
 		}
 
 		// not ExitError, print error to os.Stderr, exit code 1.
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		log.Error("Command returned an unexpected error",
+			logging.Error(err))
 		os.Exit(1)
 	}
 }

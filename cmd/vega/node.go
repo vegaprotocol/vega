@@ -151,13 +151,15 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	go graphServer.Start()
 
+	l.Log.Info("Vega startup complete")
+
 	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
-	l.Log.Info("Closing REST proxy server", logging.Error(restServer.Stop()))
-	l.Log.Info("Closing GRPC server", logging.Error(grpcServer.Stop()))
-	l.Log.Info("Closing GraphQL server", logging.Error(graphServer.Stop()))
-	l.Log.Info("Closing blockchain server", logging.Error(socketServer.Stop()))
+	restServer.Stop()
+	grpcServer.Stop()
+	graphServer.Stop()
+	socketServer.Stop()
 	statusChecker.Stop()
 
 	return nil
@@ -186,7 +188,7 @@ func waitSig(ctx context.Context, log *logging.Logger) {
 
 	select {
 	case sig := <-gracefulStop:
-		log.Info("caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
 	case <-ctx.Done():
 		// nothing to do
 	}

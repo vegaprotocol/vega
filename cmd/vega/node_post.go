@@ -4,6 +4,7 @@ package main
 import (
 	"strings"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -41,6 +42,14 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 		if err := l.partyStore.Close(); err != nil {
 			werr = append(werr, errors.Wrap(err, "error closing party store in command."))
 		}
+	}
+	l.Log.Info("Vega shutdown complete",
+		logging.String("version", Version),
+		logging.String("version-hash", VersionHash))
+
+	if len(werr) == 0 {
+		// Prevent printing of empty error and exiting with non-zero code.
+		return nil
 	}
 	return werr
 }
