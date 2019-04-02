@@ -289,13 +289,13 @@ func (c *Candle) GenerateCandlesFromBuffer(marketId string) error {
 }
 
 // GetCandles returns all candles at interval since timestamp for a market.
-func (c *Candle) GetCandles(ctx context.Context, market string, sinceTimestamp time.Time, interval types.Interval) ([]*types.Candle, error) {
-	if sinceTimestamp.Before(minSinceTime) {
+func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) ([]*types.Candle, error) {
+	if since.Before(minSinceTime) {
 		return nil, errors.New("invalid sinceTimestamp, ensure format is epoch+nanoseconds timestamp")
 	}
 
 	// generate fetch key for the candles
-	fetchKey := c.generateFetchKey(market, interval, sinceTimestamp.UnixNano())
+	fetchKey := c.generateFetchKey(market, interval, since)
 	prefix, _ := c.badger.candlePrefix(market, interval, false)
 
 	txn := c.badger.readTransaction()
@@ -342,7 +342,7 @@ func (c *Candle) GetCandles(ctx context.Context, market string, sinceTimestamp t
 }
 
 // generateFetchKey calculates the correct badger key for the given market, interval and timestamp.
-func (c *Candle) generateFetchKey(market string, interval types.Interval, sinceTimestamp int64) []byte {
+func (c *Candle) generateFetchKey(market string, interval types.Interval, since time.Time) []byte {
 	// returns valid key for Market, interval and timestamp
 	// round floor by integer division
 	switch interval {
@@ -357,8 +357,7 @@ func (c *Candle) generateFetchKey(market string, interval types.Interval, sinceT
 	case types.Interval_I6H:
 		fallthrough
 	case types.Interval_I1D:
-		return c.badger.candleKey(market, interval,
-			vegatime.RoundToNearest(vegatime.UnixNano(sinceTimestamp), interval).UnixNano())
+		return c.badger.candleKey(market, interval, vegatime.RoundToNearest(since, interval).UnixNano())
 	default:
 		return nil
 	}
