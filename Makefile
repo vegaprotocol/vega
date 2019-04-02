@@ -37,7 +37,7 @@ bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
 
 test: deps ## Run unit tests
-	@go test -v ./...
+	@go test ./...
 
 race: ## Run data race detector
 	@env CGO_ENABLED=1 go test -race ./...
@@ -47,7 +47,7 @@ mocks: ## Make mocks
 
 msan: ## Run memory sanitizer
 	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi
-	@env CC=clang CGO_ENABLED=1 go test -v -msan ./...
+	@env CC=clang CGO_ENABLED=1 go test -msan ./...
 
 .PHONY: .testCoverage.txt
 .testCoverage.txt:
