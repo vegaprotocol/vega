@@ -303,16 +303,6 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	}
 
 	// Convert javascript string representation of int epoch+nano timestamp
-	/*
-		sinceTimestamp, err := strconv.ParseInt(sinceTimestampRaw, 10, 64)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("error converting %s into a valid timestamp", sinceTimestampRaw))
-		}
-		if len(sinceTimestampRaw) < 19 {
-			return nil, errors.New("timestamp should be in epoch+nanoseconds format, eg. 1545158175835902621")
-		}
-	*/
-
 	since, err := vegatime.Parse(sinceRaw)
 	if err != nil {
 		return nil, err
