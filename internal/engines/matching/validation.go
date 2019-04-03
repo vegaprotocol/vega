@@ -15,7 +15,7 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) error {
 		return types.ErrInvalidMarketID
 	}
 
-	if orderMessage.Timestamp < b.latestTimestamp {
+	if orderMessage.CreatedAt < b.latestTimestamp {
 		return types.ErrOrderOutOfSequence
 	}
 
@@ -24,7 +24,7 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) error {
 	}
 
 	// if order is GTT, validate timestamp and convert to block number
-	if orderMessage.Type == types.Order_GTT && orderMessage.ExpirationTimestamp == 0 {
+	if orderMessage.Type == types.Order_GTT && orderMessage.ExpiresAt == 0 {
 		return types.ErrInvalidExpirationDatetime
 	}
 

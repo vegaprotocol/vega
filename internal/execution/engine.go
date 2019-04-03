@@ -242,10 +242,9 @@ func (e *Engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmati
 	newOrder.Size = existingOrder.Size
 	newOrder.Remaining = existingOrder.Remaining
 	newOrder.Type = existingOrder.Type
-	newOrder.Timestamp = timestamp.UnixNano()
+	newOrder.CreatedAt = timestamp.UnixNano()
 	newOrder.Status = existingOrder.Status
-	newOrder.ExpirationDatetime = existingOrder.ExpirationDatetime
-	newOrder.ExpirationTimestamp = existingOrder.ExpirationTimestamp
+	newOrder.ExpiresAt = existingOrder.ExpiresAt
 	newOrder.Reference = existingOrder.Reference
 
 	var (
@@ -268,9 +267,8 @@ func (e *Engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmati
 		}
 	}
 
-	if newOrder.Type == types.Order_GTT && order.ExpirationTimestamp != 0 && order.ExpirationDatetime != "" {
-		newOrder.ExpirationTimestamp = order.ExpirationTimestamp
-		newOrder.ExpirationDatetime = order.ExpirationDatetime
+	if newOrder.Type == types.Order_GTT && order.ExpiresAt != 0 {
+		newOrder.ExpiresAt = order.ExpiresAt
 		expiryChange = true
 	}
 
