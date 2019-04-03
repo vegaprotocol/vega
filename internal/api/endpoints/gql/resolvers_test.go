@@ -205,12 +205,12 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 		{
 			Id:        "order-id-1",
 			Price:     1000,
-			Timestamp: 1,
+			CreatedAt: 1,
 		},
 		{
 			Id:        "order-id-2",
 			Price:     2000,
-			Timestamp: 2,
+			CreatedAt: 2,
 		},
 	}, nil)
 

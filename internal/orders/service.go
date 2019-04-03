@@ -64,29 +64,28 @@ func (s *Svc) CreateOrder(ctx context.Context, orderSubmission *types.OrderSubmi
 		return false, "", errors.Wrap(err, "order validation failed")
 	}
 	order := types.Order{
-		Id:                 orderSubmission.Id,
-		Market:             orderSubmission.MarketId,
-		Party:              orderSubmission.Party,
-		Price:              orderSubmission.Price,
-		Size:               orderSubmission.Size,
-		Side:               orderSubmission.Side,
-		Type:               orderSubmission.Type,
-		ExpirationDatetime: orderSubmission.ExpirationDatetime,
+		Id:        orderSubmission.Id,
+		Market:    orderSubmission.MarketId,
+		Party:     orderSubmission.Party,
+		Price:     orderSubmission.Price,
+		Size:      orderSubmission.Size,
+		Side:      orderSubmission.Side,
+		Type:      orderSubmission.Type,
+		ExpiresAt: orderSubmission.ExpiresAt,
 	}
 
 	// Set defaults, prevent unwanted external manipulation
 	order.Remaining = orderSubmission.Size
 	order.Status = types.Order_Active
-	order.Timestamp = 0
+	order.CreatedAt = 0
 	order.Reference = ""
 
 	if order.Type == types.Order_GTT {
-		t, err := s.validateOrderExpirationTS(order.ExpirationDatetime)
+		_, err := s.validateOrderExpirationTS(order.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return false, "", err
 		}
-		order.ExpirationTimestamp = t.UnixNano()
 	}
 
 	// Call out to the blockchain package/layer and use internal client to gain consensus
@@ -132,23 +131,19 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 
 	// if order is GTT convert datetime to blockchain ts
 	if o.Type == types.Order_GTT {
-		t, err := s.validateOrderExpirationTS(amendment.ExpirationDatetime)
+		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
 			return false, err
 		}
-		amendment.ExpirationTimestamp = t.UnixNano()
 	}
 
 	// Send edit request by consensus
 	return s.blockchain.AmendOrder(ctx, amendment)
 }
 
-func (s *Svc) validateOrderExpirationTS(expdt string) (time.Time, error) {
-	exp, err := vegatime.Parse(expdt)
-	if err != nil {
-		return time.Time{}, ErrInvalidExpirationDTFmt
-	}
+func (s *Svc) validateOrderExpirationTS(expiresAt int64) (time.Time, error) {
+	exp := vegatime.UnixNano(expiresAt)
 
 	now, err := s.timeService.GetTimeNow()
 	if err != nil {

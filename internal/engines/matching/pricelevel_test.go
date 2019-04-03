@@ -1,9 +1,10 @@
 package matching
 
 import (
+	"testing"
+
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -32,7 +33,7 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 	}
 
 	// add orders
@@ -64,7 +65,7 @@ func TestUncross(t *testing.T) {
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 	}
 	l.addOrder(passiveOrder)
 
@@ -76,7 +77,7 @@ func TestUncross(t *testing.T) {
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 	}
 	filled, trades, impactedOrders := l.uncross(aggresiveOrder)
 	assert.Equal(t, true, filled)

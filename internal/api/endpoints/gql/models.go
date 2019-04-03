@@ -163,26 +163,26 @@ type TradeFilter struct {
 type Interval string
 
 const (
-	IntervalI1M  Interval = "I1M"
-	IntervalI5M  Interval = "I5M"
-	IntervalI15M Interval = "I15M"
-	IntervalI1H  Interval = "I1H"
-	IntervalI6H  Interval = "I6H"
-	IntervalI1D  Interval = "I1D"
+	IntervalI1m  Interval = "I1M"
+	IntervalI5m  Interval = "I5M"
+	IntervalI15m Interval = "I15M"
+	IntervalI1h  Interval = "I1H"
+	IntervalI6h  Interval = "I6H"
+	IntervalI1d  Interval = "I1D"
 )
 
 var AllInterval = []Interval{
-	IntervalI1M,
-	IntervalI5M,
-	IntervalI15M,
-	IntervalI1H,
-	IntervalI6H,
-	IntervalI1D,
+	IntervalI1m,
+	IntervalI5m,
+	IntervalI15m,
+	IntervalI1h,
+	IntervalI6h,
+	IntervalI1d,
 }
 
 func (e Interval) IsValid() bool {
 	switch e {
-	case IntervalI1M, IntervalI5M, IntervalI15M, IntervalI1H, IntervalI6H, IntervalI1D:
+	case IntervalI1m, IntervalI5m, IntervalI15m, IntervalI1h, IntervalI6h, IntervalI1d:
 		return true
 	}
 	return false

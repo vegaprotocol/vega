@@ -42,19 +42,19 @@ func (l *PriceLevel) removeOrder(index int) {
 }
 
 func (l *PriceLevel) increaseVolumeByTimestamp(o *types.Order) {
-	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
-		l.volumeAtTimestamp[o.Timestamp] = vbt + o.Remaining
+	if vbt, exists := l.volumeAtTimestamp[o.CreatedAt]; exists {
+		l.volumeAtTimestamp[o.CreatedAt] = vbt + o.Remaining
 	} else {
-		l.volumeAtTimestamp[o.Timestamp] = o.Remaining
+		l.volumeAtTimestamp[o.CreatedAt] = o.Remaining
 	}
 }
 
 func (l *PriceLevel) decreaseVolumeByTimestamp(o *types.Order) {
-	if vbt, exists := l.volumeAtTimestamp[o.Timestamp]; exists {
+	if vbt, exists := l.volumeAtTimestamp[o.CreatedAt]; exists {
 		if vbt <= o.Remaining {
-			delete(l.volumeAtTimestamp, o.Timestamp)
+			delete(l.volumeAtTimestamp, o.CreatedAt)
 		} else {
-			l.volumeAtTimestamp[o.Timestamp] = vbt - o.Remaining
+			l.volumeAtTimestamp[o.CreatedAt] = vbt - o.Remaining
 		}
 	}
 }
@@ -81,11 +81,11 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 	for i, order := range l.orders {
 
 		// See if we are at a new top timestamp
-		if currentTimestamp != order.Timestamp {
+		if currentTimestamp != order.CreatedAt {
 			// if consumed all orders on the current timestamp, delete exhausted timestamp and proceed to the next one
 			delete(l.volumeAtTimestamp, currentTimestamp)
 			// assign new timestamp
-			currentTimestamp = order.Timestamp
+			currentTimestamp = order.CreatedAt
 			// assign new volume at timestamp
 			totalVolumeAtTimestamp = l.volumeAtTimestamp[currentTimestamp]
 			volumeToShare = agg.Remaining
@@ -137,7 +137,7 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 
 func (l *PriceLevel) earliestTimestamp() int64 {
 	if len(l.orders) != 0 {
-		return l.orders[0].Timestamp
+		return l.orders[0].CreatedAt
 	}
 	return 0
 }
@@ -191,7 +191,7 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	trade.Aggressor = agg.Side
 	trade.Buyer = buyer.Party
 	trade.Seller = seller.Party
-	trade.Timestamp = agg.Timestamp
+	trade.Timestamp = agg.CreatedAt
 	return trade
 }
 
@@ -206,6 +206,6 @@ func (l PriceLevel) print() {
 		}
 
 		l.log.Debug(fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s\n",
-			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.Timestamp, o.Id))
+			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.CreatedAt, o.Id))
 	}
 }

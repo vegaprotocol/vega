@@ -55,18 +55,17 @@ func testOrderSuccess(t *testing.T) {
 	expires := now.Add(time.Hour * 2)
 	orderRef := "order_reference"
 	order := orderSubmission
-	order.ExpirationDatetime = vegatime.Format(expires)
+	order.ExpiresAt = expires.UnixNano()
 	matcher := orderMatcher{
 		e: types.Order{
-			Id:                  order.Id,
-			Market:              order.MarketId,
-			Party:               order.Party,
-			Price:               order.Price,
-			Size:                order.Size,
-			Side:                order.Side,
-			Type:                order.Type,
-			ExpirationDatetime:  order.ExpirationDatetime,
-			ExpirationTimestamp: expires.UnixNano(),
+			Id:        order.Id,
+			Market:    order.MarketId,
+			Party:     order.Party,
+			Price:     order.Price,
+			Size:      order.Size,
+			Side:      order.Side,
+			Type:      order.Type,
+			ExpiresAt: expires.UnixNano(),
 		},
 	}
 	svc := getTestService(t)
@@ -83,9 +82,8 @@ func testOrderExpired(t *testing.T) {
 	// now
 	now := vegatime.Now()
 	//expired 2 hours ago
-	expires := now.Add(time.Hour * -2)
+	// expires := now.Add(time.Hour * -2)
 	order := orderSubmission
-	order.ExpirationDatetime = vegatime.Format(expires)
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
@@ -102,18 +100,17 @@ func testOrderBlockchainError(t *testing.T) {
 	expires := now.Add(time.Hour * 2)
 	bcErr := errors.New("blockchain error")
 	order := orderSubmission
-	order.ExpirationDatetime = vegatime.Format(expires)
+	order.ExpiresAt = expires.UnixNano()
 	matcher := orderMatcher{
 		e: types.Order{
-			Id:                  order.Id,
-			Market:              order.MarketId,
-			Party:               order.Party,
-			Price:               order.Price,
-			Size:                order.Size,
-			Side:                order.Side,
-			Type:                order.Type,
-			ExpirationDatetime:  order.ExpirationDatetime,
-			ExpirationTimestamp: expires.UnixNano(),
+			Id:        order.Id,
+			Market:    order.MarketId,
+			Party:     order.Party,
+			Price:     order.Price,
+			Size:      order.Size,
+			Side:      order.Side,
+			Type:      order.Type,
+			ExpiresAt: expires.UnixNano(),
 		},
 	}
 	svc := getTestService(t)
@@ -167,8 +164,6 @@ func (m orderMatcher) Matches(x interface{}) bool {
 	if m.e.Party != v.Party {
 		return false
 	}
-	if m.e.ExpirationDatetime != v.ExpirationDatetime {
-		return false
-	}
-	return (m.e.ExpirationTimestamp == v.ExpirationTimestamp)
+
+	return (m.e.ExpiresAt == v.ExpiresAt)
 }
