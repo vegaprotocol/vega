@@ -35,6 +35,7 @@ func (m *MockMarketStore) EXPECT() *MockMarketStoreMockRecorder {
 
 // Post mocks base method
 func (m *MockMarketStore) Post(arg0 *proto.Market) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Post", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,5 +43,6 @@ func (m *MockMarketStore) Post(arg0 *proto.Market) error {
 
 // Post indicates an expected call of Post
 func (mr *MockMarketStoreMockRecorder) Post(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Post", reflect.TypeOf((*MockMarketStore)(nil).Post), arg0)
 }

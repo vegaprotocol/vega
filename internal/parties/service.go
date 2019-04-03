@@ -32,8 +32,8 @@ func (s *Svc) CreateParty(ctx context.Context, party *types.Party) error {
 }
 
 // GetByID searches for the given party by id.
-func (s *Svc) GetByID(ctx context.Context, name string) (*types.Party, error) {
-	return s.store.GetByID(name)
+func (s *Svc) GetByID(ctx context.Context, id string) (*types.Party, error) {
+	return s.store.GetByID(id)
 }
 
 // GetAll returns all parties.

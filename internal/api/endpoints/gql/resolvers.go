@@ -188,7 +188,7 @@ func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, id string) (*Mar
 
 func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {
 	if name == nil {
-		return nil, errors.New("all parties on VEGA query not implemented")
+		return nil, errors.New("query all parties on VEGA not implemented")
 	}
 	pty, err := r.Party(ctx, obj, *name)
 	if err != nil {

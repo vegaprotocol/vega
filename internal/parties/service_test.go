@@ -78,9 +78,9 @@ func TestPartyService_GetByName(t *testing.T) {
 	expect := &types.Party{
 		Name: "Candida",
 	}
-	svc.store.EXPECT().GetByName(expect.Name).Times(1).Return(expect, nil)
+	svc.store.EXPECT().GetByID(expect.Name).Times(1).Return(expect, nil)
 
-	party, err := svc.GetByName(svc.ctx, expect.Name)
+	party, err := svc.GetByID(svc.ctx, expect.Name)
 	assert.NoError(t, err)
 	assert.Equal(t, expect, party)
 }

@@ -245,6 +245,7 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 	trade := mocks.NewMockTradeService(ctrl)
 	candle := mocks.NewMockCandleService(ctrl)
 	market := mocks.NewMockMarketService(ctrl)
+	party := mocks.NewMockPartyService(ctrl)
 	statusChecker := &monitoring.Status{}
 	resolver := gql.NewResolverRoot(
 		conf,
@@ -252,6 +253,7 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 		trade,
 		candle,
 		market,
+		party,
 		statusChecker,
 	)
 	return &testResolver{

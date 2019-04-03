@@ -55,7 +55,7 @@ type MarketStore interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution PartyStore
 type PartyStore interface {
-	GetByName(name string) (*types.Party, error)
+	GetByID(id string) (*types.Party, error)
 	Post(party *types.Party) error
 }
 
@@ -145,7 +145,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Verify and add new parties
-	party, _ := e.partyStore.GetByName(order.Party)
+	party, _ := e.partyStore.GetByID(order.Party)
 	if party == nil {
 		p := &types.Party{Name: order.Party}
 		err := e.partyStore.Post(p)

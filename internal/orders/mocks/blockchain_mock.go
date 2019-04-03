@@ -36,6 +36,7 @@ func (m *MockBlockchain) EXPECT() *MockBlockchainMockRecorder {
 
 // AmendOrder mocks base method
 func (m *MockBlockchain) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (bool, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
@@ -44,11 +45,13 @@ func (m *MockBlockchain) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmend
 
 // AmendOrder indicates an expected call of AmendOrder
 func (mr *MockBlockchainMockRecorder) AmendOrder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockBlockchain)(nil).AmendOrder), arg0, arg1)
 }
 
 // CancelOrder mocks base method
 func (m *MockBlockchain) CancelOrder(arg0 context.Context, arg1 *proto.Order) (bool, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
@@ -57,11 +60,13 @@ func (m *MockBlockchain) CancelOrder(arg0 context.Context, arg1 *proto.Order) (b
 
 // CancelOrder indicates an expected call of CancelOrder
 func (mr *MockBlockchainMockRecorder) CancelOrder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockBlockchain)(nil).CancelOrder), arg0, arg1)
 }
 
 // CreateOrder mocks base method
 func (m *MockBlockchain) CreateOrder(arg0 context.Context, arg1 *proto.Order) (bool, string, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateOrder", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(string)
@@ -71,5 +76,6 @@ func (m *MockBlockchain) CreateOrder(arg0 context.Context, arg1 *proto.Order) (b
 
 // CreateOrder indicates an expected call of CreateOrder
 func (mr *MockBlockchainMockRecorder) CreateOrder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockBlockchain)(nil).CreateOrder), arg0, arg1)
 }
