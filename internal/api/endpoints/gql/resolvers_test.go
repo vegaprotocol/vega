@@ -112,22 +112,43 @@ func getTestMarket() *types.Market {
 		},
 	}
 }
+
+func getTestParty() *types.Party {
+	return &types.Party{
+		Name: "barney",
+	}
+}
+
 func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
 	defer root.Finish()
 	ctx := context.Background()
 
-	notExistsErr := errors.New("market does not exist")
+	marketNotExistsErr := errors.New("market does not exist")
 	markets := map[string]*types.Market{
 		"BTC/DEC19": getTestMarket(),
 		"ETH/USD18": nil,
 	}
 
+	partyNotExistsErr := errors.New("party does not exist")
+	parties := map[string]*types.Party{
+		"barney": getTestParty(),
+	}
+
+	root.party.EXPECT().GetByID(gomock.Any(), gomock.Any()).Times(len(parties)).DoAndReturn(func(_ context.Context, k string) (*types.Party, error) {
+		m, ok := parties[k]
+		assert.True(t, ok)
+		if m == nil {
+			return nil, partyNotExistsErr
+		}
+		return m, nil
+	})
+
 	root.market.EXPECT().GetByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {
 		m, ok := markets[k]
 		assert.True(t, ok)
 		if m == nil {
-			return nil, notExistsErr
+			return nil, marketNotExistsErr
 		}
 		return m, nil
 	})
@@ -156,14 +177,14 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	assert.Nil(t, vMarkets)
 
 	name = "barney"
-	parties, err := vegaResolver.Parties(ctx, vega, &name)
+	vParties, err := vegaResolver.Parties(ctx, vega, &name)
 	assert.Nil(t, err)
-	assert.NotNil(t, parties)
-	assert.Len(t, parties, 1)
+	assert.NotNil(t, vParties)
+	assert.Len(t, vParties, 1)
 
-	parties, err = vegaResolver.Parties(ctx, vega, nil)
+	vParties, err = vegaResolver.Parties(ctx, vega, nil)
 	assert.Error(t, err)
-	assert.Nil(t, parties)
+	assert.Nil(t, vParties)
 }
 
 func TestNewResolverRoot_MarketResolver(t *testing.T) {
@@ -235,6 +256,7 @@ type testResolver struct {
 	trade  *mocks.MockTradeService
 	candle *mocks.MockCandleService
 	market *mocks.MockMarketService
+	party  *mocks.MockPartyService
 }
 
 func buildTestResolverRoot(t *testing.T) *testResolver {
@@ -264,6 +286,7 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 		trade:        trade,
 		candle:       candle,
 		market:       market,
+		party:        party,
 	}
 }
 
