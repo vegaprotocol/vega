@@ -273,13 +273,13 @@ type PositionResolver interface {
 	MinimumMargin(ctx context.Context, obj *proto.MarketPosition) (string, error)
 }
 type PreConsensusOrderResolver interface {
-	Price(ctx context.Context, obj *proto.PreConsensusOrder) (string, error)
-	Type(ctx context.Context, obj *proto.PreConsensusOrder) (OrderType, error)
-	Side(ctx context.Context, obj *proto.PreConsensusOrder) (Side, error)
+	Price(ctx context.Context, obj *proto.PreConsensusOrder) (*string, error)
+	Type(ctx context.Context, obj *proto.PreConsensusOrder) (*OrderType, error)
+	Side(ctx context.Context, obj *proto.PreConsensusOrder) (*Side, error)
 	Market(ctx context.Context, obj *proto.PreConsensusOrder) (*Market, error)
-	Size(ctx context.Context, obj *proto.PreConsensusOrder) (string, error)
+	Size(ctx context.Context, obj *proto.PreConsensusOrder) (*string, error)
 
-	Status(ctx context.Context, obj *proto.PreConsensusOrder) (OrderStatus, error)
+	Status(ctx context.Context, obj *proto.PreConsensusOrder) (*OrderStatus, error)
 }
 type PriceLevelResolver interface {
 	Price(ctx context.Context, obj *proto.PriceLevel) (string, error)
@@ -1246,26 +1246,26 @@ type PreConsensusOrder {
   reference: String!
 
   # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
-  price: String!
+  price: String
 
   # The type of order (determines how and if it executes, and whether it persists on the book)
-  type: OrderType!
+  type: OrderType
 
   # Whether the order is to buy or sell
-  side: Side!
+  side: Side
 
   # The market the order is trading on (probably stored internally as a hash of the market details)
   # could be nil if the submit order failed an no order is getting created
   market: Market
 
   # Total number of contracts that may be bought or sold (immutable) (uint64)
-  size: String!
+  size: String
 
   # The trader who place the order (probably stored internally as the trader's public key)
-  party: String!
+  party: String
 
   # The status of an order, for example 'Active'
-  status: OrderStatus!
+  status: OrderStatus
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -4083,15 +4083,12 @@ func (ec *executionContext) _PreConsensusOrder_price(ctx context.Context, field 
 		return ec.resolvers.PreConsensusOrder().Price(rctx, obj)
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PreConsensusOrder_type(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
@@ -4110,15 +4107,12 @@ func (ec *executionContext) _PreConsensusOrder_type(ctx context.Context, field g
 		return ec.resolvers.PreConsensusOrder().Type(rctx, obj)
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(OrderType)
+	res := resTmp.(*OrderType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderType(ctx, field.Selections, res)
+	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PreConsensusOrder_side(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
@@ -4137,15 +4131,12 @@ func (ec *executionContext) _PreConsensusOrder_side(ctx context.Context, field g
 		return ec.resolvers.PreConsensusOrder().Side(rctx, obj)
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(Side)
+	res := resTmp.(*Side)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐSide(ctx, field.Selections, res)
+	return ec.marshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐSide(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PreConsensusOrder_market(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
@@ -4188,15 +4179,12 @@ func (ec *executionContext) _PreConsensusOrder_size(ctx context.Context, field g
 		return ec.resolvers.PreConsensusOrder().Size(rctx, obj)
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PreConsensusOrder_party(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
@@ -4215,15 +4203,12 @@ func (ec *executionContext) _PreConsensusOrder_party(ctx context.Context, field 
 		return obj.Party, nil
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PreConsensusOrder_status(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
@@ -4242,15 +4227,12 @@ func (ec *executionContext) _PreConsensusOrder_status(ctx context.Context, field
 		return ec.resolvers.PreConsensusOrder().Status(rctx, obj)
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(OrderStatus)
+	res := resTmp.(*OrderStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderStatus(ctx, field.Selections, res)
+	return ec.marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *proto.PriceLevel) graphql.Marshaler {
@@ -7235,9 +7217,6 @@ func (ec *executionContext) _PreConsensusOrder(ctx context.Context, sel ast.Sele
 					}
 				}()
 				res = ec._PreConsensusOrder_price(ctx, field, obj)
-				if res == graphql.Null {
-					invalid = true
-				}
 				return res
 			})
 		case "type":
@@ -7249,9 +7228,6 @@ func (ec *executionContext) _PreConsensusOrder(ctx context.Context, sel ast.Sele
 					}
 				}()
 				res = ec._PreConsensusOrder_type(ctx, field, obj)
-				if res == graphql.Null {
-					invalid = true
-				}
 				return res
 			})
 		case "side":
@@ -7263,9 +7239,6 @@ func (ec *executionContext) _PreConsensusOrder(ctx context.Context, sel ast.Sele
 					}
 				}()
 				res = ec._PreConsensusOrder_side(ctx, field, obj)
-				if res == graphql.Null {
-					invalid = true
-				}
 				return res
 			})
 		case "market":
@@ -7288,16 +7261,10 @@ func (ec *executionContext) _PreConsensusOrder(ctx context.Context, sel ast.Sele
 					}
 				}()
 				res = ec._PreConsensusOrder_size(ctx, field, obj)
-				if res == graphql.Null {
-					invalid = true
-				}
 				return res
 			})
 		case "party":
 			out.Values[i] = ec._PreConsensusOrder_party(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
 		case "status":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7307,9 +7274,6 @@ func (ec *executionContext) _PreConsensusOrder(ctx context.Context, sel ast.Sele
 					}
 				}()
 				res = ec._PreConsensusOrder_status(ctx, field, obj)
-				if res == graphql.Null {
-					invalid = true
-				}
 				return res
 			})
 		default:

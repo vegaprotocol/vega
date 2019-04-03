@@ -841,53 +841,76 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 type MyPreConsensusOrderResolver resolverRoot
 
-func (r *MyPreConsensusOrderResolver) Price(ctx context.Context, obj *proto.PreConsensusOrder) (string, error) {
+func (r *MyPreConsensusOrderResolver) Price(ctx context.Context, obj *proto.PreConsensusOrder) (*string, error) {
 	if obj != nil {
-		return fmt.Sprintf("%v", obj.Price), nil
+		if obj.Accepted {
+			str := fmt.Sprintf("%v", obj.Price)
+			return &str, nil
+		}
+		return nil, nil
 	}
-	return "", ErrNilPreConsensusOrder
+	return nil, ErrNilPreConsensusOrder
 }
 
-func (r *MyPreConsensusOrderResolver) Type(ctx context.Context, obj *proto.PreConsensusOrder) (OrderType, error) {
+func (r *MyPreConsensusOrderResolver) Type(ctx context.Context, obj *proto.PreConsensusOrder) (*OrderType, error) {
 	if obj != nil {
-		return OrderType(obj.Type.String()), nil
+		if obj.Accepted {
+			ot := OrderType(obj.Type.String())
+			return &ot, nil
+		}
+		return nil, nil
 	}
-	return "", ErrNilPreConsensusOrder
+	return nil, ErrNilPreConsensusOrder
 }
 
-func (r *MyPreConsensusOrderResolver) Side(ctx context.Context, obj *proto.PreConsensusOrder) (Side, error) {
+func (r *MyPreConsensusOrderResolver) Side(ctx context.Context, obj *proto.PreConsensusOrder) (*Side, error) {
 	if obj != nil {
-		return Side(obj.Side.String()), nil
+		if obj.Accepted {
+			s := Side(obj.Side.String())
+			return &s, nil
+		}
+		return nil, nil
 	}
-	return "", ErrNilPreConsensusOrder
+	return nil, ErrNilPreConsensusOrder
 }
 
 func (r *MyPreConsensusOrderResolver) Market(ctx context.Context, obj *proto.PreConsensusOrder) (*Market, error) {
 	if obj != nil {
-		if len(obj.MarketID) <= 0 {
-			return nil, nil
+		if obj.Accepted {
+			if len(obj.MarketID) <= 0 {
+				return nil, nil
+			}
+			pmkt, err := r.marketService.GetByID(ctx, obj.MarketID)
+			if err != nil {
+				return nil, err
+			}
+			return MarketFromProto(pmkt)
 		}
-		pmkt, err := r.marketService.GetByID(ctx, obj.MarketID)
-		if err != nil {
-			return nil, err
-		}
-		return MarketFromProto(pmkt)
+		return nil, nil
 
 	}
 	return nil, ErrNilPreConsensusOrder
 }
 
-func (r *MyPreConsensusOrderResolver) Size(ctx context.Context, obj *proto.PreConsensusOrder) (string, error) {
+func (r *MyPreConsensusOrderResolver) Size(ctx context.Context, obj *proto.PreConsensusOrder) (*string, error) {
 	if obj != nil {
-		return fmt.Sprintf("%v", obj.Size), nil
+		if obj.Accepted {
+			str := fmt.Sprintf("%v", obj.Size)
+			return &str, nil
+		}
+		return nil, nil
 	}
-	return "", ErrNilPreConsensusOrder
+	return nil, ErrNilPreConsensusOrder
 }
-func (r *MyPreConsensusOrderResolver) Status(ctx context.Context, obj *proto.PreConsensusOrder) (OrderStatus, error) {
+func (r *MyPreConsensusOrderResolver) Status(ctx context.Context, obj *proto.PreConsensusOrder) (*OrderStatus, error) {
 	if obj != nil {
-		return OrderStatus(obj.Status.String()), nil
+		if obj.Accepted {
+			os := OrderStatus(obj.Status.String())
+			return &os, nil
+		}
+		return nil, nil
 	}
-	return "", ErrNilPreConsensusOrder
+	return nil, ErrNilPreConsensusOrder
 }
 
 func validateMarket(ctx context.Context, marketId *string, marketService MarketService) (*types.Market, error) {

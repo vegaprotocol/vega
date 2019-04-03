@@ -40,26 +40,26 @@ type PreConsensusOrder {
   reference: String!
 
   # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
-  price: String!
+  price: String
 
   # The type of order (determines how and if it executes, and whether it persists on the book)
-  type: OrderType!
+  type: OrderType
 
   # Whether the order is to buy or sell
-  side: Side!
+  side: Side
 
   # The market the order is trading on (probably stored internally as a hash of the market details)
   # could be nil if the submit order failed an no order is getting created
   market: Market
 
   # Total number of contracts that may be bought or sold (immutable) (uint64)
-  size: String!
+  size: String
 
   # The trader who place the order (probably stored internally as the trader's public key)
-  party: String!
+  party: String
 
   # The status of an order, for example 'Active'
-  status: OrderStatus!
+  status: OrderStatus
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
