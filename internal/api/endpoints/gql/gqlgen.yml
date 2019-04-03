@@ -18,6 +18,8 @@ models:
     model: code.vegaprotocol.io/vega/proto.Candle
   Position:
     model: code.vegaprotocol.io/vega/proto.MarketPosition
+  PreConsensusOrder:
+    model: code.vegaprotocol.io/vega/proto.PreConsensusOrder
   Market:
     fields:
       orders:

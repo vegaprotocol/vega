@@ -277,7 +277,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/grpcOrderResponse"
+              "$ref": "#/definitions/vegaPreConsensusOrder"
             }
           }
         },
@@ -663,6 +663,41 @@
         "FOK"
       ],
       "default": "GTC"
+    },
+    "vegaPreConsensusOrder": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaOrderType"
+        },
+        "side": {
+          "$ref": "#/definitions/vegaSide"
+        },
+        "marketID": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "party": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/OrderStatus"
+        },
+        "accepted": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
     },
     "vegaPriceLevel": {
       "type": "object",

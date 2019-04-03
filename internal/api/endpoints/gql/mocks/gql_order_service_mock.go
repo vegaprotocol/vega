@@ -50,13 +50,12 @@ func (mr *MockOrderServiceMockRecorder) CancelOrder(arg0, arg1 interface{}) *gom
 }
 
 // CreateOrder mocks base method
-func (m *MockOrderService) CreateOrder(arg0 context.Context, arg1 *proto.OrderSubmission) (bool, string, error) {
+func (m *MockOrderService) CreateOrder(arg0 context.Context, arg1 *proto.OrderSubmission) (*proto.PreConsensusOrder, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateOrder", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(*proto.PreConsensusOrder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateOrder indicates an expected call of CreateOrder

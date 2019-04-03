@@ -34,7 +34,7 @@ type OrderStore interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  Blockchain
 type Blockchain interface {
-	CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error)
+	CreateOrder(ctx context.Context, order *types.Order) (*types.PreConsensusOrder, error)
 	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 }
@@ -59,9 +59,12 @@ func NewService(config *Config, store OrderStore, time TimeService, client Block
 	}, nil
 }
 
-func (s *Svc) CreateOrder(ctx context.Context, orderSubmission *types.OrderSubmission) (success bool, orderReference string, err error) {
+func (s *Svc) CreateOrder(
+	ctx context.Context,
+	orderSubmission *types.OrderSubmission,
+) (*types.PreConsensusOrder, error) {
 	if err := orderSubmission.Validate(); err != nil {
-		return false, "", errors.Wrap(err, "order validation failed")
+		return &types.PreConsensusOrder{}, errors.Wrap(err, "order validation failed")
 	}
 	order := types.Order{
 		Id:        orderSubmission.Id,
@@ -84,7 +87,7 @@ func (s *Svc) CreateOrder(ctx context.Context, orderSubmission *types.OrderSubmi
 		_, err := s.validateOrderExpirationTS(order.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
-			return false, "", err
+			return &types.PreConsensusOrder{}, err
 		}
 	}
 

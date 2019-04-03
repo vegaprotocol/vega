@@ -25,7 +25,7 @@ type VegaTime interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc OrderService
 type OrderService interface {
-	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
+	CreateOrder(ctx context.Context, order *types.OrderSubmission) (*types.PreConsensusOrder, error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
@@ -79,12 +79,12 @@ type Handlers struct {
 const defaultLimit = uint64(1000)
 
 // CreateOrder is used to request sending an order into the VEGA platform, via consensus.
-func (h *Handlers) SubmitOrder(ctx context.Context, order *types.OrderSubmission) (*api.OrderResponse, error) {
+func (h *Handlers) SubmitOrder(ctx context.Context, order *types.OrderSubmission) (*types.PreConsensusOrder, error) {
 	if h.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
-	success, reference, err := h.OrderService.CreateOrder(ctx, order)
-	return &api.OrderResponse{Success: success, Reference: reference}, err
+	pre, err := h.OrderService.CreateOrder(ctx, order)
+	return pre, err
 }
 
 // CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.

@@ -9,7 +9,7 @@ option go_package = "code.vegaprotocol.io/vega/internal/api";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 service trading {
-    rpc SubmitOrder(vega.OrderSubmission) returns (OrderResponse);
+    rpc SubmitOrder(vega.OrderSubmission) returns (vega.PreConsensusOrder);
     rpc CancelOrder(vega.OrderCancellation) returns (OrderResponse);
     rpc AmendOrder(vega.OrderAmendment) returns (OrderResponse);
     rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);

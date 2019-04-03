@@ -43,6 +43,7 @@ type ResolverRoot interface {
 	Order() OrderResolver
 	Party() PartyResolver
 	Position() PositionResolver
+	PreConsensusOrder() PreConsensusOrderResolver
 	PriceLevel() PriceLevelResolver
 	Query() QueryResolver
 	Subscription() SubscriptionResolver
@@ -164,6 +165,18 @@ type ComplexityRoot struct {
 		Reference func(childComplexity int) int
 	}
 
+	PreConsensusOrder struct {
+		Accepted  func(childComplexity int) int
+		Market    func(childComplexity int) int
+		Party     func(childComplexity int) int
+		Price     func(childComplexity int) int
+		Reference func(childComplexity int) int
+		Side      func(childComplexity int) int
+		Size      func(childComplexity int) int
+		Status    func(childComplexity int) int
+		Type      func(childComplexity int) int
+	}
+
 	PriceLevel struct {
 		CumulativeVolume func(childComplexity int) int
 		NumberOfOrders   func(childComplexity int) int
@@ -224,7 +237,7 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, typeArg OrderType, expiration *string) (*PreConsensus, error)
+	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, typeArg OrderType, expiration *string) (*proto.PreConsensusOrder, error)
 	OrderCancel(ctx context.Context, id string, market string, party string) (*PreConsensus, error)
 }
 type OrderResolver interface {
@@ -258,6 +271,15 @@ type PositionResolver interface {
 	UnrealisedProfitDirection(ctx context.Context, obj *proto.MarketPosition) (ValueDirection, error)
 	AverageEntryPrice(ctx context.Context, obj *proto.MarketPosition) (string, error)
 	MinimumMargin(ctx context.Context, obj *proto.MarketPosition) (string, error)
+}
+type PreConsensusOrderResolver interface {
+	Price(ctx context.Context, obj *proto.PreConsensusOrder) (string, error)
+	Type(ctx context.Context, obj *proto.PreConsensusOrder) (OrderType, error)
+	Side(ctx context.Context, obj *proto.PreConsensusOrder) (Side, error)
+	Market(ctx context.Context, obj *proto.PreConsensusOrder) (*Market, error)
+	Size(ctx context.Context, obj *proto.PreConsensusOrder) (string, error)
+
+	Status(ctx context.Context, obj *proto.PreConsensusOrder) (OrderStatus, error)
 }
 type PriceLevelResolver interface {
 	Price(ctx context.Context, obj *proto.PriceLevel) (string, error)
@@ -800,6 +822,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PreConsensus.Reference(childComplexity), true
 
+	case "PreConsensusOrder.Accepted":
+		if e.complexity.PreConsensusOrder.Accepted == nil {
+			break
+		}
+
+		return e.complexity.PreConsensusOrder.Accepted(childComplexity), true
+
+	case "PreConsensusOrder.Market":
+		if e.complexity.PreConsensusOrder.Market == nil {
+			break
+		}
+
+		return e.complexity.PreConsensusOrder.Market(childComplexity), true
+
+	case "PreConsensusOrder.Party":
+		if e.complexity.PreConsensusOrder.Party == nil {
+			break
+		}
+
+		return e.complexity.PreConsensusOrder.Party(childComplexity), true
+
+	case "PreConsensusOrder.Price":
+		if e.complexity.PreConsensusOrder.Price == nil {
+			break
+		}
+
+		return e.complexity.PreConsensusOrder.Price(childComplexity), true
+
+	case "PreConsensusOrder.Reference":
+		if e.complexity.PreConsensusOrder.Reference == nil {
+			break
+		}
+
+		return e.complexity.PreConsensusOrder.Reference(childComplexity), true
+
+	case "PreConsensusOrder.Side":
+		if e.complexity.PreConsensusOrder.Side == nil {
+			break
+		}
+
+		return e.complexity.PreConsensusOrder.Side(childComplexity), true
+
+	case "PreConsensusOrder.Size":
+		if e.complexity.PreConsensusOrder.Size == nil {
+			break
+		}
+
+		return e.complexity.PreConsensusOrder.Size(childComplexity), true
+
+	case "PreConsensusOrder.Status":
+		if e.complexity.PreConsensusOrder.Status == nil {
+			break
+		}
+
+		return e.complexity.PreConsensusOrder.Status(childComplexity), true
+
+	case "PreConsensusOrder.Type":
+		if e.complexity.PreConsensusOrder.Type == nil {
+			break
+		}
+
+		return e.complexity.PreConsensusOrder.Type(childComplexity), true
+
 	case "PriceLevel.CumulativeVolume":
 		if e.complexity.PriceLevel.CumulativeVolume == nil {
 			break
@@ -1135,7 +1220,7 @@ type Mutation {
 
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
-    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensus!
+    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensusOrder!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
@@ -1152,13 +1237,45 @@ type Subscription {
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
+type PreConsensusOrder {
+
+  # If true then the operation was validated and passed on for consensus with other nodes on the VEGA platform.
+  accepted: Boolean!
+
+  # A UUID reference for the caller to aid in tracking operations on VEGA
+  reference: String!
+
+  # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+  price: String!
+
+  # The type of order (determines how and if it executes, and whether it persists on the book)
+  type: OrderType!
+
+  # Whether the order is to buy or sell
+  side: Side!
+
+  # The market the order is trading on (probably stored internally as a hash of the market details)
+  # could be nil if the submit order failed an no order is getting created
+  market: Market
+
+  # Total number of contracts that may be bought or sold (immutable) (uint64)
+  size: String!
+
+  # The trader who place the order (probably stored internally as the trader's public key)
+  party: String!
+
+  # The status of an order, for example 'Active'
+  status: OrderStatus!
+}
+
+# An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
 type PreConsensus {
 
-    # If true then the operation was validated and passed on for consensus with other nodes on the VEGA platform.
-    accepted: Boolean!
+  # If true then the operation was validated and passed on for consensus with other nodes on the VEGA platform.
+  accepted: Boolean!
 
-    # A UUID reference for the caller to aid in tracking operations on VEGA
-    reference: String!
+  # A UUID reference for the caller to aid in tracking operations on VEGA
+  reference: String!
 }
 
 
@@ -3047,10 +3164,10 @@ func (ec *executionContext) _Mutation_orderCreate(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*PreConsensus)
+	res := resTmp.(*proto.PreConsensusOrder)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPreConsensus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐPreConsensus(ctx, field.Selections, res)
+	return ec.marshalNPreConsensusOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPreConsensusOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -3894,6 +4011,246 @@ func (ec *executionContext) _PreConsensus_reference(ctx context.Context, field g
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreConsensusOrder_accepted(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreConsensusOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Accepted, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreConsensusOrder_reference(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreConsensusOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reference, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreConsensusOrder_price(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreConsensusOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PreConsensusOrder().Price(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreConsensusOrder_type(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreConsensusOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PreConsensusOrder().Type(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(OrderType)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreConsensusOrder_side(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreConsensusOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PreConsensusOrder().Side(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Side)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐSide(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreConsensusOrder_market(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreConsensusOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PreConsensusOrder().Market(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Market)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreConsensusOrder_size(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreConsensusOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PreConsensusOrder().Size(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreConsensusOrder_party(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreConsensusOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Party, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PreConsensusOrder_status(ctx context.Context, field graphql.CollectedField, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PreConsensusOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PreConsensusOrder().Status(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(OrderStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *proto.PriceLevel) graphql.Marshaler {
@@ -6848,6 +7205,124 @@ func (ec *executionContext) _PreConsensus(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var preConsensusOrderImplementors = []string{"PreConsensusOrder"}
+
+func (ec *executionContext) _PreConsensusOrder(ctx context.Context, sel ast.SelectionSet, obj *proto.PreConsensusOrder) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, preConsensusOrderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PreConsensusOrder")
+		case "accepted":
+			out.Values[i] = ec._PreConsensusOrder_accepted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "reference":
+			out.Values[i] = ec._PreConsensusOrder_reference(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "price":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PreConsensusOrder_price(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
+		case "type":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PreConsensusOrder_type(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
+		case "side":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PreConsensusOrder_side(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
+		case "market":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PreConsensusOrder_market(ctx, field, obj)
+				return res
+			})
+		case "size":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PreConsensusOrder_size(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
+		case "party":
+			out.Values[i] = ec._PreConsensusOrder_party(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "status":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PreConsensusOrder_status(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
 var priceLevelImplementors = []string{"PriceLevel"}
 
 func (ec *executionContext) _PriceLevel(ctx context.Context, sel ast.SelectionSet, obj *proto.PriceLevel) graphql.Marshaler {
@@ -7577,6 +8052,20 @@ func (ec *executionContext) marshalNPreConsensus2ᚖcodeᚗvegaprotocolᚗioᚋv
 		return graphql.Null
 	}
 	return ec._PreConsensus(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPreConsensusOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPreConsensusOrder(ctx context.Context, sel ast.SelectionSet, v proto.PreConsensusOrder) graphql.Marshaler {
+	return ec._PreConsensusOrder(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPreConsensusOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPreConsensusOrder(ctx context.Context, sel ast.SelectionSet, v *proto.PreConsensusOrder) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PreConsensusOrder(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPriceLevel2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevel(ctx context.Context, sel ast.SelectionSet, v proto.PriceLevel) graphql.Marshaler {

@@ -11,16 +11,18 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 var (
-	ErrChainNotConnected = errors.New("chain not connected")
+	ErrChainNotConnected    = errors.New("chain not connected")
+	ErrNilPreConsensusOrder = errors.New("error nil preconsensus")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql OrderService
 type OrderService interface {
-	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
+	CreateOrder(ctx context.Context, order *types.OrderSubmission) (*types.PreConsensusOrder, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
@@ -120,6 +122,9 @@ func (r *resolverRoot) Party() PartyResolver {
 }
 func (r *resolverRoot) Subscription() SubscriptionResolver {
 	return (*MySubscriptionResolver)(r)
+}
+func (r *resolverRoot) PreConsensusOrder() PreConsensusOrderResolver {
+	return (*MyPreConsensusOrderResolver)(r)
 }
 
 // BEGIN: Query Resolver
@@ -637,11 +642,11 @@ func (r *MyPositionResolver) direction(val int64) ValueDirection {
 type MyMutationResolver resolverRoot
 
 func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, party string, price string,
-	size string, side Side, type_ OrderType, expiration *string) (*PreConsensus, error) {
+	size string, side Side, type_ OrderType, expiration *string) (*types.PreConsensusOrder, error) {
 	order := &types.OrderSubmission{}
-	res := PreConsensus{}
+
 	if r.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-		return &res, ErrChainNotConnected
+		return nil, ErrChainNotConnected
 	}
 
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
@@ -692,16 +697,14 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	accepted, reference, err := r.orderService.CreateOrder(ctx, order)
+	pre, err := r.orderService.CreateOrder(ctx, order)
 	if err != nil {
 		logger := *r.GetLogger()
 		logger.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
 		return nil, err
 	}
 
-	res.Accepted = accepted
-	res.Reference = reference
-	return &res, nil
+	return pre, nil
 }
 
 func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*PreConsensus, error) {
@@ -834,6 +837,57 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 		logging.Uint64("ref", ref))
 
 	return c, nil
+}
+
+type MyPreConsensusOrderResolver resolverRoot
+
+func (r *MyPreConsensusOrderResolver) Price(ctx context.Context, obj *proto.PreConsensusOrder) (string, error) {
+	if obj != nil {
+		return fmt.Sprintf("%v", obj.Price), nil
+	}
+	return "", ErrNilPreConsensusOrder
+}
+
+func (r *MyPreConsensusOrderResolver) Type(ctx context.Context, obj *proto.PreConsensusOrder) (OrderType, error) {
+	if obj != nil {
+		return OrderType(obj.Type.String()), nil
+	}
+	return "", ErrNilPreConsensusOrder
+}
+
+func (r *MyPreConsensusOrderResolver) Side(ctx context.Context, obj *proto.PreConsensusOrder) (Side, error) {
+	if obj != nil {
+		return Side(obj.Side.String()), nil
+	}
+	return "", ErrNilPreConsensusOrder
+}
+
+func (r *MyPreConsensusOrderResolver) Market(ctx context.Context, obj *proto.PreConsensusOrder) (*Market, error) {
+	if obj != nil {
+		if len(obj.MarketID) <= 0 {
+			return nil, nil
+		}
+		pmkt, err := r.marketService.GetByID(ctx, obj.MarketID)
+		if err != nil {
+			return nil, err
+		}
+		return MarketFromProto(pmkt)
+
+	}
+	return nil, ErrNilPreConsensusOrder
+}
+
+func (r *MyPreConsensusOrderResolver) Size(ctx context.Context, obj *proto.PreConsensusOrder) (string, error) {
+	if obj != nil {
+		return fmt.Sprintf("%v", obj.Size), nil
+	}
+	return "", ErrNilPreConsensusOrder
+}
+func (r *MyPreConsensusOrderResolver) Status(ctx context.Context, obj *proto.PreConsensusOrder) (OrderStatus, error) {
+	if obj != nil {
+		return OrderStatus(obj.Status.String()), nil
+	}
+	return "", ErrNilPreConsensusOrder
 }
 
 func validateMarket(ctx context.Context, marketId *string, marketService MarketService) (*types.Market, error) {
