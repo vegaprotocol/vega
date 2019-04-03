@@ -194,12 +194,9 @@ func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) (
 	if err != nil {
 		return nil, err
 	}
-	p := make([]Party, 0)
-	party := Party{
-		Name: pty.Name,
-	}
-	p = append(p, party)
-	return p, nil
+	return []Party{
+		{Name: pty.Name},
+	}, nil
 }
 
 func (r *MyVegaResolver) Party(ctx context.Context, obj *Vega, name string) (*Party, error) {
@@ -207,8 +204,7 @@ func (r *MyVegaResolver) Party(ctx context.Context, obj *Vega, name string) (*Pa
 	if err != nil {
 		return nil, err
 	}
-	party := Party{Name: pty.Name}
-	return &party, nil
+	return &Party{Name: pty.Name}, nil
 }
 
 // END: Root Resolver
