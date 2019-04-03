@@ -35,6 +35,7 @@ func (m *MockMatchingEngine) EXPECT() *MockMatchingEngineMockRecorder {
 
 // AddOrderBook mocks base method
 func (m *MockMatchingEngine) AddOrderBook(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddOrderBook", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,11 +43,13 @@ func (m *MockMatchingEngine) AddOrderBook(arg0 string) error {
 
 // AddOrderBook indicates an expected call of AddOrderBook
 func (mr *MockMatchingEngineMockRecorder) AddOrderBook(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrderBook", reflect.TypeOf((*MockMatchingEngine)(nil).AddOrderBook), arg0)
 }
 
 // AmendOrder mocks base method
 func (m *MockMatchingEngine) AmendOrder(arg0 *proto.Order) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -54,11 +57,13 @@ func (m *MockMatchingEngine) AmendOrder(arg0 *proto.Order) error {
 
 // AmendOrder indicates an expected call of AmendOrder
 func (mr *MockMatchingEngineMockRecorder) AmendOrder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockMatchingEngine)(nil).AmendOrder), arg0)
 }
 
 // CancelOrder mocks base method
 func (m *MockMatchingEngine) CancelOrder(arg0 *proto.Order) (*proto.OrderCancellationConfirmation, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0)
 	ret0, _ := ret[0].(*proto.OrderCancellationConfirmation)
 	ret1, _ := ret[1].(error)
@@ -67,11 +72,13 @@ func (m *MockMatchingEngine) CancelOrder(arg0 *proto.Order) (*proto.OrderCancell
 
 // CancelOrder indicates an expected call of CancelOrder
 func (mr *MockMatchingEngineMockRecorder) CancelOrder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockMatchingEngine)(nil).CancelOrder), arg0)
 }
 
 // RemoveExpiringOrders mocks base method
 func (m *MockMatchingEngine) RemoveExpiringOrders(arg0 uint64) []proto.Order {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveExpiringOrders", arg0)
 	ret0, _ := ret[0].([]proto.Order)
 	return ret0
@@ -79,11 +86,13 @@ func (m *MockMatchingEngine) RemoveExpiringOrders(arg0 uint64) []proto.Order {
 
 // RemoveExpiringOrders indicates an expected call of RemoveExpiringOrders
 func (mr *MockMatchingEngineMockRecorder) RemoveExpiringOrders(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveExpiringOrders", reflect.TypeOf((*MockMatchingEngine)(nil).RemoveExpiringOrders), arg0)
 }
 
 // SubmitOrder mocks base method
 func (m *MockMatchingEngine) SubmitOrder(arg0 *proto.Order) (*proto.OrderConfirmation, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitOrder", arg0)
 	ret0, _ := ret[0].(*proto.OrderConfirmation)
 	ret1, _ := ret[1].(error)
@@ -92,5 +101,6 @@ func (m *MockMatchingEngine) SubmitOrder(arg0 *proto.Order) (*proto.OrderConfirm
 
 // SubmitOrder indicates an expected call of SubmitOrder
 func (mr *MockMatchingEngineMockRecorder) SubmitOrder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockMatchingEngine)(nil).SubmitOrder), arg0)
 }

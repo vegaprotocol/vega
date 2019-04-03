@@ -36,6 +36,7 @@ func (m *MockPartyService) EXPECT() *MockPartyServiceMockRecorder {
 
 // GetAll mocks base method
 func (m *MockPartyService) GetAll(arg0 context.Context) ([]*proto.Party, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", arg0)
 	ret0, _ := ret[0].([]*proto.Party)
 	ret1, _ := ret[1].(error)
@@ -44,5 +45,6 @@ func (m *MockPartyService) GetAll(arg0 context.Context) ([]*proto.Party, error) 
 
 // GetAll indicates an expected call of GetAll
 func (mr *MockPartyServiceMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockPartyService)(nil).GetAll), arg0)
 }

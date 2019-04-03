@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -141,17 +140,15 @@ func (os *Order) Close() error {
 
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *Order) GetByMarket(ctx context.Context, market string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
-	var result []*types.Order
-	if queryFilters == nil {
-		queryFilters = &filtering.OrderQueryFilters{}
-	}
+func (os *Order) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+	var (
+		err error
+	)
+	result := make([]*types.Order, 0, int(limit))
 
 	txn := os.badger.readTransaction()
 	defer txn.Discard()
 
-	filter := OrderFilter{queryFilter: queryFilters}
-	descending := filter.queryFilter.HasLast()
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
@@ -159,27 +156,34 @@ func (os *Order) GetByMarket(ctx context.Context, market string, queryFilters *f
 	defer cancel()
 
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
+	orderBuf := []byte{}
+	openOnly := open != nil && *open
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			item := it.Item()
-			orderBuf, _ := item.ValueCopy(nil)
+			if orderBuf, err = it.Item().ValueCopy(orderBuf); err != nil {
+				return nil, err
+			}
 			var order types.Order
 			if err := proto.Unmarshal(orderBuf, &order); err != nil {
 				os.log.Error("Failed to unmarshal order value from badger in order store (getByMarket)",
 					logging.Error(err),
-					logging.String("badger-key", string(item.Key())),
+					logging.String("badger-key", string(it.Item().Key())),
 					logging.String("raw-bytes", string(orderBuf)))
 
 				return nil, err
 			}
-			if filter.apply(&order) {
+			if !openOnly || (order.Remaining == 0 || order.Status != types.Order_Active) {
+				if skip != 0 {
+					skip--
+					continue
+				}
 				result = append(result, &order)
-			}
-			if filter.isFull() {
-				break
+				if limit != 0 && len(result) == cap(result) {
+					return result, nil
+				}
 			}
 		}
 	}
@@ -212,18 +216,16 @@ func (os *Order) GetByMarketAndId(ctx context.Context, market string, id string)
 
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *Order) GetByParty(ctx context.Context, party string, queryFilters *filtering.OrderQueryFilters) ([]*types.Order, error) {
-	var result []*types.Order
-
-	if queryFilters == nil {
-		queryFilters = &filtering.OrderQueryFilters{}
-	}
+func (os *Order) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+	var (
+		err error
+	)
+	openOnly := open != nil && *open
+	result := make([]*types.Order, 0, int(limit))
 
 	txn := os.badger.readTransaction()
 	defer txn.Discard()
 
-	filter := OrderFilter{queryFilter: queryFilters}
-	descending := filter.queryFilter.HasLast()
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
@@ -231,13 +233,15 @@ func (os *Order) GetByParty(ctx context.Context, party string, queryFilters *fil
 	defer cancel()
 
 	partyPrefix, validForPrefix := os.badger.partyPrefix(party, descending)
+	marketKey, orderBuf := []byte{}, []byte{}
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			marketKeyItem := it.Item()
-			marketKey, _ := marketKeyItem.ValueCopy(nil)
+			if marketKey, err = it.Item().ValueCopy(marketKey); err != nil {
+				return nil, err
+			}
 			orderItem, err := txn.Get(marketKey)
 			if err != nil {
 				os.log.Error("Order with key does not exist in order store (getByParty)",
@@ -246,7 +250,9 @@ func (os *Order) GetByParty(ctx context.Context, party string, queryFilters *fil
 
 				return nil, err
 			}
-			orderBuf, _ := orderItem.ValueCopy(nil)
+			if orderBuf, err = orderItem.ValueCopy(orderBuf); err != nil {
+				return nil, err
+			}
 			var order types.Order
 			if err := proto.Unmarshal(orderBuf, &order); err != nil {
 				os.log.Error("Failed to unmarshal order value from badger in order store (getByParty)",
@@ -255,11 +261,15 @@ func (os *Order) GetByParty(ctx context.Context, party string, queryFilters *fil
 					logging.String("raw-bytes", string(orderBuf)))
 				return nil, err
 			}
-			if filter.apply(&order) {
+			if !openOnly || (order.Remaining == 0 || order.Status != types.Order_Active) {
+				if skip != 0 {
+					skip--
+					continue
+				}
 				result = append(result, &order)
-			}
-			if filter.isFull() {
-				break
+				if limit != 0 && len(result) == cap(result) {
+					return result, nil
+				}
 			}
 		}
 	}
@@ -462,49 +472,4 @@ func (os *Order) writeBatch(batch []types.Order) error {
 	}
 
 	return nil
-}
-
-// OrderFilter is the order specific filter query data holder. It includes the raw filters
-// and helper methods that are used internally to apply and track filter state.
-type OrderFilter struct {
-	queryFilter *filtering.OrderQueryFilters
-	skipped     uint64
-	found       uint64
-}
-
-func (f *OrderFilter) apply(order *types.Order) (include bool) {
-	if f.queryFilter.First == nil && f.queryFilter.Last == nil && f.queryFilter.Skip == nil {
-		include = true
-	} else {
-		if f.queryFilter.HasFirst() && f.found < *f.queryFilter.First {
-			include = true
-		}
-		if f.queryFilter.HasLast() && f.found < *f.queryFilter.Last {
-			include = true
-		}
-		if f.queryFilter.HasSkip() && f.skipped < *f.queryFilter.Skip {
-			f.skipped++
-			return false
-		}
-	}
-
-	if !applyOrderFilters(order, f.queryFilter) {
-		return false
-	}
-
-	// if item passes the filter, increment the found queue
-	if include {
-		f.found++
-	}
-	return include
-}
-
-func (f *OrderFilter) isFull() bool {
-	if f.queryFilter.HasLast() && f.found == *f.queryFilter.Last {
-		return true
-	}
-	if f.queryFilter.HasFirst() && f.found == *f.queryFilter.First {
-		return true
-	}
-	return false
 }

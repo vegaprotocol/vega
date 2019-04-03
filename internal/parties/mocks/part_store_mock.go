@@ -35,6 +35,7 @@ func (m *MockPartyStore) EXPECT() *MockPartyStoreMockRecorder {
 
 // GetAll mocks base method
 func (m *MockPartyStore) GetAll() ([]*proto.Party, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
 	ret0, _ := ret[0].([]*proto.Party)
 	ret1, _ := ret[1].(error)
@@ -43,11 +44,13 @@ func (m *MockPartyStore) GetAll() ([]*proto.Party, error) {
 
 // GetAll indicates an expected call of GetAll
 func (mr *MockPartyStoreMockRecorder) GetAll() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockPartyStore)(nil).GetAll))
 }
 
 // GetByName mocks base method
 func (m *MockPartyStore) GetByName(arg0 string) (*proto.Party, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByName", arg0)
 	ret0, _ := ret[0].(*proto.Party)
 	ret1, _ := ret[1].(error)
@@ -56,11 +59,13 @@ func (m *MockPartyStore) GetByName(arg0 string) (*proto.Party, error) {
 
 // GetByName indicates an expected call of GetByName
 func (mr *MockPartyStoreMockRecorder) GetByName(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByName", reflect.TypeOf((*MockPartyStore)(nil).GetByName), arg0)
 }
 
 // Post mocks base method
 func (m *MockPartyStore) Post(arg0 *proto.Party) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Post", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -68,5 +73,6 @@ func (m *MockPartyStore) Post(arg0 *proto.Party) error {
 
 // Post indicates an expected call of Post
 func (mr *MockPartyStoreMockRecorder) Post(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Post", reflect.TypeOf((*MockPartyStore)(nil).Post), arg0)
 }

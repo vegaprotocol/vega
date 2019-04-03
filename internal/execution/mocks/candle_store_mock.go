@@ -35,6 +35,7 @@ func (m *MockCandleStore) EXPECT() *MockCandleStoreMockRecorder {
 
 // AddTradeToBuffer mocks base method
 func (m *MockCandleStore) AddTradeToBuffer(arg0 proto.Trade) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddTradeToBuffer", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,11 +43,13 @@ func (m *MockCandleStore) AddTradeToBuffer(arg0 proto.Trade) error {
 
 // AddTradeToBuffer indicates an expected call of AddTradeToBuffer
 func (mr *MockCandleStoreMockRecorder) AddTradeToBuffer(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTradeToBuffer", reflect.TypeOf((*MockCandleStore)(nil).AddTradeToBuffer), arg0)
 }
 
 // GenerateCandlesFromBuffer mocks base method
 func (m *MockCandleStore) GenerateCandlesFromBuffer(arg0 string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateCandlesFromBuffer", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -54,11 +57,13 @@ func (m *MockCandleStore) GenerateCandlesFromBuffer(arg0 string) error {
 
 // GenerateCandlesFromBuffer indicates an expected call of GenerateCandlesFromBuffer
 func (mr *MockCandleStoreMockRecorder) GenerateCandlesFromBuffer(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateCandlesFromBuffer", reflect.TypeOf((*MockCandleStore)(nil).GenerateCandlesFromBuffer), arg0)
 }
 
 // StartNewBuffer mocks base method
 func (m *MockCandleStore) StartNewBuffer(arg0 string, arg1 uint64) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StartNewBuffer", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -66,5 +71,6 @@ func (m *MockCandleStore) StartNewBuffer(arg0 string, arg1 uint64) error {
 
 // StartNewBuffer indicates an expected call of StartNewBuffer
 func (mr *MockCandleStoreMockRecorder) StartNewBuffer(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartNewBuffer", reflect.TypeOf((*MockCandleStore)(nil).StartNewBuffer), arg0, arg1)
 }

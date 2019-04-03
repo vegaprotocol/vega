@@ -190,7 +190,8 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 		}
 		return m, nil
 	})
-	root.order.EXPECT().GetByMarket(gomock.Any(), marketId, gomock.Any()).Times(1).Return([]*types.Order{
+	var ui0 uint64
+	root.order.EXPECT().GetByMarket(gomock.Any(), marketId, ui0, ui0, false, nil).Times(1).Return([]*types.Order{
 		{
 			Id:        "order-id-1",
 			Price:     1000,

@@ -36,6 +36,7 @@ func (m *MockServiceTime) EXPECT() *MockServiceTimeMockRecorder {
 
 // GetTimeNow mocks base method
 func (m *MockServiceTime) GetTimeNow() (vegatime.Stamp, time.Time, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTimeNow")
 	ret0, _ := ret[0].(vegatime.Stamp)
 	ret1, _ := ret[1].(time.Time)
@@ -45,5 +46,6 @@ func (m *MockServiceTime) GetTimeNow() (vegatime.Stamp, time.Time, error) {
 
 // GetTimeNow indicates an expected call of GetTimeNow
 func (mr *MockServiceTimeMockRecorder) GetTimeNow() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeNow", reflect.TypeOf((*MockServiceTime)(nil).GetTimeNow))
 }

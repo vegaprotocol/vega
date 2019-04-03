@@ -6,7 +6,6 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 
-	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
@@ -27,8 +26,8 @@ type TimeService interface {
 type OrderStore interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error)
 	GetByPartyAndId(ctx context.Context, party, id string) (*types.Order, error)
-	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
-	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) ([]*types.Order, error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
 }
@@ -163,36 +162,12 @@ func (s *Svc) validateOrderExpirationTS(expdt string) (time.Time, error) {
 	return exp, nil
 }
 
-func (s *Svc) GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
-	o, err := s.orderStore.GetByMarket(ctx, market, filters)
-	if err != nil {
-		return nil, err
-	}
-	filterOpen := filters != nil && filters.Open == true
-	result := make([]*types.Order, 0)
-	for _, order := range o {
-		if filterOpen && (order.Remaining == 0 || order.Status != types.Order_Active) {
-			continue
-		}
-		result = append(result, order)
-	}
-	return result, err
+func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
+	return s.orderStore.GetByMarket(ctx, market, skip, limit, descending, open)
 }
 
-func (s *Svc) GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error) {
-	o, err := s.orderStore.GetByParty(ctx, party, filters)
-	if err != nil {
-		return nil, err
-	}
-	filterOpen := filters != nil && filters.Open == true
-	result := make([]*types.Order, 0)
-	for _, order := range o {
-		if filterOpen && (order.Remaining == 0 || order.Status != types.Order_Active) {
-			continue
-		}
-		result = append(result, order)
-	}
-	return result, err
+func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
+	return s.orderStore.GetByParty(ctx, party, skip, limit, descending, open)
 }
 
 func (s *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error) {

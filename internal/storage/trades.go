@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -101,7 +100,7 @@ func (ts *Trade) Commit() error {
 
 	ts.mu.Lock()
 	items := ts.buffer
-	ts.buffer = make([]types.Trade, 0)
+	ts.buffer = []types.Trade{}
 	ts.mu.Unlock()
 
 	err := ts.writeBatch(items)
@@ -122,46 +121,47 @@ func (ts *Trade) Commit() error {
 
 // GetByMarket retrieves trades for a given market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (ts *Trade) GetByMarket(ctx context.Context, market string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
-	var result []*types.Trade
-
-	if queryFilters == nil {
-		queryFilters = &filtering.TradeQueryFilters{}
-	}
+func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) ([]*types.Trade, error) {
+	// get results cap
+	var (
+		err error
+	)
+	result := make([]*types.Trade, 0, int(limit))
 
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
-
-	filter := TradeFilter{queryFilter: queryFilters}
-	descending := filter.queryFilter.HasLast()
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
 	defer cancel()
-
 	marketPrefix, validForPrefix := ts.badger.marketPrefix(market, descending)
+	tradeBuf := []byte{}
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			item := it.Item()
-			tradeBuf, _ := item.ValueCopy(nil)
+			if tradeBuf, err = it.Item().ValueCopy(tradeBuf); err != nil {
+				// @TODO log this error
+				return nil, err
+			}
 			var trade types.Trade
 			if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
 				ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarket)",
 					logging.Error(err),
-					logging.String("badger-key", string(item.Key())),
+					logging.String("badger-key", string(it.Item().Key())),
 					logging.String("raw-bytes", string(tradeBuf)))
 
 				return nil, err
 			}
-			if filter.apply(&trade) {
-				result = append(result, &trade)
+			if skip != 0 {
+				skip--
+				continue
 			}
-			if filter.isFull() {
-				break
+			result = append(result, &trade)
+			if limit != 0 && len(result) == cap(result) {
+				return result, nil
 			}
 		}
 	}
@@ -194,32 +194,34 @@ func (ts *Trade) GetByMarketAndId(ctx context.Context, market string, Id string)
 
 // GetByParty retrieves trades for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (ts *Trade) GetByParty(ctx context.Context, party string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
-	var result []*types.Trade
-
-	if queryFilters == nil {
-		queryFilters = &filtering.TradeQueryFilters{}
-	}
+func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error) {
+	// get results cap
+	var (
+		err error
+	)
+	result := make([]*types.Trade, 0, int(limit))
 
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
-	filter := TradeFilter{queryFilter: queryFilters}
-	descending := filter.queryFilter.HasLast()
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
 	defer cancel()
-
+	// reuse these buffers, slices will get reallocated, so if the buffer is big enough
+	// next calls won't alloc memory again
+	marketKey, tradeBuf := []byte{}, []byte{}
 	partyPrefix, validForPrefix := ts.badger.partyPrefix(party, descending)
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			marketKeyItem := it.Item()
-			marketKey, _ := marketKeyItem.ValueCopy(nil)
+			// these errors should be logged, means the data is being stored inconsistently
+			if marketKey, err = it.Item().ValueCopy(marketKey); err != nil {
+				return nil, err
+			}
 			tradeItem, err := txn.Get(marketKey)
 			if err != nil {
 				ts.log.Error("Trade with key does not exist in trade store (getByParty)",
@@ -228,7 +230,10 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, queryFilters *fil
 
 				return nil, err
 			}
-			tradeBuf, _ := tradeItem.ValueCopy(nil)
+			// these errors should be logged, means the data is being stored inconsistently
+			if tradeBuf, err = tradeItem.ValueCopy(tradeBuf); err != nil {
+				return nil, err
+			}
 			var trade types.Trade
 			if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
 				ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByParty)",
@@ -238,15 +243,20 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, queryFilters *fil
 
 				return nil, err
 			}
-			if filter.apply(&trade) {
+			// no market, or the market we're looking for
+			if market == nil || trade.Market == *market {
+				// skip matches if needed
+				if skip != 0 {
+					skip--
+					continue
+				}
 				result = append(result, &trade)
-			}
-			if filter.isFull() {
-				break
+				if limit != 0 && len(result) == cap(result) {
+					return result, nil
+				}
 			}
 		}
 	}
-
 	return result, nil
 }
 
@@ -292,28 +302,30 @@ func (ts *Trade) GetByPartyAndId(ctx context.Context, party string, Id string) (
 
 // GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
 // Provide optional query filters to refine the data set further (if required), any errors will be returned immediately.
-func (ts *Trade) GetByOrderId(ctx context.Context, orderId string, queryFilters *filtering.TradeQueryFilters) ([]*types.Trade, error) {
-	var result []*types.Trade
-
+func (ts *Trade) GetByOrderId(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error) {
+	var (
+		err error
+	)
+	result := make([]*types.Trade, 0, int(limit))
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
-	filter := TradeFilter{queryFilter: queryFilters}
-	descending := filter.queryFilter.HasLast()
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
+	orderPrefix, validForPrefix := ts.badger.orderPrefix(orderID, descending)
+
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
 	defer cancel()
-
-	orderPrefix, validForPrefix := ts.badger.orderPrefix(orderId, descending)
+	marketKey, tradeBuf := []byte{}, []byte{}
 	for it.Seek(orderPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			marketKeyItem := it.Item()
-			marketKey, _ := marketKeyItem.ValueCopy(nil)
+			if marketKey, err = it.Item().ValueCopy(marketKey); err != nil {
+				return nil, err
+			}
 			tradeItem, err := txn.Get(marketKey)
 			if err != nil {
 				ts.log.Error("Trade with key does not exist in trade store (getByOrderId)",
@@ -322,7 +334,9 @@ func (ts *Trade) GetByOrderId(ctx context.Context, orderId string, queryFilters 
 
 				return nil, err
 			}
-			tradeBuf, _ := tradeItem.ValueCopy(nil)
+			if tradeBuf, err = tradeItem.ValueCopy(tradeBuf); err != nil {
+				return nil, err
+			}
 			var trade types.Trade
 			if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
 				ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByOrderId)",
@@ -332,27 +346,24 @@ func (ts *Trade) GetByOrderId(ctx context.Context, orderId string, queryFilters 
 
 				return nil, err
 			}
-			if filter.apply(&trade) {
+			if market == nil || trade.Market == *market {
+				if skip != 0 {
+					skip--
+					continue
+				}
 				result = append(result, &trade)
-			}
-			if filter.isFull() {
-				break
+				if limit != 0 && len(result) == int(limit) {
+					break
+				}
 			}
 		}
 	}
-
 	return result, nil
 }
 
 // GetMarkPrice returns the current market price, for a requested market.
 func (ts *Trade) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
-
-	// We just need the very latest trade price
-	f := &filtering.TradeQueryFilters{}
-	l := uint64(1)
-	f.Last = &l
-
-	recentTrade, err := ts.GetByMarket(ctx, market, f)
+	recentTrade, err := ts.GetByMarket(ctx, market, 0, 1, true)
 	if err != nil {
 		return 0, err
 	}
@@ -459,48 +470,4 @@ func (ts *Trade) writeBatch(batch []types.Trade) error {
 	}
 
 	return nil
-}
-
-// TradeFilter is the trade specific filter query data holder. It includes the raw filters
-// and helper methods that are used internally to apply and track filter state.
-type TradeFilter struct {
-	queryFilter *filtering.TradeQueryFilters
-	skipped     uint64
-	found       uint64
-}
-
-func (f *TradeFilter) apply(trade *types.Trade) (include bool) {
-	if f.queryFilter.First == nil && f.queryFilter.Last == nil && f.queryFilter.Skip == nil {
-		include = true
-	} else {
-		if f.queryFilter.HasFirst() && f.found < *f.queryFilter.First {
-			include = true
-		}
-		if f.queryFilter.HasLast() && f.found < *f.queryFilter.Last {
-			include = true
-		}
-		if f.queryFilter.HasSkip() && f.skipped < *f.queryFilter.Skip {
-			f.skipped++
-			return false
-		}
-	}
-	if !applyTradeFilters(trade, f.queryFilter) {
-		return false
-	}
-
-	// if item passes the filter, increment the found counter
-	if include {
-		f.found++
-	}
-	return include
-}
-
-func (f *TradeFilter) isFull() bool {
-	if f.queryFilter.HasLast() && f.found == *f.queryFilter.Last {
-		return true
-	}
-	if f.queryFilter.HasFirst() && f.found == *f.queryFilter.First {
-		return true
-	}
-	return false
 }

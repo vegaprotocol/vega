@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/trades/mocks"
@@ -75,14 +74,14 @@ func TestGetByMarket(t *testing.T) {
 		{Id: "C", Market: market, Price: 300},
 	}
 
-	svc.trade.EXPECT().GetByMarket(svc.ctx, market, nil).Times(1).Return(expect, nil)
-	svc.trade.EXPECT().GetByMarket(svc.ctx, invalid, nil).Times(1).Return(nil, expErr)
+	svc.trade.EXPECT().GetByMarket(svc.ctx, market, 0, 0, false).Times(1).Return(expect, nil)
+	svc.trade.EXPECT().GetByMarket(svc.ctx, invalid, 1, 0, false).Times(1).Return(nil, expErr)
 
-	success, noErr := svc.GetByMarket(svc.ctx, market, nil)
+	success, noErr := svc.GetByMarket(svc.ctx, market, 0, 0, false)
 	assert.NoError(t, noErr)
 	assert.Equal(t, expect, success)
 
-	fail, err := svc.GetByMarket(svc.ctx, invalid, nil)
+	fail, err := svc.GetByMarket(svc.ctx, invalid, 1, 0, false)
 	assert.Nil(t, fail)
 	assert.Equal(t, expErr, err)
 }
@@ -107,7 +106,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 		},
 		invalid: nil,
 	}
-	svc.trade.EXPECT().GetByParty(svc.ctx, gomock.Any(), nil).Times(len(expect)).DoAndReturn(func(_ context.Context, party string, _ *filtering.TradeQueryFilters) ([]*types.Trade, error) {
+	svc.trade.EXPECT().GetByParty(svc.ctx, gomock.Any(), 0, 0, false, nil).Times(len(expect)).DoAndReturn(func(_ context.Context, party string, _ uint64, _ uint64, _ bool, _ *string) ([]*types.Trade, error) {
 		trades, ok := expect[party]
 		assert.True(t, ok)
 		if trades == nil {
@@ -117,7 +116,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 	})
 
 	for party, exp := range expect {
-		trades, err := svc.GetByParty(svc.ctx, party, nil)
+		trades, err := svc.GetByParty(svc.ctx, party, 0, 0, false, nil)
 		if exp == nil {
 			assert.Nil(t, trades)
 			assert.Equal(t, expErr, err)

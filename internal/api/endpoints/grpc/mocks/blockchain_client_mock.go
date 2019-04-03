@@ -37,6 +37,7 @@ func (m *MockBlockchainClient) EXPECT() *MockBlockchainClientMockRecorder {
 
 // GetGenesisTime mocks base method
 func (m *MockBlockchainClient) GetGenesisTime(arg0 context.Context) (time.Time, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGenesisTime", arg0)
 	ret0, _ := ret[0].(time.Time)
 	ret1, _ := ret[1].(error)
@@ -45,11 +46,13 @@ func (m *MockBlockchainClient) GetGenesisTime(arg0 context.Context) (time.Time, 
 
 // GetGenesisTime indicates an expected call of GetGenesisTime
 func (mr *MockBlockchainClientMockRecorder) GetGenesisTime(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGenesisTime", reflect.TypeOf((*MockBlockchainClient)(nil).GetGenesisTime), arg0)
 }
 
 // GetNetworkInfo mocks base method
 func (m *MockBlockchainClient) GetNetworkInfo(arg0 context.Context) (*types.ResultNetInfo, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNetworkInfo", arg0)
 	ret0, _ := ret[0].(*types.ResultNetInfo)
 	ret1, _ := ret[1].(error)
@@ -58,11 +61,13 @@ func (m *MockBlockchainClient) GetNetworkInfo(arg0 context.Context) (*types.Resu
 
 // GetNetworkInfo indicates an expected call of GetNetworkInfo
 func (mr *MockBlockchainClientMockRecorder) GetNetworkInfo(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkInfo", reflect.TypeOf((*MockBlockchainClient)(nil).GetNetworkInfo), arg0)
 }
 
 // GetUnconfirmedTxCount mocks base method
 func (m *MockBlockchainClient) GetUnconfirmedTxCount(arg0 context.Context) (int, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnconfirmedTxCount", arg0)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
@@ -71,5 +76,6 @@ func (m *MockBlockchainClient) GetUnconfirmedTxCount(arg0 context.Context) (int,
 
 // GetUnconfirmedTxCount indicates an expected call of GetUnconfirmedTxCount
 func (mr *MockBlockchainClientMockRecorder) GetUnconfirmedTxCount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnconfirmedTxCount", reflect.TypeOf((*MockBlockchainClient)(nil).GetUnconfirmedTxCount), arg0)
 }

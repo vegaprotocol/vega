@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -23,16 +22,16 @@ var (
 type OrderService interface {
 	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
-	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
-	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql TradeService
 type TradeService interface {
-	GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) (trades []*types.Trade, err error)
+	GetByOrderId(ctx context.Context, orderId string) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
 	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
@@ -214,15 +213,28 @@ func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 	if err != nil {
 		return nil, err
 	}
-	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
+	var (
+		offset, limit uint64
+		descending    bool
+		open          *bool
+	)
+	if where != nil {
+		open = where.Open
+	}
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		descending = true
+		limit = uint64(*last)
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	o, err := r.orderService.GetByMarket(ctx, market.ID, limit, offset, descending, open)
 	if err != nil {
 		return nil, err
 	}
-	o, err := r.orderService.GetByMarket(ctx, market.ID, queryFilters)
-	if err != nil {
-		return nil, err
-	}
-	valOrders := make([]types.Order, 0)
+	valOrders := make([]types.Order, 0, len(o))
 	for _, v := range o {
 		valOrders = append(valOrders, *v)
 	}
@@ -235,15 +247,24 @@ func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	if err != nil {
 		return nil, err
 	}
-	queryFilters, err := buildTradeQueryFilters(where, skip, first, last)
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		descending = true
+		limit = uint64(*last)
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	t, err := r.tradeService.GetByMarket(ctx, market.ID, offset, limit, descending)
 	if err != nil {
 		return nil, err
 	}
-	t, err := r.tradeService.GetByMarket(ctx, market.ID, queryFilters)
-	if err != nil {
-		return nil, err
-	}
-	valTrades := make([]types.Trade, 0)
+	valTrades := make([]types.Trade, 0, len(t))
 	for _, v := range t {
 		valTrades = append(valTrades, *v)
 	}
@@ -323,11 +344,24 @@ func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
-	if err != nil {
-		return nil, err
+	var (
+		offset, limit uint64
+		descending    bool
+		open          *bool
+	)
+	if where != nil {
+		open = where.Open
 	}
-	o, err := r.orderService.GetByParty(ctx, party.Name, queryFilters)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		limit = uint64(*last)
+		descending = true
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	o, err := r.orderService.GetByParty(ctx, party.Name, offset, limit, descending, open)
 	if err != nil {
 		return nil, err
 	}
@@ -343,15 +377,24 @@ func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	queryFilters, err := buildTradeQueryFilters(where, skip, first, last)
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		descending = true
+		offset = uint64(*last)
+	} else if first != nil {
+		offset = uint64(*first)
+	}
+	t, err := r.tradeService.GetByParty(ctx, party.Name, offset, limit, descending, where.Market)
 	if err != nil {
 		return nil, err
 	}
-	t, err := r.tradeService.GetByParty(ctx, party.Name, queryFilters)
-	if err != nil {
-		return nil, err
-	}
-	valTrades := make([]types.Trade, 0)
+	valTrades := make([]types.Trade, 0, len(t))
 	for _, v := range t {
 		valTrades = append(valTrades, *v)
 	}
@@ -399,10 +442,8 @@ func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *types.Market
 	if err != nil {
 		return nil, err
 	}
-	queryFilters := &filtering.TradeQueryFilters{}
-	last := uint64(1)
-	queryFilters.Last = &last
-	t, err := r.tradeService.GetByMarket(ctx, obj.Name, queryFilters)
+	// skip 0, descending, get one trade
+	t, err := r.tradeService.GetByMarket(ctx, obj.Name, 0, 1, true)
 	if err != nil {
 		return nil, err
 	}
@@ -451,8 +492,7 @@ func (r *MyOrderResolver) Datetime(ctx context.Context, obj *types.Order) (strin
 	return vegaTimestamp.Rfc3339Nano(), nil
 }
 func (r *MyOrderResolver) Trades(ctx context.Context, obj *types.Order) ([]*types.Trade, error) {
-	f := filtering.TradeQueryFilters{}
-	relatedTrades, err := r.tradeService.GetByOrderId(ctx, obj.Id, &f)
+	relatedTrades, err := r.tradeService.GetByOrderId(ctx, obj.Id)
 	if err != nil {
 		return nil, err
 	}
