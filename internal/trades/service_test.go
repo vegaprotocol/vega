@@ -74,8 +74,9 @@ func TestGetByMarket(t *testing.T) {
 		{Id: "C", Market: market, Price: 300},
 	}
 
-	svc.trade.EXPECT().GetByMarket(svc.ctx, market, 0, 0, false).Times(1).Return(expect, nil)
-	svc.trade.EXPECT().GetByMarket(svc.ctx, invalid, 1, 0, false).Times(1).Return(nil, expErr)
+	ui0, ui1 := uint64(0), uint64(1)
+	svc.trade.EXPECT().GetByMarket(svc.ctx, market, ui0, ui0, false).Times(1).Return(expect, nil)
+	svc.trade.EXPECT().GetByMarket(svc.ctx, invalid, ui1, ui0, false).Times(1).Return(nil, expErr)
 
 	success, noErr := svc.GetByMarket(svc.ctx, market, 0, 0, false)
 	assert.NoError(t, noErr)
@@ -106,7 +107,8 @@ func TestTradeService_GetByParty(t *testing.T) {
 		},
 		invalid: nil,
 	}
-	svc.trade.EXPECT().GetByParty(svc.ctx, gomock.Any(), 0, 0, false, nil).Times(len(expect)).DoAndReturn(func(_ context.Context, party string, _ uint64, _ uint64, _ bool, _ *string) ([]*types.Trade, error) {
+	ui0 := uint64(0)
+	svc.trade.EXPECT().GetByParty(svc.ctx, gomock.Any(), ui0, ui0, false, nil).Times(len(expect)).DoAndReturn(func(_ context.Context, party string, _ uint64, _ uint64, _ bool, _ *string) ([]*types.Trade, error) {
 		trades, ok := expect[party]
 		assert.True(t, ok)
 		if trades == nil {
