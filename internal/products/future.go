@@ -5,7 +5,6 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/oracles"
 	types "code.vegaprotocol.io/vega/proto"
-
 	"github.com/pkg/errors"
 )
 

@@ -1,9 +1,9 @@
 package products
 
 import (
-	"errors"
-
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -18,10 +18,6 @@ type FinancialAmount struct {
 
 type Product interface {
 	Settle(entryPrice uint64, netPosition uint64) (*FinancialAmount, error)
-}
-
-type IsProduct interface {
-	isInstrument_Product()
 }
 
 func New(pp interface{}) (Product, error) {
