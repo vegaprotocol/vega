@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -216,6 +217,16 @@ func TestMarketDepth_Hard(t *testing.T) {
 	assert.Equal(t, uint64(1), marketDepth.Buy[2].NumberOfOrders)
 	assert.Equal(t, uint64(400), marketDepth.Buy[2].CumulativeVolume)
 
+	// Bit of a hacky test, but we want to test timeouts when getting market depth because we can only set a timeout
+	// of 1s or more through config, we're setting a timeout of 1 nanosecond on the context we pass to orderStore
+	// this ensures that the context will get cancelled when getting market depth, and that code path gets tested
+	tctx, cfunc := context.WithTimeout(ctx, time.Nanosecond)
+	defer cfunc()
+	// perhaps sleep here in case we need to make sure the context has indeed expired, but starting the 2 routines and the map lookups
+	// alone will take longer than a nanosecond anyway, so there's no need.
+	_, err = orderStore.GetMarketDepth(tctx, testMarket)
+	assert.Equal(t, storage.ErrTimeoutReached, err)
+
 	// OK REMOVE ALL FROM THE SECOND BATCH TOO MUCH
 	secondBatchOfOrders[0].Remaining = secondBatchOfOrders[0].Remaining - uint64(100)
 
@@ -232,6 +243,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	marketDepth, _ = orderStore.GetMarketDepth(ctx, testMarket)
 
 	assert.Equal(t, 0, len(marketDepth.Buy))
+	// force a context cancel due to timeout, because we can't reduce the timout to below 1 sec through config, set timeout on context here
 }
 
 func TestOrderBookDepth_Soft(t *testing.T) {

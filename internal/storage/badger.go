@@ -8,9 +8,14 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/dgraph-io/badger/options"
+	"github.com/pkg/errors"
 )
 
 const badgerNamedLogger = "badger"
+
+var (
+	ErrTimeoutReached = errors.New("context cancelled due to timeout")
+)
 
 type badgerStore struct {
 	db *badger.DB

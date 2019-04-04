@@ -139,12 +139,17 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, queryFilters *f
 
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
 	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	marketPrefix, validForPrefix := ts.badger.marketPrefix(market, descending)
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			err := ctx.Err()
+			if deadline.Before(time.Now()) {
+				err = ErrTimeoutReached
+			}
+			return nil, err
 		default:
 			item := it.Item()
 			tradeBuf, _ := item.ValueCopy(nil)
@@ -211,12 +216,17 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, queryFilters *fil
 
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
 	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	partyPrefix, validForPrefix := ts.badger.partyPrefix(party, descending)
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			err := ctx.Err()
+			if deadline.Before(time.Now()) {
+				err = ErrTimeoutReached
+			}
+			return nil, err
 		default:
 			marketKeyItem := it.Item()
 			marketKey, _ := marketKeyItem.ValueCopy(nil)
@@ -305,12 +315,17 @@ func (ts *Trade) GetByOrderId(ctx context.Context, orderId string, queryFilters 
 
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
 	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	orderPrefix, validForPrefix := ts.badger.orderPrefix(orderId, descending)
 	for it.Seek(orderPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			err := ctx.Err()
+			if deadline.Before(time.Now()) {
+				err = ErrTimeoutReached
+			}
+			return nil, err
 		default:
 			marketKeyItem := it.Item()
 			marketKey, _ := marketKeyItem.ValueCopy(nil)

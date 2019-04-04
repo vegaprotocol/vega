@@ -303,12 +303,17 @@ func (c *Candle) GetCandles(ctx context.Context, market string, sinceTimestamp u
 
 	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout*time.Second)
 	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	var candles []*types.Candle
 	for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			err := ctx.Err()
+			if deadline.Before(time.Now()) {
+				err = ErrTimeoutReached
+			}
+			return nil, err
 		default:
 			item := it.Item()
 			value, err := item.ValueCopy(nil)

@@ -157,12 +157,17 @@ func (os *Order) GetByMarket(ctx context.Context, market string, queryFilters *f
 
 	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
 	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			err := ctx.Err()
+			if deadline.Before(time.Now()) {
+				err = ErrTimeoutReached
+			}
+			return nil, err
 		default:
 			item := it.Item()
 			orderBuf, _ := item.ValueCopy(nil)
@@ -229,12 +234,17 @@ func (os *Order) GetByParty(ctx context.Context, party string, queryFilters *fil
 
 	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
 	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	partyPrefix, validForPrefix := os.badger.partyPrefix(party, descending)
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			err := ctx.Err()
+			if deadline.Before(time.Now()) {
+				err = ErrTimeoutReached
+			}
+			return nil, err
 		default:
 			marketKeyItem := it.Item()
 			marketKey, _ := marketKeyItem.ValueCopy(nil)
@@ -309,19 +319,21 @@ func (os *Order) GetByPartyAndId(ctx context.Context, party string, id string) (
 func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error) {
 
 	// validate
-	if exists := os.depth[market]; exists == nil {
+	depth, ok := os.depth[market]
+	if !ok || depth == nil {
 		return nil, errors.New(fmt.Sprintf("market depth for %s does not exist", market))
 	}
 
 	// load from store
-	buy := os.depth[market].BuySide()
-	sell := os.depth[market].SellSide()
+	buy := depth.BuySide()
+	sell := depth.SellSide()
 
 	buyPtr := make([]*types.PriceLevel, 0, len(buy))
 	sellPtr := make([]*types.PriceLevel, 0, len(sell))
 
 	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
 	defer cancel()
+	deadline, _ := ctx.Deadline()
 	// 2 routines, each can push one error on here, so buffer to avoid deadlock
 	errCh := make(chan error, 2)
 	wg := sync.WaitGroup{}
@@ -336,7 +348,11 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 		for i, b := range buy {
 			select {
 			case <-ctx.Done():
-				errCh <- ctx.Err()
+				err := ctx.Err()
+				if deadline.Before(time.Now()) {
+					err = ErrTimeoutReached
+				}
+				errCh <- err
 				return
 			default:
 				// keep running total
@@ -353,7 +369,11 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 		for i, s := range sell {
 			select {
 			case <-ctx.Done():
-				errCh <- ctx.Err()
+				err := ctx.Err()
+				if deadline.Before(time.Now()) {
+					err = ErrTimeoutReached
+				}
+				errCh <- err
 				return
 			default:
 				// keep running total
