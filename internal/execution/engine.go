@@ -125,13 +125,10 @@ func NewEngine(
 		}
 		e.markets[mkt.Id], err = engines.NewMarket(executionConfig.Engines, &mkt)
 		if err != nil {
-			if err != nil {
-				e.log.Panic("Failed to instanciate market market",
-					logging.String("market-id", mkt.Id),
-					logging.Error(err),
-				)
-			}
-
+			e.log.Panic("Failed to instanciate market market",
+				logging.String("market-id", mkt.Id),
+				logging.Error(err),
+			)
 		}
 	}
 
