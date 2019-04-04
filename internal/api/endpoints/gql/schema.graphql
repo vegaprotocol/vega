@@ -21,15 +21,6 @@ type Mutation {
     orderCancel(id: ID!, market: String!, party: String!): PreConsensus!
 }
 
-# Queries allow a caller to read data and filter data via GraphQL.
-type Query {
-    # Int64 not yet supported, strings are returned and will need to be handled by clients:
-    # https://github.com/graphql-go/graphql/issues/257
-
-    # VEGA root query
-    vega: Vega!
-}
-
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
 type Subscription {
     candles(market: String!, interval: Interval!): Candle!
@@ -49,8 +40,9 @@ type PreConsensus {
     reference: String!
 }
 
-# VEGA the world's premier distributed derivatives trading platform
-type Vega {
+
+# Queries allow a caller to read data and filter data via GraphQL.
+type Query {
 
     # One or more instruments that are trading on the VEGA network
     markets(name: String): [Market!]

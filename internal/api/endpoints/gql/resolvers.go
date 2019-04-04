@@ -113,9 +113,6 @@ func (r *resolverRoot) Order() OrderResolver {
 func (r *resolverRoot) Trade() TradeResolver {
 	return (*MyTradeResolver)(r)
 }
-func (r *resolverRoot) Vega() VegaResolver {
-	return (*MyVegaResolver)(r)
-}
 func (r *resolverRoot) Position() PositionResolver {
 	return (*MyPositionResolver)(r)
 }
@@ -130,18 +127,7 @@ func (r *resolverRoot) Subscription() SubscriptionResolver {
 
 type MyQueryResolver resolverRoot
 
-func (r *MyQueryResolver) Vega(ctx context.Context) (*Vega, error) {
-	var vega = Vega{}
-	return &vega, nil
-}
-
-// END: Query Resolver
-
-// BEGIN: Root Resolver
-
-type MyVegaResolver resolverRoot
-
-func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, id *string) ([]Market, error) {
+func (r *MyQueryResolver) Markets(ctx context.Context, id *string) ([]Market, error) {
 	if id != nil {
 		mkt, err := validateMarket(ctx, id, r.marketService)
 		if err != nil {
@@ -173,7 +159,7 @@ func (r *MyVegaResolver) Markets(ctx context.Context, obj *Vega, id *string) ([]
 	return m, nil
 }
 
-func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, id string) (*Market, error) {
+func (r *MyQueryResolver) Market(ctx context.Context, id string) (*Market, error) {
 	mkt, err := validateMarket(ctx, &id, r.marketService)
 	if err != nil {
 		return nil, err
@@ -186,11 +172,11 @@ func (r *MyVegaResolver) Market(ctx context.Context, obj *Vega, id string) (*Mar
 	return market, nil
 }
 
-func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error) {
+func (r *MyQueryResolver) Parties(ctx context.Context, name *string) ([]Party, error) {
 	if name == nil {
-		return nil, errors.New("query all parties on VEGA not implemented")
+		return nil, errors.New("all parties not implemented")
 	}
-	pty, err := r.Party(ctx, obj, *name)
+	pty, err := r.Party(ctx, *name)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +185,7 @@ func (r *MyVegaResolver) Parties(ctx context.Context, obj *Vega, name *string) (
 	}, nil
 }
 
-func (r *MyVegaResolver) Party(ctx context.Context, obj *Vega, name string) (*Party, error) {
+func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error) {
 	pty, err := validateParty(ctx, &name, r.partyService)
 	if err != nil {
 		return nil, err

@@ -41,9 +41,6 @@ func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
 	tradeResolver := root.Trade()
 	assert.NotNil(t, tradeResolver)
 
-	vegaResolver := root.Vega()
-	assert.NotNil(t, vegaResolver)
-
 	priceLevelResolver := root.PriceLevel()
 	assert.NotNil(t, priceLevelResolver)
 
@@ -68,10 +65,6 @@ func TestNewResolverRoot_QueryResolver(t *testing.T) {
 	queryResolver := root.Query()
 	assert.NotNil(t, queryResolver)
 
-	ctx := context.Background()
-	vega, err := queryResolver.Vega(ctx)
-	assert.Nil(t, err)
-	assert.NotNil(t, vega)
 }
 
 func getTestMarket() *types.Market {
@@ -119,7 +112,7 @@ func getTestParty() *types.Party {
 	}
 }
 
-func TestNewResolverRoot_VegaResolver(t *testing.T) {
+func TestNewResolverRoot_Resolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
 	defer root.Finish()
 	ctx := context.Background()
@@ -157,32 +150,28 @@ func TestNewResolverRoot_VegaResolver(t *testing.T) {
 	}
 	root.market.EXPECT().GetAll(gomock.Any()).Times(1).Return([]*types.Market{incompleteMarket}, nil)
 
-	vegaResolver := root.Vega()
-	assert.NotNil(t, vegaResolver)
-
-	vega := &gql.Vega{}
 	name := "BTC/DEC19"
-	vMarkets, err := vegaResolver.Markets(ctx, vega, &name)
+	vMarkets, err := root.Query().Markets(ctx, &name)
 	assert.Nil(t, err)
 	assert.NotNil(t, vMarkets)
 	assert.Len(t, vMarkets, 1)
 
 	name = "ETH/USD18"
-	vMarkets, err = vegaResolver.Markets(ctx, vega, &name)
+	vMarkets, err = root.Query().Markets(ctx, &name)
 	assert.Error(t, err)
 	assert.Nil(t, vMarkets)
 
-	vMarkets, err = vegaResolver.Markets(ctx, vega, nil)
+	vMarkets, err = root.Query().Markets(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, vMarkets)
 
 	name = "barney"
-	vParties, err := vegaResolver.Parties(ctx, vega, &name)
+	vParties, err := root.Query().Parties(ctx, &name)
 	assert.Nil(t, err)
 	assert.NotNil(t, vParties)
 	assert.Len(t, vParties, 1)
 
-	vParties, err = vegaResolver.Parties(ctx, vega, nil)
+	vParties, err = root.Query().Parties(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, vParties)
 }
@@ -242,7 +231,6 @@ type resolverRoot interface {
 	Market() gql.MarketResolver
 	Order() gql.OrderResolver
 	Trade() gql.TradeResolver
-	Vega() gql.VegaResolver
 	Position() gql.PositionResolver
 	Party() gql.PartyResolver
 	Subscription() gql.SubscriptionResolver
