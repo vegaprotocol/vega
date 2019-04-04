@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -11,6 +12,7 @@ import (
 type Party struct {
 	*Config
 	db map[string]types.Party
+	mu sync.RWMutex
 }
 
 // NewStore returns a concrete implementation of a parties Store.
@@ -23,6 +25,9 @@ func NewParties(config *Config) (*Party, error) {
 
 // Post saves a given party to the mem-store.
 func (ms *Party) Post(party *types.Party) error {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
 	if _, exists := ms.db[party.Name]; exists {
 		return errors.New(fmt.Sprintf("party %s already exists in store", party.Name))
 	}
@@ -30,35 +35,27 @@ func (ms *Party) Post(party *types.Party) error {
 	return nil
 }
 
-// GetByName searches for the given party by name in the mem-store.
-func (ms *Party) GetByName(name string) (*types.Party, error) {
-	if _, exists := ms.db[name]; !exists {
-		return nil, errors.New(fmt.Sprintf("party %s not found in store", name))
+// GetByID searches for the given party by id/name in the mem-store.
+func (ms *Party) GetByID(id string) (*types.Party, error) {
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+
+	if _, exists := ms.db[id]; !exists {
+		return nil, errors.New(fmt.Sprintf("party %s not found in store", id))
 	}
-	party := ms.db[name]
+	party := ms.db[id]
 	return &party, nil
 }
 
 // GetAll returns all parties in the mem-store.
 func (ms *Party) GetAll() ([]*types.Party, error) {
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+
 	res := make([]*types.Party, 0, len(ms.db))
 	for k := range ms.db {
 		kv := ms.db[k]
 		res = append(res, &kv)
 	}
 	return res, nil
-}
-
-// Commit typically saves any operations that are queued to underlying storage,
-// if supported by underlying storage implementation.
-func (ms *Party) Commit() error {
-	// Not required with a mem-store implementation.
-	return nil
-}
-
-// Close can be called to clean up and close any storage
-// connections held by the underlying storage mechanism.
-func (ms *Party) Close() error {
-	// Not required with a mem-store implementation.
-	return nil
 }

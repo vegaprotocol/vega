@@ -35,6 +35,7 @@ func (m *MockMarketStore) EXPECT() *MockMarketStoreMockRecorder {
 
 // GetAll mocks base method
 func (m *MockMarketStore) GetAll() ([]*proto.Market, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
 	ret0, _ := ret[0].([]*proto.Market)
 	ret1, _ := ret[1].(error)
@@ -43,11 +44,13 @@ func (m *MockMarketStore) GetAll() ([]*proto.Market, error) {
 
 // GetAll indicates an expected call of GetAll
 func (mr *MockMarketStoreMockRecorder) GetAll() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMarketStore)(nil).GetAll))
 }
 
 // GetByID mocks base method
 func (m *MockMarketStore) GetByID(arg0 string) (*proto.Market, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
 	ret0, _ := ret[0].(*proto.Market)
 	ret1, _ := ret[1].(error)
@@ -56,11 +59,13 @@ func (m *MockMarketStore) GetByID(arg0 string) (*proto.Market, error) {
 
 // GetByID indicates an expected call of GetByID
 func (mr *MockMarketStoreMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMarketStore)(nil).GetByID), arg0)
 }
 
 // Post mocks base method
 func (m *MockMarketStore) Post(arg0 *proto.Market) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Post", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -68,5 +73,6 @@ func (m *MockMarketStore) Post(arg0 *proto.Market) error {
 
 // Post indicates an expected call of Post
 func (mr *MockMarketStoreMockRecorder) Post(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Post", reflect.TypeOf((*MockMarketStore)(nil).Post), arg0)
 }

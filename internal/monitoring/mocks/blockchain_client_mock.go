@@ -36,6 +36,7 @@ func (m *MockBlockchainClient) EXPECT() *MockBlockchainClientMockRecorder {
 
 // GetStatus mocks base method
 func (m *MockBlockchainClient) GetStatus(arg0 context.Context) (*types.ResultStatus, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatus", arg0)
 	ret0, _ := ret[0].(*types.ResultStatus)
 	ret1, _ := ret[1].(error)
@@ -44,11 +45,13 @@ func (m *MockBlockchainClient) GetStatus(arg0 context.Context) (*types.ResultSta
 
 // GetStatus indicates an expected call of GetStatus
 func (mr *MockBlockchainClientMockRecorder) GetStatus(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatus", reflect.TypeOf((*MockBlockchainClient)(nil).GetStatus), arg0)
 }
 
 // Health mocks base method
 func (m *MockBlockchainClient) Health() (*types.ResultHealth, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Health")
 	ret0, _ := ret[0].(*types.ResultHealth)
 	ret1, _ := ret[1].(error)
@@ -57,5 +60,6 @@ func (m *MockBlockchainClient) Health() (*types.ResultHealth, error) {
 
 // Health indicates an expected call of Health
 func (mr *MockBlockchainClientMockRecorder) Health() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Health", reflect.TypeOf((*MockBlockchainClient)(nil).Health))
 }

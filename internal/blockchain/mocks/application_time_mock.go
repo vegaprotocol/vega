@@ -35,10 +35,12 @@ func (m *MockApplicationTime) EXPECT() *MockApplicationTimeMockRecorder {
 
 // SetTimeNow mocks base method
 func (m *MockApplicationTime) SetTimeNow(arg0 vegatime.Stamp) {
+	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetTimeNow", arg0)
 }
 
 // SetTimeNow indicates an expected call of SetTimeNow
 func (mr *MockApplicationTimeMockRecorder) SetTimeNow(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimeNow", reflect.TypeOf((*MockApplicationTime)(nil).SetTimeNow), arg0)
 }

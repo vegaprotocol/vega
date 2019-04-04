@@ -36,6 +36,7 @@ func (m *MockMarketService) EXPECT() *MockMarketServiceMockRecorder {
 
 // GetAll mocks base method
 func (m *MockMarketService) GetAll(arg0 context.Context) ([]*proto.Market, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", arg0)
 	ret0, _ := ret[0].([]*proto.Market)
 	ret1, _ := ret[1].(error)
@@ -44,11 +45,13 @@ func (m *MockMarketService) GetAll(arg0 context.Context) ([]*proto.Market, error
 
 // GetAll indicates an expected call of GetAll
 func (mr *MockMarketServiceMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMarketService)(nil).GetAll), arg0)
 }
 
 // GetDepth mocks base method
 func (m *MockMarketService) GetDepth(arg0 context.Context, arg1 string) (*proto.MarketDepth, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDepth", arg0, arg1)
 	ret0, _ := ret[0].(*proto.MarketDepth)
 	ret1, _ := ret[1].(error)
@@ -57,5 +60,6 @@ func (m *MockMarketService) GetDepth(arg0 context.Context, arg1 string) (*proto.
 
 // GetDepth indicates an expected call of GetDepth
 func (mr *MockMarketServiceMockRecorder) GetDepth(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDepth", reflect.TypeOf((*MockMarketService)(nil).GetDepth), arg0, arg1)
 }

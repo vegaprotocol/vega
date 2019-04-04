@@ -36,6 +36,7 @@ func (m *MockOrderStore) EXPECT() *MockOrderStoreMockRecorder {
 
 // Commit mocks base method
 func (m *MockOrderStore) Commit() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Commit")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -43,11 +44,13 @@ func (m *MockOrderStore) Commit() error {
 
 // Commit indicates an expected call of Commit
 func (mr *MockOrderStoreMockRecorder) Commit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockOrderStore)(nil).Commit))
 }
 
 // GetByPartyAndId mocks base method
 func (m *MockOrderStore) GetByPartyAndId(arg0 context.Context, arg1, arg2 string) (*proto.Order, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByPartyAndId", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*proto.Order)
 	ret1, _ := ret[1].(error)
@@ -56,11 +59,13 @@ func (m *MockOrderStore) GetByPartyAndId(arg0 context.Context, arg1, arg2 string
 
 // GetByPartyAndId indicates an expected call of GetByPartyAndId
 func (mr *MockOrderStoreMockRecorder) GetByPartyAndId(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndId", reflect.TypeOf((*MockOrderStore)(nil).GetByPartyAndId), arg0, arg1, arg2)
 }
 
 // Post mocks base method
 func (m *MockOrderStore) Post(arg0 proto.Order) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Post", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -68,11 +73,13 @@ func (m *MockOrderStore) Post(arg0 proto.Order) error {
 
 // Post indicates an expected call of Post
 func (mr *MockOrderStoreMockRecorder) Post(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Post", reflect.TypeOf((*MockOrderStore)(nil).Post), arg0)
 }
 
 // Put mocks base method
 func (m *MockOrderStore) Put(arg0 proto.Order) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Put", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -80,5 +87,6 @@ func (m *MockOrderStore) Put(arg0 proto.Order) error {
 
 // Put indicates an expected call of Put
 func (mr *MockOrderStoreMockRecorder) Put(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockOrderStore)(nil).Put), arg0)
 }

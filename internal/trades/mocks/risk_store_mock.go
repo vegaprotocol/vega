@@ -35,6 +35,7 @@ func (m *MockRiskStore) EXPECT() *MockRiskStoreMockRecorder {
 
 // GetByMarket mocks base method
 func (m *MockRiskStore) GetByMarket(arg0 string) (*proto.RiskFactor, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByMarket", arg0)
 	ret0, _ := ret[0].(*proto.RiskFactor)
 	ret1, _ := ret[1].(error)
@@ -43,5 +44,6 @@ func (m *MockRiskStore) GetByMarket(arg0 string) (*proto.RiskFactor, error) {
 
 // GetByMarket indicates an expected call of GetByMarket
 func (mr *MockRiskStoreMockRecorder) GetByMarket(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByMarket", reflect.TypeOf((*MockRiskStore)(nil).GetByMarket), arg0)
 }
