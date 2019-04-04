@@ -163,11 +163,10 @@ func (os *Order) GetByMarket(ctx context.Context, market string, queryFilters *f
 	for it.Seek(marketPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
-			err := ctx.Err()
 			if deadline.Before(time.Now()) {
-				err = ErrTimeoutReached
+				return nil, ErrTimeoutReached
 			}
-			return nil, err
+			return nil, nil
 		default:
 			item := it.Item()
 			orderBuf, _ := item.ValueCopy(nil)
@@ -240,11 +239,10 @@ func (os *Order) GetByParty(ctx context.Context, party string, queryFilters *fil
 	for it.Seek(partyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
 		select {
 		case <-ctx.Done():
-			err := ctx.Err()
 			if deadline.Before(time.Now()) {
-				err = ErrTimeoutReached
+				return nil, ErrTimeoutReached
 			}
-			return nil, err
+			return nil, nil
 		default:
 			marketKeyItem := it.Item()
 			marketKey, _ := marketKeyItem.ValueCopy(nil)
@@ -348,11 +346,9 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 		for i, b := range buy {
 			select {
 			case <-ctx.Done():
-				err := ctx.Err()
 				if deadline.Before(time.Now()) {
-					err = ErrTimeoutReached
+					errCh <- ErrTimeoutReached
 				}
-				errCh <- err
 				return
 			default:
 				// keep running total
@@ -369,11 +365,9 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 		for i, s := range sell {
 			select {
 			case <-ctx.Done():
-				err := ctx.Err()
 				if deadline.Before(time.Now()) {
-					err = ErrTimeoutReached
+					errCh <- ErrTimeoutReached
 				}
-				errCh <- err
 				return
 			default:
 				// keep running total

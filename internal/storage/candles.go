@@ -309,11 +309,10 @@ func (c *Candle) GetCandles(ctx context.Context, market string, sinceTimestamp u
 	for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {
 		select {
 		case <-ctx.Done():
-			err := ctx.Err()
 			if deadline.Before(time.Now()) {
-				err = ErrTimeoutReached
+				return nil, ErrTimeoutReached
 			}
-			return nil, err
+			return nil, nil
 		default:
 			item := it.Item()
 			value, err := item.ValueCopy(nil)
