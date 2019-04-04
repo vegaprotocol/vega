@@ -47,7 +47,6 @@ type ResolverRoot interface {
 	Query() QueryResolver
 	Subscription() SubscriptionResolver
 	Trade() TradeResolver
-	Vega() VegaResolver
 }
 
 type DirectiveRoot struct {
@@ -171,7 +170,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Vega func(childComplexity int) int
+		Markets func(childComplexity int, name *string) int
+		Market  func(childComplexity int, name string) int
+		Parties func(childComplexity int, name *string) int
+		Party   func(childComplexity int, name string) int
 	}
 
 	Subscription struct {
@@ -197,13 +199,6 @@ type ComplexityRoot struct {
 		Size      func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 		Datetime  func(childComplexity int) int
-	}
-
-	Vega struct {
-		Markets func(childComplexity int, name *string) int
-		Market  func(childComplexity int, name string) int
-		Parties func(childComplexity int, name *string) int
-		Party   func(childComplexity int, name string) int
 	}
 }
 
@@ -267,7 +262,10 @@ type PriceLevelResolver interface {
 	CumulativeVolume(ctx context.Context, obj *proto.PriceLevel) (string, error)
 }
 type QueryResolver interface {
-	Vega(ctx context.Context) (*Vega, error)
+	Markets(ctx context.Context, name *string) ([]Market, error)
+	Market(ctx context.Context, name string) (*Market, error)
+	Parties(ctx context.Context, name *string) ([]Party, error)
+	Party(ctx context.Context, name string) (*Party, error)
 }
 type SubscriptionResolver interface {
 	Candles(ctx context.Context, market string, interval Interval) (<-chan *proto.Candle, error)
@@ -284,12 +282,6 @@ type TradeResolver interface {
 	Size(ctx context.Context, obj *proto.Trade) (string, error)
 	Timestamp(ctx context.Context, obj *proto.Trade) (string, error)
 	Datetime(ctx context.Context, obj *proto.Trade) (string, error)
-}
-type VegaResolver interface {
-	Markets(ctx context.Context, obj *Vega, name *string) ([]Market, error)
-	Market(ctx context.Context, obj *Vega, name string) (*Market, error)
-	Parties(ctx context.Context, obj *Vega, name *string) ([]Party, error)
-	Party(ctx context.Context, obj *Vega, name string) (*Party, error)
 }
 
 type executableSchema struct {
@@ -818,12 +810,53 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PriceLevel.CumulativeVolume(childComplexity), true
 
-	case "Query.Vega":
-		if e.complexity.Query.Vega == nil {
+	case "Query.Markets":
+		if e.complexity.Query.Markets == nil {
 			break
 		}
 
-		return e.complexity.Query.Vega(childComplexity), true
+		args, err := ec.field_Query_markets_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Markets(childComplexity, args["name"].(*string)), true
+
+	case "Query.Market":
+		if e.complexity.Query.Market == nil {
+			break
+		}
+
+		args, err := ec.field_Query_market_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Market(childComplexity, args["name"].(string)), true
+
+	case "Query.Parties":
+		if e.complexity.Query.Parties == nil {
+			break
+		}
+
+		args, err := ec.field_Query_parties_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Parties(childComplexity, args["name"].(*string)), true
+
+	case "Query.Party":
+		if e.complexity.Query.Party == nil {
+			break
+		}
+
+		args, err := ec.field_Query_party_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Party(childComplexity, args["name"].(string)), true
 
 	case "Subscription.Candles":
 		if e.complexity.Subscription.Candles == nil {
@@ -962,54 +995,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Datetime(childComplexity), true
 
-	case "Vega.Markets":
-		if e.complexity.Vega.Markets == nil {
-			break
-		}
-
-		args, err := ec.field_Vega_markets_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Vega.Markets(childComplexity, args["name"].(*string)), true
-
-	case "Vega.Market":
-		if e.complexity.Vega.Market == nil {
-			break
-		}
-
-		args, err := ec.field_Vega_market_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Vega.Market(childComplexity, args["name"].(string)), true
-
-	case "Vega.Parties":
-		if e.complexity.Vega.Parties == nil {
-			break
-		}
-
-		args, err := ec.field_Vega_parties_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Vega.Parties(childComplexity, args["name"].(*string)), true
-
-	case "Vega.Party":
-		if e.complexity.Vega.Party == nil {
-			break
-		}
-
-		args, err := ec.field_Vega_party_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Vega.Party(childComplexity, args["name"].(string)), true
-
 	}
 	return 0, false
 }
@@ -1139,15 +1124,6 @@ type Mutation {
     orderCancel(id: ID!, market: String!, party: String!): PreConsensus!
 }
 
-# Queries allow a caller to read data and filter data via GraphQL.
-type Query {
-    # Int64 not yet supported, strings are returned and will need to be handled by clients:
-    # https://github.com/graphql-go/graphql/issues/257
-
-    # VEGA root query
-    vega: Vega!
-}
-
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
 type Subscription {
     candles(market: String!, interval: Interval!): Candle!
@@ -1167,8 +1143,9 @@ type PreConsensus {
     reference: String!
 }
 
-# VEGA the world's premier distributed derivatives trading platform
-type Vega {
+
+# Queries allow a caller to read data and filter data via GraphQL.
+type Query {
 
     # One or more instruments that are trading on the VEGA network
     markets(name: String): [Market!]
@@ -1921,6 +1898,62 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_market_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["name"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_parties_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["name"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_party_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Subscription_candles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2012,62 +2045,6 @@ func (ec *executionContext) field_Subscription_trades_args(ctx context.Context, 
 		}
 	}
 	args["party"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Vega_market_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["name"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Vega_markets_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["name"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Vega_parties_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["name"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Vega_party_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["name"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["name"] = arg0
 	return args, nil
 }
 
@@ -3884,7 +3861,7 @@ func (ec *executionContext) _PriceLevel_cumulativeVolume(ctx context.Context, fi
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_vega(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_markets(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3893,21 +3870,115 @@ func (ec *executionContext) _Query_vega(ctx context.Context, field graphql.Colle
 		Args:   nil,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_markets_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Vega(rctx)
+		return ec.resolvers.Query().Markets(rctx, args["name"].(*string))
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(*Vega)
+	res := resTmp.([]Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNVega2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐVega(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_market(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_market_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Market(rctx, args["name"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Market)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_parties(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_parties_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Parties(rctx, args["name"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]Party)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOParty2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐParty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_party(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Field:  field,
+		Args:   nil,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_party_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Party(rctx, args["name"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Party)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -4417,126 +4488,6 @@ func (ec *executionContext) _Trade_datetime(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Vega_markets(ctx context.Context, field graphql.CollectedField, obj *Vega) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Vega",
-		Field:  field,
-		Args:   nil,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Vega_markets_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Vega().Markets(rctx, obj, args["name"].(*string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]Market)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOMarket2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐMarket(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Vega_market(ctx context.Context, field graphql.CollectedField, obj *Vega) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Vega",
-		Field:  field,
-		Args:   nil,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Vega_market_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Vega().Market(rctx, obj, args["name"].(string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Market)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐMarket(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Vega_parties(ctx context.Context, field graphql.CollectedField, obj *Vega) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Vega",
-		Field:  field,
-		Args:   nil,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Vega_parties_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Vega().Parties(rctx, obj, args["name"].(*string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]Party)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOParty2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐParty(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Vega_party(ctx context.Context, field graphql.CollectedField, obj *Vega) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Vega",
-		Field:  field,
-		Args:   nil,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Vega_party_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Vega().Party(rctx, obj, args["name"].(string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Party)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) graphql.Marshaler {
@@ -6773,7 +6724,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "vega":
+		case "markets":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -6781,10 +6732,40 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_vega(ctx, field)
-				if res == graphql.Null {
-					invalid = true
-				}
+				res = ec._Query_markets(ctx, field)
+				return res
+			})
+		case "market":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_market(ctx, field)
+				return res
+			})
+		case "parties":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_parties(ctx, field)
+				return res
+			})
+		case "party":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_party(ctx, field)
 				return res
 			})
 		case "__type":
@@ -6970,72 +6951,6 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 				if res == graphql.Null {
 					invalid = true
 				}
-				return res
-			})
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalid {
-		return graphql.Null
-	}
-	return out
-}
-
-var vegaImplementors = []string{"Vega"}
-
-func (ec *executionContext) _Vega(ctx context.Context, sel ast.SelectionSet, obj *Vega) graphql.Marshaler {
-	fields := graphql.CollectFields(ctx, sel, vegaImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	invalid := false
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Vega")
-		case "markets":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Vega_markets(ctx, field, obj)
-				return res
-			})
-		case "market":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Vega_market(ctx, field, obj)
-				return res
-			})
-		case "parties":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Vega_parties(ctx, field, obj)
-				return res
-			})
-		case "party":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Vega_party(ctx, field, obj)
 				return res
 			})
 		default:
@@ -7538,20 +7453,6 @@ func (ec *executionContext) unmarshalNValueDirection2codeᚗvegaprotocolᚗioᚋ
 
 func (ec *executionContext) marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐValueDirection(ctx context.Context, sel ast.SelectionSet, v ValueDirection) graphql.Marshaler {
 	return v
-}
-
-func (ec *executionContext) marshalNVega2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐVega(ctx context.Context, sel ast.SelectionSet, v Vega) graphql.Marshaler {
-	return ec._Vega(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNVega2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐVega(ctx context.Context, sel ast.SelectionSet, v *Vega) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Vega(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
