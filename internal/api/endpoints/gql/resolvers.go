@@ -208,7 +208,7 @@ func (r *MyVegaResolver) Party(ctx context.Context, obj *Vega, name string) (*Pa
 type MyMarketResolver resolverRoot
 
 func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
-	where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error) {
+	open *bool, skip *int, first *int, last *int) ([]types.Order, error) {
 	_, err := validateMarket(ctx, &market.ID, r.marketService)
 	if err != nil {
 		return nil, err
@@ -216,11 +216,7 @@ func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 	var (
 		offset, limit uint64
 		descending    bool
-		open          *bool
 	)
-	if where != nil {
-		open = where.Open
-	}
 	if skip != nil {
 		offset = uint64(*skip)
 	}
@@ -242,7 +238,7 @@ func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 }
 
 func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
-	where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error) {
+	skip *int, first *int, last *int) ([]types.Trade, error) {
 	_, err := validateMarket(ctx, &market.ID, r.marketService)
 	if err != nil {
 		return nil, err
@@ -340,18 +336,14 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 type MyPartyResolver resolverRoot
 
 func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
-	where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error) {
+	open *bool, skip *int, first *int, last *int) ([]types.Order, error) {
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	var (
 		offset, limit uint64
 		descending    bool
-		open          *bool
 	)
-	if where != nil {
-		open = where.Open
-	}
 	if skip != nil {
 		offset = uint64(*skip)
 	}
@@ -373,7 +365,7 @@ func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 }
 
 func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
-	where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error) {
+	market *string, skip *int, first *int, last *int) ([]types.Trade, error) {
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
@@ -390,7 +382,7 @@ func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 	} else if first != nil {
 		offset = uint64(*first)
 	}
-	t, err := r.tradeService.GetByParty(ctx, party.Name, offset, limit, descending, where.Market)
+	t, err := r.tradeService.GetByParty(ctx, party.Name, offset, limit, descending, market)
 	if err != nil {
 		return nil, err
 	}
