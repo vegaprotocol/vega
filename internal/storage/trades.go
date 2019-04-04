@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -199,6 +200,7 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 	var (
 		err error
 	)
+	tmk, kLen := ts.getTradeMarketFilter(market)
 	result := make([]*types.Trade, 0, int(limit))
 
 	txn := ts.badger.readTransaction()
@@ -222,6 +224,10 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 			if marketKey, err = it.Item().ValueCopy(marketKey); err != nil {
 				return nil, err
 			}
+			// we are filtering by market, but the market key doesn't match, stop here, don't waste time reading and unmarshalling the full trade item
+			if kLen != 0 && string(marketKey[:kLen]) != string(tmk) {
+				continue
+			}
 			tradeItem, err := txn.Get(marketKey)
 			if err != nil {
 				ts.log.Error("Trade with key does not exist in trade store (getByParty)",
@@ -243,17 +249,14 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 
 				return nil, err
 			}
-			// no market, or the market we're looking for
-			if market == nil || trade.Market == *market {
-				// skip matches if needed
-				if skip != 0 {
-					skip--
-					continue
-				}
-				result = append(result, &trade)
-				if limit != 0 && len(result) == cap(result) {
-					return result, nil
-				}
+			// skip matches if needed
+			if skip != 0 {
+				skip--
+				continue
+			}
+			result = append(result, &trade)
+			if limit != 0 && len(result) == cap(result) {
+				return result, nil
 			}
 		}
 	}
@@ -306,6 +309,7 @@ func (ts *Trade) GetByOrderId(ctx context.Context, orderID string, skip, limit u
 	var (
 		err error
 	)
+	tmk, kLen := ts.getTradeMarketFilter(market)
 	result := make([]*types.Trade, 0, int(limit))
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
@@ -325,6 +329,10 @@ func (ts *Trade) GetByOrderId(ctx context.Context, orderID string, skip, limit u
 		default:
 			if marketKey, err = it.Item().ValueCopy(marketKey); err != nil {
 				return nil, err
+			}
+			// apply market filter here, avoid getting the trade item + unmarshalling
+			if kLen != 0 && string(marketKey[:kLen]) != string(tmk) {
+				continue
 			}
 			tradeItem, err := txn.Get(marketKey)
 			if err != nil {
@@ -346,15 +354,13 @@ func (ts *Trade) GetByOrderId(ctx context.Context, orderID string, skip, limit u
 
 				return nil, err
 			}
-			if market == nil || trade.Market == *market {
-				if skip != 0 {
-					skip--
-					continue
-				}
-				result = append(result, &trade)
-				if limit != 0 && len(result) == int(limit) {
-					break
-				}
+			if skip != 0 {
+				skip--
+				continue
+			}
+			result = append(result, &trade)
+			if limit != 0 && len(result) == int(limit) {
+				return result, nil
 			}
 		}
 	}
@@ -470,4 +476,19 @@ func (ts *Trade) writeBatch(batch []types.Trade) error {
 	}
 
 	return nil
+}
+
+func (ts *Trade) getTradeMarketFilter(market *string) ([]byte, int) {
+	if market == nil {
+		return nil, 0
+	}
+	// create fake/partial key, and split at the _ID:foobar suffix
+	parts := strings.Split(
+		string(ts.badger.tradeMarketKey(*market, "")),
+		"_ID",
+	)
+	// cast the partial key to []byte in case there's some UTF-8 weirdness
+	tmk := []byte(parts[0])
+	// return partial key + its length
+	return tmk, len(tmk)
 }
