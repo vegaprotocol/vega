@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"sync/atomic"
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -60,9 +59,10 @@ func TestAppStatus(t *testing.T) {
 
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
-		blockchainClient.EXPECT().Health().MinTimes(1).Return(nil, nil)
-		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes2, nil).Do(func(ctx context.Context) {
-			wg.Done()
+		blockchainClient.EXPECT().Health().Return(nil, nil)
+		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes2, nil).Do(func(_ context.Context) {
+			// add the defer so that the waitgroup is only marked as done after we've returned the caching-up status
+			defer wg.Done()
 		})
 
 		checker := monitoring.New(cfg, blockchainClient)
@@ -98,12 +98,13 @@ func TestAppStatus(t *testing.T) {
 		wg.Add(1)
 
 		end := make(chan struct{})
-		var returnError uint32
+		returnError := 0
 		blockchainClient.EXPECT().Health().MinTimes(1).DoAndReturn(func() (*tmctypes.ResultHealth, error) {
-			if atomic.LoadUint32(&returnError) != 0 {
+			if returnError != 0 {
 				defer func() { end <- struct{}{} }()
 				return nil, errors.New("err")
 			}
+			returnError = 1
 			return nil, nil
 		})
 		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes, nil).Do(func(ctx context.Context) {
@@ -113,7 +114,6 @@ func TestAppStatus(t *testing.T) {
 		wg.Wait()
 		// ensure status is CONNECTED
 		assert.Equal(t, types.ChainStatus_CONNECTED, checker.ChainStatus())
-		atomic.StoreUint32(&returnError, 1)
 		<-end
 		// ensure it's now disconnected
 		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.ChainStatus())
