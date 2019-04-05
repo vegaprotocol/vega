@@ -8,7 +8,6 @@ import (
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
@@ -30,14 +29,14 @@ type OrderService interface {
 	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
-	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
-	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc TradeService
 type TradeService interface {
-	GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
 }
 
@@ -112,12 +111,17 @@ func (h *Handlers) OrdersByMarket(ctx context.Context,
 		return nil, errors.New("Market empty or missing")
 	}
 
-	orderFilters := &filtering.OrderQueryFilters{}
+	var (
+		skip, limit uint64
+		descending  bool
+		open        *bool
+	)
 	if request.Params != nil && request.Params.Limit > 0 {
-		orderFilters.Last = &request.Params.Limit
+		descending = true
+		limit = request.Params.Limit
 	}
 
-	o, err := h.OrderService.GetByMarket(ctx, request.Market, orderFilters)
+	o, err := h.OrderService.GetByMarket(ctx, request.Market, skip, limit, descending, open)
 	if err != nil {
 		return nil, err
 	}
@@ -138,12 +142,12 @@ func (h *Handlers) OrdersByParty(ctx context.Context,
 		return nil, errors.New("Party empty or missing")
 	}
 
-	orderFilters := &filtering.OrderQueryFilters{}
+	var limit uint64
 	if request.Params != nil && request.Params.Limit > 0 {
-		orderFilters.Last = &request.Params.Limit
+		limit = request.Params.Limit
 	}
 
-	o, err := h.OrderService.GetByParty(ctx, request.Party, orderFilters)
+	o, err := h.OrderService.GetByParty(ctx, request.Party, 0, limit, true, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -227,11 +231,7 @@ func (h *Handlers) MarketDepth(ctx context.Context, request *api.MarketDepthRequ
 	if err != nil {
 		return nil, err
 	}
-	// Query last 1 trades from store
-	queryFilters := &filtering.TradeQueryFilters{}
-	last := uint64(1)
-	queryFilters.Last = &last
-	t, err := h.TradeService.GetByMarket(ctx, request.Market, queryFilters)
+	t, err := h.TradeService.GetByMarket(ctx, request.Market, 0, 1, true)
 	if err != nil {
 		return nil, err
 	}
@@ -255,10 +255,7 @@ func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMark
 		limit = request.Params.Limit
 	}
 
-	f := &filtering.TradeQueryFilters{}
-	*f.Last = limit
-
-	t, err := h.TradeService.GetByMarket(ctx, request.Market, f)
+	t, err := h.TradeService.GetByMarket(ctx, request.Market, 0, limit, true)
 	if err != nil {
 		return nil, err
 	}

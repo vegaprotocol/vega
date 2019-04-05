@@ -35,6 +35,7 @@ func (m *MockTradeStore) EXPECT() *MockTradeStoreMockRecorder {
 
 // Commit mocks base method
 func (m *MockTradeStore) Commit() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Commit")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,11 +43,13 @@ func (m *MockTradeStore) Commit() error {
 
 // Commit indicates an expected call of Commit
 func (mr *MockTradeStoreMockRecorder) Commit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockTradeStore)(nil).Commit))
 }
 
 // Post mocks base method
 func (m *MockTradeStore) Post(arg0 *proto.Trade) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Post", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -54,5 +57,6 @@ func (m *MockTradeStore) Post(arg0 *proto.Trade) error {
 
 // Post indicates an expected call of Post
 func (mr *MockTradeStoreMockRecorder) Post(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Post", reflect.TypeOf((*MockTradeStore)(nil).Post), arg0)
 }

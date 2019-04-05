@@ -4,24 +4,33 @@ import (
 	"code.vegaprotocol.io/vega/internal/engines/matching"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"github.com/pkg/errors"
 )
 
 type Market struct {
 	*Config
 	marketcfg *types.Market
-	matching  *matching.OrderBook
+
+	matching   *matching.OrderBook
+	instrument *Instrument
 }
 
 // NewMarket create a new market using the marketcfg specification
 // and the configuration
-func NewMarket(cfg *Config, marketcfg *types.Market) *Market {
-	mkt := &Market{
-		Config:    cfg,
-		marketcfg: marketcfg,
-		matching:  matching.NewOrderBook(cfg.Matching, marketcfg.Id, false),
+func NewMarket(cfg *Config, marketcfg *types.Market) (*Market, error) {
+	instrument, err := NewInstrument(marketcfg.TradableInstrument.Instrument)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to intanciate a new market")
 	}
 
-	return mkt
+	mkt := &Market{
+		Config:     cfg,
+		marketcfg:  marketcfg,
+		matching:   matching.NewOrderBook(cfg.Matching, marketcfg.Id, false),
+		instrument: instrument,
+	}
+
+	return mkt, nil
 }
 
 // GetID returns the id of the given market

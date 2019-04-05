@@ -18,15 +18,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/vegatime"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/matching_engine_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution MatchingEngine
-type MatchingEngine interface {
-	AddOrderBook(marketId string) error
-	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
-	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
-	RemoveExpiringOrders(timestamp uint64) []types.Order
-	AmendOrder(order *types.Order) error
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution OrderStore
 type OrderStore interface {
 	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error)
@@ -55,7 +46,7 @@ type MarketStore interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution PartyStore
 type PartyStore interface {
-	GetByName(name string) (*types.Party, error)
+	GetByID(id string) (*types.Party, error)
 	Post(party *types.Party) error
 }
 
@@ -129,9 +120,16 @@ func NewEngine(
 		if err != nil {
 			e.log.Panic("Failed to add default market to market store",
 				logging.String("market-id", mkt.Id),
+				logging.Error(err),
 			)
 		}
-		e.markets[mkt.Id] = engines.NewMarket(executionConfig.Engines, &mkt)
+		e.markets[mkt.Id], err = engines.NewMarket(executionConfig.Engines, &mkt)
+		if err != nil {
+			e.log.Panic("Failed to instanciate market market",
+				logging.String("market-id", mkt.Id),
+				logging.Error(err),
+			)
+		}
 	}
 
 	return e
@@ -145,7 +143,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Verify and add new parties
-	party, _ := e.partyStore.GetByName(order.Party)
+	party, _ := e.partyStore.GetByID(order.Party)
 	if party == nil {
 		p := &types.Party{Name: order.Party}
 		err := e.partyStore.Post(p)

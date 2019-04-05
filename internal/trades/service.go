@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 
-	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -15,11 +14,11 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/trades TradeStore
 type TradeStore interface {
-	GetByMarket(ctx context.Context, market string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) ([]*types.Trade, error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Trade, error)
-	GetByParty(ctx context.Context, party string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error)
 	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Trade, error)
-	GetByOrderId(ctx context.Context, orderId string, params *filtering.TradeQueryFilters) ([]*types.Trade, error)
+	GetByOrderId(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error)
 	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*storage.MarketBucket
 	GetMarkPrice(ctx context.Context, market string) (uint64, error)
 	Subscribe(trades chan<- []types.Trade) uint64
@@ -45,16 +44,16 @@ func NewService(config *Config, tradeStore TradeStore, riskStore RiskStore) (*Sv
 	}, nil
 }
 
-func (t *Svc) GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
-	trades, err = t.tradeStore.GetByMarket(ctx, market, filters)
+func (t *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error) {
+	trades, err = t.tradeStore.GetByMarket(ctx, market, skip, limit, descending)
 	if err != nil {
 		return nil, err
 	}
 	return trades, err
 }
 
-func (t *Svc) GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
-	trades, err = t.tradeStore.GetByParty(ctx, party, filters)
+func (t *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) (trades []*types.Trade, err error) {
+	trades, err = t.tradeStore.GetByParty(ctx, party, skip, limit, descending, market)
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +76,8 @@ func (t *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (tra
 	return trade, err
 }
 
-func (t *Svc) GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error) {
-	trades, err = t.tradeStore.GetByOrderId(ctx, orderId, filters)
+func (t *Svc) GetByOrderId(ctx context.Context, orderId string) (trades []*types.Trade, err error) {
+	trades, err = t.tradeStore.GetByOrderId(ctx, orderId, 0, 0, false, nil)
 	if err != nil {
 		return nil, err
 	}

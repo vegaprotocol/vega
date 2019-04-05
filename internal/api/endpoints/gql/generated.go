@@ -104,8 +104,8 @@ type ComplexityRoot struct {
 		TradableInstrument func(childComplexity int) int
 		TradingMode        func(childComplexity int) int
 		DecimalPlaces      func(childComplexity int) int
-		Orders             func(childComplexity int, where *OrderFilter, skip *int, first *int, last *int) int
-		Trades             func(childComplexity int, where *TradeFilter, skip *int, first *int, last *int) int
+		Orders             func(childComplexity int, open *bool, skip *int, first *int, last *int) int
+		Trades             func(childComplexity int, skip *int, first *int, last *int) int
 		Depth              func(childComplexity int) int
 		Candles            func(childComplexity int, sinceTimestamp string, interval Interval) int
 	}
@@ -140,8 +140,8 @@ type ComplexityRoot struct {
 
 	Party struct {
 		Name      func(childComplexity int) int
-		Orders    func(childComplexity int, where *OrderFilter, skip *int, first *int, last *int) int
-		Trades    func(childComplexity int, where *TradeFilter, skip *int, first *int, last *int) int
+		Orders    func(childComplexity int, open *bool, skip *int, first *int, last *int) int
+		Trades    func(childComplexity int, market *string, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
 	}
 
@@ -213,8 +213,8 @@ type CandleResolver interface {
 	Interval(ctx context.Context, obj *proto.Candle) (Interval, error)
 }
 type MarketResolver interface {
-	Orders(ctx context.Context, obj *Market, where *OrderFilter, skip *int, first *int, last *int) ([]proto.Order, error)
-	Trades(ctx context.Context, obj *Market, where *TradeFilter, skip *int, first *int, last *int) ([]proto.Trade, error)
+	Orders(ctx context.Context, obj *Market, open *bool, skip *int, first *int, last *int) ([]proto.Order, error)
+	Trades(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]proto.Trade, error)
 	Depth(ctx context.Context, obj *Market) (*proto.MarketDepth, error)
 	Candles(ctx context.Context, obj *Market, sinceTimestamp string, interval Interval) ([]*proto.Candle, error)
 }
@@ -240,8 +240,8 @@ type OrderResolver interface {
 	Trades(ctx context.Context, obj *proto.Order) ([]*proto.Trade, error)
 }
 type PartyResolver interface {
-	Orders(ctx context.Context, obj *Party, where *OrderFilter, skip *int, first *int, last *int) ([]proto.Order, error)
-	Trades(ctx context.Context, obj *Party, where *TradeFilter, skip *int, first *int, last *int) ([]proto.Trade, error)
+	Orders(ctx context.Context, obj *Party, open *bool, skip *int, first *int, last *int) ([]proto.Order, error)
+	Trades(ctx context.Context, obj *Party, market *string, skip *int, first *int, last *int) ([]proto.Trade, error)
 	Positions(ctx context.Context, obj *Party) ([]proto.MarketPosition, error)
 }
 type PositionResolver interface {
@@ -491,7 +491,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.Orders(childComplexity, args["where"].(*OrderFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Market.Orders(childComplexity, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Market.Trades":
 		if e.complexity.Market.Trades == nil {
@@ -503,7 +503,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.Trades(childComplexity, args["where"].(*TradeFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Market.Trades(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Market.Depth":
 		if e.complexity.Market.Depth == nil {
@@ -684,7 +684,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Orders(childComplexity, args["where"].(*OrderFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Party.Orders(childComplexity, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Party.Trades":
 		if e.complexity.Party.Trades == nil {
@@ -696,7 +696,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Trades(childComplexity, args["where"].(*TradeFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Party.Trades(childComplexity, args["market"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Party.Positions":
 		if e.complexity.Party.Positions == nil {
@@ -1261,10 +1261,10 @@ type Market {
   decimalPlaces: Int!
 
   # Orders on a market
-  orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
+  orders (open: Boolean, skip: Int, first: Int, last: Int): [Order!]
 
   # Trades on a market
-  trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
+  trades (skip: Int, first: Int, last: Int): [Trade!]
 
   # Current depth on the orderbook for this market
   depth: MarketDepth!
@@ -1340,10 +1340,10 @@ type Party {
     name: String!
 
     # Orders relating to a party
-    orders(where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
+    orders(open: Boolean, skip: Int, first: Int, last: Int): [Order!]
 
     # Trades relating to a party (specifically where party is either buyer OR seller)
-    trades(where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
+    trades(market: String, skip: Int, first: Int, last: Int): [Trade!]
 
     # Trading positions relating to a party
     positions: [Position!]
@@ -1651,14 +1651,14 @@ func (ec *executionContext) field_Market_candles_args(ctx context.Context, rawAr
 func (ec *executionContext) field_Market_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *OrderFilter
-	if tmp, ok := rawArgs["where"]; ok {
-		arg0, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderFilter(ctx, tmp)
+	var arg0 *bool
+	if tmp, ok := rawArgs["open"]; ok {
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg0
+	args["open"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["skip"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
@@ -1689,38 +1689,30 @@ func (ec *executionContext) field_Market_orders_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Market_trades_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *TradeFilter
-	if tmp, ok := rawArgs["where"]; ok {
-		arg0, err = ec.unmarshalOTradeFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradeFilter(ctx, tmp)
+	var arg0 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg0
+	args["skip"] = arg0
 	var arg1 *int
-	if tmp, ok := rawArgs["skip"]; ok {
+	if tmp, ok := rawArgs["first"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["skip"] = arg1
+	args["first"] = arg1
 	var arg2 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	if tmp, ok := rawArgs["last"]; ok {
 		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg3
+	args["last"] = arg2
 	return args, nil
 }
 
@@ -1819,14 +1811,14 @@ func (ec *executionContext) field_Mutation_orderCreate_args(ctx context.Context,
 func (ec *executionContext) field_Party_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *OrderFilter
-	if tmp, ok := rawArgs["where"]; ok {
-		arg0, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderFilter(ctx, tmp)
+	var arg0 *bool
+	if tmp, ok := rawArgs["open"]; ok {
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg0
+	args["open"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["skip"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
@@ -1857,14 +1849,14 @@ func (ec *executionContext) field_Party_orders_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Party_trades_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *TradeFilter
-	if tmp, ok := rawArgs["where"]; ok {
-		arg0, err = ec.unmarshalOTradeFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradeFilter(ctx, tmp)
+	var arg0 *string
+	if tmp, ok := rawArgs["market"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg0
+	args["market"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["skip"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
@@ -2777,7 +2769,7 @@ func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Orders(rctx, obj, args["where"].(*OrderFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Market().Orders(rctx, obj, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -2807,7 +2799,7 @@ func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Trades(rctx, obj, args["where"].(*TradeFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Market().Trades(rctx, obj, args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -3415,7 +3407,7 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Orders(rctx, obj, args["where"].(*OrderFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Party().Orders(rctx, obj, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -3445,7 +3437,7 @@ func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Trades(rctx, obj, args["where"].(*TradeFilter), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Party().Trades(rctx, obj, args["market"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -7879,10 +7871,6 @@ func (ec *executionContext) marshalOOrder2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋp
 	return ret
 }
 
-func (ec *executionContext) unmarshalOOrderFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderFilter(ctx context.Context, v interface{}) (OrderFilter, error) {
-	return ec.unmarshalInputOrderFilter(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOOrderFilter2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderFilter(ctx context.Context, v interface{}) ([]OrderFilter, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -7901,14 +7889,6 @@ func (ec *executionContext) unmarshalOOrderFilter2ᚕcodeᚗvegaprotocolᚗioᚋ
 		}
 	}
 	return res, nil
-}
-
-func (ec *executionContext) unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderFilter(ctx context.Context, v interface{}) (*OrderFilter, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOOrderFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderFilter(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) unmarshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {
@@ -8213,10 +8193,6 @@ func (ec *executionContext) marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 	return ec._Trade(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOTradeFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradeFilter(ctx context.Context, v interface{}) (TradeFilter, error) {
-	return ec.unmarshalInputTradeFilter(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOTradeFilter2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradeFilter(ctx context.Context, v interface{}) ([]TradeFilter, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -8235,14 +8211,6 @@ func (ec *executionContext) unmarshalOTradeFilter2ᚕcodeᚗvegaprotocolᚗioᚋ
 		}
 	}
 	return res, nil
-}
-
-func (ec *executionContext) unmarshalOTradeFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradeFilter(ctx context.Context, v interface{}) (*TradeFilter, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOTradeFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐTradeFilter(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

@@ -35,6 +35,7 @@ func (m *MockServiceExecutionEngine) EXPECT() *MockServiceExecutionEngineMockRec
 
 // AmendOrder mocks base method
 func (m *MockServiceExecutionEngine) AmendOrder(arg0 *proto.OrderAmendment) (*proto.OrderConfirmation, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0)
 	ret0, _ := ret[0].(*proto.OrderConfirmation)
 	ret1, _ := ret[1].(error)
@@ -43,11 +44,13 @@ func (m *MockServiceExecutionEngine) AmendOrder(arg0 *proto.OrderAmendment) (*pr
 
 // AmendOrder indicates an expected call of AmendOrder
 func (mr *MockServiceExecutionEngineMockRecorder) AmendOrder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockServiceExecutionEngine)(nil).AmendOrder), arg0)
 }
 
 // CancelOrder mocks base method
 func (m *MockServiceExecutionEngine) CancelOrder(arg0 *proto.Order) (*proto.OrderCancellationConfirmation, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0)
 	ret0, _ := ret[0].(*proto.OrderCancellationConfirmation)
 	ret1, _ := ret[1].(error)
@@ -56,11 +59,13 @@ func (m *MockServiceExecutionEngine) CancelOrder(arg0 *proto.Order) (*proto.Orde
 
 // CancelOrder indicates an expected call of CancelOrder
 func (mr *MockServiceExecutionEngineMockRecorder) CancelOrder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockServiceExecutionEngine)(nil).CancelOrder), arg0)
 }
 
 // Generate mocks base method
 func (m *MockServiceExecutionEngine) Generate() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Generate")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -68,11 +73,13 @@ func (m *MockServiceExecutionEngine) Generate() error {
 
 // Generate indicates an expected call of Generate
 func (mr *MockServiceExecutionEngineMockRecorder) Generate() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockServiceExecutionEngine)(nil).Generate))
 }
 
 // Process mocks base method
 func (m *MockServiceExecutionEngine) Process() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Process")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -80,11 +87,13 @@ func (m *MockServiceExecutionEngine) Process() error {
 
 // Process indicates an expected call of Process
 func (mr *MockServiceExecutionEngineMockRecorder) Process() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*MockServiceExecutionEngine)(nil).Process))
 }
 
 // SubmitOrder mocks base method
 func (m *MockServiceExecutionEngine) SubmitOrder(arg0 *proto.Order) (*proto.OrderConfirmation, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitOrder", arg0)
 	ret0, _ := ret[0].(*proto.OrderConfirmation)
 	ret1, _ := ret[1].(error)
@@ -93,5 +102,6 @@ func (m *MockServiceExecutionEngine) SubmitOrder(arg0 *proto.Order) (*proto.Orde
 
 // SubmitOrder indicates an expected call of SubmitOrder
 func (mr *MockServiceExecutionEngineMockRecorder) SubmitOrder(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockServiceExecutionEngine)(nil).SubmitOrder), arg0)
 }

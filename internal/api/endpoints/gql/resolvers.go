@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/filtering"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -23,16 +22,16 @@ var (
 type OrderService interface {
 	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
-	GetByMarket(ctx context.Context, market string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
-	GetByParty(ctx context.Context, party string, filters *filtering.OrderQueryFilters) (orders []*types.Order, err error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql TradeService
 type TradeService interface {
-	GetByMarket(ctx context.Context, market string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByParty(ctx context.Context, party string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
-	GetByOrderId(ctx context.Context, orderId string, filters *filtering.TradeQueryFilters) (trades []*types.Trade, err error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) (trades []*types.Trade, err error)
+	GetByOrderId(ctx context.Context, orderId string) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
 	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
@@ -52,12 +51,19 @@ type MarketService interface {
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql PartyService
+type PartyService interface {
+	GetAll(ctx context.Context) ([]*types.Party, error)
+	GetByID(ctx context.Context, name string) (*types.Party, error)
+}
+
 type resolverRoot struct {
 	*api.Config
 	orderService  OrderService
 	tradeService  TradeService
 	candleService CandleService
 	marketService MarketService
+	partyService  PartyService
 	statusChecker *monitoring.Status
 }
 
@@ -67,6 +73,7 @@ func NewResolverRoot(
 	tradeService TradeService,
 	candleService CandleService,
 	marketService MarketService,
+	partyService PartyService,
 	statusChecker *monitoring.Status,
 ) *resolverRoot {
 
@@ -76,6 +83,7 @@ func NewResolverRoot(
 		tradeService:  tradeService,
 		candleService: candleService,
 		marketService: marketService,
+		partyService:  partyService,
 		statusChecker: statusChecker,
 	}
 }
@@ -167,25 +175,21 @@ func (r *MyQueryResolver) Parties(ctx context.Context, name *string) ([]Party, e
 	if name == nil {
 		return nil, errors.New("all parties not implemented")
 	}
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-	var p = make([]Party, 0)
-	var party = Party{
-		Name: *name,
+	pty, err := r.Party(ctx, *name)
+	if err != nil {
+		return nil, err
 	}
-	p = append(p, party)
-
-	return p, nil
+	return []Party{
+		{Name: pty.Name},
+	}, nil
 }
 
 func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error) {
-	var party = Party{
-		Name: name,
+	pty, err := validateParty(ctx, &name, r.partyService)
+	if err != nil {
+		return nil, err
 	}
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
-	return &party, nil
+	return &Party{Name: pty.Name}, nil
 }
 
 // END: Root Resolver
@@ -195,20 +199,29 @@ func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error
 type MyMarketResolver resolverRoot
 
 func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
-	where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error) {
+	open *bool, skip *int, first *int, last *int) ([]types.Order, error) {
 	_, err := validateMarket(ctx, &market.ID, r.marketService)
 	if err != nil {
 		return nil, err
 	}
-	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		descending = true
+		limit = uint64(*last)
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	o, err := r.orderService.GetByMarket(ctx, market.ID, limit, offset, descending, open)
 	if err != nil {
 		return nil, err
 	}
-	o, err := r.orderService.GetByMarket(ctx, market.ID, queryFilters)
-	if err != nil {
-		return nil, err
-	}
-	valOrders := make([]types.Order, 0)
+	valOrders := make([]types.Order, 0, len(o))
 	for _, v := range o {
 		valOrders = append(valOrders, *v)
 	}
@@ -216,20 +229,29 @@ func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 }
 
 func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
-	where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error) {
+	skip *int, first *int, last *int) ([]types.Trade, error) {
 	_, err := validateMarket(ctx, &market.ID, r.marketService)
 	if err != nil {
 		return nil, err
 	}
-	queryFilters, err := buildTradeQueryFilters(where, skip, first, last)
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		descending = true
+		limit = uint64(*last)
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	t, err := r.tradeService.GetByMarket(ctx, market.ID, offset, limit, descending)
 	if err != nil {
 		return nil, err
 	}
-	t, err := r.tradeService.GetByMarket(ctx, market.ID, queryFilters)
-	if err != nil {
-		return nil, err
-	}
-	valTrades := make([]types.Trade, 0)
+	valTrades := make([]types.Trade, 0, len(t))
 	for _, v := range t {
 		valTrades = append(valTrades, *v)
 	}
@@ -305,15 +327,24 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 type MyPartyResolver resolverRoot
 
 func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
-	where *OrderFilter, skip *int, first *int, last *int) ([]types.Order, error) {
+	open *bool, skip *int, first *int, last *int) ([]types.Order, error) {
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	queryFilters, err := buildOrderQueryFilters(where, skip, first, last)
-	if err != nil {
-		return nil, err
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
 	}
-	o, err := r.orderService.GetByParty(ctx, party.Name, queryFilters)
+	if last != nil {
+		limit = uint64(*last)
+		descending = true
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	o, err := r.orderService.GetByParty(ctx, party.Name, offset, limit, descending, open)
 	if err != nil {
 		return nil, err
 	}
@@ -325,19 +356,28 @@ func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 }
 
 func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
-	where *TradeFilter, skip *int, first *int, last *int) ([]types.Trade, error) {
+	market *string, skip *int, first *int, last *int) ([]types.Trade, error) {
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	queryFilters, err := buildTradeQueryFilters(where, skip, first, last)
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		descending = true
+		offset = uint64(*last)
+	} else if first != nil {
+		offset = uint64(*first)
+	}
+	t, err := r.tradeService.GetByParty(ctx, party.Name, offset, limit, descending, market)
 	if err != nil {
 		return nil, err
 	}
-	t, err := r.tradeService.GetByParty(ctx, party.Name, queryFilters)
-	if err != nil {
-		return nil, err
-	}
-	valTrades := make([]types.Trade, 0)
+	valTrades := make([]types.Trade, 0, len(t))
 	for _, v := range t {
 		valTrades = append(valTrades, *v)
 	}
@@ -385,10 +425,8 @@ func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *types.Market
 	if err != nil {
 		return nil, err
 	}
-	queryFilters := &filtering.TradeQueryFilters{}
-	last := uint64(1)
-	queryFilters.Last = &last
-	t, err := r.tradeService.GetByMarket(ctx, obj.Name, queryFilters)
+	// skip 0, descending, get one trade
+	t, err := r.tradeService.GetByMarket(ctx, obj.Name, 0, 1, true)
 	if err != nil {
 		return nil, err
 	}
@@ -437,8 +475,7 @@ func (r *MyOrderResolver) Datetime(ctx context.Context, obj *types.Order) (strin
 	return vegaTimestamp.Rfc3339Nano(), nil
 }
 func (r *MyOrderResolver) Trades(ctx context.Context, obj *types.Order) ([]*types.Trade, error) {
-	f := filtering.TradeQueryFilters{}
-	relatedTrades, err := r.tradeService.GetByOrderId(ctx, obj.Id, &f)
+	relatedTrades, err := r.tradeService.GetByOrderId(ctx, obj.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -800,7 +837,6 @@ func validateMarket(ctx context.Context, marketId *string, marketService MarketS
 		if len(*marketId) == 0 {
 			return nil, errors.New("market must not be empty")
 		}
-
 		mkt, err = marketService.GetByID(ctx, *marketId)
 		if err != nil {
 			return nil, err
@@ -809,18 +845,19 @@ func validateMarket(ctx context.Context, marketId *string, marketService MarketS
 	return mkt, nil
 }
 
-// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-//func validateParty(ctx context.Context, partyId *string, partyService parties.Service) error {
-//	if partyId != nil {
-//		if len(*partyId) == 0 {
-//			return errors.New("party must not be empty")
-//		}
-//		_, err := partyService.GetByName(*partyId)
-//		if err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}
+func validateParty(ctx context.Context, partyId *string, partyService PartyService) (*types.Party, error) {
+	var pty *types.Party
+	var err error
+	if partyId != nil {
+		if len(*partyId) == 0 {
+			return nil, errors.New("party must not be empty")
+		}
+		pty, err = partyService.GetByID(ctx, *partyId)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return pty, err
+}
 
 // END: Subscription Resolver

@@ -38,11 +38,6 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 			werr = append(werr, errors.Wrap(err, "error closing market store in command."))
 		}
 	}
-	if l.partyStore != nil {
-		if err := l.partyStore.Close(); err != nil {
-			werr = append(werr, errors.Wrap(err, "error closing party store in command."))
-		}
-	}
 	l.Log.Info("Vega shutdown complete",
 		logging.String("version", Version),
 		logging.String("version-hash", VersionHash))

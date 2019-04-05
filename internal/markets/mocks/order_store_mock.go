@@ -36,6 +36,7 @@ func (m *MockOrderStore) EXPECT() *MockOrderStoreMockRecorder {
 
 // GetMarketDepth mocks base method
 func (m *MockOrderStore) GetMarketDepth(arg0 context.Context, arg1 string) (*proto.MarketDepth, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketDepth", arg0, arg1)
 	ret0, _ := ret[0].(*proto.MarketDepth)
 	ret1, _ := ret[1].(error)
@@ -44,11 +45,13 @@ func (m *MockOrderStore) GetMarketDepth(arg0 context.Context, arg1 string) (*pro
 
 // GetMarketDepth indicates an expected call of GetMarketDepth
 func (mr *MockOrderStoreMockRecorder) GetMarketDepth(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDepth", reflect.TypeOf((*MockOrderStore)(nil).GetMarketDepth), arg0, arg1)
 }
 
 // Subscribe mocks base method
 func (m *MockOrderStore) Subscribe(arg0 chan<- []proto.Order) uint64 {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
 	ret0, _ := ret[0].(uint64)
 	return ret0
@@ -56,11 +59,13 @@ func (m *MockOrderStore) Subscribe(arg0 chan<- []proto.Order) uint64 {
 
 // Subscribe indicates an expected call of Subscribe
 func (mr *MockOrderStoreMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockOrderStore)(nil).Subscribe), arg0)
 }
 
 // Unsubscribe mocks base method
 func (m *MockOrderStore) Unsubscribe(arg0 uint64) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unsubscribe", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -68,5 +73,6 @@ func (m *MockOrderStore) Unsubscribe(arg0 uint64) error {
 
 // Unsubscribe indicates an expected call of Unsubscribe
 func (mr *MockOrderStoreMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockOrderStore)(nil).Unsubscribe), arg0)
 }

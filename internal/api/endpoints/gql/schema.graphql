@@ -158,10 +158,10 @@ type Market {
   decimalPlaces: Int!
 
   # Orders on a market
-  orders (where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
+  orders (open: Boolean, skip: Int, first: Int, last: Int): [Order!]
 
   # Trades on a market
-  trades (where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
+  trades (skip: Int, first: Int, last: Int): [Trade!]
 
   # Current depth on the orderbook for this market
   depth: MarketDepth!
@@ -237,10 +237,10 @@ type Party {
     name: String!
 
     # Orders relating to a party
-    orders(where: OrderFilter, skip: Int, first: Int, last: Int): [Order!]
+    orders(open: Boolean, skip: Int, first: Int, last: Int): [Order!]
 
     # Trades relating to a party (specifically where party is either buyer OR seller)
-    trades(where: TradeFilter, skip: Int, first: Int, last: Int): [Trade!]
+    trades(market: String, skip: Int, first: Int, last: Int): [Trade!]
 
     # Trading positions relating to a party
     positions: [Position!]

@@ -37,6 +37,7 @@ func (m *MockCandleStore) EXPECT() *MockCandleStoreMockRecorder {
 
 // GetCandles mocks base method
 func (m *MockCandleStore) GetCandles(arg0 context.Context, arg1 string, arg2 uint64, arg3 proto.Interval) ([]*proto.Candle, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCandles", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*proto.Candle)
 	ret1, _ := ret[1].(error)
@@ -45,11 +46,13 @@ func (m *MockCandleStore) GetCandles(arg0 context.Context, arg1 string, arg2 uin
 
 // GetCandles indicates an expected call of GetCandles
 func (mr *MockCandleStoreMockRecorder) GetCandles(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandles", reflect.TypeOf((*MockCandleStore)(nil).GetCandles), arg0, arg1, arg2, arg3)
 }
 
 // Subscribe mocks base method
 func (m *MockCandleStore) Subscribe(arg0 *storage.InternalTransport) uint64 {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
 	ret0, _ := ret[0].(uint64)
 	return ret0
@@ -57,11 +60,13 @@ func (m *MockCandleStore) Subscribe(arg0 *storage.InternalTransport) uint64 {
 
 // Subscribe indicates an expected call of Subscribe
 func (mr *MockCandleStoreMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockCandleStore)(nil).Subscribe), arg0)
 }
 
 // Unsubscribe mocks base method
 func (m *MockCandleStore) Unsubscribe(arg0 uint64) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unsubscribe", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -69,5 +74,6 @@ func (m *MockCandleStore) Unsubscribe(arg0 uint64) error {
 
 // Unsubscribe indicates an expected call of Unsubscribe
 func (mr *MockCandleStoreMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockCandleStore)(nil).Unsubscribe), arg0)
 }
