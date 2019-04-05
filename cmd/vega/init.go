@@ -153,7 +153,7 @@ func createDefaultMarkets(confpath string) error {
 				},
 				Product: &proto.Instrument_Future{
 					Future: &proto.Future{
-						Maturity: "2019-12-31",
+						Maturity: "2019-12-31T00:00:00Z",
 						Oracle: &proto.Future_EthereumEvent{
 							EthereumEvent: &proto.EthereumEvent{
 								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",

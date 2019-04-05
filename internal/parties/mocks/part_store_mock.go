@@ -48,19 +48,19 @@ func (mr *MockPartyStoreMockRecorder) GetAll() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockPartyStore)(nil).GetAll))
 }
 
-// GetByName mocks base method
-func (m *MockPartyStore) GetByName(arg0 string) (*proto.Party, error) {
+// GetByID mocks base method
+func (m *MockPartyStore) GetByID(arg0 string) (*proto.Party, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByName", arg0)
+	ret := m.ctrl.Call(m, "GetByID", arg0)
 	ret0, _ := ret[0].(*proto.Party)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByName indicates an expected call of GetByName
-func (mr *MockPartyStoreMockRecorder) GetByName(arg0 interface{}) *gomock.Call {
+// GetByID indicates an expected call of GetByID
+func (mr *MockPartyStoreMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByName", reflect.TypeOf((*MockPartyStore)(nil).GetByName), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockPartyStore)(nil).GetByID), arg0)
 }
 
 // Post mocks base method

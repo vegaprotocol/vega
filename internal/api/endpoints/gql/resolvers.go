@@ -51,12 +51,19 @@ type MarketService interface {
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql PartyService
+type PartyService interface {
+	GetAll(ctx context.Context) ([]*types.Party, error)
+	GetByID(ctx context.Context, name string) (*types.Party, error)
+}
+
 type resolverRoot struct {
 	*api.Config
 	orderService  OrderService
 	tradeService  TradeService
 	candleService CandleService
 	marketService MarketService
+	partyService  PartyService
 	statusChecker *monitoring.Status
 }
 
@@ -66,6 +73,7 @@ func NewResolverRoot(
 	tradeService TradeService,
 	candleService CandleService,
 	marketService MarketService,
+	partyService PartyService,
 	statusChecker *monitoring.Status,
 ) *resolverRoot {
 
@@ -75,6 +83,7 @@ func NewResolverRoot(
 		tradeService:  tradeService,
 		candleService: candleService,
 		marketService: marketService,
+		partyService:  partyService,
 		statusChecker: statusChecker,
 	}
 }
@@ -166,25 +175,21 @@ func (r *MyQueryResolver) Parties(ctx context.Context, name *string) ([]Party, e
 	if name == nil {
 		return nil, errors.New("all parties not implemented")
 	}
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-	var p = make([]Party, 0)
-	var party = Party{
-		Name: *name,
+	pty, err := r.Party(ctx, *name)
+	if err != nil {
+		return nil, err
 	}
-	p = append(p, party)
-
-	return p, nil
+	return []Party{
+		{Name: pty.Name},
+	}, nil
 }
 
 func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error) {
-	var party = Party{
-		Name: name,
+	pty, err := validateParty(ctx, &name, r.partyService)
+	if err != nil {
+		return nil, err
 	}
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
-	return &party, nil
+	return &Party{Name: pty.Name}, nil
 }
 
 // END: Root Resolver
@@ -832,7 +837,6 @@ func validateMarket(ctx context.Context, marketId *string, marketService MarketS
 		if len(*marketId) == 0 {
 			return nil, errors.New("market must not be empty")
 		}
-
 		mkt, err = marketService.GetByID(ctx, *marketId)
 		if err != nil {
 			return nil, err
@@ -841,18 +845,19 @@ func validateMarket(ctx context.Context, marketId *string, marketService MarketS
 	return mkt, nil
 }
 
-// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-//func validateParty(ctx context.Context, partyId *string, partyService parties.Service) error {
-//	if partyId != nil {
-//		if len(*partyId) == 0 {
-//			return errors.New("party must not be empty")
-//		}
-//		_, err := partyService.GetByName(*partyId)
-//		if err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}
+func validateParty(ctx context.Context, partyId *string, partyService PartyService) (*types.Party, error) {
+	var pty *types.Party
+	var err error
+	if partyId != nil {
+		if len(*partyId) == 0 {
+			return nil, errors.New("party must not be empty")
+		}
+		pty, err = partyService.GetByID(ctx, *partyId)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return pty, err
+}
 
 // END: Subscription Resolver
