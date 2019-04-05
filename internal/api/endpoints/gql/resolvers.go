@@ -368,10 +368,10 @@ func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 		offset = uint64(*skip)
 	}
 	if last != nil {
+		limit = uint64(*last)
 		descending = true
-		offset = uint64(*last)
 	} else if first != nil {
-		offset = uint64(*first)
+		limit = uint64(*first)
 	}
 	t, err := r.tradeService.GetByParty(ctx, party.Name, offset, limit, descending, market)
 	if err != nil {
