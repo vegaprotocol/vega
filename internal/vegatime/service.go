@@ -1,13 +1,18 @@
 package vegatime
 
 import (
+	"sync"
 	"time"
 )
 
 type Svc struct {
-	config            *Config
+	config *Config
+
 	previousTimestamp time.Time
 	currentTimestamp  time.Time
+
+	listeners []func(time.Time)
+	mu        sync.Mutex
 }
 
 func NewService(conf *Config) *Svc {
@@ -36,6 +41,22 @@ func (s *Svc) SetTimeNow(t time.Time) {
 
 func (s *Svc) GetTimeNow() (time.Time, error) {
 	return s.currentTimestamp, nil
+}
+
+func (s *Svc) notify(t time.Time) {
+	go func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		for _, f := range s.listeners {
+			go f(t)
+		}
+	}()
+}
+
+func (s *Svc) NotifyOnTick(f func(time.Time)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.listeners = append(s.listeners, f)
 }
 
 func (s *Svc) GetTimeLastBatch() (time.Time, error) {

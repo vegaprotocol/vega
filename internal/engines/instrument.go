@@ -1,10 +1,16 @@
 package engines
 
 import (
+	"time"
+
 	"code.vegaprotocol.io/vega/internal/products"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
+)
+
+var (
+	ErrNoMarketClosingTime = errors.New("no market closing time")
 )
 
 type Instrument struct {
@@ -27,4 +33,13 @@ func NewInstrument(pi *types.Instrument) (*Instrument, error) {
 		Metadata: pi.Metadata,
 		Product:  product,
 	}, err
+}
+
+func (i *Instrument) GetMarketClosingTime() (time.Time, error) {
+	switch p := i.Product.(type) {
+	case *products.Future:
+		return p.Maturity, nil
+	default:
+		return time.Time{}, ErrNoMarketClosingTime
+	}
 }
