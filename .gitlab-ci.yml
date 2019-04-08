@@ -51,11 +51,15 @@ race_detector:
  stage: test
  script:
    - make race
+  only:
+    - /^(master|develop)$/
 
 memory_sanitizer:
  stage: test
  script:
    - make msan
+  only:
+    - /^(master|develop)$/
 
 code_coverage:
   stage: test
@@ -69,6 +73,8 @@ lint_code:
  script:
    - export PATH="${PATH}:${BIN_DIR}"
    - make lint || true # Ignore lint failure for now (see #196)
+  only:
+    - /^(master|develop)$/
 
 grpc_check:
   stage: test
