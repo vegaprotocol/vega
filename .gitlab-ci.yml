@@ -76,15 +76,13 @@ lint_code:
   only:
     - /^(master|develop)$/
 
-grpc_check:
+proto_checks:
   stage: test
   script:
-    - make grpc_check
-
-proto_check:
-  stage: test
-  script:
-    - make proto_check
+    - code=0
+    - make proto_check || code=1
+    - make grpc_check || code=1
+    - exit "$code"
 
 build_vega:
   stage: build
