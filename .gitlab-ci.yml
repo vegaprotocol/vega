@@ -48,15 +48,15 @@ unit_tests:
     - make test
 
 race_detector:
- stage: test
- script:
+  stage: test
+  script:
    - make race
   only:
     - /^(master|develop)$/
 
 memory_sanitizer:
- stage: test
- script:
+  stage: test
+  script:
    - make msan
   only:
     - /^(master|develop)$/
@@ -69,8 +69,8 @@ code_coverage:
     - /^(master|develop)$/
 
 lint_code:
- stage: test
- script:
+  stage: test
+  script:
    - export PATH="${PATH}:${BIN_DIR}"
    - make lint || true # Ignore lint failure for now (see #196)
   only:
