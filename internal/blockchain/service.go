@@ -33,7 +33,7 @@ type ServiceExecutionEngine interface {
 	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	Generate() error
-	Process() error
+	// Process() error
 }
 
 type abciService struct {
@@ -86,10 +86,12 @@ func (s *abciService) Begin() error {
 	}
 
 	// Run any processing required in execution engine, e.g. check for expired orders
-	err = s.execution.Process()
-	if err != nil {
-		return err
-	}
+	/*
+		err = s.execution.Process()
+		if err != nil {
+			return err
+		}
+	*/
 
 	s.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),

@@ -77,20 +77,6 @@ func (mr *MockServiceExecutionEngineMockRecorder) Generate() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockServiceExecutionEngine)(nil).Generate))
 }
 
-// Process mocks base method
-func (m *MockServiceExecutionEngine) Process() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Process")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Process indicates an expected call of Process
-func (mr *MockServiceExecutionEngineMockRecorder) Process() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*MockServiceExecutionEngine)(nil).Process))
-}
-
 // SubmitOrder mocks base method
 func (m *MockServiceExecutionEngine) SubmitOrder(arg0 *proto.Order) (*proto.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
