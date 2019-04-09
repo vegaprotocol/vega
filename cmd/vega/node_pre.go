@@ -42,11 +42,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		}
 	}
 
-	l.Log.Info("Starting Vega",
-		logging.String("config-path", configPath),
-		logging.String("version", Version),
-		logging.String("version-hash", VersionHash))
-
 	// VEGA config (holds all package level configs)
 	conf, err := internal.NewConfigFromFile(l.Log, configPath)
 	if err != nil {
@@ -59,6 +54,13 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	} else {
 		conf.ListenForChanges()
 	}
+	l.Log = conf.GetLogger()
+
+	l.Log.Info("Starting Vega",
+		logging.String("config-path", configPath),
+		logging.String("version", Version),
+		logging.String("version-hash", VersionHash))
+
 	// assign config vars
 	l.configPath, l.conf = configPath, conf
 	l.stats = internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)

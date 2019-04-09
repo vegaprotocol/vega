@@ -47,6 +47,11 @@ type Config struct {
 	Pprof *pprof.Config
 }
 
+// GetLogger returns a pointer to the current underlying logger for this package.
+func (c *Config) GetLogger() *logging.Logger {
+	return c.log
+}
+
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
 func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) (*Config, error) {
@@ -89,6 +94,8 @@ func NewConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 		return nil, err
 	}
 
+	oldLogEnv := c.log.GetEnvironment()
+
 	// Sadly this step is manual, assign defaults to viper so when it merges config it can set initial values.
 	viper.SetDefault("API", c.API)
 	viper.SetDefault("Blockchain", c.Blockchain)
@@ -128,6 +135,8 @@ func NewConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 		return nil, errors.Wrap(err, "unable to decode into struct")
 	}
 
+	c.ResetLoggers(oldLogEnv)
+
 	// We need to call update logger on each config instance so that
 	// the zap core is updated to the new logging level.
 	c.updateLoggers()
@@ -139,6 +148,7 @@ func NewConfigFromFile(logger *logging.Logger, path string) (*Config, error) {
 func (c *Config) ListenForChanges() {
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
+		oldLogEnv := c.log.GetEnvironment()
 		err := viper.Unmarshal(&c)
 		if err != nil {
 			c.log.Warn("Failed to unmarshal vega config to struct on config change",
@@ -147,6 +157,8 @@ func (c *Config) ListenForChanges() {
 		c.log.Debug("Vega config toml file changed, updating package level loggers",
 			logging.String("config-file", e.Name))
 
+		c.ResetLoggers(oldLogEnv)
+
 		// We need to call update logger on each config instance so that
 		// the zap core is updated to the new logging level.
 		// ==> If the file changes we should hot reload.
@@ -154,8 +166,33 @@ func (c *Config) ListenForChanges() {
 	})
 }
 
+// ResetLoggers will re-create loggers of all config instances.
+func (c *Config) ResetLoggers(oldLogEnv string) {
+	newLogEnv := c.Logging.Environment
+	if oldLogEnv == newLogEnv {
+		return
+	}
+	c.log = logging.NewLoggerFromEnv(newLogEnv)
+	c.log.Info("Logging environment set", logging.String("environment", newLogEnv))
+
+	c.API.SetLogger(c.log)
+	c.Blockchain.SetLogger(c.log)
+	c.Candles.SetLogger(c.log)
+	c.Execution.SetLogger(c.log)
+	c.Markets.SetLogger(c.log)
+	c.Monitoring.SetLogger(c.log)
+	c.Orders.SetLogger(c.log)
+	c.Parties.SetLogger(c.log)
+	c.Pprof.SetLogger(c.log)
+	c.Risk.SetLogger(c.log)
+	c.Storage.SetLogger(c.log)
+	c.Time.SetLogger(c.log)
+	c.Trades.SetLogger(c.log)
+	// Any new package configs with a logger should be added here, in alphabetical order.
+}
+
 func (c *Config) updateLoggers() {
-	// We need to call update logger on each config instance so that
+	// We need to call UpdateLogger on each config instance so that
 	// the zap core is updated to the new logging level.
 	c.Trades.UpdateLogger()
 	c.Blockchain.UpdateLogger()

@@ -38,8 +38,9 @@ func (l *Level) ZapLevel() zapcore.Level {
 
 type Logger struct {
 	*zap.Logger
-	config *zap.Config
-	name   string
+	config      *zap.Config
+	environment string
+	name        string
 }
 
 func (log *Logger) Clone() *Logger {
@@ -49,8 +50,10 @@ func (log *Logger) Clone() *Logger {
 		panic(err)
 	}
 	return &Logger{
-		Logger: newLogger,
-		config: newConfig,
+		Logger:      newLogger,
+		config:      newConfig,
+		environment: log.environment,
+		name:        log.name,
 	}
 }
 
@@ -60,6 +63,10 @@ func (log *Logger) GetLevel() Level {
 
 func (log *Logger) GetLevelString() string {
 	return log.config.Level.String()
+}
+
+func (log *Logger) GetEnvironment() string {
+	return log.environment
 }
 
 func (log *Logger) GetName() string {
@@ -74,18 +81,17 @@ func (log *Logger) Named(name string) *Logger {
 	} else {
 		newName = fmt.Sprintf("%s.%s", log.name, name)
 	}
-	return &Logger{
-		Logger: c.Logger.Named(newName),
-		config: c.config,
-		name:   newName,
-	}
+	c.Logger = c.Logger.Named(newName)
+	c.name = newName
+	return c
 }
 
-func New(core *zapcore.Core, cfg *zap.Config) *Logger {
+func New(core *zapcore.Core, cfg *zap.Config, environment string) *Logger {
 	logger := Logger{
-		Logger: zap.New(*core),
-		config: cfg,
-		name:   "",
+		Logger:      zap.New(*core),
+		config:      cfg,
+		environment: environment,
+		name:        "",
 	}
 	return &logger
 }
@@ -205,7 +211,7 @@ func NewLoggerFromEnv(env string) *Logger {
 	}
 
 	core := zapcore.NewCore(encoder, os.Stdout, level)
-	return New(&core, &config)
+	return New(&core, &config, env)
 }
 
 // IPAddressFromContext will attempt to access the 'remote-ip-addr' value
