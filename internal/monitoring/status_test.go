@@ -17,7 +17,7 @@ import (
 )
 
 func TestAppStatus(t *testing.T) {
-	log := logging.NewLoggerFromEnv("dev")
+	log := logging.NewLoggerFromEnv("test")
 	defer log.Sync()
 
 	statusRes := tmctypes.ResultStatus{

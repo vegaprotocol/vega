@@ -50,7 +50,7 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 }
 
 func TestUncross(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewLoggerFromEnv("test")
 	defer logger.Sync()
 
 	conf := NewDefaultConfig(logger)

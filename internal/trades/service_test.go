@@ -31,7 +31,7 @@ func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	trade := mocks.NewMockTradeStore(ctrl)
 	risk := mocks.NewMockRiskStore(ctrl)
-	log := logging.NewLoggerFromEnv("dev")
+	log := logging.NewLoggerFromEnv("test")
 	svc, err := trades.NewService(
 		trades.NewDefaultConfig(log),
 		trade,

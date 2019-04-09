@@ -183,6 +183,29 @@ func NewLoggerFromEnv(env string) *Logger {
 			OutputPaths:      []string{"stdout"},
 			ErrorOutputPaths: []string{"stderr"},
 		}
+	case "test":
+		encoderConfig = zapcore.EncoderConfig{
+			CallerKey:      "C",
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeLevel:    zapcore.CapitalLevelEncoder,
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			LevelKey:       "L",
+			LineEnding:     "\n",
+			MessageKey:     "M",
+			NameKey:        "N",
+			TimeKey:        "T",
+		}
+		encoder = zapcore.NewConsoleEncoder(encoderConfig)
+		level = zapcore.Level(InfoLevel)
+		config = zap.Config{
+			Level:            zap.NewAtomicLevelAt(level),
+			Development:      true,
+			Encoding:         "console",
+			EncoderConfig:    encoderConfig,
+			OutputPaths:      []string{"stdout"},
+			ErrorOutputPaths: []string{"stderr"},
+		}
 	default:
 		encoderConfig = zapcore.EncoderConfig{
 			CallerKey:      "caller",
