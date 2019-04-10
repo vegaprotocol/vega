@@ -40,29 +40,27 @@ type ZapEncoder struct {
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultConfig() *Config {
 	return &Config{
-		// Set the default to dev
 		Environment: "dev",
-		// but give a custom config more similar to prod
 		Custom: &Custom{
 			Zap: &Zap{
-				Development:      false,
-				Encoding:         "json",
-				Level:            InfoLevel,
+				Development:      true,
+				Encoding:         "console",
+				Level:            DebugLevel,
 				OutputPaths:      []string{"stdout"},
 				ErrorOutputPaths: []string{"stderr"},
 			},
 			ZapEncoder: &ZapEncoder{
-				CallerKey:      "caller",
+				CallerKey:      "C",
 				EncodeCaller:   "short",
 				EncodeDuration: "string",
-				EncodeLevel:    "lowercase",
+				EncodeLevel:    "capital",
 				EncodeName:     "full",
 				EncodeTime:     "iso8601",
-				LevelKey:       "level",
+				LevelKey:       "L",
 				LineEnding:     "\n",
-				MessageKey:     "message",
-				NameKey:        "logger",
-				TimeKey:        "@timestamp",
+				MessageKey:     "M",
+				NameKey:        "N",
+				TimeKey:        "T",
 			},
 		},
 	}
