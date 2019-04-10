@@ -50,6 +50,7 @@ func (c *Config) GetLogger() *logging.Logger {
 // SetLogger creates a new logger based on a given parent logger.
 func (c *Config) SetLogger(parent *logging.Logger) {
 	c.log = parent.Named(namedLogger)
+	c.Engines.SetLogger(parent)
 }
 
 // UpdateLogger will set any new values on the underlying logging core. Useful when configs are
