@@ -80,6 +80,7 @@ proto_checks:
   stage: test
   script:
     - code=0
+    - make deps
     - make proto_check || code=1
     - make grpc_check || code=1
     - exit "$code"
