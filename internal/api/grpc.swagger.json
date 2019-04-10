@@ -456,7 +456,7 @@
       "properties": {
         "timestamp": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "datetime": {
           "type": "string"
@@ -571,7 +571,7 @@
         },
         "timestamp": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "status": {
           "$ref": "#/definitions/OrderStatus"
@@ -581,7 +581,7 @@
         },
         "expirationTimestamp": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         },
         "reference": {
           "type": "string"
@@ -610,7 +610,7 @@
         },
         "expirationTimestamp": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         }
       }
     },
@@ -821,7 +821,7 @@
         },
         "timestamp": {
           "type": "string",
-          "format": "uint64"
+          "format": "int64"
         }
       }
     }

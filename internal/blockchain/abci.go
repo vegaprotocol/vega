@@ -2,9 +2,9 @@ package blockchain
 
 import (
 	"encoding/binary"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/tendermint/tendermint/abci/types"
 )
@@ -32,7 +32,7 @@ type ApplicationProcessor interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/application_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationTime
 type ApplicationTime interface {
-	SetTimeNow(epochTimeNano vegatime.Stamp)
+	SetTimeNow(epochTimeNano time.Time)
 }
 
 type AbciApplication struct {
@@ -74,8 +74,8 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 	}
 
 	// Set time provided by ABCI block header (consensus will have been reached on block time)
-	epochNow := beginBlock.Header.Time.UnixNano()
-	app.time.SetTimeNow(vegatime.Stamp(epochNow))
+	epochNow := beginBlock.Header.Time
+	app.time.SetTimeNow(epochNow)
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has begun
 	if err := app.service.Begin(); err != nil {

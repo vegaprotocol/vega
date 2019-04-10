@@ -36,11 +36,11 @@ func TestAmendOrder(t *testing.T) {
 }
 
 func testAmendOrderSuccess(t *testing.T) {
-	now := time.Now()
+	now := vegatime.Now()
 	expires := now.Add(2 * time.Hour)
 	arg := amend
-	arg.ExpirationDatetime = expires.Format(time.RFC3339)
-	arg.ExpirationTimestamp = uint64(time.Duration(expires.Unix()) * time.Second)
+	arg.ExpirationDatetime = vegatime.Format(expires)
+	arg.ExpirationTimestamp = expires.UnixNano()
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -52,7 +52,7 @@ func testAmendOrderSuccess(t *testing.T) {
 		Type:   proto.Order_GTT,
 	}
 	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(vegatime.Stamp(now.UnixNano()), now, nil)
+	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	svc.block.EXPECT().AmendOrder(gomock.Any(), amendMatcher{e: arg}).Times(1).Return(true, nil)
 
 	success, err := svc.svc.AmendOrder(context.Background(), &arg)
@@ -61,11 +61,11 @@ func testAmendOrderSuccess(t *testing.T) {
 }
 
 func testAmendOrderExpired(t *testing.T) {
-	now := time.Now()
+	now := vegatime.Now()
 	expires := now.Add(-2 * time.Hour)
 	arg := amend
-	arg.ExpirationDatetime = expires.Format(time.RFC3339)
-	arg.ExpirationTimestamp = uint64(time.Duration(expires.Unix()) * time.Second)
+	arg.ExpirationDatetime = vegatime.Format(expires)
+	arg.ExpirationTimestamp = expires.UnixNano()
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -77,7 +77,7 @@ func testAmendOrderExpired(t *testing.T) {
 		Type:   proto.Order_GTT,
 	}
 	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(vegatime.Stamp(now.UnixNano()), now, nil)
+	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 
 	success, err := svc.svc.AmendOrder(context.Background(), &arg)
 	assert.False(t, success)
@@ -85,11 +85,11 @@ func testAmendOrderExpired(t *testing.T) {
 }
 
 func testAmendOrderNotActive(t *testing.T) {
-	now := time.Now()
+	now := vegatime.Now()
 	expires := now.Add(2 * time.Hour)
 	arg := amend
-	arg.ExpirationDatetime = expires.Format(time.RFC3339)
-	arg.ExpirationTimestamp = uint64(time.Duration(expires.Unix()) * time.Second)
+	arg.ExpirationDatetime = vegatime.Format(expires)
+	arg.ExpirationTimestamp = expires.UnixNano()
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -138,12 +138,12 @@ func testAmendOrderInvalidFormat(t *testing.T) {
 }
 
 func testAmendOrderTimeSvcErr(t *testing.T) {
-	now := time.Now()
+	now := vegatime.Now()
 	expires := now.Add(-2 * time.Hour)
 	expErr := errors.New("time service error")
 	arg := amend
-	arg.ExpirationDatetime = expires.Format(time.RFC3339)
-	arg.ExpirationTimestamp = uint64(time.Duration(expires.Unix()) * time.Second)
+	arg.ExpirationDatetime = vegatime.Format(expires)
+	arg.ExpirationTimestamp = expires.UnixNano()
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -155,7 +155,7 @@ func testAmendOrderTimeSvcErr(t *testing.T) {
 		Type:   proto.Order_GTT,
 	}
 	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
-	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(vegatime.Stamp(now.UnixNano()), now, expErr)
+	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, expErr)
 
 	success, err := svc.svc.AmendOrder(context.Background(), &arg)
 	assert.False(t, success)

@@ -15,7 +15,6 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/engines"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/vegatime"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution OrderStore
@@ -36,7 +35,7 @@ type TradeStore interface {
 type CandleStore interface {
 	AddTradeToBuffer(trade types.Trade) error
 	GenerateCandlesFromBuffer(market string) error
-	StartNewBuffer(marketId string, timestamp uint64) error
+	StartNewBuffer(marketId string, at time.Time) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution MarketStore
@@ -52,7 +51,7 @@ type PartyStore interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution TimeService
 type TimeService interface {
-	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
+	GetTimeNow() (time.Time, error)
 }
 
 type Engine struct {
@@ -228,7 +227,7 @@ func (e *Engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmati
 
 	e.log.Debug("Existing order found", logging.Order(*existingOrder))
 
-	timestamp, _, err := e.time.GetTimeNow()
+	timestamp, err := e.time.GetTimeNow()
 	if err != nil {
 		e.log.Error("Failed to obtain current vega time", logging.Error(err))
 		return &types.OrderConfirmation{}, types.ErrVegaTimeFailure
@@ -243,7 +242,7 @@ func (e *Engine) AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmati
 	newOrder.Size = existingOrder.Size
 	newOrder.Remaining = existingOrder.Remaining
 	newOrder.Type = existingOrder.Type
-	newOrder.Timestamp = timestamp.Uint64()
+	newOrder.Timestamp = timestamp.UnixNano()
 	newOrder.Status = existingOrder.Status
 	newOrder.ExpirationDatetime = existingOrder.ExpirationDatetime
 	newOrder.ExpirationTimestamp = existingOrder.ExpirationTimestamp
@@ -362,7 +361,7 @@ func (e *Engine) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 func (e *Engine) StartCandleBuffer() error {
 
 	// Load current vega-time from the blockchain (via time service)
-	stamp, _, err := e.time.GetTimeNow()
+	stamp, err := e.time.GetTimeNow()
 	if err != nil {
 		return errors.Wrap(err, "Failed to obtain current time from vega-time service")
 	}
@@ -374,7 +373,7 @@ func (e *Engine) StartCandleBuffer() error {
 			logging.String("market-id", mkt.GetID()),
 		)
 
-		err := e.candleStore.StartNewBuffer(mkt.GetID(), stamp.Uint64())
+		err := e.candleStore.StartNewBuffer(mkt.GetID(), stamp)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Failed to start new candle buffer for market %s", mkt.GetID()))
 		}
@@ -388,7 +387,7 @@ func (e *Engine) StartCandleBuffer() error {
 func (e *Engine) Process() error {
 	e.log.Debug("Removing expiring orders from matching engine")
 
-	epochTimeNano, _, err := e.time.GetTimeNow()
+	epochTimeNano, err := e.time.GetTimeNow()
 	if err != nil {
 		return err
 	}
@@ -396,7 +395,7 @@ func (e *Engine) Process() error {
 	expiringOrders := []types.Order{}
 	for _, mkt := range e.markets {
 		expiringOrders = append(
-			expiringOrders, mkt.RemoveExpiredOrders(epochTimeNano.Uint64())...)
+			expiringOrders, mkt.RemoveExpiredOrders(epochTimeNano.UnixNano())...)
 	}
 
 	e.log.Debug("Removed expired orders from matching engine",

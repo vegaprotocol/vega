@@ -3,8 +3,8 @@ package api
 import (
 	"regexp"
 	"testing"
-	"time"
 
+	"code.vegaprotocol.io/vega/internal/vegatime"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,8 +20,7 @@ func TestUnixTimestamp(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		layout := "2006-01-02T15:04:05.000Z"
-		parsed, _ := time.Parse(layout, c.datetime)
+		parsed, _ := vegatime.Parse(c.datetime)
 		res := unixTimestamp(parsed)
 		assert.Equal(t, res, c.expected)
 	}

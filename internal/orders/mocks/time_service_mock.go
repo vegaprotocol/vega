@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	vegatime "code.vegaprotocol.io/vega/internal/vegatime"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
@@ -35,13 +34,12 @@ func (m *MockTimeService) EXPECT() *MockTimeServiceMockRecorder {
 }
 
 // GetTimeNow mocks base method
-func (m *MockTimeService) GetTimeNow() (vegatime.Stamp, time.Time, error) {
+func (m *MockTimeService) GetTimeNow() (time.Time, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTimeNow")
-	ret0, _ := ret[0].(vegatime.Stamp)
-	ret1, _ := ret[1].(time.Time)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetTimeNow indicates an expected call of GetTimeNow

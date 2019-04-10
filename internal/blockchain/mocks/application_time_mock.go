@@ -5,9 +5,9 @@
 package mocks
 
 import (
-	vegatime "code.vegaprotocol.io/vega/internal/vegatime"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+	time "time"
 )
 
 // MockApplicationTime is a mock of ApplicationTime interface
@@ -34,7 +34,7 @@ func (m *MockApplicationTime) EXPECT() *MockApplicationTimeMockRecorder {
 }
 
 // SetTimeNow mocks base method
-func (m *MockApplicationTime) SetTimeNow(arg0 vegatime.Stamp) {
+func (m *MockApplicationTime) SetTimeNow(arg0 time.Time) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetTimeNow", arg0)
 }

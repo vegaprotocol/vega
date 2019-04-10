@@ -10,6 +10,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+	time "time"
 )
 
 // MockCandleStore is a mock of CandleStore interface
@@ -36,7 +37,7 @@ func (m *MockCandleStore) EXPECT() *MockCandleStoreMockRecorder {
 }
 
 // GetCandles mocks base method
-func (m *MockCandleStore) GetCandles(arg0 context.Context, arg1 string, arg2 uint64, arg3 proto.Interval) ([]*proto.Candle, error) {
+func (m *MockCandleStore) GetCandles(arg0 context.Context, arg1 string, arg2 time.Time, arg3 proto.Interval) ([]*proto.Candle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCandles", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*proto.Candle)

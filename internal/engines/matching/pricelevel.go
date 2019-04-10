@@ -12,7 +12,7 @@ type PriceLevel struct {
 	price             uint64
 	proRataMode       bool
 	orders            []*types.Order
-	volumeAtTimestamp map[uint64]uint64
+	volumeAtTimestamp map[int64]uint64
 	volume            uint64
 }
 
@@ -22,7 +22,7 @@ func NewPriceLevel(config *Config, price uint64, proRataMode bool) *PriceLevel {
 		price:             price,
 		proRataMode:       proRataMode,
 		orders:            []*types.Order{},
-		volumeAtTimestamp: make(map[uint64]uint64),
+		volumeAtTimestamp: map[int64]uint64{},
 	}
 }
 
@@ -59,7 +59,7 @@ func (l *PriceLevel) decreaseVolumeByTimestamp(o *types.Order) {
 	}
 }
 
-func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp uint64, trade *types.Trade) {
+func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp int64, trade *types.Trade) {
 	if vbt, exists := l.volumeAtTimestamp[currentTimestamp]; exists {
 		l.volumeAtTimestamp[currentTimestamp] = vbt - trade.Size
 	}
@@ -135,7 +135,7 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 	return agg.Remaining == 0, trades, impactedOrders
 }
 
-func (l *PriceLevel) earliestTimestamp() uint64 {
+func (l *PriceLevel) earliestTimestamp() int64 {
 	if len(l.orders) != 0 {
 		return l.orders[0].Timestamp
 	}

@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -21,7 +20,7 @@ var ErrChainNotConnected = errors.New("Chain not connected")
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/vega_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc VegaTime
 type VegaTime interface {
-	GetTimeNow() (epochTimeNano vegatime.Stamp, datetime time.Time, err error)
+	GetTimeNow() (time.Time, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc OrderService
@@ -42,7 +41,7 @@ type TradeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc CandleService
 type CandleService interface {
-	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error)
+	GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) (candles []*types.Candle, err error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc MarketService
@@ -212,7 +211,7 @@ func (h *Handlers) Candles(ctx context.Context,
 		return nil, errors.New("Since date is missing")
 	}
 
-	c, err := h.CandleService.GetCandles(ctx, market, request.SinceTimestamp, request.Interval)
+	c, err := h.CandleService.GetCandles(ctx, market, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +279,7 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsRequest) (*types.Statistics, error) {
 	// Call out to tendermint and related services to get related information for statistics
 	// We load read-only internal statistics through each package level statistics structs
-	epochTimeNano, _, err := h.TimeService.GetTimeNow()
+	epochTime, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +296,7 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 	// If the chain is replaying then genesis time can be nil
 	genesisTime := ""
 	if gt != nil {
-		genesisTime = gt.Format(time.RFC3339)
+		genesisTime = vegatime.Format(*gt)
 	}
 
 	// Load current markets details
@@ -326,8 +325,8 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		BacklogLength:         uint64(backlogLength),
 		TotalPeers:            uint64(numPeers),
 		GenesisTime:           genesisTime,
-		CurrentTime:           time.Now().UTC().Format(time.RFC3339),
-		VegaTime:              epochTimeNano.Rfc3339(),
+		CurrentTime:           vegatime.Format(vegatime.Now()),
+		VegaTime:              vegatime.Format(epochTime),
 		TxPerBlock:            uint64(h.Stats.Blockchain.AverageTxPerBatch()),
 		AverageTxBytes:        uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
 		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
@@ -348,12 +347,12 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 }
 
 func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest) (*api.VegaTimeResponse, error) {
-	epochTimeNano, _, err := h.TimeService.GetTimeNow()
+	epochTime, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, err
 	}
 	var response = &api.VegaTimeResponse{}
-	response.Time = fmt.Sprintf("%s", epochTimeNano.Rfc3339())
+	response.Time = vegatime.Format(epochTime)
 	return response, nil
 }
 

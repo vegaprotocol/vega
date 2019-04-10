@@ -28,7 +28,9 @@ var supportedIntervals = [6]types.Interval{
 }
 
 // Monday, January 1, 2018 12:00:01 AM GMT+00:00
-const minSinceTimestamp uint64 = 1514764801000
+const minSinceTimestamp int64 = 1514764801000
+
+var minSinceTime time.Time = vegatime.UnixNano(minSinceTimestamp)
 
 // Candle is a package internal data struct that implements the CandleStore interface.
 type Candle struct {
@@ -124,7 +126,7 @@ func (c *Candle) Close() error {
 }
 
 // StartNewBuffer creates a new trades buffer for the given market at timestamp.
-func (c *Candle) StartNewBuffer(marketId string, timestamp uint64) error {
+func (c *Candle) StartNewBuffer(marketId string, timestamp time.Time) error {
 	roundedTimestamps := GetMapOfIntervalsToRoundedTimestamps(timestamp)
 	previousCandleBuffer := c.candleBuffer[marketId]
 	c.resetCandleBuffer(marketId)
@@ -155,16 +157,17 @@ func (c *Candle) AddTradeToBuffer(trade types.Trade) error {
 	if c.candleBuffer[trade.Market] == nil {
 		c.log.Info("Starting new candle buffer for market",
 			logging.String("market-id", trade.Market),
-			logging.Uint64("timestamp", trade.Timestamp))
+			logging.Int64("timestamp", trade.Timestamp))
 
-		err := c.StartNewBuffer(trade.Market, trade.Timestamp)
+		err := c.StartNewBuffer(trade.Market, vegatime.UnixNano(trade.Timestamp))
 		if err != nil {
 			return errors.Wrap(err, "Failed to start new buffer when adding trade to candle store")
 		}
 	}
 
 	for _, interval := range supportedIntervals {
-		roundedTradeTimestamp := vegatime.Stamp(trade.Timestamp).RoundToNearest(interval).Uint64()
+		roundedTradeTimestamp := vegatime.RoundToNearest(vegatime.UnixNano(trade.Timestamp), interval)
+
 		bufferKey := getBufferKey(roundedTradeTimestamp, interval)
 
 		// check if bufferKey is present in buffer
@@ -286,13 +289,13 @@ func (c *Candle) GenerateCandlesFromBuffer(marketId string) error {
 }
 
 // GetCandles returns all candles at interval since timestamp for a market.
-func (c *Candle) GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error) {
-	if sinceTimestamp < minSinceTimestamp {
+func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) ([]*types.Candle, error) {
+	if since.Before(minSinceTime) {
 		return nil, errors.New("invalid sinceTimestamp, ensure format is epoch+nanoseconds timestamp")
 	}
 
 	// generate fetch key for the candles
-	fetchKey := c.generateFetchKey(market, interval, sinceTimestamp)
+	fetchKey := c.generateFetchKey(market, interval, since)
 	prefix, _ := c.badger.candlePrefix(market, interval, false)
 
 	txn := c.badger.readTransaction()
@@ -339,30 +342,26 @@ func (c *Candle) GetCandles(ctx context.Context, market string, sinceTimestamp u
 }
 
 // generateFetchKey calculates the correct badger key for the given market, interval and timestamp.
-func (c *Candle) generateFetchKey(market string, interval types.Interval, sinceTimestamp uint64) []byte {
+func (c *Candle) generateFetchKey(market string, interval types.Interval, since time.Time) []byte {
 	// returns valid key for Market, interval and timestamp
 	// round floor by integer division
 	switch interval {
 	case types.Interval_I1M:
-		timestampRoundedToMinute := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
-		return c.badger.candleKey(market, interval, timestampRoundedToMinute)
+		fallthrough
 	case types.Interval_I5M:
-		timestampRoundedTo5Minutes := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
-		return c.badger.candleKey(market, interval, timestampRoundedTo5Minutes)
+		fallthrough
 	case types.Interval_I15M:
-		timestampRoundedTo15Minutes := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
-		return c.badger.candleKey(market, interval, timestampRoundedTo15Minutes)
+		fallthrough
 	case types.Interval_I1H:
-		timestampRoundedTo1Hour := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
-		return c.badger.candleKey(market, interval, timestampRoundedTo1Hour)
+		fallthrough
 	case types.Interval_I6H:
-		timestampRoundedTo6Hour := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
-		return c.badger.candleKey(market, interval, timestampRoundedTo6Hour)
+		fallthrough
 	case types.Interval_I1D:
-		timestampRoundedToDay := vegatime.Stamp(sinceTimestamp).RoundToNearest(interval).Uint64()
-		return c.badger.candleKey(market, interval, timestampRoundedToDay)
+		return c.badger.candleKey(market, interval, vegatime.RoundToNearest(since, interval).UnixNano())
+	default:
+		return nil
 	}
-	return nil
+
 }
 
 func (c *Candle) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []byte) (*types.Candle, error) {
@@ -396,12 +395,12 @@ func (c *Candle) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []by
 
 // GetMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,
 //  15 minute, hour, 6hours, 1 day intervals and return a map of rounded timestamps
-func GetMapOfIntervalsToRoundedTimestamps(timestamp uint64) map[types.Interval]uint64 {
-	timestamps := make(map[types.Interval]uint64)
+func GetMapOfIntervalsToRoundedTimestamps(timestamp time.Time) map[types.Interval]time.Time {
+	timestamps := make(map[types.Interval]time.Time)
 
 	// round floor by integer division
 	for _, interval := range supportedIntervals {
-		timestamps[interval] = vegatime.Stamp(timestamp).RoundToNearest(interval).Uint64()
+		timestamps[interval] = vegatime.RoundToNearest(timestamp, interval)
 	}
 
 	return timestamps
@@ -480,15 +479,15 @@ func (c *Candle) resetCandleBuffer(market string) {
 }
 
 // getBufferKey returns the custom formatted buffer key for internal trade to timestamp mapping.
-func getBufferKey(timestamp uint64, interval types.Interval) string {
-	return fmt.Sprintf("%d:%s", timestamp, interval.String())
+func getBufferKey(timestamp time.Time, interval types.Interval) string {
+	return fmt.Sprintf("%d:%s", timestamp.UnixNano(), interval.String())
 }
 
 // newCandle constructs a new candle with minimum required parameters.
-func newCandle(timestamp, openPrice, size uint64, interval types.Interval) *types.Candle {
+func newCandle(timestamp time.Time, openPrice, size uint64, interval types.Interval) *types.Candle {
 	candle := types.CandlePool.Get().(*types.Candle)
-	candle.Timestamp = timestamp
-	candle.Datetime = vegatime.Stamp(timestamp).Rfc3339()
+	candle.Timestamp = timestamp.UnixNano()
+	candle.Datetime = vegatime.Format(timestamp)
 	candle.High = openPrice
 	candle.Low = openPrice
 	candle.Open = openPrice

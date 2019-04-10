@@ -94,6 +94,6 @@ func (m *Market) AmendOrder(order *types.Order) error {
 }
 
 // RemoveExpiredOrders remove all expired orders from the order book
-func (m *Market) RemoveExpiredOrders(timestamp uint64) []types.Order {
+func (m *Market) RemoveExpiredOrders(timestamp int64) []types.Order {
 	return m.matching.RemoveExpiredOrders(timestamp)
 }

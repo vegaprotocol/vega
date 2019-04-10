@@ -2,6 +2,7 @@ package candles
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
@@ -14,7 +15,7 @@ import (
 type CandleStore interface {
 	Subscribe(iT *storage.InternalTransport) uint64
 	Unsubscribe(id uint64) error
-	GetCandles(ctx context.Context, market string, sinceTimestamp uint64, interval types.Interval) ([]*types.Candle, error)
+	GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) ([]*types.Candle, error)
 }
 
 type Svc struct {
@@ -105,10 +106,10 @@ func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 }
 
 func (c *Svc) GetCandles(ctx context.Context, market string,
-	sinceTimestamp uint64, interval types.Interval) (candles []*types.Candle, err error) {
+	since time.Time, interval types.Interval) (candles []*types.Candle, err error) {
 
 	// sinceTimestamp must be valid and not older than market genesis timestamp
 	// interval check if from range of valid intervals
 
-	return c.candleStore.GetCandles(ctx, market, sinceTimestamp, interval)
+	return c.candleStore.GetCandles(ctx, market, since, interval)
 }
