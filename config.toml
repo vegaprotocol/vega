@@ -3,40 +3,66 @@
 
 [API]
   Level = 0
-  GraphQLServerIpAddress = "127.0.0.1"
+  Timeout = 5000
   GraphQLServerPort = 3004
-  GrpcServerIpAddress = "127.0.0.1"
-  GrpcServerPort = 3002
-  RestProxyIpAddress = "127.0.0.1"
+  GraphQLServerIpAddress = "0.0.0.0"
+  GraphQLSubscriptionRetries = 3
   RestProxyServerPort = 3003
+  RestProxyIpAddress = "0.0.0.0"
+  GrpcServerPort = 3002
+  GrpcServerIpAddress = "0.0.0.0"
+  GrpcSubscriptionRetries = 3
 
 [Blockchain]
-  Level = -1
-  ClientAddr = "tcp/://0.0.0.0:26657"
-  ClientEndpoint = "26658"
+  Level = 0
+  ClientAddr = "tcp://0.0.0.0:26657"
+  ClientEndpoint = "/websocket"
+  ServerPort = 26658
   ServerAddr = "localhost"
-  ServerPort = 46658
-  LogOrderAmendDebug = true
-  LogOrderCancelDebug = true
-  LogOrderSubmitDebug = true
   LogTimeDebug = true
+  LogOrderSubmitDebug = true
+  LogOrderAmendDebug = false
+  LogOrderCancelDebug = false
 
 [Candles]
   Level = 0
 
 [Execution]
   Level = 0
+  [Execution.Markets]
+    Path = ".vega/markets"
+    Configs = ["BTCDEC19.json", "ETHJUN19.json", "EURMAR20.json"]
+  [Execution.Engines]
+    Level = 0
+    [Execution.Engines.Matching]
+      Level = 0
+      LogPriceLevelsDebug = false
+      LogRemovedOrdersDebug = false
 
 [Logging]
+  Environment = "dev"
+  [Logging.Custom]
+    [Logging.Custom.Zap]
+      Level = -1
+      Development = true
+      Encoding = "console"
+      OutputPaths = ["stdout"]
+      ErrorOutputPaths = ["stderr"]
+    [Logging.Custom.ZapEncoder]
+      CallerKey = "C"
+      EncodeCaller = "short"
+      EncodeDuration = "string"
+      EncodeLevel = "capital"
+      EncodeName = "full"
+      EncodeTime = "iso8601"
+      LevelKey = "L"
+      LineEnding = "\n"
+      MessageKey = "M"
+      NameKey = "N"
+      TimeKey = "T"
 
 [Markets]
   Level = 0
-
-[Matching]
-  Level = 0
-  LogPriceLevelsDebug = false
-  LogRemovedOrdersDebug = false
-  ProRataMode = false
 
 [Orders]
   Level = 0
@@ -45,21 +71,34 @@
   Level = 0
 
 [Risk]
-  Level = 0
+  Level = 5
   PyRiskModelAbsolutePath = false
   PyRiskModelDefaultFileName = "/risk-model.py"
-  PyRiskModelLongIndex = 1
   PyRiskModelShortIndex = 0
+  PyRiskModelLongIndex = 1
 
 [Storage]
   Level = 0
-  CandleStoreDirPath = "../../data/candlestore"
+  OrderStoreDirPath = ".vega/orderstore"
+  TradeStoreDirPath = ".vega/tradestore"
+  CandleStoreDirPath = ".vega/candlestore"
+  MarketStoreDirPath = ".vega/marketstore"
   LogPositionStoreDebug = false
-  OrderStoreDirPath = "../../data/orderstore"
-  TradeStoreDirPath = "../../data/tradestore"
+  Timeout = 5
+
+[Trades]
+  Level = 0
 
 [Time]
   Level = 0
 
-[Trades]
-  Level = -1
+[Monitoring]
+  Level = 0
+  IntervalMilliseconds = 500
+  Retries = 5
+
+[Pprof]
+  Level = 0
+  Enabled = false
+  Port = 6060
+  ProfilesDir = "/tmp"
