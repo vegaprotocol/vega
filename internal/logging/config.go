@@ -12,7 +12,7 @@ type Custom struct {
 	ZapEncoder *ZapEncoder
 }
 
-// Zap configgures a ZapConfig
+// Zap configures a ZapConfig
 type Zap struct {
 	Level            Level
 	Development      bool
