@@ -3,12 +3,67 @@ package logging
 // Config contains the configurable items for this package
 type Config struct {
 	Environment string
+	Custom      *Custom
+}
+
+// Custom contains the custom log config
+type Custom struct {
+	Zap        *Zap
+	ZapEncoder *ZapEncoder
+}
+
+// Zap configgures a ZapConfig
+type Zap struct {
+	Level            Level
+	Development      bool
+	Encoding         string // console or json
+	OutputPaths      []string
+	ErrorOutputPaths []string
+}
+
+// ZapEncoder configures a ZapEncoderConfig
+type ZapEncoder struct {
+	CallerKey      string
+	EncodeCaller   string
+	EncodeDuration string
+	EncodeLevel    string
+	EncodeName     string
+	EncodeTime     string
+	LevelKey       string
+	LineEnding     string
+	MessageKey     string
+	NameKey        string
+	TimeKey        string
 }
 
 // NewDefaultConfig creates an instance of the package-specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultConfig() *Config {
 	return &Config{
+		// Set the default to dev
 		Environment: "dev",
+		// but give a custom config more similar to prod
+		Custom: &Custom{
+			Zap: &Zap{
+				Development:      false,
+				Encoding:         "json",
+				Level:            InfoLevel,
+				OutputPaths:      []string{"stdout"},
+				ErrorOutputPaths: []string{"stderr"},
+			},
+			ZapEncoder: &ZapEncoder{
+				CallerKey:      "caller",
+				EncodeCaller:   "short",
+				EncodeDuration: "string",
+				EncodeLevel:    "lowercase",
+				EncodeName:     "full",
+				EncodeTime:     "iso8601",
+				LevelKey:       "level",
+				LineEnding:     "\n",
+				MessageKey:     "message",
+				NameKey:        "logger",
+				TimeKey:        "@timestamp",
+			},
+		},
 	}
 }

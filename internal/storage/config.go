@@ -155,7 +155,7 @@ func (c *Config) UpdateLogger() {
 // This constructor is exclusively used in unit tests/integration tests
 func NewTestConfig() (*Config, error) {
 	// Test logger can be configured here, default to console not file etc.
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	// Test configuration for badger stores
 	cfg := Config{
 		log:                   logger,

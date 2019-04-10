@@ -172,7 +172,8 @@ func (c *Config) ResetLoggers(oldLogEnv string) {
 	if oldLogEnv == newLogEnv {
 		return
 	}
-	c.log = logging.NewLoggerFromEnv(newLogEnv)
+	c.log = logging.NewLoggerFromConfig(c.Logging)
+
 	c.log.Info("Logging environment set", logging.String("environment", newLogEnv))
 
 	c.API.SetLogger(c.log)

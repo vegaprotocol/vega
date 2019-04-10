@@ -84,7 +84,7 @@ func BenchmarkMatching(
 		periodElapsed := time.Duration(0)
 		// periodTrades := 0
 
-		logger := logging.NewLoggerFromEnv("dev")
+		logger := logging.NewDevLogger()
 		logger.SetLevel(logging.InfoLevel)
 
 		// Matching engine (trade matching)

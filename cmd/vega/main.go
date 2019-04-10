@@ -10,7 +10,7 @@ import (
 func main() {
 	// Set up the root logger
 	logDefaultConfig := logging.NewDefaultConfig()
-	log := logging.NewLoggerFromEnv(logDefaultConfig.Environment)
+	log := logging.NewLoggerFromConfig(logDefaultConfig)
 	defer log.AtExit()
 
 	cli := NewCli()

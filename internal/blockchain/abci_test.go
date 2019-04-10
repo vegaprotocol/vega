@@ -26,7 +26,7 @@ func getTestApp(t *testing.T) *testApp {
 	proc := mocks.NewMockApplicationProcessor(ctrl)
 	svc := mocks.NewMockApplicationService(ctrl)
 	time := mocks.NewMockApplicationTime(ctrl)
-	log := logging.NewLoggerFromEnv("env")
+	log := logging.NewTestLogger()
 	ch := make(chan struct{}, 1)
 	errCb := func() {
 		ch <- struct{}{}
