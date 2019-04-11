@@ -20,6 +20,17 @@ message RiskFactor {
   double long = 3;
 }
 
+message RiskResult {
+  // timestamp when these risk factors were generated
+  int64 updatedTimestamp = 1;
+  // risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market
+  map<string, RiskFactor> riskFactors = 2;
+  // time when risk factors are expected to change (or empty if risk factors are continually updated)
+  int64 nextUpdateTimestamp = 3;
+  // predicted risk factors at next change (what they'd be if the change occurred now)
+  map<string, RiskFactor> predictedNextRiskFactors = 4;
+}
+
 message Order {
   enum Type {
     GTC = 0;
