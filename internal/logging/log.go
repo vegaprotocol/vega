@@ -48,12 +48,7 @@ func (log *Logger) Clone() *Logger {
 	if err != nil {
 		panic(err)
 	}
-	return &Logger{
-		Logger:      newLogger,
-		config:      newConfig,
-		environment: log.environment,
-		name:        log.name,
-	}
+	return New(newLogger, newConfig, log.environment, log.name)
 }
 
 func (log *Logger) GetLevel() Level {
@@ -85,14 +80,13 @@ func (log *Logger) Named(name string) *Logger {
 	return c
 }
 
-func New(core *zapcore.Core, cfg *zap.Config, environment string) *Logger {
-	logger := Logger{
-		Logger:      zap.New(*core),
-		config:      cfg,
+func New(zaplogger *zap.Logger, zapconfig *zap.Config, environment, name string) *Logger {
+	return &Logger{
+		Logger:      zaplogger,
+		config:      zapconfig,
 		environment: environment,
-		name:        "",
+		name:        name,
 	}
-	return &logger
 }
 
 func (log *Logger) SetLevel(level Level) {
@@ -105,10 +99,8 @@ func (log *Logger) SetLevel(level Level) {
 
 func (log *Logger) With(fields ...zap.Field) *Logger {
 	c := log.Clone()
-	return &Logger{
-		Logger: c.Logger.With(fields...),
-		config: c.config,
-	}
+	c.Logger = c.Logger.With(fields...)
+	return c
 }
 
 // AtExit flushes the logs before exiting the process. Useful when an
@@ -175,12 +167,7 @@ func NewCustomLogger(config *Config) *Logger {
 	if err != nil {
 		panic(err)
 	}
-	return &Logger{
-		Logger:      zaplogger,
-		config:      &zapconfig,
-		environment: config.Environment,
-		name:        "",
-	}
+	return New(zaplogger, &zapconfig, config.Environment, "")
 }
 
 // NewDevLogger creates a new logger suitable for development environments.
