@@ -25,6 +25,8 @@ func New(prm interface{}) (Model, error) {
 	switch rm := prm.(type) {
 	case *types.TradableInstrument_BuiltinFutures:
 		return newBuiltinFutures(rm.BuiltinFutures)
+	case *types.TradableInstrument_ExternalRiskModel:
+		return newExternal(rm.ExternalRiskModel)
 	default:
 		return nil, ErrUnimplementedRiskModel
 	}

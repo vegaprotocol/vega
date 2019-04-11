@@ -56,12 +56,18 @@ message BuiltinFutures {
   double historicVolatility = 1;
 }
 
+message ExternalRiskModel {
+  string name = 1;
+  map<string, string> config = 2;
+}
+
 // here ends risk models
 
 message TradableInstrument {
   Instrument instrument = 1;
   oneof riskModel {
     BuiltinFutures builtinFutures = 100;
+    ExternalRiskModel externalRiskModel = 101;
   }
 }
 

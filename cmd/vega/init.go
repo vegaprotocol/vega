@@ -183,6 +183,18 @@ func createDefaultMarkets(confpath string) error {
 	mkt.TradableInstrument.Instrument.Id = "Crypto/ETHUSD/Futures/Jun19"
 	mkt.TradableInstrument.Instrument.Code = "FX:ETHUSD/Jun19"
 	mkt.TradableInstrument.Instrument.Name = "June 2019 ETH vs USD future"
+	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
+		Future: &proto.Future{
+			Maturity: "2019-06-30T00:00:00Z",
+			Oracle: &proto.Future_EthereumEvent{
+				EthereumEvent: &proto.EthereumEvent{
+					ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+					Event:      "price_changed",
+				},
+			},
+			Asset: "Ethereum/Ether",
+		},
+	}
 	err = createDefaultMarket(&mkt, path.Join(confpath, marketETHJUN19))
 	if err != nil {
 		return err
@@ -191,6 +203,18 @@ func createDefaultMarkets(confpath string) error {
 	mkt.TradableInstrument.Instrument.Id = "Fx/EURUSD/Futures/Mar20"
 	mkt.TradableInstrument.Instrument.Code = "FX:EURUSD/MAR20"
 	mkt.TradableInstrument.Instrument.Name = "March 2020 EUR vs USD future"
+	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
+		Future: &proto.Future{
+			Maturity: "2020-03-31T00:00:00Z",
+			Oracle: &proto.Future_EthereumEvent{
+				EthereumEvent: &proto.EthereumEvent{
+					ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+					Event:      "price_changed",
+				},
+			},
+			Asset: "Ethereum/Ether",
+		},
+	}
 	return createDefaultMarket(&mkt, path.Join(confpath, marketEURMAR19))
 }
 
