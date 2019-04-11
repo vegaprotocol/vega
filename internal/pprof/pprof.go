@@ -53,6 +53,11 @@ func NewDefaultConfig(logger *logging.Logger) *Config {
 	}
 }
 
+// SetLogger creates a new logger based on a given parent logger.
+func (c *Config) SetLogger(parent *logging.Logger) {
+	c.log = parent.Named(namedLogger)
+}
+
 // UpdateLogger will set any new values on the underlying logging core. Useful when configs are
 // hot reloaded at run time. Currently we only check and refresh the logging level.
 func (c *Config) UpdateLogger() {

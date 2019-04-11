@@ -18,7 +18,7 @@ func TestNoGzip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	rec := httptest.NewRecorder()
@@ -51,7 +51,7 @@ func TestGzip(t *testing.T) {
 	}
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	rec := httptest.NewRecorder()
@@ -102,7 +102,7 @@ func TestNoBody(t *testing.T) {
 	}
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	rec := httptest.NewRecorder()
@@ -138,7 +138,7 @@ func BenchmarkGzip(b *testing.B) {
 	}
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	b.ResetTimer()

@@ -9,7 +9,8 @@ import (
 
 func main() {
 	// Set up the root logger
-	log := logging.NewLoggerFromEnv("dev")
+	logDefaultConfig := logging.NewDefaultConfig()
+	log := logging.NewLoggerFromConfig(logDefaultConfig)
 	defer log.AtExit()
 
 	cli := NewCli()

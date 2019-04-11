@@ -36,7 +36,7 @@ func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	store := mocks.NewMockCandleStore(ctrl)
-	log := logging.NewLoggerFromEnv("dev")
+	log := logging.NewTestLogger()
 	// create service, pass in mocks, ignore error
 	svc, err := candles.NewService(
 		candles.NewDefaultConfig(log),

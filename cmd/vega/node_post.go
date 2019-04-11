@@ -42,6 +42,8 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 		logging.String("version", Version),
 		logging.String("version-hash", VersionHash))
 
+	l.Log.Sync()
+
 	if len(werr) == 0 {
 		// Prevent printing of empty error and exiting with non-zero code.
 		return nil

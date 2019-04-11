@@ -11,7 +11,7 @@ import (
 )
 
 func TestRiskEngine_AddNewMarket(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	config := risk.NewDefaultConfig(logger)
@@ -25,7 +25,7 @@ func TestRiskEngine_AddNewMarket(t *testing.T) {
 }
 
 func TestRiskEngine_CalibrateRiskModel(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	config := risk.NewDefaultConfig(logger)

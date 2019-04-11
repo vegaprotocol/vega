@@ -128,7 +128,7 @@ func testOrderBlockchainError(t *testing.T) {
 }
 
 func getTestService(t *testing.T) *testService {
-	log := logging.NewLoggerFromEnv("dev")
+	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	orderStore := mocks.NewMockOrderStore(ctrl)
 	timeSvc := mocks.NewMockTimeService(ctrl)

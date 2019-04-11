@@ -29,7 +29,7 @@ func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	order := mocks.NewMockOrderStore(ctrl)
 	market := mocks.NewMockMarketStore(ctrl)
-	log := logging.NewLoggerFromEnv("dev")
+	log := logging.NewTestLogger()
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := markets.NewService(
 		markets.NewDefaultConfig(log),

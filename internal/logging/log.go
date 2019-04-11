@@ -3,7 +3,6 @@ package logging
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"go.uber.org/zap"
@@ -38,8 +37,9 @@ func (l *Level) ZapLevel() zapcore.Level {
 
 type Logger struct {
 	*zap.Logger
-	config *zap.Config
-	name   string
+	config      *zap.Config
+	environment string
+	name        string
 }
 
 func (log *Logger) Clone() *Logger {
@@ -48,10 +48,7 @@ func (log *Logger) Clone() *Logger {
 	if err != nil {
 		panic(err)
 	}
-	return &Logger{
-		Logger: newLogger,
-		config: newConfig,
-	}
+	return New(newLogger, newConfig, log.environment, log.name)
 }
 
 func (log *Logger) GetLevel() Level {
@@ -60,6 +57,10 @@ func (log *Logger) GetLevel() Level {
 
 func (log *Logger) GetLevelString() string {
 	return log.config.Level.String()
+}
+
+func (log *Logger) GetEnvironment() string {
+	return log.environment
 }
 
 func (log *Logger) GetName() string {
@@ -74,20 +75,18 @@ func (log *Logger) Named(name string) *Logger {
 	} else {
 		newName = fmt.Sprintf("%s.%s", log.name, name)
 	}
-	return &Logger{
-		Logger: c.Logger.Named(newName),
-		config: c.config,
-		name:   newName,
-	}
+	c.Logger = c.Logger.Named(newName)
+	c.name = newName
+	return c
 }
 
-func New(core *zapcore.Core, cfg *zap.Config) *Logger {
-	logger := Logger{
-		Logger: zap.New(*core),
-		config: cfg,
-		name:   "",
+func New(zaplogger *zap.Logger, zapconfig *zap.Config, environment, name string) *Logger {
+	return &Logger{
+		Logger:      zaplogger,
+		config:      zapconfig,
+		environment: environment,
+		name:        name,
 	}
-	return &logger
 }
 
 func (log *Logger) SetLevel(level Level) {
@@ -100,10 +99,8 @@ func (log *Logger) SetLevel(level Level) {
 
 func (log *Logger) With(fields ...zap.Field) *Logger {
 	c := log.Clone()
-	return &Logger{
-		Logger: c.Logger.With(fields...),
-		config: c.config,
-	}
+	c.Logger = c.Logger.With(fields...)
+	return c
 }
 
 // AtExit flushes the logs before exiting the process. Useful when an
@@ -140,77 +137,151 @@ func cloneConfig(cfg *zap.Config) *zap.Config {
 	return &c
 }
 
-func NewLoggerFromEnv(env string) *Logger {
-	var encoderConfig zapcore.EncoderConfig
-	var encoder zapcore.Encoder
-	var config zap.Config
-	var level zapcore.Level
-	/*
-		Choices: (with "*" for default)
-		CallerEncoder: full*
-		DurationEncoder: nanos, seconds*, string
-		LevelEncoder: capital, capitalColor, color, lowercase*
-		NameEncoder: full*
-		TimeEncoder: epoch*, iso8601, millis, nanos
-	*/
-	switch env {
-	case "dev":
-		encoderConfig = zapcore.EncoderConfig{
-			CallerKey:      "C",
-			EncodeCaller:   zapcore.ShortCallerEncoder,
-			EncodeDuration: zapcore.StringDurationEncoder,
-			EncodeLevel:    zapcore.CapitalLevelEncoder,
-			EncodeTime:     zapcore.ISO8601TimeEncoder,
-			LevelKey:       "L",
-			LineEnding:     "\n",
-			MessageKey:     "M",
-			NameKey:        "N",
-			TimeKey:        "T",
-		}
-		encoder = zapcore.NewConsoleEncoder(encoderConfig)
-		level = zapcore.Level(DebugLevel)
-		config = zap.Config{
-			Level:            zap.NewAtomicLevelAt(level),
-			Development:      true,
-			Encoding:         "console",
-			EncoderConfig:    encoderConfig,
-			OutputPaths:      []string{"stdout"},
-			ErrorOutputPaths: []string{"stderr"},
-		}
-	default:
-		encoderConfig = zapcore.EncoderConfig{
-			CallerKey:      "caller",
-			EncodeCaller:   zapcore.ShortCallerEncoder,
-			EncodeDuration: zapcore.SecondsDurationEncoder,
-			EncodeLevel:    zapcore.LowercaseLevelEncoder,
-			EncodeName:     zapcore.FullNameEncoder,
-			EncodeTime:     zapcore.ISO8601TimeEncoder,
-			LevelKey:       "level",
-			LineEnding:     "\n",
-			MessageKey:     "message",
-			NameKey:        "logger",
-			StacktraceKey:  "stacktrace",
-			TimeKey:        "@timestamp",
-		}
-		encoder = zapcore.NewJSONEncoder(encoderConfig)
-		level = zapcore.Level(InfoLevel)
-		config = zap.Config{
-			Level:            zap.NewAtomicLevelAt(level),
-			Development:      false,
-			Encoding:         "json",
-			EncoderConfig:    encoderConfig,
-			OutputPaths:      []string{"stdout"},
-			ErrorOutputPaths: []string{"stderr"},
-		}
+// newLoggerFromConfig creates a logger according to the given custom config.
+func newLoggerFromConfig(config *Config) *Logger {
+	encoderConfig := zapcore.EncoderConfig{
+		CallerKey:  config.Custom.ZapEncoder.CallerKey,
+		LevelKey:   config.Custom.ZapEncoder.LevelKey,
+		LineEnding: config.Custom.ZapEncoder.LineEnding,
+		MessageKey: config.Custom.ZapEncoder.MessageKey,
+		NameKey:    config.Custom.ZapEncoder.NameKey,
+		TimeKey:    config.Custom.ZapEncoder.TimeKey,
 	}
 
-	core := zapcore.NewCore(encoder, os.Stdout, level)
-	return New(&core, &config)
+	encoderConfig.EncodeCaller.UnmarshalText([]byte(config.Custom.ZapEncoder.EncodeCaller))
+	encoderConfig.EncodeDuration.UnmarshalText([]byte(config.Custom.ZapEncoder.EncodeDuration))
+	encoderConfig.EncodeLevel.UnmarshalText([]byte(config.Custom.ZapEncoder.EncodeLevel))
+	encoderConfig.EncodeName.UnmarshalText([]byte(config.Custom.ZapEncoder.EncodeName))
+	encoderConfig.EncodeTime.UnmarshalText([]byte(config.Custom.ZapEncoder.EncodeTime))
+
+	zapconfig := zap.Config{
+		Level:            zap.NewAtomicLevelAt(zapcore.Level(config.Custom.Zap.Level)),
+		Development:      config.Custom.Zap.Development,
+		Encoding:         config.Custom.Zap.Encoding,
+		EncoderConfig:    encoderConfig,
+		OutputPaths:      config.Custom.Zap.OutputPaths,
+		ErrorOutputPaths: config.Custom.Zap.ErrorOutputPaths,
+	}
+
+	zaplogger, err := zapconfig.Build()
+	if err != nil {
+		panic(err)
+	}
+	return New(zaplogger, &zapconfig, config.Environment, "")
 }
 
-// IPAddressFromContext will attempt to access the 'remote-ip-addr' value
-// that we inject into a calling context via a pipelined handlers. Only
-// GraphQL API supported at present.
+// NewDevLogger creates a new logger suitable for development environments.
+func NewDevLogger() *Logger {
+	config := &Config{
+		Environment: "dev",
+		Custom: &Custom{
+			Zap: &Zap{
+				Development:      true,
+				Encoding:         "console",
+				Level:            DebugLevel,
+				OutputPaths:      []string{"stdout"},
+				ErrorOutputPaths: []string{"stderr"},
+			},
+			ZapEncoder: &ZapEncoder{
+				CallerKey:      "C",
+				EncodeCaller:   "short",
+				EncodeDuration: "string",
+				EncodeLevel:    "capital",
+				EncodeName:     "full",
+				EncodeTime:     "iso8601",
+				LevelKey:       "L",
+				LineEnding:     "\n",
+				MessageKey:     "M",
+				NameKey:        "N",
+				TimeKey:        "T",
+			},
+		},
+	}
+	return newLoggerFromConfig(config)
+}
+
+// NewTestLogger creates a new logger suitable for golang unit test
+// environments, ie when running "go test ./..."
+func NewTestLogger() *Logger {
+	config := &Config{
+		Environment: "test",
+		Custom: &Custom{
+			Zap: &Zap{
+				Development:      true,
+				Encoding:         "console",
+				Level:            DebugLevel,
+				OutputPaths:      []string{"stdout"},
+				ErrorOutputPaths: []string{"stderr"},
+			},
+			ZapEncoder: &ZapEncoder{
+				CallerKey:      "C",
+				EncodeCaller:   "short",
+				EncodeDuration: "string",
+				EncodeLevel:    "capital",
+				EncodeName:     "full",
+				EncodeTime:     "iso8601",
+				LevelKey:       "L",
+				LineEnding:     "\n",
+				MessageKey:     "M",
+				NameKey:        "N",
+				TimeKey:        "T",
+			},
+		},
+	}
+	return newLoggerFromConfig(config)
+}
+
+// NewProdLogger creates a new logger suitable for production environments,
+// including sending logs to ElasticSearch.
+func NewProdLogger() *Logger {
+	config := &Config{
+		Environment: "prod",
+		Custom: &Custom{
+			Zap: &Zap{
+				Development:      false,
+				Encoding:         "json",
+				Level:            InfoLevel,
+				OutputPaths:      []string{"stdout"},
+				ErrorOutputPaths: []string{"stderr"},
+			},
+			ZapEncoder: &ZapEncoder{
+				CallerKey:      "caller",
+				EncodeCaller:   "short",
+				EncodeDuration: "string",
+				EncodeLevel:    "lowercase",
+				EncodeName:     "full",
+				EncodeTime:     "iso8601",
+				LevelKey:       "level",
+				LineEnding:     "\n",
+				MessageKey:     "message",
+				NameKey:        "logger",
+				TimeKey:        "@timestamp",
+			},
+		},
+	}
+	return newLoggerFromConfig(config)
+}
+
+// NewLoggerFromConfig creates a standard or custom logger.
+func NewLoggerFromConfig(config *Config) *Logger {
+	switch config.Environment {
+	case "dev":
+		return NewDevLogger()
+	case "test":
+		return NewTestLogger()
+	case "prod":
+		return NewProdLogger()
+	case "custom":
+		return newLoggerFromConfig(config)
+	}
+
+	// Default:
+	return NewDevLogger()
+}
+
+// IPAddressFromContext attempts to access the 'remote-ip-addr' value that we
+// inject into a calling context via a pipelined handlers. Only GraphQL API
+// supported at present.
 func IPAddressFromContext(ctx context.Context) string {
 	if ctx.Value("remote-ip-addr") != nil {
 		return ctx.Value("remote-ip-addr").(string)

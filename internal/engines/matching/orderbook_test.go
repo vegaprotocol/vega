@@ -26,7 +26,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	market := "expiringOrderBookTest"
 	party := "clay-davis"
 
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	book := NewOrderBook(NewDefaultConfig(logger), market, true)
@@ -192,7 +192,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 //test for order validation
 func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
@@ -229,7 +229,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 }
 
 func TestOrderBook_DeleteOrder(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
 
@@ -255,7 +255,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 }
 
 func TestOrderBook_SubmitOrder(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
@@ -1053,7 +1053,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 
 func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
@@ -1079,7 +1079,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 }
 
 func TestOrderBook_CancelSellOrder(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
@@ -1116,7 +1116,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 }
 
 func TestOrderBook_CancelBuyOrder(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
@@ -1153,7 +1153,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 }
 
 func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	logger.Debug("BEGIN CANCELLING MARKET MISMATCH ORDER")
@@ -1178,7 +1178,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 }
 
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	logger.Debug("BEGIN CANCELLING INVALID ORDER")
@@ -1222,7 +1222,7 @@ func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
 }
 
 func TestOrderBook_AmendOrder(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
@@ -1265,7 +1265,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
@@ -1307,7 +1307,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	book := NewOrderBook(NewDefaultConfig(logger), "testOrderBook", true)
@@ -1347,7 +1347,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	logger.Debug("BEGIN AMENDING ORDER")
@@ -1394,7 +1394,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	logger.Debug("BEGIN AMENDING OUT OF SEQUENCE ORDER")
@@ -1443,7 +1443,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	logger.Debug("BEGIN AMEND ORDER INVALID SIZE")
@@ -1493,7 +1493,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 
 // ProRata mode OFF which is a default config for vega ME
 func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	logger.Debug("BEGIN PRO-RATA MODE OFF")

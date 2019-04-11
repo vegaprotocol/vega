@@ -9,7 +9,7 @@ import (
 )
 
 func TestConfig_GetLogger(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	partyConfig := parties.NewDefaultConfig(logger)
@@ -19,7 +19,7 @@ func TestConfig_GetLogger(t *testing.T) {
 }
 
 func TestConfig_UpdateLogger(t *testing.T) {
-	logger := logging.NewLoggerFromEnv("dev")
+	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	partyConfig := parties.NewDefaultConfig(logger)
