@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/engines/matching"
+	"code.vegaprotocol.io/vega/internal/engines/position"
+	"code.vegaprotocol.io/vega/internal/engines/risk"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -47,9 +49,13 @@ type Market struct {
 	currentTime time.Time
 	mu          sync.Mutex
 
+	markPrice uint64
+
 	// engines
-	matching   *matching.OrderBook
-	instrument *Instrument
+	matching           *matching.OrderBook
+	tradableInstrument *TradableInstrument
+	risk               *risk.Engine
+	position           *position.Engine
 
 	// stores
 	candles CandleStore
@@ -68,27 +74,32 @@ func NewMarket(
 	parties PartyStore,
 	trades TradeStore,
 ) (*Market, error) {
-	instrument, err := NewInstrument(marketcfg.TradableInstrument.Instrument)
+	tradableInstrument, err := NewTradableInstrument(marketcfg.TradableInstrument)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to intanciate a new market")
 	}
 
-	closingAt, err := instrument.GetMarketClosingTime()
+	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
+	riskengine := risk.New(cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
+	positionengine := position.New(cfg.Position)
+
 	mkt := &Market{
-		Config:      cfg,
-		marketcfg:   marketcfg,
-		closingAt:   closingAt,
-		currentTime: time.Time{},
-		matching:    matching.NewOrderBook(cfg.Matching, marketcfg.Id, false),
-		instrument:  instrument,
-		candles:     candles,
-		orders:      orders,
-		parties:     parties,
-		trades:      trades,
+		Config:             cfg,
+		marketcfg:          marketcfg,
+		closingAt:          closingAt,
+		currentTime:        time.Time{},
+		matching:           matching.NewOrderBook(cfg.Matching, marketcfg.Id, false),
+		tradableInstrument: tradableInstrument,
+		risk:               riskengine,
+		position:           positionengine,
+		candles:            candles,
+		orders:             orders,
+		parties:            parties,
+		trades:             trades,
 	}
 
 	return mkt, nil
@@ -106,6 +117,15 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 
 	m.currentTime = t
 	// TODO(): handle market start time
+
+	m.log.Debug("Calculating risk factors (if required)",
+		logging.String("market-id", m.marketcfg.Id))
+
+	m.risk.CalculateFactors(t)
+	m.risk.UpdatePositions(m.markPrice, m.position.Positions())
+
+	m.log.Debug("Calculated risk factors and updated positions (maybe)",
+		logging.String("market-id", m.marketcfg.Id))
 
 	if t.After(m.closingAt) {
 		// call settlement and stuff
@@ -186,6 +206,15 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
+
+			// Ensure mark price is always up to date for each market in execution engine
+			m.markPrice = trade.Price
+
+			// Update party positions for trade affected
+			m.position.Update(trade)
+
+			// Update positions for the market for the trade
+			m.risk.UpdatePositions(trade.Price, m.position.Positions())
 		}
 	}
 
@@ -356,4 +385,15 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 // RemoveExpiredOrders remove all expired orders from the order book
 func (m *Market) RemoveExpiredOrders(timestamp int64) []types.Order {
 	return m.matching.RemoveExpiredOrders(timestamp)
+}
+
+func getInitialFactors() *types.RiskResult {
+	return &types.RiskResult{
+		RiskFactors: map[string]*types.RiskFactor{
+			"Ethereum/Ether": {Long: 0.15, Short: 0.25},
+		},
+		PredictedNextRiskFactors: map[string]*types.RiskFactor{
+			"Ethereum/Ether": {Long: 0.15, Short: 0.25},
+		},
+	}
 }
