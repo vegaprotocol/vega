@@ -137,8 +137,8 @@ func cloneConfig(cfg *zap.Config) *zap.Config {
 	return &c
 }
 
-// NewCustomLogger creates a logger according to the given custom config.
-func NewCustomLogger(config *Config) *Logger {
+// newLoggerFromConfig creates a logger according to the given custom config.
+func newLoggerFromConfig(config *Config) *Logger {
 	encoderConfig := zapcore.EncoderConfig{
 		CallerKey:  config.Custom.ZapEncoder.CallerKey,
 		LevelKey:   config.Custom.ZapEncoder.LevelKey,
@@ -197,7 +197,7 @@ func NewDevLogger() *Logger {
 			},
 		},
 	}
-	return NewCustomLogger(config)
+	return newLoggerFromConfig(config)
 }
 
 // NewTestLogger creates a new logger suitable for golang unit test
@@ -228,7 +228,7 @@ func NewTestLogger() *Logger {
 			},
 		},
 	}
-	return NewCustomLogger(config)
+	return newLoggerFromConfig(config)
 }
 
 // NewProdLogger creates a new logger suitable for production environments,
@@ -259,7 +259,7 @@ func NewProdLogger() *Logger {
 			},
 		},
 	}
-	return NewCustomLogger(config)
+	return newLoggerFromConfig(config)
 }
 
 // NewLoggerFromConfig creates a standard or custom logger.
@@ -272,7 +272,7 @@ func NewLoggerFromConfig(config *Config) *Logger {
 	case "prod":
 		return NewProdLogger()
 	case "custom":
-		return NewCustomLogger(config)
+		return newLoggerFromConfig(config)
 	}
 
 	// Default:
