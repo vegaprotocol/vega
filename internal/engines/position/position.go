@@ -50,6 +50,9 @@ func New(config *Config) *Engine {
 
 func (e *Engine) Update(trade *types.Trade) {
 
+	// Not using defer e.mu.Unlock(), because defer calls add some overhead
+	// and this is called for each transaction, so we want to optimise as much as possible
+	// there aren't multiple returns here anyway, so just unlock as and when it's needed
 	e.mu.Lock()
 	// todo(cdm): overflow should be managed at the trade/order creation point. We shouldn't accept an order onto
 	// your book that would overflow your position. Order validation requires position store/state lookup.
