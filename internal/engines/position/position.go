@@ -12,6 +12,7 @@ type MarketPosition struct {
 	size    int64
 	margins map[string]uint64
 	partyID string
+	price   uint64
 }
 
 // Margins returns a copy of the current margins map
@@ -30,6 +31,10 @@ func (m MarketPosition) Size() int64 {
 
 func (m MarketPosition) Party() string {
 	return m.partyID
+}
+
+func (m MarketPosition) Price() uint64 {
+	return m.price
 }
 
 type Engine struct {
@@ -75,11 +80,17 @@ func (e *Engine) Update(trade *types.Trade) {
 		seller = e.positions[trade.Seller]
 	}
 
+	// get net value of trade, add that to total price running for buyer/seller
+	price := trade.Size * trade.Price
+
 	// Buyer INCREASED position size buy trade.Size
 	buyer.size += int64(trade.Size)
+	buyer.price += price
 
 	// Seller DECREASED position size buy trade.Size
 	seller.size -= int64(trade.Size)
+	// add price, still. this is keeping a running total of the sell price
+	seller.price += price
 
 	if e.LogPositionUpdate {
 		e.log.Info("Positions Updated for trade",
