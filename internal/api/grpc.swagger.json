@@ -569,17 +569,14 @@
         "type": {
           "$ref": "#/definitions/vegaOrderType"
         },
-        "timestamp": {
+        "createdAt": {
           "type": "string",
           "format": "int64"
         },
         "status": {
           "$ref": "#/definitions/OrderStatus"
         },
-        "expirationDatetime": {
-          "type": "string"
-        },
-        "expirationTimestamp": {
+        "expiresAt": {
           "type": "string",
           "format": "int64"
         },
@@ -605,10 +602,7 @@
           "type": "string",
           "format": "uint64"
         },
-        "expirationDatetime": {
-          "type": "string"
-        },
-        "expirationTimestamp": {
+        "expiresAt": {
           "type": "string",
           "format": "int64"
         }
@@ -654,8 +648,9 @@
         "type": {
           "$ref": "#/definitions/vegaOrderType"
         },
-        "expirationDatetime": {
-          "type": "string"
+        "expiresAt": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

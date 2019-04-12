@@ -284,44 +284,50 @@ type Position {
 # An order in Vega, if active it will be on the OrderBoook for the market
 type Order {
 
-    # Hash of the order data
-    id: ID!
+  # Hash of the order data
+  id: ID!
 
-    # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
-    price: String!
+  # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+  price: String!
 
-    # The type of order (determines how and if it executes, and whether it persists on the book)
-    type: OrderType!
+  # The type of order (determines how and if it executes, and whether it persists on the book)
+  type: OrderType!
 
-    # Whether the order is to buy or sell
-    side: Side!
+  # Whether the order is to buy or sell
+  side: Side!
 
-    # The market the order is trading on (probably stored internally as a hash of the market details)
-    market: Market!
+  # The market the order is trading on (probably stored internally as a hash of the market details)
+  market: Market!
 
-    # Total number of contracts that may be bought or sold (immutable) (uint64)
-    size: String!
+  # Total number of contracts that may be bought or sold (immutable) (uint64)
+  size: String!
 
-    # Number of contracts remaining of the total that have not yet been bought or sold (uint64)
-    remaining: String!
+  # Number of contracts remaining of the total that have not yet been bought or sold (uint64)
+  remaining: String!
 
-    # The trader who place the order (probably stored internally as the trader's public key)
-    party: String!
+  # The trader who place the order (probably stored internally as the trader's public key)
+  party: String!
 
-    # Unix epoch+nanoseconds for when the order was created
-    timestamp: String!
+  # Unix epoch+nanoseconds for when the order was created
+  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-    # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
-    datetime: String!
+  # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
+  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-    # The status of an order, for example 'Active'
-    status: OrderStatus!
+  # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
+  createdAt: String!
 
-    # The external reference (if available) for the order
-    reference: String!
+  # Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)
+  expiresAt: String
 
-    # Trades relating to this order
-    trades: [Trade]
+  # The status of an order, for example 'Active'
+  status: OrderStatus!
+
+  # The external reference (if available) for the order
+  reference: String!
+
+  # Trades relating to this order
+  trades: [Trade]
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market

@@ -188,7 +188,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 		Size:      1000,
 		Remaining: 1000,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 		Status:    types.Order_Active,
 	}
 
@@ -201,7 +201,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: 1,
+		CreatedAt: 1,
 		Status:    types.Order_Active,
 	}
 

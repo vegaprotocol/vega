@@ -58,14 +58,14 @@ type ComplexityRoot struct {
 	}
 
 	Candle struct {
-		Timestamp func(childComplexity int) int
+		Close     func(childComplexity int) int
 		Datetime  func(childComplexity int) int
 		High      func(childComplexity int) int
+		Interval  func(childComplexity int) int
 		Low       func(childComplexity int) int
 		Open      func(childComplexity int) int
-		Close     func(childComplexity int) int
+		Timestamp func(childComplexity int) int
 		Volume    func(childComplexity int) int
-		Interval  func(childComplexity int) int
 	}
 
 	ContinuousTrading struct {
@@ -82,16 +82,16 @@ type ComplexityRoot struct {
 	}
 
 	Future struct {
-		Maturity func(childComplexity int) int
 		Asset    func(childComplexity int) int
+		Maturity func(childComplexity int) int
 		Oracle   func(childComplexity int) int
 	}
 
 	Instrument struct {
-		ID       func(childComplexity int) int
 		Code     func(childComplexity int) int
-		Name     func(childComplexity int) int
+		ID       func(childComplexity int) int
 		Metadata func(childComplexity int) int
+		Name     func(childComplexity int) int
 		Product  func(childComplexity int) int
 	}
 
@@ -100,61 +100,63 @@ type ComplexityRoot struct {
 	}
 
 	Market struct {
-		ID                 func(childComplexity int) int
-		TradableInstrument func(childComplexity int) int
-		TradingMode        func(childComplexity int) int
-		DecimalPlaces      func(childComplexity int) int
-		Orders             func(childComplexity int, open *bool, skip *int, first *int, last *int) int
-		Trades             func(childComplexity int, skip *int, first *int, last *int) int
-		Depth              func(childComplexity int) int
 		Candles            func(childComplexity int, sinceTimestamp string, interval Interval) int
+		DecimalPlaces      func(childComplexity int) int
+		Depth              func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		Orders             func(childComplexity int, open *bool, skip *int, first *int, last *int) int
+		TradableInstrument func(childComplexity int) int
+		Trades             func(childComplexity int, skip *int, first *int, last *int) int
+		TradingMode        func(childComplexity int) int
 	}
 
 	MarketDepth struct {
-		Name      func(childComplexity int) int
 		Buy       func(childComplexity int) int
-		Sell      func(childComplexity int) int
 		LastTrade func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Sell      func(childComplexity int) int
 	}
 
 	Mutation struct {
-		OrderCreate func(childComplexity int, market string, party string, price string, size string, side Side, typeArg OrderType, expiration *string) int
 		OrderCancel func(childComplexity int, id string, market string, party string) int
+		OrderCreate func(childComplexity int, market string, party string, price string, size string, side Side, typeArg OrderType, expiration *string) int
 	}
 
 	Order struct {
-		Id        func(childComplexity int) int
-		Price     func(childComplexity int) int
-		Type      func(childComplexity int) int
-		Side      func(childComplexity int) int
-		Market    func(childComplexity int) int
-		Size      func(childComplexity int) int
-		Remaining func(childComplexity int) int
-		Party     func(childComplexity int) int
-		Timestamp func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
 		Datetime  func(childComplexity int) int
-		Status    func(childComplexity int) int
+		ExpiresAt func(childComplexity int) int
+		Id        func(childComplexity int) int
+		Market    func(childComplexity int) int
+		Party     func(childComplexity int) int
+		Price     func(childComplexity int) int
 		Reference func(childComplexity int) int
+		Remaining func(childComplexity int) int
+		Side      func(childComplexity int) int
+		Size      func(childComplexity int) int
+		Status    func(childComplexity int) int
+		Timestamp func(childComplexity int) int
 		Trades    func(childComplexity int) int
+		Type      func(childComplexity int) int
 	}
 
 	Party struct {
 		Name      func(childComplexity int) int
 		Orders    func(childComplexity int, open *bool, skip *int, first *int, last *int) int
-		Trades    func(childComplexity int, market *string, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
+		Trades    func(childComplexity int, market *string, skip *int, first *int, last *int) int
 	}
 
 	Position struct {
-		Market                    func(childComplexity int) int
-		RealisedVolume            func(childComplexity int) int
-		RealisedProfitValue       func(childComplexity int) int
-		RealisedProfitDirection   func(childComplexity int) int
-		UnrealisedVolume          func(childComplexity int) int
-		UnrealisedProfitValue     func(childComplexity int) int
-		UnrealisedProfitDirection func(childComplexity int) int
 		AverageEntryPrice         func(childComplexity int) int
+		Market                    func(childComplexity int) int
 		MinimumMargin             func(childComplexity int) int
+		RealisedProfitDirection   func(childComplexity int) int
+		RealisedProfitValue       func(childComplexity int) int
+		RealisedVolume            func(childComplexity int) int
+		UnrealisedProfitDirection func(childComplexity int) int
+		UnrealisedProfitValue     func(childComplexity int) int
+		UnrealisedVolume          func(childComplexity int) int
 	}
 
 	PreConsensus struct {
@@ -163,25 +165,25 @@ type ComplexityRoot struct {
 	}
 
 	PriceLevel struct {
+		CumulativeVolume func(childComplexity int) int
+		NumberOfOrders   func(childComplexity int) int
 		Price            func(childComplexity int) int
 		Volume           func(childComplexity int) int
-		NumberOfOrders   func(childComplexity int) int
-		CumulativeVolume func(childComplexity int) int
 	}
 
 	Query struct {
-		Markets func(childComplexity int, name *string) int
 		Market  func(childComplexity int, name string) int
+		Markets func(childComplexity int, name *string) int
 		Parties func(childComplexity int, name *string) int
 		Party   func(childComplexity int, name string) int
 	}
 
 	Subscription struct {
 		Candles     func(childComplexity int, market string, interval Interval) int
-		Orders      func(childComplexity int, market *string, party *string) int
-		Trades      func(childComplexity int, market *string, party *string) int
-		Positions   func(childComplexity int, party string) int
 		MarketDepth func(childComplexity int, market string) int
+		Orders      func(childComplexity int, market *string, party *string) int
+		Positions   func(childComplexity int, party string) int
+		Trades      func(childComplexity int, market *string, party *string) int
 	}
 
 	TradableInstrument struct {
@@ -190,15 +192,15 @@ type ComplexityRoot struct {
 	}
 
 	Trade struct {
+		Aggressor func(childComplexity int) int
+		Buyer     func(childComplexity int) int
+		Datetime  func(childComplexity int) int
 		Id        func(childComplexity int) int
 		Market    func(childComplexity int) int
-		Buyer     func(childComplexity int) int
-		Seller    func(childComplexity int) int
-		Aggressor func(childComplexity int) int
 		Price     func(childComplexity int) int
+		Seller    func(childComplexity int) int
 		Size      func(childComplexity int) int
 		Timestamp func(childComplexity int) int
-		Datetime  func(childComplexity int) int
 	}
 }
 
@@ -235,6 +237,8 @@ type OrderResolver interface {
 
 	Timestamp(ctx context.Context, obj *proto.Order) (string, error)
 	Datetime(ctx context.Context, obj *proto.Order) (string, error)
+	CreatedAt(ctx context.Context, obj *proto.Order) (string, error)
+	ExpiresAt(ctx context.Context, obj *proto.Order) (*string, error)
 	Status(ctx context.Context, obj *proto.Order) (OrderStatus, error)
 
 	Trades(ctx context.Context, obj *proto.Order) ([]*proto.Trade, error)
@@ -306,12 +310,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BuiltinFutures.HistoricVolatility(childComplexity), true
 
-	case "Candle.Timestamp":
-		if e.complexity.Candle.Timestamp == nil {
+	case "Candle.Close":
+		if e.complexity.Candle.Close == nil {
 			break
 		}
 
-		return e.complexity.Candle.Timestamp(childComplexity), true
+		return e.complexity.Candle.Close(childComplexity), true
 
 	case "Candle.Datetime":
 		if e.complexity.Candle.Datetime == nil {
@@ -327,6 +331,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Candle.High(childComplexity), true
 
+	case "Candle.Interval":
+		if e.complexity.Candle.Interval == nil {
+			break
+		}
+
+		return e.complexity.Candle.Interval(childComplexity), true
+
 	case "Candle.Low":
 		if e.complexity.Candle.Low == nil {
 			break
@@ -341,12 +352,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Candle.Open(childComplexity), true
 
-	case "Candle.Close":
-		if e.complexity.Candle.Close == nil {
+	case "Candle.Timestamp":
+		if e.complexity.Candle.Timestamp == nil {
 			break
 		}
 
-		return e.complexity.Candle.Close(childComplexity), true
+		return e.complexity.Candle.Timestamp(childComplexity), true
 
 	case "Candle.Volume":
 		if e.complexity.Candle.Volume == nil {
@@ -354,13 +365,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Candle.Volume(childComplexity), true
-
-	case "Candle.Interval":
-		if e.complexity.Candle.Interval == nil {
-			break
-		}
-
-		return e.complexity.Candle.Interval(childComplexity), true
 
 	case "ContinuousTrading.TickSize":
 		if e.complexity.ContinuousTrading.TickSize == nil {
@@ -390,19 +394,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EthereumEvent.Event(childComplexity), true
 
-	case "Future.Maturity":
-		if e.complexity.Future.Maturity == nil {
-			break
-		}
-
-		return e.complexity.Future.Maturity(childComplexity), true
-
 	case "Future.Asset":
 		if e.complexity.Future.Asset == nil {
 			break
 		}
 
 		return e.complexity.Future.Asset(childComplexity), true
+
+	case "Future.Maturity":
+		if e.complexity.Future.Maturity == nil {
+			break
+		}
+
+		return e.complexity.Future.Maturity(childComplexity), true
 
 	case "Future.Oracle":
 		if e.complexity.Future.Oracle == nil {
@@ -411,13 +415,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Future.Oracle(childComplexity), true
 
-	case "Instrument.ID":
-		if e.complexity.Instrument.ID == nil {
-			break
-		}
-
-		return e.complexity.Instrument.ID(childComplexity), true
-
 	case "Instrument.Code":
 		if e.complexity.Instrument.Code == nil {
 			break
@@ -425,12 +422,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Instrument.Code(childComplexity), true
 
-	case "Instrument.Name":
-		if e.complexity.Instrument.Name == nil {
+	case "Instrument.ID":
+		if e.complexity.Instrument.ID == nil {
 			break
 		}
 
-		return e.complexity.Instrument.Name(childComplexity), true
+		return e.complexity.Instrument.ID(childComplexity), true
 
 	case "Instrument.Metadata":
 		if e.complexity.Instrument.Metadata == nil {
@@ -438,6 +435,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Instrument.Metadata(childComplexity), true
+
+	case "Instrument.Name":
+		if e.complexity.Instrument.Name == nil {
+			break
+		}
+
+		return e.complexity.Instrument.Name(childComplexity), true
 
 	case "Instrument.Product":
 		if e.complexity.Instrument.Product == nil {
@@ -453,26 +457,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentMetadata.Tags(childComplexity), true
 
-	case "Market.ID":
-		if e.complexity.Market.ID == nil {
+	case "Market.Candles":
+		if e.complexity.Market.Candles == nil {
 			break
 		}
 
-		return e.complexity.Market.ID(childComplexity), true
-
-	case "Market.TradableInstrument":
-		if e.complexity.Market.TradableInstrument == nil {
-			break
+		args, err := ec.field_Market_candles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
 		}
 
-		return e.complexity.Market.TradableInstrument(childComplexity), true
-
-	case "Market.TradingMode":
-		if e.complexity.Market.TradingMode == nil {
-			break
-		}
-
-		return e.complexity.Market.TradingMode(childComplexity), true
+		return e.complexity.Market.Candles(childComplexity, args["sinceTimestamp"].(string), args["interval"].(Interval)), true
 
 	case "Market.DecimalPlaces":
 		if e.complexity.Market.DecimalPlaces == nil {
@@ -480,6 +475,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.DecimalPlaces(childComplexity), true
+
+	case "Market.Depth":
+		if e.complexity.Market.Depth == nil {
+			break
+		}
+
+		return e.complexity.Market.Depth(childComplexity), true
+
+	case "Market.ID":
+		if e.complexity.Market.ID == nil {
+			break
+		}
+
+		return e.complexity.Market.ID(childComplexity), true
 
 	case "Market.Orders":
 		if e.complexity.Market.Orders == nil {
@@ -493,6 +502,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.Orders(childComplexity, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
+	case "Market.TradableInstrument":
+		if e.complexity.Market.TradableInstrument == nil {
+			break
+		}
+
+		return e.complexity.Market.TradableInstrument(childComplexity), true
+
 	case "Market.Trades":
 		if e.complexity.Market.Trades == nil {
 			break
@@ -505,31 +521,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.Trades(childComplexity, args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
-	case "Market.Depth":
-		if e.complexity.Market.Depth == nil {
+	case "Market.TradingMode":
+		if e.complexity.Market.TradingMode == nil {
 			break
 		}
 
-		return e.complexity.Market.Depth(childComplexity), true
-
-	case "Market.Candles":
-		if e.complexity.Market.Candles == nil {
-			break
-		}
-
-		args, err := ec.field_Market_candles_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Market.Candles(childComplexity, args["sinceTimestamp"].(string), args["interval"].(Interval)), true
-
-	case "MarketDepth.Name":
-		if e.complexity.MarketDepth.Name == nil {
-			break
-		}
-
-		return e.complexity.MarketDepth.Name(childComplexity), true
+		return e.complexity.Market.TradingMode(childComplexity), true
 
 	case "MarketDepth.Buy":
 		if e.complexity.MarketDepth.Buy == nil {
@@ -538,13 +535,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketDepth.Buy(childComplexity), true
 
-	case "MarketDepth.Sell":
-		if e.complexity.MarketDepth.Sell == nil {
-			break
-		}
-
-		return e.complexity.MarketDepth.Sell(childComplexity), true
-
 	case "MarketDepth.LastTrade":
 		if e.complexity.MarketDepth.LastTrade == nil {
 			break
@@ -552,17 +542,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketDepth.LastTrade(childComplexity), true
 
-	case "Mutation.OrderCreate":
-		if e.complexity.Mutation.OrderCreate == nil {
+	case "MarketDepth.Name":
+		if e.complexity.MarketDepth.Name == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_orderCreate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
+		return e.complexity.MarketDepth.Name(childComplexity), true
+
+	case "MarketDepth.Sell":
+		if e.complexity.MarketDepth.Sell == nil {
+			break
 		}
 
-		return e.complexity.Mutation.OrderCreate(childComplexity, args["market"].(string), args["party"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string)), true
+		return e.complexity.MarketDepth.Sell(childComplexity), true
 
 	case "Mutation.OrderCancel":
 		if e.complexity.Mutation.OrderCancel == nil {
@@ -576,68 +568,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.OrderCancel(childComplexity, args["id"].(string), args["market"].(string), args["party"].(string)), true
 
-	case "Order.Id":
-		if e.complexity.Order.Id == nil {
+	case "Mutation.OrderCreate":
+		if e.complexity.Mutation.OrderCreate == nil {
 			break
 		}
 
-		return e.complexity.Order.Id(childComplexity), true
+		args, err := ec.field_Mutation_orderCreate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
 
-	case "Order.Price":
-		if e.complexity.Order.Price == nil {
+		return e.complexity.Mutation.OrderCreate(childComplexity, args["market"].(string), args["party"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string)), true
+
+	case "Order.CreatedAt":
+		if e.complexity.Order.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.Order.Price(childComplexity), true
-
-	case "Order.Type":
-		if e.complexity.Order.Type == nil {
-			break
-		}
-
-		return e.complexity.Order.Type(childComplexity), true
-
-	case "Order.Side":
-		if e.complexity.Order.Side == nil {
-			break
-		}
-
-		return e.complexity.Order.Side(childComplexity), true
-
-	case "Order.Market":
-		if e.complexity.Order.Market == nil {
-			break
-		}
-
-		return e.complexity.Order.Market(childComplexity), true
-
-	case "Order.Size":
-		if e.complexity.Order.Size == nil {
-			break
-		}
-
-		return e.complexity.Order.Size(childComplexity), true
-
-	case "Order.Remaining":
-		if e.complexity.Order.Remaining == nil {
-			break
-		}
-
-		return e.complexity.Order.Remaining(childComplexity), true
-
-	case "Order.Party":
-		if e.complexity.Order.Party == nil {
-			break
-		}
-
-		return e.complexity.Order.Party(childComplexity), true
-
-	case "Order.Timestamp":
-		if e.complexity.Order.Timestamp == nil {
-			break
-		}
-
-		return e.complexity.Order.Timestamp(childComplexity), true
+		return e.complexity.Order.CreatedAt(childComplexity), true
 
 	case "Order.Datetime":
 		if e.complexity.Order.Datetime == nil {
@@ -646,12 +594,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Datetime(childComplexity), true
 
-	case "Order.Status":
-		if e.complexity.Order.Status == nil {
+	case "Order.ExpiresAt":
+		if e.complexity.Order.ExpiresAt == nil {
 			break
 		}
 
-		return e.complexity.Order.Status(childComplexity), true
+		return e.complexity.Order.ExpiresAt(childComplexity), true
+
+	case "Order.Id":
+		if e.complexity.Order.Id == nil {
+			break
+		}
+
+		return e.complexity.Order.Id(childComplexity), true
+
+	case "Order.Market":
+		if e.complexity.Order.Market == nil {
+			break
+		}
+
+		return e.complexity.Order.Market(childComplexity), true
+
+	case "Order.Party":
+		if e.complexity.Order.Party == nil {
+			break
+		}
+
+		return e.complexity.Order.Party(childComplexity), true
+
+	case "Order.Price":
+		if e.complexity.Order.Price == nil {
+			break
+		}
+
+		return e.complexity.Order.Price(childComplexity), true
 
 	case "Order.Reference":
 		if e.complexity.Order.Reference == nil {
@@ -660,12 +636,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Reference(childComplexity), true
 
+	case "Order.Remaining":
+		if e.complexity.Order.Remaining == nil {
+			break
+		}
+
+		return e.complexity.Order.Remaining(childComplexity), true
+
+	case "Order.Side":
+		if e.complexity.Order.Side == nil {
+			break
+		}
+
+		return e.complexity.Order.Side(childComplexity), true
+
+	case "Order.Size":
+		if e.complexity.Order.Size == nil {
+			break
+		}
+
+		return e.complexity.Order.Size(childComplexity), true
+
+	case "Order.Status":
+		if e.complexity.Order.Status == nil {
+			break
+		}
+
+		return e.complexity.Order.Status(childComplexity), true
+
+	case "Order.Timestamp":
+		if e.complexity.Order.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.Order.Timestamp(childComplexity), true
+
 	case "Order.Trades":
 		if e.complexity.Order.Trades == nil {
 			break
 		}
 
 		return e.complexity.Order.Trades(childComplexity), true
+
+	case "Order.Type":
+		if e.complexity.Order.Type == nil {
+			break
+		}
+
+		return e.complexity.Order.Type(childComplexity), true
 
 	case "Party.Name":
 		if e.complexity.Party.Name == nil {
@@ -686,6 +704,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.Orders(childComplexity, args["open"].(*bool), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
+	case "Party.Positions":
+		if e.complexity.Party.Positions == nil {
+			break
+		}
+
+		return e.complexity.Party.Positions(childComplexity), true
+
 	case "Party.Trades":
 		if e.complexity.Party.Trades == nil {
 			break
@@ -698,12 +723,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.Trades(childComplexity, args["market"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
-	case "Party.Positions":
-		if e.complexity.Party.Positions == nil {
+	case "Position.AverageEntryPrice":
+		if e.complexity.Position.AverageEntryPrice == nil {
 			break
 		}
 
-		return e.complexity.Party.Positions(childComplexity), true
+		return e.complexity.Position.AverageEntryPrice(childComplexity), true
 
 	case "Position.Market":
 		if e.complexity.Position.Market == nil {
@@ -712,19 +737,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Position.Market(childComplexity), true
 
-	case "Position.RealisedVolume":
-		if e.complexity.Position.RealisedVolume == nil {
+	case "Position.MinimumMargin":
+		if e.complexity.Position.MinimumMargin == nil {
 			break
 		}
 
-		return e.complexity.Position.RealisedVolume(childComplexity), true
-
-	case "Position.RealisedProfitValue":
-		if e.complexity.Position.RealisedProfitValue == nil {
-			break
-		}
-
-		return e.complexity.Position.RealisedProfitValue(childComplexity), true
+		return e.complexity.Position.MinimumMargin(childComplexity), true
 
 	case "Position.RealisedProfitDirection":
 		if e.complexity.Position.RealisedProfitDirection == nil {
@@ -733,19 +751,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Position.RealisedProfitDirection(childComplexity), true
 
-	case "Position.UnrealisedVolume":
-		if e.complexity.Position.UnrealisedVolume == nil {
+	case "Position.RealisedProfitValue":
+		if e.complexity.Position.RealisedProfitValue == nil {
 			break
 		}
 
-		return e.complexity.Position.UnrealisedVolume(childComplexity), true
+		return e.complexity.Position.RealisedProfitValue(childComplexity), true
 
-	case "Position.UnrealisedProfitValue":
-		if e.complexity.Position.UnrealisedProfitValue == nil {
+	case "Position.RealisedVolume":
+		if e.complexity.Position.RealisedVolume == nil {
 			break
 		}
 
-		return e.complexity.Position.UnrealisedProfitValue(childComplexity), true
+		return e.complexity.Position.RealisedVolume(childComplexity), true
 
 	case "Position.UnrealisedProfitDirection":
 		if e.complexity.Position.UnrealisedProfitDirection == nil {
@@ -754,19 +772,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Position.UnrealisedProfitDirection(childComplexity), true
 
-	case "Position.AverageEntryPrice":
-		if e.complexity.Position.AverageEntryPrice == nil {
+	case "Position.UnrealisedProfitValue":
+		if e.complexity.Position.UnrealisedProfitValue == nil {
 			break
 		}
 
-		return e.complexity.Position.AverageEntryPrice(childComplexity), true
+		return e.complexity.Position.UnrealisedProfitValue(childComplexity), true
 
-	case "Position.MinimumMargin":
-		if e.complexity.Position.MinimumMargin == nil {
+	case "Position.UnrealisedVolume":
+		if e.complexity.Position.UnrealisedVolume == nil {
 			break
 		}
 
-		return e.complexity.Position.MinimumMargin(childComplexity), true
+		return e.complexity.Position.UnrealisedVolume(childComplexity), true
 
 	case "PreConsensus.Accepted":
 		if e.complexity.PreConsensus.Accepted == nil {
@@ -782,6 +800,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PreConsensus.Reference(childComplexity), true
 
+	case "PriceLevel.CumulativeVolume":
+		if e.complexity.PriceLevel.CumulativeVolume == nil {
+			break
+		}
+
+		return e.complexity.PriceLevel.CumulativeVolume(childComplexity), true
+
+	case "PriceLevel.NumberOfOrders":
+		if e.complexity.PriceLevel.NumberOfOrders == nil {
+			break
+		}
+
+		return e.complexity.PriceLevel.NumberOfOrders(childComplexity), true
+
 	case "PriceLevel.Price":
 		if e.complexity.PriceLevel.Price == nil {
 			break
@@ -796,19 +828,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PriceLevel.Volume(childComplexity), true
 
-	case "PriceLevel.NumberOfOrders":
-		if e.complexity.PriceLevel.NumberOfOrders == nil {
+	case "Query.Market":
+		if e.complexity.Query.Market == nil {
 			break
 		}
 
-		return e.complexity.PriceLevel.NumberOfOrders(childComplexity), true
-
-	case "PriceLevel.CumulativeVolume":
-		if e.complexity.PriceLevel.CumulativeVolume == nil {
-			break
+		args, err := ec.field_Query_market_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
 		}
 
-		return e.complexity.PriceLevel.CumulativeVolume(childComplexity), true
+		return e.complexity.Query.Market(childComplexity, args["name"].(string)), true
 
 	case "Query.Markets":
 		if e.complexity.Query.Markets == nil {
@@ -821,18 +851,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Markets(childComplexity, args["name"].(*string)), true
-
-	case "Query.Market":
-		if e.complexity.Query.Market == nil {
-			break
-		}
-
-		args, err := ec.field_Query_market_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Market(childComplexity, args["name"].(string)), true
 
 	case "Query.Parties":
 		if e.complexity.Query.Parties == nil {
@@ -870,6 +888,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.Candles(childComplexity, args["market"].(string), args["interval"].(Interval)), true
 
+	case "Subscription.MarketDepth":
+		if e.complexity.Subscription.MarketDepth == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_marketDepth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.MarketDepth(childComplexity, args["market"].(string)), true
+
 	case "Subscription.Orders":
 		if e.complexity.Subscription.Orders == nil {
 			break
@@ -881,18 +911,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.Orders(childComplexity, args["market"].(*string), args["party"].(*string)), true
-
-	case "Subscription.Trades":
-		if e.complexity.Subscription.Trades == nil {
-			break
-		}
-
-		args, err := ec.field_Subscription_trades_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Subscription.Trades(childComplexity, args["market"].(*string), args["party"].(*string)), true
 
 	case "Subscription.Positions":
 		if e.complexity.Subscription.Positions == nil {
@@ -906,17 +924,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.Positions(childComplexity, args["party"].(string)), true
 
-	case "Subscription.MarketDepth":
-		if e.complexity.Subscription.MarketDepth == nil {
+	case "Subscription.Trades":
+		if e.complexity.Subscription.Trades == nil {
 			break
 		}
 
-		args, err := ec.field_Subscription_marketDepth_args(context.TODO(), rawArgs)
+		args, err := ec.field_Subscription_trades_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Subscription.MarketDepth(childComplexity, args["market"].(string)), true
+		return e.complexity.Subscription.Trades(childComplexity, args["market"].(*string), args["party"].(*string)), true
 
 	case "TradableInstrument.Instrument":
 		if e.complexity.TradableInstrument.Instrument == nil {
@@ -932,6 +950,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TradableInstrument.RiskModel(childComplexity), true
 
+	case "Trade.Aggressor":
+		if e.complexity.Trade.Aggressor == nil {
+			break
+		}
+
+		return e.complexity.Trade.Aggressor(childComplexity), true
+
+	case "Trade.Buyer":
+		if e.complexity.Trade.Buyer == nil {
+			break
+		}
+
+		return e.complexity.Trade.Buyer(childComplexity), true
+
+	case "Trade.Datetime":
+		if e.complexity.Trade.Datetime == nil {
+			break
+		}
+
+		return e.complexity.Trade.Datetime(childComplexity), true
+
 	case "Trade.Id":
 		if e.complexity.Trade.Id == nil {
 			break
@@ -946,12 +985,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Market(childComplexity), true
 
-	case "Trade.Buyer":
-		if e.complexity.Trade.Buyer == nil {
+	case "Trade.Price":
+		if e.complexity.Trade.Price == nil {
 			break
 		}
 
-		return e.complexity.Trade.Buyer(childComplexity), true
+		return e.complexity.Trade.Price(childComplexity), true
 
 	case "Trade.Seller":
 		if e.complexity.Trade.Seller == nil {
@@ -959,20 +998,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Trade.Seller(childComplexity), true
-
-	case "Trade.Aggressor":
-		if e.complexity.Trade.Aggressor == nil {
-			break
-		}
-
-		return e.complexity.Trade.Aggressor(childComplexity), true
-
-	case "Trade.Price":
-		if e.complexity.Trade.Price == nil {
-			break
-		}
-
-		return e.complexity.Trade.Price(childComplexity), true
 
 	case "Trade.Size":
 		if e.complexity.Trade.Size == nil {
@@ -987,13 +1012,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Trade.Timestamp(childComplexity), true
-
-	case "Trade.Datetime":
-		if e.complexity.Trade.Datetime == nil {
-			break
-		}
-
-		return e.complexity.Trade.Datetime(childComplexity), true
 
 	}
 	return 0, false
@@ -1387,44 +1405,50 @@ type Position {
 # An order in Vega, if active it will be on the OrderBoook for the market
 type Order {
 
-    # Hash of the order data
-    id: ID!
+  # Hash of the order data
+  id: ID!
 
-    # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
-    price: String!
+  # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+  price: String!
 
-    # The type of order (determines how and if it executes, and whether it persists on the book)
-    type: OrderType!
+  # The type of order (determines how and if it executes, and whether it persists on the book)
+  type: OrderType!
 
-    # Whether the order is to buy or sell
-    side: Side!
+  # Whether the order is to buy or sell
+  side: Side!
 
-    # The market the order is trading on (probably stored internally as a hash of the market details)
-    market: Market!
+  # The market the order is trading on (probably stored internally as a hash of the market details)
+  market: Market!
 
-    # Total number of contracts that may be bought or sold (immutable) (uint64)
-    size: String!
+  # Total number of contracts that may be bought or sold (immutable) (uint64)
+  size: String!
 
-    # Number of contracts remaining of the total that have not yet been bought or sold (uint64)
-    remaining: String!
+  # Number of contracts remaining of the total that have not yet been bought or sold (uint64)
+  remaining: String!
 
-    # The trader who place the order (probably stored internally as the trader's public key)
-    party: String!
+  # The trader who place the order (probably stored internally as the trader's public key)
+  party: String!
 
-    # Unix epoch+nanoseconds for when the order was created
-    timestamp: String!
+  # Unix epoch+nanoseconds for when the order was created
+  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-    # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
-    datetime: String!
+  # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
+  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-    # The status of an order, for example 'Active'
-    status: OrderStatus!
+  # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
+  createdAt: String!
 
-    # The external reference (if available) for the order
-    reference: String!
+  # Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)
+  expiresAt: String
 
-    # Trades relating to this order
-    trades: [Trade]
+  # The status of an order, for example 'Active'
+  status: OrderStatus!
+
+  # The external reference (if available) for the order
+  reference: String!
+
+  # Trades relating to this order
+  trades: [Trade]
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
@@ -2084,9 +2108,10 @@ func (ec *executionContext) _BuiltinFutures_historicVolatility(ctx context.Conte
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "BuiltinFutures",
-		Field:  field,
-		Args:   nil,
+		Object:   "BuiltinFutures",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2110,9 +2135,10 @@ func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Candle",
-		Field:  field,
-		Args:   nil,
+		Object:   "Candle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2136,9 +2162,10 @@ func (ec *executionContext) _Candle_datetime(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Candle",
-		Field:  field,
-		Args:   nil,
+		Object:   "Candle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2162,9 +2189,10 @@ func (ec *executionContext) _Candle_high(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Candle",
-		Field:  field,
-		Args:   nil,
+		Object:   "Candle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2188,9 +2216,10 @@ func (ec *executionContext) _Candle_low(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Candle",
-		Field:  field,
-		Args:   nil,
+		Object:   "Candle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2214,9 +2243,10 @@ func (ec *executionContext) _Candle_open(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Candle",
-		Field:  field,
-		Args:   nil,
+		Object:   "Candle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2240,9 +2270,10 @@ func (ec *executionContext) _Candle_close(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Candle",
-		Field:  field,
-		Args:   nil,
+		Object:   "Candle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2266,9 +2297,10 @@ func (ec *executionContext) _Candle_volume(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Candle",
-		Field:  field,
-		Args:   nil,
+		Object:   "Candle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2292,9 +2324,10 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Candle",
-		Field:  field,
-		Args:   nil,
+		Object:   "Candle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2318,9 +2351,10 @@ func (ec *executionContext) _ContinuousTrading_tickSize(ctx context.Context, fie
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "ContinuousTrading",
-		Field:  field,
-		Args:   nil,
+		Object:   "ContinuousTrading",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2341,9 +2375,10 @@ func (ec *executionContext) _DiscreteTrading_duration(ctx context.Context, field
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "DiscreteTrading",
-		Field:  field,
-		Args:   nil,
+		Object:   "DiscreteTrading",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2364,9 +2399,10 @@ func (ec *executionContext) _EthereumEvent_contractId(ctx context.Context, field
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "EthereumEvent",
-		Field:  field,
-		Args:   nil,
+		Object:   "EthereumEvent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2390,9 +2426,10 @@ func (ec *executionContext) _EthereumEvent_event(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "EthereumEvent",
-		Field:  field,
-		Args:   nil,
+		Object:   "EthereumEvent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2416,9 +2453,10 @@ func (ec *executionContext) _Future_maturity(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Future",
-		Field:  field,
-		Args:   nil,
+		Object:   "Future",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2442,9 +2480,10 @@ func (ec *executionContext) _Future_asset(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Future",
-		Field:  field,
-		Args:   nil,
+		Object:   "Future",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2468,9 +2507,10 @@ func (ec *executionContext) _Future_oracle(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Future",
-		Field:  field,
-		Args:   nil,
+		Object:   "Future",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2494,9 +2534,10 @@ func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Instrument",
-		Field:  field,
-		Args:   nil,
+		Object:   "Instrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2520,9 +2561,10 @@ func (ec *executionContext) _Instrument_code(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Instrument",
-		Field:  field,
-		Args:   nil,
+		Object:   "Instrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2546,9 +2588,10 @@ func (ec *executionContext) _Instrument_name(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Instrument",
-		Field:  field,
-		Args:   nil,
+		Object:   "Instrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2572,9 +2615,10 @@ func (ec *executionContext) _Instrument_metadata(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Instrument",
-		Field:  field,
-		Args:   nil,
+		Object:   "Instrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2598,9 +2642,10 @@ func (ec *executionContext) _Instrument_product(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Instrument",
-		Field:  field,
-		Args:   nil,
+		Object:   "Instrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2624,9 +2669,10 @@ func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "InstrumentMetadata",
-		Field:  field,
-		Args:   nil,
+		Object:   "InstrumentMetadata",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2650,9 +2696,10 @@ func (ec *executionContext) _Market_id(ctx context.Context, field graphql.Collec
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Market",
-		Field:  field,
-		Args:   nil,
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2676,9 +2723,10 @@ func (ec *executionContext) _Market_tradableInstrument(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Market",
-		Field:  field,
-		Args:   nil,
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2702,9 +2750,10 @@ func (ec *executionContext) _Market_tradingMode(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Market",
-		Field:  field,
-		Args:   nil,
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2728,9 +2777,10 @@ func (ec *executionContext) _Market_decimalPlaces(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Market",
-		Field:  field,
-		Args:   nil,
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2754,9 +2804,10 @@ func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Market",
-		Field:  field,
-		Args:   nil,
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -2784,9 +2835,10 @@ func (ec *executionContext) _Market_trades(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Market",
-		Field:  field,
-		Args:   nil,
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -2814,9 +2866,10 @@ func (ec *executionContext) _Market_depth(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Market",
-		Field:  field,
-		Args:   nil,
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2840,9 +2893,10 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Market",
-		Field:  field,
-		Args:   nil,
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -2870,9 +2924,10 @@ func (ec *executionContext) _MarketDepth_name(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "MarketDepth",
-		Field:  field,
-		Args:   nil,
+		Object:   "MarketDepth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2896,9 +2951,10 @@ func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "MarketDepth",
-		Field:  field,
-		Args:   nil,
+		Object:   "MarketDepth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2919,9 +2975,10 @@ func (ec *executionContext) _MarketDepth_sell(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "MarketDepth",
-		Field:  field,
-		Args:   nil,
+		Object:   "MarketDepth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2942,9 +2999,10 @@ func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field gr
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "MarketDepth",
-		Field:  field,
-		Args:   nil,
+		Object:   "MarketDepth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -2965,9 +3023,10 @@ func (ec *executionContext) _Mutation_orderCreate(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Mutation",
-		Field:  field,
-		Args:   nil,
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -2998,9 +3057,10 @@ func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Mutation",
-		Field:  field,
-		Args:   nil,
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -3031,9 +3091,10 @@ func (ec *executionContext) _Order_id(ctx context.Context, field graphql.Collect
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3057,9 +3118,10 @@ func (ec *executionContext) _Order_price(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3083,9 +3145,10 @@ func (ec *executionContext) _Order_type(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3109,9 +3172,10 @@ func (ec *executionContext) _Order_side(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3135,9 +3199,10 @@ func (ec *executionContext) _Order_market(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3161,9 +3226,10 @@ func (ec *executionContext) _Order_size(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3187,9 +3253,10 @@ func (ec *executionContext) _Order_remaining(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3213,9 +3280,10 @@ func (ec *executionContext) _Order_party(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3239,9 +3307,10 @@ func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3265,9 +3334,10 @@ func (ec *executionContext) _Order_datetime(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3287,13 +3357,65 @@ func (ec *executionContext) _Order_datetime(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Order_createdAt(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().CreatedAt(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_expiresAt(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().ExpiresAt(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Order_status(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3317,9 +3439,10 @@ func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3343,9 +3466,10 @@ func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Order",
-		Field:  field,
-		Args:   nil,
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3366,9 +3490,10 @@ func (ec *executionContext) _Party_name(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Party",
-		Field:  field,
-		Args:   nil,
+		Object:   "Party",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3392,9 +3517,10 @@ func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Party",
-		Field:  field,
-		Args:   nil,
+		Object:   "Party",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -3422,9 +3548,10 @@ func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Party",
-		Field:  field,
-		Args:   nil,
+		Object:   "Party",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -3452,9 +3579,10 @@ func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Party",
-		Field:  field,
-		Args:   nil,
+		Object:   "Party",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3475,9 +3603,10 @@ func (ec *executionContext) _Position_market(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Position",
-		Field:  field,
-		Args:   nil,
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3501,9 +3630,10 @@ func (ec *executionContext) _Position_realisedVolume(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Position",
-		Field:  field,
-		Args:   nil,
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3527,9 +3657,10 @@ func (ec *executionContext) _Position_realisedProfitValue(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Position",
-		Field:  field,
-		Args:   nil,
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3553,9 +3684,10 @@ func (ec *executionContext) _Position_realisedProfitDirection(ctx context.Contex
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Position",
-		Field:  field,
-		Args:   nil,
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3579,9 +3711,10 @@ func (ec *executionContext) _Position_unrealisedVolume(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Position",
-		Field:  field,
-		Args:   nil,
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3605,9 +3738,10 @@ func (ec *executionContext) _Position_unrealisedProfitValue(ctx context.Context,
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Position",
-		Field:  field,
-		Args:   nil,
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3631,9 +3765,10 @@ func (ec *executionContext) _Position_unrealisedProfitDirection(ctx context.Cont
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Position",
-		Field:  field,
-		Args:   nil,
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3657,9 +3792,10 @@ func (ec *executionContext) _Position_averageEntryPrice(ctx context.Context, fie
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Position",
-		Field:  field,
-		Args:   nil,
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3683,9 +3819,10 @@ func (ec *executionContext) _Position_minimumMargin(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Position",
-		Field:  field,
-		Args:   nil,
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3709,9 +3846,10 @@ func (ec *executionContext) _PreConsensus_accepted(ctx context.Context, field gr
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "PreConsensus",
-		Field:  field,
-		Args:   nil,
+		Object:   "PreConsensus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3735,9 +3873,10 @@ func (ec *executionContext) _PreConsensus_reference(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "PreConsensus",
-		Field:  field,
-		Args:   nil,
+		Object:   "PreConsensus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3761,9 +3900,10 @@ func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "PriceLevel",
-		Field:  field,
-		Args:   nil,
+		Object:   "PriceLevel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3787,9 +3927,10 @@ func (ec *executionContext) _PriceLevel_volume(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "PriceLevel",
-		Field:  field,
-		Args:   nil,
+		Object:   "PriceLevel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3813,9 +3954,10 @@ func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "PriceLevel",
-		Field:  field,
-		Args:   nil,
+		Object:   "PriceLevel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3839,9 +3981,10 @@ func (ec *executionContext) _PriceLevel_cumulativeVolume(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "PriceLevel",
-		Field:  field,
-		Args:   nil,
+		Object:   "PriceLevel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -3865,9 +4008,10 @@ func (ec *executionContext) _Query_markets(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Query",
-		Field:  field,
-		Args:   nil,
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -3895,9 +4039,10 @@ func (ec *executionContext) _Query_market(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Query",
-		Field:  field,
-		Args:   nil,
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -3925,9 +4070,10 @@ func (ec *executionContext) _Query_parties(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Query",
-		Field:  field,
-		Args:   nil,
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -3955,9 +4101,10 @@ func (ec *executionContext) _Query_party(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Query",
-		Field:  field,
-		Args:   nil,
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -3985,9 +4132,10 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Query",
-		Field:  field,
-		Args:   nil,
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -4015,9 +4163,10 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Query",
-		Field:  field,
-		Args:   nil,
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4208,9 +4357,10 @@ func (ec *executionContext) _TradableInstrument_instrument(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "TradableInstrument",
-		Field:  field,
-		Args:   nil,
+		Object:   "TradableInstrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4234,9 +4384,10 @@ func (ec *executionContext) _TradableInstrument_riskModel(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "TradableInstrument",
-		Field:  field,
-		Args:   nil,
+		Object:   "TradableInstrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4260,9 +4411,10 @@ func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.Collect
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Trade",
-		Field:  field,
-		Args:   nil,
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4286,9 +4438,10 @@ func (ec *executionContext) _Trade_market(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Trade",
-		Field:  field,
-		Args:   nil,
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4312,9 +4465,10 @@ func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Trade",
-		Field:  field,
-		Args:   nil,
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4338,9 +4492,10 @@ func (ec *executionContext) _Trade_seller(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Trade",
-		Field:  field,
-		Args:   nil,
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4364,9 +4519,10 @@ func (ec *executionContext) _Trade_aggressor(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Trade",
-		Field:  field,
-		Args:   nil,
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4390,9 +4546,10 @@ func (ec *executionContext) _Trade_price(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Trade",
-		Field:  field,
-		Args:   nil,
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4416,9 +4573,10 @@ func (ec *executionContext) _Trade_size(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Trade",
-		Field:  field,
-		Args:   nil,
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4442,9 +4600,10 @@ func (ec *executionContext) _Trade_timestamp(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Trade",
-		Field:  field,
-		Args:   nil,
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4468,9 +4627,10 @@ func (ec *executionContext) _Trade_datetime(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Trade",
-		Field:  field,
-		Args:   nil,
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4494,9 +4654,10 @@ func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Directive",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Directive",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4520,9 +4681,10 @@ func (ec *executionContext) ___Directive_description(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Directive",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Directive",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4543,9 +4705,10 @@ func (ec *executionContext) ___Directive_locations(ctx context.Context, field gr
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Directive",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Directive",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4569,9 +4732,10 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Directive",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Directive",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4595,9 +4759,10 @@ func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__EnumValue",
-		Field:  field,
-		Args:   nil,
+		Object:   "__EnumValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4621,9 +4786,10 @@ func (ec *executionContext) ___EnumValue_description(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__EnumValue",
-		Field:  field,
-		Args:   nil,
+		Object:   "__EnumValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4644,9 +4810,10 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__EnumValue",
-		Field:  field,
-		Args:   nil,
+		Object:   "__EnumValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4670,9 +4837,10 @@ func (ec *executionContext) ___EnumValue_deprecationReason(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__EnumValue",
-		Field:  field,
-		Args:   nil,
+		Object:   "__EnumValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4693,9 +4861,10 @@ func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Field",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Field",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4719,9 +4888,10 @@ func (ec *executionContext) ___Field_description(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Field",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Field",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4742,9 +4912,10 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Field",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Field",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4768,9 +4939,10 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Field",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Field",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4794,9 +4966,10 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Field",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Field",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4820,9 +4993,10 @@ func (ec *executionContext) ___Field_deprecationReason(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Field",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Field",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4843,9 +5017,10 @@ func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__InputValue",
-		Field:  field,
-		Args:   nil,
+		Object:   "__InputValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4869,9 +5044,10 @@ func (ec *executionContext) ___InputValue_description(ctx context.Context, field
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__InputValue",
-		Field:  field,
-		Args:   nil,
+		Object:   "__InputValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4892,9 +5068,10 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__InputValue",
-		Field:  field,
-		Args:   nil,
+		Object:   "__InputValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4918,9 +5095,10 @@ func (ec *executionContext) ___InputValue_defaultValue(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__InputValue",
-		Field:  field,
-		Args:   nil,
+		Object:   "__InputValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4941,9 +5119,10 @@ func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Schema",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Schema",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4967,9 +5146,10 @@ func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Schema",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Schema",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -4993,9 +5173,10 @@ func (ec *executionContext) ___Schema_mutationType(ctx context.Context, field gr
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Schema",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Schema",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -5016,9 +5197,10 @@ func (ec *executionContext) ___Schema_subscriptionType(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Schema",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Schema",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -5039,9 +5221,10 @@ func (ec *executionContext) ___Schema_directives(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Schema",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Schema",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -5065,9 +5248,10 @@ func (ec *executionContext) ___Type_kind(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Type",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -5091,9 +5275,10 @@ func (ec *executionContext) ___Type_name(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Type",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -5114,9 +5299,10 @@ func (ec *executionContext) ___Type_description(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Type",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -5137,9 +5323,10 @@ func (ec *executionContext) ___Type_fields(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Type",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -5167,9 +5354,10 @@ func (ec *executionContext) ___Type_interfaces(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Type",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -5190,9 +5378,10 @@ func (ec *executionContext) ___Type_possibleTypes(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Type",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -5213,9 +5402,10 @@ func (ec *executionContext) ___Type_enumValues(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Type",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
@@ -5243,9 +5433,10 @@ func (ec *executionContext) ___Type_inputFields(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Type",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -5266,9 +5457,10 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "__Type",
-		Field:  field,
-		Args:   nil,
+		Object:   "__Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
@@ -6348,6 +6540,31 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				if res == graphql.Null {
 					invalid = true
 				}
+				return res
+			})
+		case "createdAt":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_createdAt(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
+		case "expiresAt":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_expiresAt(ctx, field, obj)
 				return res
 			})
 		case "status":
@@ -7697,6 +7914,9 @@ func (ec *executionContext) marshalOCandle2codeᚗvegaprotocolᚗioᚋvegaᚋpro
 }
 
 func (ec *executionContext) marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐCandle(ctx context.Context, sel ast.SelectionSet, v []*proto.Candle) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -7791,6 +8011,9 @@ func (ec *executionContext) marshalOMarket2codeᚗvegaprotocolᚗioᚋvegaᚋint
 }
 
 func (ec *executionContext) marshalOMarket2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v []Market) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -7835,6 +8058,9 @@ func (ec *executionContext) marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 }
 
 func (ec *executionContext) marshalOOrder2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx context.Context, sel ast.SelectionSet, v []proto.Order) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -7944,6 +8170,9 @@ func (ec *executionContext) marshalOParty2codeᚗvegaprotocolᚗioᚋvegaᚋinte
 }
 
 func (ec *executionContext) marshalOParty2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐParty(ctx context.Context, sel ast.SelectionSet, v []Party) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -7988,6 +8217,9 @@ func (ec *executionContext) marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋi
 }
 
 func (ec *executionContext) marshalOPosition2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketPosition(ctx context.Context, sel ast.SelectionSet, v []proto.MarketPosition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8025,6 +8257,9 @@ func (ec *executionContext) marshalOPosition2ᚕcodeᚗvegaprotocolᚗioᚋvega�
 }
 
 func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevel(ctx context.Context, sel ast.SelectionSet, v []*proto.PriceLevel) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8113,6 +8348,9 @@ func (ec *executionContext) marshalOTrade2codeᚗvegaprotocolᚗioᚋvegaᚋprot
 }
 
 func (ec *executionContext) marshalOTrade2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx context.Context, sel ast.SelectionSet, v []proto.Trade) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8150,6 +8388,9 @@ func (ec *executionContext) marshalOTrade2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋp
 }
 
 func (ec *executionContext) marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx context.Context, sel ast.SelectionSet, v []*proto.Trade) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8214,6 +8455,9 @@ func (ec *executionContext) unmarshalOTradeFilter2ᚕcodeᚗvegaprotocolᚗioᚋ
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8251,6 +8495,9 @@ func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgq
 }
 
 func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx context.Context, sel ast.SelectionSet, v []introspection.Field) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8288,6 +8535,9 @@ func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋ99designsᚋgqlgen
 }
 
 func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx context.Context, sel ast.SelectionSet, v []introspection.InputValue) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -8340,6 +8590,9 @@ func (ec *executionContext) marshalO__Type2githubᚗcomᚋ99designsᚋgqlgenᚋg
 }
 
 func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx context.Context, sel ast.SelectionSet, v []introspection.Type) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1

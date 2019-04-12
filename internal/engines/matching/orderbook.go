@@ -116,8 +116,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		return nil, err
 	}
 
-	if order.Timestamp > b.latestTimestamp {
-		b.latestTimestamp = order.Timestamp
+	if order.CreatedAt > b.latestTimestamp {
+		b.latestTimestamp = order.CreatedAt
 	}
 
 	if b.LogPriceLevelsDebug {
@@ -191,7 +191,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 
 	// linear scan of our expiring orders, prune any that have expired
 	for _, or := range b.expiringOrders {
-		if or.ExpirationTimestamp <= expirationTimestamp {
+		if or.ExpiresAt <= expirationTimestamp {
 			b.DeleteOrder(&or)              // order is removed from the book
 			or.Status = types.Order_Expired // order is marked as expired for storage
 			expiredOrders = append(expiredOrders, or)

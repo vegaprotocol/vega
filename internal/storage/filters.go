@@ -122,7 +122,7 @@ func applyOrderFilters(order *types.Order, queryFilters *filtering.OrderQueryFil
 		}
 	}
 	if queryFilters.TimestampFilter != nil {
-		ok = queryFilters.TimestampFilter.ApplyFilters(order.Timestamp)
+		ok = queryFilters.TimestampFilter.ApplyFilters(order.CreatedAt)
 		if ok {
 			count++
 		}
