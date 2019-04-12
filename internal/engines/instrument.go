@@ -3,6 +3,7 @@ package engines
 import (
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/products"
 	"code.vegaprotocol.io/vega/internal/riskmodels"
 	types "code.vegaprotocol.io/vega/proto"
@@ -27,13 +28,13 @@ type TradableInstrument struct {
 	RiskModel  riskmodels.Model
 }
 
-func NewTradableInstrument(pti *types.TradableInstrument) (*TradableInstrument, error) {
+func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (*TradableInstrument, error) {
 	instrument, err := NewInstrument(pti.Instrument)
 	if err != nil {
 		return nil, err
 	}
 
-	riskmodel, err := riskmodels.New(pti.RiskModel)
+	riskmodel, err := riskmodels.New(log, pti.RiskModel)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instanciate risk model")
 	}
