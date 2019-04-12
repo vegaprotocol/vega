@@ -44,7 +44,6 @@ type CalculateRiskFactorsResponse struct {
 }
 
 func newExternal(log *logging.Logger, pe *types.ExternalRiskModel) (*External, error) {
-	log.Info("NEW EXTERNAL SHITE")
 	tr := &http.Transport{
 		Dial: func(proto, addr string) (conn net.Conn, err error) {
 			return net.Dial("unix", pe.Socket)
@@ -108,7 +107,6 @@ func (e *External) setup() error {
 }
 
 func (e *External) CalculationInterval() time.Duration {
-	e.log.Info("CALCULATION INTERVAL SHITE")
 	if !e.getIsSetup() {
 		if err := e.setup(); err != nil {
 			e.log.Error(
@@ -164,7 +162,6 @@ func (e *External) CalculationInterval() time.Duration {
 
 func (e *External) CalculateRiskFactors(
 	current *types.RiskResult) (bool, *types.RiskResult) {
-	e.log.Info("CALCULATE RISK FACTORS SHITE")
 	if !e.getIsSetup() {
 		if err := e.setup(); err != nil {
 			e.log.Error(
