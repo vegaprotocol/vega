@@ -74,7 +74,7 @@ func NewMarket(
 	parties PartyStore,
 	trades TradeStore,
 ) (*Market, error) {
-	tradableInstrument, err := NewTradableInstrument(marketcfg.TradableInstrument)
+	tradableInstrument, err := NewTradableInstrument(cfg.log, marketcfg.TradableInstrument)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to intanciate a new market")
 	}

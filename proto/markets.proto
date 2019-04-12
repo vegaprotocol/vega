@@ -58,7 +58,8 @@ message BuiltinFutures {
 
 message ExternalRiskModel {
   string name = 1;
-  map<string, string> config = 2;
+  string socket = 2;
+  map<string, string> config = 3;
 }
 
 // here ends risk models

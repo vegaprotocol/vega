@@ -16,7 +16,6 @@ type Engine struct {
 
 	model   riskmodels.Model
 	factors *types.RiskResult
-	models  riskmodels.Model
 	waiting bool
 }
 
@@ -28,7 +27,7 @@ func New(
 	return &Engine{
 		Config:  config,
 		factors: initialFactors,
-		models:  model,
+		model:   model,
 		waiting: false,
 	}
 }
