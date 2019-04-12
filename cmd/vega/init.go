@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal/tomlcommentator"
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/BurntSushi/toml"
@@ -128,13 +129,31 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	if _, err := f.WriteString(buf.String()); err != nil {
+	if _, err := f.WriteString(addTomlComments(buf.String())); err != nil {
 		return err
 	}
 
 	ic.Log.Info("configuration generated successfully", zap.String("path", ic.rootPath))
 
 	return nil
+}
+
+func addTomlComments(toml string) string {
+	c := &tomlcommentator.Comments{
+		Header: []string{
+			"This is a TOML config file.",
+			"For more information, see https://github.com/toml-lang/toml",
+		},
+		Items: []*tomlcommentator.CommentItem{
+			&tomlcommentator.CommentItem{
+				Regex: `\[Logging.Custom\]$`,
+				CommentPara: []string{
+					"This section takes effect only when Environment is set to \"custom\".",
+				},
+			},
+		},
+	}
+	return tomlcommentator.Commentate(toml, c)
 }
 
 func createDefaultMarkets(confpath string) error {
