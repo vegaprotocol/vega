@@ -37,6 +37,8 @@ func (s *Svc) SetTimeNow(t time.Time) {
 	if s.previousTimestamp.Unix() < 1 {
 		s.previousTimestamp = s.currentTimestamp
 	}
+
+	s.notify(t)
 }
 
 func (s *Svc) GetTimeNow() (time.Time, error) {

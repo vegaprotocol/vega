@@ -2,6 +2,7 @@ package risk
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/engines/position"
@@ -16,8 +17,8 @@ type Engine struct {
 
 	model   riskmodels.Model
 	factors *types.RiskResult
-	models  riskmodels.Model
 	waiting bool
+	mu      sync.Mutex // protect against factors beeing update while beein iterated over
 }
 
 func New(
@@ -28,7 +29,7 @@ func New(
 	return &Engine{
 		Config:  config,
 		factors: initialFactors,
-		models:  model,
+		model:   model,
 		waiting: false,
 	}
 }
@@ -59,6 +60,7 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []position.MarketP
 	// todo(cdm): fix mark price overflow problems
 	// todo(cdm): return action to possibly return action to update margin elsewhere rather than direct
 
+	re.mu.Lock()
 	for _, pos := range positions {
 		notional := int64(markPrice) * pos.Size()
 		for assetId, factor := range re.factors.RiskFactors {
@@ -74,10 +76,13 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []position.MarketP
 			}
 		}
 	}
+	re.mu.Unlock()
 }
 
 func (re *Engine) UpdateFactors(result *types.RiskResult) {
+	re.mu.Lock()
 	re.factors = result
+	re.mu.Unlock()
 }
 
 func abs(x int64) int64 {

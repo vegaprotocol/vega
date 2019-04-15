@@ -13,16 +13,29 @@ type MarketPosition struct {
 	margins map[string]uint64
 	partyID string
 	price   uint64
+	mu      sync.Mutex
+}
+
+func (m MarketPosition) String() string {
+	return fmt.Sprintf("size: %v, margins: %v, partyID: %v", m.size, m.margins, m.partyID)
 }
 
 // Margins returns a copy of the current margins map
 func (m *MarketPosition) Margins() map[string]uint64 {
-	return m.margins
+	m.mu.Lock()
+	out := make(map[string]uint64, 0)
+	for k, v := range m.margins {
+		out[k] = v
+	}
+	m.mu.Unlock()
+	return out
 }
 
 // UpdateMargin updates the margin value for a single asset
 func (m *MarketPosition) UpdateMargin(assetID string, margin uint64) {
+	m.mu.Lock()
 	m.margins[assetID] = margin
+	m.mu.Unlock()
 }
 
 func (m MarketPosition) Size() int64 {

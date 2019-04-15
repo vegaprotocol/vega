@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/engines/matching"
 	"code.vegaprotocol.io/vega/internal/engines/position"
 	"code.vegaprotocol.io/vega/internal/engines/risk"
@@ -31,9 +32,8 @@ type TradeStore interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution CandleStore
 type CandleStore interface {
-	AddTradeToBuffer(trade types.Trade) error
-	GenerateCandlesFromBuffer(market string) error
-	StartNewBuffer(marketId string, at time.Time) error
+	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
+	FetchMostRecentCandle(marketID string, interval types.Interval, descending bool) (*types.Candle, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution PartyStore
@@ -62,6 +62,9 @@ type Market struct {
 	orders  OrderStore
 	parties PartyStore
 	trades  TradeStore
+
+	// buffers
+	candlesBuf *buffer.Candle
 }
 
 // NewMarket create a new market using the marketcfg specification
@@ -73,8 +76,9 @@ func NewMarket(
 	orders OrderStore,
 	parties PartyStore,
 	trades TradeStore,
+	now time.Time,
 ) (*Market, error) {
-	tradableInstrument, err := NewTradableInstrument(marketcfg.TradableInstrument)
+	tradableInstrument, err := NewTradableInstrument(cfg.log, marketcfg.TradableInstrument)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to intanciate a new market")
 	}
@@ -86,6 +90,9 @@ func NewMarket(
 
 	riskengine := risk.New(cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
 	positionengine := position.New(cfg.Position)
+
+	// create buffers
+	candlesBuf := buffer.NewCandle(marketcfg.Id, candles, now)
 
 	mkt := &Market{
 		Config:             cfg,
@@ -100,6 +107,7 @@ func NewMarket(
 		orders:             orders,
 		parties:            parties,
 		trades:             trades,
+		candlesBuf:         candlesBuf,
 	}
 
 	return mkt, nil
@@ -126,6 +134,19 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 
 	m.log.Debug("Calculated risk factors and updated positions (maybe)",
 		logging.String("market-id", m.marketcfg.Id))
+
+	// generated / store the buffered candles
+	previousCandlesBuf, err := m.candlesBuf.Start(t)
+	if err != nil {
+		m.log.Error("unable to get candles buf", logging.Error(err))
+	}
+
+	// get the buffered candles from the buffer
+
+	err = m.candles.GenerateCandlesFromBuffer(m.GetID(), previousCandlesBuf)
+	if err != nil {
+		m.log.Error("Failed to generate candles from buffer for market", logging.String("market-id", m.GetID()))
+	}
 
 	if t.After(m.closingAt) {
 		// call settlement and stuff
@@ -200,7 +221,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			}
 
 			// Save to trade buffer for generating candles etc
-			err := m.candles.AddTradeToBuffer(*trade)
+			err := m.candlesBuf.AddTrade(*trade)
 			if err != nil {
 				m.log.Error("Failure adding trade to candle buffer in execution engine (submit)",
 					logging.Trade(*trade),

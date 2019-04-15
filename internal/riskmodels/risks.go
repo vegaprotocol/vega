@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -17,7 +18,7 @@ type Model interface {
 	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)
 }
 
-func New(prm interface{}) (Model, error) {
+func New(log *logging.Logger, prm interface{}) (Model, error) {
 	if prm == nil {
 		return nil, ErrNilRiskModel
 	}
@@ -26,7 +27,7 @@ func New(prm interface{}) (Model, error) {
 	case *types.TradableInstrument_BuiltinFutures:
 		return newBuiltinFutures(rm.BuiltinFutures)
 	case *types.TradableInstrument_ExternalRiskModel:
-		return newExternal(rm.ExternalRiskModel)
+		return newExternal(log, rm.ExternalRiskModel)
 	default:
 		return nil, ErrUnimplementedRiskModel
 	}
