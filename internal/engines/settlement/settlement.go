@@ -75,7 +75,7 @@ func (e *Engine) settleBuy() []*types.SettlePosition {
 		netPrice := int64(bpos.price) / bpos.size
 		r = append(r, &types.SettlePosition{
 			Owner: party,
-			Size:  uint64(bpos.Size),
+			Size:  uint64(bpos.size),
 			Price: netPrice,
 		})
 		e.log.Debugf("Settling %d buys at average price: %d", bpos.size, netPrice)
@@ -90,7 +90,7 @@ func (e *Engine) settleSell() []*types.SettlePosition {
 		netPrice := int64(spos.price) / (-spos.size)
 		r = append(r, &types.SettlePosition{
 			Owner: party,
-			Size:  uint64(-spos.Size),
+			Size:  uint64(-spos.size),
 			Price: netPrice,
 		})
 		e.log.Debugf("Settling %d sales at average price: %d", spos.size, netPrice)
