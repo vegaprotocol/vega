@@ -37,9 +37,8 @@ type TradeStore interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution CandleStore
 type CandleStore interface {
-	AddTradeToBuffer(trade types.Trade) error
-	GenerateCandlesFromBuffer(market string) error
-	StartNewBuffer(marketId string, at time.Time) error
+	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
+	FetchMostRecentCandle(marketID string, interval types.Interval, descending bool) (*types.Candle, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution MarketStore
@@ -127,9 +126,10 @@ func (e *Engine) SubmitMarket(mkt *types.Market) error {
 		return ErrMarketAlreadyExist
 	}
 
+	now, _ := e.time.GetTimeNow()
 	var err error
 	e.markets[mkt.Id], err = engines.NewMarket(
-		e.Config.Engines, mkt, e.candleStore, e.orderStore, e.partyStore, e.tradeStore)
+		e.Config.Engines, mkt, e.candleStore, e.orderStore, e.partyStore, e.tradeStore, now)
 	if err != nil {
 		e.log.Panic("Failed to instanciate market market",
 			logging.String("market-id", mkt.Id),
@@ -195,6 +195,7 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	return mkt.CancelOrder(order)
 }
 
+/*
 func (e *Engine) startCandleBuffer() error {
 
 	// Load current vega-time from the blockchain (via time service)
@@ -218,6 +219,7 @@ func (e *Engine) startCandleBuffer() error {
 
 	return nil
 }
+*/
 
 func (e *Engine) onChainTimeUpdate(t time.Time) {
 	e.log.Debug("updating engine on new time update")
@@ -262,10 +264,10 @@ func (e *Engine) removeExpiredOrders(t time.Time) error {
 	// We need to call start new candle buffer for every block with the current implementation.
 	// This ensures that empty candles are created for a timestamp and can fill up. We will
 	// hopefully revisit candles in the future and improve the design.
-	err := e.startCandleBuffer()
-	if err != nil {
-		return err
-	}
+	// err := e.startCandleBuffer()
+	// if err != nil {
+	// return err
+	// }
 
 	return nil
 }
@@ -276,11 +278,13 @@ func (e *Engine) Generate() error {
 
 	for _, mkt := range e.markets {
 		// We need a buffer for all current markets on VEGA
-		err := e.candleStore.GenerateCandlesFromBuffer(mkt.GetID())
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to generate candles from buffer for market %s", mkt.GetID()))
-		}
-		err = e.orderStore.Commit()
+		/*
+			err := e.candleStore.GenerateCandlesFromBuffer(mkt.GetID())
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Failed to generate candles from buffer for market %s", mkt.GetID()))
+			}
+		*/
+		err := e.orderStore.Commit()
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Failed to commit orders for market %s", mkt.GetID()))
 		}

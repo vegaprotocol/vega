@@ -8,7 +8,6 @@ import (
 	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
-	time "time"
 )
 
 // MockCandleStore is a mock of CandleStore interface
@@ -34,44 +33,31 @@ func (m *MockCandleStore) EXPECT() *MockCandleStoreMockRecorder {
 	return m.recorder
 }
 
-// AddTradeToBuffer mocks base method
-func (m *MockCandleStore) AddTradeToBuffer(arg0 proto.Trade) error {
+// FetchMostRecentCandle mocks base method
+func (m *MockCandleStore) FetchMostRecentCandle(arg0 string, arg1 proto.Interval, arg2 bool) (*proto.Candle, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddTradeToBuffer", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "FetchMostRecentCandle", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*proto.Candle)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// AddTradeToBuffer indicates an expected call of AddTradeToBuffer
-func (mr *MockCandleStoreMockRecorder) AddTradeToBuffer(arg0 interface{}) *gomock.Call {
+// FetchMostRecentCandle indicates an expected call of FetchMostRecentCandle
+func (mr *MockCandleStoreMockRecorder) FetchMostRecentCandle(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTradeToBuffer", reflect.TypeOf((*MockCandleStore)(nil).AddTradeToBuffer), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchMostRecentCandle", reflect.TypeOf((*MockCandleStore)(nil).FetchMostRecentCandle), arg0, arg1, arg2)
 }
 
 // GenerateCandlesFromBuffer mocks base method
-func (m *MockCandleStore) GenerateCandlesFromBuffer(arg0 string) error {
+func (m *MockCandleStore) GenerateCandlesFromBuffer(arg0 string, arg1 map[string]proto.Candle) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateCandlesFromBuffer", arg0)
+	ret := m.ctrl.Call(m, "GenerateCandlesFromBuffer", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // GenerateCandlesFromBuffer indicates an expected call of GenerateCandlesFromBuffer
-func (mr *MockCandleStoreMockRecorder) GenerateCandlesFromBuffer(arg0 interface{}) *gomock.Call {
+func (mr *MockCandleStoreMockRecorder) GenerateCandlesFromBuffer(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateCandlesFromBuffer", reflect.TypeOf((*MockCandleStore)(nil).GenerateCandlesFromBuffer), arg0)
-}
-
-// StartNewBuffer mocks base method
-func (m *MockCandleStore) StartNewBuffer(arg0 string, arg1 time.Time) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartNewBuffer", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// StartNewBuffer indicates an expected call of StartNewBuffer
-func (mr *MockCandleStoreMockRecorder) StartNewBuffer(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartNewBuffer", reflect.TypeOf((*MockCandleStore)(nil).StartNewBuffer), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateCandlesFromBuffer", reflect.TypeOf((*MockCandleStore)(nil).GenerateCandlesFromBuffer), arg0, arg1)
 }

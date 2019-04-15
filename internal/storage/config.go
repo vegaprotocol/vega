@@ -109,6 +109,7 @@ func FlushStores(c *Config) {
 				logging.Error(err))
 		}
 	}
+
 	err = os.RemoveAll(c.MarketStoreDirPath)
 	if err != nil {
 		c.log.Error("Failed to flush the candle store",
@@ -118,8 +119,8 @@ func FlushStores(c *Config) {
 	if _, err := os.Stat(c.MarketStoreDirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(c.MarketStoreDirPath, os.ModePerm)
 		if err != nil {
-			c.log.Error("Failed to create the candle store",
-				logging.String("path", c.TradeStoreDirPath),
+			c.log.Error("Failed to create the market store",
+				logging.String("path", c.MarketStoreDirPath),
 				logging.Error(err))
 		}
 	}
@@ -162,6 +163,7 @@ func NewTestConfig() (*Config, error) {
 		OrderStoreDirPath:     fmt.Sprintf("/tmp/vegatests/orderstore-%v", randSeq(5)),
 		TradeStoreDirPath:     fmt.Sprintf("/tmp/vegatests/tradestore-%v", randSeq(5)),
 		CandleStoreDirPath:    fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
+		MarketStoreDirPath:    fmt.Sprintf("/tmp/vegatests/marketstore-%v", randSeq(5)),
 		LogPositionStoreDebug: true,
 		Timeout:               defaultStorageAccessTimeout,
 	}
@@ -173,6 +175,10 @@ func NewTestConfig() (*Config, error) {
 		return nil, err
 	}
 	if err := ensureDir(cfg.TradeStoreDirPath); err != nil {
+		return nil, err
+	}
+
+	if err := ensureDir(cfg.MarketStoreDirPath); err != nil {
 		return nil, err
 	}
 
