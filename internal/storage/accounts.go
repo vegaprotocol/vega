@@ -159,14 +159,14 @@ func (a *Account) CreateTraderMarketAccounts(owner, market string) error {
 	return nil
 }
 
-func (a *Account) GetMarketAccounts(market string) ([]types.Account, error) {
+func (a *Account) GetMarketAccounts(market string) ([]*types.Account, error) {
 	a.mu.RLock()
 	byOwner, ok := a.byMarketOwner[market]
 	if !ok {
 		a.mu.RUnlock()
 		return nil, ErrMarketNotFound
 	}
-	accounts := make([]types.Account, 0, len(a.byMarketOwner)*2) // each owner has 2 accounts -> for market, and margin, system has 2 (insurance + settlement)
+	accounts := make([]*types.Account, 0, len(a.byMarketOwner)*2) // each owner has 2 accounts -> for market, and margin, system has 2 (insurance + settlement)
 	for owner, records := range byOwner {
 		// this shouldn't be possible, but you never know
 		if len(records) == 0 {
@@ -175,7 +175,8 @@ func (a *Account) GetMarketAccounts(market string) ([]types.Account, error) {
 		// system accounts are appended as they are
 		if owner == SystemOwner {
 			for _, r := range records {
-				accounts = append(accounts, *r.Account)
+				cpy := *r.Account
+				accounts = append(accounts, &cpy)
 			}
 			continue
 		}
@@ -183,19 +184,21 @@ func (a *Account) GetMarketAccounts(market string) ([]types.Account, error) {
 		// there should only be 1 here
 		for _, r := range records {
 			if r.Type == types.AccountType_MARKET {
-				mTrader = r.Account
+				cpy := *r.Account
+				mTrader = &cpy
 				break
 			}
 		}
 		if mTrader == nil {
 			continue
 		}
-		accounts = append(accounts, *mTrader)
+		accounts = append(accounts, mTrader)
 		// get margin account
 		ownerAcc := a.byOwner[owner]
 		for _, acc := range ownerAcc {
 			if acc.Type == types.AccountType_MARGIN {
-				accounts = append(accounts, *acc.Account)
+				cpy := *acc.Account
+				accounts = append(accounts, &cpy)
 				break
 			}
 		}
@@ -204,7 +207,7 @@ func (a *Account) GetMarketAccounts(market string) ([]types.Account, error) {
 	return accounts, nil
 }
 
-func (a *Account) GetMarketAccountsForOwner(market, owner string) ([]types.Account, error) {
+func (a *Account) GetMarketAccountsForOwner(market, owner string) ([]*types.Account, error) {
 	a.mu.RLock()
 	owners, ok := a.byMarketOwner[market]
 	if !ok {
@@ -216,15 +219,17 @@ func (a *Account) GetMarketAccountsForOwner(market, owner string) ([]types.Accou
 		a.mu.RUnlock()
 		return nil, ErrOwnerNotFound
 	}
-	accounts := make([]types.Account, 0, 2) // there's always 2 accounts given the market + owner
+	accounts := make([]*types.Account, 0, 2) // there's always 2 accounts given the market + owner
 	// system owner -> copy both, non-system, there's only 1
 	for _, record := range records {
-		accounts = append(accounts, *record.Account)
+		cpy := *record.Account
+		accounts = append(accounts, &cpy)
 	}
 	if owner != SystemOwner {
 		for _, record := range a.byOwner[owner] {
 			if record.Type == types.AccountType_MARKET {
-				accounts = append(accounts, *record.Account)
+				cpy := *record.Account
+				accounts = append(accounts, &cpy)
 				break
 			}
 		}
@@ -233,16 +238,17 @@ func (a *Account) GetMarketAccountsForOwner(market, owner string) ([]types.Accou
 	return accounts, nil
 }
 
-func (a *Account) GetAccountsForOwner(owner string) ([]types.Account, error) {
+func (a *Account) GetAccountsForOwner(owner string) ([]*types.Account, error) {
 	a.mu.RLock()
 	acc, ok := a.byOwner[owner]
 	if !ok {
 		a.mu.RUnlock()
 		return nil, ErrOwnerNotFound
 	}
-	ret := make([]types.Account, 0, len(acc))
+	ret := make([]*types.Account, 0, len(acc))
 	for _, r := range acc {
-		ret = append(ret, *r.Account)
+		cpy := *r.Account
+		ret = append(ret, &cpy)
 	}
 	a.mu.RUnlock()
 	return ret, nil

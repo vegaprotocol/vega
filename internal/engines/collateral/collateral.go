@@ -26,7 +26,7 @@ type Accounts interface {
 	CreateTraderMarketAccounts(owner, market string) error
 	UpdateBalance(id string, balance int64) error
 	IncrementBalance(id string, inc int64) error
-	GetMarketAccountsForOwner(market, owner string) ([]types.Account, error)
+	GetMarketAccountsForOwner(market, owner string) ([]*types.Account, error)
 	GetAccountsForOwnerByType(owner string, accType types.AccountType) (*types.Account, error)
 }
 
@@ -53,9 +53,9 @@ func (e *Engine) CollectSells(positions []*types.SettlePosition) (*types.Transfe
 	for _, sa := range sysAccounts {
 		switch sa.Type {
 		case types.AccountType_INSURANCE:
-			insurance = &sa
+			insurance = sa
 		case types.AccountType_SETTLEMENT:
-			settle = &sa
+			settle = sa
 		}
 	}
 	if settle == nil || insurance == nil {
@@ -128,9 +128,9 @@ func (e *Engine) CollectBuys(positions []*types.SettlePosition) (*types.Transfer
 	for _, sa := range sysAccounts {
 		switch sa.Type {
 		case types.AccountType_INSURANCE:
-			insurance = &sa
+			insurance = sa
 		case types.AccountType_SETTLEMENT:
-			settle = &sa
+			settle = sa
 		}
 	}
 	resp := types.TransferResponse{
@@ -167,9 +167,9 @@ func (e *Engine) CollectBuys(positions []*types.SettlePosition) (*types.Transfer
 		for _, ca := range accounts {
 			switch ca.Type {
 			case types.AccountType_MARGIN:
-				req.FromAccount[0] = &ca
+				req.FromAccount[0] = ca
 			case types.AccountType_MARKET:
-				req.FromAccount[1] = &ca
+				req.FromAccount[1] = ca
 			}
 		}
 		req.FromAccount[2] = insurance
@@ -183,9 +183,11 @@ func (e *Engine) CollectBuys(positions []*types.SettlePosition) (*types.Transfer
 		// increment balance
 		resp.Balances[0].Balance += res.Balances[0].Balance
 	}
-	if err := e.accountStore.UpdateBalance(resp.Balances[0].Account.Id, resp.Balances[0].Account.Balance); err != nil {
-		e.log.Debugf("Failed to update target account %s to balance %v: %+v", settle.Id, settle.Balance, err)
-		return nil, err
+	for _, bacc := range resp.Balances {
+		if err := e.accountStore.IncrementBalance(bacc.Account.Id, bacc.Balance); err != nil {
+			e.log.Debugf("Failed to update target account %s incrementing balance with %d: %+v", bacc.Account.Id, bacc.Balance, err)
+			return nil, err
+		}
 	}
 	return &resp, nil
 }
@@ -205,6 +207,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 	for _, acc := range req.FromAccount {
 		// give each to account an equal share
 		parts := amount / int64(len(req.ToAccount))
+		e.log.Debugf("amount %d, parts %d", amount, parts)
 		// add remaining pennies to last ledger movement
 		remainder := amount % int64(len(req.ToAccount))
 		var (
@@ -214,7 +217,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 		// either the account contains enough, or we're having to access insurance pool money
 		if acc.Balance > amount || acc.Type == types.AccountType_INSURANCE {
 			acc.Balance -= amount
-			if err := e.accountStore.UpdateBalance(acc.Id, acc.Balance); err != nil {
+			if err := e.accountStore.IncrementBalance(acc.Id, -amount); err != nil {
 				e.log.Debugf("Failed to update balance of account %s to %d: %+v", acc.Id, acc.Balance, err)
 				return nil, err
 			}
@@ -241,6 +244,8 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 		}
 		if acc.Balance > 0 {
 			amount -= acc.Balance
+			// partial amount resolves differently
+			parts = amount / int64(len(req.ToAccount))
 			if err := e.accountStore.UpdateBalance(acc.Id, 0); err != nil {
 				e.log.Debugf("Failed to update balance of account %s to 0: %+v", acc.Id, err)
 				return nil, err
@@ -257,11 +262,6 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 				ret.Transfers = append(ret.Transfers, lm)
 				to.Account.Balance += parts
 				to.Balance += parts
-			}
-			if remainder > 0 {
-				lm.Amount += remainder
-				to.Account.Balance += remainder
-				to.Balance += remainder
 			}
 			acc.Balance = 0
 		}
