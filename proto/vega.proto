@@ -200,3 +200,54 @@ message OrderCancellation {
   string marketId = 2;
   string party = 3;
 }
+
+enum AccountType {
+  INSURANCE = 0;
+  SETTLEMENT = 1;
+  MARGIN = 2;
+  MARKET = 3;
+  GENERAL = 4;
+}
+
+message Account {
+  string id = 1;
+  string owner = 2;
+  int64 balance = 3;
+  string asset = 4;
+  string market = 5;
+  AccountType type = 6;
+}
+
+message SettlePosition {
+  string owner = 1;
+  uint64 size = 2;
+  int64 price = 3;
+}
+
+message TransferRequest {
+  repeated Account fromAccount = 1;
+  repeated Account toAccount = 2;
+  uint64 amount = 3;
+  uint64 minAmount = 4;
+  string asset = 5;
+  string reference = 6;
+}
+
+message LedgerEntry {
+  string fromAccount = 1;
+  string toAccount = 2;
+  int64 amount = 3;
+  string reference = 4;
+  string type = 5;
+  int64 timestamp = 6;
+}
+
+message TransferBalance {
+  Account account = 1;
+  int64 balance = 2;
+}
+
+message TransferResponse {
+  repeated LedgerEntry transfers = 1;
+  repeated TransferBalance balances = 2;
+}

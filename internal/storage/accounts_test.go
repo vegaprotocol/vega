@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/storage"
+	types "code.vegaprotocol.io/vega/proto"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,11 +16,12 @@ func TestAccounts(t *testing.T) {
 
 func testAddDuplicate(t *testing.T) {
 	acc := getAccountStorage()
-	rec := storage.AccountRecord{
-		ID:     uuid.NewV4().String(),
+	rec := types.Account{
+		Id:     uuid.NewV4().String(),
+		Asset:  "GBP",
 		Market: "market",
 		Owner:  uuid.NewV4().String(),
-		Type:   storage.GeneralTrader,
+		Type:   types.AccountType_GENERAL,
 	}
 	assert.NoError(t, acc.Create(&rec))
 	assert.Equal(t, storage.ErrDuplicateAccount, acc.Create(&rec))
@@ -37,7 +39,7 @@ func testCreateMarketAccounts(t *testing.T) {
 	for _, account := range accounts {
 		assert.Equal(t, market, account.Market)
 		assert.Equal(t, storage.SystemOwner, account.Owner)
-		if account.Type == storage.InsurancePool {
+		if account.Type == types.AccountType_INSURANCE {
 			assert.Equal(t, settlement, account.Balance)
 		}
 	}
@@ -48,9 +50,9 @@ func testCreateMarketAccounts(t *testing.T) {
 	assert.NoError(t, acc.CreateTraderMarketAccounts(uuid.NewV4().String(), market))
 	accounts, err = acc.GetMarketAccounts(market)
 	assert.NotEqual(t, sysLen, len(accounts))
-	types := []storage.AccountType{
-		storage.Margin,
-		storage.MarketTrader,
+	types := []types.AccountType{
+		types.AccountType_MARGIN,
+		types.AccountType_MARKET,
 	}
 	var owner string
 	for _, account := range accounts {
