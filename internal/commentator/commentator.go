@@ -27,7 +27,7 @@ func Commentate(data string, c *Comments) string {
 		return data
 	}
 
-	results := make([]string, 0)
+	results := []string{}
 	if c.Header != nil && len(c.Header) > 0 {
 		if c.Header[len(c.Header)-1] != "" {
 			c.Header = append(c.Header, "")
@@ -45,7 +45,7 @@ func Commentate(data string, c *Comments) string {
 		// Process lines
 		for _, dataLine := range dataLines {
 			indent := countIndent(dataLine)
-			eolAdditions := make([]string, 0)
+			eolAdditions := []string{}
 			for _, item := range c.Items {
 				if item.regex.MatchString(dataLine) {
 					if item.CommentPara != nil && len(item.CommentPara) > 0 {
