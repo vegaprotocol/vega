@@ -20,11 +20,6 @@ var (
 			return &OrderConfirmation{}
 		},
 	}
-	CandlePool = &sync.Pool{
-		New: func() interface{} {
-			return &Candle{}
-		},
-	}
 )
 
 func (o *OrderConfirmation) Release() {

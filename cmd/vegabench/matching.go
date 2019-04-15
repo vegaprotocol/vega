@@ -93,7 +93,7 @@ func BenchmarkMatching(
 
 		// Execution engine (broker operation of markets at runtime etc)
 		executionEngine := getExecEngine(b, logger)
-		executionEngine.candle.EXPECT().AddTradeToBuffer(gomock.Any()).Return(nil)
+		// executionEngine.candle.EXPECT().AddTradeToBuffer(gomock.Any()).Return(nil)
 		executionEngine.order.EXPECT().Post(gomock.Any()).Return(nil)
 		executionEngine.order.EXPECT().Put(gomock.Any()).Return(nil)
 		executionEngine.trade.EXPECT().Post(gomock.Any()).Return(nil)
