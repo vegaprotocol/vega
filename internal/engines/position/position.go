@@ -15,6 +15,10 @@ type MarketPosition struct {
 	mu      sync.Mutex
 }
 
+func (m MarketPosition) String() string {
+	return fmt.Sprintf("size: %v, margins: %v, partyID: %v", m.size, m.margins, m.partyID)
+}
+
 // Margins returns a copy of the current margins map
 func (m *MarketPosition) Margins() map[string]uint64 {
 	m.mu.Lock()
