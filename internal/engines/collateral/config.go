@@ -9,6 +9,8 @@ const namedLogger = "collateral"
 type Config struct {
 	log   *logging.Logger
 	Level logging.Level
+	// Auto-create trader accounts if needed?
+	CreateTraderAccounts bool
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -18,6 +20,8 @@ func NewDefaultConfig(logger *logging.Logger) *Config {
 	return &Config{
 		log:   logger,
 		Level: logging.InfoLevel,
+
+		CreateTraderAccounts: true,
 	}
 }
 

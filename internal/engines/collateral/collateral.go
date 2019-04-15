@@ -20,12 +20,13 @@ type Engine struct {
 	accountStore Accounts
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/engines/collateral Accounts
 type Accounts interface {
 	CreateMarketAccounts(market string) error
+	CreateTraderMarketAccounts(owner, market string) error
 	UpdateBalance(id string, balance int64) error
 	IncrementBalance(id string, inc int64) error
 	GetMarketAccountsForOwner(market, owner string) ([]types.Account, error)
-	GetMarketAccounts(market string) ([]types.Account, error)
 	GetAccountsForOwnerByType(owner string, accType types.AccountType) (*types.Account, error)
 }
 
@@ -72,6 +73,9 @@ func (e *Engine) CollectSells(positions []*types.SettlePosition) (*types.Transfe
 		},
 	}
 	for _, p := range positions {
+		if e.CreateTraderAccounts {
+			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
+		}
 		// general account:
 		gen, err := e.accountStore.GetAccountsForOwnerByType(p.Owner, types.AccountType_GENERAL)
 		if err != nil {
@@ -142,6 +146,9 @@ func (e *Engine) CollectBuys(positions []*types.SettlePosition) (*types.Transfer
 		return nil, ErrSystemAccountsMissing
 	}
 	for _, p := range positions {
+		if e.CreateTraderAccounts {
+			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
+		}
 		accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, p.Owner)
 		if err != nil {
 			e.log.Debugf("could not get accounts for %s on market %s: %+v", p.Owner, e.market, err)

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/engines/position"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type pos struct {
@@ -57,28 +58,42 @@ func (e *Engine) Update(positions []position.MarketPosition) {
 	e.mu.Unlock()
 }
 
-func (e *Engine) Settle(t time.Time) {
+func (e *Engine) Settle(t time.Time) (buy []*types.SettlePosition, sell []*types.SettlePosition) {
 	e.mu.Lock()
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
 	// first all the buys
-	e.settleBuy()
-	e.settleSell()
+	buy, sell = e.settleBuy(), e.settleSell()
 	e.mu.Unlock()
+	return buy, sell
 }
 
-func (e *Engine) settleBuy() {
+func (e *Engine) settleBuy() []*types.SettlePosition {
 	// mu is locked here
+	r := make([]*types.SettlePosition, 0, len(e.buys))
 	for party, bpos := range e.buys {
 		e.log.Debugf("Settling buys for %s", party)
 		netPrice := int64(bpos.price) / bpos.size
+		r = append(r, &types.SettlePosition{
+			Owner: party,
+			Size:  uint64(bpos.Size),
+			Price: netPrice,
+		})
 		e.log.Debugf("Settling %d buys at average price: %d", bpos.size, netPrice)
 	}
+	return r
 }
 
-func (e *Engine) settleSell() {
+func (e *Engine) settleSell() []*types.SettlePosition {
+	r := make([]*types.SettlePosition, 0, len(e.sells))
 	for party, spos := range e.sells {
 		e.log.Debugf("Settling sales for %s", party)
 		netPrice := int64(spos.price) / (-spos.size)
+		r = append(r, &types.SettlePosition{
+			Owner: party,
+			Size:  uint64(-spos.Size),
+			Price: netPrice,
+		})
 		e.log.Debugf("Settling %d sales at average price: %d", spos.size, netPrice)
 	}
+	return r
 }
