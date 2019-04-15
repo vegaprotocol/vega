@@ -1,4 +1,4 @@
-package tomlcommentator
+package commentator
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Comments encapsulates all the comments that can be added to a toml file.
+// Comments encapsulates all the comments that can be added to a toml/yaml file.
 type Comments struct {
 	Header []string
 	Items  []*CommentItem
@@ -21,10 +21,10 @@ type CommentItem struct {
 	CommentPara []string
 }
 
-// Commentate adds all the given comments to a toml string.
-func Commentate(toml string, c *Comments) string {
+// Commentate adds all the given comments to a toml/yaml string.
+func Commentate(data string, c *Comments) string {
 	if c == nil {
-		return toml
+		return data
 	}
 
 	results := make([]string, 0)
@@ -35,7 +35,7 @@ func Commentate(toml string, c *Comments) string {
 		results = append(results, addHashes(c.Header, 0)...)
 	}
 
-	tomlLines := strings.Split(toml, "\n")
+	dataLines := strings.Split(data, "\n")
 	if c.Items != nil && len(c.Items) > 0 {
 		// Compile all regexes once.
 		for _, item := range c.Items {
@@ -43,11 +43,11 @@ func Commentate(toml string, c *Comments) string {
 		}
 
 		// Process lines
-		for _, tomlLine := range tomlLines {
-			indent := countIndent(tomlLine)
+		for _, dataLine := range dataLines {
+			indent := countIndent(dataLine)
 			eolAdditions := make([]string, 0)
 			for _, item := range c.Items {
-				if item.regex.MatchString(tomlLine) {
+				if item.regex.MatchString(dataLine) {
 					if item.CommentPara != nil && len(item.CommentPara) > 0 {
 						results = append(results, addHashes(item.CommentPara, indent)...)
 					}
@@ -57,12 +57,12 @@ func Commentate(toml string, c *Comments) string {
 				}
 			}
 			if len(eolAdditions) > 0 {
-				tomlLine = fmt.Sprintf("%s  # %s", tomlLine, strings.Join(eolAdditions, ""))
+				dataLine = fmt.Sprintf("%s  # %s", dataLine, strings.Join(eolAdditions, ""))
 			}
-			results = append(results, tomlLine)
+			results = append(results, dataLine)
 		}
 	} else {
-		results = append(results, tomlLines...)
+		results = append(results, dataLines...)
 	}
 
 	if c.Footer != nil && len(c.Footer) > 0 {
