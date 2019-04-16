@@ -142,7 +142,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 	}
 
 	// get the buffered candles from the buffer
-
 	err = m.candles.GenerateCandlesFromBuffer(m.GetID(), previousCandlesBuf)
 	if err != nil {
 		m.log.Error("Failed to generate candles from buffer for market", logging.String("market-id", m.GetID()))
@@ -297,15 +296,6 @@ func (m *Market) AmendOrder(
 			logging.String("market", m.marketcfg.Id))
 		return &types.OrderConfirmation{}, types.ErrInvalidMarketID
 	}
-
-	// TODO(): is this ok ?
-	/*
-		timestamp, err := m.time.GetTimeNow()
-		if err != nil {
-			e.log.Error("Failed to obtain current vega time", logging.Error(err))
-			return &types.OrderConfirmation{}, types.ErrVegaTimeFailure
-		}
-	*/
 
 	m.mu.Lock()
 	currentTime := m.currentTime

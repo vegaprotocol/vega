@@ -33,7 +33,6 @@ type ServiceExecutionEngine interface {
 	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	Generate() error
-	// Process() error
 }
 
 type abciService struct {
@@ -84,14 +83,6 @@ func (s *abciService) Begin() error {
 	if s.previousTimestamp.Unix() < 1 {
 		s.previousTimestamp = epochTime
 	}
-
-	// Run any processing required in execution engine, e.g. check for expired orders
-	/*
-		err = s.execution.Process()
-		if err != nil {
-			return err
-		}
-	*/
 
 	s.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),
@@ -245,8 +236,8 @@ func (s *abciService) setBatchStats() {
 	s.log.Debug("Blockchain service batch stats",
 		logging.Uint64("total-batches", s.totalBatches),
 		logging.Int("avg-orders-batch", s.stats.averageOrdersPerBatch),
-		logging.Uint64("orders-per-secs", s.stats.OrdersPerSecond()),
-		logging.Uint64("trades-per-secs", s.stats.TradesPerSecond()),
+		logging.Uint64("orders-per-sec", s.stats.OrdersPerSecond()),
+		logging.Uint64("trades-per-sec", s.stats.TradesPerSecond()),
 	)
 
 	s.currentOrdersInBatch = 0

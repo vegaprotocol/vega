@@ -87,13 +87,8 @@ func BenchmarkMatching(
 		logger := logging.NewDevLogger()
 		logger.SetLevel(logging.InfoLevel)
 
-		// Matching engine (trade matching)
-		// matchingConfig := matching.NewDefaultConfig(logger)
-		// matchingEngine := matching.NewMatchingEngine(matchingConfig)
-
 		// Execution engine (broker operation of markets at runtime etc)
 		executionEngine := getExecEngine(b, logger)
-		// executionEngine.candle.EXPECT().AddTradeToBuffer(gomock.Any()).Return(nil)
 		executionEngine.order.EXPECT().Post(gomock.Any()).Return(nil)
 		executionEngine.order.EXPECT().Put(gomock.Any()).Return(nil)
 		executionEngine.trade.EXPECT().Post(gomock.Any()).Return(nil)
@@ -157,7 +152,7 @@ func BenchmarkMatching(
 			// 	vega.GetMarketData(marketId),
 			// 	vega.GetMarketDepth(marketId))
 		}
-		executionEngine.ctrl.Finish() // finalise gomock controller
+		executionEngine.ctrl.Finish()
 		logger.Sync()
 	}
 }

@@ -49,13 +49,11 @@ func (s *Svc) GetTimeNow() (time.Time, error) {
 }
 
 func (s *Svc) notify(t time.Time) {
-	go func() {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		for _, f := range s.listeners {
-			go f(t)
-		}
-	}()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, f := range s.listeners {
+		f(t)
+	}
 }
 
 func (s *Svc) NotifyOnTick(f func(time.Time)) {
