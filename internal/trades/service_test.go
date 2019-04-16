@@ -2,6 +2,7 @@ package trades_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/storage"
@@ -127,6 +128,237 @@ func TestTradeService_GetByParty(t *testing.T) {
 			assert.Equal(t, exp, trades)
 		}
 	}
+}
+
+func TestObserveTrades(t *testing.T) {
+	t.Run("Observe trades - no filters, successfully push to channel", testObserveTradesSuccess)
+	t.Run("Observe trades - no filters, no write to channel (retry path)", testObserveTradesNoWrite)
+	t.Run("Observe trades - filter, partial results returned", testObserveTradesFilterSuccess)
+	t.Run("Observe trades - filters, no results returned", testObserveTradesFilterNone)
+}
+
+func testObserveTradesSuccess(t *testing.T) {
+	ref := uint64(1)
+	market := "BTC/DEC19"
+	buyer, seller := "buyerID", "sellerID"
+	trades := []types.Trade{
+		{
+			Id:     "trade1",
+			Market: market,
+			Price:  1000,
+			Size:   1,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+		{
+			Id:     "trade2",
+			Market: market,
+			Price:  1200,
+			Size:   2,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+	}
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	writeF := func(ch chan<- []types.Trade) {
+		ch <- trades
+	}
+	svc := getTestService(t)
+	defer svc.Finish()
+	ctx, cfunc := context.WithCancel(svc.ctx)
+	svc.trade.EXPECT().Subscribe(gomock.Any()).Times(1).DoAndReturn(func(ch chan<- []types.Trade) uint64 {
+		go writeF(ch)
+		return ref
+	})
+	svc.trade.EXPECT().Unsubscribe(ref).Times(1).Return(nil).Do(func(_ uint64) {
+		wg.Done()
+	})
+	ch, rref := svc.ObserveTrades(ctx, 0, nil, nil)
+	// wait for data on channel
+	gotTrades := <-ch
+	// ensure we got the data we expected
+	assert.Equal(t, ref, rref)
+	assert.Equal(t, trades, gotTrades)
+	// unsubscript
+	cfunc()
+	// ensure unsubscribe was indeed called before returning
+	wg.Wait()
+}
+
+func testObserveTradesNoWrite(t *testing.T) {
+	ref := uint64(1)
+	market := "BTC/DEC19"
+	buyer, seller := "buyerID", "sellerID"
+	trades := []types.Trade{
+		{
+			Id:     "trade1",
+			Market: market,
+			Price:  1000,
+			Size:   1,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+		{
+			Id:     "trade2",
+			Market: market,
+			Price:  1200,
+			Size:   2,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+	}
+	done := make(chan struct{})
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	writeF := func(ch chan<- []types.Trade) {
+		ch <- trades
+		wg.Done()
+	}
+	svc := getTestService(t)
+	defer svc.Finish()
+	ctx, cfunc := context.WithCancel(svc.ctx)
+	svc.trade.EXPECT().Subscribe(gomock.Any()).Times(1).DoAndReturn(func(ch chan<- []types.Trade) uint64 {
+		go writeF(ch)
+		return ref
+	})
+	svc.trade.EXPECT().Unsubscribe(ref).Times(1).Return(nil).Do(func(_ uint64) {
+		done <- struct{}{}
+	})
+	ch, rref := svc.ObserveTrades(ctx, 0, nil, nil)
+	// do not read channel
+	wg.Wait()
+	// cancel context, write will not happen to channel
+	cfunc()
+	// ensure unsubscribe was called (and channels were closed)
+	<-done
+	// wait for data on channel
+	gotTrades := <-ch
+	// ensure we got the data we expected
+	assert.Equal(t, ref, rref)
+	assert.Nil(t, gotTrades)
+}
+
+func testObserveTradesFilterSuccess(t *testing.T) {
+	ref := uint64(1)
+	market := "BTC/DEC19"
+	filterMarket := "foobar"
+	buyer, seller := "buyerID", "sellerID"
+	trades := []types.Trade{
+		{
+			Id:     "trade1",
+			Market: market,
+			Price:  1000,
+			Size:   1,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+		{
+			Id:     "trade2",
+			Market: market,
+			Price:  1200,
+			Size:   2,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+		{
+			Id:     "trade3",
+			Market: filterMarket,
+			Price:  1200,
+			Size:   2,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+	}
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	writeF := func(ch chan<- []types.Trade) {
+		ch <- trades
+	}
+	svc := getTestService(t)
+	defer svc.Finish()
+	ctx, cfunc := context.WithCancel(svc.ctx)
+	svc.trade.EXPECT().Subscribe(gomock.Any()).Times(1).DoAndReturn(func(ch chan<- []types.Trade) uint64 {
+		go writeF(ch)
+		return ref
+	})
+	svc.trade.EXPECT().Unsubscribe(ref).Times(1).Return(nil).Do(func(_ uint64) {
+		wg.Done()
+	})
+	// filter by market and party
+	ch, rref := svc.ObserveTrades(ctx, 0, &filterMarket, &buyer)
+	// wait for data on channel
+	gotTrades := <-ch
+	// ensure we got the data we expected
+	assert.Equal(t, ref, rref)
+	assert.Equal(t, 1, len(gotTrades))
+	assert.Equal(t, filterMarket, gotTrades[0].Market)
+	// unsubscript
+	cfunc()
+	// ensure unsubscribe was indeed called before returning
+	wg.Wait()
+}
+
+func testObserveTradesFilterNone(t *testing.T) {
+	ref := uint64(1)
+	market := "BTC/DEC19"
+	filterMarket := "foobar"
+	buyer, seller := "buyerID", "sellerID"
+	trades := []types.Trade{
+		{
+			Id:     "trade1",
+			Market: market,
+			Price:  1000,
+			Size:   1,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+		{
+			Id:     "trade2",
+			Market: market,
+			Price:  1200,
+			Size:   2,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+		{
+			Id:     "trade3",
+			Market: filterMarket,
+			Price:  1200,
+			Size:   2,
+			Buyer:  buyer,
+			Seller: seller,
+		},
+	}
+	done := make(chan struct{})
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	writeF := func(ch chan<- []types.Trade) {
+		ch <- trades
+		done <- struct{}{}
+	}
+	svc := getTestService(t)
+	defer svc.Finish()
+	ctx, cfunc := context.WithCancel(svc.ctx)
+	svc.trade.EXPECT().Subscribe(gomock.Any()).Times(1).DoAndReturn(func(ch chan<- []types.Trade) uint64 {
+		go writeF(ch)
+		return ref
+	})
+	svc.trade.EXPECT().Unsubscribe(ref).Times(1).Return(nil).Do(func(_ uint64) {
+		wg.Done()
+	})
+	// filter by specific market, and use market as party, no results will be returned
+	ch, rref := svc.ObserveTrades(ctx, 0, &filterMarket, &market)
+	// wait for data on channel
+	<-done
+	// ensure unsubscribe is called
+	cfunc()
+	// ensure unsubscribe was indeed called before returning
+	wg.Wait()
+	gotTrades := <-ch
+	// ensure we got the data we expected
+	assert.Equal(t, ref, rref)
+	assert.Empty(t, gotTrades)
 }
 
 func (t *testService) Finish() {
