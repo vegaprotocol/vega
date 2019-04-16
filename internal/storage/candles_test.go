@@ -114,9 +114,6 @@ func TestStorage_GenerateCandles(t *testing.T) {
 
 	fmt.Println(" --- candles ", fmt.Sprintf("%+v", candles))
 
-	t.Log(fmt.Sprintf("%v", candles[0]))
-	t.Log(fmt.Sprintf("%v", candles[1]))
-	t.Log(fmt.Sprintf("%v", candles[2]))
 	assert.Equal(t, 3, len(candles))
 	assert.Equal(t, int64(1542106860000000000), candles[0].Timestamp)
 	assert.Equal(t, uint64(100), candles[0].High)
