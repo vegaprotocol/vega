@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -37,6 +38,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	candle := mocks.NewMockCandleStore(ctrl)
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyStore(ctrl)
+	accounts, _ := storage.NewAccounts(storage.NewDefaultConfig(log, ""))
 	conf := execution.NewDefaultConfig(log, "")
 	engine := execution.NewEngine(
 		conf,
@@ -46,6 +48,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 		candle,
 		market,
 		party,
+		accounts,
 	)
 	return &execEngine{
 		Engine: engine,

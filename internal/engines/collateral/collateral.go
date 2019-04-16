@@ -22,7 +22,7 @@ type Engine struct {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/engines/collateral Accounts
 type Accounts interface {
-	CreateMarketAccounts(market string) error
+	CreateMarketAccounts(market string, insurance int64) error
 	CreateTraderMarketAccounts(owner, market string) error
 	UpdateBalance(id string, balance int64) error
 	IncrementBalance(id string, inc int64) error
@@ -31,8 +31,8 @@ type Accounts interface {
 }
 
 func New(conf *Config, market string, accounts Accounts) (*Engine, error) {
-	// ensure market accounts are all good to go
-	if err := accounts.CreateMarketAccounts(market); err != nil && err != storage.ErrMarketAccountsExist {
+	// ensure market accounts are all good to go - get insurance pool initial value from config?
+	if err := accounts.CreateMarketAccounts(market, 0); err != nil && err != storage.ErrMarketAccountsExist {
 		return nil, err
 	}
 	return &Engine{

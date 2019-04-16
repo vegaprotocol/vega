@@ -218,7 +218,7 @@ func getTestEngine(t *testing.T, market string, err error) *testEngine {
 	ctrl := gomock.NewController(t)
 	acc := mocks.NewMockAccounts(ctrl)
 	conf := collateral.NewDefaultConfig(logging.NewTestLogger())
-	acc.EXPECT().CreateMarketAccounts(market).Times(1).Return(err)
+	acc.EXPECT().CreateMarketAccounts(market, int64(0)).Times(1).Return(err)
 	eng, err2 := collateral.New(conf, market, acc)
 	assert.Equal(t, err, err2)
 	if err != nil {

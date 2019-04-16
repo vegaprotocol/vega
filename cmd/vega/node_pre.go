@@ -83,6 +83,9 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
 		return
 	}
+	if l.accounts, err = storage.NewAccounts(l.conf.Storage); err != nil {
+		return
+	}
 	return nil
 }
 

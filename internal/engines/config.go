@@ -1,6 +1,7 @@
 package engines
 
 import (
+	"code.vegaprotocol.io/vega/internal/engines/collateral"
 	"code.vegaprotocol.io/vega/internal/engines/matching"
 	"code.vegaprotocol.io/vega/internal/engines/position"
 	"code.vegaprotocol.io/vega/internal/engines/risk"
@@ -22,6 +23,7 @@ type Config struct {
 	Risk       *risk.Config
 	Position   *position.Config
 	Settlement *settlement.Config
+	Collateral *collateral.Config
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -35,6 +37,7 @@ func NewDefaultConfig(logger *logging.Logger) *Config {
 		Risk:       risk.NewDefaultConfig(logger),
 		Position:   position.NewDefaultConfig(logger),
 		Settlement: settlement.NewDefaultConfig(logger),
+		Collateral: collateral.NewDefaultConfig(logger),
 	}
 }
 
@@ -56,4 +59,5 @@ func (c *Config) UpdateLogger() {
 	c.Risk.UpdateLogger()
 	c.Position.UpdateLogger()
 	c.Settlement.UpdateLogger()
+	c.Collateral.UpdateLogger()
 }

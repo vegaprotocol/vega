@@ -7,10 +7,13 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/buffer"
+	"code.vegaprotocol.io/vega/internal/engines/collateral"
 	"code.vegaprotocol.io/vega/internal/engines/matching"
 	"code.vegaprotocol.io/vega/internal/engines/position"
 	"code.vegaprotocol.io/vega/internal/engines/risk"
+	"code.vegaprotocol.io/vega/internal/engines/settlement"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -56,12 +59,15 @@ type Market struct {
 	tradableInstrument *TradableInstrument
 	risk               *risk.Engine
 	position           *position.Engine
+	settlement         *settlement.Engine
+	collateral         *collateral.Engine
 
 	// stores
-	candles CandleStore
-	orders  OrderStore
-	parties PartyStore
-	trades  TradeStore
+	candles  CandleStore
+	orders   OrderStore
+	parties  PartyStore
+	trades   TradeStore
+	accounts *storage.Account
 
 	// buffers
 	candlesBuf *buffer.Candle
@@ -76,6 +82,7 @@ func NewMarket(
 	orders OrderStore,
 	parties PartyStore,
 	trades TradeStore,
+	accounts *storage.Account,
 	now time.Time,
 ) (*Market, error) {
 	tradableInstrument, err := NewTradableInstrument(cfg.log, marketcfg.TradableInstrument)
@@ -88,8 +95,14 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
+	collateralEngine, err := collateral.New(cfg.Collateral, marketcfg.Id, accounts)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to set up collateral engine")
+	}
+
 	riskengine := risk.New(cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
 	positionengine := position.New(cfg.Position)
+	settleEngine := settlement.New(cfg.Settlement)
 
 	// create buffers
 	candlesBuf := buffer.NewCandle(marketcfg.Id, candles, now)
@@ -103,10 +116,13 @@ func NewMarket(
 		tradableInstrument: tradableInstrument,
 		risk:               riskengine,
 		position:           positionengine,
+		settlement:         settleEngine,
+		collateral:         collateralEngine,
 		candles:            candles,
 		orders:             orders,
 		parties:            parties,
 		trades:             trades,
+		accounts:           accounts,
 		candlesBuf:         candlesBuf,
 	}
 

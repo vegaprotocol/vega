@@ -35,6 +35,7 @@ type NodeCommand struct {
 	ctx   context.Context
 	cfunc context.CancelFunc
 
+	accounts    *storage.Account
 	candleStore *storage.Candle
 	orderStore  *storage.Order
 	marketStore *storage.Market
@@ -98,6 +99,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.candleStore,
 		l.marketStore,
 		l.partyStore,
+		l.accounts,
 	)
 
 	// ABCI<>blockchain server

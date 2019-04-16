@@ -15,6 +15,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/engines"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/storage"
 )
 
 var (
@@ -60,13 +61,14 @@ type TimeService interface {
 
 type Engine struct {
 	*Config
-	markets     map[string]*engines.Market
-	orderStore  OrderStore
-	tradeStore  TradeStore
-	candleStore CandleStore
-	marketStore MarketStore
-	partyStore  PartyStore
-	time        TimeService
+	markets      map[string]*engines.Market
+	orderStore   OrderStore
+	tradeStore   TradeStore
+	candleStore  CandleStore
+	marketStore  MarketStore
+	partyStore   PartyStore
+	time         TimeService
+	accountStore *storage.Account
 }
 
 // NewEngine takes stores and engines and returns
@@ -79,6 +81,7 @@ func NewEngine(
 	candleStore CandleStore,
 	marketStore MarketStore,
 	partyStore PartyStore,
+	accountStore *storage.Account,
 ) *Engine {
 	e := &Engine{
 		Config:      executionConfig,
@@ -129,7 +132,7 @@ func (e *Engine) SubmitMarket(mkt *types.Market) error {
 	now, _ := e.time.GetTimeNow()
 	var err error
 	e.markets[mkt.Id], err = engines.NewMarket(
-		e.Config.Engines, mkt, e.candleStore, e.orderStore, e.partyStore, e.tradeStore, now)
+		e.Config.Engines, mkt, e.candleStore, e.orderStore, e.partyStore, e.tradeStore, e.accountStore, now)
 	if err != nil {
 		e.log.Panic("Failed to instanciate market market",
 			logging.String("market-id", mkt.Id),
