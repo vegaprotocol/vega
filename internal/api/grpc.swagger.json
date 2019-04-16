@@ -692,6 +692,9 @@
         },
         "status": {
           "$ref": "#/definitions/OrderStatus"
+        },
+        "id": {
+          "type": "string"
         }
       }
     },
