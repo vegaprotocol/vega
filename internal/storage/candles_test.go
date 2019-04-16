@@ -49,6 +49,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	// start a new buffer, to get the previous one
 	currentVegaTime := t0.Add(2 * time.Minute)
 	previousBuf, err := buf.Start(currentVegaTime)
+
 	err = candleStore.GenerateCandlesFromBuffer(testMarket, previousBuf)
 	assert.Nil(t, err)
 
@@ -113,9 +114,6 @@ func TestStorage_GenerateCandles(t *testing.T) {
 
 	fmt.Println(" --- candles ", fmt.Sprintf("%+v", candles))
 
-	t.Log(fmt.Sprintf("%v", candles[0]))
-	t.Log(fmt.Sprintf("%v", candles[1]))
-	t.Log(fmt.Sprintf("%v", candles[2]))
 	assert.Equal(t, 3, len(candles))
 	assert.Equal(t, int64(1542106860000000000), candles[0].Timestamp)
 	assert.Equal(t, uint64(100), candles[0].High)
@@ -185,6 +183,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Open)
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(0), candles[0].Volume)
+
 }
 
 func TestStorage_GetMapOfIntervalsToTimestamps(t *testing.T) {
