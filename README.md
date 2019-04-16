@@ -358,3 +358,16 @@ The application has structured logging capability, the first port of call for a 
 Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `-1` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
 
 Debugging the application locally is also possible with [Delve](https://github.com/go-delve/delve).
+
+## Git Hooks
+
+Run the script `script/githooks_setup.sh` to set up git hooks for `pre-commit` and `pre-push`.
+
+The main script lives at `script/githooks.sh`.
+
+For `pre-commit`, the script:
+* runs `gofmt`, if any `.go` files are to be committed.
+
+For `pre-push`, the script:
+* runs `make grpc_check proto_check`, if any `.proto` files are to be pushed.
+* runs `make test`, if any `.go` files are to be pushed.
