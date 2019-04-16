@@ -48,7 +48,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/grpcOrderResponse"
+              "$ref": "#/definitions/vegaPendingOrder"
             }
           }
         },
@@ -277,7 +277,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/vegaPreConsensusOrder"
+              "$ref": "#/definitions/vegaPendingOrder"
             }
           }
         },
@@ -664,7 +664,7 @@
       ],
       "default": "GTC"
     },
-    "vegaPreConsensusOrder": {
+    "vegaPendingOrder": {
       "type": "object",
       "properties": {
         "reference": {
@@ -692,10 +692,6 @@
         },
         "status": {
           "$ref": "#/definitions/OrderStatus"
-        },
-        "accepted": {
-          "type": "boolean",
-          "format": "boolean"
         }
       }
     },

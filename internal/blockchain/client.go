@@ -40,16 +40,15 @@ func (b *Client) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 	return b.sendAmendmentCommand(ctx, amendment, AmendOrderCommand)
 }
 
-func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.PreConsensusOrder, error) {
+func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error) {
 	order.Reference = fmt.Sprintf("%s", uuid.NewV4())
-	success, err := b.sendOrderCommand(ctx, order, SubmitOrderCommand)
+	_, err := b.sendOrderCommand(ctx, order, SubmitOrderCommand)
 
 	if err != nil {
-		return &types.PreConsensusOrder{Accepted: false, Reference: ""}, err
+		return nil, err
 	}
 
-	return &types.PreConsensusOrder{
-		Accepted:  success,
+	return &types.PendingOrder{
 		Reference: order.Reference,
 		Price:     order.Price,
 		Type:      order.Type,

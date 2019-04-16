@@ -53,8 +53,7 @@ func testOrderSuccess(t *testing.T) {
 	now := vegatime.Now()
 	// expires 2 hours from now
 	expires := now.Add(time.Hour * 2)
-	pre := &types.PreConsensusOrder{
-		Accepted:  true,
+	pre := &types.PendingOrder{
 		Reference: "order_reference",
 	}
 	order := orderSubmission
@@ -76,10 +75,10 @@ func testOrderSuccess(t *testing.T) {
 
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	svc.block.EXPECT().CreateOrder(gomock.Any(), matcher).Times(1).Return(pre, nil)
-	res, err := svc.svc.CreateOrder(context.Background(), &order)
-	assert.True(t, res.Accepted)
+	pendingOrder, err := svc.svc.CreateOrder(context.Background(), &order)
+	assert.NotNil(t, pendingOrder)
 	assert.NoError(t, err)
-	assert.Equal(t, pre.Reference, res.Reference)
+	assert.Equal(t, pre.Reference, pendingOrder.Reference)
 }
 
 func testOrderExpired(t *testing.T) {
@@ -91,10 +90,9 @@ func testOrderExpired(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	res, err := svc.svc.CreateOrder(context.Background(), &order)
-	assert.False(t, res.Accepted)
+	pendingOrder, err := svc.svc.CreateOrder(context.Background(), &order)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
-	assert.Equal(t, "", res.Reference)
 }
 
 func testOrderBlockchainError(t *testing.T) {
@@ -120,12 +118,11 @@ func testOrderBlockchainError(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	svc.block.EXPECT().CreateOrder(gomock.Any(), matcher).Times(1).Return(&types.PreConsensusOrder{}, bcErr)
-	res, err := svc.svc.CreateOrder(context.Background(), &order)
-	assert.False(t, res.Accepted)
+	svc.block.EXPECT().CreateOrder(gomock.Any(), matcher).Times(1).Return(nil, bcErr)
+	pendingOrder, err := svc.svc.CreateOrder(context.Background(), &order)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 	assert.Equal(t, bcErr, err)
-	assert.Equal(t, "", res.Reference)
 }
 
 func getTestService(t *testing.T) *testService {

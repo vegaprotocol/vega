@@ -123,11 +123,6 @@ type Party struct {
 	Positions []proto.MarketPosition `json:"positions"`
 }
 
-type PreConsensus struct {
-	Accepted  bool   `json:"accepted"`
-	Reference string `json:"reference"`
-}
-
 type TradableInstrument struct {
 	Instrument Instrument `json:"instrument"`
 	RiskModel  RiskModel  `json:"riskModel"`

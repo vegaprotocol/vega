@@ -113,7 +113,7 @@ func (this *MarketPosition) Validate() error {
 func (this *Statistics) Validate() error {
 	return nil
 }
-func (this *PreConsensusOrder) Validate() error {
+func (this *PendingOrder) Validate() error {
 	return nil
 }
 func (this *OrderAmendment) Validate() error {

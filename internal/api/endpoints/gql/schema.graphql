@@ -14,11 +14,11 @@ type Mutation {
 
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
-    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensusOrder!
+    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PendingOrder!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
-    orderCancel(id: ID!, market: String!, party: String!): PreConsensus!
+    orderCancel(id: ID!, market: String!, party: String!): PendingOrder!
 }
 
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
@@ -31,10 +31,10 @@ type Subscription {
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
-type PreConsensusOrder {
+type PendingOrder {
 
-  # If true then the operation was validated and passed on for consensus with other nodes on the VEGA platform.
-  accepted: Boolean!
+  # The id of the Order, can be null if the request was SubmitOrder
+  id: String
 
   # A UUID reference for the caller to aid in tracking operations on VEGA
   reference: String!
@@ -61,17 +61,6 @@ type PreConsensusOrder {
   # The status of an order, for example 'Active'
   status: OrderStatus
 }
-
-# An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
-type PreConsensus {
-
-  # If true then the operation was validated and passed on for consensus with other nodes on the VEGA platform.
-  accepted: Boolean!
-
-  # A UUID reference for the caller to aid in tracking operations on VEGA
-  reference: String!
-}
-
 
 # Queries allow a caller to read data and filter data via GraphQL.
 type Query {

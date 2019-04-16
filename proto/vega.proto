@@ -174,7 +174,7 @@ enum ChainStatus {
     CONNECTED = 2;
 }
 
-message PreConsensusOrder {
+message PendingOrder {
   string reference = 1;
   uint64 price = 2;
   Order.Type type = 3;
@@ -183,7 +183,7 @@ message PreConsensusOrder {
   uint64 size = 6;
   string party = 7;
   Order.Status status = 8;
-  bool accepted = 9;
+  string id = 9;
 }
 
 message OrderAmendment {

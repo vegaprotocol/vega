@@ -35,10 +35,10 @@ func (m *MockOrderService) EXPECT() *MockOrderServiceMockRecorder {
 }
 
 // CancelOrder mocks base method
-func (m *MockOrderService) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (bool, error) {
+func (m *MockOrderService) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (*proto.PendingOrder, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1)
-	ret0, _ := ret[0].(bool)
+	ret0, _ := ret[0].(*proto.PendingOrder)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,10 +50,10 @@ func (mr *MockOrderServiceMockRecorder) CancelOrder(arg0, arg1 interface{}) *gom
 }
 
 // CreateOrder mocks base method
-func (m *MockOrderService) CreateOrder(arg0 context.Context, arg1 *proto.OrderSubmission) (*proto.PreConsensusOrder, error) {
+func (m *MockOrderService) CreateOrder(arg0 context.Context, arg1 *proto.OrderSubmission) (*proto.PendingOrder, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateOrder", arg0, arg1)
-	ret0, _ := ret[0].(*proto.PreConsensusOrder)
+	ret0, _ := ret[0].(*proto.PendingOrder)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
