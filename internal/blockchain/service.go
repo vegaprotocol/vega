@@ -119,6 +119,7 @@ func (s *abciService) Commit() error {
 		return errors.Wrap(err, "Failure generating data in execution engine (commit)")
 	}
 
+	s.log.Debug("ABCI service COMMIT completed")
 	return nil
 }
 
@@ -161,7 +162,6 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 		return errorMessage
 	}
 
-	s.log.Debug("ABCI service COMMIT completed")
 	return nil
 }
 
