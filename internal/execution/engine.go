@@ -116,7 +116,11 @@ func NewEngine(
 			logging.String("market-config", path),
 			logging.String("market-id", mkt.Id))
 
-		e.SubmitMarket(&mkt)
+		err = e.SubmitMarket(&mkt)
+		if err != nil {
+			e.log.Panic("Unable to submit market",
+				logging.Error(err))
+		}
 	}
 
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
@@ -198,32 +202,6 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	return mkt.CancelOrder(order)
 }
 
-/*
-func (e *Engine) startCandleBuffer() error {
-
-	// Load current vega-time from the blockchain (via time service)
-	t, err := e.time.GetTimeNow()
-	if err != nil {
-		return errors.Wrap(err, "Failed to obtain current time from vega-time service")
-	}
-
-	// We need a buffer for all current markets on VEGA
-	for _, mkt := range e.markets {
-		e.log.Debug(
-			"Starting candle buffer for market",
-			logging.String("market-id", mkt.GetID()),
-		)
-
-		err := e.candleStore.StartNewBuffer(mkt.GetID(), t)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to start new candle buffer for market %s", mkt.GetID()))
-		}
-	}
-
-	return nil
-}
-*/
-
 func (e *Engine) onChainTimeUpdate(t time.Time) {
 	e.log.Debug("updating engine on new time update")
 
@@ -264,14 +242,6 @@ func (e *Engine) removeExpiredOrders(t time.Time) error {
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
 
-	// We need to call start new candle buffer for every block with the current implementation.
-	// This ensures that empty candles are created for a timestamp and can fill up. We will
-	// hopefully revisit candles in the future and improve the design.
-	// err := e.startCandleBuffer()
-	// if err != nil {
-	// return err
-	// }
-
 	return nil
 }
 
@@ -280,13 +250,6 @@ func (e *Engine) removeExpiredOrders(t time.Time) error {
 func (e *Engine) Generate() error {
 
 	for _, mkt := range e.markets {
-		// We need a buffer for all current markets on VEGA
-		/*
-			err := e.candleStore.GenerateCandlesFromBuffer(mkt.GetID())
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Failed to generate candles from buffer for market %s", mkt.GetID()))
-			}
-		*/
 		err := e.orderStore.Commit()
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Failed to commit orders for market %s", mkt.GetID()))
