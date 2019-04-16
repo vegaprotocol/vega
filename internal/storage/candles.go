@@ -200,6 +200,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 
 			c.queueEvent(marketID, *candleDb)
 		}
+
 	}
 
 	if err := writeBatch.Flush(); err != nil {

@@ -1,7 +1,7 @@
 module code.vegaprotocol.io/vega
 
 require (
-	github.com/99designs/gqlgen v0.8.0
+	github.com/99designs/gqlgen v0.8.3
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
@@ -37,7 +37,7 @@ require (
 	github.com/tendermint/go-amino v0.14.1 // indirect
 	github.com/tendermint/tendermint v0.30.0
 	github.com/vegaprotocol/modvendor v0.0.1 // indirect
-	github.com/vektah/gqlparser v1.1.1
+	github.com/vektah/gqlparser v1.1.2
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1

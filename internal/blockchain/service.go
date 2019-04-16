@@ -119,6 +119,7 @@ func (s *abciService) Commit() error {
 		return errors.Wrap(err, "Failure generating data in execution engine (commit)")
 	}
 
+	s.log.Debug("ABCI service COMMIT completed")
 	return nil
 }
 
@@ -129,7 +130,7 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	}
 
 	order.Id = fmt.Sprintf("V%010d-%010d", s.totalBatches, s.totalOrders)
-	order.Timestamp = s.currentTimestamp.UnixNano()
+	order.CreatedAt = s.currentTimestamp.UnixNano()
 
 	// Submit the create order request to the execution engine
 	confirmationMessage, errorMessage := s.execution.SubmitOrder(order)
@@ -161,7 +162,6 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 		return errorMessage
 	}
 
-	s.log.Debug("ABCI service COMMIT completed")
 	return nil
 }
 

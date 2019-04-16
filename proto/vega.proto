@@ -55,11 +55,10 @@ message Order {
   uint64 size = 6;
   uint64 remaining = 7;
   Type type = 8;
-  int64 timestamp = 9;
+  int64 createdAt = 9;
   Status status = 10;
-  string expirationDatetime = 11;
-  int64 expirationTimestamp = 12;
-  string reference = 13;
+  int64 expiresAt = 11;
+  string reference = 12;
 }
 
 message OrderCancellationConfirmation {
@@ -180,8 +179,7 @@ message OrderAmendment {
     string party = 2 [(validator.field) = {msg_exists : true}];
     uint64 price = 3;
     uint64 size = 4 [(validator.field) = {int_gt: 0}];
-    string expirationDatetime = 5;
-    int64 expirationTimestamp = 6;
+    int64 expiresAt = 5;
 }
 
 message OrderSubmission {
@@ -192,7 +190,7 @@ message OrderSubmission {
   uint64 size = 5;
   Side side = 6;
   Order.Type type = 7;
-  string expirationDatetime = 8;
+  int64 expiresAt = 8;
 }
 
 message OrderCancellation {

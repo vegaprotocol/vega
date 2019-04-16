@@ -283,17 +283,17 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	// Validate interval, map to protobuf enum
 	var pbInterval types.Interval
 	switch interval {
-	case IntervalI15M:
+	case IntervalI15m:
 		pbInterval = types.Interval_I15M
-	case IntervalI1D:
+	case IntervalI1d:
 		pbInterval = types.Interval_I1D
-	case IntervalI1H:
+	case IntervalI1h:
 		pbInterval = types.Interval_I1H
-	case IntervalI1M:
+	case IntervalI1m:
 		pbInterval = types.Interval_I1M
-	case IntervalI5M:
+	case IntervalI5m:
 		pbInterval = types.Interval_I5M
-	case IntervalI6H:
+	case IntervalI6h:
 		pbInterval = types.Interval_I6H
 	default:
 		logger := *r.GetLogger()
@@ -303,16 +303,6 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	}
 
 	// Convert javascript string representation of int epoch+nano timestamp
-	/*
-		sinceTimestamp, err := strconv.ParseInt(sinceTimestampRaw, 10, 64)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("error converting %s into a valid timestamp", sinceTimestampRaw))
-		}
-		if len(sinceTimestampRaw) < 19 {
-			return nil, errors.New("timestamp should be in epoch+nanoseconds format, eg. 1545158175835902621")
-		}
-	*/
-
 	since, err := vegatime.Parse(sinceRaw)
 	if err != nil {
 		return nil, err
@@ -472,13 +462,23 @@ func (r *MyOrderResolver) Remaining(ctx context.Context, obj *types.Order) (stri
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 func (r *MyOrderResolver) Timestamp(ctx context.Context, obj *types.Order) (string, error) {
-	return strconv.FormatInt(obj.Timestamp, 10), nil
+	return strconv.FormatInt(obj.CreatedAt, 10), nil
 }
 func (r *MyOrderResolver) Status(ctx context.Context, obj *types.Order) (OrderStatus, error) {
 	return OrderStatus(obj.Status.String()), nil
 }
 func (r *MyOrderResolver) Datetime(ctx context.Context, obj *types.Order) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
+	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
+}
+func (r *MyOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
+}
+func (r *MyOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
+	if obj.ExpiresAt <= 0 {
+		return nil, nil
+	}
+	expiresAt := vegatime.Format(vegatime.UnixNano(obj.ExpiresAt))
+	return &expiresAt, nil
 }
 func (r *MyOrderResolver) Trades(ctx context.Context, obj *types.Order) ([]*types.Trade, error) {
 	relatedTrades, err := r.tradeService.GetByOrderId(ctx, obj.Id)
@@ -548,7 +548,7 @@ func (r *MyCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Int
 		logger := *r.GetLogger()
 		logger.Warn("Interval conversion from proto to gql type failed, falling back to default: I15M",
 			logging.String("interval", interval.String()))
-		return IntervalI15M, nil
+		return IntervalI15m, nil
 	}
 }
 
@@ -682,13 +682,13 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 		// Validate RFC3339 with no milli or nanosecond (@matt has chosen this strategy, good enough until unix epoch timestamp)
 		//layout := "2006-01-02T15:04:05Z"
 		// _, err := time.Parse(layout, *expiration)
-		_, err := vegatime.Parse(*expiration)
+		expiresAt, err := vegatime.Parse(*expiration)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
 		}
 
 		// move to pure timestamps or convert an RFC format shortly
-		order.ExpirationDatetime = *expiration
+		order.ExpiresAt = expiresAt.UnixNano()
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
@@ -805,17 +805,17 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 	var pbInterval types.Interval
 	switch interval {
-	case IntervalI15M:
+	case IntervalI15m:
 		pbInterval = types.Interval_I15M
-	case IntervalI1D:
+	case IntervalI1d:
 		pbInterval = types.Interval_I1D
-	case IntervalI1H:
+	case IntervalI1h:
 		pbInterval = types.Interval_I1H
-	case IntervalI1M:
+	case IntervalI1m:
 		pbInterval = types.Interval_I1M
-	case IntervalI5M:
+	case IntervalI5m:
 		pbInterval = types.Interval_I5M
-	case IntervalI6H:
+	case IntervalI6h:
 		pbInterval = types.Interval_I6H
 	default:
 		logger.Warn("Invalid interval when subscribing to candles in gql, falling back to default: I15M",

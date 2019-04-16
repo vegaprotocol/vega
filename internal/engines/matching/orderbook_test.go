@@ -34,46 +34,46 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	someTimeLater := currentTimestamp + (1000 * 1000)
 
 	order1 := &types.Order{
-		Market:              market,
-		Party:               party,
-		Side:                types.Side_Sell,
-		Price:               1,
-		Size:                1,
-		Remaining:           1,
-		Type:                types.Order_GTT,
-		Timestamp:           currentTimestamp,
-		ExpirationTimestamp: someTimeLater,
-		Id:                  "1",
+		Market:    market,
+		Party:     party,
+		Side:      types.Side_Sell,
+		Price:     1,
+		Size:      1,
+		Remaining: 1,
+		Type:      types.Order_GTT,
+		CreatedAt: currentTimestamp,
+		ExpiresAt: someTimeLater,
+		Id:        "1",
 	}
 	_, err := book.SubmitOrder(order1)
 	assert.Equal(t, err, nil)
 
 	order2 := &types.Order{
-		Market:              market,
-		Party:               party,
-		Side:                types.Side_Sell,
-		Price:               3298,
-		Size:                99,
-		Remaining:           99,
-		Type:                types.Order_GTT,
-		Timestamp:           currentTimestamp,
-		ExpirationTimestamp: someTimeLater + 1,
-		Id:                  "2",
+		Market:    market,
+		Party:     party,
+		Side:      types.Side_Sell,
+		Price:     3298,
+		Size:      99,
+		Remaining: 99,
+		Type:      types.Order_GTT,
+		CreatedAt: currentTimestamp,
+		ExpiresAt: someTimeLater + 1,
+		Id:        "2",
 	}
 	_, err = book.SubmitOrder(order2)
 	assert.Equal(t, err, nil)
 
 	order3 := &types.Order{
-		Market:              market,
-		Party:               party,
-		Side:                types.Side_Sell,
-		Price:               771,
-		Size:                19,
-		Remaining:           19,
-		Type:                types.Order_GTT,
-		Timestamp:           currentTimestamp,
-		ExpirationTimestamp: someTimeLater,
-		Id:                  "3",
+		Market:    market,
+		Party:     party,
+		Side:      types.Side_Sell,
+		Price:     771,
+		Size:      19,
+		Remaining: 19,
+		Type:      types.Order_GTT,
+		CreatedAt: currentTimestamp,
+		ExpiresAt: someTimeLater,
+		Id:        "3",
 	}
 	_, err = book.SubmitOrder(order3)
 	assert.Equal(t, err, nil)
@@ -86,23 +86,23 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Size:      7,
 		Remaining: 7,
 		Type:      types.Order_GTC,
-		Timestamp: currentTimestamp,
+		CreatedAt: currentTimestamp,
 		Id:        "4",
 	}
 	_, err = book.SubmitOrder(order4)
 	assert.Equal(t, err, nil)
 
 	order5 := &types.Order{
-		Market:              market,
-		Party:               party,
-		Side:                types.Side_Sell,
-		Price:               199,
-		Size:                99999,
-		Remaining:           99999,
-		Type:                types.Order_GTT,
-		Timestamp:           currentTimestamp,
-		ExpirationTimestamp: someTimeLater,
-		Id:                  "5",
+		Market:    market,
+		Party:     party,
+		Side:      types.Side_Sell,
+		Price:     199,
+		Size:      99999,
+		Remaining: 99999,
+		Type:      types.Order_GTT,
+		CreatedAt: currentTimestamp,
+		ExpiresAt: someTimeLater,
+		Id:        "5",
 	}
 	_, err = book.SubmitOrder(order5)
 	assert.Equal(t, err, nil)
@@ -115,38 +115,38 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: currentTimestamp,
+		CreatedAt: currentTimestamp,
 		Id:        "6",
 	}
 	_, err = book.SubmitOrder(order6)
 	assert.Equal(t, err, nil)
 
 	order7 := &types.Order{
-		Market:              market,
-		Party:               party,
-		Side:                types.Side_Sell,
-		Price:               41,
-		Size:                9999,
-		Remaining:           9999,
-		Type:                types.Order_GTT,
-		Timestamp:           currentTimestamp,
-		ExpirationTimestamp: someTimeLater + 9999,
-		Id:                  "7",
+		Market:    market,
+		Party:     party,
+		Side:      types.Side_Sell,
+		Price:     41,
+		Size:      9999,
+		Remaining: 9999,
+		Type:      types.Order_GTT,
+		CreatedAt: currentTimestamp,
+		ExpiresAt: someTimeLater + 9999,
+		Id:        "7",
 	}
 	_, err = book.SubmitOrder(order7)
 	assert.Equal(t, err, nil)
 
 	order8 := &types.Order{
-		Market:              market,
-		Party:               party,
-		Side:                types.Side_Sell,
-		Price:               1,
-		Size:                1,
-		Remaining:           1,
-		Type:                types.Order_GTT,
-		Timestamp:           currentTimestamp,
-		ExpirationTimestamp: someTimeLater - 9999,
-		Id:                  "8",
+		Market:    market,
+		Party:     party,
+		Side:      types.Side_Sell,
+		Price:     1,
+		Size:      1,
+		Remaining: 1,
+		Type:      types.Order_GTT,
+		CreatedAt: currentTimestamp,
+		ExpiresAt: someTimeLater - 9999,
+		Id:        "8",
 	}
 	_, err = book.SubmitOrder(order8)
 	assert.Equal(t, err, nil)
@@ -159,23 +159,23 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Size:      12,
 		Remaining: 12,
 		Type:      types.Order_GTC,
-		Timestamp: currentTimestamp,
+		CreatedAt: currentTimestamp,
 		Id:        "9",
 	}
 	_, err = book.SubmitOrder(order9)
 	assert.Equal(t, err, nil)
 
 	order10 := &types.Order{
-		Market:              market,
-		Party:               party,
-		Side:                types.Side_Sell,
-		Price:               1,
-		Size:                1,
-		Remaining:           1,
-		Type:                types.Order_GTT,
-		Timestamp:           currentTimestamp,
-		ExpirationTimestamp: someTimeLater - 1,
-		Id:                  "10",
+		Market:    market,
+		Party:     party,
+		Side:      types.Side_Sell,
+		Price:     1,
+		Size:      1,
+		Remaining: 1,
+		Type:      types.Order_GTT,
+		CreatedAt: currentTimestamp,
+		ExpiresAt: someTimeLater - 1,
+		Id:        "10",
 	}
 	_, err = book.SubmitOrder(order10)
 	assert.Equal(t, err, nil)
@@ -206,7 +206,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 		Id:        "id-number-one",
 	}
 	_, err := book.SubmitOrder(invalidTimestampOrdertypes)
@@ -221,7 +221,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		Size:      100,
 		Remaining: 300,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 		Id:        "id-number-one",
 	}
 	_, err = book.SubmitOrder(invalidRemainginSizeOrdertypes)
@@ -241,7 +241,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 	}
 
 	book.SubmitOrder(newOrder)
@@ -274,7 +274,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 		{
 			Market:    "testOrderBook",
@@ -284,7 +284,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 		{
 			Market:    "testOrderBook",
@@ -294,7 +294,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 		{
 			Market:    "testOrderBook",
@@ -304,7 +304,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 		// Side Buy
 		{
@@ -315,7 +315,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 		{
 			Market:    "testOrderBook",
@@ -325,7 +325,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 		{
 			Market:    "testOrderBook",
@@ -335,7 +335,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 	}
 
@@ -350,7 +350,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 1,
+			CreatedAt: 1,
 		},
 		// Side Buy
 		{
@@ -361,7 +361,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 1,
+			CreatedAt: 1,
 		},
 	}
 
@@ -376,7 +376,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 2,
+			CreatedAt: 2,
 		},
 		// Side Buy
 		{
@@ -387,7 +387,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 2,
+			CreatedAt: 2,
 		},
 	}
 
@@ -414,7 +414,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_GTC,
-				Timestamp: 3,
+				CreatedAt: 3,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -443,7 +443,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 				{
 					Market:    "testOrderBook",
@@ -453,7 +453,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 			},
 		},
@@ -467,7 +467,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      150,
 				Remaining: 150,
 				Type:      types.Order_GTC,
-				Timestamp: 3,
+				CreatedAt: 3,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -504,7 +504,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 				{
 					Market:    "testOrderBook",
@@ -514,7 +514,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 				{
 					Market:    "testOrderBook",
@@ -524,7 +524,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
-					Timestamp: 1,
+					CreatedAt: 1,
 				},
 			},
 		},
@@ -538,7 +538,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      70,
 				Remaining: 70,
 				Type:      types.Order_GTC,
-				Timestamp: 3,
+				CreatedAt: 3,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -567,7 +567,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 1,
+					CreatedAt: 1,
 				},
 				{
 					Market:    "testOrderBook",
@@ -577,7 +577,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 80,
 					Type:      types.Order_GTC,
-					Timestamp: 2,
+					CreatedAt: 2,
 				},
 			},
 		},
@@ -592,7 +592,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_GTC,
-				Timestamp: 3,
+				CreatedAt: 3,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -621,7 +621,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 2,
+					CreatedAt: 2,
 				},
 				{
 					Market:    "testOrderBook",
@@ -631,7 +631,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 80,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 			},
 		},
@@ -645,7 +645,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_GTC,
-				Timestamp: 4,
+				CreatedAt: 4,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -674,7 +674,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 				{
 					Market:    "testOrderBook",
@@ -684,7 +684,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 			},
 		},
@@ -698,7 +698,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      350,
 				Remaining: 350,
 				Type:      types.Order_GTC,
-				Timestamp: 4,
+				CreatedAt: 4,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -743,7 +743,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 				{
 					Market:    "testOrderBook",
@@ -753,7 +753,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 				{
 					Market:    "testOrderBook",
@@ -763,7 +763,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 1,
+					CreatedAt: 1,
 				},
 				{
 					Market:    "testOrderBook",
@@ -773,7 +773,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 2,
+					CreatedAt: 2,
 				},
 			},
 		},
@@ -786,7 +786,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_FOK, // nonpersistent
-				Timestamp: 4,
+				CreatedAt: 4,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -815,7 +815,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      350,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 4,
+					CreatedAt: 4,
 				},
 				{
 					Market:    "testOrderBook",
@@ -825,7 +825,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 30,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 			},
 		},
@@ -838,7 +838,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      200,
 				Remaining: 200,
 				Type:      types.Order_ENE, // nonpersistent
-				Timestamp: 5,
+				CreatedAt: 5,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -867,7 +867,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 				{
 					Market:    "testOrderBook",
@@ -877,7 +877,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 			},
 		},
@@ -890,7 +890,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      2000,
 				Remaining: 2000,
 				Type:      types.Order_FOK, // nonpersistent
-				Timestamp: 5,
+				CreatedAt: 5,
 			},
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
@@ -904,7 +904,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      2000,
 				Remaining: 2000,
 				Type:      types.Order_FOK, // nonpersistent
-				Timestamp: 5,
+				CreatedAt: 5,
 			},
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
@@ -918,7 +918,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      200,
 				Remaining: 200,
 				Type:      types.Order_ENE, // nonpersistent
-				Timestamp: 5,
+				CreatedAt: 5,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -939,22 +939,21 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 			},
 		},
 		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
 			aggressiveOrder: &types.Order{
-				Market:              "testOrderBook",
-				Party:               "ZZ",
-				Side:                types.Side_Sell,
-				Price:               95,
-				Size:                200,
-				Remaining:           200,
-				Type:                types.Order_GTT, // nonpersistent
-				Timestamp:           5,
-				ExpirationDatetime:  "2006-01-02T15:04:05Z07:00",
-				ExpirationTimestamp: 6,
+				Market:    "testOrderBook",
+				Party:     "ZZ",
+				Side:      types.Side_Sell,
+				Price:     95,
+				Size:      200,
+				Remaining: 200,
+				Type:      types.Order_GTT, // nonpersistent
+				CreatedAt: 5,
+				ExpiresAt: 6,
 			},
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
@@ -968,7 +967,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_FOK, // nonpersistent
-				Timestamp: 6,
+				CreatedAt: 6,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -982,16 +981,15 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					Market:              "testOrderBook",
-					Party:               "ZZ",
-					Side:                types.Side_Sell,
-					Price:               95,
-					Size:                200,
-					Remaining:           100,
-					Type:                types.Order_GTT, // nonpersistent
-					Timestamp:           5,
-					ExpirationDatetime:  "2006-01-02T15:04:05Z07:00",
-					ExpirationTimestamp: 7,
+					Market:    "testOrderBook",
+					Party:     "ZZ",
+					Side:      types.Side_Sell,
+					Price:     95,
+					Size:      200,
+					Remaining: 100,
+					Type:      types.Order_GTT, // nonpersistent
+					CreatedAt: 5,
+					ExpiresAt: 7,
 				},
 			},
 		},
@@ -1004,7 +1002,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Size:      2000,
 				Remaining: 2000,
 				Type:      types.Order_FOK, // nonpersistent
-				Timestamp: 6,
+				CreatedAt: 6,
 			},
 			expectedTrades:                []types.Trade{},
 			expectedPassiveOrdersAffected: []types.Order{},
@@ -1047,7 +1045,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		}
 
 		// call remove expired orders every scenario
-		book.RemoveExpiredOrders(s.aggressiveOrder.Timestamp)
+		book.RemoveExpiredOrders(s.aggressiveOrder.CreatedAt)
 	}
 }
 
@@ -1065,7 +1063,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
 
@@ -1094,7 +1092,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
 
@@ -1131,7 +1129,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
-		Timestamp: 0,
+		CreatedAt: 0,
 		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
 
@@ -1218,7 +1216,7 @@ func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
 	assert.Equal(t, expectedOrder.Size, order.Size)
 	assert.Equal(t, expectedOrder.Remaining, order.Remaining)
 	assert.Equal(t, expectedOrder.Type, order.Type)
-	assert.Equal(t, expectedOrder.Timestamp, order.Timestamp)
+	assert.Equal(t, expectedOrder.CreatedAt, order.CreatedAt)
 }
 
 func TestOrderBook_AmendOrder(t *testing.T) {
@@ -1409,7 +1407,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
-		Timestamp: 10,
+		CreatedAt: 10,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1431,7 +1429,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
-		Timestamp: 5,
+		CreatedAt: 5,
 	}
 
 	err = book.AmendOrder(editedOrder)
@@ -1458,7 +1456,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
-		Timestamp: 10,
+		CreatedAt: 10,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1480,7 +1478,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		Size:      300,
 		Remaining: 300,
 		Type:      types.Order_GTC,
-		Timestamp: 10,
+		CreatedAt: 10,
 	}
 
 	err = book.AmendOrder(editedOrder)
@@ -1514,7 +1512,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 		{
 			Market:    "testOrderBook",
@@ -1524,7 +1522,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 		// Side Buy
 		{
@@ -1535,7 +1533,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 		{
 			Market:    "testOrderBook",
@@ -1545,7 +1543,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 0,
+			CreatedAt: 0,
 		},
 	}
 
@@ -1560,7 +1558,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 1,
+			CreatedAt: 1,
 		},
 		// Side Buy
 		{
@@ -1571,7 +1569,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
-			Timestamp: 1,
+			CreatedAt: 1,
 		},
 	}
 
@@ -1598,7 +1596,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_GTC,
-				Timestamp: 3,
+				CreatedAt: 3,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -1619,7 +1617,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 			},
 		},
@@ -1633,7 +1631,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				Size:      200,
 				Remaining: 200,
 				Type:      types.Order_GTC,
-				Timestamp: 4,
+				CreatedAt: 4,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -1662,7 +1660,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 				{
 					Market:    "testOrderBook",
@@ -1672,7 +1670,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 1,
+					CreatedAt: 1,
 				},
 			},
 		},
@@ -1686,7 +1684,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				Size:      250,
 				Remaining: 250,
 				Type:      types.Order_GTC,
-				Timestamp: 5,
+				CreatedAt: 5,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -1723,7 +1721,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 1,
+					CreatedAt: 1,
 				},
 				{
 					Market:    "testOrderBook",
@@ -1733,7 +1731,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 				{
 					Market:    "testOrderBook",
@@ -1743,7 +1741,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 			},
 		},
@@ -1757,7 +1755,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				Size:      50,
 				Remaining: 50,
 				Type:      types.Order_GTC,
-				Timestamp: 6,
+				CreatedAt: 6,
 			},
 			expectedTrades: []types.Trade{
 				{
@@ -1778,7 +1776,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
-					Timestamp: 0,
+					CreatedAt: 0,
 				},
 			},
 		},
@@ -1819,6 +1817,6 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		}
 
 		// call remove expired orders every scenario
-		book.RemoveExpiredOrders(s.aggressiveOrder.Timestamp)
+		book.RemoveExpiredOrders(s.aggressiveOrder.CreatedAt)
 	}
 }

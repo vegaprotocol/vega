@@ -311,7 +311,6 @@ func (m *Market) AmendOrder(
 		m.log.Error("Market ID mismatch",
 			logging.Order(*existingOrder),
 			logging.String("market", m.marketcfg.Id))
-
 		return &types.OrderConfirmation{}, types.ErrInvalidMarketID
 	}
 
@@ -337,10 +336,9 @@ func (m *Market) AmendOrder(
 	newOrder.Size = existingOrder.Size
 	newOrder.Remaining = existingOrder.Remaining
 	newOrder.Type = existingOrder.Type
-	newOrder.Timestamp = currentTime.UnixNano()
+	newOrder.CreatedAt = currentTime.UnixNano()
 	newOrder.Status = existingOrder.Status
-	newOrder.ExpirationDatetime = existingOrder.ExpirationDatetime
-	newOrder.ExpirationTimestamp = existingOrder.ExpirationTimestamp
+	newOrder.ExpiresAt = existingOrder.ExpiresAt
 	newOrder.Reference = existingOrder.Reference
 
 	var (
@@ -363,9 +361,8 @@ func (m *Market) AmendOrder(
 		}
 	}
 
-	if newOrder.Type == types.Order_GTT && orderAmendment.ExpirationTimestamp != 0 && orderAmendment.ExpirationDatetime != "" {
-		newOrder.ExpirationTimestamp = orderAmendment.ExpirationTimestamp
-		newOrder.ExpirationDatetime = orderAmendment.ExpirationDatetime
+	if newOrder.Type == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
+		newOrder.ExpiresAt = orderAmendment.ExpiresAt
 		expiryChange = true
 	}
 

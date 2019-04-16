@@ -122,7 +122,7 @@ func BenchmarkMatching(
 			order.Size = size
 			order.Remaining = size
 			order.Type = types.Order_GTC
-			order.Timestamp = timestamp
+			order.CreatedAt = timestamp
 
 			start := vegatime.Now()
 			oc, oe := executionEngine.SubmitOrder(order)
