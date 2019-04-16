@@ -22,10 +22,6 @@ var (
 	ErrMarketAlreadyExist = errors.New("market already exist")
 )
 
-var (
-	ErrMarketAlreadyExist = errors.New("market already exist")
-)
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution OrderStore
 type OrderStore interface {
 	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error)
