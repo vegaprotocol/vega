@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -12,6 +13,7 @@ import (
 
 var (
 	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
+	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 )
 
 type Engine struct {
@@ -46,7 +48,10 @@ func (e *Engine) CollectSells(positions []*types.SettlePosition) (*types.Transfe
 	reference := fmt.Sprintf("%s close", e.market)
 	sysAccounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, storage.SystemOwner)
 	if err != nil {
-		e.log.Debugf("Failed to collect buys, system accounts missing: %+v", err)
+		e.log.Error(
+			"Failed to collect buys (system accounts missing)",
+			logging.Error(err),
+		)
 		return nil, err
 	}
 	var settle, insurance *types.Account
@@ -79,7 +84,11 @@ func (e *Engine) CollectSells(positions []*types.SettlePosition) (*types.Transfe
 		// general account:
 		gen, err := e.accountStore.GetAccountsForOwnerByType(p.Owner, types.AccountType_GENERAL)
 		if err != nil {
-			e.log.Debugf("Failed to get general account for %s: %+v", p.Owner, err)
+			e.log.Error(
+				"Failed to get the general account",
+				logging.String("owner", p.Owner),
+				logging.Error(err),
+			)
 			return nil, err
 		}
 		req := types.TransferRequest{
@@ -97,13 +106,22 @@ func (e *Engine) CollectSells(positions []*types.SettlePosition) (*types.Transfe
 		}
 		res, err := e.getLedgerEntries(&req)
 		if err != nil {
-			e.log.Debugf("Failed to get ledger entries for sell positions of %s: %+v", p.Owner, err)
+			e.log.Error(
+				"Failed to get ledger entries for sell positions",
+				logging.String("owner", p.Owner),
+				logging.Error(err),
+			)
 			return nil, err
 		}
 		// there's only 1 balance account here (the ToAccount)
 		if err := e.accountStore.IncrementBalance(gen.Id, res.Balances[0].Balance); err != nil {
 			// this account might get accessed concurrently -> use increment
-			e.log.Debugf("Failed to increment the balance of account %s: %+v", gen.Id, res.Balances[0].Balance)
+			e.log.Error(
+				"Failed to increment balance of general account",
+				logging.String("account-id", gen.Id),
+				logging.Int64("increment", res.Balances[0].Balance),
+				logging.Error(err),
+			)
 			return nil, err
 		}
 		resp.Transfers = append(resp.Transfers, res.Transfers...)
@@ -119,7 +137,10 @@ func (e *Engine) CollectBuys(positions []*types.SettlePosition) (*types.Transfer
 	reference := fmt.Sprintf("%s close", e.market)
 	sysAccounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, storage.SystemOwner)
 	if err != nil {
-		e.log.Debugf("Failed to collect buys, system accounts missing: %+v", err)
+		e.log.Error(
+			"Failed to collect buys (system accounts missing)",
+			logging.Error(err),
+		)
 		return nil, err
 	}
 	var (
@@ -151,7 +172,12 @@ func (e *Engine) CollectBuys(positions []*types.SettlePosition) (*types.Transfer
 		}
 		accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, p.Owner)
 		if err != nil {
-			e.log.Debugf("could not get accounts for %s on market %s: %+v", p.Owner, e.market, err)
+			e.log.Error(
+				"could not get accounts for market",
+				logging.String("account-owner", p.Owner),
+				logging.String("market", e.market),
+				logging.Error(err),
+			)
 			return nil, err
 		}
 		req := types.TransferRequest{
@@ -172,6 +198,9 @@ func (e *Engine) CollectBuys(positions []*types.SettlePosition) (*types.Transfer
 				req.FromAccount[1] = ca
 			}
 		}
+		if req.FromAccount[0] == nil || req.FromAccount[1] == nil {
+			return nil, ErrTraderAccountsMissing
+		}
 		req.FromAccount[2] = insurance
 		res, err := e.getLedgerEntries(&req)
 		if err != nil {
@@ -185,7 +214,12 @@ func (e *Engine) CollectBuys(positions []*types.SettlePosition) (*types.Transfer
 	}
 	for _, bacc := range resp.Balances {
 		if err := e.accountStore.IncrementBalance(bacc.Account.Id, bacc.Balance); err != nil {
-			e.log.Debugf("Failed to update target account %s incrementing balance with %d: %+v", bacc.Account.Id, bacc.Balance, err)
+			e.log.Error(
+				"Failed to upadte target account",
+				logging.String("target-account", bacc.Account.Id),
+				logging.Int64("balance", bacc.Balance),
+				logging.Error(err),
+			)
 			return nil, err
 		}
 	}
@@ -207,7 +241,6 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 	for _, acc := range req.FromAccount {
 		// give each to account an equal share
 		parts := amount / int64(len(req.ToAccount))
-		e.log.Debugf("amount %d, parts %d", amount, parts)
 		// add remaining pennies to last ledger movement
 		remainder := amount % int64(len(req.ToAccount))
 		var (
@@ -218,7 +251,12 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 		if acc.Balance > amount || acc.Type == types.AccountType_INSURANCE {
 			acc.Balance -= amount
 			if err := e.accountStore.IncrementBalance(acc.Id, -amount); err != nil {
-				e.log.Debugf("Failed to update balance of account %s to %d: %+v", acc.Id, acc.Balance, err)
+				e.log.Error(
+					"Failed to update balance for account",
+					logging.String("account-id", acc.Id),
+					logging.Int64("balance", acc.Balance),
+					logging.Error(err),
+				)
 				return nil, err
 			}
 			for _, to = range ret.Balances {
@@ -247,7 +285,11 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 			// partial amount resolves differently
 			parts = amount / int64(len(req.ToAccount))
 			if err := e.accountStore.UpdateBalance(acc.Id, 0); err != nil {
-				e.log.Debugf("Failed to update balance of account %s to 0: %+v", acc.Id, err)
+				e.log.Error(
+					"Failed to set balance of account to 0",
+					logging.String("account-id", acc.Id),
+					logging.Error(err),
+				)
 				return nil, err
 			}
 			for _, to = range ret.Balances {

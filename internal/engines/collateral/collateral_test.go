@@ -26,6 +26,7 @@ func TestCollateral(t *testing.T) {
 	t.Run("test creating new - should create market accounts", testNew)
 	t.Run("test collecting buys - both insurance and sufficient in trader accounts", testCollectBuy)
 	t.Run("test collecting buys - trader account not empty, but insufficient", testCollectComplexBuy)
+	t.Run("test collecting buys - trader missing some accounts", testCollectBuyMissingTraderAccounts)
 	t.Run("test collecting sells - cases where settle account is full + where insurance pool is tapped", testCollectSell)
 }
 
@@ -140,6 +141,43 @@ func testCollectComplexBuy(t *testing.T) {
 	assert.Equal(t, price, resp.Balances[0].Balance)
 	// there should be 2 ledger moves, one from trader account, one from insurance acc
 	assert.Equal(t, 2, len(resp.Transfers))
+}
+
+func testCollectBuyMissingTraderAccounts(t *testing.T) {
+	market := "test-market"
+	trader := "test-trader"
+	price := int64(1000)
+
+	systemAccs := getSystemAccounts(market)
+	allAccs := getTraderAccounts(trader, market)
+	traderAccs := make([]*types.Account, 0, len(allAccs)-1)
+	for _, acc := range allAccs {
+		// all but margin account
+		if acc.Type != types.AccountType_MARGIN {
+			traderAccs = append(traderAccs, acc)
+		}
+	}
+	eng := getTestEngine(t, market, nil)
+	defer eng.ctrl.Finish()
+	// we're going to auto-create the accounts
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(1).Return(nil).Do(func(owner, market string) {
+		assert.Equal(t, trader, owner)
+	})
+	// set up the get-accounts calls
+	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, storage.SystemOwner).Times(1).Return(systemAccs, nil)
+	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
+	// now the positions
+	pos := []*types.SettlePosition{
+		{
+			Owner: trader,
+			Size:  1,
+			Price: price,
+		},
+	}
+	resp, err := eng.CollectBuys(pos)
+	assert.Nil(t, resp)
+	assert.Error(t, err)
+	assert.Equal(t, collateral.ErrTraderAccountsMissing, err)
 }
 
 func testCollectSell(t *testing.T) {
