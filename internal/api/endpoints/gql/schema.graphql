@@ -354,32 +354,35 @@ type Order {
 # A trade on Vega, the result of two orders being "matched" in the market
 type Trade {
 
-    # The hash of the trade data
-    id: ID!
+  # The hash of the trade data
+  id: ID!
 
-    # The market the trade occurred on
-    market: Market!
+  # The market the trade occurred on
+  market: Market!
 
-    # The order that bought
-    buyer: String!
+  # The order that bought
+  buyer: String!
 
-    # The order that sold
-    seller: String!
+  # The order that sold
+  seller: String!
 
-    # The aggressor indicates whether this trade was related to a BUY or SELL
-    aggressor: Side!
+  # The aggressor indicates whether this trade was related to a BUY or SELL
+  aggressor: Side!
 
-    # The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)
-    price: String!
+  # The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)
+  price: String!
 
-    # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
-    size: String!
+  # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
+  size: String!
 
-    # Unix epoch+nanoseconds for when the trade occured
-    timestamp: String!
+  # Unix epoch+nanoseconds for when the trade occured
+  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-    # ISO-8601 RFC3339+Nano formatted data and time for when the trade occured (timestamp)
-    datetime: String!
+  # ISO-8601 RFC3339+Nano formatted data and time for when the trade occured (timestamp)
+  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
+
+  # RFC3339Nano for when th trade occured
+  createdAt: String!
 }
 
 # Valid order types, these determine what happens when an order is added to the book

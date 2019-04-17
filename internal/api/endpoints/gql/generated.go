@@ -202,6 +202,7 @@ type ComplexityRoot struct {
 	Trade struct {
 		Aggressor func(childComplexity int) int
 		Buyer     func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
 		Datetime  func(childComplexity int) int
 		Id        func(childComplexity int) int
 		Market    func(childComplexity int) int
@@ -303,6 +304,7 @@ type TradeResolver interface {
 	Size(ctx context.Context, obj *proto.Trade) (string, error)
 	Timestamp(ctx context.Context, obj *proto.Trade) (string, error)
 	Datetime(ctx context.Context, obj *proto.Trade) (string, error)
+	CreatedAt(ctx context.Context, obj *proto.Trade) (string, error)
 }
 
 type executableSchema struct {
@@ -1030,6 +1032,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Trade.Buyer(childComplexity), true
 
+	case "Trade.CreatedAt":
+		if e.complexity.Trade.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Trade.CreatedAt(childComplexity), true
+
 	case "Trade.Datetime":
 		if e.complexity.Trade.Datetime == nil {
 			break
@@ -1541,32 +1550,35 @@ type Order {
 # A trade on Vega, the result of two orders being "matched" in the market
 type Trade {
 
-    # The hash of the trade data
-    id: ID!
+  # The hash of the trade data
+  id: ID!
 
-    # The market the trade occurred on
-    market: Market!
+  # The market the trade occurred on
+  market: Market!
 
-    # The order that bought
-    buyer: String!
+  # The order that bought
+  buyer: String!
 
-    # The order that sold
-    seller: String!
+  # The order that sold
+  seller: String!
 
-    # The aggressor indicates whether this trade was related to a BUY or SELL
-    aggressor: Side!
+  # The aggressor indicates whether this trade was related to a BUY or SELL
+  aggressor: Side!
 
-    # The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)
-    price: String!
+  # The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)
+  price: String!
 
-    # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
-    size: String!
+  # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
+  size: String!
 
-    # Unix epoch+nanoseconds for when the trade occured
-    timestamp: String!
+  # Unix epoch+nanoseconds for when the trade occured
+  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
 
-    # ISO-8601 RFC3339+Nano formatted data and time for when the trade occured (timestamp)
-    datetime: String!
+  # ISO-8601 RFC3339+Nano formatted data and time for when the trade occured (timestamp)
+  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
+
+  # RFC3339Nano for when th trade occured
+  createdAt: String!
 }
 
 # Valid order types, these determine what happens when an order is added to the book
@@ -4902,6 +4914,33 @@ func (ec *executionContext) _Trade_datetime(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Trade_createdAt(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Trade",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Trade().CreatedAt(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -7482,6 +7521,20 @@ func (ec *executionContext) _Trade(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Trade_datetime(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
+		case "createdAt":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Trade_createdAt(ctx, field, obj)
 				if res == graphql.Null {
 					invalid = true
 				}
