@@ -84,14 +84,15 @@ func NewEngine(
 	accountStore *storage.Account,
 ) *Engine {
 	e := &Engine{
-		Config:      executionConfig,
-		markets:     map[string]*engines.Market{},
-		candleStore: candleStore,
-		orderStore:  orderStore,
-		tradeStore:  tradeStore,
-		marketStore: marketStore,
-		partyStore:  partyStore,
-		time:        time,
+		Config:       executionConfig,
+		markets:      map[string]*engines.Market{},
+		candleStore:  candleStore,
+		orderStore:   orderStore,
+		tradeStore:   tradeStore,
+		marketStore:  marketStore,
+		partyStore:   partyStore,
+		time:         time,
+		accountStore: accountStore,
 	}
 
 	// loads markets from configuration
