@@ -246,7 +246,8 @@ func (app *AbciApplication) setBatchStats() {
 		logging.Int("average-tx-total", averageTxTotal))
 
 	app.stats.averageTxPerBatch = averageTxTotal
-	app.stats.totalTxLastBatch = 0
+	app.stats.totalTxLastBatch = app.stats.totalTxCurrentBatch
+	app.stats.totalTxCurrentBatch = 0
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(app.txTotals) == statsSampleSize {
@@ -257,7 +258,7 @@ func (app *AbciApplication) setBatchStats() {
 // setTxStats is used to calculate any statistics that should be
 // recorded once per transaction delivery.
 func (app *AbciApplication) setTxStats(txLength int) {
-	app.stats.totalTxLastBatch++
+	app.stats.totalTxCurrentBatch++
 	if app.txSizes == nil {
 		app.txSizes = make([]int, 0)
 	}

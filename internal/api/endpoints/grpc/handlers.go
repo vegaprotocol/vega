@@ -327,7 +327,7 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		GenesisTime:           genesisTime,
 		CurrentTime:           vegatime.Format(vegatime.Now()),
 		VegaTime:              vegatime.Format(epochTime),
-		TxPerBlock:            uint64(h.Stats.Blockchain.AverageTxPerBatch()),
+		TxPerBlock:            uint64(h.Stats.Blockchain.TotalTxLastBatch()),
 		AverageTxBytes:        uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
 		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
 		TradesPerSecond:       uint64(h.Stats.Blockchain.TradesPerSecond()),
