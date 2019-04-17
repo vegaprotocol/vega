@@ -25,6 +25,7 @@ type Service interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceTime
 type ServiceTime interface {
 	GetTimeNow() (time.Time, error)
+	GetTimeLastBatch() (time.Time, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceExecutionEngine
@@ -229,10 +230,14 @@ func (s *abciService) setBatchStats() {
 		}
 	}
 
-	blockDuration := time.Duration(vegatime.Now().UnixNano() - s.currentTimestamp.UnixNano()).Seconds()
-	s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
-	s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
-
+	prev, err := s.time.GetTimeLastBatch()
+	if err != nil {
+		s.log.Error("unable to get previous batch time", logging.Error(err))
+	} else {
+		blockDuration := time.Duration(s.currentTimestamp.UnixNano() - prev.UnixNano()).Seconds()
+		s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
+		s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
+	}
 	s.log.Debug("Blockchain service batch stats",
 		logging.Uint64("total-batches", s.totalBatches),
 		logging.Int("avg-orders-batch", s.stats.averageOrdersPerBatch),
