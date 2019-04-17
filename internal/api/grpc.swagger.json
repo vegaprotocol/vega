@@ -48,7 +48,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/grpcOrderResponse"
+              "$ref": "#/definitions/vegaPendingOrder"
             }
           }
         },
@@ -277,7 +277,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/grpcOrderResponse"
+              "$ref": "#/definitions/vegaPendingOrder"
             }
           }
         },
@@ -663,6 +663,40 @@
         "FOK"
       ],
       "default": "GTC"
+    },
+    "vegaPendingOrder": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaOrderType"
+        },
+        "side": {
+          "$ref": "#/definitions/vegaSide"
+        },
+        "marketID": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "party": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/OrderStatus"
+        },
+        "id": {
+          "type": "string"
+        }
+      }
     },
     "vegaPriceLevel": {
       "type": "object",
