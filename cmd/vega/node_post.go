@@ -38,6 +38,12 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 			werr = append(werr, errors.Wrap(err, "error closing market store in command."))
 		}
 	}
+	if l.pproffhandlr != nil {
+		if err := l.pproffhandlr.Stop(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error stopping pprof"))
+		}
+	}
+
 	l.Log.Info("Vega shutdown complete",
 		logging.String("version", Version),
 		logging.String("version-hash", VersionHash))

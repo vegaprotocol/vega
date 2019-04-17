@@ -33,7 +33,6 @@ type ServiceExecutionEngine interface {
 	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	Generate() error
-	Process() error
 }
 
 type abciService struct {
@@ -85,12 +84,6 @@ func (s *abciService) Begin() error {
 		s.previousTimestamp = epochTime
 	}
 
-	// Run any processing required in execution engine, e.g. check for expired orders
-	err = s.execution.Process()
-	if err != nil {
-		return err
-	}
-
 	s.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),
 		logging.Int64("previous-timestamp", s.previousTimestamp.UnixNano()),
@@ -117,6 +110,7 @@ func (s *abciService) Commit() error {
 		return errors.Wrap(err, "Failure generating data in execution engine (commit)")
 	}
 
+	s.log.Debug("ABCI service COMMIT completed")
 	return nil
 }
 
@@ -159,7 +153,6 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 		return errorMessage
 	}
 
-	s.log.Debug("ABCI service COMMIT completed")
 	return nil
 }
 
@@ -243,8 +236,8 @@ func (s *abciService) setBatchStats() {
 	s.log.Debug("Blockchain service batch stats",
 		logging.Uint64("total-batches", s.totalBatches),
 		logging.Int("avg-orders-batch", s.stats.averageOrdersPerBatch),
-		logging.Uint64("orders-per-secs", s.stats.OrdersPerSecond()),
-		logging.Uint64("trades-per-secs", s.stats.TradesPerSecond()),
+		logging.Uint64("orders-per-sec", s.stats.OrdersPerSecond()),
+		logging.Uint64("trades-per-sec", s.stats.TradesPerSecond()),
 	)
 
 	s.currentOrdersInBatch = 0

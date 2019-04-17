@@ -47,8 +47,8 @@ func testCancelOrderSuccess(t *testing.T) {
 
 	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketId, arg.Id).Times(1).Return(&order, nil)
 	svc.block.EXPECT().CancelOrder(gomock.Any(), cancelMatcher{e: order}).Times(1).Return(true, nil)
-	success, err := svc.svc.CancelOrder(ctx, &arg)
-	assert.True(t, success)
+	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
+	assert.NotNil(t, pendingOrder)
 	assert.NoError(t, err)
 }
 
@@ -60,8 +60,8 @@ func testCancelOrderNotFound(t *testing.T) {
 	osErr := errors.New("orderStore error")
 
 	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketId, arg.Id).Times(1).Return(nil, osErr)
-	success, err := svc.svc.CancelOrder(ctx, &arg)
-	assert.False(t, success)
+	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 	assert.Equal(t, osErr, err)
 }
@@ -80,8 +80,8 @@ func testCancelOrderDuplicate(t *testing.T) {
 	}
 
 	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketId, arg.Id).Times(1).Return(&order, nil)
-	success, err := svc.svc.CancelOrder(ctx, &arg)
-	assert.False(t, success)
+	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
 
@@ -99,8 +99,8 @@ func testCancelOrderFilled(t *testing.T) {
 	}
 
 	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketId, arg.Id).Times(1).Return(&order, nil)
-	success, err := svc.svc.CancelOrder(ctx, &arg)
-	assert.False(t, success)
+	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
 
@@ -118,8 +118,8 @@ func testCancelOrderPartyMismatch(t *testing.T) {
 	}
 
 	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketId, arg.Id).Times(1).Return(&order, nil)
-	success, err := svc.svc.CancelOrder(ctx, &arg)
-	assert.False(t, success)
+	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
 

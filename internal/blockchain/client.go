@@ -40,10 +40,24 @@ func (b *Client) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 	return b.sendAmendmentCommand(ctx, amendment, AmendOrderCommand)
 }
 
-func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (success bool, orderReference string, err error) {
+func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error) {
 	order.Reference = fmt.Sprintf("%s", uuid.NewV4())
-	success, err = b.sendOrderCommand(ctx, order, SubmitOrderCommand)
-	return success, order.Reference, err
+	_, err := b.sendOrderCommand(ctx, order, SubmitOrderCommand)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.PendingOrder{
+		Reference: order.Reference,
+		Price:     order.Price,
+		Type:      order.Type,
+		Side:      order.Side,
+		MarketID:  order.Market,
+		Size:      order.Size,
+		Party:     order.Party,
+		Status:    order.Status,
+	}, nil
 }
 
 func (b *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {

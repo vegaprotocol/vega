@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
+	"code.vegaprotocol.io/vega/internal/pprof"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -56,6 +57,14 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 	l.Log = conf.GetLogger()
 
+	if flagProvided("--with-pprof") || conf.Pprof.Enabled {
+		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
+		l.pproffhandlr, err = pprof.New(conf.Pprof)
+		if err != nil {
+			return
+		}
+	}
+
 	l.Log.Info("Starting Vega",
 		logging.String("config-path", configPath),
 		logging.String("version", Version),
@@ -81,6 +90,9 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		return
 	}
 	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
+		return
+	}
+	if l.accounts, err = storage.NewAccounts(l.conf.Storage); err != nil {
 		return
 	}
 	return nil

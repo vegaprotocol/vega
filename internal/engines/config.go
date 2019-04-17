@@ -1,7 +1,11 @@
 package engines
 
 import (
+	"code.vegaprotocol.io/vega/internal/engines/collateral"
 	"code.vegaprotocol.io/vega/internal/engines/matching"
+	"code.vegaprotocol.io/vega/internal/engines/position"
+	"code.vegaprotocol.io/vega/internal/engines/risk"
+	"code.vegaprotocol.io/vega/internal/engines/settlement"
 	"code.vegaprotocol.io/vega/internal/logging"
 )
 
@@ -15,7 +19,11 @@ type Config struct {
 	log   *logging.Logger
 	Level logging.Level
 
-	Matching *matching.Config
+	Matching   *matching.Config
+	Risk       *risk.Config
+	Position   *position.Config
+	Settlement *settlement.Config
+	Collateral *collateral.Config
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -23,9 +31,13 @@ type Config struct {
 func NewDefaultConfig(logger *logging.Logger) *Config {
 	logger = logger.Named(namedLogger)
 	return &Config{
-		log:      logger,
-		Level:    logging.InfoLevel,
-		Matching: matching.NewDefaultConfig(logger),
+		log:        logger,
+		Level:      logging.InfoLevel,
+		Matching:   matching.NewDefaultConfig(logger),
+		Risk:       risk.NewDefaultConfig(logger),
+		Position:   position.NewDefaultConfig(logger),
+		Settlement: settlement.NewDefaultConfig(logger),
+		Collateral: collateral.NewDefaultConfig(logger),
 	}
 }
 
@@ -43,4 +55,9 @@ func (c *Config) SetLogger(parent *logging.Logger) {
 // hot reloaded at run time. Currently we only check and refresh the logging level.
 func (c *Config) UpdateLogger() {
 	c.log.SetLevel(c.Level)
+	c.Matching.UpdateLogger()
+	c.Risk.UpdateLogger()
+	c.Position.UpdateLogger()
+	c.Settlement.UpdateLogger()
+	c.Collateral.UpdateLogger()
 }

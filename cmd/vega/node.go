@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
+	"code.vegaprotocol.io/vega/internal/pprof"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -35,6 +36,7 @@ type NodeCommand struct {
 	ctx   context.Context
 	cfunc context.CancelFunc
 
+	accounts    *storage.Account
 	candleStore *storage.Candle
 	orderStore  *storage.Order
 	marketStore *storage.Market
@@ -51,11 +53,12 @@ type NodeCommand struct {
 
 	blockchainClient *blockchain.Client
 
-	configPath string
-	conf       *internal.Config
-	stats      *internal.Stats
-	withPPROF  bool
-	Log        *logging.Logger
+	pproffhandlr *pprof.Pprofhandler
+	configPath   string
+	conf         *internal.Config
+	stats        *internal.Stats
+	withPPROF    bool
+	Log          *logging.Logger
 }
 
 // Init initialises the node command.
@@ -98,6 +101,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.candleStore,
 		l.marketStore,
 		l.partyStore,
+		l.accounts,
 	)
 
 	// ABCI<>blockchain server

@@ -11,17 +11,19 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 var (
 	ErrChainNotConnected = errors.New("chain not connected")
+	ErrNilPendingOrder   = errors.New("error nil preconsensus")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql OrderService
 type OrderService interface {
-	CreateOrder(ctx context.Context, order *types.OrderSubmission) (success bool, orderReference string, err error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
+	CreateOrder(ctx context.Context, order *types.OrderSubmission) (*types.PendingOrder, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
@@ -120,6 +122,9 @@ func (r *resolverRoot) Party() PartyResolver {
 }
 func (r *resolverRoot) Subscription() SubscriptionResolver {
 	return (*MySubscriptionResolver)(r)
+}
+func (r *resolverRoot) PendingOrder() PendingOrderResolver {
+	return (*MyPendingOrderResolver)(r)
 }
 
 // BEGIN: Query Resolver
@@ -637,11 +642,11 @@ func (r *MyPositionResolver) direction(val int64) ValueDirection {
 type MyMutationResolver resolverRoot
 
 func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, party string, price string,
-	size string, side Side, type_ OrderType, expiration *string) (*PreConsensus, error) {
+	size string, side Side, type_ OrderType, expiration *string) (*types.PendingOrder, error) {
 	order := &types.OrderSubmission{}
-	res := PreConsensus{}
+
 	if r.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-		return &res, ErrChainNotConnected
+		return nil, ErrChainNotConnected
 	}
 
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
@@ -692,24 +697,21 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	accepted, reference, err := r.orderService.CreateOrder(ctx, order)
+	pendingOrder, err := r.orderService.CreateOrder(ctx, order)
 	if err != nil {
 		logger := *r.GetLogger()
 		logger.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
 		return nil, err
 	}
 
-	res.Accepted = accepted
-	res.Reference = reference
-	return &res, nil
+	return pendingOrder, nil
 }
 
-func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*PreConsensus, error) {
+func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*types.PendingOrder, error) {
 	order := &types.OrderCancellation{}
-	res := PreConsensus{}
 
 	if r.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-		return &res, ErrChainNotConnected
+		return nil, ErrChainNotConnected
 	}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
@@ -731,13 +733,12 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	order.Party = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
-	accepted, err := r.orderService.CancelOrder(ctx, order)
+	pendingOrder, err := r.orderService.CancelOrder(ctx, order)
 	if err != nil {
 		return nil, err
 	}
 
-	res.Accepted = accepted
-	return &res, nil
+	return pendingOrder, nil
 }
 
 // END: Mutation Resolver
@@ -834,6 +835,61 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 		logging.Uint64("ref", ref))
 
 	return c, nil
+}
+
+type MyPendingOrderResolver resolverRoot
+
+func (r *MyPendingOrderResolver) Price(ctx context.Context, obj *proto.PendingOrder) (*string, error) {
+	if obj != nil {
+		str := fmt.Sprintf("%v", obj.Price)
+		return &str, nil
+	}
+	return nil, ErrNilPendingOrder
+}
+
+func (r *MyPendingOrderResolver) Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error) {
+	if obj != nil {
+		ot := OrderType(obj.Type.String())
+		return &ot, nil
+	}
+	return nil, ErrNilPendingOrder
+}
+
+func (r *MyPendingOrderResolver) Side(ctx context.Context, obj *proto.PendingOrder) (*Side, error) {
+	if obj != nil {
+		s := Side(obj.Side.String())
+		return &s, nil
+	}
+	return nil, ErrNilPendingOrder
+}
+
+func (r *MyPendingOrderResolver) Market(ctx context.Context, obj *proto.PendingOrder) (*Market, error) {
+	if obj != nil {
+		if len(obj.MarketID) <= 0 {
+			return nil, nil
+		}
+		pmkt, err := r.marketService.GetByID(ctx, obj.MarketID)
+		if err != nil {
+			return nil, err
+		}
+		return MarketFromProto(pmkt)
+	}
+	return nil, ErrNilPendingOrder
+}
+
+func (r *MyPendingOrderResolver) Size(ctx context.Context, obj *proto.PendingOrder) (*string, error) {
+	if obj != nil {
+		str := fmt.Sprintf("%v", obj.Size)
+		return &str, nil
+	}
+	return nil, ErrNilPendingOrder
+}
+func (r *MyPendingOrderResolver) Status(ctx context.Context, obj *proto.PendingOrder) (*OrderStatus, error) {
+	if obj != nil {
+		os := OrderStatus(obj.Status.String())
+		return &os, nil
+	}
+	return nil, ErrNilPendingOrder
 }
 
 func validateMarket(ctx context.Context, marketId *string, marketService MarketService) (*types.Market, error) {

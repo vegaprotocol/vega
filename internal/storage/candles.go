@@ -15,18 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Currently we support 6 interval durations for trading candles on VEGA, as follows:
-var supportedIntervals = [6]types.Interval{
-	types.Interval_I1M,  // 1 minute
-	types.Interval_I5M,  // 5 minutes
-	types.Interval_I15M, // 15 minutes
-	types.Interval_I1H,  // 1 hour
-	types.Interval_I6H,  // 6 hours
-	types.Interval_I1D,  // 1 day
-
-	// Add intervals here as required...
-}
-
 // Monday, January 1, 2018 12:00:01 AM GMT+00:00
 const minSinceTimestamp int64 = 1514764801000
 
@@ -36,7 +24,6 @@ var minSinceTime time.Time = vegatime.UnixNano(minSinceTimestamp)
 type Candle struct {
 	*Config
 	badger       *badgerStore
-	candleBuffer map[string]map[string]types.Candle
 	subscribers  map[uint64]*InternalTransport
 	subscriberId uint64
 	queue        []marketCandle
@@ -69,11 +56,10 @@ func NewCandles(c *Config) (*Candle, error) {
 	}
 	bs := badgerStore{db: db}
 	return &Candle{
-		Config:       c,
-		badger:       &bs,
-		subscribers:  make(map[uint64]*InternalTransport),
-		candleBuffer: make(map[string]map[string]types.Candle),
-		queue:        make([]marketCandle, 0),
+		Config:      c,
+		badger:      &bs,
+		subscribers: make(map[uint64]*InternalTransport),
+		queue:       make([]marketCandle, 0),
 	}, nil
 }
 
@@ -125,67 +111,8 @@ func (c *Candle) Close() error {
 	return c.badger.db.Close()
 }
 
-// StartNewBuffer creates a new trades buffer for the given market at timestamp.
-func (c *Candle) StartNewBuffer(marketId string, timestamp time.Time) error {
-	roundedTimestamps := GetMapOfIntervalsToRoundedTimestamps(timestamp)
-	previousCandleBuffer := c.candleBuffer[marketId]
-	c.resetCandleBuffer(marketId)
-
-	for _, interval := range supportedIntervals {
-		bufferKey := getBufferKey(roundedTimestamps[interval], interval)
-		lastClose := previousCandleBuffer[bufferKey].Close
-		if lastClose == uint64(0) {
-			prefixForMostRecent, _ := c.badger.candlePrefix(marketId, interval, true)
-			txn := c.badger.readTransaction()
-			previousCandle, err := c.fetchMostRecentCandle(txn, prefixForMostRecent)
-			if err != nil {
-				lastClose = 0
-			} else {
-				lastClose = previousCandle.Close
-			}
-			txn.Discard()
-		}
-		c.candleBuffer[marketId][bufferKey] = *newCandle(roundedTimestamps[interval], lastClose, 0, interval)
-	}
-
-	return nil
-}
-
-// AddTradeToBuffer adds a trade to the trades buffer for the given market.
-func (c *Candle) AddTradeToBuffer(trade types.Trade) error {
-
-	if c.candleBuffer[trade.Market] == nil {
-		c.log.Info("Starting new candle buffer for market",
-			logging.String("market-id", trade.Market),
-			logging.Int64("timestamp", trade.Timestamp))
-
-		err := c.StartNewBuffer(trade.Market, vegatime.UnixNano(trade.Timestamp))
-		if err != nil {
-			return errors.Wrap(err, "Failed to start new buffer when adding trade to candle store")
-		}
-	}
-
-	for _, interval := range supportedIntervals {
-		roundedTradeTimestamp := vegatime.RoundToNearest(vegatime.UnixNano(trade.Timestamp), interval)
-
-		bufferKey := getBufferKey(roundedTradeTimestamp, interval)
-
-		// check if bufferKey is present in buffer
-		if candle, exists := c.candleBuffer[trade.Market][bufferKey]; exists {
-			// if exists update the value of the candle under bufferKey with trade data
-			updateCandle(&candle, &trade)
-			c.candleBuffer[trade.Market][bufferKey] = candle
-		} else {
-			// if doesn't exist create new candle under this buffer key
-			c.candleBuffer[trade.Market][bufferKey] = *newCandle(roundedTradeTimestamp, trade.Price, trade.Size, candle.Interval)
-		}
-	}
-
-	return nil
-}
-
 // GenerateCandlesFromBuffer will generate all candles for a given market.
-func (c *Candle) GenerateCandlesFromBuffer(marketId string) error {
+func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types.Candle) error {
 
 	fetchCandle := func(txn *badger.Txn, badgerKey []byte) (*types.Candle, error) {
 		item, err := txn.Get(badgerKey)
@@ -238,8 +165,8 @@ func (c *Candle) GenerateCandlesFromBuffer(marketId string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, candle := range c.candleBuffer[marketId] {
-		badgerKey := c.badger.candleKey(marketId, candle.Interval, candle.Timestamp)
+	for _, candle := range buf {
+		badgerKey := c.badger.candleKey(marketID, candle.Interval, candle.Timestamp)
 		candleDb, err := fetchCandle(readTxn, badgerKey)
 		if err == badger.ErrKeyNotFound {
 			err := insertNewCandle(writeBatch, badgerKey, candle)
@@ -252,7 +179,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketId string) error {
 					logging.Candle(candle),
 					logging.String("badger-key", string(badgerKey)))
 			}
-			c.queueEvent(marketId, candle)
+			c.queueEvent(marketID, candle)
 		}
 
 		if err == nil && candle.Volume != uint64(0) {
@@ -271,8 +198,9 @@ func (c *Candle) GenerateCandlesFromBuffer(marketId string) error {
 					logging.String("badger-key", string(badgerKey)))
 			}
 
-			c.queueEvent(marketId, *candleDb)
+			c.queueEvent(marketID, *candleDb)
 		}
+
 	}
 
 	if err := writeBatch.Flush(); err != nil {
@@ -364,7 +292,12 @@ func (c *Candle) generateFetchKey(market string, interval types.Interval, since 
 
 }
 
-func (c *Candle) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []byte) (*types.Candle, error) {
+func (c *Candle) FetchMostRecentCandle(
+	marketID string, interval types.Interval, descending bool) (*types.Candle, error) {
+	prefixForMostRecent, _ := c.badger.candlePrefix(marketID, interval, descending)
+	txn := c.badger.readTransaction()
+	defer txn.Discard()
+
 	var previousCandle types.Candle
 
 	// set iterator to reverse in order to fetch most recent
@@ -391,19 +324,6 @@ func (c *Candle) fetchMostRecentCandle(txn *badger.Txn, prefixForMostRecent []by
 	}
 
 	return &previousCandle, nil
-}
-
-// GetMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,
-//  15 minute, hour, 6hours, 1 day intervals and return a map of rounded timestamps
-func GetMapOfIntervalsToRoundedTimestamps(timestamp time.Time) map[types.Interval]time.Time {
-	timestamps := make(map[types.Interval]time.Time)
-
-	// round floor by integer division
-	for _, interval := range supportedIntervals {
-		timestamps[interval] = vegatime.RoundToNearest(timestamp, interval)
-	}
-
-	return timestamps
 }
 
 // queueEvent appends a candle onto a queue for a market.
@@ -471,58 +391,6 @@ func (c *Candle) notify() error {
 	c.queue = make([]marketCandle, 0)
 
 	return nil
-}
-
-// resetCandleBuffer does what it says on the tin :)
-func (c *Candle) resetCandleBuffer(market string) {
-	c.candleBuffer[market] = make(map[string]types.Candle)
-}
-
-// getBufferKey returns the custom formatted buffer key for internal trade to timestamp mapping.
-func getBufferKey(timestamp time.Time, interval types.Interval) string {
-	return fmt.Sprintf("%d:%s", timestamp.UnixNano(), interval.String())
-}
-
-// newCandle constructs a new candle with minimum required parameters.
-func newCandle(timestamp time.Time, openPrice, size uint64, interval types.Interval) *types.Candle {
-	candle := types.CandlePool.Get().(*types.Candle)
-	candle.Timestamp = timestamp.UnixNano()
-	candle.Datetime = vegatime.Format(timestamp)
-	candle.High = openPrice
-	candle.Low = openPrice
-	candle.Open = openPrice
-	candle.Close = openPrice
-	candle.Volume = size
-	candle.Interval = interval
-	return candle
-}
-
-// updateCandle will calculate and set volume, open, close etc based on the given Trade.
-func updateCandle(candle *types.Candle, trade *types.Trade) {
-	// always overwrite close price
-	candle.Close = trade.Price
-
-	// candle.Volume == uint64(0) in case this is new candle and first trading activity happens for that candle !!!!
-	// or candle.Open == uint64(0) in case there was no previous candle as this is a new market (aka also new trading activity for that candle)
-	// -> overwrite open price with new trade price (by default candle.Open price is set to previous candle close price)
-	// -> overwrite High and Low with new trade price (by default Low and High prices are set to candle open price which is set to previous candle close price)
-	if candle.Volume == uint64(0) || candle.Open == uint64(0) {
-		candle.Open = trade.Price
-		candle.High = trade.Price
-		candle.Low = trade.Price
-	}
-
-	// set minimum
-	if trade.Price < candle.Low || candle.Low == uint64(0) {
-		candle.Low = trade.Price
-	}
-
-	// set maximum
-	if trade.Price > candle.High {
-		candle.High = trade.Price
-	}
-
-	candle.Volume += trade.Size
 }
 
 // mergeCandles is used to update an existing candle in the buffer.
