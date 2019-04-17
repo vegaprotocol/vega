@@ -66,24 +66,18 @@ func (s *abciService) Begin() error {
 	s.log.Debug("ABCI service BEGIN starting")
 
 	// Load the latest consensus block time
-	epochTime, err := s.time.GetTimeNow()
+	currentTime, err := s.time.GetTimeNow()
 	if err != nil {
 		return err
 	}
 
-	// We need to cache the last timestamp so we can distribute trades
-	// in a block evenly between last timestamp and current timestamp
-	if epochTime.Unix() > 0 {
-		s.previousTimestamp = epochTime
+	previousTime, err := s.time.GetTimeLastBatch()
+	if err != nil {
+		return err
 	}
 
-	// Store the timestamp info that we receive from the blockchain provider
-	s.currentTimestamp = epochTime
-
-	// Ensure we always set app.previousTimestamp it'll be 0 on the first block
-	if s.previousTimestamp.Unix() < 1 {
-		s.previousTimestamp = epochTime
-	}
+	s.currentTimestamp = currentTime
+	s.previousTimestamp = previousTime
 
 	s.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),
@@ -230,14 +224,11 @@ func (s *abciService) setBatchStats() {
 		}
 	}
 
-	prev, err := s.time.GetTimeLastBatch()
-	if err != nil {
-		s.log.Error("unable to get previous batch time", logging.Error(err))
-	} else {
-		blockDuration := time.Duration(s.currentTimestamp.UnixNano() - prev.UnixNano()).Seconds()
-		s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
-		s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
-	}
+	blockDuration := time.Duration(s.currentTimestamp.UnixNano() - s.previousTimestamp.UnixNano()).Seconds()
+	s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
+	s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
+	s.log.Info("blockduration", logging.Float64("dur", blockDuration))
+
 	s.log.Debug("Blockchain service batch stats",
 		logging.Uint64("total-batches", s.totalBatches),
 		logging.Int("avg-orders-batch", s.stats.averageOrdersPerBatch),
