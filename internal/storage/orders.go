@@ -152,7 +152,7 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip, limit uin
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -233,7 +233,7 @@ func (os *Order) GetByParty(ctx context.Context, party string, skip, limit uint6
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -339,7 +339,7 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	buyPtr := make([]*types.PriceLevel, 0, len(buy))
 	sellPtr := make([]*types.PriceLevel, 0, len(sell))
 
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 	// 2 routines, each can push one error on here, so buffer to avoid deadlock

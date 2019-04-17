@@ -232,7 +232,7 @@ func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time,
 	it := c.badger.getIterator(txn, false)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 

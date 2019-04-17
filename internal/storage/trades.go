@@ -134,7 +134,7 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -214,7 +214,7 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -327,7 +327,7 @@ func (ts *Trade) GetByOrderId(ctx context.Context, orderID string, skip, limit u
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 

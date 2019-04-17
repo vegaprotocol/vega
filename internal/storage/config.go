@@ -22,8 +22,22 @@ const (
 	// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 	namedLogger = "storage"
 
-	defaultStorageAccessTimeout = 5
+	defaultStorageAccessTimeout = 5 * time.Second
 )
+
+type duration struct {
+	time.Duration
+}
+
+func (d *duration) UnmarshalText(text []byte) error {
+	var err error
+	d.Duration, err = time.ParseDuration(string(text))
+	return err
+}
+
+func (d duration) MarshalText() ([]byte, error) {
+	return []byte(d.String()), nil
+}
 
 // Config provides package level settings, configuration and logging.
 type Config struct {
@@ -38,7 +52,7 @@ type Config struct {
 	//LogOrderStoreDebug    bool
 	//LogCandleStoreDebug   bool
 	LogPositionStoreDebug bool
-	Timeout               time.Duration
+	Timeout               duration
 }
 
 // NewConfig constructs a new Config instance with default parameters.
@@ -59,7 +73,7 @@ func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) *Confi
 		//LogOrderStoreDebug:    true,
 		//LogCandleStoreDebug:   false,
 		LogPositionStoreDebug: false,
-		Timeout:               defaultStorageAccessTimeout,
+		Timeout:               duration{defaultStorageAccessTimeout},
 	}
 }
 
@@ -165,7 +179,7 @@ func NewTestConfig() (*Config, error) {
 		CandleStoreDirPath:    fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
 		MarketStoreDirPath:    fmt.Sprintf("/tmp/vegatests/marketstore-%v", randSeq(5)),
 		LogPositionStoreDebug: true,
-		Timeout:               defaultStorageAccessTimeout,
+		Timeout:               duration{defaultStorageAccessTimeout},
 	}
 
 	if err := ensureDir(cfg.CandleStoreDirPath); err != nil {
