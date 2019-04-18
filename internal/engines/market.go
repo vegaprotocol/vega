@@ -297,7 +297,7 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
-		m.log.Panic("Failure after cancel order from matching engine",
+		m.log.Error("Failure after cancel order from matching engine",
 			logging.Order(*order),
 			logging.Error(err))
 		return nil, err

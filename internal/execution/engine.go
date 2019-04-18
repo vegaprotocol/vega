@@ -162,7 +162,7 @@ func (e *Engine) SubmitMarket(mkt *types.Market) error {
 	e.markets[mkt.Id], err = engines.NewMarket(
 		e.log, e.Config.Engines, mkt, e.candleStore, e.orderStore, e.partyStore, e.tradeStore, e.accountStore, now)
 	if err != nil {
-		e.log.Panic("Failed to instanciate market market",
+		e.log.Error("Failed to instanciate market",
 			logging.String("market-id", mkt.Id),
 			logging.Error(err),
 		)
@@ -170,7 +170,7 @@ func (e *Engine) SubmitMarket(mkt *types.Market) error {
 
 	err = e.marketStore.Post(mkt)
 	if err != nil {
-		e.log.Panic("Failed to add default market to market store",
+		e.log.Error("Failed to add default market to market store",
 			logging.String("market-id", mkt.Id),
 			logging.Error(err),
 		)
