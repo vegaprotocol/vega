@@ -317,20 +317,20 @@ func (m *Market) AmendOrder(
 	currentTime := m.currentTime
 	m.mu.Unlock()
 
-	newOrder := types.OrderPool.Get().(*types.Order)
-	newOrder.Id = existingOrder.Id
-	newOrder.Market = existingOrder.Market
-	newOrder.Party = existingOrder.Party
-	newOrder.Side = existingOrder.Side
-	newOrder.Price = existingOrder.Price
-	newOrder.Size = existingOrder.Size
-	newOrder.Remaining = existingOrder.Remaining
-	newOrder.Type = existingOrder.Type
-	newOrder.CreatedAt = currentTime.UnixNano()
-	newOrder.Status = existingOrder.Status
-	newOrder.ExpiresAt = existingOrder.ExpiresAt
-	newOrder.Reference = existingOrder.Reference
-
+	newOrder := &types.Order{
+		Id:        existingOrder.Id,
+		Market:    existingOrder.Market,
+		Party:     existingOrder.Party,
+		Side:      existingOrder.Side,
+		Price:     existingOrder.Price,
+		Size:      existingOrder.Size,
+		Remaining: existingOrder.Remaining,
+		Type:      existingOrder.Type,
+		CreatedAt: currentTime.UnixNano(),
+		Status:    existingOrder.Status,
+		ExpiresAt: existingOrder.ExpiresAt,
+		Reference: existingOrder.Reference,
+	}
 	var (
 		priceShift, sizeIncrease, sizeDecrease, expiryChange = false, false, false, false
 	)

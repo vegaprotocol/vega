@@ -184,15 +184,15 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 		panic(fmt.Sprintf("agg.side == pass.side (agg: %v, pass: %v)", agg, pass))
 	}
 
-	trade := types.TradePool.Get().(*types.Trade)
-	trade.Market = agg.Market
-	trade.Price = pass.Price
-	trade.Size = size
-	trade.Aggressor = agg.Side
-	trade.Buyer = buyer.Party
-	trade.Seller = seller.Party
-	trade.Timestamp = agg.CreatedAt
-	return trade
+	return &types.Trade{
+		Market:    agg.Market,
+		Price:     pass.Price,
+		Size:      size,
+		Aggressor: agg.Side,
+		Buyer:     buyer.Party,
+		Seller:    seller.Party,
+		Timestamp: agg.CreatedAt,
+	}
 }
 
 func (l PriceLevel) print() {

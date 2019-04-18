@@ -135,7 +135,6 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 		s.stats.addTotalTrades(uint64(len(confirmationMessage.Trades)))
 
 		s.currentOrdersInBatch++
-		confirmationMessage.Release()
 	}
 
 	// increment total orders, even for failures so current ID strategy is valid.
