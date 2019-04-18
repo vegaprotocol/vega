@@ -120,7 +120,7 @@ func BenchmarkMatching(
 				CreatedAt: timestamp,
 			}
 			start := vegatime.Now()
-			oc, oe := executionEngine.SubmitOrder(order)
+			executionEngine.SubmitOrder(order)
 			end := vegatime.Now()
 			timetaken := end.Sub(start)
 			totalElapsed += timetaken
