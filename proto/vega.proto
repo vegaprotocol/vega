@@ -228,10 +228,21 @@ message Account {
   AccountType type = 6;
 }
 
+message FinancialAmount {
+  uint64 amount = 1;
+  string asset = 2;
+}
+
+enum SettleType {
+  BUY = 0;
+  SELL = 1;
+}
+
 message SettlePosition {
   string owner = 1;
   uint64 size = 2;
-  int64 price = 3;
+  FinancialAmount amount = 3;
+  SettleType type = 4;
 }
 
 message TransferRequest {

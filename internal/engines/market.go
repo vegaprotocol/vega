@@ -102,7 +102,7 @@ func NewMarket(
 
 	riskengine := risk.New(cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
 	positionengine := position.New(cfg.Position)
-	settleEngine := settlement.New(cfg.Settlement)
+	settleEngine := settlement.New(cfg.Settlement, tradableInstrument.Instrument.Product)
 
 	// create buffers
 	candlesBuf := buffer.NewCandle(marketcfg.Id, candles, now)
