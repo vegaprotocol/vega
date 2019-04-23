@@ -107,7 +107,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// generate a default configuration
-	cfg := config.NewDefaultConfig(ic.Log, ic.rootPath)
+	cfg := config.NewDefaultConfig(ic.rootPath)
 
 	// setup the defaults markets
 	cfg.Execution.Markets.Configs = []string{

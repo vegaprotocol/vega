@@ -31,7 +31,7 @@ func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath s
 	watcherlog.SetLevel(logging.DebugLevel)
 	w := &Watcher{
 		log:                watcherlog,
-		cfg:                NewDefaultConfig(log, defaultStoreDirPath),
+		cfg:                NewDefaultConfig(defaultStoreDirPath),
 		path:               filepath.Join(path, configFileName),
 		cfgUpdateListeners: []func(Config){},
 	}

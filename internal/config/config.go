@@ -19,7 +19,6 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
-	log        *logging.Logger
 	API        api.Config
 	Blockchain blockchain.Config
 	Candles    candles.Config
@@ -39,9 +38,8 @@ type Config struct {
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
-func NewDefaultConfig(log *logging.Logger, defaultStoreDirPath string) Config {
+func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
-		log:        log,
 		Trades:     trades.NewDefaultConfig(),
 		Blockchain: blockchain.NewDefaultConfig(),
 		Execution:  execution.NewDefaultConfig(defaultStoreDirPath),
