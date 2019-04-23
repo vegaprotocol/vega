@@ -50,7 +50,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	// VEGA config (holds all package level configs)
-	cfgwatchr, err := config.NewFromFile(l.Log, configPath, configPath)
+	cfgwatchr, err := config.NewFromFile(l.ctx, l.Log, configPath, configPath)
 	if err != nil {
 		l.Log.Error("unable to start config watcher", logging.Error(err))
 		return

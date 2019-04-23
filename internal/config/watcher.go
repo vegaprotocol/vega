@@ -25,7 +25,7 @@ type Watcher struct {
 	mu                 sync.Mutex
 }
 
-func NewFromFile(log *logging.Logger, defaultStoreDirPath string, path string) (*Watcher, error) {
+func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath string, path string) (*Watcher, error) {
 	watcherlog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
 	watcherlog.SetLevel(logging.DebugLevel)
@@ -41,7 +41,7 @@ func NewFromFile(log *logging.Logger, defaultStoreDirPath string, path string) (
 		return nil, err
 	}
 
-	err = w.watch(context.Background())
+	err = w.watch(ctx)
 	if err != nil {
 		return nil, err
 	}
