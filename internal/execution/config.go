@@ -29,7 +29,7 @@ type Config struct {
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
-func NewDefaultConfig(logger *logging.Logger, defaultConfigDirPath string) *Config {
+func NewDefaultConfig(logger *logging.Logger, defaultConfigDirPath string) Config {
 	c := Config{
 		Level: logging.InfoLevel,
 		Markets: MarketConfig{
@@ -39,7 +39,7 @@ func NewDefaultConfig(logger *logging.Logger, defaultConfigDirPath string) *Conf
 		Engines: engines.NewDefaultConfig(logger),
 	}
 	c.SetLogger(logger)
-	return &c
+	return c
 }
 
 // GetLogger returns a pointer to the current underlying logger for this package.

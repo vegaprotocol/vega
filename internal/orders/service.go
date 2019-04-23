@@ -40,23 +40,44 @@ type Blockchain interface {
 }
 
 type Svc struct {
-	*Config
+	Config
+	log *logging.Logger
+
 	blockchain  Blockchain
 	orderStore  OrderStore
 	timeService TimeService
 }
 
 // NewService creates an Orders service with the necessary dependencies
-func NewService(config *Config, store OrderStore, time TimeService, client Blockchain) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, store OrderStore, time TimeService, client Blockchain) (*Svc, error) {
 	if client == nil {
 		return nil, errors.New("blockchain client is nil when calling NewService in OrderService")
 	}
+
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	return &Svc{
+		log:         log,
 		Config:      config,
 		blockchain:  client,
 		orderStore:  store,
 		timeService: time,
 	}, nil
+}
+
+func (s *Svc) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.Config = cfg
 }
 
 func (s *Svc) CreateOrder(

@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
@@ -26,7 +27,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // NodeCommand use to implement 'node' command.
@@ -55,10 +55,11 @@ type NodeCommand struct {
 
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
-	conf         *internal.Config
+	conf         config.Config
 	stats        *internal.Stats
 	withPPROF    bool
 	Log          *logging.Logger
+	cfgwatchr    *config.Watcher
 }
 
 // Init initialises the node command.
@@ -94,7 +95,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	// check node_pre.go, that's where everything gets bootstrapped
 	// Execution engine (broker operation at runtime etc)
 	executionEngine := execution.NewEngine(
-		l.conf.Execution,
+		&l.conf.Execution,
 		l.timeService,
 		l.orderStore,
 		l.tradeStore,
@@ -105,27 +106,27 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 
 	// ABCI<>blockchain server
-	bcService := blockchain.NewService(l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
-	bcProcessor := blockchain.NewProcessor(l.conf.Blockchain, bcService)
+	bcService := blockchain.NewService(&l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
+	bcProcessor := blockchain.NewProcessor(&l.conf.Blockchain, bcService)
 	bcApp := blockchain.NewApplication(
-		l.conf.Blockchain,
+		&l.conf.Blockchain,
 		l.stats.Blockchain,
 		bcProcessor,
 		bcService,
 		l.timeService,
 		l.cfunc,
 	)
-	socketServer := blockchain.NewServer(l.conf.Blockchain, l.stats.Blockchain, bcApp)
+	socketServer := blockchain.NewServer(&l.conf.Blockchain, l.stats.Blockchain, bcApp)
 	if err := socketServer.Start(); err != nil {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
 
-	statusChecker := monitoring.New(l.conf.Monitoring, l.blockchainClient)
+	statusChecker := monitoring.New(&l.conf.Monitoring, l.blockchainClient)
 	statusChecker.OnChainDisconnect(l.cfunc)
 
 	// gRPC server
 	grpcServer := grpc.NewGRPCServer(
-		l.conf.API,
+		&l.conf.API,
 		l.stats,
 		l.blockchainClient,
 		l.timeService,
@@ -139,12 +140,12 @@ func (l *NodeCommand) runNode(args []string) error {
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server
-	restServer := restproxy.NewRestProxyServer(l.conf.API)
+	restServer := restproxy.NewRestProxyServer(&l.conf.API)
 	go restServer.Start()
 
 	// GraphQL server
 	graphServer := gql.NewGraphQLServer(
-		l.conf.API,
+		&l.conf.API,
 		l.orderService,
 		l.tradeService,
 		l.candleService,
@@ -173,15 +174,6 @@ func (l *NodeCommand) runNode(args []string) error {
 func nodeExample() string {
 	return `$ vega node
 VEGA started successfully`
-}
-
-// envConfigPath attempts to look at ENV variable VEGA_CONFIG for the config.toml path
-func envConfigPath() string {
-	err := viper.BindEnv("config")
-	if err == nil {
-		return viper.GetString("config")
-	}
-	return ""
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.

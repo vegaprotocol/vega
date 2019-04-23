@@ -19,8 +19,8 @@ type Config struct {
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
-func NewDefaultConfig(log *logging.Logger) *Config {
-	return &Config{
+func NewDefaultConfig(log *logging.Logger) Config {
+	return Config{
 		log:                  log.Named(namedLogger),
 		IntervalMilliseconds: 500, // this will be 500*time.Milliseconds when instanciated
 		Retries:              5,

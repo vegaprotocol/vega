@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	cfgencoding "code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/pkg/errors"
@@ -25,20 +26,6 @@ const (
 	defaultStorageAccessTimeout = 5 * time.Second
 )
 
-type duration struct {
-	time.Duration
-}
-
-func (d *duration) UnmarshalText(text []byte) error {
-	var err error
-	d.Duration, err = time.ParseDuration(string(text))
-	return err
-}
-
-func (d duration) MarshalText() ([]byte, error) {
-	return []byte(d.String()), nil
-}
-
 // Config provides package level settings, configuration and logging.
 type Config struct {
 	log   *logging.Logger
@@ -52,17 +39,17 @@ type Config struct {
 	//LogOrderStoreDebug    bool
 	//LogCandleStoreDebug   bool
 	LogPositionStoreDebug bool
-	Timeout               duration
+	Timeout               cfgencoding.Duration
 }
 
 // NewConfig constructs a new Config instance with default parameters.
 // This constructor is used by the vega application code. Logger is a
 // pointer to a logging instance and defaultStoreDirPath is the root directory
 // where all storage directories are to be read from and written to.
-func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) *Config {
+func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) Config {
 	logger = logger.Named(namedLogger)
 
-	return &Config{
+	return Config{
 		log:                logger,
 		Level:              logging.InfoLevel,
 		OrderStoreDirPath:  filepath.Join(defaultStoreDirPath, OrderStoreDataPath),
@@ -73,7 +60,7 @@ func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) *Confi
 		//LogOrderStoreDebug:    true,
 		//LogCandleStoreDebug:   false,
 		LogPositionStoreDebug: false,
-		Timeout:               duration{defaultStorageAccessTimeout},
+		Timeout:               cfgencoding.Duration{defaultStorageAccessTimeout},
 	}
 }
 
@@ -179,7 +166,7 @@ func NewTestConfig() (*Config, error) {
 		CandleStoreDirPath:    fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
 		MarketStoreDirPath:    fmt.Sprintf("/tmp/vegatests/marketstore-%v", randSeq(5)),
 		LogPositionStoreDebug: true,
-		Timeout:               duration{defaultStorageAccessTimeout},
+		Timeout:               cfgencoding.Duration{defaultStorageAccessTimeout},
 	}
 
 	if err := ensureDir(cfg.CandleStoreDirPath); err != nil {

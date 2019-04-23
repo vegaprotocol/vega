@@ -3,10 +3,12 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
@@ -19,6 +21,10 @@ import (
 
 	"github.com/spf13/cobra"
 )
+
+func envConfigPath() string {
+	return os.Getenv("VEGA_CONFIG")
+}
 
 func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error) {
 	// this shouldn't happen...
@@ -44,22 +50,18 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	// VEGA config (holds all package level configs)
-	conf, err := internal.NewConfigFromFile(l.Log, configPath)
+	cfgwatchr, err := config.NewFromFile(l.Log, configPath, configPath)
 	if err != nil {
-		// We revert to default configs if there are any errors in read/parse process
-		l.Log.Error("Error reading config from file, using defaults", logging.Error(err))
-		if conf, err = internal.NewDefaultConfig(l.Log, fsutil.DefaultVegaDir()); err != nil {
-			// cancel context here
-			return err
-		}
-	} else {
-		conf.ListenForChanges()
+		l.Log.Error("unable to start config watcher", logging.Error(err))
+		return
 	}
-	l.Log = conf.GetLogger()
+	conf := cfgwatchr.Get()
+	l.cfgwatchr = cfgwatchr
+	// l.Log = conf.GetLogger()
 
 	if flagProvided("--with-pprof") || conf.Pprof.Enabled {
 		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
-		l.pproffhandlr, err = pprof.New(conf.Pprof)
+		l.pproffhandlr, err = pprof.New(&conf.Pprof)
 		if err != nil {
 			return
 		}
@@ -74,25 +76,25 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	l.configPath, l.conf = configPath, conf
 	l.stats = internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
 	// set up storage, this should be persistent
-	if l.candleStore, err = storage.NewCandles(l.conf.Storage); err != nil {
+	if l.candleStore, err = storage.NewCandles(&l.conf.Storage); err != nil {
 		return
 	}
-	if l.orderStore, err = storage.NewOrders(l.conf.Storage, l.cfunc); err != nil {
+	if l.orderStore, err = storage.NewOrders(&l.conf.Storage, l.cfunc); err != nil {
 		return
 	}
-	if l.tradeStore, err = storage.NewTrades(l.conf.Storage, l.cfunc); err != nil {
+	if l.tradeStore, err = storage.NewTrades(&l.conf.Storage, l.cfunc); err != nil {
 		return
 	}
-	if l.riskStore, err = storage.NewRisks(l.conf.Storage); err != nil {
+	if l.riskStore, err = storage.NewRisks(&l.conf.Storage); err != nil {
 		return
 	}
-	if l.marketStore, err = storage.NewMarkets(l.conf.Storage); err != nil {
+	if l.marketStore, err = storage.NewMarkets(&l.conf.Storage); err != nil {
 		return
 	}
-	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
+	if l.partyStore, err = storage.NewParties(&l.conf.Storage); err != nil {
 		return
 	}
-	if l.accounts, err = storage.NewAccounts(l.conf.Storage); err != nil {
+	if l.accounts, err = storage.NewAccounts(&l.conf.Storage); err != nil {
 		return
 	}
 	return nil
@@ -107,24 +109,26 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 	// this doesn't fail
-	l.timeService = vegatime.NewService(l.conf.Time)
-	if l.blockchainClient, err = blockchain.NewClient(l.conf.Blockchain); err != nil {
+	l.timeService = vegatime.NewService(&l.conf.Time)
+	if l.blockchainClient, err = blockchain.NewClient(&l.conf.Blockchain); err != nil {
 		return
 	}
 	// start services
-	if l.candleService, err = candles.NewService(l.conf.Candles, l.candleStore); err != nil {
+	if l.candleService, err = candles.NewService(&l.conf.Candles, l.candleStore); err != nil {
 		return
 	}
-	if l.orderService, err = orders.NewService(l.conf.Orders, l.orderStore, l.timeService, l.blockchainClient); err != nil {
+	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService, l.blockchainClient); err != nil {
 		return
 	}
-	if l.tradeService, err = trades.NewService(l.conf.Trades, l.tradeStore, l.riskStore); err != nil {
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) })
+
+	if l.tradeService, err = trades.NewService(&l.conf.Trades, l.tradeStore, l.riskStore); err != nil {
 		return
 	}
-	if l.marketService, err = markets.NewService(l.conf.Markets, l.marketStore, l.orderStore); err != nil {
+	if l.marketService, err = markets.NewService(&l.conf.Markets, l.marketStore, l.orderStore); err != nil {
 		return
 	}
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
-	l.partyService, err = parties.NewService(l.conf.Parties, l.partyStore)
+	l.partyService, err = parties.NewService(&l.conf.Parties, l.partyStore)
 	return
 }

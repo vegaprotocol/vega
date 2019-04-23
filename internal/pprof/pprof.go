@@ -42,9 +42,9 @@ type Pprofhandler struct {
 }
 
 // NewDefaultConfig create a new default configuration for the pprof handler
-func NewDefaultConfig(logger *logging.Logger) *Config {
+func NewDefaultConfig(logger *logging.Logger) Config {
 	logger = logger.Named(namedLogger)
-	return &Config{
+	return Config{
 		log:         logger,
 		Level:       logging.InfoLevel,
 		Enabled:     false,

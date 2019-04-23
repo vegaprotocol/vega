@@ -1,6 +1,3 @@
-# This is a TOML config file.
-# For more information, see https://github.com/toml-lang/toml
-
 [API]
   Level = 0
   Timeout = 5000
@@ -30,7 +27,7 @@
 [Execution]
   Level = 0
   [Execution.Markets]
-    Path = ".vega/markets"
+    Path = "/Users/jeremy/.vega/markets"
     Configs = ["BTCDEC19.json", "ETHJUN19.json", "EURMAR20.json"]
   [Execution.Engines]
     Level = 0
@@ -38,6 +35,17 @@
       Level = 0
       LogPriceLevelsDebug = false
       LogRemovedOrdersDebug = false
+    [Execution.Engines.Risk]
+      Level = 0
+      LogMarginUpdate = true
+    [Execution.Engines.Position]
+      Level = 0
+      LogPositionUpdate = true
+    [Execution.Engines.Settlement]
+      Level = 0
+    [Execution.Engines.Collateral]
+      Level = 0
+      CreateTraderAccounts = true
 
 [Logging]
   Environment = "dev"
@@ -79,12 +87,12 @@
 
 [Storage]
   Level = 0
-  OrderStoreDirPath = ".vega/orderstore"
-  TradeStoreDirPath = ".vega/tradestore"
-  CandleStoreDirPath = ".vega/candlestore"
-  MarketStoreDirPath = ".vega/marketstore"
+  OrderStoreDirPath = "/Users/jeremy/.vega/orderstore"
+  TradeStoreDirPath = "/Users/jeremy/.vega/tradestore"
+  CandleStoreDirPath = "/Users/jeremy/.vega/candlestore"
+  MarketStoreDirPath = "/Users/jeremy/.vega/marketstore"
   LogPositionStoreDebug = false
-  Timeout = 5
+  Timeout = "5s"
 
 [Trades]
   Level = 0
