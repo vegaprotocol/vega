@@ -1,7 +1,6 @@
 package pprof
 
 import (
-	"errors"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
+	"code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 )
@@ -21,56 +21,39 @@ const (
 	namedLogger = "pprof"
 )
 
-var (
-	ErrNilPPROFConfiguration = errors.New("nil pprof configuration")
-)
-
 type Config struct {
-	log   *logging.Logger
-	Level logging.Level
-
+	Level       encoding.LogLevel
 	Enabled     bool
 	Port        uint16
 	ProfilesDir string
 }
 
 type Pprofhandler struct {
-	*Config
+	Config
 
+	log            *logging.Logger
 	memprofilePath string
 	cpuprofilePath string
 }
 
 // NewDefaultConfig create a new default configuration for the pprof handler
-func NewDefaultConfig(logger *logging.Logger) Config {
-	logger = logger.Named(namedLogger)
+func NewDefaultConfig() Config {
 	return Config{
-		log:         logger,
-		Level:       logging.InfoLevel,
+		Level:       encoding.LogLevel{Level: logging.InfoLevel},
 		Enabled:     false,
 		Port:        6060,
 		ProfilesDir: "/tmp",
 	}
 }
 
-// SetLogger creates a new logger based on a given parent logger.
-func (c *Config) SetLogger(parent *logging.Logger) {
-	c.log = parent.Named(namedLogger)
-}
-
-// UpdateLogger will set any new values on the underlying logging core. Useful when configs are
-// hot reloaded at run time. Currently we only check and refresh the logging level.
-func (c *Config) UpdateLogger() {
-	c.log.SetLevel(c.Level)
-}
-
 // New creates a new pprof handler
-func New(config *Config) (*Pprofhandler, error) {
-	if config == nil {
-		config.log.Error("cannot start pprof", logging.Error(ErrNilPPROFConfiguration))
-		return nil, ErrNilPPROFConfiguration
-	}
+func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	p := &Pprofhandler{
+		log:            log,
 		Config:         config,
 		memprofilePath: filepath.Join(config.ProfilesDir, pprofDir, memprofileFile),
 		cpuprofilePath: filepath.Join(config.ProfilesDir, pprofDir, cpuprofileFile),
@@ -101,6 +84,20 @@ func New(config *Config) (*Pprofhandler, error) {
 	pprof.StartCPUProfile(profileFile)
 
 	return p, nil
+}
+
+func (p *Pprofhandler) ReloadConf(cfg Config) {
+	p.log.Info("reloading configuration")
+	if p.log.GetLevel() != cfg.Level.Get() {
+		p.log.Info("updating log level",
+			logging.String("old", p.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		p.log.SetLevel(cfg.Level.Get())
+	}
+
+	// the config will not be used anyway, just use the log level in here
+	p.Config = cfg
 }
 
 // Stop is meant to be use to stop the pprof profile, should be use with defer probably

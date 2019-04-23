@@ -26,11 +26,11 @@ type Watcher struct {
 }
 
 func NewFromFile(log *logging.Logger, defaultStoreDirPath string, path string) (*Watcher, error) {
-	log = log.Named(namedLogger)
+	watcherlog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
-	log.SetLevel(logging.DebugLevel)
+	watcherlog.SetLevel(logging.DebugLevel)
 	w := &Watcher{
-		log:                log,
+		log:                watcherlog,
 		cfg:                NewDefaultConfig(log, defaultStoreDirPath),
 		path:               filepath.Join(path, configFileName),
 		cfgUpdateListeners: []func(Config){},

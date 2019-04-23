@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -22,15 +23,15 @@ func TestStorage_NewOrders(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
 
-	orderStore, err := storage.NewOrders(config, func() {})
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 	assert.NotNil(t, orderStore)
 	assert.Nil(t, err)
 
 	config.OrderStoreDirPath = ""
 
-	orderStore, err = storage.NewOrders(config, func() {})
+	orderStore, err = storage.NewOrders(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, orderStore)
 	assert.NotNil(t, err)
 
@@ -44,8 +45,8 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
-	orderStore, err := storage.NewOrders(config, func() {})
+	storage.FlushStores(logging.NewTestLogger(), config)
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 	defer orderStore.Close()
 
 	var order = &types.Order{
@@ -70,7 +71,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
 
 	var tests = []struct {
 		inMarkets      []string
@@ -151,7 +152,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		orderStore, err := storage.NewOrders(config, func() {})
+		orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 		assert.Nil(t, err)
 
 		for _, order := range tt.inOrders {
@@ -174,9 +175,9 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
 
-	orderStore, err := storage.NewOrders(config, func() {})
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 

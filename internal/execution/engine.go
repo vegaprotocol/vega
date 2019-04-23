@@ -60,7 +60,8 @@ type TimeService interface {
 }
 
 type Engine struct {
-	*Config
+	log *logging.Logger
+	Config
 	markets      map[string]*engines.Market
 	orderStore   OrderStore
 	tradeStore   TradeStore
@@ -74,7 +75,8 @@ type Engine struct {
 // NewEngine takes stores and engines and returns
 // a new execution engine to process new orders, etc.
 func NewEngine(
-	executionConfig *Config,
+	log *logging.Logger,
+	executionConfig Config,
 	time TimeService,
 	orderStore OrderStore,
 	tradeStore TradeStore,
@@ -83,7 +85,12 @@ func NewEngine(
 	partyStore PartyStore,
 	accountStore *storage.Account,
 ) *Engine {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(executionConfig.Level.Get())
+
 	e := &Engine{
+		log:          log,
 		Config:       executionConfig,
 		markets:      map[string]*engines.Market{},
 		candleStore:  candleStore,
@@ -129,6 +136,22 @@ func NewEngine(
 	return e
 }
 
+func (e *Engine) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.Config = cfg
+	for _, mkt := range e.markets {
+		mkt.ReloadConf(cfg.Engines)
+	}
+}
+
 func (e *Engine) SubmitMarket(mkt *types.Market) error {
 	if _, ok := e.markets[mkt.Id]; ok {
 		return ErrMarketAlreadyExist
@@ -137,7 +160,7 @@ func (e *Engine) SubmitMarket(mkt *types.Market) error {
 	now, _ := e.time.GetTimeNow()
 	var err error
 	e.markets[mkt.Id], err = engines.NewMarket(
-		e.Config.Engines, mkt, e.candleStore, e.orderStore, e.partyStore, e.tradeStore, e.accountStore, now)
+		e.log, e.Config.Engines, mkt, e.candleStore, e.orderStore, e.partyStore, e.tradeStore, e.accountStore, now)
 	if err != nil {
 		e.log.Panic("Failed to instanciate market market",
 			logging.String("market-id", mkt.Id),

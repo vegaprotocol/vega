@@ -42,69 +42,20 @@ type Config struct {
 func NewDefaultConfig(log *logging.Logger, defaultStoreDirPath string) Config {
 	return Config{
 		log:        log,
-		Trades:     trades.NewDefaultConfig(log),
-		Blockchain: blockchain.NewDefaultConfig(log),
-		Execution:  execution.NewDefaultConfig(log, defaultStoreDirPath),
-		API:        api.NewDefaultConfig(log),
-		Orders:     orders.NewDefaultConfig(log),
-		Time:       vegatime.NewDefaultConfig(log),
-		Markets:    markets.NewDefaultConfig(log),
-		Parties:    parties.NewDefaultConfig(log),
-		Candles:    candles.NewDefaultConfig(log),
-		Storage:    storage.NewDefaultConfig(log, defaultStoreDirPath),
-		Risk:       risk.NewDefaultConfig(log),
-		Pprof:      pprof.NewDefaultConfig(log),
-		Monitoring: monitoring.NewDefaultConfig(log),
+		Trades:     trades.NewDefaultConfig(),
+		Blockchain: blockchain.NewDefaultConfig(),
+		Execution:  execution.NewDefaultConfig(defaultStoreDirPath),
+		API:        api.NewDefaultConfig(),
+		Orders:     orders.NewDefaultConfig(),
+		Time:       vegatime.NewDefaultConfig(),
+		Markets:    markets.NewDefaultConfig(),
+		Parties:    parties.NewDefaultConfig(),
+		Candles:    candles.NewDefaultConfig(),
+		Storage:    storage.NewDefaultConfig(defaultStoreDirPath),
+		// TODO: remove this soon
+		Risk:       risk.NewDefaultConfig(logging.NewTestLogger()),
+		Pprof:      pprof.NewDefaultConfig(),
+		Monitoring: monitoring.NewDefaultConfig(),
 		Logging:    logging.NewDefaultConfig(),
 	}
-}
-
-// ResetLoggers will re-create loggers of all config instances.
-func (c *Config) ResetLoggers(oldLogEnv string) {
-	newLogEnv := c.Logging.Environment
-	if oldLogEnv == newLogEnv {
-		return
-	}
-	c.log = logging.NewLoggerFromConfig(c.Logging)
-
-	/*
-		c.log.Info("Logging environment set", logging.String("environment", newLogEnv))
-
-		c.API.SetLogger(c.log)
-		c.Blockchain.SetLogger(c.log)
-		c.Candles.SetLogger(c.log)
-		c.Execution.SetLogger(c.log)
-		c.Markets.SetLogger(c.log)
-		c.Monitoring.SetLogger(c.log)
-		c.Orders.SetLogger(c.log)
-		c.Parties.SetLogger(c.log)
-		c.Pprof.SetLogger(c.log)
-		c.Risk.SetLogger(c.log)
-		c.Storage.SetLogger(c.log)
-		c.Time.SetLogger(c.log)
-		c.Trades.SetLogger(c.log)
-		// Any new package configs with a logger should be added here, in alphabetical order.
-
-	*/
-}
-
-func (c *Config) updateLoggers() {
-	// We need to call UpdateLogger on each config instance so that
-	// the zap core is updated to the new logging level.
-	/*
-		c.Trades.UpdateLogger()
-		c.Blockchain.UpdateLogger()
-		c.Execution.UpdateLogger()
-		c.API.UpdateLogger()
-		c.Orders.UpdateLogger()
-		c.Time.UpdateLogger()
-		c.Markets.UpdateLogger()
-		c.Parties.UpdateLogger()
-		c.Candles.UpdateLogger()
-		c.Storage.UpdateLogger()
-		c.Risk.UpdateLogger()
-		c.Pprof.UpdateLogger()
-		c.Monitoring.UpdateLogger()
-	*/
-	// Any new package configs with a logger should be added here <>
 }

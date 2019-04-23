@@ -32,7 +32,8 @@ func getTestApp(t *testing.T) *testApp {
 		ch <- struct{}{}
 	}
 	app := blockchain.NewApplication(
-		blockchain.NewDefaultConfig(log),
+		log,
+		blockchain.NewDefaultConfig(),
 		blockchain.NewStats(),
 		proc,
 		svc,

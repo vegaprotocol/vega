@@ -13,8 +13,9 @@ import (
 )
 
 type Engine struct {
-	*Config
-
+	Config
+	log     *logging.Logger
+	cfgMu   sync.Mutex
 	model   riskmodels.Model
 	factors *types.RiskResult
 	waiting bool
@@ -22,16 +23,37 @@ type Engine struct {
 }
 
 func New(
-	config *Config,
+	log *logging.Logger,
+	config Config,
 	model riskmodels.Model,
 	initialFactors *types.RiskResult,
 ) *Engine {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	return &Engine{
+		log:     log,
 		Config:  config,
 		factors: initialFactors,
 		model:   model,
 		waiting: false,
 	}
+}
+
+func (e *Engine) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.cfgMu.Lock()
+	e.Config = cfg
+	e.cfgMu.Unlock()
 }
 
 func (re *Engine) CalculateFactors(now time.Time) {
@@ -70,10 +92,12 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []position.MarketP
 				pos.UpdateMargin(assetId, uint64(float64(abs(notional))*factor.Short))
 			}
 
+			re.cfgMu.Lock()
 			if re.LogMarginUpdate {
 				re.log.Info("Margins updated for position",
 					logging.String("position", fmt.Sprintf("%+v", pos)))
 			}
+			re.cfgMu.Unlock()
 		}
 	}
 	re.mu.Unlock()

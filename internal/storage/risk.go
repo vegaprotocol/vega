@@ -6,14 +6,18 @@ import (
 
 // Risk is used for memory/RAM based risk storage.
 type Risk struct {
-	*Config
+	Config
 }
 
 // NewRisks returns a concrete implementation of RiskStore.
-func NewRisks(config *Config) (*Risk, error) {
+func NewRisks(config Config) (*Risk, error) {
 	return &Risk{
 		Config: config,
 	}, nil
+}
+
+func (r *Risk) ReloadConf(config Config) {
+	// nothing to do for now
 }
 
 // Post saves a given risk factor to the mem-store.

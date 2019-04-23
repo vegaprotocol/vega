@@ -28,7 +28,8 @@ func getTestService(t *testing.T) *testService {
 	log := logging.NewTestLogger()
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := parties.NewService(
-		parties.NewDefaultConfig(log),
+		log,
+		parties.NewDefaultConfig(),
 		store,
 	)
 	assert.NoError(t, err)

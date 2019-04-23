@@ -95,7 +95,8 @@ func (l *NodeCommand) runNode(args []string) error {
 	// check node_pre.go, that's where everything gets bootstrapped
 	// Execution engine (broker operation at runtime etc)
 	executionEngine := execution.NewEngine(
-		&l.conf.Execution,
+		l.Log,
+		l.conf.Execution,
 		l.timeService,
 		l.orderStore,
 		l.tradeStore,
@@ -104,29 +105,40 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.partyStore,
 		l.accounts,
 	)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { executionEngine.ReloadConf(cfg.Execution) })
 
 	// ABCI<>blockchain server
-	bcService := blockchain.NewService(&l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
-	bcProcessor := blockchain.NewProcessor(&l.conf.Blockchain, bcService)
+	bcService := blockchain.NewService(l.Log, l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcService.ReloadConf(cfg.Blockchain) })
+
+	bcProcessor := blockchain.NewProcessor(l.Log, l.conf.Blockchain, bcService)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcProcessor.ReloadConf(cfg.Blockchain) })
+
 	bcApp := blockchain.NewApplication(
-		&l.conf.Blockchain,
+		l.Log,
+		l.conf.Blockchain,
 		l.stats.Blockchain,
 		bcProcessor,
 		bcService,
 		l.timeService,
 		l.cfunc,
 	)
-	socketServer := blockchain.NewServer(&l.conf.Blockchain, l.stats.Blockchain, bcApp)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcApp.ReloadConf(cfg.Blockchain) })
+
+	socketServer := blockchain.NewServer(l.Log, l.conf.Blockchain, l.stats.Blockchain, bcApp)
 	if err := socketServer.Start(); err != nil {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { socketServer.ReloadConf(cfg.Blockchain) })
 
-	statusChecker := monitoring.New(&l.conf.Monitoring, l.blockchainClient)
+	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
 	statusChecker.OnChainDisconnect(l.cfunc)
 
 	// gRPC server
 	grpcServer := grpc.NewGRPCServer(
-		&l.conf.API,
+		l.Log,
+		l.conf.API,
 		l.stats,
 		l.blockchainClient,
 		l.timeService,
@@ -137,15 +149,18 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.candleService,
 		statusChecker,
 	)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server
-	restServer := restproxy.NewRestProxyServer(&l.conf.API)
+	restServer := restproxy.NewRestProxyServer(l.Log, l.conf.API)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { restServer.ReloadConf(cfg.API) })
 	go restServer.Start()
 
 	// GraphQL server
 	graphServer := gql.NewGraphQLServer(
-		&l.conf.API,
+		l.Log,
+		l.conf.API,
 		l.orderService,
 		l.tradeService,
 		l.candleService,
@@ -154,6 +169,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.timeService,
 		statusChecker,
 	)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { graphServer.ReloadConf(cfg.API) })
 	go graphServer.Start()
 
 	l.Log.Info("Vega startup complete")

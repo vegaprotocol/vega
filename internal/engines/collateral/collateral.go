@@ -2,6 +2,7 @@ package collateral
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -17,7 +18,10 @@ var (
 )
 
 type Engine struct {
-	*Config
+	Config
+	log   *logging.Logger
+	cfgMu sync.Mutex
+
 	market       string
 	accountStore Accounts
 }
@@ -32,16 +36,36 @@ type Accounts interface {
 	GetAccountsForOwnerByType(owner string, accType types.AccountType) (*types.Account, error)
 }
 
-func New(conf *Config, market string, accounts Accounts) (*Engine, error) {
+func New(log *logging.Logger, conf Config, market string, accounts Accounts) (*Engine, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(conf.Level.Get())
+
 	// ensure market accounts are all good to go - get insurance pool initial value from config?
 	if err := accounts.CreateMarketAccounts(market, 0); err != nil && err != storage.ErrMarketAccountsExist {
 		return nil, err
 	}
 	return &Engine{
+		log:          log,
 		Config:       conf,
 		market:       market,
 		accountStore: accounts,
 	}, nil
+}
+
+func (e *Engine) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.cfgMu.Lock()
+	e.Config = cfg
+	e.cfgMu.Unlock()
 }
 
 func (e *Engine) CollectSells(positions []*types.SettlePosition) (*types.TransferResponse, error) {
@@ -78,9 +102,11 @@ func (e *Engine) CollectSells(positions []*types.SettlePosition) (*types.Transfe
 		},
 	}
 	for _, p := range positions {
+		e.cfgMu.Lock()
 		if e.CreateTraderAccounts {
 			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
 		}
+		e.cfgMu.Unlock()
 		// general account:
 		gen, err := e.accountStore.GetAccountsForOwnerByType(p.Owner, types.AccountType_GENERAL)
 		if err != nil {
@@ -167,9 +193,13 @@ func (e *Engine) CollectBuys(positions []*types.SettlePosition) (*types.Transfer
 		return nil, ErrSystemAccountsMissing
 	}
 	for _, p := range positions {
+
+		e.cfgMu.Lock()
 		if e.CreateTraderAccounts {
 			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
 		}
+		e.cfgMu.Unlock()
+
 		accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, p.Owner)
 		if err != nil {
 			e.log.Error(

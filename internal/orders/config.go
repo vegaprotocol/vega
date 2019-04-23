@@ -15,7 +15,7 @@ type Config struct {
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
-func NewDefaultConfig(logger *logging.Logger) Config {
+func NewDefaultConfig() Config {
 	return Config{
 		Level: cfgencoding.LogLevel{logging.InfoLevel},
 	}

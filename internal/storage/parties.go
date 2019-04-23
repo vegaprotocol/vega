@@ -10,17 +10,21 @@ import (
 
 // Party is used for memory/RAM based parties storage.
 type Party struct {
-	*Config
+	Config
 	db map[string]types.Party
 	mu sync.RWMutex
 }
 
 // NewStore returns a concrete implementation of a parties Store.
-func NewParties(config *Config) (*Party, error) {
+func NewParties(config Config) (*Party, error) {
 	return &Party{
 		Config: config,
 		db:     make(map[string]types.Party, 0),
 	}, nil
+}
+
+func (p *Party) ReloadConf(config Config) {
+	// nothing to do for now
 }
 
 // Post saves a given party to the mem-store.

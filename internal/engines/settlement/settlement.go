@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/engines/position"
+	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -14,19 +15,39 @@ type pos struct {
 }
 
 type Engine struct {
-	*Config
+	log *logging.Logger
+
+	Config
 	mu    *sync.Mutex
 	buys  map[string]*pos
 	sells map[string]*pos
 }
 
-func New(conf *Config) *Engine {
+func New(log *logging.Logger, conf Config) *Engine {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(conf.Level.Get())
+
 	return &Engine{
+		log:    log,
 		Config: conf,
 		mu:     &sync.Mutex{},
 		buys:   map[string]*pos{},
 		sells:  map[string]*pos{},
 	}
+}
+
+func (e *Engine) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.Config = cfg
 }
 
 // Update - takes market positions, keeps track of things

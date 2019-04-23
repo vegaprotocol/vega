@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -19,20 +20,22 @@ type BlockchainClient interface {
 
 // Status holds a collection of monitoring services, for checking the state of internal or external resources.
 type Status struct {
-	*Config
-
+	Config
+	log        *logging.Logger
 	blockchain *ChainStatus
 }
 
 // ChainStatus provides the current status of the underlying blockchain provider, given a blockchain.Client.
 type ChainStatus struct {
-	log          *logging.Logger
-	interval     time.Duration
-	client       BlockchainClient
-	status       uint32
-	starting     bool
-	maxRetries   uint8
+	log *logging.Logger
+
+	config   Config
+	client   BlockchainClient
+	status   uint32
+	starting bool
+
 	retriesCount int
+	cfgMu        sync.Mutex
 
 	cancel            func()
 	onChainDisconnect func()
@@ -41,17 +44,21 @@ type ChainStatus struct {
 // New creates a Status checker, currently this is limited to the underlying blockchain status, but
 // will be expanded over time to include other services. Once created, a go-routine will start up and
 // immediately begin checking at an interval, currently defined internally and set to every 500 milliseconds.
-func New(conf *Config, clt BlockchainClient) *Status {
+func New(log *logging.Logger, conf Config, clt BlockchainClient) *Status {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(conf.Level.Get())
+
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &Status{
+		log:    log,
 		Config: conf,
 		blockchain: &ChainStatus{
-			log:               conf.log,
-			interval:          conf.IntervalMilliseconds * time.Millisecond,
+			log:               log,
+			config:            conf,
 			client:            clt,
 			status:            uint32(types.ChainStatus_DISCONNECTED),
 			starting:          true,
-			maxRetries:        conf.Retries,
 			retriesCount:      int(conf.Retries),
 			cancel:            cancel,
 			onChainDisconnect: nil,
@@ -59,6 +66,22 @@ func New(conf *Config, clt BlockchainClient) *Status {
 	}
 	go s.blockchain.start(ctx)
 	return s
+}
+
+func (s *Status) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.blockchain.cfgMu.Lock()
+	s.blockchain.config = cfg
+	s.blockchain.retriesCount = int(cfg.Retries)
+	s.blockchain.cfgMu.Unlock()
 }
 
 func (s *Status) OnChainDisconnect(f func()) {
@@ -86,11 +109,13 @@ func (cs *ChainStatus) setStatus(status types.ChainStatus) {
 }
 
 func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
+	cs.cfgMu.Lock()
+	defer cs.cfgMu.Unlock()
 	newStatus := status
 	_, err := cs.client.Health()
 	if (status == types.ChainStatus_DISCONNECTED || status == types.ChainStatus_REPLAYING) && err == nil {
 		cs.starting = false
-		cs.retriesCount = int(cs.maxRetries)
+		cs.retriesCount = int(cs.config.Retries)
 		// node is connected, now let's check if we are replaying
 		res, err2 := cs.client.GetStatus(context.Background())
 		if err2 != nil {
@@ -126,7 +151,7 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 // Calling start ideally by go-routine will start periodic checking at interval specified by config
 // until context cancel is triggered, typically by the stop function call.
 func (cs *ChainStatus) start(ctx context.Context) {
-	ticker := time.NewTicker(cs.interval)
+	ticker := time.NewTicker(cs.config.Interval.Get())
 	currentStatus := cs.Status()
 	for {
 		select {
@@ -140,9 +165,11 @@ func (cs *ChainStatus) start(ctx context.Context) {
 				)
 
 				if cs.retriesCount <= 0 {
+					cs.cfgMu.Lock()
 					cs.log.Info("Chain is still disconnected, shutting down now",
-						logging.Int("retries-count", int(cs.maxRetries)),
+						logging.Int("retries-count", int(cs.config.Retries)),
 					)
+					cs.cfgMu.Unlock()
 					cs.onChainDisconnect()
 				}
 			}

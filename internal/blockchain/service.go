@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -20,6 +21,7 @@ type Service interface {
 	CancelOrder(order *types.Order) error
 	AmendOrder(order *types.OrderAmendment) error
 	ValidateOrder(order *types.Order) error
+	ReloadConf(conf Config)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceTime
@@ -37,8 +39,10 @@ type ServiceExecutionEngine interface {
 }
 
 type abciService struct {
-	*Config
+	Config
 
+	cfgMu             sync.Mutex
+	log               *logging.Logger
 	stats             *Stats
 	time              ServiceTime
 	execution         ServiceExecutionEngine
@@ -53,13 +57,33 @@ type abciService struct {
 	totalTrades          uint64
 }
 
-func NewService(conf *Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) Service {
+func NewService(log *logging.Logger, conf Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) Service {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(conf.Level.Get())
+
 	return &abciService{
+		log:       log,
 		Config:    conf,
 		stats:     stats,
 		execution: ex,
 		time:      timeService,
 	}
+}
+
+func (s *abciService) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.cfgMu.Lock()
+	s.Config = cfg
+	s.cfgMu.Unlock()
 }
 
 func (s *abciService) Begin() error {
@@ -110,6 +134,8 @@ func (s *abciService) Commit() error {
 }
 
 func (s *abciService) SubmitOrder(order *types.Order) error {
+	s.cfgMu.Lock()
+	defer s.cfgMu.Unlock()
 	s.stats.addTotalCreateOrder(1)
 	if s.LogOrderSubmitDebug {
 		s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
@@ -151,6 +177,8 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 }
 
 func (s *abciService) CancelOrder(order *types.Order) error {
+	s.cfgMu.Lock()
+	defer s.cfgMu.Unlock()
 	s.stats.addTotalCancelOrder(1)
 	if s.LogOrderCancelDebug {
 		s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
@@ -174,6 +202,8 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 }
 
 func (s *abciService) AmendOrder(order *types.OrderAmendment) error {
+	s.cfgMu.Lock()
+	defer s.cfgMu.Unlock()
 	s.stats.addTotalAmendOrder(1)
 	if s.LogOrderAmendDebug {
 		s.log.Debug("Blockchain service received a AMEND ORDER request",

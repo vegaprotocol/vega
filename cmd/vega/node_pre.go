@@ -57,11 +57,13 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 	conf := cfgwatchr.Get()
 	l.cfgwatchr = cfgwatchr
-	// l.Log = conf.GetLogger()
+
+	// reload logger with the setup from configuration
+	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
 	if flagProvided("--with-pprof") || conf.Pprof.Enabled {
 		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
-		l.pproffhandlr, err = pprof.New(&conf.Pprof)
+		l.pproffhandlr, err = pprof.New(l.Log, conf.Pprof)
 		if err != nil {
 			return
 		}
@@ -76,27 +78,41 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	l.configPath, l.conf = configPath, conf
 	l.stats = internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
 	// set up storage, this should be persistent
-	if l.candleStore, err = storage.NewCandles(&l.conf.Storage); err != nil {
+	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
 		return
 	}
-	if l.orderStore, err = storage.NewOrders(&l.conf.Storage, l.cfunc); err != nil {
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Storage) })
+
+	if l.orderStore, err = storage.NewOrders(l.Log, l.conf.Storage, l.cfunc); err != nil {
 		return
 	}
-	if l.tradeStore, err = storage.NewTrades(&l.conf.Storage, l.cfunc); err != nil {
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Storage) })
+
+	if l.tradeStore, err = storage.NewTrades(l.Log, l.conf.Storage, l.cfunc); err != nil {
 		return
 	}
-	if l.riskStore, err = storage.NewRisks(&l.conf.Storage); err != nil {
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) })
+
+	if l.riskStore, err = storage.NewRisks(l.conf.Storage); err != nil {
 		return
 	}
-	if l.marketStore, err = storage.NewMarkets(&l.conf.Storage); err != nil {
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) })
+
+	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage); err != nil {
 		return
 	}
-	if l.partyStore, err = storage.NewParties(&l.conf.Storage); err != nil {
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
+
+	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
 		return
 	}
-	if l.accounts, err = storage.NewAccounts(&l.conf.Storage); err != nil {
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) })
+
+	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage); err != nil {
 		return
 	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) })
+
 	return nil
 }
 
@@ -109,26 +125,34 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 	// this doesn't fail
-	l.timeService = vegatime.NewService(&l.conf.Time)
+	l.timeService = vegatime.NewService(l.conf.Time)
 	if l.blockchainClient, err = blockchain.NewClient(&l.conf.Blockchain); err != nil {
 		return
 	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.timeService.ReloadConf(cfg.Time) })
+
 	// start services
-	if l.candleService, err = candles.NewService(&l.conf.Candles, l.candleStore); err != nil {
+	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
 		return
 	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) })
 	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService, l.blockchainClient); err != nil {
 		return
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) })
 
-	if l.tradeService, err = trades.NewService(&l.conf.Trades, l.tradeStore, l.riskStore); err != nil {
+	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.riskStore); err != nil {
 		return
 	}
-	if l.marketService, err = markets.NewService(&l.conf.Markets, l.marketStore, l.orderStore); err != nil {
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) })
+
+	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore); err != nil {
 		return
 	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) })
+
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
-	l.partyService, err = parties.NewService(&l.conf.Parties, l.partyStore)
+	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) })
 	return
 }

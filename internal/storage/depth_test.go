@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -20,7 +21,7 @@ func TestMarketDepth_Hard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	orderStore, err := storage.NewOrders(config, func() {})
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 
 	assert.Nil(t, err)
 	defer orderStore.Close()
@@ -402,7 +403,7 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	orderStore, err := storage.NewOrders(config, func() {})
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 
 	assert.Nil(t, err)
 	defer orderStore.Close()
@@ -533,7 +534,7 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	orderStore, err := storage.NewOrders(config, func() {})
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 

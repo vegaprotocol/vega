@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/config/encoding"
 	cfgencoding "code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
 
@@ -28,8 +29,7 @@ const (
 
 // Config provides package level settings, configuration and logging.
 type Config struct {
-	log   *logging.Logger
-	Level logging.Level
+	Level encoding.LogLevel
 
 	OrderStoreDirPath  string
 	TradeStoreDirPath  string
@@ -46,66 +46,60 @@ type Config struct {
 // This constructor is used by the vega application code. Logger is a
 // pointer to a logging instance and defaultStoreDirPath is the root directory
 // where all storage directories are to be read from and written to.
-func NewDefaultConfig(logger *logging.Logger, defaultStoreDirPath string) Config {
-	logger = logger.Named(namedLogger)
-
+func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
-		log:                logger,
-		Level:              logging.InfoLevel,
-		OrderStoreDirPath:  filepath.Join(defaultStoreDirPath, OrderStoreDataPath),
-		TradeStoreDirPath:  filepath.Join(defaultStoreDirPath, TradeStoreDataPath),
-		CandleStoreDirPath: filepath.Join(defaultStoreDirPath, CandleStoreDataPath),
-		MarketStoreDirPath: filepath.Join(defaultStoreDirPath, MarketStoreDataPath),
-		//LogPartyStoreDebug:    true,
-		//LogOrderStoreDebug:    true,
-		//LogCandleStoreDebug:   false,
+		Level:                 encoding.LogLevel{Level: logging.InfoLevel},
+		OrderStoreDirPath:     filepath.Join(defaultStoreDirPath, OrderStoreDataPath),
+		TradeStoreDirPath:     filepath.Join(defaultStoreDirPath, TradeStoreDataPath),
+		CandleStoreDirPath:    filepath.Join(defaultStoreDirPath, CandleStoreDataPath),
+		MarketStoreDirPath:    filepath.Join(defaultStoreDirPath, MarketStoreDataPath),
 		LogPositionStoreDebug: false,
-		Timeout:               cfgencoding.Duration{defaultStorageAccessTimeout},
+		Timeout:               cfgencoding.Duration{Duration: defaultStorageAccessTimeout},
 	}
 }
 
 // FlushStores will remove/clear the badger key and value files (i.e. databases)
 // from disk at the locations specified by the given storage.Config. This is
 // currently used within unit and integration tests to clear between runs.
-func FlushStores(c *Config) {
+func FlushStores(log *logging.Logger, c Config) {
 	err := os.RemoveAll(c.OrderStoreDirPath)
 	if err != nil {
-		c.log.Error("Failed to flush the order store",
+		log.Error("Failed to flush the order store",
 			logging.String("path", c.OrderStoreDirPath),
 			logging.Error(err))
 	}
 	if _, err := os.Stat(c.OrderStoreDirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(c.OrderStoreDirPath, os.ModePerm)
 		if err != nil {
-			c.log.Error("Failed to create the order store",
+			log.Error("Failed to create the order store",
 				logging.String("path", c.OrderStoreDirPath),
 				logging.Error(err))
 		}
 	}
 	err = os.RemoveAll(c.TradeStoreDirPath)
 	if err != nil {
-		c.log.Error("Failed to flush the trade store",
+		log.Error("Failed to flush the trade store",
 			logging.String("path", c.TradeStoreDirPath),
 			logging.Error(err))
 	}
 	if _, err := os.Stat(c.TradeStoreDirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(c.TradeStoreDirPath, os.ModePerm)
 		if err != nil {
-			c.log.Error("Failed to create the trade store",
+			log.Error("Failed to create the trade store",
 				logging.String("path", c.TradeStoreDirPath),
 				logging.Error(err))
 		}
 	}
 	err = os.RemoveAll(c.CandleStoreDirPath)
 	if err != nil {
-		c.log.Error("Failed to flush the candle store",
+		log.Error("Failed to flush the candle store",
 			logging.String("path", c.CandleStoreDirPath),
 			logging.Error(err))
 	}
 	if _, err := os.Stat(c.CandleStoreDirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(c.CandleStoreDirPath, os.ModePerm)
 		if err != nil {
-			c.log.Error("Failed to create the candle store",
+			log.Error("Failed to create the candle store",
 				logging.String("path", c.TradeStoreDirPath),
 				logging.Error(err))
 		}
@@ -113,14 +107,14 @@ func FlushStores(c *Config) {
 
 	err = os.RemoveAll(c.MarketStoreDirPath)
 	if err != nil {
-		c.log.Error("Failed to flush the candle store",
+		log.Error("Failed to flush the candle store",
 			logging.String("path", c.MarketStoreDirPath),
 			logging.Error(err))
 	}
 	if _, err := os.Stat(c.MarketStoreDirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(c.MarketStoreDirPath, os.ModePerm)
 		if err != nil {
-			c.log.Error("Failed to create the market store",
+			log.Error("Failed to create the market store",
 				logging.String("path", c.MarketStoreDirPath),
 				logging.Error(err))
 		}
@@ -137,53 +131,34 @@ func InitStoreDirectory(path string) error {
 	return nil
 }
 
-// GetLogger returns a pointer to the current underlying logger for this package.
-func (c *Config) GetLogger() *logging.Logger {
-	return c.log
-}
-
-// SetLogger creates a new logger based on a given parent logger.
-func (c *Config) SetLogger(parent *logging.Logger) {
-	c.log = parent.Named(namedLogger)
-}
-
-// UpdateLogger will set any new values on the underlying logging core. Useful when configs are
-// hot reloaded at run time. Currently we only check and refresh the logging level.
-func (c *Config) UpdateLogger() {
-	c.log.SetLevel(c.Level)
-}
-
 // NewTestConfig constructs a new Config instance with test parameters.
 // This constructor is exclusively used in unit tests/integration tests
-func NewTestConfig() (*Config, error) {
-	// Test logger can be configured here, default to console not file etc.
-	logger := logging.NewTestLogger()
+func NewTestConfig() (Config, error) {
 	// Test configuration for badger stores
 	cfg := Config{
-		log:                   logger,
 		OrderStoreDirPath:     fmt.Sprintf("/tmp/vegatests/orderstore-%v", randSeq(5)),
 		TradeStoreDirPath:     fmt.Sprintf("/tmp/vegatests/tradestore-%v", randSeq(5)),
 		CandleStoreDirPath:    fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
 		MarketStoreDirPath:    fmt.Sprintf("/tmp/vegatests/marketstore-%v", randSeq(5)),
 		LogPositionStoreDebug: true,
-		Timeout:               cfgencoding.Duration{defaultStorageAccessTimeout},
+		Timeout:               cfgencoding.Duration{Duration: defaultStorageAccessTimeout},
 	}
 
 	if err := ensureDir(cfg.CandleStoreDirPath); err != nil {
-		return nil, err
+		return Config{}, err
 	}
 	if err := ensureDir(cfg.OrderStoreDirPath); err != nil {
-		return nil, err
+		return Config{}, err
 	}
 	if err := ensureDir(cfg.TradeStoreDirPath); err != nil {
-		return nil, err
+		return Config{}, err
 	}
 
 	if err := ensureDir(cfg.MarketStoreDirPath); err != nil {
-		return nil, err
+		return Config{}, err
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
 
 func ensureDir(path string) error {
