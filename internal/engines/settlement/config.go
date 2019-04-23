@@ -17,6 +17,6 @@ type Config struct {
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultConfig() Config {
 	return Config{
-		Level: encoding.LogLevel{logging.InfoLevel},
+		Level: encoding.LogLevel{Level: logging.InfoLevel},
 	}
 }
