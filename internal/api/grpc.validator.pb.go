@@ -18,6 +18,21 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *OrdersSubscribeRequest) Validate() error {
+	return nil
+}
+func (this *TradesSubscribeRequest) Validate() error {
+	return nil
+}
+func (this *CandlesSubscribeRequest) Validate() error {
+	return nil
+}
+func (this *MarketDepthSubscribeRequest) Validate() error {
+	return nil
+}
+func (this *PositionsSubscribeRequest) Validate() error {
+	return nil
+}
 func (this *OrderResponse) Validate() error {
 	return nil
 }
