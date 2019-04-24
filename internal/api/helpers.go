@@ -18,7 +18,7 @@ func newGuid() string {
 	return uuid.NewV4().String()
 }
 
-func RemoteAddrMiddleware(log logging.Logger, next http.Handler) http.Handler {
+func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		found := false

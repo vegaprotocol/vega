@@ -89,7 +89,7 @@ func (s *grpcServer) ReloadConf(cfg api.Config) {
 	s.Config = cfg
 }
 
-func remoteAddrInterceptor(log logging.Logger) grpc.UnaryServerInterceptor {
+func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
@@ -149,7 +149,7 @@ func (g *grpcServer) Start() {
 		g.log.Panic("Failure listening on gRPC port", logging.Int("port", port), logging.Error(err))
 	}
 
-	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(logger))
+	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
 	var handlers = &Handlers{
 		Stats:         g.stats,
 		Client:        g.client,

@@ -176,7 +176,7 @@ func (g *graphServer) Start() {
 	handlr := http.NewServeMux()
 
 	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
-	handlr.Handle("/query", api.RemoteAddrMiddleware(logger, c.Handler(handler.GraphQL(
+	handlr.Handle("/query", api.RemoteAddrMiddleware(g.log, c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
