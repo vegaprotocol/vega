@@ -240,8 +240,10 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
-	newOrderStore, err := storage.NewOrders(config, func() {})
+	log := logging.NewTestLogger()
+
+	storage.FlushStores(log, config)
+	newOrderStore, err := storage.NewOrders(log, config, func() {})
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 
@@ -276,9 +278,9 @@ func testStorage_InsertBatchOrders(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-
-	storage.FlushStores(config)
-	orderStore, err := storage.NewOrders(config, func() {})
+	log := logging.NewTestLogger()
+	storage.FlushStores(log, config)
+	orderStore, err := storage.NewOrders(log, config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
