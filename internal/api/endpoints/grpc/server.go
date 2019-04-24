@@ -43,7 +43,7 @@ type grpcServer struct {
 
 	// used in order to gracefully close streams
 	ctx   context.Context
-	cfunc func()
+	cfunc context.CancelFunc
 }
 
 func NewGRPCServer(
