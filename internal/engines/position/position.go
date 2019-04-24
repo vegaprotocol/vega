@@ -122,14 +122,11 @@ func (e *Engine) Update(trade *types.Trade) {
 	// add price, still. this is keeping a running total of the sell price
 	seller.price += price
 
-	e.cfgMu.Lock()
-	if e.LogPositionUpdate {
-		e.log.Info("Positions Updated for trade",
-			logging.Trade(*trade),
-			logging.String("buyer-position", fmt.Sprintf("%+v", buyer)),
-			logging.String("seller-position", fmt.Sprintf("%+v", seller)))
-	}
-	e.cfgMu.Unlock()
+	e.log.Debug("Positions Updated for trade",
+		logging.Trade(*trade),
+		logging.String("buyer-position", fmt.Sprintf("%+v", buyer)),
+		logging.String("seller-position", fmt.Sprintf("%+v", seller)))
+
 	// we've set all the values now, unlock after logging
 	// because we're working on MarketPosition pointers
 	e.mu.Unlock()
