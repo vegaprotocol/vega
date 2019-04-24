@@ -60,7 +60,9 @@ type PartyService interface {
 }
 
 type resolverRoot struct {
-	*api.Config
+	api.Config
+
+	log           *logging.Logger
 	orderService  OrderService
 	tradeService  TradeService
 	candleService CandleService
@@ -70,7 +72,8 @@ type resolverRoot struct {
 }
 
 func NewResolverRoot(
-	config *api.Config,
+	log *logging.Logger,
+	config api.Config,
 	orderService OrderService,
 	tradeService TradeService,
 	candleService CandleService,
@@ -80,6 +83,7 @@ func NewResolverRoot(
 ) *resolverRoot {
 
 	return &resolverRoot{
+		log:           log,
 		Config:        config,
 		orderService:  orderService,
 		tradeService:  tradeService,
@@ -139,7 +143,7 @@ func (r *MyQueryResolver) Markets(ctx context.Context, id *string) ([]Market, er
 		}
 		market, err := MarketFromProto(mkt)
 		if err != nil {
-			r.GetLogger().Error("unable to convert market from proto", logging.Error(err))
+			r.log.Error("unable to convert market from proto", logging.Error(err))
 			return nil, err
 		}
 		return []Market{
@@ -154,7 +158,7 @@ func (r *MyQueryResolver) Markets(ctx context.Context, id *string) ([]Market, er
 	for _, pmarket := range pmkts {
 		market, err := MarketFromProto(pmarket)
 		if err != nil {
-			r.GetLogger().Error("unable to convert market from proto", logging.Error(err))
+			r.log.Error("unable to convert market from proto", logging.Error(err))
 			return nil, err
 		}
 		m = append(m, *market)
@@ -170,7 +174,7 @@ func (r *MyQueryResolver) Market(ctx context.Context, id string) (*Market, error
 	}
 	market, err := MarketFromProto(mkt)
 	if err != nil {
-		r.GetLogger().Error("unable to convert market from proto", logging.Error(err))
+		r.log.Error("unable to convert market from proto", logging.Error(err))
 		return nil, err
 	}
 	return market, nil
@@ -301,8 +305,7 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	case IntervalI6h:
 		pbInterval = types.Interval_I6H
 	default:
-		logger := *r.GetLogger()
-		logger.Warn("Invalid interval when subscribing to candles, falling back to default: I15M",
+		r.log.Warn("Invalid interval when subscribing to candles, falling back to default: I15M",
 			logging.String("interval", interval.String()))
 		pbInterval = types.Interval_I15M
 	}
@@ -550,8 +553,7 @@ func (r *MyCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Int
 	if interval.IsValid() {
 		return interval, nil
 	} else {
-		logger := *r.GetLogger()
-		logger.Warn("Interval conversion from proto to gql type failed, falling back to default: I15M",
+		r.log.Warn("Interval conversion from proto to gql type failed, falling back to default: I15M",
 			logging.String("interval", interval.String()))
 		return IntervalI15m, nil
 	}
@@ -699,8 +701,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	pendingOrder, err := r.orderService.CreateOrder(ctx, order)
 	if err != nil {
-		logger := *r.GetLogger()
-		logger.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
 		return nil, err
 	}
 
@@ -756,8 +757,7 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	c, ref := r.orderService.ObserveOrders(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
-	logger := *r.GetLogger()
-	logger.Debug("Orders: new subscriber", logging.Uint64("ref", ref))
+	r.log.Debug("Orders: new subscriber", logging.Uint64("ref", ref))
 	return c, nil
 }
 
@@ -770,8 +770,7 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	c, ref := r.tradeService.ObserveTrades(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
-	logger := *r.GetLogger()
-	logger.Debug("Trades: new subscriber", logging.Uint64("ref", ref))
+	r.log.Debug("Trades: new subscriber", logging.Uint64("ref", ref))
 	return c, nil
 }
 
@@ -780,8 +779,7 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	c, ref := r.tradeService.ObservePositions(ctx, r.Config.GraphQLSubscriptionRetries, party)
-	logger := *r.GetLogger()
-	logger.Debug("Positions: new subscriber", logging.Uint64("ref", ref))
+	r.log.Debug("Positions: new subscriber", logging.Uint64("ref", ref))
 	return c, nil
 }
 
@@ -791,8 +789,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 		return nil, err
 	}
 	c, ref := r.marketService.ObserveDepth(ctx, r.Config.GraphQLSubscriptionRetries, market)
-	logger := *r.GetLogger()
-	logger.Debug("Market Depth: new subscriber", logging.Uint64("ref", ref))
+	r.log.Debug("Market Depth: new subscriber", logging.Uint64("ref", ref))
 	return c, nil
 }
 
@@ -801,8 +798,6 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	if err != nil {
 		return nil, err
 	}
-
-	logger := *r.GetLogger()
 
 	var pbInterval types.Interval
 	switch interval {
@@ -819,7 +814,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 	case IntervalI6h:
 		pbInterval = types.Interval_I6H
 	default:
-		logger.Warn("Invalid interval when subscribing to candles in gql, falling back to default: I15M",
+		r.log.Warn("Invalid interval when subscribing to candles in gql, falling back to default: I15M",
 			logging.String("interval", interval.String()))
 		pbInterval = types.Interval_I15M
 	}
@@ -829,7 +824,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 	c, ref := r.candleService.ObserveCandles(ctx, r.Config.GraphQLSubscriptionRetries, &market, &pbInterval)
 
-	logger.Debug("Candles: New subscriber",
+	r.log.Debug("Candles: New subscriber",
 		logging.String("interval", pbInterval.String()),
 		logging.String("market", market),
 		logging.Uint64("ref", ref))

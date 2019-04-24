@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/buffer"
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
@@ -21,8 +22,8 @@ func TestStorage_GenerateCandles(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
-	candleStore, err := storage.NewCandles(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
+	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
@@ -204,24 +205,22 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
-	candleStore, err := storage.NewCandles(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
+	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
 	internalTransport1 := &storage.InternalTransport{
 		Market:    testMarket,
 		Interval:  types.Interval_I1M,
-		Transport: make(chan *types.Candle),
-	}
+		Transport: make(chan *types.Candle)}
 	ref := candleStore.Subscribe(internalTransport1)
 	assert.Equal(t, uint64(1), ref)
 
 	internalTransport2 := &storage.InternalTransport{
 		Market:    testMarket,
 		Interval:  types.Interval_I1M,
-		Transport: make(chan *types.Candle),
-	}
+		Transport: make(chan *types.Candle)}
 	ref = candleStore.Subscribe(internalTransport2)
 	assert.Equal(t, uint64(2), ref)
 
@@ -245,8 +244,8 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
-	candleStore, err := storage.NewCandles(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
+	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config)
 	assert.Nil(t, err)
 	defer candleStore.Close()
 

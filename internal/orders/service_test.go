@@ -131,8 +131,8 @@ func getTestService(t *testing.T) *testService {
 	orderStore := mocks.NewMockOrderStore(ctrl)
 	timeSvc := mocks.NewMockTimeService(ctrl)
 	block := mocks.NewMockBlockchain(ctrl)
-	conf := orders.NewDefaultConfig(log)
-	svc, err := orders.NewService(conf, orderStore, timeSvc, block)
+	conf := orders.NewDefaultConfig()
+	svc, err := orders.NewService(log, conf, orderStore, timeSvc, block)
 	if err != nil {
 		t.Fatalf("Failed to get test service: %+v", err)
 	}

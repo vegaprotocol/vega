@@ -19,22 +19,39 @@ type CandleStore interface {
 }
 
 type Svc struct {
-	*Config
+	log *logging.Logger
+	Config
 	tradesBuffer map[string][]*types.Trade
 	candleStore  CandleStore
 }
 
-func NewService(config *Config, candleStore CandleStore) (*Svc, error) {
-	if config == nil {
-		return nil, errors.New("candle config is nil when creating candle service instance.")
-	}
+func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*Svc, error) {
 	if candleStore == nil {
 		return nil, errors.New("candleStore instance is nil when creating candle service instance.")
 	}
+
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	return &Svc{
+		log:         log,
 		Config:      config,
 		candleStore: candleStore,
 	}, nil
+}
+
+func (s *Svc) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.Config = cfg
 }
 
 func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {

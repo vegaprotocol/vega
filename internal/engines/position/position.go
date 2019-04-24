@@ -13,7 +13,6 @@ type MarketPosition struct {
 	margins map[string]uint64
 	partyID string
 	price   uint64
-	mu      sync.Mutex
 }
 
 func (m MarketPosition) String() string {
@@ -22,20 +21,16 @@ func (m MarketPosition) String() string {
 
 // Margins returns a copy of the current margins map
 func (m *MarketPosition) Margins() map[string]uint64 {
-	m.mu.Lock()
 	out := make(map[string]uint64, 0)
 	for k, v := range m.margins {
 		out[k] = v
 	}
-	m.mu.Unlock()
 	return out
 }
 
 // UpdateMargin updates the margin value for a single asset
 func (m *MarketPosition) UpdateMargin(assetID string, margin uint64) {
-	m.mu.Lock()
 	m.margins[assetID] = margin
-	m.mu.Unlock()
 }
 
 func (m MarketPosition) Size() int64 {
@@ -51,19 +46,41 @@ func (m MarketPosition) Price() uint64 {
 }
 
 type Engine struct {
-	*Config
+	log *logging.Logger
+	Config
 
-	mu *sync.RWMutex
+	cfgMu sync.Mutex
+	mu    *sync.RWMutex
 	// partyID -> MarketPosition
 	positions map[string]*MarketPosition
 }
 
-func New(config *Config) *Engine {
+func New(log *logging.Logger, config Config) *Engine {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	return &Engine{
-		mu:        &sync.RWMutex{},
 		Config:    config,
+		log:       log,
+		mu:        &sync.RWMutex{},
 		positions: map[string]*MarketPosition{},
 	}
+}
+
+func (e *Engine) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.cfgMu.Lock()
+	e.Config = cfg
+	e.cfgMu.Unlock()
 }
 
 func (e *Engine) Update(trade *types.Trade) {
@@ -105,12 +122,11 @@ func (e *Engine) Update(trade *types.Trade) {
 	// add price, still. this is keeping a running total of the sell price
 	seller.price += price
 
-	if e.LogPositionUpdate {
-		e.log.Info("Positions Updated for trade",
-			logging.Trade(*trade),
-			logging.String("buyer-position", fmt.Sprintf("%+v", buyer)),
-			logging.String("seller-position", fmt.Sprintf("%+v", seller)))
-	}
+	e.log.Debug("Positions Updated for trade",
+		logging.Trade(*trade),
+		logging.String("buyer-position", fmt.Sprintf("%+v", buyer)),
+		logging.String("seller-position", fmt.Sprintf("%+v", seller)))
+
 	// we've set all the values now, unlock after logging
 	// because we're working on MarketPosition pointers
 	e.mu.Unlock()

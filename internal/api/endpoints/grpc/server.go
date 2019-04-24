@@ -20,8 +20,13 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	namedLogger = "api.grpc"
+)
+
 type grpcServer struct {
-	*api.Config
+	log *logging.Logger
+	api.Config
 	stats         *internal.Stats
 	client        *blockchain.Client
 	orderService  *orders.Svc
@@ -35,7 +40,8 @@ type grpcServer struct {
 }
 
 func NewGRPCServer(
-	config *api.Config,
+	log *logging.Logger,
+	config api.Config,
 	stats *internal.Stats,
 	client *blockchain.Client,
 	timeService *vegatime.Svc,
@@ -46,8 +52,12 @@ func NewGRPCServer(
 	candleService *candles.Svc,
 	statusChecker *monitoring.Status,
 ) *grpcServer {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
 
 	return &grpcServer{
+		log:           log,
 		Config:        config,
 		stats:         stats,
 		client:        client,
@@ -61,17 +71,31 @@ func NewGRPCServer(
 	}
 }
 
+func (s *grpcServer) ReloadConf(cfg api.Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	// TODO(): not updating the the actual server for now, may need to look at this later
+	// e.g restart the http server on another port or whatever
+	s.Config = cfg
+}
+
 func (g *grpcServer) Start() {
-	logger := *g.GetLogger()
 
 	ip := g.GrpcServerIpAddress
 	port := g.GrpcServerPort
 
-	logger.Info("Starting gRPC based API", logging.String("addr", ip), logging.Int("port", port))
+	g.log.Info("Starting gRPC based API", logging.String("addr", ip), logging.Int("port", port))
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
-		logger.Panic("Failure listening on gRPC port", logging.Int("port", port), logging.Error(err))
+		g.log.Panic("Failure listening on gRPC port", logging.Int("port", port), logging.Error(err))
 	}
 
 	var handlers = &Handlers{
@@ -89,14 +113,13 @@ func (g *grpcServer) Start() {
 	api.RegisterTradingServer(g.srv, handlers)
 	err = g.srv.Serve(lis)
 	if err != nil {
-		logger.Panic("Failure serving gRPC API", logging.Error(err))
+		g.log.Panic("Failure serving gRPC API", logging.Error(err))
 	}
 }
 
 func (g *grpcServer) Stop() {
 	if g.srv != nil {
-		logger := *g.GetLogger()
-		logger.Info("Stopping gRPC based API")
+		g.log.Info("Stopping gRPC based API")
 		g.srv.GracefulStop()
 	}
 }

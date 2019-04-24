@@ -3,6 +3,7 @@ package storage_test
 import (
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 	uuid "github.com/satori/go.uuid"
@@ -73,6 +74,6 @@ func testCreateMarketAccounts(t *testing.T) {
 
 func getAccountStorage() *storage.Account {
 	conf, _ := storage.NewTestConfig()
-	acc, _ := storage.NewAccounts(conf)
+	acc, _ := storage.NewAccounts(logging.NewTestLogger(), conf)
 	return acc
 }

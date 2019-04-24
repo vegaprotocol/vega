@@ -22,18 +22,37 @@ type OrderStore interface {
 }
 
 type Svc struct {
-	*Config
+	Config
+	log         *logging.Logger
 	marketStore MarketStore
 	orderStore  OrderStore
 }
 
 // NewService creates an market service with the necessary dependencies
-func NewService(config *Config, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	return &Svc{
-		config,
-		marketStore,
-		orderStore,
+		log:         log,
+		Config:      config,
+		marketStore: marketStore,
+		orderStore:  orderStore,
 	}, nil
+}
+
+func (s *Svc) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.Config = cfg
 }
 
 // CreateMarket stores the given market.
