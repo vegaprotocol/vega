@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
@@ -354,6 +355,82 @@ func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest
 	var response = &api.VegaTimeResponse{}
 	response.Time = vegatime.Format(epochTime)
 	return response, nil
+}
+
+func (h *Handlers) OrdersSubscribe(req *api.OrdersSubscribeRequest, srv api.Trading_OrdersSubscribeServer) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
+	if err != nil {
+		return err
+	}
+
+	orderschan, ref := h.OrderService.ObserveOrders(
+		srv.Context(), h.Config.GraphQLSubscriptionRetries, req.MarketID, req.PartyID)
+	h.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	for {
+		select {
+		case orders := <-orderschan:
+			for _, o := range orders {
+				err := srv.Send(o)
+				if err != nil {
+					h.log.Error("Orders subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+				}
+			}
+		case <-srv.Context():
+			h.log.Debug("Orders subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		}
+
+		if orderschan == nil {
+			h.log.Debug("Orders subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return errors.New("stream closed")
+		}
+	}
+
+	return nil
+}
+
+func (h *Handlers) TradesSubscribe(req *api.TradesSubscribeRequest, srv api.Trading_TradesSubscribeServer) error {
+	return nil
+}
+
+func (h *Handlers) CandlesSubscribe(*api.CandlesSubscribeRequest, api.Trading_CandlesSubscribeServer) error {
+	return nil
+}
+
+func (h *Handlers) MarketDepthSubscribe(*api.MarketDepthSubscribeRequest, api.Trading_MarketDepthSubscribeServer) error {
+	return nil
+}
+
+func (h *Handlers) PositionsSubscribe(*api.PositionsSubscribeRequest, api.Trading_PositionsSubscribeServer) error {
+	return nil
+}
+
+func validateMarket(ctx context.Context, marketId *string, marketService MarketService) (*types.Market, error) {
+	var mkt *types.Market
+	var err error
+	if marketId != nil {
+		if len(*marketId) == 0 {
+			return nil, errors.New("market must not be empty")
+		}
+		mkt, err = marketService.GetByID(ctx, *marketId)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return mkt, nil
 }
 
 func (h *Handlers) getTendermintStats(ctx context.Context) (backlogLength int,
