@@ -32,6 +32,7 @@ type OrderService interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
+	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc TradeService
@@ -47,6 +48,7 @@ type CandleService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc MarketService
 type MarketService interface {
+	GetByID(ctx context.Context, name string) (*types.Market, error)
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
 }
@@ -64,6 +66,8 @@ type BlockchainClient interface {
 }
 
 type Handlers struct {
+	log           *logging.Logger
+	Config        api.Config
 	Client        BlockchainClient
 	Stats         *internal.Stats
 	TimeService   VegaTime
@@ -368,22 +372,23 @@ func (h *Handlers) OrdersSubscribe(req *api.OrdersSubscribeRequest, srv api.Trad
 	}
 
 	orderschan, ref := h.OrderService.ObserveOrders(
-		srv.Context(), h.Config.GraphQLSubscriptionRetries, req.MarketID, req.PartyID)
+		srv.Context(), h.Config.GraphQLSubscriptionRetries, &req.MarketID, &req.PartyID)
 	h.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	for {
 		select {
 		case orders := <-orderschan:
 			for _, o := range orders {
-				err := srv.Send(o)
+				err := srv.Send(&o)
 				if err != nil {
 					h.log.Error("Orders subscriber - rpc stream error",
 						logging.Error(err),
 						logging.Uint64("ref", ref),
 					)
+					return err
 				}
 			}
-		case <-srv.Context():
+		case <-ctx.Done():
 			h.log.Debug("Orders subscriber - rpc stream ctx error",
 				logging.Error(err),
 				logging.Uint64("ref", ref),
@@ -398,8 +403,6 @@ func (h *Handlers) OrdersSubscribe(req *api.OrdersSubscribeRequest, srv api.Trad
 			return errors.New("stream closed")
 		}
 	}
-
-	return nil
 }
 
 func (h *Handlers) TradesSubscribe(req *api.TradesSubscribeRequest, srv api.Trading_TradesSubscribeServer) error {
@@ -418,18 +421,17 @@ func (h *Handlers) PositionsSubscribe(*api.PositionsSubscribeRequest, api.Tradin
 	return nil
 }
 
-func validateMarket(ctx context.Context, marketId *string, marketService MarketService) (*types.Market, error) {
+func validateMarket(ctx context.Context, marketID string, marketService MarketService) (*types.Market, error) {
 	var mkt *types.Market
 	var err error
-	if marketId != nil {
-		if len(*marketId) == 0 {
-			return nil, errors.New("market must not be empty")
-		}
-		mkt, err = marketService.GetByID(ctx, *marketId)
-		if err != nil {
-			return nil, err
-		}
+	if len(marketID) == 0 {
+		return nil, errors.New("market must not be empty")
 	}
+	mkt, err = marketService.GetByID(ctx, marketID)
+	if err != nil {
+		return nil, err
+	}
+
 	return mkt, nil
 }
 

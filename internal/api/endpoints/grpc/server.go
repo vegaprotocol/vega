@@ -151,6 +151,8 @@ func (g *grpcServer) Start() {
 
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
 	var handlers = &Handlers{
+		log:           g.log,
+		Config:        g.Config,
 		Stats:         g.stats,
 		Client:        g.client,
 		OrderService:  g.orderService,
