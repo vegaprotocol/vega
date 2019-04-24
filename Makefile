@@ -25,7 +25,7 @@ else
 	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
-.PHONY: all bench deps build clean grpc grpc_check help test lint mocks proto_check
+.PHONY: all bench deps build clean gettools grpc grpc_check help test lint mocks proto_check
 
 all: build
 
@@ -144,6 +144,9 @@ grpc_check: deps ## gRPC: Check committed files match just-generated files
 	fi
 
 # Misc Targets
+
+gettools:
+	@./script/gettools.sh
 
 clean: ## Remove previous build
 	@rm -f ./vega{,bench} ./cmd/{vega/vega,vegabench/vegabench}
