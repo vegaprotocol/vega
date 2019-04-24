@@ -52,7 +52,7 @@ message MarketDepthSubscribeRequest {
 }
 
 message PositionsSubscribeRequest {
-  string marketID = 1;
+  string partyID = 1;
 }
 
 message OrderResponse {

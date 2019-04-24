@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/proto"
 
 	"google.golang.org/grpc"
 )
@@ -88,18 +89,168 @@ func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
 }
 
 func startTrades(ctx context.Context, wg *sync.WaitGroup) error {
+	if len(market) <= 0 {
+		return ErrMissingMarket
+	}
+	if len(party) <= 0 {
+		return ErrMissingParty
+	}
+
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	client := api.NewTradingClient(conn)
+	req := &api.TradesSubscribeRequest{
+		MarketID: market,
+		PartyID:  party,
+	}
+	stream, err := client.TradesSubscribe(ctx, req)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	go func() {
+		defer wg.Done()
+		defer conn.Close()
+		for {
+			o, err := stream.Recv()
+			if err == io.EOF {
+				log.Printf("trades: stream closed by server err=%v", err)
+				break
+			}
+			if err != nil {
+				log.Printf("trades: stream closed err=%v", err)
+				break
+			}
+			log.Printf("trade: %v", o)
+		}
+
+	}()
 	return nil
 }
 
 func startPositions(ctx context.Context, wg *sync.WaitGroup) error {
+	if len(party) <= 0 {
+		return ErrMissingParty
+	}
+
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	client := api.NewTradingClient(conn)
+	req := &api.PositionsSubscribeRequest{
+		PartyID: party,
+	}
+	stream, err := client.PositionsSubscribe(ctx, req)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	go func() {
+		defer wg.Done()
+		defer conn.Close()
+		for {
+			o, err := stream.Recv()
+			if err == io.EOF {
+				log.Printf("positions: stream closed by server err=%v", err)
+				break
+			}
+			if err != nil {
+				log.Printf("positions: stream closed err=%v", err)
+				break
+			}
+			log.Printf("position: %v", o)
+		}
+
+	}()
 	return nil
+
 }
 
 func startCandles(ctx context.Context, wg *sync.WaitGroup) error {
+	if len(market) <= 0 {
+		return ErrMissingMarket
+	}
+
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	client := api.NewTradingClient(conn)
+	req := &api.CandlesSubscribeRequest{
+		MarketID: market,
+		Interval: proto.Interval_I1M,
+	}
+	stream, err := client.CandlesSubscribe(ctx, req)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	go func() {
+		defer wg.Done()
+		defer conn.Close()
+		for {
+			o, err := stream.Recv()
+			if err == io.EOF {
+				log.Printf("candles: stream closed by server err=%v", err)
+				break
+			}
+			if err != nil {
+				log.Printf("candles: stream closed err=%v", err)
+				break
+			}
+			log.Printf("candles: %v", o)
+		}
+
+	}()
 	return nil
 }
 
 func startDepth(ctx context.Context, wg *sync.WaitGroup) error {
+	if len(market) <= 0 {
+		return ErrMissingMarket
+	}
+
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	client := api.NewTradingClient(conn)
+	req := &api.MarketDepthSubscribeRequest{
+		MarketID: market,
+	}
+	stream, err := client.MarketDepthSubscribe(ctx, req)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	go func() {
+		defer wg.Done()
+		defer conn.Close()
+		for {
+			o, err := stream.Recv()
+			if err == io.EOF {
+				log.Printf("depth: stream closed by server err=%v", err)
+				break
+			}
+			if err != nil {
+				log.Printf("depth: stream closed err=%v", err)
+				break
+			}
+			log.Printf("depth: %v", o)
+		}
+
+	}()
 	return nil
 }
 
