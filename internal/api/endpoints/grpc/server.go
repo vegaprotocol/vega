@@ -40,6 +40,10 @@ type grpcServer struct {
 	timeService   *vegatime.Svc
 	srv           *grpc.Server
 	statusChecker *monitoring.Status
+
+	// used in order to gracefully close streams
+	ctx   context.Context
+	cfunc func()
 }
 
 func NewGRPCServer(
@@ -58,6 +62,7 @@ func NewGRPCServer(
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
+	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &grpcServer{
 		log:           log,
@@ -71,6 +76,8 @@ func NewGRPCServer(
 		marketService: marketService,
 		partyService:  partyService,
 		statusChecker: statusChecker,
+		ctx:           ctx,
+		cfunc:         cfunc,
 	}
 }
 
@@ -162,6 +169,7 @@ func (g *grpcServer) Start() {
 		PartyService:  g.partyService,
 		TimeService:   g.timeService,
 		statusChecker: g.statusChecker,
+		ctx:           g.ctx,
 	}
 	g.srv = grpc.NewServer(intercept)
 	api.RegisterTradingServer(g.srv, handlers)
@@ -174,6 +182,7 @@ func (g *grpcServer) Start() {
 func (g *grpcServer) Stop() {
 	if g.srv != nil {
 		g.log.Info("Stopping gRPC based API")
+		g.cfunc()
 		g.srv.GracefulStop()
 	}
 }

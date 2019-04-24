@@ -77,6 +77,7 @@ type Handlers struct {
 	MarketService MarketService
 	PartyService  PartyService
 	statusChecker *monitoring.Status
+	ctx           context.Context
 }
 
 // If no limit is provided at the gRPC API level, the system will use this limit instead.
@@ -394,6 +395,8 @@ func (h *Handlers) OrdersSubscribe(req *api.OrdersSubscribeRequest, srv api.Trad
 				logging.Uint64("ref", ref),
 			)
 			return err
+		case <-h.ctx.Done():
+			return errors.New("server shutdown")
 		}
 
 		if orderschan == nil {

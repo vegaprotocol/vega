@@ -40,7 +40,7 @@ func init() {
 	flag.BoolVar(&candles, "candles", false, "listen to newly created candles")
 	flag.StringVar(&party, "party", "extremtrader", "name of the party to listen for updates")
 	flag.StringVar(&market, "market", "BTC/DEC19", "id of the market to listen for updates")
-	flag.StringVar(&serverAddr, "addr", "0.0.0.0:3003", "address of the grpc server")
+	flag.StringVar(&serverAddr, "addr", "0.0.0.0:3002", "address of the grpc server")
 }
 
 func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
@@ -48,10 +48,10 @@ func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
 		return ErrMissingMarket
 	}
 	if len(party) <= 0 {
-		return ErrMissinParty
+		return ErrMissingParty
 	}
 
-	conn, err := grpc.Dial(*serverAddr)
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return err
 	}
@@ -73,14 +73,14 @@ func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
 		for {
 			o, err := stream.Recv()
 			if err == io.EOF {
-				log.Printf("orders: stream close by server err=%v", err)
+				log.Printf("orders: stream closed by server err=%v", err)
 				break
 			}
 			if err != nil {
-				log.Printf("orders: stream close err=%v", err)
+				log.Printf("orders: stream closed err=%v", err)
 				break
 			}
-			log.Prinf("order: %v", o)
+			log.Printf("order: %v", o)
 		}
 
 	}()
