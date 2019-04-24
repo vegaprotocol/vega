@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
@@ -36,13 +37,20 @@ func TestStorage_GenerateCandles(t *testing.T) {
 		{Id: "4", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 20*time.Second).UnixNano()},
 	}
 
-	err = candleStore.StartNewBuffer(testMarket, t0)
-	assert.Nil(t, err)
+	// create+start a new buffer
+	buf := buffer.NewCandle(testMarket, candleStore, t0)
+	// assert.Nil(t, err)
+
 	for idx := range trades {
-		err := candleStore.AddTradeToBuffer(*trades[idx])
+		err := buf.AddTrade(*trades[idx])
 		assert.Nil(t, err)
 	}
-	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+
+	// start a new buffer, to get the previous one
+	currentVegaTime := t0.Add(2 * time.Minute)
+	previousBuf, err := buf.Start(currentVegaTime)
+
+	err = candleStore.GenerateCandlesFromBuffer(testMarket, previousBuf)
 	assert.Nil(t, err)
 
 	candles, err := candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
@@ -91,10 +99,13 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(400), candles[0].Volume)
 
 	//------------------- generate empty candles-------------------------//
-	currentVegaTime := t0.Add(2 * time.Minute)
-	err = candleStore.StartNewBuffer(testMarket, currentVegaTime)
+	// currentVegaTime := t0.Add(2 * time.Minute)
+	// err = candleStore.StartNewBuffer(testMarket, currentVegaTime)
 	assert.Nil(t, err)
-	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	// we use the buffer started previously when stopping the previous test
+	currentVegaTime = t0.Add(17 * time.Minute)
+	previousBuf, _ = buf.Start(currentVegaTime)
+	err = candleStore.GenerateCandlesFromBuffer(testMarket, previousBuf)
 	assert.Nil(t, err)
 
 	candles, err = candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
@@ -155,10 +166,10 @@ func TestStorage_GenerateCandles(t *testing.T) {
 
 	assert.Equal(t, 0, len(candles))
 
-	currentVegaTime = t0.Add(17 * time.Minute)
-	err = candleStore.StartNewBuffer(testMarket, currentVegaTime)
+	currentVegaTime = t0.Add(20 * time.Minute)
+	previousBuf, err = buf.Start(currentVegaTime)
 	assert.Nil(t, err)
-	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	err = candleStore.GenerateCandlesFromBuffer(testMarket, previousBuf)
 	assert.Nil(t, err)
 
 	candles, err = candleStore.GetCandles(ctx, testMarket, t0.Add(17*time.Minute), types.Interval_I15M)
@@ -172,12 +183,13 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	assert.Equal(t, uint64(100), candles[0].Open)
 	assert.Equal(t, uint64(100), candles[0].Close)
 	assert.Equal(t, uint64(0), candles[0].Volume)
+
 }
 
 func TestStorage_GetMapOfIntervalsToTimestamps(t *testing.T) {
 	timestamp, _ := vegatime.Parse("2018-11-13T11:01:14Z")
 	t0 := timestamp
-	timestamps := storage.GetMapOfIntervalsToRoundedTimestamps(timestamp)
+	timestamps := buffer.GetMapOfIntervalsToRoundedTimestamps(timestamp)
 	assert.Equal(t, t0.Add(-14*time.Second), timestamps[types.Interval_I1M])
 	assert.Equal(t, t0.Add(-(time.Minute + 14*time.Second)), timestamps[types.Interval_I5M])
 	assert.Equal(t, t0.Add(-(time.Minute + 14*time.Second)), timestamps[types.Interval_I15M])
@@ -197,11 +209,19 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 	assert.Nil(t, err)
 	defer candleStore.Close()
 
-	internalTransport1 := &storage.InternalTransport{testMarket, types.Interval_I1M, make(chan *types.Candle)}
+	internalTransport1 := &storage.InternalTransport{
+		Market:    testMarket,
+		Interval:  types.Interval_I1M,
+		Transport: make(chan *types.Candle),
+	}
 	ref := candleStore.Subscribe(internalTransport1)
 	assert.Equal(t, uint64(1), ref)
 
-	internalTransport2 := &storage.InternalTransport{testMarket, types.Interval_I1M, make(chan *types.Candle)}
+	internalTransport2 := &storage.InternalTransport{
+		Market:    testMarket,
+		Interval:  types.Interval_I1M,
+		Transport: make(chan *types.Candle),
+	}
 	ref = candleStore.Subscribe(internalTransport2)
 	assert.Equal(t, uint64(2), ref)
 
@@ -244,13 +264,13 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 		{Id: "8", Market: testMarket, Price: uint64(109), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 30*time.Second).UnixNano()},
 	}
 
-	err = candleStore.StartNewBuffer(testMarket, t0)
-	assert.Nil(t, err)
+	buf := buffer.NewCandle(testMarket, candleStore, t0)
 	for idx := range trades1 {
-		err := candleStore.AddTradeToBuffer(*trades1[idx])
+		err := buf.AddTrade(*trades1[idx])
 		assert.Nil(t, err)
 	}
-	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	previousBuf, _ := buf.Start(t0.Add(2 * time.Minute))
+	err = candleStore.GenerateCandlesFromBuffer(testMarket, previousBuf)
 	assert.Nil(t, err)
 
 	candles, err := candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
@@ -313,13 +333,13 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 		{Id: "16", Market: testMarket, Price: uint64(109), Size: uint64(100), Timestamp: t0.Add(3*time.Minute + 40*time.Second).UnixNano()},
 	}
 
-	err = candleStore.StartNewBuffer(testMarket, t0.Add(2*time.Minute))
 	assert.Nil(t, err)
 	for idx := range trades2 {
-		err := candleStore.AddTradeToBuffer(*trades2[idx])
+		err := buf.AddTrade(*trades2[idx])
 		assert.Nil(t, err)
 	}
-	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	previousBuf, _ = buf.Start(t0.Add(4 * time.Minute))
+	err = candleStore.GenerateCandlesFromBuffer(testMarket, previousBuf)
 	assert.Nil(t, err)
 
 	candles, err = candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)
@@ -366,13 +386,13 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 		{Id: "24", Market: testMarket, Price: uint64(101), Size: uint64(100), Timestamp: t0.Add(5*time.Minute + 40*time.Second).UnixNano()},
 	}
 
-	err = candleStore.StartNewBuffer(testMarket, t0.Add(4*time.Minute))
 	assert.Nil(t, err)
 	for idx := range trades3 {
-		err := candleStore.AddTradeToBuffer(*trades3[idx])
+		err := buf.AddTrade(*trades3[idx])
 		assert.Nil(t, err)
 	}
-	err = candleStore.GenerateCandlesFromBuffer(testMarket)
+	previousBuf, _ = buf.Start(t0.Add(10 * time.Minute))
+	err = candleStore.GenerateCandlesFromBuffer(testMarket, previousBuf)
 	assert.Nil(t, err)
 
 	candles, err = candleStore.GetCandles(ctx, testMarket, t0, types.Interval_I1M)

@@ -244,11 +244,11 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
-	confirm := types.OrderConfirmationPool.Get().(*types.OrderConfirmation)
-	confirm.Order = order
-	confirm.PassiveOrdersAffected = impactedOrders
-	confirm.Trades = trades
-	return confirm
+	return &types.OrderConfirmation{
+		Order:                 order,
+		PassiveOrdersAffected: impactedOrders,
+		Trades:                trades,
+	}
 }
 
 func (b *OrderBook) PrintState(types string) {

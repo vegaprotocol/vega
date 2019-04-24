@@ -32,7 +32,7 @@ func NewProcessor(config *Config, blockchainService ProcessorService) *Processor
 }
 
 func (p *Processor) getOrder(payload []byte) (*types.Order, error) {
-	order := types.OrderPool.Get().(*types.Order)
+	order := &types.Order{}
 	err := proto.Unmarshal(payload, order)
 	if err != nil {
 		return nil, err

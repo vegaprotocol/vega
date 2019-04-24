@@ -56,6 +56,10 @@ func (this *Instrument) Validate() error {
 func (this *BuiltinFutures) Validate() error {
 	return nil
 }
+func (this *ExternalRiskModel) Validate() error {
+	// Validation of proto3 map<> fields is unsupported.
+	return nil
+}
 func (this *TradableInstrument) Validate() error {
 	if this.Instrument != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Instrument); err != nil {
@@ -66,6 +70,13 @@ func (this *TradableInstrument) Validate() error {
 		if oneOfNester.BuiltinFutures != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.BuiltinFutures); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("BuiltinFutures", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetRiskModel().(*TradableInstrument_ExternalRiskModel); ok {
+		if oneOfNester.ExternalRiskModel != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.ExternalRiskModel); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("ExternalRiskModel", err)
 			}
 		}
 	}

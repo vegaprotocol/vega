@@ -30,6 +30,11 @@ func (this *Party) Validate() error {
 func (this *RiskFactor) Validate() error {
 	return nil
 }
+func (this *RiskResult) Validate() error {
+	// Validation of proto3 map<> fields is unsupported.
+	// Validation of proto3 map<> fields is unsupported.
+	return nil
+}
 func (this *Order) Validate() error {
 	return nil
 }
@@ -108,6 +113,9 @@ func (this *MarketPosition) Validate() error {
 func (this *Statistics) Validate() error {
 	return nil
 }
+func (this *PendingOrder) Validate() error {
+	return nil
+}
 func (this *OrderAmendment) Validate() error {
 	if !(this.Size > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
@@ -118,5 +126,56 @@ func (this *OrderSubmission) Validate() error {
 	return nil
 }
 func (this *OrderCancellation) Validate() error {
+	return nil
+}
+func (this *Account) Validate() error {
+	return nil
+}
+func (this *SettlePosition) Validate() error {
+	return nil
+}
+func (this *TransferRequest) Validate() error {
+	for _, item := range this.FromAccount {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("FromAccount", err)
+			}
+		}
+	}
+	for _, item := range this.ToAccount {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("ToAccount", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *LedgerEntry) Validate() error {
+	return nil
+}
+func (this *TransferBalance) Validate() error {
+	if this.Account != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Account); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Account", err)
+		}
+	}
+	return nil
+}
+func (this *TransferResponse) Validate() error {
+	for _, item := range this.Transfers {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Transfers", err)
+			}
+		}
+	}
+	for _, item := range this.Balances {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Balances", err)
+			}
+		}
+	}
 	return nil
 }

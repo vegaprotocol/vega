@@ -42,6 +42,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Order() OrderResolver
 	Party() PartyResolver
+	PendingOrder() PendingOrderResolver
 	Position() PositionResolver
 	PriceLevel() PriceLevelResolver
 	Query() QueryResolver
@@ -147,6 +148,18 @@ type ComplexityRoot struct {
 		Trades    func(childComplexity int, market *string, skip *int, first *int, last *int) int
 	}
 
+	PendingOrder struct {
+		Id        func(childComplexity int) int
+		Market    func(childComplexity int) int
+		Party     func(childComplexity int) int
+		Price     func(childComplexity int) int
+		Reference func(childComplexity int) int
+		Side      func(childComplexity int) int
+		Size      func(childComplexity int) int
+		Status    func(childComplexity int) int
+		Type      func(childComplexity int) int
+	}
+
 	Position struct {
 		AverageEntryPrice         func(childComplexity int) int
 		Market                    func(childComplexity int) int
@@ -157,11 +170,6 @@ type ComplexityRoot struct {
 		UnrealisedProfitDirection func(childComplexity int) int
 		UnrealisedProfitValue     func(childComplexity int) int
 		UnrealisedVolume          func(childComplexity int) int
-	}
-
-	PreConsensus struct {
-		Accepted  func(childComplexity int) int
-		Reference func(childComplexity int) int
 	}
 
 	PriceLevel struct {
@@ -224,8 +232,8 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, typeArg OrderType, expiration *string) (*PreConsensus, error)
-	OrderCancel(ctx context.Context, id string, market string, party string) (*PreConsensus, error)
+	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, typeArg OrderType, expiration *string) (*proto.PendingOrder, error)
+	OrderCancel(ctx context.Context, id string, market string, party string) (*proto.PendingOrder, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *proto.Order) (string, error)
@@ -247,6 +255,15 @@ type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, open *bool, skip *int, first *int, last *int) ([]proto.Order, error)
 	Trades(ctx context.Context, obj *Party, market *string, skip *int, first *int, last *int) ([]proto.Trade, error)
 	Positions(ctx context.Context, obj *Party) ([]proto.MarketPosition, error)
+}
+type PendingOrderResolver interface {
+	Price(ctx context.Context, obj *proto.PendingOrder) (*string, error)
+	Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error)
+	Side(ctx context.Context, obj *proto.PendingOrder) (*Side, error)
+	Market(ctx context.Context, obj *proto.PendingOrder) (*Market, error)
+	Size(ctx context.Context, obj *proto.PendingOrder) (*string, error)
+
+	Status(ctx context.Context, obj *proto.PendingOrder) (*OrderStatus, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *proto.MarketPosition) (*Market, error)
@@ -723,6 +740,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.Trades(childComplexity, args["market"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
+	case "PendingOrder.Id":
+		if e.complexity.PendingOrder.Id == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Id(childComplexity), true
+
+	case "PendingOrder.Market":
+		if e.complexity.PendingOrder.Market == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Market(childComplexity), true
+
+	case "PendingOrder.Party":
+		if e.complexity.PendingOrder.Party == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Party(childComplexity), true
+
+	case "PendingOrder.Price":
+		if e.complexity.PendingOrder.Price == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Price(childComplexity), true
+
+	case "PendingOrder.Reference":
+		if e.complexity.PendingOrder.Reference == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Reference(childComplexity), true
+
+	case "PendingOrder.Side":
+		if e.complexity.PendingOrder.Side == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Side(childComplexity), true
+
+	case "PendingOrder.Size":
+		if e.complexity.PendingOrder.Size == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Size(childComplexity), true
+
+	case "PendingOrder.Status":
+		if e.complexity.PendingOrder.Status == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Status(childComplexity), true
+
+	case "PendingOrder.Type":
+		if e.complexity.PendingOrder.Type == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Type(childComplexity), true
+
 	case "Position.AverageEntryPrice":
 		if e.complexity.Position.AverageEntryPrice == nil {
 			break
@@ -785,20 +865,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Position.UnrealisedVolume(childComplexity), true
-
-	case "PreConsensus.Accepted":
-		if e.complexity.PreConsensus.Accepted == nil {
-			break
-		}
-
-		return e.complexity.PreConsensus.Accepted(childComplexity), true
-
-	case "PreConsensus.Reference":
-		if e.complexity.PreConsensus.Reference == nil {
-			break
-		}
-
-		return e.complexity.PreConsensus.Reference(childComplexity), true
 
 	case "PriceLevel.CumulativeVolume":
 		if e.complexity.PriceLevel.CumulativeVolume == nil {
@@ -1135,11 +1201,11 @@ type Mutation {
 
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
-    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PreConsensus!
+    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PendingOrder!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
-    orderCancel(id: ID!, market: String!, party: String!): PreConsensus!
+    orderCancel(id: ID!, market: String!, party: String!): PendingOrder!
 }
 
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
@@ -1152,15 +1218,36 @@ type Subscription {
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
-type PreConsensus {
+type PendingOrder {
 
-    # If true then the operation was validated and passed on for consensus with other nodes on the VEGA platform.
-    accepted: Boolean!
+  # The id of the Order, can be null if the request was SubmitOrder
+  id: String
 
-    # A UUID reference for the caller to aid in tracking operations on VEGA
-    reference: String!
+  # A UUID reference for the caller to aid in tracking operations on VEGA
+  reference: String!
+
+  # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+  price: String
+
+  # The type of order (determines how and if it executes, and whether it persists on the book)
+  type: OrderType
+
+  # Whether the order is to buy or sell
+  side: Side
+
+  # The market the order is trading on (probably stored internally as a hash of the market details)
+  # could be nil if the submit order failed an no order is getting created
+  market: Market
+
+  # Total number of contracts that may be bought or sold (immutable) (uint64)
+  size: String
+
+  # The trader who place the order (probably stored internally as the trader's public key)
+  party: String
+
+  # The status of an order, for example 'Active'
+  status: OrderStatus
 }
-
 
 # Queries allow a caller to read data and filter data via GraphQL.
 type Query {
@@ -3047,10 +3134,10 @@ func (ec *executionContext) _Mutation_orderCreate(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*PreConsensus)
+	res := resTmp.(*proto.PendingOrder)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPreConsensus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐPreConsensus(ctx, field.Selections, res)
+	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -3081,10 +3168,10 @@ func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*PreConsensus)
+	res := resTmp.(*proto.PendingOrder)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPreConsensus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐPreConsensus(ctx, field.Selections, res)
+	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
@@ -3599,6 +3686,225 @@ func (ec *executionContext) _Party_positions(ctx context.Context, field graphql.
 	return ec.marshalOPosition2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketPosition(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PendingOrder_id(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PendingOrder_reference(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reference, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PendingOrder_price(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PendingOrder().Price(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PendingOrder_type(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PendingOrder().Type(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OrderType)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PendingOrder_side(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PendingOrder().Side(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Side)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐSide(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PendingOrder_market(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PendingOrder().Market(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Market)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PendingOrder_size(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PendingOrder().Size(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PendingOrder_party(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Party, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PendingOrder_status(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PendingOrder().Status(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OrderStatus)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐOrderStatus(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketPosition) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -3829,60 +4135,6 @@ func (ec *executionContext) _Position_minimumMargin(ctx context.Context, field g
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Position().MinimumMargin(rctx, obj)
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreConsensus_accepted(ctx context.Context, field graphql.CollectedField, obj *PreConsensus) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "PreConsensus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Accepted, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreConsensus_reference(ctx context.Context, field graphql.CollectedField, obj *PreConsensus) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "PreConsensus",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Reference, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -6668,6 +6920,103 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var pendingOrderImplementors = []string{"PendingOrder"}
+
+func (ec *executionContext) _PendingOrder(ctx context.Context, sel ast.SelectionSet, obj *proto.PendingOrder) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, pendingOrderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PendingOrder")
+		case "id":
+			out.Values[i] = ec._PendingOrder_id(ctx, field, obj)
+		case "reference":
+			out.Values[i] = ec._PendingOrder_reference(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "price":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PendingOrder_price(ctx, field, obj)
+				return res
+			})
+		case "type":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PendingOrder_type(ctx, field, obj)
+				return res
+			})
+		case "side":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PendingOrder_side(ctx, field, obj)
+				return res
+			})
+		case "market":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PendingOrder_market(ctx, field, obj)
+				return res
+			})
+		case "size":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PendingOrder_size(ctx, field, obj)
+				return res
+			})
+		case "party":
+			out.Values[i] = ec._PendingOrder_party(ctx, field, obj)
+		case "status":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PendingOrder_status(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
 var positionImplementors = []string{"Position"}
 
 func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet, obj *proto.MarketPosition) graphql.Marshaler {
@@ -6805,38 +7154,6 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 				}
 				return res
 			})
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalid {
-		return graphql.Null
-	}
-	return out
-}
-
-var preConsensusImplementors = []string{"PreConsensus"}
-
-func (ec *executionContext) _PreConsensus(ctx context.Context, sel ast.SelectionSet, obj *PreConsensus) graphql.Marshaler {
-	fields := graphql.CollectFields(ctx, sel, preConsensusImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	invalid := false
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreConsensus")
-		case "accepted":
-			out.Values[i] = ec._PreConsensus_accepted(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
-		case "reference":
-			out.Values[i] = ec._PreConsensus_reference(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7551,6 +7868,20 @@ func (ec *executionContext) marshalNParty2codeᚗvegaprotocolᚗioᚋvegaᚋinte
 	return ec._Party(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNPendingOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx context.Context, sel ast.SelectionSet, v proto.PendingOrder) graphql.Marshaler {
+	return ec._PendingOrder(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx context.Context, sel ast.SelectionSet, v *proto.PendingOrder) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PendingOrder(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNPosition2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketPosition(ctx context.Context, sel ast.SelectionSet, v proto.MarketPosition) graphql.Marshaler {
 	return ec._Position(ctx, sel, &v)
 }
@@ -7563,20 +7894,6 @@ func (ec *executionContext) marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 		return graphql.Null
 	}
 	return ec._Position(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPreConsensus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐPreConsensus(ctx context.Context, sel ast.SelectionSet, v PreConsensus) graphql.Marshaler {
-	return ec._PreConsensus(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPreConsensus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋapiᚋendpointsᚋgqlᚐPreConsensus(ctx context.Context, sel ast.SelectionSet, v *PreConsensus) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PreConsensus(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPriceLevel2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevel(ctx context.Context, sel ast.SelectionSet, v proto.PriceLevel) graphql.Marshaler {

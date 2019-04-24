@@ -20,6 +20,17 @@ message RiskFactor {
   double long = 3;
 }
 
+message RiskResult {
+  // timestamp when these risk factors were generated
+  int64 updatedTimestamp = 1;
+  // risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market
+  map<string, RiskFactor> riskFactors = 2;
+  // time when risk factors are expected to change (or empty if risk factors are continually updated)
+  int64 nextUpdateTimestamp = 3;
+  // predicted risk factors at next change (what they'd be if the change occurred now)
+  map<string, RiskFactor> predictedNextRiskFactors = 4;
+}
+
 message Order {
   enum Type {
     GTC = 0;
@@ -163,6 +174,18 @@ enum ChainStatus {
     CONNECTED = 2;
 }
 
+message PendingOrder {
+  string reference = 1;
+  uint64 price = 2;
+  Order.Type type = 3;
+  Side side = 4;
+  string marketID = 5;
+  uint64 size = 6;
+  string party = 7;
+  Order.Status status = 8;
+  string id = 9;
+}
+
 message OrderAmendment {
     string id = 1 [(validator.field) = {msg_exists : true}];
     string party = 2 [(validator.field) = {msg_exists : true}];
@@ -186,4 +209,55 @@ message OrderCancellation {
   string id = 1;
   string marketId = 2;
   string party = 3;
+}
+
+enum AccountType {
+  INSURANCE = 0;
+  SETTLEMENT = 1;
+  MARGIN = 2;
+  MARKET = 3;
+  GENERAL = 4;
+}
+
+message Account {
+  string id = 1;
+  string owner = 2;
+  int64 balance = 3;
+  string asset = 4;
+  string market = 5;
+  AccountType type = 6;
+}
+
+message SettlePosition {
+  string owner = 1;
+  uint64 size = 2;
+  int64 price = 3;
+}
+
+message TransferRequest {
+  repeated Account fromAccount = 1;
+  repeated Account toAccount = 2;
+  uint64 amount = 3;
+  uint64 minAmount = 4;
+  string asset = 5;
+  string reference = 6;
+}
+
+message LedgerEntry {
+  string fromAccount = 1;
+  string toAccount = 2;
+  int64 amount = 3;
+  string reference = 4;
+  string type = 5;
+  int64 timestamp = 6;
+}
+
+message TransferBalance {
+  Account account = 1;
+  int64 balance = 2;
+}
+
+message TransferResponse {
+  repeated LedgerEntry transfers = 1;
+  repeated TransferBalance balances = 2;
 }

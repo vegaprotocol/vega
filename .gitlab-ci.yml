@@ -85,6 +85,13 @@ proto_checks:
     - make grpc_check || code=1
     - exit "$code"
 
+vet:
+  stage: test
+  script:
+    - make vet
+  only:
+    - /^(master|develop)$/
+
 build_vega:
   stage: build
   script:

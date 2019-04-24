@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -37,6 +38,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	candle := mocks.NewMockCandleStore(ctrl)
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyStore(ctrl)
+	accounts, _ := storage.NewAccounts(storage.NewDefaultConfig(log, ""))
 	conf := execution.NewDefaultConfig(log, "")
 	engine := execution.NewEngine(
 		conf,
@@ -46,6 +48,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 		candle,
 		market,
 		party,
+		accounts,
 	)
 	return &execEngine{
 		Engine: engine,
@@ -87,13 +90,8 @@ func BenchmarkMatching(
 		logger := logging.NewDevLogger()
 		logger.SetLevel(logging.InfoLevel)
 
-		// Matching engine (trade matching)
-		// matchingConfig := matching.NewDefaultConfig(logger)
-		// matchingEngine := matching.NewMatchingEngine(matchingConfig)
-
 		// Execution engine (broker operation of markets at runtime etc)
 		executionEngine := getExecEngine(b, logger)
-		executionEngine.candle.EXPECT().AddTradeToBuffer(gomock.Any()).Return(nil)
 		executionEngine.order.EXPECT().Post(gomock.Any()).Return(nil)
 		executionEngine.order.EXPECT().Put(gomock.Any()).Return(nil)
 		executionEngine.trade.EXPECT().Post(gomock.Any()).Return(nil)
@@ -111,22 +109,19 @@ func BenchmarkMatching(
 				size = 50
 			}
 
-			order := types.OrderPool.Get().(*types.Order)
-			order.Market = marketID
-			order.Party = fmt.Sprintf("P%v", timestamp)
-			order.Side = types.Side(rand.Intn(2))
-			order.Price = uint64(rand.Intn(100) + 50)
-			order.Size = size
-			order.Remaining = size
-			order.Type = types.Order_GTC
-			order.CreatedAt = timestamp
-
-			start := vegatime.Now()
-			oc, oe := executionEngine.SubmitOrder(order)
-			end := vegatime.Now()
-			if oe == nil {
-				oc.Release()
+			order := &types.Order{
+				Market:    marketID,
+				Party:     fmt.Sprintf("P%v", timestamp),
+				Side:      types.Side(rand.Intn(2)),
+				Price:     uint64(rand.Intn(100) + 50),
+				Size:      size,
+				Remaining: size,
+				Type:      types.Order_GTC,
+				CreatedAt: timestamp,
 			}
+			start := vegatime.Now()
+			executionEngine.SubmitOrder(order)
+			end := vegatime.Now()
 			timetaken := end.Sub(start)
 			totalElapsed += timetaken
 			periodElapsed += timetaken
@@ -157,7 +152,7 @@ func BenchmarkMatching(
 			// 	vega.GetMarketData(marketId),
 			// 	vega.GetMarketDepth(marketId))
 		}
-		executionEngine.ctrl.Finish() // finalise gomock controller
+		executionEngine.ctrl.Finish()
 		logger.Sync()
 	}
 }

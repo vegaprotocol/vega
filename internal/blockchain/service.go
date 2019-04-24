@@ -25,6 +25,7 @@ type Service interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceTime
 type ServiceTime interface {
 	GetTimeNow() (time.Time, error)
+	GetTimeLastBatch() (time.Time, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceExecutionEngine
@@ -33,7 +34,6 @@ type ServiceExecutionEngine interface {
 	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	Generate() error
-	Process() error
 }
 
 type abciService struct {
@@ -66,30 +66,18 @@ func (s *abciService) Begin() error {
 	s.log.Debug("ABCI service BEGIN starting")
 
 	// Load the latest consensus block time
-	epochTime, err := s.time.GetTimeNow()
+	currentTime, err := s.time.GetTimeNow()
 	if err != nil {
 		return err
 	}
 
-	// We need to cache the last timestamp so we can distribute trades
-	// in a block evenly between last timestamp and current timestamp
-	if epochTime.Unix() > 0 {
-		s.previousTimestamp = epochTime
-	}
-
-	// Store the timestamp info that we receive from the blockchain provider
-	s.currentTimestamp = epochTime
-
-	// Ensure we always set app.previousTimestamp it'll be 0 on the first block
-	if s.previousTimestamp.Unix() < 1 {
-		s.previousTimestamp = epochTime
-	}
-
-	// Run any processing required in execution engine, e.g. check for expired orders
-	err = s.execution.Process()
+	previousTime, err := s.time.GetTimeLastBatch()
 	if err != nil {
 		return err
 	}
+
+	s.currentTimestamp = currentTime
+	s.previousTimestamp = previousTime
 
 	s.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),
@@ -117,6 +105,7 @@ func (s *abciService) Commit() error {
 		return errors.Wrap(err, "Failure generating data in execution engine (commit)")
 	}
 
+	s.log.Debug("ABCI service COMMIT completed")
 	return nil
 }
 
@@ -146,7 +135,6 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 		s.stats.addTotalTrades(uint64(len(confirmationMessage.Trades)))
 
 		s.currentOrdersInBatch++
-		confirmationMessage.Release()
 	}
 
 	// increment total orders, even for failures so current ID strategy is valid.
@@ -159,7 +147,6 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 		return errorMessage
 	}
 
-	s.log.Debug("ABCI service COMMIT completed")
 	return nil
 }
 
@@ -236,15 +223,16 @@ func (s *abciService) setBatchStats() {
 		}
 	}
 
-	blockDuration := time.Duration(vegatime.Now().UnixNano() - s.currentTimestamp.UnixNano()).Seconds()
+	blockDuration := time.Duration(s.currentTimestamp.UnixNano() - s.previousTimestamp.UnixNano()).Seconds()
 	s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
 	s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
+	s.log.Info("blockduration", logging.Float64("dur", blockDuration))
 
 	s.log.Debug("Blockchain service batch stats",
 		logging.Uint64("total-batches", s.totalBatches),
 		logging.Int("avg-orders-batch", s.stats.averageOrdersPerBatch),
-		logging.Uint64("orders-per-secs", s.stats.OrdersPerSecond()),
-		logging.Uint64("trades-per-secs", s.stats.TradesPerSecond()),
+		logging.Uint64("orders-per-sec", s.stats.OrdersPerSecond()),
+		logging.Uint64("trades-per-sec", s.stats.TradesPerSecond()),
 	)
 
 	s.currentOrdersInBatch = 0

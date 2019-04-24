@@ -13,3 +13,4 @@ tmp/
 data/
 vendor/
 .envrc
+proto/*-re
