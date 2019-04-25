@@ -305,8 +305,6 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 			return &ret, nil
 		}
 		if acc.Balance > 0 {
-			// I'm keeping these weird debug statements here, because something isn't quite right ATM
-			// but I'm a bit at a loss trying to figure out what
 			amount -= acc.Balance
 			// partial amount resolves differently
 			parts = acc.Balance / int64(len(req.ToAccount))
