@@ -192,7 +192,29 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 
 	if t.After(m.closingAt) {
 		// call settlement and stuff
-		// m.settlement.Settle(t)
+		positions, err := m.settlement.Settle(t)
+		if err != nil {
+			m.log.Error(
+				"Failed to get settle positions on market close",
+				logging.Error(err),
+			)
+			return
+		}
+		transfers, err := m.collateral.Collect(positions)
+		if err != nil {
+			m.log.Error(
+				"Failed to get ledger movements after settling closed market",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err),
+			)
+			return
+		}
+		// use transfers, unused var thingy
+		m.log.Debug(
+			"Got transfers on market close (%#v)",
+			logging.String("transfers-dump", fmt.Sprintf("%#v", transfers)), // @TODO process these transfers, they contain the ledger movements...
+			logging.String("market-id", m.GetID()),
+		)
 	}
 }
 
