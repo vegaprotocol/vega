@@ -355,9 +355,9 @@ func testCollectBoth(t *testing.T) {
 		case types.AccountType_SETTLEMENT:
 			// assign to var so we don't need to repeat this loop for sells
 			settle = sacc
-			settle.Balance += 3 * price
 			eng.accounts.EXPECT().IncrementBalance(sacc.Id, 3*price).Times(1).Return(nil).Do(func(_ string, inc int64) {
-				settle.Balance += inc // this should be happening in the code already, though
+				assert.Equal(t, 3*price, inc)
+				// settle.Balance += inc // this should be happening in the code already, though
 			})
 		}
 	}
@@ -395,7 +395,7 @@ func testCollectBoth(t *testing.T) {
 	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return(mGeneral, nil)
 	// now, settle account will be debited per sell position, so 2 calls:
 	eng.accounts.EXPECT().IncrementBalance(settle.Id, gomock.Any()).Times(2).Return(nil).Do(func(_ string, inc int64) {
-		settle.Balance += inc
+		assert.NotZero(t, inc)
 	})
 	// next up, updating the balance of the traders' general accounts
 	eng.accounts.EXPECT().IncrementBalance(tGeneral.Id, price).Times(1).Return(nil)
@@ -407,10 +407,7 @@ func testCollectBoth(t *testing.T) {
 	// total balance of settlement account should be 3 times price
 	for _, bal := range resp.Balances {
 		if bal.Account.Type == types.AccountType_SETTLEMENT {
-			// for some reason, this test only passes is we set the settle account balance to 3*price beforehand
-			// if we don't, then it fails, but we do end up with a balance of 3*price in the end, so the account
-			// *DOES* balance to zero as it turns out... @TODO fix this
-			assert.Equal(t, 3*price, bal.Account.Balance)
+			assert.Zero(t, bal.Account.Balance)
 		}
 	}
 	resp = responses[1]
