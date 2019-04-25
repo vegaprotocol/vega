@@ -279,10 +279,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 		if acc.Balance > 0 {
 			// I'm keeping these weird debug statements here, because something isn't quite right ATM
 			// but I'm a bit at a loss trying to figure out what
-			fmt.Println(amount)
-			fmt.Printf("Account %s has balance %d\n", acc.Id, acc.Balance)
 			amount -= acc.Balance
-			fmt.Println(amount)
 			// partial amount resolves differently
 			parts = acc.Balance / int64(len(req.ToAccount))
 			if err := e.accountStore.UpdateBalance(acc.Id, 0); err != nil {
