@@ -38,9 +38,10 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	candle := mocks.NewMockCandleStore(ctrl)
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyStore(ctrl)
-	accounts, _ := storage.NewAccounts(storage.NewDefaultConfig(log, ""))
-	conf := execution.NewDefaultConfig(log, "")
+	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
+	conf := execution.NewDefaultConfig("")
 	engine := execution.NewEngine(
+		log,
 		conf,
 		time,
 		order,
@@ -109,22 +110,19 @@ func BenchmarkMatching(
 				size = 50
 			}
 
-			order := types.OrderPool.Get().(*types.Order)
-			order.Market = marketID
-			order.Party = fmt.Sprintf("P%v", timestamp)
-			order.Side = types.Side(rand.Intn(2))
-			order.Price = uint64(rand.Intn(100) + 50)
-			order.Size = size
-			order.Remaining = size
-			order.Type = types.Order_GTC
-			order.CreatedAt = timestamp
-
-			start := vegatime.Now()
-			oc, oe := executionEngine.SubmitOrder(order)
-			end := vegatime.Now()
-			if oe == nil {
-				oc.Release()
+			order := &types.Order{
+				Market:    marketID,
+				Party:     fmt.Sprintf("P%v", timestamp),
+				Side:      types.Side(rand.Intn(2)),
+				Price:     uint64(rand.Intn(100) + 50),
+				Size:      size,
+				Remaining: size,
+				Type:      types.Order_GTC,
+				CreatedAt: timestamp,
 			}
+			start := vegatime.Now()
+			executionEngine.SubmitOrder(order)
+			end := vegatime.Now()
 			timetaken := end.Sub(start)
 			totalElapsed += timetaken
 			periodElapsed += timetaken

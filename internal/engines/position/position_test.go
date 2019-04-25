@@ -42,8 +42,6 @@ func TestUpdatePosition(t *testing.T) {
 
 func getTestEngine(t *testing.T) *position.Engine {
 	return position.New(
-		position.NewDefaultConfig(
-			logging.NewTestLogger(),
-		),
+		logging.NewTestLogger(), position.NewDefaultConfig(),
 	)
 }

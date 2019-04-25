@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"math"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 type PriceLevel struct {
-	*Config
 	price             uint64
 	proRataMode       bool
 	orders            []*types.Order
@@ -16,9 +16,8 @@ type PriceLevel struct {
 	volume            uint64
 }
 
-func NewPriceLevel(config *Config, price uint64, proRataMode bool) *PriceLevel {
+func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 	return &PriceLevel{
-		Config:            config,
 		price:             price,
 		proRataMode:       proRataMode,
 		orders:            []*types.Order{},
@@ -184,19 +183,19 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 		panic(fmt.Sprintf("agg.side == pass.side (agg: %v, pass: %v)", agg, pass))
 	}
 
-	trade := types.TradePool.Get().(*types.Trade)
-	trade.Market = agg.Market
-	trade.Price = pass.Price
-	trade.Size = size
-	trade.Aggressor = agg.Side
-	trade.Buyer = buyer.Party
-	trade.Seller = seller.Party
-	trade.Timestamp = agg.CreatedAt
-	return trade
+	return &types.Trade{
+		Market:    agg.Market,
+		Price:     pass.Price,
+		Size:      size,
+		Aggressor: agg.Side,
+		Buyer:     buyer.Party,
+		Seller:    seller.Party,
+		Timestamp: agg.CreatedAt,
+	}
 }
 
-func (l PriceLevel) print() {
-	l.log.Debug(fmt.Sprintf("priceLevel: %d\n", l.price))
+func (l PriceLevel) print(log *logging.Logger) {
+	log.Debug(fmt.Sprintf("priceLevel: %d\n", l.price))
 	for _, o := range l.orders {
 		var side string
 		if o.Side == types.Side_Buy {
@@ -205,7 +204,7 @@ func (l PriceLevel) print() {
 			side = "SELL"
 		}
 
-		l.log.Debug(fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s\n",
+		log.Debug(fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s\n",
 			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.CreatedAt, o.Id))
 	}
 }

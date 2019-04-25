@@ -272,6 +272,7 @@
     },
     "/submitOrder": {
       "post": {
+        "summary": "unary calls",
         "operationId": "SubmitOrder",
         "responses": {
           "200": {
@@ -451,6 +452,43 @@
         }
       }
     },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeStreamError": {
+      "type": "object",
+      "properties": {
+        "grpc_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "http_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "http_status": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -506,6 +544,26 @@
         "I1D"
       ],
       "default": "I1M"
+    },
+    "vegaMarketDepth": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "buy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        },
+        "sell": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          }
+        }
+      }
     },
     "vegaMarketPosition": {
       "type": "object",
@@ -853,6 +911,68 @@
           "format": "int64"
         }
       }
+    }
+  },
+  "x-stream-definitions": {
+    "vegaCandle": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaCandle"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaCandle"
+    },
+    "vegaMarketDepth": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarketDepth"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarketDepth"
+    },
+    "vegaMarketPosition": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarketPosition"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarketPosition"
+    },
+    "vegaOrder": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaOrder"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaOrder"
+    },
+    "vegaTrade": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaTrade"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaTrade"
     }
   }
 }

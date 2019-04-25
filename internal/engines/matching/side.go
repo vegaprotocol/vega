@@ -3,11 +3,13 @@ package matching
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 type OrderBookSide struct {
-	*Config
+	log *logging.Logger
+	// Config
 	levels      []*PriceLevel
 	proRataMode bool
 }
@@ -113,7 +115,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 			break
 		}
 	}
-	level := NewPriceLevel(s.Config, price, s.proRataMode)
+	level := NewPriceLevel(price, s.proRataMode)
 	if at == -1 {
 		s.levels = append(s.levels, level)
 		return level

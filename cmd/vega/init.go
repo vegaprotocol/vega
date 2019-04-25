@@ -7,7 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -107,10 +107,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// generate a default configuration
-	cfg, err := internal.NewDefaultConfig(ic.Log, ic.rootPath)
-	if err != nil {
-		return err
-	}
+	cfg := config.NewDefaultConfig(ic.rootPath)
 
 	// setup the defaults markets
 	cfg.Execution.Markets.Configs = []string{

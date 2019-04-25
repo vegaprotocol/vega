@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -20,11 +21,13 @@ type Service interface {
 	CancelOrder(order *types.Order) error
 	AmendOrder(order *types.OrderAmendment) error
 	ValidateOrder(order *types.Order) error
+	ReloadConf(conf Config)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceTime
 type ServiceTime interface {
 	GetTimeNow() (time.Time, error)
+	GetTimeLastBatch() (time.Time, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceExecutionEngine
@@ -36,8 +39,10 @@ type ServiceExecutionEngine interface {
 }
 
 type abciService struct {
-	*Config
+	Config
 
+	cfgMu             sync.Mutex
+	log               *logging.Logger
 	stats             *Stats
 	time              ServiceTime
 	execution         ServiceExecutionEngine
@@ -52,8 +57,13 @@ type abciService struct {
 	totalTrades          uint64
 }
 
-func NewService(conf *Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) Service {
+func NewService(log *logging.Logger, conf Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) Service {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(conf.Level.Get())
+
 	return &abciService{
+		log:       log,
 		Config:    conf,
 		stats:     stats,
 		execution: ex,
@@ -61,28 +71,37 @@ func NewService(conf *Config, stats *Stats, ex ServiceExecutionEngine, timeServi
 	}
 }
 
+func (s *abciService) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.cfgMu.Lock()
+	s.Config = cfg
+	s.cfgMu.Unlock()
+}
+
 func (s *abciService) Begin() error {
 	s.log.Debug("ABCI service BEGIN starting")
 
 	// Load the latest consensus block time
-	epochTime, err := s.time.GetTimeNow()
+	currentTime, err := s.time.GetTimeNow()
 	if err != nil {
 		return err
 	}
 
-	// We need to cache the last timestamp so we can distribute trades
-	// in a block evenly between last timestamp and current timestamp
-	if epochTime.Unix() > 0 {
-		s.previousTimestamp = epochTime
+	previousTime, err := s.time.GetTimeLastBatch()
+	if err != nil {
+		return err
 	}
 
-	// Store the timestamp info that we receive from the blockchain provider
-	s.currentTimestamp = epochTime
-
-	// Ensure we always set app.previousTimestamp it'll be 0 on the first block
-	if s.previousTimestamp.Unix() < 1 {
-		s.previousTimestamp = epochTime
-	}
+	s.currentTimestamp = currentTime
+	s.previousTimestamp = previousTime
 
 	s.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),
@@ -116,9 +135,7 @@ func (s *abciService) Commit() error {
 
 func (s *abciService) SubmitOrder(order *types.Order) error {
 	s.stats.addTotalCreateOrder(1)
-	if s.LogOrderSubmitDebug {
-		s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
-	}
+	s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
 
 	order.Id = fmt.Sprintf("V%010d-%010d", s.totalBatches, s.totalOrders)
 	order.CreatedAt = s.currentTimestamp.UnixNano()
@@ -126,21 +143,19 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	// Submit the create order request to the execution engine
 	confirmationMessage, errorMessage := s.execution.SubmitOrder(order)
 	if confirmationMessage != nil {
-		if s.LogOrderSubmitDebug {
-			s.log.Debug("Order confirmed",
-				logging.Order(*order),
-				logging.OrderWithTag(*confirmationMessage.Order, "aggressive-order"),
-				logging.String("passive-trades", fmt.Sprintf("%+v", confirmationMessage.Trades)),
-				logging.String("passive-orders", fmt.Sprintf("%+v", confirmationMessage.PassiveOrdersAffected)))
 
-			s.currentTradesInBatch += len(confirmationMessage.Trades)
-			s.totalTrades += uint64(s.currentTradesInBatch)
-		}
+		s.log.Debug("Order confirmed",
+			logging.Order(*order),
+			logging.OrderWithTag(*confirmationMessage.Order, "aggressive-order"),
+			logging.String("passive-trades", fmt.Sprintf("%+v", confirmationMessage.Trades)),
+			logging.String("passive-orders", fmt.Sprintf("%+v", confirmationMessage.PassiveOrdersAffected)))
+
+		s.currentTradesInBatch += len(confirmationMessage.Trades)
+		s.totalTrades += uint64(s.currentTradesInBatch)
 		s.stats.addTotalOrders(1)
 		s.stats.addTotalTrades(uint64(len(confirmationMessage.Trades)))
 
 		s.currentOrdersInBatch++
-		confirmationMessage.Release()
 	}
 
 	// increment total orders, even for failures so current ID strategy is valid.
@@ -158,9 +173,7 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 
 func (s *abciService) CancelOrder(order *types.Order) error {
 	s.stats.addTotalCancelOrder(1)
-	if s.LogOrderCancelDebug {
-		s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
-	}
+	s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
 
 	// Submit the cancel new order request to the Vega trading core
 	cancellationMessage, errorMessage := s.execution.CancelOrder(order)
@@ -181,10 +194,8 @@ func (s *abciService) CancelOrder(order *types.Order) error {
 
 func (s *abciService) AmendOrder(order *types.OrderAmendment) error {
 	s.stats.addTotalAmendOrder(1)
-	if s.LogOrderAmendDebug {
-		s.log.Debug("Blockchain service received a AMEND ORDER request",
-			logging.String("order", order.String()))
-	}
+	s.log.Debug("Blockchain service received a AMEND ORDER request",
+		logging.String("order", order.String()))
 
 	// Submit the Amendment new order request to the Vega trading core
 	confirmationMessage, errorMessage := s.execution.AmendOrder(order)
@@ -229,9 +240,10 @@ func (s *abciService) setBatchStats() {
 		}
 	}
 
-	blockDuration := time.Duration(vegatime.Now().UnixNano() - s.currentTimestamp.UnixNano()).Seconds()
+	blockDuration := time.Duration(s.currentTimestamp.UnixNano() - s.previousTimestamp.UnixNano()).Seconds()
 	s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
 	s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
+	s.log.Info("blockduration", logging.Float64("dur", blockDuration))
 
 	s.log.Debug("Blockchain service batch stats",
 		logging.Uint64("total-batches", s.totalBatches),

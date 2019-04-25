@@ -2,11 +2,16 @@ package logging
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+)
+
+var (
+	ErrInvalidLogLevel = errors.New("invalid log level")
 )
 
 // A Level is a logging priority. Higher levels are more important.
@@ -30,6 +35,45 @@ const (
 	// FatalLevel logs a message, then calls os.Exit(1).
 	FatalLevel Level = 5
 )
+
+func ParseLevel(l string) (Level, error) {
+	l = strings.ToLower(l)
+	switch l {
+	case "debug":
+		return DebugLevel, nil
+	case "info":
+		return InfoLevel, nil
+	case "warning":
+		return WarnLevel, nil
+	case "error":
+		return ErrorLevel, nil
+	case "panic":
+		return PanicLevel, nil
+	case "fatal":
+		return FatalLevel, nil
+	default:
+		return Level(100), ErrInvalidLogLevel
+	}
+}
+
+func (l Level) String() string {
+	switch l {
+	case DebugLevel:
+		return "Debug"
+	case InfoLevel:
+		return "Info"
+	case WarnLevel:
+		return "Warning"
+	case ErrorLevel:
+		return "Error"
+	case PanicLevel:
+		return "Panic"
+	case FatalLevel:
+		return "Fatal"
+	default:
+		return "Unknow"
+	}
+}
 
 func (l *Level) ZapLevel() zapcore.Level {
 	return zapcore.Level(*l)
@@ -138,7 +182,7 @@ func cloneConfig(cfg *zap.Config) *zap.Config {
 }
 
 // newLoggerFromConfig creates a logger according to the given custom config.
-func newLoggerFromConfig(config *Config) *Logger {
+func newLoggerFromConfig(config Config) *Logger {
 	encoderConfig := zapcore.EncoderConfig{
 		CallerKey:  config.Custom.ZapEncoder.CallerKey,
 		LevelKey:   config.Custom.ZapEncoder.LevelKey,
@@ -172,7 +216,7 @@ func newLoggerFromConfig(config *Config) *Logger {
 
 // NewDevLogger creates a new logger suitable for development environments.
 func NewDevLogger() *Logger {
-	config := &Config{
+	config := Config{
 		Environment: "dev",
 		Custom: &Custom{
 			Zap: &Zap{
@@ -203,7 +247,7 @@ func NewDevLogger() *Logger {
 // NewTestLogger creates a new logger suitable for golang unit test
 // environments, ie when running "go test ./..."
 func NewTestLogger() *Logger {
-	config := &Config{
+	config := Config{
 		Environment: "test",
 		Custom: &Custom{
 			Zap: &Zap{
@@ -234,7 +278,7 @@ func NewTestLogger() *Logger {
 // NewProdLogger creates a new logger suitable for production environments,
 // including sending logs to ElasticSearch.
 func NewProdLogger() *Logger {
-	config := &Config{
+	config := Config{
 		Environment: "prod",
 		Custom: &Custom{
 			Zap: &Zap{
@@ -263,7 +307,7 @@ func NewProdLogger() *Logger {
 }
 
 // NewLoggerFromConfig creates a standard or custom logger.
-func NewLoggerFromConfig(config *Config) *Logger {
+func NewLoggerFromConfig(config Config) *Logger {
 	switch config.Environment {
 	case "dev":
 		return NewDevLogger()

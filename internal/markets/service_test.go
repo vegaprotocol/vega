@@ -32,7 +32,8 @@ func getTestService(t *testing.T) *testService {
 	log := logging.NewTestLogger()
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := markets.NewService(
-		markets.NewDefaultConfig(log),
+		log,
+		markets.NewDefaultConfig(),
 		market,
 		order,
 	)

@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
@@ -26,7 +27,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // NodeCommand use to implement 'node' command.
@@ -55,10 +55,11 @@ type NodeCommand struct {
 
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
-	conf         *internal.Config
+	conf         config.Config
 	stats        *internal.Stats
 	withPPROF    bool
 	Log          *logging.Logger
+	cfgwatchr    *config.Watcher
 }
 
 // Init initialises the node command.
@@ -94,6 +95,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	// check node_pre.go, that's where everything gets bootstrapped
 	// Execution engine (broker operation at runtime etc)
 	executionEngine := execution.NewEngine(
+		l.Log,
 		l.conf.Execution,
 		l.timeService,
 		l.orderStore,
@@ -103,11 +105,17 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.partyStore,
 		l.accounts,
 	)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { executionEngine.ReloadConf(cfg.Execution) })
 
 	// ABCI<>blockchain server
-	bcService := blockchain.NewService(l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
-	bcProcessor := blockchain.NewProcessor(l.conf.Blockchain, bcService)
+	bcService := blockchain.NewService(l.Log, l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcService.ReloadConf(cfg.Blockchain) })
+
+	bcProcessor := blockchain.NewProcessor(l.Log, l.conf.Blockchain, bcService)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcProcessor.ReloadConf(cfg.Blockchain) })
+
 	bcApp := blockchain.NewApplication(
+		l.Log,
 		l.conf.Blockchain,
 		l.stats.Blockchain,
 		bcProcessor,
@@ -115,16 +123,21 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.timeService,
 		l.cfunc,
 	)
-	socketServer := blockchain.NewServer(l.conf.Blockchain, l.stats.Blockchain, bcApp)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcApp.ReloadConf(cfg.Blockchain) })
+
+	socketServer := blockchain.NewServer(l.Log, l.conf.Blockchain, l.stats.Blockchain, bcApp)
 	if err := socketServer.Start(); err != nil {
 		return errors.Wrap(err, "ABCI socket server error")
 	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { socketServer.ReloadConf(cfg.Blockchain) })
 
-	statusChecker := monitoring.New(l.conf.Monitoring, l.blockchainClient)
+	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
 	statusChecker.OnChainDisconnect(l.cfunc)
 
 	// gRPC server
 	grpcServer := grpc.NewGRPCServer(
+		l.Log,
 		l.conf.API,
 		l.stats,
 		l.blockchainClient,
@@ -136,14 +149,17 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.candleService,
 		statusChecker,
 	)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server
-	restServer := restproxy.NewRestProxyServer(l.conf.API)
+	restServer := restproxy.NewRestProxyServer(l.Log, l.conf.API)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { restServer.ReloadConf(cfg.API) })
 	go restServer.Start()
 
 	// GraphQL server
 	graphServer := gql.NewGraphQLServer(
+		l.Log,
 		l.conf.API,
 		l.orderService,
 		l.tradeService,
@@ -153,6 +169,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.timeService,
 		statusChecker,
 	)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { graphServer.ReloadConf(cfg.API) })
 	go graphServer.Start()
 
 	l.Log.Info("Vega startup complete")
@@ -173,15 +190,6 @@ func (l *NodeCommand) runNode(args []string) error {
 func nodeExample() string {
 	return `$ vega node
 VEGA started successfully`
-}
-
-// envConfigPath attempts to look at ENV variable VEGA_CONFIG for the config.toml path
-func envConfigPath() string {
-	err := viper.BindEnv("config")
-	if err == nil {
-		return viper.GetString("config")
-	}
-	return ""
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.

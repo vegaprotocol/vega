@@ -31,17 +31,36 @@ type RiskStore interface {
 }
 
 type Svc struct {
-	*Config
+	Config
+	log        *logging.Logger
 	tradeStore TradeStore
 	riskStore  RiskStore
 }
 
-func NewService(config *Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	return &Svc{
+		log:        log,
 		Config:     config,
 		tradeStore: tradeStore,
 		riskStore:  riskStore,
 	}, nil
+}
+
+func (s *Svc) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.Config = cfg
 }
 
 func (t *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error) {

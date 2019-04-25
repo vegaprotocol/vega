@@ -3,6 +3,7 @@ package storage
 import (
 	"sync"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -27,21 +28,41 @@ type accountRecord struct {
 }
 
 type Account struct {
-	*Config
+	Config
+
+	log           *logging.Logger
 	mu            *sync.RWMutex
 	byMarketOwner map[string]map[string][]*accountRecord
 	byOwner       map[string][]*accountRecord
 	byID          map[string]*accountRecord
 }
 
-func NewAccounts(c *Config) (*Account, error) {
+func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(c.Level.Get())
+
 	return &Account{
+		log:           log,
 		Config:        c,
 		mu:            &sync.RWMutex{},
 		byMarketOwner: map[string]map[string][]*accountRecord{},
 		byOwner:       map[string][]*accountRecord{},
 		byID:          map[string]*accountRecord{},
 	}, nil
+}
+
+func (a *Account) ReloadConf(cfg Config) {
+	a.log.Info("reloading configuration")
+	if a.log.GetLevel() != cfg.Level.Get() {
+		a.log.Info("updating log level",
+			logging.String("old", a.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		a.log.SetLevel(cfg.Level.Get())
+	}
+
+	a.Config = cfg
 }
 
 // Create an account, adds in all lists simultaneously

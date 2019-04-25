@@ -34,7 +34,8 @@ func getTestService(t *testing.T) *testService {
 	risk := mocks.NewMockRiskStore(ctrl)
 	log := logging.NewTestLogger()
 	svc, err := trades.NewService(
-		trades.NewDefaultConfig(log),
+		log,
+		trades.NewDefaultConfig(),
 		trade,
 		risk,
 	)
@@ -53,7 +54,7 @@ func getTestService(t *testing.T) *testService {
 // storageConfig specifies that the badger files are kept in a different
 // directory when the candle service tests run. This is useful as when
 // all the unit tests are run for the project they can be run in parallel.
-func storageConfig(t *testing.T) *storage.Config {
+func storageConfig(t *testing.T) storage.Config {
 	storeConfig, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)

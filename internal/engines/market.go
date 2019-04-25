@@ -46,7 +46,9 @@ type PartyStore interface {
 }
 
 type Market struct {
-	*Config
+	Config
+	log *logging.Logger
+
 	marketcfg   *types.Market
 	closingAt   time.Time
 	currentTime time.Time
@@ -76,7 +78,9 @@ type Market struct {
 // NewMarket create a new market using the marketcfg specification
 // and the configuration
 func NewMarket(
-	cfg *Config,
+	log *logging.Logger,
+
+	cfg Config,
 	marketcfg *types.Market,
 	candles CandleStore,
 	orders OrderStore,
@@ -85,7 +89,11 @@ func NewMarket(
 	accounts *storage.Account,
 	now time.Time,
 ) (*Market, error) {
-	tradableInstrument, err := NewTradableInstrument(cfg.log, marketcfg.TradableInstrument)
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
+
+	tradableInstrument, err := NewTradableInstrument(log, marketcfg.TradableInstrument)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to intanciate a new market")
 	}
@@ -95,24 +103,25 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
-	collateralEngine, err := collateral.New(cfg.Collateral, marketcfg.Id, accounts)
+	collateralEngine, err := collateral.New(log, cfg.Collateral, marketcfg.Id, accounts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to set up collateral engine")
 	}
 
-	riskengine := risk.New(cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
-	positionengine := position.New(cfg.Position)
-	settleEngine := settlement.New(cfg.Settlement, tradableInstrument.Instrument.Product)
+	riskengine := risk.New(log, cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
+	positionengine := position.New(log, cfg.Position)
+	settleEngine := settlement.New(log, cfg.Settlement)
 
 	// create buffers
 	candlesBuf := buffer.NewCandle(marketcfg.Id, candles, now)
 
 	mkt := &Market{
+		log:                log,
 		Config:             cfg,
 		marketcfg:          marketcfg,
 		closingAt:          closingAt,
 		currentTime:        time.Time{},
-		matching:           matching.NewOrderBook(cfg.Matching, marketcfg.Id, false),
+		matching:           matching.NewOrderBook(log, cfg.Matching, marketcfg.Id, false),
 		tradableInstrument: tradableInstrument,
 		risk:               riskengine,
 		position:           positionengine,
@@ -127,6 +136,24 @@ func NewMarket(
 	}
 
 	return mkt, nil
+}
+
+func (m *Market) ReloadConf(cfg Config) {
+	m.log.Info("reloading configuration")
+	if m.log.GetLevel() != cfg.Level.Get() {
+		m.log.Info("updating log level",
+			logging.String("old", m.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		m.log.SetLevel(cfg.Level.Get())
+	}
+
+	m.Config = cfg
+	m.matching.ReloadConf(cfg.Matching)
+	m.risk.ReloadConf(cfg.Risk)
+	m.position.ReloadConf(cfg.Position)
+	m.settlement.ReloadConf(cfg.Settlement)
+	m.collateral.ReloadConf(cfg.Collateral)
 }
 
 // GetID returns the id of the given market
@@ -270,7 +297,7 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
-		m.log.Panic("Failure after cancel order from matching engine",
+		m.log.Error("Failure after cancel order from matching engine",
 			logging.Order(*order),
 			logging.Error(err))
 		return nil, err
@@ -317,20 +344,20 @@ func (m *Market) AmendOrder(
 	currentTime := m.currentTime
 	m.mu.Unlock()
 
-	newOrder := types.OrderPool.Get().(*types.Order)
-	newOrder.Id = existingOrder.Id
-	newOrder.Market = existingOrder.Market
-	newOrder.Party = existingOrder.Party
-	newOrder.Side = existingOrder.Side
-	newOrder.Price = existingOrder.Price
-	newOrder.Size = existingOrder.Size
-	newOrder.Remaining = existingOrder.Remaining
-	newOrder.Type = existingOrder.Type
-	newOrder.CreatedAt = currentTime.UnixNano()
-	newOrder.Status = existingOrder.Status
-	newOrder.ExpiresAt = existingOrder.ExpiresAt
-	newOrder.Reference = existingOrder.Reference
-
+	newOrder := &types.Order{
+		Id:        existingOrder.Id,
+		Market:    existingOrder.Market,
+		Party:     existingOrder.Party,
+		Side:      existingOrder.Side,
+		Price:     existingOrder.Price,
+		Size:      existingOrder.Size,
+		Remaining: existingOrder.Remaining,
+		Type:      existingOrder.Type,
+		CreatedAt: currentTime.UnixNano(),
+		Status:    existingOrder.Status,
+		ExpiresAt: existingOrder.ExpiresAt,
+		Reference: existingOrder.Reference,
+	}
 	var (
 		priceShift, sizeIncrease, sizeDecrease, expiryChange = false, false, false, false
 	)

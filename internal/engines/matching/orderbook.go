@@ -2,13 +2,17 @@ package matching
 
 import (
 	"fmt"
+	"sync"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 type OrderBook struct {
-	*Config
+	log *logging.Logger
+	Config
+
+	cfgMu           *sync.Mutex
 	marketID        string
 	buy             *OrderBookSide
 	sell            *OrderBookSide
@@ -18,14 +22,35 @@ type OrderBook struct {
 }
 
 // Create an order book with a given name
-func NewOrderBook(config *Config, marketID string, proRataMode bool) *OrderBook {
+func NewOrderBook(log *logging.Logger, config Config, marketID string, proRataMode bool) *OrderBook {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	return &OrderBook{
+		log:            log,
 		marketID:       marketID,
-		buy:            &OrderBookSide{Config: config, proRataMode: proRataMode},
-		sell:           &OrderBookSide{Config: config, proRataMode: proRataMode},
+		cfgMu:          &sync.Mutex{},
+		buy:            &OrderBookSide{log: log, proRataMode: proRataMode},
+		sell:           &OrderBookSide{log: log, proRataMode: proRataMode},
 		Config:         config,
 		expiringOrders: make([]types.Order, 0),
 	}
+}
+
+func (s *OrderBook) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.cfgMu.Lock()
+	s.Config = cfg
+	s.cfgMu.Unlock()
 }
 
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
@@ -244,11 +269,11 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
-	confirm := types.OrderConfirmationPool.Get().(*types.OrderConfirmation)
-	confirm.Order = order
-	confirm.PassiveOrdersAffected = impactedOrders
-	confirm.Trades = trades
-	return confirm
+	return &types.OrderConfirmation{
+		Order:                 order,
+		PassiveOrdersAffected: impactedOrders,
+		Trades:                trades,
+	}
 }
 
 func (b *OrderBook) PrintState(types string) {
@@ -257,14 +282,14 @@ func (b *OrderBook) PrintState(types string) {
 	b.log.Debug("                        BUY SIDE                            ")
 	for _, priceLevel := range b.buy.getLevels() {
 		if len(priceLevel.orders) > 0 {
-			priceLevel.print()
+			priceLevel.print(b.log)
 		}
 	}
 	b.log.Debug("------------------------------------------------------------")
 	b.log.Debug("                        SELL SIDE                           ")
 	for _, priceLevel := range b.sell.getLevels() {
 		if len(priceLevel.orders) > 0 {
-			priceLevel.print()
+			priceLevel.print(b.log)
 		}
 	}
 	b.log.Debug("------------------------------------------------------------")

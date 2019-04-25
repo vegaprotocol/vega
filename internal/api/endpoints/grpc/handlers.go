@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
@@ -31,23 +32,29 @@ type OrderService interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
+	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc TradeService
 type TradeService interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
+	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
+	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc CandleService
 type CandleService interface {
 	GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) (candles []*types.Candle, err error)
+	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc MarketService
 type MarketService interface {
+	GetByID(ctx context.Context, name string) (*types.Market, error)
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
+	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc PartyService
@@ -63,6 +70,8 @@ type BlockchainClient interface {
 }
 
 type Handlers struct {
+	log           *logging.Logger
+	Config        api.Config
 	Client        BlockchainClient
 	Stats         *internal.Stats
 	TimeService   VegaTime
@@ -72,6 +81,7 @@ type Handlers struct {
 	MarketService MarketService
 	PartyService  PartyService
 	statusChecker *monitoring.Status
+	ctx           context.Context
 }
 
 // If no limit is provided at the gRPC API level, the system will use this limit instead.
@@ -327,7 +337,7 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		GenesisTime:           genesisTime,
 		CurrentTime:           vegatime.Format(vegatime.Now()),
 		VegaTime:              vegatime.Format(epochTime),
-		TxPerBlock:            uint64(h.Stats.Blockchain.AverageTxPerBatch()),
+		TxPerBlock:            uint64(h.Stats.Blockchain.TotalTxLastBatch()),
 		AverageTxBytes:        uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
 		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
 		TradesPerSecond:       uint64(h.Stats.Blockchain.TradesPerSecond()),
@@ -354,6 +364,251 @@ func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest
 	var response = &api.VegaTimeResponse{}
 	response.Time = vegatime.Format(epochTime)
 	return response, nil
+}
+
+func (h *Handlers) OrdersSubscribe(req *api.OrdersSubscribeRequest, srv api.Trading_OrdersSubscribeServer) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
+	if err != nil {
+		return err
+	}
+
+	orderschan, ref := h.OrderService.ObserveOrders(
+		ctx, h.Config.GraphQLSubscriptionRetries, &req.MarketID, &req.PartyID)
+	h.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	for {
+		select {
+		case orders := <-orderschan:
+			for _, o := range orders {
+				err := srv.Send(&o)
+				if err != nil {
+					h.log.Error("Orders subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+					return err
+				}
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			h.log.Debug("Orders subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return errors.New("server shutdown")
+		}
+
+		if orderschan == nil {
+			h.log.Debug("Orders subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return errors.New("stream closed")
+		}
+	}
+}
+
+func (h *Handlers) TradesSubscribe(req *api.TradesSubscribeRequest, srv api.Trading_TradesSubscribeServer) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
+	if err != nil {
+		return err
+	}
+
+	tradeschan, ref := h.TradeService.ObserveTrades(
+		ctx, h.Config.GraphQLSubscriptionRetries, &req.MarketID, &req.PartyID)
+	h.log.Debug("Trades subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	for {
+		select {
+		case trades := <-tradeschan:
+			for _, o := range trades {
+				err := srv.Send(&o)
+				if err != nil {
+					h.log.Error("Trades subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+					return err
+				}
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			h.log.Debug("Trades subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return errors.New("server shutdown")
+		}
+
+		if tradeschan == nil {
+			h.log.Debug("Trades subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return errors.New("stream closed")
+		}
+	}
+}
+
+func (h *Handlers) CandlesSubscribe(req *api.CandlesSubscribeRequest, srv api.Trading_CandlesSubscribeServer) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
+	if err != nil {
+		return err
+	}
+
+	candleschan, ref := h.CandleService.ObserveCandles(
+		ctx, h.Config.GraphQLSubscriptionRetries, &req.MarketID, &req.Interval)
+	h.log.Debug("Candles subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	for {
+		select {
+		case candle := <-candleschan:
+			err := srv.Send(candle)
+			if err != nil {
+				h.log.Error("Candles subscriber - rpc stream error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			h.log.Debug("Candles subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return errors.New("server shutdown")
+		}
+
+		if candleschan == nil {
+			h.log.Debug("Candles subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return errors.New("stream closed")
+		}
+	}
+}
+
+func (h *Handlers) MarketDepthSubscribe(
+	req *api.MarketDepthSubscribeRequest,
+	srv api.Trading_MarketDepthSubscribeServer,
+) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
+	if err != nil {
+		return err
+	}
+
+	depthchan, ref := h.MarketService.ObserveDepth(
+		ctx, h.Config.GraphQLSubscriptionRetries, req.MarketID)
+	h.log.Debug("Depth subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	for {
+		select {
+		case depth := <-depthchan:
+			err := srv.Send(depth)
+			if err != nil {
+				h.log.Error("Depth subscriber - rpc stream error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+
+		case <-ctx.Done():
+			err = ctx.Err()
+			h.log.Debug("Depth subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return errors.New("server shutdown")
+		}
+
+		if depthchan == nil {
+			h.log.Debug("Depth subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return errors.New("stream closed")
+		}
+	}
+}
+
+func (h *Handlers) PositionsSubscribe(
+	req *api.PositionsSubscribeRequest,
+	srv api.Trading_PositionsSubscribeServer,
+) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	positionschan, ref := h.TradeService.ObservePositions(
+		ctx, h.Config.GraphQLSubscriptionRetries, req.PartyID)
+	h.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	for {
+		select {
+		case position := <-positionschan:
+			err := srv.Send(position)
+			if err != nil {
+				h.log.Error("Positions subscriber - rpc stream error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+		case <-ctx.Done():
+			err := ctx.Err()
+			h.log.Debug("Positions subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return errors.New("server shutdown")
+		}
+
+		if positionschan == nil {
+			h.log.Debug("Positions subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return errors.New("stream closed")
+		}
+	}
+}
+
+func validateMarket(ctx context.Context, marketID string, marketService MarketService) (*types.Market, error) {
+	var mkt *types.Market
+	var err error
+	if len(marketID) == 0 {
+		return nil, errors.New("market must not be empty")
+	}
+	mkt, err = marketService.GetByID(ctx, marketID)
+	if err != nil {
+		return nil, err
+	}
+
+	return mkt, nil
 }
 
 func (h *Handlers) getTendermintStats(ctx context.Context) (backlogLength int,

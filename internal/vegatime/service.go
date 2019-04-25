@@ -6,7 +6,7 @@ import (
 )
 
 type Svc struct {
-	config *Config
+	config Config
 
 	previousTimestamp time.Time
 	currentTimestamp  time.Time
@@ -15,8 +15,12 @@ type Svc struct {
 	mu        sync.Mutex
 }
 
-func NewService(conf *Config) *Svc {
+func NewService(conf Config) *Svc {
 	return &Svc{config: conf}
+}
+
+func (s *Svc) ReloadConf(conf Config) {
+	// do nothing here, conf is not used for now
 }
 
 func (s *Svc) SetTimeNow(t time.Time) {

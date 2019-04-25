@@ -17,7 +17,10 @@ import (
 
 // Trade is a package internal data struct that implements the TradeStore interface.
 type Trade struct {
-	*Config
+	Config
+
+	cfgMu           sync.Mutex
+	log             *logging.Logger
 	badger          *badgerStore
 	subscribers     map[uint64]chan<- []types.Trade
 	subscriberId    uint64
@@ -29,23 +32,44 @@ type Trade struct {
 // NewTrades is used to initialise and create a TradeStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewTrades(c *Config, onCriticalError func()) (*Trade, error) {
+func NewTrades(log *logging.Logger, c Config, onCriticalError func()) (*Trade, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(c.Level.Get())
+
 	err := InitStoreDirectory(c.TradeStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for trades storage")
 	}
-	db, err := badger.Open(customBadgerOptions(c.TradeStoreDirPath, c.GetLogger()))
+	db, err := badger.Open(customBadgerOptions(c.TradeStoreDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for trades storage")
 	}
 	bs := badgerStore{db: db}
 	return &Trade{
+		log:             log,
 		Config:          c,
 		badger:          &bs,
 		buffer:          make([]types.Trade, 0),
 		subscribers:     make(map[uint64]chan<- []types.Trade),
 		onCriticalError: onCriticalError,
 	}, nil
+}
+
+func (t *Trade) ReloadConf(cfg Config) {
+	t.log.Info("reloading configuration")
+	if t.log.GetLevel() != cfg.Level.Get() {
+		t.log.Info("updating log level",
+			logging.String("old", t.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		t.log.SetLevel(cfg.Level.Get())
+	}
+
+	// only Timeout is really use in here
+	t.cfgMu.Lock()
+	t.Config = cfg
+	t.cfgMu.Unlock()
 }
 
 // Subscribe to a channel of new or updated trades. The subscriber id will be returned as a uint64 value
@@ -134,8 +158,11 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
+	ts.cfgMu.Lock()
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	ts.cfgMu.Unlock()
 	defer cancel()
+
 	deadline, _ := ctx.Deadline()
 
 	marketPrefix, validForPrefix := ts.badger.marketPrefix(market, descending)
@@ -214,7 +241,7 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -327,7 +354,7 @@ func (ts *Trade) GetByOrderId(ctx context.Context, orderID string, skip, limit u
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 

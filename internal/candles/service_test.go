@@ -39,7 +39,8 @@ func getTestService(t *testing.T) *testService {
 	log := logging.NewTestLogger()
 	// create service, pass in mocks, ignore error
 	svc, err := candles.NewService(
-		candles.NewDefaultConfig(log),
+		log,
+		candles.NewDefaultConfig(),
 		store,
 	)
 	if err != nil {
