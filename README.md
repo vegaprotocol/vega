@@ -109,6 +109,14 @@ As a globally available command (installed in your Go path):
 make install
 ```
 
+If the build complains about `protoc` or `protoc-gen-go` (e.g. cannot find program, program version mismatch) then run
+
+```bash
+make gettools  # see also: script/gettools.sh
+```
+
+and follow instructions, if any. You may have to install `protoc` manually, but other programs should be installed automatically with `go get`.
+
 ### Local
 
 As a single `binary` in your project:
