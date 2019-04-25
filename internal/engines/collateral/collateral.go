@@ -174,7 +174,7 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 		for _, bacc := range buyResp.Balances {
 			if err := e.accountStore.IncrementBalance(bacc.Account.Id, bacc.Balance); err != nil {
 				e.log.Error(
-					"Failed to upadte target account",
+					"Failed to update target account",
 					logging.String("target-account", bacc.Account.Id),
 					logging.Int64("balance", bacc.Balance),
 					logging.Error(err),
