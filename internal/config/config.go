@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/pprof"
-	"code.vegaprotocol.io/vega/internal/risk"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -27,7 +26,6 @@ type Config struct {
 	Markets    markets.Config
 	Orders     orders.Config
 	Parties    parties.Config
-	Risk       risk.Config
 	Storage    storage.Config
 	Trades     trades.Config
 	Time       vegatime.Config
@@ -50,8 +48,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Parties:    parties.NewDefaultConfig(),
 		Candles:    candles.NewDefaultConfig(),
 		Storage:    storage.NewDefaultConfig(defaultStoreDirPath),
-		// TODO: remove this soon
-		Risk:       risk.NewDefaultConfig(logging.NewTestLogger()),
 		Pprof:      pprof.NewDefaultConfig(),
 		Monitoring: monitoring.NewDefaultConfig(),
 		Logging:    logging.NewDefaultConfig(),

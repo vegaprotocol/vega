@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -18,6 +19,8 @@ import (
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 )
 
 const (
@@ -37,6 +40,10 @@ type grpcServer struct {
 	timeService   *vegatime.Svc
 	srv           *grpc.Server
 	statusChecker *monitoring.Status
+
+	// used in order to gracefully close streams
+	ctx   context.Context
+	cfunc context.CancelFunc
 }
 
 func NewGRPCServer(
@@ -55,6 +62,7 @@ func NewGRPCServer(
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
+	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &grpcServer{
 		log:           log,
@@ -68,6 +76,8 @@ func NewGRPCServer(
 		marketService: marketService,
 		partyService:  partyService,
 		statusChecker: statusChecker,
+		ctx:           ctx,
+		cfunc:         cfunc,
 	}
 }
 
@@ -86,6 +96,54 @@ func (s *grpcServer) ReloadConf(cfg api.Config) {
 	s.Config = cfg
 }
 
+func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
+	return func(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (resp interface{}, err error) {
+
+		// first check if the request is forwarded from our restproxy
+		// get the metadata
+		var ip string
+		md, ok := metadata.FromIncomingContext(ctx)
+		if ok {
+			forwardedFor, ok := md["x-forwarded-for"]
+			if ok && len(forwardedFor) > 0 {
+				log.Debug("grpc request x-forwarded-for",
+					logging.String("method", info.FullMethod),
+					logging.String("remote-ip-addr", forwardedFor[0]),
+				)
+				ip = forwardedFor[0]
+			}
+		}
+
+		// if the request is not forwarded let's get it from the peer infos
+		if len(ip) <= 0 {
+			p, ok := peer.FromContext(ctx)
+			if ok && p != nil {
+				log.Debug("grpc peer client request",
+					logging.String("method", info.FullMethod),
+					logging.String("remote-ip-addr", p.Addr.String()))
+				ip = p.Addr.String()
+			}
+		}
+
+		ctx = context.WithValue(ctx, "remote-ip-addr", ip)
+
+		// Calls the handler
+		h, err := handler(ctx, req)
+
+		log.Debug("Invoked RPC call",
+			logging.String("method", info.FullMethod),
+			logging.Error(err),
+		)
+
+		return h, err
+	}
+}
+
 func (g *grpcServer) Start() {
 
 	ip := g.GrpcServerIpAddress
@@ -98,7 +156,10 @@ func (g *grpcServer) Start() {
 		g.log.Panic("Failure listening on gRPC port", logging.Int("port", port), logging.Error(err))
 	}
 
+	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
 	var handlers = &Handlers{
+		log:           g.log,
+		Config:        g.Config,
 		Stats:         g.stats,
 		Client:        g.client,
 		OrderService:  g.orderService,
@@ -108,8 +169,9 @@ func (g *grpcServer) Start() {
 		PartyService:  g.partyService,
 		TimeService:   g.timeService,
 		statusChecker: g.statusChecker,
+		ctx:           g.ctx,
 	}
-	g.srv = grpc.NewServer()
+	g.srv = grpc.NewServer(intercept)
 	api.RegisterTradingServer(g.srv, handlers)
 	err = g.srv.Serve(lis)
 	if err != nil {
@@ -120,6 +182,7 @@ func (g *grpcServer) Start() {
 func (g *grpcServer) Stop() {
 	if g.srv != nil {
 		g.log.Info("Stopping gRPC based API")
+		g.cfunc()
 		g.srv.GracefulStop()
 	}
 }

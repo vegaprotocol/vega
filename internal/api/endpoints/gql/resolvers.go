@@ -520,6 +520,9 @@ func (r *MyTradeResolver) Timestamp(ctx context.Context, obj *types.Trade) (stri
 func (r *MyTradeResolver) Datetime(ctx context.Context, obj *types.Trade) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
+func (r *MyTradeResolver) CreatedAt(ctx context.Context, obj *types.Trade) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
+}
 
 // END: Trade Resolver
 
