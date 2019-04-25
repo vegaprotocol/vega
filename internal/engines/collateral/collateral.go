@@ -118,8 +118,12 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 		},
 	}
 	responses := make([]*types.TransferResponse, 0, 2)
+	// get config once, when we start settling, then reuse the value
+	e.cfgMu.Lock()
+	createTraderAccounts := e.CreateTraderAccounts
+	e.cfgMu.Unlock()
 	for _, p := range positions {
-		if e.CreateTraderAccounts {
+		if createTraderAccounts {
 			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
 		}
 		req, err := e.getTransferRequest(p, settle, insurance)
