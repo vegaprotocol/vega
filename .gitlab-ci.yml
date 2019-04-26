@@ -104,6 +104,6 @@ build_vega:
 push_to_devnet:
   stage: deploy
   script:
-    - ./.deploy.sh devnet vega "${BIN_DIR}/vega:/home/vega/current/:0755"
+    - ./script/deploy.sh devnet vega "${BIN_DIR}/vega:/home/vega/current/:0755"
   only:
     - /^develop$/  # VERY IMPORTANT: Only the develop branch should be deployed to devnet.
