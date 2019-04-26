@@ -14,13 +14,15 @@
 # - "${NET}_DEPLOY_HOSTS"
 # - "${NET}_DEPLOY_SSH_KNOWN_HOSTS"
 
+# Optional vars:
+# - "$SLACK_HOOK_URL" for sending Slack notifications
+
 check_apps() {
 	# Check required programs
 	apps=( rsync scp ssh )
 	for app in "${apps[@]}" ; do
 		if ! which "$app" 1>/dev/null ; then
-			echo "Program missing: $app" >/dev/stderr
-			exit 1
+			failure "Program missing: $app"
 		fi
 	done
 }
@@ -37,8 +39,7 @@ check_vars() {
 				eval "${var}"'="$(cat '"${var}"'.tmp)"'
 			fi
 			if test -z "${!var}" ; then
-				echo "Variable missing: \$${var}" >/dev/stderr
-				exit 1
+				failure "Variable missing: \$${var}"
 			fi
 		fi
 	done
@@ -88,8 +89,7 @@ nodeloop() {
 		test "$code" -gt "$maxcode" && maxcode="$code"
 	done
 	if test "$maxcode" -gt 0 ; then
-		echo "Failed to run commands on all nodes. Max exit code was $maxcode" >/dev/stderr
-		exit 1
+		failure "Failed to run commands on all nodes. Max exit code was $maxcode"
 	fi
 }
 
@@ -107,6 +107,30 @@ nukedata_vega() {
 		'sudo -iu vega /bin/bash -c "' \
 			'cd ; rm -rf current/tmp/*store .vega/*store' \
 		'"'
+}
+
+json_escape() {
+	echo -n "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+}
+
+slack_notify() {
+	slack_hook_url="${SLACK_HOOK_URL:-}"
+	if test -z "$slack_hook_url" ; then
+		return
+	fi
+	if ! which curl 1>/dev/null ; then
+		return
+	fi
+	channel="${1:-tradingcore-notify}"
+	icon_emoji="${2:-:thinking-face:}"
+	text="${3:-A slack notification}"
+	# Escape text in preparation for inclusion in JSON payload
+	channel="$(json_escape "$channel")"
+	icon_emoji="$(json_escape "$icon_emoji")"
+	text="$(json_escape "$text")"
+	curl -XPOST --silent -H 'Content-Type: application/json' \
+		--data '{"channel": '"$channel"', "icon_emoji": '"$icon_emoji"', "text": '"$text"', "username": "Autodeploy"}' \
+		"$slack_hook_url" >/dev/null
 }
 
 ssh_setup() {
@@ -151,6 +175,34 @@ stop_vega_tendermint() {
 		'true'
 }
 
+failure() {
+	extra="${1:-no error message supplied}"
+	echo "$extra" >/dev/stderr
+	gitlab_ci="${GITLAB_CI:-false}"
+	if test "$gitlab_ci" == "true" ; then
+		pipeline_url="${CI_PIPELINE_URL:-[failed to get piepline URL]}"
+		msg="Failed to deploy to \`$net\`: $extra. See $pipeline_url for details."
+	else
+		msg="Failed to deploy to \`$net\`."
+	fi
+
+	slack_notify "#tradingcore-notify" ":scream:" "$msg"
+	exit 1
+}
+
+success() {
+	gitlab_ci="${GITLAB_CI:-false}"
+	if test "$gitlab_ci" == "true" ; then
+		commit_hash="${CI_COMMIT_SHORT_SHA:-[failed to get commit hash]}"
+		commit_msg="${CI_COMMIT_TITLE:-[failed to get commit message]}"
+		pipeline_url="${CI_PIPELINE_URL:-[failed to get piepline URL]}"
+		msg="\`$net\` has been deployed at \`$commit_hash\` \"$commit_msg\" (see $pipeline_url for details)."
+	else
+		msg="\`$net\` has been deployed."
+	fi
+	slack_notify "#engineering" ":tada:" "$msg"
+}
+
 test_ssh_access() {
 	nodeloop "Testing ssh access" '/bin/true'
 }
@@ -168,16 +220,14 @@ vega_resetconfig() {
 # Specify which network is being deployed to
 net="${1:-}"
 if test -z "$net" ; then
-	echo "Syntax: $0 somenet sshuser ..." >/dev/stderr
-	exit 1
+	failure "Syntax: $0 somenet sshuser ..."
 fi
 net_ucase="$(echo "$net" | tr '[:lower:]' '[:upper:]')"
 
 # Specify the user to ssh in to machines as
 sshuser="${2:-}"
 if test -z "$sshuser" ; then
-	echo "Syntax: $0 somenet sshuser ..." >/dev/stderr
-	exit 1
+	failure "Syntax: $0 somenet sshuser ..."
 fi
 
 shift
@@ -203,4 +253,5 @@ start_vega_tendermint
 
 ssh_tidy
 
+success
 exit 0
