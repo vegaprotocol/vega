@@ -243,8 +243,8 @@ func (s *abciService) setBatchStats() {
 	blockDuration := time.Duration(s.currentTimestamp.UnixNano() - s.previousTimestamp.UnixNano()).Seconds()
 	s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
 	s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
-	s.log.Info("blockduration", logging.Float64("dur", blockDuration))
 
+	s.log.Debug("blockduration", logging.Float64("dur", blockDuration))
 	s.log.Debug("Blockchain service batch stats",
 		logging.Uint64("total-batches", s.totalBatches),
 		logging.Int("avg-orders-batch", s.stats.averageOrdersPerBatch),
