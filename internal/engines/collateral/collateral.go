@@ -100,7 +100,7 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 	}
 	// this way we know if we need to check loss response
 	haveLoss := (positions[0].Type == types.SettleType_LOSS)
-	expSettle, expDistribute := uint64(0), uint64(0)
+	expWin, expLoss := uint64(0), uint64(0)
 	lossResp := types.TransferResponse{
 		Transfers: make([]*types.LedgerEntry, 0, len(positions)), // roughly half should be loss, but create 2 ledger entries, so that's a reasonable cap to use
 		Balances: []*types.TransferBalance{
@@ -127,33 +127,30 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 	createTraderAccounts := e.CreateTraderAccounts
 	e.cfgMu.Unlock()
 	// common tasks performed for both win and loss positions
-	setupCB := func(exp, delta *uint64) func(*types.SettlePosition) (*types.TransferResponse, error) {
-		return func(p *types.SettlePosition) (*types.TransferResponse, error) {
-			if createTraderAccounts {
-				// ignore errors, the only error ATM is the one telling us this call was redundant
-				_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
-			}
-			req, err := e.getTransferRequest(p, settle, insurance)
-			if err != nil {
-				e.log.Error(
-					"Failed to create the transfer request",
-					logging.String("settlement-type", p.Type.String()),
-					logging.String("trader-id", p.Owner),
-					logging.Error(err),
-				)
-				return nil, err
-			}
-			if p.Type == types.SettleType_WIN && *exp != *delta {
-				req.Amount = uint64(float64(req.Amount) / float64(*exp) * float64(*delta))
-			}
-			req.Reference = reference
-			res, err := e.getLedgerEntries(req)
-			if err != nil {
-				return nil, err
-			}
-			return res, nil
+	amountCB := func(_ *types.TransferRequest) {}
+	setupCB := func(p *types.SettlePosition) (*types.TransferResponse, error) {
+		if createTraderAccounts {
+			// ignore errors, the only error ATM is the one telling us this call was redundant
+			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
 		}
-	}(&expDistribute, &balanceDelta)
+		req, err := e.getTransferRequest(p, settle, insurance)
+		if err != nil {
+			e.log.Error(
+				"Failed to create the transfer request",
+				logging.String("settlement-type", p.Type.String()),
+				logging.String("trader-id", p.Owner),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		amountCB(req)
+		req.Reference = reference
+		res, err := e.getLedgerEntries(req)
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
+	}
 	// pretty much the body of the for loop for
 	// has access to all vars set up in this func, so we can set to work
 	lossCB := func(p *types.SettlePosition) error {
@@ -162,7 +159,7 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 			return err
 		}
 		expAmount := uint64(-p.Amount.Amount) * p.Size
-		expDistribute += expAmount
+		expLoss += expAmount
 		if uint64(res.Balances[0].Balance) != expAmount {
 			e.log.Warn(
 				"Loss trader accounts for full amount failed",
@@ -183,7 +180,7 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 		if err != nil {
 			return err
 		}
-		expSettle += uint64(res.Balances[0].Balance)
+		expWin += uint64(res.Balances[0].Balance)
 		// there's only 1 balance account here (the ToAccount)
 		if err := e.accountStore.IncrementBalance(res.Balances[0].Account.Id, res.Balances[0].Balance); err != nil {
 			// this account might get accessed concurrently -> use increment
@@ -217,12 +214,15 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 				return nil, err
 			}
 		}
-		if balanceDelta != expDistribute {
+		if balanceDelta != expLoss {
 			e.log.Warn(
 				"Expected to distribute and actual balance mismatch",
-				logging.Uint64("expected-balance", expDistribute),
+				logging.Uint64("expected-balance", expLoss),
 				logging.Uint64("actual-balance", balanceDelta),
 			)
+			amountCB = func(req *types.TransferRequest) {
+				req.Amount = uint64(float64(req.Amount) / float64(expLoss) * float64(balanceDelta))
+			}
 		}
 	}
 	if len(winPos) == 0 {
