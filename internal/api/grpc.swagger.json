@@ -123,7 +123,7 @@
     },
     "/marketOrders": {
       "get": {
-        "summary": "unary calls - read",
+        "summary": "orders",
         "operationId": "OrdersByMarket",
         "responses": {
           "200": {
@@ -155,6 +155,7 @@
     },
     "/marketTrades": {
       "get": {
+        "summary": "trades",
         "operationId": "TradesByMarket",
         "responses": {
           "200": {
@@ -233,6 +234,7 @@
     },
     "/partyPositions": {
       "get": {
+        "summary": "positions",
         "operationId": "PositionsByParty",
         "responses": {
           "200": {
@@ -257,6 +259,7 @@
     },
     "/statistics": {
       "get": {
+        "summary": "metrics",
         "operationId": "Statistics",
         "responses": {
           "200": {
@@ -335,6 +338,14 @@
           "items": {
             "$ref": "#/definitions/vegaCandle"
           }
+        }
+      }
+    },
+    "grpcMarketByIDResponse": {
+      "type": "object",
+      "properties": {
+        "market": {
+          "$ref": "#/definitions/vegaMarket"
         }
       }
     },
@@ -423,6 +434,25 @@
         }
       }
     },
+    "grpcPartiesResponse": {
+      "type": "object",
+      "properties": {
+        "parties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaParty"
+          }
+        }
+      }
+    },
+    "grpcPartyByIDResponse": {
+      "type": "object",
+      "properties": {
+        "party": {
+          "$ref": "#/definitions/vegaParty"
+        }
+      }
+    },
     "grpcPositionsByPartyResponse": {
       "type": "object",
       "properties": {
@@ -435,6 +465,28 @@
       }
     },
     "grpcTradesByMarketResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTrade"
+          }
+        }
+      }
+    },
+    "grpcTradesByOrderResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTrade"
+          }
+        }
+      }
+    },
+    "grpcTradesByPartyResponse": {
       "type": "object",
       "properties": {
         "trades": {
@@ -844,6 +896,20 @@
         "FOK"
       ],
       "default": "GTC"
+    },
+    "vegaParty": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaMarketPosition"
+          }
+        }
+      }
     },
     "vegaPendingOrder": {
       "type": "object",

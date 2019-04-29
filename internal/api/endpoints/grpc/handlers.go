@@ -38,7 +38,9 @@ type OrderService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc TradeService
 type TradeService interface {
+	GetByOrderId(ctx context.Context, orderID string) ([]*types.Trade, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
@@ -60,6 +62,7 @@ type MarketService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc PartyService
 type PartyService interface {
+	GetByID(ctx context.Context, id string) (*types.Party, error)
 	GetAll(ctx context.Context) ([]*types.Party, error)
 }
 
@@ -598,6 +601,67 @@ func (h *Handlers) PositionsSubscribe(
 	}
 }
 
+func (h *Handlers) MarketByID(ctx context.Context, req *api.MarketByIDRequest) (*api.MarketByIDResponse, error) {
+	mkt, err := validateMarket(ctx, req.Id, h.MarketService)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.MarketByIDResponse{
+		Market: mkt,
+	}, nil
+}
+func (h *Handlers) Parties(ctx context.Context, req *google_proto.Empty) (*api.PartiesResponse, error) {
+	pties, err := h.PartyService.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &api.PartiesResponse{
+		Parties: pties,
+	}, nil
+}
+func (h *Handlers) PartyByID(ctx context.Context, req *api.PartyByIDRequest) (*api.PartyByIDResponse, error) {
+	pty, err := validateParty(ctx, req.Id, h.PartyService)
+	if err != nil {
+		return nil, err
+	}
+	return &api.PartyByIDResponse{
+		Party: pty,
+	}, nil
+}
+func (h *Handlers) TradesByParty(
+	ctx context.Context, req *api.TradesByPartyRequest,
+) (*api.TradesByPartyResponse, error) {
+	var (
+		skip, limit uint64
+		descending  bool
+	)
+	if req.Params != nil && req.Params.Limit > 0 {
+		descending = true
+		limit = req.Params.Limit
+	}
+
+	trades, err := h.TradeService.GetByParty(ctx, req.PartyID, skip, limit, descending, &req.MarketID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.TradesByPartyResponse{
+		Trades: trades,
+	}, nil
+}
+func (h *Handlers) TradesByOrder(
+	ctx context.Context, req *api.TradesByOrderRequest,
+) (*api.TradesByOrderResponse, error) {
+	trades, err := h.TradeService.GetByOrderId(ctx, req.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	return &api.TradesByOrderResponse{
+		Trades: trades,
+	}, nil
+}
+
 func validateMarket(ctx context.Context, marketID string, marketService MarketService) (*types.Market, error) {
 	var mkt *types.Market
 	var err error
@@ -610,6 +674,19 @@ func validateMarket(ctx context.Context, marketID string, marketService MarketSe
 	}
 
 	return mkt, nil
+}
+
+func validateParty(ctx context.Context, partyID string, partyService PartyService) (*types.Party, error) {
+	var pty *types.Party
+	var err error
+	if len(partyID) == 0 {
+		return nil, errors.New("party must not be empty")
+	}
+	pty, err = partyService.GetByID(ctx, partyID)
+	if err != nil {
+		return nil, err
+	}
+	return pty, err
 }
 
 func (h *Handlers) getTendermintStats(ctx context.Context) (backlogLength int,

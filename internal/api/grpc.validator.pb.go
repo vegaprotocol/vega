@@ -19,6 +19,74 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *MarketByIDRequest) Validate() error {
+	return nil
+}
+func (this *MarketByIDResponse) Validate() error {
+	if this.Market != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Market); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Market", err)
+		}
+	}
+	return nil
+}
+func (this *PartyByIDRequest) Validate() error {
+	return nil
+}
+func (this *PartyByIDResponse) Validate() error {
+	if this.Party != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Party); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Party", err)
+		}
+	}
+	return nil
+}
+func (this *PartiesResponse) Validate() error {
+	for _, item := range this.Parties {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Parties", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *TradesByPartyRequest) Validate() error {
+	if this.Params != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
+		}
+	}
+	return nil
+}
+func (this *TradesByPartyResponse) Validate() error {
+	for _, item := range this.Trades {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Trades", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *TradesByOrderRequest) Validate() error {
+	if this.Params != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
+		}
+	}
+	return nil
+}
+func (this *TradesByOrderResponse) Validate() error {
+	for _, item := range this.Trades {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Trades", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *OrdersSubscribeRequest) Validate() error {
 	return nil
 }

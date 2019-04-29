@@ -17,15 +17,33 @@ service trading {
   rpc AmendOrder(vega.OrderAmendment) returns (OrderResponse);
 
   // unary calls - read
+
+  // orders
   rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
   rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
+
+  // markets
+  rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
   rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
-  rpc Candles(CandlesRequest) returns (CandlesResponse);
   rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
+
+  // parties
+  rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
+  rpc Parties(google.protobuf.Empty) returns (PartiesResponse);
+
+  // trades
   rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
+  rpc TradesByParty(TradesByPartyRequest) returns (TradesByPartyResponse);
+  rpc TradesByOrder(TradesByOrderRequest) returns (TradesByOrderResponse);
+
+  // positions
   rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
 
+  // candles
+  rpc Candles(CandlesRequest) returns (CandlesResponse);
+
+  // metrics
   rpc Statistics(google.protobuf.Empty) returns (vega.Statistics);
   rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
 
@@ -35,6 +53,45 @@ service trading {
   rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
+}
+
+message MarketByIDRequest {
+  string id = 1;
+}
+
+message MarketByIDResponse {
+  vega.Market market = 1;
+}
+
+message PartyByIDRequest {
+  string id = 1;
+}
+
+message PartyByIDResponse {
+  vega.Party party = 1;
+}
+
+message PartiesResponse {
+  repeated vega.Party parties = 1;
+}
+
+message TradesByPartyRequest {
+  string partyID = 1;
+  string marketID = 2;
+  OptionalParams params = 3;
+}
+
+message TradesByPartyResponse {
+  repeated vega.Trade trades = 1;
+}
+
+message TradesByOrderRequest {
+  string orderID = 1;
+  OptionalParams params = 2;
+}
+
+message TradesByOrderResponse {
+  repeated vega.Trade trades = 1;
 }
 
 message OrdersSubscribeRequest {
