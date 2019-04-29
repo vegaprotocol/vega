@@ -27,14 +27,24 @@ http:
       get: '/marketOrder'
     - selector: api.trading.Markets
       get: '/markets'
+    - selector: api.trading.Market
+      get: '/market'
     - selector: api.trading.TradeCandles
       get: '/candles'
     - selector: api.trading.MarketDepth
       get: '/marketDepth'
     - selector: api.trading.TradesByMarket
       get: '/marketTrades'
+    - selector: api.trading.TradesByParty
+      get: '/partyTrades'
+    - selector: api.trading.TradesByOrder
+      get: '/orderTrades'
     - selector: api.trading.PositionsByParty
       get: '/partyPositions'
+    - selector: api.trading.Party
+      get: '/party'
+    - selector: api.trading.Parties
+      get: '/parties'
     - selector: api.trading.Statistics
       get: '/statistics'
     - selector: api.trading.GetVegaTime
