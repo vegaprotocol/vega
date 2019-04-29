@@ -4,19 +4,9 @@ import (
 	context "context"
 	"net"
 	"net/http"
-	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	uuid "github.com/satori/go.uuid"
 )
-
-func unixTimestamp(datetime time.Time) uint64 {
-	return uint64(datetime.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond)))
-}
-
-func newGuid() string {
-	return uuid.NewV4().String()
-}
 
 func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
