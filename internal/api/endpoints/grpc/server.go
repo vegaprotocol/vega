@@ -17,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -172,7 +173,7 @@ func (g *grpcServer) Start() {
 		ctx:           g.ctx,
 	}
 	g.srv = grpc.NewServer(intercept)
-	api.RegisterTradingServer(g.srv, handlers)
+	protoapi.RegisterTradingServer(g.srv, handlers)
 	err = g.srv.Serve(lis)
 	if err != nil {
 		g.log.Panic("Failure serving gRPC API", logging.Error(err))

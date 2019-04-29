@@ -1,11 +1,11 @@
 syntax = "proto3";
 
+option go_package = "code.vegaprotocol.io/vega/proto/api";
+
 import "proto/vega.proto";
 import "proto/markets.proto";
 
-package grpc;
-
-option go_package = "code.vegaprotocol.io/vega/internal/api";
+package api;
 
 import "google/protobuf/empty.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";

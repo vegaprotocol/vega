@@ -2,7 +2,7 @@
 type: google.api.Service
 config_version: 3
 
-name: grpc.trading
+name: api.trading
 title: Vega Trading API
 
 apis:
@@ -10,32 +10,32 @@ apis:
 
 http:
   rules:
-    - selector: grpc.trading.SubmitOrder
+    - selector: api.trading.SubmitOrder
       post: '/submitOrder'
       body: "*"
-    - selector: grpc.trading.CancelOrder
+    - selector: api.trading.CancelOrder
       post: '/cancelOrder'
       body: "*"
-    - selector: grpc.trading.AmendOrder
+    - selector: api.trading.AmendOrder
       post: '/amendOrder'
       body: "*"
-    - selector: grpc.trading.OrdersByMarket
+    - selector: api.trading.OrdersByMarket
       get: '/marketOrders'
-    - selector: grpc.trading.OrdersByParty
+    - selector: api.trading.OrdersByParty
       get: '/partyOrders'
-    - selector: grpc.trading.OrderByMarketAndId
+    - selector: api.trading.OrderByMarketAndId
       get: '/marketOrder'
-    - selector: grpc.trading.Markets
+    - selector: api.trading.Markets
       get: '/markets'
-    - selector: grpc.trading.TradeCandles
+    - selector: api.trading.TradeCandles
       get: '/candles'
-    - selector: grpc.trading.MarketDepth
+    - selector: api.trading.MarketDepth
       get: '/marketDepth'
-    - selector: grpc.trading.TradesByMarket
+    - selector: api.trading.TradesByMarket
       get: '/marketTrades'
-    - selector: grpc.trading.PositionsByParty
+    - selector: api.trading.PositionsByParty
       get: '/partyPositions'
-    - selector: grpc.trading.Statistics
+    - selector: api.trading.Statistics
       get: '/statistics'
-    - selector: grpc.trading.GetVegaTime
+    - selector: api.trading.GetVegaTime
       get: '/vegaTime'

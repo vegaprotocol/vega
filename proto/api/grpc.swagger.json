@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "internal/api/grpc.proto",
+    "title": "proto/api/grpc.proto",
     "version": "version not set"
   },
   "schemes": [
@@ -14,310 +14,7 @@
   "produces": [
     "application/json"
   ],
-  "paths": {
-    "/amendOrder": {
-      "post": {
-        "operationId": "AmendOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/vegaOrderAmendment"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/cancelOrder": {
-      "post": {
-        "operationId": "CancelOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/vegaOrderCancellation"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/marketDepth": {
-      "get": {
-        "operationId": "MarketDepth",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcMarketDepthResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "market",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/marketOrder": {
-      "get": {
-        "operationId": "OrderByMarketAndId",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcOrderByMarketAndIdResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/marketOrders": {
-      "get": {
-        "summary": "orders",
-        "operationId": "OrdersByMarket",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcOrdersByMarketResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "params.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/marketTrades": {
-      "get": {
-        "summary": "trades",
-        "operationId": "TradesByMarket",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcTradesByMarketResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "params.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/markets": {
-      "get": {
-        "operationId": "Markets",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcMarketsResponse"
-            }
-          }
-        },
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/partyOrders": {
-      "get": {
-        "operationId": "OrdersByParty",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcOrdersByPartyResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "params.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/partyPositions": {
-      "get": {
-        "summary": "positions",
-        "operationId": "PositionsByParty",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcPositionsByPartyResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/statistics": {
-      "get": {
-        "summary": "metrics",
-        "operationId": "Statistics",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaStatistics"
-            }
-          }
-        },
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/submitOrder": {
-      "post": {
-        "summary": "unary calls - writes",
-        "operationId": "SubmitOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/vegaOrderSubmission"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/vegaTime": {
-      "get": {
-        "operationId": "GetVegaTime",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/grpcVegaTimeResponse"
-            }
-          }
-        },
-        "tags": [
-          "trading"
-        ]
-      }
-    }
-  },
+  "paths": {},
   "definitions": {
     "OrderStatus": {
       "type": "string",
@@ -330,7 +27,7 @@
       ],
       "default": "Active"
     },
-    "grpcCandlesResponse": {
+    "apiCandlesResponse": {
       "type": "object",
       "properties": {
         "candles": {
@@ -341,7 +38,7 @@
         }
       }
     },
-    "grpcMarketByIDResponse": {
+    "apiMarketByIDResponse": {
       "type": "object",
       "properties": {
         "market": {
@@ -349,7 +46,7 @@
         }
       }
     },
-    "grpcMarketDepthResponse": {
+    "apiMarketDepthResponse": {
       "type": "object",
       "properties": {
         "marketID": {
@@ -372,7 +69,7 @@
         }
       }
     },
-    "grpcMarketsResponse": {
+    "apiMarketsResponse": {
       "type": "object",
       "properties": {
         "markets": {
@@ -383,7 +80,7 @@
         }
       }
     },
-    "grpcOptionalParams": {
+    "apiOptionalParams": {
       "type": "object",
       "properties": {
         "limit": {
@@ -392,7 +89,7 @@
         }
       }
     },
-    "grpcOrderByMarketAndIdResponse": {
+    "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {
         "order": {
@@ -400,7 +97,7 @@
         }
       }
     },
-    "grpcOrderResponse": {
+    "apiOrderResponse": {
       "type": "object",
       "properties": {
         "success": {
@@ -412,7 +109,7 @@
         }
       }
     },
-    "grpcOrdersByMarketResponse": {
+    "apiOrdersByMarketResponse": {
       "type": "object",
       "properties": {
         "orders": {
@@ -423,7 +120,7 @@
         }
       }
     },
-    "grpcOrdersByPartyResponse": {
+    "apiOrdersByPartyResponse": {
       "type": "object",
       "properties": {
         "orders": {
@@ -434,7 +131,7 @@
         }
       }
     },
-    "grpcPartiesResponse": {
+    "apiPartiesResponse": {
       "type": "object",
       "properties": {
         "parties": {
@@ -445,7 +142,7 @@
         }
       }
     },
-    "grpcPartyByIDResponse": {
+    "apiPartyByIDResponse": {
       "type": "object",
       "properties": {
         "party": {
@@ -453,7 +150,7 @@
         }
       }
     },
-    "grpcPositionsByPartyResponse": {
+    "apiPositionsByPartyResponse": {
       "type": "object",
       "properties": {
         "positions": {
@@ -464,7 +161,7 @@
         }
       }
     },
-    "grpcTradesByMarketResponse": {
+    "apiTradesByMarketResponse": {
       "type": "object",
       "properties": {
         "trades": {
@@ -475,7 +172,7 @@
         }
       }
     },
-    "grpcTradesByOrderResponse": {
+    "apiTradesByOrderResponse": {
       "type": "object",
       "properties": {
         "trades": {
@@ -486,7 +183,7 @@
         }
       }
     },
-    "grpcTradesByPartyResponse": {
+    "apiTradesByPartyResponse": {
       "type": "object",
       "properties": {
         "trades": {
@@ -497,7 +194,7 @@
         }
       }
     },
-    "grpcVegaTimeResponse": {
+    "apiVegaTimeResponse": {
       "type": "object",
       "properties": {
         "timestamp": {
@@ -815,75 +512,6 @@
         },
         "reference": {
           "type": "string"
-        }
-      }
-    },
-    "vegaOrderAmendment": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "party": {
-          "type": "string"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "expiresAt": {
-          "type": "string",
-          "format": "int64"
-        }
-      }
-    },
-    "vegaOrderCancellation": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "marketId": {
-          "type": "string"
-        },
-        "party": {
-          "type": "string"
-        }
-      }
-    },
-    "vegaOrderSubmission": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "marketId": {
-          "type": "string"
-        },
-        "party": {
-          "type": "string"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "side": {
-          "$ref": "#/definitions/vegaSide"
-        },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
-        },
-        "expiresAt": {
-          "type": "string",
-          "format": "int64"
         }
       }
     },

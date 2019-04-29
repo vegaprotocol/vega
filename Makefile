@@ -111,27 +111,26 @@ proto_check: deps ## proto: Check committed files match just-generated files
 
 # GRPC Targets
 
-grpc: internal/api/grpc.pb.go internal/api/grpc.validator.pb.go internal/api/grpc.pb.gw.go internal/api/grpc.swagger.json  ## Generate gRPC files: grpc.pb.go, grpc.validator.pb.go, grpc.pb.gw.go, grpc.swagger.json
+grpc: proto/api/grpc.pb.go proto/api/grpc.validator.pb.go internal/api/grpc.pb.gw.go internal/api/grpc.swagger.json  ## Generate gRPC files: grpc.pb.go, grpc.validator.pb.go, grpc.pb.gw.go, grpc.swagger.json
 
-internal/api/grpc.pb.go: internal/api/grpc.proto
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. \
-		-Iinternal/api/ --go_out=plugins=grpc,paths=source_relative:. "$<"
+internal/api/grpc.pb.go: proto/api/grpc.proto
+	@protoc -Iproto -Ivendor -Ivendor/github.com/google/protobuf/src --go_out=plugins=grpc,paths=source_relative:. "$<"
 
-internal/api/grpc.validator.pb.go: internal/api/grpc.proto
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. \
-		-Iinternal/api/ --govalidators_out=paths=source_relative:. "$<" && \
+internal/api/grpc.validator.pb.go: proto/api/grpc.proto
+	@protoc --proto_path=vendor -Ivendor/github.com/google/protobuf/src -I. \
+		 -Iinternal/api/ --govalidators_out=paths=source_relative:. "$<" && \
 	./script/fix_imports.sh "$@"
 
 GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml,paths=source_relative:.
 SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml:.
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
-internal/api/grpc.pb.gw.go: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. -Iinternal/api/ --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
+internal/api/grpc.pb.gw.go: proto/api/grpc.proto internal/api/grpc-rest-bindings.yml
+	@protoc -I=vendor -I. -Iproto/api/ -Ivendor/github.com/google/protobuf/src --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
 
 # Generate Swagger documentation
-internal/api/grpc.swagger.json: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
+internal/api/grpc.swagger.json: proto/api/grpc.proto internal/api/grpc-rest-bindings.yml
+	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
 grpc_check: deps ## gRPC: Check committed files match just-generated files
 	@touch internal/api/*.proto ; \

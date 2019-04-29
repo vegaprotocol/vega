@@ -10,10 +10,10 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
-
 	types "code.vegaprotocol.io/vega/proto"
-	google_proto "github.com/golang/protobuf/ptypes/empty"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
 
+	google_proto "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -111,14 +111,14 @@ func (h *Handlers) CancelOrder(ctx context.Context, order *types.OrderCancellati
 }
 
 // AmendOrder is used to request editing an order onto the VEGA platform, via consensus.
-func (h *Handlers) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*api.OrderResponse, error) {
+func (h *Handlers) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*protoapi.OrderResponse, error) {
 	success, err := h.OrderService.AmendOrder(ctx, amendment)
-	return &api.OrderResponse{Success: success}, err
+	return &protoapi.OrderResponse{Success: success}, err
 }
 
 // OrdersByMarket provides a list of orders for a given market. Optional limits can be provided. Most recent first.
 func (h *Handlers) OrdersByMarket(ctx context.Context,
-	request *api.OrdersByMarketRequest) (*api.OrdersByMarketResponse, error) {
+	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersByMarketResponse, error) {
 
 	if request.MarketID == "" {
 		return nil, errors.New("Market empty or missing")
@@ -139,7 +139,7 @@ func (h *Handlers) OrdersByMarket(ctx context.Context,
 		return nil, err
 	}
 
-	var response = &api.OrdersByMarketResponse{}
+	var response = &protoapi.OrdersByMarketResponse{}
 	if len(o) > 0 {
 		response.Orders = o
 	}
@@ -149,7 +149,7 @@ func (h *Handlers) OrdersByMarket(ctx context.Context,
 
 // OrdersByParty provides a list of orders for a given party. Optional limits can be provided. Most recent first.
 func (h *Handlers) OrdersByParty(ctx context.Context,
-	request *api.OrdersByPartyRequest) (*api.OrdersByPartyResponse, error) {
+	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
 
 	if request.PartyID == "" {
 		return nil, errors.New("Party empty or missing")
@@ -165,7 +165,7 @@ func (h *Handlers) OrdersByParty(ctx context.Context,
 		return nil, err
 	}
 
-	var response = &api.OrdersByPartyResponse{}
+	var response = &protoapi.OrdersByPartyResponse{}
 	if len(o) > 0 {
 		response.Orders = o
 	}
@@ -174,13 +174,13 @@ func (h *Handlers) OrdersByParty(ctx context.Context,
 }
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
-func (h *Handlers) Markets(ctx context.Context, request *google_proto.Empty) (*api.MarketsResponse, error) {
+func (h *Handlers) Markets(ctx context.Context, request *google_proto.Empty) (*protoapi.MarketsResponse, error) {
 	mkts, err := h.MarketService.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &api.MarketsResponse{
+	return &protoapi.MarketsResponse{
 		Markets: mkts,
 	}, nil
 }
@@ -188,7 +188,7 @@ func (h *Handlers) Markets(ctx context.Context, request *google_proto.Empty) (*a
 // OrdersByMarketAndId searches for the given order by Id and Market. If found it will return
 // an Order types otherwise it will return an error.
 func (h *Handlers) OrderByMarketAndId(ctx context.Context,
-	request *api.OrderByMarketAndIdRequest) (*api.OrderByMarketAndIdResponse, error) {
+	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
 
 	if request.MarketID == "" {
 		return nil, errors.New("Market empty or missing")
@@ -201,7 +201,7 @@ func (h *Handlers) OrderByMarketAndId(ctx context.Context,
 		return nil, err
 	}
 
-	return &api.OrderByMarketAndIdResponse{
+	return &protoapi.OrderByMarketAndIdResponse{
 		Order: order,
 	}, nil
 }
@@ -209,7 +209,7 @@ func (h *Handlers) OrderByMarketAndId(ctx context.Context,
 // TradeCandles returns trade open/close/volume data for the given time period and interval.
 // It will fill in any trade-less intervals with zero based candles. Since time period must be in RFC3339 string format.
 func (h *Handlers) Candles(ctx context.Context,
-	request *api.CandlesRequest) (*api.CandlesResponse, error) {
+	request *protoapi.CandlesRequest) (*protoapi.CandlesResponse, error) {
 
 	market := request.Market
 	if market == "" {
@@ -225,13 +225,13 @@ func (h *Handlers) Candles(ctx context.Context,
 		return nil, err
 	}
 
-	return &api.CandlesResponse{
+	return &protoapi.CandlesResponse{
 		Candles: c,
 	}, nil
 
 }
 
-func (h *Handlers) MarketDepth(ctx context.Context, req *api.MarketDepthRequest) (*api.MarketDepthResponse, error) {
+func (h *Handlers) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
 	if req.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
@@ -247,7 +247,7 @@ func (h *Handlers) MarketDepth(ctx context.Context, req *api.MarketDepthRequest)
 	}
 
 	// Build market depth response, including last trade (if available)
-	resp := &api.MarketDepthResponse{
+	resp := &protoapi.MarketDepthResponse{
 		Buy:      depth.Buy,
 		MarketID: depth.Name,
 		Sell:     depth.Sell,
@@ -258,7 +258,7 @@ func (h *Handlers) MarketDepth(ctx context.Context, req *api.MarketDepthRequest)
 	return resp, nil
 }
 
-func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMarketRequest) (*api.TradesByMarketResponse, error) {
+func (h *Handlers) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
 	if request.MarketID == "" {
 		return nil, errors.New("Market empty or missing")
 	}
@@ -271,12 +271,12 @@ func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMark
 	if err != nil {
 		return nil, err
 	}
-	return &api.TradesByMarketResponse{
+	return &protoapi.TradesByMarketResponse{
 		Trades: t,
 	}, nil
 }
 
-func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsByPartyRequest) (*api.PositionsByPartyResponse, error) {
+func (h *Handlers) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
 	if request.PartyID == "" {
 		return nil, errors.New("Party empty or missing")
 	}
@@ -284,7 +284,7 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 	if err != nil {
 		return nil, err
 	}
-	var response = &api.PositionsByPartyResponse{}
+	var response = &protoapi.PositionsByPartyResponse{}
 	response.Positions = positions
 	return response, nil
 }
@@ -359,18 +359,19 @@ func (h *Handlers) Statistics(ctx context.Context, request *google_proto.Empty) 
 	}, nil
 }
 
-func (h *Handlers) GetVegaTime(ctx context.Context, request *google_proto.Empty) (*api.VegaTimeResponse, error) {
+func (h *Handlers) GetVegaTime(ctx context.Context, request *google_proto.Empty) (*protoapi.VegaTimeResponse, error) {
 	ts, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, err
 	}
-	return &api.VegaTimeResponse{
+	return &protoapi.VegaTimeResponse{
 		Timestamp: ts.UnixNano(),
 	}, nil
 
 }
 
-func (h *Handlers) OrdersSubscribe(req *api.OrdersSubscribeRequest, srv api.Trading_OrdersSubscribeServer) error {
+func (h *Handlers) OrdersSubscribe(
+	req *protoapi.OrdersSubscribeRequest, srv protoapi.Trading_OrdersSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
@@ -417,7 +418,7 @@ func (h *Handlers) OrdersSubscribe(req *api.OrdersSubscribeRequest, srv api.Trad
 	}
 }
 
-func (h *Handlers) TradesSubscribe(req *api.TradesSubscribeRequest, srv api.Trading_TradesSubscribeServer) error {
+func (h *Handlers) TradesSubscribe(req *protoapi.TradesSubscribeRequest, srv protoapi.Trading_TradesSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
@@ -464,7 +465,7 @@ func (h *Handlers) TradesSubscribe(req *api.TradesSubscribeRequest, srv api.Trad
 	}
 }
 
-func (h *Handlers) CandlesSubscribe(req *api.CandlesSubscribeRequest, srv api.Trading_CandlesSubscribeServer) error {
+func (h *Handlers) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest, srv protoapi.Trading_CandlesSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
@@ -510,8 +511,8 @@ func (h *Handlers) CandlesSubscribe(req *api.CandlesSubscribeRequest, srv api.Tr
 }
 
 func (h *Handlers) MarketDepthSubscribe(
-	req *api.MarketDepthSubscribeRequest,
-	srv api.Trading_MarketDepthSubscribeServer,
+	req *protoapi.MarketDepthSubscribeRequest,
+	srv protoapi.Trading_MarketDepthSubscribeServer,
 ) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
@@ -559,8 +560,8 @@ func (h *Handlers) MarketDepthSubscribe(
 }
 
 func (h *Handlers) PositionsSubscribe(
-	req *api.PositionsSubscribeRequest,
-	srv api.Trading_PositionsSubscribeServer,
+	req *protoapi.PositionsSubscribeRequest,
+	srv protoapi.Trading_PositionsSubscribeServer,
 ) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
@@ -601,37 +602,37 @@ func (h *Handlers) PositionsSubscribe(
 	}
 }
 
-func (h *Handlers) MarketByID(ctx context.Context, req *api.MarketByIDRequest) (*api.MarketByIDResponse, error) {
+func (h *Handlers) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
 	mkt, err := validateMarket(ctx, req.Id, h.MarketService)
 	if err != nil {
 		return nil, err
 	}
 
-	return &api.MarketByIDResponse{
+	return &protoapi.MarketByIDResponse{
 		Market: mkt,
 	}, nil
 }
-func (h *Handlers) Parties(ctx context.Context, req *google_proto.Empty) (*api.PartiesResponse, error) {
+func (h *Handlers) Parties(ctx context.Context, req *google_proto.Empty) (*protoapi.PartiesResponse, error) {
 	pties, err := h.PartyService.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &api.PartiesResponse{
+	return &protoapi.PartiesResponse{
 		Parties: pties,
 	}, nil
 }
-func (h *Handlers) PartyByID(ctx context.Context, req *api.PartyByIDRequest) (*api.PartyByIDResponse, error) {
+func (h *Handlers) PartyByID(ctx context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
 	pty, err := validateParty(ctx, req.Id, h.PartyService)
 	if err != nil {
 		return nil, err
 	}
-	return &api.PartyByIDResponse{
+	return &protoapi.PartyByIDResponse{
 		Party: pty,
 	}, nil
 }
 func (h *Handlers) TradesByParty(
-	ctx context.Context, req *api.TradesByPartyRequest,
-) (*api.TradesByPartyResponse, error) {
+	ctx context.Context, req *protoapi.TradesByPartyRequest,
+) (*protoapi.TradesByPartyResponse, error) {
 	var (
 		skip, limit uint64
 		descending  bool
@@ -646,18 +647,18 @@ func (h *Handlers) TradesByParty(
 		return nil, err
 	}
 
-	return &api.TradesByPartyResponse{
+	return &protoapi.TradesByPartyResponse{
 		Trades: trades,
 	}, nil
 }
 func (h *Handlers) TradesByOrder(
-	ctx context.Context, req *api.TradesByOrderRequest,
-) (*api.TradesByOrderResponse, error) {
+	ctx context.Context, req *protoapi.TradesByOrderRequest,
+) (*protoapi.TradesByOrderResponse, error) {
 	trades, err := h.TradeService.GetByOrderId(ctx, req.OrderID)
 	if err != nil {
 		return nil, err
 	}
-	return &api.TradesByOrderResponse{
+	return &protoapi.TradesByOrderResponse{
 		Trades: trades,
 	}, nil
 }
