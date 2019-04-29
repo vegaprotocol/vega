@@ -19,33 +19,33 @@ http:
     - selector: api.trading.AmendOrder
       post: '/amendOrder'
       body: "*"
-    - selector: api.trading.OrdersByMarket
+    - selector: api.trading_data.OrdersByMarket
       get: '/marketOrders'
-    - selector: api.trading.OrdersByParty
+    - selector: api.trading_data.OrdersByParty
       get: '/partyOrders'
-    - selector: api.trading.OrderByMarketAndId
+    - selector: api.trading_data.OrderByMarketAndId
       get: '/marketOrder'
-    - selector: api.trading.Markets
+    - selector: api.trading_data.Markets
       get: '/markets'
-    - selector: api.trading.Market
+    - selector: api.trading_data.Market
       get: '/market'
-    - selector: api.trading.TradeCandles
+    - selector: api.trading_data.TradeCandles
       get: '/candles'
-    - selector: api.trading.MarketDepth
+    - selector: api.trading_data.MarketDepth
       get: '/marketDepth'
-    - selector: api.trading.TradesByMarket
+    - selector: api.trading_data.TradesByMarket
       get: '/marketTrades'
-    - selector: api.trading.TradesByParty
+    - selector: api.trading_data.TradesByParty
       get: '/partyTrades'
-    - selector: api.trading.TradesByOrder
+    - selector: api.trading_data.TradesByOrder
       get: '/orderTrades'
-    - selector: api.trading.PositionsByParty
+    - selector: api.trading_data.PositionsByParty
       get: '/partyPositions'
-    - selector: api.trading.Party
+    - selector: api.trading_data.Party
       get: '/party'
-    - selector: api.trading.Parties
+    - selector: api.trading_data.Parties
       get: '/parties'
-    - selector: api.trading.Statistics
+    - selector: api.trading_data.Statistics
       get: '/statistics'
-    - selector: api.trading.GetVegaTime
+    - selector: api.trading_data.GetVegaTime
       get: '/vegaTime'

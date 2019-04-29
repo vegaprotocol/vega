@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "proto/api/grpc.proto",
+    "title": "proto/api/trading.proto",
     "version": "version not set"
   },
   "schemes": [
@@ -87,7 +87,7 @@
           }
         ],
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -117,7 +117,7 @@
           }
         ],
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -149,7 +149,7 @@
           }
         ],
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -181,7 +181,7 @@
           }
         ],
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -197,7 +197,7 @@
           }
         },
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -228,7 +228,7 @@
           }
         ],
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -244,7 +244,7 @@
           }
         },
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -275,7 +275,7 @@
           }
         ],
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -300,7 +300,7 @@
           }
         ],
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -337,7 +337,7 @@
           }
         ],
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -354,7 +354,7 @@
           }
         },
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     },
@@ -397,7 +397,7 @@
           }
         },
         "tags": [
-          "trading"
+          "trading_data"
         ]
       }
     }

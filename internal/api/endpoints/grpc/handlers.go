@@ -371,7 +371,7 @@ func (h *Handlers) GetVegaTime(ctx context.Context, request *google_proto.Empty)
 }
 
 func (h *Handlers) OrdersSubscribe(
-	req *protoapi.OrdersSubscribeRequest, srv protoapi.Trading_OrdersSubscribeServer) error {
+	req *protoapi.OrdersSubscribeRequest, srv protoapi.TradingData_OrdersSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
@@ -418,7 +418,7 @@ func (h *Handlers) OrdersSubscribe(
 	}
 }
 
-func (h *Handlers) TradesSubscribe(req *protoapi.TradesSubscribeRequest, srv protoapi.Trading_TradesSubscribeServer) error {
+func (h *Handlers) TradesSubscribe(req *protoapi.TradesSubscribeRequest, srv protoapi.TradingData_TradesSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
@@ -465,7 +465,7 @@ func (h *Handlers) TradesSubscribe(req *protoapi.TradesSubscribeRequest, srv pro
 	}
 }
 
-func (h *Handlers) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest, srv protoapi.Trading_CandlesSubscribeServer) error {
+func (h *Handlers) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest, srv protoapi.TradingData_CandlesSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
@@ -512,7 +512,7 @@ func (h *Handlers) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest, srv p
 
 func (h *Handlers) MarketDepthSubscribe(
 	req *protoapi.MarketDepthSubscribeRequest,
-	srv protoapi.Trading_MarketDepthSubscribeServer,
+	srv protoapi.TradingData_MarketDepthSubscribeServer,
 ) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
@@ -561,7 +561,7 @@ func (h *Handlers) MarketDepthSubscribe(
 
 func (h *Handlers) PositionsSubscribe(
 	req *protoapi.PositionsSubscribeRequest,
-	srv protoapi.Trading_PositionsSubscribeServer,
+	srv protoapi.TradingData_PositionsSubscribeServer,
 ) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
