@@ -17,6 +17,8 @@ var (
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 )
 
+type collectCB func(p *types.SettlePosition) error
+
 type Engine struct {
 	Config
 	log   *logging.Logger
@@ -69,11 +71,17 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferResponse, error) {
+	var balanceDelta uint64
+	// nothing to collect, return here and now
+	if len(positions) == 0 {
+		return nil, nil
+	}
+	// set up vars we'll be needing...
 	reference := fmt.Sprintf("%s close", e.market)
 	sysAccounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, storage.SystemOwner)
 	if err != nil {
 		e.log.Error(
-			"Failed to collect buys (system accounts missing)",
+			"Failed to collect loss (system accounts missing)",
 			logging.Error(err),
 		)
 		return nil, err
@@ -90,14 +98,11 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 	if settle == nil || insurance == nil {
 		return nil, ErrSystemAccountsMissing
 	}
-	// assign this here, so we can set cap for sell response correctly,
-	// and make an educated guess for buys
-	transferCap := len(positions)
-	// bit clunky, bit this ensures that we're not trying to do silly things, and the response doesn't contain
-	// a useless TransferResponse object
-	haveBuys, haveSells := false, false
-	buyResp := types.TransferResponse{
-		Transfers: make([]*types.LedgerEntry, 0, transferCap), // roughly half should be buys, but create 2 ledger entries, so that's a reasonable cap to use
+	// this way we know if we need to check loss response
+	haveLoss := (positions[0].Type == types.SettleType_LOSS)
+	expSettle, expDistribute := uint64(0), uint64(0)
+	lossResp := types.TransferResponse{
+		Transfers: make([]*types.LedgerEntry, 0, len(positions)), // roughly half should be loss, but create 2 ledger entries, so that's a reasonable cap to use
 		Balances: []*types.TransferBalance{
 			{
 				Account: settle, // settle to this account
@@ -105,8 +110,8 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 			},
 		},
 	}
-	sellResp := types.TransferResponse{
-		// we will alloc this slice once we've processed all buys
+	winResp := types.TransferResponse{
+		// we will alloc this slice once we've processed all loss
 		// Transfers: make([]*types.LedgerEntry, 0, len(positions)),
 		Balances: []*types.TransferBalance{
 			{
@@ -117,61 +122,91 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 			},
 		},
 	}
-	responses := make([]*types.TransferResponse, 0, 2)
 	// get config once, when we start settling, then reuse the value
 	e.cfgMu.Lock()
 	createTraderAccounts := e.CreateTraderAccounts
 	e.cfgMu.Unlock()
-	for _, p := range positions {
-		if createTraderAccounts {
-			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
-		}
-		req, err := e.getTransferRequest(p, settle, insurance)
-		if err != nil {
-			e.log.Error(
-				"Failed to create the transfer request",
-				logging.String("settlement-type", p.Type.String()),
-				logging.String("trader-id", p.Owner),
-				logging.Error(err),
-			)
-			return nil, err
-		}
-		req.Reference = reference
-		res, err := e.getLedgerEntries(req)
-		if err != nil {
-			return nil, err
-		}
-		// append ledger moves
-		if p.Type == types.SettleType_BUY {
-			haveBuys = true
-			buyResp.Transfers = append(buyResp.Transfers, res.Transfers...)
-			// account balance is updated automatically
-			// increment balance
-			buyResp.Balances[0].Balance += res.Balances[0].Balance
-			// one less cap for selling to consider
-			transferCap--
-		} else {
-			haveSells = true
-			if len(sellResp.Transfers) == 0 {
-				sellResp.Transfers = make([]*types.LedgerEntry, 0, transferCap*2) // each sell pos will (roughly speaking) result in 2 ledger movements, so this cap is sensible
+	// common tasks performed for both win and loss positions
+	setupCB := func(exp, delta *uint64) func(*types.SettlePosition) (*types.TransferResponse, error) {
+		return func(p *types.SettlePosition) (*types.TransferResponse, error) {
+			if createTraderAccounts {
+				// ignore errors, the only error ATM is the one telling us this call was redundant
+				_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
 			}
-			// there's only 1 balance account here (the ToAccount)
-			if err := e.accountStore.IncrementBalance(req.ToAccount[0].Id, res.Balances[0].Balance); err != nil {
-				// this account might get accessed concurrently -> use increment
+			req, err := e.getTransferRequest(p, settle, insurance)
+			if err != nil {
 				e.log.Error(
-					"Failed to increment balance of general account",
-					logging.String("account-id", req.ToAccount[0].Id),
-					logging.Int64("increment", res.Balances[0].Balance),
+					"Failed to create the transfer request",
+					logging.String("settlement-type", p.Type.String()),
+					logging.String("trader-id", p.Owner),
 					logging.Error(err),
 				)
 				return nil, err
 			}
-			sellResp.Transfers = append(sellResp.Transfers, res.Transfers...)
+			if p.Type == types.SettleType_WIN && *exp != *delta {
+				req.Amount = uint64(float64(req.Amount) / float64(*exp) * float64(*delta))
+			}
+			req.Reference = reference
+			res, err := e.getLedgerEntries(req)
+			if err != nil {
+				return nil, err
+			}
+			return res, nil
 		}
+	}(&expDistribute, &balanceDelta)
+	// pretty much the body of the for loop for
+	// has access to all vars set up in this func, so we can set to work
+	lossCB := func(p *types.SettlePosition) error {
+		res, err := setupCB(p)
+		if err != nil {
+			return err
+		}
+		expAmount := uint64(-p.Amount.Amount) * p.Size
+		expDistribute += expAmount
+		if uint64(res.Balances[0].Balance) != expAmount {
+			e.log.Warn(
+				"Loss trader accounts for full amount failed",
+				logging.String("trader-id", p.Owner),
+				logging.Uint64("expected-amount", expAmount),
+				logging.Int64("actual-amount", res.Balances[0].Balance),
+			)
+		}
+		lossResp.Transfers = append(lossResp.Transfers, res.Transfers...)
+		// account balance is updated automatically
+		// increment balance
+		lossResp.Balances[0].Balance += res.Balances[0].Balance
+		return nil
 	}
-	if haveBuys {
-		responses = append(responses, &buyResp)
-		for _, bacc := range buyResp.Balances {
+	// logic to be applied to win positions
+	winCB := func(p *types.SettlePosition) error {
+		res, err := setupCB(p)
+		if err != nil {
+			return err
+		}
+		expSettle += uint64(res.Balances[0].Balance)
+		// there's only 1 balance account here (the ToAccount)
+		if err := e.accountStore.IncrementBalance(res.Balances[0].Account.Id, res.Balances[0].Balance); err != nil {
+			// this account might get accessed concurrently -> use increment
+			e.log.Error(
+				"Failed to increment balance of general account",
+				logging.String("account-id", res.Balances[0].Account.Id),
+				logging.Int64("increment", res.Balances[0].Balance),
+				logging.Error(err),
+			)
+			return err
+		}
+		winResp.Transfers = append(winResp.Transfers, res.Transfers...)
+		return nil
+	}
+	// begin work, start by processing the loss positions, and get win positions while we're at it
+	winPos, err := collectLoss(positions, lossCB)
+	if err != nil {
+		return nil, err
+	}
+	// process lossResp before moving on to win...
+	if haveLoss {
+		for _, bacc := range lossResp.Balances {
+			balanceDelta += uint64(bacc.Balance)
 			if err := e.accountStore.IncrementBalance(bacc.Account.Id, bacc.Balance); err != nil {
 				e.log.Error(
 					"Failed to update target account",
@@ -182,19 +217,65 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 				return nil, err
 			}
 		}
-	}
-	if haveSells {
-		responses = append(responses, &sellResp)
-		for _, b := range sellResp.Balances {
-			b.Balance = b.Account.Balance
+		if balanceDelta != expDistribute {
+			e.log.Warn(
+				"Expected to distribute and actual balance mismatch",
+				logging.Uint64("expected-balance", expDistribute),
+				logging.Uint64("actual-balance", balanceDelta),
+			)
 		}
 	}
-	return responses, nil
+	if len(winPos) == 0 {
+		return []*types.TransferResponse{
+			&lossResp,
+		}, nil
+	}
+	winResp.Transfers = make([]*types.LedgerEntry, 0, len(winPos)*2)
+	if err := collectWin(winPos, winCB); err != nil {
+		return nil, err
+	}
+	// do some more work on winResp
+	for _, b := range winResp.Balances {
+		b.Balance = b.Account.Balance
+	}
+	if haveLoss {
+		return []*types.TransferResponse{
+			&lossResp,
+			&winResp,
+		}, nil
+	}
+	return []*types.TransferResponse{
+		&winResp,
+	}, nil
+}
+
+func collectLoss(positions []*types.SettlePosition, cb collectCB) ([]*types.SettlePosition, error) {
+	// collect whatever we have until we reach the DEBIT part of the positions
+	for i, p := range positions {
+		if p.Type == types.SettleType_WIN {
+			return positions[i:], nil
+		}
+		if err := cb(p); err != nil {
+			return nil, err
+		}
+	}
+	// only CREDIT positions found OR positions was empty to begin with
+	return nil, nil
+}
+
+func collectWin(positions []*types.SettlePosition, cb collectCB) error {
+	// this is really simple -> just collect whatever was left
+	for _, p := range positions {
+		if err := cb(p); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the SettlePosition argument
 func (e *Engine) getTransferRequest(p *types.SettlePosition, settle, insurance *types.Account) (*types.TransferRequest, error) {
-	if p.Type == types.SettleType_BUY {
+	if p.Type == types.SettleType_LOSS {
 		accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, p.Owner)
 		if err != nil {
 			e.log.Error(
@@ -210,7 +291,7 @@ func (e *Engine) getTransferRequest(p *types.SettlePosition, settle, insurance *
 			ToAccount: []*types.Account{
 				settle,
 			},
-			Amount:    p.Amount.Amount * p.Size,
+			Amount:    uint64(-p.Amount.Amount) * p.Size,
 			MinAmount: 0,  // default value, but keep it here explicitly
 			Asset:     "", // TBC
 		}
@@ -244,7 +325,7 @@ func (e *Engine) getTransferRequest(p *types.SettlePosition, settle, insurance *
 		ToAccount: []*types.Account{
 			gen,
 		},
-		Amount:    p.Amount.Amount * p.Size,
+		Amount:    uint64(p.Amount.Amount) * p.Size,
 		MinAmount: 0,  // default value, but keep it here explicitly
 		Asset:     "", // TBC
 	}, nil
@@ -272,7 +353,8 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 			lm *types.LedgerEntry
 		)
 		// either the account contains enough, or we're having to access insurance pool money
-		if acc.Balance >= amount || acc.Type == types.AccountType_INSURANCE {
+		// if acc.Balance >= amount || acc.Type == types.AccountType_INSURANCE {
+		if acc.Balance >= amount {
 			acc.Balance -= amount
 			if err := e.accountStore.IncrementBalance(acc.Id, -amount); err != nil {
 				e.log.Error(
@@ -316,6 +398,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 				)
 				return nil, err
 			}
+			acc.Balance = 0
 			for _, to = range ret.Balances {
 				lm = &types.LedgerEntry{
 					FromAccount: acc.Id,
@@ -329,7 +412,6 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 				to.Account.Balance += parts
 				to.Balance += parts
 			}
-			acc.Balance = 0
 		}
 	}
 	return &ret, nil
