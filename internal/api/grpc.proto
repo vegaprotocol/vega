@@ -1,28 +1,33 @@
 syntax = "proto3";
 
 import "proto/vega.proto";
+import "proto/markets.proto";
 
 package grpc;
 
 option go_package = "code.vegaprotocol.io/vega/internal/api";
 
+import "google/protobuf/empty.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 service trading {
-  // unary calls
+  // unary calls - writes
   rpc SubmitOrder(vega.OrderSubmission) returns (vega.PendingOrder);
   rpc CancelOrder(vega.OrderCancellation) returns (vega.PendingOrder);
   rpc AmendOrder(vega.OrderAmendment) returns (OrderResponse);
+
+  // unary calls - read
   rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
   rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
-  rpc Markets(MarketsRequest) returns (MarketsResponse);
+  rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
   rpc Candles(CandlesRequest) returns (CandlesResponse);
   rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
   rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
   rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
-  rpc Statistics(StatisticsRequest) returns (vega.Statistics);
-  rpc GetVegaTime(VegaTimeRequest) returns (VegaTimeResponse);
+
+  rpc Statistics(google.protobuf.Empty) returns (vega.Statistics);
+  rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
 
   // streams
   rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream vega.Order);
@@ -61,7 +66,7 @@ message OrderResponse {
 }
 
 message OrdersByMarketRequest {
-  string market = 1 [(validator.field) = {msg_exists : true}];
+  string marketID = 1 [(validator.field) = {msg_exists : true}];
   OptionalParams params = 2;
 }
 
@@ -70,7 +75,7 @@ message OrdersByMarketResponse {
 }
 
 message OrdersByPartyRequest {
-  string party = 1 [(validator.field) = {msg_exists : true }];
+  string partyID = 1 [(validator.field) = {msg_exists : true }];
   OptionalParams params = 2;
 }
 
@@ -79,7 +84,7 @@ message OrdersByPartyResponse {
 }
 
 message OrderByMarketAndIdRequest {
-  string market = 1 [(validator.field) = {msg_exists : true }];
+  string marketID = 1 [(validator.field) = {msg_exists : true }];
   string id = 2 [(validator.field) = {msg_exists : true}];
 }
 
@@ -87,12 +92,8 @@ message OrderByMarketAndIdResponse {
   vega.Order order = 1;
 }
 
-message MarketsRequest {
-  // empty for now
-}
-
 message MarketsResponse {
-  repeated string markets = 1;
+  repeated vega.Market markets = 1;
 }
 
 message CandlesRequest {
@@ -110,14 +111,14 @@ message MarketDepthRequest {
 }
 
 message MarketDepthResponse {
-  string   name = 1;
+  string marketID = 1;
   repeated vega.PriceLevel buy = 2;
   repeated vega.PriceLevel sell = 3;
   vega.Trade lastTrade = 4;
 }
 
 message TradesByMarketRequest {
-  string market = 1 [(validator.field) = {msg_exists: true}];
+  string marketID = 1 [(validator.field) = {msg_exists: true}];
   OptionalParams params = 2;
 }
 
@@ -126,25 +127,17 @@ message TradesByMarketResponse {
 }
 
 message PositionsByPartyRequest{
-  string party = 1 [(validator.field) = {msg_exists: true}];
+  string partyID = 1 [(validator.field) = {msg_exists: true}];
 }
 
 message PositionsByPartyResponse{
   repeated vega.MarketPosition positions = 1;
 }
 
-message StatisticsRequest {
-  // empty for now
+message VegaTimeResponse {
+  int64 timestamp = 1;
 }
 
 message OptionalParams {
   uint64 limit = 1 [(validator.field) = {int_lt: 50}];
-}
-
-message VegaTimeRequest {
-  // empty
-}
-
-message VegaTimeResponse {
-  string time = 1;
 }

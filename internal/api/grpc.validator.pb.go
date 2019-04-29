@@ -9,6 +9,7 @@ import (
 
 	_ "code.vegaprotocol.io/vega/proto"
 	proto "github.com/golang/protobuf/proto"
+	_ "github.com/golang/protobuf/ptypes/empty"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
@@ -83,10 +84,14 @@ func (this *OrderByMarketAndIdResponse) Validate() error {
 	}
 	return nil
 }
-func (this *MarketsRequest) Validate() error {
-	return nil
-}
 func (this *MarketsResponse) Validate() error {
+	for _, item := range this.Markets {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Markets", err)
+			}
+		}
+	}
 	return nil
 }
 func (this *CandlesRequest) Validate() error {
@@ -161,18 +166,12 @@ func (this *PositionsByPartyResponse) Validate() error {
 	}
 	return nil
 }
-func (this *StatisticsRequest) Validate() error {
+func (this *VegaTimeResponse) Validate() error {
 	return nil
 }
 func (this *OptionalParams) Validate() error {
 	if !(this.Limit < 50) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Limit", fmt.Errorf(`value '%v' must be less than '50'`, this.Limit))
 	}
-	return nil
-}
-func (this *VegaTimeRequest) Validate() error {
-	return nil
-}
-func (this *VegaTimeResponse) Validate() error {
 	return nil
 }

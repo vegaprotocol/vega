@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	types "code.vegaprotocol.io/vega/proto"
+	google_proto "github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -116,7 +117,7 @@ func (h *Handlers) AmendOrder(ctx context.Context, amendment *types.OrderAmendme
 func (h *Handlers) OrdersByMarket(ctx context.Context,
 	request *api.OrdersByMarketRequest) (*api.OrdersByMarketResponse, error) {
 
-	if request.Market == "" {
+	if request.MarketID == "" {
 		return nil, errors.New("Market empty or missing")
 	}
 
@@ -130,7 +131,7 @@ func (h *Handlers) OrdersByMarket(ctx context.Context,
 		limit = request.Params.Limit
 	}
 
-	o, err := h.OrderService.GetByMarket(ctx, request.Market, skip, limit, descending, open)
+	o, err := h.OrderService.GetByMarket(ctx, request.MarketID, skip, limit, descending, open)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +148,7 @@ func (h *Handlers) OrdersByMarket(ctx context.Context,
 func (h *Handlers) OrdersByParty(ctx context.Context,
 	request *api.OrdersByPartyRequest) (*api.OrdersByPartyResponse, error) {
 
-	if request.Party == "" {
+	if request.PartyID == "" {
 		return nil, errors.New("Party empty or missing")
 	}
 
@@ -156,7 +157,7 @@ func (h *Handlers) OrdersByParty(ctx context.Context,
 		limit = request.Params.Limit
 	}
 
-	o, err := h.OrderService.GetByParty(ctx, request.Party, 0, limit, true, nil)
+	o, err := h.OrderService.GetByParty(ctx, request.PartyID, 0, limit, true, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -170,20 +171,15 @@ func (h *Handlers) OrdersByParty(ctx context.Context,
 }
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
-func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (*api.MarketsResponse, error) {
-	m, err := h.MarketService.GetAll(ctx)
+func (h *Handlers) Markets(ctx context.Context, request *google_proto.Empty) (*api.MarketsResponse, error) {
+	mkts, err := h.MarketService.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var response = &api.MarketsResponse{}
-	if len(m) > 0 {
-		var res []string
-		for _, mv := range m {
-			res = append(res, mv.Id)
-		}
-		response.Markets = res
-	}
-	return response, nil
+
+	return &api.MarketsResponse{
+		Markets: mkts,
+	}, nil
 }
 
 // OrdersByMarketAndId searches for the given order by Id and Market. If found it will return
@@ -191,20 +187,20 @@ func (h *Handlers) Markets(ctx context.Context, request *api.MarketsRequest) (*a
 func (h *Handlers) OrderByMarketAndId(ctx context.Context,
 	request *api.OrderByMarketAndIdRequest) (*api.OrderByMarketAndIdResponse, error) {
 
-	if request.Market == "" {
+	if request.MarketID == "" {
 		return nil, errors.New("Market empty or missing")
 	}
 	if request.Id == "" {
 		return nil, errors.New("Id empty or missing")
 	}
-	order, err := h.OrderService.GetByMarketAndId(ctx, request.Market, request.Id)
+	order, err := h.OrderService.GetByMarketAndId(ctx, request.MarketID, request.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	var response = &api.OrderByMarketAndIdResponse{}
-	response.Order = order
-	return response, nil
+	return &api.OrderByMarketAndIdResponse{
+		Order: order,
+	}, nil
 }
 
 // TradeCandles returns trade open/close/volume data for the given time period and interval.
@@ -226,37 +222,41 @@ func (h *Handlers) Candles(ctx context.Context,
 		return nil, err
 	}
 
-	response := &api.CandlesResponse{}
-	response.Candles = c
-	return response, nil
+	return &api.CandlesResponse{
+		Candles: c,
+	}, nil
+
 }
 
-func (h *Handlers) MarketDepth(ctx context.Context, request *api.MarketDepthRequest) (*api.MarketDepthResponse, error) {
-	if request.Market == "" {
+func (h *Handlers) MarketDepth(ctx context.Context, req *api.MarketDepthRequest) (*api.MarketDepthResponse, error) {
+	if req.Market == "" {
 		return nil, errors.New("Market empty or missing")
 	}
+
 	// Query market depth statistics
-	depth, err := h.MarketService.GetDepth(ctx, request.Market)
+	depth, err := h.MarketService.GetDepth(ctx, req.Market)
 	if err != nil {
 		return nil, err
 	}
-	t, err := h.TradeService.GetByMarket(ctx, request.Market, 0, 1, true)
+	t, err := h.TradeService.GetByMarket(ctx, req.Market, 0, 1, true)
 	if err != nil {
 		return nil, err
 	}
+
 	// Build market depth response, including last trade (if available)
-	var response = &api.MarketDepthResponse{}
-	response.Buy = depth.Buy
-	response.Name = depth.Name
-	response.Sell = depth.Sell
-	if t != nil && t[0] != nil {
-		response.LastTrade = t[0]
+	resp := &api.MarketDepthResponse{
+		Buy:      depth.Buy,
+		MarketID: depth.Name,
+		Sell:     depth.Sell,
 	}
-	return response, nil
+	if t != nil && t[0] != nil {
+		resp.LastTrade = t[0]
+	}
+	return resp, nil
 }
 
 func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMarketRequest) (*api.TradesByMarketResponse, error) {
-	if request.Market == "" {
+	if request.MarketID == "" {
 		return nil, errors.New("Market empty or missing")
 	}
 	limit := defaultLimit
@@ -264,20 +264,20 @@ func (h *Handlers) TradesByMarket(ctx context.Context, request *api.TradesByMark
 		limit = request.Params.Limit
 	}
 
-	t, err := h.TradeService.GetByMarket(ctx, request.Market, 0, limit, true)
+	t, err := h.TradeService.GetByMarket(ctx, request.MarketID, 0, limit, true)
 	if err != nil {
 		return nil, err
 	}
-	var response = &api.TradesByMarketResponse{}
-	response.Trades = t
-	return response, nil
+	return &api.TradesByMarketResponse{
+		Trades: t,
+	}, nil
 }
 
 func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsByPartyRequest) (*api.PositionsByPartyResponse, error) {
-	if request.Party == "" {
+	if request.PartyID == "" {
 		return nil, errors.New("Party empty or missing")
 	}
-	positions, err := h.TradeService.GetPositionsByParty(ctx, request.Party)
+	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func (h *Handlers) PositionsByParty(ctx context.Context, request *api.PositionsB
 	return response, nil
 }
 
-func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsRequest) (*types.Statistics, error) {
+func (h *Handlers) Statistics(ctx context.Context, request *google_proto.Empty) (*types.Statistics, error) {
 	// Call out to tendermint and related services to get related information for statistics
 	// We load read-only internal statistics through each package level statistics structs
 	epochTime, err := h.TimeService.GetTimeNow()
@@ -356,14 +356,15 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 	}, nil
 }
 
-func (h *Handlers) GetVegaTime(ctx context.Context, request *api.VegaTimeRequest) (*api.VegaTimeResponse, error) {
-	epochTime, err := h.TimeService.GetTimeNow()
+func (h *Handlers) GetVegaTime(ctx context.Context, request *google_proto.Empty) (*api.VegaTimeResponse, error) {
+	ts, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, err
 	}
-	var response = &api.VegaTimeResponse{}
-	response.Time = vegatime.Format(epochTime)
-	return response, nil
+	return &api.VegaTimeResponse{
+		Timestamp: ts.UnixNano(),
+	}, nil
+
 }
 
 func (h *Handlers) OrdersSubscribe(req *api.OrdersSubscribeRequest, srv api.Trading_OrdersSubscribeServer) error {

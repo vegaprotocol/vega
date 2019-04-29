@@ -104,7 +104,7 @@
         },
         "parameters": [
           {
-            "name": "market",
+            "name": "marketID",
             "in": "query",
             "required": false,
             "type": "string"
@@ -123,6 +123,7 @@
     },
     "/marketOrders": {
       "get": {
+        "summary": "unary calls - read",
         "operationId": "OrdersByMarket",
         "responses": {
           "200": {
@@ -134,7 +135,7 @@
         },
         "parameters": [
           {
-            "name": "market",
+            "name": "marketID",
             "in": "query",
             "required": false,
             "type": "string"
@@ -165,7 +166,7 @@
         },
         "parameters": [
           {
-            "name": "market",
+            "name": "marketID",
             "in": "query",
             "required": false,
             "type": "string"
@@ -212,7 +213,7 @@
         },
         "parameters": [
           {
-            "name": "party",
+            "name": "partyID",
             "in": "query",
             "required": false,
             "type": "string"
@@ -243,7 +244,7 @@
         },
         "parameters": [
           {
-            "name": "party",
+            "name": "partyID",
             "in": "query",
             "required": false,
             "type": "string"
@@ -272,7 +273,7 @@
     },
     "/submitOrder": {
       "post": {
-        "summary": "unary calls",
+        "summary": "unary calls - writes",
         "operationId": "SubmitOrder",
         "responses": {
           "200": {
@@ -340,7 +341,7 @@
     "grpcMarketDepthResponse": {
       "type": "object",
       "properties": {
-        "name": {
+        "marketID": {
           "type": "string"
         },
         "buy": {
@@ -366,7 +367,7 @@
         "markets": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/vegaMarket"
           }
         }
       }
@@ -447,8 +448,9 @@
     "grpcVegaTimeResponse": {
       "type": "object",
       "properties": {
-        "time": {
-          "type": "string"
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -486,6 +488,15 @@
           "items": {
             "$ref": "#/definitions/protobufAny"
           }
+        }
+      }
+    },
+    "vegaBuiltinFutures": {
+      "type": "object",
+      "properties": {
+        "historicVolatility": {
+          "type": "number",
+          "format": "double"
         }
       }
     },
@@ -533,6 +544,97 @@
       ],
       "default": "DISCONNECTED"
     },
+    "vegaContinuousTrading": {
+      "type": "object",
+      "properties": {
+        "tickSize": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaDiscreteTrading": {
+      "type": "object",
+      "properties": {
+        "duration": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "vegaEthereumEvent": {
+      "type": "object",
+      "properties": {
+        "contractID": {
+          "type": "string"
+        },
+        "event": {
+          "type": "string"
+        }
+      }
+    },
+    "vegaExternalRiskModel": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "socket": {
+          "type": "string"
+        },
+        "config": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "vegaFuture": {
+      "type": "object",
+      "properties": {
+        "maturity": {
+          "type": "string"
+        },
+        "asset": {
+          "type": "string"
+        },
+        "ethereumEvent": {
+          "$ref": "#/definitions/vegaEthereumEvent"
+        }
+      }
+    },
+    "vegaInstrument": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/definitions/vegaInstrumentMetadata"
+        },
+        "future": {
+          "$ref": "#/definitions/vegaFuture"
+        }
+      }
+    },
+    "vegaInstrumentMetadata": {
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "vegaInterval": {
       "type": "string",
       "enum": [
@@ -544,6 +646,27 @@
         "I1D"
       ],
       "default": "I1M"
+    },
+    "vegaMarket": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tradableInstrument": {
+          "$ref": "#/definitions/vegaTradableInstrument"
+        },
+        "decimalPlaces": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "continuous": {
+          "$ref": "#/definitions/vegaContinuousTrading"
+        },
+        "discrete": {
+          "$ref": "#/definitions/vegaDiscreteTrading"
+        }
+      }
     },
     "vegaMarketDepth": {
       "type": "object",
@@ -871,6 +994,20 @@
         "totalTrades": {
           "type": "string",
           "format": "uint64"
+        }
+      }
+    },
+    "vegaTradableInstrument": {
+      "type": "object",
+      "properties": {
+        "instrument": {
+          "$ref": "#/definitions/vegaInstrument"
+        },
+        "builtinFutures": {
+          "$ref": "#/definitions/vegaBuiltinFutures"
+        },
+        "externalRiskModel": {
+          "$ref": "#/definitions/vegaExternalRiskModel"
         }
       }
     },
