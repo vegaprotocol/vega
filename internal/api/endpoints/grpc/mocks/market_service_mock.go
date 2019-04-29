@@ -49,6 +49,21 @@ func (mr *MockMarketServiceMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMarketService)(nil).GetAll), arg0)
 }
 
+// GetByID mocks base method
+func (m *MockMarketService) GetByID(arg0 context.Context, arg1 string) (*proto.Market, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
+	ret0, _ := ret[0].(*proto.Market)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID
+func (mr *MockMarketServiceMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMarketService)(nil).GetByID), arg0, arg1)
+}
+
 // GetDepth mocks base method
 func (m *MockMarketService) GetDepth(arg0 context.Context, arg1 string) (*proto.MarketDepth, error) {
 	m.ctrl.T.Helper()
@@ -62,4 +77,19 @@ func (m *MockMarketService) GetDepth(arg0 context.Context, arg1 string) (*proto.
 func (mr *MockMarketServiceMockRecorder) GetDepth(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDepth", reflect.TypeOf((*MockMarketService)(nil).GetDepth), arg0, arg1)
+}
+
+// ObserveDepth mocks base method
+func (m *MockMarketService) ObserveDepth(arg0 context.Context, arg1 int, arg2 string) (<-chan *proto.MarketDepth, uint64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObserveDepth", arg0, arg1, arg2)
+	ret0, _ := ret[0].(<-chan *proto.MarketDepth)
+	ret1, _ := ret[1].(uint64)
+	return ret0, ret1
+}
+
+// ObserveDepth indicates an expected call of ObserveDepth
+func (mr *MockMarketServiceMockRecorder) ObserveDepth(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveDepth", reflect.TypeOf((*MockMarketService)(nil).ObserveDepth), arg0, arg1, arg2)
 }

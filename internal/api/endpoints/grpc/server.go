@@ -158,7 +158,15 @@ func (g *grpcServer) Start() {
 	}
 
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
-	var handlers = &Handlers{
+	g.srv = grpc.NewServer(intercept)
+
+	tradingSvc := &tradingService{
+		tradeOrderService: g.orderService,
+		statusChecker:     g.statusChecker,
+	}
+	protoapi.RegisterTradingServer(g.srv, tradingSvc)
+
+	tradingDataSvc := &tradingDataService{
 		log:           g.log,
 		Config:        g.Config,
 		Stats:         g.stats,
@@ -172,8 +180,8 @@ func (g *grpcServer) Start() {
 		statusChecker: g.statusChecker,
 		ctx:           g.ctx,
 	}
-	g.srv = grpc.NewServer(intercept)
-	protoapi.RegisterTradingServer(g.srv, handlers)
+	protoapi.RegisterTradingDataServer(g.srv, tradingDataSvc)
+
 	err = g.srv.Serve(lis)
 	if err != nil {
 		g.log.Panic("Failure serving gRPC API", logging.Error(err))

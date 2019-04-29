@@ -34,51 +34,6 @@ func (m *MockOrderService) EXPECT() *MockOrderServiceMockRecorder {
 	return m.recorder
 }
 
-// AmendOrder mocks base method
-func (m *MockOrderService) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AmendOrder indicates an expected call of AmendOrder
-func (mr *MockOrderServiceMockRecorder) AmendOrder(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockOrderService)(nil).AmendOrder), arg0, arg1)
-}
-
-// CancelOrder mocks base method
-func (m *MockOrderService) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (*proto.PendingOrder, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CancelOrder indicates an expected call of CancelOrder
-func (mr *MockOrderServiceMockRecorder) CancelOrder(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockOrderService)(nil).CancelOrder), arg0, arg1)
-}
-
-// CreateOrder mocks base method
-func (m *MockOrderService) CreateOrder(arg0 context.Context, arg1 *proto.OrderSubmission) (*proto.PendingOrder, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateOrder", arg0, arg1)
-	ret0, _ := ret[0].(*proto.PendingOrder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateOrder indicates an expected call of CreateOrder
-func (mr *MockOrderServiceMockRecorder) CreateOrder(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockOrderService)(nil).CreateOrder), arg0, arg1)
-}
-
 // GetByMarket mocks base method
 func (m *MockOrderService) GetByMarket(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool, arg5 *bool) ([]*proto.Order, error) {
 	m.ctrl.T.Helper()
@@ -122,4 +77,19 @@ func (m *MockOrderService) GetByParty(arg0 context.Context, arg1 string, arg2, a
 func (mr *MockOrderServiceMockRecorder) GetByParty(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByParty", reflect.TypeOf((*MockOrderService)(nil).GetByParty), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
+// ObserveOrders mocks base method
+func (m *MockOrderService) ObserveOrders(arg0 context.Context, arg1 int, arg2, arg3 *string) (<-chan []proto.Order, uint64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObserveOrders", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(<-chan []proto.Order)
+	ret1, _ := ret[1].(uint64)
+	return ret0, ret1
+}
+
+// ObserveOrders indicates an expected call of ObserveOrders
+func (mr *MockOrderServiceMockRecorder) ObserveOrders(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveOrders", reflect.TypeOf((*MockOrderService)(nil).ObserveOrders), arg0, arg1, arg2, arg3)
 }
