@@ -66,9 +66,9 @@ func (this *PartiesResponse) Validate() error {
 	return nil
 }
 func (this *TradesByPartyRequest) Validate() error {
-	if this.Params != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
+	if this.Pagination != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Pagination", err)
 		}
 	}
 	return nil
@@ -84,11 +84,6 @@ func (this *TradesByPartyResponse) Validate() error {
 	return nil
 }
 func (this *TradesByOrderRequest) Validate() error {
-	if this.Params != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
-		}
-	}
 	return nil
 }
 func (this *TradesByOrderResponse) Validate() error {
@@ -117,9 +112,9 @@ func (this *PositionsSubscribeRequest) Validate() error {
 	return nil
 }
 func (this *OrdersByMarketRequest) Validate() error {
-	if this.Params != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
+	if this.Pagination != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Pagination", err)
 		}
 	}
 	return nil
@@ -135,9 +130,9 @@ func (this *OrdersByMarketResponse) Validate() error {
 	return nil
 }
 func (this *OrdersByPartyRequest) Validate() error {
-	if this.Params != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
+	if this.Pagination != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Pagination", err)
 		}
 	}
 	return nil
@@ -215,9 +210,9 @@ func (this *MarketDepthResponse) Validate() error {
 	return nil
 }
 func (this *TradesByMarketRequest) Validate() error {
-	if this.Params != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
+	if this.Pagination != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Pagination", err)
 		}
 	}
 	return nil
@@ -248,9 +243,6 @@ func (this *PositionsByPartyResponse) Validate() error {
 func (this *VegaTimeResponse) Validate() error {
 	return nil
 }
-func (this *OptionalParams) Validate() error {
-	if !(this.Limit < 50) {
-		return github_com_mwitkow_go_proto_validators.FieldError("Limit", fmt.Errorf(`value '%v' must be less than '50'`, this.Limit))
-	}
+func (this *Pagination) Validate() error {
 	return nil
 }
