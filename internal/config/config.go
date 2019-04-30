@@ -31,25 +31,27 @@ type Config struct {
 	Time       vegatime.Config
 	Monitoring monitoring.Config
 
-	Pprof pprof.Config
+	Pprof        pprof.Config
+	EmbedGateway bool
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
 func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
-		Trades:     trades.NewDefaultConfig(),
-		Blockchain: blockchain.NewDefaultConfig(),
-		Execution:  execution.NewDefaultConfig(defaultStoreDirPath),
-		API:        api.NewDefaultConfig(),
-		Orders:     orders.NewDefaultConfig(),
-		Time:       vegatime.NewDefaultConfig(),
-		Markets:    markets.NewDefaultConfig(),
-		Parties:    parties.NewDefaultConfig(),
-		Candles:    candles.NewDefaultConfig(),
-		Storage:    storage.NewDefaultConfig(defaultStoreDirPath),
-		Pprof:      pprof.NewDefaultConfig(),
-		Monitoring: monitoring.NewDefaultConfig(),
-		Logging:    logging.NewDefaultConfig(),
+		Trades:       trades.NewDefaultConfig(),
+		Blockchain:   blockchain.NewDefaultConfig(),
+		Execution:    execution.NewDefaultConfig(defaultStoreDirPath),
+		API:          api.NewDefaultConfig(),
+		Orders:       orders.NewDefaultConfig(),
+		Time:         vegatime.NewDefaultConfig(),
+		Markets:      markets.NewDefaultConfig(),
+		Parties:      parties.NewDefaultConfig(),
+		Candles:      candles.NewDefaultConfig(),
+		Storage:      storage.NewDefaultConfig(defaultStoreDirPath),
+		Pprof:        pprof.NewDefaultConfig(),
+		Monitoring:   monitoring.NewDefaultConfig(),
+		Logging:      logging.NewDefaultConfig(),
+		EmbedGateway: true,
 	}
 }

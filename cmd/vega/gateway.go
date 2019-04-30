@@ -56,26 +56,43 @@ func (g *gatewayCommand) runGateway(args []string) error {
 		}
 	}
 
+	gty, err := startGateway(g.Log, configPath)
+	if err != nil {
+		return err
+	}
+
+	waitSig(ctx, g.Log)
+	gty.Stop()
+
+	return nil
+}
+
+type Gateway struct {
+	gqlSrv  gatewaySrv
+	restSrv gatewaySrv
+}
+
+func startGateway(log *logging.Logger, configPath string) (*Gateway, error) {
 	// load config
 	buf, err := ioutil.ReadFile(filepath.Join(configPath, "gateway.toml"))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	cfg := gateway.NewDefaultConfig()
 	_, err = toml.Decode(string(buf), &cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var restSrv, gqlSrv gatewaySrv
 
 	if cfg.REST.Enabled {
-		restSrv = rest.NewRestProxyServer(g.Log, cfg)
+		restSrv = rest.NewRestProxyServer(log, cfg)
 	}
 
 	if cfg.GraphQL.Enabled {
-		gqlSrv, err = gql.New(g.Log, cfg)
+		gqlSrv, err = gql.New(log, cfg)
 	}
 
 	if restSrv != nil {
@@ -85,13 +102,18 @@ func (g *gatewayCommand) runGateway(args []string) error {
 		go gqlSrv.Start()
 	}
 
-	waitSig(ctx, g.Log)
-	if restSrv != nil {
-		restSrv.Stop()
-	}
-	if gqlSrv != nil {
-		gqlSrv.Stop()
-	}
+	return &Gateway{
+		gqlSrv:  gqlSrv,
+		restSrv: restSrv,
+	}, nil
 
-	return nil
+}
+
+func (g *Gateway) Stop() {
+	if g.restSrv != nil {
+		g.restSrv.Stop()
+	}
+	if g.gqlSrv != nil {
+		g.gqlSrv.Stop()
+	}
 }
