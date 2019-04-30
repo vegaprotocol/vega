@@ -150,37 +150,33 @@ func (l *NodeCommand) runNode(args []string) error {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
 
-	// REST<>gRPC (gRPC proxy) server
-	// restServer := rest.NewRestProxyServer(l.Log, l.conf.API)
-	// l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { restServer.ReloadConf(cfg.API) })
-	//go restServer.Start()
+	// start gateway
+	var (
+		gty *Gateway
+		err error
+	)
+	if l.conf.EmbedGateway {
+		gty, err = startGateway(l.Log, l.configPath)
+		if err != nil {
+			return err
+		}
+	}
 
-	/*
-		// GraphQL server
-		graphServer := gql.NewGraphQLServer(
-			l.Log,
-			l.conf.API,
-			l.orderService,
-			l.tradeService,
-			l.candleService,
-			l.marketService,
-			l.partyService,
-			l.timeService,
-			statusChecker,
-		)
-		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { graphServer.ReloadConf(cfg.API) })
-		go graphServer.Start()
-	*/
 	l.Log.Info("Vega startup complete")
 
 	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
-	// restServer.Stop()
 	grpcServer.Stop()
-	// graphServer.Stop()
 	socketServer.Stop()
 	statusChecker.Stop()
+
+	// cleanup gateway
+	if l.conf.EmbedGateway {
+		if gty != nil {
+			gty.Stop()
+		}
+	}
 
 	return nil
 }
