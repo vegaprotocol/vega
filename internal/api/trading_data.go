@@ -350,13 +350,19 @@ func (h *tradingDataService) OrdersSubscribe(
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
 
-	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
-	if err != nil {
-		return err
+	var (
+		err               error
+		marketID, partyID *string
+	)
+	if len(req.MarketID) > 0 {
+		marketID = &req.MarketID
+	}
+	if len(req.PartyID) > 0 {
+		partyID = &req.PartyID
 	}
 
 	orderschan, ref := h.OrderService.ObserveOrders(
-		ctx, h.Config.StreamRetries, &req.MarketID, &req.PartyID)
+		ctx, h.Config.StreamRetries, marketID, partyID)
 	h.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	for {
@@ -397,13 +403,19 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
 
-	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
-	if err != nil {
-		return err
+	var (
+		err               error
+		marketID, partyID *string
+	)
+	if len(req.MarketID) > 0 {
+		marketID = &req.MarketID
+	}
+	if len(req.PartyID) > 0 {
+		partyID = &req.PartyID
 	}
 
 	tradeschan, ref := h.TradeService.ObserveTrades(
-		ctx, h.Config.StreamRetries, &req.MarketID, &req.PartyID)
+		ctx, h.Config.StreamRetries, marketID, partyID)
 	h.log.Debug("Trades subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	for {
@@ -444,13 +456,16 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
 
-	_, err := validateMarket(ctx, req.MarketID, h.MarketService)
-	if err != nil {
-		return err
+	var (
+		err      error
+		marketID *string
+	)
+	if len(req.MarketID) > 0 {
+		marketID = &req.MarketID
 	}
 
 	candleschan, ref := h.CandleService.ObserveCandles(
-		ctx, h.Config.StreamRetries, &req.MarketID, &req.Interval)
+		ctx, h.Config.StreamRetries, marketID, &req.Interval)
 	h.log.Debug("Candles subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	for {
