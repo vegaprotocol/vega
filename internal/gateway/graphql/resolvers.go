@@ -599,108 +599,88 @@ type MyMutationResolver resolverRoot
 
 func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, party string, price string,
 	size string, side Side, type_ OrderType, expiration *string) (*types.PendingOrder, error) {
-	/*
-		order := &types.OrderSubmission{}
 
-		if r.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-			return nil, ErrChainNotConnected
-		}
+	order := &types.OrderSubmission{}
 
-		// We need to convert strings to uint64 (JS doesn't yet support uint64)
-		p, err := safeStringUint64(price)
+	// We need to convert strings to uint64 (JS doesn't yet support uint64)
+	p, err := safeStringUint64(price)
+	if err != nil {
+		return nil, err
+	}
+	order.Price = p
+	s, err := safeStringUint64(size)
+	if err != nil {
+		return nil, err
+	}
+	order.Size = s
+	if len(market) <= 0 {
+		return nil, errors.New("market missing or empty")
+	}
+	order.MarketId = market
+	if len(party) <= 0 {
+		return nil, errors.New("party missing or empty")
+	}
+
+	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+
+	order.Party = party
+	order.Type, err = parseOrderType(&type_)
+	if err != nil {
+		return nil, err
+	}
+	order.Side, err = parseSide(&side)
+	if err != nil {
+		return nil, err
+	}
+
+	// GTT must have an expiration value
+	if order.Type == types.Order_GTT && expiration != nil {
+		expiresAt, err := vegatime.Parse(*expiration)
 		if err != nil {
-			return nil, err
-		}
-		order.Price = p
-		s, err := safeStringUint64(size)
-		if err != nil {
-			return nil, err
-		}
-		order.Size = s
-		_, err = validateMarket(ctx, &market, r.marketService)
-		if err != nil {
-			return nil, err
-		}
-		order.MarketId = market
-		if len(party) == 0 {
-			return nil, errors.New("party missing or empty")
+			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
 		}
 
-		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+		// move to pure timestamps or convert an RFC format shortly
+		order.ExpiresAt = expiresAt.UnixNano()
+	}
 
-		order.Party = party
-		order.Type, err = parseOrderType(&type_)
-		if err != nil {
-			return nil, err
-		}
-		order.Side, err = parseSide(&side)
-		if err != nil {
-			return nil, err
-		}
+	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+	pendingOrder, err := r.tradingClient.SubmitOrder(ctx, order)
+	if err != nil {
+		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+		return nil, err
+	}
 
-		// GTT must have an expiration value
-		if order.Type == types.Order_GTT && expiration != nil {
-
-			// Validate RFC3339 with no milli or nanosecond (@matt has chosen this strategy, good enough until unix epoch timestamp)
-			//layout := "2006-01-02T15:04:05Z"
-			// _, err := time.Parse(layout, *expiration)
-			expiresAt, err := vegatime.Parse(*expiration)
-			if err != nil {
-				return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
-			}
-
-			// move to pure timestamps or convert an RFC format shortly
-			order.ExpiresAt = expiresAt.UnixNano()
-		}
-
-		// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-		pendingOrder, err := r.orderService.CreateOrder(ctx, order)
-		if err != nil {
-			r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
-			return nil, err
-		}
-
-		return pendingOrder, nil
-	*/
-	return nil, nil
+	return pendingOrder, nil
 
 }
 
 func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*types.PendingOrder, error) {
-	//order := &types.OrderCancellation{}
-	/*
+	order := &types.OrderCancellation{}
 
-		if r.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-			return nil, ErrChainNotConnected
-		}
+	// Cancellation currently only requires ID and Market to be set, all other fields will be added
+	if len(market) <= 0 {
+		return nil, errors.New("market missing or empty")
+	}
+	order.MarketId = market
+	if len(id) == 0 {
+		return nil, errors.New("id missing or empty")
+	}
+	order.Id = id
+	if len(party) == 0 {
+		return nil, errors.New("party missing or empty")
+	}
 
-		// Cancellation currently only requires ID and Market to be set, all other fields will be added
-		_, err := validateMarket(ctx, &market, r.marketService)
-		if err != nil {
-			return nil, err
-		}
-		order.MarketId = market
-		if len(id) == 0 {
-			return nil, errors.New("id missing or empty")
-		}
-		order.Id = id
-		if len(party) == 0 {
-			return nil, errors.New("party missing or empty")
-		}
+	order.Party = party
 
-		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
+	pendingOrder, err := r.tradingClient.CancelOrder(ctx, order)
+	if err != nil {
+		return nil, err
+	}
 
-		order.Party = party
+	return pendingOrder, nil
 
-		// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
-		pendingOrder, err := r.orderService.CancelOrder(ctx, order)
-		if err != nil {
-			return nil, err
-		}
-
-		return pendingOrder, nil
-	*/
-	return nil, nil
 }
 
 // END: Mutation Resolver
