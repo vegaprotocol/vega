@@ -1,11 +1,12 @@
-package restproxy
+package rest
 
 import (
-	"code.vegaprotocol.io/vega/internal/logging"
 	"compress/gzip"
 	"net/http"
 	"strings"
 	"sync"
+
+	"code.vegaprotocol.io/vega/internal/logging"
 )
 
 type gzipResponseWriter struct {

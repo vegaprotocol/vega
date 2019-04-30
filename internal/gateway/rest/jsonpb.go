@@ -1,4 +1,4 @@
-package restproxy
+package rest
 
 import (
 	"bytes"

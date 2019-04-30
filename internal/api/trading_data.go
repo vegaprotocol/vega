@@ -1,4 +1,4 @@
-package grpc
+package api
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
@@ -72,7 +71,7 @@ type BlockchainClient interface {
 
 type tradingDataService struct {
 	log           *logging.Logger
-	Config        api.Config
+	Config        Config
 	Client        BlockchainClient
 	Stats         *internal.Stats
 	TimeService   VegaTime
@@ -355,7 +354,7 @@ func (h *tradingDataService) OrdersSubscribe(
 	}
 
 	orderschan, ref := h.OrderService.ObserveOrders(
-		ctx, h.Config.GraphQLSubscriptionRetries, &req.MarketID, &req.PartyID)
+		ctx, h.Config.StreamRetries, &req.MarketID, &req.PartyID)
 	h.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	for {
@@ -402,7 +401,7 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 	}
 
 	tradeschan, ref := h.TradeService.ObserveTrades(
-		ctx, h.Config.GraphQLSubscriptionRetries, &req.MarketID, &req.PartyID)
+		ctx, h.Config.StreamRetries, &req.MarketID, &req.PartyID)
 	h.log.Debug("Trades subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	for {
@@ -449,7 +448,7 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 	}
 
 	candleschan, ref := h.CandleService.ObserveCandles(
-		ctx, h.Config.GraphQLSubscriptionRetries, &req.MarketID, &req.Interval)
+		ctx, h.Config.StreamRetries, &req.MarketID, &req.Interval)
 	h.log.Debug("Candles subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	for {
@@ -497,7 +496,7 @@ func (h *tradingDataService) MarketDepthSubscribe(
 	}
 
 	depthchan, ref := h.MarketService.ObserveDepth(
-		ctx, h.Config.GraphQLSubscriptionRetries, req.MarketID)
+		ctx, h.Config.StreamRetries, req.MarketID)
 	h.log.Debug("Depth subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	for {
@@ -541,7 +540,7 @@ func (h *tradingDataService) PositionsSubscribe(
 	defer cfunc()
 
 	positionschan, ref := h.TradeService.ObservePositions(
-		ctx, h.Config.GraphQLSubscriptionRetries, req.PartyID)
+		ctx, h.Config.StreamRetries, req.PartyID)
 	h.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	for {

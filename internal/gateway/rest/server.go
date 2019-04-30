@@ -1,11 +1,11 @@
-package restproxy
+package rest
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/gateway"
 	"code.vegaprotocol.io/vega/internal/logging"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
@@ -20,11 +20,11 @@ const (
 
 type restProxyServer struct {
 	log *logging.Logger
-	api.Config
+	gateway.Config
 	srv *http.Server
 }
 
-func NewRestProxyServer(log *logging.Logger, config api.Config) *restProxyServer {
+func NewRestProxyServer(log *logging.Logger, config gateway.Config) *restProxyServer {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -36,7 +36,7 @@ func NewRestProxyServer(log *logging.Logger, config api.Config) *restProxyServer
 	}
 }
 
-func (s *restProxyServer) ReloadConf(cfg api.Config) {
+func (s *restProxyServer) ReloadConf(cfg gateway.Config) {
 	s.log.Info("reloading confioguration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
@@ -55,15 +55,15 @@ func (s *restProxyServer) Start() {
 	logger := s.log
 
 	logger.Info("Starting REST<>GRPC based API",
-		logging.String("addr", s.RestProxyIpAddress),
-		logging.Int("port", s.RestProxyServerPort))
+		logging.String("addr", s.Rest.IP),
+		logging.Int("port", s.Rest.Port))
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	restAddr := fmt.Sprintf("%s:%d", s.RestProxyIpAddress, s.RestProxyServerPort)
-	grpcAddr := fmt.Sprintf("%s:%d", s.GrpcServerIpAddress, s.GrpcServerPort)
+	restAddr := fmt.Sprintf("%s:%d", s.Rest.IP, s.Rest.Port)
+	grpcAddr := fmt.Sprintf("%s:%d", s.Node.IP, s.Node.Port)
 	jsonPB := &JSONPb{
 		EmitDefaults: true,
 		Indent:       "  ", // formatted json output
@@ -85,7 +85,7 @@ func (s *restProxyServer) Start() {
 
 	// CORS support
 	handler := cors.Default().Handler(mux)
-	handler = api.RemoteAddrMiddleware(logger, handler)
+	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support
 	handler = NewGzipHandler(*logger, handler.(http.HandlerFunc))
 
@@ -94,7 +94,7 @@ func (s *restProxyServer) Start() {
 		Handler: handler,
 	}
 	// Start http server on port specified
-	err := s.srv.ListenAndServe()
+	err = s.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		logger.Panic("Failure serving REST proxy API", logging.Error(err))
 	}
