@@ -93,8 +93,9 @@ func (s *restProxyServer) Start() {
 		Addr:    restAddr,
 		Handler: handler,
 	}
+
 	// Start http server on port specified
-	err = s.srv.ListenAndServe()
+	err := s.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		logger.Panic("Failure serving REST proxy API", logging.Error(err))
 	}

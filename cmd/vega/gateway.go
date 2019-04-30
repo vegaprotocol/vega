@@ -1,10 +1,23 @@
 package main
 
 import (
+	"context"
+	"io/ioutil"
+	"path/filepath"
+
 	"code.vegaprotocol.io/vega/internal/fsutil"
+	"code.vegaprotocol.io/vega/internal/gateway"
+	"code.vegaprotocol.io/vega/internal/gateway/rest"
 	"code.vegaprotocol.io/vega/internal/logging"
+
+	"github.com/BurntSushi/toml"
 	"github.com/spf13/cobra"
 )
+
+type gatewaySrv interface {
+	Start()
+	Stop()
+}
 
 type gatewayCommand struct {
 	command
@@ -29,5 +42,51 @@ func (g *gatewayCommand) Init(c *Cli) {
 }
 
 func (g *gatewayCommand) runGateway(args []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+
+	configPath := g.rootPath
+	if configPath == "" {
+		// Use configPath from ENV
+		configPath = envConfigPath()
+		if configPath == "" {
+			// Default directory ($HOME/.vega)
+			configPath = fsutil.DefaultVegaDir()
+		}
+	}
+
+	// load config
+	buf, err := ioutil.ReadFile(filepath.Join(configPath, "gateway.toml"))
+	if err != nil {
+		return err
+	}
+
+	cfg := gateway.NewDefaultConfig()
+	_, err = toml.Decode(string(buf), &cfg)
+	if err != nil {
+		return err
+	}
+
+	var restSrv, gqlSrv gatewaySrv
+
+	if cfg.Rest.Enabled {
+		restSrv = rest.NewRestProxyServer(g.Log, cfg)
+	}
+
+	if restSrv != nil {
+		go restSrv.Start()
+	}
+	if gqlSrv != nil {
+		go gqlSrv.Start()
+	}
+
+	waitSig(ctx, g.Log)
+	if restSrv != nil {
+		restSrv.Stop()
+	}
+	if gqlSrv != nil {
+		gqlSrv.Stop()
+	}
+
 	return nil
 }
