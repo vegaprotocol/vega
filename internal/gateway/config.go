@@ -21,8 +21,8 @@ type Config struct {
 	Level               encoding.LogLevel
 	Timeout             encoding.Duration
 	Node                ServerConfig
-	Graphql             GatewayServiceConfig
-	Rest                GatewayServiceConfig
+	GraphQL             GatewayServiceConfig
+	REST                GatewayServiceConfig
 	SubscriptionRetries int
 }
 
@@ -32,14 +32,14 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level:   encoding.LogLevel{Level: logging.InfoLevel},
 		Timeout: encoding.Duration{Duration: 5 * time.Second},
-		Graphql: GatewayServiceConfig{
+		GraphQL: GatewayServiceConfig{
 			ServerConfig: ServerConfig{
 				IP:   "0.0.0.0",
 				Port: 3004,
 			},
 			Enabled: true,
 		},
-		Rest: GatewayServiceConfig{
+		REST: GatewayServiceConfig{
 			ServerConfig: ServerConfig{
 				IP:   "0.0.0.0",
 				Port: 3003,

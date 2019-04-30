@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/gateway"
+	gql "code.vegaprotocol.io/vega/internal/gateway/graphql"
 	"code.vegaprotocol.io/vega/internal/gateway/rest"
 	"code.vegaprotocol.io/vega/internal/logging"
 
@@ -69,8 +70,12 @@ func (g *gatewayCommand) runGateway(args []string) error {
 
 	var restSrv, gqlSrv gatewaySrv
 
-	if cfg.Rest.Enabled {
+	if cfg.REST.Enabled {
 		restSrv = rest.NewRestProxyServer(g.Log, cfg)
+	}
+
+	if cfg.GraphQL.Enabled {
+		gqlSrv, err = gql.New(g.Log, cfg)
 	}
 
 	if restSrv != nil {

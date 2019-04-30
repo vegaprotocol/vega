@@ -4,19 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"runtime/debug"
 
-	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/gateway"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/monitoring"
-	"code.vegaprotocol.io/vega/internal/orders"
-	"code.vegaprotocol.io/vega/internal/parties"
-	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/proto/api"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/handler"
@@ -26,52 +22,49 @@ import (
 )
 
 const (
-	namedLogger = "api.gql"
+	namedLogger = "gateway.gql"
 )
 
 type graphServer struct {
-	api.Config
+	gateway.Config
 
-	log           *logging.Logger
-	orderService  *orders.Svc
-	tradeService  *trades.Svc
-	candleService *candles.Svc
-	marketService *markets.Svc
-	partyService  *parties.Svc
-	timeService   *vegatime.Svc
-	srv           *http.Server
-	statusChecker *monitoring.Status
+	log               *logging.Logger
+	tradingClient     protoapi.TradingClient
+	tradingDataClient protoapi.TradingDataClient
+	srv               *http.Server
 }
 
-func NewGraphQLServer(
+func New(
 	log *logging.Logger,
-	config api.Config,
-	orderService *orders.Svc,
-	tradeService *trades.Svc,
-	candleService *candles.Svc,
-	marketService *markets.Svc,
-	partyService *parties.Svc,
-	timeService *vegatime.Svc,
-	statusChecker *monitoring.Status,
-) *graphServer {
+	config gateway.Config,
+) (*graphServer, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	return &graphServer{
-		log:           log,
-		Config:        config,
-		orderService:  orderService,
-		tradeService:  tradeService,
-		candleService: candleService,
-		timeService:   timeService,
-		marketService: marketService,
-		partyService:  partyService,
-		statusChecker: statusChecker,
+	serverAddr := fmt.Sprintf("%v:%v", config.Node.IP, config.Node.Port)
+
+	tdconn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
 	}
+	tradingDataClient := api.NewTradingDataClient(tdconn)
+
+	tconn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	tradingClient := api.NewTradingClient(tconn)
+
+	return &graphServer{
+		log:               log,
+		Config:            config,
+		tradingClient:     tradingClient,
+		tradingDataClient: tradingDataClient,
+	}, nil
 }
 
-func (s *graphServer) ReloadConf(cfg api.Config) {
+func (s *graphServer) ReloadConf(cfg gateway.Config) {
 	s.log.Info("reloading confioguration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
@@ -86,41 +79,6 @@ func (s *graphServer) ReloadConf(cfg api.Config) {
 	s.Config = cfg
 }
 
-func (g *graphServer) remoteAddrMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		logger := g.log
-		found := false
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			logger.Warn("Remote address is not splittable in middleware",
-				logging.String("remote-addr", r.RemoteAddr))
-		} else {
-			userIP := net.ParseIP(ip)
-			if userIP == nil {
-				logger.Warn("Remote address is not IP:port format in middleware",
-					logging.String("remote-addr", r.RemoteAddr))
-			} else {
-				found = true
-
-				// Only defined when site is accessed via non-anonymous proxy
-				// and takes precedence over RemoteAddr
-				forward := r.Header.Get("X-Forwarded-For")
-				if forward != "" {
-					ip = forward
-				}
-			}
-		}
-
-		if found {
-			ctx := context.WithValue(r.Context(), "remote-ip-addr", ip)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		} else {
-			next.ServeHTTP(w, r)
-		}
-	})
-}
-
 func (g *graphServer) Start() {
 	// <--- cors support - configure for production
 	var c = cors.Default()
@@ -133,8 +91,8 @@ func (g *graphServer) Start() {
 	}
 	// cors support - configure for production --->
 
-	port := g.GraphQLServerPort
-	ip := g.GraphQLServerIpAddress
+	port := g.GraphQL.Port
+	ip := g.GraphQL.IP
 
 	g.log.Info("Starting GraphQL based API", logging.String("addr", ip), logging.Int("port", port))
 
@@ -142,12 +100,8 @@ func (g *graphServer) Start() {
 	resolverRoot := NewResolverRoot(
 		g.log,
 		g.Config,
-		g.orderService,
-		g.tradeService,
-		g.candleService,
-		g.marketService,
-		g.partyService,
-		g.statusChecker,
+		g.tradingClient,
+		g.tradingDataClient,
 	)
 	var config = Config{
 		Resolvers: resolverRoot,
@@ -176,7 +130,7 @@ func (g *graphServer) Start() {
 	handlr := http.NewServeMux()
 
 	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
-	handlr.Handle("/query", api.RemoteAddrMiddleware(g.log, c.Handler(handler.GraphQL(
+	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,

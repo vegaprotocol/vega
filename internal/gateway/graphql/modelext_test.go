@@ -3,7 +3,7 @@ package gql_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
+	gql "code.vegaprotocol.io/vega/internal/gateway/graphql"
 	"code.vegaprotocol.io/vega/proto"
 	"github.com/stretchr/testify/assert"
 )

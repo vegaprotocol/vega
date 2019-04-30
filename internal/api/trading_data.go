@@ -635,6 +635,24 @@ func (h *tradingDataService) TradesByOrder(
 	}, nil
 }
 
+func (h *tradingDataService) LastTrade(
+	ctx context.Context, req *protoapi.LastTradeRequest,
+) (*protoapi.LastTradeResponse, error) {
+	if len(req.MarketID) <= 0 {
+		return nil, errors.New("missing market ID")
+	}
+	t, err := h.TradeService.GetByMarket(ctx, req.MarketID, 0, 1, true)
+	if err != nil {
+		return nil, err
+	}
+	if t != nil && len(t) > 0 && t[0] != nil {
+		return &protoapi.LastTradeResponse{Trade: t[0]}, nil
+	}
+	// No trades found on the market yet (and no errors)
+	// this can happen at the beginning of a new market
+	return &protoapi.LastTradeResponse{}, nil
+}
+
 func validateMarket(ctx context.Context, marketID string, marketService MarketService) (*types.Market, error) {
 	var mkt *types.Market
 	var err error

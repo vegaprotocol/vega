@@ -8,8 +8,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/gql/mocks"
+	gql "code.vegaprotocol.io/vega/internal/gateway/graphql"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 
@@ -239,44 +238,23 @@ type resolverRoot interface {
 
 type testResolver struct {
 	resolverRoot
-	log    *logging.Logger
-	ctrl   *gomock.Controller
-	order  *mocks.MockOrderService
-	trade  *mocks.MockTradeService
-	candle *mocks.MockCandleService
-	market *mocks.MockMarketService
-	party  *mocks.MockPartyService
+	log  *logging.Logger
+	ctrl *gomock.Controller
 }
 
 func buildTestResolverRoot(t *testing.T) *testResolver {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	conf := api.NewDefaultConfig()
-	order := mocks.NewMockOrderService(ctrl)
-	trade := mocks.NewMockTradeService(ctrl)
-	candle := mocks.NewMockCandleService(ctrl)
-	market := mocks.NewMockMarketService(ctrl)
-	party := mocks.NewMockPartyService(ctrl)
 	statusChecker := &monitoring.Status{}
 	resolver := gql.NewResolverRoot(
 		log,
 		conf,
-		order,
-		trade,
-		candle,
-		market,
-		party,
-		statusChecker,
 	)
 	return &testResolver{
 		resolverRoot: resolver,
 		log:          log,
 		ctrl:         ctrl,
-		order:        order,
-		trade:        trade,
-		candle:       candle,
-		market:       market,
-		party:        party,
 	}
 }
 
