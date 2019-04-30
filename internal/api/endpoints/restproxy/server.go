@@ -78,23 +78,27 @@ func (s *restProxyServer) Start() {
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 	if err := protoapi.RegisterTradingHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
-	} else {
-		// CORS support
-		handler := cors.Default().Handler(mux)
-		handler = api.RemoteAddrMiddleware(logger, handler)
-		// Gzip encoding support
-		handler = NewGzipHandler(*logger, handler.(http.HandlerFunc))
-
-		s.srv = &http.Server{
-			Addr:    restAddr,
-			Handler: handler,
-		}
-		// Start http server on port specified
-		err = s.srv.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
-			logger.Panic("Failure serving REST proxy API", logging.Error(err))
-		}
 	}
+	if err := protoapi.RegisterTradingDataHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
+		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
+	}
+
+	// CORS support
+	handler := cors.Default().Handler(mux)
+	handler = api.RemoteAddrMiddleware(logger, handler)
+	// Gzip encoding support
+	handler = NewGzipHandler(*logger, handler.(http.HandlerFunc))
+
+	s.srv = &http.Server{
+		Addr:    restAddr,
+		Handler: handler,
+	}
+	// Start http server on port specified
+	err := s.srv.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		logger.Panic("Failure serving REST proxy API", logging.Error(err))
+	}
+
 }
 
 func (s *restProxyServer) Stop() {
