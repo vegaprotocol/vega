@@ -67,6 +67,30 @@
         ]
       }
     },
+    "/lastTrade": {
+      "get": {
+        "operationId": "LastTrade",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiLastTradeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/marketDepth": {
       "get": {
         "operationId": "MarketDepth",
@@ -422,6 +446,14 @@
           "items": {
             "$ref": "#/definitions/vegaCandle"
           }
+        }
+      }
+    },
+    "apiLastTradeResponse": {
+      "type": "object",
+      "properties": {
+        "trade": {
+          "$ref": "#/definitions/vegaTrade"
         }
       }
     },

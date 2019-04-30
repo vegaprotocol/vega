@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	namedLogger = "api.restproxy"
+	namedLogger = "gateway.restproxy"
 )
 
 type restProxyServer struct {
@@ -55,14 +55,14 @@ func (s *restProxyServer) Start() {
 	logger := s.log
 
 	logger.Info("Starting REST<>GRPC based API",
-		logging.String("addr", s.Rest.IP),
-		logging.Int("port", s.Rest.Port))
+		logging.String("addr", s.REST.IP),
+		logging.Int("port", s.REST.Port))
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	restAddr := fmt.Sprintf("%s:%d", s.Rest.IP, s.Rest.Port)
+	restAddr := fmt.Sprintf("%s:%d", s.REST.IP, s.REST.Port)
 	grpcAddr := fmt.Sprintf("%s:%d", s.Node.IP, s.Node.Port)
 	jsonPB := &JSONPb{
 		EmitDefaults: true,

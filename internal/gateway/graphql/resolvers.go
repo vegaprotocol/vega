@@ -5,107 +5,60 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"time"
 
-	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/gateway"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
+
+	"github.com/golang/protobuf/ptypes/empty"
 )
 
 var (
-	ErrChainNotConnected = errors.New("chain not connected")
-	ErrNilPendingOrder   = errors.New("error nil preconsensus")
+	ErrNilPendingOrder = errors.New("mil pending order")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql OrderService
-type OrderService interface {
-	CreateOrder(ctx context.Context, order *types.OrderSubmission) (*types.PendingOrder, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error)
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
-	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql TradeService
-type TradeService interface {
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) (trades []*types.Trade, err error)
-	GetByOrderId(ctx context.Context, orderId string) (trades []*types.Trade, err error)
-	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
-	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
-	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_candle_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql CandleService
-type CandleService interface {
-	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
-	GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) (candles []*types.Candle, err error)
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql MarketService
-type MarketService interface {
-	GetAll(ctx context.Context) ([]*types.Market, error)
-	GetByID(ctx context.Context, name string) (*types.Market, error)
-	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
-	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/gql_party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/gql PartyService
-type PartyService interface {
-	GetAll(ctx context.Context) ([]*types.Party, error)
-	GetByID(ctx context.Context, name string) (*types.Party, error)
-}
-
 type resolverRoot struct {
-	api.Config
+	gateway.Config
 
-	log           *logging.Logger
-	orderService  OrderService
-	tradeService  TradeService
-	candleService CandleService
-	marketService MarketService
-	partyService  PartyService
-	statusChecker *monitoring.Status
+	log               *logging.Logger
+	tradingClient     protoapi.TradingClient
+	tradingDataClient protoapi.TradingDataClient
 }
 
 func NewResolverRoot(
 	log *logging.Logger,
-	config api.Config,
-	orderService OrderService,
-	tradeService TradeService,
-	candleService CandleService,
-	marketService MarketService,
-	partyService PartyService,
-	statusChecker *monitoring.Status,
+	config gateway.Config,
+	tradingClient protoapi.TradingClient,
+	tradingDataClient protoapi.TradingDataClient,
 ) *resolverRoot {
 
 	return &resolverRoot{
-		log:           log,
-		Config:        config,
-		orderService:  orderService,
-		tradeService:  tradeService,
-		candleService: candleService,
-		marketService: marketService,
-		partyService:  partyService,
-		statusChecker: statusChecker,
+		log:               log,
+		Config:            config,
+		tradingClient:     tradingClient,
+		tradingDataClient: tradingDataClient,
 	}
 }
 
 func (r *resolverRoot) Query() QueryResolver {
 	return (*MyQueryResolver)(r)
 }
+
 func (r *resolverRoot) Mutation() MutationResolver {
 	return (*MyMutationResolver)(r)
 }
+
 func (r *resolverRoot) Candle() CandleResolver {
 	return (*MyCandleResolver)(r)
 }
+
 func (r *resolverRoot) MarketDepth() MarketDepthResolver {
 	return (*MyMarketDepthResolver)(r)
 }
+
 func (r *resolverRoot) PriceLevel() PriceLevelResolver {
 	return (*MyPriceLevelResolver)(r)
 }
@@ -137,25 +90,21 @@ type MyQueryResolver resolverRoot
 
 func (r *MyQueryResolver) Markets(ctx context.Context, id *string) ([]Market, error) {
 	if id != nil {
-		mkt, err := validateMarket(ctx, id, r.marketService)
+		mkt, err := r.Market(ctx, *id)
 		if err != nil {
 			return nil, err
 		}
-		market, err := MarketFromProto(mkt)
-		if err != nil {
-			r.log.Error("unable to convert market from proto", logging.Error(err))
-			return nil, err
-		}
-		return []Market{
-			*market,
-		}, nil
+		return []Market{*mkt}, nil
+
 	}
-	pmkts, err := r.marketService.GetAll(ctx)
+	res, err := r.tradingDataClient.Markets(ctx, &empty.Empty{})
 	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	m := make([]Market, 0, len(pmkts))
-	for _, pmarket := range pmkts {
+
+	m := make([]Market, 0, len(res.Markets))
+	for _, pmarket := range res.Markets {
 		market, err := MarketFromProto(pmarket)
 		if err != nil {
 			r.log.Error("unable to convert market from proto", logging.Error(err))
@@ -168,11 +117,14 @@ func (r *MyQueryResolver) Markets(ctx context.Context, id *string) ([]Market, er
 }
 
 func (r *MyQueryResolver) Market(ctx context.Context, id string) (*Market, error) {
-	mkt, err := validateMarket(ctx, &id, r.marketService)
+	req := protoapi.MarketByIDRequest{Id: id}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	market, err := MarketFromProto(mkt)
+
+	market, err := MarketFromProto(res.Market)
 	if err != nil {
 		r.log.Error("unable to convert market from proto", logging.Error(err))
 		return nil, err
@@ -194,11 +146,14 @@ func (r *MyQueryResolver) Parties(ctx context.Context, name *string) ([]Party, e
 }
 
 func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error) {
-	pty, err := validateParty(ctx, &name, r.partyService)
+	req := protoapi.PartyByIDRequest{Id: name}
+	res, err := r.tradingDataClient.PartyByID(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	return &Party{Name: pty.Name}, nil
+
+	return &Party{Name: res.Party.Name}, nil
 }
 
 // END: Root Resolver
@@ -209,120 +164,115 @@ type MyMarketResolver resolverRoot
 
 func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
 	open *bool, skip *int, first *int, last *int) ([]types.Order, error) {
-	_, err := validateMarket(ctx, &market.ID, r.marketService)
-	if err != nil {
-		return nil, err
-	}
-	var (
-		offset, limit uint64
-		descending    bool
-	)
-	if skip != nil {
-		offset = uint64(*skip)
-	}
-	if last != nil {
-		descending = true
-		limit = uint64(*last)
-	} else if first != nil {
-		limit = uint64(*first)
-	}
-	o, err := r.orderService.GetByMarket(ctx, market.ID, limit, offset, descending, open)
-	if err != nil {
-		return nil, err
-	}
-	valOrders := make([]types.Order, 0, len(o))
-	for _, v := range o {
-		valOrders = append(valOrders, *v)
-	}
-	return valOrders, nil
+	/*
+		_, err := validateMarket(ctx, &market.ID, r.marketService)
+		if err != nil {
+			return nil, err
+		}
+		var (
+			offset, limit uint64
+			descending    bool
+		)
+		if skip != nil {
+			offset = uint64(*skip)
+		}
+		if last != nil {
+			descending = true
+			limit = uint64(*last)
+		} else if first != nil {
+			limit = uint64(*first)
+		}
+		o, err := r.orderService.GetByMarket(ctx, market.ID, limit, offset, descending, open)
+		if err != nil {
+			return nil, err
+		}
+		valOrders := make([]types.Order, 0, len(o))
+		for _, v := range o {
+			valOrders = append(valOrders, *v)
+		}
+		return valOrders, nil
+	*/
+	return nil, nil
 }
 
 func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	skip *int, first *int, last *int) ([]types.Trade, error) {
-	_, err := validateMarket(ctx, &market.ID, r.marketService)
-	if err != nil {
-		return nil, err
-	}
-	var (
-		offset, limit uint64
-		descending    bool
-	)
-	if skip != nil {
-		offset = uint64(*skip)
-	}
-	if last != nil {
-		descending = true
-		limit = uint64(*last)
-	} else if first != nil {
-		limit = uint64(*first)
-	}
-	t, err := r.tradeService.GetByMarket(ctx, market.ID, offset, limit, descending)
-	if err != nil {
-		return nil, err
-	}
-	valTrades := make([]types.Trade, 0, len(t))
-	for _, v := range t {
-		valTrades = append(valTrades, *v)
-	}
-	return valTrades, nil
+	/*
+		_, err := validateMarket(ctx, &market.ID, r.marketService)
+		if err != nil {
+			return nil, err
+		}
+		var (
+			offset, limit uint64
+			descending    bool
+		)
+		if skip != nil {
+			offset = uint64(*skip)
+		}
+		if last != nil {
+			descending = true
+			limit = uint64(*last)
+		} else if first != nil {
+			limit = uint64(*first)
+		}
+		t, err := r.tradeService.GetByMarket(ctx, market.ID, offset, limit, descending)
+		if err != nil {
+			return nil, err
+		}
+		valTrades := make([]types.Trade, 0, len(t))
+		for _, v := range t {
+			valTrades = append(valTrades, *v)
+		}
+		return valTrades, nil
+	*/
+	return nil, nil
 }
 
 func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (*types.MarketDepth, error) {
+
 	if market == nil {
 		return nil, errors.New("market missing or empty")
 
 	}
-	_, err := validateMarket(ctx, &market.ID, r.marketService)
-	if err != nil {
-		return nil, err
-	}
+
+	req := protoapi.MarketDepthRequest{Market: market.ID}
 	// Look for market depth for the given market (will validate market internally)
 	// Note: Market depth is also known as OrderBook depth within the matching-engine
-	depth, err := r.marketService.GetDepth(ctx, market.ID)
+	res, err := r.tradingDataClient.MarketDepth(ctx, &req)
 	if err != nil {
+		r.log.Error("trading data client", logging.Error(err))
 		return nil, err
 	}
 
-	return depth, nil
+	return &types.MarketDepth{
+		Name: res.MarketID,
+		Buy:  res.Buy,
+		Sell: res.Sell,
+	}, nil
 }
 
 func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	sinceRaw string, interval Interval) ([]*types.Candle, error) {
-
-	// Validate interval, map to protobuf enum
-	var pbInterval types.Interval
-	switch interval {
-	case IntervalI15m:
-		pbInterval = types.Interval_I15M
-	case IntervalI1d:
-		pbInterval = types.Interval_I1D
-	case IntervalI1h:
-		pbInterval = types.Interval_I1H
-	case IntervalI1m:
-		pbInterval = types.Interval_I1M
-	case IntervalI5m:
-		pbInterval = types.Interval_I5M
-	case IntervalI6h:
-		pbInterval = types.Interval_I6H
-	default:
-		r.log.Warn("Invalid interval when subscribing to candles, falling back to default: I15M",
-			logging.String("interval", interval.String()))
-		pbInterval = types.Interval_I15M
+	pinterval, err := convertInterval(interval)
+	if err != nil {
+		r.log.Warn("interval convert error", logging.Error(err))
 	}
 
-	// Convert javascript string representation of int epoch+nano timestamp
 	since, err := vegatime.Parse(sinceRaw)
 	if err != nil {
 		return nil, err
 	}
 
-	// Retrieve candles from store/service
-	c, err := r.candleService.GetCandles(ctx, market.ID, since, pbInterval)
+	req := protoapi.CandlesRequest{
+		SinceTimestamp: since.UnixNano(),
+		Interval:       pinterval,
+	}
+	res, err := r.tradingDataClient.Candles(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-
-	return c, nil
+	return res.Candles, nil
 }
 
 // END: Market Resolver
@@ -335,73 +285,82 @@ func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 	open *bool, skip *int, first *int, last *int) ([]types.Order, error) {
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
-	var (
-		offset, limit uint64
-		descending    bool
-	)
-	if skip != nil {
-		offset = uint64(*skip)
-	}
-	if last != nil {
-		limit = uint64(*last)
-		descending = true
-	} else if first != nil {
-		limit = uint64(*first)
-	}
-	o, err := r.orderService.GetByParty(ctx, party.Name, offset, limit, descending, open)
-	if err != nil {
-		return nil, err
-	}
-	valOrders := make([]types.Order, 0)
-	for _, v := range o {
-		valOrders = append(valOrders, *v)
-	}
-	return valOrders, nil
+	/*
+		var (
+			offset, limit uint64
+			descending    bool
+		)
+		if skip != nil {
+			offset = uint64(*skip)
+		}
+		if last != nil {
+			limit = uint64(*last)
+			descending = true
+		} else if first != nil {
+			limit = uint64(*first)
+		}
+		o, err := r.orderService.GetByParty(ctx, party.Name, offset, limit, descending, open)
+		if err != nil {
+			return nil, err
+		}
+		valOrders := make([]types.Order, 0)
+		for _, v := range o {
+			valOrders = append(valOrders, *v)
+		}
+		return valOrders, nil
+	*/
+	return nil, nil
 }
 
 func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 	market *string, skip *int, first *int, last *int) ([]types.Trade, error) {
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
-	var (
-		offset, limit uint64
-		descending    bool
-	)
-	if skip != nil {
-		offset = uint64(*skip)
-	}
-	if last != nil {
-		limit = uint64(*last)
-		descending = true
-	} else if first != nil {
-		limit = uint64(*first)
-	}
-	t, err := r.tradeService.GetByParty(ctx, party.Name, offset, limit, descending, market)
-	if err != nil {
-		return nil, err
-	}
-	valTrades := make([]types.Trade, 0, len(t))
-	for _, v := range t {
-		valTrades = append(valTrades, *v)
-	}
-	return valTrades, nil
+	/*
+		var (
+			offset, limit uint64
+			descending    bool
+		)
+		if skip != nil {
+			offset = uint64(*skip)
+		}
+		if last != nil {
+			limit = uint64(*last)
+			descending = true
+		} else if first != nil {
+			limit = uint64(*first)
+		}
+		t, err := r.tradeService.GetByParty(ctx, party.Name, offset, limit, descending, market)
+		if err != nil {
+			return nil, err
+		}
+		valTrades := make([]types.Trade, 0, len(t))
+		for _, v := range t {
+			valTrades = append(valTrades, *v)
+		}
+		return valTrades, nil
+	*/
+	return nil, nil
 }
 
-func (r *MyPartyResolver) Positions(ctx context.Context, obj *Party) ([]types.MarketPosition, error) {
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
-	positions, err := r.tradeService.GetPositionsByParty(ctx, obj.Name)
+func (r *MyPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.MarketPosition, error) {
+	if pty == nil {
+		return nil, errors.New("nil party")
+	}
+	req := protoapi.PositionsByPartyRequest{PartyID: pty.Name}
+	res, err := r.tradingDataClient.PositionsByParty(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	var valPositions = make([]types.MarketPosition, 0)
-	for _, v := range positions {
-		valPositions = append(valPositions, *v)
+
+	retpos := make([]types.MarketPosition, 0, len(res.Positions))
+	for _, v := range res.Positions {
+		v := v
+		retpos = append(retpos, *v)
 	}
-	return valPositions, nil
+	return retpos, nil
+
 }
 
 // END: Party Resolver
@@ -425,22 +384,19 @@ func (r *MyMarketDepthResolver) Sell(ctx context.Context, obj *types.MarketDepth
 	return valBuyLevels, nil
 }
 
-func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, obj *types.MarketDepth) (*types.Trade, error) {
-	_, err := validateMarket(ctx, &obj.Name, r.marketService)
+func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketDepth) (*types.Trade, error) {
+	if md == nil {
+		return nil, errors.New("invalid market depth")
+	}
+
+	req := protoapi.LastTradeRequest{MarketID: md.Name}
+	res, err := r.tradingDataClient.LastTrade(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	// skip 0, descending, get one trade
-	t, err := r.tradeService.GetByMarket(ctx, obj.Name, 0, 1, true)
-	if err != nil {
-		return nil, err
-	}
-	if t != nil && len(t) > 0 && t[0] != nil {
-		return t[0], nil
-	}
-	// No trades found on the market yet (and no errors)
-	// this can happen at the beginning of a new market
-	return nil, nil
+
+	return res.Trade, nil
 }
 
 // END: Market Depth Resolver
@@ -488,12 +444,18 @@ func (r *MyOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*str
 	expiresAt := vegatime.Format(vegatime.UnixNano(obj.ExpiresAt))
 	return &expiresAt, nil
 }
-func (r *MyOrderResolver) Trades(ctx context.Context, obj *types.Order) ([]*types.Trade, error) {
-	relatedTrades, err := r.tradeService.GetByOrderId(ctx, obj.Id)
+func (r *MyOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*types.Trade, error) {
+	if ord == nil {
+		return nil, errors.New("nil order")
+	}
+
+	req := protoapi.TradesByOrderRequest{OrderID: ord.Id}
+	res, err := r.tradingDataClient.TradesByOrder(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	return relatedTrades, nil
+	return res.Trades, nil
 }
 
 // END: Order Resolver
@@ -648,101 +610,108 @@ type MyMutationResolver resolverRoot
 
 func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, party string, price string,
 	size string, side Side, type_ OrderType, expiration *string) (*types.PendingOrder, error) {
-	order := &types.OrderSubmission{}
+	/*
+		order := &types.OrderSubmission{}
 
-	if r.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-		return nil, ErrChainNotConnected
-	}
-
-	// We need to convert strings to uint64 (JS doesn't yet support uint64)
-	p, err := safeStringUint64(price)
-	if err != nil {
-		return nil, err
-	}
-	order.Price = p
-	s, err := safeStringUint64(size)
-	if err != nil {
-		return nil, err
-	}
-	order.Size = s
-	_, err = validateMarket(ctx, &market, r.marketService)
-	if err != nil {
-		return nil, err
-	}
-	order.MarketId = market
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
-
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
-	order.Party = party
-	order.Type, err = parseOrderType(&type_)
-	if err != nil {
-		return nil, err
-	}
-	order.Side, err = parseSide(&side)
-	if err != nil {
-		return nil, err
-	}
-
-	// GTT must have an expiration value
-	if order.Type == types.Order_GTT && expiration != nil {
-
-		// Validate RFC3339 with no milli or nanosecond (@matt has chosen this strategy, good enough until unix epoch timestamp)
-		//layout := "2006-01-02T15:04:05Z"
-		// _, err := time.Parse(layout, *expiration)
-		expiresAt, err := vegatime.Parse(*expiration)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+		if r.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
+			return nil, ErrChainNotConnected
 		}
 
-		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
-	}
+		// We need to convert strings to uint64 (JS doesn't yet support uint64)
+		p, err := safeStringUint64(price)
+		if err != nil {
+			return nil, err
+		}
+		order.Price = p
+		s, err := safeStringUint64(size)
+		if err != nil {
+			return nil, err
+		}
+		order.Size = s
+		_, err = validateMarket(ctx, &market, r.marketService)
+		if err != nil {
+			return nil, err
+		}
+		order.MarketId = market
+		if len(party) == 0 {
+			return nil, errors.New("party missing or empty")
+		}
 
-	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	pendingOrder, err := r.orderService.CreateOrder(ctx, order)
-	if err != nil {
-		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
-		return nil, err
-	}
+		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	return pendingOrder, nil
+		order.Party = party
+		order.Type, err = parseOrderType(&type_)
+		if err != nil {
+			return nil, err
+		}
+		order.Side, err = parseSide(&side)
+		if err != nil {
+			return nil, err
+		}
+
+		// GTT must have an expiration value
+		if order.Type == types.Order_GTT && expiration != nil {
+
+			// Validate RFC3339 with no milli or nanosecond (@matt has chosen this strategy, good enough until unix epoch timestamp)
+			//layout := "2006-01-02T15:04:05Z"
+			// _, err := time.Parse(layout, *expiration)
+			expiresAt, err := vegatime.Parse(*expiration)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+			}
+
+			// move to pure timestamps or convert an RFC format shortly
+			order.ExpiresAt = expiresAt.UnixNano()
+		}
+
+		// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+		pendingOrder, err := r.orderService.CreateOrder(ctx, order)
+		if err != nil {
+			r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+			return nil, err
+		}
+
+		return pendingOrder, nil
+	*/
+	return nil, nil
+
 }
 
 func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*types.PendingOrder, error) {
-	order := &types.OrderCancellation{}
+	//order := &types.OrderCancellation{}
+	/*
 
-	if r.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
-		return nil, ErrChainNotConnected
-	}
+		if r.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
+			return nil, ErrChainNotConnected
+		}
 
-	// Cancellation currently only requires ID and Market to be set, all other fields will be added
-	_, err := validateMarket(ctx, &market, r.marketService)
-	if err != nil {
-		return nil, err
-	}
-	order.MarketId = market
-	if len(id) == 0 {
-		return nil, errors.New("id missing or empty")
-	}
-	order.Id = id
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
+		// Cancellation currently only requires ID and Market to be set, all other fields will be added
+		_, err := validateMarket(ctx, &market, r.marketService)
+		if err != nil {
+			return nil, err
+		}
+		order.MarketId = market
+		if len(id) == 0 {
+			return nil, errors.New("id missing or empty")
+		}
+		order.Id = id
+		if len(party) == 0 {
+			return nil, errors.New("party missing or empty")
+		}
 
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	order.Party = party
+		order.Party = party
 
-	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
-	pendingOrder, err := r.orderService.CancelOrder(ctx, order)
-	if err != nil {
-		return nil, err
-	}
+		// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
+		pendingOrder, err := r.orderService.CancelOrder(ctx, order)
+		if err != nil {
+			return nil, err
+		}
 
-	return pendingOrder, nil
+		return pendingOrder, nil
+	*/
+	return nil, nil
 }
 
 // END: Mutation Resolver
@@ -752,87 +721,102 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 type MySubscriptionResolver resolverRoot
 
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []types.Order, error) {
-	_, err := validateMarket(ctx, market, r.marketService)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		_, err := validateMarket(ctx, market, r.marketService)
+		if err != nil {
+			return nil, err
+		}
 
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	c, ref := r.orderService.ObserveOrders(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
-	r.log.Debug("Orders: new subscriber", logging.Uint64("ref", ref))
-	return c, nil
+		c, ref := r.orderService.ObserveOrders(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
+		r.log.Debug("Orders: new subscriber", logging.Uint64("ref", ref))
+		return c, nil
+	*/
+	return nil, nil
 }
 
 func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []types.Trade, error) {
-	_, err := validateMarket(ctx, market, r.marketService)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		_, err := validateMarket(ctx, market, r.marketService)
+		if err != nil {
+			return nil, err
+		}
 
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	c, ref := r.tradeService.ObserveTrades(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
-	r.log.Debug("Trades: new subscriber", logging.Uint64("ref", ref))
-	return c, nil
+		c, ref := r.tradeService.ObserveTrades(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
+		r.log.Debug("Trades: new subscriber", logging.Uint64("ref", ref))
+		return c, nil
+	*/
+	return nil, nil
 }
 
 func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.MarketPosition, error) {
 
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+	/*
+		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	c, ref := r.tradeService.ObservePositions(ctx, r.Config.GraphQLSubscriptionRetries, party)
-	r.log.Debug("Positions: new subscriber", logging.Uint64("ref", ref))
-	return c, nil
+		c, ref := r.tradeService.ObservePositions(ctx, r.Config.GraphQLSubscriptionRetries, party)
+		r.log.Debug("Positions: new subscriber", logging.Uint64("ref", ref))
+		return c, nil
+	*/
+	return nil, nil
 }
 
 func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan *types.MarketDepth, error) {
-	_, err := validateMarket(ctx, &market, r.marketService)
-	if err != nil {
-		return nil, err
-	}
-	c, ref := r.marketService.ObserveDepth(ctx, r.Config.GraphQLSubscriptionRetries, market)
-	r.log.Debug("Market Depth: new subscriber", logging.Uint64("ref", ref))
-	return c, nil
+	/*
+		_, err := validateMarket(ctx, &market, r.marketService)
+		if err != nil {
+			return nil, err
+		}
+		c, ref := r.marketService.ObserveDepth(ctx, r.Config.GraphQLSubscriptionRetries, market)
+		r.log.Debug("Market Depth: new subscriber", logging.Uint64("ref", ref))
+		return c, nil
+	*/
+	return nil, nil
 }
 
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
-	_, err := validateMarket(ctx, &market, r.marketService)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		_, err := validateMarket(ctx, &market, r.marketService)
+		if err != nil {
+			return nil, err
+		}
 
-	var pbInterval types.Interval
-	switch interval {
-	case IntervalI15m:
-		pbInterval = types.Interval_I15M
-	case IntervalI1d:
-		pbInterval = types.Interval_I1D
-	case IntervalI1h:
-		pbInterval = types.Interval_I1H
-	case IntervalI1m:
-		pbInterval = types.Interval_I1M
-	case IntervalI5m:
-		pbInterval = types.Interval_I5M
-	case IntervalI6h:
-		pbInterval = types.Interval_I6H
-	default:
-		r.log.Warn("Invalid interval when subscribing to candles in gql, falling back to default: I15M",
-			logging.String("interval", interval.String()))
-		pbInterval = types.Interval_I15M
-	}
+		var pbInterval types.Interval
+		switch interval {
+		case IntervalI15m:
+			pbInterval = types.Interval_I15M
+		case IntervalI1d:
+			pbInterval = types.Interval_I1D
+		case IntervalI1h:
+			pbInterval = types.Interval_I1H
+		case IntervalI1m:
+			pbInterval = types.Interval_I1M
+		case IntervalI5m:
+			pbInterval = types.Interval_I5M
+		case IntervalI6h:
+			pbInterval = types.Interval_I6H
+		default:
+			r.log.Warn("Invalid interval when subscribing to candles in gql, falling back to default: I15M",
+				logging.String("interval", interval.String()))
+			pbInterval = types.Interval_I15M
+		}
 
-	// Observe new candles for interval
-	// --------------------------------
+		// Observe new candles for interval
+		// --------------------------------
 
-	c, ref := r.candleService.ObserveCandles(ctx, r.Config.GraphQLSubscriptionRetries, &market, &pbInterval)
+		c, ref := r.candleService.ObserveCandles(ctx, r.Config.GraphQLSubscriptionRetries, &market, &pbInterval)
 
-	r.log.Debug("Candles: New subscriber",
-		logging.String("interval", pbInterval.String()),
-		logging.String("market", market),
-		logging.Uint64("ref", ref))
+		r.log.Debug("Candles: New subscriber",
+			logging.String("interval", pbInterval.String()),
+			logging.String("market", market),
+			logging.Uint64("ref", ref))
 
-	return c, nil
+		return c, nil
+	*/
+	return nil, nil
 }
 
 type MyPendingOrderResolver resolverRoot
@@ -861,18 +845,19 @@ func (r *MyPendingOrderResolver) Side(ctx context.Context, obj *proto.PendingOrd
 	return nil, ErrNilPendingOrder
 }
 
-func (r *MyPendingOrderResolver) Market(ctx context.Context, obj *proto.PendingOrder) (*Market, error) {
-	if obj != nil {
-		if len(obj.MarketID) <= 0 {
-			return nil, nil
-		}
-		pmkt, err := r.marketService.GetByID(ctx, obj.MarketID)
-		if err != nil {
-			return nil, err
-		}
-		return MarketFromProto(pmkt)
+func (r *MyPendingOrderResolver) Market(ctx context.Context, pord *proto.PendingOrder) (*Market, error) {
+	if pord == nil {
+		return nil, nil
 	}
-	return nil, ErrNilPendingOrder
+
+	req := protoapi.MarketByIDRequest{Id: pord.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return MarketFromProto(res.Market)
+
 }
 
 func (r *MyPendingOrderResolver) Size(ctx context.Context, obj *proto.PendingOrder) (*string, error) {
@@ -888,36 +873,6 @@ func (r *MyPendingOrderResolver) Status(ctx context.Context, obj *proto.PendingO
 		return &os, nil
 	}
 	return nil, ErrNilPendingOrder
-}
-
-func validateMarket(ctx context.Context, marketId *string, marketService MarketService) (*types.Market, error) {
-	var mkt *types.Market
-	var err error
-	if marketId != nil {
-		if len(*marketId) == 0 {
-			return nil, errors.New("market must not be empty")
-		}
-		mkt, err = marketService.GetByID(ctx, *marketId)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return mkt, nil
-}
-
-func validateParty(ctx context.Context, partyId *string, partyService PartyService) (*types.Party, error) {
-	var pty *types.Party
-	var err error
-	if partyId != nil {
-		if len(*partyId) == 0 {
-			return nil, errors.New("party must not be empty")
-		}
-		pty, err = partyService.GetByID(ctx, *partyId)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return pty, err
 }
 
 // END: Subscription Resolver

@@ -188,7 +188,7 @@ type Market {
   depth: MarketDepth!
 
   # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
-  candles (sinceTimestamp: String!, interval: Interval!): [Candle]
+  candles (since: String!, interval: Interval!): [Candle]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.

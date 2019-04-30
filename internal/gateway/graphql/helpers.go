@@ -17,6 +17,27 @@ func safeStringUint64(input string) (uint64, error) {
 	return 0, errors.New(fmt.Sprintf("Invalid input string for uint64 conversion %s", input))
 }
 
+func convertInterval(interval Interval) (types.Interval, error) {
+	switch interval {
+	case IntervalI15m:
+		return types.Interval_I15M, nil
+	case IntervalI1d:
+		return types.Interval_I1D, nil
+	case IntervalI1h:
+		return types.Interval_I1H, nil
+	case IntervalI1m:
+		return types.Interval_I1M, nil
+	case IntervalI5m:
+		return types.Interval_I5M, nil
+	case IntervalI6h:
+		return types.Interval_I6H, nil
+	default:
+		err := fmt.Errorf("Invalid interval when subscribing to candles, falling back to default: I15M, (%v)", interval)
+
+		return types.Interval_I15M, err
+	}
+}
+
 func parseOrderType(orderType *OrderType) (types.Order_Type, error) {
 	switch *orderType {
 	case OrderTypeGtc:

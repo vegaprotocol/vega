@@ -33,6 +33,8 @@ http:
       get: '/candles'
     - selector: api.trading_data.MarketDepth
       get: '/marketDepth'
+    - selector: api.trading_data.LastTrade
+      get: '/lastTrade'
     - selector: api.trading_data.TradesByMarket
       get: '/marketTrades'
     - selector: api.trading_data.TradesByParty

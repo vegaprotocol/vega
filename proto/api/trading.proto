@@ -33,6 +33,7 @@ service trading_data {
   rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
   rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
   rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
+  rpc LastTrade(LastTradeRequest) returns (LastTradeResponse);
 
   // parties
   rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
@@ -59,6 +60,14 @@ service trading_data {
   rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
+}
+
+message LastTradeRequest {
+  string marketID = 1;
+}
+
+message LastTradeResponse {
+  vega.Trade trade = 1;
 }
 
 message MarketByIDRequest {

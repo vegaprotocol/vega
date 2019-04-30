@@ -22,6 +22,17 @@ var _ = math.Inf
 func (this *OrderResponse) Validate() error {
 	return nil
 }
+func (this *LastTradeRequest) Validate() error {
+	return nil
+}
+func (this *LastTradeResponse) Validate() error {
+	if this.Trade != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Trade); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Trade", err)
+		}
+	}
+	return nil
+}
 func (this *MarketByIDRequest) Validate() error {
 	return nil
 }
