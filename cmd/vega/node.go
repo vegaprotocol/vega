@@ -8,9 +8,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/grpc"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
+	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/config"
@@ -136,7 +134,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	statusChecker.OnChainDisconnect(l.cfunc)
 
 	// gRPC server
-	grpcServer := grpc.NewGRPCServer(
+	grpcServer := api.NewGRPCServer(
 		l.Log,
 		l.conf.API,
 		l.stats,
@@ -153,33 +151,34 @@ func (l *NodeCommand) runNode(args []string) error {
 	go grpcServer.Start()
 
 	// REST<>gRPC (gRPC proxy) server
-	restServer := restproxy.NewRestProxyServer(l.Log, l.conf.API)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { restServer.ReloadConf(cfg.API) })
-	go restServer.Start()
+	// restServer := rest.NewRestProxyServer(l.Log, l.conf.API)
+	// l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { restServer.ReloadConf(cfg.API) })
+	//go restServer.Start()
 
-	// GraphQL server
-	graphServer := gql.NewGraphQLServer(
-		l.Log,
-		l.conf.API,
-		l.orderService,
-		l.tradeService,
-		l.candleService,
-		l.marketService,
-		l.partyService,
-		l.timeService,
-		statusChecker,
-	)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { graphServer.ReloadConf(cfg.API) })
-	go graphServer.Start()
-
+	/*
+		// GraphQL server
+		graphServer := gql.NewGraphQLServer(
+			l.Log,
+			l.conf.API,
+			l.orderService,
+			l.tradeService,
+			l.candleService,
+			l.marketService,
+			l.partyService,
+			l.timeService,
+			statusChecker,
+		)
+		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { graphServer.ReloadConf(cfg.API) })
+		go graphServer.Start()
+	*/
 	l.Log.Info("Vega startup complete")
 
 	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
-	restServer.Stop()
+	// restServer.Stop()
 	grpcServer.Stop()
-	graphServer.Stop()
+	// graphServer.Stop()
 	socketServer.Stop()
 	statusChecker.Stop()
 

@@ -1,20 +1,18 @@
-package grpc
+package api
 
 import (
 	"context"
 	"fmt"
 	"net"
 
-	"code.vegaprotocol.io/vega/internal/parties"
-
 	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
+	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
@@ -24,13 +22,9 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-const (
-	namedLogger = "api.grpc"
-)
-
 type grpcServer struct {
 	log *logging.Logger
-	api.Config
+	Config
 	stats         *internal.Stats
 	client        *blockchain.Client
 	orderService  *orders.Svc
@@ -49,7 +43,7 @@ type grpcServer struct {
 
 func NewGRPCServer(
 	log *logging.Logger,
-	config api.Config,
+	config Config,
 	stats *internal.Stats,
 	client *blockchain.Client,
 	timeService *vegatime.Svc,
@@ -82,7 +76,7 @@ func NewGRPCServer(
 	}
 }
 
-func (s *grpcServer) ReloadConf(cfg api.Config) {
+func (s *grpcServer) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
@@ -147,8 +141,8 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 
 func (g *grpcServer) Start() {
 
-	ip := g.GrpcServerIpAddress
-	port := g.GrpcServerPort
+	ip := g.IP
+	port := g.Port
 
 	g.log.Info("Starting gRPC based API", logging.String("addr", ip), logging.Int("port", port))
 

@@ -1,7 +1,7 @@
-package api
+package gateway
 
 import (
-	context "context"
+	"context"
 	"net"
 	"net/http"
 
@@ -34,10 +34,8 @@ func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 		}
 
 		if found {
-			ctx := context.WithValue(r.Context(), "remote-ip-addr", ip)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		} else {
-			next.ServeHTTP(w, r)
+			r = r.WithContext(context.WithValue(r.Context(), "remote-ip-addr", ip))
 		}
+		next.ServeHTTP(w, r)
 	})
 }

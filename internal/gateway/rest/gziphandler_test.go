@@ -1,4 +1,4 @@
-package restproxy_test
+package rest_test
 
 import (
 	"compress/gzip"
@@ -8,7 +8,7 @@ import (
 	"net/http/httputil"
 	"testing"
 
-	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
+	"code.vegaprotocol.io/vega/internal/gateway/rest"
 	"code.vegaprotocol.io/vega/internal/logging"
 )
 
@@ -22,7 +22,7 @@ func TestNoGzip(t *testing.T) {
 	defer logger.Sync()
 
 	rec := httptest.NewRecorder()
-	restproxy.NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
+	rest.NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test"))
 	})(rec, req)
 
@@ -55,7 +55,7 @@ func TestGzip(t *testing.T) {
 	defer logger.Sync()
 
 	rec := httptest.NewRecorder()
-	restproxy.NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
+	rest.NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", "4")
 		w.Header().Set("Content-Type", "text/test")
 		w.Write([]byte("test"))
@@ -106,7 +106,7 @@ func TestNoBody(t *testing.T) {
 	defer logger.Sync()
 
 	rec := httptest.NewRecorder()
-	restproxy.NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
+	rest.NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})(rec, req)
 
@@ -145,7 +145,7 @@ func BenchmarkGzip(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			rec := httptest.NewRecorder()
-			restproxy.NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
+			rest.NewGzipHandler(*logger, func(w http.ResponseWriter, r *http.Request) {
 				w.Write(body)
 			})(rec, req)
 
