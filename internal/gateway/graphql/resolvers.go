@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 
 	"code.vegaprotocol.io/vega/internal/gateway"
@@ -11,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -690,102 +692,173 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 type MySubscriptionResolver resolverRoot
 
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []types.Order, error) {
-	/*
-		_, err := validateMarket(ctx, market, r.marketService)
-		if err != nil {
-			return nil, err
+	var (
+		mkt, pty string
+	)
+	if market != nil {
+		mkt = *market
+	}
+	if party != nil {
+		pty = *party
+	}
+
+	req := &api.OrdersSubscribeRequest{
+		MarketID: mkt,
+		PartyID:  pty,
+	}
+	stream, err := r.tradingDataClient.OrdersSubscribe(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	c := make(chan []types.Order)
+	go func() {
+		for {
+			o, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("orders: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+				break
+			}
+			c <- []types.Order{*o}
 		}
+	}()
 
-		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
-		c, ref := r.orderService.ObserveOrders(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
-		r.log.Debug("Orders: new subscriber", logging.Uint64("ref", ref))
-		return c, nil
-	*/
-	return nil, nil
+	return c, nil
 }
 
 func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []types.Trade, error) {
-	/*
-		_, err := validateMarket(ctx, market, r.marketService)
-		if err != nil {
-			return nil, err
+	var (
+		mkt, pty string
+	)
+	if market != nil {
+		mkt = *market
+	}
+	if party != nil {
+		pty = *party
+	}
+
+	req := &api.TradesSubscribeRequest{
+		MarketID: mkt,
+		PartyID:  pty,
+	}
+	stream, err := r.tradingDataClient.TradesSubscribe(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	c := make(chan []types.Trade)
+	go func() {
+		for {
+			t, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("orders: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+				break
+			}
+			c <- []types.Trade{*t}
 		}
+	}()
 
-		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-
-		c, ref := r.tradeService.ObserveTrades(ctx, r.Config.GraphQLSubscriptionRetries, market, party)
-		r.log.Debug("Trades: new subscriber", logging.Uint64("ref", ref))
-		return c, nil
-	*/
-	return nil, nil
+	return c, nil
 }
 
 func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.MarketPosition, error) {
+	req := &api.PositionsSubscribeRequest{
+		PartyID: party,
+	}
+	stream, err := r.tradingDataClient.PositionsSubscribe(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 
-	/*
-		// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
+	c := make(chan *types.MarketPosition)
+	go func() {
+		for {
+			t, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("orders: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+				break
+			}
+			c <- t
+		}
+	}()
 
-		c, ref := r.tradeService.ObservePositions(ctx, r.Config.GraphQLSubscriptionRetries, party)
-		r.log.Debug("Positions: new subscriber", logging.Uint64("ref", ref))
-		return c, nil
-	*/
-	return nil, nil
+	return c, nil
 }
 
 func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string) (<-chan *types.MarketDepth, error) {
-	/*
-		_, err := validateMarket(ctx, &market, r.marketService)
-		if err != nil {
-			return nil, err
+	req := &api.MarketDepthSubscribeRequest{
+		MarketID: market,
+	}
+	stream, err := r.tradingDataClient.MarketDepthSubscribe(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	c := make(chan *types.MarketDepth)
+	go func() {
+		for {
+			md, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("orders: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+				break
+			}
+			c <- md
 		}
-		c, ref := r.marketService.ObserveDepth(ctx, r.Config.GraphQLSubscriptionRetries, market)
-		r.log.Debug("Market Depth: new subscriber", logging.Uint64("ref", ref))
-		return c, nil
-	*/
-	return nil, nil
+	}()
+
+	return c, nil
 }
 
 func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
-	/*
-		_, err := validateMarket(ctx, &market, r.marketService)
-		if err != nil {
-			return nil, err
+
+	pinterval, err := convertInterval(interval)
+	if err != nil {
+		r.log.Error("invalid interval for candles subscriptions", logging.Error(err))
+	}
+
+	req := &api.CandlesSubscribeRequest{
+		MarketID: market,
+		Interval: pinterval,
+	}
+	stream, err := r.tradingDataClient.CandlesSubscribe(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	c := make(chan *types.Candle)
+	go func() {
+		for {
+			cdl, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("orders: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+				break
+			}
+			c <- cdl
 		}
+	}()
 
-		var pbInterval types.Interval
-		switch interval {
-		case IntervalI15m:
-			pbInterval = types.Interval_I15M
-		case IntervalI1d:
-			pbInterval = types.Interval_I1D
-		case IntervalI1h:
-			pbInterval = types.Interval_I1H
-		case IntervalI1m:
-			pbInterval = types.Interval_I1M
-		case IntervalI5m:
-			pbInterval = types.Interval_I5M
-		case IntervalI6h:
-			pbInterval = types.Interval_I6H
-		default:
-			r.log.Warn("Invalid interval when subscribing to candles in gql, falling back to default: I15M",
-				logging.String("interval", interval.String()))
-			pbInterval = types.Interval_I15M
-		}
+	return c, nil
 
-		// Observe new candles for interval
-		// --------------------------------
-
-		c, ref := r.candleService.ObserveCandles(ctx, r.Config.GraphQLSubscriptionRetries, &market, &pbInterval)
-
-		r.log.Debug("Candles: New subscriber",
-			logging.String("interval", pbInterval.String()),
-			logging.String("market", market),
-			logging.Uint64("ref", ref))
-
-		return c, nil
-	*/
-	return nil, nil
 }
 
 type MyPendingOrderResolver resolverRoot
