@@ -165,11 +165,32 @@
             "type": "string"
           },
           {
-            "name": "params.limit",
+            "name": "pagination.skip",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          },
+          {
+            "name": "open",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
           }
         ],
         "tags": [
@@ -197,11 +218,25 @@
             "type": "string"
           },
           {
-            "name": "params.limit",
+            "name": "pagination.skip",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
           }
         ],
         "tags": [
@@ -242,13 +277,6 @@
             "in": "query",
             "required": false,
             "type": "string"
-          },
-          {
-            "name": "params.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
           }
         ],
         "tags": [
@@ -291,11 +319,32 @@
             "type": "string"
           },
           {
-            "name": "params.limit",
+            "name": "pagination.skip",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          },
+          {
+            "name": "open",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
           }
         ],
         "tags": [
@@ -353,11 +402,25 @@
             "type": "string"
           },
           {
-            "name": "params.limit",
+            "name": "pagination.skip",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
           }
         ],
         "tags": [
@@ -499,15 +562,6 @@
         }
       }
     },
-    "apiOptionalParams": {
-      "type": "object",
-      "properties": {
-        "limit": {
-          "type": "string",
-          "format": "uint64"
-        }
-      }
-    },
     "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {
@@ -547,6 +601,23 @@
           "items": {
             "$ref": "#/definitions/vegaOrder"
           }
+        }
+      }
+    },
+    "apiPagination": {
+      "type": "object",
+      "properties": {
+        "skip": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "descending": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },

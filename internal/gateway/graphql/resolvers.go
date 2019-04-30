@@ -162,70 +162,48 @@ func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error
 
 type MyMarketResolver resolverRoot
 
-func (r *MyMarketResolver) Orders(ctx context.Context, market *Market,
-	open *bool, skip *int, first *int, last *int) ([]types.Order, error) {
-	/*
-		_, err := validateMarket(ctx, &market.ID, r.marketService)
-		if err != nil {
-			return nil, err
-		}
-		var (
-			offset, limit uint64
-			descending    bool
-		)
-		if skip != nil {
-			offset = uint64(*skip)
-		}
-		if last != nil {
-			descending = true
-			limit = uint64(*last)
-		} else if first != nil {
-			limit = uint64(*first)
-		}
-		o, err := r.orderService.GetByMarket(ctx, market.ID, limit, offset, descending, open)
-		if err != nil {
-			return nil, err
-		}
-		valOrders := make([]types.Order, 0, len(o))
-		for _, v := range o {
-			valOrders = append(valOrders, *v)
-		}
-		return valOrders, nil
-	*/
-	return nil, nil
+func (r *MyMarketResolver) Orders(
+	ctx context.Context, market *Market, open *bool, skip *int, first *int, last *int,
+) ([]types.Order, error) {
+	p := makePagination(skip, first, last)
+	openOnly := open != nil && *open
+	req := protoapi.OrdersByMarketRequest{
+		MarketID:   market.ID,
+		Open:       openOnly,
+		Pagination: p,
+	}
+	res, err := r.tradingDataClient.OrdersByMarket(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	outorders := make([]types.Order, 0, len(res.Orders))
+	for _, v := range res.Orders {
+		v := v
+		outorders = append(outorders, *v)
+	}
+	return outorders, nil
 }
 
 func (r *MyMarketResolver) Trades(ctx context.Context, market *Market,
 	skip *int, first *int, last *int) ([]types.Trade, error) {
-	/*
-		_, err := validateMarket(ctx, &market.ID, r.marketService)
-		if err != nil {
-			return nil, err
-		}
-		var (
-			offset, limit uint64
-			descending    bool
-		)
-		if skip != nil {
-			offset = uint64(*skip)
-		}
-		if last != nil {
-			descending = true
-			limit = uint64(*last)
-		} else if first != nil {
-			limit = uint64(*first)
-		}
-		t, err := r.tradeService.GetByMarket(ctx, market.ID, offset, limit, descending)
-		if err != nil {
-			return nil, err
-		}
-		valTrades := make([]types.Trade, 0, len(t))
-		for _, v := range t {
-			valTrades = append(valTrades, *v)
-		}
-		return valTrades, nil
-	*/
-	return nil, nil
+	p := makePagination(skip, first, last)
+	req := protoapi.TradesByMarketRequest{
+		MarketID:   market.ID,
+		Pagination: p,
+	}
+	res, err := r.tradingDataClient.TradesByMarket(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	outtrades := make([]types.Trade, 0, len(res.Trades))
+	for _, v := range res.Trades {
+		v := v
+		outtrades = append(outtrades, *v)
+	}
+	return outtrades, nil
 }
 
 func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (*types.MarketDepth, error) {
@@ -281,66 +259,77 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 
 type MyPartyResolver resolverRoot
 
+func makePagination(skip, first, last *int) *protoapi.Pagination {
+	var (
+		offset, limit uint64
+		descending    bool
+	)
+	if skip != nil {
+		offset = uint64(*skip)
+	}
+	if last != nil {
+		limit = uint64(*last)
+		descending = true
+	} else if first != nil {
+		limit = uint64(*first)
+	}
+	return &protoapi.Pagination{
+		Skip:       offset,
+		Limit:      limit,
+		Descending: descending,
+	}
+}
+
 func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 	open *bool, skip *int, first *int, last *int) ([]types.Order, error) {
 
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-	/*
-		var (
-			offset, limit uint64
-			descending    bool
-		)
-		if skip != nil {
-			offset = uint64(*skip)
-		}
-		if last != nil {
-			limit = uint64(*last)
-			descending = true
-		} else if first != nil {
-			limit = uint64(*first)
-		}
-		o, err := r.orderService.GetByParty(ctx, party.Name, offset, limit, descending, open)
-		if err != nil {
-			return nil, err
-		}
-		valOrders := make([]types.Order, 0)
-		for _, v := range o {
-			valOrders = append(valOrders, *v)
-		}
-		return valOrders, nil
-	*/
-	return nil, nil
+	p := makePagination(skip, first, last)
+	openOnly := open != nil && *open
+	req := protoapi.OrdersByPartyRequest{
+		PartyID:    party.Name,
+		Open:       openOnly,
+		Pagination: p,
+	}
+	res, err := r.tradingDataClient.OrdersByParty(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	outorders := make([]types.Order, 0, len(res.Orders))
+	for _, v := range res.Orders {
+		v := v
+		outorders = append(outorders, *v)
+	}
+	return outorders, nil
 }
 
 func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 	market *string, skip *int, first *int, last *int) ([]types.Trade, error) {
 
-	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
-	/*
-		var (
-			offset, limit uint64
-			descending    bool
-		)
-		if skip != nil {
-			offset = uint64(*skip)
-		}
-		if last != nil {
-			limit = uint64(*last)
-			descending = true
-		} else if first != nil {
-			limit = uint64(*first)
-		}
-		t, err := r.tradeService.GetByParty(ctx, party.Name, offset, limit, descending, market)
-		if err != nil {
-			return nil, err
-		}
-		valTrades := make([]types.Trade, 0, len(t))
-		for _, v := range t {
-			valTrades = append(valTrades, *v)
-		}
-		return valTrades, nil
-	*/
-	return nil, nil
+	var mkt string
+	if market != nil {
+		mkt = *market
+	}
+
+	p := makePagination(skip, first, last)
+	req := protoapi.TradesByPartyRequest{
+		PartyID:    party.Name,
+		MarketID:   mkt,
+		Pagination: p,
+	}
+
+	res, err := r.tradingDataClient.TradesByParty(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	outtrades := make([]types.Trade, 0, len(res.Trades))
+	for _, v := range res.Trades {
+		v := v
+		outtrades = append(outtrades, *v)
+	}
+	return outtrades, nil
 }
 
 func (r *MyPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.MarketPosition, error) {

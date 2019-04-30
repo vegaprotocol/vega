@@ -19,6 +19,12 @@ import (
 
 var ErrChainNotConnected = errors.New("Chain not connected")
 
+var defaultPagination = protoapi.Pagination{
+	Skip:       0,
+	Limit:      50,
+	Descending: true,
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/vega_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc VegaTime
 type VegaTime interface {
 	GetTimeNow() (time.Time, error)
@@ -96,17 +102,12 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 		return nil, errors.New("Market empty or missing")
 	}
 
-	var (
-		skip, limit uint64
-		descending  bool
-		open        *bool
-	)
-	if request.Params != nil && request.Params.Limit > 0 {
-		descending = true
-		limit = request.Params.Limit
+	p := defaultPagination
+	if request.Pagination != nil {
+		p = *request.Pagination
 	}
 
-	o, err := h.OrderService.GetByMarket(ctx, request.MarketID, skip, limit, descending, open)
+	o, err := h.OrderService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending, &request.Open)
 	if err != nil {
 		return nil, err
 	}
@@ -127,12 +128,12 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 		return nil, errors.New("Party empty or missing")
 	}
 
-	var limit uint64
-	if request.Params != nil && request.Params.Limit > 0 {
-		limit = request.Params.Limit
+	p := defaultPagination
+	if request.Pagination != nil {
+		p = *request.Pagination
 	}
 
-	o, err := h.OrderService.GetByParty(ctx, request.PartyID, 0, limit, true, nil)
+	o, err := h.OrderService.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending, &request.Open)
 	if err != nil {
 		return nil, err
 	}
@@ -234,12 +235,13 @@ func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoa
 	if request.MarketID == "" {
 		return nil, errors.New("Market empty or missing")
 	}
-	limit := defaultLimit
-	if request.Params != nil && request.Params.Limit > 0 {
-		limit = request.Params.Limit
+
+	p := defaultPagination
+	if request.Pagination != nil {
+		p = *request.Pagination
 	}
 
-	t, err := h.TradeService.GetByMarket(ctx, request.MarketID, 0, limit, true)
+	t, err := h.TradeService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending)
 	if err != nil {
 		return nil, err
 	}
@@ -605,16 +607,13 @@ func (h *tradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyB
 func (h *tradingDataService) TradesByParty(
 	ctx context.Context, req *protoapi.TradesByPartyRequest,
 ) (*protoapi.TradesByPartyResponse, error) {
-	var (
-		skip, limit uint64
-		descending  bool
-	)
-	if req.Params != nil && req.Params.Limit > 0 {
-		descending = true
-		limit = req.Params.Limit
+
+	p := defaultPagination
+	if req.Pagination != nil {
+		p = *req.Pagination
 	}
 
-	trades, err := h.TradeService.GetByParty(ctx, req.PartyID, skip, limit, descending, &req.MarketID)
+	trades, err := h.TradeService.GetByParty(ctx, req.PartyID, p.Skip, p.Limit, p.Descending, &req.MarketID)
 	if err != nil {
 		return nil, err
 	}
