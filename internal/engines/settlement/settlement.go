@@ -83,6 +83,33 @@ func (e *Engine) Settle(t time.Time) ([]*types.SettlePosition, error) {
 	return positions, nil
 }
 
+// MarkToMarket - read settle positions from channel (populated by positions engine), then notify through done channel
+// these settle positions aren't going to update the positions tracked here in the settlement engine
+// instead the net result will be a a slice where losses are prepended, and wins appended
+// this slice will be pushed onto the return channel
+func (e *Engine) MarkToMarket(ch <-chan *types.SettlePosition) <-chan []*types.SettlePosition {
+	// indicate the settlement engine has processed everything in the channel via waitgroup, market framework is closing the channel after the loop
+	sch := make(chan []*types.SettlePosition) // no buffer, so the read on this channel will be blocking. Once we've read the slice, we know the work here is done
+	// read the channel, writing to the return channel indicates the routine is done, and the channel is closed
+	go func() {
+		// set buffer of channel as cap of slice, reason for this pre-allocation is the same as why we buffer the channel to a given size
+		posSlice := make([]*types.SettlePosition, 0, cap(ch))
+		winSlice := make([]*types.SettlePosition, 0, cap(ch)/2) // assuming half of these will be wins (not a given, but it's a decent enough cap)
+		for pos := range ch {
+			if pos.Amount.Amount < 0 {
+				posSlice = append(posSlice, pos)
+			} else {
+				winSlice = append(winSlice, pos)
+			}
+		}
+		// create a single slice here, losses first, wins after
+		posSlice = append(posSlice, winSlice...)
+		sch <- posSlice
+		close(sch)
+	}()
+	return sch
+}
+
 // simplified settle call
 func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
 	// there should be as many positions as there are traders (obviously)
@@ -91,24 +118,14 @@ func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
 	// The split won't always be 50-50, but it's a reasonable approximation
 	owed := make([]*types.SettlePosition, 0, len(e.pos)/2)
 	for party, pos := range e.pos {
-		e.log.Debug("Settling position for trader", logging.String("trader-id", party))
+		// this is possible now, with the Mark to Market stuff, it's possible we've settled any and all positions for a given trader
 		if pos.size == 0 {
-			e.log.Debug(
-				"Trader has a net size/position of 0, default to 1",
-				logging.String("trader-id", party),
-				logging.Uint64("price", pos.price),
-			)
-			// we should have this happen on close, or ever, really -> the amount could be - or +
-			// this is just so we can ensure the division and multiplication isn't going to fail
-			pos.size = 1
+			continue
 		}
-		// @TODO positions should take care of this
-		netPrice := int64(pos.price) / pos.size
-		if netPrice < 0 {
-			// get abs value
-			netPrice *= -1
-		}
-		amt, err := e.product.Settle(uint64(netPrice), pos.size)
+		e.log.Debug("Settling position for trader", logging.String("trader-id", party))
+		// @TODO - there was something here... the final amount had to be oracle - market or something
+		// check with Tamlyn why that was, because we're only handling open positions here...
+		amt, err := e.product.Settle(pos.price, pos.size)
 		if err != nil {
 			e.log.Error(
 				"Failed to settle position for trader",
@@ -122,6 +139,10 @@ func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
 			Size:   uint64(pos.size),
 			Amount: amt,
 			Type:   types.SettleType_LOSS, // this is a poor name, will be changed later
+		}
+		if pos.size < 0 {
+			// ensure absolute value
+			settlePos.Size = uint64(-pos.size)
 		}
 		e.log.Debug(
 			"Settled position for trader",

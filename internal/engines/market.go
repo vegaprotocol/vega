@@ -267,6 +267,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.Trades != nil {
+		// create channel for settlement engine, this will allow us to get the mark to market stuff
+		// buffer is big enough for 1 settle per trade, in reality, each trade can produce between 0 and 2 settle positions.
+		// either way, this buffer seems sensible enough
+		ch := make(chan *types.SettlePosition, len(confirmation.Trades))
+		// this channel is read by settlement, populated in the loop by position engine
+		settleCh := m.settlement.MarkToMarket(ch)
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -296,10 +302,20 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			m.markPrice = trade.Price
 
 			// Update party positions for trade affected
-			m.position.Update(trade)
+			m.position.Update(trade, ch)
 
 			// Update positions for the market for the trade
+			// this is broken, m.position.Positions() returns copies of the market positions, we can't update them directly
+			// perhaps we need to use a channel here, too or something?
+			// AFAIK, we're not using the margins from risk in this loop, so chances are this call can be moved outside of the loop anyway
+			// avoiding a lot of pointless calls copying all the positions each time(?)
 			m.risk.UpdatePositions(trade.Price, m.position.Positions())
+		}
+		close(ch) // close the group already, we're fine
+		// we'll wait for settlement engine to finish here
+		if settle := <-settleCh; len(settle) > 0 {
+			// something happened
+			m.collateral.MarkToMarket(settle)
 		}
 	}
 

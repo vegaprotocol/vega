@@ -83,7 +83,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Unlock()
 }
 
-func (e *Engine) Update(trade *types.Trade) {
+func (e *Engine) Update(trade *types.Trade, ch chan<- *types.SettlePosition) {
 
 	// Not using defer e.mu.Unlock(), because defer calls add some overhead
 	// and this is called for each transaction, so we want to optimise as much as possible
@@ -94,33 +94,28 @@ func (e *Engine) Update(trade *types.Trade) {
 
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
-		e.positions[trade.Buyer] = &MarketPosition{
+		buyer = &MarketPosition{
 			margins: map[string]uint64{},
 			partyID: trade.Buyer,
 		}
-		buyer = e.positions[trade.Buyer]
+		e.positions[trade.Buyer] = buyer
 	}
 
 	seller, ok := e.positions[trade.Seller]
 	if !ok {
-		e.positions[trade.Seller] = &MarketPosition{
+		seller = &MarketPosition{
 			margins: map[string]uint64{},
 			partyID: trade.Seller,
 		}
-		seller = e.positions[trade.Seller]
+		e.positions[trade.Seller] = seller
 	}
-
-	// get net value of trade, add that to total price running for buyer/seller
-	price := trade.Size * trade.Price
-
-	// Buyer INCREASED position size buy trade.Size
-	buyer.size += int64(trade.Size)
-	buyer.price += price
-
-	// Seller DECREASED position size buy trade.Size
-	seller.size -= int64(trade.Size)
-	// add price, still. this is keeping a running total of the sell price
-	seller.price += price
+	// update positions, potentially settle (depending on positions)
+	if s := updateBuyerPosition(buyer, trade); s != nil {
+		ch <- s
+	}
+	if s := updateSellerPosition(seller, trade); s != nil {
+		ch <- s
+	}
 
 	e.log.Debug("Positions Updated for trade",
 		logging.Trade(*trade),
@@ -130,6 +125,70 @@ func (e *Engine) Update(trade *types.Trade) {
 	// we've set all the values now, unlock after logging
 	// because we're working on MarketPosition pointers
 	e.mu.Unlock()
+}
+
+// just the logic to update buyer, will eventually return the SettlePosition we need to push
+func updateBuyerPosition(buyer *MarketPosition, trade *types.Trade) *types.SettlePosition {
+	if buyer.size == 0 {
+		// position is N long, at current market price, job done
+		buyer.size = int64(trade.Size)
+		buyer.price = trade.Price
+		return nil
+	}
+	if buyer.size > 0 {
+		// buyer is already long, so the price should be the average ((old_price * old_size + new_price * trade_size)/(old_size + trade_size))
+		buyer.price = (buyer.price*uint64(buyer.size) + trade.Size*trade.Price) / (trade.Size + uint64(buyer.size))
+		buyer.size += int64(trade.Size)
+		return nil
+	}
+	// buyer is short, we can close out (part of) the current position at the current position price (not the trade price)
+	settle := &types.SettlePosition{
+		Owner: buyer.partyID,
+		Size:  trade.Size,
+		Amount: &types.FinancialAmount{
+			Amount: int64(trade.Price) - int64(buyer.price), // current delta -> mark price minus current position average
+		},
+		Type: types.SettleType_MTM,
+	}
+	buyer.size += int64(trade.Size)
+	if buyer.size > 0 {
+		// buyer is long, update the price
+		buyer.price = trade.Price
+	}
+	return settle
+}
+
+// same as updateBuyerPosition, only the position volume goes down
+func updateSellerPosition(seller *MarketPosition, trade *types.Trade) *types.SettlePosition {
+	// seller had no open positions, so we don't have to check collateral
+	if seller.size == 0 {
+		seller.size -= int64(trade.Size)
+		seller.price = trade.Price
+		return nil
+	}
+	// seller was already short, that position is only going to increase, we can't really close anything here
+	if seller.size < 0 {
+		// seller is already short, calculate price average, and update accordingly
+		seller.price = (seller.price*uint64(-seller.size) + trade.Size*trade.Price) / (trade.Size + uint64(-seller.size))
+		seller.size -= int64(trade.Size)
+		return nil
+	}
+	// seller was long, let's see if that's still the case
+	// either way, position is changing here, so we need to close what we can...
+	settle := &types.SettlePosition{
+		Owner: seller.partyID,
+		Size:  trade.Size,
+		Amount: &types.FinancialAmount{
+			Amount: int64(trade.Price) - int64(seller.price), // price delta: mark price - short average price
+		},
+		Type: types.SettleType_MTM,
+	}
+	seller.size -= int64(trade.Size)
+	if seller.size < 0 {
+		// nope, seller is now short, update price
+		seller.price = trade.Price
+	}
+	return settle
 }
 
 func (e *Engine) Positions() []MarketPosition {

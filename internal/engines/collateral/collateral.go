@@ -96,6 +96,11 @@ func (e *Engine) getSystemAccounts() (settle, insurance *types.Account, err erro
 	return
 }
 
+// MarkToMarket... WIP
+func (e *Engine) MarkToMarket(positions []*types.SettlePosition) ([]*types.TransferResponse, error) {
+	return nil, nil
+}
+
 func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferResponse, error) {
 	if len(positions) == 0 {
 		return nil, nil

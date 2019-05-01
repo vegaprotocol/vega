@@ -12,6 +12,7 @@ import (
 )
 
 func TestUpdatePosition(t *testing.T) {
+	ch := make(chan *proto.SettlePosition, 1)
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
 	buyer := "buyer_id"
@@ -28,7 +29,9 @@ func TestUpdatePosition(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	engine.Update(&trade)
+	engine.Update(&trade, ch)
+	close(ch)
+	assert.Empty(t, ch)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	for _, p := range pos {
