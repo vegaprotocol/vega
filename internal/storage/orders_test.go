@@ -4,6 +4,9 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
+
+	"code.vegaprotocol.io/vega/internal/config/encoding"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
@@ -367,4 +370,48 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 	assert.Equal(t, 1, len(depth.Sell))
 	assert.Equal(t, uint64(100), depth.Buy[0].Price)
 	assert.Equal(t, uint64(9999), depth.Sell[0].Price)
+}
+
+func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
+	ctx := context.Background()
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+	config.Timeout = encoding.Duration{Duration: time.Nanosecond}
+	log := logging.NewTestLogger()
+	storage.FlushStores(log, config)
+	orderStore, err := storage.NewOrders(log, config, func() {})
+	assert.Nil(t, err)
+	defer orderStore.Close()
+
+	order := &types.Order{
+		Id:        "d41d8cd98f00b204e9800998ecf8427b",
+		Market:    testMarket,
+		Party:     testPartyA,
+		Side:      types.Side_Buy,
+		Price:     100,
+		Size:      1000,
+		Remaining: 0,
+		Type:      types.Order_GTC,
+		CreatedAt: 0,
+		Status:    types.Order_Active,
+		Reference: "123123-34334343-1231231",
+	}
+
+	err = orderStore.Post(*order)
+	assert.Nil(t, err)
+
+	orderStore.Commit()
+
+	// Bit of a hacky test, but we want to test timeouts when getting market depth because we can only set a timeout
+	// of 1s or more through config, we're setting a timeout of 1 nanosecond on the context we pass to orderStore
+	// this ensures that the context will get cancelled when getting market depth, and that code path gets tested
+	tctx, cfunc := context.WithTimeout(ctx, time.Nanosecond)
+	defer cfunc()
+
+	// perhaps sleep here in case we need to make sure the context has indeed expired, but starting the 2 routines and the map lookups
+	// alone will take longer than a nanosecond anyway, so there's no need.
+	_, err = orderStore.GetMarketDepth(tctx, testMarket)
+	assert.Equal(t, storage.ErrTimeoutReached, err)
 }
