@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"encoding/binary"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -37,8 +38,10 @@ type ApplicationTime interface {
 
 type AbciApplication struct {
 	types.BaseApplication
-	*Config
+	Config
 
+	cfgMu     sync.Mutex
+	log       *logging.Logger
 	stats     *Stats
 	processor ApplicationProcessor
 	service   ApplicationService
@@ -51,8 +54,13 @@ type AbciApplication struct {
 	onCriticalError func()
 }
 
-func NewApplication(config *Config, stats *Stats, proc ApplicationProcessor, svc ApplicationService, time ApplicationTime, onCriticalError func()) *AbciApplication {
+func NewApplication(log *logging.Logger, config Config, stats *Stats, proc ApplicationProcessor, svc ApplicationService, time ApplicationTime, onCriticalError func()) *AbciApplication {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	return &AbciApplication{
+		log:             log,
 		Config:          config,
 		stats:           stats,
 		processor:       proc,
@@ -62,9 +70,27 @@ func NewApplication(config *Config, stats *Stats, proc ApplicationProcessor, svc
 	}
 }
 
+func (s *AbciApplication) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	// TODO(): not updating the the actual server for now, may need to look at this later
+	// e.g restart the http server on another port or whatever
+	s.cfgMu.Lock()
+	s.Config = cfg
+	s.cfgMu.Unlock()
+}
+
 func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
 
 	// We can log more gossiped time info (switchable in config)
+	app.cfgMu.Lock()
 	if app.LogTimeDebug {
 		app.log.Debug("Block time for height",
 			logging.Int64("height", beginBlock.Header.Height),
@@ -72,6 +98,7 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 			logging.Int64("epoch-nano", beginBlock.Header.Time.UnixNano()),
 			logging.String("time", beginBlock.Header.Time.String()))
 	}
+	app.cfgMu.Unlock()
 
 	// Set time provided by ABCI block header (consensus will have been reached on block time)
 	epochNow := beginBlock.Header.Time
@@ -219,7 +246,8 @@ func (app *AbciApplication) setBatchStats() {
 		logging.Int("average-tx-total", averageTxTotal))
 
 	app.stats.averageTxPerBatch = averageTxTotal
-	app.stats.totalTxLastBatch = 0
+	app.stats.totalTxLastBatch = app.stats.totalTxCurrentBatch
+	app.stats.totalTxCurrentBatch = 0
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(app.txTotals) == statsSampleSize {
@@ -230,7 +258,7 @@ func (app *AbciApplication) setBatchStats() {
 // setTxStats is used to calculate any statistics that should be
 // recorded once per transaction delivery.
 func (app *AbciApplication) setTxStats(txLength int) {
-	app.stats.totalTxLastBatch++
+	app.stats.totalTxCurrentBatch++
 	if app.txSizes == nil {
 		app.txSizes = make([]int, 0)
 	}

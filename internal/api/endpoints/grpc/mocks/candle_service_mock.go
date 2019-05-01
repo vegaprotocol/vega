@@ -49,3 +49,18 @@ func (mr *MockCandleServiceMockRecorder) GetCandles(arg0, arg1, arg2, arg3 inter
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandles", reflect.TypeOf((*MockCandleService)(nil).GetCandles), arg0, arg1, arg2, arg3)
 }
+
+// ObserveCandles mocks base method
+func (m *MockCandleService) ObserveCandles(arg0 context.Context, arg1 int, arg2 *string, arg3 *proto.Interval) (<-chan *proto.Candle, uint64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObserveCandles", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(<-chan *proto.Candle)
+	ret1, _ := ret[1].(uint64)
+	return ret0, ret1
+}
+
+// ObserveCandles indicates an expected call of ObserveCandles
+func (mr *MockCandleServiceMockRecorder) ObserveCandles(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveCandles", reflect.TypeOf((*MockCandleService)(nil).ObserveCandles), arg0, arg1, arg2, arg3)
+}

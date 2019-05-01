@@ -16,7 +16,10 @@ import (
 
 // Order is a package internal data struct that implements the OrderStore interface.
 type Order struct {
-	*Config
+	Config
+
+	cfgMu           sync.Mutex
+	log             *logging.Logger
 	badger          *badgerStore
 	subscribers     map[uint64]chan<- []types.Order
 	subscriberId    uint64
@@ -29,17 +32,22 @@ type Order struct {
 // NewOrders is used to initialise and create a OrderStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewOrders(c *Config, onCriticalError func()) (*Order, error) {
+func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(c.Level.Get())
+
 	err := InitStoreDirectory(c.OrderStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for orders storage")
 	}
-	db, err := badger.Open(customBadgerOptions(c.OrderStoreDirPath, c.GetLogger()))
+	db, err := badger.Open(customBadgerOptions(c.OrderStoreDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for orders storage")
 	}
 	bs := badgerStore{db: db}
 	return &Order{
+		log:             log,
 		Config:          c,
 		badger:          &bs,
 		depth:           map[string]*Depth{},
@@ -47,6 +55,22 @@ func NewOrders(c *Config, onCriticalError func()) (*Order, error) {
 		buffer:          []types.Order{},
 		onCriticalError: onCriticalError,
 	}, nil
+}
+
+func (o *Order) ReloadConf(cfg Config) {
+	o.log.Info("reloading configuration")
+	if o.log.GetLevel() != cfg.Level.Get() {
+		o.log.Info("updating log level",
+			logging.String("old", o.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		o.log.SetLevel(cfg.Level.Get())
+	}
+
+	// only Timeout is really use in here
+	o.cfgMu.Lock()
+	o.Config = cfg
+	o.cfgMu.Unlock()
 }
 
 // Subscribe to a channel of new or updated orders. The subscriber id will be returned as a uint64 value
@@ -152,8 +176,11 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip, limit uin
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
+	os.cfgMu.Lock()
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
+	os.cfgMu.Unlock()
 	defer cancel()
+
 	deadline, _ := ctx.Deadline()
 
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
@@ -233,7 +260,7 @@ func (os *Order) GetByParty(ctx context.Context, party string, skip, limit uint6
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -339,7 +366,7 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	buyPtr := make([]*types.PriceLevel, 0, len(buy))
 	sellPtr := make([]*types.PriceLevel, 0, len(sell))
 
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 	// 2 routines, each can push one error on here, so buffer to avoid deadlock

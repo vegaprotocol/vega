@@ -6,6 +6,7 @@ type Stats struct {
 	height                uint64
 	averageTxSizeBytes    int
 	averageTxPerBatch     int
+	totalTxCurrentBatch   int
 	totalTxLastBatch      int
 	totalOrdersLastBatch  int
 	totalTradesLastBatch  int
@@ -24,6 +25,7 @@ func NewStats() *Stats {
 		height:                0,
 		averageTxSizeBytes:    0,
 		averageTxPerBatch:     0,
+		totalTxCurrentBatch:   0,
 		totalTxLastBatch:      0,
 		totalOrdersLastBatch:  0,
 		totalTradesLastBatch:  0,

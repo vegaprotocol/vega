@@ -22,7 +22,10 @@ var minSinceTime time.Time = vegatime.UnixNano(minSinceTimestamp)
 
 // Candle is a package internal data struct that implements the CandleStore interface.
 type Candle struct {
-	*Config
+	Config
+
+	cfgMu        sync.Mutex
+	log          *logging.Logger
 	badger       *badgerStore
 	subscribers  map[uint64]*InternalTransport
 	subscriberId uint64
@@ -45,22 +48,43 @@ type marketCandle struct {
 // NewCandles is used to initialise and create a CandleStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewCandles(c *Config) (*Candle, error) {
+func NewCandles(log *logging.Logger, c Config) (*Candle, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(c.Level.Get())
+
 	err := InitStoreDirectory(c.CandleStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")
 	}
-	db, err := badger.Open(customBadgerOptions(c.CandleStoreDirPath, c.GetLogger()))
+	db, err := badger.Open(customBadgerOptions(c.CandleStoreDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}
 	bs := badgerStore{db: db}
 	return &Candle{
+		log:         log,
 		Config:      c,
 		badger:      &bs,
 		subscribers: make(map[uint64]*InternalTransport),
 		queue:       make([]marketCandle, 0),
 	}, nil
+}
+
+func (c *Candle) ReloadConf(cfg Config) {
+	c.log.Info("reloading configuration")
+	if c.log.GetLevel() != cfg.Level.Get() {
+		c.log.Info("updating log level",
+			logging.String("old", c.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		c.log.SetLevel(cfg.Level.Get())
+	}
+
+	// only Timeout is really use in here
+	c.cfgMu.Lock()
+	c.Config = cfg
+	c.cfgMu.Unlock()
 }
 
 // Subscribe to a channel of new or updated candles. The subscriber id will be returned as a uint64 value
@@ -232,8 +256,11 @@ func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time,
 	it := c.badger.getIterator(txn, false)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout*time.Second)
+	c.cfgMu.Lock()
+	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
+	c.cfgMu.Unlock()
 	defer cancel()
+
 	deadline, _ := ctx.Deadline()
 
 	var candles []*types.Candle

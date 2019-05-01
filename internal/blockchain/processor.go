@@ -18,17 +18,36 @@ type ProcessorService interface {
 }
 
 type Processor struct {
-	*Config
+	log *logging.Logger
+	Config
 	blockchainService ProcessorService
 	seenPayloads      map[string]byte
 }
 
-func NewProcessor(config *Config, blockchainService ProcessorService) *Processor {
+func NewProcessor(log *logging.Logger, config Config, blockchainService ProcessorService) *Processor {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	return &Processor{
+		log:               log,
 		Config:            config,
 		blockchainService: blockchainService,
 		seenPayloads:      map[string]byte{},
 	}
+}
+
+func (p *Processor) ReloadConf(cfg Config) {
+	p.log.Info("reloading configuration")
+	if p.log.GetLevel() != cfg.Level.Get() {
+		p.log.Info("updating log level",
+			logging.String("old", p.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		p.log.SetLevel(cfg.Level.Get())
+	}
+
+	p.Config = cfg
 }
 
 func (p *Processor) getOrder(payload []byte) (*types.Order, error) {

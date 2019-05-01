@@ -1,0 +1,201 @@
+syntax = "proto3";
+
+option go_package = "code.vegaprotocol.io/vega/proto/api";
+
+import "proto/vega.proto";
+import "proto/markets.proto";
+
+package api;
+
+import "google/protobuf/empty.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+
+service trading {
+  // unary calls - writes
+  rpc SubmitOrder(vega.OrderSubmission) returns (vega.PendingOrder);
+  rpc CancelOrder(vega.OrderCancellation) returns (vega.PendingOrder);
+  rpc AmendOrder(vega.OrderAmendment) returns (OrderResponse);
+  // unary calls - read
+}
+
+message OrderResponse {
+  bool success = 1;
+  string reference = 2;
+}
+
+service trading_data {
+  // orders
+  rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
+  rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
+  rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
+
+  // markets
+  rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
+  rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
+  rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
+
+  // parties
+  rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
+  rpc Parties(google.protobuf.Empty) returns (PartiesResponse);
+
+  // trades
+  rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
+  rpc TradesByParty(TradesByPartyRequest) returns (TradesByPartyResponse);
+  rpc TradesByOrder(TradesByOrderRequest) returns (TradesByOrderResponse);
+
+  // positions
+  rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
+
+  // candles
+  rpc Candles(CandlesRequest) returns (CandlesResponse);
+
+  // metrics
+  rpc Statistics(google.protobuf.Empty) returns (vega.Statistics);
+  rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
+
+  // streams
+  rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream vega.Order);
+  rpc TradesSubscribe(TradesSubscribeRequest) returns (stream vega.Trade);
+  rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
+  rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
+  rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
+}
+
+message MarketByIDRequest {
+  string id = 1;
+}
+
+message MarketByIDResponse {
+  vega.Market market = 1;
+}
+
+message PartyByIDRequest {
+  string id = 1;
+}
+
+message PartyByIDResponse {
+  vega.Party party = 1;
+}
+
+message PartiesResponse {
+  repeated vega.Party parties = 1;
+}
+
+message TradesByPartyRequest {
+  string partyID = 1;
+  string marketID = 2;
+  OptionalParams params = 3;
+}
+
+message TradesByPartyResponse {
+  repeated vega.Trade trades = 1;
+}
+
+message TradesByOrderRequest {
+  string orderID = 1;
+  OptionalParams params = 2;
+}
+
+message TradesByOrderResponse {
+  repeated vega.Trade trades = 1;
+}
+
+message OrdersSubscribeRequest {
+  string marketID = 1;
+  string partyID = 2;
+}
+
+message TradesSubscribeRequest {
+  string marketID = 1;
+  string partyID = 2;
+}
+
+message CandlesSubscribeRequest {
+  string marketID = 1;
+  vega.Interval interval = 2;
+}
+
+message MarketDepthSubscribeRequest {
+  string marketID = 1;
+}
+
+message PositionsSubscribeRequest {
+  string partyID = 1;
+}
+
+message OrdersByMarketRequest {
+  string marketID = 1 [(validator.field) = {msg_exists : true}];
+  OptionalParams params = 2;
+}
+
+message OrdersByMarketResponse {
+  repeated vega.Order orders = 1;
+}
+
+message OrdersByPartyRequest {
+  string partyID = 1 [(validator.field) = {msg_exists : true }];
+  OptionalParams params = 2;
+}
+
+message OrdersByPartyResponse {
+  repeated vega.Order orders = 1;
+}
+
+message OrderByMarketAndIdRequest {
+  string marketID = 1 [(validator.field) = {msg_exists : true }];
+  string id = 2 [(validator.field) = {msg_exists : true}];
+}
+
+message OrderByMarketAndIdResponse {
+  vega.Order order = 1;
+}
+
+message MarketsResponse {
+  repeated vega.Market markets = 1;
+}
+
+message CandlesRequest {
+  string market = 1 [(validator.field) = {msg_exists : true}];
+  int64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
+  vega.Interval interval = 3;
+}
+
+message CandlesResponse {
+  repeated vega.Candle candles = 1;
+}
+
+message MarketDepthRequest {
+  string market = 1 [(validator.field) = {msg_exists: true}];
+}
+
+message MarketDepthResponse {
+  string marketID = 1;
+  repeated vega.PriceLevel buy = 2;
+  repeated vega.PriceLevel sell = 3;
+  vega.Trade lastTrade = 4;
+}
+
+message TradesByMarketRequest {
+  string marketID = 1 [(validator.field) = {msg_exists: true}];
+  OptionalParams params = 2;
+}
+
+message TradesByMarketResponse {
+  repeated vega.Trade trades = 1;
+}
+
+message PositionsByPartyRequest{
+  string partyID = 1 [(validator.field) = {msg_exists: true}];
+}
+
+message PositionsByPartyResponse{
+  repeated vega.MarketPosition positions = 1;
+}
+
+message VegaTimeResponse {
+  int64 timestamp = 1;
+}
+
+message OptionalParams {
+  uint64 limit = 1 [(validator.field) = {int_lt: 50}];
+}

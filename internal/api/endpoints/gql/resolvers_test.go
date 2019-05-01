@@ -251,7 +251,7 @@ type testResolver struct {
 func buildTestResolverRoot(t *testing.T) *testResolver {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
-	conf := api.NewDefaultConfig(log)
+	conf := api.NewDefaultConfig()
 	order := mocks.NewMockOrderService(ctrl)
 	trade := mocks.NewMockTradeService(ctrl)
 	candle := mocks.NewMockCandleService(ctrl)
@@ -259,6 +259,7 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 	party := mocks.NewMockPartyService(ctrl)
 	statusChecker := &monitoring.Status{}
 	resolver := gql.NewResolverRoot(
+		log,
 		conf,
 		order,
 		trade,

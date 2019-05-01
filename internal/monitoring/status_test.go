@@ -5,7 +5,9 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"time"
 
+	"code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/monitoring/mocks"
@@ -26,8 +28,8 @@ func TestAppStatus(t *testing.T) {
 		},
 	}
 
-	cfg := monitoring.NewDefaultConfig(log)
-	cfg.IntervalMilliseconds = 50
+	cfg := monitoring.NewDefaultConfig()
+	cfg.Interval = encoding.Duration{Duration: 50 * time.Millisecond}
 
 	t.Run("Status = CONNECTED if client healthy + !catching up", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
@@ -41,7 +43,7 @@ func TestAppStatus(t *testing.T) {
 			wg.Done()
 		})
 
-		checker := monitoring.New(cfg, blockchainClient)
+		checker := monitoring.New(log, cfg, blockchainClient)
 
 		wg.Wait()
 		assert.Equal(t, types.ChainStatus_CONNECTED, checker.ChainStatus())
@@ -65,7 +67,7 @@ func TestAppStatus(t *testing.T) {
 			defer wg.Done()
 		})
 
-		checker := monitoring.New(cfg, blockchainClient)
+		checker := monitoring.New(log, cfg, blockchainClient)
 
 		wg.Wait()
 		assert.Equal(t, types.ChainStatus_REPLAYING, checker.ChainStatus())
@@ -82,7 +84,7 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().Health().MinTimes(1).Return(nil, errors.New("err")).Do(func() {
 			end <- struct{}{}
 		})
-		checker := monitoring.New(cfg, blockchainClient)
+		checker := monitoring.New(log, cfg, blockchainClient)
 		<-end
 		assert.Equal(t, types.ChainStatus_DISCONNECTED, checker.ChainStatus())
 
@@ -110,7 +112,7 @@ func TestAppStatus(t *testing.T) {
 		blockchainClient.EXPECT().GetStatus(gomock.Any()).Return(&statusRes, nil).Do(func(ctx context.Context) {
 			wg.Done()
 		})
-		checker := monitoring.New(cfg, blockchainClient)
+		checker := monitoring.New(log, cfg, blockchainClient)
 		wg.Wait()
 		// ensure status is CONNECTED
 		assert.Equal(t, types.ChainStatus_CONNECTED, checker.ChainStatus())

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/stretchr/testify/assert"
@@ -16,15 +17,15 @@ func TestStorage_NewTrades(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
 
-	tradeStore, err := storage.NewTrades(config, func() {})
+	tradeStore, err := storage.NewTrades(logging.NewTestLogger(), config, func() {})
 	assert.NotNil(t, tradeStore)
 	assert.Nil(t, err)
 
 	config.TradeStoreDirPath = ""
 
-	tradeStore, err = storage.NewTrades(config, func() {})
+	tradeStore, err = storage.NewTrades(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, tradeStore)
 	assert.NotNil(t, err)
 
@@ -38,12 +39,12 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
 
-	orderStore, err := storage.NewOrders(config, func() {})
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 
-	tradeStore, err := storage.NewTrades(config, func() {})
+	tradeStore, err := storage.NewTrades(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 
 	defer orderStore.Close()
@@ -69,12 +70,12 @@ func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
 
-	orderStore, err := storage.NewOrders(config, func() {})
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 
-	tradeStore, err := storage.NewTrades(config, func() {})
+	tradeStore, err := storage.NewTrades(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 
 	defer orderStore.Close()
@@ -112,12 +113,12 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(config)
+	storage.FlushStores(logging.NewTestLogger(), config)
 
-	orderStore, err := storage.NewOrders(config, func() {})
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 
-	tradeStore, err := storage.NewTrades(config, func() {})
+	tradeStore, err := storage.NewTrades(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, err)
 
 	defer orderStore.Close()

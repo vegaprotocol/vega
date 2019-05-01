@@ -25,8 +25,14 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	namedLogger = "api.gql"
+)
+
 type graphServer struct {
-	*api.Config
+	api.Config
+
+	log           *logging.Logger
 	orderService  *orders.Svc
 	tradeService  *trades.Svc
 	candleService *candles.Svc
@@ -38,7 +44,8 @@ type graphServer struct {
 }
 
 func NewGraphQLServer(
-	config *api.Config,
+	log *logging.Logger,
+	config api.Config,
 	orderService *orders.Svc,
 	tradeService *trades.Svc,
 	candleService *candles.Svc,
@@ -47,8 +54,12 @@ func NewGraphQLServer(
 	timeService *vegatime.Svc,
 	statusChecker *monitoring.Status,
 ) *graphServer {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
 
 	return &graphServer{
+		log:           log,
 		Config:        config,
 		orderService:  orderService,
 		tradeService:  tradeService,
@@ -60,10 +71,25 @@ func NewGraphQLServer(
 	}
 }
 
+func (s *graphServer) ReloadConf(cfg api.Config) {
+	s.log.Info("reloading confioguration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	// TODO(): not updating the the actual server for now, may need to look at this later
+	// e.g restart the http server on another port or whatever
+	s.Config = cfg
+}
+
 func (g *graphServer) remoteAddrMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		logger := *g.GetLogger()
+		logger := g.log
 		found := false
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
@@ -96,8 +122,6 @@ func (g *graphServer) remoteAddrMiddleware(next http.Handler) http.Handler {
 }
 
 func (g *graphServer) Start() {
-	logger := *g.GetLogger()
-
 	// <--- cors support - configure for production
 	var c = cors.Default()
 	var up = websocket.Upgrader{
@@ -112,10 +136,11 @@ func (g *graphServer) Start() {
 	port := g.GraphQLServerPort
 	ip := g.GraphQLServerIpAddress
 
-	logger.Info("Starting GraphQL based API", logging.String("addr", ip), logging.Int("port", port))
+	g.log.Info("Starting GraphQL based API", logging.String("addr", ip), logging.Int("port", port))
 
 	addr := fmt.Sprintf("%s:%d", ip, port)
 	resolverRoot := NewResolverRoot(
+		g.log,
 		g.Config,
 		g.orderService,
 		g.tradeService,
@@ -132,7 +157,7 @@ func (g *graphServer) Start() {
 		reqctx := graphql.GetRequestContext(ctx)
 		logfields := make([]zap.Field, 0)
 		logfields = append(logfields, logging.String("raw", reqctx.RawQuery))
-		rlogger := logger.With(logfields...)
+		rlogger := g.log.With(logfields...)
 		rlogger.Debug("GQL Start")
 		start := vegatime.Now()
 		res, err = next(ctx)
@@ -143,7 +168,7 @@ func (g *graphServer) Start() {
 		timetaken := end.Sub(start)
 		logfields = append(logfields, logging.Int64("duration_nano", timetaken.Nanoseconds()))
 
-		rlogger = logger.With(logfields...)
+		rlogger = g.log.With(logfields...)
 		rlogger.Debug("GQL Finish")
 		return res, err
 	})
@@ -151,12 +176,12 @@ func (g *graphServer) Start() {
 	handlr := http.NewServeMux()
 
 	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
-	handlr.Handle("/query", g.remoteAddrMiddleware(c.Handler(handler.GraphQL(
+	handlr.Handle("/query", api.RemoteAddrMiddleware(g.log, c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
-			logger.Warn("Recovering from error on graphQL handler",
+			g.log.Warn("Recovering from error on graphQL handler",
 				logging.String("error", fmt.Sprintf("%s", err)))
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
@@ -170,16 +195,15 @@ func (g *graphServer) Start() {
 
 	err := g.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		logger.Panic("Failed to listen and serve on graphQL server", logging.Error(err))
+		g.log.Panic("Failed to listen and serve on graphQL server", logging.Error(err))
 	}
 }
 
 func (g *graphServer) Stop() {
 	if g.srv != nil {
-		logger := *g.GetLogger()
-		logger.Info("Stopping GraphQL based API")
+		g.log.Info("Stopping GraphQL based API")
 		if err := g.srv.Shutdown(context.Background()); err != nil {
-			logger.Error("Failed to stop GraphQL based API cleanly",
+			g.log.Error("Failed to stop GraphQL based API cleanly",
 				logging.Error(err))
 		}
 	}

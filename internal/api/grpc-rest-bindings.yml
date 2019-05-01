@@ -2,7 +2,7 @@
 type: google.api.Service
 config_version: 3
 
-name: grpc.trading
+name: api.trading
 title: Vega Trading API
 
 apis:
@@ -10,32 +10,42 @@ apis:
 
 http:
   rules:
-    - selector: grpc.trading.SubmitOrder
+    - selector: api.trading.SubmitOrder
       post: '/submitOrder'
       body: "*"
-    - selector: grpc.trading.CancelOrder
+    - selector: api.trading.CancelOrder
       post: '/cancelOrder'
       body: "*"
-    - selector: grpc.trading.AmendOrder
+    - selector: api.trading.AmendOrder
       post: '/amendOrder'
       body: "*"
-    - selector: grpc.trading.OrdersByMarket
+    - selector: api.trading_data.OrdersByMarket
       get: '/marketOrders'
-    - selector: grpc.trading.OrdersByParty
+    - selector: api.trading_data.OrdersByParty
       get: '/partyOrders'
-    - selector: grpc.trading.OrderByMarketAndId
+    - selector: api.trading_data.OrderByMarketAndId
       get: '/marketOrder'
-    - selector: grpc.trading.Markets
+    - selector: api.trading_data.Markets
       get: '/markets'
-    - selector: grpc.trading.TradeCandles
+    - selector: api.trading_data.Market
+      get: '/market'
+    - selector: api.trading_data.TradeCandles
       get: '/candles'
-    - selector: grpc.trading.MarketDepth
+    - selector: api.trading_data.MarketDepth
       get: '/marketDepth'
-    - selector: grpc.trading.TradesByMarket
+    - selector: api.trading_data.TradesByMarket
       get: '/marketTrades'
-    - selector: grpc.trading.PositionsByParty
+    - selector: api.trading_data.TradesByParty
+      get: '/partyTrades'
+    - selector: api.trading_data.TradesByOrder
+      get: '/orderTrades'
+    - selector: api.trading_data.PositionsByParty
       get: '/partyPositions'
-    - selector: grpc.trading.Statistics
+    - selector: api.trading_data.Party
+      get: '/party'
+    - selector: api.trading_data.Parties
+      get: '/parties'
+    - selector: api.trading_data.Statistics
       get: '/statistics'
-    - selector: grpc.trading.GetVegaTime
+    - selector: api.trading_data.GetVegaTime
       get: '/vegaTime'

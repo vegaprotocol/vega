@@ -100,3 +100,10 @@ build_vega:
     paths:
       - ${BIN_DIR}
     expire_in: 2 weeks
+
+push_to_devnet:
+  stage: deploy
+  script:
+    - ./script/deploy.sh devnet vega "${BIN_DIR}/vega:/home/vega/current/:0755"
+  only:
+    - /^develop$/  # VERY IMPORTANT: Only the develop branch should be deployed to devnet.

@@ -11,25 +11,45 @@ import (
 
 // Market is used for memory/RAM based markets storage.
 type Market struct {
-	*Config
+	Config
+
+	log    *logging.Logger
 	badger *badgerStore
 }
 
 // NewMarkets returns a concrete implementation of MarketStore.
-func NewMarkets(c *Config) (*Market, error) {
+func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(c.Level.Get())
+
 	err := InitStoreDirectory(c.MarketStoreDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")
 	}
-	db, err := badger.Open(customBadgerOptions(c.MarketStoreDirPath, c.GetLogger()))
+	db, err := badger.Open(customBadgerOptions(c.MarketStoreDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}
 	bs := badgerStore{db: db}
 	return &Market{
+		log:    log,
 		Config: c,
 		badger: &bs,
 	}, nil
+}
+
+func (m *Market) ReloadConf(cfg Config) {
+	m.log.Info("reloading configuration")
+	if m.log.GetLevel() != cfg.Level.Get() {
+		m.log.Info("updating log level",
+			logging.String("old", m.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		m.log.SetLevel(cfg.Level.Get())
+	}
+
+	m.Config = cfg
 }
 
 // Post saves a given market to the mem-store.
