@@ -14,14 +14,14 @@ type Future struct {
 	Oracle   oracles.Oracle
 }
 
-func (f *Future) Settle(entryPrice uint64, netPosition uint64) (*FinancialAmount, error) {
+func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error) {
 	settlementPrice, err := f.Oracle.SettlementPrice()
 	if err != nil {
 		return nil, err
 	}
-	return &FinancialAmount{
+	return &types.FinancialAmount{
 		Asset:  f.Asset,
-		Amount: (settlementPrice - entryPrice) * netPosition,
+		Amount: int64((settlementPrice - entryPrice)) * netPosition,
 	}, nil
 }
 

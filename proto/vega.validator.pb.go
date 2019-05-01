@@ -17,6 +17,9 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *Amount) Validate() error {
+	return nil
+}
 func (this *Party) Validate() error {
 	for _, item := range this.Positions {
 		if item != nil {
