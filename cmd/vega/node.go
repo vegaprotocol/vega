@@ -155,7 +155,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		gty *Gateway
 		err error
 	)
-	if l.conf.EmbedGateway {
+	if l.conf.GatewayEnabled {
 		gty, err = startGateway(l.Log, l.configPath)
 		if err != nil {
 			return err
@@ -172,7 +172,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	statusChecker.Stop()
 
 	// cleanup gateway
-	if l.conf.EmbedGateway {
+	if l.conf.GatewayEnabled {
 		if gty != nil {
 			gty.Stop()
 		}
