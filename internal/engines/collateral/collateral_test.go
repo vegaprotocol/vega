@@ -24,11 +24,12 @@ type testEngine struct {
 
 func TestCollateral(t *testing.T) {
 	t.Run("test creating new - should create market accounts", testNew)
-	t.Run("test collecting buys - both insurance and sufficient in trader accounts", testCollectBuy)
-	t.Run("test collecting buys - trader account not empty, but insufficient", testCollectComplexBuy)
-	t.Run("test collecting buys - trader missing some accounts", testCollectBuyMissingTraderAccounts)
-	t.Run("test collecting sells - cases where settle account is full + where insurance pool is tapped", testCollectSell)
-	t.Run("test collecting both buys and sells - Successfully collect buy and sell in a single call", testCollectBoth)
+	t.Run("test collecting buys - both insurance and sufficient in trader accounts", testCollectLoss)
+	t.Run("test collecting buys - trader account not empty, but insufficient", testCollectComplexLoss)
+	t.Run("test collecting buys - trader missing some accounts", testCollectLossMissingTraderAccounts)
+	t.Run("test collecting sells - cases where settle account is full + where insurance pool is tapped", testDistributeWin)
+	t.Run("test collecting both buys and sells - Successfully collect buy and sell in a single call", testProcessBoth)
+	t.Run("test distribution insufficient funds - Collect losses (partial), distribute wins pro-rate", testProcessBothProRated)
 }
 
 func testNew(t *testing.T) {
@@ -38,7 +39,7 @@ func testNew(t *testing.T) {
 	eng.ctrl.Finish()
 }
 
-func testCollectBuy(t *testing.T) {
+func testCollectLoss(t *testing.T) {
 	market := "test-market"
 	trader := "test-trader"
 	moneyTrader := "money-trader"
@@ -64,24 +65,25 @@ func testCollectBuy(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: uint64(price),
+				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_BUY,
+			Type: types.SettleType_LOSS,
 		},
 		{
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: uint64(price),
+				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_BUY,
+			Type: types.SettleType_LOSS,
 		},
 	}
 	for _, sacc := range systemAccs {
 		switch sacc.Type {
 		case types.AccountType_INSURANCE:
+			sacc.Balance = price * 5
 			eng.accounts.EXPECT().IncrementBalance(sacc.Id, -price).Times(1).Return(nil)
 		case types.AccountType_SETTLEMENT:
 			// update settlement account balance
@@ -106,7 +108,7 @@ func testCollectBuy(t *testing.T) {
 	assert.Equal(t, 2, len(resp.Transfers))
 }
 
-func testCollectComplexBuy(t *testing.T) {
+func testCollectComplexLoss(t *testing.T) {
 	market := "test-market"
 	trader := "test-trader"
 	half := int64(500)
@@ -128,14 +130,15 @@ func testCollectComplexBuy(t *testing.T) {
 			Size:  1,
 			Amount: &types.FinancialAmount{
 				Asset:  "BTC",
-				Amount: uint64(price),
+				Amount: -price,
 			},
-			Type: types.SettleType_BUY,
+			Type: types.SettleType_LOSS,
 		},
 	}
 	for _, sacc := range systemAccs {
 		switch sacc.Type {
 		case types.AccountType_INSURANCE:
+			sacc.Balance = half
 			eng.accounts.EXPECT().IncrementBalance(sacc.Id, -half).Times(1).Return(nil)
 		case types.AccountType_SETTLEMENT:
 			// update settlement account balance
@@ -160,7 +163,7 @@ func testCollectComplexBuy(t *testing.T) {
 	assert.Equal(t, 2, len(resp.Transfers))
 }
 
-func testCollectBuyMissingTraderAccounts(t *testing.T) {
+func testCollectLossMissingTraderAccounts(t *testing.T) {
 	market := "test-market"
 	trader := "test-trader"
 	price := int64(1000)
@@ -190,9 +193,9 @@ func testCollectBuyMissingTraderAccounts(t *testing.T) {
 			Size:  1,
 			Amount: &types.FinancialAmount{
 				Asset:  "BTC",
-				Amount: uint64(price),
+				Amount: -price,
 			},
-			Type: types.SettleType_BUY,
+			Type: types.SettleType_LOSS,
 		},
 	}
 	resp, err := eng.Collect(pos)
@@ -201,7 +204,7 @@ func testCollectBuyMissingTraderAccounts(t *testing.T) {
 	assert.Equal(t, collateral.ErrTraderAccountsMissing, err)
 }
 
-func testCollectSell(t *testing.T) {
+func testDistributeWin(t *testing.T) {
 	market := "test-market"
 	trader := "test-trader"
 	moneyTrader := "money-trader"
@@ -225,25 +228,26 @@ func testCollectSell(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: uint64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_SELL,
+			Type: types.SettleType_WIN,
 		},
 		{
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: uint64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_SELL,
+			Type: types.SettleType_WIN,
 		},
 	}
 	for _, sacc := range systemAccs {
 		switch sacc.Type {
 		case types.AccountType_INSURANCE:
 			// insurance will be used to settle one more sale
+			sacc.Balance = price
 			eng.accounts.EXPECT().IncrementBalance(sacc.Id, -price).Times(1).Return(nil)
 		case types.AccountType_SETTLEMENT:
 			sacc.Balance = 2 * price
@@ -283,7 +287,7 @@ func testCollectSell(t *testing.T) {
 	assert.Equal(t, 3, len(resp.Transfers))
 }
 
-func testCollectBoth(t *testing.T) {
+func testProcessBoth(t *testing.T) {
 	market := "test-market"
 	trader := "test-trader"
 	moneyTrader := "money-trader"
@@ -297,37 +301,37 @@ func testCollectBoth(t *testing.T) {
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: uint64(price),
+				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_BUY,
+			Type: types.SettleType_LOSS,
 		},
 		{
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: uint64(price),
+				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_BUY,
+			Type: types.SettleType_LOSS,
 		},
 		{
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
-				Amount: uint64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_SELL,
+			Type: types.SettleType_WIN,
 		},
 		{
 			Owner: moneyTrader,
 			Size:  2,
 			Amount: &types.FinancialAmount{
-				Amount: uint64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_SELL,
+			Type: types.SettleType_WIN,
 		},
 	}
 	eng := getTestEngine(t, market, nil)
@@ -408,6 +412,142 @@ func testCollectBoth(t *testing.T) {
 	for _, bal := range resp.Balances {
 		if bal.Account.Type == types.AccountType_SETTLEMENT {
 			assert.Zero(t, bal.Account.Balance)
+		}
+	}
+	resp = responses[1]
+	// there should be 3 ledger moves -> settle to trader 1, settle to trader 2, insurance to trader 2
+	assert.Equal(t, 2, len(resp.Transfers))
+}
+
+func testProcessBothProRated(t *testing.T) {
+	market := "test-market"
+	trader := "test-trader"
+	moneyTrader := "money-trader"
+	price := int64(1000)
+
+	systemAccs := getSystemAccounts(market)
+	traderAccs := getTraderAccounts(trader, market)
+	moneyAccs := getTraderAccounts(moneyTrader, market)
+	pos := []*types.SettlePosition{
+		{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: -price,
+				Asset:  "BTC",
+			},
+			Type: types.SettleType_LOSS,
+		},
+		{
+			Owner: moneyTrader,
+			Size:  2,
+			Amount: &types.FinancialAmount{
+				Amount: -price,
+				Asset:  "BTC",
+			},
+			Type: types.SettleType_LOSS,
+		},
+		{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  "BTC",
+			},
+			Type: types.SettleType_WIN,
+		},
+		{
+			Owner: moneyTrader,
+			Size:  2,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  "BTC",
+			},
+			Type: types.SettleType_WIN,
+		},
+	}
+	eng := getTestEngine(t, market, nil)
+	defer eng.ctrl.Finish()
+	// first up, we'll get the system accounts for the market
+	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, storage.SystemOwner).Times(1).Return(systemAccs, nil)
+	// The, each time we encounter a trader (ie each position aggregate), we'll attempt to create the account
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos)).Return(nil).Do(func(owner, market string) {
+		isTrader := (owner == trader || owner == moneyTrader)
+		assert.True(t, isTrader)
+	})
+	// next up, calls to buy positions, get market accounts for owner (for this market)
+	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
+	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, moneyTrader).Times(1).Return(moneyAccs, nil)
+	// now the positions, calls we expect to be made when processing buys
+	// system accounts
+	var settle *types.Account
+	for _, sacc := range systemAccs {
+		switch sacc.Type {
+		case types.AccountType_INSURANCE:
+			// insurance will be used to settle one sale (size 1, of value price, taken from insurance account)
+			sacc.Balance = price / 2
+			eng.accounts.EXPECT().UpdateBalance(sacc.Id, int64(0)).Times(1).Return(nil).Do(func(_ string, _ int64) {
+				sacc.Balance = 0
+			})
+		case types.AccountType_SETTLEMENT:
+			// assign to var so we don't need to repeat this loop for sells
+			settle = sacc
+			exp := 2 * price
+			exp += price / 2
+			eng.accounts.EXPECT().IncrementBalance(sacc.Id, exp).Times(1).Return(nil).Do(func(_ string, inc int64) {
+				assert.Equal(t, exp, inc)
+				// settle.Balance += inc // this should be happening in the code already, though
+			})
+		}
+	}
+	// ensure this is set
+	assert.NotNil(t, settle)
+	// now settlement for buys on trader with money:
+	for _, tacc := range moneyAccs {
+		if tacc.Type == types.AccountType_MARGIN {
+			tacc.Balance += 5 * price // plenty
+			// we expect the settle of size 2 to be taken from this account
+			eng.accounts.EXPECT().IncrementBalance(tacc.Id, -2*price).Times(1).Return(nil)
+			break
+		}
+	}
+	// buys should be handled at this point, moving on to sells
+	// first thing that'll happen here is getting the general accounts
+	var tGeneral, mGeneral *types.Account
+	for _, acc := range traderAccs {
+		if acc.Type == types.AccountType_GENERAL {
+			tGeneral = acc
+			break
+		}
+	}
+	// ensure we have this account
+	assert.NotNil(t, tGeneral)
+	for _, acc := range moneyAccs {
+		if acc.Type == types.AccountType_GENERAL {
+			mGeneral = acc
+			break
+		}
+	}
+	// ensure we have this account
+	assert.NotNil(t, mGeneral)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return(tGeneral, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return(mGeneral, nil)
+	// now, settle account will be debited per sell position, so 2 calls:
+	eng.accounts.EXPECT().IncrementBalance(settle.Id, gomock.Any()).Times(2).Return(nil).Do(func(_ string, inc int64) {
+		assert.NotZero(t, inc)
+	})
+	// next up, updating the balance of the traders' general accounts
+	eng.accounts.EXPECT().IncrementBalance(tGeneral.Id, int64(833)).Times(1).Return(nil)
+	eng.accounts.EXPECT().IncrementBalance(mGeneral.Id, int64(1666)).Times(1).Return(nil)
+	responses, err := eng.Collect(pos)
+	assert.Equal(t, 2, len(responses))
+	assert.NoError(t, err)
+	resp := responses[0]
+	// total balance of settlement account should be 3 times price
+	for _, bal := range resp.Balances {
+		if bal.Account.Type == types.AccountType_SETTLEMENT {
+			// rounding error -> 1666 + 833 == 2499 assert.Equal(t, int64(1), bal.Account.Balance) }
+			assert.Equal(t, int64(1), bal.Account.Balance)
 		}
 	}
 	resp = responses[1]
