@@ -8,7 +8,7 @@ import (
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api/endpoints/grpc TradeOrderService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeOrderService
 type TradeOrderService interface {
 	CreateOrder(ctx context.Context, order *types.OrderSubmission) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error)
