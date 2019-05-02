@@ -2,18 +2,19 @@ package gql_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
 
-	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/gateway"
 	gql "code.vegaprotocol.io/vega/internal/gateway/graphql"
+	"code.vegaprotocol.io/vega/internal/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/monitoring"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -127,27 +128,27 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 		"barney": getTestParty(),
 	}
 
-	root.party.EXPECT().GetByID(gomock.Any(), gomock.Any()).Times(len(parties)).DoAndReturn(func(_ context.Context, k string) (*types.Party, error) {
-		m, ok := parties[k]
+	root.tradingDataClient.EXPECT().PartyByID(gomock.Any(), gomock.Any()).Times(len(parties)).DoAndReturn(func(_ context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
+		m, ok := parties[req.Id]
 		assert.True(t, ok)
 		if m == nil {
 			return nil, partyNotExistsErr
 		}
-		return m, nil
+		return &protoapi.PartyByIDResponse{Party: m}, nil
 	})
 
-	root.market.EXPECT().GetByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {
-		m, ok := markets[k]
+	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
+		m, ok := markets[req.Id]
 		assert.True(t, ok)
 		if m == nil {
 			return nil, marketNotExistsErr
 		}
-		return m, nil
+		return &protoapi.MarketByIDResponse{Market: m}, nil
 	})
 	incompleteMarket := &types.Market{
 		Id: "foobar",
 	}
-	root.market.EXPECT().GetAll(gomock.Any()).Times(1).Return([]*types.Market{incompleteMarket}, nil)
+	root.tradingDataClient.EXPECT().Markets(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.MarketsResponse{Markets: []*types.Market{incompleteMarket}}, nil)
 
 	name := "BTC/DEC19"
 	vMarkets, err := root.Query().Markets(ctx, &name)
@@ -180,27 +181,12 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	defer root.Finish()
 	ctx := context.Background()
 
-	notExistsErr := errors.New("market does not exist")
-	markets := map[string]*types.Market{
-		"BTC/DEC19": &types.Market{
-			Id: "BTC/DEC19",
-		},
-	}
 	marketId := "BTC/DEC19"
 	market := &gql.Market{
 		ID: marketId,
 	}
 
-	root.market.EXPECT().GetByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, k string) (*types.Market, error) {
-		m, ok := markets[k]
-		assert.True(t, ok)
-		if m == nil {
-			return nil, notExistsErr
-		}
-		return m, nil
-	})
-	var ui0 uint64
-	root.order.EXPECT().GetByMarket(gomock.Any(), marketId, ui0, ui0, false, nil).Times(1).Return([]*types.Order{
+	root.tradingDataClient.EXPECT().OrdersByMarket(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.OrdersByMarketResponse{Orders: []*types.Order{
 		{
 			Id:        "order-id-1",
 			Price:     1000,
@@ -211,7 +197,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 			Price:     2000,
 			CreatedAt: 2,
 		},
-	}, nil)
+	}}, nil)
 
 	marketResolver := root.Market()
 	assert.NotNil(t, marketResolver)
@@ -238,23 +224,31 @@ type resolverRoot interface {
 
 type testResolver struct {
 	resolverRoot
-	log  *logging.Logger
-	ctrl *gomock.Controller
+	log               *logging.Logger
+	ctrl              *gomock.Controller
+	tradingClient     *mocks.MockTradingClient
+	tradingDataClient *mocks.MockTradingDataClient
 }
 
 func buildTestResolverRoot(t *testing.T) *testResolver {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
-	conf := api.NewDefaultConfig()
-	statusChecker := &monitoring.Status{}
+	conf := gateway.NewDefaultConfig()
+	// statusChecker := &monitoring.Status{}
+	tradingClient := mocks.NewMockTradingClient(ctrl)
+	tradingDataClient := mocks.NewMockTradingDataClient(ctrl)
 	resolver := gql.NewResolverRoot(
 		log,
 		conf,
+		tradingClient,
+		tradingDataClient,
 	)
 	return &testResolver{
-		resolverRoot: resolver,
-		log:          log,
-		ctrl:         ctrl,
+		resolverRoot:      resolver,
+		log:               log,
+		ctrl:              ctrl,
+		tradingClient:     tradingClient,
+		tradingDataClient: tradingDataClient,
 	}
 }
 
