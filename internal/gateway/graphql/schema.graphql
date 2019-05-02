@@ -41,6 +41,13 @@ type Mutation {
     # ID of the party which created the order
     partyId: String!
   ): PendingOrder!
+
+  # sign a party in using an username and password, then return a token
+  signin(
+    # ID of the party to get logged in
+    username: String!,
+    # Password of the party
+    password: String!): String!
 }
 
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.

@@ -694,6 +694,14 @@
         }
       }
     },
+    "apiSignInResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        }
+      }
+    },
     "apiTradesByMarketResponse": {
       "type": "object",
       "properties": {

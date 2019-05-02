@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/config"
@@ -48,6 +49,7 @@ type NodeCommand struct {
 	orderService  *orders.Svc
 	partyService  *parties.Svc
 	timeService   *vegatime.Svc
+	auth          *auth.Svc
 
 	blockchainClient *blockchain.Client
 

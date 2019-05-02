@@ -15,7 +15,32 @@ service trading {
   rpc SubmitOrder(vega.OrderSubmission) returns (vega.PendingOrder);
   rpc CancelOrder(vega.OrderCancellation) returns (vega.PendingOrder);
   rpc AmendOrder(vega.OrderAmendment) returns (OrderResponse);
+  rpc SignIn(SignInRequest) returns (SignInResponse);
   // unary calls - read
+}
+
+message SignInRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message SignInResponse {
+  string token = 1;
+}
+
+message SubmitOrderRequest {
+  vega.OrderSubmission submission = 1;
+  string token = 101;
+}
+
+message CancelOrderRequest {
+  vega.OrderCancellation cancellation = 1;
+  string token = 101;
+}
+
+message AmendOrderRequest {
+  vega.OrderAmendment amendment = 1;
+  string token = 101;
 }
 
 message OrderResponse {

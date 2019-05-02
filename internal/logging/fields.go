@@ -154,3 +154,7 @@ func Market(m types.Market) zap.Field {
 func Party(p types.Party) zap.Field {
 	return zap.String("party", p.String())
 }
+
+func Reflect(key string, val interface{}) zap.Field {
+	return zap.Reflect("key", val)
+}
