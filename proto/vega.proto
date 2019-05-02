@@ -240,7 +240,9 @@ message FinancialAmount {
 enum SettleType {
   LOSS = 0;
   WIN = 1;
-  MTM = 2;
+  CLOSE = 2;
+  MTM_LOSS = 3;
+  MTM_WIN = 4;
 }
 
 message SettlePosition {

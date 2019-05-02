@@ -267,12 +267,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.Trades != nil {
-		// create channel for settlement engine, this will allow us to get the mark to market stuff
-		// buffer is big enough for 1 settle per trade, in reality, each trade can produce between 0 and 2 settle positions.
-		// either way, this buffer seems sensible enough
-		ch := make(chan *types.SettlePosition, len(confirmation.Trades))
-		// this channel is read by settlement, populated in the loop by position engine
-		settleCh := m.settlement.MarkToMarket(ch)
+		// do this ones, we'll use this as a reference for the channel buffer size
+		positionCount := len(m.position.Positions())
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -301,21 +297,33 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// Ensure mark price is always up to date for each market in execution engine
 			m.markPrice = trade.Price
 
+			// create channel for setllement engine, this will allow us to get the mark to market stuff in there
+			// use the total number of positions in the market as buffer, trades can increase the number of positions
+			// but we're reading from the channel anyway, so that shouldn't affect this one bit
+			ch := make(chan *types.SettlePosition, positionCount)
+			// this channel is read by settlement, populated in the loop by position engine
+			settleCh := m.settlement.MarkToMarket(ch)
 			// Update party positions for trade affected
 			m.position.Update(trade, ch)
 
+			// @TODO we should return something from update (ie the closed positions from trade)
+			// and pass that on to settle && collateral
+
+			// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
+			close(ch)
+			if settle := <-settleCh; len(settle) > 0 {
+				if _, err := m.collateral.Collect(settle); err != nil {
+					m.log.Error("Failed to collect mark-to-market stuff",
+						logging.Error(err),
+					)
+				}
+			}
 			// Update positions for the market for the trade
 			// this is broken, m.position.Positions() returns copies of the market positions, we can't update them directly
 			// perhaps we need to use a channel here, too or something?
 			// AFAIK, we're not using the margins from risk in this loop, so chances are this call can be moved outside of the loop anyway
 			// avoiding a lot of pointless calls copying all the positions each time(?)
 			m.risk.UpdatePositions(trade.Price, m.position.Positions())
-		}
-		close(ch) // close the group already, we're fine
-		// we'll wait for settlement engine to finish here
-		if settle := <-settleCh; len(settle) > 0 {
-			// something happened
-			m.collateral.MarkToMarket(settle)
 		}
 	}
 

@@ -96,7 +96,7 @@ func (e *Engine) MarkToMarket(ch <-chan *types.SettlePosition) <-chan []*types.S
 		posSlice := make([]*types.SettlePosition, 0, cap(ch))
 		winSlice := make([]*types.SettlePosition, 0, cap(ch)/2) // assuming half of these will be wins (not a given, but it's a decent enough cap)
 		for pos := range ch {
-			if pos.Amount.Amount < 0 {
+			if pos.Type == types.SettleType_MTM_LOSS {
 				posSlice = append(posSlice, pos)
 			} else {
 				winSlice = append(winSlice, pos)

@@ -96,11 +96,7 @@ func (e *Engine) getSystemAccounts() (settle, insurance *types.Account, err erro
 	return
 }
 
-// MarkToMarket... WIP
-func (e *Engine) MarkToMarket(positions []*types.SettlePosition) ([]*types.TransferResponse, error) {
-	return nil, nil
-}
-
+// Collect, handles collects for both market close as mark-to-market stuff
 func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferResponse, error) {
 	if len(positions) == 0 {
 		return nil, nil
@@ -111,7 +107,7 @@ func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferRe
 		return nil, err
 	}
 	// this way we know if we need to check loss response
-	haveLoss := (positions[0].Type == types.SettleType_LOSS)
+	haveLoss := (positions[0].Type == types.SettleType_LOSS || positions[0].Type == types.SettleType_MTM_LOSS)
 	// tracks delta, wins & losses and determines how to distribute losses amongst wins if needed
 	distr := distributor{}
 	lossResp, winResp := getTransferResponses(positions, settle, insurance)
@@ -284,7 +280,7 @@ func (e *Engine) getWinCB(distr *distributor, winResp *types.TransferResponse, s
 func collectLoss(positions []*types.SettlePosition, cb collectCB) ([]*types.SettlePosition, error) {
 	// collect whatever we have until we reach the DEBIT part of the positions
 	for i, p := range positions {
-		if p.Type == types.SettleType_WIN {
+		if p.Type == types.SettleType_WIN || p.Type == types.SettleType_MTM_WIN {
 			return positions[i:], nil
 		}
 		if err := cb(p); err != nil {
@@ -307,7 +303,8 @@ func collectWin(positions []*types.SettlePosition, cb collectCB) error {
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the SettlePosition argument
 func (e *Engine) getTransferRequest(p *types.SettlePosition, settle, insurance *types.Account) (*types.TransferRequest, error) {
-	if p.Type == types.SettleType_LOSS {
+	// final settle, or MTM settle, makes no difference, it's win/loss still
+	if p.Type == types.SettleType_LOSS || p.Type == types.SettleType_MTM_LOSS {
 		accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, p.Owner)
 		if err != nil {
 			e.log.Error(

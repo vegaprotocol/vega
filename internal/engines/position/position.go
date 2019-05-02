@@ -110,12 +110,16 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- *types.SettlePosition) {
 		e.positions[trade.Seller] = seller
 	}
 	// update positions, potentially settle (depending on positions)
+	// these settle positions should *not* be pushed onto the channel
+	// they should be returned instead, and passed on to collateral/settlement directly
 	if s := updateBuyerPosition(buyer, trade); s != nil {
 		ch <- s
 	}
 	if s := updateSellerPosition(seller, trade); s != nil {
 		ch <- s
 	}
+	// mark to market for all open positions
+	e.updateMTMPositions(trade, ch)
 
 	e.log.Debug("Positions Updated for trade",
 		logging.Trade(*trade),
@@ -125,6 +129,39 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- *types.SettlePosition) {
 	// we've set all the values now, unlock after logging
 	// because we're working on MarketPosition pointers
 	e.mu.Unlock()
+}
+
+// iterate over all open positions, for mark to market based on new market price
+func (e *Engine) updateMTMPositions(trade *types.Trade, ch chan<- *types.SettlePosition) {
+	for id, pos := range e.positions {
+		// no volume (closed out), or position price == market price
+		// there's no MTM settlement required, carry on...
+		if pos.size == 0 || pos.price == trade.Price {
+			// this trader was closed out already, no MTM applies
+			continue
+		}
+		// e.g. position avg -> 90, market price 100:
+		// short -> (100 - 90) * -10 => -100 ==> MTM_LOSS
+		// long -> (100-90) * 10 => 100 ==> MTM_WIN
+		mtmShare := int64(trade.Price-pos.price) * pos.size
+		settle := &types.SettlePosition{
+			Owner: id,
+			Size:  1, // this is an absolute delta based on volume, so size is always 1
+			Amount: &types.FinancialAmount{
+				Amount: mtmShare, // current delta -> mark price minus current position average
+			},
+			Type: types.SettleType_MTM_LOSS,
+		}
+		// we've handled the mark-to-marked share here, so whatever the position, from this point on
+		// the traders' positions are volume * market.price
+		pos.price = trade.Price
+		if mtmShare > 0 {
+			// win type
+			settle.Type = types.SettleType_MTM_WIN
+		}
+		// set position
+		ch <- settle
+	}
 }
 
 // just the logic to update buyer, will eventually return the SettlePosition we need to push
@@ -141,6 +178,7 @@ func updateBuyerPosition(buyer *MarketPosition, trade *types.Trade) *types.Settl
 		buyer.size += int64(trade.Size)
 		return nil
 	}
+	// @TODO this settle position should only close out to position 0 (ie if buyer was short, and is now 0, or long)
 	// buyer is short, we can close out (part of) the current position at the current position price (not the trade price)
 	settle := &types.SettlePosition{
 		Owner: buyer.partyID,
@@ -148,7 +186,7 @@ func updateBuyerPosition(buyer *MarketPosition, trade *types.Trade) *types.Settl
 		Amount: &types.FinancialAmount{
 			Amount: int64(trade.Price) - int64(buyer.price), // current delta -> mark price minus current position average
 		},
-		Type: types.SettleType_MTM,
+		Type: types.SettleType_CLOSE,
 	}
 	buyer.size += int64(trade.Size)
 	if buyer.size > 0 {
@@ -173,6 +211,8 @@ func updateSellerPosition(seller *MarketPosition, trade *types.Trade) *types.Set
 		seller.size -= int64(trade.Size)
 		return nil
 	}
+	// @TODO -> the close settle position should *only* apply to the part of the position that was closed out
+	// if initial postion was 5 long, and new pos is 5 short, the close settle should be of size 5
 	// seller was long, let's see if that's still the case
 	// either way, position is changing here, so we need to close what we can...
 	settle := &types.SettlePosition{
@@ -181,7 +221,7 @@ func updateSellerPosition(seller *MarketPosition, trade *types.Trade) *types.Set
 		Amount: &types.FinancialAmount{
 			Amount: int64(trade.Price) - int64(seller.price), // price delta: mark price - short average price
 		},
-		Type: types.SettleType_MTM,
+		Type: types.SettleType_CLOSE,
 	}
 	seller.size -= int64(trade.Size)
 	if seller.size < 0 {
