@@ -277,7 +277,7 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	sinceRaw string, interval Interval) ([]*types.Candle, error) {
 	pinterval, err := convertInterval(interval)
 	if err != nil {
-		r.log.Warn("interval convert error", logging.Error(err))
+		r.log.Debug("interval convert error", logging.Error(err))
 	}
 
 	since, err := vegatime.Parse(sinceRaw)
@@ -886,7 +886,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 	pinterval, err := convertInterval(interval)
 	if err != nil {
-		r.log.Error("invalid interval for candles subscriptions", logging.Error(err))
+		r.log.Debug("invalid interval for candles subscriptions", logging.Error(err))
 	}
 
 	req := &api.CandlesSubscribeRequest{
