@@ -246,3 +246,23 @@ func (this *VegaTimeResponse) Validate() error {
 func (this *Pagination) Validate() error {
 	return nil
 }
+func (this *OrdersStream) Validate() error {
+	for _, item := range this.Orders {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Orders", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *TradesStream) Validate() error {
+	for _, item := range this.Trades {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Trades", err)
+			}
+		}
+	}
+	return nil
+}

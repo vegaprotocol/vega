@@ -604,6 +604,17 @@
         }
       }
     },
+    "apiOrdersStream": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
+        }
+      }
+    },
     "apiPagination": {
       "type": "object",
       "properties": {
@@ -674,6 +685,17 @@
       }
     },
     "apiTradesByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTrade"
+          }
+        }
+      }
+    },
+    "apiTradesStream": {
       "type": "object",
       "properties": {
         "trades": {
@@ -1304,6 +1326,30 @@
     }
   },
   "x-stream-definitions": {
+    "apiOrdersStream": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiOrdersStream"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiOrdersStream"
+    },
+    "apiTradesStream": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiTradesStream"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiTradesStream"
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -1339,30 +1385,6 @@
         }
       },
       "title": "Stream result of vegaMarketPosition"
-    },
-    "vegaOrder": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/vegaOrder"
-        },
-        "error": {
-          "$ref": "#/definitions/runtimeStreamError"
-        }
-      },
-      "title": "Stream result of vegaOrder"
-    },
-    "vegaTrade": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/vegaTrade"
-        },
-        "error": {
-          "$ref": "#/definitions/runtimeStreamError"
-        }
-      },
-      "title": "Stream result of vegaTrade"
     }
   }
 }

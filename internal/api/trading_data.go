@@ -368,15 +368,18 @@ func (h *tradingDataService) OrdersSubscribe(
 	for {
 		select {
 		case orders := <-orderschan:
-			for _, o := range orders {
-				err := srv.Send(&o)
-				if err != nil {
-					h.log.Error("Orders subscriber - rpc stream error",
-						logging.Error(err),
-						logging.Uint64("ref", ref),
-					)
-					return err
-				}
+			out := make([]*types.Order, 0, len(orders))
+			for _, v := range orders {
+				v := v
+				out = append(out, &v)
+			}
+			err := srv.Send(&protoapi.OrdersStream{Orders: out})
+			if err != nil {
+				h.log.Error("Orders subscriber - rpc stream error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
 			}
 		case <-ctx.Done():
 			err = ctx.Err()
@@ -421,15 +424,18 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 	for {
 		select {
 		case trades := <-tradeschan:
-			for _, o := range trades {
-				err := srv.Send(&o)
-				if err != nil {
-					h.log.Error("Trades subscriber - rpc stream error",
-						logging.Error(err),
-						logging.Uint64("ref", ref),
-					)
-					return err
-				}
+			out := make([]*types.Trade, 0, len(trades))
+			for _, v := range trades {
+				v := v
+				out = append(out, &v)
+			}
+			err := srv.Send(&protoapi.TradesStream{Trades: out})
+			if err != nil {
+				h.log.Error("Trades subscriber - rpc stream error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
 			}
 		case <-ctx.Done():
 			err = ctx.Err()
