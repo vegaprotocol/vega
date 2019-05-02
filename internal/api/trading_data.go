@@ -368,6 +368,14 @@ func (h *tradingDataService) OrdersSubscribe(
 	for {
 		select {
 		case orders := <-orderschan:
+			if orders == nil {
+				err := errors.New("channel closed")
+				h.log.Error("Orders subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
 			out := make([]*types.Order, 0, len(orders))
 			for _, v := range orders {
 				v := v
@@ -424,6 +432,15 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 	for {
 		select {
 		case trades := <-tradeschan:
+			if len(trades) <= 0 {
+				err := errors.New("channel closed")
+				h.log.Error("Trades subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+
 			out := make([]*types.Trade, 0, len(trades))
 			for _, v := range trades {
 				v := v
@@ -477,6 +494,15 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 	for {
 		select {
 		case candle := <-candleschan:
+			if candle == nil {
+				err := errors.New("channel closed")
+				h.log.Error("Candles subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+
 			err := srv.Send(candle)
 			if err != nil {
 				h.log.Error("Candles subscriber - rpc stream error",
@@ -525,6 +551,15 @@ func (h *tradingDataService) MarketDepthSubscribe(
 	for {
 		select {
 		case depth := <-depthchan:
+			if depth == nil {
+				err := errors.New("channel closed")
+				h.log.Error("Depth subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+
 			err := srv.Send(depth)
 			if err != nil {
 				h.log.Error("Depth subscriber - rpc stream error",
@@ -569,6 +604,14 @@ func (h *tradingDataService) PositionsSubscribe(
 	for {
 		select {
 		case position := <-positionschan:
+			if position == nil {
+				err := errors.New("channel closed")
+				h.log.Error("Positions subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
 			err := srv.Send(position)
 			if err != nil {
 				h.log.Error("Positions subscriber - rpc stream error",
