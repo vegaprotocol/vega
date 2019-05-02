@@ -96,9 +96,10 @@ func (e *Engine) MarkToMarket(ch <-chan *types.SettlePosition) <-chan []*types.S
 		posSlice := make([]*types.SettlePosition, 0, cap(ch))
 		winSlice := make([]*types.SettlePosition, 0, cap(ch)/2) // assuming half of these will be wins (not a given, but it's a decent enough cap)
 		for pos := range ch {
-			if pos.Type == types.SettleType_MTM_LOSS {
+			switch pos.Type {
+			case types.SettleType_MTM_LOSS:
 				posSlice = append(posSlice, pos)
-			} else {
+			case types.SettleType_MTM_WIN:
 				winSlice = append(winSlice, pos)
 			}
 		}
@@ -126,6 +127,8 @@ func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
 		// @TODO - there was something here... the final amount had to be oracle - market or something
 		// check with Tamlyn why that was, because we're only handling open positions here...
 		amt, err := e.product.Settle(pos.price, pos.size)
+		// for now, product.Settle returns the total value, we need to only settle the delta between a traders current position
+		// and the final price coming from the oracle, so oracle_price - market_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
 			e.log.Error(
 				"Failed to settle position for trader",

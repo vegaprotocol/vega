@@ -173,27 +173,36 @@ func updateBuyerPosition(buyer *MarketPosition, trade *types.Trade) *types.Settl
 		return nil
 	}
 	if buyer.size > 0 {
-		// buyer is already long, so the price should be the average ((old_price * old_size + new_price * trade_size)/(old_size + trade_size))
-		buyer.price = (buyer.price*uint64(buyer.size) + trade.Size*trade.Price) / (trade.Size + uint64(buyer.size))
+		delta := int64(trade.Price) - int64(buyer.price)
+		// mark-to-market for the buyers' current position already
+		settle := &types.SettlePosition{
+			Owner: buyer.partyID,
+			Size:  uint64(buyer.size),
+			Amount: &types.FinancialAmount{
+				Amount: delta, // current delta -> mark price minus current position average
+			},
+			Type: types.SettleType_MTM_WIN,
+		}
+		if delta < 0 {
+			// market price went down
+			settle.Type = types.SettleType_MTM_LOSS
+		}
+		// now that we've requested the mark-to-market stuff, we can update the trader position to the current market value already
+		buyer.price = trade.Price
+		// increment the size
 		buyer.size += int64(trade.Size)
-		return nil
+		return settle
 	}
-	// @TODO this settle position should only close out to position 0 (ie if buyer was short, and is now 0, or long)
-	// buyer is short, we can close out (part of) the current position at the current position price (not the trade price)
-	settle := &types.SettlePosition{
-		Owner: buyer.partyID,
-		Size:  trade.Size,
-		Amount: &types.FinancialAmount{
-			Amount: int64(trade.Price) - int64(buyer.price), // current delta -> mark price minus current position average
-		},
-		Type: types.SettleType_CLOSE,
-	}
+	// Now, the trader was short, and still might be short after the trade.
+	// if trader is still short, we should just let the normal settle position flow take it from here
 	buyer.size += int64(trade.Size)
+	// buyer is now long, the trade is its own thing, the new position is held at current market price
+	// if the trader is still short, we don't update the price, that happens when we do the normal mark-to-market flow for
+	// all positions
 	if buyer.size > 0 {
-		// buyer is long, update the price
 		buyer.price = trade.Price
 	}
-	return settle
+	return nil
 }
 
 // same as updateBuyerPosition, only the position volume goes down
@@ -206,29 +215,36 @@ func updateSellerPosition(seller *MarketPosition, trade *types.Trade) *types.Set
 	}
 	// seller was already short, that position is only going to increase, we can't really close anything here
 	if seller.size < 0 {
+		// the delta is the inverse of buyer: current position - market price
+		// if the market went down, the delta will be positive, and the short positions win
+		// if the market went up, delta will be negative, and short positions lost
+		delta := int64(seller.price) - int64(trade.Price)
+		// mark-to-market for the sellers current position, seller is confirmed short already
+		settle := &types.SettlePosition{
+			Owner: seller.partyID,
+			Size:  uint64(-seller.size), // current volume has to be adjusted to conform to market
+			Amount: &types.FinancialAmount{
+				Amount: delta, // current delta -> mark price minus current position average
+			},
+			Type: types.SettleType_MTM_WIN,
+		}
+		if delta < 0 {
+			// market price went down
+			settle.Type = types.SettleType_MTM_LOSS
+		}
 		// seller is already short, calculate price average, and update accordingly
-		seller.price = (seller.price*uint64(-seller.size) + trade.Size*trade.Price) / (trade.Size + uint64(-seller.size))
+		seller.price = trade.Price
 		seller.size -= int64(trade.Size)
-		return nil
+		return settle
 	}
-	// @TODO -> the close settle position should *only* apply to the part of the position that was closed out
-	// if initial postion was 5 long, and new pos is 5 short, the close settle should be of size 5
-	// seller was long, let's see if that's still the case
-	// either way, position is changing here, so we need to close what we can...
-	settle := &types.SettlePosition{
-		Owner: seller.partyID,
-		Size:  trade.Size,
-		Amount: &types.FinancialAmount{
-			Amount: int64(trade.Price) - int64(seller.price), // price delta: mark price - short average price
-		},
-		Type: types.SettleType_CLOSE,
-	}
+	// seller was long, might not be after this...
 	seller.size -= int64(trade.Size)
 	if seller.size < 0 {
-		// nope, seller is now short, update price
+		// seller holds a new short position, at the current market price, update position price and be done with it
 		seller.price = trade.Price
 	}
-	return settle
+	// if seller is still long, we don't want to update the price here, that happens when we're updating all market positions
+	return nil
 }
 
 func (e *Engine) Positions() []MarketPosition {

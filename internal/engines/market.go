@@ -312,7 +312,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
 			close(ch)
 			if settle := <-settleCh; len(settle) > 0 {
-				if _, err := m.collateral.Collect(settle); err != nil {
+				if _, err := m.collateral.MarkToMarket(settle); err != nil {
 					m.log.Error("Failed to collect mark-to-market stuff",
 						logging.Error(err),
 					)

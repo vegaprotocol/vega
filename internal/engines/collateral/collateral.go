@@ -96,6 +96,12 @@ func (e *Engine) getSystemAccounts() (settle, insurance *types.Account, err erro
 	return
 }
 
+func (e *Engine) MarkToMarket(positions []*types.SettlePosition) ([]*types.TransferResponse, error) {
+	// for now, this is the same as collect, but once we finish the closing positions bit in positions/settlement
+	// we'll first handle the close settlement, then the updated positions for mark-to-market
+	return e.Collect(positions)
+}
+
 // Collect, handles collects for both market close as mark-to-market stuff
 func (e *Engine) Collect(positions []*types.SettlePosition) ([]*types.TransferResponse, error) {
 	if len(positions) == 0 {
