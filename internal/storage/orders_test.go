@@ -392,7 +392,7 @@ func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
 		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      1000,
-		Remaining: 0,
+		Remaining: 1000,
 		Type:      types.Order_GTC,
 		CreatedAt: 0,
 		Status:    types.Order_Active,
@@ -402,7 +402,8 @@ func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
 	err = orderStore.Post(*order)
 	assert.Nil(t, err)
 
-	orderStore.Commit()
+	err = orderStore.Commit()
+	assert.Nil(t, err)
 
 	// Bit of a hacky test, but we want to test timeouts when getting market depth because we can only set a timeout
 	// of 1s or more through config, we're setting a timeout of 1 nanosecond on the context we pass to orderStore
