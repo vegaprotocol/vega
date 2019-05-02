@@ -23,7 +23,7 @@ var (
 	ErrNilPendingOrder = errors.New("mil pending order")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/grapqhl TradingClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/graphql TradingClient
 type TradingClient interface {
 	// unary calls - writes
 	SubmitOrder(ctx context.Context, in *types.OrderSubmission, opts ...grpc.CallOption) (*types.PendingOrder, error)
@@ -31,7 +31,7 @@ type TradingClient interface {
 	AmendOrder(ctx context.Context, in *types.OrderAmendment, opts ...grpc.CallOption) (*protoapi.OrderResponse, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/grapqhl TradingDataClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/graphql TradingDataClient
 type TradingDataClient interface {
 	// orders
 	OrdersByMarket(ctx context.Context, in *protoapi.OrdersByMarketRequest, opts ...grpc.CallOption) (*protoapi.OrdersByMarketResponse, error)
