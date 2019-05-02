@@ -55,8 +55,8 @@ service trading_data {
   rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
 
   // streams
-  rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream vega.Order);
-  rpc TradesSubscribe(TradesSubscribeRequest) returns (stream vega.Trade);
+  rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
+  rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesStream);
   rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
@@ -210,4 +210,12 @@ message Pagination {
   uint64 skip = 1;
   uint64 limit = 2;
   bool descending = 3;
+}
+
+message OrdersStream {
+  repeated vega.Order orders = 1;
+}
+
+message TradesStream {
+  repeated vega.Trade trades = 1;
 }

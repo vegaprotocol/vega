@@ -14,6 +14,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"google.golang.org/grpc"
 
 	"github.com/golang/protobuf/ptypes/empty"
 )
@@ -22,23 +23,60 @@ var (
 	ErrNilPendingOrder = errors.New("mil pending order")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/grapqhl TradingClient
+type TradingClient interface {
+	// unary calls - writes
+	SubmitOrder(ctx context.Context, in *types.OrderSubmission, opts ...grpc.CallOption) (*types.PendingOrder, error)
+	CancelOrder(ctx context.Context, in *types.OrderCancellation, opts ...grpc.CallOption) (*types.PendingOrder, error)
+	AmendOrder(ctx context.Context, in *types.OrderAmendment, opts ...grpc.CallOption) (*protoapi.OrderResponse, error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/grapqhl TradingDataClient
+type TradingDataClient interface {
+	// orders
+	OrdersByMarket(ctx context.Context, in *protoapi.OrdersByMarketRequest, opts ...grpc.CallOption) (*protoapi.OrdersByMarketResponse, error)
+	OrdersByParty(ctx context.Context, in *protoapi.OrdersByPartyRequest, opts ...grpc.CallOption) (*protoapi.OrdersByPartyResponse, error)
+	OrderByMarketAndId(ctx context.Context, in *protoapi.OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*protoapi.OrderByMarketAndIdResponse, error)
+	// markets
+	MarketByID(ctx context.Context, in *protoapi.MarketByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketByIDResponse, error)
+	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
+	MarketDepth(ctx context.Context, in *protoapi.MarketDepthRequest, opts ...grpc.CallOption) (*protoapi.MarketDepthResponse, error)
+	LastTrade(ctx context.Context, in *protoapi.LastTradeRequest, opts ...grpc.CallOption) (*protoapi.LastTradeResponse, error)
+	// parties
+	PartyByID(ctx context.Context, in *protoapi.PartyByIDRequest, opts ...grpc.CallOption) (*protoapi.PartyByIDResponse, error)
+	Parties(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.PartiesResponse, error)
+	// trades
+	TradesByMarket(ctx context.Context, in *protoapi.TradesByMarketRequest, opts ...grpc.CallOption) (*protoapi.TradesByMarketResponse, error)
+	TradesByParty(ctx context.Context, in *protoapi.TradesByPartyRequest, opts ...grpc.CallOption) (*protoapi.TradesByPartyResponse, error)
+	TradesByOrder(ctx context.Context, in *protoapi.TradesByOrderRequest, opts ...grpc.CallOption) (*protoapi.TradesByOrderResponse, error)
+	// positions
+	PositionsByParty(ctx context.Context, in *protoapi.PositionsByPartyRequest, opts ...grpc.CallOption) (*protoapi.PositionsByPartyResponse, error)
+	// candles
+	Candles(ctx context.Context, in *protoapi.CandlesRequest, opts ...grpc.CallOption) (*protoapi.CandlesResponse, error)
+	// metrics
+	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*types.Statistics, error)
+	GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.VegaTimeResponse, error)
+	// streams
+	OrdersSubscribe(ctx context.Context, in *protoapi.OrdersSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_OrdersSubscribeClient, error)
+	TradesSubscribe(ctx context.Context, in *protoapi.TradesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_TradesSubscribeClient, error)
+	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
+	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthSubscribeClient, error)
+	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_PositionsSubscribeClient, error)
+}
+
 type resolverRoot struct {
 	gateway.Config
 
-	log *logging.Logger
-
-	//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/grapqhl protoapi.TradingClient
-	tradingClient protoapi.TradingClient
-
-	//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/grapqhl protoapi.TradingDataClient
-	tradingDataClient protoapi.TradingDataClient
+	log               *logging.Logger
+	tradingClient     TradingClient
+	tradingDataClient TradingDataClient
 }
 
 func NewResolverRoot(
 	log *logging.Logger,
 	config gateway.Config,
-	tradingClient protoapi.TradingClient,
-	tradingDataClient protoapi.TradingDataClient,
+	tradingClient TradingClient,
+	tradingDataClient TradingDataClient,
 ) *resolverRoot {
 
 	return &resolverRoot{
@@ -247,7 +285,13 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 		return nil, err
 	}
 
+	var mkt string
+	if market != nil {
+		mkt = market.ID
+	}
+
 	req := protoapi.CandlesRequest{
+		Market:         mkt,
 		SinceTimestamp: since.UnixNano(),
 		Interval:       pinterval,
 	}
@@ -727,7 +771,11 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			c <- []types.Order{*o}
+			out := make([]types.Order, 0, len(o.Orders))
+			for _, v := range o.Orders {
+				out = append(out, *v)
+			}
+			c <- out
 		}
 	}()
 
@@ -766,7 +814,12 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			c <- []types.Trade{*t}
+			out := make([]types.Trade, 0, len(t.Trades))
+			for _, v := range t.Trades {
+				out = append(out, *v)
+			}
+
+			c <- out
 		}
 	}()
 
