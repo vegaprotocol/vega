@@ -156,7 +156,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		err error
 	)
 	if l.conf.GatewayEnabled {
-		gty, err = startGateway(l.Log, l.configPath)
+		gty, err = startGateway(l.Log, l.conf.Gateway)
 		if err != nil {
 			return err
 		}

@@ -5,6 +5,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/gateway"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/monitoring"
@@ -30,6 +31,7 @@ type Config struct {
 	Trades     trades.Config
 	Time       vegatime.Config
 	Monitoring monitoring.Config
+	Gateway    gateway.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -52,6 +54,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Pprof:          pprof.NewDefaultConfig(),
 		Monitoring:     monitoring.NewDefaultConfig(),
 		Logging:        logging.NewDefaultConfig(),
+		Gateway:        gateway.NewDefaultConfig(),
 		GatewayEnabled: true,
 	}
 }
