@@ -135,9 +135,10 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- settlement.MarketPosition)
 // iterate over all open positions, for mark to market based on new market price
 func (e *Engine) updateMTMPositions(trade *types.Trade, ch chan<- settlement.MarketPosition) {
 	for _, pos := range e.positions {
-		// no volume (closed out), or position price == market price
+		// no volume (closed out), if price == trade price, that's one thing, only if it equals market price should we ignore it
+		// we don't know where to get that from just yet
 		// there's no MTM settlement required, carry on...
-		if pos.size == 0 || pos.price == trade.Price {
+		if pos.size == 0 {
 			// this trader was closed out already, no MTM applies
 			continue
 		}
