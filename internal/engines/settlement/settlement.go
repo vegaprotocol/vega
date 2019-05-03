@@ -5,15 +5,21 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/products"
 	types "code.vegaprotocol.io/vega/proto"
 )
+
+// We should really use a type from the proto package for this, although, these mocks are kind of easy to set up :)
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/internal/engines/settlement MarketPosition
 type MarketPosition interface {
 	Party() string
 	Size() int64
 	Price() uint64
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/internal/engines/settlement Product
+type Product interface {
+	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
 }
 
 type pos struct {
@@ -26,20 +32,21 @@ type Engine struct {
 
 	Config
 	mu      *sync.Mutex
-	product products.Product
+	product Product
 	pos     map[string]*pos
 }
 
-func New(log *logging.Logger, conf Config) *Engine {
+func New(log *logging.Logger, conf Config, product Product) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
 	return &Engine{
-		log:    log,
-		Config: conf,
-		mu:     &sync.Mutex{},
-		pos:    map[string]*pos{},
+		log:     log,
+		Config:  conf,
+		mu:      &sync.Mutex{},
+		product: product,
+		pos:     map[string]*pos{},
 	}
 }
 
@@ -171,13 +178,8 @@ func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
 		}
 		settlePos := &types.SettlePosition{
 			Owner:  party,
-			Size:   uint64(pos.size),
+			Size:   1,
 			Amount: amt,
-			Type:   types.SettleType_LOSS, // this is a poor name, will be changed later
-		}
-		if pos.size < 0 {
-			// ensure absolute value
-			settlePos.Size = uint64(-pos.size)
 		}
 		e.log.Debug(
 			"Settled position for trader",
@@ -185,6 +187,8 @@ func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
 			logging.Int64("amount", amt.Amount),
 		)
 		if amt.Amount < 0 {
+			// trader is winning...
+			settlePos.Type = types.SettleType_LOSS
 			aggregated = append(aggregated, settlePos)
 		} else {
 			// bad name again, but SELL means trader is owed money

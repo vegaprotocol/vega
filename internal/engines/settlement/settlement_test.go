@@ -1,9 +1,11 @@
 package settlement_test
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/engines/settlement"
 	"code.vegaprotocol.io/vega/internal/engines/settlement/mocks"
@@ -17,12 +19,115 @@ import (
 type testEngine struct {
 	*settlement.Engine
 	ctrl      *gomock.Controller
+	prod      *mocks.MockProduct
 	positions []*mocks.MockMarketPosition
 }
 
+type posValue struct {
+	trader string
+	price  uint64
+	size   int64
+}
+
 func TestMarkToMarket(t *testing.T) {
+	t.Run("Settle at market close - success", testSettleCloseSuccess)
+	t.Run("Settle at market close - error", testSettleCloseFail)
 	t.Run("No settle positions if none were on channel", testMarkToMarketEmpty)
 	t.Run("Settle positions are pushed onto the slice channel in order", testMarkToMarketOrdered)
+}
+
+func testSettleCloseSuccess(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	// these are mark prices, product will provide the actual value
+	data := []posValue{
+		{
+			trader: "trader1",
+			price:  1000,
+			size:   10,
+		},
+		{
+			trader: "trader2",
+			price:  1000,
+			size:   -5,
+		},
+		{
+			trader: "trader3",
+			price:  1000,
+			size:   -5,
+		},
+	}
+	exp := []*types.SettlePosition{
+		{
+			Owner: data[1].trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: -500,
+			},
+			Type: types.SettleType_LOSS,
+		},
+		{
+			Owner: data[2].trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: -500,
+			},
+			Type: types.SettleType_LOSS,
+		},
+		{
+			Owner: data[0].trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: 1000,
+			},
+			Type: types.SettleType_WIN,
+		},
+	}
+	oraclePrice := uint64(1100)
+	settleF := func(price uint64, size int64) (*types.FinancialAmount, error) {
+		sp := int64((oraclePrice - price)) * size
+		return &types.FinancialAmount{
+			Amount: sp,
+		}, nil
+	}
+	positions := engine.getClosePositions(data...)
+	for _, d := range data {
+		// we expect settle calls for each position
+		engine.prod.EXPECT().Settle(d.price, d.size).Times(1).DoAndReturn(settleF)
+	}
+	// ensure positions are set
+	engine.Update(positions)
+	// now settle:
+	got, err := engine.Settle(time.Now())
+	assert.NoError(t, err)
+	assert.Equal(t, len(exp), len(got))
+	for i, p := range got {
+		e := exp[i]
+		assert.Equal(t, e.Size, p.Size)
+		assert.Equal(t, e.Type, p.Type)
+		assert.Equal(t, e.Amount.Amount, p.Amount.Amount)
+	}
+}
+
+func testSettleCloseFail(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	// these are mark prices, product will provide the actual value
+	data := []posValue{
+		{
+			trader: "trader1",
+			price:  1000,
+			size:   10,
+		},
+	}
+	errExp := errors.New("product.Settle error")
+	positions := engine.getClosePositions(data...)
+	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, errExp)
+	engine.Update(positions)
+	empty, err := engine.Settle(time.Now())
+	assert.Empty(t, empty)
+	assert.Error(t, err)
+	assert.Equal(t, errExp, err)
 }
 
 func testMarkToMarketEmpty(t *testing.T) {
@@ -32,7 +137,7 @@ func testMarkToMarketEmpty(t *testing.T) {
 	}
 	ch := make(chan settlement.MarketPosition, 10)
 	engine := getTestEngine(t)
-	defer engine.ctrl.Finish()
+	defer engine.Finish()
 	settleCh := engine.SettleMTM(trade, ch)
 	close(ch)
 	result := <-settleCh
@@ -137,6 +242,21 @@ func (te *testEngine) getTestPositions(trade *types.Trade, data []*types.SettleP
 	te.positions = append(te.positions, shortPos...)
 }
 
+func (te *testEngine) getClosePositions(positions ...posValue) []settlement.MarketPosition {
+	te.positions = make([]*mocks.MockMarketPosition, 0, len(positions))
+	mpSlice := make([]settlement.MarketPosition, 0, len(positions))
+	for _, p := range positions {
+		pos := mocks.NewMockMarketPosition(te.ctrl)
+		// these values should only be obtained once, and assigned internally
+		pos.EXPECT().Party().Times(1).Return(p.trader)
+		pos.EXPECT().Size().Times(1).Return(p.size)
+		pos.EXPECT().Price().Times(1).Return(p.price)
+		te.positions = append(te.positions, pos)
+		mpSlice = append(mpSlice, pos)
+	}
+	return mpSlice
+}
+
 // Finish - call finish on controller, remove test state (positions)
 func (te *testEngine) Finish() {
 	te.ctrl.Finish()
@@ -146,8 +266,11 @@ func (te *testEngine) Finish() {
 func getTestEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
+	prod := mocks.NewMockProduct(ctrl)
 	return &testEngine{
-		Engine: settlement.New(logging.NewTestLogger(), conf),
-		ctrl:   ctrl,
+		Engine:    settlement.New(logging.NewTestLogger(), conf, prod),
+		ctrl:      ctrl,
+		prod:      prod,
+		positions: nil,
 	}
 }
