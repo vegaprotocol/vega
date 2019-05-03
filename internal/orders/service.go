@@ -89,8 +89,8 @@ func (s *Svc) CreateOrder(
 	}
 	order := types.Order{
 		Id:        orderSubmission.Id,
-		Market:    orderSubmission.MarketId,
-		Party:     orderSubmission.Party,
+		MarketID:  orderSubmission.MarketID,
+		PartyID:   orderSubmission.PartyID,
 		Price:     orderSubmission.Price,
 		Size:      orderSubmission.Size,
 		Side:      orderSubmission.Side,
@@ -122,7 +122,7 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 		return nil, errors.Wrap(err, "order cancellation validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketId, order.Id)
+	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketID, order.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 	if o.Remaining == 0 {
 		return nil, errors.New("order has been fully filled")
 	}
-	if o.Party != order.Party {
+	if o.PartyID != order.PartyID {
 		return nil, errors.New("party mis-match cannot cancel order")
 	}
 	// Send cancellation request by consensus
@@ -145,9 +145,9 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 		Price:     o.Price,
 		Type:      o.Type,
 		Side:      o.Side,
-		MarketID:  o.Market,
+		MarketID:  o.MarketID,
 		Size:      o.Size,
-		Party:     o.Party,
+		PartyID:   o.PartyID,
 		Status:    types.Order_Cancelled,
 		Id:        o.Id,
 	}, nil
@@ -158,7 +158,7 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 		return false, errors.Wrap(err, "order amendment validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.Party, amendment.Id)
+	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.PartyID, amendment.Id)
 	if err != nil {
 		return false, err
 	}
@@ -255,7 +255,7 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 				validatedOrders := make([]types.Order, 0, len(v))
 				for _, item := range v {
 					// if market is not set, or equals item market and party is not set or equals item party
-					if (market == nil || item.Market == *market) && (party == nil || item.Party == *party) {
+					if (market == nil || item.MarketID == *market) && (party == nil || item.PartyID == *party) {
 						validatedOrders = append(validatedOrders, item)
 					}
 				}

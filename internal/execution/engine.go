@@ -181,7 +181,7 @@ func (e *Engine) SubmitMarket(mkt *types.Market) error {
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Submit order", logging.Order(*order))
-	mkt, ok := e.markets[order.Market]
+	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
@@ -195,18 +195,18 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	e.log.Debug("Amend order")
 	// try to get the order first
 	order, err := e.orderStore.GetByPartyAndId(
-		context.Background(), orderAmendment.Party, orderAmendment.Id)
+		context.Background(), orderAmendment.PartyID, orderAmendment.Id)
 	if err != nil {
 		e.log.Error("Invalid order reference",
 			logging.String("id", order.Id),
-			logging.String("party", order.Party),
+			logging.String("party", order.PartyID),
 			logging.Error(err))
 
 		return nil, types.ErrInvalidOrderReference
 	}
 	e.log.Debug("Existing order found", logging.Order(*order))
 
-	mkt, ok := e.markets[order.Market]
+	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
@@ -217,7 +217,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
 func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	e.log.Debug("Cancel order")
-	mkt, ok := e.markets[order.Market]
+	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}

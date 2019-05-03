@@ -185,7 +185,7 @@ func (r *MyQueryResolver) Parties(ctx context.Context, name *string) ([]Party, e
 		return nil, err
 	}
 	return []Party{
-		{Name: pty.Name},
+		{ID: pty.ID},
 	}, nil
 }
 
@@ -197,7 +197,7 @@ func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error
 		return nil, err
 	}
 
-	return &Party{Name: res.Party.Name}, nil
+	return &Party{ID: res.Party.Id}, nil
 }
 
 // END: Root Resolver
@@ -267,9 +267,9 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (*types.Ma
 	}
 
 	return &types.MarketDepth{
-		Name: res.MarketID,
-		Buy:  res.Buy,
-		Sell: res.Sell,
+		MarketID: res.MarketID,
+		Buy:      res.Buy,
+		Sell:     res.Sell,
 	}, nil
 }
 
@@ -336,7 +336,7 @@ func (r *MyPartyResolver) Orders(ctx context.Context, party *Party,
 	p := makePagination(skip, first, last)
 	openOnly := open != nil && *open
 	req := protoapi.OrdersByPartyRequest{
-		PartyID:    party.Name,
+		PartyID:    party.ID,
 		Open:       openOnly,
 		Pagination: p,
 	}
@@ -364,7 +364,7 @@ func (r *MyPartyResolver) Trades(ctx context.Context, party *Party,
 
 	p := makePagination(skip, first, last)
 	req := protoapi.TradesByPartyRequest{
-		PartyID:    party.Name,
+		PartyID:    party.ID,
 		MarketID:   mkt,
 		Pagination: p,
 	}
@@ -386,7 +386,7 @@ func (r *MyPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.Ma
 	if pty == nil {
 		return nil, errors.New("nil party")
 	}
-	req := protoapi.PositionsByPartyRequest{PartyID: pty.Name}
+	req := protoapi.PositionsByPartyRequest{PartyID: pty.ID}
 	res, err := r.tradingDataClient.PositionsByParty(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -428,7 +428,7 @@ func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 		return nil, errors.New("invalid market depth")
 	}
 
-	req := protoapi.LastTradeRequest{MarketID: md.Name}
+	req := protoapi.LastTradeRequest{MarketID: md.MarketID}
 	res, err := r.tradingDataClient.LastTrade(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -455,7 +455,7 @@ func (r *MyOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, err
 }
 func (r *MyOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market, error) {
 	return &Market{
-		ID: obj.Market,
+		ID: obj.MarketID,
 	}, nil
 }
 func (r *MyOrderResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
@@ -504,7 +504,7 @@ func (r *MyOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 type MyTradeResolver resolverRoot
 
 func (r *MyTradeResolver) Market(ctx context.Context, obj *types.Trade) (*Market, error) {
-	return &Market{ID: obj.Market}, nil
+	return &Market{ID: obj.MarketID}, nil
 }
 func (r *MyTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side, error) {
 	return Side(obj.Aggressor.String()), nil
@@ -624,7 +624,7 @@ func (r *MyPositionResolver) MinimumMargin(ctx context.Context, obj *types.Marke
 }
 
 func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (*Market, error) {
-	return &Market{ID: obj.Market}, nil
+	return &Market{ID: obj.MarketID}, nil
 }
 
 func (r *MyPositionResolver) absInt64Str(val int64) string {
@@ -666,14 +666,14 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 	if len(market) <= 0 {
 		return nil, errors.New("market missing or empty")
 	}
-	order.MarketId = market
+	order.MarketID = market
 	if len(party) <= 0 {
 		return nil, errors.New("party missing or empty")
 	}
 
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
-	order.Party = party
+	order.PartyID = party
 	order.Type, err = parseOrderType(&type_)
 	if err != nil {
 		return nil, err
@@ -712,7 +712,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	if len(market) <= 0 {
 		return nil, errors.New("market missing or empty")
 	}
-	order.MarketId = market
+	order.MarketID = market
 	if len(id) == 0 {
 		return nil, errors.New("id missing or empty")
 	}
@@ -721,7 +721,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 		return nil, errors.New("party missing or empty")
 	}
 
-	order.Party = party
+	order.PartyID = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
 	pendingOrder, err := r.tradingClient.CancelOrder(ctx, order)
@@ -956,7 +956,13 @@ func (r *MyPendingOrderResolver) Market(ctx context.Context, pord *proto.Pending
 		return nil, err
 	}
 	return MarketFromProto(res.Market)
+}
 
+func (r *MyPendingOrderResolver) Party(ctx context.Context, pord *proto.PendingOrder) (*Party, error) {
+	if pord == nil {
+		return nil, nil
+	}
+	return &Party{ID: pord.PartyID}, nil
 }
 
 func (r *MyPendingOrderResolver) Size(ctx context.Context, obj *proto.PendingOrder) (*string, error) {

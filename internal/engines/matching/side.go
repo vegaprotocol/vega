@@ -39,7 +39,7 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 		return types.ErrOrderNotFound
 	}
 
-	if s.levels[priceLevelIndex].orders[orderIndex].Party != orderAmended.Party {
+	if s.levels[priceLevelIndex].orders[orderIndex].PartyID != orderAmended.PartyID {
 		return types.ErrOrderAmendFailure
 	}
 

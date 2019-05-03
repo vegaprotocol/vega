@@ -82,42 +82,8 @@ type Market struct {
 	Candles            []*proto.Candle    `json:"candles"`
 }
 
-type OrderFilter struct {
-	And           []OrderFilter `json:"AND"`
-	Or            []OrderFilter `json:"OR"`
-	Open          *bool         `json:"open"`
-	ID            *string       `json:"id"`
-	IDNeq         *string       `json:"id_neq"`
-	Market        *string       `json:"market"`
-	MarketNeq     *string       `json:"market_neq"`
-	Party         *string       `json:"party"`
-	PartyNeq      *string       `json:"party_neq"`
-	Side          *Side         `json:"side"`
-	SideNeq       *Side         `json:"side_neq"`
-	Price         *string       `json:"price"`
-	PriceNeq      *string       `json:"price_neq"`
-	PriceFrom     *string       `json:"price_from"`
-	PriceTo       *string       `json:"price_to"`
-	Size          *string       `json:"size"`
-	SizeNeq       *string       `json:"size_neq"`
-	SizeFrom      *string       `json:"size_from"`
-	SizeTo        *string       `json:"size_to"`
-	Remaining     *string       `json:"remaining"`
-	RemainingNeq  *string       `json:"remaining_neq"`
-	RemainingFrom *string       `json:"remaining_from"`
-	RemainingTo   *string       `json:"remaining_to"`
-	Type          *OrderType    `json:"type"`
-	TypeNeq       *OrderType    `json:"type_neq"`
-	Timestamp     *string       `json:"timestamp"`
-	TimestampNeq  *string       `json:"timestamp_neq"`
-	TimestampFrom *string       `json:"timestamp_from"`
-	TimestampTo   *string       `json:"timestamp_to"`
-	Status        *OrderStatus  `json:"status"`
-	StatusNeq     *OrderStatus  `json:"status_neq"`
-}
-
 type Party struct {
-	Name      string                 `json:"name"`
+	ID        string                 `json:"id"`
 	Orders    []proto.Order          `json:"orders"`
 	Trades    []proto.Trade          `json:"trades"`
 	Positions []proto.MarketPosition `json:"positions"`
@@ -126,33 +92,6 @@ type Party struct {
 type TradableInstrument struct {
 	Instrument Instrument `json:"instrument"`
 	RiskModel  RiskModel  `json:"riskModel"`
-}
-
-type TradeFilter struct {
-	And           []TradeFilter `json:"AND"`
-	Or            []TradeFilter `json:"OR"`
-	ID            *string       `json:"id"`
-	IDNeq         *string       `json:"id_neq"`
-	Market        *string       `json:"market"`
-	MarketNeq     *string       `json:"market_neq"`
-	Buyer         *string       `json:"buyer"`
-	BuyerNeq      *string       `json:"buyer_neq"`
-	Seller        *string       `json:"seller"`
-	SellerNeq     *string       `json:"seller_neq"`
-	Aggressor     *Side         `json:"aggressor"`
-	AggressorNeq  *Side         `json:"aggressor_neq"`
-	Price         *string       `json:"price"`
-	PriceNeq      *string       `json:"price_neq"`
-	PriceFrom     *string       `json:"price_from"`
-	PriceTo       *string       `json:"price_to"`
-	Size          *string       `json:"size"`
-	SizeNeq       *string       `json:"size_neq"`
-	SizeFrom      *string       `json:"size_from"`
-	SizeTo        *string       `json:"size_to"`
-	Timestamp     *string       `json:"timestamp"`
-	TimestampNeq  *string       `json:"timestamp_neq"`
-	TimestampFrom *string       `json:"timestamp_from"`
-	TimestampTo   *string       `json:"timestamp_to"`
 }
 
 type Interval string

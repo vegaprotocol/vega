@@ -58,7 +58,7 @@ func (s *OrderBook) ReloadConf(cfg Config) {
 // not trust that the external world can provide these values reliably.
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
-	if order.Market != b.marketID {
+	if order.MarketID != b.marketID {
 		b.log.Error("Market ID mismatch",
 			logging.Order(*order),
 			logging.String("order-book", b.marketID))

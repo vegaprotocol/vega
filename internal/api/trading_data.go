@@ -222,7 +222,7 @@ func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 	// Build market depth response, including last trade (if available)
 	resp := &protoapi.MarketDepthResponse{
 		Buy:      depth.Buy,
-		MarketID: depth.Name,
+		MarketID: depth.MarketID,
 		Sell:     depth.Sell,
 	}
 	if t != nil && t[0] != nil {
@@ -303,7 +303,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 	for _, v := range p {
 		if v != nil {
 			pp := *v
-			partyNames = append(partyNames, pp.Name)
+			partyNames = append(partyNames, pp.Id)
 		}
 	}
 

@@ -53,9 +53,9 @@ func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.Pe
 		Price:     order.Price,
 		Type:      order.Type,
 		Side:      order.Side,
-		MarketID:  order.Market,
+		MarketID:  order.MarketID,
 		Size:      order.Size,
-		Party:     order.Party,
+		PartyID:   order.PartyID,
 		Status:    order.Status,
 	}, nil
 }

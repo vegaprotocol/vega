@@ -26,8 +26,8 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 	side := &OrderBookSide{}
 	l := side.getPriceLevel(100, types.Side_Sell)
 	order := &types.Order{
-		Market:    "testOrderBook",
-		Party:     "A",
+		MarketID:  "testOrderBook",
+		PartyID:   "A",
 		Side:      types.Side_Sell,
 		Price:     101,
 		Size:      100,
@@ -57,8 +57,8 @@ func TestUncross(t *testing.T) {
 	side := &OrderBookSide{}
 	l := side.getPriceLevel(100, types.Side_Sell)
 	passiveOrder := &types.Order{
-		Market:    "testOrderBook",
-		Party:     "A",
+		MarketID:  "testOrderBook",
+		PartyID:   "A",
 		Side:      types.Side_Sell,
 		Price:     101,
 		Size:      100,
@@ -69,8 +69,8 @@ func TestUncross(t *testing.T) {
 	l.addOrder(passiveOrder)
 
 	aggresiveOrder := &types.Order{
-		Market:    "testOrderBook",
-		Party:     "B",
+		MarketID:  "testOrderBook",
+		PartyID:   "B",
 		Side:      types.Side_Buy,
 		Price:     101,
 		Size:      100,

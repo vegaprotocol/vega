@@ -14,20 +14,20 @@ type Mutation {
 
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
-    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PendingOrder!
+    orderCreate(marketId: String!, partyId: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PendingOrder!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
-    orderCancel(id: ID!, market: String!, party: String!): PendingOrder!
+    orderCancel(id: ID!, marketId: String!, partyId: String!): PendingOrder!
 }
 
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
 type Subscription {
-    candles(market: String!, interval: Interval!): Candle!
-    orders(market: String, party: String): [Order!]
-    trades(market: String, party: String): [Trade!]
-    positions(party: String!): Position!
-    marketDepth(market: String!): MarketDepth!
+    candles(marketId: String!, interval: Interval!): Candle!
+    orders(marketId: String, partyId: String): [Order!]
+    trades(marketId: String, partyId: String): [Trade!]
+    positions(partyId: String!): Position!
+    marketDepth(marketId: String!): MarketDepth!
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -56,7 +56,7 @@ type PendingOrder {
   size: String
 
   # The trader who place the order (probably stored internally as the trader's public key)
-  party: String
+  party: Party
 
   # The status of an order, for example 'Active'
   status: OrderStatus
@@ -66,16 +66,16 @@ type PendingOrder {
 type Query {
 
     # One or more instruments that are trading on the VEGA network
-    markets(name: String): [Market!]
+    markets(id: String): [Market!]
 
     # An instrument that is trading on the VEGA network
-    market(name: String!): Market
+    market(id: String!): Market
 
     # One or more entities that are trading on the VEGA network
-    parties(name: String): [Party!]
+    parties(id: String): [Party!]
 
     # An entity that is trading on the VEGA network
-    party(name: String!): Party
+    party(id: String!): Party
 }
 
 # A mode where Vega try to execute order as soon as they are received
@@ -196,7 +196,7 @@ type Market {
 type MarketDepth {
 
     # Market id
-    name: String!
+    marketId: String!
 
     # Buy side price levels (if available)
     buy: [PriceLevel!]
@@ -254,17 +254,17 @@ type Candle {
 
 # Represents a party on Vega, could be an ethereum wallet address in the future
 type Party {
-    # Party identifier
-    name: String!
+  # Party identifier
+  id: String!
 
-    # Orders relating to a party
-    orders(open: Boolean, skip: Int, first: Int, last: Int): [Order!]
+  # Orders relating to a party
+  orders(open: Boolean, skip: Int, first: Int, last: Int): [Order!]
 
-    # Trades relating to a party (specifically where party is either buyer OR seller)
-    trades(market: String, skip: Int, first: Int, last: Int): [Trade!]
+  # Trades relating to a party (specifically where party is either buyer OR seller)
+  trades(marketId: String, skip: Int, first: Int, last: Int): [Trade!]
 
-    # Trading positions relating to a party
-    positions: [Position!]
+  # Trading positions relating to a party
+  positions: [Position!]
 }
 
 # An individual trader at any point in time is considered net long or net short.
@@ -327,7 +327,7 @@ type Order {
   remaining: String!
 
   # The trader who place the order (probably stored internally as the trader's public key)
-  party: String!
+  partyId: String!
 
   # Unix epoch+nanoseconds for when the order was created
   timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
@@ -432,109 +432,6 @@ enum Side {
 enum ValueDirection {
     Positive
     Negative
-}
-
-# Filters for Trade queries on VEGA graphql, typically specified by WHERE clause
-input TradeFilter {
-    # logical operators
-    AND: [TradeFilter!] # combines all passed `TradeFilter` objects with logical AND
-    OR: [TradeFilter!] # combines all passed `TradeFilter` objects with logical OR
-
-    # ID filters
-    id: ID # matches all trades with exact ID value
-    id_neq: ID # matches all trades with different ID to value
-
-    # Market filters
-    market: String # matches all trades with exact market value
-    market_neq: String # matches all trades with different market to value
-
-    # Buyer filters
-    buyer: String # matches all trades with exact buyer value
-    buyer_neq: String # matches all trades with different buyer to value
-
-    # Buyer filters
-    seller: String # matches all trades with exact seller value
-    seller_neq: String # matches all trades with different seller to value
-
-    # Aggressor filters
-    aggressor: Side # matches all trades with exact aggressor value e.g. Buy
-    aggressor_neq: Side # matches all trades with different aggressor to value
-
-    # Price filters
-    price: String # matches all trades with exact price value
-    price_neq: String # matches all trades with different price to value
-    price_from: String # matches all trades from this price value
-    price_to: String # matches all trades to this price value
-
-    # Size filters
-    size: String # matches all trades with exact size value
-    size_neq: String # matches all trades with different size to value
-    size_from: String # matches all trades from this size value
-    size_to: String # matches all trades to this size value
-
-    # TimeStamp filters
-    timestamp: String # matches all trades with exact timestamp value
-    timestamp_neq: String # matches all trades with different timestamp to value
-    timestamp_from: String # matches all trades from this timestamp value
-    timestamp_to: String # matches all trades to this timestamp value
-}
-
-# Filters for Order queries on VEGA graphql, typically specified by WHERE clause
-input OrderFilter {
-    # logical operators
-    AND: [OrderFilter!] # combines all passed `OrderFilter` objects with logical AND
-    OR: [OrderFilter!] # combines all passed `OrderFilter` objects with logical OR
-
-    # Open only filter
-    open: Boolean # Include only open orders in results (default: False)
-
-    # ID filters
-    id: ID # matches all orders with exact ID value
-    id_neq: ID # matches all orders with different ID to value
-
-    # Market filters
-    market: String # matches all orders with exact market value
-    market_neq: String # matches all orders with different market to value
-
-    # Party filters
-    party: String # matches all orders with exact party value
-    party_neq: String # matches all orders with different party to value
-
-    # Side filters
-    side: Side # matches all orders with exact side value e.g. Buy
-    side_neq: Side # matches all orders with different side to value
-
-    # Price filters
-    price: String # matches all orders with exact price value
-    price_neq: String # matches all orders with different price to value
-    price_from: String # matches all orders from this price value
-    price_to: String # matches all orders to this price value
-
-    # Size filters
-    size: String # matches all orders with exact size value
-    size_neq: String # matches all orders with different size to value
-    size_from: String # matches all orders from this size value
-    size_to: String # matches all orders to this size value
-
-    # Remaining filters
-    remaining: String # matches all orders with exact remaining value
-    remaining_neq: String # matches all orders with different remaining to value
-    remaining_from: String # matches all orders from this remaining value
-    remaining_to: String # matches all orders to this remaining value
-
-    # Type filters
-    type: OrderType # matches all orders with exact type value
-    type_neq: OrderType # matches all orders with different type to value
-
-    # Timestamp filters
-    timestamp: String # matches all orders with exact timestamp value
-    timestamp_neq: String # matches all orders with different timestamp to value
-    timestamp_from: String # matches all orders from this timestamp value
-    timestamp_to: String # matches all orders to this timestamp value
-
-    # Status filters
-    status: OrderStatus # matches all orders with exact status value
-    status_neq: OrderStatus # matches all orders with different status to value
 }
 
 # The interval for trade candles when subscribing via VEGA graphql, default is I15M

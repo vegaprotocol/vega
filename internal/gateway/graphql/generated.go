@@ -101,7 +101,7 @@ type ComplexityRoot struct {
 	}
 
 	Market struct {
-		Candles            func(childComplexity int, sinceTimestamp string, interval Interval) int
+		Candles            func(childComplexity int, since string, interval Interval) int
 		DecimalPlaces      func(childComplexity int) int
 		Depth              func(childComplexity int) int
 		ID                 func(childComplexity int) int
@@ -114,13 +114,13 @@ type ComplexityRoot struct {
 	MarketDepth struct {
 		Buy       func(childComplexity int) int
 		LastTrade func(childComplexity int) int
-		Name      func(childComplexity int) int
+		MarketID  func(childComplexity int) int
 		Sell      func(childComplexity int) int
 	}
 
 	Mutation struct {
-		OrderCancel func(childComplexity int, id string, market string, party string) int
-		OrderCreate func(childComplexity int, market string, party string, price string, size string, side Side, typeArg OrderType, expiration *string) int
+		OrderCancel func(childComplexity int, id string, marketID string, partyID string) int
+		OrderCreate func(childComplexity int, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) int
 	}
 
 	Order struct {
@@ -129,7 +129,7 @@ type ComplexityRoot struct {
 		ExpiresAt func(childComplexity int) int
 		Id        func(childComplexity int) int
 		Market    func(childComplexity int) int
-		Party     func(childComplexity int) int
+		PartyID   func(childComplexity int) int
 		Price     func(childComplexity int) int
 		Reference func(childComplexity int) int
 		Remaining func(childComplexity int) int
@@ -142,10 +142,10 @@ type ComplexityRoot struct {
 	}
 
 	Party struct {
-		Name      func(childComplexity int) int
+		ID        func(childComplexity int) int
 		Orders    func(childComplexity int, open *bool, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
-		Trades    func(childComplexity int, market *string, skip *int, first *int, last *int) int
+		Trades    func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
 	}
 
 	PendingOrder struct {
@@ -180,18 +180,18 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Market  func(childComplexity int, name string) int
-		Markets func(childComplexity int, name *string) int
-		Parties func(childComplexity int, name *string) int
-		Party   func(childComplexity int, name string) int
+		Market  func(childComplexity int, id string) int
+		Markets func(childComplexity int, id *string) int
+		Parties func(childComplexity int, id *string) int
+		Party   func(childComplexity int, id string) int
 	}
 
 	Subscription struct {
-		Candles     func(childComplexity int, market string, interval Interval) int
-		MarketDepth func(childComplexity int, market string) int
-		Orders      func(childComplexity int, market *string, party *string) int
-		Positions   func(childComplexity int, party string) int
-		Trades      func(childComplexity int, market *string, party *string) int
+		Candles     func(childComplexity int, marketID string, interval Interval) int
+		MarketDepth func(childComplexity int, marketID string) int
+		Orders      func(childComplexity int, marketID *string, partyID *string) int
+		Positions   func(childComplexity int, partyID string) int
+		Trades      func(childComplexity int, marketID *string, partyID *string) int
 	}
 
 	TradableInstrument struct {
@@ -227,14 +227,14 @@ type MarketResolver interface {
 	Orders(ctx context.Context, obj *Market, open *bool, skip *int, first *int, last *int) ([]proto.Order, error)
 	Trades(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]proto.Trade, error)
 	Depth(ctx context.Context, obj *Market) (*proto.MarketDepth, error)
-	Candles(ctx context.Context, obj *Market, sinceTimestamp string, interval Interval) ([]*proto.Candle, error)
+	Candles(ctx context.Context, obj *Market, since string, interval Interval) ([]*proto.Candle, error)
 }
 type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	OrderCreate(ctx context.Context, market string, party string, price string, size string, side Side, typeArg OrderType, expiration *string) (*proto.PendingOrder, error)
-	OrderCancel(ctx context.Context, id string, market string, party string) (*proto.PendingOrder, error)
+	OrderCreate(ctx context.Context, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) (*proto.PendingOrder, error)
+	OrderCancel(ctx context.Context, id string, marketID string, partyID string) (*proto.PendingOrder, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *proto.Order) (string, error)
@@ -254,7 +254,7 @@ type OrderResolver interface {
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, open *bool, skip *int, first *int, last *int) ([]proto.Order, error)
-	Trades(ctx context.Context, obj *Party, market *string, skip *int, first *int, last *int) ([]proto.Trade, error)
+	Trades(ctx context.Context, obj *Party, marketID *string, skip *int, first *int, last *int) ([]proto.Trade, error)
 	Positions(ctx context.Context, obj *Party) ([]proto.MarketPosition, error)
 }
 type PendingOrderResolver interface {
@@ -263,7 +263,7 @@ type PendingOrderResolver interface {
 	Side(ctx context.Context, obj *proto.PendingOrder) (*Side, error)
 	Market(ctx context.Context, obj *proto.PendingOrder) (*Market, error)
 	Size(ctx context.Context, obj *proto.PendingOrder) (*string, error)
-
+	Party(ctx context.Context, obj *proto.PendingOrder) (*Party, error)
 	Status(ctx context.Context, obj *proto.PendingOrder) (*OrderStatus, error)
 }
 type PositionResolver interface {
@@ -284,17 +284,17 @@ type PriceLevelResolver interface {
 	CumulativeVolume(ctx context.Context, obj *proto.PriceLevel) (string, error)
 }
 type QueryResolver interface {
-	Markets(ctx context.Context, name *string) ([]Market, error)
-	Market(ctx context.Context, name string) (*Market, error)
-	Parties(ctx context.Context, name *string) ([]Party, error)
-	Party(ctx context.Context, name string) (*Party, error)
+	Markets(ctx context.Context, id *string) ([]Market, error)
+	Market(ctx context.Context, id string) (*Market, error)
+	Parties(ctx context.Context, id *string) ([]Party, error)
+	Party(ctx context.Context, id string) (*Party, error)
 }
 type SubscriptionResolver interface {
-	Candles(ctx context.Context, market string, interval Interval) (<-chan *proto.Candle, error)
-	Orders(ctx context.Context, market *string, party *string) (<-chan []proto.Order, error)
-	Trades(ctx context.Context, market *string, party *string) (<-chan []proto.Trade, error)
-	Positions(ctx context.Context, party string) (<-chan *proto.MarketPosition, error)
-	MarketDepth(ctx context.Context, market string) (<-chan *proto.MarketDepth, error)
+	Candles(ctx context.Context, marketID string, interval Interval) (<-chan *proto.Candle, error)
+	Orders(ctx context.Context, marketID *string, partyID *string) (<-chan []proto.Order, error)
+	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []proto.Trade, error)
+	Positions(ctx context.Context, partyID string) (<-chan *proto.MarketPosition, error)
+	MarketDepth(ctx context.Context, marketID string) (<-chan *proto.MarketDepth, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *proto.Trade) (*Market, error)
@@ -486,7 +486,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.Candles(childComplexity, args["sinceTimestamp"].(string), args["interval"].(Interval)), true
+		return e.complexity.Market.Candles(childComplexity, args["since"].(string), args["interval"].(Interval)), true
 
 	case "Market.DecimalPlaces":
 		if e.complexity.Market.DecimalPlaces == nil {
@@ -561,12 +561,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketDepth.LastTrade(childComplexity), true
 
-	case "MarketDepth.Name":
-		if e.complexity.MarketDepth.Name == nil {
+	case "MarketDepth.MarketID":
+		if e.complexity.MarketDepth.MarketID == nil {
 			break
 		}
 
-		return e.complexity.MarketDepth.Name(childComplexity), true
+		return e.complexity.MarketDepth.MarketID(childComplexity), true
 
 	case "MarketDepth.Sell":
 		if e.complexity.MarketDepth.Sell == nil {
@@ -585,7 +585,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.OrderCancel(childComplexity, args["id"].(string), args["market"].(string), args["party"].(string)), true
+		return e.complexity.Mutation.OrderCancel(childComplexity, args["id"].(string), args["marketId"].(string), args["partyId"].(string)), true
 
 	case "Mutation.OrderCreate":
 		if e.complexity.Mutation.OrderCreate == nil {
@@ -597,7 +597,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.OrderCreate(childComplexity, args["market"].(string), args["party"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string)), true
+		return e.complexity.Mutation.OrderCreate(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string)), true
 
 	case "Order.CreatedAt":
 		if e.complexity.Order.CreatedAt == nil {
@@ -634,12 +634,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Market(childComplexity), true
 
-	case "Order.Party":
-		if e.complexity.Order.Party == nil {
+	case "Order.PartyID":
+		if e.complexity.Order.PartyID == nil {
 			break
 		}
 
-		return e.complexity.Order.Party(childComplexity), true
+		return e.complexity.Order.PartyID(childComplexity), true
 
 	case "Order.Price":
 		if e.complexity.Order.Price == nil {
@@ -704,12 +704,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Type(childComplexity), true
 
-	case "Party.Name":
-		if e.complexity.Party.Name == nil {
+	case "Party.ID":
+		if e.complexity.Party.ID == nil {
 			break
 		}
 
-		return e.complexity.Party.Name(childComplexity), true
+		return e.complexity.Party.ID(childComplexity), true
 
 	case "Party.Orders":
 		if e.complexity.Party.Orders == nil {
@@ -740,7 +740,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Trades(childComplexity, args["market"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Party.Trades(childComplexity, args["marketId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "PendingOrder.Id":
 		if e.complexity.PendingOrder.Id == nil {
@@ -906,7 +906,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Market(childComplexity, args["name"].(string)), true
+		return e.complexity.Query.Market(childComplexity, args["id"].(string)), true
 
 	case "Query.Markets":
 		if e.complexity.Query.Markets == nil {
@@ -918,7 +918,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Markets(childComplexity, args["name"].(*string)), true
+		return e.complexity.Query.Markets(childComplexity, args["id"].(*string)), true
 
 	case "Query.Parties":
 		if e.complexity.Query.Parties == nil {
@@ -930,7 +930,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Parties(childComplexity, args["name"].(*string)), true
+		return e.complexity.Query.Parties(childComplexity, args["id"].(*string)), true
 
 	case "Query.Party":
 		if e.complexity.Query.Party == nil {
@@ -942,7 +942,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Party(childComplexity, args["name"].(string)), true
+		return e.complexity.Query.Party(childComplexity, args["id"].(string)), true
 
 	case "Subscription.Candles":
 		if e.complexity.Subscription.Candles == nil {
@@ -954,7 +954,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Candles(childComplexity, args["market"].(string), args["interval"].(Interval)), true
+		return e.complexity.Subscription.Candles(childComplexity, args["marketId"].(string), args["interval"].(Interval)), true
 
 	case "Subscription.MarketDepth":
 		if e.complexity.Subscription.MarketDepth == nil {
@@ -966,7 +966,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.MarketDepth(childComplexity, args["market"].(string)), true
+		return e.complexity.Subscription.MarketDepth(childComplexity, args["marketId"].(string)), true
 
 	case "Subscription.Orders":
 		if e.complexity.Subscription.Orders == nil {
@@ -978,7 +978,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Orders(childComplexity, args["market"].(*string), args["party"].(*string)), true
+		return e.complexity.Subscription.Orders(childComplexity, args["marketId"].(*string), args["partyId"].(*string)), true
 
 	case "Subscription.Positions":
 		if e.complexity.Subscription.Positions == nil {
@@ -990,7 +990,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Positions(childComplexity, args["party"].(string)), true
+		return e.complexity.Subscription.Positions(childComplexity, args["partyId"].(string)), true
 
 	case "Subscription.Trades":
 		if e.complexity.Subscription.Trades == nil {
@@ -1002,7 +1002,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Trades(childComplexity, args["market"].(*string), args["party"].(*string)), true
+		return e.complexity.Subscription.Trades(childComplexity, args["marketId"].(*string), args["partyId"].(*string)), true
 
 	case "TradableInstrument.Instrument":
 		if e.complexity.TradableInstrument.Instrument == nil {
@@ -1210,20 +1210,20 @@ type Mutation {
 
     # Send a create order request into VEGA network, this does not immediately create the order.
     # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
-    orderCreate(market: String!, party: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PendingOrder!
+    orderCreate(marketId: String!, partyId: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PendingOrder!
 
     # Send a cancel order request into VEGA network, this does not immediately cancel an order.
     # It validates and sends the request out for consensus.
-    orderCancel(id: ID!, market: String!, party: String!): PendingOrder!
+    orderCancel(id: ID!, marketId: String!, partyId: String!): PendingOrder!
 }
 
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
 type Subscription {
-    candles(market: String!, interval: Interval!): Candle!
-    orders(market: String, party: String): [Order!]
-    trades(market: String, party: String): [Trade!]
-    positions(party: String!): Position!
-    marketDepth(market: String!): MarketDepth!
+    candles(marketId: String!, interval: Interval!): Candle!
+    orders(marketId: String, partyId: String): [Order!]
+    trades(marketId: String, partyId: String): [Trade!]
+    positions(partyId: String!): Position!
+    marketDepth(marketId: String!): MarketDepth!
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -1252,7 +1252,7 @@ type PendingOrder {
   size: String
 
   # The trader who place the order (probably stored internally as the trader's public key)
-  party: String
+  party: Party
 
   # The status of an order, for example 'Active'
   status: OrderStatus
@@ -1262,16 +1262,16 @@ type PendingOrder {
 type Query {
 
     # One or more instruments that are trading on the VEGA network
-    markets(name: String): [Market!]
+    markets(id: String): [Market!]
 
     # An instrument that is trading on the VEGA network
-    market(name: String!): Market
+    market(id: String!): Market
 
     # One or more entities that are trading on the VEGA network
-    parties(name: String): [Party!]
+    parties(id: String): [Party!]
 
     # An entity that is trading on the VEGA network
-    party(name: String!): Party
+    party(id: String!): Party
 }
 
 # A mode where Vega try to execute order as soon as they are received
@@ -1384,7 +1384,7 @@ type Market {
   depth: MarketDepth!
 
   # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
-  candles (sinceTimestamp: String!, interval: Interval!): [Candle]
+  candles (since: String!, interval: Interval!): [Candle]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
@@ -1392,7 +1392,7 @@ type Market {
 type MarketDepth {
 
     # Market id
-    name: String!
+    marketId: String!
 
     # Buy side price levels (if available)
     buy: [PriceLevel!]
@@ -1450,17 +1450,17 @@ type Candle {
 
 # Represents a party on Vega, could be an ethereum wallet address in the future
 type Party {
-    # Party identifier
-    name: String!
+  # Party identifier
+  id: String!
 
-    # Orders relating to a party
-    orders(open: Boolean, skip: Int, first: Int, last: Int): [Order!]
+  # Orders relating to a party
+  orders(open: Boolean, skip: Int, first: Int, last: Int): [Order!]
 
-    # Trades relating to a party (specifically where party is either buyer OR seller)
-    trades(market: String, skip: Int, first: Int, last: Int): [Trade!]
+  # Trades relating to a party (specifically where party is either buyer OR seller)
+  trades(marketId: String, skip: Int, first: Int, last: Int): [Trade!]
 
-    # Trading positions relating to a party
-    positions: [Position!]
+  # Trading positions relating to a party
+  positions: [Position!]
 }
 
 # An individual trader at any point in time is considered net long or net short.
@@ -1523,7 +1523,7 @@ type Order {
   remaining: String!
 
   # The trader who place the order (probably stored internally as the trader's public key)
-  party: String!
+  partyId: String!
 
   # Unix epoch+nanoseconds for when the order was created
   timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
@@ -1630,109 +1630,6 @@ enum ValueDirection {
     Negative
 }
 
-# Filters for Trade queries on VEGA graphql, typically specified by WHERE clause
-input TradeFilter {
-    # logical operators
-    AND: [TradeFilter!] # combines all passed ` + "`" + `TradeFilter` + "`" + ` objects with logical AND
-    OR: [TradeFilter!] # combines all passed ` + "`" + `TradeFilter` + "`" + ` objects with logical OR
-
-    # ID filters
-    id: ID # matches all trades with exact ID value
-    id_neq: ID # matches all trades with different ID to value
-
-    # Market filters
-    market: String # matches all trades with exact market value
-    market_neq: String # matches all trades with different market to value
-
-    # Buyer filters
-    buyer: String # matches all trades with exact buyer value
-    buyer_neq: String # matches all trades with different buyer to value
-
-    # Buyer filters
-    seller: String # matches all trades with exact seller value
-    seller_neq: String # matches all trades with different seller to value
-
-    # Aggressor filters
-    aggressor: Side # matches all trades with exact aggressor value e.g. Buy
-    aggressor_neq: Side # matches all trades with different aggressor to value
-
-    # Price filters
-    price: String # matches all trades with exact price value
-    price_neq: String # matches all trades with different price to value
-    price_from: String # matches all trades from this price value
-    price_to: String # matches all trades to this price value
-
-    # Size filters
-    size: String # matches all trades with exact size value
-    size_neq: String # matches all trades with different size to value
-    size_from: String # matches all trades from this size value
-    size_to: String # matches all trades to this size value
-
-    # TimeStamp filters
-    timestamp: String # matches all trades with exact timestamp value
-    timestamp_neq: String # matches all trades with different timestamp to value
-    timestamp_from: String # matches all trades from this timestamp value
-    timestamp_to: String # matches all trades to this timestamp value
-}
-
-# Filters for Order queries on VEGA graphql, typically specified by WHERE clause
-input OrderFilter {
-    # logical operators
-    AND: [OrderFilter!] # combines all passed ` + "`" + `OrderFilter` + "`" + ` objects with logical AND
-    OR: [OrderFilter!] # combines all passed ` + "`" + `OrderFilter` + "`" + ` objects with logical OR
-
-    # Open only filter
-    open: Boolean # Include only open orders in results (default: False)
-
-    # ID filters
-    id: ID # matches all orders with exact ID value
-    id_neq: ID # matches all orders with different ID to value
-
-    # Market filters
-    market: String # matches all orders with exact market value
-    market_neq: String # matches all orders with different market to value
-
-    # Party filters
-    party: String # matches all orders with exact party value
-    party_neq: String # matches all orders with different party to value
-
-    # Side filters
-    side: Side # matches all orders with exact side value e.g. Buy
-    side_neq: Side # matches all orders with different side to value
-
-    # Price filters
-    price: String # matches all orders with exact price value
-    price_neq: String # matches all orders with different price to value
-    price_from: String # matches all orders from this price value
-    price_to: String # matches all orders to this price value
-
-    # Size filters
-    size: String # matches all orders with exact size value
-    size_neq: String # matches all orders with different size to value
-    size_from: String # matches all orders from this size value
-    size_to: String # matches all orders to this size value
-
-    # Remaining filters
-    remaining: String # matches all orders with exact remaining value
-    remaining_neq: String # matches all orders with different remaining to value
-    remaining_from: String # matches all orders from this remaining value
-    remaining_to: String # matches all orders to this remaining value
-
-    # Type filters
-    type: OrderType # matches all orders with exact type value
-    type_neq: OrderType # matches all orders with different type to value
-
-    # Timestamp filters
-    timestamp: String # matches all orders with exact timestamp value
-    timestamp_neq: String # matches all orders with different timestamp to value
-    timestamp_from: String # matches all orders from this timestamp value
-    timestamp_to: String # matches all orders to this timestamp value
-
-    # Status filters
-    status: OrderStatus # matches all orders with exact status value
-    status_neq: OrderStatus # matches all orders with different status to value
-}
-
 # The interval for trade candles when subscribing via VEGA graphql, default is I15M
 enum Interval {
     I1M # 1 minute interval
@@ -1753,13 +1650,13 @@ func (ec *executionContext) field_Market_candles_args(ctx context.Context, rawAr
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["sinceTimestamp"]; ok {
+	if tmp, ok := rawArgs["since"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["sinceTimestamp"] = arg0
+	args["since"] = arg0
 	var arg1 Interval
 	if tmp, ok := rawArgs["interval"]; ok {
 		arg1, err = ec.unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInterval(ctx, tmp)
@@ -1851,21 +1748,21 @@ func (ec *executionContext) field_Mutation_orderCancel_args(ctx context.Context,
 	}
 	args["id"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["market"]; ok {
+	if tmp, ok := rawArgs["marketId"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["market"] = arg1
+	args["marketId"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["party"]; ok {
+	if tmp, ok := rawArgs["partyId"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg2
+	args["partyId"] = arg2
 	return args, nil
 }
 
@@ -1873,21 +1770,21 @@ func (ec *executionContext) field_Mutation_orderCreate_args(ctx context.Context,
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["market"]; ok {
+	if tmp, ok := rawArgs["marketId"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["market"] = arg0
+	args["marketId"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["party"]; ok {
+	if tmp, ok := rawArgs["partyId"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg1
+	args["partyId"] = arg1
 	var arg2 string
 	if tmp, ok := rawArgs["price"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
@@ -1973,13 +1870,13 @@ func (ec *executionContext) field_Party_trades_args(ctx context.Context, rawArgs
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["market"]; ok {
+	if tmp, ok := rawArgs["marketId"]; ok {
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["market"] = arg0
+	args["marketId"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["skip"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
@@ -2025,13 +1922,13 @@ func (ec *executionContext) field_Query_market_args(ctx context.Context, rawArgs
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["name"]; ok {
+	if tmp, ok := rawArgs["id"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["name"] = arg0
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -2039,13 +1936,13 @@ func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArg
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["name"]; ok {
+	if tmp, ok := rawArgs["id"]; ok {
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["name"] = arg0
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -2053,13 +1950,13 @@ func (ec *executionContext) field_Query_parties_args(ctx context.Context, rawArg
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["name"]; ok {
+	if tmp, ok := rawArgs["id"]; ok {
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["name"] = arg0
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -2067,13 +1964,13 @@ func (ec *executionContext) field_Query_party_args(ctx context.Context, rawArgs 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["name"]; ok {
+	if tmp, ok := rawArgs["id"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["name"] = arg0
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -2081,13 +1978,13 @@ func (ec *executionContext) field_Subscription_candles_args(ctx context.Context,
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["market"]; ok {
+	if tmp, ok := rawArgs["marketId"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["market"] = arg0
+	args["marketId"] = arg0
 	var arg1 Interval
 	if tmp, ok := rawArgs["interval"]; ok {
 		arg1, err = ec.unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInterval(ctx, tmp)
@@ -2103,13 +2000,13 @@ func (ec *executionContext) field_Subscription_marketDepth_args(ctx context.Cont
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["market"]; ok {
+	if tmp, ok := rawArgs["marketId"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["market"] = arg0
+	args["marketId"] = arg0
 	return args, nil
 }
 
@@ -2117,21 +2014,21 @@ func (ec *executionContext) field_Subscription_orders_args(ctx context.Context, 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["market"]; ok {
+	if tmp, ok := rawArgs["marketId"]; ok {
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["market"] = arg0
+	args["marketId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["party"]; ok {
+	if tmp, ok := rawArgs["partyId"]; ok {
 		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg1
+	args["partyId"] = arg1
 	return args, nil
 }
 
@@ -2139,13 +2036,13 @@ func (ec *executionContext) field_Subscription_positions_args(ctx context.Contex
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["party"]; ok {
+	if tmp, ok := rawArgs["partyId"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg0
+	args["partyId"] = arg0
 	return args, nil
 }
 
@@ -2153,21 +2050,21 @@ func (ec *executionContext) field_Subscription_trades_args(ctx context.Context, 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["market"]; ok {
+	if tmp, ok := rawArgs["marketId"]; ok {
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["market"] = arg0
+	args["marketId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["party"]; ok {
+	if tmp, ok := rawArgs["partyId"]; ok {
 		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["party"] = arg1
+	args["partyId"] = arg1
 	return args, nil
 }
 
@@ -3008,7 +2905,7 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().Candles(rctx, obj, args["sinceTimestamp"].(string), args["interval"].(Interval))
+		return ec.resolvers.Market().Candles(rctx, obj, args["since"].(string), args["interval"].(Interval))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -3019,7 +2916,7 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	return ec.marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐCandle(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketDepth_name(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) _MarketDepth_marketId(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3032,7 +2929,7 @@ func (ec *executionContext) _MarketDepth_name(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
+		return obj.MarketID, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3138,7 +3035,7 @@ func (ec *executionContext) _Mutation_orderCreate(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderCreate(rctx, args["market"].(string), args["party"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string))
+		return ec.resolvers.Mutation().OrderCreate(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3172,7 +3069,7 @@ func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderCancel(rctx, args["id"].(string), args["market"].(string), args["party"].(string))
+		return ec.resolvers.Mutation().OrderCancel(rctx, args["id"].(string), args["marketId"].(string), args["partyId"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3375,7 +3272,7 @@ func (ec *executionContext) _Order_remaining(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_party(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_partyId(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3388,7 +3285,7 @@ func (ec *executionContext) _Order_party(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Party, nil
+		return obj.PartyID, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3585,7 +3482,7 @@ func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.Col
 	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Party_name(ctx context.Context, field graphql.CollectedField, obj *Party) graphql.Marshaler {
+func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *Party) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -3598,7 +3495,7 @@ func (ec *executionContext) _Party_name(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
+		return obj.ID, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3663,7 +3560,7 @@ func (ec *executionContext) _Party_trades(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Trades(rctx, obj, args["market"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Party().Trades(rctx, obj, args["marketId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -3876,21 +3773,21 @@ func (ec *executionContext) _PendingOrder_party(ctx context.Context, field graph
 		Object:   "PendingOrder",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Party, nil
+		return ec.resolvers.PendingOrder().Party(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PendingOrder_status(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
@@ -4288,7 +4185,7 @@ func (ec *executionContext) _Query_markets(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Markets(rctx, args["name"].(*string))
+		return ec.resolvers.Query().Markets(rctx, args["id"].(*string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4319,7 +4216,7 @@ func (ec *executionContext) _Query_market(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Market(rctx, args["name"].(string))
+		return ec.resolvers.Query().Market(rctx, args["id"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4350,7 +4247,7 @@ func (ec *executionContext) _Query_parties(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Parties(rctx, args["name"].(*string))
+		return ec.resolvers.Query().Parties(rctx, args["id"].(*string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4381,7 +4278,7 @@ func (ec *executionContext) _Query_party(ctx context.Context, field graphql.Coll
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Party(rctx, args["name"].(string))
+		return ec.resolvers.Query().Party(rctx, args["id"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4461,7 +4358,7 @@ func (ec *executionContext) _Subscription_candles(ctx context.Context, field gra
 	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
 	//          and Tracer stack
 	rctx := ctx
-	results, err := ec.resolvers.Subscription().Candles(rctx, args["market"].(string), args["interval"].(Interval))
+	results, err := ec.resolvers.Subscription().Candles(rctx, args["marketId"].(string), args["interval"].(Interval))
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -4495,7 +4392,7 @@ func (ec *executionContext) _Subscription_orders(ctx context.Context, field grap
 	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
 	//          and Tracer stack
 	rctx := ctx
-	results, err := ec.resolvers.Subscription().Orders(rctx, args["market"].(*string), args["party"].(*string))
+	results, err := ec.resolvers.Subscription().Orders(rctx, args["marketId"].(*string), args["partyId"].(*string))
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -4529,7 +4426,7 @@ func (ec *executionContext) _Subscription_trades(ctx context.Context, field grap
 	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
 	//          and Tracer stack
 	rctx := ctx
-	results, err := ec.resolvers.Subscription().Trades(rctx, args["market"].(*string), args["party"].(*string))
+	results, err := ec.resolvers.Subscription().Trades(rctx, args["marketId"].(*string), args["partyId"].(*string))
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -4563,7 +4460,7 @@ func (ec *executionContext) _Subscription_positions(ctx context.Context, field g
 	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
 	//          and Tracer stack
 	rctx := ctx
-	results, err := ec.resolvers.Subscription().Positions(rctx, args["party"].(string))
+	results, err := ec.resolvers.Subscription().Positions(rctx, args["partyId"].(string))
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -4597,7 +4494,7 @@ func (ec *executionContext) _Subscription_marketDepth(ctx context.Context, field
 	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
 	//          and Tracer stack
 	rctx := ctx
-	results, err := ec.resolvers.Subscription().MarketDepth(rctx, args["market"].(string))
+	results, err := ec.resolvers.Subscription().MarketDepth(rctx, args["marketId"].(string))
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -5772,360 +5669,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputOrderFilter(ctx context.Context, v interface{}) (OrderFilter, error) {
-	var it OrderFilter
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "AND":
-			var err error
-			it.And, err = ec.unmarshalOOrderFilter2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderFilter(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "OR":
-			var err error
-			it.Or, err = ec.unmarshalOOrderFilter2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderFilter(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "open":
-			var err error
-			it.Open, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "id_neq":
-			var err error
-			it.IDNeq, err = ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "market":
-			var err error
-			it.Market, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "market_neq":
-			var err error
-			it.MarketNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "party":
-			var err error
-			it.Party, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "party_neq":
-			var err error
-			it.PartyNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "side":
-			var err error
-			it.Side, err = ec.unmarshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "side_neq":
-			var err error
-			it.SideNeq, err = ec.unmarshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "price":
-			var err error
-			it.Price, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "price_neq":
-			var err error
-			it.PriceNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "price_from":
-			var err error
-			it.PriceFrom, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "price_to":
-			var err error
-			it.PriceTo, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "size":
-			var err error
-			it.Size, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "size_neq":
-			var err error
-			it.SizeNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "size_from":
-			var err error
-			it.SizeFrom, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "size_to":
-			var err error
-			it.SizeTo, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "remaining":
-			var err error
-			it.Remaining, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "remaining_neq":
-			var err error
-			it.RemainingNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "remaining_from":
-			var err error
-			it.RemainingFrom, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "remaining_to":
-			var err error
-			it.RemainingTo, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "type":
-			var err error
-			it.Type, err = ec.unmarshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "type_neq":
-			var err error
-			it.TypeNeq, err = ec.unmarshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "timestamp":
-			var err error
-			it.Timestamp, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "timestamp_neq":
-			var err error
-			it.TimestampNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "timestamp_from":
-			var err error
-			it.TimestampFrom, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "timestamp_to":
-			var err error
-			it.TimestampTo, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "status":
-			var err error
-			it.Status, err = ec.unmarshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "status_neq":
-			var err error
-			it.StatusNeq, err = ec.unmarshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputTradeFilter(ctx context.Context, v interface{}) (TradeFilter, error) {
-	var it TradeFilter
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "AND":
-			var err error
-			it.And, err = ec.unmarshalOTradeFilter2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradeFilter(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "OR":
-			var err error
-			it.Or, err = ec.unmarshalOTradeFilter2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradeFilter(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "id_neq":
-			var err error
-			it.IDNeq, err = ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "market":
-			var err error
-			it.Market, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "market_neq":
-			var err error
-			it.MarketNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "buyer":
-			var err error
-			it.Buyer, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "buyer_neq":
-			var err error
-			it.BuyerNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "seller":
-			var err error
-			it.Seller, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "seller_neq":
-			var err error
-			it.SellerNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "aggressor":
-			var err error
-			it.Aggressor, err = ec.unmarshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "aggressor_neq":
-			var err error
-			it.AggressorNeq, err = ec.unmarshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "price":
-			var err error
-			it.Price, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "price_neq":
-			var err error
-			it.PriceNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "price_from":
-			var err error
-			it.PriceFrom, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "price_to":
-			var err error
-			it.PriceTo, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "size":
-			var err error
-			it.Size, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "size_neq":
-			var err error
-			it.SizeNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "size_from":
-			var err error
-			it.SizeFrom, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "size_to":
-			var err error
-			it.SizeTo, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "timestamp":
-			var err error
-			it.Timestamp, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "timestamp_neq":
-			var err error
-			it.TimestampNeq, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "timestamp_from":
-			var err error
-			it.TimestampFrom, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "timestamp_to":
-			var err error
-			it.TimestampTo, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -6633,8 +6176,8 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketDepth")
-		case "name":
-			out.Values[i] = ec._MarketDepth_name(ctx, field, obj)
+		case "marketId":
+			out.Values[i] = ec._MarketDepth_marketId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -6800,8 +6343,8 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
-		case "party":
-			out.Values[i] = ec._Order_party(ctx, field, obj)
+		case "partyId":
+			out.Values[i] = ec._Order_partyId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -6910,8 +6453,8 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Party")
-		case "name":
-			out.Values[i] = ec._Party_name(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._Party_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -7033,7 +6576,16 @@ func (ec *executionContext) _PendingOrder(ctx context.Context, sel ast.Selection
 				return res
 			})
 		case "party":
-			out.Values[i] = ec._PendingOrder_party(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PendingOrder_party(ctx, field, obj)
+				return res
+			})
 		case "status":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7895,10 +7447,6 @@ func (ec *executionContext) marshalNOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprot
 	return ec._Order(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalNOrderFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderFilter(ctx context.Context, v interface{}) (OrderFilter, error) {
-	return ec.unmarshalInputOrderFilter(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {
 	var res OrderStatus
 	return res, res.UnmarshalGQL(v)
@@ -8023,10 +7571,6 @@ func (ec *executionContext) marshalNTradableInstrument2codeᚗvegaprotocolᚗio�
 
 func (ec *executionContext) marshalNTrade2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx context.Context, sel ast.SelectionSet, v proto.Trade) graphql.Marshaler {
 	return ec._Trade(ctx, sel, &v)
-}
-
-func (ec *executionContext) unmarshalNTradeFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradeFilter(ctx context.Context, v interface{}) (TradeFilter, error) {
-	return ec.unmarshalInputTradeFilter(ctx, v)
 }
 
 func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradingMode(ctx context.Context, sel ast.SelectionSet, v TradingMode) graphql.Marshaler {
@@ -8330,29 +7874,6 @@ func (ec *executionContext) marshalOCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._Candle(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalID(v)
-}
-
-func (ec *executionContext) marshalOID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalID(v)
-}
-
-func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOID2string(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOID2string(ctx, sel, *v)
-}
-
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
 	return graphql.UnmarshalInt(v)
 }
@@ -8465,26 +7986,6 @@ func (ec *executionContext) marshalOOrder2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋp
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) unmarshalOOrderFilter2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderFilter(ctx context.Context, v interface{}) ([]OrderFilter, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]OrderFilter, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNOrderFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderFilter(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) unmarshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {
@@ -8802,26 +8303,6 @@ func (ec *executionContext) marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Trade(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOTradeFilter2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradeFilter(ctx context.Context, v interface{}) ([]TradeFilter, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]TradeFilter, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNTradeFilter2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradeFilter(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

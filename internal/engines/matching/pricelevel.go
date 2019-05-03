@@ -184,12 +184,12 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	}
 
 	return &types.Trade{
-		Market:    agg.Market,
+		MarketID:  agg.MarketID,
 		Price:     pass.Price,
 		Size:      size,
 		Aggressor: agg.Side,
-		Buyer:     buyer.Party,
-		Seller:    seller.Party,
+		Buyer:     buyer.PartyID,
+		Seller:    seller.PartyID,
 		Timestamp: agg.CreatedAt,
 	}
 }
@@ -205,6 +205,6 @@ func (l PriceLevel) print(log *logging.Logger) {
 		}
 
 		log.Debug(fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s\n",
-			o.Party, side, o.Price, o.Size, o.Remaining, o.Type, o.CreatedAt, o.Id))
+			o.PartyID, side, o.Price, o.Size, o.Remaining, o.Type, o.CreatedAt, o.Id))
 	}
 }

@@ -19,7 +19,7 @@ func TestUpdatePosition(t *testing.T) {
 	size := int64(10)
 	trade := proto.Trade{
 		Id:        "trade_id",
-		Market:    "market_id",
+		MarketID:  "market_id",
 		Price:     10000,
 		Size:      uint64(size),
 		Buyer:     buyer,

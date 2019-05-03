@@ -6,9 +6,9 @@ import (
 )
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) error {
-	if orderMessage.Market != b.marketID {
+	if orderMessage.MarketID != b.marketID {
 		b.log.Error("Market ID mismatch",
-			logging.String("market", orderMessage.Market),
+			logging.String("market", orderMessage.MarketID),
 			logging.String("order-book", b.marketID),
 			logging.Order(*orderMessage))
 

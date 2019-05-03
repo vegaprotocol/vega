@@ -108,7 +108,7 @@ func getTestMarket() *types.Market {
 
 func getTestParty() *types.Party {
 	return &types.Party{
-		Name: "barney",
+		Id: "barney",
 	}
 }
 

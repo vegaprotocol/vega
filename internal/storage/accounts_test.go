@@ -18,11 +18,11 @@ func TestAccounts(t *testing.T) {
 func testAddDuplicate(t *testing.T) {
 	acc := getAccountStorage()
 	rec := types.Account{
-		Id:     uuid.NewV4().String(),
-		Asset:  "GBP",
-		Market: "market",
-		Owner:  uuid.NewV4().String(),
-		Type:   types.AccountType_GENERAL,
+		Id:       uuid.NewV4().String(),
+		Asset:    "GBP",
+		MarketID: "market",
+		Owner:    uuid.NewV4().String(),
+		Type:     types.AccountType_GENERAL,
 	}
 	assert.NoError(t, acc.Create(&rec))
 	assert.Equal(t, storage.ErrDuplicateAccount, acc.Create(&rec))
@@ -38,7 +38,7 @@ func testCreateMarketAccounts(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, accounts)
 	for _, account := range accounts {
-		assert.Equal(t, market, account.Market)
+		assert.Equal(t, market, account.MarketID)
 		assert.Equal(t, storage.SystemOwner, account.Owner)
 		if account.Type == types.AccountType_INSURANCE {
 			assert.Equal(t, settlement, account.Balance)
