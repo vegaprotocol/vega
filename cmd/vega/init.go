@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/fsutil"
-	"code.vegaprotocol.io/vega/internal/gateway"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/proto"
@@ -130,35 +129,8 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	// create gateway conf
-	if err := createGatewayConfig(ic.rootPath); err != nil {
-		return err
-	}
-
 	ic.Log.Info("configuration generated successfully", zap.String("path", ic.rootPath))
 
-	return nil
-}
-
-func createGatewayConfig(confpath string) error {
-	// generate a default configuration
-	cfg := gateway.NewDefaultConfig()
-
-	// write configuration to toml
-	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(cfg); err != nil {
-		return err
-	}
-
-	// create the configuration file
-	f, err := os.Create(filepath.Join(confpath, "gateway.toml"))
-	if err != nil {
-		return err
-	}
-
-	if _, err := f.WriteString(buf.String()); err != nil {
-		return err
-	}
 	return nil
 }
 
