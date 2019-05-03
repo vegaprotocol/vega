@@ -2,16 +2,15 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
-	"path/filepath"
+	"errors"
 
+	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/gateway"
 	gql "code.vegaprotocol.io/vega/internal/gateway/graphql"
 	"code.vegaprotocol.io/vega/internal/gateway/rest"
 	"code.vegaprotocol.io/vega/internal/logging"
 
-	"github.com/BurntSushi/toml"
 	"github.com/spf13/cobra"
 )
 
@@ -56,7 +55,15 @@ func (g *gatewayCommand) runGateway(args []string) error {
 		}
 	}
 
-	gty, err := startGateway(g.Log, configPath)
+	// VEGA config (holds all package level configs)
+	cfgwatchr, err := config.NewFromFile(ctx, g.Log, configPath, configPath)
+	if err != nil {
+		g.Log.Error("unable to start config watcher", logging.Error(err))
+		return errors.New("unable to start config watcher")
+	}
+	conf := cfgwatchr.Get()
+
+	gty, err := startGateway(g.Log, conf.Gateway)
 	if err != nil {
 		return err
 	}
@@ -72,27 +79,20 @@ type Gateway struct {
 	restSrv gatewaySrv
 }
 
-func startGateway(log *logging.Logger, configPath string) (*Gateway, error) {
-	// load config
-	buf, err := ioutil.ReadFile(filepath.Join(configPath, "gateway.toml"))
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := gateway.NewDefaultConfig()
-	_, err = toml.Decode(string(buf), &cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	var restSrv, gqlSrv gatewaySrv
-
+func startGateway(log *logging.Logger, cfg gateway.Config) (*Gateway, error) {
+	var (
+		restSrv, gqlSrv gatewaySrv
+		err             error
+	)
 	if cfg.REST.Enabled {
 		restSrv = rest.NewRestProxyServer(log, cfg)
 	}
 
 	if cfg.GraphQL.Enabled {
 		gqlSrv, err = gql.New(log, cfg)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if restSrv != nil {
