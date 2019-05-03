@@ -4,11 +4,17 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/engines/position"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/products"
 	types "code.vegaprotocol.io/vega/proto"
 )
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/internal/engines/settlement MarketPosition
+type MarketPosition interface {
+	Party() string
+	Size() int64
+	Price() uint64
+}
 
 type pos struct {
 	size  int64
@@ -51,21 +57,24 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // Update - takes market positions, keeps track of things
-func (e *Engine) Update(positions []position.MarketPosition) {
+func (e *Engine) Update(positions []MarketPosition) {
 	e.mu.Lock()
 	for _, p := range positions {
-		party := p.Party()
-		ps, ok := e.pos[party]
-		// create entry for trader if needed
-		// if not, just update with new net position
-		if !ok {
-			ps := &pos{}
-			e.pos[party] = ps
-		}
-		ps.price = p.Price()
-		ps.size = p.Size()
+		e.updatePosition(p, p.Price())
 	}
 	e.mu.Unlock()
+}
+
+func (e *Engine) updatePosition(p MarketPosition, price uint64) {
+	party := p.Party()
+	ps, ok := e.pos[party]
+	if !ok {
+		ps = &pos{}
+		e.pos[party] = ps
+	}
+	// price can come from either position, or trade (Update vs SettleMTM)
+	ps.price = price
+	ps.size = p.Size()
 }
 
 func (e *Engine) Settle(t time.Time) ([]*types.SettlePosition, error) {
@@ -83,27 +92,50 @@ func (e *Engine) Settle(t time.Time) ([]*types.SettlePosition, error) {
 	return positions, nil
 }
 
-// MarkToMarket - read settle positions from channel (populated by positions engine), then notify through done channel
-// these settle positions aren't going to update the positions tracked here in the settlement engine
-// instead the net result will be a a slice where losses are prepended, and wins appended
-// this slice will be pushed onto the return channel
-func (e *Engine) MarkToMarket(ch <-chan *types.SettlePosition) <-chan []*types.SettlePosition {
-	// indicate the settlement engine has processed everything in the channel via waitgroup, market framework is closing the channel after the loop
-	sch := make(chan []*types.SettlePosition) // no buffer, so the read on this channel will be blocking. Once we've read the slice, we know the work here is done
-	// read the channel, writing to the return channel indicates the routine is done, and the channel is closed
+func (e *Engine) SettleMTM(trade *types.Trade, ch <-chan MarketPosition) <-chan []*types.SettlePosition {
+	// put the positions on here once we've worked out what all we need to settle
+	sch := make(chan []*types.SettlePosition)
 	go func() {
-		// set buffer of channel as cap of slice, reason for this pre-allocation is the same as why we buffer the channel to a given size
 		posSlice := make([]*types.SettlePosition, 0, cap(ch))
-		winSlice := make([]*types.SettlePosition, 0, cap(ch)/2) // assuming half of these will be wins (not a given, but it's a decent enough cap)
+		winSlice := make([]*types.SettlePosition, 0, cap(ch)/2)
+		e.mu.Lock()
 		for pos := range ch {
-			switch pos.Type {
-			case types.SettleType_MTM_LOSS:
-				posSlice = append(posSlice, pos)
-			case types.SettleType_MTM_WIN:
-				winSlice = append(winSlice, pos)
+			if pos == nil {
+				break
+			}
+			// update position for trader - always keep track of latest position
+			pp := pos.Price()
+			ps := pos.Size()
+			// all positions need to be updated to the new market price
+			e.updatePosition(pos, trade.Price)
+			// we should set the new position to market price here... somehow
+			// e.Update([]MarketPosition{pos})
+			if pp == trade.Price || ps == 0 {
+				// nothing has changed or there's no position to settle
+				continue
+			}
+			// e.g. position avg -> 90, market price 100:
+			// short -> (100 - 90) * -10 => -100 ==> MTM_LOSS
+			// long -> (100-90) * 10 => 100 ==> MTM_WIN
+			// short -> (100 - 110) * -10 => 100 ==> MTM_WIN
+			// long -> (100 - 110) * 10 => -100 ==> MTM_LOSS
+			mtmShare := (int64(trade.Price) - int64(pp)) * ps
+			settle := &types.SettlePosition{
+				Owner: pos.Party(),
+				Size:  1, // this is an absolute delta based on volume, so size is always 1
+				Amount: &types.FinancialAmount{
+					Amount: mtmShare, // current delta -> mark price minus current position average
+				},
+			}
+			if mtmShare > 0 {
+				settle.Type = types.SettleType_MTM_WIN
+				winSlice = append(winSlice, settle)
+			} else {
+				settle.Type = types.SettleType_MTM_LOSS
+				posSlice = append(posSlice, settle)
 			}
 		}
-		// create a single slice here, losses first, wins after
+		e.mu.Unlock()
 		posSlice = append(posSlice, winSlice...)
 		sch <- posSlice
 		close(sch)

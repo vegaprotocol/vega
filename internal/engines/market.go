@@ -269,6 +269,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if confirmation.Trades != nil {
 		// do this ones, we'll use this as a reference for the channel buffer size
 		positionCount := len(m.position.Positions())
+		if positionCount == 0 {
+			// ensure channel buffer will never be 0, so the channel is never a blocking one
+			// even though we could handle that, it's just not going to be awfully efficient
+			positionCount += 2 + len(confirmation.Trades)
+		}
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -300,9 +305,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// create channel for setllement engine, this will allow us to get the mark to market stuff in there
 			// use the total number of positions in the market as buffer, trades can increase the number of positions
 			// but we're reading from the channel anyway, so that shouldn't affect this one bit
-			ch := make(chan *types.SettlePosition, positionCount)
+			ch := make(chan settlement.MarketPosition, positionCount)
 			// this channel is read by settlement, populated in the loop by position engine
-			settleCh := m.settlement.MarkToMarket(ch)
+			settleCh := m.settlement.SettleMTM(trade, ch)
 			// Update party positions for trade affected
 			m.position.Update(trade, ch)
 

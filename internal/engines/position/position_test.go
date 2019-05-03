@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/engines/position"
+	"code.vegaprotocol.io/vega/internal/engines/settlement"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/proto"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func TestUpdatePosition(t *testing.T) {
-	ch := make(chan *proto.SettlePosition, 1)
+	ch := make(chan settlement.MarketPosition, 1)
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
 	buyer := "buyer_id"
