@@ -18,12 +18,13 @@ type GatewayServiceConfig struct {
 }
 
 type Config struct {
-	Level               encoding.LogLevel
-	Timeout             encoding.Duration
-	Node                ServerConfig
-	GraphQL             GatewayServiceConfig
-	REST                GatewayServiceConfig
-	SubscriptionRetries int
+	Level                    encoding.LogLevel
+	Timeout                  encoding.Duration
+	Node                     ServerConfig
+	GraphQL                  GatewayServiceConfig
+	REST                     GatewayServiceConfig
+	SubscriptionRetries      int
+	GraphQLPlaygroundEnabled bool
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -50,6 +51,7 @@ func NewDefaultConfig() Config {
 			IP:   "0.0.0.0",
 			Port: 3002,
 		},
-		SubscriptionRetries: 3,
+		SubscriptionRetries:      3,
+		GraphQLPlaygroundEnabled: true,
 	}
 }

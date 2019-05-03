@@ -129,7 +129,10 @@ func (g *graphServer) Start() {
 
 	handlr := http.NewServeMux()
 
-	handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
+	if g.GraphQLPlaygroundEnabled {
+		g.log.Warn("graphql playground enabled, this is not a recommended setting for production")
+		handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
+	}
 	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
