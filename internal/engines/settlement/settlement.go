@@ -115,8 +115,6 @@ func (e *Engine) SettleMTM(trade *types.Trade, ch <-chan MarketPosition) <-chan 
 			ps := pos.Size()
 			// all positions need to be updated to the new market price
 			e.updatePosition(pos, trade.Price)
-			// we should set the new position to market price here... somehow
-			// e.Update([]MarketPosition{pos})
 			if pp == trade.Price || ps == 0 {
 				// nothing has changed or there's no position to settle
 				continue
