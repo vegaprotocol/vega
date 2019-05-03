@@ -12,22 +12,74 @@ schema {
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
 
-    # Send a create order request into VEGA network, this does not immediately create the order.
-    # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
-    orderCreate(marketId: String!, partyId: String!, price: String!, size: String!, side: Side!, type: OrderType!, expiration: String): PendingOrder!
+  # Send a create order request into VEGA network, this does not immediately create the order.
+  # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
+  orderCreate(
+    # ID of the market to place the order
+    marketId: String!,
+    # ID of the party placing the order
+    partyId: String!,
+    # Price of the asset
+    price: String!,
+    # Size ofthe order
+    size: String!,
+    # Side of the order (Buy or Sell)
+    side: Side!,
+    # Type of the order
+    type: OrderType!,
+    # exiration of the the order
+    expiration: String
+  ): PendingOrder!
 
-    # Send a cancel order request into VEGA network, this does not immediately cancel an order.
-    # It validates and sends the request out for consensus.
-    orderCancel(id: ID!, marketId: String!, partyId: String!): PendingOrder!
+  # Send a cancel order request into VEGA network, this does not immediately cancel an order.
+  # It validates and sends the request out for consensus.
+  orderCancel(
+    # ID of the order to cancel
+    id: ID!,
+    # ID of the market where to find the order
+    marketId: String!,
+    # ID of the party which created the order
+    partyId: String!
+  ): PendingOrder!
 }
 
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
 type Subscription {
-    candles(marketId: String!, interval: Interval!): Candle!
-    orders(marketId: String, partyId: String): [Order!]
-    trades(marketId: String, partyId: String): [Trade!]
-    positions(partyId: String!): Position!
-    marketDepth(marketId: String!): MarketDepth!
+  # Subscribe to the candles updates
+  candles(
+    # ID of the market we want to listen candles for
+    marketId: String!,
+    # Interval of the candles we want to listen for
+    interval: Interval!
+  ): Candle!
+
+  # Subscribe to orders updates
+  orders(
+    # ID of the market from which we want orders updates
+    marketId: String,
+    # ID of the party from which we want orders updates
+    partyId: String
+  ): [Order!]
+
+  # Subscribe to the trades updates
+  trades(
+    # ID of the market from which we want trades updates
+    marketId: String,
+    # ID of the party from which we want trades updates
+    partyId: String
+  ): [Trade!]
+
+  # Subscribe to the positions updates
+  positions(
+    # ID of the party from we want updates for
+    partyId: String!
+  ): Position!
+
+  # Subscribe to the market depths update
+  marketDepth(
+    # ID of the market we want to receive market depth updates for
+    marketId: String!
+  ): MarketDepth!
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -65,17 +117,29 @@ type PendingOrder {
 # Queries allow a caller to read data and filter data via GraphQL.
 type Query {
 
-    # One or more instruments that are trading on the VEGA network
-    markets(id: String): [Market!]
+  # One or more instruments that are trading on the VEGA network
+  markets(
+    # ID of the market
+    id: String
+  ): [Market!]
 
-    # An instrument that is trading on the VEGA network
-    market(id: String!): Market
+  # An instrument that is trading on the VEGA network
+  market(
+    # Optional ID of a market
+    id: String!
+  ): Market
 
-    # One or more entities that are trading on the VEGA network
-    parties(id: String): [Party!]
+  # One or more entities that are trading on the VEGA network
+  parties(
+    # Optional ID of a party
+    id: String
+  ): [Party!]
 
-    # An entity that is trading on the VEGA network
-    party(id: String!): Party
+  # An entity that is trading on the VEGA network
+  party(
+    # ID of a party
+    id: String!
+  ): Party
 }
 
 # A mode where Vega try to execute order as soon as they are received
@@ -179,16 +243,36 @@ type Market {
   decimalPlaces: Int!
 
   # Orders on a market
-  orders (open: Boolean, skip: Int, first: Int, last: Int): [Order!]
+  orders (
+    # Filter open orders only
+    open: Boolean,
+    # Pagination skip
+    skip: Int,
+    # Pagination first element
+    first: Int,
+    # Pagination last element
+    last: Int
+  ): [Order!]
 
   # Trades on a market
-  trades (skip: Int, first: Int, last: Int): [Trade!]
+  trades (
+    # Pagination skip
+    skip: Int,
+    # Pagination first element
+    first: Int,
+    # Pagination last element
+    last: Int): [Trade!]
 
   # Current depth on the orderbook for this market
   depth: MarketDepth!
 
   # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
-  candles (since: String!, interval: Interval!): [Candle]
+  candles (
+    # RFC3339Nano encoded time from when to get candles
+    since: String!,
+    # Interval of the candles
+    interval: Interval!
+  ): [Candle]
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
@@ -258,10 +342,26 @@ type Party {
   id: String!
 
   # Orders relating to a party
-  orders(open: Boolean, skip: Int, first: Int, last: Int): [Order!]
+  orders(
+    # Is the order still open or not
+    open: Boolean,
+    # Pagination skip
+    skip: Int,
+    # Pagination first element
+    first: Int,
+    # Pagination last element
+    last: Int): [Order!]
 
   # Trades relating to a party (specifically where party is either buyer OR seller)
-  trades(marketId: String, skip: Int, first: Int, last: Int): [Trade!]
+  trades(
+    # ID of the market we want to get trades for
+    marketId: String,
+    # Pagination skip
+    skip: Int,
+    # Pagination first element
+    first: Int,
+    # Pagination last element
+    last: Int): [Trade!]
 
   # Trading positions relating to a party
   positions: [Position!]
@@ -424,22 +524,36 @@ enum OrderStatus {
 
 # Whether the placer of an order is aiming to buy or sell on the market
 enum Side {
-    Buy
-    Sell
+  # The Placer of the order is aiming to buy
+  Buy
+
+  # The placer of the order is aiming to sell
+  Sell
 }
 
 # Whether the position etc value is in profit (positive) or loss (negative).
 enum ValueDirection {
-    Positive
-    Negative
+  Positive
+  Negative
 }
 
 # The interval for trade candles when subscribing via VEGA graphql, default is I15M
 enum Interval {
-    I1M # 1 minute interval
-    I5M # 5 minute interval
-    I15M # 15 minute interval (default)
-    I1H # 1 hour interval
-    I6H # 6 hour interval
-    I1D # 1 day interval
+  # 1 minute interval
+  I1M
+
+  # 5 minute interval
+  I5M
+
+  # 15 minute interval (default)
+  I15M
+
+  # 1 hour interval
+  I1H
+
+  # 6 hour interval
+  I6H
+
+  # 1 day interval
+  I1D
 }
