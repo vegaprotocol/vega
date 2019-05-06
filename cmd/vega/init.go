@@ -14,9 +14,9 @@ import (
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/proto"
 
-	"github.com/BurntSushi/toml"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
+	"github.com/zannen/toml"
 	"go.uber.org/zap"
 )
 
