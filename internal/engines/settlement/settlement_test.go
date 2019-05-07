@@ -224,7 +224,7 @@ func (te *testEngine) getTestPositions(trade *types.Trade, data []*types.SettleP
 			posPrice = trade.Price + uint64(sp.Amount.Amount)
 			short.EXPECT().Price().MinTimes(1).Return(posPrice)
 		} else {
-			// position is long, to get a loss, we need position price > trade.Price (market price has gone down)
+			// position is long, to get a loss, we need position price > trade.Price (mark price has gone down)
 			// amount is negative -> trade.Price - (neg amount) == trade.Price + amount -> old price was greater
 			posPrice := uint64(int64(trade.Price) - sp.Amount.Amount)
 			long.EXPECT().Price().MinTimes(1).Return(posPrice)

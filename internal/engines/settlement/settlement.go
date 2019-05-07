@@ -113,13 +113,13 @@ func (e *Engine) SettleMTM(trade *types.Trade, ch <-chan MarketPosition) <-chan 
 			// update position for trader - always keep track of latest position
 			pp := pos.Price()
 			ps := pos.Size()
-			// all positions need to be updated to the new market price
+			// all positions need to be updated to the new mark price
 			e.updatePosition(pos, trade.Price)
 			if pp == trade.Price || ps == 0 {
 				// nothing has changed or there's no position to settle
 				continue
 			}
-			// e.g. position avg -> 90, market price 100:
+			// e.g. position avg -> 90, mark price 100:
 			// short -> (100 - 90) * -10 => -100 ==> MTM_LOSS
 			// long -> (100-90) * 10 => 100 ==> MTM_WIN
 			// short -> (100 - 110) * -10 => 100 ==> MTM_WIN
@@ -165,7 +165,7 @@ func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
 		// check with Tamlyn why that was, because we're only handling open positions here...
 		amt, err := e.product.Settle(pos.price, pos.size)
 		// for now, product.Settle returns the total value, we need to only settle the delta between a traders current position
-		// and the final price coming from the oracle, so oracle_price - market_price * volume (check with Tamlyn whether this should be absolute or not)
+		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
 			e.log.Error(
 				"Failed to settle position for trader",
