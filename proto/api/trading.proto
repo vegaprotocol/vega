@@ -33,6 +33,7 @@ service trading_data {
   rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
   rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
   rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
+  rpc LastTrade(LastTradeRequest) returns (LastTradeResponse);
 
   // parties
   rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
@@ -54,11 +55,19 @@ service trading_data {
   rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
 
   // streams
-  rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream vega.Order);
-  rpc TradesSubscribe(TradesSubscribeRequest) returns (stream vega.Trade);
+  rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
+  rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesStream);
   rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
+}
+
+message LastTradeRequest {
+  string marketID = 1;
+}
+
+message LastTradeResponse {
+  vega.Trade trade = 1;
 }
 
 message MarketByIDRequest {
@@ -84,7 +93,7 @@ message PartiesResponse {
 message TradesByPartyRequest {
   string partyID = 1;
   string marketID = 2;
-  OptionalParams params = 3;
+  Pagination pagination = 3;
 }
 
 message TradesByPartyResponse {
@@ -93,7 +102,6 @@ message TradesByPartyResponse {
 
 message TradesByOrderRequest {
   string orderID = 1;
-  OptionalParams params = 2;
 }
 
 message TradesByOrderResponse {
@@ -125,7 +133,8 @@ message PositionsSubscribeRequest {
 
 message OrdersByMarketRequest {
   string marketID = 1 [(validator.field) = {msg_exists : true}];
-  OptionalParams params = 2;
+  Pagination pagination = 2;
+  bool open = 3;
 }
 
 message OrdersByMarketResponse {
@@ -134,7 +143,8 @@ message OrdersByMarketResponse {
 
 message OrdersByPartyRequest {
   string partyID = 1 [(validator.field) = {msg_exists : true }];
-  OptionalParams params = 2;
+  Pagination pagination = 2;
+  bool open = 3;
 }
 
 message OrdersByPartyResponse {
@@ -177,7 +187,7 @@ message MarketDepthResponse {
 
 message TradesByMarketRequest {
   string marketID = 1 [(validator.field) = {msg_exists: true}];
-  OptionalParams params = 2;
+  Pagination pagination = 2;
 }
 
 message TradesByMarketResponse {
@@ -196,6 +206,16 @@ message VegaTimeResponse {
   int64 timestamp = 1;
 }
 
-message OptionalParams {
-  uint64 limit = 1 [(validator.field) = {int_lt: 50}];
+message Pagination {
+  uint64 skip = 1;
+  uint64 limit = 2;
+  bool descending = 3;
+}
+
+message OrdersStream {
+  repeated vega.Order orders = 1;
+}
+
+message TradesStream {
+  repeated vega.Trade trades = 1;
 }

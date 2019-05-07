@@ -67,6 +67,30 @@
         ]
       }
     },
+    "/lastTrade": {
+      "get": {
+        "operationId": "LastTrade",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiLastTradeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/marketDepth": {
       "get": {
         "operationId": "MarketDepth",
@@ -141,11 +165,32 @@
             "type": "string"
           },
           {
-            "name": "params.limit",
+            "name": "pagination.skip",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          },
+          {
+            "name": "open",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
           }
         ],
         "tags": [
@@ -173,11 +218,25 @@
             "type": "string"
           },
           {
-            "name": "params.limit",
+            "name": "pagination.skip",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
           }
         ],
         "tags": [
@@ -218,13 +277,6 @@
             "in": "query",
             "required": false,
             "type": "string"
-          },
-          {
-            "name": "params.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
           }
         ],
         "tags": [
@@ -267,11 +319,32 @@
             "type": "string"
           },
           {
-            "name": "params.limit",
+            "name": "pagination.skip",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          },
+          {
+            "name": "open",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
           }
         ],
         "tags": [
@@ -329,11 +402,25 @@
             "type": "string"
           },
           {
-            "name": "params.limit",
+            "name": "pagination.skip",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
           }
         ],
         "tags": [
@@ -425,6 +512,14 @@
         }
       }
     },
+    "apiLastTradeResponse": {
+      "type": "object",
+      "properties": {
+        "trade": {
+          "$ref": "#/definitions/vegaTrade"
+        }
+      }
+    },
     "apiMarketByIDResponse": {
       "type": "object",
       "properties": {
@@ -467,15 +562,6 @@
         }
       }
     },
-    "apiOptionalParams": {
-      "type": "object",
-      "properties": {
-        "limit": {
-          "type": "string",
-          "format": "uint64"
-        }
-      }
-    },
     "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {
@@ -515,6 +601,34 @@
           "items": {
             "$ref": "#/definitions/vegaOrder"
           }
+        }
+      }
+    },
+    "apiOrdersStream": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          }
+        }
+      }
+    },
+    "apiPagination": {
+      "type": "object",
+      "properties": {
+        "skip": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "descending": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
@@ -571,6 +685,17 @@
       }
     },
     "apiTradesByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTrade"
+          }
+        }
+      }
+    },
+    "apiTradesStream": {
       "type": "object",
       "properties": {
         "trades": {
@@ -1201,6 +1326,30 @@
     }
   },
   "x-stream-definitions": {
+    "apiOrdersStream": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiOrdersStream"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiOrdersStream"
+    },
+    "apiTradesStream": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiTradesStream"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiTradesStream"
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -1236,30 +1385,6 @@
         }
       },
       "title": "Stream result of vegaMarketPosition"
-    },
-    "vegaOrder": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/vegaOrder"
-        },
-        "error": {
-          "$ref": "#/definitions/runtimeStreamError"
-        }
-      },
-      "title": "Stream result of vegaOrder"
-    },
-    "vegaTrade": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/vegaTrade"
-        },
-        "error": {
-          "$ref": "#/definitions/runtimeStreamError"
-        }
-      },
-      "title": "Stream result of vegaTrade"
     }
   }
 }
