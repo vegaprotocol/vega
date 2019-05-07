@@ -291,7 +291,7 @@ func TestStorage_GetMarketDepthForNewMarket(t *testing.T) {
 	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
 	assert.Nil(t, err)
 
-	assert.Equal(t, testMarket, depth.Name)
+	assert.Equal(t, testMarket, depth.MarketID)
 	assert.Equal(t, 0, len(depth.Buy))
 	assert.Equal(t, 0, len(depth.Sell))
 }
@@ -338,8 +338,8 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 
 	order3 := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998hhf8427c",
-		Market:    testMarket,
-		Party:     testPartyB,
+		MarketID:  testMarket,
+		PartyID:   testPartyB,
 		Side:      types.Side_Sell,
 		Price:     9999,
 		Size:      20,
@@ -365,7 +365,7 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
 	assert.Nil(t, err)
 
-	assert.Equal(t, testMarket, depth.Name)
+	assert.Equal(t, testMarket, depth.MarketID)
 	assert.Equal(t, 1, len(depth.Buy))
 	assert.Equal(t, 1, len(depth.Sell))
 	assert.Equal(t, uint64(100), depth.Buy[0].Price)
@@ -387,8 +387,8 @@ func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
 
 	order := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427b",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      1000,

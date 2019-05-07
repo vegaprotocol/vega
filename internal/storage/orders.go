@@ -359,9 +359,9 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 		// When a market is new with no orders there will not be any market depth/order book
 		// so we do not need to try and calculate the depth cumulative volumes etc
 		return &types.MarketDepth{
-			Name: market,
-			Buy:  []*types.PriceLevel{},
-			Sell: []*types.PriceLevel{},
+			MarketID: market,
+			Buy:      []*types.PriceLevel{},
+			Sell:     []*types.PriceLevel{},
 		}, nil
 	}
 
