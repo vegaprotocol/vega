@@ -1,7 +1,7 @@
 module code.vegaprotocol.io/vega
 
 require (
-	code.vegaprotocol.io/quant v0.0.0
+	code.vegaprotocol.io/quant v0.1.0
 	github.com/99designs/gqlgen v0.8.3
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
@@ -49,7 +49,7 @@ require (
 )
 
 replace (
-	code.vegaprotocol.io/quant => gitlab.com/vega-protocol/quant v0.0.0-20190430213103-f4ff58c545be
+	code.vegaprotocol.io/quant => gitlab.com/vega-protocol/quant v0.1.0
 	github.com/dgraph-io/badger => github.com/dgraph-io/badger v1.5.5-0.20190214192501-3196cc1d7a5f
 	github.com/golang/protobuf => github.com/golang/protobuf v1.2.1-0.20190205222052-c823c79ea157
 )
