@@ -117,7 +117,8 @@ publish-docker:
     - for app in vega vegabench ; do
     -   f="${BIN_DIR}/$app"
     -   if ! test -f "$f" ; then
-    -     echo "Failed to find: $f"
+    # single quotes to avoid the colon making a yaml key:value pair.
+    -     'echo "Failed to find: $f"'
     -     exit 1
     -   fi
     -   cp -a "$f" docker/ || exit 1
