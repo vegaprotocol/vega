@@ -57,7 +57,7 @@ func NewCandles(log *logging.Logger, c Config) (*Candle, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")
 	}
-	db, err := badger.Open(customBadgerOptions(c.CandleStoreDirPath, log))
+	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.CandleStoreDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}

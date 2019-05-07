@@ -397,7 +397,6 @@ func TestOrderBookDepthBuySide(t *testing.T) {
 	// call getMarketDepth and see if order book depth is OK
 
 	ctx := context.Background()
-	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 
 	config, err := storage.NewTestConfig()
 	if err != nil {
@@ -528,7 +527,6 @@ func TestOrderBookDepthSellSide(t *testing.T) {
 	// call getMarketDepth and see if order book depth is OK
 
 	ctx := context.Background()
-	//var memStore = NewMemStore([]string{testMarket}, []string{testParty, testPartyA, testPartyB})
 
 	config, err := storage.NewTestConfig()
 	if err != nil {

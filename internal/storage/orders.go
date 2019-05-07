@@ -41,7 +41,7 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for orders storage")
 	}
-	db, err := badger.Open(customBadgerOptions(c.OrderStoreDirPath, log))
+	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.OrderStoreDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for orders storage")
 	}
@@ -57,20 +57,20 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 	}, nil
 }
 
-func (o *Order) ReloadConf(cfg Config) {
-	o.log.Info("reloading configuration")
-	if o.log.GetLevel() != cfg.Level.Get() {
-		o.log.Info("updating log level",
-			logging.String("old", o.log.GetLevel().String()),
+func (os *Order) ReloadConf(cfg Config) {
+	os.log.Info("reloading configuration")
+	if os.log.GetLevel() != cfg.Level.Get() {
+		os.log.Info("updating log level",
+			logging.String("old", os.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		o.log.SetLevel(cfg.Level.Get())
+		os.log.SetLevel(cfg.Level.Get())
 	}
 
 	// only Timeout is really use in here
-	o.cfgMu.Lock()
-	o.Config = cfg
-	o.cfgMu.Unlock()
+	os.cfgMu.Lock()
+	os.Config = cfg
+	os.cfgMu.Unlock()
 }
 
 // Subscribe to a channel of new or updated orders. The subscriber id will be returned as a uint64 value
@@ -356,7 +356,13 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	// validate
 	depth, ok := os.depth[market]
 	if !ok || depth == nil {
-		return nil, errors.New(fmt.Sprintf("market depth for %s does not exist", market))
+		// When a market is new with no orders there will not be any market depth/order book
+		// so we do not need to try and calculate the depth cumulative volumes etc
+		return &types.MarketDepth{
+			Name: market,
+			Buy:  []*types.PriceLevel{},
+			Sell: []*types.PriceLevel{},
+		}, nil
 	}
 
 	// load from store
