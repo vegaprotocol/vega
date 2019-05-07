@@ -24,8 +24,8 @@ func New(log *logging.Logger, prm interface{}) (Model, error) {
 	}
 
 	switch rm := prm.(type) {
-	case *types.TradableInstrument_BuiltinFutures:
-		return newBuiltinFutures(rm.BuiltinFutures)
+	case *types.TradableInstrument_Forward:
+		return newBuiltinFutures(rm.Forward)
 	case *types.TradableInstrument_ExternalRiskModel:
 		return newExternal(log, rm.ExternalRiskModel)
 	default:

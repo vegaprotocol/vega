@@ -1,6 +1,7 @@
 module code.vegaprotocol.io/vega
 
 require (
+	code.vegaprotocol.io/quant v0.0.0
 	github.com/99designs/gqlgen v0.8.3
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
@@ -42,12 +43,13 @@ require (
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd // indirect
-	golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223 // indirect
+	golang.org/x/exp v0.0.0-20190429183610-475c5042d3f1
+	gonum.org/v1/gonum v0.0.0-20190424212039-2a1643c79af2
 	google.golang.org/grpc v1.19.0
 )
 
 replace (
+	code.vegaprotocol.io/quant => gitlab.com/vega-protocol/quant v0.0.0-20190430213103-f4ff58c545be
 	github.com/dgraph-io/badger => github.com/dgraph-io/badger v1.5.5-0.20190214192501-3196cc1d7a5f
 	github.com/golang/protobuf => github.com/golang/protobuf v1.2.1-0.20190205222052-c823c79ea157
 )
