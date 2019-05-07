@@ -25,7 +25,7 @@ else
 	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
-.PHONY: all bench deps build clean gettools grpc grpc_check help test lint mocks proto_check
+.PHONY: all bench deps build clean docker gettools grpc grpc_check help test lint mocks proto_check
 
 all: build
 
@@ -75,14 +75,16 @@ deps: ## Get the dependencies
 
 build: proto ## install the binaries in cmd/{progname}/
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/vega/vega" ./cmd/vega
-	@go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/vegabench/vegabench" ./cmd/vegabench
+	@for app in vega vegabench ; do \
+		env CGO_ENABLED=0 go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/$$app/$$app" "./cmd/$$app" || exit 1 ; \
+	done
 
-install: proto ## install the binary in GOPATH/bin
+install: proto ## install the binaries in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" ./cmd/vega
-	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" ./cmd/vegabench
+	@for app in vega vegabench ; do \
+		env CGO_ENABLED=0 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
+	done
 
 gqlgen: deps ## run gqlgen
 	@cd ./internal/api/endpoints/gql && go run github.com/99designs/gqlgen -c gqlgen.yml
@@ -143,6 +145,24 @@ grpc_check: deps ## gRPC: Check committed files match just-generated files
 	fi
 
 # Misc Targets
+
+docker:
+	@if test -n "${CI}" ; then \
+		for app in vega vegabench ; do \
+			f="${BIN_DIR}/$$app"
+			if ! test -f "$$f" ; then \
+				echo "Failed to find: $$f" ; \
+				exit 1 ; \
+			fi ; \
+			cp -a "$$f" docker/ || exit 1 ; \
+		done
+		docker login -u gitlab-ci-token -p "${CI_JOB_TOKEN}" registry.gitlab.com || exit 1 ; \
+		docker build -t "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" docker/ || exit 1 ; \
+		@docker push "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" || exit 1 ; \
+	else \
+		docker build -t "registry.gitlab.com/vega-protocol/trading-core:latest" docker/ || exit 1; \
+		echo "Not pushing to registry." ; \
+	fi
 
 gettools:
 	@./script/gettools.sh

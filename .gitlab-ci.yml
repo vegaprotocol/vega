@@ -107,3 +107,11 @@ push_to_devnet:
     - ./script/deploy.sh devnet vega "${BIN_DIR}/vega:/home/vega/current/:0755"
   only:
     - /^develop$/  # VERY IMPORTANT: Only the develop branch should be deployed to devnet.
+
+publish-docker:
+  image: docker:stable
+  services:
+    - docker:dind
+  stage: deploy
+  script:
+    - make docker
