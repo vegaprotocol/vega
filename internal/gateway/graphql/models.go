@@ -26,12 +26,6 @@ type TradingMode interface {
 	IsTradingMode()
 }
 
-type BuiltinFutures struct {
-	HistoricVolatility float64 `json:"historicVolatility"`
-}
-
-func (BuiltinFutures) IsRiskModel() {}
-
 type ContinuousTrading struct {
 	TickSize *int `json:"tickSize"`
 }
@@ -50,6 +44,14 @@ type EthereumEvent struct {
 }
 
 func (EthereumEvent) IsOracle() {}
+
+type Forward struct {
+	Lambd  float64       `json:"lambd"`
+	Tau    float64       `json:"Tau"`
+	Params ModelParamsBs `json:"params"`
+}
+
+func (Forward) IsRiskModel() {}
 
 type Future struct {
 	Maturity string `json:"maturity"`
@@ -81,6 +83,46 @@ type Market struct {
 	Depth              proto.MarketDepth  `json:"depth"`
 	Candles            []*proto.Candle    `json:"candles"`
 	OrderByReference   proto.Order        `json:"orderByReference"`
+}
+
+type ModelParamsBs struct {
+	Mu    float64 `json:"mu"`
+	R     float64 `json:"r"`
+	Sigma float64 `json:"sigma"`
+}
+
+type OrderFilter struct {
+	And           []OrderFilter `json:"AND"`
+	Or            []OrderFilter `json:"OR"`
+	Open          *bool         `json:"open"`
+	ID            *string       `json:"id"`
+	IDNeq         *string       `json:"id_neq"`
+	Market        *string       `json:"market"`
+	MarketNeq     *string       `json:"market_neq"`
+	Party         *string       `json:"party"`
+	PartyNeq      *string       `json:"party_neq"`
+	Side          *Side         `json:"side"`
+	SideNeq       *Side         `json:"side_neq"`
+	Price         *string       `json:"price"`
+	PriceNeq      *string       `json:"price_neq"`
+	PriceFrom     *string       `json:"price_from"`
+	PriceTo       *string       `json:"price_to"`
+	Size          *string       `json:"size"`
+	SizeNeq       *string       `json:"size_neq"`
+	SizeFrom      *string       `json:"size_from"`
+	SizeTo        *string       `json:"size_to"`
+	Remaining     *string       `json:"remaining"`
+	RemainingNeq  *string       `json:"remaining_neq"`
+	RemainingFrom *string       `json:"remaining_from"`
+	RemainingTo   *string       `json:"remaining_to"`
+	Type          *OrderType    `json:"type"`
+	TypeNeq       *OrderType    `json:"type_neq"`
+	Timestamp     *string       `json:"timestamp"`
+	TimestampNeq  *string       `json:"timestamp_neq"`
+	TimestampFrom *string       `json:"timestamp_from"`
+	TimestampTo   *string       `json:"timestamp_to"`
+	Status        *OrderStatus  `json:"status"`
+	StatusNeq     *OrderStatus  `json:"status_neq"`
 }
 
 type Party struct {

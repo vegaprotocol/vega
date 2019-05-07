@@ -53,7 +53,15 @@ func (this *Instrument) Validate() error {
 	}
 	return nil
 }
+func (this *ModelParamsBS) Validate() error {
+	return nil
+}
 func (this *Forward) Validate() error {
+	if this.Params != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
+		}
+	}
 	return nil
 }
 func (this *ExternalRiskModel) Validate() error {

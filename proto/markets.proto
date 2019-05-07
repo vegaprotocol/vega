@@ -52,13 +52,16 @@ message Instrument {
 
 // here start risk models
 
+message ModelParamsBS {
+  double mu = 1;
+  double r = 2;
+  double sigma = 3;
+}
+
 message Forward {
   double lambd = 1;
   double tau = 2;
-  // models params
-  double mu = 3;
-  double r = 4;
-  double sigma = 5;
+  ModelParamsBS params = 3;
 }
 
 message ExternalRiskModel {

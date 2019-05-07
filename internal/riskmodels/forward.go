@@ -17,9 +17,9 @@ func newBuiltinFutures(pf *types.Forward) (*Forward, error) {
 		lambd: pf.Lambd,
 		tau:   pf.Tau,
 		params: riskmodelbs.ModelParamsBS{
-			Mu:    pf.Mu,
-			R:     pf.R,
-			Sigma: pf.Sigma,
+			Mu:    pf.Params.Mu,
+			R:     pf.Params.R,
+			Sigma: pf.Params.Sigma,
 		},
 	}, nil
 }

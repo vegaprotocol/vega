@@ -165,9 +165,11 @@ func createDefaultMarkets(confpath string) error {
 				Forward: &proto.Forward{
 					Lambd: 0.01,
 					Tau:   1.0 / 365.25 / 24,
-					Mu:    0,
-					R:     0.016,
-					Sigma: 0.09,
+					Params: &proto.ModelParamsBS{
+						Mu:    0,
+						R:     0.016,
+						Sigma: 0.09,
+					},
 				},
 			},
 		},

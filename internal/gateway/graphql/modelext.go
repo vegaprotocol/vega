@@ -142,10 +142,16 @@ func (i *Instrument) IntoProto() (*proto.Instrument, error) {
 	return pinst, err
 }
 
-func (bf *BuiltinFutures) IntoProto() (*proto.TradableInstrument_BuiltinFutures, error) {
-	return &proto.TradableInstrument_BuiltinFutures{
-		BuiltinFutures: &proto.BuiltinFutures{
-			HistoricVolatility: bf.HistoricVolatility,
+func (f *Forward) IntoProto() (*proto.TradableInstrument_Forward, error) {
+	return &proto.TradableInstrument_Forward{
+		Forward: &proto.Forward{
+			Lambd: f.Lambd,
+			Tau:   f.Tau,
+			Params: &proto.ModelParamsBS{
+				Mu:    f.Params.Mu,
+				R:     f.Params.R,
+				Sigma: f.Params.Sigma,
+			},
 		},
 	}, nil
 }
@@ -156,7 +162,7 @@ func (ti *TradableInstrument) riskModelIntoProto(
 		return ErrNilRiskModel
 	}
 	switch rm := ti.RiskModel.(type) {
-	case *BuiltinFutures:
+	case *Forward:
 		pti.RiskModel, err = rm.IntoProto()
 	default:
 		err = ErrUnimplementedRiskModel
@@ -314,9 +320,15 @@ func InstrumentFromProto(pi *proto.Instrument) (*Instrument, error) {
 	return i, nil
 }
 
-func BuiltinFuturesFromProto(bf *proto.BuiltinFutures) (*BuiltinFutures, error) {
-	return &BuiltinFutures{
-		HistoricVolatility: bf.HistoricVolatility,
+func ForwardFromProto(f *proto.Forward) (*Forward, error) {
+	return &Forward{
+		Lambd: f.Lambd,
+		Tau:   f.Tau,
+		Params: ModelParamsBs{
+			Mu:    f.Params.Mu,
+			R:     f.Params.R,
+			Sigma: f.Params.Sigma,
+		},
 	}, nil
 }
 
@@ -326,8 +338,8 @@ func RiskModelFromProto(rm interface{}) (RiskModel, error) {
 	}
 
 	switch rmimpl := rm.(type) {
-	case *proto.TradableInstrument_BuiltinFutures:
-		return BuiltinFuturesFromProto(rmimpl.BuiltinFutures)
+	case *proto.TradableInstrument_Forward:
+		return ForwardFromProto(rmimpl.Forward)
 	default:
 		return nil, ErrUnimplementedRiskModel
 	}
