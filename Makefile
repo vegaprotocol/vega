@@ -146,8 +146,16 @@ grpc_check: deps ## gRPC: Check committed files match just-generated files
 
 # Misc Targets
 
-docker:
-	docker build -t "registry.gitlab.com/vega-protocol/trading-core:latest" docker/
+docker: build ## Make docker container image
+	@for app in vega vegabench ; do \
+		f="cmd/$$app/$$app" ; \
+		if ! test -f "$$f" ; then \
+			echo "Failed to find: $$f" ; \
+			exit 1 ; \
+		fi ; \
+		cp -a "$$f" docker/ || exit 1 ; \
+	done
+	@docker build -t "registry.gitlab.com/vega-protocol/trading-core:latest" docker/
 
 gettools:
 	@./script/gettools.sh
