@@ -161,9 +161,13 @@ func createDefaultMarkets(confpath string) error {
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_BuiltinFutures{
-				BuiltinFutures: &proto.BuiltinFutures{
-					HistoricVolatility: 0.15,
+			RiskModel: &proto.TradableInstrument_Forward{
+				Forward: &proto.Forward{
+					Lambd: 0.01,
+					Tau:   1.0 / 365.25 / 24,
+					Mu:    0,
+					R:     0.016,
+					Sigma: 0.09,
 				},
 			},
 		},
@@ -176,10 +180,10 @@ func createDefaultMarkets(confpath string) error {
 	if err != nil {
 		return err
 	}
-	mkt.Id = "ETH/JUN19"
-	mkt.TradableInstrument.Instrument.Id = "Crypto/ETHUSD/Futures/Jun19"
-	mkt.TradableInstrument.Instrument.Code = "FX:ETHUSD/Jun19"
-	mkt.TradableInstrument.Instrument.Name = "June 2019 ETH vs USD future"
+	mkt.Id = "GBP/JUN19"
+	mkt.TradableInstrument.Instrument.Id = "FX/GBPUSD/Futures/Jun19"
+	mkt.TradableInstrument.Instrument.Code = "FX:GBPUSD/Jun19"
+	mkt.TradableInstrument.Instrument.Name = "June 2019 GBP vs USD future"
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: &proto.Future{
 			Maturity: "2019-06-30T00:00:00Z",
@@ -189,7 +193,7 @@ func createDefaultMarkets(confpath string) error {
 					Event:      "price_changed",
 				},
 			},
-			Asset: "Ethereum/Ether",
+			Asset: "USD",
 		},
 	}
 	err = createDefaultMarket(&mkt, path.Join(confpath, marketETHJUN19))
