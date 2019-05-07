@@ -147,22 +147,7 @@ grpc_check: deps ## gRPC: Check committed files match just-generated files
 # Misc Targets
 
 docker:
-	@if test -n "${CI}" ; then \
-		for app in vega vegabench ; do \
-			f="${BIN_DIR}/$$app"
-			if ! test -f "$$f" ; then \
-				echo "Failed to find: $$f" ; \
-				exit 1 ; \
-			fi ; \
-			cp -a "$$f" docker/ || exit 1 ; \
-		done
-		docker login -u gitlab-ci-token -p "${CI_JOB_TOKEN}" registry.gitlab.com || exit 1 ; \
-		docker build -t "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" docker/ || exit 1 ; \
-		@docker push "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" || exit 1 ; \
-	else \
-		docker build -t "registry.gitlab.com/vega-protocol/trading-core:latest" docker/ || exit 1; \
-		echo "Not pushing to registry." ; \
-	fi
+	docker build -t "registry.gitlab.com/vega-protocol/trading-core:latest" docker/
 
 gettools:
 	@./script/gettools.sh
