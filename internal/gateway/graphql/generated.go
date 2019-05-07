@@ -114,7 +114,7 @@ type ComplexityRoot struct {
 	MarketDepth struct {
 		Buy       func(childComplexity int) int
 		LastTrade func(childComplexity int) int
-		MarketID  func(childComplexity int) int
+		Market    func(childComplexity int) int
 		Sell      func(childComplexity int) int
 	}
 
@@ -129,7 +129,7 @@ type ComplexityRoot struct {
 		ExpiresAt func(childComplexity int) int
 		Id        func(childComplexity int) int
 		Market    func(childComplexity int) int
-		PartyID   func(childComplexity int) int
+		Party     func(childComplexity int) int
 		Price     func(childComplexity int) int
 		Reference func(childComplexity int) int
 		Remaining func(childComplexity int) int
@@ -230,6 +230,8 @@ type MarketResolver interface {
 	Candles(ctx context.Context, obj *Market, since string, interval Interval) ([]*proto.Candle, error)
 }
 type MarketDepthResolver interface {
+	Market(ctx context.Context, obj *proto.MarketDepth) (*Market, error)
+
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
@@ -243,7 +245,7 @@ type OrderResolver interface {
 	Market(ctx context.Context, obj *proto.Order) (*Market, error)
 	Size(ctx context.Context, obj *proto.Order) (string, error)
 	Remaining(ctx context.Context, obj *proto.Order) (string, error)
-
+	Party(ctx context.Context, obj *proto.Order) (*Party, error)
 	Timestamp(ctx context.Context, obj *proto.Order) (string, error)
 	Datetime(ctx context.Context, obj *proto.Order) (string, error)
 	CreatedAt(ctx context.Context, obj *proto.Order) (string, error)
@@ -561,12 +563,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketDepth.LastTrade(childComplexity), true
 
-	case "MarketDepth.MarketID":
-		if e.complexity.MarketDepth.MarketID == nil {
+	case "MarketDepth.Market":
+		if e.complexity.MarketDepth.Market == nil {
 			break
 		}
 
-		return e.complexity.MarketDepth.MarketID(childComplexity), true
+		return e.complexity.MarketDepth.Market(childComplexity), true
 
 	case "MarketDepth.Sell":
 		if e.complexity.MarketDepth.Sell == nil {
@@ -634,12 +636,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Market(childComplexity), true
 
-	case "Order.PartyID":
-		if e.complexity.Order.PartyID == nil {
+	case "Order.Party":
+		if e.complexity.Order.Party == nil {
 			break
 		}
 
-		return e.complexity.Order.PartyID(childComplexity), true
+		return e.complexity.Order.Party(childComplexity), true
 
 	case "Order.Price":
 		if e.complexity.Order.Price == nil {
@@ -1476,7 +1478,7 @@ type Market {
 type MarketDepth {
 
     # Market id
-    marketId: String!
+    market: Market!
 
     # Buy side price levels (if available)
     buy: [PriceLevel!]
@@ -1623,7 +1625,7 @@ type Order {
   remaining: String!
 
   # The trader who place the order (probably stored internally as the trader's public key)
-  partyId: String!
+  party: Party!
 
   # Unix epoch+nanoseconds for when the order was created
   timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
@@ -3030,20 +3032,20 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	return ec.marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐCandle(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketDepth_marketId(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) graphql.Marshaler {
+func (ec *executionContext) _MarketDepth_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object:   "MarketDepth",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MarketID, nil
+		return ec.resolvers.MarketDepth().Market(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3051,10 +3053,10 @@ func (ec *executionContext) _MarketDepth_marketId(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) graphql.Marshaler {
@@ -3386,20 +3388,20 @@ func (ec *executionContext) _Order_remaining(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_partyId(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_party(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
 		Object:   "Order",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PartyID, nil
+		return ec.resolvers.Order().Party(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -3407,10 +3409,10 @@ func (ec *executionContext) _Order_partyId(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
@@ -6290,11 +6292,20 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketDepth")
-		case "marketId":
-			out.Values[i] = ec._MarketDepth_marketId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
+		case "market":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketDepth_market(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
 		case "buy":
 			out.Values[i] = ec._MarketDepth_buy(ctx, field, obj)
 		case "sell":
@@ -6457,11 +6468,20 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
-		case "partyId":
-			out.Values[i] = ec._Order_partyId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
+		case "party":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_party(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
 		case "timestamp":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7581,6 +7601,16 @@ func (ec *executionContext) marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋ
 
 func (ec *executionContext) marshalNParty2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v Party) graphql.Marshaler {
 	return ec._Party(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v *Party) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Party(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPendingOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx context.Context, sel ast.SelectionSet, v proto.PendingOrder) graphql.Marshaler {

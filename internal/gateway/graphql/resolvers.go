@@ -438,6 +438,20 @@ func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 	return res.Trade, nil
 }
 
+func (r *MyMarketDepthResolver) Market(ctx context.Context, md *types.MarketDepth) (*Market, error) {
+	if md == nil {
+		return nil, errors.New("invalid market depth")
+	}
+
+	req := protoapi.MarketByIDRequest{Id: md.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return MarketFromProto(res.Market)
+}
+
 // END: Market Depth Resolver
 
 // BEGIN: Order Resolver
@@ -495,6 +509,14 @@ func (r *MyOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 		return nil, err
 	}
 	return res.Trades, nil
+}
+func (r *MyOrderResolver) Party(ctx context.Context, ord *types.Order) (*Party, error) {
+	if ord == nil {
+		return nil, errors.New("nil order")
+	}
+	return &Party{
+		ID: ord.PartyID,
+	}, nil
 }
 
 // END: Order Resolver

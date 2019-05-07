@@ -280,7 +280,7 @@ type Market {
 type MarketDepth {
 
     # Market id
-    marketId: String!
+    market: Market!
 
     # Buy side price levels (if available)
     buy: [PriceLevel!]
@@ -427,7 +427,7 @@ type Order {
   remaining: String!
 
   # The trader who place the order (probably stored internally as the trader's public key)
-  partyId: String!
+  party: Party!
 
   # Unix epoch+nanoseconds for when the order was created
   timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
