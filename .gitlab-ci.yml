@@ -13,8 +13,6 @@ variables:
   PKGMOD_DIR: "${CI_PROJECT_DIR}/go/pkg/mod"
   VENDOR_DIR: "${CI_PROJECT_DIR}/vendor"
 
-  CI_DEBUG_TRACE: "true" ### ### DO NOT MERGE ### ###
-
 cache:
   key: ${CI_COMMIT_REF_SLUG}  # one cache per branch
   paths:
