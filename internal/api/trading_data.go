@@ -179,6 +179,19 @@ func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 	}, nil
 }
 
+func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
+	if req.Reference == "" {
+		return nil, errors.New("missing order reference")
+	}
+	order, err := h.OrderService.GetByReference(ctx, req.Reference)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.OrderByReferenceRequest{
+		Order: order,
+	}, nil
+}
+
 // TradeCandles returns trade open/close/volume data for the given time period and interval.
 // It will fill in any trade-less intervals with zero based candles. Since time period must be in RFC3339 string format.
 func (h *tradingDataService) Candles(ctx context.Context,

@@ -570,6 +570,14 @@
         }
       }
     },
+    "apiOrderByReferenceResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder"
+        }
+      }
+    },
     "apiOrderResponse": {
       "type": "object",
       "properties": {
@@ -932,7 +940,7 @@
     "vegaMarketDepth": {
       "type": "object",
       "properties": {
-        "name": {
+        "marketID": {
           "type": "string"
         },
         "buy": {
@@ -952,7 +960,7 @@
     "vegaMarketPosition": {
       "type": "object",
       "properties": {
-        "market": {
+        "marketID": {
           "type": "string"
         },
         "realisedVolume": {
@@ -987,10 +995,10 @@
         "id": {
           "type": "string"
         },
-        "market": {
+        "marketID": {
           "type": "string"
         },
-        "party": {
+        "partyID": {
           "type": "string"
         },
         "side": {
@@ -1033,7 +1041,7 @@
         "id": {
           "type": "string"
         },
-        "party": {
+        "partyID": {
           "type": "string"
         },
         "price": {
@@ -1056,10 +1064,10 @@
         "id": {
           "type": "string"
         },
-        "marketId": {
+        "marketID": {
           "type": "string"
         },
-        "party": {
+        "partyID": {
           "type": "string"
         }
       }
@@ -1070,10 +1078,10 @@
         "id": {
           "type": "string"
         },
-        "marketId": {
+        "marketID": {
           "type": "string"
         },
-        "party": {
+        "partyID": {
           "type": "string"
         },
         "price": {
@@ -1109,7 +1117,7 @@
     "vegaParty": {
       "type": "object",
       "properties": {
-        "name": {
+        "id": {
           "type": "string"
         },
         "positions": {
@@ -1143,7 +1151,7 @@
           "type": "string",
           "format": "uint64"
         },
-        "party": {
+        "partyID": {
           "type": "string"
         },
         "status": {
@@ -1292,7 +1300,7 @@
         "id": {
           "type": "string"
         },
-        "market": {
+        "marketID": {
           "type": "string"
         },
         "price": {

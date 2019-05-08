@@ -158,6 +158,17 @@ func (this *OrderByMarketAndIdResponse) Validate() error {
 	}
 	return nil
 }
+func (this *OrderByReferenceRequest) Validate() error {
+	return nil
+}
+func (this *OrderByReferenceResponse) Validate() error {
+	if this.Order != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Order); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
+		}
+	}
+	return nil
+}
 func (this *MarketsResponse) Validate() error {
 	for _, item := range this.Markets {
 		if item != nil {
