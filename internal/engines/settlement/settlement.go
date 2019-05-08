@@ -160,10 +160,10 @@ func (e *Engine) SettlePreTrade(markPrice uint64, trade *types.Trade) []*types.S
 	return result
 }
 
-func (e *Engine) SettleMTM(trade *types.Trade, ch <-chan MarketPosition) <-chan []*types.SettlePosition {
+func (e *Engine) SettleMTM(trade *types.Trade, markPrice uint64, ch <-chan MarketPosition) <-chan []*types.SettlePosition {
 	// put the positions on here once we've worked out what all we need to settle
 	sch := make(chan []*types.SettlePosition)
-	tradePos := e.SettlePreTrade(trade.Price, trade)
+	tradePos := e.SettlePreTrade(markPrice, trade)
 	go func() {
 		posSlice := make([]*types.SettlePosition, 0, cap(ch))
 		winSlice := make([]*types.SettlePosition, 0, cap(ch)/2)
@@ -191,8 +191,8 @@ func (e *Engine) SettleMTM(trade *types.Trade, ch <-chan MarketPosition) <-chan 
 			pp := pos.Price()
 			ps := pos.Size()
 			// all positions need to be updated to the new mark price
-			e.updatePosition(pos, trade.Price)
-			if pp == trade.Price || ps == 0 {
+			e.updatePosition(pos, markPrice)
+			if pp == markPrice || ps == 0 {
 				// nothing has changed or there's no position to settle
 				continue
 			}
@@ -201,7 +201,7 @@ func (e *Engine) SettleMTM(trade *types.Trade, ch <-chan MarketPosition) <-chan 
 			// long -> (100-90) * 10 => 100 ==> MTM_WIN
 			// short -> (100 - 110) * -10 => 100 ==> MTM_WIN
 			// long -> (100 - 110) * 10 => -100 ==> MTM_LOSS
-			mtmShare := (int64(trade.Price) - int64(pp)) * ps
+			mtmShare := (int64(markPrice) - int64(pp)) * ps
 			if mtmShare == 0 {
 				continue
 			}
