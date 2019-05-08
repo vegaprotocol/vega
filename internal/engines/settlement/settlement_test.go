@@ -25,22 +25,25 @@ type testEngine struct {
 
 type posValue struct {
 	trader string
-	price  uint64
+	price  uint64 // absolute Mark price
 	size   int64
 }
 
 func TestMarkToMarket(t *testing.T) {
-	t.Run("Settle at market close - success", testSettleCloseSuccess)
-	t.Run("Settle at market close - error", testSettleCloseFail)
+	t.Run("Settle at market expiry - success", testSettleExpiredSuccess)
+	t.Run("Settle at market expiry - error", testSettleExpiryFail)
 	t.Run("No settle positions if none were on channel", testMarkToMarketEmpty)
 	t.Run("Settle positions are pushed onto the slice channel in order", testMarkToMarketOrdered)
+	// -- MTM -> special case for traders getting MTM before changing positions, and trade introducing new trader
+	// while existing traders still should get their MTM position updated
+	t.Run("Settle MTM with new and existing trader position combo", testMTMPrefixTradePositions)
 }
 
-func testSettleCloseSuccess(t *testing.T) {
+func testSettleExpiredSuccess(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	// these are mark prices, product will provide the actual value
-	data := []posValue{
+	data := []posValue{ // {{{2
 		{
 			trader: "trader1",
 			price:  1000,
@@ -57,7 +60,7 @@ func testSettleCloseSuccess(t *testing.T) {
 			size:   -5,
 		},
 	}
-	exp := []*types.SettlePosition{
+	expect := []*types.SettlePosition{
 		{
 			Owner: data[1].trader,
 			Size:  1,
@@ -82,7 +85,7 @@ func testSettleCloseSuccess(t *testing.T) {
 			},
 			Type: types.SettleType_WIN,
 		},
-	}
+	} // }}}
 	oraclePrice := uint64(1100)
 	settleF := func(price uint64, size int64) (*types.FinancialAmount, error) {
 		sp := int64((oraclePrice - price)) * size
@@ -90,7 +93,7 @@ func testSettleCloseSuccess(t *testing.T) {
 			Amount: sp,
 		}, nil
 	}
-	positions := engine.getClosePositions(data...)
+	positions := engine.getExpiryPositions(data...)
 	for _, d := range data {
 		// we expect settle calls for each position
 		engine.prod.EXPECT().Settle(d.price, d.size).Times(1).DoAndReturn(settleF)
@@ -100,16 +103,16 @@ func testSettleCloseSuccess(t *testing.T) {
 	// now settle:
 	got, err := engine.Settle(time.Now())
 	assert.NoError(t, err)
-	assert.Equal(t, len(exp), len(got))
+	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
-		e := exp[i]
+		e := expect[i]
 		assert.Equal(t, e.Size, p.Size)
 		assert.Equal(t, e.Type, p.Type)
 		assert.Equal(t, e.Amount.Amount, p.Amount.Amount)
 	}
 }
 
-func testSettleCloseFail(t *testing.T) {
+func testSettleExpiryFail(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	// these are mark prices, product will provide the actual value
@@ -121,7 +124,7 @@ func testSettleCloseFail(t *testing.T) {
 		},
 	}
 	errExp := errors.New("product.Settle error")
-	positions := engine.getClosePositions(data...)
+	positions := engine.getExpiryPositions(data...)
 	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, errExp)
 	engine.Update(positions)
 	empty, err := engine.Settle(time.Now())
@@ -146,7 +149,7 @@ func testMarkToMarketEmpty(t *testing.T) {
 
 func testMarkToMarketOrdered(t *testing.T) {
 	// data is pused in the wrong order
-	trade := &types.Trade{
+	trade := &types.Trade{ // {{{2
 		Price: 10000,
 		Size:  1, // for now, keep volume to 1, it's tricky to calculate the old position if not
 	}
@@ -160,14 +163,14 @@ func testMarkToMarketOrdered(t *testing.T) {
 			Type: types.SettleType_MTM_WIN,
 		},
 		{
-			Owner: "trader1",
+			Owner: "trader2",
 			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: -100,
 			},
 			Type: types.SettleType_MTM_LOSS,
 		},
-	}
+	} // }}}
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	// set up test data
@@ -203,6 +206,148 @@ func testMarkToMarketOrdered(t *testing.T) {
 	// ensure we get the data we expect, in the correct order
 }
 
+func testMTMPrefixTradePositions(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	// setup {{{2
+	trade := &types.Trade{
+		Size:   5,
+		Price:  1000,
+		Buyer:  "trader1", // trader holding long position of 5@900
+		Seller: "trader3", // new trader, going short @1000
+	}
+	// these are the initial positions, long 5@900, short 5@900
+	startPos := []posValue{
+		{
+			trader: "trader1",
+			price:  900,
+			size:   5,
+		},
+		{
+			trader: "trader2",
+			price:  900,
+			size:   -5,
+		},
+	}
+	startState := engine.getExpiryPositions(startPos...)
+	// initial positions for traders 1 & 2 (omitting trader 3, because that's coming from a trade-based MTM)
+	// these should be set before we actually run the test
+	engine.Update(startState)
+	// data at the end, after a trade with new trader
+	data := []posValue{
+		{
+			trader: "trader1",
+			price:  1000,
+			size:   10,
+		},
+		{
+			trader: "trader2", // at close, this trader should end up at 1000
+			price:  1000,
+			size:   -5,
+		},
+		{
+			trader: "trader3",
+			price:  1000,
+			size:   -5,
+		},
+	}
+	// calling SettlePreTrade won't include trader2 entry here
+	preTrade := []*types.SettlePosition{
+		{
+			Owner: startPos[1].trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: -500, // was 5 short at 900, trade boosts price to 1000, so this trader loses 5*-100
+			},
+			Type: types.SettleType_MTM_LOSS,
+		},
+		{
+			Owner: startPos[0].trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: 500, // was 5 long at 900, trade boosts to 1000 => 5*100
+			},
+			Type: types.SettleType_MTM_WIN,
+		},
+	}
+	expiry := []*types.SettlePosition{
+		{
+			Owner: data[1].trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: -500,
+			},
+			Type: types.SettleType_LOSS,
+		},
+		{
+			Owner: data[2].trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: -500,
+			},
+			Type: types.SettleType_LOSS,
+		},
+		{
+			Owner: data[0].trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: 1000,
+			},
+			Type: types.SettleType_WIN,
+		},
+	}
+	// }}}
+	oraclePrice := uint64(1100)
+	settleF := func(price uint64, size int64) (*types.FinancialAmount, error) {
+		sp := int64((oraclePrice - price)) * size
+		return &types.FinancialAmount{
+			Amount: sp,
+		}, nil
+	}
+	for _, d := range data {
+		// we expect settle calls for each position
+		// engine.prod.EXPECT().Settle(d.price, d.size).Times(1).DoAndReturn(settleF)
+		engine.prod.EXPECT().Settle(d.price, d.size).Times(1).DoAndReturn(settleF)
+	}
+	// now let's set trader2 to still be at old mark price (900)
+	data[1] = startPos[1]
+	// these will be the positions *after* trade, we apply the MTM for the trade beforehand
+	positions := engine.getExpiryPositions(data...)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	ch := make(chan settlement.MarketPosition, len(positions))
+	go func() {
+		for _, p := range positions {
+			ch <- p
+		}
+		wg.Done()
+	}()
+	settleCh := engine.SettleMTM(trade, ch)
+	wg.Wait()
+	close(ch)
+	mtm := <-settleCh
+	assert.NotEmpty(t, mtm)
+	assert.Equal(t, len(preTrade), len(mtm))
+	// ensure we get the expected SettlePositions (includes trader 1 and trader 2)
+	for i, m := range mtm {
+		assert.Equal(t, preTrade[i].Owner, m.Owner)
+		assert.Equal(t, preTrade[i].Type, m.Type)
+		assert.Equal(t, preTrade[i].Amount.Amount, m.Amount.Amount)
+	}
+	// assert.Equal(t, len(preTrade), len(mtm))
+	// now settle:
+	got, err := engine.Settle(time.Now())
+	assert.NoError(t, err)
+	assert.Equal(t, len(expiry), len(got))
+	for i, p := range got {
+		e := expiry[i]
+		assert.Equal(t, e.Size, p.Size)
+		assert.Equal(t, e.Type, p.Type)
+		assert.Equal(t, e.Amount.Amount, p.Amount.Amount)
+	}
+}
+
+// Setup functions, makes mocking easier {{{
 func (te *testEngine) getTestPositions(trade *types.Trade, data []*types.SettlePosition) {
 	// positions double data -> wins and losses for both long and short positions
 	te.positions = make([]*mocks.MockMarketPosition, 0, len(data)*2)
@@ -242,14 +387,14 @@ func (te *testEngine) getTestPositions(trade *types.Trade, data []*types.SettleP
 	te.positions = append(te.positions, shortPos...)
 }
 
-func (te *testEngine) getClosePositions(positions ...posValue) []settlement.MarketPosition {
+func (te *testEngine) getExpiryPositions(positions ...posValue) []settlement.MarketPosition {
 	te.positions = make([]*mocks.MockMarketPosition, 0, len(positions))
 	mpSlice := make([]settlement.MarketPosition, 0, len(positions))
 	for _, p := range positions {
 		pos := mocks.NewMockMarketPosition(te.ctrl)
 		// these values should only be obtained once, and assigned internally
-		pos.EXPECT().Party().Times(1).Return(p.trader)
-		pos.EXPECT().Size().Times(1).Return(p.size)
+		pos.EXPECT().Party().MinTimes(1).MaxTimes(2).Return(p.trader)
+		pos.EXPECT().Size().MinTimes(1).MaxTimes(2).Return(p.size)
 		pos.EXPECT().Price().Times(1).Return(p.price)
 		te.positions = append(te.positions, pos)
 		mpSlice = append(mpSlice, pos)
@@ -273,4 +418,6 @@ func getTestEngine(t *testing.T) *testEngine {
 		prod:      prod,
 		positions: nil,
 	}
-}
+} // }}}
+
+//  vim: set ts=4 sw=4 tw=0 foldlevel=1 foldmethod=marker noet :
