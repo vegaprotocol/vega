@@ -258,7 +258,7 @@ func testMTMPrefixTradePositions(t *testing.T) {
 			size:   -5,
 		},
 	}
-	// calling SettlePreTrade won't include trader2 entry here
+	// call to settlePreTrade won't include trader2 entry here
 	preTrade := []*types.SettlePosition{
 		{
 			Owner: startPos[1].trader,

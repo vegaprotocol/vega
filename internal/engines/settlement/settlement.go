@@ -109,7 +109,7 @@ func (e *Engine) Settle(t time.Time) ([]*types.SettlePosition, error) {
 }
 
 // SettlePreTrade ensures that the MTM for traders involved in the trade are applied before closing out
-func (e *Engine) SettlePreTrade(markPrice uint64, trade *types.Trade) []*types.SettlePosition {
+func (e *Engine) settlePreTrade(markPrice uint64, trade *types.Trade) []*types.SettlePosition {
 	result := make([]*types.SettlePosition, 0, 2)
 	winSlice := make([]*types.SettlePosition, 0, 1) // expect 1 loss, 1 win (worst case 2 wins)
 	e.mu.Lock()
@@ -163,7 +163,7 @@ func (e *Engine) SettlePreTrade(markPrice uint64, trade *types.Trade) []*types.S
 func (e *Engine) SettleMTM(trade *types.Trade, markPrice uint64, ch <-chan MarketPosition) <-chan []*types.SettlePosition {
 	// put the positions on here once we've worked out what all we need to settle
 	sch := make(chan []*types.SettlePosition)
-	tradePos := e.SettlePreTrade(markPrice, trade)
+	tradePos := e.settlePreTrade(markPrice, trade)
 	go func() {
 		posSlice := make([]*types.SettlePosition, 0, cap(ch))
 		winSlice := make([]*types.SettlePosition, 0, cap(ch)/2)
