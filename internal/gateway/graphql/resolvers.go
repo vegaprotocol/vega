@@ -35,6 +35,7 @@ type TradingClient interface {
 type TradingDataClient interface {
 	// orders
 	OrdersByMarket(ctx context.Context, in *protoapi.OrdersByMarketRequest, opts ...grpc.CallOption) (*protoapi.OrdersByMarketResponse, error)
+	OrderByReference(ctx context.Context, in *protoapi.OrderByReferenceRequest, opts ...grpc.CallOption) (*protoapi.OrderByReferenceResponse, error)
 	OrdersByParty(ctx context.Context, in *protoapi.OrdersByPartyRequest, opts ...grpc.CallOption) (*protoapi.OrdersByPartyResponse, error)
 	OrderByMarketAndId(ctx context.Context, in *protoapi.OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*protoapi.OrderByMarketAndIdResponse, error)
 	// markets
@@ -301,6 +302,20 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 		return nil, err
 	}
 	return res.Candles, nil
+}
+
+func (r *MyMarketResolver) OrderByReference(ctx context.Context, market *Market,
+	ref string) (*types.Order, error) {
+
+	req := protoapi.OrderByReferenceRequest{
+		Reference: ref,
+	}
+	res, err := r.tradingDataClient.OrderByReference(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return res.Order, nil
 }
 
 // END: Market Resolver

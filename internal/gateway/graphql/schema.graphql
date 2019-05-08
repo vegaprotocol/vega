@@ -273,6 +273,12 @@ type Market {
     # Interval of the candles
     interval: Interval!
   ): [Candle]
+
+  # Query an order by reference for the given market
+  orderByReference (
+    # reference of the order
+    reference: String!,
+  ): Order!
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.

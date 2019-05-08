@@ -30,6 +30,8 @@ models:
         resolver: true
       candles:
         resolver: true
+      orderByReference:
+        resolver: true
   Party:
     fields:
       orders:

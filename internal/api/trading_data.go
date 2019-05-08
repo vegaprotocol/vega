@@ -35,6 +35,7 @@ type OrderService interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
+	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 }
 
@@ -187,7 +188,7 @@ func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.OrderByReferenceRequest{
+	return &protoapi.OrderByReferenceResponse{
 		Order: order,
 	}, nil
 }

@@ -28,6 +28,7 @@ type OrderStore interface {
 	GetByPartyAndId(ctx context.Context, party, id string) (*types.Order, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
+	GetByReference(ctx context.Context, ref string) (*types.Order, error)
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
 }
@@ -193,6 +194,10 @@ func (s *Svc) validateOrderExpirationTS(expiresAt int64) (time.Time, error) {
 	}
 
 	return exp, nil
+}
+
+func (s *Svc) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
+	return s.orderStore.GetByReference(ctx, ref)
 }
 
 func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {

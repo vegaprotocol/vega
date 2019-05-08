@@ -176,6 +176,10 @@ func (bs *badgerStore) orderMarketKey(market string, Id string) []byte {
 	return []byte(fmt.Sprintf("M:%s_ID:%s", market, Id))
 }
 
+func (bs *badgerStore) orderReferenceKey(ref string) []byte {
+	return []byte(fmt.Sprintf("REF:%s", ref))
+}
+
 func (bs *badgerStore) orderIdKey(Id string) []byte {
 	return []byte(fmt.Sprintf("ID:%s", Id))
 }

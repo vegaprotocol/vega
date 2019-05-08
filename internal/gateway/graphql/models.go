@@ -80,6 +80,7 @@ type Market struct {
 	Trades             []proto.Trade      `json:"trades"`
 	Depth              proto.MarketDepth  `json:"depth"`
 	Candles            []*proto.Candle    `json:"candles"`
+	OrderByReference   proto.Order        `json:"orderByReference"`
 }
 
 type Party struct {

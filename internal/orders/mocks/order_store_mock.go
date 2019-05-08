@@ -94,6 +94,21 @@ func (mr *MockOrderStoreMockRecorder) GetByPartyAndId(arg0, arg1, arg2 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndId", reflect.TypeOf((*MockOrderStore)(nil).GetByPartyAndId), arg0, arg1, arg2)
 }
 
+// GetByReference mocks base method
+func (m *MockOrderStore) GetByReference(arg0 context.Context, arg1 string) (*proto.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByReference", arg0, arg1)
+	ret0, _ := ret[0].(*proto.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByReference indicates an expected call of GetByReference
+func (mr *MockOrderStoreMockRecorder) GetByReference(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByReference", reflect.TypeOf((*MockOrderStore)(nil).GetByReference), arg0, arg1)
+}
+
 // Subscribe mocks base method
 func (m *MockOrderStore) Subscribe(arg0 chan<- []proto.Order) uint64 {
 	m.ctrl.T.Helper()

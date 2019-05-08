@@ -217,6 +217,26 @@ func (mr *MockTradingDataClientMockRecorder) OrderByMarketAndId(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderByMarketAndId", reflect.TypeOf((*MockTradingDataClient)(nil).OrderByMarketAndId), varargs...)
 }
 
+// OrderByReference mocks base method
+func (m *MockTradingDataClient) OrderByReference(arg0 context.Context, arg1 *api.OrderByReferenceRequest, arg2 ...grpc.CallOption) (*api.OrderByReferenceResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "OrderByReference", varargs...)
+	ret0, _ := ret[0].(*api.OrderByReferenceResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OrderByReference indicates an expected call of OrderByReference
+func (mr *MockTradingDataClientMockRecorder) OrderByReference(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderByReference", reflect.TypeOf((*MockTradingDataClient)(nil).OrderByReference), varargs...)
+}
+
 // OrdersByMarket mocks base method
 func (m *MockTradingDataClient) OrdersByMarket(arg0 context.Context, arg1 *api.OrdersByMarketRequest, arg2 ...grpc.CallOption) (*api.OrdersByMarketResponse, error) {
 	m.ctrl.T.Helper()
