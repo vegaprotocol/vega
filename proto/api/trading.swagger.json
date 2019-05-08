@@ -260,6 +260,30 @@
         ]
       }
     },
+    "/orderByreference": {
+      "get": {
+        "operationId": "OrderByReference",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiOrderByReferenceResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/orderTrades": {
       "get": {
         "operationId": "TradesByOrder",
