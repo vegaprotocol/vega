@@ -307,7 +307,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// but we're reading from the channel anyway, so that shouldn't affect this one bit
 			ch := make(chan settlement.MarketPosition, positionCount)
 			// this channel is read by settlement, populated in the loop by position engine
-			settleCh := m.settlement.SettleMTM(trade, m.markPrice, ch)
+			// don't pass a pointer, we're using trade in a routine here, so pass a copy
+			settleCh := m.settlement.SettleMTM(*trade, m.markPrice, ch)
 			// Update party positions for trade affected
 			m.position.Update(trade, ch)
 

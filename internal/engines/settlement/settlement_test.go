@@ -141,7 +141,7 @@ func testMarkToMarketEmpty(t *testing.T) {
 	ch := make(chan settlement.MarketPosition, 10)
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	settleCh := engine.SettleMTM(trade, trade.Price, ch)
+	settleCh := engine.SettleMTM(*trade, trade.Price, ch)
 	close(ch)
 	result := <-settleCh
 	assert.Empty(t, result)
@@ -200,7 +200,7 @@ func testMarkToMarketOrdered(t *testing.T) {
 		}()
 		// tradeArg has a different price compared to mark price here
 		// this should *not* affect the output
-		settleCh := engine.SettleMTM(tradeArg, trade.Price, ch)
+		settleCh := engine.SettleMTM(*tradeArg, trade.Price, ch)
 		wg.Wait()
 		close(ch)
 		result := <-settleCh
@@ -329,7 +329,7 @@ func testMTMPrefixTradePositions(t *testing.T) {
 		}
 		wg.Done()
 	}()
-	settleCh := engine.SettleMTM(trade, trade.Price, ch)
+	settleCh := engine.SettleMTM(*trade, trade.Price, ch)
 	wg.Wait()
 	close(ch)
 	mtm := <-settleCh
