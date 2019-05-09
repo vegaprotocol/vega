@@ -22,14 +22,14 @@ type testEngine struct {
 	systemAccs []*types.Account
 }
 
-func TestCollateralCollect(t *testing.T) {
+func TestCollateralTransfer(t *testing.T) {
 	t.Run("test creating new - should create market accounts", testNew)
-	t.Run("test collecting buys - both insurance and sufficient in trader accounts", testCollectLoss)
-	t.Run("test collecting buys - trader account not empty, but insufficient", testCollectComplexLoss)
-	t.Run("test collecting buys - trader missing some accounts", testCollectLossMissingTraderAccounts)
+	t.Run("test collecting buys - both insurance and sufficient in trader accounts", testTransferLoss)
+	t.Run("test collecting buys - trader account not empty, but insufficient", testTransferComplexLoss)
+	t.Run("test collecting buys - trader missing some accounts", testTransferLossMissingTraderAccounts)
 	t.Run("test collecting sells - cases where settle account is full + where insurance pool is tapped", testDistributeWin)
 	t.Run("test collecting both buys and sells - Successfully collect buy and sell in a single call", testProcessBoth)
-	t.Run("test distribution insufficient funds - Collect losses (partial), distribute wins pro-rate", testProcessBothProRated)
+	t.Run("test distribution insufficient funds - Transfer losses (partial), distribute wins pro-rate", testProcessBothProRated)
 }
 
 func TestCollateralMarkToMarket(t *testing.T) {
@@ -43,7 +43,7 @@ func testNew(t *testing.T) {
 	eng.ctrl.Finish()
 }
 
-func testCollectLoss(t *testing.T) {
+func testTransferLoss(t *testing.T) {
 	market := "test-market"
 	trader := "test-trader"
 	moneyTrader := "money-trader"
@@ -64,7 +64,7 @@ func testCollectLoss(t *testing.T) {
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, moneyTrader).Times(1).Return(moneyAccs, nil)
 	// now the positions
-	pos := []*types.SettlePosition{
+	pos := []*types.Transfer{
 		{
 			Owner: trader,
 			Size:  1,
@@ -72,7 +72,7 @@ func testCollectLoss(t *testing.T) {
 				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_LOSS,
+			Type: types.TransferType_LOSS,
 		},
 		{
 			Owner: moneyTrader,
@@ -81,7 +81,7 @@ func testCollectLoss(t *testing.T) {
 				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_LOSS,
+			Type: types.TransferType_LOSS,
 		},
 	}
 	for _, sacc := range systemAccs {
@@ -102,7 +102,7 @@ func testCollectLoss(t *testing.T) {
 			eng.accounts.EXPECT().IncrementBalance(tacc.Id, -2*price).Times(1).Return(nil)
 		}
 	}
-	responses, err := eng.Collect(pos)
+	responses, err := eng.Transfer(pos)
 	assert.Equal(t, 1, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
@@ -112,7 +112,7 @@ func testCollectLoss(t *testing.T) {
 	assert.Equal(t, 2, len(resp.Transfers))
 }
 
-func testCollectComplexLoss(t *testing.T) {
+func testTransferComplexLoss(t *testing.T) {
 	market := "test-market"
 	trader := "test-trader"
 	half := int64(500)
@@ -128,7 +128,7 @@ func testCollectComplexLoss(t *testing.T) {
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, storage.SystemOwner).Times(1).Return(systemAccs, nil)
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
 	// now the positions
-	pos := []*types.SettlePosition{
+	pos := []*types.Transfer{
 		{
 			Owner: trader,
 			Size:  1,
@@ -136,7 +136,7 @@ func testCollectComplexLoss(t *testing.T) {
 				Asset:  "BTC",
 				Amount: -price,
 			},
-			Type: types.SettleType_LOSS,
+			Type: types.TransferType_LOSS,
 		},
 	}
 	for _, sacc := range systemAccs {
@@ -157,7 +157,7 @@ func testCollectComplexLoss(t *testing.T) {
 			eng.accounts.EXPECT().UpdateBalance(tacc.Id, int64(0)).Times(1).Return(nil)
 		}
 	}
-	responses, err := eng.Collect(pos)
+	responses, err := eng.Transfer(pos)
 	assert.Equal(t, 1, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
@@ -167,7 +167,7 @@ func testCollectComplexLoss(t *testing.T) {
 	assert.Equal(t, 2, len(resp.Transfers))
 }
 
-func testCollectLossMissingTraderAccounts(t *testing.T) {
+func testTransferLossMissingTraderAccounts(t *testing.T) {
 	market := "test-market"
 	trader := "test-trader"
 	price := int64(1000)
@@ -191,7 +191,7 @@ func testCollectLossMissingTraderAccounts(t *testing.T) {
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, storage.SystemOwner).Times(1).Return(systemAccs, nil)
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
 	// now the positions
-	pos := []*types.SettlePosition{
+	pos := []*types.Transfer{
 		{
 			Owner: trader,
 			Size:  1,
@@ -199,10 +199,10 @@ func testCollectLossMissingTraderAccounts(t *testing.T) {
 				Asset:  "BTC",
 				Amount: -price,
 			},
-			Type: types.SettleType_LOSS,
+			Type: types.TransferType_LOSS,
 		},
 	}
-	resp, err := eng.Collect(pos)
+	resp, err := eng.Transfer(pos)
 	assert.Nil(t, resp)
 	assert.Error(t, err)
 	assert.Equal(t, collateral.ErrTraderAccountsMissing, err)
@@ -227,7 +227,7 @@ func testDistributeWin(t *testing.T) {
 	// set up the get-accounts calls
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, storage.SystemOwner).Times(1).Return(systemAccs, nil)
 	// now the positions
-	pos := []*types.SettlePosition{
+	pos := []*types.Transfer{
 		{
 			Owner: trader,
 			Size:  1,
@@ -235,7 +235,7 @@ func testDistributeWin(t *testing.T) {
 				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_WIN,
+			Type: types.TransferType_WIN,
 		},
 		{
 			Owner: moneyTrader,
@@ -244,7 +244,7 @@ func testDistributeWin(t *testing.T) {
 				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_WIN,
+			Type: types.TransferType_WIN,
 		},
 	}
 	for _, sacc := range systemAccs {
@@ -277,7 +277,7 @@ func testDistributeWin(t *testing.T) {
 			break
 		}
 	}
-	responses, err := eng.Collect(pos)
+	responses, err := eng.Transfer(pos)
 	assert.Equal(t, 1, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
@@ -300,7 +300,7 @@ func testProcessBoth(t *testing.T) {
 	systemAccs := getSystemAccounts(market)
 	traderAccs := getTraderAccounts(trader, market)
 	moneyAccs := getTraderAccounts(moneyTrader, market)
-	pos := []*types.SettlePosition{
+	pos := []*types.Transfer{
 		{
 			Owner: trader,
 			Size:  1,
@@ -308,7 +308,7 @@ func testProcessBoth(t *testing.T) {
 				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_LOSS,
+			Type: types.TransferType_LOSS,
 		},
 		{
 			Owner: moneyTrader,
@@ -317,7 +317,7 @@ func testProcessBoth(t *testing.T) {
 				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_LOSS,
+			Type: types.TransferType_LOSS,
 		},
 		{
 			Owner: trader,
@@ -326,7 +326,7 @@ func testProcessBoth(t *testing.T) {
 				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_WIN,
+			Type: types.TransferType_WIN,
 		},
 		{
 			Owner: moneyTrader,
@@ -335,7 +335,7 @@ func testProcessBoth(t *testing.T) {
 				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_WIN,
+			Type: types.TransferType_WIN,
 		},
 	}
 	eng := getTestEngine(t, market, nil)
@@ -408,7 +408,7 @@ func testProcessBoth(t *testing.T) {
 	// next up, updating the balance of the traders' general accounts
 	eng.accounts.EXPECT().IncrementBalance(tGeneral.Id, price).Times(1).Return(nil)
 	eng.accounts.EXPECT().IncrementBalance(mGeneral.Id, 2*price).Times(1).Return(nil)
-	responses, err := eng.Collect(pos)
+	responses, err := eng.Transfer(pos)
 	assert.Equal(t, 2, len(responses))
 	assert.NoError(t, err)
 	resp := responses[0]
@@ -432,7 +432,7 @@ func testProcessBothProRated(t *testing.T) {
 	systemAccs := getSystemAccounts(market)
 	traderAccs := getTraderAccounts(trader, market)
 	moneyAccs := getTraderAccounts(moneyTrader, market)
-	pos := []*types.SettlePosition{
+	pos := []*types.Transfer{
 		{
 			Owner: trader,
 			Size:  1,
@@ -440,7 +440,7 @@ func testProcessBothProRated(t *testing.T) {
 				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_LOSS,
+			Type: types.TransferType_LOSS,
 		},
 		{
 			Owner: moneyTrader,
@@ -449,7 +449,7 @@ func testProcessBothProRated(t *testing.T) {
 				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_LOSS,
+			Type: types.TransferType_LOSS,
 		},
 		{
 			Owner: trader,
@@ -458,7 +458,7 @@ func testProcessBothProRated(t *testing.T) {
 				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_WIN,
+			Type: types.TransferType_WIN,
 		},
 		{
 			Owner: moneyTrader,
@@ -467,7 +467,7 @@ func testProcessBothProRated(t *testing.T) {
 				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_WIN,
+			Type: types.TransferType_WIN,
 		},
 	}
 	eng := getTestEngine(t, market, nil)
@@ -543,7 +543,7 @@ func testProcessBothProRated(t *testing.T) {
 	// next up, updating the balance of the traders' general accounts
 	eng.accounts.EXPECT().IncrementBalance(tGeneral.Id, int64(833)).Times(1).Return(nil)
 	eng.accounts.EXPECT().IncrementBalance(mGeneral.Id, int64(1666)).Times(1).Return(nil)
-	responses, err := eng.Collect(pos)
+	responses, err := eng.Transfer(pos)
 	assert.Equal(t, 2, len(responses))
 	assert.NoError(t, err)
 	resp := responses[0]
@@ -568,7 +568,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	systemAccs := getSystemAccounts(market)
 	traderAccs := getTraderAccounts(trader, market)
 	moneyAccs := getTraderAccounts(moneyTrader, market)
-	pos := []*types.SettlePosition{
+	pos := []*types.Transfer{
 		{
 			Owner: trader,
 			Size:  1,
@@ -576,7 +576,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_MTM_LOSS,
+			Type: types.TransferType_MTM_LOSS,
 		},
 		{
 			Owner: moneyTrader,
@@ -585,7 +585,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 				Amount: -price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_MTM_LOSS,
+			Type: types.TransferType_MTM_LOSS,
 		},
 		{
 			Owner: trader,
@@ -594,7 +594,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_MTM_WIN,
+			Type: types.TransferType_MTM_WIN,
 		},
 		{
 			Owner: moneyTrader,
@@ -603,7 +603,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.SettleType_MTM_WIN,
+			Type: types.TransferType_MTM_WIN,
 		},
 	}
 	eng := getTestEngine(t, market, nil)

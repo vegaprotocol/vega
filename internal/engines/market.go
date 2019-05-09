@@ -200,7 +200,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 			)
 			return
 		}
-		transfers, err := m.collateral.Collect(positions)
+		transfers, err := m.collateral.Transfer(positions)
 		if err != nil {
 			m.log.Error(
 				"Failed to get ledger movements after settling closed market",
@@ -329,7 +329,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// perhaps we need to use a channel here, too or something?
 			// AFAIK, we're not using the margins from risk in this loop, so chances are this call can be moved outside of the loop anyway
 			// avoiding a lot of pointless calls copying all the positions each time(?)
-			m.risk.UpdatePositions(trade.Price, m.position.Positions())
+			m.risk.UpdatePositions(m.markPrice, m.position.Positions())
 		}
 	}
 

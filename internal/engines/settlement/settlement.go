@@ -93,7 +93,7 @@ func (e *Engine) getPosition(party string) pos {
 	return *ps
 }
 
-func (e *Engine) Settle(t time.Time) ([]*types.SettlePosition, error) {
+func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 	e.mu.Lock()
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
 	positions, err := e.settleAll()
@@ -109,9 +109,10 @@ func (e *Engine) Settle(t time.Time) ([]*types.SettlePosition, error) {
 }
 
 // SettlePreTrade ensures that the MTM for traders involved in the trade are applied before closing out
-func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*types.SettlePosition {
-	result := make([]*types.SettlePosition, 0, 2)
-	winSlice := make([]*types.SettlePosition, 0, 1) // expect 1 loss, 1 win (worst case 2 wins)
+// this applies the MTM for traders _before_ the trade happened
+func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*types.Transfer {
+	result := make([]*types.Transfer, 0, 2)
+	winSlice := make([]*types.Transfer, 0, 1) // expect 1 loss, 1 win (worst case 2 wins)
 	e.mu.Lock()
 	positions := map[string]pos{
 		trade.Buyer:  e.getPosition(trade.Buyer),
@@ -122,14 +123,26 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*types.Se
 	for owner, ps := range positions {
 		// if markPrice == position price, or position size == 0
 		// this won't really do anything, other than making sure the mark price matches
-		// perhaps the mark price check should be separated out in case size == 0
+		// but the trade itself needn't have happened at the mark price, so we carry on regardless
+		// because we add/subtract later on
 		mtmShare := (int64(markPrice) - int64(ps.price)) * ps.size
 		// update the positions after calculating mark-to-market share
 		if !seller {
+			// account for the trade size being different to the mark price:
+			// subtract the (trade price - mark price) * trade volume from mtmShare
+			// old pos +10@1k -> trade at 2K (new pos +11), mark price 1.5K
+			// this would mean mtmShare == (1500 - 1000) * 10 => 5K
+			// mtmShare -= (2000 - 1500) * 1 == 4.5K
+			// perfectly valid again
+			mtmShare -= (int64(trade.Price) - int64(markPrice)) * int64(trade.Size)
 			ps.size += int64(trade.Size)
 			e.updatePosition(ps, markPrice)
 			seller = true
 		} else {
+			// add (trade price - mark price) * trade volume to the MTM share
+			// if old pos was +1 @1K, trade at 2K (net pos 0) -> mark price 1.5K
+			// this will yield a mtmShare of 500, + (2000 - 1500)*1 -> 1K MTM share, perfectly valid
+			mtmShare += (int64(trade.Price) - int64(markPrice)) * int64(trade.Size)
 			ps.size -= int64(trade.Size)
 			e.updatePosition(ps, markPrice)
 		}
@@ -137,7 +150,7 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*types.Se
 		if mtmShare == 0 {
 			continue
 		}
-		settle := &types.SettlePosition{
+		settle := &types.Transfer{
 			Owner: owner,
 			Size:  1,
 			Amount: &types.FinancialAmount{
@@ -145,10 +158,10 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*types.Se
 			},
 		}
 		if mtmShare > 0 {
-			settle.Type = types.SettleType_MTM_WIN
+			settle.Type = types.TransferType_MTM_WIN
 			winSlice = append(winSlice, settle)
 		} else {
-			settle.Type = types.SettleType_MTM_LOSS
+			settle.Type = types.TransferType_MTM_LOSS
 			result = append(result, settle)
 		}
 	}
@@ -160,17 +173,17 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*types.Se
 	return result
 }
 
-func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan MarketPosition) <-chan []*types.SettlePosition {
+func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan MarketPosition) <-chan []*types.Transfer {
 	// put the positions on here once we've worked out what all we need to settle
-	sch := make(chan []*types.SettlePosition)
+	sch := make(chan []*types.Transfer)
 	tradePos := e.settlePreTrade(markPrice, trade)
 	go func() {
-		posSlice := make([]*types.SettlePosition, 0, cap(ch))
-		winSlice := make([]*types.SettlePosition, 0, cap(ch)/2)
+		posSlice := make([]*types.Transfer, 0, cap(ch))
+		winSlice := make([]*types.Transfer, 0, cap(ch)/2)
 		// ensure we've got the MTM for buyer/seller _before_ trade was applied
 		// makes sure the order is preserved, too
 		for _, sp := range tradePos {
-			if sp.Type == types.SettleType_MTM_WIN {
+			if sp.Type == types.TransferType_MTM_WIN {
 				winSlice = append(winSlice, sp)
 			} else {
 				posSlice = append(posSlice, sp)
@@ -181,11 +194,6 @@ func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan Market
 			if pos == nil {
 				break
 			}
-			// MTM on traders in a trade -> TODO
-			// 1st trade for person -> trade entry price might not be mark price
-			// trade comes in, can be a MTM immediately needed
-			//
-			// @TODO -> trader net pos == 0, but closes out in trade
 			// trade.Buyer == owner || trade.Seller == owner
 			// update position for trader - always keep track of latest position
 			pp := pos.Price()
@@ -201,11 +209,12 @@ func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan Market
 			// long -> (100-90) * 10 => 100 ==> MTM_WIN
 			// short -> (100 - 110) * -10 => 100 ==> MTM_WIN
 			// long -> (100 - 110) * 10 => -100 ==> MTM_LOSS
+			// @TODO -> move to product level (same as prod.Settle)
 			mtmShare := (int64(markPrice) - int64(pp)) * ps
 			if mtmShare == 0 {
 				continue
 			}
-			settle := &types.SettlePosition{
+			settle := &types.Transfer{
 				Owner: pos.Party(),
 				Size:  1, // this is an absolute delta based on volume, so size is always 1
 				Amount: &types.FinancialAmount{
@@ -213,10 +222,10 @@ func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan Market
 				},
 			}
 			if mtmShare > 0 {
-				settle.Type = types.SettleType_MTM_WIN
+				settle.Type = types.TransferType_MTM_WIN
 				winSlice = append(winSlice, settle)
 			} else {
-				settle.Type = types.SettleType_MTM_LOSS
+				settle.Type = types.TransferType_MTM_LOSS
 				posSlice = append(posSlice, settle)
 			}
 		}
@@ -229,12 +238,12 @@ func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan Market
 }
 
 // simplified settle call
-func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
+func (e *Engine) settleAll() ([]*types.Transfer, error) {
 	// there should be as many positions as there are traders (obviously)
-	aggregated := make([]*types.SettlePosition, 0, len(e.pos))
+	aggregated := make([]*types.Transfer, 0, len(e.pos))
 	// traders who are in the black should be appended (collect first) obvioulsy.
 	// The split won't always be 50-50, but it's a reasonable approximation
-	owed := make([]*types.SettlePosition, 0, len(e.pos)/2)
+	owed := make([]*types.Transfer, 0, len(e.pos)/2)
 	for party, pos := range e.pos {
 		// this is possible now, with the Mark to Market stuff, it's possible we've settled any and all positions for a given trader
 		if pos.size == 0 {
@@ -254,7 +263,7 @@ func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
 			)
 			return nil, err
 		}
-		settlePos := &types.SettlePosition{
+		settlePos := &types.Transfer{
 			Owner:  party,
 			Size:   1,
 			Amount: amt,
@@ -266,11 +275,11 @@ func (e *Engine) settleAll() ([]*types.SettlePosition, error) {
 		)
 		if amt.Amount < 0 {
 			// trader is winning...
-			settlePos.Type = types.SettleType_LOSS
+			settlePos.Type = types.TransferType_LOSS
 			aggregated = append(aggregated, settlePos)
 		} else {
 			// bad name again, but SELL means trader is owed money
-			settlePos.Type = types.SettleType_WIN
+			settlePos.Type = types.TransferType_WIN
 			owed = append(owed, settlePos)
 		}
 	}
