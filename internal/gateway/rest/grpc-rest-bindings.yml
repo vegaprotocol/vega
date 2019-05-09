@@ -25,6 +25,8 @@ http:
       get: '/partyOrders'
     - selector: api.trading_data.OrderByMarketAndId
       get: '/marketOrder'
+    - selector: api.trading_data.OrderByReference
+      get: '/orderByreference'
     - selector: api.trading_data.Markets
       get: '/markets'
     - selector: api.trading_data.Market

@@ -28,6 +28,7 @@ service trading_data {
   rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
   rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
+  rpc OrderByReference(OrderByReferenceRequest) returns (OrderByReferenceResponse);
 
   // markets
   rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
@@ -157,6 +158,14 @@ message OrderByMarketAndIdRequest {
 }
 
 message OrderByMarketAndIdResponse {
+  vega.Order order = 1;
+}
+
+message OrderByReferenceRequest {
+  string reference = 1;
+}
+
+message OrderByReferenceResponse {
   vega.Order order = 1;
 }
 

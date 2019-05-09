@@ -111,8 +111,14 @@ func TestModelConverters(t *testing.T) {
 					},
 				},
 			},
-			RiskModel: &gql.BuiltinFutures{
-				HistoricVolatility: 42.42,
+			RiskModel: &gql.Forward{
+				Lambd: 0.01,
+				Tau:   1.0 / 365.25 / 24,
+				Params: gql.ModelParamsBs{
+					Mu:    0,
+					R:     0.016,
+					Sigma: 0.09,
+				},
 			},
 		}
 		pti, err := ti.IntoProto()
@@ -134,8 +140,14 @@ func TestModelConverters(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &gql.BuiltinFutures{
-					HistoricVolatility: 42.42,
+				RiskModel: &gql.Forward{
+					Lambd: 0.01,
+					Tau:   1.0 / 365.25 / 24,
+					Params: gql.ModelParamsBs{
+						Mu:    0,
+						R:     0.016,
+						Sigma: 0.09,
+					},
 				},
 			},
 		}
@@ -328,15 +340,21 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("RiskModelFromProto", func(t *testing.T) {
-		prm := &proto.TradableInstrument_BuiltinFutures{
-			BuiltinFutures: &proto.BuiltinFutures{
-				HistoricVolatility: 42.4,
+		prm := &proto.TradableInstrument_Forward{
+			Forward: &proto.Forward{
+				Lambd: 0.01,
+				Tau:   1.0 / 365.25 / 24,
+				Params: &proto.ModelParamsBS{
+					Mu:    0,
+					R:     0.016,
+					Sigma: 0.09,
+				},
 			},
 		}
 		rm, err := gql.RiskModelFromProto(prm)
 		assert.NotNil(t, rm)
 		assert.Nil(t, err)
-		_, ok := rm.(*gql.BuiltinFutures)
+		_, ok := rm.(*gql.Forward)
 		assert.True(t, ok)
 	})
 
@@ -359,9 +377,15 @@ func TestModelConverters(t *testing.T) {
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_BuiltinFutures{
-				BuiltinFutures: &proto.BuiltinFutures{
-					HistoricVolatility: 42.4,
+			RiskModel: &proto.TradableInstrument_Forward{
+				Forward: &proto.Forward{
+					Lambd: 0.01,
+					Tau:   1.0 / 365.25 / 24,
+					Params: &proto.ModelParamsBS{
+						Mu:    0,
+						R:     0.016,
+						Sigma: 0.09,
+					},
 				},
 			},
 		}
@@ -391,9 +415,15 @@ func TestModelConverters(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &proto.TradableInstrument_BuiltinFutures{
-					BuiltinFutures: &proto.BuiltinFutures{
-						HistoricVolatility: 42.4,
+				RiskModel: &proto.TradableInstrument_Forward{
+					Forward: &proto.Forward{
+						Lambd: 0.01,
+						Tau:   1.0 / 365.25 / 24,
+						Params: &proto.ModelParamsBS{
+							Mu:    0,
+							R:     0.016,
+							Sigma: 0.09,
+						},
 					},
 				},
 			},

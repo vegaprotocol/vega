@@ -53,7 +53,15 @@ func (this *Instrument) Validate() error {
 	}
 	return nil
 }
-func (this *BuiltinFutures) Validate() error {
+func (this *ModelParamsBS) Validate() error {
+	return nil
+}
+func (this *Forward) Validate() error {
+	if this.Params != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
+		}
+	}
 	return nil
 }
 func (this *ExternalRiskModel) Validate() error {
@@ -66,10 +74,10 @@ func (this *TradableInstrument) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("Instrument", err)
 		}
 	}
-	if oneOfNester, ok := this.GetRiskModel().(*TradableInstrument_BuiltinFutures); ok {
-		if oneOfNester.BuiltinFutures != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.BuiltinFutures); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("BuiltinFutures", err)
+	if oneOfNester, ok := this.GetRiskModel().(*TradableInstrument_Forward); ok {
+		if oneOfNester.Forward != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Forward); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Forward", err)
 			}
 		}
 	}

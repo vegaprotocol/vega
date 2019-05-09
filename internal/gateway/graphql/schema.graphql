@@ -158,12 +158,27 @@ union TradingMode =
 ContinuousTrading
 | DiscreteTrading
 
-type BuiltinFutures {
-  # The historic volatily of the future (float64)
-  historicVolatility: Float!
+# Parameters to be forwards to the risk model
+type ModelParamsBS {
+  # mu parameter
+  mu: Float!
+  # r parameter
+  r: Float!
+  # sigma parameter
+  sigma: Float!
 }
 
-union RiskModel = BuiltinFutures
+# A type of risk model for futures trading
+type Forward {
+  # lambd parameter of the risk model
+  lambd: Float!
+  # Tau parameter of the risk model
+  Tau: Float!
+  # Params for the risl model
+  params: ModelParamsBS!
+}
+
+union RiskModel = Forward
 
 # A set of metadat to associate to an instruments
 type InstrumentMetadata {
@@ -273,6 +288,12 @@ type Market {
     # Interval of the candles
     interval: Interval!
   ): [Candle]
+
+  # Query an order by reference for the given market
+  orderByReference (
+    # reference of the order
+    reference: String!,
+  ): Order!
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.

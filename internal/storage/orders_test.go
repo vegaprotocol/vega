@@ -68,6 +68,33 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 	assert.Equal(t, order.Id, o.Id)
 }
 
+func TestStorage_PostAndGetByReference(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
+	storage.FlushStores(logging.NewTestLogger(), config)
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	defer orderStore.Close()
+
+	var order = &types.Order{
+		Reference: "83cfdf76-8eac-4c7e-8f6a-2aa51e89364f",
+		Id:        "45305210ff7a9bb9450b1833cc10368a",
+		MarketID:  "testMarket",
+		PartyID:   "testParty",
+	}
+
+	err = orderStore.Post(*order)
+	assert.Nil(t, err)
+
+	orderStore.Commit()
+
+	o, err := orderStore.GetByReference(context.Background(), order.Reference)
+	assert.Nil(t, err)
+	assert.Equal(t, order.Id, o.Id)
+}
+
 func TestStorage_GetOrdersForMarket(t *testing.T) {
 	config, err := storage.NewTestConfig()
 	if err != nil {

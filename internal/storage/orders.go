@@ -350,6 +350,45 @@ func (os *Order) GetByPartyAndId(ctx context.Context, party string, id string) (
 	return &order, nil
 }
 
+// GetByreference retrieves an order for a given referefence, any errors will be returned immediately.
+func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
+	var order types.Order
+
+	err := os.badger.db.View(func(txn *badger.Txn) error {
+		refKey := os.badger.orderReferenceKey(ref)
+		marketKeyItem, err := txn.Get(refKey)
+		if err != nil {
+			return err
+		}
+		marketKey, err := marketKeyItem.ValueCopy(nil)
+		if err != nil {
+			return err
+		}
+		orderItem, err := txn.Get(marketKey)
+		if err != nil {
+			return err
+		}
+		orderBuf, err := orderItem.ValueCopy(nil)
+		if err != nil {
+			return err
+		}
+		if err := proto.Unmarshal(orderBuf, &order); err != nil {
+			os.log.Error("Failed to unmarshal order value from badger in order store (getByPartyAndId)",
+				logging.Error(err),
+				logging.String("badger-key", string(refKey)),
+				logging.String("raw-bytes", string(orderBuf)))
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &order, nil
+}
+
 // GetMarketDepth calculates and returns order book/depth of market for a given market.
 func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error) {
 
@@ -482,10 +521,12 @@ func (os *Order) orderBatchToMap(batch []types.Order) (map[string][]byte, error)
 		}
 		marketKey := os.badger.orderMarketKey(order.MarketID, order.Id)
 		idKey := os.badger.orderIdKey(order.Id)
+		refKey := os.badger.orderReferenceKey(order.Reference)
 		partyKey := os.badger.orderPartyKey(order.PartyID, order.Id)
 		results[string(marketKey)] = orderBuf
 		results[string(idKey)] = marketKey
 		results[string(partyKey)] = marketKey
+		results[string(refKey)] = marketKey
 	}
 	return results, nil
 }
