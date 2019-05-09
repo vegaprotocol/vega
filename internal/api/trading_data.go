@@ -239,7 +239,7 @@ func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 		MarketID: depth.MarketID,
 		Sell:     depth.Sell,
 	}
-	if t != nil && t[0] != nil {
+	if len(t) > 0 && t[0] != nil {
 		resp.LastTrade = t[0]
 	}
 	return resp, nil
