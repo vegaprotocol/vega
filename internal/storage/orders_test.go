@@ -53,9 +53,9 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 	defer orderStore.Close()
 
 	var order = &types.Order{
-		Id:     "45305210ff7a9bb9450b1833cc10368a",
-		Market: "testMarket",
-		Party:  "testParty",
+		Id:       "45305210ff7a9bb9450b1833cc10368a",
+		MarketID: "testMarket",
+		PartyID:  "testParty",
 	}
 
 	err = orderStore.Post(*order)
@@ -64,6 +64,33 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 	orderStore.Commit()
 
 	o, err := orderStore.GetByMarketAndId(context.Background(), "testMarket", order.Id)
+	assert.Nil(t, err)
+	assert.Equal(t, order.Id, o.Id)
+}
+
+func TestStorage_PostAndGetByReference(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
+	storage.FlushStores(logging.NewTestLogger(), config)
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	defer orderStore.Close()
+
+	var order = &types.Order{
+		Reference: "83cfdf76-8eac-4c7e-8f6a-2aa51e89364f",
+		Id:        "45305210ff7a9bb9450b1833cc10368a",
+		MarketID:  "testMarket",
+		PartyID:   "testParty",
+	}
+
+	err = orderStore.Post(*order)
+	assert.Nil(t, err)
+
+	orderStore.Commit()
+
+	o, err := orderStore.GetByReference(context.Background(), order.Reference)
 	assert.Nil(t, err)
 	assert.Equal(t, order.Id, o.Id)
 }
@@ -87,19 +114,19 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 			inMarkets: []string{"testMarket1", "marketZ"},
 			inOrders: []*types.Order{
 				{
-					Id:     "d41d8cd98f00b204e9800998ecf8427e",
-					Market: "testMarket1",
-					Party:  testParty,
+					Id:       "d41d8cd98f00b204e9800998ecf8427e",
+					MarketID: "testMarket1",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "ad2dc275947362c45893bbeb30fc3098",
-					Market: "marketZ",
-					Party:  testParty,
+					Id:       "ad2dc275947362c45893bbeb30fc3098",
+					MarketID: "marketZ",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "4e8e41367997cfe705d62ea80592cbcc",
-					Market: "testMarket1",
-					Party:  testParty,
+					Id:       "4e8e41367997cfe705d62ea80592cbcc",
+					MarketID: "testMarket1",
+					PartyID:  testParty,
 				},
 			},
 			inLimit:        5000,
@@ -110,19 +137,19 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 			inMarkets: []string{testMarket, "marketABC"},
 			inOrders: []*types.Order{
 				{
-					Id:     "d41d8cd98f00b204e9800998ecf8427e",
-					Market: testMarket,
-					Party:  testParty,
+					Id:       "d41d8cd98f00b204e9800998ecf8427e",
+					MarketID: testMarket,
+					PartyID:  testParty,
 				},
 				{
-					Id:     "ad2dc275947362c45893bbeb30fc3098",
-					Market: "marketABC",
-					Party:  testParty,
+					Id:       "ad2dc275947362c45893bbeb30fc3098",
+					MarketID: "marketABC",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "4e8e41367997cfe705d62ea80592cbcc",
-					Market: testMarket,
-					Party:  testParty,
+					Id:       "4e8e41367997cfe705d62ea80592cbcc",
+					MarketID: testMarket,
+					PartyID:  testParty,
 				},
 			},
 			inLimit:        5000,
@@ -133,19 +160,19 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 			inMarkets: []string{"marketXYZ"},
 			inOrders: []*types.Order{
 				{
-					Id:     "d41d8cd98f00b204e9800998ecf8427e",
-					Market: "marketXYZ",
-					Party:  testParty,
+					Id:       "d41d8cd98f00b204e9800998ecf8427e",
+					MarketID: "marketXYZ",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "ad2dc275947362c45893bbeb30fc3098",
-					Market: "marketXYZ",
-					Party:  testParty,
+					Id:       "ad2dc275947362c45893bbeb30fc3098",
+					MarketID: "marketXYZ",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "4e8e41367997cfe705d62ea80592cbcc",
-					Market: "marketXYZ",
-					Party:  testParty,
+					Id:       "4e8e41367997cfe705d62ea80592cbcc",
+					MarketID: "marketXYZ",
+					PartyID:  testParty,
 				},
 			},
 			inLimit:        2,
@@ -186,15 +213,15 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 
 	passiveOrder := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf9999e",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Remaining: 0,
 	}
 
 	aggressiveOrder := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427e",
-		Market:    testMarket,
-		Party:     testPartyB,
+		MarketID:  testMarket,
+		PartyID:   testPartyB,
 		Remaining: 100,
 	}
 
@@ -225,8 +252,8 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	// update order, parties should also be updated as its a pointer
 	updatedAggressiveOrder := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427e",
-		Market:    testMarket,
-		Party:     testPartyB,
+		MarketID:  testMarket,
+		PartyID:   testPartyB,
 		Remaining: 0,
 	}
 
@@ -252,8 +279,8 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 
 	order := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427b",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      1000,
@@ -291,7 +318,7 @@ func TestStorage_GetMarketDepthForNewMarket(t *testing.T) {
 	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
 	assert.Nil(t, err)
 
-	assert.Equal(t, testMarket, depth.Name)
+	assert.Equal(t, testMarket, depth.MarketID)
 	assert.Equal(t, 0, len(depth.Buy))
 	assert.Equal(t, 0, len(depth.Sell))
 }
@@ -310,8 +337,8 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 
 	order1 := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427b",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      1000,
@@ -324,8 +351,8 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 
 	order2 := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427c",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      1000,
@@ -338,8 +365,8 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 
 	order3 := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998hhf8427c",
-		Market:    testMarket,
-		Party:     testPartyB,
+		MarketID:  testMarket,
+		PartyID:   testPartyB,
 		Side:      types.Side_Sell,
 		Price:     9999,
 		Size:      20,
@@ -365,7 +392,7 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
 	assert.Nil(t, err)
 
-	assert.Equal(t, testMarket, depth.Name)
+	assert.Equal(t, testMarket, depth.MarketID)
 	assert.Equal(t, 1, len(depth.Buy))
 	assert.Equal(t, 1, len(depth.Sell))
 	assert.Equal(t, uint64(100), depth.Buy[0].Price)
@@ -387,8 +414,8 @@ func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
 
 	order := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427b",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      1000,

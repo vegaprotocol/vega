@@ -87,7 +87,7 @@ install: proto ## install the binaries in GOPATH/bin
 	done
 
 gqlgen: deps ## run gqlgen
-	@cd ./internal/api/endpoints/gql && go run github.com/99designs/gqlgen -c gqlgen.yml
+	@cd ./internal/gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
 
 proto: | deps ${PROTOFILES} ${PROTOVALFILES} ## build proto definitions
 
@@ -123,15 +123,15 @@ proto/api/trading.validator.pb.go: proto/api/trading.proto
 		 --govalidators_out=paths=source_relative:. "$<" && \
 	./script/fix_imports.sh "$@"
 
-GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml,paths=source_relative:.
-SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml:.
+GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/gateway/rest/grpc-rest-bindings.yml,paths=source_relative:.
+SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/gateway/rest/grpc-rest-bindings.yml:.
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
-proto/api/trading.pb.gw.go: proto/api/trading.proto internal/api/grpc-rest-bindings.yml
+proto/api/trading.pb.gw.go: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
 	@protoc -Ivendor -I. -Iproto/api/ -Ivendor/github.com/google/protobuf/src --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
 
 # Generate Swagger documentation
-proto/api/trading.swagger.json: proto/api/trading.proto internal/api/grpc-rest-bindings.yml
+proto/api/trading.swagger.json: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
 	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
 grpc_check: deps ## gRPC: Check committed files match just-generated files

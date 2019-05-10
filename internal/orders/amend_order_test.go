@@ -15,10 +15,10 @@ import (
 
 var (
 	amend = proto.OrderAmendment{
-		Id:    "order_id",
-		Party: "party",
-		Price: 10000,
-		Size:  1,
+		Id:      "order_id",
+		PartyID: "party",
+		Price:   10000,
+		Size:    1,
 	}
 )
 
@@ -43,13 +43,13 @@ func testAmendOrderSuccess(t *testing.T) {
 	defer svc.ctrl.Finish()
 
 	order := proto.Order{
-		Id:     arg.Id,
-		Market: "market",
-		Party:  arg.Party,
-		Status: proto.Order_Active,
-		Type:   proto.Order_GTT,
+		Id:       arg.Id,
+		MarketID: "market",
+		PartyID:  arg.PartyID,
+		Status:   proto.Order_Active,
+		Type:     proto.Order_GTT,
 	}
-	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.Id).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	svc.block.EXPECT().AmendOrder(gomock.Any(), amendMatcher{e: arg}).Times(1).Return(true, nil)
 
@@ -67,13 +67,13 @@ func testAmendOrderExpired(t *testing.T) {
 	defer svc.ctrl.Finish()
 
 	order := proto.Order{
-		Id:     arg.Id,
-		Market: "market",
-		Party:  arg.Party,
-		Status: proto.Order_Active,
-		Type:   proto.Order_GTT,
+		Id:       arg.Id,
+		MarketID: "market",
+		PartyID:  arg.PartyID,
+		Status:   proto.Order_Active,
+		Type:     proto.Order_GTT,
 	}
-	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.Id).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 
 	success, err := svc.svc.AmendOrder(context.Background(), &arg)
@@ -90,12 +90,12 @@ func testAmendOrderNotActive(t *testing.T) {
 	defer svc.ctrl.Finish()
 
 	order := proto.Order{
-		Id:     arg.Id,
-		Market: "market",
-		Party:  arg.Party,
-		Status: proto.Order_Expired,
+		Id:       arg.Id,
+		MarketID: "market",
+		PartyID:  arg.PartyID,
+		Status:   proto.Order_Expired,
 	}
-	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.Id).Times(1).Return(&order, nil)
 
 	success, err := svc.svc.AmendOrder(context.Background(), &arg)
 	assert.False(t, success)
@@ -123,13 +123,13 @@ func testAmendOrderTimeSvcErr(t *testing.T) {
 	defer svc.ctrl.Finish()
 
 	order := proto.Order{
-		Id:     arg.Id,
-		Market: "market",
-		Party:  arg.Party,
-		Status: proto.Order_Active,
-		Type:   proto.Order_GTT,
+		Id:       arg.Id,
+		MarketID: "market",
+		PartyID:  arg.PartyID,
+		Status:   proto.Order_Active,
+		Type:     proto.Order_GTT,
 	}
-	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.Party, arg.Id).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.Id).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, expErr)
 
 	success, err := svc.svc.AmendOrder(context.Background(), &arg)
@@ -151,6 +151,6 @@ func (m amendMatcher) Matches(x interface{}) bool {
 	default:
 		return false
 	}
-	return (m.e.Id == v.Id && m.e.Party == v.Party && m.e.Price == v.Price && m.e.Size == v.Size &&
+	return (m.e.Id == v.Id && m.e.PartyID == v.PartyID && m.e.Price == v.Price && m.e.Size == v.Size &&
 		m.e.ExpiresAt == v.ExpiresAt)
 }

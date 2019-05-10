@@ -111,8 +111,8 @@ func BenchmarkMatching(
 			}
 
 			order := &types.Order{
-				Market:    marketID,
-				Party:     fmt.Sprintf("P%v", timestamp),
+				MarketID:  marketID,
+				PartyID:   fmt.Sprintf("P%v", timestamp),
 				Side:      types.Side(rand.Intn(2)),
 				Price:     uint64(rand.Intn(100) + 50),
 				Size:      size,

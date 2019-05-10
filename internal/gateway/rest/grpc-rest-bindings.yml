@@ -1,0 +1,55 @@
+---
+type: google.api.Service
+config_version: 3
+
+name: api.trading
+title: Vega Trading API
+
+apis:
+  - name: trading
+
+http:
+  rules:
+    - selector: api.trading.SubmitOrder
+      post: '/submitOrder'
+      body: "*"
+    - selector: api.trading.CancelOrder
+      post: '/cancelOrder'
+      body: "*"
+    - selector: api.trading.AmendOrder
+      post: '/amendOrder'
+      body: "*"
+    - selector: api.trading_data.OrdersByMarket
+      get: '/marketOrders'
+    - selector: api.trading_data.OrdersByParty
+      get: '/partyOrders'
+    - selector: api.trading_data.OrderByMarketAndId
+      get: '/marketOrder'
+    - selector: api.trading_data.OrderByReference
+      get: '/orderByreference'
+    - selector: api.trading_data.Markets
+      get: '/markets'
+    - selector: api.trading_data.Market
+      get: '/market'
+    - selector: api.trading_data.TradeCandles
+      get: '/candles'
+    - selector: api.trading_data.MarketDepth
+      get: '/marketDepth'
+    - selector: api.trading_data.LastTrade
+      get: '/lastTrade'
+    - selector: api.trading_data.TradesByMarket
+      get: '/marketTrades'
+    - selector: api.trading_data.TradesByParty
+      get: '/partyTrades'
+    - selector: api.trading_data.TradesByOrder
+      get: '/orderTrades'
+    - selector: api.trading_data.PositionsByParty
+      get: '/partyPositions'
+    - selector: api.trading_data.Party
+      get: '/party'
+    - selector: api.trading_data.Parties
+      get: '/parties'
+    - selector: api.trading_data.Statistics
+      get: '/statistics'
+    - selector: api.trading_data.GetVegaTime
+      get: '/vegaTime'

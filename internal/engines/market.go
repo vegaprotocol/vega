@@ -221,7 +221,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	// Validate Market
-	if order.Market != m.marketcfg.Id {
+	if order.MarketID != m.marketcfg.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
 			logging.String("market", m.marketcfg.Id))
@@ -230,9 +230,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Verify and add new parties
-	party, _ := m.parties.GetByID(order.Party)
+	party, _ := m.parties.GetByID(order.PartyID)
 	if party == nil {
-		p := &types.Party{Name: order.Party}
+		p := &types.Party{Id: order.PartyID}
 		err := m.parties.Post(p)
 		if err != nil {
 			return nil, err
@@ -309,7 +309,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // CancelOrder cancel the given order
 func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
-	if order.Market != m.marketcfg.Id {
+	if order.MarketID != m.marketcfg.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
 			logging.String("market", m.marketcfg.Id))
@@ -339,7 +339,7 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 // DeleteOrder delete the given order from the order book
 func (m *Market) DeleteOrder(order *types.Order) error {
 	// Validate Market
-	if order.Market != m.marketcfg.Id {
+	if order.MarketID != m.marketcfg.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
 			logging.String("market", m.marketcfg.Id))
@@ -355,7 +355,7 @@ func (m *Market) AmendOrder(
 	existingOrder *types.Order,
 ) (*types.OrderConfirmation, error) {
 	// Validate Market
-	if existingOrder.Market != m.marketcfg.Id {
+	if existingOrder.MarketID != m.marketcfg.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*existingOrder),
 			logging.String("market", m.marketcfg.Id))
@@ -368,8 +368,8 @@ func (m *Market) AmendOrder(
 
 	newOrder := &types.Order{
 		Id:        existingOrder.Id,
-		Market:    existingOrder.Market,
-		Party:     existingOrder.Party,
+		MarketID:  existingOrder.MarketID,
+		PartyID:   existingOrder.PartyID,
 		Side:      existingOrder.Side,
 		Price:     existingOrder.Price,
 		Size:      existingOrder.Size,

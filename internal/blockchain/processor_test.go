@@ -21,9 +21,9 @@ func TestDecodeInvalidPayload(t *testing.T) {
 
 func TestEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	order := &types.Order{
-		Id:     "V9-120",
-		Market: "BTC/DEC18",
-		Party:  "PartyA",
+		Id:       "V9-120",
+		MarketID: "BTC/DEC18",
+		PartyID:  "PartyA",
 	}
 
 	orderBytes, err := proto.Marshal(order)
@@ -40,6 +40,6 @@ func TestEncodeAndDecodeWithCreateOrderCommand(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "V9-120", resultOrder.Id)
-	assert.Equal(t, "BTC/DEC18", resultOrder.Market)
-	assert.Equal(t, "PartyA", resultOrder.Party)
+	assert.Equal(t, "BTC/DEC18", resultOrder.MarketID)
+	assert.Equal(t, "PartyA", resultOrder.PartyID)
 }

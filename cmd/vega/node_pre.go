@@ -48,6 +48,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			configPath = fsutil.DefaultVegaDir()
 		}
 	}
+	l.configPath = configPath
 
 	// VEGA config (holds all package level configs)
 	cfgwatchr, err := config.NewFromFile(l.ctx, l.Log, configPath, configPath)

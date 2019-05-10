@@ -46,7 +46,7 @@ func getTestService(t *testing.T) *testService {
 func TestPartyService_CreateParty(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.Finish()
-	p := &types.Party{Name: "Christina"}
+	p := &types.Party{Id: "Christina"}
 
 	svc.store.EXPECT().Post(p).Times(1).Return(nil)
 
@@ -58,10 +58,10 @@ func TestPartyService_GetAll(t *testing.T) {
 	defer svc.Finish()
 
 	expected := []*types.Party{
-		{Name: "Edd"},
-		{Name: "Barney"},
-		{Name: "Ramsey"},
-		{Name: "Jeremy"},
+		{Id: "Edd"},
+		{Id: "Barney"},
+		{Id: "Ramsey"},
+		{Id: "Jeremy"},
 	}
 
 	svc.store.EXPECT().GetAll().Times(1).Return(expected, nil)
@@ -77,11 +77,11 @@ func TestPartyService_GetByName(t *testing.T) {
 	defer svc.Finish()
 
 	expect := &types.Party{
-		Name: "Candida",
+		Id: "Candida",
 	}
-	svc.store.EXPECT().GetByID(expect.Name).Times(1).Return(expect, nil)
+	svc.store.EXPECT().GetByID(expect.Id).Times(1).Return(expect, nil)
 
-	party, err := svc.GetByID(svc.ctx, expect.Name)
+	party, err := svc.GetByID(svc.ctx, expect.Id)
 	assert.NoError(t, err)
 	assert.Equal(t, expect, party)
 }

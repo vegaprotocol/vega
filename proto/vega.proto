@@ -14,7 +14,7 @@ message Amount {
 }
 
 message Party {
-    string name = 1 [(validator.field) = {msg_exists : true}];
+    string id = 1 [(validator.field) = {msg_exists : true}];
     repeated MarketPosition positions = 2;
 }
 
@@ -52,8 +52,8 @@ message Order {
   }
 
   string id = 1;
-  string market = 2;
-  string party = 3;
+  string marketID = 2;
+  string partyID = 3;
   Side side = 4;
   uint64 price = 5;
   uint64 size = 6;
@@ -92,7 +92,7 @@ enum OrderError {
 
 message Trade {
     string id = 1;
-    string market = 2;
+    string marketID = 2;
     uint64 price = 3;
     uint64 size = 4;
     string buyer = 5;
@@ -132,13 +132,13 @@ message PriceLevel {
 }
 
 message MarketDepth {
-    string   name = 1;
+    string marketID = 1;
     repeated PriceLevel buy = 2;
     repeated PriceLevel sell = 3;
 }
 
 message MarketPosition {
-    string market = 1;
+    string marketID = 1;
     int64 realisedVolume = 2;
     int64 realisedPNL  = 3;
     int64 unrealisedVolume = 4;
@@ -185,14 +185,14 @@ message PendingOrder {
   Side side = 4;
   string marketID = 5;
   uint64 size = 6;
-  string party = 7;
+  string partyID = 7;
   Order.Status status = 8;
   string id = 9;
 }
 
 message OrderAmendment {
     string id = 1 [(validator.field) = {msg_exists : true}];
-    string party = 2 [(validator.field) = {msg_exists : true}];
+    string partyID = 2 [(validator.field) = {msg_exists : true}];
     uint64 price = 3;
     uint64 size = 4 [(validator.field) = {int_gt: 0}];
     int64 expiresAt = 5;
@@ -200,8 +200,8 @@ message OrderAmendment {
 
 message OrderSubmission {
   string id = 1;
-  string marketId = 2;
-  string party = 3;
+  string marketID = 2;
+  string partyID = 3;
   uint64 price = 4;
   uint64 size = 5;
   Side side = 6;
@@ -211,8 +211,8 @@ message OrderSubmission {
 
 message OrderCancellation {
   string id = 1;
-  string marketId = 2;
-  string party = 3;
+  string marketID = 2;
+  string partyID = 3;
 }
 
 enum AccountType {
@@ -228,7 +228,7 @@ message Account {
   string owner = 2;
   int64 balance = 3;
   string asset = 4;
-  string market = 5;
+  string marketID = 5;
   AccountType type = 6;
 }
 

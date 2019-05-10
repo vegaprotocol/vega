@@ -8,9 +8,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/grpc"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
+	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/config"
@@ -136,7 +134,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	statusChecker.OnChainDisconnect(l.cfunc)
 
 	// gRPC server
-	grpcServer := grpc.NewGRPCServer(
+	grpcServer := api.NewGRPCServer(
 		l.Log,
 		l.conf.API,
 		l.stats,
@@ -152,36 +150,33 @@ func (l *NodeCommand) runNode(args []string) error {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
 
-	// REST<>gRPC (gRPC proxy) server
-	restServer := restproxy.NewRestProxyServer(l.Log, l.conf.API)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { restServer.ReloadConf(cfg.API) })
-	go restServer.Start()
-
-	// GraphQL server
-	graphServer := gql.NewGraphQLServer(
-		l.Log,
-		l.conf.API,
-		l.orderService,
-		l.tradeService,
-		l.candleService,
-		l.marketService,
-		l.partyService,
-		l.timeService,
-		statusChecker,
+	// start gateway
+	var (
+		gty *Gateway
+		err error
 	)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { graphServer.ReloadConf(cfg.API) })
-	go graphServer.Start()
+	if l.conf.GatewayEnabled {
+		gty, err = startGateway(l.Log, l.conf.Gateway)
+		if err != nil {
+			return err
+		}
+	}
 
 	l.Log.Info("Vega startup complete")
 
 	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
-	restServer.Stop()
 	grpcServer.Stop()
-	graphServer.Stop()
 	socketServer.Stop()
 	statusChecker.Stop()
+
+	// cleanup gateway
+	if l.conf.GatewayEnabled {
+		if gty != nil {
+			gty.Stop()
+		}
+	}
 
 	return nil
 }
