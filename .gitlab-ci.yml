@@ -117,7 +117,7 @@ push_to_devnet:
     - /^develop$/  # VERY IMPORTANT: Only the develop branch should be deployed to devnet.
 
 publish-docker:
-  image: docker:stable
+  image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline-docker:stable
   services:
     - docker:dind
   stage: deploy
