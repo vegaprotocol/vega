@@ -36,7 +36,7 @@ type TradeStore interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution CandleStore
 type CandleStore interface {
 	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
-	FetchMostRecentCandle(marketID string, interval types.Interval, descending bool) (*types.Candle, error)
+	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution PartyStore
