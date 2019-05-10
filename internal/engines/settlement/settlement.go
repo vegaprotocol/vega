@@ -196,8 +196,8 @@ func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan Market
 			}
 			// trade.Buyer == owner || trade.Seller == owner
 			// update position for trader - always keep track of latest position
-			pp := pos.Price()
 			ps := pos.Size()
+			pp := pos.Price()
 			// all positions need to be updated to the new mark price
 			e.updatePosition(pos, markPrice)
 			if pp == markPrice || ps == 0 {

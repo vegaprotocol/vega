@@ -2,7 +2,6 @@ package settlement_test
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -147,17 +146,15 @@ func testMarkToMarketEmpty(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-// @TODO make the amounts work with trade price vs settlement, we're already getting -7900/+8000 in the correct places
-// but the amounts themselves still don't quite line up
 func testMarkToMarketOrdered(t *testing.T) {
-	// data is pused in the wrong order
+	// this is the mark price
 	trade := &types.Trade{ // {{{2
 		Price: 10000,
-		Size:  1, // for now, keep volume to 1, it's tricky to calculate the old position if not
+		Size:  1,
 	}
-	// pass in a trade with a price other than mark price, this should still yield the same response
+	// this is the trade we're using to trigger the change
 	tradeArg := &types.Trade{
-		Price:  20000,
+		Price:  trade.Price * 2,
 		Size:   1,
 		Buyer:  "trader1",
 		Seller: "trader2",
@@ -182,18 +179,21 @@ func testMarkToMarketOrdered(t *testing.T) {
 	} // }}}
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	// set up test data
-	engine.getTestPositions(tradeArg, data)
-	// channel only needs to be buffered for half
-	// both tests should return the same values, essentially
+	// get initial positions (short && long)
+	engine.getTestPositions(trade, data)
 	positions := [][]*mocks.MockMarketPosition{
 		engine.positions[:len(data)],
 		engine.positions[len(data):],
 	}
-	// responses := make([]*types.Transfer, 2)
+	// so 1 is wins 100 on MTM, the other loses 100 on MTM
+	// BUT they also traded at double market price
 	wg := sync.WaitGroup{}
-	for i, pos := range positions {
-		tstSet := fmt.Sprintf("positions slice %d", i)
+	for _, pos := range positions {
+		update := make([]settlement.MarketPosition, 0, len(positions[0]))
+		for _, p := range pos {
+			update = append(update, p)
+		}
+		engine.Update(update)
 		wg.Add(1)
 		ch := make(chan settlement.MarketPosition, len(pos))
 		go func() {
@@ -217,21 +217,13 @@ func testMarkToMarketOrdered(t *testing.T) {
 		for _, r := range result {
 			sum += r.Amount.Amount
 		}
-		// everything should net out
-		// we're not initialising positions correctly, traders with no previous position should not be able to close out right away
-		// this test is broken without this hack, but we'll fix this tomorrow
-		if sum > 0 {
-			sum -= int64(tradeArg.Price)
-		} else {
-			sum += int64(tradeArg.Price)
-		}
+		// this all balances out
 		assert.Zero(t, sum)
 		// assert.Equal(t, data[0].Type, result[1].Type)
 		// assert.Equal(t, data[0].Amount.Amount, result[1].Amount.Amount)
-		assert.Equal(t, data[1].Type, result[0].Type, tstSet)
+		assert.Equal(t, data[1].Type, result[0].Type, pos)
 		// assert.Equal(t, data[1].Amount.Amount, result[0].Amount.Amount, tstSet)
 	}
-	// ensure we get the data we expect, in the correct order
 }
 
 func testMTMPrefixTradePositions(t *testing.T) {
