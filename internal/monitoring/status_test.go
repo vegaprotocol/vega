@@ -3,6 +3,7 @@ package monitoring_test
 import (
 	"context"
 	"errors"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -19,6 +20,10 @@ import (
 )
 
 func TestAppStatus(t *testing.T) {
+	if os.Getenv("TEST_SKIP_RACE") != "" {
+		t.Skip("Skipping test when running race detector")
+	}
+
 	log := logging.NewTestLogger()
 	defer log.Sync()
 
