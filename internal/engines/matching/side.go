@@ -2,6 +2,7 @@ package matching
 
 import (
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -85,6 +86,34 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 		return types.ErrOrderNotFound
 	}
 	return nil
+}
+
+func (s *OrderBookSide) getPriceLevel2(price uint64, side types.Side) *PriceLevel {
+	//todo: use binary search of price levels (gitlab.com/vega-protocol/trading-core/issues/90)
+	at := -1
+	if side == types.Side_Buy {
+		at := sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
+		if at < len(s.levels) && s.levels[at].price == price {
+			// ok
+		} else {
+			at = -1
+		}
+	} else {
+		at := sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
+		if at < len(s.levels) && s.levels[at].price == price {
+			// ok
+		} else {
+			at = -1
+		}
+
+	}
+	level := NewPriceLevel(price, s.proRataMode)
+	if at == -1 {
+		s.levels = append(s.levels, level)
+		return level
+	}
+	s.levels = append(s.levels[:at], append([]*PriceLevel{level}, s.levels[at:]...)...)
+	return level
 }
 
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {

@@ -83,3 +83,57 @@ func TestUncross(t *testing.T) {
 	assert.Equal(t, 1, len(trades))
 	assert.Equal(t, 1, len(impactedOrders))
 }
+
+func benchmarkGetPriceLevel2(priceLevelCnt int, b *testing.B) {
+	priceToFind1 := uint64(float64(priceLevelCnt) * 0.75)
+	priceToFind2 := uint64(float64(priceLevelCnt) * 0.50)
+	priceToFind3 := uint64(float64(priceLevelCnt) * 0.25)
+	bookside := OrderBookSide{levels: []*PriceLevel{}}
+	for i := 0; i <= priceLevelCnt; i += 1 {
+		bookside.getPriceLevel(uint64(i), types.Side_Buy)
+		bookside.getPriceLevel(uint64(i), types.Side_Sell)
+	}
+
+	for n := 0; n < b.N; n++ {
+		bookside.getPriceLevel2(priceToFind1, types.Side_Buy)
+		bookside.getPriceLevel2(priceToFind2, types.Side_Buy)
+		bookside.getPriceLevel2(priceToFind3, types.Side_Buy)
+		bookside.getPriceLevel2(priceToFind1, types.Side_Sell)
+		bookside.getPriceLevel2(priceToFind2, types.Side_Sell)
+		bookside.getPriceLevel2(priceToFind3, types.Side_Sell)
+	}
+}
+
+func BenchmarkGetPriceLevel2_100(b *testing.B) { benchmarkGetPriceLevel2(100, b) }
+
+func BenchmarkGetPriceLevel2_1000(b *testing.B)  { benchmarkGetPriceLevel2(1000, b) }
+func BenchmarkGetPriceLevel2_2500(b *testing.B)  { benchmarkGetPriceLevel2(2500, b) }
+func BenchmarkGetPriceLevel2_5000(b *testing.B)  { benchmarkGetPriceLevel2(5000, b) }
+func BenchmarkGetPriceLevel2_10000(b *testing.B) { benchmarkGetPriceLevel2(10000, b) }
+
+func benchmarkGetPriceLevel(priceLevelCnt int, b *testing.B) {
+	priceToFind1 := uint64(float64(priceLevelCnt) * 0.75)
+	priceToFind2 := uint64(float64(priceLevelCnt) * 0.50)
+	priceToFind3 := uint64(float64(priceLevelCnt) * 0.25)
+	bookside := OrderBookSide{levels: []*PriceLevel{}}
+	for i := 0; i < priceLevelCnt; i += 1 {
+		bookside.getPriceLevel(uint64(i), types.Side_Buy)
+		bookside.getPriceLevel(uint64(i), types.Side_Sell)
+	}
+
+	for n := 0; n < b.N; n++ {
+		bookside.getPriceLevel(priceToFind1, types.Side_Buy)
+		bookside.getPriceLevel(priceToFind2, types.Side_Buy)
+		bookside.getPriceLevel(priceToFind3, types.Side_Buy)
+
+		bookside.getPriceLevel(priceToFind1, types.Side_Sell)
+		bookside.getPriceLevel(priceToFind2, types.Side_Sell)
+		bookside.getPriceLevel(priceToFind3, types.Side_Sell)
+	}
+}
+
+func BenchmarkGetPriceLevel100(b *testing.B)   { benchmarkGetPriceLevel(100, b) }
+func BenchmarkGetPriceLevel1000(b *testing.B)  { benchmarkGetPriceLevel(1000, b) }
+func BenchmarkGetPriceLevel2500(b *testing.B)  { benchmarkGetPriceLevel(2500, b) }
+func BenchmarkGetPriceLevel5000(b *testing.B)  { benchmarkGetPriceLevel(5000, b) }
+func BenchmarkGetPriceLevel10000(b *testing.B) { benchmarkGetPriceLevel(10000, b) }
