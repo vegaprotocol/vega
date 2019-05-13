@@ -169,6 +169,13 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 		return nil
 	}
 
+	updateLastCandle := func(wb *badger.WriteBatch, key []byte, candleKey []byte) error {
+		if err := wb.Set(key, candleKey, 0); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	updateCandle := func(wb *badger.WriteBatch, badgerKey []byte, candleDb *types.Candle) error {
 		candleBuf, err := proto.Marshal(candleDb)
 		if err != nil {
@@ -225,6 +232,21 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 			c.queueEvent(marketID, *candleDb)
 		}
 
+		// add the lastCandle index
+		lastCandleKey := c.badger.lastCandleKey(marketID, candle.Interval)
+		err = updateLastCandle(writeBatch, lastCandleKey, badgerKey)
+		if err != nil {
+			c.log.Error("failed to store last candle",
+				logging.Error(err),
+				logging.String("market-id", marketID),
+				logging.String("interval", candle.Interval.String()),
+			)
+		} else {
+			c.log.Debug("last candle updatedx",
+				logging.String("market-id", marketID),
+				logging.String("interval", candle.Interval.String()),
+			)
+		}
 	}
 
 	if err := writeBatch.Flush(); err != nil {
@@ -319,38 +341,41 @@ func (c *Candle) generateFetchKey(market string, interval types.Interval, since 
 
 }
 
-func (c *Candle) FetchMostRecentCandle(
-	marketID string, interval types.Interval, descending bool) (*types.Candle, error) {
-	prefixForMostRecent, _ := c.badger.candlePrefix(marketID, interval, descending)
-	txn := c.badger.readTransaction()
-	defer txn.Discard()
+func (c *Candle) FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error) {
+	var candle types.Candle
+	key := c.badger.lastCandleKey(marketID, interval)
+	err := c.badger.db.View(func(txn *badger.Txn) error {
+		lastCandleItem, err := txn.Get(key)
+		if err != nil {
+			return err
+		}
+		candleKey, err := lastCandleItem.ValueCopy(nil)
+		if err != nil {
+			return err
+		}
+		candleItem, err := txn.Get(candleKey)
+		if err != nil {
+			return err
+		}
+		candleBuf, err := candleItem.ValueCopy(nil)
+		if err != nil {
+			return err
+		}
+		if err := proto.Unmarshal(candleBuf, &candle); err != nil {
+			c.log.Error("Failed to unmarshal candle value from badger in candle store (FetchLastCandle)",
+				logging.Error(err),
+				logging.String("badger-key", string(key)),
+				logging.String("raw-bytes", string(candleBuf)))
+			return err
+		}
+		return nil
+	})
 
-	var previousCandle types.Candle
-
-	// set iterator to reverse in order to fetch most recent
-	options := badger.DefaultIteratorOptions
-	options.Reverse = true
-
-	it := txn.NewIterator(options)
-	it.Seek(prefixForMostRecent)
-	defer it.Close()
-
-	if !it.Valid() {
-		return nil, errors.New("no candles for this market")
-	}
-
-	item := it.Item()
-	value, err := item.ValueCopy(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	err = proto.Unmarshal(value, &previousCandle)
-	if err != nil {
-		return nil, errors.Wrap(err, "previous candle unmarshal failed")
-	}
-
-	return &previousCandle, nil
+	return &candle, nil
 }
 
 // queueEvent appends a candle onto a queue for a market.

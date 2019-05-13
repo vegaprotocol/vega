@@ -20,7 +20,7 @@ var supportedIntervals = [6]types.Interval{
 }
 
 type CandleStore interface {
-	FetchMostRecentCandle(marketID string, interval types.Interval, descending bool) (*types.Candle, error)
+	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
 }
 
 type Candle struct {
@@ -60,7 +60,7 @@ func (c *Candle) Start(timestamp time.Time) (map[string]types.Candle, error) {
 		}
 
 		if lastClose == 0 {
-			previousCandle, err := c.store.FetchMostRecentCandle(c.marketID, interval, true)
+			previousCandle, err := c.store.FetchLastCandle(c.marketID, interval)
 			if err == nil {
 				lastClose = previousCandle.Close
 			}

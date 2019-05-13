@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"code.vegaprotocol.io/vega/internal/engines/settlement"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -83,7 +84,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Unlock()
 }
 
-func (e *Engine) Update(trade *types.Trade) {
+func (e *Engine) Update(trade *types.Trade, ch chan<- settlement.MarketPosition) {
 
 	// Not using defer e.mu.Unlock(), because defer calls add some overhead
 	// and this is called for each transaction, so we want to optimise as much as possible
@@ -94,33 +95,32 @@ func (e *Engine) Update(trade *types.Trade) {
 
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
-		e.positions[trade.Buyer] = &MarketPosition{
+		buyer = &MarketPosition{
 			margins: map[string]uint64{},
 			partyID: trade.Buyer,
 		}
-		buyer = e.positions[trade.Buyer]
+		e.positions[trade.Buyer] = buyer
 	}
 
 	seller, ok := e.positions[trade.Seller]
 	if !ok {
-		e.positions[trade.Seller] = &MarketPosition{
+		seller = &MarketPosition{
 			margins: map[string]uint64{},
 			partyID: trade.Seller,
 		}
-		seller = e.positions[trade.Seller]
+		e.positions[trade.Seller] = seller
 	}
-
-	// get net value of trade, add that to total price running for buyer/seller
-	price := trade.Size * trade.Price
-
-	// Buyer INCREASED position size buy trade.Size
-	buyer.size += int64(trade.Size)
-	buyer.price += price
-
-	// Seller DECREASED position size buy trade.Size
-	seller.size -= int64(trade.Size)
-	// add price, still. this is keeping a running total of the sell price
-	seller.price += price
+	// update positions, potentially settle (depending on positions)
+	// these settle positions should *not* be pushed onto the channel
+	// they should be returned instead, and passed on to collateral/settlement directly
+	if pos := updateBuyerPosition(buyer, trade); pos != nil {
+		ch <- pos
+	}
+	if pos := updateSellerPosition(seller, trade); pos != nil {
+		ch <- pos
+	}
+	// mark to market for all open positions
+	e.updateMTMPositions(trade, ch)
 
 	e.log.Debug("Positions Updated for trade",
 		logging.Trade(*trade),
@@ -130,6 +130,82 @@ func (e *Engine) Update(trade *types.Trade) {
 	// we've set all the values now, unlock after logging
 	// because we're working on MarketPosition pointers
 	e.mu.Unlock()
+}
+
+// iterate over all open positions, for mark to market based on new market price
+func (e *Engine) updateMTMPositions(trade *types.Trade, ch chan<- settlement.MarketPosition) {
+	for _, pos := range e.positions {
+		// no volume (closed out), if price == trade price, that's one thing, only if it equals market price should we ignore it
+		// we don't know where to get that from just yet
+		// there's no MTM settlement required, carry on...
+		if pos.size == 0 {
+			// this trader was closed out already, no MTM applies
+			continue
+		}
+		cpy := *pos
+		// let settlement handle the old position and mark it to market
+		ch <- &cpy
+		// we've passed on the old position to the settlement channel already
+		// now simply update the price on the position
+		pos.price = trade.Price
+	}
+}
+
+// just the logic to update buyer, will eventually return the SettlePosition we need to push
+func updateBuyerPosition(buyer *MarketPosition, trade *types.Trade) *MarketPosition {
+	if buyer.size == 0 {
+		// position is N long, at current market price, job done
+		buyer.size = int64(trade.Size)
+		buyer.price = trade.Price
+		return nil
+	}
+	if buyer.size > 0 {
+		// we need the old position to be marked to market
+		pos := *buyer
+		// update the buyer position to the new one
+		buyer.price = trade.Price
+		// increment the size
+		buyer.size += int64(trade.Size)
+		return &pos
+	}
+	// Now, the trader was short, and still might be short after the trade.
+	// if trader is still short, we should just let the normal settle position flow take it from here
+	buyer.size += int64(trade.Size)
+	// buyer is now long, the trade is its own thing, the new position is held at current market price
+	// if the trader is still short, we don't update the price, that happens when we do the normal mark-to-market flow for
+	// all positions
+	if buyer.size > 0 {
+		buyer.price = trade.Price
+	}
+	return nil
+}
+
+// same as updateBuyerPosition, only the position volume goes down
+func updateSellerPosition(seller *MarketPosition, trade *types.Trade) *MarketPosition {
+	// seller had no open positions, so we don't have to check collateral
+	if seller.size == 0 {
+		seller.size -= int64(trade.Size)
+		seller.price = trade.Price
+		return nil
+	}
+	// seller was already short, that position is only going to increase, we can't really close anything here
+	if seller.size < 0 {
+		// seller is already short, we have to MTM the current position for the trader
+		// then update the new one to the market price
+		pos := *seller
+		// update position
+		seller.price = trade.Price
+		seller.size -= int64(trade.Size)
+		return &pos
+	}
+	// seller was long, might not be after this...
+	seller.size -= int64(trade.Size)
+	if seller.size < 0 {
+		// seller holds a new short position, at the current market price, update position price and be done with it
+		seller.price = trade.Price
+	}
+	// if seller is still long, we don't want to update the price here, that happens when we're updating all market positions
+	return nil
 }
 
 func (e *Engine) Positions() []MarketPosition {

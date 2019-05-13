@@ -237,16 +237,19 @@ message FinancialAmount {
   string asset = 2;
 }
 
-enum SettleType {
+enum TransferType {
   LOSS = 0;
   WIN = 1;
+  CLOSE = 2;
+  MTM_LOSS = 3;
+  MTM_WIN = 4;
 }
 
-message SettlePosition {
+message Transfer {
   string owner = 1;
   uint64 size = 2;
   FinancialAmount amount = 3;
-  SettleType type = 4;
+  TransferType type = 4;
 }
 
 message TransferRequest {
