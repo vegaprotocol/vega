@@ -25,7 +25,7 @@ else
 	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
-.PHONY: all bench deps build clean docker gettools grpc grpc_check help test lint mocks proto_check
+.PHONY: all bench deps build clean docker docker_quick gettools grpc grpc_check help test lint mocks proto_check
 
 all: build
 
@@ -146,16 +146,29 @@ grpc_check: deps ## gRPC: Check committed files match just-generated files
 
 # Misc Targets
 
-docker: build ## Make docker container image
+docker: ## Make docker container image from scratch
+	@test -f "$(HOME)/.ssh/id_rsa" || exit 1
+	@docker build \
+		--build-arg SSH_KEY="$$(cat ~/.ssh/id_rsa)" \
+		-t "registry.gitlab.com/vega-protocol/trading-core:latest" \
+		.
+
+docker_quick: build ## Make docker container image using pre-existing binaries
 	@for app in vega vegabench ; do \
 		f="cmd/$$app/$$app" ; \
 		if ! test -f "$$f" ; then \
 			echo "Failed to find: $$f" ; \
 			exit 1 ; \
 		fi ; \
-		cp -a "$$f" docker/ || exit 1 ; \
+		cp -a "$$f" . || exit 1 ; \
 	done
-	@docker build -t "registry.gitlab.com/vega-protocol/trading-core:latest" docker/
+	@docker build \
+		-t "registry.gitlab.com/vega-protocol/trading-core:latest" \
+		-f Dockerfile.quick \
+		.
+	@for app in vega vegabench ; do \
+		rm -rf "./$$app" ; \
+	done
 
 gettools:
 	@./script/gettools.sh
