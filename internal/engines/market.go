@@ -269,13 +269,10 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.Trades != nil {
-		// do this ones, we'll use this as a reference for the channel buffer size
-		positionCount := len(m.position.Positions())
-		if positionCount == 0 {
-			// ensure channel buffer will never be 0, so the channel is never a blocking one
-			// even though we could handle that, it's just not going to be awfully efficient
-			positionCount += 2 + len(confirmation.Trades)
-		}
+		// a trade contains 2 traders, so at most, each trade can introduce 2 new positions to the market
+		// but usually this won't happen, and even if it does, a buffer of 1 should be enough
+		// do this once, we'll use this as a reference for the channel buffer size
+		positionCount := len(m.position.Positions() + 1)
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -320,6 +317,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
 			close(ch)
 			if settle := <-settleCh; len(settle) > 0 {
+				if len(settle) > positionCount {
+					// we've exceeded the buffer size here, let's adjust the buffer size for next iteration
+					// so this doesn't keep happening
+					positionCount = len(settle) + 1
+				}
+				// this collateral point is a kind of
 				if _, err := m.collateral.MarkToMarket(settle); err != nil {
 					m.log.Error("Failed to collect mark-to-market stuff",
 						logging.Error(err),
