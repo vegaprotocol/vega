@@ -36,10 +36,51 @@ func TestCollateralMarkToMarket(t *testing.T) {
 	t.Run("Mark to Market distribution, insufficient funcs - complex scenario", testProcessBothProRatedMTM)
 }
 
+func TestAddTraderToMarket(t *testing.T) {
+	t.Run("Successful calls adding new traders (one duplicate, one actual new)", testAddTrader)
+}
+
 func testNew(t *testing.T) {
 	eng := getTestEngine(t, "test-market", nil)
 	eng.ctrl.Finish()
 	eng = getTestEngine(t, "test-market", errors.New("random error"))
+	eng.ctrl.Finish()
+}
+
+func testAddTrader(t *testing.T) {
+	market := "test-market"
+	eng := getTestEngine(t, market, nil)
+	traders := []string{
+		"duplicate",
+		"success",
+	}
+	traderAccs := getTraderAccounts(traders[1], market)
+	// this trader already exists, skip this stuff
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[0], market).Times(1).Return(errors.New("already exists"))
+	// this trader will be set up successfully
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[1], market).Times(1).Return(nil)
+	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, traders[1]).Times(1).Return(traderAccs, nil)
+	// expected balances
+	general := eng.Config.TraderGeneralAccountBalance
+	margin := general / 100 * eng.Config.TraderMarginPercent
+	general -= margin
+	for _, acc := range traderAccs {
+		if acc.Type == types.AccountType_MARGIN || acc.Type == types.AccountType_GENERAL {
+			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil).Do((func(acc *types.Account) func(string, int64) error {
+				return func(id string, balance int64) error {
+					if acc.Type == types.AccountType_MARGIN {
+						assert.Equal(t, margin, balance)
+					} else {
+						assert.Equal(t, general, balance)
+					}
+					return nil
+				}
+			}(acc)))
+		}
+	}
+	for _, trader := range traders {
+		assert.NoError(t, eng.AddTraderToMarket(trader))
+	}
 	eng.ctrl.Finish()
 }
 

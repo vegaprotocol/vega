@@ -15,6 +15,7 @@ import (
 var (
 	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
+	ErrBalanceNotSet         = errors.New("failed to update account balance")
 )
 
 type collectCB func(p *types.Transfer) error
@@ -94,6 +95,59 @@ func (e *Engine) getSystemAccounts() (settle, insurance *types.Account, err erro
 		err = ErrSystemAccountsMissing
 	}
 	return
+}
+
+// AddTraderToMarket - when a new trader enters a market, ensure general + margin accounts both exist
+func (e *Engine) AddTraderToMarket(id string) error {
+	// this will only fail if the trader already has the accounts, in which case, we don't really care
+	if err := e.accountStore.CreateTraderMarketAccounts(id, e.market); err != nil {
+		return nil
+	}
+	// now get the accounts we've just created
+	accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, id)
+	if err != nil {
+		e.log.Error(
+			"Failed to create new trader accounts",
+			logging.String("trader-id", id),
+			logging.Error(err),
+		)
+		return err
+	}
+	// let's get the balances we need
+	e.cfgMu.Lock()
+	general := e.Config.TraderGeneralAccountBalance
+	margin := general / 100 * e.Config.TraderMarginPercent
+	e.cfgMu.Unlock()
+	// move from general to margin, so subtract from general account
+	balances := map[types.AccountType]int64{
+		types.AccountType_GENERAL: general - margin,
+		types.AccountType_MARGIN:  margin,
+	}
+	set := 0
+	for _, acc := range accounts {
+		if bal, ok := balances[acc.Type]; ok {
+			set++
+			if err := e.accountStore.UpdateBalance(acc.Id, bal); err != nil {
+				e.log.Error(
+					"Failed to set the new balance for new trader account",
+					logging.String("trader-id", id),
+					logging.String("account-id", acc.Id),
+					logging.Int64("balance", bal),
+					logging.Error(err),
+				)
+				return err
+			}
+		}
+	}
+	if set != len(balances) {
+		e.log.Error(
+			"Failed to set required trader balances. Expected to set general + margin balance...",
+			logging.String("trader-id", id),
+			logging.Int("balances-set", set),
+		)
+		return ErrBalanceNotSet
+	}
+	return nil
 }
 
 func (e *Engine) MarkToMarket(positions []*types.Transfer) ([]*types.TransferResponse, error) {
