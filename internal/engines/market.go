@@ -232,9 +232,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Verify and add new parties
 	party, _ := m.parties.GetByID(order.PartyID)
 	if party == nil {
-		p := &types.Party{Id: order.PartyID}
-		err := m.parties.Post(p)
-		if err != nil {
+		if err := m.parties.Post(&types.Party{Id: order.PartyID}); err != nil {
+			return nil, err
+		}
+		// create accounts if needed
+		if err := m.collateral.AddTraderToMarket(order.PartyID); err != nil {
 			return nil, err
 		}
 	}
