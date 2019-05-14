@@ -32,7 +32,13 @@ func customBadgerOptions(dir string, log *logging.Logger) badger.Options {
 	opts := badger.DefaultOptions
 	opts.Dir, opts.ValueDir = dir, dir
 
-	opts.MaxTableSize = 64 << 20
+	/*
+		Notes:
+		* MaxTableSize: set low to avoid badger grabbing-then-releasing gigs of memory (#147)
+		* ValueThreshold: set low to move most data out of the LSM tree (#147)
+	*/
+	opts.MaxTableSize = 16 << 20
+	opts.ValueThreshold = 16
 	opts.NumMemtables = 1
 	opts.NumLevelZeroTables = 1
 	opts.NumLevelZeroTablesStall = 2
