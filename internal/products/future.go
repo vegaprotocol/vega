@@ -25,6 +25,11 @@ func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialA
 	}, nil
 }
 
+// Value - returns the nominal value of a unit given a current mark price
+func (f *Future) Value(markPrice uint64) (uint64, error) {
+	return markPrice, nil
+}
+
 func newFuture(f *types.Future) (*Future, error) {
 	maturity, err := time.Parse(time.RFC3339, f.Maturity)
 	if err != nil {

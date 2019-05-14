@@ -25,7 +25,7 @@ else
 	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
-.PHONY: all bench deps build clean gettools grpc grpc_check help test lint mocks proto_check
+.PHONY: all bench deps build clean docker docker_quick gettools grpc grpc_check help test lint mocks proto_check
 
 all: build
 
@@ -52,14 +52,14 @@ msan: ## Run memory sanitizer
 vet: ## Run go vet
 	@go vet -all ./...
 
-.PHONY: .testCoverage.txt
+.PRECIOUS: .testCoverage.txt
 .testCoverage.txt:
 	@go test -covermode=count -coverprofile="$@" ./...
 	@go tool cover -func="$@"
 
 coverage: .testCoverage.txt ## Generate global code coverage report
 
-.PHONY: .testCoverage.html
+.PRECIOUS: .testCoverage.html
 .testCoverage.html: .testCoverage.txt
 	@go tool cover -html="$^" -o "$@"
 
@@ -75,14 +75,16 @@ deps: ## Get the dependencies
 
 build: proto ## install the binaries in cmd/{progname}/
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/vega/vega" ./cmd/vega
-	@go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/vegabench/vegabench" ./cmd/vegabench
+	@for app in vega vegabench ; do \
+		env CGO_ENABLED=0 go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/$$app/$$app" "./cmd/$$app" || exit 1 ; \
+	done
 
-install: proto ## install the binary in GOPATH/bin
+install: proto ## install the binaries in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" ./cmd/vega
-	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" ./cmd/vegabench
+	@for app in vega vegabench ; do \
+		env CGO_ENABLED=0 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
+	done
 
 gqlgen: deps ## run gqlgen
 	@cd ./internal/gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
@@ -143,6 +145,30 @@ grpc_check: deps ## gRPC: Check committed files match just-generated files
 	fi
 
 # Misc Targets
+
+docker: ## Make docker container image from scratch
+	@test -f "$(HOME)/.ssh/id_rsa" || exit 1
+	@docker build \
+		--build-arg SSH_KEY="$$(cat ~/.ssh/id_rsa)" \
+		-t "registry.gitlab.com/vega-protocol/trading-core:latest" \
+		.
+
+docker_quick: build ## Make docker container image using pre-existing binaries
+	@for app in vega vegabench ; do \
+		f="cmd/$$app/$$app" ; \
+		if ! test -f "$$f" ; then \
+			echo "Failed to find: $$f" ; \
+			exit 1 ; \
+		fi ; \
+		cp -a "$$f" . || exit 1 ; \
+	done
+	@docker build \
+		-t "registry.gitlab.com/vega-protocol/trading-core:latest" \
+		-f Dockerfile.quick \
+		.
+	@for app in vega vegabench ; do \
+		rm -rf "./$$app" ; \
+	done
 
 gettools:
 	@./script/gettools.sh

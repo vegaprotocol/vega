@@ -164,6 +164,11 @@ func (bs *badgerStore) writeTransaction() *badger.Txn {
 	return bs.db.NewTransaction(true)
 }
 
+func (bs *badgerStore) lastCandleKey(
+	marketID string, interval types.Interval) []byte {
+	return []byte(fmt.Sprintf("LCM:%s_I:%s", marketID, interval.String()))
+}
+
 func (bs *badgerStore) marketKey(marketID string) []byte {
 	return []byte(fmt.Sprintf("MID:%v", marketID))
 }

@@ -36,7 +36,7 @@ type TradeStore interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution CandleStore
 type CandleStore interface {
 	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
-	FetchMostRecentCandle(marketID string, interval types.Interval, descending bool) (*types.Candle, error)
+	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution PartyStore
@@ -110,7 +110,7 @@ func NewMarket(
 
 	riskengine := risk.New(log, cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
 	positionengine := position.New(log, cfg.Position)
-	settleEngine := settlement.New(log, cfg.Settlement)
+	settleEngine := settlement.New(log, cfg.Settlement, tradableInstrument.Instrument.Product)
 
 	// create buffers
 	candlesBuf := buffer.NewCandle(marketcfg.Id, candles, now)
@@ -200,7 +200,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 			)
 			return
 		}
-		transfers, err := m.collateral.Collect(positions)
+		transfers, err := m.collateral.Transfer(positions)
 		if err != nil {
 			m.log.Error(
 				"Failed to get ledger movements after settling closed market",
@@ -232,9 +232,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Verify and add new parties
 	party, _ := m.parties.GetByID(order.PartyID)
 	if party == nil {
-		p := &types.Party{Id: order.PartyID}
-		err := m.parties.Post(p)
-		if err != nil {
+		if err := m.parties.Post(&types.Party{Id: order.PartyID}); err != nil {
+			return nil, err
+		}
+		// create accounts if needed
+		if err := m.collateral.AddTraderToMarket(order.PartyID); err != nil {
 			return nil, err
 		}
 	}
@@ -267,6 +269,13 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.Trades != nil {
+		// do this ones, we'll use this as a reference for the channel buffer size
+		positionCount := len(m.position.Positions())
+		if positionCount == 0 {
+			// ensure channel buffer will never be 0, so the channel is never a blocking one
+			// even though we could handle that, it's just not going to be awfully efficient
+			positionCount += 2 + len(confirmation.Trades)
+		}
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -295,11 +304,34 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// Ensure mark price is always up to date for each market in execution engine
 			m.markPrice = trade.Price
 
+			// create channel for setllement engine, this will allow us to get the mark to market stuff in there
+			// use the total number of positions in the market as buffer, trades can increase the number of positions
+			// but we're reading from the channel anyway, so that shouldn't affect this one bit
+			ch := make(chan settlement.MarketPosition, positionCount)
+			// this channel is read by settlement, populated in the loop by position engine
+			// don't pass a pointer, we're using trade in a routine here, so pass a copy
+			settleCh := m.settlement.SettleMTM(*trade, m.markPrice, ch)
 			// Update party positions for trade affected
-			m.position.Update(trade)
+			m.position.Update(trade, ch)
 
+			// @TODO we should return something from update (ie the closed positions from trade)
+			// and pass that on to settle && collateral
+
+			// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
+			close(ch)
+			if settle := <-settleCh; len(settle) > 0 {
+				if _, err := m.collateral.MarkToMarket(settle); err != nil {
+					m.log.Error("Failed to collect mark-to-market stuff",
+						logging.Error(err),
+					)
+				}
+			}
 			// Update positions for the market for the trade
-			m.risk.UpdatePositions(trade.Price, m.position.Positions())
+			// this is broken, m.position.Positions() returns copies of the market positions, we can't update them directly
+			// perhaps we need to use a channel here, too or something?
+			// AFAIK, we're not using the margins from risk in this loop, so chances are this call can be moved outside of the loop anyway
+			// avoiding a lot of pointless calls copying all the positions each time(?)
+			m.risk.UpdatePositions(m.markPrice, m.position.Positions())
 		}
 	}
 
