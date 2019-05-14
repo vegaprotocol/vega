@@ -1,3 +1,5 @@
+// +build !race
+
 package monitoring_test
 
 import (
