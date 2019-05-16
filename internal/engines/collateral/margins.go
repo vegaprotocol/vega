@@ -2,7 +2,7 @@ package collateral
 
 import types "code.vegaprotocol.io/vega/proto"
 
-type marginUpadate struct {
+type marginUpdate struct {
 	*types.Transfer
 	margin  *types.Account
 	general *types.Account
@@ -18,7 +18,7 @@ func (m marginUpdate) Party() string {
 func (m marginUpdate) Size() int64 {
 	s := int64(m.Transfer.Size)
 	// losses are negative...
-	if m.Type == types.TransferType_MTM_LOSS || types.TransferType_LOSS {
+	if m.Type == types.TransferType_MTM_LOSS || m.Type == types.TransferType_LOSS {
 		s *= -1
 	}
 	return s

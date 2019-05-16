@@ -13,6 +13,7 @@ type MarketPosition interface {
 // MarginChange - change made to balances after Settling MTM
 type MarginChange interface {
 	MarketPosition
+	Asset() string
 	MarginBalance() uint64
 	GeneralBalance() uint64
 }

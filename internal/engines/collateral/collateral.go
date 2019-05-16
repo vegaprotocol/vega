@@ -151,9 +151,6 @@ func (e *Engine) AddTraderToMarket(id string) error {
 }
 
 func (e *Engine) MarkToMarket(positions []*types.Transfer) ([]*types.TransferResponse, error) {
-	// for MTM, we can use a channel pushing each handled request onto the channel, for risk engine to process
-	// instead of waiting for all of the transfers to go through first
-	ch := make(chan *types.TransferResponse, len(positions))
 	// for now, this is the same as collect, but once we finish the closing positions bit in positions/settlement
 	// we'll first handle the close settlement, then the updated positions for mark-to-market
 	return e.Transfer(positions)
@@ -163,7 +160,6 @@ func (e *Engine) Transfer(transfers []*types.Transfer) ([]*types.TransferRespons
 	if len(transfers) == 0 {
 		return nil, nil
 	}
-	resp := make([]*types.TransferResponse, 0, len(transfers))
 	if isSettle(transfers[0]) {
 		return e.collect(transfers)
 	}
@@ -177,17 +173,6 @@ func isSettle(transfer *types.Transfer) bool {
 		return true
 	}
 	return false
-}
-
-func (e *Engine) collectCh(positions []*types.Transfer) (<-chan *types.TransferResponse, <-chan error) {
-	tch := make(chan *types.TransferResponse, 0, len(positions))
-	ech := make(chan error) // an error is blocking
-	defer func() {
-		close(tch)
-		close(ech)
-	}()
-	return nil, nil
-	// @TODO -> implement collect with channels
 }
 
 // collect, handles collects for both market close as mark-to-market stuff

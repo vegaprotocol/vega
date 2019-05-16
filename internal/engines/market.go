@@ -272,7 +272,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		// a trade contains 2 traders, so at most, each trade can introduce 2 new positions to the market
 		// but usually this won't happen, and even if it does, a buffer of 1 should be enough
 		// do this once, we'll use this as a reference for the channel buffer size
-		positionCount := len(m.position.Positions() + 1)
+		positionCount := len(m.position.Positions()) + 1
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -298,6 +298,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					logging.Error(err))
 			}
 
+			// breaking things up, and using channels -> see tradeInChannelFlow
 			// Ensure mark price is always up to date for each market in execution engine
 			m.markPrice = trade.Price
 
@@ -316,6 +317,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 			// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
 			close(ch)
+
 			if settle := <-settleCh; len(settle) > 0 {
 				if len(settle) > positionCount {
 					// we've exceeded the buffer size here, let's adjust the buffer size for next iteration
@@ -335,10 +337,64 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// AFAIK, we're not using the margins from risk in this loop, so chances are this call can be moved outside of the loop anyway
 			// avoiding a lot of pointless calls copying all the positions each time(?)
 			m.risk.UpdatePositions(m.markPrice, m.position.Positions())
+
 		}
 	}
 
 	return confirmation, nil
+}
+
+func (m *Market) tradeInChannelFlow(trade *types.Trade, posCount int) {
+	m.markPrice = trade.Price
+	// update positions, do SettleMTM
+	settle := m.positionAndSettle(trade, posCount)
+	// move money after SettleMTM, check risk engine and get margin balances to update (if any)
+	margins := m.collateralAndRisk(settle)
+	m.log.Debug("No of margin accounts that need to be updated:", logging.Int("risk-update-len", len(margins)))
+}
+
+func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []*types.Transfer {
+	// create channel for positions to populate and settlement to consume
+	ch := make(chan settlement.MarketPosition, posCount)
+	// starting settlement first, the reading routine does more work, so it'll be slower
+	// although, it can be moved down if you really want
+	settleCh := m.settlement.SettleMTM(*trade, m.markPrice, ch) // no pointer, trade is RO
+	// Update party positions for trade affected, pushes new positions on channel
+	m.position.Update(trade, ch)
+	// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
+	close(ch)
+	// this channel is unbuffered, and therefore can be used in bare return
+	return <-settleCh
+}
+
+// this function handles moving money after settle MTM + risk margin updates
+// but does not move the money between trader accounts (ie not to/from margin accounts after risk)
+func (m *Market) collateralAndRisk(settle []*types.Transfer) []interface{} {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+	tch, ech := m.collateral.TransferCh(settle)
+	go func() {
+		err := <-ech
+		if err != nil {
+			m.log.Error(
+				"Some error in collateral when processing settle MTM transfers",
+				logging.Error(err),
+			)
+			cfunc()
+		}
+	}()
+	// let risk engine do its thing here - it returns a slice of money that needs
+	// to be moved to and from margin accounts
+	riskUpdates := m.risk.UpdateMarings(ctx, tch, m.markPrice)
+	if len(riskUpdates) == 0 {
+		m.log.Warn("probably no risk margin changes due to error")
+		return nil
+	}
+	m.log.Debug(
+		"Got more stuff to do in collateral",
+		logging.String("dump stuff", fmt.Sprintf("%#v", riskUpdates)),
+	)
+	return riskUpdates
 }
 
 // CancelOrder cancel the given order
