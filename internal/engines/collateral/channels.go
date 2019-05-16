@@ -8,11 +8,11 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// transferT internal type, keeps account reference etc...
 type processF func(t *transferT) (*types.TransferResponse, error)
 
 type collectF func(t *transferT) error
 
+// transferT internal type, keeps account reference etc...
 type transferT struct {
 	t       *types.Transfer
 	res     *types.TransferResponse
