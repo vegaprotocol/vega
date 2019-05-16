@@ -8,6 +8,10 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// generate this mock so we can write tests more easilyh
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mtm_transfer_mock.go -package mocks code.vegaprotocol.io/vega/internal/engines/collateral MTMTransfer
+type MTMTransfer events.MTMTransfer
+
 type processF func(t *transferT) (*types.TransferResponse, error)
 
 type collectF func(t *transferT) error
