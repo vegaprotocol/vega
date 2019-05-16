@@ -34,6 +34,9 @@ func (so sortedorders) insert(ord types.Order) sortedorders {
 }
 
 func (so sortedorders) removeExpired(expirationTs int64) ([]types.Order, sortedorders) {
+	if len(so) <= 0 {
+		return []types.Order{}, so
+	}
 	s := []types.Order(so)
 	// find the index of the last ts of expired order
 	i := sort.Search(len(s), func(i int) bool { return s[i].ExpiresAt >= expirationTs })
