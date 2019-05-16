@@ -36,7 +36,7 @@ require (
 	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v0.0.0-20190203031304-2f17a3356c66 // indirect
 	github.com/tendermint/go-amino v0.14.1 // indirect
-	github.com/tendermint/tendermint v0.30.0
+	github.com/tendermint/tendermint v0.31.5
 	github.com/vegaprotocol/modvendor v0.0.1 // indirect
 	github.com/vektah/gqlparser v1.1.2
 	github.com/zannen/toml v0.3.2
