@@ -131,8 +131,13 @@ func (re *Engine) UpdateMarings(ctx context.Context, ch <-chan events.MarginChan
 			// we're not returning anything, because things didn't go as expected
 			return nil
 		case change := <-ch:
-			// just read from channel
+			// just read from channel - this is the open position
 			size := change.Size()
+			// closed out, shouldn't be on this channel in the first place
+			// but it's better to check anyway
+			if size == 0 {
+				continue
+			}
 			notional := int64(markPrice) * size
 			factor, ok := re.factors.RiskFactors[change.Asset()]
 			if !ok {

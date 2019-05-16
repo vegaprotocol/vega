@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/engines/collateral"
 	"code.vegaprotocol.io/vega/internal/engines/collateral/mocks"
+	"code.vegaprotocol.io/vega/internal/engines/events"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -720,7 +721,9 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	// next up, updating the balance of the traders' general accounts
 	eng.accounts.EXPECT().IncrementBalance(tGeneral.Id, int64(833)).Times(1).Return(nil)
 	eng.accounts.EXPECT().IncrementBalance(mGeneral.Id, int64(1666)).Times(1).Return(nil)
-	responses, err := eng.MarkToMarket(pos)
+	// quickly get the interface mocked for this test
+	transfers := getMTMTransfer(pos)
+	responses, err := eng.MarkToMarket(transfers)
 	assert.Equal(t, 2, len(responses))
 	assert.NoError(t, err)
 	resp := responses[0]
@@ -751,6 +754,25 @@ func getTestEngine(t *testing.T, market string, err error) *testEngine {
 		ctrl:     ctrl,
 		accounts: acc,
 	}
+}
+
+type mtmFake struct {
+	t *types.Transfer
+}
+
+func (m mtmFake) Party() string             { return "" }
+func (m mtmFake) Size() int64               { return 0 }
+func (m mtmFake) Price() uint64             { return 0 }
+func (m mtmFake) Transfer() *types.Transfer { return m.t }
+
+func getMTMTransfer(transfers []*types.Transfer) []events.MTMTransfer {
+	r := make([]events.MTMTransfer, 0, len(transfers))
+	for _, t := range transfers {
+		r = append(r, &mtmFake{
+			t: t,
+		})
+	}
+	return r
 }
 
 func getSystemAccounts(market string) []*types.Account {

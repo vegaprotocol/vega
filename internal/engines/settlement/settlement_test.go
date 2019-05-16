@@ -211,17 +211,17 @@ func testMarkToMarketOrdered(t *testing.T) {
 		// length is always 4
 		assert.Equal(t, len(data)*2, len(result))
 		// start with losses, end with wins
-		assert.Equal(t, types.TransferType_MTM_LOSS, result[0].Type)
-		assert.Equal(t, types.TransferType_MTM_WIN, result[len(result)-1].Type)
+		assert.Equal(t, types.TransferType_MTM_LOSS, result[0].Transfer().Type)
+		assert.Equal(t, types.TransferType_MTM_WIN, result[len(result)-1].Transfer().Type)
 		var sum int64
 		for _, r := range result {
-			sum += r.Amount.Amount
+			sum += r.Transfer().Amount.Amount
 		}
 		// this all balances out
 		assert.Zero(t, sum)
 		// assert.Equal(t, data[0].Type, result[1].Type)
 		// assert.Equal(t, data[0].Amount.Amount, result[1].Amount.Amount)
-		assert.Equal(t, data[1].Type, result[0].Type, pos)
+		assert.Equal(t, data[1].Type, result[0].Transfer().Type, pos)
 		// assert.Equal(t, data[1].Amount.Amount, result[0].Amount.Amount, tstSet)
 	}
 }
@@ -350,9 +350,9 @@ func testMTMPrefixTradePositions(t *testing.T) {
 	assert.Equal(t, len(preTrade), len(mtm))
 	// ensure we get the expected Transfers (includes trader 1 and trader 2)
 	for i, m := range mtm {
-		assert.Equal(t, preTrade[i].Owner, m.Owner)
-		assert.Equal(t, preTrade[i].Type, m.Type)
-		assert.Equal(t, preTrade[i].Amount.Amount, m.Amount.Amount)
+		assert.Equal(t, preTrade[i].Owner, m.Transfer().Owner)
+		assert.Equal(t, preTrade[i].Type, m.Transfer().Type)
+		assert.Equal(t, preTrade[i].Amount.Amount, m.Transfer().Amount.Amount)
 	}
 	// assert.Equal(t, len(preTrade), len(mtm))
 	// now settle:

@@ -14,27 +14,12 @@ type collectF func(t *transferT) error
 
 // transferT internal type, keeps account reference etc...
 type transferT struct {
+	events.MTMTransfer
 	t       *types.Transfer
 	res     *types.TransferResponse
 	margin  *types.Account
 	market  *types.Account
 	general *types.Account
-}
-
-func (t transferT) Party() string {
-	return t.t.Owner
-}
-
-func (t transferT) Size() int64 {
-	return int64(t.t.Size)
-}
-
-func (t transferT) Price() uint64 {
-	a := t.t.Amount.Amount
-	if a < 0 {
-		a *= -1
-	}
-	return uint64(a)
 }
 
 func (t transferT) Asset() string {
@@ -54,7 +39,7 @@ func (t transferT) TransferType() types.TransferType {
 	return t.t.Type
 }
 
-func (e *Engine) TransferCh(transfers []*types.Transfer) (<-chan events.MarginChange, <-chan error) {
+func (e *Engine) TransferCh(transfers []events.MTMTransfer) (<-chan events.MarginChange, <-chan error) {
 	ech := make(chan error)
 	// create channel for events
 	ch := make(chan events.MarginChange, len(transfers))
@@ -76,13 +61,13 @@ func (e *Engine) TransferCh(transfers []*types.Transfer) (<-chan events.MarginCh
 		}
 		reference := fmt.Sprintf("%s close", e.market) // ledger moves need to indicate that they happened because market was closed
 		// this way we know if we need to check loss response
-		haveLoss := (transfers[0].Type == types.TransferType_LOSS || transfers[0].Type == types.TransferType_MTM_LOSS)
+		haveLoss := (transfers[0].Transfer().Type == types.TransferType_LOSS || transfers[0].Transfer().Type == types.TransferType_MTM_LOSS)
 		// tracks delta, wins & losses and determines how to distribute losses amongst wins if needed
 		distr := &distributor{}
 		// get a generic setup Callback function to get trader accounts etc...
 		// this returns either an error or a transfer response...
 		process := e.getProcessCB(distr, reference, settle, insurance)
-		lossResp, winResp := getTransferResponses(transfers, settle, insurance)
+		lossResp, winResp := buildResponses(transfers, settle, insurance)
 		loss := e.lossCB(distr, lossResp, process)
 		winPos, err := processLoss(ch, transfers, loss)
 		if err != nil {
@@ -268,14 +253,15 @@ func (e *Engine) lossCB(distr *distributor, lossResp *types.TransferResponse, pr
 	}
 }
 
-func processLoss(ch chan<- events.MarginChange, positions []*types.Transfer, cb collectF) ([]*types.Transfer, error) {
+func processLoss(ch chan<- events.MarginChange, positions []events.MTMTransfer, cb collectF) ([]events.MTMTransfer, error) {
 	// collect whatever we have until we reach the DEBIT part of the positions
 	for i, p := range positions {
-		if p.Type == types.TransferType_WIN || p.Type == types.TransferType_MTM_WIN {
+		if p.Transfer().Type == types.TransferType_WIN || p.Transfer().Type == types.TransferType_MTM_WIN {
 			return positions[i:], nil
 		}
 		t := &transferT{
-			t: p,
+			MTMTransfer: p,
+			t:           p.Transfer(),
 		}
 		if err := cb(t); err != nil {
 			return nil, err
@@ -287,11 +273,12 @@ func processLoss(ch chan<- events.MarginChange, positions []*types.Transfer, cb 
 	return nil, nil
 }
 
-func processWin(ch chan<- events.MarginChange, positions []*types.Transfer, cb collectF) error {
+func processWin(ch chan<- events.MarginChange, positions []events.MTMTransfer, cb collectF) error {
 	// this is really simple -> just collect whatever was left
 	for _, p := range positions {
 		t := &transferT{
-			t: p,
+			MTMTransfer: p,
+			t:           p.Transfer(),
 		}
 		if err := cb(t); err != nil {
 			return err
@@ -299,4 +286,29 @@ func processWin(ch chan<- events.MarginChange, positions []*types.Transfer, cb c
 		ch <- t
 	}
 	return nil
+}
+
+func buildResponses(positions []events.MTMTransfer, settle, insurance *types.Account) (loss, win *types.TransferResponse) {
+	loss = &types.TransferResponse{
+		Transfers: make([]*types.LedgerEntry, 0, len(positions)), // roughly half should be loss, but create 2 ledger entries, so that's a reasonable cap to use
+		Balances: []*types.TransferBalance{
+			{
+				Account: settle, // settle to this account
+				Balance: 0,      // current balance delta -> 0
+			},
+		},
+	}
+	win = &types.TransferResponse{
+		// we will alloc this slice once we've processed all loss
+		// Transfers: make([]*types.LedgerEntry, 0, len(positions)),
+		Balances: []*types.TransferBalance{
+			{
+				Account: settle,
+			},
+			{
+				Account: insurance,
+			},
+		},
+	}
+	return
 }

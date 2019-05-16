@@ -3,11 +3,23 @@
 // interfaces will end up embedding the previous ones
 package events
 
+import (
+	types "code.vegaprotocol.io/vega/proto"
+)
+
 // MarketPosition - The main position interface
 type MarketPosition interface {
 	Party() string
 	Size() int64
 	Price() uint64
+}
+
+// MTMTransfer, the interface passed on by settlement engine, contains position
+// and the resulting transfer for the collateral engine to use. We need MarketPosition
+// because we can't loose the long/short status of the open positions
+type MTMTransfer interface {
+	MarketPosition
+	Transfer() *types.Transfer
 }
 
 // MarginChange - change made to balances after Settling MTM

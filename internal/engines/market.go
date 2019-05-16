@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/engines/collateral"
+	"code.vegaprotocol.io/vega/internal/engines/events"
 	"code.vegaprotocol.io/vega/internal/engines/matching"
 	"code.vegaprotocol.io/vega/internal/engines/position"
 	"code.vegaprotocol.io/vega/internal/engines/risk"
@@ -353,7 +354,7 @@ func (m *Market) tradeInChannelFlow(trade *types.Trade, posCount int) {
 	m.log.Debug("No of margin accounts that need to be updated:", logging.Int("risk-update-len", len(margins)))
 }
 
-func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []*types.Transfer {
+func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.MTMTransfer {
 	// create channel for positions to populate and settlement to consume
 	ch := make(chan settlement.MarketPosition, posCount)
 	// starting settlement first, the reading routine does more work, so it'll be slower
@@ -369,7 +370,7 @@ func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []*types.Tr
 
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRisk(settle []*types.Transfer) []interface{} {
+func (m *Market) collateralAndRisk(settle []events.MTMTransfer) []interface{} {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	tch, ech := m.collateral.TransferCh(settle)

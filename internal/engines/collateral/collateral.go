@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/engines/events"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -150,10 +151,14 @@ func (e *Engine) AddTraderToMarket(id string) error {
 	return nil
 }
 
-func (e *Engine) MarkToMarket(positions []*types.Transfer) ([]*types.TransferResponse, error) {
+func (e *Engine) MarkToMarket(positions []events.MTMTransfer) ([]*types.TransferResponse, error) {
 	// for now, this is the same as collect, but once we finish the closing positions bit in positions/settlement
 	// we'll first handle the close settlement, then the updated positions for mark-to-market
-	return e.Transfer(positions)
+	transfers := make([]*types.Transfer, 0, len(positions))
+	for _, p := range positions {
+		transfers = append(transfers, p.Transfer())
+	}
+	return e.Transfer(transfers)
 }
 
 func (e *Engine) Transfer(transfers []*types.Transfer) ([]*types.TransferResponse, error) {
