@@ -299,46 +299,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					logging.Error(err))
 			}
 
-			// breaking things up, and using channels -> see tradeInChannelFlow
-			// Ensure mark price is always up to date for each market in execution engine
-			m.markPrice = trade.Price
-
-			// create channel for setllement engine, this will allow us to get the mark to market stuff in there
-			// use the total number of positions in the market as buffer, trades can increase the number of positions
-			// but we're reading from the channel anyway, so that shouldn't affect this one bit
-			ch := make(chan events.MarketPosition, positionCount)
-			// this channel is read by settlement, populated in the loop by position engine
-			// don't pass a pointer, we're using trade in a routine here, so pass a copy
-			settleCh := m.settlement.SettleMTM(*trade, m.markPrice, ch)
-			// Update party positions for trade affected
-			m.position.Update(trade, ch)
-
-			// @TODO we should return something from update (ie the closed positions from trade)
-			// and pass that on to settle && collateral
-
-			// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
-			close(ch)
-
-			if settle := <-settleCh; len(settle) > 0 {
-				if len(settle) > positionCount {
-					// we've exceeded the buffer size here, let's adjust the buffer size for next iteration
-					// so this doesn't keep happening
-					positionCount = len(settle) + 1
-				}
-				// this collateral point is a kind of
-				if _, err := m.collateral.MarkToMarket(settle); err != nil {
-					m.log.Error("Failed to collect mark-to-market stuff",
-						logging.Error(err),
-					)
-				}
-			}
-			// Update positions for the market for the trade
-			// this is broken, m.position.Positions() returns copies of the market positions, we can't update them directly
-			// perhaps we need to use a channel here, too or something?
-			// AFAIK, we're not using the margins from risk in this loop, so chances are this call can be moved outside of the loop anyway
-			// avoiding a lot of pointless calls copying all the positions each time(?)
-			m.risk.UpdatePositions(m.markPrice, m.position.Positions())
-
+			m.tradeInChannelFlow(trade, positionCount)
 		}
 	}
 
