@@ -306,7 +306,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// create channel for setllement engine, this will allow us to get the mark to market stuff in there
 			// use the total number of positions in the market as buffer, trades can increase the number of positions
 			// but we're reading from the channel anyway, so that shouldn't affect this one bit
-			ch := make(chan settlement.MarketPosition, positionCount)
+			ch := make(chan events.MarketPosition, positionCount)
 			// this channel is read by settlement, populated in the loop by position engine
 			// don't pass a pointer, we're using trade in a routine here, so pass a copy
 			settleCh := m.settlement.SettleMTM(*trade, m.markPrice, ch)
@@ -356,7 +356,8 @@ func (m *Market) tradeInChannelFlow(trade *types.Trade, posCount int) {
 
 func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.MTMTransfer {
 	// create channel for positions to populate and settlement to consume
-	ch := make(chan settlement.MarketPosition, posCount)
+	// @TODO use events.MarketPosition
+	ch := make(chan events.MarketPosition, posCount)
 	// starting settlement first, the reading routine does more work, so it'll be slower
 	// although, it can be moved down if you really want
 	settleCh := m.settlement.SettleMTM(*trade, m.markPrice, ch) // no pointer, trade is RO
@@ -370,7 +371,7 @@ func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.MT
 
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRisk(settle []events.MTMTransfer) []interface{} {
+func (m *Market) collateralAndRisk(settle []events.MTMTransfer) []events.RiskUpdate {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	tch, ech := m.collateral.TransferCh(settle)
@@ -386,7 +387,7 @@ func (m *Market) collateralAndRisk(settle []events.MTMTransfer) []interface{} {
 	}()
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarings(ctx, tch, m.markPrice)
+	riskUpdates := m.risk.UpdateMargins(ctx, tch, m.markPrice)
 	if len(riskUpdates) == 0 {
 		m.log.Warn("probably no risk margin changes due to error")
 		return nil

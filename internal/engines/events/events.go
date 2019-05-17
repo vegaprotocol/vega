@@ -33,5 +33,5 @@ type MarginChange interface {
 // RiskUpdate summarizes everything + an eventual update to margin account
 type RiskUpdate interface {
 	MarginChange
-	Update() int64
+	Amount() int64
 }

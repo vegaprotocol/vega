@@ -180,7 +180,7 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*mtmTrans
 	return res
 }
 
-func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan MarketPosition) <-chan []events.MTMTransfer {
+func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan events.MarketPosition) <-chan []events.MTMTransfer {
 	// put the positions on here once we've worked out what all we need to settle
 	sch := make(chan []events.MTMTransfer)
 	// sch := make(chan []*types.Transfer)

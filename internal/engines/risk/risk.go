@@ -15,8 +15,8 @@ import (
 )
 
 type marginChange struct {
-	prev   events.MarginChange // previous event that caused this change
-	amount int64               // the amount we need to move (positive is move to margin, neg == move to general)
+	events.MarginChange       // previous event that caused this change
+	amount              int64 // the amount we need to move (positive is move to margin, neg == move to general)
 }
 
 type Engine struct {
@@ -111,7 +111,7 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []position.MarketP
 }
 
 // mock implementation, this wil return adjustments based on position updates
-func (re *Engine) UpdateMarings(ctx context.Context, ch <-chan events.MarginChange, markPrice uint64) []interface{} {
+func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.MarginChange, markPrice uint64) []events.RiskUpdate {
 	re.mu.Lock()
 	defer re.mu.Unlock()
 	// get config value up front
@@ -121,7 +121,7 @@ func (re *Engine) UpdateMarings(ctx context.Context, ch <-chan events.MarginChan
 	// we can allocate the return value here already
 	// problem is that we don't know whether loss indicates a long/short position
 	// @TODO ^^ Positions should provide this information, so we can pass this through correctly
-	ret := make([]*marginChange, 0, cap(ch))
+	ret := make([]events.RiskUpdate, 0, cap(ch))
 	// this will keep going until we've closed this channel
 	// this can be the result of an error, or being "finished"
 	for {
@@ -163,26 +163,26 @@ func (re *Engine) UpdateMarings(ctx context.Context, ch <-chan events.MarginChan
 			if marginBal == reqMargin {
 				continue
 			}
+			// amount could be int64(reqMargin) - int64(marginBal)
+			// if we're "over-margined", we get an event with amount -N where N is the amount to be moved
+			// to general account
+			// same time, N > 0 is what we need to increment the margin balance with
 			if marginBal < reqMargin {
 				ret = append(ret, &marginChange{
-					prev:   change,
-					amount: int64(reqMargin),
+					MarginChange: change,
+					amount:       int64(reqMargin),
 				})
 			} else {
 				// delta, the bit we can move back
 				ret = append(ret, &marginChange{
-					prev:   change,
-					amount: int64(marginBal) - int64(reqMargin),
+					MarginChange: change,
+					amount:       int64(marginBal) - int64(reqMargin),
 				})
 			}
 		}
 	}
 	// just quick hack for return type
-	intRet := make([]interface{}, 0, len(ret))
-	for _, r := range ret {
-		intRet = append(intRet, interface{}(r))
-	}
-	return intRet
+	return ret
 }
 
 func (re *Engine) UpdateFactors(result *types.RiskResult) {
@@ -196,4 +196,8 @@ func abs(x int64) int64 {
 		return -x
 	}
 	return x
+}
+
+func (m marginChange) Amount() int64 {
+	return m.amount
 }

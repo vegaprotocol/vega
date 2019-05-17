@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/engines/events"
 	"code.vegaprotocol.io/vega/internal/engines/settlement"
 	"code.vegaprotocol.io/vega/internal/engines/settlement/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -137,7 +138,7 @@ func testMarkToMarketEmpty(t *testing.T) {
 		Price: 10000,
 		Size:  1, // for now, keep volume to 1, it's tricky to calculate the old position if not
 	}
-	ch := make(chan settlement.MarketPosition, 10)
+	ch := make(chan events.MarketPosition, 10)
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	settleCh := engine.SettleMTM(*trade, trade.Price, ch)
@@ -195,7 +196,7 @@ func testMarkToMarketOrdered(t *testing.T) {
 		}
 		engine.Update(update)
 		wg.Add(1)
-		ch := make(chan settlement.MarketPosition, len(pos))
+		ch := make(chan events.MarketPosition, len(pos))
 		go func() {
 			for _, p := range pos {
 				ch <- p
@@ -335,7 +336,7 @@ func testMTMPrefixTradePositions(t *testing.T) {
 	positions := engine.getExpiryPositions(data...)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	ch := make(chan settlement.MarketPosition, len(positions))
+	ch := make(chan events.MarketPosition, len(positions))
 	go func() {
 		for _, p := range positions {
 			ch <- p
