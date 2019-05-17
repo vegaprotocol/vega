@@ -126,7 +126,11 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.MarginChan
 			// this allows us to cancel in case of an error
 			// we're not returning anything, because things didn't go as expected
 			return nil
-		case change := <-ch:
+		case change, ok := <-ch:
+			// channel is closed, and we've got a nil interface
+			if !ok && change == nil {
+				break
+			}
 			// just read from channel - this is the open position
 			size := change.Size()
 			// closed out, shouldn't be on this channel in the first place
@@ -172,7 +176,6 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.MarginChan
 			}
 		}
 	}
-	// just quick hack for return type
 	return ret
 }
 
