@@ -81,7 +81,7 @@ func (b *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 	if err != nil {
 		return 0, err
 	}
-	return res.N, err
+	return res.Count, err
 }
 
 func (b *Client) Health() (*tmctypes.ResultHealth, error) {
