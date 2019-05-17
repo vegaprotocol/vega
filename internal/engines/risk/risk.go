@@ -114,10 +114,6 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []position.MarketP
 func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.MarginChange, markPrice uint64) []events.RiskUpdate {
 	re.mu.Lock()
 	defer re.mu.Unlock()
-	// get config value up front
-	re.cfgMu.Lock()
-	logUpdate := re.LogMarginUpdate
-	re.cfgMu.Unlock()
 	// we can allocate the return value here already
 	// problem is that we don't know whether loss indicates a long/short position
 	// @TODO ^^ Positions should provide this information, so we can pass this through correctly
@@ -153,11 +149,6 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.MarginChan
 				reqMargin = uint64(float64(abs(notional)) * factor.Long)
 			} else {
 				reqMargin = uint64(float64(abs(notional)) * factor.Short)
-			}
-			// this is a bit silly here
-			if logUpdate {
-				re.log.Info("Margins updated for position",
-					logging.String("position", fmt.Sprintf("%+v", change)))
 			}
 			marginBal := change.MarginBalance()
 			if marginBal == reqMargin {
