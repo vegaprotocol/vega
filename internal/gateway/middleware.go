@@ -4,9 +4,38 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"strings"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 )
+
+const bearerPrefix = "Bearer "
+
+type tokenKeyTy int
+
+var tokenKey tokenKeyTy
+
+func TokenFromContext(ctx context.Context) string {
+	u, _ := ctx.Value(tokenKey).(string)
+	return u
+}
+
+func TokenMiddleware(log *logging.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if authhdr := r.Header.Get("Authorization"); len(authhdr) > 0 {
+			if strings.HasPrefix(authhdr, bearerPrefix) {
+				tkn := strings.TrimPrefix(authhdr, bearerPrefix)
+				r = r.WithContext(context.WithValue(r.Context(), "token", tkn))
+			} else {
+				log.Debug("token specified but invalid fmt",
+					logging.String("remote-addr", r.RemoteAddr),
+				)
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -14,7 +14,7 @@ import (
 type Callback func([]PartyInfo)
 
 type PartyInfo struct {
-	Name     string `json:"name"`
+	ID       string `json:"id"`
 	Password string `json:"password"`
 	Token    string `json:"token"`
 }

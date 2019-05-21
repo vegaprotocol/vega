@@ -12,15 +12,15 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 service trading {
   // unary calls - writes
-  rpc SubmitOrder(vega.OrderSubmission) returns (vega.PendingOrder);
-  rpc CancelOrder(vega.OrderCancellation) returns (vega.PendingOrder);
-  rpc AmendOrder(vega.OrderAmendment) returns (OrderResponse);
+  rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder);
+  rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder);
+  rpc AmendOrder(AmendOrderRequest) returns (OrderResponse);
   rpc SignIn(SignInRequest) returns (SignInResponse);
   // unary calls - read
 }
 
 message SignInRequest {
-  string username = 1;
+  string id = 1;
   string password = 2;
 }
 

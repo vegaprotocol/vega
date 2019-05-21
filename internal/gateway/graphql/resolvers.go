@@ -26,9 +26,10 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/graphql TradingClient
 type TradingClient interface {
 	// unary calls - writes
-	SubmitOrder(ctx context.Context, in *types.OrderSubmission, opts ...grpc.CallOption) (*types.PendingOrder, error)
-	CancelOrder(ctx context.Context, in *types.OrderCancellation, opts ...grpc.CallOption) (*types.PendingOrder, error)
-	AmendOrder(ctx context.Context, in *types.OrderAmendment, opts ...grpc.CallOption) (*protoapi.OrderResponse, error)
+	SubmitOrder(ctx context.Context, in *protoapi.SubmitOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
+	CancelOrder(ctx context.Context, in *protoapi.CancelOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
+	AmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*protoapi.OrderResponse, error)
+	SignIn(ctx context.Context, in *protoapi.SignInRequest, opts ...grpc.CallOption) (*protoapi.SignInResponse, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/graphql TradingDataClient
@@ -689,6 +690,8 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 
 	order := &types.OrderSubmission{}
 
+	tkn := gateway.TokenFromContext(ctx)
+
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	p, err := safeStringUint64(price)
 	if err != nil {
@@ -731,8 +734,13 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 		order.ExpiresAt = expiresAt.UnixNano()
 	}
 
+	req := protoapi.SubmitOrderRequest{
+		Submission: order,
+		Token:      tkn,
+	}
+
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	pendingOrder, err := r.tradingClient.SubmitOrder(ctx, order)
+	pendingOrder, err := r.tradingClient.SubmitOrder(ctx, &req)
 	if err != nil {
 		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
 		return nil, err
@@ -744,6 +752,8 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 
 func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*types.PendingOrder, error) {
 	order := &types.OrderCancellation{}
+
+	tkn := gateway.TokenFromContext(ctx)
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
 	if len(market) <= 0 {
@@ -761,13 +771,32 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	order.PartyID = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
-	pendingOrder, err := r.tradingClient.CancelOrder(ctx, order)
+
+	req := protoapi.CancelOrderRequest{
+		Cancellation: order,
+		Token:        tkn,
+	}
+	pendingOrder, err := r.tradingClient.CancelOrder(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
 
 	return pendingOrder, nil
 
+}
+
+func (r *MyMutationResolver) Signin(ctx context.Context, id string, password string) (string, error) {
+	req := protoapi.SignInRequest{
+		Id:       id,
+		Password: password,
+	}
+
+	res, err := r.tradingClient.SignIn(ctx, &req)
+	if err != nil {
+		return "", err
+	}
+
+	return res.Token, nil
 }
 
 // END: Mutation Resolver

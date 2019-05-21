@@ -32,7 +32,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/vegaOrderAmendment"
+              "$ref": "#/definitions/apiAmendOrderRequest"
             }
           }
         ],
@@ -58,7 +58,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/vegaOrderCancellation"
+              "$ref": "#/definitions/apiCancelOrderRequest"
             }
           }
         ],
@@ -487,7 +487,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/vegaOrderSubmission"
+              "$ref": "#/definitions/apiSubmitOrderRequest"
             }
           }
         ],
@@ -524,6 +524,28 @@
         "Filled"
       ],
       "default": "Active"
+    },
+    "apiAmendOrderRequest": {
+      "type": "object",
+      "properties": {
+        "amendment": {
+          "$ref": "#/definitions/vegaOrderAmendment"
+        },
+        "token": {
+          "type": "string"
+        }
+      }
+    },
+    "apiCancelOrderRequest": {
+      "type": "object",
+      "properties": {
+        "cancellation": {
+          "$ref": "#/definitions/vegaOrderCancellation"
+        },
+        "token": {
+          "type": "string"
+        }
+      }
     },
     "apiCandlesResponse": {
       "type": "object",
@@ -697,6 +719,17 @@
     "apiSignInResponse": {
       "type": "object",
       "properties": {
+        "token": {
+          "type": "string"
+        }
+      }
+    },
+    "apiSubmitOrderRequest": {
+      "type": "object",
+      "properties": {
+        "submission": {
+          "$ref": "#/definitions/vegaOrderSubmission"
+        },
         "token": {
           "type": "string"
         }
