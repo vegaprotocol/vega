@@ -38,7 +38,7 @@ type Accounts interface {
 	UpdateBalance(id string, balance int64) error
 	IncrementBalance(id string, inc int64) error
 	GetMarketAccountsForOwner(market, owner string) ([]*types.Account, error)
-	GetAccountsForOwnerByType(owner string, accType types.AccountType) (*types.Account, error)
+	GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error)
 }
 
 func New(log *logging.Logger, conf Config, market string, accounts Accounts) (*Engine, error) {
@@ -123,7 +123,7 @@ func (e *Engine) AddTraderToMarket(id string) error {
 		)
 		return err
 	}
-	accounts = append(accounts, gen)
+	accounts = append(accounts, gen...)
 	// let's get the balances we need
 	e.cfgMu.Lock()
 	general := e.Config.TraderGeneralAccountBalance
@@ -446,7 +446,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			insurance,
 		},
 		ToAccount: []*types.Account{
-			gen,
+			gen[0],
 		},
 		Amount:    uint64(p.Amount.Amount) * p.Size,
 		MinAmount: 0,  // default value, but keep it here explicitly

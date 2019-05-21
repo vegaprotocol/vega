@@ -69,7 +69,7 @@ func testAddTrader(t *testing.T) {
 	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[0], market).Times(1).Return(errors.New("already exists"))
 	// this trader will be set up successfully
 	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[1], market).Times(1).Return(nil)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(gen.Owner, types.AccountType_GENERAL).Times(1).Return(gen, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(gen.Owner, types.AccountType_GENERAL).Times(1).Return([]*types.Account{gen}, nil)
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, traders[1]).Times(1).Return(traderAccs, nil)
 	// expected balances
 	general := eng.Config.TraderGeneralAccountBalance
@@ -317,7 +317,7 @@ func testDistributeWin(t *testing.T) {
 	for _, tacc := range traderAccs {
 		if tacc.Type == types.AccountType_GENERAL {
 			eng.accounts.EXPECT().IncrementBalance(tacc.Id, price).Times(1).Return(nil)
-			eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, tacc.Type).Times(1).Return(tacc, nil)
+			eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, tacc.Type).Times(1).Return([]*types.Account{tacc}, nil)
 			break
 		}
 	}
@@ -325,7 +325,7 @@ func testDistributeWin(t *testing.T) {
 		// ensure trader has money in account
 		if tacc.Type == types.AccountType_GENERAL {
 			// update balance accordingly
-			eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, tacc.Type).Times(1).Return(tacc, nil)
+			eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, tacc.Type).Times(1).Return([]*types.Account{tacc}, nil)
 			eng.accounts.EXPECT().IncrementBalance(tacc.Id, 2*price).Times(1).Return(nil)
 			break
 		}
@@ -452,8 +452,8 @@ func testProcessBoth(t *testing.T) {
 	}
 	// ensure we have this account
 	assert.NotNil(t, mGeneral)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return(tGeneral, nil)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return(mGeneral, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{tGeneral}, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{mGeneral}, nil)
 	// now, settle account will be debited per sell position, so 2 calls:
 	eng.accounts.EXPECT().IncrementBalance(settle.Id, gomock.Any()).Times(2).Return(nil).Do(func(_ string, inc int64) {
 		assert.NotZero(t, inc)
@@ -587,8 +587,8 @@ func testProcessBothProRated(t *testing.T) {
 	}
 	// ensure we have this account
 	assert.NotNil(t, mGeneral)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return(tGeneral, nil)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return(mGeneral, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{tGeneral}, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{mGeneral}, nil)
 	// now, settle account will be debited per sell position, so 2 calls:
 	eng.accounts.EXPECT().IncrementBalance(settle.Id, gomock.Any()).Times(2).Return(nil).Do(func(_ string, inc int64) {
 		assert.NotZero(t, inc)
@@ -723,8 +723,8 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	}
 	// ensure we have this account
 	assert.NotNil(t, mGeneral)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return(tGeneral, nil)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return(mGeneral, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{tGeneral}, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{mGeneral}, nil)
 	// now, settle account will be debited per sell position, so 2 calls:
 	eng.accounts.EXPECT().IncrementBalance(settle.Id, gomock.Any()).Times(2).Return(nil).Do(func(_ string, inc int64) {
 		assert.NotZero(t, inc)

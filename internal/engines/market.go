@@ -321,7 +321,6 @@ func (m *Market) tradeInChannelFlow(trade *types.Trade, posCount int) {
 
 func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.MTMTransfer {
 	// create channel for positions to populate and settlement to consume
-	// @TODO use events.MarketPosition
 	ch := make(chan events.MarketPosition, posCount)
 	// starting settlement first, the reading routine does more work, so it'll be slower
 	// although, it can be moved down if you really want

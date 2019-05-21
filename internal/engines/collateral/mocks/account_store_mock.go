@@ -62,10 +62,10 @@ func (mr *MockAccountsMockRecorder) CreateTraderMarketAccounts(arg0, arg1 interf
 }
 
 // GetAccountsForOwnerByType mocks base method
-func (m *MockAccounts) GetAccountsForOwnerByType(arg0 string, arg1 proto.AccountType) (*proto.Account, error) {
+func (m *MockAccounts) GetAccountsForOwnerByType(arg0 string, arg1 proto.AccountType) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccountsForOwnerByType", arg0, arg1)
-	ret0, _ := ret[0].(*proto.Account)
+	ret0, _ := ret[0].([]*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

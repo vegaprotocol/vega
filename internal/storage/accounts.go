@@ -265,22 +265,25 @@ func (a *Account) GetAccountsForOwner(owner string) ([]*types.Account, error) {
 	return ret, nil
 }
 
-func (a *Account) GetAccountsForOwnerByType(owner string, accType types.AccountType) (*types.Account, error) {
+func (a *Account) GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error) {
 	a.mu.RLock()
 	acc, ok := a.byOwner[owner]
 	if !ok {
 		a.mu.RUnlock()
 		return nil, ErrOwnerNotFound
 	}
+	var ret []*types.Account
 	for _, ac := range acc {
 		if ac.Type == accType {
 			cpy := *ac.Account
-			a.mu.RUnlock()
-			return &cpy, nil
+			ret = append(ret, &cpy)
 		}
 	}
 	a.mu.RUnlock()
-	return nil, ErrAccountNotFound
+	if len(ret) == 0 {
+		return nil, ErrAccountNotFound
+	}
+	return ret, nil
 }
 
 func (a *Account) UpdateBalance(id string, balance int64) error {
