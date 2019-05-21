@@ -107,6 +107,29 @@ nukedata_vega() {
 		'"'
 }
 
+traders_action() {
+	action="${1:-}"
+	case "$action" in
+	start|stop)
+		response_headers_file="$(mktemp)"
+		output_file="$(mktemp)"
+		curl -D "$response_headers_file" --silent -XPUT "https://bots.vegaprotocol.io/$net/v2/traders?action=$action" 1>"$output_file" 2>&1
+		response_line="$(head -n1 <"$response_headers_file")"
+		if ! echo -n "$response_line" | grep -q '^HTTP/[0-9][.0-9]* 200 OK' ; then
+			echo "Warning: Bad response from go-trade-bot: $response_line"
+			echo "Headers:"
+			cat "$response_headers_file"
+			echo "Response:"
+			cat "$output_file"
+			echo "Continuing with deployment..."
+		fi
+		rm -f "$response_headers_file" "$output_file"
+		;;
+	*)
+		failure "Invalid action for go-trade-bot: $action"
+	esac
+}
+
 json_escape() {
 	echo -n "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
@@ -239,6 +262,8 @@ ssh_setup
 
 test_ssh_access
 
+traders_action "stop"
+
 stop_vega_tendermint
 
 nukedata_tendermint
@@ -248,6 +273,8 @@ install_files "$@"
 
 vega_resetconfig
 start_vega_tendermint
+
+traders_action "start"
 
 ssh_tidy
 
