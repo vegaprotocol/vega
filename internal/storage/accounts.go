@@ -142,7 +142,7 @@ func (a *Account) CreateMarketAccounts(market string, insuranceBalance int64) er
 	return nil
 }
 
-// CreateTraderMarketIDAccounts - sets up accounts for trader for a particular market
+// CreateTraderMarketAccounts - sets up accounts for trader for a particular market
 // checks general accounts, and creates those, too if needed
 func (a *Account) CreateTraderMarketAccounts(owner, market string) error {
 	// does this trader actually have any accounts yet?

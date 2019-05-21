@@ -56,10 +56,20 @@ func testAddTrader(t *testing.T) {
 		"success",
 	}
 	traderAccs := getTraderAccounts(traders[1], market)
+	var gen *types.Account
+	for i := range traderAccs {
+		if traderAccs[i].Type == types.AccountType_GENERAL {
+			gen = traderAccs[i]
+			traderAccs = append(traderAccs[:i], traderAccs[i+1:]...)
+			break
+		}
+	}
+	assert.NotNil(t, gen)
 	// this trader already exists, skip this stuff
 	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[0], market).Times(1).Return(errors.New("already exists"))
 	// this trader will be set up successfully
 	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[1], market).Times(1).Return(nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(gen.Owner, types.AccountType_GENERAL).Times(1).Return(gen, nil)
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, traders[1]).Times(1).Return(traderAccs, nil)
 	// expected balances
 	general := eng.Config.TraderGeneralAccountBalance
@@ -79,6 +89,7 @@ func testAddTrader(t *testing.T) {
 			}(acc)))
 		}
 	}
+	eng.accounts.EXPECT().UpdateBalance(gen.Id, general).Times(1).Return(nil)
 	for _, trader := range traders {
 		assert.NoError(t, eng.AddTraderToMarket(trader))
 	}

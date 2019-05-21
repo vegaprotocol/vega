@@ -105,6 +105,15 @@ func (e *Engine) AddTraderToMarket(id string) error {
 		return nil
 	}
 	// now get the accounts we've just created
+	gen, err := e.accountStore.GetAccountsForOwnerByType(id, types.AccountType_GENERAL)
+	if err != nil {
+		e.log.Error(
+			"Trader doesn't have a general account somehow?",
+			logging.String("trader-id", id),
+			logging.Error(err),
+		)
+		return err
+	}
 	accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, id)
 	if err != nil {
 		e.log.Error(
@@ -114,6 +123,7 @@ func (e *Engine) AddTraderToMarket(id string) error {
 		)
 		return err
 	}
+	accounts = append(accounts, gen)
 	// let's get the balances we need
 	e.cfgMu.Lock()
 	general := e.Config.TraderGeneralAccountBalance

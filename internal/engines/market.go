@@ -273,7 +273,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		// a trade contains 2 traders, so at most, each trade can introduce 2 new positions to the market
 		// but usually this won't happen, and even if it does, a buffer of 1 should be enough
 		// do this once, we'll use this as a reference for the channel buffer size
-		positionCount := len(m.position.Positions()) + 1
+		positionCount := len(m.position.Positions()) + 2*len(confirmation.Trades)
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -310,6 +310,10 @@ func (m *Market) tradeInChannelFlow(trade *types.Trade, posCount int) {
 	m.markPrice = trade.Price
 	// update positions, do SettleMTM
 	settle := m.positionAndSettle(trade, posCount)
+	m.log.Debug(
+		"got settle MTM",
+		logging.Int("settle", len(settle)),
+	)
 	// move money after SettleMTM, check risk engine and get margin balances to update (if any)
 	margins := m.collateralAndRisk(settle)
 	m.log.Debug("No of margin accounts that need to be updated:", logging.Int("risk-update-len", len(margins)))
@@ -349,6 +353,7 @@ func (m *Market) collateralAndRisk(settle []events.MTMTransfer) []events.RiskUpd
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMargins(ctx, tch, m.markPrice)
+	m.log.Info("Risk done")
 	if len(riskUpdates) == 0 {
 		m.log.Warn("probably no risk margin changes due to error")
 		return nil

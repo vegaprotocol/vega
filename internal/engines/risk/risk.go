@@ -129,7 +129,7 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.MarginChan
 		case change, ok := <-ch:
 			// channel is closed, and we've got a nil interface
 			if !ok && change == nil {
-				break
+				return ret
 			}
 			// just read from channel - this is the open position
 			size := change.Size()

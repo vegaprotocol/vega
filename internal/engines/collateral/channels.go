@@ -50,6 +50,7 @@ func (e *Engine) TransferCh(transfers []events.MTMTransfer) (<-chan events.Margi
 	go func() {
 		// once this is done, close the channel
 		defer func() {
+			e.log.Debug("Closing channels")
 			close(ech)
 			close(ch)
 		}()
