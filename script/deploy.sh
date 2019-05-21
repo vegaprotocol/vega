@@ -96,9 +96,7 @@ nodeloop() {
 nukedata_tendermint() {
 	nodeloop \
 		"Resetting tendermint chain" \
-		'sudo -iu vega /bin/bash -c "' \
-			'cd ; ./tendermint unsafe_reset_all' \
-		'"'
+		'sudo -iu vega tendermint unsafe_reset_all'
 }
 
 nukedata_vega() {
@@ -156,7 +154,7 @@ start_vega_tendermint() {
 	nodeloop \
 		"Starting vega and tendermint with SystemD" \
 		'cd ; ./current/vega --version ; ' \
-		'./tendermint version ; ' \
+		'tendermint version ; ' \
 		'sudo systemctl daemon-reload ; ' \
 		'sudo systemctl restart vega ; ' \
 		'sleep 1 ; ' \
@@ -167,7 +165,7 @@ stop_vega_tendermint() {
 	nodeloop \
 		"Stopping vega and tendermint processes with SystemD" \
 		'cd ; ./current/vega --version ; ' \
-		'./tendermint version ; ' \
+		'tendermint version ; ' \
 		'sudo systemctl daemon-reload ; ' \
 		'sudo systemctl stop vega ; ' \
 		'sudo systemctl stop tendermint ; ' \
