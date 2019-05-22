@@ -152,7 +152,7 @@ func createDefaultMarkets(confpath string) error {
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Id:   "Crypto/ETHUSD/Futures/Dec19",
-				Code: "FX:BTCUSD/DEC19",
+				Code: "FX:ETHUSD/DEC19",
 				Name: "December 2019 ETH vs USD future",
 				Metadata: &proto.InstrumentMetadata{
 					Tags: []string{
