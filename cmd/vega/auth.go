@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/gorilla/handlers"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +41,9 @@ func (a *authCommand) runAuth(args []string) error {
 
 	svc := &handler.PartyService{File: a.dbfile}
 	if err := svc.Load(); err != nil {
-		return errors.Wrap(err, "unable to load dbfile")
+		a.Log.Warn("unable to load dbfile, a new one will be created at destinations",
+			logging.Error(err),
+		)
 	}
 
 	handler := handlers.CombinedLoggingHandler(os.Stdout, svc)

@@ -41,12 +41,14 @@ func (p *PartyService) Load() error {
 	p.mu.Lock()
 	buf, err := ioutil.ReadFile(filepath.Join(p.File))
 	if err != nil {
+		p.mu.Unlock()
 		return err
 	}
 
 	cfg := Config{}
 	err = json.Unmarshal(buf, &cfg)
 	if err != nil {
+		p.mu.Unlock()
 		return err
 	}
 
