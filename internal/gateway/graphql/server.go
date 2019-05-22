@@ -106,6 +106,9 @@ func (g *graphServer) Start() {
 	var config = Config{
 		Resolvers: resolverRoot,
 	}
+	c.Directives.IsAuthorized = func(ctx context.Context, next graphql.Resolver, token string) (interface{}, error) {
+		return next(gateway.AddTokenToContext(ctx, token))
+	}
 
 	loggingMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
 		reqctx := graphql.GetRequestContext(ctx)

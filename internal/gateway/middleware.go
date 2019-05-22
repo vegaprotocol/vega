@@ -20,6 +20,10 @@ func TokenFromContext(ctx context.Context) string {
 	return u
 }
 
+func AddTokenToContext(ctx context.Context, tkn string) context.Context {
+	return context.WithValue(ctx, tokenKey, tkn)
+}
+
 func TokenMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 

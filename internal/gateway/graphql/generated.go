@@ -51,6 +51,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	IsAuthorized func(ctx context.Context, obj interface{}, next graphql.Resolver, token string) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -1244,6 +1245,24 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}
 			ret = nil
 		}
 	}()
+	rctx := graphql.GetResolverContext(ctx)
+	for _, d := range rctx.Field.Definition.Directives {
+		switch d.Name {
+		case "isAuthorized":
+			if ec.directives.IsAuthorized != nil {
+				rawArgs := d.ArgumentMap(ec.Variables)
+				args, err := ec.dir_isAuthorized_args(ctx, rawArgs)
+				if err != nil {
+					ec.Error(ctx, err)
+					return nil
+				}
+				n := next
+				next = func(ctx context.Context) (interface{}, error) {
+					return ec.directives.IsAuthorized(ctx, obj, n, args["token"].(string))
+				}
+			}
+		}
+	}
 	res, err := ec.ResolverMiddleware(ctx, next)
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1278,6 +1297,8 @@ schema {
     mutation: Mutation
 }
 
+directive @isAuthorized(token: String!) on FIELD_DEFINITION
+
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
 
@@ -1298,7 +1319,7 @@ type Mutation {
     type: OrderType!,
     # exiration of the the order
     expiration: String
-  ): PendingOrder!
+  ): PendingOrder! @isAuthorized
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
   # It validates and sends the request out for consensus.
@@ -1309,7 +1330,7 @@ type Mutation {
     marketId: String!,
     # ID of the party which created the order
     partyId: String!
-  ): PendingOrder!
+  ): PendingOrder! @isAuthorized
 
   # sign a party in using an username and password, then return a token
   signin(
@@ -1860,6 +1881,20 @@ enum Interval {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_isAuthorized_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["token"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["token"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Market_candles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
