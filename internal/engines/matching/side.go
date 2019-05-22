@@ -86,16 +86,31 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 }
 
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
-	var at int
+	//todo: use binary search of price levels (gitlab.com/vega-protocol/trading-core/issues/90)
+	at := -1
 	if side == types.Side_Buy {
-		at = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
-		if at < len(s.levels) && s.levels[at].price == price {
-			return s.levels[at]
+		// buy side levels should be ordered in descending
+		for i, level := range s.levels {
+			if level.price > price {
+				continue
+			}
+			if level.price == price {
+				return level
+			}
+			at = i
+			break
 		}
 	} else {
-		at = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
-		if at < len(s.levels) && s.levels[at].price == price {
-			return s.levels[at]
+		// sell side levels should be ordered in ascending
+		for i, level := range s.levels {
+			if level.price < price {
+				continue
+			}
+			if level.price == price {
+				return level
+			}
+			at = i
+			break
 		}
 	}
 
