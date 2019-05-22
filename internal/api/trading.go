@@ -43,11 +43,11 @@ func (s *tradingService) UpdateParties(parties []auth.PartyInfo) {
 	s.mu.Unlock()
 }
 
-func (s *tradingService) validateToken(tkn string) error {
+func (s *tradingService) validateToken(partyID string, tkn string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, v := range s.parties {
-		if v.Token == tkn {
+		if v.ID == partyID && v.Token == tkn {
 			return nil
 		}
 	}
@@ -108,7 +108,7 @@ func (s *tradingService) SubmitOrder(
 			s.log.Debug("missing token")
 			return nil, errors.New("missing auth token")
 		}
-		if err := s.validateToken(req.Token); err != nil {
+		if err := s.validateToken(req.Submission.PartyID, req.Token); err != nil {
 			s.log.Debug("token error", logging.Error(err))
 			return nil, err
 		}
@@ -132,7 +132,7 @@ func (s *tradingService) CancelOrder(
 			s.log.Debug("missing token")
 			return nil, errors.New("missing auth token")
 		}
-		if err := s.validateToken(req.Token); err != nil {
+		if err := s.validateToken(req.Cancellation.PartyID, req.Token); err != nil {
 			s.log.Debug("token error", logging.Error(err))
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func (s *tradingService) AmendOrder(
 			s.log.Debug("missing token")
 			return nil, errors.New("missing auth token")
 		}
-		if err := s.validateToken(req.Token); err != nil {
+		if err := s.validateToken(req.Amendment.PartyID, req.Token); err != nil {
 			s.log.Debug("token error", logging.Error(err))
 			return nil, err
 		}
