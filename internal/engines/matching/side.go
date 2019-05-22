@@ -2,7 +2,6 @@ package matching
 
 import (
 	"fmt"
-	"sort"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -23,14 +22,16 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 	priceLevelIndex := -1
 	orderIndex := -1
 
-	i := sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= orderAmended.Price })
-	if i < len(s.levels) && s.levels[i].price == orderAmended.Price {
-		priceLevelIndex = i
-		for j, order := range s.levels[i].orders {
-			if order.Id == orderAmended.Id {
-				orderIndex = j
-				break
+	for idx, priceLevel := range s.levels {
+		if priceLevel.price == orderAmended.Price {
+			priceLevelIndex = idx
+			for j, order := range priceLevel.orders {
+				if order.Id == orderAmended.Id {
+					orderIndex = j
+					break
+				}
 			}
+			break
 		}
 	}
 
@@ -55,25 +56,26 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 }
 
 func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
-
+	//todo: use binary search of expiring price levels (https://gitlab.com/vega-protocol/trading-core/issues/132)
 	toDelete := -1
 	toRemove := -1
-	i := sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= o.Price })
-	if i < len(s.levels) && s.levels[i].price == o.Price {
-		for j, order := range s.levels[i].orders {
-			if order.Id == o.Id {
-				toRemove = j
-				break
+	for idx, priceLevel := range s.levels {
+		if priceLevel.price == o.Price {
+			for j, order := range priceLevel.orders {
+				if order.Id == o.Id {
+					toRemove = j
+					break
+				}
 			}
-		}
-		if toRemove != -1 {
-			s.levels[i].removeOrder(toRemove)
-		}
-		if len(s.levels[i].orders) == 0 {
-			toDelete = i
+			if toRemove != -1 {
+				priceLevel.removeOrder(toRemove)
+			}
+			if len(priceLevel.orders) == 0 {
+				toDelete = idx
+			}
+			break
 		}
 	}
-
 	if toDelete != -1 {
 		copy(s.levels[toDelete:], s.levels[toDelete+1:])
 		s.levels = s.levels[:len(s.levels)-1]
@@ -113,16 +115,12 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 			break
 		}
 	}
-
 	level := NewPriceLevel(price, s.proRataMode)
-	if len(s.levels) <= 0 {
+	if at == -1 {
 		s.levels = append(s.levels, level)
-	} else {
-		s.levels = append(s.levels, &PriceLevel{})
-		copy(s.levels[at+1:], s.levels[at:])
-		s.levels[at] = level
+		return level
 	}
-
+	s.levels = append(s.levels[:at], append([]*PriceLevel{level}, s.levels[at:]...)...)
 	return level
 }
 
