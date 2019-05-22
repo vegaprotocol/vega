@@ -158,6 +158,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
+	l.auth.OnPartiesUpdated(grpcServer.OnPartiesUpdated)
 
 	// start gateway
 	var gty *Gateway

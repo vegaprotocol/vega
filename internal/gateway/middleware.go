@@ -26,12 +26,20 @@ func TokenMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 		if authhdr := r.Header.Get("Authorization"); len(authhdr) > 0 {
 			if strings.HasPrefix(authhdr, bearerPrefix) {
 				tkn := strings.TrimPrefix(authhdr, bearerPrefix)
-				r = r.WithContext(context.WithValue(r.Context(), "token", tkn))
+				r = r.WithContext(context.WithValue(r.Context(), tokenKey, tkn))
+				log.Debug("request with auth token",
+					logging.String("token", tkn),
+					logging.String("remote-addr", r.RemoteAddr),
+				)
 			} else {
 				log.Debug("token specified but invalid fmt",
 					logging.String("remote-addr", r.RemoteAddr),
 				)
 			}
+		} else {
+			log.Debug("no auth token",
+				logging.String("remote-addr", r.RemoteAddr),
+			)
 		}
 		next.ServeHTTP(w, r)
 	})

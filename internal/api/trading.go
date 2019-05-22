@@ -2,13 +2,16 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/internal/auth"
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -25,6 +28,7 @@ type TradeOrderService interface {
 }
 
 type tradingService struct {
+	log               *logging.Logger
 	tradeOrderService TradeOrderService
 	statusChecker     *monitoring.Status
 
@@ -61,6 +65,7 @@ func (s *tradingService) SignIn(
 	}
 
 	var tkn string
+	saltpass := fmt.Sprintf("vega%v", req.Password)
 
 	s.mu.Lock()
 	if !s.authEnabled {
@@ -68,7 +73,13 @@ func (s *tradingService) SignIn(
 		return nil, ErrAuthDisabled
 	}
 	for _, v := range s.parties {
-		if v.ID == req.Id && v.Password == req.Password {
+		if v.ID == req.Id {
+			if err := bcrypt.CompareHashAndPassword([]byte(v.Password), []byte(saltpass)); err != nil {
+				s.log.Debug("invalid password",
+					logging.String("user-id", v.ID),
+					logging.Error(err),
+				)
+			}
 			tkn = v.Token
 		}
 	}
@@ -90,6 +101,19 @@ func (s *tradingService) SubmitOrder(
 	if s.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
+
+	// check auth if required
+	if s.authEnabled {
+		if len(req.Token) <= 0 {
+			s.log.Debug("missing token")
+			return nil, errors.New("missing auth token")
+		}
+		if err := s.validateToken(req.Token); err != nil {
+			s.log.Debug("token error", logging.Error(err))
+			return nil, err
+		}
+	}
+
 	pendingOrder, err := s.tradeOrderService.CreateOrder(ctx, req.Submission)
 	return pendingOrder, err
 }
@@ -101,6 +125,19 @@ func (s *tradingService) CancelOrder(
 	if s.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
+
+	// check auth if required
+	if s.authEnabled {
+		if len(req.Token) <= 0 {
+			s.log.Debug("missing token")
+			return nil, errors.New("missing auth token")
+		}
+		if err := s.validateToken(req.Token); err != nil {
+			s.log.Debug("token error", logging.Error(err))
+			return nil, err
+		}
+	}
+
 	pendingOrder, err := s.tradeOrderService.CancelOrder(ctx, req.Cancellation)
 	return pendingOrder, err
 }
@@ -110,5 +147,18 @@ func (s *tradingService) AmendOrder(
 	ctx context.Context, req *protoapi.AmendOrderRequest,
 ) (*protoapi.OrderResponse, error) {
 	success, err := s.tradeOrderService.AmendOrder(ctx, req.Amendment)
+
+	// check auth if required
+	if s.authEnabled {
+		if len(req.Token) <= 0 {
+			s.log.Debug("missing token")
+			return nil, errors.New("missing auth token")
+		}
+		if err := s.validateToken(req.Token); err != nil {
+			s.log.Debug("token error", logging.Error(err))
+			return nil, err
+		}
+	}
+
 	return &protoapi.OrderResponse{Success: success}, err
 }

@@ -3,11 +3,13 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/auth/handler"
 	"code.vegaprotocol.io/vega/internal/logging"
 )
 
@@ -75,7 +77,10 @@ func (s *Svc) update() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	resp, err := s.client.Get(s.ServerAddr)
+	req, _ := http.NewRequest(http.MethodGet, s.ServerAddr, nil)
+	req = addToken(req)
+
+	resp, err := s.client.Do(req)
 	if err != nil {
 		s.log.Error("unable to call authentication service",
 			logging.Error(err),
@@ -88,6 +93,13 @@ func (s *Svc) update() bool {
 	if err != nil {
 		s.log.Error("unable to read body from response",
 			logging.Error(err),
+		)
+		return false
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		s.log.Error("received error from auth server",
+			logging.String("error", string(body)),
 		)
 		return false
 	}
@@ -149,4 +161,9 @@ func (s *Svc) start() {
 			return
 		}
 	}
+}
+
+func addToken(r *http.Request) *http.Request {
+	r.Header.Add("Authorization", fmt.Sprintf("Bearer %v", handler.Token))
+	return r
 }

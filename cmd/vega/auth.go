@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	authsrv "code.vegaprotocol.io/vega/internal/auth/server"
+	"code.vegaprotocol.io/vega/internal/auth/handler"
 	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/gorilla/handlers"
@@ -38,9 +38,9 @@ func (a *authCommand) Init(c *Cli) {
 }
 
 func (a *authCommand) runAuth(args []string) error {
-	authsrv.InitJWT()
+	handler.InitJWT()
 
-	svc := &authsrv.PartyService{File: a.dbfile}
+	svc := &handler.PartyService{File: a.dbfile}
 	if err := svc.Load(); err != nil {
 		return errors.Wrap(err, "unable to load dbfile")
 	}

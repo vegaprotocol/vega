@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -25,16 +26,17 @@ import (
 type grpcServer struct {
 	log *logging.Logger
 	Config
-	stats         *internal.Stats
-	client        *blockchain.Client
-	orderService  *orders.Svc
-	tradeService  *trades.Svc
-	candleService *candles.Svc
-	marketService *markets.Svc
-	partyService  *parties.Svc
-	timeService   *vegatime.Svc
-	srv           *grpc.Server
-	statusChecker *monitoring.Status
+	stats          *internal.Stats
+	client         *blockchain.Client
+	orderService   *orders.Svc
+	tradeService   *trades.Svc
+	candleService  *candles.Svc
+	marketService  *markets.Svc
+	partyService   *parties.Svc
+	timeService    *vegatime.Svc
+	srv            *grpc.Server
+	statusChecker  *monitoring.Status
+	tradingService *tradingService
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -155,9 +157,12 @@ func (g *grpcServer) Start() {
 	g.srv = grpc.NewServer(intercept)
 
 	tradingSvc := &tradingService{
+		log:               g.log,
+		authEnabled:       g.Config.AuthEnabled,
 		tradeOrderService: g.orderService,
 		statusChecker:     g.statusChecker,
 	}
+	g.tradingService = tradingSvc
 	protoapi.RegisterTradingServer(g.srv, tradingSvc)
 
 	tradingDataSvc := &tradingDataService{
@@ -188,4 +193,8 @@ func (g *grpcServer) Stop() {
 		g.cfunc()
 		g.srv.GracefulStop()
 	}
+}
+
+func (g *grpcServer) OnPartiesUpdated(ps []auth.PartyInfo) {
+	g.tradingService.UpdateParties(ps)
 }

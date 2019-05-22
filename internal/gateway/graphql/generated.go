@@ -130,7 +130,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		OrderCancel func(childComplexity int, id string, marketID string, partyID string) int
 		OrderCreate func(childComplexity int, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) int
-		Signin      func(childComplexity int, username string, password string) int
+		Signin      func(childComplexity int, id string, password string) int
 	}
 
 	Order struct {
@@ -248,7 +248,7 @@ type MarketDepthResolver interface {
 type MutationResolver interface {
 	OrderCreate(ctx context.Context, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, marketID string, partyID string) (*proto.PendingOrder, error)
-	Signin(ctx context.Context, username string, password string) (string, error)
+	Signin(ctx context.Context, id string, password string) (string, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *proto.Order) (string, error)
@@ -670,7 +670,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Signin(childComplexity, args["username"].(string), args["password"].(string)), true
+		return e.complexity.Mutation.Signin(childComplexity, args["id"].(string), args["password"].(string)), true
 
 	case "Order.CreatedAt":
 		if e.complexity.Order.CreatedAt == nil {
@@ -1314,7 +1314,7 @@ type Mutation {
   # sign a party in using an username and password, then return a token
   signin(
     # ID of the party to get logged in
-    username: String!,
+    id: String!,
     # Password of the party
     password: String!): String!
 }
@@ -2061,13 +2061,13 @@ func (ec *executionContext) field_Mutation_signin_args(ctx context.Context, rawA
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["username"]; ok {
+	if tmp, ok := rawArgs["id"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["username"] = arg0
+	args["id"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["password"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
@@ -3523,7 +3523,7 @@ func (ec *executionContext) _Mutation_signin(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Signin(rctx, args["username"].(string), args["password"].(string))
+		return ec.resolvers.Mutation().Signin(rctx, args["id"].(string), args["password"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {

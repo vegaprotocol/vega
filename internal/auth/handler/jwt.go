@@ -1,11 +1,11 @@
-package authsrv
+package handler
 
 import (
 	"crypto/rsa"
 	"log"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/auth/server/keys"
+	"code.vegaprotocol.io/vega/internal/auth/handler/keys"
 	"github.com/dgrijalva/jwt-go"
 )
 

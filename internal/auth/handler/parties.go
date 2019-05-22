@@ -1,22 +1,24 @@
-package authsrv
+package handler
 
 import (
 	cryptorand "crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
-	token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODk5ODQxMjksImlkIjoiYjgxNjk4ZWI1YWY5ZDZmNTMwZmFjOTEwYmMwYWRkYTcwYzQ5YzE3NGFmOWY4ZjU5NmIzODExODk3NDRjNmNiOCJ9.tCU56ntqbX2Mr8b-bYW-Re59WFZU4rE_9blL6nOBzme6OaQWUxUBYc39FeCOZBQGGao8MvyjLY8s4qd6sxVoxyA75qToAIAyRsDblzwdokRTsH7tkeFix0mUmLJN2kMJx8bVVFjCesXenZ4j_lF26BxvYByQi-UGcdl4EdpxbwtrhdILXFel5WDA97gizVWrBG2qOGdA7vujHeuE5CTWRhIXj5REIGtbLNoXpEaN_c7pWsQ4l-xxsfFqAhbuD3lQTMyLZvStAyy9aqDymZskF_4CKGAV9ASs_S9TVc_olhPfGNjDaj1ku71NEait7ZAEQd8HxKnZiLb22_iI6jxyiIAHEQq1cCT_mn8dAW3rU2J2Js_geJWAaRWhLdJ3gnK5fqI8MEvJm03ZgiqOQ0IEW9sVQOc2uLNu9FPTbzH0Lbkk8kgCu68ZgfWw24A-oEvWREfpMxZrLDEJ2nNsJ7PNarE0wxEFNfaW5Z3YYg_k3CSReYGk3tQEjrEKH3tqExusd-SYOnCuHhZmwPxtrgsGlxpToKBXm_JxxI0G3VITIEAk95El6nAXcZxqPV-G4tE_rGvo6Z_60cc0DKco0Ut323YIIrc4FvDp1GroFBmV1paArUx1a5apTSjTqSAJ8Ox_LGMrLEOOmxYRTFkwvvFTk5FEj1a303HTzg_u5v8Er78"
+	Token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODk5ODQxMjksImlkIjoiYjgxNjk4ZWI1YWY5ZDZmNTMwZmFjOTEwYmMwYWRkYTcwYzQ5YzE3NGFmOWY4ZjU5NmIzODExODk3NDRjNmNiOCJ9.tCU56ntqbX2Mr8b-bYW-Re59WFZU4rE_9blL6nOBzme6OaQWUxUBYc39FeCOZBQGGao8MvyjLY8s4qd6sxVoxyA75qToAIAyRsDblzwdokRTsH7tkeFix0mUmLJN2kMJx8bVVFjCesXenZ4j_lF26BxvYByQi-UGcdl4EdpxbwtrhdILXFel5WDA97gizVWrBG2qOGdA7vujHeuE5CTWRhIXj5REIGtbLNoXpEaN_c7pWsQ4l-xxsfFqAhbuD3lQTMyLZvStAyy9aqDymZskF_4CKGAV9ASs_S9TVc_olhPfGNjDaj1ku71NEait7ZAEQd8HxKnZiLb22_iI6jxyiIAHEQq1cCT_mn8dAW3rU2J2Js_geJWAaRWhLdJ3gnK5fqI8MEvJm03ZgiqOQ0IEW9sVQOc2uLNu9FPTbzH0Lbkk8kgCu68ZgfWw24A-oEvWREfpMxZrLDEJ2nNsJ7PNarE0wxEFNfaW5Z3YYg_k3CSReYGk3tQEjrEKH3tqExusd-SYOnCuHhZmwPxtrgsGlxpToKBXm_JxxI0G3VITIEAk95El6nAXcZxqPV-G4tE_rGvo6Z_60cc0DKco0Ut323YIIrc4FvDp1GroFBmV1paArUx1a5apTSjTqSAJ8Ox_LGMrLEOOmxYRTFkwvvFTk5FEj1a303HTzg_u5v8Er78"
 )
 
 type Party struct {
@@ -80,6 +82,12 @@ func (p *PartyService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *PartyService) getParties(w http.ResponseWriter, r *http.Request) {
+	if err := checkToken(r); err != nil {
+		log.Printf("token error: %v", err)
+		http.Error(w, "token error", http.StatusBadRequest)
+		return
+	}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	buf, err := json.Marshal(p.cfg)
@@ -94,6 +102,12 @@ func (p *PartyService) getParties(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *PartyService) addParty(w http.ResponseWriter, r *http.Request) {
+	if err := checkToken(r); err != nil {
+		log.Printf("token error: %v", err)
+		http.Error(w, "token error", http.StatusBadRequest)
+		return
+	}
+
 	payload := Party{}
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -148,7 +162,18 @@ func (p *PartyService) addParty(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkToken(r *http.Request) error {
-	return nil
+	const bearerPrefix = "Bearer "
+	if authhdr := r.Header.Get("Authorization"); len(authhdr) > 0 {
+		if strings.HasPrefix(authhdr, bearerPrefix) {
+			tkn := strings.TrimPrefix(authhdr, bearerPrefix)
+			if tkn == Token {
+				return nil
+			}
+			return errors.New("invalid token")
+		}
+		return errors.New("invalid token format")
+	}
+	return errors.New("missing Authorization header")
 }
 
 func makeID() string {
