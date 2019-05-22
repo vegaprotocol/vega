@@ -8,10 +8,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-const (
-	expiringOrdersInitialCap = 4096
-)
-
 type OrderBook struct {
 	log *logging.Logger
 	Config
@@ -22,7 +18,7 @@ type OrderBook struct {
 	sell            *OrderBookSide
 	lastTradedPrice uint64
 	latestTimestamp int64
-	expiringOrders  sortedorders // keep a list of all expiring trades, these will be in timestamp ascending order.
+	expiringOrders  []types.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
 }
 
 // Create an order book with a given name
@@ -38,7 +34,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, proRataMo
 		buy:            &OrderBookSide{log: log, proRataMode: proRataMode},
 		sell:           &OrderBookSide{log: log, proRataMode: proRataMode},
 		Config:         config,
-		expiringOrders: newSortedOrders(expiringOrdersInitialCap),
+		expiringOrders: make([]types.Order, 0),
 	}
 }
 
@@ -169,7 +165,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
 		if order.Type == types.Order_GTT {
-			b.expiringOrders = b.expiringOrders.insert(*order)
+			b.expiringOrders = append(b.expiringOrders, *order)
 		}
 
 		b.getSide(order.Side).addOrder(order, order.Side)
@@ -214,23 +210,32 @@ func (b *OrderBook) DeleteOrder(order *types.Order) error {
 // expirationTimestamp must be of the format unix epoch seconds with nanoseconds e.g. 1544010789803472469.
 // RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
 // matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
-func (b *OrderBook) RemoveExpiredOrders(expirationTs int64) []types.Order {
-	var expired []types.Order
-	expired, b.expiringOrders = b.expiringOrders.removeExpired(expirationTs)
-	for _, v := range expired {
-		v := v
-		b.DeleteOrder(&v)
-		v.Status = types.Order_Expired
+func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order {
+	var expiredOrders []types.Order
+	var pendingOrders []types.Order
+
+	// linear scan of our expiring orders, prune any that have expired
+	for _, or := range b.expiringOrders {
+		if or.ExpiresAt <= expirationTimestamp {
+			b.DeleteOrder(&or)              // order is removed from the book
+			or.Status = types.Order_Expired // order is marked as expired for storage
+			expiredOrders = append(expiredOrders, or)
+		} else {
+			pendingOrders = append(pendingOrders, or) // order is pending expiry (future)
+		}
 	}
 
 	if b.LogRemovedOrdersDebug {
 		b.log.Debug("Removed expired orders from order book",
 			logging.String("order-book", b.marketID),
-			logging.Int("expired-orders", len(expired)),
-			logging.Int("remaining-orders", len(b.expiringOrders)))
+			logging.Int("expired-orders", len(expiredOrders)),
+			logging.Int("remaining-orders", len(pendingOrders)))
 	}
 
-	return expired
+	// update our list of GTT orders pending expiry, ready for next run.
+	b.expiringOrders = nil
+	b.expiringOrders = pendingOrders
+	return expiredOrders
 }
 
 func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {
