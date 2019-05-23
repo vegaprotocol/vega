@@ -94,7 +94,7 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []position.MarketP
 
 			re.cfgMu.Lock()
 			if re.LogMarginUpdate {
-				re.log.Info("Margins updated for position",
+				re.log.Debug("Margins updated for position",
 					logging.String("position", fmt.Sprintf("%+v", pos)))
 			}
 			re.cfgMu.Unlock()
