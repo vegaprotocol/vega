@@ -115,7 +115,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 			case <-internal: // we don't need the orders, we just need to know there was a change
 				d, err := s.orderStore.GetMarketDepth(ctx, market)
 				if err != nil {
-					s.log.Error(
+					s.log.Debug(
 						"Failure calculating market depth for subscriber",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
