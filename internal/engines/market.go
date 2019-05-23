@@ -50,7 +50,7 @@ type Market struct {
 	Config
 	log *logging.Logger
 
-	marketcfg   *types.Market
+	mkt         *types.Market
 	closingAt   time.Time
 	currentTime time.Time
 	mu          sync.Mutex
@@ -76,13 +76,11 @@ type Market struct {
 	candlesBuf *buffer.Candle
 }
 
-// NewMarket create a new market using the marketcfg specification
-// and the configuration
+// NewMarket creates a new market using the market framework configuration and creates underlying engines.
 func NewMarket(
 	log *logging.Logger,
-
 	cfg Config,
-	marketcfg *types.Market,
+	mkt *types.Market,
 	candles CandleStore,
 	orders OrderStore,
 	parties PartyStore,
@@ -90,11 +88,10 @@ func NewMarket(
 	accounts *storage.Account,
 	now time.Time,
 ) (*Market, error) {
-	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	tradableInstrument, err := NewTradableInstrument(log, marketcfg.TradableInstrument)
+	tradableInstrument, err := NewTradableInstrument(log, mkt.TradableInstrument)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to intanciate a new market")
 	}
@@ -104,28 +101,27 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
-	collateralEngine, err := collateral.New(log, cfg.Collateral, marketcfg.Id, accounts)
+	collateralEngine, err := collateral.New(log, cfg.Collateral, mkt.Id, accounts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to set up collateral engine")
 	}
 
-	riskengine := risk.New(log, cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
-	positionengine := position.New(log, cfg.Position)
+	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
+
+	riskEngine := risk.New(log, cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
+	positionEngine := position.New(log, cfg.Position)
 	settleEngine := settlement.New(log, cfg.Settlement, tradableInstrument.Instrument.Product)
 
-	// create buffers
-	candlesBuf := buffer.NewCandle(marketcfg.Id, candles, now)
-
-	mkt := &Market{
+	market := &Market{
 		log:                log,
 		Config:             cfg,
-		marketcfg:          marketcfg,
+		mkt:                mkt,
 		closingAt:          closingAt,
 		currentTime:        time.Time{},
-		matching:           matching.NewOrderBook(log, cfg.Matching, marketcfg.Id, false),
+		matching:           matching.NewOrderBook(log, cfg.Matching, mkt.Id, false),
 		tradableInstrument: tradableInstrument,
-		risk:               riskengine,
-		position:           positionengine,
+		risk:               riskEngine,
+		position:           positionEngine,
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
 		candles:            candles,
@@ -136,9 +132,11 @@ func NewMarket(
 		candlesBuf:         candlesBuf,
 	}
 
-	return mkt, nil
+	return market, nil
 }
 
+// ReloadConf will trigger a reload of all the config settings in the market and all underlying engines
+// this is required when hot-reloading any config changes, eg. logger level.
 func (m *Market) ReloadConf(cfg Config) {
 	m.log.Info("reloading configuration")
 	if m.log.GetLevel() != cfg.Level.Get() {
@@ -159,10 +157,11 @@ func (m *Market) ReloadConf(cfg Config) {
 
 // GetID returns the id of the given market
 func (m *Market) GetID() string {
-	return m.marketcfg.Id
+	return m.mkt.Id
 }
 
-// OnChainTimeUpdate notify the market of a new chain time update
+// OnChainTimeUpdate notifies the market of a new time event/update.
+// todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(t time.Time) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -171,13 +170,13 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 	// TODO(): handle market start time
 
 	m.log.Debug("Calculating risk factors (if required)",
-		logging.String("market-id", m.marketcfg.Id))
+		logging.String("market-id", m.mkt.Id))
 
 	m.risk.CalculateFactors(t)
 	m.risk.UpdatePositions(m.markPrice, m.position.Positions())
 
 	m.log.Debug("Calculated risk factors and updated positions (maybe)",
-		logging.String("market-id", m.marketcfg.Id))
+		logging.String("market-id", m.mkt.Id))
 
 	// generated / store the buffered candles
 	previousCandlesBuf, err := m.candlesBuf.Start(t)
@@ -221,11 +220,11 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	// Validate Market
-	if order.MarketID != m.marketcfg.Id {
+	// Validate market
+	if order.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
-			logging.String("market", m.marketcfg.Id))
+			logging.String("market", m.mkt.Id))
 
 		return nil, types.ErrInvalidMarketID
 	}
@@ -244,7 +243,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
-		m.log.Error("Failure after submit order from matching engine",
+		m.log.Error("Failure after submitting order to matching engine",
 			logging.Order(*order),
 			logging.Error(err))
 
@@ -254,15 +253,15 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Insert aggressive remaining order
 	err = m.orders.Post(*order)
 	if err != nil {
-		m.log.Error("Failure storing new order in execution engine (submit)", logging.Error(err))
+		m.log.Error("Failure storing new order in submit order", logging.Error(err))
 	}
+
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert all passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			// Note: writing to store should not prevent flow to other engines
 			err := m.orders.Put(*order)
 			if err != nil {
-				m.log.Error("Failure storing order update in execution engine (submit)",
+				m.log.Fatal("Failure storing order update in submit order",
 					logging.Order(*order),
 					logging.Error(err))
 			}
@@ -286,7 +285,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			}
 
 			if err := m.trades.Post(trade); err != nil {
-				m.log.Error("Failure storing new trade in execution engine (submit)",
+				m.log.Error("Failure storing new trade in submit order",
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
@@ -294,41 +293,44 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// Save to trade buffer for generating candles etc
 			err := m.candlesBuf.AddTrade(*trade)
 			if err != nil {
-				m.log.Error("Failure adding trade to candle buffer in execution engine (submit)",
+				m.log.Error("Failure adding trade to candle buffer after submit order",
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
 
-			m.tradeInChannelFlow(trade, positionCount)
+			// Calculate and set current mark price
+			m.setMarkPrice(trade)
+
+			// Update positions and settlement
+			settle := m.positionAndSettle(trade, positionCount)
+			m.log.Debug("Total length of settle MTM after submit order", logging.Int("settle", len(settle)))
+
+			// Move money after settlement, check risk engine and get margin balances to update (if any)
+			margins := m.collateralAndRisk(settle)
+			m.log.Debug("Total margin accounts to be updated after submit order", logging.Int("risk-update-len", len(margins)))
 		}
 	}
 
 	return confirmation, nil
 }
 
-func (m *Market) tradeInChannelFlow(trade *types.Trade, posCount int) {
+func (m *Market) setMarkPrice(trade *types.Trade) {
+	// The current mark price calculation is simply the last trade
+	// in the future this will use varying logic based on market config
+	// the responsibility for calculation could be elsewhere for testability
 	m.markPrice = trade.Price
-	// update positions, do SettleMTM
-	settle := m.positionAndSettle(trade, posCount)
-	m.log.Debug(
-		"got settle MTM",
-		logging.Int("settle", len(settle)),
-	)
-	// move money after SettleMTM, check risk engine and get margin balances to update (if any)
-	margins := m.collateralAndRisk(settle)
-	m.log.Debug("No of margin accounts that need to be updated:", logging.Int("risk-update-len", len(margins)))
 }
 
 func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.MTMTransfer {
 	// create channel for positions to populate and settlement to consume
-	ch := make(chan events.MarketPosition, posCount)
+	positionCh := make(chan events.MarketPosition, posCount)
 	// starting settlement first, the reading routine does more work, so it'll be slower
 	// although, it can be moved down if you really want
-	settleCh := m.settlement.SettleMTM(*trade, m.markPrice, ch) // no pointer, trade is RO
+	settleCh := m.settlement.SettleMTM(*trade, m.markPrice, positionCh) // no pointer, trade is RO
 	// Update party positions for trade affected, pushes new positions on channel
-	m.position.Update(trade, ch)
+	m.position.Update(trade, positionCh)
 	// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
-	close(ch)
+	close(positionCh)
 	// this channel is unbuffered, and therefore can be used in bare return
 	return <-settleCh
 }
@@ -336,22 +338,22 @@ func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.MT
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRisk(settle []events.MTMTransfer) []events.RiskUpdate {
-	ctx, cfunc := context.WithCancel(context.Background())
-	defer cfunc()
-	tch, ech := m.collateral.TransferCh(settle)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	transferCh, errCh := m.collateral.TransferCh(settle)
 	go func() {
-		err := <-ech
+		err := <-errCh
 		if err != nil {
 			m.log.Error(
 				"Some error in collateral when processing settle MTM transfers",
 				logging.Error(err),
 			)
-			cfunc()
+			cancel()
 		}
 	}()
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMargins(ctx, tch, m.markPrice)
+	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, m.markPrice)
 	m.log.Info("Risk done")
 	if len(riskUpdates) == 0 {
 		m.log.Warn("probably no risk margin changes due to error")
@@ -364,13 +366,13 @@ func (m *Market) collateralAndRisk(settle []events.MTMTransfer) []events.RiskUpd
 	return riskUpdates
 }
 
-// CancelOrder cancel the given order
+// CancelOrder cancels the given order
 func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
-	if order.MarketID != m.marketcfg.Id {
+	if order.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
-			logging.String("market", m.marketcfg.Id))
+			logging.String("market", m.mkt.Id))
 
 		return nil, types.ErrInvalidMarketID
 	}
@@ -397,10 +399,10 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 // DeleteOrder delete the given order from the order book
 func (m *Market) DeleteOrder(order *types.Order) error {
 	// Validate Market
-	if order.MarketID != m.marketcfg.Id {
+	if order.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
-			logging.String("market", m.marketcfg.Id))
+			logging.String("market", m.mkt.Id))
 
 		return types.ErrInvalidMarketID
 	}
@@ -413,10 +415,10 @@ func (m *Market) AmendOrder(
 	existingOrder *types.Order,
 ) (*types.OrderConfirmation, error) {
 	// Validate Market
-	if existingOrder.MarketID != m.marketcfg.Id {
+	if existingOrder.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*existingOrder),
-			logging.String("market", m.marketcfg.Id))
+			logging.String("market", m.mkt.Id))
 		return &types.OrderConfirmation{}, types.ErrInvalidMarketID
 	}
 
@@ -508,7 +510,7 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 		m.log.Error("Failure storing order update in execution engine (amend-in-place)",
 			logging.Order(*newOrder),
 			logging.Error(err))
-		// todo: txn or other strategy (https://gitlab.com/vega-prxotocol/trading-core/issues/160)
+		// todo: txn or othe   r strategy (https://gitlab.com/vega-prxotocol/trading-core/issues/160)
 	}
 	return &types.OrderConfirmation{}, nil
 }
