@@ -1,10 +1,10 @@
-package position
+package positions
 
 import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/internal/engines/events"
+	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )

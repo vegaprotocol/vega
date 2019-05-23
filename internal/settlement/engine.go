@@ -4,21 +4,22 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/engines/events"
+	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 // We should really use a type from the proto package for this, although, these mocks are kind of easy to set up :)
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/internal/engines/settlement MarketPosition
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/events/settlement MarketPosition
 type MarketPosition interface {
 	Party() string
 	Size() int64
 	Price() uint64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/internal/engines/settlement Product
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/events/settlement Product
 type Product interface {
 	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
 }
@@ -180,14 +181,14 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*mtmTrans
 	return res
 }
 
-func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan events.MarketPosition) <-chan []events.MTMTransfer {
+func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan events.MarketPosition) <-chan []events.Transfer {
 	// put the positions on here once we've worked out what all we need to settle
-	sch := make(chan []events.MTMTransfer)
+	sch := make(chan []events.Transfer)
 	// sch := make(chan []*types.Transfer)
 	tradePos := e.settlePreTrade(markPrice, trade)
 	go func() {
-		posE := make([]events.MTMTransfer, 0, cap(ch))
-		winE := make([]events.MTMTransfer, 0, cap(ch)/2)
+		posE := make([]events.Transfer, 0, cap(ch))
+		winE := make([]events.Transfer, 0, cap(ch)/2)
 		// ensure we've got the MTM for buyer/seller _before_ trade was applied
 		// makes sure the order is preserved, too
 		for _, sp := range tradePos {

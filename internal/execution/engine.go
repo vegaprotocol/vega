@@ -11,11 +11,16 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 
-	types "code.vegaprotocol.io/vega/proto"
-
-	"code.vegaprotocol.io/vega/internal/engines"
+	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal/positions"
+	"code.vegaprotocol.io/vega/internal/risk"
+	"code.vegaprotocol.io/vega/internal/settlement"
 	"code.vegaprotocol.io/vega/internal/storage"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 var (
@@ -62,7 +67,15 @@ type TimeService interface {
 type Engine struct {
 	log *logging.Logger
 	Config
-	markets      map[string]*engines.Market
+
+	marketConfig     markets.Config
+	riskConfig       risk.Config
+	collateralConfig collateral.Config
+	positionConfig   positions.Config
+	settlementConfig settlement.Config
+	matchingConfig   matching.Config
+
+	markets      map[string]*markets.Market
 	orderStore   OrderStore
 	tradeStore   TradeStore
 	candleStore  CandleStore
@@ -77,6 +90,12 @@ type Engine struct {
 func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
+	marketConfig markets.Config,
+	riskConfig risk.Config,
+	collateralConfig collateral.Config,
+	positionConfig positions.Config,
+	settlementConfig settlement.Config,
+	matchingConfig matching.Config,
 	time TimeService,
 	orderStore OrderStore,
 	tradeStore TradeStore,
@@ -90,16 +109,22 @@ func NewEngine(
 	log.SetLevel(executionConfig.Level.Get())
 
 	e := &Engine{
-		log:          log,
-		Config:       executionConfig,
-		markets:      map[string]*engines.Market{},
-		candleStore:  candleStore,
-		orderStore:   orderStore,
-		tradeStore:   tradeStore,
-		marketStore:  marketStore,
-		partyStore:   partyStore,
-		time:         time,
-		accountStore: accountStore,
+		log:              log,
+		Config:           executionConfig,
+		marketConfig:     marketConfig,
+		riskConfig:       riskConfig,
+		collateralConfig: collateralConfig,
+		positionConfig:   positionConfig,
+		settlementConfig: settlementConfig,
+		matchingConfig:   matchingConfig,
+		markets:          map[string]*markets.Market{},
+		candleStore:      candleStore,
+		orderStore:       orderStore,
+		tradeStore:       tradeStore,
+		marketStore:      marketStore,
+		partyStore:       partyStore,
+		time:             time,
+		accountStore:     accountStore,
 	}
 
 	// loads markets from configuration
@@ -120,7 +145,7 @@ func NewEngine(
 				logging.String("config-path", path))
 		}
 
-		e.log.Info("New market loaded from configuation",
+		e.log.Info("NewModel market loaded from configuation",
 			logging.String("market-config", path),
 			logging.String("market-id", mkt.Id))
 
@@ -148,7 +173,8 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 	e.Config = cfg
 	for _, mkt := range e.markets {
-		mkt.ReloadConf(cfg.Engines)
+		mkt.ReloadConf(e.marketConfig, e.riskConfig, e.collateralConfig,
+			e.positionConfig, e.settlementConfig, e.matchingConfig)
 	}
 }
 
@@ -159,8 +185,22 @@ func (e *Engine) SubmitMarket(mkt *types.Market) error {
 
 	now, _ := e.time.GetTimeNow()
 	var err error
-	e.markets[mkt.Id], err = engines.NewMarket(
-		e.log, e.Config.Engines, mkt, e.candleStore, e.orderStore, e.partyStore, e.tradeStore, e.accountStore, now)
+	e.markets[mkt.Id], err = markets.NewMarket(
+		e.log,
+		e.marketConfig,
+		e.riskConfig,
+		e.collateralConfig,
+		e.positionConfig,
+		e.settlementConfig,
+		e.matchingConfig,
+		mkt,
+		e.candleStore,
+		e.orderStore,
+		e.partyStore,
+		e.tradeStore,
+		e.accountStore,
+		now,
+	)
 	if err != nil {
 		e.log.Error("Failed to instanciate market",
 			logging.String("market-id", mkt.Id),

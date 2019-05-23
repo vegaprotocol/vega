@@ -1,4 +1,4 @@
-package position
+package positions
 
 import (
 	"code.vegaprotocol.io/vega/internal/config/encoding"

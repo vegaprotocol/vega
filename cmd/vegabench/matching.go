@@ -6,13 +6,18 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/execution/mocks"
+	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal/positions"
+	"code.vegaprotocol.io/vega/internal/risk"
+	"code.vegaprotocol.io/vega/internal/settlement"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"code.vegaprotocol.io/vega/internal/execution/mocks"
-	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/golang/mock/gomock"
 )
@@ -39,10 +44,24 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyStore(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
-	conf := execution.NewDefaultConfig("")
+	executionConfig := execution.NewDefaultConfig("")
+
+	marketConfig := markets.NewDefaultConfig()
+	riskConfig := risk.NewDefaultConfig()
+	collateralConfig := collateral.NewDefaultConfig()
+	settlementConfig := settlement.NewDefaultConfig()
+	positionConfig := positions.NewDefaultConfig()
+	matchingConfig := matching.NewDefaultConfig()
+
 	engine := execution.NewEngine(
 		log,
-		conf,
+		executionConfig,
+		marketConfig,
+		riskConfig,
+		collateralConfig,
+		positionConfig,
+		settlementConfig,
+		matchingConfig,
 		time,
 		order,
 		trade,

@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/vega/internal/config/encoding"
-	"code.vegaprotocol.io/vega/internal/engines"
 	"code.vegaprotocol.io/vega/internal/logging"
 )
 
@@ -24,7 +23,6 @@ type Config struct {
 	Level encoding.LogLevel
 
 	Markets MarketConfig
-	Engines engines.Config
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -36,7 +34,6 @@ func NewDefaultConfig(defaultConfigDirPath string) Config {
 			Path:    filepath.Join(defaultConfigDirPath, MarketConfigPath),
 			Configs: []string{},
 		},
-		Engines: engines.NewDefaultConfig(),
 	}
 	return c
 }

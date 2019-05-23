@@ -4,8 +4,8 @@ import (
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/vega/internal/engines/collateral/mocks"
-	"code.vegaprotocol.io/vega/internal/engines/events"
+	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/collateral/mocks"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -142,7 +142,7 @@ func testTransferChannelSuccess(t *testing.T) {
 	eng.accounts.EXPECT().IncrementBalance(mGeneral.Id, int64(1666)).Times(1).Return(nil)
 	transfers := eng.getTestMTMTransfer(pos)
 	resCh, errCh := eng.TransferCh(transfers)
-	responses := make([]events.MarginChange, 0, len(transfers))
+	responses := make([]internal.Margin, 0, len(transfers))
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -156,8 +156,8 @@ func testTransferChannelSuccess(t *testing.T) {
 	assert.Equal(t, 4, len(responses))
 }
 
-func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.MTMTransfer {
-	tt := make([]events.MTMTransfer, 0, len(transfers))
+func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []internal.Transfer {
+	tt := make([]internal.Transfer, 0, len(transfers))
 	for _, t := range transfers {
 		mt := mocks.NewMockMTMTransfer(e.ctrl)
 		mt.EXPECT().Transfer().MinTimes(1).Return(t)

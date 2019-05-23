@@ -1,4 +1,4 @@
-package riskmodels
+package models
 
 import (
 	"time"
@@ -12,7 +12,7 @@ type Forward struct {
 	params     riskmodelbs.ModelParamsBS
 }
 
-func newBuiltinFutures(pf *types.Forward) (*Forward, error) {
+func NewBuiltinFutures(pf *types.Forward) (*Forward, error) {
 	return &Forward{
 		lambd: pf.Lambd,
 		tau:   pf.Tau,
