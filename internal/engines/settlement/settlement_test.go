@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/engines/events"
 	"code.vegaprotocol.io/vega/internal/engines/settlement"
 	"code.vegaprotocol.io/vega/internal/engines/settlement/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -137,7 +138,7 @@ func testMarkToMarketEmpty(t *testing.T) {
 		Price: 10000,
 		Size:  1, // for now, keep volume to 1, it's tricky to calculate the old position if not
 	}
-	ch := make(chan settlement.MarketPosition, 10)
+	ch := make(chan events.MarketPosition, 10)
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	settleCh := engine.SettleMTM(*trade, trade.Price, ch)
@@ -195,7 +196,7 @@ func testMarkToMarketOrdered(t *testing.T) {
 		}
 		engine.Update(update)
 		wg.Add(1)
-		ch := make(chan settlement.MarketPosition, len(pos))
+		ch := make(chan events.MarketPosition, len(pos))
 		go func() {
 			for _, p := range pos {
 				ch <- p
@@ -211,17 +212,17 @@ func testMarkToMarketOrdered(t *testing.T) {
 		// length is always 4
 		assert.Equal(t, len(data)*2, len(result))
 		// start with losses, end with wins
-		assert.Equal(t, types.TransferType_MTM_LOSS, result[0].Type)
-		assert.Equal(t, types.TransferType_MTM_WIN, result[len(result)-1].Type)
+		assert.Equal(t, types.TransferType_MTM_LOSS, result[0].Transfer().Type)
+		assert.Equal(t, types.TransferType_MTM_WIN, result[len(result)-1].Transfer().Type)
 		var sum int64
 		for _, r := range result {
-			sum += r.Amount.Amount
+			sum += r.Transfer().Amount.Amount
 		}
 		// this all balances out
 		assert.Zero(t, sum)
 		// assert.Equal(t, data[0].Type, result[1].Type)
 		// assert.Equal(t, data[0].Amount.Amount, result[1].Amount.Amount)
-		assert.Equal(t, data[1].Type, result[0].Type, pos)
+		assert.Equal(t, data[1].Type, result[0].Transfer().Type, pos)
 		// assert.Equal(t, data[1].Amount.Amount, result[0].Amount.Amount, tstSet)
 	}
 }
@@ -335,7 +336,7 @@ func testMTMPrefixTradePositions(t *testing.T) {
 	positions := engine.getExpiryPositions(data...)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	ch := make(chan settlement.MarketPosition, len(positions))
+	ch := make(chan events.MarketPosition, len(positions))
 	go func() {
 		for _, p := range positions {
 			ch <- p
@@ -350,9 +351,9 @@ func testMTMPrefixTradePositions(t *testing.T) {
 	assert.Equal(t, len(preTrade), len(mtm))
 	// ensure we get the expected Transfers (includes trader 1 and trader 2)
 	for i, m := range mtm {
-		assert.Equal(t, preTrade[i].Owner, m.Owner)
-		assert.Equal(t, preTrade[i].Type, m.Type)
-		assert.Equal(t, preTrade[i].Amount.Amount, m.Amount.Amount)
+		assert.Equal(t, preTrade[i].Owner, m.Transfer().Owner)
+		assert.Equal(t, preTrade[i].Type, m.Transfer().Type)
+		assert.Equal(t, preTrade[i].Amount.Amount, m.Transfer().Amount.Amount)
 	}
 	// assert.Equal(t, len(preTrade), len(mtm))
 	// now settle:

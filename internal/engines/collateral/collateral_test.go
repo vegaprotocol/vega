@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/engines/collateral"
 	"code.vegaprotocol.io/vega/internal/engines/collateral/mocks"
+	"code.vegaprotocol.io/vega/internal/engines/events"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -55,10 +56,20 @@ func testAddTrader(t *testing.T) {
 		"success",
 	}
 	traderAccs := getTraderAccounts(traders[1], market)
+	var gen *types.Account
+	for i := range traderAccs {
+		if traderAccs[i].Type == types.AccountType_GENERAL {
+			gen = traderAccs[i]
+			traderAccs = append(traderAccs[:i], traderAccs[i+1:]...)
+			break
+		}
+	}
+	assert.NotNil(t, gen)
 	// this trader already exists, skip this stuff
 	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[0], market).Times(1).Return(errors.New("already exists"))
 	// this trader will be set up successfully
 	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[1], market).Times(1).Return(nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(gen.Owner, types.AccountType_GENERAL).Times(1).Return([]*types.Account{gen}, nil)
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, traders[1]).Times(1).Return(traderAccs, nil)
 	// expected balances
 	general := eng.Config.TraderGeneralAccountBalance
@@ -78,6 +89,7 @@ func testAddTrader(t *testing.T) {
 			}(acc)))
 		}
 	}
+	eng.accounts.EXPECT().UpdateBalance(gen.Id, general).Times(1).Return(nil)
 	for _, trader := range traders {
 		assert.NoError(t, eng.AddTraderToMarket(trader))
 	}
@@ -305,7 +317,7 @@ func testDistributeWin(t *testing.T) {
 	for _, tacc := range traderAccs {
 		if tacc.Type == types.AccountType_GENERAL {
 			eng.accounts.EXPECT().IncrementBalance(tacc.Id, price).Times(1).Return(nil)
-			eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, tacc.Type).Times(1).Return(tacc, nil)
+			eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, tacc.Type).Times(1).Return([]*types.Account{tacc}, nil)
 			break
 		}
 	}
@@ -313,7 +325,7 @@ func testDistributeWin(t *testing.T) {
 		// ensure trader has money in account
 		if tacc.Type == types.AccountType_GENERAL {
 			// update balance accordingly
-			eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, tacc.Type).Times(1).Return(tacc, nil)
+			eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, tacc.Type).Times(1).Return([]*types.Account{tacc}, nil)
 			eng.accounts.EXPECT().IncrementBalance(tacc.Id, 2*price).Times(1).Return(nil)
 			break
 		}
@@ -440,8 +452,8 @@ func testProcessBoth(t *testing.T) {
 	}
 	// ensure we have this account
 	assert.NotNil(t, mGeneral)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return(tGeneral, nil)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return(mGeneral, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{tGeneral}, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{mGeneral}, nil)
 	// now, settle account will be debited per sell position, so 2 calls:
 	eng.accounts.EXPECT().IncrementBalance(settle.Id, gomock.Any()).Times(2).Return(nil).Do(func(_ string, inc int64) {
 		assert.NotZero(t, inc)
@@ -575,8 +587,8 @@ func testProcessBothProRated(t *testing.T) {
 	}
 	// ensure we have this account
 	assert.NotNil(t, mGeneral)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return(tGeneral, nil)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return(mGeneral, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{tGeneral}, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{mGeneral}, nil)
 	// now, settle account will be debited per sell position, so 2 calls:
 	eng.accounts.EXPECT().IncrementBalance(settle.Id, gomock.Any()).Times(2).Return(nil).Do(func(_ string, inc int64) {
 		assert.NotZero(t, inc)
@@ -711,8 +723,8 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	}
 	// ensure we have this account
 	assert.NotNil(t, mGeneral)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return(tGeneral, nil)
-	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return(mGeneral, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{tGeneral}, nil)
+	eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, types.AccountType_GENERAL).Times(1).Return([]*types.Account{mGeneral}, nil)
 	// now, settle account will be debited per sell position, so 2 calls:
 	eng.accounts.EXPECT().IncrementBalance(settle.Id, gomock.Any()).Times(2).Return(nil).Do(func(_ string, inc int64) {
 		assert.NotZero(t, inc)
@@ -720,7 +732,9 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	// next up, updating the balance of the traders' general accounts
 	eng.accounts.EXPECT().IncrementBalance(tGeneral.Id, int64(833)).Times(1).Return(nil)
 	eng.accounts.EXPECT().IncrementBalance(mGeneral.Id, int64(1666)).Times(1).Return(nil)
-	responses, err := eng.MarkToMarket(pos)
+	// quickly get the interface mocked for this test
+	transfers := getMTMTransfer(pos)
+	responses, err := eng.MarkToMarket(transfers)
 	assert.Equal(t, 2, len(responses))
 	assert.NoError(t, err)
 	resp := responses[0]
@@ -751,6 +765,25 @@ func getTestEngine(t *testing.T, market string, err error) *testEngine {
 		ctrl:     ctrl,
 		accounts: acc,
 	}
+}
+
+type mtmFake struct {
+	t *types.Transfer
+}
+
+func (m mtmFake) Party() string             { return "" }
+func (m mtmFake) Size() int64               { return 0 }
+func (m mtmFake) Price() uint64             { return 0 }
+func (m mtmFake) Transfer() *types.Transfer { return m.t }
+
+func getMTMTransfer(transfers []*types.Transfer) []events.MTMTransfer {
+	r := make([]events.MTMTransfer, 0, len(transfers))
+	for _, t := range transfers {
+		r = append(r, &mtmFake{
+			t: t,
+		})
+	}
+	return r
 }
 
 func getSystemAccounts(market string) []*types.Account {

@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/engines/events"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -110,9 +111,9 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 
 // SettlePreTrade ensures that the MTM for traders involved in the trade are applied before closing out
 // this applies the MTM for traders _before_ the trade happened
-func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*types.Transfer {
-	result := make([]*types.Transfer, 0, 2)
-	winSlice := make([]*types.Transfer, 0, 1) // expect 1 loss, 1 win (worst case 2 wins)
+func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*mtmTransfer {
+	res := make([]*mtmTransfer, 0, 2)
+	winS := make([]*mtmTransfer, 0, 1)
 	e.mu.Lock()
 	positions := map[string]pos{
 		trade.Buyer:  e.getPosition(trade.Buyer),
@@ -159,34 +160,41 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*types.Tr
 		}
 		if mtmShare > 0 {
 			settle.Type = types.TransferType_MTM_WIN
-			winSlice = append(winSlice, settle)
+			winS = append(winS, &mtmTransfer{
+				MarketPosition: ps,
+				transfer:       settle,
+			})
 		} else {
 			settle.Type = types.TransferType_MTM_LOSS
-			result = append(result, settle)
+			res = append(res, &mtmTransfer{
+				MarketPosition: ps,
+				transfer:       settle,
+			})
 		}
 	}
 	e.mu.Unlock()
-	if len(winSlice) > 0 {
+	if len(winS) > 0 {
 		// append wins if any...
-		result = append(result, winSlice...)
+		res = append(res, winS...)
 	}
-	return result
+	return res
 }
 
-func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan MarketPosition) <-chan []*types.Transfer {
+func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan events.MarketPosition) <-chan []events.MTMTransfer {
 	// put the positions on here once we've worked out what all we need to settle
-	sch := make(chan []*types.Transfer)
+	sch := make(chan []events.MTMTransfer)
+	// sch := make(chan []*types.Transfer)
 	tradePos := e.settlePreTrade(markPrice, trade)
 	go func() {
-		posSlice := make([]*types.Transfer, 0, cap(ch))
-		winSlice := make([]*types.Transfer, 0, cap(ch)/2)
+		posE := make([]events.MTMTransfer, 0, cap(ch))
+		winE := make([]events.MTMTransfer, 0, cap(ch)/2)
 		// ensure we've got the MTM for buyer/seller _before_ trade was applied
 		// makes sure the order is preserved, too
 		for _, sp := range tradePos {
-			if sp.Type == types.TransferType_MTM_WIN {
-				winSlice = append(winSlice, sp)
+			if sp.transfer.Type == types.TransferType_MTM_WIN {
+				winE = append(winE, sp)
 			} else {
-				posSlice = append(posSlice, sp)
+				posE = append(posE, sp)
 			}
 		}
 		e.mu.Lock()
@@ -223,15 +231,21 @@ func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan Market
 			}
 			if mtmShare > 0 {
 				settle.Type = types.TransferType_MTM_WIN
-				winSlice = append(winSlice, settle)
+				winE = append(winE, &mtmTransfer{
+					MarketPosition: pos,
+					transfer:       settle,
+				})
 			} else {
 				settle.Type = types.TransferType_MTM_LOSS
-				posSlice = append(posSlice, settle)
+				posE = append(posE, &mtmTransfer{
+					MarketPosition: pos,
+					transfer:       settle,
+				})
 			}
 		}
 		e.mu.Unlock()
-		posSlice = append(posSlice, winSlice...)
-		sch <- posSlice
+		posE = append(posE, winE...)
+		sch <- posE
 		close(sch)
 	}()
 	return sch
