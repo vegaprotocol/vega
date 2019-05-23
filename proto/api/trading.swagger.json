@@ -452,6 +452,32 @@
         ]
       }
     },
+    "/signin": {
+      "post": {
+        "operationId": "SignIn",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiSignInResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiSignInRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/statistics": {
       "get": {
         "summary": "metrics",
@@ -716,6 +742,17 @@
         }
       }
     },
+    "apiSignInRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
     "apiSignInResponse": {
       "type": "object",
       "properties": {
@@ -825,15 +862,6 @@
         }
       }
     },
-    "vegaBuiltinFutures": {
-      "type": "object",
-      "properties": {
-        "historicVolatility": {
-          "type": "number",
-          "format": "double"
-        }
-      }
-    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -921,6 +949,22 @@
           "additionalProperties": {
             "type": "string"
           }
+        }
+      }
+    },
+    "vegaForward": {
+      "type": "object",
+      "properties": {
+        "lambd": {
+          "type": "number",
+          "format": "double"
+        },
+        "tau": {
+          "type": "number",
+          "format": "double"
+        },
+        "params": {
+          "$ref": "#/definitions/vegaModelParamsBS"
         }
       }
     },
@@ -1051,6 +1095,23 @@
         "minimumMargin": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "vegaModelParamsBS": {
+      "type": "object",
+      "properties": {
+        "mu": {
+          "type": "number",
+          "format": "double"
+        },
+        "r": {
+          "type": "number",
+          "format": "double"
+        },
+        "sigma": {
+          "type": "number",
+          "format": "double"
         }
       }
     },
@@ -1351,8 +1412,8 @@
         "instrument": {
           "$ref": "#/definitions/vegaInstrument"
         },
-        "builtinFutures": {
-          "$ref": "#/definitions/vegaBuiltinFutures"
+        "forward": {
+          "$ref": "#/definitions/vegaForward"
         },
         "externalRiskModel": {
           "$ref": "#/definitions/vegaExternalRiskModel"
