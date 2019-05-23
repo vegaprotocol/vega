@@ -11,13 +11,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 
-	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/matching"
-	"code.vegaprotocol.io/vega/internal/positions"
-	"code.vegaprotocol.io/vega/internal/risk"
-	"code.vegaprotocol.io/vega/internal/settlement"
 	"code.vegaprotocol.io/vega/internal/storage"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -68,14 +62,7 @@ type Engine struct {
 	log *logging.Logger
 	Config
 
-	marketConfig     markets.Config
-	riskConfig       risk.Config
-	collateralConfig collateral.Config
-	positionConfig   positions.Config
-	settlementConfig settlement.Config
-	matchingConfig   matching.Config
-
-	markets      map[string]*markets.Market
+	markets      map[string]*Market
 	orderStore   OrderStore
 	tradeStore   TradeStore
 	candleStore  CandleStore
@@ -90,12 +77,6 @@ type Engine struct {
 func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
-	marketConfig markets.Config,
-	riskConfig risk.Config,
-	collateralConfig collateral.Config,
-	positionConfig positions.Config,
-	settlementConfig settlement.Config,
-	matchingConfig matching.Config,
 	time TimeService,
 	orderStore OrderStore,
 	tradeStore TradeStore,
@@ -109,22 +90,16 @@ func NewEngine(
 	log.SetLevel(executionConfig.Level.Get())
 
 	e := &Engine{
-		log:              log,
-		Config:           executionConfig,
-		marketConfig:     marketConfig,
-		riskConfig:       riskConfig,
-		collateralConfig: collateralConfig,
-		positionConfig:   positionConfig,
-		settlementConfig: settlementConfig,
-		matchingConfig:   matchingConfig,
-		markets:          map[string]*markets.Market{},
-		candleStore:      candleStore,
-		orderStore:       orderStore,
-		tradeStore:       tradeStore,
-		marketStore:      marketStore,
-		partyStore:       partyStore,
-		time:             time,
-		accountStore:     accountStore,
+		log:          log,
+		Config:       executionConfig,
+		markets:      map[string]*Market{},
+		candleStore:  candleStore,
+		orderStore:   orderStore,
+		tradeStore:   tradeStore,
+		marketStore:  marketStore,
+		partyStore:   partyStore,
+		time:         time,
+		accountStore: accountStore,
 	}
 
 	// loads markets from configuration
@@ -173,8 +148,8 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 	e.Config = cfg
 	for _, mkt := range e.markets {
-		mkt.ReloadConf(e.marketConfig, e.riskConfig, e.collateralConfig,
-			e.positionConfig, e.settlementConfig, e.matchingConfig)
+		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
+			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
 	}
 }
 
@@ -185,14 +160,13 @@ func (e *Engine) SubmitMarket(mkt *types.Market) error {
 
 	now, _ := e.time.GetTimeNow()
 	var err error
-	e.markets[mkt.Id], err = markets.NewMarket(
+	e.markets[mkt.Id], err = NewMarket(
 		e.log,
-		e.marketConfig,
-		e.riskConfig,
-		e.collateralConfig,
-		e.positionConfig,
-		e.settlementConfig,
-		e.matchingConfig,
+		e.Config.Risk,
+		e.Config.Collateral,
+		e.Config.Position,
+		e.Config.Settlement,
+		e.Config.Matching,
 		mkt,
 		e.candleStore,
 		e.orderStore,
@@ -281,7 +255,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(t time.Time) error {
+func (e *Engine) removeExpiredOrders(t time.Time) {
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
@@ -305,8 +279,6 @@ func (e *Engine) removeExpiredOrders(t time.Time) error {
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
-
-	return nil
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.

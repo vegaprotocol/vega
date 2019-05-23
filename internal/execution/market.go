@@ -1,10 +1,12 @@
-package markets
+package execution
 
 import (
 	"context"
 	"fmt"
 	"sync"
 	"time"
+
+	"code.vegaprotocol.io/vega/internal/markets"
 
 	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/collateral"
@@ -20,34 +22,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets OrderStore
-type OrderStore interface {
-	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error)
-	Post(order types.Order) error
-	Put(order types.Order) error
-	Commit() error
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets TradeStore
-type TradeStore interface {
-	Commit() error
-	Post(trade *types.Trade) error
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets CandleStore
-type CandleStore interface {
-	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
-	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets PartyStore
-type PartyStore interface {
-	GetByID(id string) (*types.Party, error)
-	Post(party *types.Party) error
-}
-
 type Market struct {
-	Config
 	log *logging.Logger
 
 	riskConfig       risk.Config
@@ -65,7 +40,7 @@ type Market struct {
 
 	// engines
 	matching           *matching.OrderBook
-	tradableInstrument *TradableInstrument
+	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
 	position           *positions.Engine
 	settlement         *settlement.Engine
@@ -85,7 +60,6 @@ type Market struct {
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
 func NewMarket(
 	log *logging.Logger,
-	marketConfig Config,
 	riskConfig risk.Config,
 	collateralConfig collateral.Config,
 	positionConfig positions.Config,
@@ -99,12 +73,10 @@ func NewMarket(
 	accounts *storage.Account,
 	now time.Time,
 ) (*Market, error) {
-	log = log.Named(namedLogger)
-	log.SetLevel(marketConfig.Level.Get())
 
-	tradableInstrument, err := NewTradableInstrument(log, mkt.TradableInstrument)
+	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to intanciate a new market")
+		return nil, errors.Wrap(err, "unable to instantiate a new market")
 	}
 
 	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
@@ -125,7 +97,6 @@ func NewMarket(
 
 	market := &Market{
 		log:                log,
-		Config:             marketConfig,
 		mkt:                mkt,
 		closingAt:          closingAt,
 		currentTime:        time.Time{},
@@ -149,23 +120,13 @@ func NewMarket(
 // ReloadConf will trigger a reload of all the config settings in the market and all underlying engines
 // this is required when hot-reloading any config changes, eg. logger level.
 func (m *Market) ReloadConf(
-	marketConfig Config,
+	matchingConfig matching.Config,
 	riskConfig risk.Config,
 	collateralConfig collateral.Config,
 	positionConfig positions.Config,
 	settlementConfig settlement.Config,
-	matchingConfig matching.Config,
 ) {
 	m.log.Info("reloading configuration")
-	if m.log.GetLevel() != marketConfig.Level.Get() {
-		m.log.Info("updating log level",
-			logging.String("old", m.log.GetLevel().String()),
-			logging.String("new", marketConfig.Level.String()),
-		)
-		m.log.SetLevel(marketConfig.Level.Get())
-	}
-
-	m.Config = marketConfig
 	m.matching.ReloadConf(matchingConfig)
 	m.risk.ReloadConf(riskConfig)
 	m.position.ReloadConf(positionConfig)

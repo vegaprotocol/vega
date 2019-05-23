@@ -94,15 +94,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	// Execution engine (broker operation at runtime etc)
 	executionEngine := execution.NewEngine(
 		l.Log,
-
 		l.conf.Execution,
-		l.conf.Markets,
-		l.conf.Risk,
-		l.conf.Collateral,
-		l.conf.Position,
-		l.conf.Settlement,
-		l.conf.Matching,
-
 		l.timeService,
 		l.orderStore,
 		l.tradeStore,
