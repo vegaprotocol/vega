@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/vega/internal/config"
-	"code.vegaprotocol.io/vega/internal/engines"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -241,7 +240,7 @@ func createDefaultMarkets(confpath string) error {
 }
 
 func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
-	engines.SetMarketID(mkt, seq)
+	execution.SetMarketID(mkt, seq)
 	m := jsonpb.Marshaler{
 		Indent: "  ",
 	}
