@@ -18,6 +18,7 @@ var (
 	ErrAuthDisabled       = errors.New("auth disabled")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrAuthRequired       = errors.New("auth required")
+	ErrMissingOrder       = errors.New("missing order in request payload")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeOrderService
@@ -102,6 +103,10 @@ func (s *tradingService) SubmitOrder(
 		return nil, ErrChainNotConnected
 	}
 
+	if req.Submission == nil {
+		return nil, ErrMissingOrder
+	}
+
 	// check auth if required
 	if s.authEnabled {
 		if len(req.Token) <= 0 {
@@ -126,6 +131,10 @@ func (s *tradingService) CancelOrder(
 		return nil, ErrChainNotConnected
 	}
 
+	if req.Cancellation == nil {
+		return nil, ErrMissingOrder
+	}
+
 	// check auth if required
 	if s.authEnabled {
 		if len(req.Token) <= 0 {
@@ -146,7 +155,10 @@ func (s *tradingService) CancelOrder(
 func (s *tradingService) AmendOrder(
 	ctx context.Context, req *protoapi.AmendOrderRequest,
 ) (*protoapi.OrderResponse, error) {
-	success, err := s.tradeOrderService.AmendOrder(ctx, req.Amendment)
+
+	if req.Amendment == nil {
+		return nil, ErrMissingOrder
+	}
 
 	// check auth if required
 	if s.authEnabled {
@@ -159,6 +171,8 @@ func (s *tradingService) AmendOrder(
 			return nil, err
 		}
 	}
+
+	success, err := s.tradeOrderService.AmendOrder(ctx, req.Amendment)
 
 	return &protoapi.OrderResponse{Success: success}, err
 }
