@@ -76,6 +76,25 @@ func testTransferChannelSuccess(t *testing.T) {
 		isTrader := (owner == trader || owner == moneyTrader)
 		assert.True(t, isTrader)
 	})
+	var tGeneral, mGeneral *types.Account
+	for i, acc := range traderAccs {
+		if acc.Type == types.AccountType_GENERAL {
+			eng.accounts.EXPECT().GetAccountsForOwnerByType(trader, acc.Type).Times(2).Return([]*types.Account{acc}, nil)
+			traderAccs = append(traderAccs[:i], traderAccs[i+1:]...)
+			tGeneral = acc
+			break
+		}
+	}
+	assert.NotNil(t, tGeneral)
+	for i, acc := range moneyAccs {
+		if acc.Type == types.AccountType_GENERAL {
+			eng.accounts.EXPECT().GetAccountsForOwnerByType(moneyTrader, acc.Type).Times(2).Return([]*types.Account{acc}, nil)
+			moneyAccs = append(moneyAccs[:i], moneyAccs[i+1:]...)
+			mGeneral = acc
+			break
+		}
+	}
+	assert.NotNil(t, mGeneral)
 	// next up, calls to buy positions, get market accounts for owner (for this market)
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, moneyTrader).Times(1).Return(moneyAccs, nil)
@@ -112,25 +131,6 @@ func testTransferChannelSuccess(t *testing.T) {
 			break
 		}
 	}
-	// buys should be handled at this point, moving on to sells
-	// first thing that'll happen here is getting the general accounts
-	var tGeneral, mGeneral *types.Account
-	for _, acc := range traderAccs {
-		if acc.Type == types.AccountType_GENERAL {
-			tGeneral = acc
-			break
-		}
-	}
-	// ensure we have this account
-	assert.NotNil(t, tGeneral)
-	for _, acc := range moneyAccs {
-		if acc.Type == types.AccountType_GENERAL {
-			mGeneral = acc
-			break
-		}
-	}
-	// ensure we have this account
-	assert.NotNil(t, mGeneral)
 	// this is different, we're always getting all accounts for traders
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, moneyTrader).Times(1).Return(moneyAccs, nil)
