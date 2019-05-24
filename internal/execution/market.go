@@ -2,6 +2,9 @@ package execution
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base32"
+	"encoding/binary"
 	"fmt"
 	"sync"
 	"time"
@@ -19,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -57,6 +61,30 @@ type Market struct {
 	candlesBuf *buffer.Candle
 }
 
+// SetMarketID assigns a deterministic pseudo-random ID to a Market
+func SetMarketID(marketcfg *types.Market, seq uint64) error {
+	marketcfg.Id = ""
+	marketbytes, err := proto.Marshal(marketcfg)
+	if err != nil {
+		return err
+	}
+	if len(marketbytes) == 0 {
+		return errors.New("Failed to marshal market")
+	}
+
+	seqbytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(seqbytes, seq)
+
+	h := sha256.New()
+	h.Write(marketbytes)
+	h.Write(seqbytes)
+
+	d := h.Sum(nil)
+	d = d[:20]
+	marketcfg.Id = base32.StdEncoding.EncodeToString(d)
+	return nil
+}
+
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
 func NewMarket(
 	log *logging.Logger,
@@ -72,6 +100,7 @@ func NewMarket(
 	trades TradeStore,
 	accounts *storage.Account,
 	now time.Time,
+	seq uint64,
 ) (*Market, error) {
 
 	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
@@ -113,6 +142,7 @@ func NewMarket(
 		accounts:           accounts,
 		candlesBuf:         candlesBuf,
 	}
+	SetMarketID(mkt, seq)
 
 	return market, nil
 }
