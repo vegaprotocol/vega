@@ -3,7 +3,7 @@ package engines
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/base32"
 	"encoding/binary"
 	"fmt"
 	"sync"
@@ -100,7 +100,7 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 
 	d := h.Sum(nil)
 	d = d[:20]
-	marketcfg.Id = base64.StdEncoding.EncodeToString(d)
+	marketcfg.Id = base32.StdEncoding.EncodeToString(d)
 	return nil
 }
 
