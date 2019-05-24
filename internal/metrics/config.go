@@ -1,4 +1,4 @@
-package api
+package metrics
 
 import (
 	"time"
@@ -9,16 +9,14 @@ import (
 
 // namedLogger is the identifier for package and should ideally match the package name
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
-const namedLogger = "api.grpc"
+const namedLogger = "metrics"
 
 type Config struct {
-	Level             encoding.LogLevel
-	Timeout           encoding.Duration
-	Port              int
-	IP                string
-	StreamRetries     int
-	AuthEnabled       bool
-	PrometheusEnabled bool
+	Level   encoding.LogLevel
+	Timeout encoding.Duration
+	Port    int
+	Path    string
+	Enabled bool
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -28,10 +26,8 @@ func NewDefaultConfig() Config {
 		Level:   encoding.LogLevel{Level: logging.InfoLevel},
 		Timeout: encoding.Duration{Duration: 5000 * time.Millisecond},
 
-		IP:                "0.0.0.0",
-		Port:              3002,
-		StreamRetries:     3,
-		AuthEnabled:       false,
-		PrometheusEnabled: false,
+		Port:    2112,
+		Path:    "/metrics",
+		Enabled: false,
 	}
 }
