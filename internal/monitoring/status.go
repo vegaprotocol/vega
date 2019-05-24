@@ -123,6 +123,17 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 			// really connected, let's not change the status then
 			return status
 		}
+
+		if err := defaultChainVersion.Check(res.NodeInfo.Version); err != nil {
+			cs.log.Error("tendermint version error",
+				logging.Error(err),
+			)
+			cs.onChainDisconnect()
+		}
+		cs.log.Info("tendermint info",
+			logging.String("version", res.NodeInfo.Version),
+		)
+
 		if res.SyncInfo.CatchingUp {
 			newStatus = types.ChainStatus_REPLAYING
 		} else {

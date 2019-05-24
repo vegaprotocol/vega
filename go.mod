@@ -5,6 +5,7 @@ require (
 	github.com/99designs/gqlgen v0.8.3
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
 	github.com/dgraph-io/badger v1.5.4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
