@@ -51,6 +51,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	RequireAuth func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -130,6 +131,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		OrderCancel func(childComplexity int, id string, marketID string, partyID string) int
 		OrderCreate func(childComplexity int, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) int
+		Signin      func(childComplexity int, id string, password string) int
 	}
 
 	Order struct {
@@ -247,6 +249,7 @@ type MarketDepthResolver interface {
 type MutationResolver interface {
 	OrderCreate(ctx context.Context, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, marketID string, partyID string) (*proto.PendingOrder, error)
+	Signin(ctx context.Context, id string, password string) (string, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *proto.Order) (string, error)
@@ -657,6 +660,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.OrderCreate(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string)), true
+
+	case "Mutation.Signin":
+		if e.complexity.Mutation.Signin == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_signin_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Signin(childComplexity, args["id"].(string), args["password"].(string)), true
 
 	case "Order.CreatedAt":
 		if e.complexity.Order.CreatedAt == nil {
@@ -1230,6 +1245,18 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}
 			ret = nil
 		}
 	}()
+	rctx := graphql.GetResolverContext(ctx)
+	for _, d := range rctx.Field.Definition.Directives {
+		switch d.Name {
+		case "requireAuth":
+			if ec.directives.RequireAuth != nil {
+				n := next
+				next = func(ctx context.Context) (interface{}, error) {
+					return ec.directives.RequireAuth(ctx, obj, n)
+				}
+			}
+		}
+	}
 	res, err := ec.ResolverMiddleware(ctx, next)
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1264,6 +1291,8 @@ schema {
     mutation: Mutation
 }
 
+directive @requireAuth on FIELD
+
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
 
@@ -1284,7 +1313,7 @@ type Mutation {
     type: OrderType!,
     # exiration of the the order
     expiration: String
-  ): PendingOrder!
+  ): PendingOrder! @requireAuth
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
   # It validates and sends the request out for consensus.
@@ -1295,7 +1324,14 @@ type Mutation {
     marketId: String!,
     # ID of the party which created the order
     partyId: String!
-  ): PendingOrder!
+  ): PendingOrder! @requireAuth
+
+  # sign a party in using an username and password, then return a token
+  signin(
+    # ID of the party to get logged in
+    id: String!,
+    # Password of the party
+    password: String!): String!
 }
 
 # Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
@@ -2033,6 +2069,28 @@ func (ec *executionContext) field_Mutation_orderCreate_args(ctx context.Context,
 		}
 	}
 	args["expiration"] = arg6
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_signin_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["password"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["password"] = arg1
 	return args, nil
 }
 
@@ -3458,6 +3516,40 @@ func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field gra
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_signin(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_signin_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Signin(rctx, args["id"].(string), args["password"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
@@ -6676,6 +6768,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "orderCancel":
 			out.Values[i] = ec._Mutation_orderCancel(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "signin":
+			out.Values[i] = ec._Mutation_signin(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}

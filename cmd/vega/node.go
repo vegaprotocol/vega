@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/config"
@@ -48,6 +49,7 @@ type NodeCommand struct {
 	orderService  *orders.Svc
 	partyService  *parties.Svc
 	timeService   *vegatime.Svc
+	auth          *auth.Svc
 
 	blockchainClient *blockchain.Client
 
@@ -133,6 +135,13 @@ func (l *NodeCommand) runNode(args []string) error {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
 	statusChecker.OnChainDisconnect(l.cancel)
 
+	var err error
+	l.auth, err = auth.New(l.ctx, l.Log, l.conf.Auth)
+	if err != nil {
+		return errors.Wrap(err, "unable to start auth service")
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.auth.ReloadConf(cfg.Auth) })
+
 	// gRPC server
 	grpcServer := api.NewGRPCServer(
 		l.Log,
@@ -149,12 +158,11 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
+	l.auth.OnPartiesUpdated(grpcServer.OnPartiesUpdated)
 
 	// start gateway
-	var (
-		gty *Gateway
-		err error
-	)
+	var gty *Gateway
+
 	if l.conf.GatewayEnabled {
 		gty, err = startGateway(l.Log, l.conf.Gateway)
 		if err != nil {

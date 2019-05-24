@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/positions"
 
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/execution"
@@ -47,6 +48,7 @@ type Config struct {
 	Time       vegatime.Config
 	Monitoring monitoring.Config
 	Gateway    gateway.Config
+	Auth       auth.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -75,6 +77,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Position:       positions.NewDefaultConfig(),
 		Settlement:     settlement.NewDefaultConfig(),
 		Collateral:     collateral.NewDefaultConfig(),
+		Auth:           auth.NewDefaultConfig(),
 		GatewayEnabled: true,
 	}
 }
