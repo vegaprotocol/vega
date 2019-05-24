@@ -2,6 +2,7 @@ package config
 
 import (
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/execution"
@@ -32,6 +33,7 @@ type Config struct {
 	Time       vegatime.Config
 	Monitoring monitoring.Config
 	Gateway    gateway.Config
+	Auth       auth.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -55,6 +57,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Monitoring:     monitoring.NewDefaultConfig(),
 		Logging:        logging.NewDefaultConfig(),
 		Gateway:        gateway.NewDefaultConfig(),
+		Auth:           auth.NewDefaultConfig(),
 		GatewayEnabled: true,
 	}
 }

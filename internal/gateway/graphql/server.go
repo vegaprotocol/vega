@@ -107,6 +107,14 @@ func (g *graphServer) Start() {
 		Resolvers: resolverRoot,
 	}
 
+	config.Directives.RequireAuth = func(ctx context.Context, obj interface{}, next graphql.Resolver) (interface{}, error) {
+		if str := gateway.TokenFromContext(ctx); len(str) <= 0 {
+			return nil, errors.New("token required")
+		}
+
+		return next(ctx)
+	}
+
 	loggingMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
 		reqctx := graphql.GetRequestContext(ctx)
 		logfields := make([]zap.Field, 0)
@@ -133,7 +141,7 @@ func (g *graphServer) Start() {
 		g.log.Warn("graphql playground enabled, this is not a recommended setting for production")
 		handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
 	}
-	handlr.Handle("/query", gateway.RemoteAddrMiddleware(g.log, c.Handler(handler.GraphQL(
+	handlr.Handle("/query", gateway.TokenMiddleware(g.log, gateway.RemoteAddrMiddleware(g.log, c.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
@@ -143,7 +151,7 @@ func (g *graphServer) Start() {
 			debug.PrintStack()
 			return errors.New("an internal error occurred")
 		})),
-	)))
+	))))
 
 	g.srv = &http.Server{
 		Addr:    addr,

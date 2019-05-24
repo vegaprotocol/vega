@@ -19,6 +19,36 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *SignInRequest) Validate() error {
+	return nil
+}
+func (this *SignInResponse) Validate() error {
+	return nil
+}
+func (this *SubmitOrderRequest) Validate() error {
+	if this.Submission != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
+		}
+	}
+	return nil
+}
+func (this *CancelOrderRequest) Validate() error {
+	if this.Cancellation != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Cancellation); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Cancellation", err)
+		}
+	}
+	return nil
+}
+func (this *AmendOrderRequest) Validate() error {
+	if this.Amendment != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Amendment); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Amendment", err)
+		}
+	}
+	return nil
+}
 func (this *OrderResponse) Validate() error {
 	return nil
 }

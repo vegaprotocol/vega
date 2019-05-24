@@ -85,6 +85,7 @@ func (s *restProxyServer) Start() {
 
 	// CORS support
 	handler := cors.Default().Handler(mux)
+	handler = gateway.TokenMiddleware(logger, handler)
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support
 	handler = NewGzipHandler(*logger, handler.(http.HandlerFunc))
