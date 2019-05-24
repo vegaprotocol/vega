@@ -1,14 +1,15 @@
-package position_test
+package positions_test
 
 import (
 	"sync"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/engines/events"
-	"code.vegaprotocol.io/vega/internal/engines/position"
-	"code.vegaprotocol.io/vega/internal/engines/settlement"
+	"code.vegaprotocol.io/vega/internal/events"
+
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/positions"
+	"code.vegaprotocol.io/vega/internal/settlement"
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -57,8 +58,8 @@ func TestUpdatePosition(t *testing.T) {
 	}
 }
 
-func getTestEngine(t *testing.T) *position.Engine {
-	return position.New(
-		logging.NewTestLogger(), position.NewDefaultConfig(),
+func getTestEngine(t *testing.T) *positions.Engine {
+	return positions.New(
+		logging.NewTestLogger(), positions.NewDefaultConfig(),
 	)
 }

@@ -3,14 +3,15 @@ package collateral
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/internal/engines/events"
+	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 // generate this mock so we can write tests more easilyh
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mtm_transfer_mock.go -package mocks code.vegaprotocol.io/vega/internal/engines/collateral MTMTransfer
-type MTMTransfer events.MTMTransfer
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mtm_transfer_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral Transfer
+type MTMTransfer events.Transfer
 
 type processF func(t *transferT) (*types.TransferResponse, error)
 
@@ -18,7 +19,7 @@ type collectF func(t *transferT) error
 
 // transferT internal type, keeps account reference etc...
 type transferT struct {
-	events.MTMTransfer
+	events.Transfer
 	t       *types.Transfer
 	res     *types.TransferResponse
 	margin  *types.Account
@@ -39,14 +40,14 @@ func (t transferT) GeneralBalance() uint64 {
 }
 
 // TransferType indicates whether this was a win or a loss
-func (t transferT) TransferType() types.TransferType {
+func (t transferT) TransferaType() types.TransferType {
 	return t.t.Type
 }
 
-func (e *Engine) TransferCh(transfers []events.MTMTransfer) (<-chan events.MarginChange, <-chan error) {
+func (e *Engine) TransferCh(transfers []events.Transfer) (<-chan events.Margin, <-chan error) {
 	ech := make(chan error)
 	// create channel for events
-	ch := make(chan events.MarginChange, len(transfers))
+	ch := make(chan events.Margin, len(transfers))
 	go func() {
 		// once this is done, close the channel
 		defer func() {
@@ -258,32 +259,32 @@ func (e *Engine) lossCB(distr *distributor, lossResp *types.TransferResponse, pr
 	}
 }
 
-func processLoss(ch chan<- events.MarginChange, positions []events.MTMTransfer, cb collectF) ([]events.MTMTransfer, error) {
+func processLoss(ch chan<- events.Margin, positions []events.Transfer, cb collectF) ([]events.Transfer, error) {
 	// collect whatever we have until we reach the DEBIT part of the positions
 	for i, p := range positions {
 		if p.Transfer().Type == types.TransferType_WIN || p.Transfer().Type == types.TransferType_MTM_WIN {
 			return positions[i:], nil
 		}
 		t := &transferT{
-			MTMTransfer: p,
-			t:           p.Transfer(),
+			Transfer: p,
+			t:        p.Transfer(),
 		}
 		if err := cb(t); err != nil {
 			return nil, err
 		}
-		// add MarginChange on channel
+		// add Margin on channel
 		ch <- t
 	}
 	// only CREDIT positions found OR positions was empty to begin with
 	return nil, nil
 }
 
-func processWin(ch chan<- events.MarginChange, positions []events.MTMTransfer, cb collectF) error {
+func processWin(ch chan<- events.Margin, positions []events.Transfer, cb collectF) error {
 	// this is really simple -> just collect whatever was left
 	for _, p := range positions {
 		t := &transferT{
-			MTMTransfer: p,
-			t:           p.Transfer(),
+			Transfer: p,
+			t:        p.Transfer(),
 		}
 		if err := cb(t); err != nil {
 			return err
@@ -293,7 +294,7 @@ func processWin(ch chan<- events.MarginChange, positions []events.MTMTransfer, c
 	return nil
 }
 
-func buildResponses(positions []events.MTMTransfer, settle, insurance *types.Account) (loss, win *types.TransferResponse) {
+func buildResponses(positions []events.Transfer, settle, insurance *types.Account) (loss, win *types.TransferResponse) {
 	loss = &types.TransferResponse{
 		Transfers: make([]*types.LedgerEntry, 0, len(positions)), // roughly half should be loss, but create 2 ledger entries, so that's a reasonable cap to use
 		Balances: []*types.TransferBalance{

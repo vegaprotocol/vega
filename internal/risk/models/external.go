@@ -1,4 +1,4 @@
-package riskmodels
+package models
 
 import (
 	"bytes"
@@ -43,7 +43,7 @@ type CalculateRiskFactorsResponse struct {
 	Result     *types.RiskResult `json:"result"`
 }
 
-func newExternal(log *logging.Logger, pe *types.ExternalRiskModel) (*External, error) {
+func NewExternal(log *logging.Logger, pe *types.ExternalRiskModel) (*External, error) {
 	tr := &http.Transport{
 		Dial: func(proto, addr string) (conn net.Conn, err error) {
 			return net.Dial("unix", pe.Socket)

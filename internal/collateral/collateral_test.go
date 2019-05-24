@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/vega/internal/engines/collateral"
-	"code.vegaprotocol.io/vega/internal/engines/collateral/mocks"
-	"code.vegaprotocol.io/vega/internal/engines/events"
+	"code.vegaprotocol.io/vega/internal/events"
+
+	"code.vegaprotocol.io/vega/internal/collateral"
+	"code.vegaprotocol.io/vega/internal/collateral/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -776,8 +777,8 @@ func (m mtmFake) Size() int64               { return 0 }
 func (m mtmFake) Price() uint64             { return 0 }
 func (m mtmFake) Transfer() *types.Transfer { return m.t }
 
-func getMTMTransfer(transfers []*types.Transfer) []events.MTMTransfer {
-	r := make([]events.MTMTransfer, 0, len(transfers))
+func getMTMTransfer(transfers []*types.Transfer) []events.Transfer {
+	r := make([]events.Transfer, 0, len(transfers))
 	for _, t := range transfers {
 		r = append(r, &mtmFake{
 			t: t,

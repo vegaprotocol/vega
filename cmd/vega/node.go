@@ -32,8 +32,8 @@ import (
 type NodeCommand struct {
 	command
 
-	ctx   context.Context
-	cfunc context.CancelFunc
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	accounts    *storage.Account
 	candleStore *storage.Candle
@@ -91,7 +91,7 @@ func (l *NodeCommand) addFlags() {
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
-	defer l.cfunc()
+	defer l.cancel()
 	// check node_pre.go, that's where everything gets bootstrapped
 	// Execution engine (broker operation at runtime etc)
 	executionEngine := execution.NewEngine(
@@ -121,7 +121,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		bcProcessor,
 		bcService,
 		l.timeService,
-		l.cfunc,
+		l.cancel,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcApp.ReloadConf(cfg.Blockchain) })
 
@@ -133,7 +133,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
-	statusChecker.OnChainDisconnect(l.cfunc)
+	statusChecker.OnChainDisconnect(l.cancel)
 
 	var err error
 	l.auth, err = auth.New(l.ctx, l.Log, l.conf.Auth)

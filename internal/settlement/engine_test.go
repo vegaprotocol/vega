@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/engines/events"
-	"code.vegaprotocol.io/vega/internal/engines/settlement"
-	"code.vegaprotocol.io/vega/internal/engines/settlement/mocks"
+	"code.vegaprotocol.io/vega/internal/events"
+
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/settlement"
+	"code.vegaprotocol.io/vega/internal/settlement/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"

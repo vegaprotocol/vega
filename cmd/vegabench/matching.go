@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/execution"
+	"code.vegaprotocol.io/vega/internal/execution/mocks"
+	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"code.vegaprotocol.io/vega/internal/execution/mocks"
-	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/golang/mock/gomock"
 )
@@ -39,10 +38,11 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyStore(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
-	conf := execution.NewDefaultConfig("")
+	executionConfig := execution.NewDefaultConfig("")
+
 	engine := execution.NewEngine(
 		log,
-		conf,
+		executionConfig,
 		time,
 		order,
 		trade,
