@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
@@ -159,6 +160,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
 	l.auth.OnPartiesUpdated(grpcServer.OnPartiesUpdated)
+	metrics.Start(l.conf.Metrics)
 
 	// start gateway
 	var gty *Gateway
