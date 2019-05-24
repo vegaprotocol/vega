@@ -165,12 +165,12 @@ func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
 
 	if request.MarketID == "" {
-		return nil, errors.New("Market empty or missing")
+		return nil, errors.New("MarketID empty or missing")
 	}
-	if request.Id == "" {
-		return nil, errors.New("Id empty or missing")
+	if request.OrderID == "" {
+		return nil, errors.New("OrderID empty or missing")
 	}
-	order, err := h.OrderService.GetByMarketAndId(ctx, request.MarketID, request.Id)
+	order, err := h.OrderService.GetByMarketAndId(ctx, request.MarketID, request.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -193,21 +193,21 @@ func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi
 	}, nil
 }
 
-// TradeCandles returns trade open/close/volume data for the given time period and interval.
+// Candles returns trade open/close/volume data for the given time period and interval.
 // It will fill in any trade-less intervals with zero based candles. Since time period must be in RFC3339 string format.
 func (h *tradingDataService) Candles(ctx context.Context,
 	request *protoapi.CandlesRequest) (*protoapi.CandlesResponse, error) {
 
-	market := request.Market
-	if market == "" {
-		return nil, errors.New("Market empty or missing")
+	marketID := request.MarketID
+	if marketID == "" {
+		return nil, errors.New("MarketID empty or missing")
 	}
 
 	if request.SinceTimestamp == 0 {
 		return nil, errors.New("Since date is missing")
 	}
 
-	c, err := h.CandleService.GetCandles(ctx, market, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
+	c, err := h.CandleService.GetCandles(ctx, marketID, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
 	if err != nil {
 		return nil, err
 	}
@@ -219,16 +219,16 @@ func (h *tradingDataService) Candles(ctx context.Context,
 }
 
 func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
-	if req.Market == "" {
-		return nil, errors.New("Market empty or missing")
+	if req.MarketID == "" {
+		return nil, errors.New("MarketID empty or missing")
 	}
 
 	// Query market depth statistics
-	depth, err := h.MarketService.GetDepth(ctx, req.Market)
+	depth, err := h.MarketService.GetDepth(ctx, req.MarketID)
 	if err != nil {
 		return nil, err
 	}
-	t, err := h.TradeService.GetByMarket(ctx, req.Market, 0, 1, true)
+	t, err := h.TradeService.GetByMarket(ctx, req.MarketID, 0, 1, true)
 	if err != nil {
 		return nil, err
 	}

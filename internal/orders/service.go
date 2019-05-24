@@ -123,7 +123,7 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 		return nil, errors.Wrap(err, "order cancellation validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketID, order.Id)
+	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketID, order.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 		return false, errors.Wrap(err, "order amendment validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.PartyID, amendment.Id)
+	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.PartyID, amendment.OrderID)
 	if err != nil {
 		return false, err
 	}
