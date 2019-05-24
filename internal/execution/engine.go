@@ -11,11 +11,10 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 
-	types "code.vegaprotocol.io/vega/proto"
-
-	"code.vegaprotocol.io/vega/internal/engines"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 var (
@@ -62,7 +61,8 @@ type TimeService interface {
 type Engine struct {
 	log *logging.Logger
 	Config
-	markets      map[string]*engines.Market
+
+	markets      map[string]*Market
 	orderStore   OrderStore
 	tradeStore   TradeStore
 	candleStore  CandleStore
@@ -92,7 +92,7 @@ func NewEngine(
 	e := &Engine{
 		log:          log,
 		Config:       executionConfig,
-		markets:      map[string]*engines.Market{},
+		markets:      map[string]*Market{},
 		candleStore:  candleStore,
 		orderStore:   orderStore,
 		tradeStore:   tradeStore,
@@ -120,7 +120,7 @@ func NewEngine(
 				logging.String("config-path", path))
 		}
 
-		e.log.Info("New market loaded from configuation",
+		e.log.Info("NewModel market loaded from configuation",
 			logging.String("market-config", path),
 			logging.String("market-id", mkt.Id))
 
@@ -148,7 +148,8 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 	e.Config = cfg
 	for _, mkt := range e.markets {
-		mkt.ReloadConf(cfg.Engines)
+		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
+			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
 	}
 }
 
@@ -159,13 +160,26 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	// 	return ErrMarketAlreadyExist
 	// }
 
-	var mkt *engines.Market
+	var mkt *Market
 	var err error
 
 	now, _ := e.time.GetTimeNow()
-	mkt, err = engines.NewMarket(
-		e.log, e.Config.Engines, mktconfig, e.candleStore, e.orderStore, e.partyStore,
-		e.tradeStore, e.accountStore, now, uint64(len(e.markets)))
+	mkt, err = NewMarket(
+		e.log,
+		e.Config.Risk,
+		e.Config.Collateral,
+		e.Config.Position,
+		e.Config.Settlement,
+		e.Config.Matching,
+		mktconfig,
+		e.candleStore,
+		e.orderStore,
+		e.partyStore,
+		e.tradeStore,
+		e.accountStore,
+		now,
+		uint64(len(e.markets)),
+	)
 	if err != nil {
 		e.log.Error("Failed to instanciate market",
 			logging.String("market-name", mktconfig.Name),
@@ -247,7 +261,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(t time.Time) error {
+func (e *Engine) removeExpiredOrders(t time.Time) {
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
@@ -271,8 +285,6 @@ func (e *Engine) removeExpiredOrders(t time.Time) error {
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
-
-	return nil
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.

@@ -3,9 +3,13 @@ package execution
 import (
 	"path/filepath"
 
+	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/config/encoding"
-	"code.vegaprotocol.io/vega/internal/engines"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal/positions"
+	"code.vegaprotocol.io/vega/internal/risk"
+	"code.vegaprotocol.io/vega/internal/settlement"
 )
 
 const (
@@ -24,7 +28,12 @@ type Config struct {
 	Level encoding.LogLevel
 
 	Markets MarketConfig
-	Engines engines.Config
+
+	Matching   matching.Config
+	Risk       risk.Config
+	Position   positions.Config
+	Settlement settlement.Config
+	Collateral collateral.Config
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -36,7 +45,11 @@ func NewDefaultConfig(defaultConfigDirPath string) Config {
 			Path:    filepath.Join(defaultConfigDirPath, MarketConfigPath),
 			Configs: []string{},
 		},
-		Engines: engines.NewDefaultConfig(),
+		Matching:   matching.NewDefaultConfig(),
+		Risk:       risk.NewDefaultConfig(),
+		Position:   positions.NewDefaultConfig(),
+		Settlement: settlement.NewDefaultConfig(),
+		Collateral: collateral.NewDefaultConfig(),
 	}
 	return c
 }

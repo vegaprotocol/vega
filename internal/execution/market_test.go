@@ -1,10 +1,10 @@
-package engines_test
+package execution_test
 
 import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/vega/internal/engines"
+	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 func TestSetMarketID(t *testing.T) {
 	t.Run("nil market config", func(t *testing.T) {
 		marketcfg := &proto.Market{}
-		err := engines.SetMarketID(marketcfg, 0)
+		err := execution.SetMarketID(marketcfg, 0)
 		assert.Error(t, err)
 	})
 
@@ -62,16 +62,16 @@ func TestSetMarketID(t *testing.T) {
 			},
 		}
 
-		err := engines.SetMarketID(marketcfg, 0)
+		err := execution.SetMarketID(marketcfg, 0)
 		assert.NoError(t, err)
 		fmt.Println(marketcfg.Id)
 		id := marketcfg.Id
 
-		err = engines.SetMarketID(marketcfg, 0)
+		err = execution.SetMarketID(marketcfg, 0)
 		assert.NoError(t, err)
 		assert.Equal(t, id, marketcfg.Id)
 
-		err = engines.SetMarketID(marketcfg, 1)
+		err = execution.SetMarketID(marketcfg, 1)
 		assert.NoError(t, err)
 		fmt.Println(marketcfg.Id)
 		assert.NotEqual(t, id, marketcfg.Id)

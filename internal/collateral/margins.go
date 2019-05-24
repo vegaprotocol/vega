@@ -1,12 +1,13 @@
 package collateral
 
 import (
-	"code.vegaprotocol.io/vega/internal/engines/events"
+	"code.vegaprotocol.io/vega/internal/events"
+
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 type marginUpdate struct {
-	events.MTMTransfer
+	events.Transfer
 	margin  *types.Account
 	general *types.Account
 }

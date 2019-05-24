@@ -1,11 +1,11 @@
-package engines
+package markets
 
 import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/products"
-	"code.vegaprotocol.io/vega/internal/riskmodels"
+	"code.vegaprotocol.io/vega/internal/risk"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -25,7 +25,7 @@ type Instrument struct {
 
 type TradableInstrument struct {
 	Instrument *Instrument
-	RiskModel  riskmodels.Model
+	RiskModel  risk.Model
 }
 
 func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (*TradableInstrument, error) {
@@ -33,14 +33,13 @@ func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (
 	if err != nil {
 		return nil, err
 	}
-
-	riskmodel, err := riskmodels.New(log, pti.RiskModel)
+	riskModel, err := risk.NewModel(log, pti.RiskModel)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instanciate risk model")
+		return nil, errors.Wrap(err, "unable to instantiate risk model")
 	}
 	return &TradableInstrument{
 		Instrument: instrument,
-		RiskModel:  riskmodel,
+		RiskModel:  riskModel,
 	}, nil
 }
 

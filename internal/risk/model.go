@@ -1,8 +1,10 @@
-package riskmodels
+package risk
 
 import (
 	"errors"
 	"time"
+
+	"code.vegaprotocol.io/vega/internal/risk/models"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -18,16 +20,16 @@ type Model interface {
 	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)
 }
 
-func New(log *logging.Logger, prm interface{}) (Model, error) {
+func NewModel(log *logging.Logger, prm interface{}) (Model, error) {
 	if prm == nil {
 		return nil, ErrNilRiskModel
 	}
 
 	switch rm := prm.(type) {
 	case *types.TradableInstrument_Forward:
-		return newBuiltinFutures(rm.Forward)
+		return models.NewBuiltinFutures(rm.Forward)
 	case *types.TradableInstrument_ExternalRiskModel:
-		return newExternal(log, rm.ExternalRiskModel)
+		return models.NewExternal(log, rm.ExternalRiskModel)
 	default:
 		return nil, ErrUnimplementedRiskModel
 	}

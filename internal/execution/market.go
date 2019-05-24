@@ -1,4 +1,4 @@
-package engines
+package execution
 
 import (
 	"context"
@@ -9,14 +9,16 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/markets"
+
 	"code.vegaprotocol.io/vega/internal/buffer"
-	"code.vegaprotocol.io/vega/internal/engines/collateral"
-	"code.vegaprotocol.io/vega/internal/engines/events"
-	"code.vegaprotocol.io/vega/internal/engines/matching"
-	"code.vegaprotocol.io/vega/internal/engines/position"
-	"code.vegaprotocol.io/vega/internal/engines/risk"
-	"code.vegaprotocol.io/vega/internal/engines/settlement"
+	"code.vegaprotocol.io/vega/internal/collateral"
+	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal/positions"
+	"code.vegaprotocol.io/vega/internal/risk"
+	"code.vegaprotocol.io/vega/internal/settlement"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -24,35 +26,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution OrderStore
-type OrderStore interface {
-	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error)
-	Post(order types.Order) error
-	Put(order types.Order) error
-	Commit() error
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution TradeStore
-type TradeStore interface {
-	Commit() error
-	Post(trade *types.Trade) error
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution CandleStore
-type CandleStore interface {
-	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
-	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution PartyStore
-type PartyStore interface {
-	GetByID(id string) (*types.Party, error)
-	Post(party *types.Party) error
-}
-
 type Market struct {
-	Config
 	log *logging.Logger
+
+	riskConfig       risk.Config
+	collateralConfig collateral.Config
+	positionConfig   positions.Config
+	settlementConfig settlement.Config
+	matchingConfig   matching.Config
 
 	mkt         *types.Market
 	closingAt   time.Time
@@ -63,9 +44,9 @@ type Market struct {
 
 	// engines
 	matching           *matching.OrderBook
-	tradableInstrument *TradableInstrument
+	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
-	position           *position.Engine
+	position           *positions.Engine
 	settlement         *settlement.Engine
 	collateral         *collateral.Engine
 
@@ -107,7 +88,11 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
 func NewMarket(
 	log *logging.Logger,
-	cfg Config,
+	riskConfig risk.Config,
+	collateralConfig collateral.Config,
+	positionConfig positions.Config,
+	settlementConfig settlement.Config,
+	matchingConfig matching.Config,
 	mkt *types.Market,
 	candles CandleStore,
 	orders OrderStore,
@@ -117,12 +102,10 @@ func NewMarket(
 	now time.Time,
 	seq uint64,
 ) (*Market, error) {
-	log = log.Named(namedLogger)
-	log.SetLevel(cfg.Level.Get())
 
-	tradableInstrument, err := NewTradableInstrument(log, mkt.TradableInstrument)
+	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to intanciate a new market")
+		return nil, errors.Wrap(err, "unable to instantiate a new market")
 	}
 
 	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
@@ -130,24 +113,23 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
-	collateralEngine, err := collateral.New(log, cfg.Collateral, mkt.Id, accounts)
+	collateralEngine, err := collateral.New(log, collateralConfig, mkt.Id, accounts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to set up collateral engine")
 	}
 
 	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
 
-	riskEngine := risk.New(log, cfg.Risk, tradableInstrument.RiskModel, getInitialFactors())
-	positionEngine := position.New(log, cfg.Position)
-	settleEngine := settlement.New(log, cfg.Settlement, tradableInstrument.Instrument.Product)
+	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.RiskModel, getInitialFactors())
+	positionEngine := positions.New(log, positionConfig)
+	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product)
 
 	market := &Market{
 		log:                log,
-		Config:             cfg,
 		mkt:                mkt,
 		closingAt:          closingAt,
 		currentTime:        time.Time{},
-		matching:           matching.NewOrderBook(log, cfg.Matching, mkt.Id, false),
+		matching:           matching.NewOrderBook(log, matchingConfig, mkt.Id, false),
 		tradableInstrument: tradableInstrument,
 		risk:               riskEngine,
 		position:           positionEngine,
@@ -167,22 +149,19 @@ func NewMarket(
 
 // ReloadConf will trigger a reload of all the config settings in the market and all underlying engines
 // this is required when hot-reloading any config changes, eg. logger level.
-func (m *Market) ReloadConf(cfg Config) {
+func (m *Market) ReloadConf(
+	matchingConfig matching.Config,
+	riskConfig risk.Config,
+	collateralConfig collateral.Config,
+	positionConfig positions.Config,
+	settlementConfig settlement.Config,
+) {
 	m.log.Info("reloading configuration")
-	if m.log.GetLevel() != cfg.Level.Get() {
-		m.log.Info("updating log level",
-			logging.String("old", m.log.GetLevel().String()),
-			logging.String("new", cfg.Level.String()),
-		)
-		m.log.SetLevel(cfg.Level.Get())
-	}
-
-	m.Config = cfg
-	m.matching.ReloadConf(cfg.Matching)
-	m.risk.ReloadConf(cfg.Risk)
-	m.position.ReloadConf(cfg.Position)
-	m.settlement.ReloadConf(cfg.Settlement)
-	m.collateral.ReloadConf(cfg.Collateral)
+	m.matching.ReloadConf(matchingConfig)
+	m.risk.ReloadConf(riskConfig)
+	m.position.ReloadConf(positionConfig)
+	m.settlement.ReloadConf(settlementConfig)
+	m.collateral.ReloadConf(collateralConfig)
 }
 
 // GetID returns the id of the given market
@@ -351,7 +330,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 	m.markPrice = trade.Price
 }
 
-func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.MTMTransfer {
+func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.Transfer {
 	// create channel for positions to populate and settlement to consume
 	positionCh := make(chan events.MarketPosition, posCount)
 	// starting settlement first, the reading routine does more work, so it'll be slower
@@ -367,7 +346,7 @@ func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.MT
 
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRisk(settle []events.MTMTransfer) []events.RiskUpdate {
+func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	transferCh, errCh := m.collateral.TransferCh(settle)

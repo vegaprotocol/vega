@@ -6,33 +6,33 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/engines/events"
-	"code.vegaprotocol.io/vega/internal/engines/position"
+	"code.vegaprotocol.io/vega/internal/events"
+
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/riskmodels"
+	"code.vegaprotocol.io/vega/internal/positions"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 type marginChange struct {
-	events.MarginChange       // previous event that caused this change
-	amount              int64 // the amount we need to move (positive is move to margin, neg == move to general)
+	events.Margin       // previous event that caused this change
+	amount        int64 // the amount we need to move (positive is move to margin, neg == move to general)
 }
 
 type Engine struct {
 	Config
 	log     *logging.Logger
 	cfgMu   sync.Mutex
-	model   riskmodels.Model
+	model   Model
 	factors *types.RiskResult
 	waiting bool
-	mu      sync.Mutex // protect against factors beeing update while beein iterated over
+	mu      sync.Mutex
 }
 
-func New(
+func NewEngine(
 	log *logging.Logger,
 	config Config,
-	model riskmodels.Model,
+	model Model,
 	initialFactors *types.RiskResult,
 ) *Engine {
 	// setup logger
@@ -85,7 +85,7 @@ func (re *Engine) CalculateFactors(now time.Time) {
 	}
 }
 
-func (re *Engine) UpdatePositions(markPrice uint64, positions []position.MarketPosition) {
+func (re *Engine) UpdatePositions(markPrice uint64, positions []positions.MarketPosition) {
 	// todo(cdm): fix mark price overflow problems
 	// todo(cdm): return action to possibly return action to update margin elsewhere rather than direct
 
@@ -111,13 +111,13 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []position.MarketP
 }
 
 // mock implementation, this wil return adjustments based on position updates
-func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.MarginChange, markPrice uint64) []events.RiskUpdate {
+func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.Margin, markPrice uint64) []events.Risk {
 	re.mu.Lock()
 	defer re.mu.Unlock()
 	// we can allocate the return value here already
 	// problem is that we don't know whether loss indicates a long/short position
 	// @TODO ^^ Positions should provide this information, so we can pass this through correctly
-	ret := make([]events.RiskUpdate, 0, cap(ch))
+	ret := make([]events.Risk, 0, cap(ch))
 	// this will keep going until we've closed this channel
 	// this can be the result of an error, or being "finished"
 	for {
@@ -164,19 +164,18 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.MarginChan
 			// same time, N > 0 is what we need to increment the margin balance with
 			if marginBal < reqMargin {
 				ret = append(ret, &marginChange{
-					MarginChange: change,
-					amount:       int64(reqMargin),
+					Margin: change,
+					amount: int64(reqMargin),
 				})
 			} else {
 				// delta, the bit we can move back
 				ret = append(ret, &marginChange{
-					MarginChange: change,
-					amount:       int64(marginBal) - int64(reqMargin),
+					Margin: change,
+					amount: int64(marginBal) - int64(reqMargin),
 				})
 			}
 		}
 	}
-	return ret
 }
 
 func (re *Engine) UpdateFactors(result *types.RiskResult) {

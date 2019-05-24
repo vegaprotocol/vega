@@ -1,7 +1,8 @@
 package settlement
 
 import (
-	"code.vegaprotocol.io/vega/internal/engines/events"
+	"code.vegaprotocol.io/vega/internal/events"
+
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -31,7 +32,7 @@ func (p pos) Price() uint64 {
 	return p.price
 }
 
-// Transfer - part of the MTMTransfer interface
+// Transfer - part of the Transfer interface
 func (m mtmTransfer) Transfer() *types.Transfer {
 	return m.transfer
 }
