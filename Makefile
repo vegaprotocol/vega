@@ -25,7 +25,7 @@ else
 	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
-.PHONY: all bench deps build clean gettools grpc grpc_check help test lint mocks proto_check
+.PHONY: all bench deps build clean docker docker_quick gettools grpc grpc_check help test lint mocks proto_check
 
 all: build
 
@@ -52,14 +52,14 @@ msan: ## Run memory sanitizer
 vet: ## Run go vet
 	@go vet -all ./...
 
-.PHONY: .testCoverage.txt
+.PRECIOUS: .testCoverage.txt
 .testCoverage.txt:
 	@go test -covermode=count -coverprofile="$@" ./...
 	@go tool cover -func="$@"
 
 coverage: .testCoverage.txt ## Generate global code coverage report
 
-.PHONY: .testCoverage.html
+.PRECIOUS: .testCoverage.html
 .testCoverage.html: .testCoverage.txt
 	@go tool cover -html="$^" -o "$@"
 
@@ -75,29 +75,31 @@ deps: ## Get the dependencies
 
 build: proto ## install the binaries in cmd/{progname}/
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/vega/vega" ./cmd/vega
-	@go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/vegabench/vegabench" ./cmd/vegabench
+	@for app in vega vegabench ; do \
+		env CGO_ENABLED=0 go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/$$app/$$app" "./cmd/$$app" || exit 1 ; \
+	done
 
-install: proto ## install the binary in GOPATH/bin
+install: proto ## install the binaries in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" ./cmd/vega
-	@go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" ./cmd/vegabench
+	@for app in vega vegabench ; do \
+		env CGO_ENABLED=0 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
+	done
 
 gqlgen: deps ## run gqlgen
-	@cd ./internal/api/endpoints/gql && go run github.com/99designs/gqlgen -c gqlgen.yml
+	@cd ./internal/gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
 
 proto: | deps ${PROTOFILES} ${PROTOVALFILES} ## build proto definitions
 
 .PRECIOUS: proto/%.validator.pb.go
 proto/%.validator.pb.go: proto/%.proto
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --govalidators_out=paths=source_relative:. "$<" && \
+	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. --govalidators_out=paths=source_relative:. "$<" && \
 	sed -i -re 's/this\.Size_/this.Size/' "$@" && \
 	./script/fix_imports.sh "$@"
 
 .PRECIOUS: proto/%.pb.go
 proto/%.pb.go: proto/%.proto
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. --go_out=paths=source_relative:. "$<"
+	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. --go_out=paths=source_relative:. "$<"
 
 proto_check: deps ## proto: Check committed files match just-generated files
 	@touch proto/*.proto ; \
@@ -111,27 +113,26 @@ proto_check: deps ## proto: Check committed files match just-generated files
 
 # GRPC Targets
 
-grpc: internal/api/grpc.pb.go internal/api/grpc.validator.pb.go internal/api/grpc.pb.gw.go internal/api/grpc.swagger.json  ## Generate gRPC files: grpc.pb.go, grpc.validator.pb.go, grpc.pb.gw.go, grpc.swagger.json
+grpc: proto/api/trading.pb.go proto/api/trading.validator.pb.go proto/api/trading.pb.gw.go proto/api/trading.swagger.json  ## Generate gRPC files: grpc.pb.go, grpc.validator.pb.go, grpc.pb.gw.go, grpc.swagger.json
 
-internal/api/grpc.pb.go: internal/api/grpc.proto
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. \
-		-Iinternal/api/ --go_out=plugins=grpc,paths=source_relative:. "$<"
+proto/api/trading.pb.go: proto/api/trading.proto
+	@protoc -I. -Iproto -Ivendor -Ivendor/github.com/google/protobuf/src --go_out=plugins=grpc,paths=source_relative:. "$<"
 
-internal/api/grpc.validator.pb.go: internal/api/grpc.proto
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. \
-		-Iinternal/api/ --govalidators_out=paths=source_relative:. "$<" && \
+proto/api/trading.validator.pb.go: proto/api/trading.proto
+	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. \
+		 --govalidators_out=paths=source_relative:. "$<" && \
 	./script/fix_imports.sh "$@"
 
-GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml,paths=source_relative:.
-SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/api/grpc-rest-bindings.yml:.
+GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/gateway/rest/grpc-rest-bindings.yml,paths=source_relative:.
+SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/gateway/rest/grpc-rest-bindings.yml:.
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
-internal/api/grpc.pb.gw.go: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. -Iinternal/api/ --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
+proto/api/trading.pb.gw.go: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
+	@protoc -Ivendor -I. -Iproto/api/ -Ivendor/github.com/google/protobuf/src --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
 
 # Generate Swagger documentation
-internal/api/grpc.swagger.json: internal/api/grpc.proto internal/api/grpc-rest-bindings.yml
-	@protoc --proto_path=vendor --proto_path=vendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
+proto/api/trading.swagger.json: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
+	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
 grpc_check: deps ## gRPC: Check committed files match just-generated files
 	@touch internal/api/*.proto ; \
@@ -144,6 +145,30 @@ grpc_check: deps ## gRPC: Check committed files match just-generated files
 	fi
 
 # Misc Targets
+
+docker: ## Make docker container image from scratch
+	@test -f "$(HOME)/.ssh/id_rsa" || exit 1
+	@docker build \
+		--build-arg SSH_KEY="$$(cat ~/.ssh/id_rsa)" \
+		-t "registry.gitlab.com/vega-protocol/trading-core:latest" \
+		.
+
+docker_quick: build ## Make docker container image using pre-existing binaries
+	@for app in vega vegabench ; do \
+		f="cmd/$$app/$$app" ; \
+		if ! test -f "$$f" ; then \
+			echo "Failed to find: $$f" ; \
+			exit 1 ; \
+		fi ; \
+		cp -a "$$f" . || exit 1 ; \
+	done
+	@docker build \
+		-t "registry.gitlab.com/vega-protocol/trading-core:latest" \
+		-f Dockerfile.quick \
+		.
+	@for app in vega vegabench ; do \
+		rm -rf "./$$app" ; \
+	done
 
 gettools:
 	@./script/gettools.sh

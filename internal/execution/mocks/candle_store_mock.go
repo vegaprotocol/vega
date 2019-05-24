@@ -33,19 +33,19 @@ func (m *MockCandleStore) EXPECT() *MockCandleStoreMockRecorder {
 	return m.recorder
 }
 
-// FetchMostRecentCandle mocks base method
-func (m *MockCandleStore) FetchMostRecentCandle(arg0 string, arg1 proto.Interval, arg2 bool) (*proto.Candle, error) {
+// FetchLastCandle mocks base method
+func (m *MockCandleStore) FetchLastCandle(arg0 string, arg1 proto.Interval) (*proto.Candle, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchMostRecentCandle", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "FetchLastCandle", arg0, arg1)
 	ret0, _ := ret[0].(*proto.Candle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// FetchMostRecentCandle indicates an expected call of FetchMostRecentCandle
-func (mr *MockCandleStoreMockRecorder) FetchMostRecentCandle(arg0, arg1, arg2 interface{}) *gomock.Call {
+// FetchLastCandle indicates an expected call of FetchLastCandle
+func (mr *MockCandleStoreMockRecorder) FetchLastCandle(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchMostRecentCandle", reflect.TypeOf((*MockCandleStore)(nil).FetchMostRecentCandle), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchLastCandle", reflect.TypeOf((*MockCandleStore)(nil).FetchLastCandle), arg0, arg1)
 }
 
 // GenerateCandlesFromBuffer mocks base method

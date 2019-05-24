@@ -8,15 +8,15 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/gql"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/grpc"
-	"code.vegaprotocol.io/vega/internal/api/endpoints/restproxy"
+	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
@@ -33,8 +33,8 @@ import (
 type NodeCommand struct {
 	command
 
-	ctx   context.Context
-	cfunc context.CancelFunc
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	accounts    *storage.Account
 	candleStore *storage.Candle
@@ -50,6 +50,7 @@ type NodeCommand struct {
 	orderService  *orders.Svc
 	partyService  *parties.Svc
 	timeService   *vegatime.Svc
+	auth          *auth.Svc
 
 	blockchainClient *blockchain.Client
 
@@ -91,7 +92,7 @@ func (l *NodeCommand) addFlags() {
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
-	defer l.cfunc()
+	defer l.cancel()
 	// check node_pre.go, that's where everything gets bootstrapped
 	// Execution engine (broker operation at runtime etc)
 	executionEngine := execution.NewEngine(
@@ -121,7 +122,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		bcProcessor,
 		bcService,
 		l.timeService,
-		l.cfunc,
+		l.cancel,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcApp.ReloadConf(cfg.Blockchain) })
 
@@ -133,10 +134,19 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
-	statusChecker.OnChainDisconnect(l.cfunc)
+	statusChecker.OnChainDisconnect(l.cancel)
+
+	var err error
+	if l.conf.Auth.Enabled {
+		l.auth, err = auth.New(l.ctx, l.Log, l.conf.Auth)
+		if err != nil {
+			return errors.Wrap(err, "unable to start auth service")
+		}
+		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.auth.ReloadConf(cfg.Auth) })
+	}
 
 	// gRPC server
-	grpcServer := grpc.NewGRPCServer(
+	grpcServer := api.NewGRPCServer(
 		l.Log,
 		l.conf.API,
 		l.stats,
@@ -151,37 +161,36 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
+	if l.conf.Auth.Enabled {
+		l.auth.OnPartiesUpdated(grpcServer.OnPartiesUpdated)
+	}
+	metrics.Start(l.conf.Metrics)
 
-	// REST<>gRPC (gRPC proxy) server
-	restServer := restproxy.NewRestProxyServer(l.Log, l.conf.API)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { restServer.ReloadConf(cfg.API) })
-	go restServer.Start()
+	// start gateway
+	var gty *Gateway
 
-	// GraphQL server
-	graphServer := gql.NewGraphQLServer(
-		l.Log,
-		l.conf.API,
-		l.orderService,
-		l.tradeService,
-		l.candleService,
-		l.marketService,
-		l.partyService,
-		l.timeService,
-		statusChecker,
-	)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { graphServer.ReloadConf(cfg.API) })
-	go graphServer.Start()
+	if l.conf.GatewayEnabled {
+		gty, err = startGateway(l.Log, l.conf.Gateway)
+		if err != nil {
+			return err
+		}
+	}
 
 	l.Log.Info("Vega startup complete")
 
 	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
-	restServer.Stop()
 	grpcServer.Stop()
-	graphServer.Stop()
 	socketServer.Stop()
 	statusChecker.Stop()
+
+	// cleanup gateway
+	if l.conf.GatewayEnabled {
+		if gty != nil {
+			gty.Stop()
+		}
+	}
 
 	return nil
 }

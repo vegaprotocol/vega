@@ -107,7 +107,7 @@ func TestMarketService_GetDepth(t *testing.T) {
 	defer svc.Finish()
 	market := &types.Market{Id: "BTC/DEC19"}
 	depth := &types.MarketDepth{
-		Name: market.Id,
+		MarketID: market.Id,
 	}
 
 	svc.market.EXPECT().GetByID(market.Id).Times(1).Return(market, nil)
@@ -143,7 +143,7 @@ func testMarketObserveDepthSuccess(t *testing.T) {
 	orders := []types.Order{}
 	// return value of GetMarketDepth call
 	depth := types.MarketDepth{
-		Name: marketArg,
+		MarketID: marketArg,
 	}
 	// ensure unsubscribe was handled properly
 	wg := sync.WaitGroup{}

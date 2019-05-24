@@ -11,8 +11,8 @@ import (
 	"sync"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/api"
 
 	"google.golang.org/grpc"
 )
@@ -57,7 +57,7 @@ func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
 		return err
 	}
 
-	client := api.NewTradingClient(conn)
+	client := api.NewTradingDataClient(conn)
 	req := &api.OrdersSubscribeRequest{
 		MarketID: market,
 		PartyID:  party,
@@ -101,7 +101,7 @@ func startTrades(ctx context.Context, wg *sync.WaitGroup) error {
 		return err
 	}
 
-	client := api.NewTradingClient(conn)
+	client := api.NewTradingDataClient(conn)
 	req := &api.TradesSubscribeRequest{
 		MarketID: market,
 		PartyID:  party,
@@ -142,7 +142,7 @@ func startPositions(ctx context.Context, wg *sync.WaitGroup) error {
 		return err
 	}
 
-	client := api.NewTradingClient(conn)
+	client := api.NewTradingDataClient(conn)
 	req := &api.PositionsSubscribeRequest{
 		PartyID: party,
 	}
@@ -183,7 +183,7 @@ func startCandles(ctx context.Context, wg *sync.WaitGroup) error {
 		return err
 	}
 
-	client := api.NewTradingClient(conn)
+	client := api.NewTradingDataClient(conn)
 	req := &api.CandlesSubscribeRequest{
 		MarketID: market,
 		Interval: proto.Interval_I1M,
@@ -224,7 +224,7 @@ func startDepth(ctx context.Context, wg *sync.WaitGroup) error {
 		return err
 	}
 
-	client := api.NewTradingClient(conn)
+	client := api.NewTradingDataClient(conn)
 	req := &api.MarketDepthSubscribeRequest{
 		MarketID: market,
 	}

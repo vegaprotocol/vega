@@ -4,6 +4,9 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
+
+	"code.vegaprotocol.io/vega/internal/config/encoding"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
@@ -50,9 +53,9 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 	defer orderStore.Close()
 
 	var order = &types.Order{
-		Id:     "45305210ff7a9bb9450b1833cc10368a",
-		Market: "testMarket",
-		Party:  "testParty",
+		Id:       "45305210ff7a9bb9450b1833cc10368a",
+		MarketID: "testMarket",
+		PartyID:  "testParty",
 	}
 
 	err = orderStore.Post(*order)
@@ -61,6 +64,33 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 	orderStore.Commit()
 
 	o, err := orderStore.GetByMarketAndId(context.Background(), "testMarket", order.Id)
+	assert.Nil(t, err)
+	assert.Equal(t, order.Id, o.Id)
+}
+
+func TestStorage_PostAndGetByReference(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
+	storage.FlushStores(logging.NewTestLogger(), config)
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	defer orderStore.Close()
+
+	var order = &types.Order{
+		Reference: "83cfdf76-8eac-4c7e-8f6a-2aa51e89364f",
+		Id:        "45305210ff7a9bb9450b1833cc10368a",
+		MarketID:  "testMarket",
+		PartyID:   "testParty",
+	}
+
+	err = orderStore.Post(*order)
+	assert.Nil(t, err)
+
+	orderStore.Commit()
+
+	o, err := orderStore.GetByReference(context.Background(), order.Reference)
 	assert.Nil(t, err)
 	assert.Equal(t, order.Id, o.Id)
 }
@@ -84,19 +114,19 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 			inMarkets: []string{"testMarket1", "marketZ"},
 			inOrders: []*types.Order{
 				{
-					Id:     "d41d8cd98f00b204e9800998ecf8427e",
-					Market: "testMarket1",
-					Party:  testParty,
+					Id:       "d41d8cd98f00b204e9800998ecf8427e",
+					MarketID: "testMarket1",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "ad2dc275947362c45893bbeb30fc3098",
-					Market: "marketZ",
-					Party:  testParty,
+					Id:       "ad2dc275947362c45893bbeb30fc3098",
+					MarketID: "marketZ",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "4e8e41367997cfe705d62ea80592cbcc",
-					Market: "testMarket1",
-					Party:  testParty,
+					Id:       "4e8e41367997cfe705d62ea80592cbcc",
+					MarketID: "testMarket1",
+					PartyID:  testParty,
 				},
 			},
 			inLimit:        5000,
@@ -107,19 +137,19 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 			inMarkets: []string{testMarket, "marketABC"},
 			inOrders: []*types.Order{
 				{
-					Id:     "d41d8cd98f00b204e9800998ecf8427e",
-					Market: testMarket,
-					Party:  testParty,
+					Id:       "d41d8cd98f00b204e9800998ecf8427e",
+					MarketID: testMarket,
+					PartyID:  testParty,
 				},
 				{
-					Id:     "ad2dc275947362c45893bbeb30fc3098",
-					Market: "marketABC",
-					Party:  testParty,
+					Id:       "ad2dc275947362c45893bbeb30fc3098",
+					MarketID: "marketABC",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "4e8e41367997cfe705d62ea80592cbcc",
-					Market: testMarket,
-					Party:  testParty,
+					Id:       "4e8e41367997cfe705d62ea80592cbcc",
+					MarketID: testMarket,
+					PartyID:  testParty,
 				},
 			},
 			inLimit:        5000,
@@ -130,19 +160,19 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 			inMarkets: []string{"marketXYZ"},
 			inOrders: []*types.Order{
 				{
-					Id:     "d41d8cd98f00b204e9800998ecf8427e",
-					Market: "marketXYZ",
-					Party:  testParty,
+					Id:       "d41d8cd98f00b204e9800998ecf8427e",
+					MarketID: "marketXYZ",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "ad2dc275947362c45893bbeb30fc3098",
-					Market: "marketXYZ",
-					Party:  testParty,
+					Id:       "ad2dc275947362c45893bbeb30fc3098",
+					MarketID: "marketXYZ",
+					PartyID:  testParty,
 				},
 				{
-					Id:     "4e8e41367997cfe705d62ea80592cbcc",
-					Market: "marketXYZ",
-					Party:  testParty,
+					Id:       "4e8e41367997cfe705d62ea80592cbcc",
+					MarketID: "marketXYZ",
+					PartyID:  testParty,
 				},
 			},
 			inLimit:        2,
@@ -183,15 +213,15 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 
 	passiveOrder := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf9999e",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Remaining: 0,
 	}
 
 	aggressiveOrder := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427e",
-		Market:    testMarket,
-		Party:     testPartyB,
+		MarketID:  testMarket,
+		PartyID:   testPartyB,
 		Remaining: 100,
 	}
 
@@ -222,8 +252,8 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	// update order, parties should also be updated as its a pointer
 	updatedAggressiveOrder := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427e",
-		Market:    testMarket,
-		Party:     testPartyB,
+		MarketID:  testMarket,
+		PartyID:   testPartyB,
 		Remaining: 0,
 	}
 
@@ -249,8 +279,8 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 
 	order := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427b",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      1000,
@@ -272,8 +302,29 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	assert.Equal(t, order.Id, fetchedOrder[0].Id)
 }
 
-// @TODO this test is being skipped after changes to the filtering stuff
-func testStorage_InsertBatchOrders(t *testing.T) {
+// Ensures that we return a market depth struct with empty buy/sell for
+// markets that have no orders (when they are newly created)
+func TestStorage_GetMarketDepthForNewMarket(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+	log := logging.NewTestLogger()
+	storage.FlushStores(log, config)
+	orderStore, err := storage.NewOrders(log, config, func() {})
+	assert.Nil(t, err)
+	defer orderStore.Close()
+
+	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
+	assert.Nil(t, err)
+
+	assert.Equal(t, testMarket, depth.MarketID)
+	assert.Equal(t, 0, len(depth.Buy))
+	assert.Equal(t, 0, len(depth.Sell))
+}
+
+// Ensure market depth returns expected price levels from incoming orders
+func TestStorage_GetMarketDepth(t *testing.T) {
 	config, err := storage.NewTestConfig()
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
@@ -286,12 +337,12 @@ func testStorage_InsertBatchOrders(t *testing.T) {
 
 	order1 := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427b",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      1000,
-		Remaining: 0,
+		Remaining: 1000,
 		Type:      types.Order_GTC,
 		CreatedAt: 0,
 		Status:    types.Order_Active,
@@ -300,12 +351,26 @@ func testStorage_InsertBatchOrders(t *testing.T) {
 
 	order2 := &types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427c",
-		Market:    testMarket,
-		Party:     testPartyA,
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
 		Side:      types.Side_Buy,
 		Price:     100,
 		Size:      1000,
-		Remaining: 0,
+		Remaining: 1000,
+		Type:      types.Order_GTC,
+		CreatedAt: 0,
+		Status:    types.Order_Active,
+		Reference: "123123-34334343-1231232",
+	}
+
+	order3 := &types.Order{
+		Id:        "d41d8cd98f00b204e9800998hhf8427c",
+		MarketID:  testMarket,
+		PartyID:   testPartyB,
+		Side:      types.Side_Sell,
+		Price:     9999,
+		Size:      20,
+		Remaining: 20,
 		Type:      types.Order_GTC,
 		CreatedAt: 0,
 		Status:    types.Order_Active,
@@ -318,14 +383,63 @@ func testStorage_InsertBatchOrders(t *testing.T) {
 	err = orderStore.Post(*order2)
 	assert.Nil(t, err)
 
-	fetchedOrder, err := orderStore.GetByParty(context.Background(), testPartyA, 0, 1, true, nil)
+	err = orderStore.Post(*order3)
 	assert.Nil(t, err)
-	assert.Equal(t, 0, len(fetchedOrder))
 
-	orderStore.Commit()
-
-	fetchedOrder, err = orderStore.GetByParty(context.Background(), testPartyA, 0, 1, true, nil)
+	err = orderStore.Commit()
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(fetchedOrder))
-	assert.Equal(t, order1.Id, fetchedOrder[0].Id)
+
+	depth, err := orderStore.GetMarketDepth(context.Background(), testMarket)
+	assert.Nil(t, err)
+
+	assert.Equal(t, testMarket, depth.MarketID)
+	assert.Equal(t, 1, len(depth.Buy))
+	assert.Equal(t, 1, len(depth.Sell))
+	assert.Equal(t, uint64(100), depth.Buy[0].Price)
+	assert.Equal(t, uint64(9999), depth.Sell[0].Price)
+}
+
+func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
+	ctx := context.Background()
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+	config.Timeout = encoding.Duration{Duration: time.Nanosecond}
+	log := logging.NewTestLogger()
+	storage.FlushStores(log, config)
+	orderStore, err := storage.NewOrders(log, config, func() {})
+	assert.Nil(t, err)
+	defer orderStore.Close()
+
+	order := &types.Order{
+		Id:        "d41d8cd98f00b204e9800998ecf8427b",
+		MarketID:  testMarket,
+		PartyID:   testPartyA,
+		Side:      types.Side_Buy,
+		Price:     100,
+		Size:      1000,
+		Remaining: 1000,
+		Type:      types.Order_GTC,
+		CreatedAt: 0,
+		Status:    types.Order_Active,
+		Reference: "123123-34334343-1231231",
+	}
+
+	err = orderStore.Post(*order)
+	assert.Nil(t, err)
+
+	err = orderStore.Commit()
+	assert.Nil(t, err)
+
+	// Bit of a hacky test, but we want to test timeouts when getting market depth because we can only set a timeout
+	// of 1s or more through config, we're setting a timeout of 1 nanosecond on the context we pass to orderStore
+	// this ensures that the context will get cancelled when getting market depth, and that code path gets tested
+	tctx, cfunc := context.WithTimeout(ctx, time.Nanosecond)
+	defer cfunc()
+
+	// perhaps sleep here in case we need to make sure the context has indeed expired, but starting the 2 routines and the map lookups
+	// alone will take longer than a nanosecond anyway, so there's no need.
+	_, err = orderStore.GetMarketDepth(tctx, testMarket)
+	assert.Equal(t, storage.ErrTimeoutReached, err)
 }

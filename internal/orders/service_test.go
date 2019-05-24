@@ -21,8 +21,8 @@ import (
 var (
 	orderSubmission = types.OrderSubmission{
 		Id:       "order_id",
-		MarketId: "market_id",
-		Party:    "party",
+		MarketID: "market_id",
+		PartyID:  "party",
 		Price:    10000,
 		Size:     1,
 		Side:     types.Side(1),
@@ -61,8 +61,8 @@ func testOrderSuccess(t *testing.T) {
 	matcher := orderMatcher{
 		e: types.Order{
 			Id:        order.Id,
-			Market:    order.MarketId,
-			Party:     order.Party,
+			MarketID:  order.MarketID,
+			PartyID:   order.PartyID,
 			Price:     order.Price,
 			Size:      order.Size,
 			Side:      order.Side,
@@ -106,8 +106,8 @@ func testOrderBlockchainError(t *testing.T) {
 	matcher := orderMatcher{
 		e: types.Order{
 			Id:        order.Id,
-			Market:    order.MarketId,
-			Party:     order.Party,
+			MarketID:  order.MarketID,
+			PartyID:   order.PartyID,
 			Price:     order.Price,
 			Size:      order.Size,
 			Side:      order.Side,
@@ -159,10 +159,10 @@ func (m orderMatcher) Matches(x interface{}) bool {
 	default:
 		return false
 	}
-	if m.e.Id != v.Id && m.e.Market != v.Market {
+	if m.e.Id != v.Id && m.e.MarketID != v.MarketID {
 		return false
 	}
-	if m.e.Party != v.Party {
+	if m.e.PartyID != v.PartyID {
 		return false
 	}
 

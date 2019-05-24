@@ -29,7 +29,8 @@ const (
 
 // Config provides package level settings, configuration and logging.
 type Config struct {
-	Level encoding.LogLevel
+	BadgerOptions BadgerOptions
+	Level         encoding.LogLevel
 
 	OrderStoreDirPath  string
 	TradeStoreDirPath  string
@@ -48,6 +49,7 @@ type Config struct {
 // where all storage directories are to be read from and written to.
 func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
+		BadgerOptions:         DefaultBadgerOptions(),
 		Level:                 encoding.LogLevel{Level: logging.InfoLevel},
 		OrderStoreDirPath:     filepath.Join(defaultStoreDirPath, OrderStoreDataPath),
 		TradeStoreDirPath:     filepath.Join(defaultStoreDirPath, TradeStoreDataPath),
@@ -136,6 +138,7 @@ func InitStoreDirectory(path string) error {
 func NewTestConfig() (Config, error) {
 	// Test configuration for badger stores
 	cfg := Config{
+		BadgerOptions:         DefaultBadgerOptions(),
 		OrderStoreDirPath:     fmt.Sprintf("/tmp/vegatests/orderstore-%v", randSeq(5)),
 		TradeStoreDirPath:     fmt.Sprintf("/tmp/vegatests/tradestore-%v", randSeq(5)),
 		CandleStoreDirPath:    fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),

@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 
+	cfgencoding "code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -21,6 +22,31 @@ type badgerStore struct {
 	db *badger.DB
 }
 
+// BadgerOptions are params for creating a DB object.
+type BadgerOptions struct {
+	// Dir                  string // not customisable by end user
+	// ValueDir             string // not customisable by end user
+	SyncWrites              bool
+	TableLoadingMode        cfgencoding.FileLoadingMode
+	ValueLogLoadingMode     cfgencoding.FileLoadingMode
+	NumVersionsToKeep       int
+	MaxTableSize            int64
+	LevelSizeMultiplier     int
+	MaxLevels               int
+	ValueThreshold          int
+	NumMemtables            int
+	NumLevelZeroTables      int
+	NumLevelZeroTablesStall int
+	LevelOneSize            int64
+	ValueLogFileSize        int64
+	ValueLogMaxEntries      uint32
+	NumCompactors           int
+	CompactL0OnClose        bool
+	ReadOnly                bool
+	Truncate                bool
+	// Logger               logging.Logger // not customisable by end user
+}
+
 func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Iterator {
 	if descending {
 		return bs.descendingIterator(txn)
@@ -28,25 +54,64 @@ func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Ite
 	return bs.ascendingIterator(txn)
 }
 
-func customBadgerOptions(dir string, log *logging.Logger) badger.Options {
-	opts := badger.DefaultOptions
-	opts.Dir, opts.ValueDir = dir, dir
-
+// DefaultBadgerOptions supplies default badger options to be used for all stores.
+func DefaultBadgerOptions() BadgerOptions {
 	/*
 		Notes:
 		* MaxTableSize: set low to avoid badger grabbing-then-releasing gigs of memory (#147)
 		* ValueThreshold: set low to move most data out of the LSM tree (#147)
 	*/
-	opts.MaxTableSize = 16 << 20
-	opts.ValueThreshold = 16
-	opts.NumMemtables = 1
-	opts.NumLevelZeroTables = 1
-	opts.NumLevelZeroTablesStall = 2
-	opts.NumCompactors = 2
+	fileio := cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
+	opts := BadgerOptions{
+		// Dir:                  TBD,       // string
+		// ValueDir:             TBD,       // string
+		SyncWrites:              true,      // bool
+		TableLoadingMode:        fileio,    // options.FileLoadingMode, default options.MemoryMap
+		ValueLogLoadingMode:     fileio,    // options.FileLoadingMode, default options.MemoryMap
+		NumVersionsToKeep:       1,         // int
+		MaxTableSize:            16 << 20,  // int64, default 64<<20 (64MB)
+		LevelSizeMultiplier:     10,        // int
+		MaxLevels:               7,         // int
+		ValueThreshold:          16,        // int, default 32
+		NumMemtables:            1,         // int, default 5
+		NumLevelZeroTables:      1,         // int, default 5
+		NumLevelZeroTablesStall: 2,         // int, default 10
+		LevelOneSize:            64 << 20,  // int64, default 256<<20
+		ValueLogFileSize:        1<<30 - 1, // int64, default 1<<30-1 (almost 1GB)
+		ValueLogMaxEntries:      1000000,   // uint32
+		NumCompactors:           2,         // int, default 2
+		CompactL0OnClose:        true,      // bool
+		ReadOnly:                false,     // bool
+		Truncate:                false,     // bool
+		// Logger:               TBD,       // Logger, default defaultLogger
+	}
+	return opts
+}
 
-	opts.TableLoadingMode, opts.ValueLogLoadingMode = options.FileIO, options.FileIO
-	opts.Logger = log.Named(badgerNamedLogger)
-
+func badgerOptionsFromConfig(cfg BadgerOptions, dir string, log *logging.Logger) badger.Options {
+	opts := badger.Options{
+		Dir:                     dir,
+		ValueDir:                dir,
+		SyncWrites:              cfg.SyncWrites,
+		TableLoadingMode:        cfg.TableLoadingMode.Get(),
+		ValueLogLoadingMode:     cfg.ValueLogLoadingMode.Get(),
+		NumVersionsToKeep:       cfg.NumVersionsToKeep,
+		MaxTableSize:            cfg.MaxTableSize,
+		LevelSizeMultiplier:     cfg.LevelSizeMultiplier,
+		MaxLevels:               cfg.MaxLevels,
+		ValueThreshold:          cfg.ValueThreshold,
+		NumMemtables:            cfg.NumMemtables,
+		NumLevelZeroTables:      cfg.NumLevelZeroTables,
+		NumLevelZeroTablesStall: cfg.NumLevelZeroTablesStall,
+		LevelOneSize:            cfg.LevelOneSize,
+		ValueLogFileSize:        cfg.ValueLogFileSize,
+		ValueLogMaxEntries:      cfg.ValueLogMaxEntries,
+		NumCompactors:           cfg.NumCompactors,
+		CompactL0OnClose:        cfg.CompactL0OnClose,
+		ReadOnly:                cfg.ReadOnly,
+		Truncate:                cfg.Truncate,
+		Logger:                  log.Named(badgerNamedLogger),
+	}
 	return opts
 }
 
@@ -99,6 +164,11 @@ func (bs *badgerStore) writeTransaction() *badger.Txn {
 	return bs.db.NewTransaction(true)
 }
 
+func (bs *badgerStore) lastCandleKey(
+	marketID string, interval types.Interval) []byte {
+	return []byte(fmt.Sprintf("LCM:%s_I:%s", marketID, interval.String()))
+}
+
 func (bs *badgerStore) marketKey(marketID string) []byte {
 	return []byte(fmt.Sprintf("MID:%v", marketID))
 }
@@ -109,6 +179,10 @@ func (bs *badgerStore) candleKey(market string, interval types.Interval, timesta
 
 func (bs *badgerStore) orderMarketKey(market string, Id string) []byte {
 	return []byte(fmt.Sprintf("M:%s_ID:%s", market, Id))
+}
+
+func (bs *badgerStore) orderReferenceKey(ref string) []byte {
+	return []byte(fmt.Sprintf("R:%s", ref))
 }
 
 func (bs *badgerStore) orderIdKey(Id string) []byte {

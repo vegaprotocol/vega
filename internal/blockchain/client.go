@@ -53,9 +53,9 @@ func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.Pe
 		Price:     order.Price,
 		Type:      order.Type,
 		Side:      order.Side,
-		MarketID:  order.Market,
+		MarketID:  order.MarketID,
 		Size:      order.Size,
-		Party:     order.Party,
+		PartyID:   order.PartyID,
 		Status:    order.Status,
 	}, nil
 }
@@ -81,7 +81,7 @@ func (b *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 	if err != nil {
 		return 0, err
 	}
-	return res.N, err
+	return res.Count, err
 }
 
 func (b *Client) Health() (*tmctypes.ResultHealth, error) {

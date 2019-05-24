@@ -32,10 +32,10 @@ func (ms *Party) Post(party *types.Party) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
-	if _, exists := ms.db[party.Name]; exists {
-		return errors.New(fmt.Sprintf("party %s already exists in store", party.Name))
+	if _, exists := ms.db[party.Id]; exists {
+		return errors.New(fmt.Sprintf("party %s already exists in store", party.Id))
 	}
-	ms.db[party.Name] = *party
+	ms.db[party.Id] = *party
 	return nil
 }
 

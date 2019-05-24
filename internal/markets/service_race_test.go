@@ -19,7 +19,7 @@ func TestMarketObserveDepthRetryLimit(t *testing.T) {
 	ref := uint64(1)
 	// return value of GetMarketDepth call
 	depth := types.MarketDepth{
-		Name: marketArg,
+		MarketID: marketArg,
 	}
 	// ensure unsubscribe was handled properly
 	wg := sync.WaitGroup{}
