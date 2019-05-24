@@ -82,8 +82,9 @@ message TradableInstrument {
 
 message Market {
   string id = 1;
-  TradableInstrument tradableInstrument = 2;
-  uint64 decimalPlaces = 3;
+  string name = 2;
+  TradableInstrument tradableInstrument = 3;
+  uint64 decimalPlaces = 4;
   oneof tradingMode {
     ContinuousTrading continuous = 100;
     DiscreteTrading discrete = 101;

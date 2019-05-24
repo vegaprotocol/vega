@@ -153,43 +153,49 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 }
 
-func (e *Engine) SubmitMarket(mkt *types.Market) error {
-	if _, ok := e.markets[mkt.Id]; ok {
-		return ErrMarketAlreadyExist
-	}
+func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
+
+	// TODO: Check for existing market in MarketStore by Name.
+	// if __TBC_MarketExists__(mktconfig.Name) {
+	// 	return ErrMarketAlreadyExist
+	// }
+
+	var mkt *Market
+	var err error
 
 	now, _ := e.time.GetTimeNow()
-	var err error
-	e.markets[mkt.Id], err = NewMarket(
+	mkt, err = NewMarket(
 		e.log,
 		e.Config.Risk,
 		e.Config.Collateral,
 		e.Config.Position,
 		e.Config.Settlement,
 		e.Config.Matching,
-		mkt,
+		mktconfig,
 		e.candleStore,
 		e.orderStore,
 		e.partyStore,
 		e.tradeStore,
 		e.accountStore,
 		now,
+		uint64(len(e.markets)),
 	)
 	if err != nil {
 		e.log.Error("Failed to instanciate market",
-			logging.String("market-id", mkt.Id),
+			logging.String("market-name", mktconfig.Name),
 			logging.Error(err),
 		)
 	}
 
-	err = e.marketStore.Post(mkt)
+	err = e.marketStore.Post(mktconfig)
 	if err != nil {
 		e.log.Error("Failed to add default market to market store",
-			logging.String("market-id", mkt.Id),
+			logging.String("market-name", mktconfig.Name),
 			logging.Error(err),
 		)
 	}
 
+	e.markets[mktconfig.Id] = mkt
 	return nil
 }
 
