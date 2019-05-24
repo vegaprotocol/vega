@@ -17,6 +17,7 @@ type Config struct {
 	Port          int
 	IP            string
 	StreamRetries int
+	AuthEnabled   bool
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -29,5 +30,6 @@ func NewDefaultConfig() Config {
 		IP:            "0.0.0.0",
 		Port:          3002,
 		StreamRetries: 3,
+		AuthEnabled:   false,
 	}
 }

@@ -9,12 +9,14 @@ import (
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/api"
+	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
@@ -31,8 +33,8 @@ import (
 type NodeCommand struct {
 	command
 
-	ctx   context.Context
-	cfunc context.CancelFunc
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	accounts    *storage.Account
 	candleStore *storage.Candle
@@ -48,6 +50,7 @@ type NodeCommand struct {
 	orderService  *orders.Svc
 	partyService  *parties.Svc
 	timeService   *vegatime.Svc
+	auth          *auth.Svc
 
 	blockchainClient *blockchain.Client
 
@@ -89,7 +92,7 @@ func (l *NodeCommand) addFlags() {
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
-	defer l.cfunc()
+	defer l.cancel()
 	// check node_pre.go, that's where everything gets bootstrapped
 	// Execution engine (broker operation at runtime etc)
 	executionEngine := execution.NewEngine(
@@ -119,7 +122,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		bcProcessor,
 		bcService,
 		l.timeService,
-		l.cfunc,
+		l.cancel,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcApp.ReloadConf(cfg.Blockchain) })
 
@@ -131,7 +134,14 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
-	statusChecker.OnChainDisconnect(l.cfunc)
+	statusChecker.OnChainDisconnect(l.cancel)
+
+	var err error
+	l.auth, err = auth.New(l.ctx, l.Log, l.conf.Auth)
+	if err != nil {
+		return errors.Wrap(err, "unable to start auth service")
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.auth.ReloadConf(cfg.Auth) })
 
 	// gRPC server
 	grpcServer := api.NewGRPCServer(
@@ -149,12 +159,12 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
+	l.auth.OnPartiesUpdated(grpcServer.OnPartiesUpdated)
+	metrics.Start(l.conf.Metrics)
 
 	// start gateway
-	var (
-		gty *Gateway
-		err error
-	)
+	var gty *Gateway
+
 	if l.conf.GatewayEnabled {
 		gty, err = startGateway(l.Log, l.conf.Gateway)
 		if err != nil {

@@ -17,6 +17,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/tendermint/tendermint/p2p"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -27,6 +28,9 @@ func TestAppStatus(t *testing.T) {
 	statusRes := tmctypes.ResultStatus{
 		SyncInfo: tmctypes.SyncInfo{
 			CatchingUp: false,
+		},
+		NodeInfo: p2p.DefaultNodeInfo{
+			Version: "0.31.5",
 		},
 	}
 

@@ -62,6 +62,7 @@ func testCreateMarketAccounts(t *testing.T) {
 			assert.Contains(t, types, account.Type)
 		}
 	}
+	assert.NotEmpty(t, owner)
 	accounts, err = acc.GetAccountsForOwner(owner)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(accounts))

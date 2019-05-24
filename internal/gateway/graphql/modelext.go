@@ -370,6 +370,7 @@ func MarketFromProto(pmkt *proto.Market) (*Market, error) {
 	var err error
 	mkt := &Market{}
 	mkt.ID = pmkt.Id
+	mkt.Name = pmkt.Name
 	mkt.DecimalPlaces = int(pmkt.DecimalPlaces)
 	mkt.TradingMode, err = TradingModeFromProto(pmkt.TradingMode)
 	if err != nil {

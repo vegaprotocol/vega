@@ -135,6 +135,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 }
 
 func createDefaultMarkets(confpath string) error {
+	var seq uint64
 	riskModel := &proto.TradableInstrument_Forward{
 		Forward: &proto.Forward{
 			Lambd: 0.01,
@@ -148,11 +149,11 @@ func createDefaultMarkets(confpath string) error {
 	}
 
 	mkt := proto.Market{
-		Id: "ETH/DEC19",
+		Name: "ETH/DEC19",
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Id:   "Crypto/ETHUSD/Futures/Dec19",
-				Code: "FX:BTCUSD/DEC19",
+				Code: "FX:ETHUSD/DEC19",
 				Name: "December 2019 ETH vs USD future",
 				Metadata: &proto.InstrumentMetadata{
 					Tags: []string{
@@ -180,11 +181,13 @@ func createDefaultMarkets(confpath string) error {
 		},
 	}
 
-	err := createDefaultMarket(&mkt, path.Join(confpath, marketETHDEC19))
+	err := createDefaultMarket(&mkt, path.Join(confpath, marketETHDEC19), seq)
 	if err != nil {
 		return err
 	}
-	mkt.Id = "GBP/JUN19"
+	seq++
+
+	mkt.Name = "GBP/JUN19"
 	mkt.TradableInstrument.Instrument.Id = "FX/GBPUSD/Futures/Jun19"
 	mkt.TradableInstrument.Instrument.Code = "FX:GBPUSD/Jun19"
 	mkt.TradableInstrument.Instrument.Name = "June 2019 GBP vs USD future"
@@ -211,11 +214,13 @@ func createDefaultMarkets(confpath string) error {
 			},
 		},
 	}
-	err = createDefaultMarket(&mkt, path.Join(confpath, marketGBPJUN19))
+	err = createDefaultMarket(&mkt, path.Join(confpath, marketGBPJUN19), seq)
 	if err != nil {
 		return err
 	}
-	mkt.Id = "BTC/DEC19"
+	seq++
+
+	mkt.Name = "BTC/DEC19"
 	mkt.TradableInstrument.Instrument.Id = "Fx/BTCUSD/Futures/Mar20"
 	mkt.TradableInstrument.Instrument.Code = "FX:BTCUSD/MAR20"
 	mkt.TradableInstrument.Instrument.Name = "DEC 2019 BTC vs USD future"
@@ -231,10 +236,11 @@ func createDefaultMarkets(confpath string) error {
 			Asset: "Ethereum/Ether",
 		},
 	}
-	return createDefaultMarket(&mkt, path.Join(confpath, marketBTCDEC19))
+	return createDefaultMarket(&mkt, path.Join(confpath, marketBTCDEC19), seq)
 }
 
-func createDefaultMarket(mkt *proto.Market, path string) error {
+func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
+	execution.SetMarketID(mkt, seq)
 	m := jsonpb.Marshaler{
 		Indent: "  ",
 	}

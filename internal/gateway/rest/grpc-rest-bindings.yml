@@ -10,6 +10,9 @@ apis:
 
 http:
   rules:
+    - selector: api.trading.SignIn
+      post: '/signin'
+      body: "*"
     - selector: api.trading.SubmitOrder
       post: '/submitOrder'
       body: "*"
