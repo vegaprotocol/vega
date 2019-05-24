@@ -254,8 +254,11 @@ type TradableInstrument {
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market {
 
-  # Market full name
+  # Market ID
   id: String!
+
+	# Market full name
+  name: String!
 
   # An instance of or reference to a tradable instrument.
   tradableInstrument: TradableInstrument!

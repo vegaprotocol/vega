@@ -75,6 +75,7 @@ type InstrumentMetadata struct {
 
 type Market struct {
 	ID                 string             `json:"id"`
+	Name               string             `json:"name"`
 	TradableInstrument TradableInstrument `json:"tradableInstrument"`
 	TradingMode        TradingMode        `json:"tradingMode"`
 	DecimalPlaces      int                `json:"decimalPlaces"`

@@ -108,6 +108,7 @@ type ComplexityRoot struct {
 		DecimalPlaces      func(childComplexity int) int
 		Depth              func(childComplexity int) int
 		ID                 func(childComplexity int) int
+		Name               func(childComplexity int) int
 		OrderByReference   func(childComplexity int, reference string) int
 		Orders             func(childComplexity int, open *bool, skip *int, first *int, last *int) int
 		TradableInstrument func(childComplexity int) int
@@ -537,6 +538,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.ID(childComplexity), true
+
+	case "Market.Name":
+		if e.complexity.Market.Name == nil {
+			break
+		}
+
+		return e.complexity.Market.Name(childComplexity), true
 
 	case "Market.OrderByReference":
 		if e.complexity.Market.OrderByReference == nil {
@@ -1536,8 +1544,11 @@ type TradableInstrument {
 # Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market {
 
-  # Market full name
+  # Market ID
   id: String!
+
+	# Market full name
+  name: String!
 
   # An instance of or reference to a tradable instrument.
   tradableInstrument: TradableInstrument!
@@ -3022,6 +3033,33 @@ func (ec *executionContext) _Market_id(ctx context.Context, field graphql.Collec
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_name(ctx context.Context, field graphql.CollectedField, obj *Market) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -6568,6 +6606,11 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = graphql.MarshalString("Market")
 		case "id":
 			out.Values[i] = ec._Market_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "name":
+			out.Values[i] = ec._Market_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
