@@ -71,9 +71,9 @@ func TestGetByMarket(t *testing.T) {
 	invalid := "LTC/DEC19"
 	expErr := errors.New("phobos communications link interrupted")
 	expect := []*types.Trade{
-		{Id: "A", Market: market, Price: 100},
-		{Id: "B", Market: market, Price: 200},
-		{Id: "C", Market: market, Price: 300},
+		{Id: "A", MarketID: market, Price: 100},
+		{Id: "B", MarketID: market, Price: 200},
+		{Id: "C", MarketID: market, Price: 300},
 	}
 
 	ui0, ui1 := uint64(0), uint64(1)
@@ -144,20 +144,20 @@ func testObserveTradesSuccess(t *testing.T) {
 	buyer, seller := "buyerID", "sellerID"
 	trades := []types.Trade{
 		{
-			Id:     "trade1",
-			Market: market,
-			Price:  1000,
-			Size:   1,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade1",
+			MarketID: market,
+			Price:    1000,
+			Size:     1,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 		{
-			Id:     "trade2",
-			Market: market,
-			Price:  1200,
-			Size:   2,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade2",
+			MarketID: market,
+			Price:    1200,
+			Size:     2,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 	}
 	wg := sync.WaitGroup{}
@@ -193,20 +193,20 @@ func testObserveTradesNoWrite(t *testing.T) {
 	buyer, seller := "buyerID", "sellerID"
 	trades := []types.Trade{
 		{
-			Id:     "trade1",
-			Market: market,
-			Price:  1000,
-			Size:   1,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade1",
+			MarketID: market,
+			Price:    1000,
+			Size:     1,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 		{
-			Id:     "trade2",
-			Market: market,
-			Price:  1200,
-			Size:   2,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade2",
+			MarketID: market,
+			Price:    1200,
+			Size:     2,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 	}
 	done := make(chan struct{})
@@ -247,28 +247,28 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 	buyer, seller := "buyerID", "sellerID"
 	trades := []types.Trade{
 		{
-			Id:     "trade1",
-			Market: market,
-			Price:  1000,
-			Size:   1,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade1",
+			MarketID: market,
+			Price:    1000,
+			Size:     1,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 		{
-			Id:     "trade2",
-			Market: market,
-			Price:  1200,
-			Size:   2,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade2",
+			MarketID: market,
+			Price:    1200,
+			Size:     2,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 		{
-			Id:     "trade3",
-			Market: filterMarket,
-			Price:  1200,
-			Size:   2,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade3",
+			MarketID: filterMarket,
+			Price:    1200,
+			Size:     2,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 	}
 	wg := sync.WaitGroup{}
@@ -293,7 +293,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 	// ensure we got the data we expected
 	assert.Equal(t, ref, rref)
 	assert.Equal(t, 1, len(gotTrades))
-	assert.Equal(t, filterMarket, gotTrades[0].Market)
+	assert.Equal(t, filterMarket, gotTrades[0].MarketID)
 	// unsubscript
 	cfunc()
 	// ensure unsubscribe was indeed called before returning
@@ -307,28 +307,28 @@ func testObserveTradesFilterNone(t *testing.T) {
 	buyer, seller := "buyerID", "sellerID"
 	trades := []types.Trade{
 		{
-			Id:     "trade1",
-			Market: market,
-			Price:  1000,
-			Size:   1,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade1",
+			MarketID: market,
+			Price:    1000,
+			Size:     1,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 		{
-			Id:     "trade2",
-			Market: market,
-			Price:  1200,
-			Size:   2,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade2",
+			MarketID: market,
+			Price:    1200,
+			Size:     2,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 		{
-			Id:     "trade3",
-			Market: filterMarket,
-			Price:  1200,
-			Size:   2,
-			Buyer:  buyer,
-			Seller: seller,
+			Id:       "trade3",
+			MarketID: filterMarket,
+			Price:    1200,
+			Size:     2,
+			Buyer:    buyer,
+			Seller:   seller,
 		},
 	}
 	done := make(chan struct{})
@@ -380,12 +380,12 @@ func (t *testService) Finish() {
 //	tradeService.Init(vega, &tradeStore)
 //
 //	tradeStore.On("GetByOrderId", market, orderId, datastore.GetParams{Limit: datastore.GetParamsLimitDefault}).Return([]datastore.Trade{
-//		{Trade: types.Trade{Id: "A", Market: market, Price: 1}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "B", Market: market, Price: 2}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "C", Market: market, Price: 3}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "D", Market: market, Price: 4}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "E", Market: market, Price: 5}, OrderId: orderId},
-//		{Trade: types.Trade{Id: "F", Market: market, Price: 6}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "A", MarketID: market, Price: 1}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "B", MarketID: market, Price: 2}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "C", MarketID: market, Price: 3}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "D", MarketID: market, Price: 4}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "E", MarketID: market, Price: 5}, OrderId: orderId},
+//		{Trade: types.Trade{Id: "F", MarketID: market, Price: 6}, OrderId: orderId},
 //	}, nil).Once()
 //
 //	var tradeSet, err = tradeService.GetTradesForOrder(ctx, market, orderId, datastore.GetParamsLimitDefault)
@@ -408,7 +408,7 @@ func (t *testService) Finish() {
 //	orderService.Init(vega, &orderStore)
 //
 //	orderStore.On("Get", market, orderId).Return(datastore.Order{
-//		Order: types.Order{Id: orderId, Market: market},
+//		Order: types.Order{Id: orderId, MarketID: market},
 //	}, nil)
 //
 //	var order, err = orderService.GetById(ctx, market, orderId)

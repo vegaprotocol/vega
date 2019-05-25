@@ -137,7 +137,7 @@ func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 				validatedTrades := make([]types.Trade, 0, len(v))
 				for _, item := range v {
 					// if market is nil or matches item market and party was nil, or matches seller or buyer
-					if (market == nil || item.Market == *market) && (party == nil || item.Seller == *party || item.Buyer == *party) {
+					if (market == nil || item.MarketID == *market) && (party == nil || item.Seller == *party || item.Buyer == *party) {
 						validatedTrades = append(validatedTrades, item)
 					}
 				}
@@ -324,7 +324,7 @@ func (t *Svc) GetPositionsByParty(ctx context.Context, party string) (positions 
 		}
 
 		marketPositions := &types.MarketPosition{}
-		marketPositions.Market = market
+		marketPositions.MarketID = market
 		marketPositions.RealisedVolume = int64(ClosedContracts)
 		marketPositions.UnrealisedVolume = int64(OpenContracts)
 		marketPositions.RealisedPNL = int64(float64(ClosedContracts) * deltaAverageEntryPrice)

@@ -95,18 +95,20 @@ func (a *Account) createAccount(cpy *types.Account) {
 	// use an embedded type here to keep track of this
 	rec.ownerIdx = len(a.byOwner[rec.Owner])
 	a.byOwner[rec.Owner] = append(a.byOwner[rec.Owner], rec)
-	if _, ok := a.byMarketOwner[rec.Market]; !ok {
-		a.byMarketOwner[rec.Market] = map[string][]*accountRecord{
-			rec.Owner: []*accountRecord{},
+	if rec.MarketID != "" {
+		if _, ok := a.byMarketOwner[rec.MarketID]; !ok {
+			a.byMarketOwner[rec.MarketID] = map[string][]*accountRecord{
+				rec.Owner: []*accountRecord{},
+			}
 		}
+		if _, ok := a.byMarketOwner[rec.MarketID][rec.Owner]; !ok {
+			a.byMarketOwner[rec.MarketID][rec.Owner] = []*accountRecord{}
+		}
+		a.byMarketOwner[rec.MarketID][rec.Owner] = append(a.byMarketOwner[rec.MarketID][rec.Owner], rec)
 	}
-	if _, ok := a.byMarketOwner[rec.Market][rec.Owner]; !ok {
-		a.byMarketOwner[rec.Market][rec.Owner] = []*accountRecord{}
-	}
-	a.byMarketOwner[rec.Market][rec.Owner] = append(a.byMarketOwner[rec.Market][rec.Owner], rec)
 }
 
-// CreateMarketAccounts - shortcut to quickly add the system balances for a market
+// CreateMarketIDAccounts - shortcut to quickly add the system balances for a market
 func (a *Account) CreateMarketAccounts(market string, insuranceBalance int64) error {
 	owner := SystemOwner
 	a.mu.Lock()
@@ -119,28 +121,24 @@ func (a *Account) CreateMarketAccounts(market string, insuranceBalance int64) er
 		return ErrMarketAccountsExist
 	}
 	a.byMarketOwner[market][owner] = []*accountRecord{}
-	// we can unlock here, we've set the byMarketOwner keys, duplicates are impossible
-	a.mu.Unlock()
 	accounts := []*types.Account{
 		{
-			Market:  market,
-			Owner:   owner,
-			Type:    types.AccountType_INSURANCE,
-			Balance: insuranceBalance,
+			MarketID: market,
+			Owner:    owner,
+			Type:     types.AccountType_INSURANCE,
+			Balance:  insuranceBalance,
 		},
 		{
-			Market: market,
-			Owner:  owner,
-			Type:   types.AccountType_SETTLEMENT,
+			MarketID: market,
+			Owner:    owner,
+			Type:     types.AccountType_SETTLEMENT,
 		},
 	}
-	// add them in the usual way
-	for _, account := range accounts {
-		if err := a.Create(account); err != nil {
-			// this is next to impossible, but ah well...
-			return err
-		}
+	for _, acc := range accounts {
+		a.createAccount(acc)
 	}
+	// we can unlock here, we've set the byMarketIDOwner keys, duplicates are impossible
+	a.mu.Unlock()
 	return nil
 }
 
@@ -150,10 +148,16 @@ func (a *Account) CreateTraderMarketAccounts(owner, market string) error {
 	// does this trader actually have any accounts yet?
 	accounts := []*types.Account{
 		{
-			Id:     uuid.NewV4().String(),
-			Market: market,
-			Owner:  owner,
-			Type:   types.AccountType_MARKET,
+			Id:       uuid.NewV4().String(),
+			MarketID: market,
+			Owner:    owner,
+			Type:     types.AccountType_MARKET,
+		},
+		{
+			Id:       uuid.NewV4().String(),
+			MarketID: market,
+			Owner:    owner,
+			Type:     types.AccountType_MARGIN,
 		},
 	}
 	a.mu.Lock()
@@ -165,11 +169,6 @@ func (a *Account) CreateTraderMarketAccounts(owner, market string) error {
 				Id:    uuid.NewV4().String(),
 				Owner: owner,
 				Type:  types.AccountType_GENERAL,
-			},
-			&types.Account{
-				Id:    uuid.NewV4().String(),
-				Owner: owner,
-				Type:  types.AccountType_MARGIN,
 			},
 		)
 	}
@@ -246,15 +245,6 @@ func (a *Account) GetMarketAccountsForOwner(market, owner string) ([]*types.Acco
 		cpy := *record.Account
 		accounts = append(accounts, &cpy)
 	}
-	if owner != SystemOwner {
-		for _, record := range a.byOwner[owner] {
-			if record.Type == types.AccountType_MARKET {
-				cpy := *record.Account
-				accounts = append(accounts, &cpy)
-				break
-			}
-		}
-	}
 	a.mu.RUnlock()
 	return accounts, nil
 }
@@ -275,22 +265,25 @@ func (a *Account) GetAccountsForOwner(owner string) ([]*types.Account, error) {
 	return ret, nil
 }
 
-func (a *Account) GetAccountsForOwnerByType(owner string, accType types.AccountType) (*types.Account, error) {
+func (a *Account) GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error) {
 	a.mu.RLock()
 	acc, ok := a.byOwner[owner]
 	if !ok {
 		a.mu.RUnlock()
 		return nil, ErrOwnerNotFound
 	}
+	var ret []*types.Account
 	for _, ac := range acc {
 		if ac.Type == accType {
 			cpy := *ac.Account
-			a.mu.RUnlock()
-			return &cpy, nil
+			ret = append(ret, &cpy)
 		}
 	}
 	a.mu.RUnlock()
-	return nil, ErrAccountNotFound
+	if len(ret) == 0 {
+		return nil, ErrAccountNotFound
+	}
+	return ret, nil
 }
 
 func (a *Account) UpdateBalance(id string, balance int64) error {

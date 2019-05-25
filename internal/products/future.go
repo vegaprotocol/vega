@@ -14,15 +14,20 @@ type Future struct {
 	Oracle   oracles.Oracle
 }
 
-func (f *Future) Settle(entryPrice uint64, netPosition uint64) (*FinancialAmount, error) {
+func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error) {
 	settlementPrice, err := f.Oracle.SettlementPrice()
 	if err != nil {
 		return nil, err
 	}
-	return &FinancialAmount{
+	return &types.FinancialAmount{
 		Asset:  f.Asset,
-		Amount: (settlementPrice - entryPrice) * netPosition,
+		Amount: int64((settlementPrice - entryPrice)) * netPosition,
 	}, nil
+}
+
+// Value - returns the nominal value of a unit given a current mark price
+func (f *Future) Value(markPrice uint64) (uint64, error) {
+	return markPrice, nil
 }
 
 func newFuture(f *types.Future) (*Future, error) {

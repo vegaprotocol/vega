@@ -28,16 +28,16 @@ func envConfigPath() string {
 
 func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error) {
 	// this shouldn't happen...
-	if l.cfunc != nil {
-		l.cfunc()
+	if l.cancel != nil {
+		l.cancel()
 	}
 	// ensure we cancel the context on error
 	defer func() {
 		if err != nil {
-			l.cfunc()
+			l.cancel()
 		}
 	}()
-	l.ctx, l.cfunc = context.WithCancel(context.Background())
+	l.ctx, l.cancel = context.WithCancel(context.Background())
 	// Use configPath from args
 	configPath := l.configPath
 	if configPath == "" {
@@ -48,6 +48,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			configPath = fsutil.DefaultVegaDir()
 		}
 	}
+	l.configPath = configPath
 
 	// VEGA config (holds all package level configs)
 	cfgwatchr, err := config.NewFromFile(l.ctx, l.Log, configPath, configPath)
@@ -83,12 +84,12 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Storage) })
 
-	if l.orderStore, err = storage.NewOrders(l.Log, l.conf.Storage, l.cfunc); err != nil {
+	if l.orderStore, err = storage.NewOrders(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Storage) })
 
-	if l.tradeStore, err = storage.NewTrades(l.Log, l.conf.Storage, l.cfunc); err != nil {
+	if l.tradeStore, err = storage.NewTrades(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) })
@@ -121,7 +122,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
 	defer func() {
 		if err != nil {
-			l.cfunc()
+			l.cancel()
 		}
 	}()
 	// this doesn't fail
