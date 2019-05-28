@@ -32,6 +32,23 @@ go generate .
 git diff # hopefully no differences
 ```
 
+## Running tests
+
+To run all tests, use:
+
+```bash
+make test
+```
+
+To run tests from one subdirectory, use:
+
+```bash
+go test ./internal/somedir/
+```
+
+To force a re-run of previously successful tests, add `-count 1`.
+
+
 ## Reasons for moving from mockery to mockgen
 
 TBD (#230)
