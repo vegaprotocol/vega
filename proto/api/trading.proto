@@ -179,7 +179,7 @@ message OrdersByPartyResponse {
 
 message OrderByMarketAndIdRequest {
   string marketID = 1 [(validator.field) = {msg_exists : true }];
-  string id = 2 [(validator.field) = {msg_exists : true}];
+  string orderID = 2 [(validator.field) = {msg_exists : true}];
 }
 
 message OrderByMarketAndIdResponse {
@@ -199,7 +199,7 @@ message MarketsResponse {
 }
 
 message CandlesRequest {
-  string market = 1 [(validator.field) = {msg_exists : true}];
+  string marketID = 1 [(validator.field) = {msg_exists : true}];
   int64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
   vega.Interval interval = 3;
 }
@@ -209,7 +209,7 @@ message CandlesResponse {
 }
 
 message MarketDepthRequest {
-  string market = 1 [(validator.field) = {msg_exists: true}];
+  string marketID = 1 [(validator.field) = {msg_exists: true}];
 }
 
 message MarketDepthResponse {

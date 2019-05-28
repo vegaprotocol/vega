@@ -8,8 +8,8 @@ import (
 var (
 	ErrNilTradingMode                  = errors.New("nil trading mode")
 	ErrUnimplementedTradingMode        = errors.New("unimplemented trading mode")
-	ErrNilMarket                       = errors.New("nil trading mode")
-	ErrUnimplementedMarket             = errors.New("unimplemented trading mode")
+	ErrNilMarket                       = errors.New("nil market")
+	ErrUnimplementedMarket             = errors.New("unimplemented market")
 	ErrNilTradableInstrument           = errors.New("nil tradable instrument")
 	ErrUnimplementedTradableInstrument = errors.New("unimplemented tradable instrument")
 	ErrNilOracle                       = errors.New("nil oracle")

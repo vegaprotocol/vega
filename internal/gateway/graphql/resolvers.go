@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	ErrNilPendingOrder = errors.New("mil pending order")
+	ErrNilPendingOrder = errors.New("nil pending order")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/graphql TradingClient
@@ -259,7 +259,7 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (*types.Ma
 
 	}
 
-	req := protoapi.MarketDepthRequest{Market: market.ID}
+	req := protoapi.MarketDepthRequest{MarketID: market.ID}
 	// Look for market depth for the given market (will validate market internally)
 	// Note: Market depth is also known as OrderBook depth within the matching-engine
 	res, err := r.tradingDataClient.MarketDepth(ctx, &req)
@@ -293,7 +293,7 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	}
 
 	req := protoapi.CandlesRequest{
-		Market:         mkt,
+		MarketID:       mkt,
 		SinceTimestamp: since.UnixNano(),
 		Interval:       pinterval,
 	}
@@ -763,7 +763,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	if len(id) == 0 {
 		return nil, errors.New("id missing or empty")
 	}
-	order.Id = id
+	order.OrderID = id
 	if len(party) == 0 {
 		return nil, errors.New("party missing or empty")
 	}

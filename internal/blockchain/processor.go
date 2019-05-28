@@ -88,7 +88,7 @@ func (p *Processor) Validate(payload []byte) error {
 		// Add future valid VEGA commands here
 		return nil
 	}
-	return errors.New("Unknown command when validating payload")
+	return errors.New("unknown command when validating payload")
 
 	// todo: Validation required here using blockchain service (gitlab.com/vega-protocol/trading-core/issues/177)
 	//p.blockchainService.ValidateOrder()
