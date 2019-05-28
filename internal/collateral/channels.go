@@ -121,6 +121,16 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 	// final settle, or MTM settle, makes no difference, it's win/loss still
 	// get the actual trasfer value here, for convenience
 	p := t.t
+	gen, err := e.accountStore.GetAccountsForOwnerByType(p.Owner, types.AccountType_GENERAL)
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general account",
+			logging.String("owner", p.Owner),
+			logging.String("market", e.market),
+			logging.Error(err),
+		)
+		return nil, err
+	}
 	accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, p.Owner)
 	if err != nil {
 		e.log.Error(
@@ -131,6 +141,7 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 		)
 		return nil, err
 	}
+	accounts = append(accounts, gen...)
 	// set all accounts onto transferT internal type
 	for _, ac := range accounts {
 		switch ac.Type {
@@ -193,6 +204,7 @@ func (e *Engine) getProcessCB(distr *distributor, reference string, settle, insu
 				"Failed to create the transfer request",
 				logging.String("settlement-type", p.Type.String()),
 				logging.String("trader-id", p.Owner),
+				logging.String("market-id", e.market),
 				logging.Error(err),
 			)
 			return nil, err

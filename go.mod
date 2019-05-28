@@ -5,6 +5,7 @@ require (
 	github.com/99designs/gqlgen v0.8.3
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
 	github.com/dgraph-io/badger v1.5.4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -28,7 +29,7 @@ require (
 	github.com/jmhodges/levigo v0.0.0-20161115193449-c42d9e0ca023 // indirect
 	github.com/mwitkow/go-proto-validators v0.0.0-20190212092829-1f388280e944
 	github.com/pkg/errors v0.8.1
-	github.com/prometheus/client_golang v0.9.2 // indirect
+	github.com/prometheus/client_golang v0.9.2
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0

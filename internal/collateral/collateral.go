@@ -437,6 +437,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		e.log.Error(
 			"Failed to get the general account",
 			logging.String("owner", p.Owner),
+			logging.String("market", e.market),
 			logging.Error(err),
 		)
 		return nil, err

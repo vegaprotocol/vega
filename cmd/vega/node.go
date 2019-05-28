@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
@@ -136,11 +137,13 @@ func (l *NodeCommand) runNode(args []string) error {
 	statusChecker.OnChainDisconnect(l.cancel)
 
 	var err error
-	l.auth, err = auth.New(l.ctx, l.Log, l.conf.Auth)
-	if err != nil {
-		return errors.Wrap(err, "unable to start auth service")
+	if l.conf.Auth.Enabled {
+		l.auth, err = auth.New(l.ctx, l.Log, l.conf.Auth)
+		if err != nil {
+			return errors.Wrap(err, "unable to start auth service")
+		}
+		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.auth.ReloadConf(cfg.Auth) })
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.auth.ReloadConf(cfg.Auth) })
 
 	// gRPC server
 	grpcServer := api.NewGRPCServer(
@@ -158,7 +161,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
 	go grpcServer.Start()
-	l.auth.OnPartiesUpdated(grpcServer.OnPartiesUpdated)
+	if l.conf.Auth.Enabled {
+		l.auth.OnPartiesUpdated(grpcServer.OnPartiesUpdated)
+	}
+	metrics.Start(l.conf.Metrics)
 
 	// start gateway
 	var gty *Gateway
