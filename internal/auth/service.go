@@ -82,7 +82,7 @@ func (s *Svc) update() bool {
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		s.log.Error("unable to call authentication service",
+		s.log.Warn("unable to call authentication service",
 			logging.Error(err),
 		)
 		return false
@@ -91,14 +91,14 @@ func (s *Svc) update() bool {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		s.log.Error("unable to read body from response",
+		s.log.Warn("unable to read body from response",
 			logging.Error(err),
 		)
 		return false
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		s.log.Error("received error from auth server",
+		s.log.Warn("received error from auth server",
 			logging.String("error", string(body)),
 		)
 		return false
@@ -109,7 +109,7 @@ func (s *Svc) update() bool {
 	}{}
 	err = json.Unmarshal(body, &payload)
 	if err != nil {
-		s.log.Error("unable to read body from response",
+		s.log.Warn("unable to read body from response",
 			logging.Error(err),
 		)
 		return false
