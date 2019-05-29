@@ -60,21 +60,21 @@ race_detector:
   script:
     - make race
   only:
-    - /^(master|develop)$/
+    - /^(master$|develop$|release/|v[0-9])/
 
 memory_sanitizer:
   stage: test
   script:
     - make msan
   only:
-    - /^(master|develop)$/
+    - /^(master$|develop$|release/|v[0-9])/
 
 code_coverage:
   stage: test
   script:
     - make coveragehtml
   only:
-    - /^(master|develop)$/
+    - /^(master$|develop$|release/|v[0-9])/
 
 lint_code:
   stage: test
@@ -82,15 +82,15 @@ lint_code:
     - export PATH="${PATH}:${BIN_DIR}"
     - make lint || true  # Ignore lint failure for now (see #196)
   only:
-    - /^(master|develop)$/
+    - /^(master$|develop$|release/|v[0-9])/
 
-proto_checks:
+autogen_checks:
   stage: test
   script:
     - code=0
     - make deps
     - make proto_check || code=1
-    - make grpc_check || code=1
+    - make gqlgen_check || code=1
     - exit "$code"
 
 vet:
@@ -98,7 +98,7 @@ vet:
   script:
     - make vet
   only:
-    - /^(master|develop)$/
+    - /^(master$|develop$|release/|v[0-9])/
 
 build_vega:
   stage: build
