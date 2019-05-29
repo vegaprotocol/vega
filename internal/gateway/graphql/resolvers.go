@@ -827,6 +827,10 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 
 	c := make(chan []types.Order)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			o, err := stream.Recv()
 			if err == io.EOF {
@@ -870,6 +874,10 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 
 	c := make(chan []types.Trade)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			t, err := stream.Recv()
 			if err == io.EOF {
@@ -903,6 +911,10 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 
 	c := make(chan *types.MarketPosition)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			t, err := stream.Recv()
 			if err == io.EOF {
@@ -931,6 +943,10 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 
 	c := make(chan *types.MarketDepth)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			md, err := stream.Recv()
 			if err == io.EOF {
@@ -966,6 +982,10 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 	c := make(chan *types.Candle)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			cdl, err := stream.Recv()
 			if err == io.EOF {
