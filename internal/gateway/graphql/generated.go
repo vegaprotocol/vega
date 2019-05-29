@@ -1299,7 +1299,7 @@ schema {
     mutation: Mutation
 }
 
-directive @requireAuth on FIELD
+directive @requireAuth on FIELD | FIELD_DEFINITION
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
