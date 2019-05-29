@@ -241,8 +241,8 @@ func (s *abciService) setBatchStats() {
 	}
 
 	blockDuration := time.Duration(s.currentTimestamp.UnixNano() - s.previousTimestamp.UnixNano()).Seconds()
-	if blockDuration < 0.0 {
-		// VegaTime can be negative before the chain is connected (#233).
+	if blockDuration <= 0.0 {
+		// Timestamps are inaccurate just after startup (#233).
 		s.stats.setOrdersPerSecond(0)
 		s.stats.setTradesPerSecond(0)
 	} else {
@@ -251,7 +251,11 @@ func (s *abciService) setBatchStats() {
 	}
 
 	s.log.Debug("Blockchain service batch stats",
+		logging.Int64("previousTimestamp", s.previousTimestamp.UnixNano()),
+		logging.Int64("currentTimestamp", s.currentTimestamp.UnixNano()),
 		logging.Float64("duration", blockDuration),
+		logging.Int("currentOrdersInBatch", s.currentOrdersInBatch),
+		logging.Int("currentTradesInBatch", s.currentTradesInBatch),
 		logging.Uint64("total-batches", s.totalBatches),
 		logging.Int("avg-orders-batch", s.stats.averageOrdersPerBatch),
 		logging.Uint64("orders-per-sec", s.stats.OrdersPerSecond()),
