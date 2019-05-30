@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"code.vegaprotocol.io/vega/internal/dto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"go.uber.org/zap"
@@ -131,7 +132,7 @@ func CandleWithTag(c types.Candle, tag string) zap.Field {
 }
 
 // Order constructs a field with the given VEGA order proto value.
-func Order(o types.Order) zap.Field {
+func Order(o dto.Order) zap.Field {
 	return zap.String("order", o.String())
 }
 

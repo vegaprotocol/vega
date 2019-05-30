@@ -3,8 +3,10 @@ package matching
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/internal/dto"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"github.com/shopspring/decimal"
 )
 
 type OrderBookSide struct {
@@ -14,16 +16,16 @@ type OrderBookSide struct {
 	proRataMode bool
 }
 
-func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
+func (s *OrderBookSide) addOrder(o *dto.Order, side types.Side) {
 	s.getPriceLevel(o.Price, side).addOrder(o)
 }
 
-func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
+func (s *OrderBookSide) amendOrder(orderAmended *dto.Order) error {
 	priceLevelIndex := -1
 	orderIndex := -1
 
 	for idx, priceLevel := range s.levels {
-		if priceLevel.price == orderAmended.Price {
+		if priceLevel.price.Equal(orderAmended.Price) {
 			priceLevelIndex = idx
 			for j, order := range priceLevel.orders {
 				if order.Id == orderAmended.Id {
@@ -55,12 +57,12 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 	return nil
 }
 
-func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
+func (s *OrderBookSide) RemoveOrder(o *dto.Order) error {
 	//todo: use binary search of expiring price levels (https://gitlab.com/vega-protocol/trading-core/issues/132)
 	toDelete := -1
 	toRemove := -1
 	for idx, priceLevel := range s.levels {
-		if priceLevel.price == o.Price {
+		if priceLevel.price.Equal(o.Price) {
 			for j, order := range priceLevel.orders {
 				if order.Id == o.Id {
 					toRemove = j
@@ -87,16 +89,16 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 	return nil
 }
 
-func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
+func (s *OrderBookSide) getPriceLevel(price decimal.Decimal, side types.Side) *PriceLevel {
 	//todo: use binary search of price levels (gitlab.com/vega-protocol/trading-core/issues/90)
 	at := -1
 	if side == types.Side_Buy {
 		// buy side levels should be ordered in descending
 		for i, level := range s.levels {
-			if level.price > price {
+			if level.price.GreaterThan(price) {
 				continue
 			}
-			if level.price == price {
+			if level.price.Equal(price) {
 				return level
 			}
 			at = i
@@ -105,10 +107,10 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	} else {
 		// sell side levels should be ordered in ascending
 		for i, level := range s.levels {
-			if level.price < price {
+			if level.price.LessThan(price) {
 				continue
 			}
-			if level.price == price {
+			if level.price.Equal(price) {
 				return level
 			}
 			at = i
@@ -124,12 +126,12 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	return level
 }
 
-func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
+func (s *OrderBookSide) uncross(agg *dto.Order) ([]*types.Trade, []*dto.Order, decimal.Decimal) {
 
 	var (
 		trades            []*types.Trade
-		impactedOrders    []*types.Order
-		lastTradedPrice   uint64
+		impactedOrders    []*dto.Order
+		lastTradedPrice   decimal.Decimal
 		totalVolumeToFill uint64
 	)
 
@@ -137,7 +139,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 
 		if agg.Side == types.Side_Sell {
 			for _, level := range s.levels {
-				if level.price >= agg.Price {
+				if level.price.GreaterThanOrEqual(agg.Price) {
 					totalVolumeToFill += level.volume
 				}
 			}
@@ -145,7 +147,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 
 		if agg.Side == types.Side_Buy {
 			for _, level := range s.levels {
-				if level.price <= agg.Price {
+				if level.price.LessThanOrEqual(agg.Price) {
 					totalVolumeToFill += level.volume
 				}
 			}
@@ -154,14 +156,14 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))
 
 		if totalVolumeToFill <= agg.Remaining {
-			return trades, impactedOrders, 0
+			return trades, impactedOrders, decimal.Decimal{}
 		}
 	}
 
 	if agg.Side == types.Side_Sell {
 		for _, level := range s.levels {
 			// buy side levels are ordered descending
-			if level.price >= agg.Price {
+			if level.price.GreaterThanOrEqual(agg.Price) {
 				filled, nTrades, nImpact := level.uncross(agg)
 				trades = append(trades, nTrades...)
 				impactedOrders = append(impactedOrders, nImpact...)
@@ -177,7 +179,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 	if agg.Side == types.Side_Buy {
 		for _, level := range s.levels {
 			// sell side levels are ordered ascending
-			if level.price <= agg.Price {
+			if level.price.LessThanOrEqual(agg.Price) {
 				filled, nTrades, nImpact := level.uncross(agg)
 				trades = append(trades, nTrades...)
 				impactedOrders = append(impactedOrders, nImpact...)
@@ -191,7 +193,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 	}
 
 	if len(trades) > 0 {
-		lastTradedPrice = trades[len(trades)-1].Price
+		lastTradedPrice = decimal.NewFromFloat(float64(trades[len(trades)-1].Price))
 	}
 	return trades, impactedOrders, lastTradedPrice
 }

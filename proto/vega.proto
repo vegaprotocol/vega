@@ -55,7 +55,8 @@ message Order {
   string marketID = 2;
   string partyID = 3;
   Side side = 4;
-  uint64 price = 5;
+  // decimal.Decimal MarshalBinary
+  bytes price = 5;
   uint64 size = 6;
   uint64 remaining = 7;
   Type type = 8;
@@ -202,7 +203,7 @@ message OrderSubmission {
   string id = 1;
   string marketID = 2;
   string partyID = 3;
-  uint64 price = 4;
+  bytes price = 4;
   uint64 size = 5;
   Side side = 6;
   Order.Type type = 7;

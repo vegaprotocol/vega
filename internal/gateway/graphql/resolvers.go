@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -475,7 +476,7 @@ func (r *MyMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 type MyOrderResolver resolverRoot
 
 func (r *MyOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
-	return strconv.FormatUint(obj.Price, 10), nil
+	return string(obj.Price), nil
 }
 func (r *MyOrderResolver) Type(ctx context.Context, obj *types.Order) (OrderType, error) {
 	return OrderType(obj.Type.String()), nil
@@ -692,12 +693,12 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 
 	tkn := gateway.TokenFromContext(ctx)
 
-	// We need to convert strings to uint64 (JS doesn't yet support uint64)
-	p, err := safeStringUint64(price)
+	// validate price
+	_, err := decimal.NewFromString(price)
 	if err != nil {
 		return nil, err
 	}
-	order.Price = p
+	order.Price = []byte(price)
 	s, err := safeStringUint64(size)
 	if err != nil {
 		return nil, err

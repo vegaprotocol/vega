@@ -195,12 +195,12 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	root.tradingDataClient.EXPECT().OrdersByMarket(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.OrdersByMarketResponse{Orders: []*types.Order{
 		{
 			Id:        "order-id-1",
-			Price:     1000,
+			Price:     []byte("1000"),
 			CreatedAt: 1,
 		},
 		{
 			Id:        "order-id-2",
-			Price:     2000,
+			Price:     []byte("2000"),
 			CreatedAt: 2,
 		},
 	}}, nil)

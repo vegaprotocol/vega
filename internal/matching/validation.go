@@ -1,11 +1,12 @@
 package matching
 
 import (
+	"code.vegaprotocol.io/vega/internal/dto"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func (b OrderBook) validateOrder(orderMessage *types.Order) error {
+func (b OrderBook) validateOrder(orderMessage *dto.Order) error {
 	if orderMessage.MarketID != b.marketID {
 		b.log.Error("Market ID mismatch",
 			logging.String("market", orderMessage.MarketID),

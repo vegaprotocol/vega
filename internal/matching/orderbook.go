@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"sync"
 
+	"code.vegaprotocol.io/vega/internal/dto"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
+	"github.com/shopspring/decimal"
 )
 
 type OrderBook struct {
@@ -16,9 +19,9 @@ type OrderBook struct {
 	marketID        string
 	buy             *OrderBookSide
 	sell            *OrderBookSide
-	lastTradedPrice uint64
+	lastTradedPrice decimal.Decimal
 	latestTimestamp int64
-	expiringOrders  []types.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
+	expiringOrders  []dto.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
 }
 
 // Create an order book with a given name
@@ -34,7 +37,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, proRataMo
 		buy:            &OrderBookSide{log: log, proRataMode: proRataMode},
 		sell:           &OrderBookSide{log: log, proRataMode: proRataMode},
 		Config:         config,
-		expiringOrders: make([]types.Order, 0),
+		expiringOrders: make([]dto.Order, 0),
 	}
 }
 
@@ -56,7 +59,7 @@ func (s *OrderBook) ReloadConf(cfg Config) {
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
-func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
+func (b *OrderBook) CancelOrder(order *dto.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
 	if order.MarketID != b.marketID {
 		b.log.Error("Market ID mismatch",
@@ -97,12 +100,12 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	order.Status = types.Order_Cancelled
 
 	result := &types.OrderCancellationConfirmation{
-		Order: order,
+		Order: order.Proto(),
 	}
 	return result, nil
 }
 
-func (b *OrderBook) AmendOrder(order *types.Order) error {
+func (b *OrderBook) AmendOrder(order *dto.Order) error {
 	if err := b.validateOrder(order); err != nil {
 		b.log.Error("Order validation failure",
 			logging.Order(*order),
@@ -136,7 +139,7 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 }
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
-func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+func (b *OrderBook) SubmitOrder(order *dto.Order) (*types.OrderConfirmation, error) {
 	if err := b.validateOrder(order); err != nil {
 		return nil, err
 	}
@@ -151,7 +154,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	// uncross with opposite
 	trades, impactedOrders, lastTradedPrice := b.getOppositeSide(order.Side).uncross(order)
-	if lastTradedPrice != 0 {
+	if !lastTradedPrice.Equal(decimal.Decimal{}) {
 		b.lastTradedPrice = lastTradedPrice
 	}
 
@@ -201,7 +204,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	return orderConfirmation, nil
 }
 
-func (b *OrderBook) DeleteOrder(order *types.Order) error {
+func (b *OrderBook) DeleteOrder(order *dto.Order) error {
 	err := b.getSide(order.Side).RemoveOrder(order)
 	return err
 }
@@ -210,9 +213,9 @@ func (b *OrderBook) DeleteOrder(order *types.Order) error {
 // expirationTimestamp must be of the format unix epoch seconds with nanoseconds e.g. 1544010789803472469.
 // RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
 // matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
-func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order {
-	var expiredOrders []types.Order
-	var pendingOrders []types.Order
+func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []dto.Order {
+	var expiredOrders []dto.Order
+	var pendingOrders []dto.Order
 
 	// linear scan of our expiring orders, prune any that have expired
 	for _, or := range b.expiringOrders {
@@ -254,7 +257,7 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 	}
 }
 
-func (b OrderBook) removePendingGttOrder(order types.Order) bool {
+func (b OrderBook) removePendingGttOrder(order dto.Order) bool {
 	found := -1
 	for idx, or := range b.expiringOrders {
 		if or.Id == order.Id {
@@ -268,10 +271,15 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 	return false
 }
 
-func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
+func makeResponse(order *dto.Order, trades []*types.Trade, impactedOrders []*dto.Order) *types.OrderConfirmation {
+	iorders := make([]*proto.Order, 0, len(impactedOrders))
+	for _, v := range impactedOrders {
+		iorders = append(iorders, v.Proto())
+	}
+
 	return &types.OrderConfirmation{
-		Order:                 order,
-		PassiveOrdersAffected: impactedOrders,
+		Order:                 order.Proto(),
+		PassiveOrdersAffected: iorders,
 		Trades:                trades,
 	}
 }

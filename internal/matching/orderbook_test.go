@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/dto"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,149 +35,179 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	currentTimestamp := getCurrentUtcTimestampNano()
 	someTimeLater := currentTimestamp + (1000 * 1000)
 
-	order1 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     1,
-		Size:      1,
-		Remaining: 1,
-		Type:      types.Order_GTT,
-		CreatedAt: currentTimestamp,
-		ExpiresAt: someTimeLater,
-		Id:        "1",
+	order1 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("1"),
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTT,
+			CreatedAt: currentTimestamp,
+			ExpiresAt: someTimeLater,
+			Id:        "1",
+		},
+		Price: decimal.RequireFromString("1"),
 	}
 	_, err := book.SubmitOrder(order1)
 	assert.Equal(t, err, nil)
 
-	order2 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     3298,
-		Size:      99,
-		Remaining: 99,
-		Type:      types.Order_GTT,
-		CreatedAt: currentTimestamp,
-		ExpiresAt: someTimeLater + 1,
-		Id:        "2",
+	order2 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("3298"),
+			Size:      99,
+			Remaining: 99,
+			Type:      types.Order_GTT,
+			CreatedAt: currentTimestamp,
+			ExpiresAt: someTimeLater + 1,
+			Id:        "2",
+		},
+		Price: decimal.RequireFromString("3298"),
 	}
 	_, err = book.SubmitOrder(order2)
 	assert.Equal(t, err, nil)
 
-	order3 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     771,
-		Size:      19,
-		Remaining: 19,
-		Type:      types.Order_GTT,
-		CreatedAt: currentTimestamp,
-		ExpiresAt: someTimeLater,
-		Id:        "3",
+	order3 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("771"),
+			Size:      19,
+			Remaining: 19,
+			Type:      types.Order_GTT,
+			CreatedAt: currentTimestamp,
+			ExpiresAt: someTimeLater,
+			Id:        "3",
+		},
+		Price: decimal.RequireFromString("771"),
 	}
 	_, err = book.SubmitOrder(order3)
 	assert.Equal(t, err, nil)
 
-	order4 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     1000,
-		Size:      7,
-		Remaining: 7,
-		Type:      types.Order_GTC,
-		CreatedAt: currentTimestamp,
-		Id:        "4",
+	order4 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("1000"),
+			Size:      7,
+			Remaining: 7,
+			Type:      types.Order_GTC,
+			CreatedAt: currentTimestamp,
+			Id:        "4",
+		},
+		Price: decimal.RequireFromString("1000"),
 	}
 	_, err = book.SubmitOrder(order4)
 	assert.Equal(t, err, nil)
 
-	order5 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     199,
-		Size:      99999,
-		Remaining: 99999,
-		Type:      types.Order_GTT,
-		CreatedAt: currentTimestamp,
-		ExpiresAt: someTimeLater,
-		Id:        "5",
+	order5 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("199"),
+			Size:      99999,
+			Remaining: 99999,
+			Type:      types.Order_GTT,
+			CreatedAt: currentTimestamp,
+			ExpiresAt: someTimeLater,
+			Id:        "5",
+		},
+		Price: decimal.RequireFromString("199"),
 	}
 	_, err = book.SubmitOrder(order5)
 	assert.Equal(t, err, nil)
 
-	order6 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     100,
-		Size:      100,
-		Remaining: 100,
-		Type:      types.Order_GTC,
-		CreatedAt: currentTimestamp,
-		Id:        "6",
+	order6 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("100"),
+			Size:      100,
+			Remaining: 100,
+			Type:      types.Order_GTC,
+			CreatedAt: currentTimestamp,
+			Id:        "6",
+		},
+		Price: decimal.RequireFromString("100"),
 	}
 	_, err = book.SubmitOrder(order6)
 	assert.Equal(t, err, nil)
 
-	order7 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     41,
-		Size:      9999,
-		Remaining: 9999,
-		Type:      types.Order_GTT,
-		CreatedAt: currentTimestamp,
-		ExpiresAt: someTimeLater + 9999,
-		Id:        "7",
+	order7 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("41"),
+			Size:      9999,
+			Remaining: 9999,
+			Type:      types.Order_GTT,
+			CreatedAt: currentTimestamp,
+			ExpiresAt: someTimeLater + 9999,
+			Id:        "7",
+		},
+		Price: decimal.RequireFromString("41"),
 	}
 	_, err = book.SubmitOrder(order7)
 	assert.Equal(t, err, nil)
 
-	order8 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     1,
-		Size:      1,
-		Remaining: 1,
-		Type:      types.Order_GTT,
-		CreatedAt: currentTimestamp,
-		ExpiresAt: someTimeLater - 9999,
-		Id:        "8",
+	order8 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("1"),
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTT,
+			CreatedAt: currentTimestamp,
+			ExpiresAt: someTimeLater - 9999,
+			Id:        "8",
+		},
+		Price: decimal.RequireFromString("1"),
 	}
 	_, err = book.SubmitOrder(order8)
 	assert.Equal(t, err, nil)
 
-	order9 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     65,
-		Size:      12,
-		Remaining: 12,
-		Type:      types.Order_GTC,
-		CreatedAt: currentTimestamp,
-		Id:        "9",
+	order9 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("65"),
+			Size:      12,
+			Remaining: 12,
+			Type:      types.Order_GTC,
+			CreatedAt: currentTimestamp,
+			Id:        "9",
+		},
+		Price: decimal.RequireFromString("65"),
 	}
 	_, err = book.SubmitOrder(order9)
 	assert.Equal(t, err, nil)
 
-	order10 := &types.Order{
-		MarketID:  market,
-		PartyID:   party,
-		Side:      types.Side_Sell,
-		Price:     1,
-		Size:      1,
-		Remaining: 1,
-		Type:      types.Order_GTT,
-		CreatedAt: currentTimestamp,
-		ExpiresAt: someTimeLater - 1,
-		Id:        "10",
+	order10 := &dto.Order{
+		Order: types.Order{
+			MarketID:  market,
+			PartyID:   party,
+			Side:      types.Side_Sell,
+			Price:     []byte("1"),
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTT,
+			CreatedAt: currentTimestamp,
+			ExpiresAt: someTimeLater - 1,
+			Id:        "10",
+		},
+		Price: decimal.RequireFromString("1"),
 	}
 	_, err = book.SubmitOrder(order10)
 	assert.Equal(t, err, nil)
@@ -198,31 +230,37 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 	book.latestTimestamp = 10
 
-	invalidTimestampOrdertypes := &types.Order{
-		MarketID:  "testOrderBook",
-		PartyID:   "A",
-		Side:      types.Side_Sell,
-		Price:     100,
-		Size:      100,
-		Remaining: 100,
-		Type:      types.Order_GTC,
-		CreatedAt: 0,
-		Id:        "id-number-one",
+	invalidTimestampOrdertypes := &dto.Order{
+		Order: types.Order{
+			MarketID:  "testOrderBook",
+			PartyID:   "A",
+			Side:      types.Side_Sell,
+			Price:     []byte("100"),
+			Size:      100,
+			Remaining: 100,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+			Id:        "id-number-one",
+		},
+		Price: decimal.RequireFromString("100"),
 	}
 	_, err := book.SubmitOrder(invalidTimestampOrdertypes)
 	assert.Equal(t, types.OrderError_ORDER_OUT_OF_SEQUENCE, err)
 
 	book.latestTimestamp = 0
-	invalidRemainginSizeOrdertypes := &types.Order{
-		MarketID:  "testOrderBook",
-		PartyID:   "A",
-		Side:      types.Side_Sell,
-		Price:     100,
-		Size:      100,
-		Remaining: 300,
-		Type:      types.Order_GTC,
-		CreatedAt: 0,
-		Id:        "id-number-one",
+	invalidRemainginSizeOrdertypes := &dto.Order{
+		Order: types.Order{
+			MarketID:  "testOrderBook",
+			PartyID:   "A",
+			Side:      types.Side_Sell,
+			Price:     []byte("100"),
+			Size:      100,
+			Remaining: 300,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+			Id:        "id-number-one",
+		},
+		Price: decimal.RequireFromString("100"),
 	}
 	_, err = book.SubmitOrder(invalidRemainginSizeOrdertypes)
 	assert.Equal(t, types.OrderError_INVALID_REMAINING_SIZE, err)
@@ -233,15 +271,18 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 	defer logger.Sync()
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 
-	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
-		PartyID:   "A",
-		Side:      types.Side_Sell,
-		Price:     101,
-		Size:      100,
-		Remaining: 100,
-		Type:      types.Order_GTC,
-		CreatedAt: 0,
+	newOrder := &dto.Order{
+		Order: types.Order{
+			MarketID:  "testOrderBook",
+			PartyID:   "A",
+			Side:      types.Side_Sell,
+			Price:     []byte("101"),
+			Size:      100,
+			Remaining: 100,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+		},
+		Price: decimal.RequireFromString("101"),
 	}
 
 	book.SubmitOrder(newOrder)
@@ -261,16 +302,16 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 
 	const numberOfTimestamps = 3
-	m := make(map[int64][]*types.Order, numberOfTimestamps)
+	m := make(map[int64][]types.Order, numberOfTimestamps)
 
 	// sell and buy side orders at timestamp 0
-	m[0] = []*types.Order{
+	m[0] = []types.Order{
 		// Side Sell
 		{
 			MarketID:  "testOrderBook",
 			PartyID:   "A",
 			Side:      types.Side_Sell,
-			Price:     101,
+			Price:     []byte("101"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -280,7 +321,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "B",
 			Side:      types.Side_Sell,
-			Price:     101,
+			Price:     []byte("101"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -290,7 +331,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "C",
 			Side:      types.Side_Sell,
-			Price:     102,
+			Price:     []byte("102"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -300,7 +341,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "D",
 			Side:      types.Side_Sell,
-			Price:     103,
+			Price:     []byte("103"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -311,7 +352,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "E",
 			Side:      types.Side_Buy,
-			Price:     99,
+			Price:     []byte("99"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -321,7 +362,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "F",
 			Side:      types.Side_Buy,
-			Price:     99,
+			Price:     []byte("99"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -331,7 +372,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "G",
 			Side:      types.Side_Buy,
-			Price:     98,
+			Price:     []byte("98"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -340,13 +381,13 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 	}
 
 	// sell and buy orders at timestamp 1
-	m[1] = []*types.Order{
+	m[1] = []types.Order{
 		// Side Sell
 		{
 			MarketID:  "testOrderBook",
 			PartyID:   "M",
 			Side:      types.Side_Sell,
-			Price:     101,
+			Price:     []byte("101"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -357,7 +398,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "N",
 			Side:      types.Side_Buy,
-			Price:     99,
+			Price:     []byte("99"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -366,13 +407,13 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 	}
 
 	// sell and buy orders at timestamp 2
-	m[2] = []*types.Order{
+	m[2] = []types.Order{
 		// Side Sell
 		{
 			MarketID:  "testOrderBook",
 			PartyID:   "R",
 			Side:      types.Side_Sell,
-			Price:     101,
+			Price:     []byte("101"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -383,7 +424,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "S",
 			Side:      types.Side_Buy,
-			Price:     99,
+			Price:     []byte("99"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -395,7 +436,11 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 	for _, timestamp := range timestamps {
 		for index, _ := range m[timestamp] {
 			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
-			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
+			o := &dto.Order{
+				Order: m[timestamp][index],
+				Price: decimal.RequireFromString(string(m[timestamp][index].Price)),
+			}
+			confirmationtypes, err := book.SubmitOrder(o)
 			// this should not return any errors
 			assert.Equal(t, nil, err)
 			// this should not generate any trades
@@ -410,7 +455,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "X",
 				Side:      types.Side_Buy,
-				Price:     101,
+				Price:     []byte("101"),
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_GTC,
@@ -439,7 +484,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "A",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
@@ -449,7 +494,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "B",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
@@ -463,7 +508,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "Y",
 				Side:      types.Side_Buy,
-				Price:     102,
+				Price:     []byte("102"),
 				Size:      150,
 				Remaining: 150,
 				Type:      types.Order_GTC,
@@ -500,7 +545,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "A",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -510,7 +555,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "B",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -520,7 +565,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "M",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
@@ -534,7 +579,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "Z",
 				Side:      types.Side_Buy,
-				Price:     102,
+				Price:     []byte("102"),
 				Size:      70,
 				Remaining: 70,
 				Type:      types.Order_GTC,
@@ -563,7 +608,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "M",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -573,7 +618,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "R",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 80,
 					Type:      types.Order_GTC,
@@ -588,7 +633,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "X",
 				Side:      types.Side_Buy,
-				Price:     102,
+				Price:     []byte("102"),
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_GTC,
@@ -617,7 +662,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "R",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -627,7 +672,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "C",
 					Side:      types.Side_Sell,
-					Price:     102,
+					Price:     []byte("102"),
 					Size:      100,
 					Remaining: 80,
 					Type:      types.Order_GTC,
@@ -641,7 +686,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "Y",
 				Side:      types.Side_Sell,
-				Price:     98,
+				Price:     []byte("98"),
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_GTC,
@@ -670,7 +715,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "E",
 					Side:      types.Side_Buy,
-					Price:     99,
+					Price:     []byte("99"),
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
@@ -680,7 +725,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "F",
 					Side:      types.Side_Buy,
-					Price:     99,
+					Price:     []byte("99"),
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
@@ -694,7 +739,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "Z",
 				Side:      types.Side_Sell,
-				Price:     99,
+				Price:     []byte("99"),
 				Size:      350,
 				Remaining: 350,
 				Type:      types.Order_GTC,
@@ -739,7 +784,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "E",
 					Side:      types.Side_Buy,
-					Price:     99,
+					Price:     []byte("99"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -749,7 +794,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "F",
 					Side:      types.Side_Buy,
-					Price:     99,
+					Price:     []byte("99"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -759,7 +804,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "N",
 					Side:      types.Side_Buy,
-					Price:     99,
+					Price:     []byte("99"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -769,7 +814,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "S",
 					Side:      types.Side_Buy,
-					Price:     99,
+					Price:     []byte("99"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -782,7 +827,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "XX",
 				Side:      types.Side_Buy,
-				Price:     102,
+				Price:     []byte("102"),
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_FOK, // nonpersistent
@@ -811,7 +856,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "Z",
 					Side:      types.Side_Sell,
-					Price:     99,
+					Price:     []byte("99"),
 					Size:      350,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -821,7 +866,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "C",
 					Side:      types.Side_Sell,
-					Price:     102,
+					Price:     []byte("102"),
 					Size:      100,
 					Remaining: 30,
 					Type:      types.Order_GTC,
@@ -834,7 +879,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "YY",
 				Side:      types.Side_Buy,
-				Price:     103,
+				Price:     []byte("103"),
 				Size:      200,
 				Remaining: 200,
 				Type:      types.Order_ENE, // nonpersistent
@@ -863,7 +908,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "C",
 					Side:      types.Side_Sell,
-					Price:     102,
+					Price:     []byte("102"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -873,7 +918,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "D",
 					Side:      types.Side_Sell,
-					Price:     103,
+					Price:     []byte("103"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -886,7 +931,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "XX",
 				Side:      types.Side_Sell,
-				Price:     96,
+				Price:     []byte("96"),
 				Size:      2000,
 				Remaining: 2000,
 				Type:      types.Order_FOK, // nonpersistent
@@ -900,7 +945,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "XX",
 				Side:      types.Side_Buy,
-				Price:     102,
+				Price:     []byte("102"),
 				Size:      2000,
 				Remaining: 2000,
 				Type:      types.Order_FOK, // nonpersistent
@@ -914,7 +959,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "ZZ",
 				Side:      types.Side_Sell,
-				Price:     95,
+				Price:     []byte("95"),
 				Size:      200,
 				Remaining: 200,
 				Type:      types.Order_ENE, // nonpersistent
@@ -935,7 +980,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "G",
 					Side:      types.Side_Buy,
-					Price:     98,
+					Price:     []byte("98"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -948,7 +993,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "ZZ",
 				Side:      types.Side_Sell,
-				Price:     95,
+				Price:     []byte("95"),
 				Size:      200,
 				Remaining: 200,
 				Type:      types.Order_GTT, // nonpersistent
@@ -963,7 +1008,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "ZXY",
 				Side:      types.Side_Buy,
-				Price:     95,
+				Price:     []byte("95"),
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_FOK, // nonpersistent
@@ -984,7 +1029,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "ZZ",
 					Side:      types.Side_Sell,
-					Price:     95,
+					Price:     []byte("95"),
 					Size:      200,
 					Remaining: 100,
 					Type:      types.Order_GTT, // nonpersistent
@@ -998,7 +1043,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "XX",
 				Side:      types.Side_Buy,
-				Price:     102,
+				Price:     []byte("102"),
 				Size:      2000,
 				Remaining: 2000,
 				Type:      types.Order_FOK, // nonpersistent
@@ -1020,7 +1065,10 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		fmt.Println("expectedTrades: ", s.expectedTrades)
 		fmt.Println()
 
-		confirmationtypes, err := book.SubmitOrder(s.aggressiveOrder)
+		agg := &dto.Order{}
+		agg.FromProto(s.aggressiveOrder)
+
+		confirmationtypes, err := book.SubmitOrder(agg)
 
 		//this should not return any errors
 		assert.Equal(t, nil, err)
@@ -1055,17 +1103,19 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 	defer logger.Sync()
 
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newProtoOrder := &types.Order{
 		MarketID:  "invalid",
 		PartyID:   "A",
 		Side:      types.Side_Sell,
-		Price:     101,
+		Price:     []byte("101"),
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
 		CreatedAt: 0,
 		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
+	newOrder := &dto.Order{}
+	newOrder.FromProto(newProtoOrder)
 
 	_, err := book.SubmitOrder(newOrder)
 	if err != nil {
@@ -1084,22 +1134,26 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 
 	// Arrange
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		PartyID:   "A",
 		Side:      types.Side_Sell,
-		Price:     101,
+		Price:     []byte("101"),
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
 		CreatedAt: 0,
 		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
+	newOrder := &dto.Order{}
+	newOrder.FromProto(newProtoOrder)
 
 	confirmation, err := book.SubmitOrder(newOrder)
-	orderAdded := confirmation.Order
+	protoOrderAdded := confirmation.Order
 
 	// Act
+	orderAdded := &dto.Order{}
+	orderAdded.FromProto(protoOrderAdded)
 	res, err := book.CancelOrder(orderAdded)
 	if err != nil {
 		fmt.Println(err)
@@ -1121,20 +1175,25 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 
 	// Arrange
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		PartyID:   "A",
 		Side:      types.Side_Buy,
-		Price:     101,
+		Price:     []byte("101"),
 		Size:      100,
 		Remaining: 100,
 		Type:      types.Order_GTC,
 		CreatedAt: 0,
 		Id:        fmt.Sprintf("V%d-%d", 1, 1),
 	}
+	newOrder := &dto.Order{}
+	newOrder.FromProto(newProtoOrder)
 
 	confirmation, err := book.SubmitOrder(newOrder)
-	orderAdded := confirmation.Order
+	protoOrderAdded := confirmation.Order
+
+	orderAdded := &dto.Order{}
+	orderAdded.FromProto(protoOrderAdded)
 
 	// Act
 	res, err := book.CancelOrder(orderAdded)
@@ -1157,17 +1216,17 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING MARKET MISMATCH ORDER")
 
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newOrder := &dto.Order{Order: types.Order{
 		MarketID: "testOrderBook",
 		Id:       "123456",
-	}
+	}}
 
 	confirmation, err := book.SubmitOrder(newOrder)
 	orderAdded := confirmation.Order
 
 	orderAdded.MarketID = "invalid" // Bad market, malformed?
 
-	_, err = book.CancelOrder(orderAdded)
+	_, err = book.CancelOrder(&dto.Order{Order: *orderAdded})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -1182,15 +1241,15 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING INVALID ORDER")
 
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newOrder := &dto.Order{Order: types.Order{
 		MarketID: "testOrderBook",
 		Id:       "id",
-	}
+	}}
 
 	confirmation, err := book.SubmitOrder(newOrder)
 	orderAdded := confirmation.Order
 
-	_, err = book.CancelOrder(orderAdded)
+	_, err = book.CancelOrder(&dto.Order{Order: *orderAdded})
 	if err != nil {
 		logger.Debug("error cancelling order", logging.Error(err))
 	}
@@ -1212,7 +1271,7 @@ func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
 	assert.Equal(t, expectedOrder.MarketID, order.MarketID)
 	assert.Equal(t, expectedOrder.PartyID, order.PartyID)
 	assert.Equal(t, expectedOrder.Side, order.Side)
-	assert.Equal(t, expectedOrder.Price, order.Price)
+	assert.Equal(t, string(expectedOrder.Price), string(order.Price))
 	assert.Equal(t, expectedOrder.Size, order.Size)
 	assert.Equal(t, expectedOrder.Remaining, order.Remaining)
 	assert.Equal(t, expectedOrder.Type, order.Type)
@@ -1224,15 +1283,17 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	defer logger.Sync()
 
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 	}
+	newOrder := &dto.Order{}
+	newOrder.FromProto(newProtoOrder)
 
 	confirmation, err := book.SubmitOrder(newOrder)
 	if err != nil {
@@ -1244,15 +1305,17 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
 
-	editedOrder := &types.Order{
+	editedProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 	}
+	editedOrder := &dto.Order{}
+	editedOrder.FromProto(editedProtoOrder)
 
 	err = book.AmendOrder(editedOrder)
 	if err != nil {
@@ -1267,15 +1330,17 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	defer logger.Sync()
 
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 	}
+	newOrder := &dto.Order{}
+	newOrder.FromProto(newProtoOrder)
 
 	confirmation, err := book.SubmitOrder(newOrder)
 	if err != nil {
@@ -1287,15 +1352,18 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
 
-	editedOrder := &types.Order{
+	editedProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Sell,
-		Price:     100,
+		Price:     []byte("100"),
 		Size:      100,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 	}
+	editedOrder := &dto.Order{}
+	editedOrder.FromProto(editedProtoOrder)
+
 	err = book.AmendOrder(editedOrder)
 	if err != types.OrderError_INVALID_REMAINING_SIZE {
 		t.Log(err)
@@ -1309,15 +1377,17 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	defer logger.Sync()
 
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 	}
+	newOrder := &dto.Order{}
+	newOrder.FromProto(newProtoOrder)
 
 	confirmation, err := book.SubmitOrder(newOrder)
 	if err != nil {
@@ -1326,15 +1396,17 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 
 	fmt.Printf("confirmation : %+v", confirmation)
 
-	editedOrder := &types.Order{
+	editedProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Sell,
-		Price:     100,
+		Price:     []byte("100"),
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 	}
+	editedOrder := &dto.Order{}
+	editedOrder.FromProto(editedProtoOrder)
 
 	err = book.AmendOrder(editedOrder)
 	if err != types.OrderError_ORDER_NOT_FOUND {
@@ -1351,16 +1423,18 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	logger.Debug("BEGIN AMENDING ORDER")
 
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		PartyID:   "A",
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 	}
+	newOrder := &dto.Order{}
+	newOrder.FromProto(newProtoOrder)
 
 	confirmation, err := book.SubmitOrder(newOrder)
 	if err != nil {
@@ -1372,16 +1446,18 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
 
-	editedOrder := &types.Order{
+	editedProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		PartyID:   "B",
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 	}
+	editedOrder := &dto.Order{}
+	editedOrder.FromProto(editedProtoOrder)
 
 	err = book.AmendOrder(editedOrder)
 	if err != types.OrderError_ORDER_AMEND_FAILURE {
@@ -1398,17 +1474,19 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	logger.Debug("BEGIN AMENDING OUT OF SEQUENCE ORDER")
 
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		PartyID:   "A",
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 		CreatedAt: 10,
 	}
+	newOrder := &dto.Order{}
+	newOrder.FromProto(newProtoOrder)
 
 	confirmation, err := book.SubmitOrder(newOrder)
 	if err != nil {
@@ -1420,17 +1498,19 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
 
-	editedOrder := &types.Order{
+	editedProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		PartyID:   "A",
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 		CreatedAt: 5,
 	}
+	editedOrder := &dto.Order{}
+	editedOrder.FromProto(editedProtoOrder)
 
 	err = book.AmendOrder(editedOrder)
 	if err != types.OrderError_ORDER_OUT_OF_SEQUENCE {
@@ -1447,17 +1527,19 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	logger.Debug("BEGIN AMEND ORDER INVALID SIZE")
 
 	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	newOrder := &types.Order{
+	newProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		PartyID:   "A",
 		Size:      200,
 		Remaining: 200,
 		Type:      types.Order_GTC,
 		CreatedAt: 10,
 	}
+	newOrder := &dto.Order{}
+	newOrder.FromProto(newProtoOrder)
 
 	confirmation, err := book.SubmitOrder(newOrder)
 	if err != nil {
@@ -1469,17 +1551,19 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	assert.Equal(t, "123456", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
 
-	editedOrder := &types.Order{
+	editedProtoOrder := &types.Order{
 		MarketID:  "testOrderBook",
 		Id:        "123456",
 		Side:      types.Side_Buy,
-		Price:     100,
+		Price:     []byte("100"),
 		PartyID:   "B",
 		Size:      300,
 		Remaining: 300,
 		Type:      types.Order_GTC,
 		CreatedAt: 10,
 	}
+	editedOrder := &dto.Order{}
+	editedOrder.FromProto(editedProtoOrder)
 
 	err = book.AmendOrder(editedOrder)
 	if err != types.OrderError_ORDER_AMEND_FAILURE {
@@ -1508,7 +1592,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "A",
 			Side:      types.Side_Sell,
-			Price:     101,
+			Price:     []byte("101"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -1518,7 +1602,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "B",
 			Side:      types.Side_Sell,
-			Price:     101,
+			Price:     []byte("101"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -1529,7 +1613,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "C",
 			Side:      types.Side_Buy,
-			Price:     98,
+			Price:     []byte("98"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -1539,7 +1623,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "D",
 			Side:      types.Side_Buy,
-			Price:     98,
+			Price:     []byte("98"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -1554,7 +1638,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "E",
 			Side:      types.Side_Sell,
-			Price:     101,
+			Price:     []byte("101"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -1565,7 +1649,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			MarketID:  "testOrderBook",
 			PartyID:   "F",
 			Side:      types.Side_Buy,
-			Price:     99,
+			Price:     []byte("99"),
 			Size:      100,
 			Remaining: 100,
 			Type:      types.Order_GTC,
@@ -1577,7 +1661,9 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	for _, timestamp := range timestamps {
 		for index, _ := range m[timestamp] {
 			fmt.Println("tests calling book.SubmitOrder: ", m[timestamp][index])
-			confirmationtypes, err := book.SubmitOrder(m[timestamp][index])
+			o := &dto.Order{}
+			o.FromProto(m[timestamp][index])
+			confirmationtypes, err := book.SubmitOrder(o)
 			// this should not return any errors
 			assert.Equal(t, nil, err)
 			// this should not generate any trades
@@ -1592,7 +1678,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "M",
 				Side:      types.Side_Buy,
-				Price:     101,
+				Price:     []byte("101"),
 				Size:      100,
 				Remaining: 100,
 				Type:      types.Order_GTC,
@@ -1613,7 +1699,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "A",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -1627,7 +1713,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "N",
 				Side:      types.Side_Buy,
-				Price:     102,
+				Price:     []byte("102"),
 				Size:      200,
 				Remaining: 200,
 				Type:      types.Order_GTC,
@@ -1656,7 +1742,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "B",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -1666,7 +1752,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "E",
 					Side:      types.Side_Sell,
-					Price:     101,
+					Price:     []byte("101"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -1680,7 +1766,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "O",
 				Side:      types.Side_Sell,
-				Price:     97,
+				Price:     []byte("97"),
 				Size:      250,
 				Remaining: 250,
 				Type:      types.Order_GTC,
@@ -1717,7 +1803,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "F",
 					Side:      types.Side_Buy,
-					Price:     99,
+					Price:     []byte("99"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -1727,7 +1813,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "C",
 					Side:      types.Side_Buy,
-					Price:     98,
+					Price:     []byte("98"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -1737,7 +1823,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "D",
 					Side:      types.Side_Buy,
-					Price:     98,
+					Price:     []byte("98"),
 					Size:      100,
 					Remaining: 50,
 					Type:      types.Order_GTC,
@@ -1751,7 +1837,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				MarketID:  "testOrderBook",
 				PartyID:   "X",
 				Side:      types.Side_Sell,
-				Price:     98,
+				Price:     []byte("98"),
 				Size:      50,
 				Remaining: 50,
 				Type:      types.Order_GTC,
@@ -1772,7 +1858,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketID:  "testOrderBook",
 					PartyID:   "D",
 					Side:      types.Side_Buy,
-					Price:     98,
+					Price:     []byte("98"),
 					Size:      100,
 					Remaining: 0,
 					Type:      types.Order_GTC,
@@ -1792,7 +1878,9 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		fmt.Println("expectedTrades: ", s.expectedTrades)
 		fmt.Println()
 
-		confirmationtypes, err := book.SubmitOrder(s.aggressiveOrder)
+		aggO := &dto.Order{}
+		aggO.FromProto(s.aggressiveOrder)
+		confirmationtypes, err := book.SubmitOrder(aggO)
 
 		//this should not return any errors
 		assert.Equal(t, nil, err)
