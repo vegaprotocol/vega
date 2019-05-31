@@ -30,6 +30,9 @@ type Engine struct {
 
 	market       string
 	accountStore Accounts
+
+	// map of trader ID's to map of account types + account ID's
+	traderAccounts map[string]map[types.AccountType]string
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral Accounts
@@ -39,6 +42,7 @@ type Accounts interface {
 	UpdateBalance(id string, balance int64) error
 	IncrementBalance(id string, inc int64) error
 	GetMarketAccountsForOwner(market, owner string) ([]*types.Account, error)
+	GetAccountByID(id string) (*types.Account, error)
 	GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error)
 }
 

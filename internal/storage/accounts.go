@@ -84,6 +84,11 @@ func (a *Account) Create(rec *types.Account) error {
 	return nil
 }
 
+// GetAccountByID - returns a given account by ID (if it exists, obviously)
+func (a *Account) GetAccountByID(id string) (*types.Account, error) {
+	return a.getAccountByID(nil, id)
+}
+
 func (a *Account) createAccounts(accounts ...*types.Account) error {
 	records, err := a.createAccountRecords(accounts...)
 	if err != nil {

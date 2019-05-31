@@ -112,6 +112,54 @@ func (e *Engine) TransferCh(transfers []events.Transfer) (<-chan events.Margin, 
 	return ch, ech
 }
 
+func (e *Engine) getOwnerAccounts(owner string) ([]*types.Account, error) {
+	ids, ok := e.traderAccounts[owner]
+	if !ok {
+		accounts, err := a.accountStroe.GetAccountsForOwnerByType(owner, types.AccountType_GENERAL)
+		if err != nil {
+			e.log.Error(
+				"Failed to get the general account",
+				logging.String("owner", p.Owner),
+				logging.String("market", e.market),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		maccs, err := e.accountStore.GetMarketAccountsForOwner(e.market, owner)
+		if err != nil {
+			e.log.Error(
+				"Could not get accounts for market",
+				logging.String("account-owner", owner),
+				logging.String("market", e.market),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		accounts = append(accounts, maccs...)
+		ids = map[types.AccountType]string{}
+		for _, acc := range accounts {
+			ids[acc.Type] = acc.Id
+		}
+		e.traderAccounts[owner] = ids
+		return accounts, nil
+	}
+	accounts := make([]*types.Account, 0, len(ids))
+	for _, id := range ids {
+		acc, err := e.accountStore.GetAccountByID(id)
+		if err != nil {
+			e.log.Error(
+				"Failed to get account by ID",
+				logging.String("account-id", id),
+				logging.String("owner", owner),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		accounts = append(accounts, acc)
+	}
+	return accounts, nil
+}
+
 // buildTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument
 func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Account) (*types.TransferRequest, error) {
 	// final settle, or MTM settle, makes no difference, it's win/loss still
