@@ -138,6 +138,10 @@ func (r *resolverRoot) Account() AccountResolver {
 	return (*MyAccountResolver)(r)
 }
 
+func (r *resolverRoot) Statistics() StatisticsResolver {
+	return (*MyStatisticsResolver)(r)
+}
+
 // BEGIN: Query Resolver
 
 type MyQueryResolver resolverRoot
@@ -208,6 +212,15 @@ func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error
 	}
 
 	return &Party{ID: res.Party.Id}, nil
+}
+
+func (r *MyQueryResolver) Statistics(ctx context.Context) (*types.Statistics, error) {
+	res, err := r.tradingDataClient.Statistics(ctx, &empty.Empty{})
+	if err != nil {
+		r.log.Error("tradingCore client", logging.Error(err))
+		return nil, err
+	}
+	return res, nil
 }
 
 // END: Root Resolver
@@ -1155,3 +1168,69 @@ func (r *MyAccountResolver) Type(ctx context.Context, obj *proto.Account) (Accou
 }
 
 // END: Account Resolver
+
+type MyStatisticsResolver resolverRoot
+
+func (r *MyStatisticsResolver) BlockHeight(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.BlockHeight), nil
+}
+
+func (r *MyStatisticsResolver) BacklogLength(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.BacklogLength), nil
+}
+
+func (r *MyStatisticsResolver) TotalPeers(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalPeers), nil
+}
+
+func (r *MyStatisticsResolver) Status(ctx context.Context, obj *proto.Statistics) (string, error) {
+	return obj.Status.String(), nil
+}
+
+func (r *MyStatisticsResolver) TxPerBlock(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TxPerBlock), nil
+}
+
+func (r *MyStatisticsResolver) AverageTxBytes(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.AverageTxBytes), nil
+}
+
+func (r *MyStatisticsResolver) AverageOrdersPerBlock(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.AverageOrdersPerBlock), nil
+}
+
+func (r *MyStatisticsResolver) TradesPerSecond(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TradesPerSecond), nil
+}
+
+func (r *MyStatisticsResolver) OrdersPerSecond(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.OrdersPerSecond), nil
+}
+
+func (r *MyStatisticsResolver) TotalMarkets(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalMarkets), nil
+}
+
+func (r *MyStatisticsResolver) TotalParties(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalParties), nil
+}
+
+func (r *MyStatisticsResolver) TotalAmendOrder(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalAmendOrder), nil
+}
+
+func (r *MyStatisticsResolver) TotalCancelOrder(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalCancelOrder), nil
+}
+
+func (r *MyStatisticsResolver) TotalCreateOrder(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalCreateOrder), nil
+}
+
+func (r *MyStatisticsResolver) TotalOrders(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalOrders), nil
+}
+
+func (r *MyStatisticsResolver) TotalTrades(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalTrades), nil
+}

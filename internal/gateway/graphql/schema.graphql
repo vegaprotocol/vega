@@ -144,6 +144,81 @@ type Query {
     # ID of a party
     id: String!
   ): Party
+
+  # a bunch of statistics about the node
+  statistics: Statistics!
+}
+
+# A bunch of statistics about the node
+type Statistics {
+  # Current block number
+  blockHeight: Int!
+
+  # Number of items in the backlog
+  backlogLength: Int!
+
+  # Total number of peers on the vega network
+  totalPeers: Int!
+
+  # Genesis time of the chain
+  genesisTime: String!
+
+  # Current time (real)
+  currentTime: String!
+
+  # Current time of the chain (decided through consensus)
+  vegaTime: String!
+
+  # Status of the vega application connection with the chain
+  status: String!
+
+  # Number of transaction processed per block
+  txPerBlock: Int!
+
+  # Average size of the transactions
+  averageTxBytes: Int!
+
+  # Average number of orders added per blocks
+  averageOrdersPerBlock: Int!
+
+  # Number of the trades per seconds
+  tradesPerSecond: Int!
+
+  # Number of orders per seconds
+  ordersPerSecond: Int!
+
+  # Total number of markets
+  totalMarkets: Int!
+
+  # Total number of parties
+  totalParties: Int!
+
+  # Traders on the vega network
+  parties: [String]!
+
+  # Total number of amended orders
+  totalAmendOrder: Int!
+
+  # Total number of cancelled orders
+  totalCancelOrder: Int!
+
+  # Total number of orders created
+  totalCreateOrder: Int!
+
+  # Total number of orders
+  totalOrders: Int!
+
+  # Total number of trades
+  totalTrades: Int!
+
+  # Version commit hash of the vega node
+  appVersionHash: String!
+
+  # Version of the vega node (semver)
+  appVersion: String!
+
+  # Version of the chain (semver)
+  chainVersion: String!
 }
 
 # A mode where Vega try to execute order as soon as they are received

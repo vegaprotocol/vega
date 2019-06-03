@@ -358,6 +358,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 		Parties:               partyNames,
 		AppVersionHash:        h.Stats.GetVersionHash(),
 		AppVersion:            h.Stats.GetVersion(),
+		ChainVersion:          h.Stats.GetChainVersion(),
 		TotalAmendOrder:       h.Stats.Blockchain.TotalAmendOrder(),
 		TotalCancelOrder:      h.Stats.Blockchain.TotalCancelOrder(),
 		TotalCreateOrder:      h.Stats.Blockchain.TotalCreateOrder(),
