@@ -51,7 +51,6 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	RequireAuth func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -1253,18 +1252,6 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}
 			ret = nil
 		}
 	}()
-	rctx := graphql.GetResolverContext(ctx)
-	for _, d := range rctx.Field.Definition.Directives {
-		switch d.Name {
-		case "requireAuth":
-			if ec.directives.RequireAuth != nil {
-				n := next
-				next = func(ctx context.Context) (interface{}, error) {
-					return ec.directives.RequireAuth(ctx, obj, n)
-				}
-			}
-		}
-	}
 	res, err := ec.ResolverMiddleware(ctx, next)
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1290,16 +1277,11 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `## VEGA - GraphQL schema
 
-# Represents a date/time
-scalar DateTime
-
 schema {
     query: Query,
     subscription: Subscription,
     mutation: Mutation
 }
-
-directive @requireAuth on FIELD
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
@@ -1321,7 +1303,7 @@ type Mutation {
     type: OrderType!,
     # exiration of the the order
     expiration: String
-  ): PendingOrder! @requireAuth
+  ): PendingOrder!
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
   # It validates and sends the request out for consensus.
@@ -1332,7 +1314,7 @@ type Mutation {
     marketId: String!,
     # ID of the party which created the order
     partyId: String!
-  ): PendingOrder! @requireAuth
+  ): PendingOrder!
 
   # sign a party in using an username and password, then return a token
   signin(

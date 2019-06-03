@@ -1,15 +1,10 @@
 ## VEGA - GraphQL schema
 
-# Represents a date/time
-scalar DateTime
-
 schema {
     query: Query,
     subscription: Subscription,
     mutation: Mutation
 }
-
-directive @requireAuth on FIELD
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
@@ -31,7 +26,7 @@ type Mutation {
     type: OrderType!,
     # exiration of the the order
     expiration: String
-  ): PendingOrder! @requireAuth
+  ): PendingOrder!
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
   # It validates and sends the request out for consensus.
@@ -42,7 +37,7 @@ type Mutation {
     marketId: String!,
     # ID of the party which created the order
     partyId: String!
-  ): PendingOrder! @requireAuth
+  ): PendingOrder!
 
   # sign a party in using an username and password, then return a token
   signin(
