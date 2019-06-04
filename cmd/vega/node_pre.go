@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/accounts"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/config"
@@ -155,5 +156,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) })
+	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
 	return
 }

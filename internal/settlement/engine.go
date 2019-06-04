@@ -12,14 +12,14 @@ import (
 
 // We should really use a type from the proto package for this, although, these mocks are kind of easy to set up :)
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/events/settlement MarketPosition
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/internal/settlement MarketPosition
 type MarketPosition interface {
 	Party() string
 	Size() int64
 	Price() uint64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/events/settlement Product
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/internal/settlement Product
 type Product interface {
 	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
 }

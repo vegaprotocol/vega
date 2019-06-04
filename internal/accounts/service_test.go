@@ -34,7 +34,7 @@ var (
 )
 
 type tstService struct {
-	*accounts.Service
+	*accounts.Svc
 	ctrl    *gomock.Controller
 	storage *mocks.MockAccountStore
 }
@@ -110,9 +110,9 @@ func getTestService(t *testing.T) *tstService {
 	ctrl := gomock.NewController(t)
 	acc := mocks.NewMockAccountStore(ctrl)
 	conf := accounts.NewDefaultConfig()
-	svc := accounts.New(logging.NewTestLogger(), conf, acc)
+	svc := accounts.NewService(logging.NewTestLogger(), conf, acc)
 	return &tstService{
-		Service: svc,
+		Svc:     svc,
 		ctrl:    ctrl,
 		storage: acc,
 	}

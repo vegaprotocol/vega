@@ -20,26 +20,26 @@ type AccountStore interface {
 	GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error)
 }
 
-// Service - the accounts service itself
-type Service struct {
+// Svc - the accounts service itself
+type Svc struct {
 	Config
 	log     *logging.Logger
 	storage AccountStore
 }
 
 // New - create new accounts service
-func New(log *logging.Logger, conf Config, storage AccountStore) *Service {
+func NewService(log *logging.Logger, conf Config, storage AccountStore) *Svc {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
-	return &Service{
+	return &Svc{
 		Config:  conf,
 		log:     log,
 		storage: storage,
 	}
 }
 
-func (s *Service) GetTraderAccounts(id string) ([]*types.Account, error) {
+func (s *Svc) GetTraderAccounts(id string) ([]*types.Account, error) {
 	// we can just return this outright, but we might want to use
 	accs, err := s.storage.GetAccountsForOwner(id)
 	if err != nil {
@@ -48,7 +48,7 @@ func (s *Service) GetTraderAccounts(id string) ([]*types.Account, error) {
 	return accs, nil
 }
 
-func (s *Service) GetTraderAccountsForMarket(trader, market string) ([]*types.Account, error) {
+func (s *Svc) GetTraderAccountsForMarket(trader, market string) ([]*types.Account, error) {
 	accs, err := s.storage.GetMarketAccountsForOwner(trader, market)
 	if err != nil {
 		if err == storage.ErrOwnerNotFound {
@@ -60,7 +60,7 @@ func (s *Service) GetTraderAccountsForMarket(trader, market string) ([]*types.Ac
 }
 
 // Get all accounts relevant for a trader on a market, so we can get the total balance available breakdown
-func (s *Service) GetTraderMarketBalance(trader, market string) ([]*types.Account, error) {
+func (s *Svc) GetTraderMarketBalance(trader, market string) ([]*types.Account, error) {
 	accs, err := s.GetTraderAccountsForMarket(trader, market)
 	if err != nil {
 		return nil, err

@@ -80,6 +80,7 @@ type Market struct {
 	TradingMode        TradingMode        `json:"tradingMode"`
 	DecimalPlaces      int                `json:"decimalPlaces"`
 	Orders             []proto.Order      `json:"orders"`
+	Accounts           []proto.Account    `json:"accounts"`
 	Trades             []proto.Trade      `json:"trades"`
 	Depth              proto.MarketDepth  `json:"depth"`
 	Candles            []*proto.Candle    `json:"candles"`
@@ -96,12 +97,60 @@ type Party struct {
 	ID        string                 `json:"id"`
 	Orders    []proto.Order          `json:"orders"`
 	Trades    []proto.Trade          `json:"trades"`
+	Accounts  []proto.Account        `json:"accounts"`
 	Positions []proto.MarketPosition `json:"positions"`
 }
 
 type TradableInstrument struct {
 	Instrument Instrument `json:"instrument"`
 	RiskModel  RiskModel  `json:"riskModel"`
+}
+
+type AccountType string
+
+const (
+	AccountTypeInsurance  AccountType = "Insurance"
+	AccountTypeSettlement AccountType = "Settlement"
+	AccountTypeMargin     AccountType = "Margin"
+	AccountTypeMarket     AccountType = "Market"
+	AccountTypeGeneral    AccountType = "General"
+)
+
+var AllAccountType = []AccountType{
+	AccountTypeInsurance,
+	AccountTypeSettlement,
+	AccountTypeMargin,
+	AccountTypeMarket,
+	AccountTypeGeneral,
+}
+
+func (e AccountType) IsValid() bool {
+	switch e {
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeMarket, AccountTypeGeneral:
+		return true
+	}
+	return false
+}
+
+func (e AccountType) String() string {
+	return string(e)
+}
+
+func (e *AccountType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AccountType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AccountType", str)
+	}
+	return nil
+}
+
+func (e AccountType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type Interval string

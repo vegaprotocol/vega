@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/accounts"
 	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
@@ -44,13 +45,14 @@ type NodeCommand struct {
 	partyStore  *storage.Party
 	riskStore   *storage.Risk
 
-	candleService *candles.Svc
-	tradeService  *trades.Svc
-	marketService *markets.Svc
-	orderService  *orders.Svc
-	partyService  *parties.Svc
-	timeService   *vegatime.Svc
-	auth          *auth.Svc
+	candleService   *candles.Svc
+	tradeService    *trades.Svc
+	marketService   *markets.Svc
+	orderService    *orders.Svc
+	partyService    *parties.Svc
+	timeService     *vegatime.Svc
+	auth            *auth.Svc
+	accountsService *accounts.Svc
 
 	blockchainClient *blockchain.Client
 
@@ -157,6 +159,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.orderService,
 		l.tradeService,
 		l.candleService,
+		l.accountsService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

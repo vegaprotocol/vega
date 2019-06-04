@@ -87,19 +87,27 @@ type BlockchainClient interface {
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api AccountsService
+type AccountsService interface {
+	GetTraderAccounts(id string) ([]*types.Account, error)
+	GetTraderAccountsForMarket(trader, market string) ([]*types.Account, error)
+	GetTraderMarketBalance(trader, market string) ([]*types.Account, error)
+}
+
 type tradingDataService struct {
-	log           *logging.Logger
-	Config        Config
-	Client        BlockchainClient
-	Stats         *internal.Stats
-	TimeService   VegaTime
-	OrderService  OrderService
-	TradeService  TradeService
-	CandleService CandleService
-	MarketService MarketService
-	PartyService  PartyService
-	statusChecker *monitoring.Status
-	ctx           context.Context
+	log             *logging.Logger
+	Config          Config
+	Client          BlockchainClient
+	Stats           *internal.Stats
+	TimeService     VegaTime
+	OrderService    OrderService
+	TradeService    TradeService
+	CandleService   CandleService
+	MarketService   MarketService
+	PartyService    PartyService
+	AccountsService AccountsService
+	statusChecker   *monitoring.Status
+	ctx             context.Context
 }
 
 // If no limit is provided at the gRPC API level, the system will use this limit instead.
@@ -739,6 +747,36 @@ func (h *tradingDataService) LastTrade(
 	// No trades found on the market yet (and no errors)
 	// this can happen at the beginning of a new market
 	return &protoapi.LastTradeResponse{}, nil
+}
+
+func (h *tradingDataService) TraderAccounts(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
+	accs, err := h.AccountsService.GetTraderAccounts(req.Party)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.CollateralResponse{
+		Accounts: accs,
+	}, nil
+}
+
+func (h *tradingDataService) TraderMarketAccounts(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
+	accs, err := h.AccountsService.GetTraderAccountsForMarket(req.Party, req.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.CollateralResponse{
+		Accounts: accs,
+	}, nil
+}
+
+func (h *tradingDataService) TraderMarketBalance(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
+	accs, err := h.AccountsService.GetTraderMarketBalance(req.Party, req.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.CollateralResponse{
+		Accounts: accs,
+	}, nil
 }
 
 func validateMarket(ctx context.Context, marketID string, marketService MarketService) (*types.Market, error) {

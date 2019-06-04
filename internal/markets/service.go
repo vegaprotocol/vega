@@ -7,15 +7,15 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets ServiceMarketStore
-type ServiceMarketStore interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets MarketStore
+type MarketStore interface {
 	Post(party *types.Market) error
 	GetByID(name string) (*types.Market, error)
 	GetAll() ([]*types.Market, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets ServiceOrderStore
-type ServiceOrderStore interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets OrderStore
+type OrderStore interface {
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
 	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
@@ -24,12 +24,12 @@ type ServiceOrderStore interface {
 type Svc struct {
 	Config
 	log         *logging.Logger
-	marketStore ServiceMarketStore
-	orderStore  ServiceOrderStore
+	marketStore MarketStore
+	orderStore  OrderStore
 }
 
 // NewService creates an market service with the necessary dependencies
-func NewService(log *logging.Logger, config Config, marketStore ServiceMarketStore, orderStore ServiceOrderStore) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())

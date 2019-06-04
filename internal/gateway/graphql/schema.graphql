@@ -276,6 +276,10 @@ type Market {
     last: Int
   ): [Order!]
 
+  accounts(
+    type: AccountType,
+  ): [Account!]
+
   # Trades on a market
   trades (
     # Pagination skip
@@ -390,6 +394,12 @@ type Party {
     first: Int,
     # Pagination last element
     last: Int): [Trade!]
+
+  accounts(
+    marketID: String,
+    type: AccountType,
+  ): [Account!]
+
 
   # Trading positions relating to a party
   positions: [Position!]
@@ -513,6 +523,14 @@ type Trade {
   createdAt: String!
 }
 
+# An account
+type Account {
+  id: String!
+  balance: String!
+  asset: String!
+  type: AccountType!
+}
+
 # Valid order types, these determine what happens when an order is added to the book
 enum OrderType {
 
@@ -584,4 +602,18 @@ enum Interval {
 
   # 1 day interval
   I1D
+}
+
+# The various account types we have (used by collateral)
+enum AccountType {
+  # Insurance pool account - only for party "system"
+  Insurance
+  # Settlement - Again, only for "system" party
+  Settlement
+  # Margin - The leverage account for traders
+  Margin
+  # Market - it's in the spec, but AFAIK, we're not using this currently
+  Market
+  # General account - the actual account containing "unused" monies
+  General
 }

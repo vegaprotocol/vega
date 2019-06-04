@@ -86,6 +86,11 @@ service trading_data {
   rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
+
+  // collateral/accounts
+  rpc TraderAccounts(CollateralRequest) returns (CollateralResponse);
+  rpc TraderMarketAccounts(CollateralRequest) returns (CollateralResponse);
+  rpc TraderMarketBalance(CollateralRequest) returns (CollateralResponse);
 }
 
 message LastTradeRequest {
@@ -252,4 +257,14 @@ message OrdersStream {
 
 message TradesStream {
   repeated vega.Trade trades = 1;
+}
+
+message CollateralRequest {
+    string party = 1 [(validator.field) = {msg_exists : true}];
+    string marketID = 2;
+    vega.AccountType type = 3;
+}
+
+message CollateralResponse {
+  repeated vega.Account accounts = 1;
 }

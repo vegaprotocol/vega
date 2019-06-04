@@ -64,6 +64,10 @@ type TradingDataClient interface {
 	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
 	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthSubscribeClient, error)
 	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_PositionsSubscribeClient, error)
+	// collateral
+	TraderAccounts(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
+	TraderMarketAccounts(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
+	TraderMarketBalance(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
 }
 
 type resolverRoot struct {
@@ -128,6 +132,9 @@ func (r *resolverRoot) Subscription() SubscriptionResolver {
 }
 func (r *resolverRoot) PendingOrder() PendingOrderResolver {
 	return (*MyPendingOrderResolver)(r)
+}
+func (r *resolverRoot) Account() AccountResolver {
+	return (*MyAccountResolver)(r)
 }
 
 // BEGIN: Query Resolver
@@ -319,6 +326,10 @@ func (r *MyMarketResolver) OrderByReference(ctx context.Context, market *Market,
 	return res.Order, nil
 }
 
+func (r *MyMarketResolver) Accounts(ctx context.Context, market *Market, accType *AccountType) ([]types.Account, error) {
+	return nil, errors.New("not implemented yet")
+}
+
 // END: Market Resolver
 
 // BEGIN: Party Resolver
@@ -416,6 +427,53 @@ func (r *MyPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.Ma
 	}
 	return retpos, nil
 
+}
+
+func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, accType *AccountType) ([]types.Account, error) {
+	if pty == nil {
+		return nil, errors.New("nil party")
+	}
+	// the call we'll be making
+	call := r.tradingDataClient.TraderAccounts
+	var (
+		market string
+		at     types.AccountType
+	)
+	if marketID != nil {
+		market = *marketID
+		// if a market was given, assume we want the market accounts
+		call = r.tradingDataClient.TraderMarketAccounts
+	}
+	if accType != nil {
+		// if an account type was specified, we'll be getting the balance (hacky, but simplifies this temp API)
+		switch *accType {
+		case AccountTypeMargin:
+			at = types.AccountType_MARGIN
+		case AccountTypeMarket:
+			at = types.AccountType_MARKET
+		case AccountTypeGeneral:
+			at = types.AccountType_GENERAL
+		case AccountTypeInsurance:
+			at = types.AccountType_INSURANCE
+		case AccountTypeSettlement:
+			at = types.AccountType_SETTLEMENT
+		}
+		call = r.tradingDataClient.TraderMarketBalance
+	}
+	req := protoapi.CollateralRequest{
+		Party:    pty.ID,
+		MarketID: market,
+		Type:     at,
+	}
+	resp, err := call(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	accounts := make([]types.Account, 0, len(resp.Accounts))
+	for _, acc := range resp.Accounts {
+		accounts = append(accounts, *acc)
+	}
+	return accounts, nil
 }
 
 // END: Party Resolver
@@ -1067,3 +1125,32 @@ func (r *MyPendingOrderResolver) Status(ctx context.Context, obj *proto.PendingO
 }
 
 // END: Subscription Resolver
+
+// START: Account Resolver
+
+// MyAccountResolver - seems to be required by gqlgen, but we're not using this ATM
+type MyAccountResolver resolverRoot
+
+func (r *MyAccountResolver) Balance(ctx context.Context, acc *proto.Account) (string, error) {
+	bal := fmt.Sprintf("%d", acc.Balance)
+	return bal, nil
+}
+
+func (r *MyAccountResolver) Type(ctx context.Context, obj *proto.Account) (AccountType, error) {
+	var t AccountType
+	switch obj.Type {
+	case types.AccountType_MARGIN:
+		t = AccountTypeMargin
+	case types.AccountType_MARKET:
+		t = AccountTypeMarket
+	case types.AccountType_GENERAL:
+		t = AccountTypeGeneral
+	case types.AccountType_INSURANCE:
+		t = AccountTypeInsurance
+	case types.AccountType_SETTLEMENT:
+		t = AccountTypeSettlement
+	}
+	return t, nil
+}
+
+// END: Account Resolver
