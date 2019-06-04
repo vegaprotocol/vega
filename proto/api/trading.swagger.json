@@ -315,7 +315,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrderResponse"
+              "$ref": "#/definitions/vegaPendingOrder"
             }
           }
         },
@@ -716,18 +716,6 @@
       "properties": {
         "order": {
           "$ref": "#/definitions/vegaOrder"
-        }
-      }
-    },
-    "apiOrderResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean",
-          "format": "boolean"
-        },
-        "reference": {
-          "type": "string"
         }
       }
     },
