@@ -81,7 +81,7 @@ func (s *graphServer) ReloadConf(cfg gateway.Config) {
 
 func (g *graphServer) Start() {
 	// <--- cors support - configure for production
-	var c = cors.Default()
+	corz := cors.AllowAll()
 	var up = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -131,9 +131,9 @@ func (g *graphServer) Start() {
 
 	if g.GraphQLPlaygroundEnabled {
 		g.log.Warn("graphql playground enabled, this is not a recommended setting for production")
-		handlr.Handle("/", c.Handler(handler.Playground("VEGA", "/query")))
+		handlr.Handle("/", corz.Handler(handler.Playground("VEGA", "/query")))
 	}
-	handlr.Handle("/query", gateway.TokenMiddleware(g.log, gateway.RemoteAddrMiddleware(g.log, c.Handler(handler.GraphQL(
+	handlr.Handle("/query", gateway.TokenMiddleware(g.log, gateway.RemoteAddrMiddleware(g.log, corz.Handler(handler.GraphQL(
 		NewExecutableSchema(config),
 		handler.WebsocketUpgrader(up),
 		loggingMiddleware,
