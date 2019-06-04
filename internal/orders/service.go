@@ -164,6 +164,10 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 		return nil, err
 	}
 
+	if o.PartyID != amendment.PartyID {
+		return nil, errors.New("party mis-match cannot cancel order")
+	}
+
 	if o.Status != types.Order_Active {
 		return nil, errors.New("order is not active")
 	}
