@@ -88,7 +88,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 func (e *Engine) getSystemAccounts() (settle, insurance *types.Account, err error) {
-	var sysAccounts []*types.Account
 	asset := e.market[:3]
 	insId, ok := e.marketAccounts[types.AccountType_INSURANCE][asset]
 	if !ok {

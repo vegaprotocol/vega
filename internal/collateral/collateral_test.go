@@ -359,7 +359,7 @@ func testDistributeWin(t *testing.T) {
 		// ensure trader has money in account
 		if tacc.Type == types.AccountType_GENERAL {
 			// update balance accordingly
-			eng.accounts.GetAccountByID(tacc.Id).Times(1).Return(tacc, nil)
+			eng.accounts.EXPECT().GetAccountByID(tacc.Id).Times(1).Return(tacc, nil)
 			eng.accounts.EXPECT().IncrementBalance(tacc.Id, 2*price).Times(1).Return(nil)
 			break
 		}
@@ -449,7 +449,7 @@ func testProcessBoth(t *testing.T) {
 	}
 	// The, each time we encounter a trader (ie each position aggregate), we'll attempt to create the account
 	// create the trader accounts, they'll be returned anyway
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos)).DoAndReturn(func(owner, market string) ([]*types.Account, nil) {
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos)).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
 		isTrader := (owner == trader || owner == moneyTrader)
 		assert.True(t, isTrader)
 		if owner == trader {
