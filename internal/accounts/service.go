@@ -39,6 +39,19 @@ func NewService(log *logging.Logger, conf Config, storage AccountStore) *Svc {
 	}
 }
 
+func (s *Svc) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.Config = cfg
+}
+
 func (s *Svc) GetTraderAccounts(id string) ([]*types.Account, error) {
 	// we can just return this outright, but we might want to use
 	accs, err := s.storage.GetAccountsForOwner(id)

@@ -157,5 +157,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) })
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) })
 	return
 }
