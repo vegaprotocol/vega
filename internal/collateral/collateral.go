@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/events"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -32,18 +31,18 @@ type Engine struct {
 	accountStore Accounts
 
 	// map of trader ID's to map of account types + account ID's
-	traderAccounts map[string]map[types.AccountType]string
+	traderAccounts map[string]map[types.AccountType]map[string]string // by trader, type, and asset
+	marketAccounts map[types.AccountType]map[string]string            // by type and asset
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral Accounts
 type Accounts interface {
-	CreateMarketAccounts(market string, insurance int64) error
-	CreateTraderMarketAccounts(owner, market string) error
+	CreateMarketAccounts(market string, insurance int64) ([]*types.Account, error)
+	CreateTraderMarketAccounts(owner, market string) ([]*types.Account, error)
 	UpdateBalance(id string, balance int64) error
 	IncrementBalance(id string, inc int64) error
 	GetMarketAccountsForOwner(market, owner string) ([]*types.Account, error)
 	GetAccountByID(id string) (*types.Account, error)
-	GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error)
 }
 
 func New(log *logging.Logger, conf Config, market string, accounts Accounts) (*Engine, error) {
@@ -52,14 +51,24 @@ func New(log *logging.Logger, conf Config, market string, accounts Accounts) (*E
 	log.SetLevel(conf.Level.Get())
 
 	// ensure market accounts are all good to go - get insurance pool initial value from config?
-	if err := accounts.CreateMarketAccounts(market, 0); err != nil && err != storage.ErrMarketAccountsExist {
+	accs, err := accounts.CreateMarketAccounts(market, 0)
+	if err != nil {
 		return nil, err
 	}
+	marketAccounts := make(map[types.AccountType]map[string]string, len(accs))
+	for _, acc := range accs {
+		if _, ok := marketAccounts[acc.Type]; !ok {
+			marketAccounts[acc.Type] = map[string]string{}
+		}
+		marketAccounts[acc.Type][acc.Asset] = acc.Id
+	}
 	return &Engine{
-		log:          log,
-		Config:       conf,
-		market:       market,
-		accountStore: accounts,
+		log:            log,
+		Config:         conf,
+		market:         market,
+		accountStore:   accounts,
+		traderAccounts: map[string]map[types.AccountType]map[string]string{},
+		marketAccounts: marketAccounts, // we've got all the ID's for market ID's already
 	}, nil
 }
 
@@ -80,88 +89,91 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 func (e *Engine) getSystemAccounts() (settle, insurance *types.Account, err error) {
 	var sysAccounts []*types.Account
-	sysAccounts, err = e.accountStore.GetMarketAccountsForOwner(e.market, storage.SystemOwner)
-	if err != nil {
-		e.log.Error(
-			"Failed to collect loss (system accounts missing)",
-			logging.Error(err),
-		)
+	asset := e.market[:3]
+	insId, ok := e.marketAccounts[types.AccountType_INSURANCE][asset]
+	if !ok {
+		err = ErrSystemAccountsMissing
 		return
 	}
-	for _, sa := range sysAccounts {
-		switch sa.Type {
-		case types.AccountType_INSURANCE:
-			insurance = sa
-		case types.AccountType_SETTLEMENT:
-			settle = sa
-		}
-	}
-	// if one of the required accounts is nil, set error accordingly
-	if settle == nil || insurance == nil {
+	setId, ok := e.marketAccounts[types.AccountType_SETTLEMENT][asset]
+	if !ok {
 		err = ErrSystemAccountsMissing
+		return
 	}
+	if insurance, err = e.accountStore.GetAccountByID(insId); err != nil {
+		return
+	}
+	settle, err = e.accountStore.GetAccountByID(setId)
 	return
 }
 
 // AddTraderToMarket - when a new trader enters a market, ensure general + margin accounts both exist
 func (e *Engine) AddTraderToMarket(id string) error {
-	// this will only fail if the trader already has the accounts, in which case, we don't really care
-	if err := e.accountStore.CreateTraderMarketAccounts(id, e.market); err != nil {
+	// trader was already in market, so skip
+	if _, ok := e.traderAccounts[id]; ok {
 		return nil
 	}
-	// now get the accounts we've just created
-	gen, err := e.accountStore.GetAccountsForOwnerByType(id, types.AccountType_GENERAL)
+	// initialise
+	e.traderAccounts[id] = map[types.AccountType]map[string]string{}
+	// badger errors are relevant now
+	accounts, err := e.accountStore.CreateTraderMarketAccounts(id, e.market)
 	if err != nil {
-		e.log.Error(
-			"Trader doesn't have a general account somehow?",
-			logging.String("trader-id", id),
-			logging.Error(err),
-		)
 		return err
 	}
-	accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, id)
-	if err != nil {
-		e.log.Error(
-			"Failed to create new trader accounts",
-			logging.String("trader-id", id),
-			logging.Error(err),
-		)
-		return err
+	// add account ID's to map
+	var (
+		gen, margin *types.Account
+	)
+	for _, acc := range accounts {
+		if _, ok := e.traderAccounts[id][acc.Type]; !ok {
+			switch acc.Type {
+			case types.AccountType_GENERAL:
+				gen = acc
+			case types.AccountType_MARGIN:
+				margin = acc
+			}
+			e.traderAccounts[id][acc.Type] = map[string]string{}
+		}
+		e.traderAccounts[id][acc.Type][acc.Asset] = acc.Id
 	}
-	accounts = append(accounts, gen...)
+	if gen == nil || margin == nil {
+		e.log.Error(
+			"Trader doesn't have a general or margin account somehow?",
+			logging.String("trader-id", id),
+		)
+		return ErrTraderAccountsMissing
+	}
 	// let's get the balances we need
 	e.cfgMu.Lock()
-	general := e.Config.TraderGeneralAccountBalance
-	margin := general / 100 * e.Config.TraderMarginPercent
+	genBal := e.Config.TraderGeneralAccountBalance
+	marginBal := genBal / 100 * e.Config.TraderMarginPercent
 	e.cfgMu.Unlock()
-	// move from general to margin, so subtract from general account
-	balances := map[types.AccountType]int64{
-		types.AccountType_GENERAL: general - margin,
-		types.AccountType_MARGIN:  margin,
+	// check to see if there's enough balance on the general account already
+	// if not, add it
+	if gen.Balance < genBal {
+		gen.Balance = genBal
 	}
-	set := 0
-	for _, acc := range accounts {
-		if bal, ok := balances[acc.Type]; ok {
-			set++
-			if err := e.accountStore.UpdateBalance(acc.Id, bal); err != nil {
-				e.log.Error(
-					"Failed to set the new balance for new trader account",
-					logging.String("trader-id", id),
-					logging.String("account-id", acc.Id),
-					logging.Int64("balance", bal),
-					logging.Error(err),
-				)
-				return err
-			}
-		}
-	}
-	if set != len(balances) {
+	// subtract the margin from the general balance
+	gen.Balance -= marginBal
+	if err := e.accountStore.UpdateBalance(gen.Id, gen.Balance); err != nil {
 		e.log.Error(
-			"Failed to set required trader balances. Expected to set general + margin balance...",
+			"Failed to set new balance for general account",
 			logging.String("trader-id", id),
-			logging.Int("balances-set", set),
+			logging.String("account-id", gen.Id),
+			logging.Int64("balance", gen.Balance),
+			logging.Error(err),
 		)
-		return ErrBalanceNotSet
+		return err
+	}
+	if err := e.accountStore.UpdateBalance(margin.Id, marginBal); err != nil {
+		e.log.Error(
+			"Failed to set new balance for margin account",
+			logging.String("trader-id", id),
+			logging.String("account-id", margin.Id),
+			logging.Int64("balance", marginBal),
+			logging.Error(err),
+		)
+		return err
 	}
 	return nil
 }
@@ -304,8 +316,10 @@ func (e *Engine) getSetupCB(distr *distributor, reference string, settle, insura
 	// common tasks performed for both win and loss positions
 	return func(p *types.Transfer) (*types.TransferResponse, error) {
 		if createTraderAccounts {
-			// ignore errors, the only error ATM is the one telling us this call was redundant
-			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
+			// perform the same logic as adding a trader to market, if needed
+			if err := e.AddTraderToMarket(p.Owner); err != nil {
+				return nil, err
+			}
 		}
 		req, err := e.getTransferRequest(p, settle, insurance)
 		if err != nil {
@@ -404,18 +418,13 @@ func collectWin(positions []*types.Transfer, cb collectCB) error {
 func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.Account) (*types.TransferRequest, error) {
 	// final settle, or MTM settle, makes no difference, it's win/loss still
 	if p.Type == types.TransferType_LOSS || p.Type == types.TransferType_MTM_LOSS {
-		accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, p.Owner)
+		// types needed: margin, market
+		accounts, err := e.getTraderAccountsByAssetAndType(p.Owner, p.Amount.Asset, types.AccountType_MARGIN, types.AccountType_MARKET)
 		if err != nil {
-			e.log.Error(
-				"could not get accounts for market",
-				logging.String("account-owner", p.Owner),
-				logging.String("market", e.market),
-				logging.Error(err),
-			)
 			return nil, err
 		}
 		req := types.TransferRequest{
-			FromAccount: []*types.Account{nil, nil, insurance}, // we'll need 3 accounts, last one is insurance
+			FromAccount: []*types.Account{nil, nil, insurance}, // we'll need 3 accounts, last one is insurance pool
 			ToAccount: []*types.Account{
 				settle,
 			},
@@ -423,6 +432,8 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			MinAmount: 0,  // default value, but keep it here explicitly
 			Asset:     "", // TBC
 		}
+		// this is guaranteed to work at this point, getTraderAccountIDs already ensures we've got both ID's
+		// and getting the accounts by ID ensures we've gotten the record from storage correctly
 		for _, ca := range accounts {
 			switch ca.Type {
 			case types.AccountType_MARGIN:
@@ -431,12 +442,9 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 				req.FromAccount[1] = ca
 			}
 		}
-		if req.FromAccount[0] == nil || req.FromAccount[1] == nil {
-			return nil, ErrTraderAccountsMissing
-		}
 		return &req, nil
 	}
-	gen, err := e.accountStore.GetAccountsForOwnerByType(p.Owner, types.AccountType_GENERAL)
+	accounts, err := e.getTraderAccountsByAssetAndType(p.Owner, p.Amount.Asset, types.AccountType_GENERAL)
 	if err != nil {
 		e.log.Error(
 			"Failed to get the general account",
@@ -452,12 +460,58 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			insurance,
 		},
 		ToAccount: []*types.Account{
-			gen[0],
+			accounts[0],
 		},
 		Amount:    uint64(p.Amount.Amount) * p.Size,
 		MinAmount: 0,  // default value, but keep it here explicitly
 		Asset:     "", // TBC
 	}, nil
+}
+
+func (e *Engine) getTraderAccountsByAssetAndType(trader, asset string, accTypes ...types.AccountType) ([]*types.Account, error) {
+	ids, err := e.getTraderAccountIDs(asset, trader, accTypes...)
+	if err != nil {
+		return nil, err
+	}
+	accounts := make([]*types.Account, 0, len(ids))
+	for _, id := range ids {
+		acc, err := e.accountStore.GetAccountByID(id)
+		if err != nil {
+			e.log.Error(
+				"Failed to get account by id",
+				logging.String("account-id", id),
+				logging.Error(err),
+			)
+			return nil, ErrTraderAccountsMissing
+		}
+		accounts = append(accounts, acc)
+	}
+	return accounts, nil
+}
+
+func (e *Engine) getTraderAccountIDs(asset, trader string, types ...types.AccountType) ([]string, error) {
+	taccs := e.traderAccounts[trader]
+	// no specific types, get all accounts for asset
+	if len(types) == 0 {
+		ids := make([]string, 0, len(taccs))
+		for _, accs := range taccs {
+			if id, ok := accs[asset]; ok {
+				ids = append(ids, id)
+			}
+		}
+		return ids, nil
+	}
+	ids := make([]string, 0, len(types))
+	for _, t := range types {
+		accs, ok := taccs[t]
+		if !ok {
+			return nil, ErrTraderAccountsMissing
+		}
+		if id, ok := accs[asset]; ok {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
 }
 
 // this builds a TransferResponse for a specific request, we collect all of them and aggregate

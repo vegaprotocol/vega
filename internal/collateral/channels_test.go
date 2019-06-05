@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTransferChannel(t *testing.T) {
+func testTransferChannel(t *testing.T) {
 	t.Run("Test channel flow success", testTransferChannelSuccess)
 }
 

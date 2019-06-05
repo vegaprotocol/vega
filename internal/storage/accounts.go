@@ -90,6 +90,9 @@ func (a *Account) GetAccountByID(id string) (*types.Account, error) {
 }
 
 func (a *Account) createAccounts(accounts ...*types.Account) error {
+	if len(accounts) == 0 {
+		return nil
+	}
 	records, err := a.createAccountRecords(accounts...)
 	if err != nil {
 		return err
@@ -110,6 +113,8 @@ func (a *Account) hasAccount(acc *types.Account) (bool, error) {
 		market = NoMarket
 	}
 	key := a.badger.accountKey(acc.Owner, acc.Asset, market, acc.Type)
+	// set Id here - if account exists, we still want to return the full record with ID'
+	acc.Id = string(key)
 	err := a.badger.db.View(func(txn *badger.Txn) error {
 		account, err := txn.Get(key)
 		if err != nil {
@@ -180,7 +185,7 @@ func (a *Account) createAccountRecords(accounts ...*types.Account) (map[string][
 	return m, nil
 }
 
-func (a *Account) CreateMarketAccounts(market string, insuranceBalance int64) error {
+func (a *Account) CreateMarketAccounts(market string, insuranceBalance int64) ([]*types.Account, error) {
 	// all market accounts that the system should have available to it
 	accounts := []*types.Account{
 		{
@@ -203,25 +208,27 @@ func (a *Account) CreateMarketAccounts(market string, insuranceBalance int64) er
 			Type:     types.AccountType_SETTLEMENT,
 		},
 	}
+	// This should probably be a single transaction
 	create := make([]*types.Account, 0, len(accounts))
 	for _, acc := range accounts {
 		ok, err := a.hasAccount(acc)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !ok {
 			create = append(create, acc)
 		}
 	}
-	if len(create) > 0 {
-		return a.createAccounts(create...)
+	if err := a.createAccounts(create...); err != nil {
+		return nil, err
 	}
-	return nil
+	// don't return just the ones we've created, we should return all the accounts we need
+	return accounts, nil
 }
 
 // CreateTraderMarketAccounts - sets up accounts for trader for a particular market
 // checks general accounts, and creates those, too if needed
-func (a *Account) CreateTraderMarketAccounts(owner, market string) error {
+func (a *Account) CreateTraderMarketAccounts(owner, market string) ([]*types.Account, error) {
 	// does this trader actually have any accounts yet?
 	accounts := []*types.Account{
 		{
@@ -243,18 +250,24 @@ func (a *Account) CreateTraderMarketAccounts(owner, market string) error {
 			Type:     types.AccountType_GENERAL,
 		},
 	}
+	// Again, probably better to put this in a transaction, even though accounts are created
+	// in a deterministic flow (sequential), and as such, this is safe
 	create := make([]*types.Account, 0, len(accounts))
 	for _, acc := range accounts {
 		ok, err := a.hasAccount(acc)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !ok {
 			// no errors returned by check, no account found
 			create = append(create, acc)
 		}
 	}
-	return nil
+	if err := a.createAccounts(create...); err != nil {
+		return nil, err
+	}
+	// again, return not just the created accounts, return all of them
+	return accounts, nil
 }
 
 func (a *Account) GetMarketAccounts(market string) ([]*types.Account, error) {
