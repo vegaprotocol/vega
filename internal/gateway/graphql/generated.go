@@ -1622,7 +1622,9 @@ type Market {
     last: Int
   ): [Order!]
 
+  # Get system accounts for a given market (insurance pool, settlement)
   accounts(
+    # Specify the account type to get a specific account
     type: AccountType,
   ): [Account!]
 
@@ -1741,8 +1743,11 @@ type Party {
     # Pagination last element
     last: Int): [Trade!]
 
+    # get accounts for a given party, filtered if needed
   accounts(
+    # Market ID - specify what market accounts for the party to return
     marketID: String,
+    # Filter accounts by type (General account, margin account, etc...)
     type: AccountType,
   ): [Account!]
 
@@ -1869,11 +1874,15 @@ type Trade {
   createdAt: String!
 }
 
-# An account
+# An account record
 type Account {
+  # id the id for this account, not useful given the current API, but might be useful
   id: String!
+  # Balance as string - current account balance (approx. as balances can be updated several times per second)
   balance: String!
+  # Asset, the "currency"
   asset: String!
+  # Account type (enum type)
   type: AccountType!
 }
 
