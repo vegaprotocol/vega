@@ -69,8 +69,9 @@ func (s *tradingService) SignIn(
 	saltpass := fmt.Sprintf("vega%v", req.Password)
 
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if !s.authEnabled {
-		s.mu.Unlock()
 		return nil, ErrAuthDisabled
 	}
 	for _, v := range s.parties {
@@ -80,11 +81,11 @@ func (s *tradingService) SignIn(
 					logging.String("user-id", v.ID),
 					logging.Error(err),
 				)
+				return nil, ErrInvalidCredentials
 			}
 			tkn = v.Token
 		}
 	}
-	s.mu.Unlock()
 
 	if len(tkn) <= 0 {
 		return nil, ErrInvalidCredentials
