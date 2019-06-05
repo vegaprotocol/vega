@@ -276,6 +276,7 @@ type Market {
     last: Int
   ): [Order!]
 
+  # Get system accounts for a given market (insurance pool, settlement)
   accounts(
     type: AccountType,
   ): [Account!]

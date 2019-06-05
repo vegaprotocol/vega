@@ -20,7 +20,8 @@ import (
 )
 
 var (
-	ErrNilPendingOrder = errors.New("nil pending order")
+	ErrNilPendingOrder    = errors.New("nil pending order")
+	ErrUnknownAccountType = errors.New("unknown account type")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/graphql TradingClient
@@ -1140,17 +1141,17 @@ func (r *MyAccountResolver) Type(ctx context.Context, obj *proto.Account) (Accou
 	var t AccountType
 	switch obj.Type {
 	case types.AccountType_MARGIN:
-		t = AccountTypeMargin
+		return AccountTypeMargin, nil
 	case types.AccountType_MARKET:
-		t = AccountTypeMarket
+		return AccountTypeMarket, nil
 	case types.AccountType_GENERAL:
-		t = AccountTypeGeneral
+		return AccountTypeGeneral, nil
 	case types.AccountType_INSURANCE:
-		t = AccountTypeInsurance
+		return AccountTypeInsurance, nil
 	case types.AccountType_SETTLEMENT:
-		t = AccountTypeSettlement
+		return AccountTypeSettlement, nil
 	}
-	return t, nil
+	return t, ErrUnknownAccountType
 }
 
 // END: Account Resolver
