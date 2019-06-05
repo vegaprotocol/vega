@@ -642,6 +642,17 @@
         }
       }
     },
+    "apiCollateralResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
     "apiLastTradeResponse": {
       "type": "object",
       "properties": {
@@ -919,6 +930,41 @@
           }
         }
       }
+    },
+    "vegaAccount": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "balance": {
+          "type": "string",
+          "format": "int64"
+        },
+        "asset": {
+          "type": "string"
+        },
+        "marketID": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaAccountType"
+        }
+      }
+    },
+    "vegaAccountType": {
+      "type": "string",
+      "enum": [
+        "INSURANCE",
+        "SETTLEMENT",
+        "MARGIN",
+        "MARKET",
+        "GENERAL"
+      ],
+      "default": "INSURANCE"
     },
     "vegaCandle": {
       "type": "object",
