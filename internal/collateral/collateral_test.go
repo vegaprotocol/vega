@@ -70,14 +70,15 @@ func TestAddTraderToMarket(t *testing.T) {
 
 func testNew(t *testing.T) {
 	eng := getTestEngine(t, "test-market", nil)
-	eng.ctrl.Finish()
+	eng.Finish()
 	eng = getTestEngine(t, "test-market", errors.New("random error"))
-	eng.ctrl.Finish()
+	eng.Finish()
 }
 
 func testAddTrader(t *testing.T) {
 	market := "BTCtest-market"
 	eng := getTestEngine(t, market, nil)
+	defer eng.Finish()
 	traders := []string{
 		"duplicate",
 		"success",
@@ -106,7 +107,6 @@ func testAddTrader(t *testing.T) {
 	// expected balances
 	assert.Error(t, eng.AddTraderToMarket(traders[0]))
 	assert.NoError(t, eng.AddTraderToMarket(traders[1]))
-	eng.ctrl.Finish()
 }
 
 func testTransferLoss(t *testing.T) {
@@ -118,7 +118,7 @@ func testTransferLoss(t *testing.T) {
 	traderAccs := getTraderAccounts(trader, market)
 	moneyAccs := getTraderAccounts(moneyTrader, market)
 	eng := getTestEngine(t, market, nil)
-	defer eng.ctrl.Finish()
+	defer eng.Finish()
 	systemAccs := eng.systemAccs
 	// we're going to auto-create the accounts
 	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(2).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
@@ -194,14 +194,33 @@ func testTransferComplexLoss(t *testing.T) {
 	half := int64(500)
 	price := half * 2
 
-	systemAccs := getSystemAccounts(market)
 	traderAccs := getTraderAccounts(trader, market)
 	eng := getTestEngine(t, market, nil)
-	defer eng.ctrl.Finish()
+	defer eng.Finish()
+	systemAccs := eng.systemAccs
 	// we're going to auto-create the accounts
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(trader, market).Times(1).Return(nil)
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(trader, market).Times(1).Return(traderAccs, nil)
 	// set up the get-accounts calls
-	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, storage.SystemOwner).Times(1).Return(systemAccs, nil)
+	for _, acc := range systemAccs {
+		if acc.Type == types.AccountType_INSURANCE {
+			acc.Balance += half
+			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
+			eng.accounts.EXPECT().IncrementBalance(acc.Id, -half).Times(1).Return(nil)
+		}
+		if acc.Type == types.AccountType_SETTLEMENT {
+			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
+			eng.accounts.EXPECT().IncrementBalance(acc.Id, price).Times(1).Return(nil)
+		}
+	}
+	for _, acc := range traderAccs {
+		if acc.Type == types.AccountType_MARGIN {
+			acc.Balance += half
+			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
+		}
+		if acc.Type == types.AccountType_MARKET {
+			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
+		}
+	}
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
 	// now the positions
 	pos := []*types.Transfer{
@@ -214,24 +233,6 @@ func testTransferComplexLoss(t *testing.T) {
 			},
 			Type: types.TransferType_LOSS,
 		},
-	}
-	for _, sacc := range systemAccs {
-		switch sacc.Type {
-		case types.AccountType_INSURANCE:
-			sacc.Balance = half
-			eng.accounts.EXPECT().IncrementBalance(sacc.Id, -half).Times(1).Return(nil)
-		case types.AccountType_SETTLEMENT:
-			// update settlement account balance
-			eng.accounts.EXPECT().IncrementBalance(sacc.Id, price).Times(1).Return(nil)
-		}
-	}
-	for _, tacc := range traderAccs {
-		// ensure trader has money in account
-		if tacc.Type == types.AccountType_MARGIN {
-			tacc.Balance += half
-			// update balance accordingly
-			eng.accounts.EXPECT().UpdateBalance(tacc.Id, int64(0)).Times(1).Return(nil)
-		}
 	}
 	responses, err := eng.Transfer(pos)
 	assert.Equal(t, 1, len(responses))
@@ -247,8 +248,9 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 	market := "BTCtest-market"
 	trader := "test-trader"
 	price := int64(1000)
+	eng := getTestEngine(t, market, nil)
+	defer eng.Finish()
 
-	systemAccs := getSystemAccounts(market)
 	allAccs := getTraderAccounts(trader, market)
 	traderAccs := make([]*types.Account, 0, len(allAccs)-1)
 	for _, acc := range allAccs {
@@ -257,15 +259,18 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 			traderAccs = append(traderAccs, acc)
 		}
 	}
-	eng := getTestEngine(t, market, nil)
-	defer eng.ctrl.Finish()
+	systemAccs := eng.systemAccs
 	// we're going to auto-create the accounts
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(1).Return(nil).Do(func(owner, market string) {
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(1).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
 		assert.Equal(t, trader, owner)
+		return traderAccs, nil
 	})
 	// set up the get-accounts calls
-	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, storage.SystemOwner).Times(1).Return(systemAccs, nil)
-	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
+	for _, acc := range systemAccs {
+		if acc.Type == types.AccountType_INSURANCE || acc.Type == types.AccountType_SETTLEMENT {
+			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
+		}
+	}
 	// now the positions
 	pos := []*types.Transfer{
 		{
@@ -290,17 +295,27 @@ func testDistributeWin(t *testing.T) {
 	moneyTrader := "money-trader"
 	price := int64(1000)
 
-	systemAccs := getSystemAccounts(market)
+	eng := getTestEngine(t, market, nil)
+	defer eng.Finish()
+
+	systemAccs := eng.systemAccs
 	traderAccs := getTraderAccounts(trader, market)
 	moneyAccs := getTraderAccounts(moneyTrader, market)
-	eng := getTestEngine(t, market, nil)
-	defer eng.ctrl.Finish()
 	// we're going to auto-create the accounts
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(2).Return(nil).Do(func(owner, market string) {
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(2).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
 		isTrader := (owner == trader || owner == moneyTrader)
 		assert.True(t, isTrader)
+		if owner == trader {
+			return traderAccs, nil
+		}
+		return moneyAccs, nil
 	})
 	// set up the get-accounts calls
+	for _, acc := range systemAccs {
+		if acc.Type == types.AccountType_INSURANCE || acc.Type == types.AccountType_SETTLEMENT {
+			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc)
+		}
+	}
 	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, storage.SystemOwner).Times(1).Return(systemAccs, nil)
 	// now the positions
 	pos := []*types.Transfer{
@@ -798,6 +813,11 @@ func getTestEngine(t *testing.T, market string, err error) *testEngine {
 		accounts:   acc,
 		systemAccs: accounts,
 	}
+}
+
+func (te *testEngine) Finish() {
+	te.systemAccs = nil
+	te.ctrl.Finish()
 }
 
 type mtmFake struct {
