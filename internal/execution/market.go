@@ -122,7 +122,7 @@ func NewMarket(
 
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.RiskModel, getInitialFactors())
 	positionEngine := positions.New(log, positionConfig)
-	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product)
+	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
 
 	market := &Market{
 		log:                log,
