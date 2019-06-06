@@ -1479,13 +1479,7 @@
           "type": "string",
           "format": "uint64"
         },
-        "appVersionHash": {
-          "type": "string"
-        },
-        "appVersion": {
-          "type": "string"
-        },
-        "Parties": {
+        "parties": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1510,6 +1504,15 @@
         "totalTrades": {
           "type": "string",
           "format": "uint64"
+        },
+        "appVersionHash": {
+          "type": "string"
+        },
+        "appVersion": {
+          "type": "string"
+        },
+        "chainVersion": {
+          "type": "string"
         }
       }
     },
