@@ -109,6 +109,20 @@ func (mr *MockOrderStoreMockRecorder) GetByReference(arg0, arg1 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByReference", reflect.TypeOf((*MockOrderStore)(nil).GetByReference), arg0, arg1)
 }
 
+// GetSubscribersCount mocks base method
+func (m *MockOrderStore) GetSubscribersCount() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSubscribersCount")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// GetSubscribersCount indicates an expected call of GetSubscribersCount
+func (mr *MockOrderStoreMockRecorder) GetSubscribersCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubscribersCount", reflect.TypeOf((*MockOrderStore)(nil).GetSubscribersCount))
+}
+
 // Subscribe mocks base method
 func (m *MockOrderStore) Subscribe(arg0 chan<- []proto.Order) uint64 {
 	m.ctrl.T.Helper()

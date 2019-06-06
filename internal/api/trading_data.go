@@ -48,6 +48,7 @@ type OrderService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
+	GetSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeService
@@ -58,12 +59,15 @@ type TradeService interface {
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
+	GetTradeSubscribersCount() int32
+	GetPositionsSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api CandleService
 type CandleService interface {
 	GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) (candles []*types.Candle, err error)
 	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
+	GetSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api MarketService
@@ -72,6 +76,7 @@ type MarketService interface {
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
+	GetSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api PartyService
@@ -341,30 +346,35 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 	}
 
 	return &types.Statistics{
-		BlockHeight:           h.Stats.Blockchain.Height(),
-		BacklogLength:         uint64(backlogLength),
-		TotalPeers:            uint64(numPeers),
-		GenesisTime:           genesisTime,
-		CurrentTime:           vegatime.Format(vegatime.Now()),
-		VegaTime:              vegatime.Format(epochTime),
-		TxPerBlock:            uint64(h.Stats.Blockchain.TotalTxLastBatch()),
-		AverageTxBytes:        uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
-		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
-		TradesPerSecond:       uint64(h.Stats.Blockchain.TradesPerSecond()),
-		OrdersPerSecond:       uint64(h.Stats.Blockchain.OrdersPerSecond()),
-		Status:                h.statusChecker.ChainStatus(),
-		TotalMarkets:          uint64(len(m)),
-		TotalParties:          uint64(len(p)),
-		Parties:               partyNames,
-		AppVersionHash:        h.Stats.GetVersionHash(),
-		AppVersion:            h.Stats.GetVersion(),
-		ChainVersion:          h.Stats.GetChainVersion(),
-		TotalAmendOrder:       h.Stats.Blockchain.TotalAmendOrder(),
-		TotalCancelOrder:      h.Stats.Blockchain.TotalCancelOrder(),
-		TotalCreateOrder:      h.Stats.Blockchain.TotalCreateOrder(),
-		TotalOrders:           h.Stats.Blockchain.TotalOrders(),
-		TotalTrades:           h.Stats.Blockchain.TotalTrades(),
-		BlockDuration:         h.Stats.Blockchain.BlockDuration(),
+		BlockHeight:              h.Stats.Blockchain.Height(),
+		BacklogLength:            uint64(backlogLength),
+		TotalPeers:               uint64(numPeers),
+		GenesisTime:              genesisTime,
+		CurrentTime:              vegatime.Format(vegatime.Now()),
+		VegaTime:                 vegatime.Format(epochTime),
+		TxPerBlock:               uint64(h.Stats.Blockchain.TotalTxLastBatch()),
+		AverageTxBytes:           uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
+		AverageOrdersPerBlock:    uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
+		TradesPerSecond:          uint64(h.Stats.Blockchain.TradesPerSecond()),
+		OrdersPerSecond:          uint64(h.Stats.Blockchain.OrdersPerSecond()),
+		Status:                   h.statusChecker.ChainStatus(),
+		TotalMarkets:             uint64(len(m)),
+		TotalParties:             uint64(len(p)),
+		Parties:                  partyNames,
+		AppVersionHash:           h.Stats.GetVersionHash(),
+		AppVersion:               h.Stats.GetVersion(),
+		ChainVersion:             h.Stats.GetChainVersion(),
+		TotalAmendOrder:          h.Stats.Blockchain.TotalAmendOrder(),
+		TotalCancelOrder:         h.Stats.Blockchain.TotalCancelOrder(),
+		TotalCreateOrder:         h.Stats.Blockchain.TotalCreateOrder(),
+		TotalOrders:              h.Stats.Blockchain.TotalOrders(),
+		TotalTrades:              h.Stats.Blockchain.TotalTrades(),
+		BlockDuration:            h.Stats.Blockchain.BlockDuration(),
+		OrderSubscriptions:       h.OrderService.GetSubscribersCount(),
+		TradeSubscriptions:       h.TradeService.GetTradeSubscribersCount(),
+		PositionsSubscriptions:   h.TradeService.GetPositionsSubscribersCount(),
+		MarketDepthSubscriptions: h.MarketService.GetSubscribersCount(),
+		CandleSubscriptions:      h.CandleService.GetSubscribersCount(),
 	}, nil
 }
 
