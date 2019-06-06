@@ -33,6 +33,21 @@ func (m *MockAccountStore) EXPECT() *MockAccountStoreMockRecorder {
 	return m.recorder
 }
 
+// GetAccountsByOwnerAndAsset mocks base method
+func (m *MockAccountStore) GetAccountsByOwnerAndAsset(arg0, arg1 string) ([]*proto.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountsByOwnerAndAsset", arg0, arg1)
+	ret0, _ := ret[0].([]*proto.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccountsByOwnerAndAsset indicates an expected call of GetAccountsByOwnerAndAsset
+func (mr *MockAccountStoreMockRecorder) GetAccountsByOwnerAndAsset(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountsByOwnerAndAsset", reflect.TypeOf((*MockAccountStore)(nil).GetAccountsByOwnerAndAsset), arg0, arg1)
+}
+
 // GetAccountsForOwner mocks base method
 func (m *MockAccountStore) GetAccountsForOwner(arg0 string) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
@@ -76,4 +91,19 @@ func (m *MockAccountStore) GetMarketAccountsForOwner(arg0, arg1 string) ([]*prot
 func (mr *MockAccountStoreMockRecorder) GetMarketAccountsForOwner(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketAccountsForOwner", reflect.TypeOf((*MockAccountStore)(nil).GetMarketAccountsForOwner), arg0, arg1)
+}
+
+// GetMarketAssetAccounts mocks base method
+func (m *MockAccountStore) GetMarketAssetAccounts(arg0, arg1, arg2 string) ([]*proto.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMarketAssetAccounts", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]*proto.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMarketAssetAccounts indicates an expected call of GetMarketAssetAccounts
+func (mr *MockAccountStoreMockRecorder) GetMarketAssetAccounts(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketAssetAccounts", reflect.TypeOf((*MockAccountStore)(nil).GetMarketAssetAccounts), arg0, arg1, arg2)
 }

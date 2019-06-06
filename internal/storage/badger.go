@@ -154,6 +154,14 @@ func (bs *badgerStore) accountReferencePrefix(owner, market string, descending b
 	return bs.getPrefix("AR", fmt.Sprintf("%s:%s", owner, market), descending)
 }
 
+func (bs *badgerStore) accountAssetPrefix(owner, asset string, descending bool) ([]byte, []byte) {
+	return bs.getPrefix("AA", fmt.Sprintf("%s:%s", owner, asset), descending)
+}
+
+func (bs *badgerStore) accountKeyPrefix(owner, asset, market string, descending bool) ([]byte, []byte) {
+	return bs.getPrefix("A", fmt.Sprintf("%s:%s:%s", owner, asset, market), descending)
+}
+
 func (bs *badgerStore) getPrefix(modifier string, prefix string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
 	validForPrefix = []byte(fmt.Sprintf("%s:%s_", modifier, prefix))
 	keyPrefix = validForPrefix
@@ -190,6 +198,10 @@ func (bs *badgerStore) accountMarketReferenceKey(market, owner, asset string, ac
 
 func (bs *badgerStore) accountReferenceKey(owner, market, asset string, accountType types.AccountType) []byte {
 	return []byte(fmt.Sprintf("AR:%s:%s:%s:%s", owner, market, asset, accountType.String()))
+}
+
+func (bs *badgerStore) accountAssetReferenceKey(owner, asset, market string, accountType types.AccountType) []byte {
+	return []byte(fmt.Sprintf("AA:%s:%s:%s:%s", owner, asset, market, accountType.String()))
 }
 
 func (bs *badgerStore) accountKey(owner, asset, market string, accountType types.AccountType) []byte {

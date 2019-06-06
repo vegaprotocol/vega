@@ -147,7 +147,7 @@ func (a *Account) hasAccount(acc *types.Account) (bool, error) {
 }
 
 func (a *Account) createAccountRecords(accounts ...*types.Account) (map[string][]byte, error) {
-	m := make(map[string][]byte, len(accounts)*4) // each account has its key + 1 reference key, so map == nr of accounts * 2
+	m := make(map[string][]byte, len(accounts)*5) // each account has its key + 1 reference key, so map == nr of accounts * 2
 	for _, acc := range accounts {
 		// for general accounts, a market isn't specified
 		market := acc.MarketID
@@ -167,6 +167,9 @@ func (a *Account) createAccountRecords(accounts ...*types.Account) (map[string][
 		trefKey := a.badger.accountTypeReferenceKey(
 			acc.Owner, market, acc.Asset, acc.Type,
 		)
+		assetRef := a.badger.accountAssetReferenceKey(
+			acc.Owner, acc.Asset, market, acc.Type,
+		)
 		buf, err := proto.Marshal(acc)
 		if err != nil {
 			a.log.Error("unable to marshal account",
@@ -181,6 +184,7 @@ func (a *Account) createAccountRecords(accounts ...*types.Account) (map[string][
 		m[string(refKey)] = accKey
 		m[string(mrefKey)] = accKey
 		m[string(trefKey)] = accKey
+		m[string(assetRef)] = accKey
 	}
 	return m, nil
 }
@@ -268,6 +272,16 @@ func (a *Account) CreateTraderMarketAccounts(owner, market string) ([]*types.Acc
 	}
 	// again, return not just the created accounts, return all of them
 	return accounts, nil
+}
+
+func (a *Account) GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error) {
+	prefix, valid := a.badger.accountAssetPrefix(owner, asset, false)
+	return a.getByReference(prefix, valid, 3) // at least 3 accounts, I suppose
+}
+
+func (a *Account) GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error) {
+	prefix, valid := a.badger.accountKeyPrefix(owner, asset, market, false)
+	return a.getByReference(prefix, valid, 3)
 }
 
 func (a *Account) GetMarketAccounts(market string) ([]*types.Account, error) {
