@@ -512,6 +512,8 @@ func (e *Engine) getTraderAccountIDs(asset, trader string, types ...types.Accoun
 		}
 		if id, ok := accs[asset]; ok {
 			ids = append(ids, id)
+		} else {
+			return nil, ErrTraderAccountsMissing
 		}
 	}
 	return ids, nil
