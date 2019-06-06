@@ -56,8 +56,8 @@ func TestCollateralTransfer(t *testing.T) {
 	t.Run("test collecting buys - trader account not empty, but insufficient", testTransferComplexLoss)
 	t.Run("test collecting buys - trader missing some accounts", testTransferLossMissingTraderAccounts)
 	t.Run("test collecting sells - cases where settle account is full + where insurance pool is tapped", testDistributeWin)
-	// t.Run("test collecting both buys and sells - Successfully collect buy and sell in a single call", testProcessBoth)
-	// t.Run("test distribution insufficient funds - Transfer losses (partial), distribute wins pro-rate", testProcessBothProRated)
+	t.Run("test collecting both buys and sells - Successfully collect buy and sell in a single call", testProcessBoth)
+	t.Run("test distribution insufficient funds - Transfer losses (partial), distribute wins pro-rate", testProcessBothProRated)
 }
 
 func TestCollateralMarkToMarket(t *testing.T) {
@@ -458,7 +458,7 @@ func testProcessBoth(t *testing.T) {
 	}
 	// The, each time we encounter a trader (ie each position aggregate), we'll attempt to create the account
 	// create the trader accounts, they'll be returned anyway
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos)).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos) / 2).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
 		isTrader := (owner == trader || owner == moneyTrader)
 		assert.True(t, isTrader)
 		if owner == trader {
@@ -473,8 +473,7 @@ func testProcessBoth(t *testing.T) {
 			// insurance will be used to settle one sale (size 1, of value price, taken from insurance account)
 			sacc.Balance = price * 3
 			eng.accounts.EXPECT().GetAccountByID(sacc.Id).Times(1).Return(sacc, nil)
-			eng.accounts.EXPECT().UpdateBalance(sacc.Id, gomock.Any()).Times(1).Return(nil)
-			eng.accounts.EXPECT().IncrementBalance(sacc.Id, gomock.Any()).Times(1).Return(nil)
+			eng.accounts.EXPECT().IncrementBalance(sacc.Id, -price).Times(1).Return(nil)
 		case types.AccountType_SETTLEMENT:
 			// assign to var so we don't need to repeat this loop for sells
 			eng.accounts.EXPECT().GetAccountByID(sacc.Id).Times(1).Return(sacc, nil)
@@ -581,7 +580,7 @@ func testProcessBothProRated(t *testing.T) {
 		},
 	}
 	// The, each time we encounter a trader (ie each position aggregate), we'll attempt to create the account
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos)).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos) / 2).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
 		isTrader := (owner == trader || owner == moneyTrader)
 		assert.True(t, isTrader)
 		if owner == trader {
@@ -589,9 +588,6 @@ func testProcessBothProRated(t *testing.T) {
 		}
 		return moneyAccs, nil
 	})
-	// next up, calls to buy positions, get market accounts for owner (for this market)
-	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, trader).Times(1).Return(traderAccs, nil)
-	eng.accounts.EXPECT().GetMarketAccountsForOwner(market, moneyTrader).Times(1).Return(moneyAccs, nil)
 	// now the positions, calls we expect to be made when processing buys
 	// system accounts
 	for _, sacc := range systemAccs {
@@ -600,9 +596,7 @@ func testProcessBothProRated(t *testing.T) {
 			// insurance will be used to settle one sale (size 1, of value price, taken from insurance account)
 			sacc.Balance = price / 2
 			eng.accounts.EXPECT().GetAccountByID(sacc.Id).Times(1).Return(sacc, nil)
-			eng.accounts.EXPECT().UpdateBalance(sacc.Id, int64(0)).Times(1).Return(nil).Do(func(_ string, _ int64) {
-				sacc.Balance = 0
-			})
+			eng.accounts.EXPECT().UpdateBalance(sacc.Id, gomock.Any()).Times(1).Return(nil)
 		case types.AccountType_SETTLEMENT:
 			// assign to var so we don't need to repeat this loop for sells
 			exp := 2 * price
@@ -614,18 +608,20 @@ func testProcessBothProRated(t *testing.T) {
 			})
 		}
 	}
-	// set up getting all trader accounts, ensure balances are set
+	// now settlement for buys on trader with money:
 	for _, acc := range moneyAccs {
 		switch acc.Type {
 		case types.AccountType_MARGIN:
 			acc.Balance += 5 * price
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
+			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil)
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, -2*price).Times(1).Return(nil)
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		case types.AccountType_GENERAL:
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
+			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil)
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, int64(1666)).Times(1).Return(nil)
+		case types.AccountType_MARKET:
+			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
 	for _, acc := range traderAccs {
@@ -633,7 +629,12 @@ func testProcessBothProRated(t *testing.T) {
 		case types.AccountType_GENERAL:
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, int64(833)).Times(1).Return(nil)
 			fallthrough
-		case types.AccountType_MARGIN, types.AccountType_MARKET:
+		case types.AccountType_MARGIN:
+			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil).Do(func(_ string, bal int64) {
+				assert.NotZero(t, bal)
+			})
+			fallthrough
+		case types.AccountType_MARKET:
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}

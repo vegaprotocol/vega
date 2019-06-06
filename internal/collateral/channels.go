@@ -149,8 +149,8 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 				settle,
 			},
 			Amount:    uint64(-p.Amount.Amount) * p.Size,
-			MinAmount: 0,  // default value, but keep it here explicitly
-			Asset:     "", // TBC
+			MinAmount: 0,            // default value, but keep it here explicitly
+			Asset:     e.market[:3], // TBC
 		}
 		if req.FromAccount[0] == nil || req.FromAccount[1] == nil {
 			return nil, ErrTraderAccountsMissing
