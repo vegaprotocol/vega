@@ -50,7 +50,7 @@ type testEngine struct {
 	systemAccs []*types.Account
 }
 
-func TestCollateralTransfer(t *testing.T) {
+func testCollateralTransfer(t *testing.T) {
 	t.Run("test creating new - should create market accounts", testNew)
 	t.Run("test collecting buys - both insurance and sufficient in trader accounts", testTransferLoss)
 	t.Run("test collecting buys - trader account not empty, but insufficient", testTransferComplexLoss)
@@ -60,7 +60,7 @@ func TestCollateralTransfer(t *testing.T) {
 	t.Run("test distribution insufficient funds - Transfer losses (partial), distribute wins pro-rate", testProcessBothProRated)
 }
 
-func testCollateralMarkToMarket(t *testing.T) {
+func TestCollateralMarkToMarket(t *testing.T) {
 	t.Run("Mark to Market distribution, insufficient funcs - complex scenario", testProcessBothProRatedMTM)
 }
 
@@ -679,14 +679,8 @@ func testProcessBothProRatedMTM(t *testing.T) {
 		},
 	}
 	// The, each time we encounter a trader (ie each position aggregate), we'll attempt to create the account
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos)).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
-		isTrader := (owner == trader || owner == moneyTrader)
-		assert.True(t, isTrader)
-		if owner == trader {
-			return traderAccs, nil
-		}
-		return moneyAccs, nil
-	})
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(trader, market).Times(1).Return(traderAccs, nil)
+	eng.accounts.EXPECT().CreateTraderMarketAccounts(moneyTrader, market).Times(1).Return(moneyAccs, nil)
 	// system accounts
 	for _, sacc := range systemAccs {
 		switch sacc.Type {
@@ -694,9 +688,6 @@ func testProcessBothProRatedMTM(t *testing.T) {
 			// insurance will be used to settle one sale (size 1, of value price, taken from insurance account)
 			sacc.Balance = price / 2
 			eng.accounts.EXPECT().GetAccountByID(sacc.Id).Times(1).Return(sacc, nil)
-			eng.accounts.EXPECT().UpdateBalance(sacc.Id, int64(0)).Times(1).Return(nil).Do(func(_ string, _ int64) {
-				sacc.Balance = 0
-			})
 		case types.AccountType_SETTLEMENT:
 			// assign to var so we don't need to repeat this loop for sells
 			exp := 2 * price
@@ -719,7 +710,6 @@ func testProcessBothProRatedMTM(t *testing.T) {
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, -2*price).Times(1).Return(nil)
 		case types.AccountType_GENERAL:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, int64(1666)).Times(1).Return(nil)
 		case types.AccountType_MARKET:
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
@@ -730,7 +720,12 @@ func testProcessBothProRatedMTM(t *testing.T) {
 		case types.AccountType_GENERAL:
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, int64(833)).Times(1).Return(nil)
 			fallthrough
-		case types.AccountType_MARKET, types.AccountType_MARGIN:
+		case types.AccountType_MARGIN:
+			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil).Do(func(_ string, bal int64) {
+				assert.NotZero(t, bal)
+			})
+			fallthrough
+		case types.AccountType_MARKET:
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
@@ -756,16 +751,16 @@ func getTestEngine(t *testing.T, market string, err error) *testEngine {
 	ctrl := gomock.NewController(t)
 	acc := mocks.NewMockAccounts(ctrl)
 	conf := collateral.NewDefaultConfig()
-	var accounts []*types.Account
-	if err != nil {
-		// create copies
-		gen, set, ins := generalSystem, settlementSystem, insuranceSystem
-		gen.MarketID = market
-		set.MarketID = market
-		ins.MarketID = market
-		accounts = []*types.Account{&gen, &set, &ins}
-	}
-	acc.EXPECT().CreateMarketAccounts(market, int64(0)).Times(1).Return(accounts, err)
+	// create copies
+	gen, set, ins := generalSystem, settlementSystem, insuranceSystem
+	gen.MarketID = market
+	gen.Asset = market[:3]
+	set.MarketID = market
+	set.Asset = market[:3]
+	ins.MarketID = market
+	ins.Asset = market[:3]
+	accounts := []*types.Account{&gen, &set, &ins}
+	acc.EXPECT().CreateMarketAccounts(market, gomock.Any()).Times(1).Return(accounts, err)
 	eng, err2 := collateral.New(logging.NewTestLogger(), conf, market, acc)
 	assert.Equal(t, err, err2)
 	if err != nil {
