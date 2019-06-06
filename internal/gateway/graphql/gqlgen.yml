@@ -20,6 +20,8 @@ models:
     model: code.vegaprotocol.io/vega/proto.MarketPosition
   PendingOrder:
     model: code.vegaprotocol.io/vega/proto.PendingOrder
+  Account:
+    model: code.vegaprotocol.io/vega/proto.Account
   Market:
     fields:
       orders:
@@ -30,6 +32,8 @@ models:
         resolver: true
       candles:
         resolver: true
+      accounts:
+        resolver: true
       orderByReference:
         resolver: true
   Party:
@@ -39,4 +43,6 @@ models:
       trades:
         resolver: true
       positions:
+        resolver: true
+      accounts:
         resolver: true

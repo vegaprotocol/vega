@@ -14,7 +14,7 @@ import (
 
 var (
 	cancel = proto.OrderCancellation{
-		Id:       "order_id",
+		OrderID:  "order_id",
 		MarketID: "market",
 		PartyID:  "party",
 	}
@@ -38,14 +38,14 @@ func testCancelOrderSuccess(t *testing.T) {
 	ctx := context.Background()
 	arg := cancel
 	order := proto.Order{
-		Id:        arg.Id,
+		Id:        arg.OrderID,
 		MarketID:  arg.MarketID,
 		PartyID:   arg.PartyID,
 		Status:    proto.Order_Active,
 		Remaining: 1,
 	}
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.Id).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	svc.block.EXPECT().CancelOrder(gomock.Any(), cancelMatcher{e: order}).Times(1).Return(true, nil)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.NotNil(t, pendingOrder)
@@ -59,7 +59,7 @@ func testCancelOrderNotFound(t *testing.T) {
 	arg := cancel
 	osErr := errors.New("orderStore error")
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.Id).Times(1).Return(nil, osErr)
+	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(nil, osErr)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
@@ -72,14 +72,14 @@ func testCancelOrderDuplicate(t *testing.T) {
 	ctx := context.Background()
 	arg := cancel
 	order := proto.Order{
-		Id:        arg.Id,
+		Id:        arg.OrderID,
 		MarketID:  arg.MarketID,
 		PartyID:   arg.PartyID,
 		Status:    proto.Order_Cancelled,
 		Remaining: 1,
 	}
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.Id).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
@@ -91,14 +91,14 @@ func testCancelOrderFilled(t *testing.T) {
 	ctx := context.Background()
 	arg := cancel
 	order := proto.Order{
-		Id:        arg.Id,
+		Id:        arg.OrderID,
 		MarketID:  arg.MarketID,
 		PartyID:   arg.PartyID,
 		Status:    proto.Order_Active,
 		Remaining: 0,
 	}
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.Id).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
@@ -110,14 +110,14 @@ func testCancelOrderPartyMismatch(t *testing.T) {
 	ctx := context.Background()
 	arg := cancel
 	order := proto.Order{
-		Id:        arg.Id,
+		Id:        arg.OrderID,
 		MarketID:  arg.MarketID,
 		PartyID:   fmt.Sprintf("%s-foobar", arg.PartyID),
 		Status:    proto.Order_Active,
 		Remaining: 1,
 	}
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.Id).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)

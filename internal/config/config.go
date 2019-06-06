@@ -1,6 +1,7 @@
 package config
 
 import (
+	"code.vegaprotocol.io/vega/internal/accounts"
 	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
@@ -27,6 +28,7 @@ import (
 // Config ties together all other application configuration types.
 type Config struct {
 	API        api.Config
+	Accounts   accounts.Config
 	Blockchain blockchain.Config
 	Candles    candles.Config
 	Collateral collateral.Config
@@ -59,6 +61,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Blockchain:     blockchain.NewDefaultConfig(),
 		Execution:      execution.NewDefaultConfig(defaultStoreDirPath),
 		API:            api.NewDefaultConfig(),
+		Accounts:       accounts.NewDefaultConfig(),
 		Orders:         orders.NewDefaultConfig(),
 		Time:           vegatime.NewDefaultConfig(),
 		Markets:        markets.NewDefaultConfig(),

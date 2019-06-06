@@ -215,7 +215,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	e.log.Debug("Amend order")
 	// try to get the order first
 	order, err := e.orderStore.GetByPartyAndId(
-		context.Background(), orderAmendment.PartyID, orderAmendment.Id)
+		context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
 	if err != nil {
 		e.log.Error("Invalid order reference",
 			logging.String("id", order.Id),

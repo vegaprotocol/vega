@@ -115,7 +115,7 @@ traders_action() {
 		output_file="$(mktemp)"
 		curl -D "$response_headers_file" --silent -XPUT "https://bots.vegaprotocol.io/$net/v2/traders?action=$action" 1>"$output_file" 2>&1
 		response_line="$(head -n1 <"$response_headers_file")"
-		if ! echo -n "$response_line" | grep -q '^HTTP/[0-9][.0-9]* 200 OK' ; then
+		if ! echo -n "$response_line" | grep -q '^HTTP/[0-9][.0-9]* 200' ; then
 			echo "Warning: Bad response from go-trade-bot: $response_line"
 			echo "Headers:"
 			cat "$response_headers_file"
@@ -177,7 +177,7 @@ start_vega_tendermint() {
 	nodeloop \
 		"Starting vega and tendermint with SystemD" \
 		'cd ; ./current/vega --version ; ' \
-		'tendermint version ; ' \
+		'/home/vega/bin/tendermint version ; ' \
 		'sudo systemctl daemon-reload ; ' \
 		'sudo systemctl restart vega ; ' \
 		'sleep 1 ; ' \
@@ -188,7 +188,7 @@ stop_vega_tendermint() {
 	nodeloop \
 		"Stopping vega and tendermint processes with SystemD" \
 		'cd ; ./current/vega --version ; ' \
-		'tendermint version ; ' \
+		'/home/vega/bin/tendermint version ; ' \
 		'sudo systemctl daemon-reload ; ' \
 		'sudo systemctl stop vega ; ' \
 		'sudo systemctl stop tendermint ; ' \

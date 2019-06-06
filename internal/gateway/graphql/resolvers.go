@@ -20,7 +20,8 @@ import (
 )
 
 var (
-	ErrNilPendingOrder = errors.New("mil pending order")
+	ErrNilPendingOrder    = errors.New("nil pending order")
+	ErrUnknownAccountType = errors.New("unknown account type")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/graphql TradingClient
@@ -64,6 +65,10 @@ type TradingDataClient interface {
 	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
 	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthSubscribeClient, error)
 	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_PositionsSubscribeClient, error)
+	// collateral
+	TraderAccounts(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
+	TraderMarketAccounts(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
+	TraderMarketBalance(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
 }
 
 type resolverRoot struct {
@@ -128,6 +133,9 @@ func (r *resolverRoot) Subscription() SubscriptionResolver {
 }
 func (r *resolverRoot) PendingOrder() PendingOrderResolver {
 	return (*MyPendingOrderResolver)(r)
+}
+func (r *resolverRoot) Account() AccountResolver {
+	return (*MyAccountResolver)(r)
 }
 
 // BEGIN: Query Resolver
@@ -259,7 +267,7 @@ func (r *MyMarketResolver) Depth(ctx context.Context, market *Market) (*types.Ma
 
 	}
 
-	req := protoapi.MarketDepthRequest{Market: market.ID}
+	req := protoapi.MarketDepthRequest{MarketID: market.ID}
 	// Look for market depth for the given market (will validate market internally)
 	// Note: Market depth is also known as OrderBook depth within the matching-engine
 	res, err := r.tradingDataClient.MarketDepth(ctx, &req)
@@ -293,7 +301,7 @@ func (r *MyMarketResolver) Candles(ctx context.Context, market *Market,
 	}
 
 	req := protoapi.CandlesRequest{
-		Market:         mkt,
+		MarketID:       mkt,
 		SinceTimestamp: since.UnixNano(),
 		Interval:       pinterval,
 	}
@@ -317,6 +325,10 @@ func (r *MyMarketResolver) OrderByReference(ctx context.Context, market *Market,
 		return nil, err
 	}
 	return res.Order, nil
+}
+
+func (r *MyMarketResolver) Accounts(ctx context.Context, market *Market, accType *AccountType) ([]types.Account, error) {
+	return nil, errors.New("not implemented yet")
 }
 
 // END: Market Resolver
@@ -416,6 +428,53 @@ func (r *MyPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.Ma
 	}
 	return retpos, nil
 
+}
+
+func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, accType *AccountType) ([]types.Account, error) {
+	if pty == nil {
+		return nil, errors.New("nil party")
+	}
+	// the call we'll be making
+	call := r.tradingDataClient.TraderAccounts
+	var (
+		market string
+		at     types.AccountType
+	)
+	if marketID != nil {
+		market = *marketID
+		// if a market was given, assume we want the market accounts
+		call = r.tradingDataClient.TraderMarketAccounts
+	}
+	if accType != nil {
+		// if an account type was specified, we'll be getting the balance (hacky, but simplifies this temp API)
+		switch *accType {
+		case AccountTypeMargin:
+			at = types.AccountType_MARGIN
+		case AccountTypeMarket:
+			at = types.AccountType_MARKET
+		case AccountTypeGeneral:
+			at = types.AccountType_GENERAL
+		case AccountTypeInsurance:
+			at = types.AccountType_INSURANCE
+		case AccountTypeSettlement:
+			at = types.AccountType_SETTLEMENT
+		}
+		call = r.tradingDataClient.TraderMarketBalance
+	}
+	req := protoapi.CollateralRequest{
+		Party:    pty.ID,
+		MarketID: market,
+		Type:     at,
+	}
+	resp, err := call(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	accounts := make([]types.Account, 0, len(resp.Accounts))
+	for _, acc := range resp.Accounts {
+		accounts = append(accounts, *acc)
+	}
+	return accounts, nil
 }
 
 // END: Party Resolver
@@ -763,7 +822,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 	if len(id) == 0 {
 		return nil, errors.New("id missing or empty")
 	}
-	order.Id = id
+	order.OrderID = id
 	if len(party) == 0 {
 		return nil, errors.New("party missing or empty")
 	}
@@ -827,6 +886,10 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 
 	c := make(chan []types.Order)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			o, err := stream.Recv()
 			if err == io.EOF {
@@ -870,6 +933,10 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 
 	c := make(chan []types.Trade)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			t, err := stream.Recv()
 			if err == io.EOF {
@@ -903,6 +970,10 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 
 	c := make(chan *types.MarketPosition)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			t, err := stream.Recv()
 			if err == io.EOF {
@@ -931,6 +1002,10 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 
 	c := make(chan *types.MarketDepth)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			md, err := stream.Recv()
 			if err == io.EOF {
@@ -966,6 +1041,10 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 	c := make(chan *types.Candle)
 	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
 		for {
 			cdl, err := stream.Recv()
 			if err == io.EOF {
@@ -1047,3 +1126,32 @@ func (r *MyPendingOrderResolver) Status(ctx context.Context, obj *proto.PendingO
 }
 
 // END: Subscription Resolver
+
+// START: Account Resolver
+
+// MyAccountResolver - seems to be required by gqlgen, but we're not using this ATM
+type MyAccountResolver resolverRoot
+
+func (r *MyAccountResolver) Balance(ctx context.Context, acc *proto.Account) (string, error) {
+	bal := fmt.Sprintf("%d", acc.Balance)
+	return bal, nil
+}
+
+func (r *MyAccountResolver) Type(ctx context.Context, obj *proto.Account) (AccountType, error) {
+	var t AccountType
+	switch obj.Type {
+	case types.AccountType_MARGIN:
+		return AccountTypeMargin, nil
+	case types.AccountType_MARKET:
+		return AccountTypeMarket, nil
+	case types.AccountType_GENERAL:
+		return AccountTypeGeneral, nil
+	case types.AccountType_INSURANCE:
+		return AccountTypeInsurance, nil
+	case types.AccountType_SETTLEMENT:
+		return AccountTypeSettlement, nil
+	}
+	return t, ErrUnknownAccountType
+}
+
+// END: Account Resolver

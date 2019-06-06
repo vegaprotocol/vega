@@ -397,6 +397,66 @@ func (mr *MockTradingDataClientMockRecorder) Statistics(arg0, arg1 interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockTradingDataClient)(nil).Statistics), varargs...)
 }
 
+// TraderAccounts mocks base method
+func (m *MockTradingDataClient) TraderAccounts(arg0 context.Context, arg1 *api.CollateralRequest, arg2 ...grpc.CallOption) (*api.CollateralResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "TraderAccounts", varargs...)
+	ret0, _ := ret[0].(*api.CollateralResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TraderAccounts indicates an expected call of TraderAccounts
+func (mr *MockTradingDataClientMockRecorder) TraderAccounts(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TraderAccounts", reflect.TypeOf((*MockTradingDataClient)(nil).TraderAccounts), varargs...)
+}
+
+// TraderMarketAccounts mocks base method
+func (m *MockTradingDataClient) TraderMarketAccounts(arg0 context.Context, arg1 *api.CollateralRequest, arg2 ...grpc.CallOption) (*api.CollateralResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "TraderMarketAccounts", varargs...)
+	ret0, _ := ret[0].(*api.CollateralResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TraderMarketAccounts indicates an expected call of TraderMarketAccounts
+func (mr *MockTradingDataClientMockRecorder) TraderMarketAccounts(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TraderMarketAccounts", reflect.TypeOf((*MockTradingDataClient)(nil).TraderMarketAccounts), varargs...)
+}
+
+// TraderMarketBalance mocks base method
+func (m *MockTradingDataClient) TraderMarketBalance(arg0 context.Context, arg1 *api.CollateralRequest, arg2 ...grpc.CallOption) (*api.CollateralResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "TraderMarketBalance", varargs...)
+	ret0, _ := ret[0].(*api.CollateralResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TraderMarketBalance indicates an expected call of TraderMarketBalance
+func (mr *MockTradingDataClientMockRecorder) TraderMarketBalance(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TraderMarketBalance", reflect.TypeOf((*MockTradingDataClient)(nil).TraderMarketBalance), varargs...)
+}
+
 // TradesByMarket mocks base method
 func (m *MockTradingDataClient) TradesByMarket(arg0 context.Context, arg1 *api.TradesByMarketRequest, arg2 ...grpc.CallOption) (*api.TradesByMarketResponse, error) {
 	m.ctrl.T.Helper()

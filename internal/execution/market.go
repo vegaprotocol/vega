@@ -69,7 +69,7 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 		return err
 	}
 	if len(marketbytes) == 0 {
-		return errors.New("Failed to marshal market")
+		return errors.New("failed to marshal market")
 	}
 
 	seqbytes := make([]byte, 8)

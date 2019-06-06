@@ -1,15 +1,10 @@
 ## VEGA - GraphQL schema
 
-# Represents a date/time
-scalar DateTime
-
 schema {
     query: Query,
     subscription: Subscription,
     mutation: Mutation
 }
-
-directive @requireAuth on FIELD
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
@@ -31,7 +26,7 @@ type Mutation {
     type: OrderType!,
     # exiration of the the order
     expiration: String
-  ): PendingOrder! @requireAuth
+  ): PendingOrder!
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
   # It validates and sends the request out for consensus.
@@ -42,7 +37,7 @@ type Mutation {
     marketId: String!,
     # ID of the party which created the order
     partyId: String!
-  ): PendingOrder! @requireAuth
+  ): PendingOrder!
 
   # sign a party in using an username and password, then return a token
   signin(
@@ -281,6 +276,12 @@ type Market {
     last: Int
   ): [Order!]
 
+  # Get system accounts for a given market (insurance pool, settlement)
+  accounts(
+    # Specify the account type to get a specific account
+    type: AccountType,
+  ): [Account!]
+
   # Trades on a market
   trades (
     # Pagination skip
@@ -395,6 +396,15 @@ type Party {
     first: Int,
     # Pagination last element
     last: Int): [Trade!]
+
+    # get accounts for a given party, filtered if needed
+  accounts(
+    # Market ID - specify what market accounts for the party to return
+    marketID: String,
+    # Filter accounts by type (General account, margin account, etc...)
+    type: AccountType,
+  ): [Account!]
+
 
   # Trading positions relating to a party
   positions: [Position!]
@@ -518,6 +528,18 @@ type Trade {
   createdAt: String!
 }
 
+# An account record
+type Account {
+  # id the id for this account, not useful given the current API, but might be useful
+  id: String!
+  # Balance as string - current account balance (approx. as balances can be updated several times per second)
+  balance: String!
+  # Asset, the "currency"
+  asset: String!
+  # Account type (enum type)
+  type: AccountType!
+}
+
 # Valid order types, these determine what happens when an order is added to the book
 enum OrderType {
 
@@ -589,4 +611,18 @@ enum Interval {
 
   # 1 day interval
   I1D
+}
+
+# The various account types we have (used by collateral)
+enum AccountType {
+  # Insurance pool account - only for party "system"
+  Insurance
+  # Settlement - Again, only for "system" party
+  Settlement
+  # Margin - The leverage account for traders
+  Margin
+  # Market - it's in the spec, but AFAIK, we're not using this currently
+  Market
+  # General account - the actual account containing "unused" monies
+  General
 }

@@ -307,3 +307,16 @@ func (this *TradesStream) Validate() error {
 	}
 	return nil
 }
+func (this *CollateralRequest) Validate() error {
+	return nil
+}
+func (this *CollateralResponse) Validate() error {
+	for _, item := range this.Accounts {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Accounts", err)
+			}
+		}
+	}
+	return nil
+}

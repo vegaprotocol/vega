@@ -17,7 +17,7 @@ COPY internal /go/src/project/internal
 COPY proto /go/src/project/proto
 COPY .asciiart.txt Makefile /go/src/project/
 RUN make deps
-RUN make proto
+RUN make gqlgen proto
 RUN make install
 
 
