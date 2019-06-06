@@ -219,6 +219,21 @@ type Statistics {
 
   # Version of the chain (semver)
   chainVersion: String!
+
+  # Number of orders subscriptions
+  orderSubscriptions: Int!
+
+  # Number of trades subscriptions
+  tradeSubscriptions: Int!
+
+  # Number of candles subscriptions
+  candleSubscriptions: Int!
+
+  # Number of market depth subscriptions
+  marketDepthSubscriptions: Int!
+
+  # Number of positions subscriptions
+  positionsSubscriptions: Int!
 }
 
 # A mode where Vega try to execute order as soon as they are received
