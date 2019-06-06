@@ -142,7 +142,7 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 		req := types.TransferRequest{
 			FromAccount: []*types.Account{
 				t.margin,
-				t.general,
+				t.market,
 				insurance,
 			},
 			ToAccount: []*types.Account{

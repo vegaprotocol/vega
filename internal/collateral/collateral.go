@@ -55,12 +55,10 @@ func New(log *logging.Logger, conf Config, market string, accounts Accounts) (*E
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Accounts: %#v\n", accs)
 	marketAccounts := make(map[types.AccountType]map[string]string, len(accs))
 	for _, acc := range accs {
 		if _, ok := marketAccounts[acc.Type]; !ok {
 			marketAccounts[acc.Type] = map[string]string{}
-			fmt.Printf("Account: %#v\n", *acc)
 		}
 		marketAccounts[acc.Type][acc.Asset] = acc.Id
 	}
