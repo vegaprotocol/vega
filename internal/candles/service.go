@@ -2,6 +2,7 @@ package candles
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -21,8 +22,9 @@ type CandleStore interface {
 type Svc struct {
 	log *logging.Logger
 	Config
-	tradesBuffer map[string][]*types.Trade
-	candleStore  CandleStore
+	tradesBuffer  map[string][]*types.Trade
+	candleStore   CandleStore
+	subscriberCnt int32
 }
 
 func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*Svc, error) {
@@ -54,6 +56,10 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
+func (s *Svc) GetSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.subscriberCnt)
+}
+
 func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
 	candleCh := make(chan *types.Candle)
 	iT := storage.InternalTransport{
@@ -65,6 +71,8 @@ func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 	retryCount := retries
 
 	go func() {
+		atomic.AddInt32(&c.subscriberCnt, 1)
+		defer atomic.AddInt32(&c.subscriberCnt, -1)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		ip := logging.IPAddressFromContext(ctx)

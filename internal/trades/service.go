@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
@@ -32,9 +33,11 @@ type RiskStore interface {
 
 type Svc struct {
 	Config
-	log        *logging.Logger
-	tradeStore TradeStore
-	riskStore  RiskStore
+	log                     *logging.Logger
+	tradeStore              TradeStore
+	riskStore               RiskStore
+	positionsSubscribersCnt int32
+	tradeSubscribersCnt     int32
 }
 
 func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
@@ -103,6 +106,10 @@ func (t *Svc) GetByOrderId(ctx context.Context, orderId string) (trades []*types
 	return trades, err
 }
 
+func (s *Svc) GetTradeSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.tradeSubscribersCnt)
+}
+
 func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Trade, uint64) {
 	trades := make(chan []types.Trade)
 	internal := make(chan []types.Trade)
@@ -110,6 +117,8 @@ func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 	retryCount := retries
 
 	go func() {
+		atomic.AddInt32(&t.tradeSubscribersCnt, 1)
+		defer atomic.AddInt32(&t.tradeSubscribersCnt, -1)
 		ip := logging.IPAddressFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
@@ -176,6 +185,10 @@ func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 	return trades, ref
 }
 
+func (s *Svc) GetPositionsSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.positionsSubscribersCnt)
+}
+
 func (t *Svc) ObservePositions(ctx context.Context, retries int, party string) (<-chan *types.MarketPosition, uint64) {
 	positions := make(chan *types.MarketPosition)
 	internal := make(chan []types.Trade)
@@ -183,6 +196,8 @@ func (t *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 	retryCount := retries
 
 	go func() {
+		atomic.AddInt32(&t.positionsSubscribersCnt, 1)
+		defer atomic.AddInt32(&t.positionsSubscribersCnt, -1)
 		ip := logging.IPAddressFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
