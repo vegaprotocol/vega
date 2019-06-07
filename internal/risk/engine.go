@@ -142,7 +142,8 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.Margin, ma
 			factor, ok := re.factors.RiskFactors[change.Asset()]
 			if !ok {
 				// not sure what to do about these
-				re.log.Warn(
+				// @TODO this is debug for now, until we've got the asset format sorted out
+				re.log.Debug(
 					"No factor found for asset",
 					logging.String("assetId", change.Asset()),
 				)
