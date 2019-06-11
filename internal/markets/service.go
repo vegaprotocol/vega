@@ -2,6 +2,7 @@ package markets
 
 import (
 	"context"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -23,9 +24,10 @@ type OrderStore interface {
 
 type Svc struct {
 	Config
-	log         *logging.Logger
-	marketStore MarketStore
-	orderStore  OrderStore
+	log            *logging.Logger
+	marketStore    MarketStore
+	orderStore     OrderStore
+	subscribersCnt int32
 }
 
 // NewService creates an market service with the necessary dependencies
@@ -82,6 +84,10 @@ func (s *Svc) GetDepth(ctx context.Context, marketID string) (marketDepth *types
 	return s.orderStore.GetMarketDepth(ctx, m.Id)
 }
 
+func (s *Svc) GetSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.subscribersCnt)
+}
+
 // ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
 func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-chan *types.MarketDepth, uint64) {
 	depth := make(chan *types.MarketDepth)
@@ -90,6 +96,8 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 
 	retryCount := retries
 	go func() {
+		atomic.AddInt32(&s.subscribersCnt, 1)
+		defer atomic.AddInt32(&s.subscribersCnt, -1)
 		ip := logging.IPAddressFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()

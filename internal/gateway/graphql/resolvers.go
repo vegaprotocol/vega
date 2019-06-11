@@ -996,11 +996,11 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 		for {
 			t, err := stream.Recv()
 			if err == io.EOF {
-				r.log.Error("orders: stream closed by server", logging.Error(err))
+				r.log.Error("trades: stream closed by server", logging.Error(err))
 				break
 			}
 			if err != nil {
-				r.log.Error("orders: stream closed", logging.Error(err))
+				r.log.Error("trades: stream closed", logging.Error(err))
 				break
 			}
 			out := make([]types.Trade, 0, len(t.Trades))
@@ -1033,11 +1033,11 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 		for {
 			t, err := stream.Recv()
 			if err == io.EOF {
-				r.log.Error("orders: stream closed by server", logging.Error(err))
+				r.log.Error("positions: stream closed by server", logging.Error(err))
 				break
 			}
 			if err != nil {
-				r.log.Error("orders: stream closed", logging.Error(err))
+				r.log.Error("positions: stream closed", logging.Error(err))
 				break
 			}
 			c <- t
@@ -1065,11 +1065,11 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 		for {
 			md, err := stream.Recv()
 			if err == io.EOF {
-				r.log.Error("orders: stream closed by server", logging.Error(err))
+				r.log.Error("marketDepth: stream closed by server", logging.Error(err))
 				break
 			}
 			if err != nil {
-				r.log.Error("orders: stream closed", logging.Error(err))
+				r.log.Error("marketDepth: stream closed", logging.Error(err))
 				break
 			}
 			c <- md
@@ -1104,11 +1104,11 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 		for {
 			cdl, err := stream.Recv()
 			if err == io.EOF {
-				r.log.Error("orders: stream closed by server", logging.Error(err))
+				r.log.Error("candles: stream closed by server", logging.Error(err))
 				break
 			}
 			if err != nil {
-				r.log.Error("orders: stream closed", logging.Error(err))
+				r.log.Error("candles: stream closed", logging.Error(err))
 				break
 			}
 			c <- cdl
