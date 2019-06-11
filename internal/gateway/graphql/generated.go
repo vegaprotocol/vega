@@ -139,7 +139,8 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		OrderCancel func(childComplexity int, id string, marketID string, partyID string) int
+		OrderAmend  func(childComplexity int, id string, partyID string, price int, size int, expiration *string) int
+		OrderCancel func(childComplexity int, id string, partyID string, marketID string) int
 		OrderCreate func(childComplexity int, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) int
 		Signin      func(childComplexity int, id string, password string) int
 	}
@@ -292,7 +293,8 @@ type MarketDepthResolver interface {
 }
 type MutationResolver interface {
 	OrderCreate(ctx context.Context, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) (*proto.PendingOrder, error)
-	OrderCancel(ctx context.Context, id string, marketID string, partyID string) (*proto.PendingOrder, error)
+	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
+	OrderAmend(ctx context.Context, id string, partyID string, price int, size int, expiration *string) (*proto.PendingOrder, error)
 	Signin(ctx context.Context, id string, password string) (string, error)
 }
 type OrderResolver interface {
@@ -750,6 +752,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ModelParamsBs.Sigma(childComplexity), true
 
+	case "Mutation.OrderAmend":
+		if e.complexity.Mutation.OrderAmend == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_orderAmend_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.OrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(int), args["size"].(int), args["expiration"].(*string)), true
+
 	case "Mutation.OrderCancel":
 		if e.complexity.Mutation.OrderCancel == nil {
 			break
@@ -760,7 +774,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.OrderCancel(childComplexity, args["id"].(string), args["marketId"].(string), args["partyId"].(string)), true
+		return e.complexity.Mutation.OrderCancel(childComplexity, args["id"].(string), args["partyId"].(string), args["marketId"].(string)), true
 
 	case "Mutation.OrderCreate":
 		if e.complexity.Mutation.OrderCreate == nil {
@@ -1596,11 +1610,27 @@ type Mutation {
   orderCancel(
     # ID of the order to cancel
     id: ID!,
+    # ID of the party placing the order
+    partyId: String!,
     # ID of the market where to find the order
     marketId: String!,
+  ): PendingOrder!
+
+  # Send a amend order request into VEGA network, this does not immediately amend an order.
+  # It validates and sends the request out for consensus.
+  orderAmend(
+    # ID of the order to amend
+    id: ID!,
     # ID of the party which created the order
     partyId: String!
+    # New price for this order
+    price: Int!,
+    # New size for this order
+    size: Int!,
+    # New expiration time
+    expiration: String,
   ): PendingOrder!
+
 
   # sign a party in using an username and password, then return a token
   signin(
@@ -2389,6 +2419,52 @@ func (ec *executionContext) field_Market_trades_args(ctx context.Context, rawArg
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_orderAmend_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["price"]; ok {
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["price"] = arg2
+	var arg3 int
+	if tmp, ok := rawArgs["size"]; ok {
+		arg3, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["size"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["expiration"]; ok {
+		arg4, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["expiration"] = arg4
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_orderCancel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2401,21 +2477,21 @@ func (ec *executionContext) field_Mutation_orderCancel_args(ctx context.Context,
 	}
 	args["id"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["marketId"]; ok {
+	if tmp, ok := rawArgs["partyId"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketId"] = arg1
+	args["partyId"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["partyId"]; ok {
+	if tmp, ok := rawArgs["marketId"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyId"] = arg2
+	args["marketId"] = arg2
 	return args, nil
 }
 
@@ -4101,7 +4177,41 @@ func (ec *executionContext) _Mutation_orderCancel(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderCancel(rctx, args["id"].(string), args["marketId"].(string), args["partyId"].(string))
+		return ec.resolvers.Mutation().OrderCancel(rctx, args["id"].(string), args["partyId"].(string), args["marketId"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.PendingOrder)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPendingOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPendingOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_orderAmend(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_orderAmend_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().OrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(int), args["size"].(int), args["expiration"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8120,6 +8230,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "orderCancel":
 			out.Values[i] = ec._Mutation_orderCancel(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "orderAmend":
+			out.Values[i] = ec._Mutation_orderAmend(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}

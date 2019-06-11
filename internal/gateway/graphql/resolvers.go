@@ -29,7 +29,7 @@ type TradingClient interface {
 	// unary calls - writes
 	SubmitOrder(ctx context.Context, in *protoapi.SubmitOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, in *protoapi.CancelOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
-	AmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*protoapi.OrderResponse, error)
+	AmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
 	SignIn(ctx context.Context, in *protoapi.SignInRequest, opts ...grpc.CallOption) (*protoapi.SignInResponse, error)
 }
 
@@ -865,6 +865,49 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 
 	return pendingOrder, nil
 
+}
+
+func (r *MyMutationResolver) OrderAmend(ctx context.Context, id string, party string, price, size int, expiration *string) (*types.PendingOrder, error) {
+	order := &types.OrderAmendment{}
+
+	tkn := gateway.TokenFromContext(ctx)
+
+	// Cancellation currently only requires ID and Market to be set, all other fields will be added
+	if len(id) == 0 {
+		return nil, errors.New("id missing or empty")
+	}
+	order.OrderID = id
+	if len(party) == 0 {
+		return nil, errors.New("party missing or empty")
+	}
+	order.PartyID = party
+	if price < 0 {
+		return nil, errors.New("cannot have price less than 0")
+	}
+	order.Price = uint64(price)
+	if size < 0 {
+		return nil, errors.New("cannot have size less thean 0")
+	}
+	order.Size = uint64(size)
+	if expiration != nil {
+		expiresAt, err := vegatime.Parse(*expiration)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+		}
+		// move to pure timestamps or convert an RFC format shortly
+		order.ExpiresAt = expiresAt.UnixNano()
+	}
+
+	req := protoapi.AmendOrderRequest{
+		Amendment: order,
+		Token:     tkn,
+	}
+	pendingOrder, err := r.tradingClient.AmendOrder(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return pendingOrder, nil
 }
 
 func (r *MyMutationResolver) Signin(ctx context.Context, id string, password string) (string, error) {
