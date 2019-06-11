@@ -21,14 +21,14 @@ type testService struct {
 	cfunc  context.CancelFunc
 	log    *logging.Logger
 	ctrl   *gomock.Controller
-	order  *mocks.MockServiceOrderStore
-	market *mocks.MockServiceMarketStore
+	order  *mocks.MockOrderStore
+	market *mocks.MockMarketStore
 }
 
 func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
-	order := mocks.NewMockServiceOrderStore(ctrl)
-	market := mocks.NewMockServiceMarketStore(ctrl)
+	order := mocks.NewMockOrderStore(ctrl)
+	market := mocks.NewMockMarketStore(ctrl)
 	log := logging.NewTestLogger()
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := markets.NewService(
