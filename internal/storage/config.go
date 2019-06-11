@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	CandleStoreDataPath = "candlestore"
-	MarketStoreDataPath = "marketstore"
-	OrderStoreDataPath  = "orderstore"
-	TradeStoreDataPath  = "tradestore"
+	AccountStoreDataPath = "accountstore"
+	CandleStoreDataPath  = "candlestore"
+	MarketStoreDataPath  = "marketstore"
+	OrderStoreDataPath   = "orderstore"
+	TradeStoreDataPath   = "tradestore"
 
 	// namedLogger is the identifier for package and should ideally match the package name
 	// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
@@ -32,10 +33,11 @@ type Config struct {
 	BadgerOptions BadgerOptions
 	Level         encoding.LogLevel
 
-	OrderStoreDirPath  string
-	TradeStoreDirPath  string
-	CandleStoreDirPath string
-	MarketStoreDirPath string
+	AccountStoreDirPath string
+	OrderStoreDirPath   string
+	TradeStoreDirPath   string
+	CandleStoreDirPath  string
+	MarketStoreDirPath  string
 	//LogPartyStoreDebug    bool
 	//LogOrderStoreDebug    bool
 	//LogCandleStoreDebug   bool
@@ -51,6 +53,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
 		BadgerOptions:         DefaultBadgerOptions(),
 		Level:                 encoding.LogLevel{Level: logging.InfoLevel},
+		AccountStoreDirPath:   filepath.Join(defaultStoreDirPath, AccountStoreDataPath),
 		OrderStoreDirPath:     filepath.Join(defaultStoreDirPath, OrderStoreDataPath),
 		TradeStoreDirPath:     filepath.Join(defaultStoreDirPath, TradeStoreDataPath),
 		CandleStoreDirPath:    filepath.Join(defaultStoreDirPath, CandleStoreDataPath),
@@ -64,69 +67,36 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 // from disk at the locations specified by the given storage.Config. This is
 // currently used within unit and integration tests to clear between runs.
 func FlushStores(log *logging.Logger, c Config) {
-	err := os.RemoveAll(c.OrderStoreDirPath)
-	if err != nil {
-		log.Error("Failed to flush the order store",
-			logging.String("path", c.OrderStoreDirPath),
-			logging.Error(err))
+	paths := map[string]string{
+		"account": c.AccountStoreDirPath,
+		"order":   c.OrderStoreDirPath,
+		"trade":   c.TradeStoreDirPath,
+		"candle":  c.CandleStoreDirPath,
+		"market":  c.MarketStoreDirPath,
 	}
-	if _, err := os.Stat(c.OrderStoreDirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(c.OrderStoreDirPath, os.ModePerm)
-		if err != nil {
-			log.Error("Failed to create the order store",
-				logging.String("path", c.OrderStoreDirPath),
-				logging.Error(err))
+	for name, path := range paths {
+		if err := os.RemoveAll(path); err != nil {
+			log.Error(
+				fmt.Sprintf("Failed to flush the %s path", name),
+				logging.String("path", path),
+				logging.Error(err),
+			)
 		}
-	}
-	err = os.RemoveAll(c.TradeStoreDirPath)
-	if err != nil {
-		log.Error("Failed to flush the trade store",
-			logging.String("path", c.TradeStoreDirPath),
-			logging.Error(err))
-	}
-	if _, err := os.Stat(c.TradeStoreDirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(c.TradeStoreDirPath, os.ModePerm)
-		if err != nil {
-			log.Error("Failed to create the trade store",
-				logging.String("path", c.TradeStoreDirPath),
-				logging.Error(err))
-		}
-	}
-	err = os.RemoveAll(c.CandleStoreDirPath)
-	if err != nil {
-		log.Error("Failed to flush the candle store",
-			logging.String("path", c.CandleStoreDirPath),
-			logging.Error(err))
-	}
-	if _, err := os.Stat(c.CandleStoreDirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(c.CandleStoreDirPath, os.ModePerm)
-		if err != nil {
-			log.Error("Failed to create the candle store",
-				logging.String("path", c.TradeStoreDirPath),
-				logging.Error(err))
-		}
-	}
-
-	err = os.RemoveAll(c.MarketStoreDirPath)
-	if err != nil {
-		log.Error("Failed to flush the candle store",
-			logging.String("path", c.MarketStoreDirPath),
-			logging.Error(err))
-	}
-	if _, err := os.Stat(c.MarketStoreDirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(c.MarketStoreDirPath, os.ModePerm)
-		if err != nil {
-			log.Error("Failed to create the market store",
-				logging.String("path", c.MarketStoreDirPath),
-				logging.Error(err))
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			if err = os.MkdirAll(path, os.ModePerm); err != nil {
+				log.Error(
+					fmt.Sprintf("Failed to create the %s store", name),
+					logging.String("path", path),
+					logging.Error(err),
+				)
+			}
 		}
 	}
 }
 
 func InitStoreDirectory(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.MkdirAll(path, os.ModePerm)
-		if err != nil {
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("could not create directory path for badger data store: %s", path))
 		}
 	}

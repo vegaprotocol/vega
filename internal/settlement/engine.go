@@ -32,9 +32,10 @@ type Engine struct {
 	mu      *sync.Mutex
 	product Product
 	pos     map[string]*pos
+	market  string
 }
 
-func New(log *logging.Logger, conf Config, product Product) *Engine {
+func New(log *logging.Logger, conf Config, product Product, market string) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -45,6 +46,7 @@ func New(log *logging.Logger, conf Config, product Product) *Engine {
 		mu:      &sync.Mutex{},
 		product: product,
 		pos:     map[string]*pos{},
+		market:  market,
 	}
 }
 
@@ -157,6 +159,7 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*mtmTrans
 			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: mtmShare,
+				Asset:  e.market[:3],
 			},
 		}
 		if mtmShare > 0 {
@@ -228,6 +231,7 @@ func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan events
 				Size:  1, // this is an absolute delta based on volume, so size is always 1
 				Amount: &types.FinancialAmount{
 					Amount: mtmShare, // current delta -> mark price minus current position average
+					Asset:  e.market[:3],
 				},
 			}
 			if mtmShare > 0 {

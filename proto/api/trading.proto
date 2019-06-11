@@ -14,7 +14,7 @@ service trading {
   // unary calls - writes
   rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder);
   rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder);
-  rpc AmendOrder(AmendOrderRequest) returns (OrderResponse);
+  rpc AmendOrder(AmendOrderRequest) returns (vega.PendingOrder);
   rpc SignIn(SignInRequest) returns (SignInResponse);
   // unary calls - read
 }
@@ -41,11 +41,6 @@ message CancelOrderRequest {
 message AmendOrderRequest {
   vega.OrderAmendment amendment = 1;
   string token = 101;
-}
-
-message OrderResponse {
-  bool success = 1;
-  string reference = 2;
 }
 
 service trading_data {

@@ -22,6 +22,8 @@ models:
     model: code.vegaprotocol.io/vega/proto.PendingOrder
   Account:
     model: code.vegaprotocol.io/vega/proto.Account
+  Statistics:
+    model: code.vegaprotocol.io/vega/proto.Statistics
   Market:
     fields:
       orders:

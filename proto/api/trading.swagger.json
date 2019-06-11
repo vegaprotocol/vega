@@ -315,7 +315,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrderResponse"
+              "$ref": "#/definitions/vegaPendingOrder"
             }
           }
         },
@@ -716,18 +716,6 @@
       "properties": {
         "order": {
           "$ref": "#/definitions/vegaOrder"
-        }
-      }
-    },
-    "apiOrderResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean",
-          "format": "boolean"
-        },
-        "reference": {
-          "type": "string"
         }
       }
     },
@@ -1479,13 +1467,7 @@
           "type": "string",
           "format": "uint64"
         },
-        "appVersionHash": {
-          "type": "string"
-        },
-        "appVersion": {
-          "type": "string"
-        },
-        "Parties": {
+        "parties": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1510,6 +1492,15 @@
         "totalTrades": {
           "type": "string",
           "format": "uint64"
+        },
+        "appVersionHash": {
+          "type": "string"
+        },
+        "appVersion": {
+          "type": "string"
+        },
+        "chainVersion": {
+          "type": "string"
         }
       }
     },

@@ -39,6 +39,9 @@ type ChainStatus struct {
 
 	cancel            func()
 	onChainDisconnect func()
+
+	callbacks []func(string)
+	mu        sync.Mutex
 }
 
 // New creates a Status checker, currently this is limited to the underlying blockchain status, but
@@ -88,6 +91,10 @@ func (s *Status) OnChainDisconnect(f func()) {
 	s.blockchain.onChainDisconnect = f
 }
 
+func (s *Status) OnChainVersionObtained(f func(string)) {
+	s.blockchain.OnChainVersionObtained(f)
+}
+
 // Stop the internal checker(s) from periodically calling their underlying providers
 // Note: currently the only way to start checking externally is to New up a new Status checker
 func (s *Status) Stop() {
@@ -96,6 +103,20 @@ func (s *Status) Stop() {
 
 func (s *Status) ChainStatus() types.ChainStatus {
 	return s.blockchain.Status()
+}
+
+func (s *ChainStatus) OnChainVersionObtained(f func(string)) {
+	s.mu.Lock()
+	s.callbacks = append(s.callbacks, f)
+	s.mu.Unlock()
+}
+
+func (s *ChainStatus) notifyChainVersion(v string) {
+	s.mu.Lock()
+	for _, f := range s.callbacks {
+		f(v)
+	}
+	s.mu.Unlock()
 }
 
 // Status returns the current status of the underlying Blockchain connection.
@@ -133,6 +154,7 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 		cs.log.Info("tendermint info",
 			logging.String("version", res.NodeInfo.Version),
 		)
+		cs.notifyChainVersion(res.NodeInfo.Version)
 
 		if res.SyncInfo.CatchingUp {
 			newStatus = types.ChainStatus_REPLAYING

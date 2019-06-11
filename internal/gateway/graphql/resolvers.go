@@ -29,7 +29,7 @@ type TradingClient interface {
 	// unary calls - writes
 	SubmitOrder(ctx context.Context, in *protoapi.SubmitOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
 	CancelOrder(ctx context.Context, in *protoapi.CancelOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
-	AmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*protoapi.OrderResponse, error)
+	AmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
 	SignIn(ctx context.Context, in *protoapi.SignInRequest, opts ...grpc.CallOption) (*protoapi.SignInResponse, error)
 }
 
@@ -138,6 +138,10 @@ func (r *resolverRoot) Account() AccountResolver {
 	return (*MyAccountResolver)(r)
 }
 
+func (r *resolverRoot) Statistics() StatisticsResolver {
+	return (*MyStatisticsResolver)(r)
+}
+
 // BEGIN: Query Resolver
 
 type MyQueryResolver resolverRoot
@@ -208,6 +212,15 @@ func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error
 	}
 
 	return &Party{ID: res.Party.Id}, nil
+}
+
+func (r *MyQueryResolver) Statistics(ctx context.Context) (*types.Statistics, error) {
+	res, err := r.tradingDataClient.Statistics(ctx, &empty.Empty{})
+	if err != nil {
+		r.log.Error("tradingCore client", logging.Error(err))
+		return nil, err
+	}
+	return res, nil
 }
 
 // END: Root Resolver
@@ -844,6 +857,49 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market 
 
 }
 
+func (r *MyMutationResolver) OrderAmend(ctx context.Context, id string, party string, price, size int, expiration *string) (*types.PendingOrder, error) {
+	order := &types.OrderAmendment{}
+
+	tkn := gateway.TokenFromContext(ctx)
+
+	// Cancellation currently only requires ID and Market to be set, all other fields will be added
+	if len(id) == 0 {
+		return nil, errors.New("id missing or empty")
+	}
+	order.OrderID = id
+	if len(party) == 0 {
+		return nil, errors.New("party missing or empty")
+	}
+	order.PartyID = party
+	if price < 0 {
+		return nil, errors.New("cannot have price less than 0")
+	}
+	order.Price = uint64(price)
+	if size < 0 {
+		return nil, errors.New("cannot have size less thean 0")
+	}
+	order.Size = uint64(size)
+	if expiration != nil {
+		expiresAt, err := vegatime.Parse(*expiration)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+		}
+		// move to pure timestamps or convert an RFC format shortly
+		order.ExpiresAt = expiresAt.UnixNano()
+	}
+
+	req := protoapi.AmendOrderRequest{
+		Amendment: order,
+		Token:     tkn,
+	}
+	pendingOrder, err := r.tradingClient.AmendOrder(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return pendingOrder, nil
+}
+
 func (r *MyMutationResolver) Signin(ctx context.Context, id string, password string) (string, error) {
 	req := protoapi.SignInRequest{
 		Id:       id,
@@ -1155,3 +1211,69 @@ func (r *MyAccountResolver) Type(ctx context.Context, obj *proto.Account) (Accou
 }
 
 // END: Account Resolver
+
+type MyStatisticsResolver resolverRoot
+
+func (r *MyStatisticsResolver) BlockHeight(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.BlockHeight), nil
+}
+
+func (r *MyStatisticsResolver) BacklogLength(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.BacklogLength), nil
+}
+
+func (r *MyStatisticsResolver) TotalPeers(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalPeers), nil
+}
+
+func (r *MyStatisticsResolver) Status(ctx context.Context, obj *proto.Statistics) (string, error) {
+	return obj.Status.String(), nil
+}
+
+func (r *MyStatisticsResolver) TxPerBlock(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TxPerBlock), nil
+}
+
+func (r *MyStatisticsResolver) AverageTxBytes(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.AverageTxBytes), nil
+}
+
+func (r *MyStatisticsResolver) AverageOrdersPerBlock(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.AverageOrdersPerBlock), nil
+}
+
+func (r *MyStatisticsResolver) TradesPerSecond(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TradesPerSecond), nil
+}
+
+func (r *MyStatisticsResolver) OrdersPerSecond(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.OrdersPerSecond), nil
+}
+
+func (r *MyStatisticsResolver) TotalMarkets(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalMarkets), nil
+}
+
+func (r *MyStatisticsResolver) TotalParties(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalParties), nil
+}
+
+func (r *MyStatisticsResolver) TotalAmendOrder(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalAmendOrder), nil
+}
+
+func (r *MyStatisticsResolver) TotalCancelOrder(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalCancelOrder), nil
+}
+
+func (r *MyStatisticsResolver) TotalCreateOrder(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalCreateOrder), nil
+}
+
+func (r *MyStatisticsResolver) TotalOrders(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalOrders), nil
+}
+
+func (r *MyStatisticsResolver) TotalTrades(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.TotalTrades), nil
+}

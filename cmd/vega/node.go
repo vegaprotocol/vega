@@ -137,6 +137,9 @@ func (l *NodeCommand) runNode(args []string) error {
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
 	statusChecker.OnChainDisconnect(l.cancel)
+	statusChecker.OnChainVersionObtained(func(v string) {
+		l.stats.SetChainVersion(v)
+	})
 
 	var err error
 	if l.conf.Auth.Enabled {

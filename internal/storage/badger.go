@@ -138,6 +138,30 @@ func (bs *badgerStore) orderPrefix(order string, descending bool) (keyPrefix []b
 	return bs.getPrefix("O", order, descending)
 }
 
+func (bs *badgerStore) accountMarketPrefix(market string, descending bool) ([]byte, []byte) {
+	return bs.getPrefix("AMR", market, descending)
+}
+
+func (bs *badgerStore) accountOwnerPrefix(owner string, descending bool) ([]byte, []byte) {
+	return bs.getPrefix("AR", owner, descending)
+}
+
+func (bs *badgerStore) accountTypePrefix(owner string, accountType types.AccountType, descending bool) ([]byte, []byte) {
+	return bs.getPrefix("ATR", fmt.Sprintf("%s:%s", owner, accountType.String()), descending)
+}
+
+func (bs *badgerStore) accountReferencePrefix(owner, market string, descending bool) ([]byte, []byte) {
+	return bs.getPrefix("AR", fmt.Sprintf("%s:%s", owner, market), descending)
+}
+
+func (bs *badgerStore) accountAssetPrefix(owner, asset string, descending bool) ([]byte, []byte) {
+	return bs.getPrefix("AA", fmt.Sprintf("%s:%s", owner, asset), descending)
+}
+
+func (bs *badgerStore) accountKeyPrefix(owner, asset, market string, descending bool) ([]byte, []byte) {
+	return bs.getPrefix("A", fmt.Sprintf("%s:%s:%s", owner, asset, market), descending)
+}
+
 func (bs *badgerStore) getPrefix(modifier string, prefix string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
 	validForPrefix = []byte(fmt.Sprintf("%s:%s_", modifier, prefix))
 	keyPrefix = validForPrefix
@@ -162,6 +186,26 @@ func (bs *badgerStore) readTransaction() *badger.Txn {
 
 func (bs *badgerStore) writeTransaction() *badger.Txn {
 	return bs.db.NewTransaction(true)
+}
+
+func (bs *badgerStore) accountTypeReferenceKey(owner, market, asset string, accountType types.AccountType) []byte {
+	return []byte(fmt.Sprintf("ATR:%s:%s:%s:%s", owner, accountType.String(), asset, market))
+}
+
+func (bs *badgerStore) accountMarketReferenceKey(market, owner, asset string, accountType types.AccountType) []byte {
+	return []byte(fmt.Sprintf("AMR:%s:%s:%s:%s", market, owner, asset, accountType.String()))
+}
+
+func (bs *badgerStore) accountReferenceKey(owner, market, asset string, accountType types.AccountType) []byte {
+	return []byte(fmt.Sprintf("AR:%s:%s:%s:%s", owner, market, asset, accountType.String()))
+}
+
+func (bs *badgerStore) accountAssetReferenceKey(owner, asset, market string, accountType types.AccountType) []byte {
+	return []byte(fmt.Sprintf("AA:%s:%s:%s:%s", owner, asset, market, accountType.String()))
+}
+
+func (bs *badgerStore) accountKey(owner, asset, market string, accountType types.AccountType) []byte {
+	return []byte(fmt.Sprintf("A:%s:%s:%s:%s", owner, asset, market, accountType.String()))
 }
 
 func (bs *badgerStore) lastCandleKey(
@@ -219,50 +263,41 @@ func (bs *badgerStore) tradeOrderIdKey(orderId, Id string) []byte {
 //         committed successfully, but an error was returned on the transaction
 //         number N+1.
 func (bs *badgerStore) writeBatch(kv map[string][]byte) (int, error) {
-	txns := make([]*badger.Txn, 0)
-	lastTxnIdx := 0
+	// create transaction
+	txn := bs.writeTransaction()
+	defer txn.Discard()
+	// add to transaction batch
+	txns := []*badger.Txn{
+		txn,
+	}
 
-	txns = append(txns, bs.writeTransaction())
-	defer txns[lastTxnIdx].Discard()
-
-	i := 0
 	for k, v := range kv {
 		// First attempt: put kv pair in current transaction
-		err := txns[lastTxnIdx].Set([]byte(k), v)
-		switch err {
-		case nil: // all is well
-		case badger.ErrTxnTooBig:
+		if err := txn.Set([]byte(k), v); err != nil {
+			if err != badger.ErrTxnTooBig {
+				return 0, err
+			}
 			// Start a new transaction WITHOUT commiting any previous ones, in order
 			// to maintain atomicity.
-			txns = append(txns, bs.writeTransaction())
-			lastTxnIdx++
-			defer txns[lastTxnIdx].Discard()
-
+			txn = bs.writeTransaction()
+			defer txn.Discard()
+			txns = append(txns, txn)
 			// Second attempt: put kv pair in new transaction
-			err = txns[lastTxnIdx].Set([]byte(k), v)
-			if err != nil {
+			if err := txn.Set([]byte(k), v); err != nil {
 				return 0, err
-				// All transactions will be discarded
 			}
-			i = 0
-		default:
-			return 0, err
-			// All transactions will be discarded
 		}
-		i++
 	}
 
 	// At this point, we have filled one or more transactions with the all the kv
 	// pairs, and we have commited none of the transactions.
-
-	for j, txn := range txns {
-		err := txn.Commit()
-		if err != nil {
+	for j, tx := range txns {
+		if err := tx.Commit(); err != nil {
 			// This is very bad. We committed some transactions, but have now failed
 			// to commit a transaction.
 			return j, err
 		}
 	}
 
-	return lastTxnIdx + 1, nil
+	return len(txns) + 1, nil
 }

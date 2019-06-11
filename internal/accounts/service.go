@@ -18,6 +18,8 @@ type AccountStore interface {
 	GetMarketAccountsForOwner(id, market string) ([]*types.Account, error)
 	GetAccountsForOwner(owner string) ([]*types.Account, error)
 	GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error)
+	GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error)
+	GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error)
 }
 
 // Svc - the accounts service itself
@@ -59,6 +61,14 @@ func (s *Svc) GetTraderAccounts(id string) ([]*types.Account, error) {
 		return nil, err
 	}
 	return accs, nil
+}
+
+func (s *Svc) GetTraderAssetBalance(id, asset string) ([]*types.Account, error) {
+	return s.storage.GetAccountsByOwnerAndAsset(id, asset)
+}
+
+func (s *Svc) GetTraderMarketAssetBalance(id, asset, market string) ([]*types.Account, error) {
+	return s.storage.GetMarketAssetAccounts(id, asset, market)
 }
 
 func (s *Svc) GetTraderAccountsForMarket(trader, market string) ([]*types.Account, error) {

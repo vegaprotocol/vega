@@ -154,18 +154,22 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 	}, nil
 }
 
-func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
+func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
 	if err := amendment.Validate(); err != nil {
-		return false, errors.Wrap(err, "order amendment validation failed")
+		return nil, errors.Wrap(err, "order amendment validation failed")
 	}
 	// Validate order exists using read store
 	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.PartyID, amendment.OrderID)
 	if err != nil {
-		return false, err
+		return nil, err
+	}
+
+	if o.PartyID != amendment.PartyID {
+		return nil, errors.New("party mis-match cannot cancel order")
 	}
 
 	if o.Status != types.Order_Active {
-		return false, errors.New("order is not active")
+		return nil, errors.New("order is not active")
 	}
 
 	// if order is GTT convert datetime to blockchain ts
@@ -173,12 +177,26 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
-			return false, err
+			return nil, err
 		}
 	}
 
 	// Send edit request by consensus
-	return s.blockchain.AmendOrder(ctx, amendment)
+	if _, err := s.blockchain.AmendOrder(ctx, amendment); err != nil {
+		return nil, err
+	}
+
+	return &types.PendingOrder{
+		Reference: o.Reference,
+		Price:     amendment.Price,
+		Type:      o.Type,
+		Side:      o.Side,
+		MarketID:  o.MarketID,
+		Size:      amendment.Size,
+		PartyID:   o.PartyID,
+		Status:    types.Order_Cancelled,
+		Id:        o.Id,
+	}, nil
 }
 
 func (s *Svc) validateOrderExpirationTS(expiresAt int64) (time.Time, error) {
