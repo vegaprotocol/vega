@@ -149,7 +149,8 @@ func testTransferChannelSuccess(t *testing.T) {
 func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Transfer {
 	tt := make([]events.Transfer, 0, len(transfers))
 	for _, t := range transfers {
-		mt := mocks.NewMockMTMTransfer(e.ctrl)
+
+		mt := mocks.NewMockTransfer(e.ctrl)
 		mt.EXPECT().Transfer().AnyTimes().Return(t)
 		// mt.EXPECT().Transfer().MinTimes(1).Return(t)
 		tt = append(tt, mt)

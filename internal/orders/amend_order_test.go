@@ -53,8 +53,8 @@ func testAmendOrderSuccess(t *testing.T) {
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	svc.block.EXPECT().AmendOrder(gomock.Any(), amendMatcher{e: arg}).Times(1).Return(true, nil)
 
-	success, err := svc.svc.AmendOrder(context.Background(), &arg)
-	assert.True(t, success)
+	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
+	assert.NotNil(t, pendingOrder)
 	assert.NoError(t, err)
 }
 
@@ -76,8 +76,8 @@ func testAmendOrderExpired(t *testing.T) {
 	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 
-	success, err := svc.svc.AmendOrder(context.Background(), &arg)
-	assert.False(t, success)
+	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
 
@@ -97,8 +97,8 @@ func testAmendOrderNotActive(t *testing.T) {
 	}
 	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
 
-	success, err := svc.svc.AmendOrder(context.Background(), &arg)
-	assert.False(t, success)
+	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
 
@@ -108,8 +108,8 @@ func testAmendOrderInvalidPayload(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
-	success, err := svc.svc.AmendOrder(context.Background(), &arg)
-	assert.False(t, success)
+	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
 
@@ -132,8 +132,8 @@ func testAmendOrderTimeSvcErr(t *testing.T) {
 	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, expErr)
 
-	success, err := svc.svc.AmendOrder(context.Background(), &arg)
-	assert.False(t, success)
+	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
+	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
 }
 
