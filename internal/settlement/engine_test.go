@@ -22,6 +22,7 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	prod      *mocks.MockProduct
 	positions []*mocks.MockMarketPosition
+	market    string
 }
 
 type posValue struct {
@@ -434,11 +435,13 @@ func getTestEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
 	prod := mocks.NewMockProduct(ctrl)
+	market := "BTC/DEC19"
 	return &testEngine{
-		Engine:    settlement.New(logging.NewTestLogger(), conf, prod),
+		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market),
 		ctrl:      ctrl,
 		prod:      prod,
 		positions: nil,
+		market:    market,
 	}
 } // }}}
 

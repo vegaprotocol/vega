@@ -33,11 +33,27 @@ type Mutation {
   orderCancel(
     # ID of the order to cancel
     id: ID!,
+    # ID of the party placing the order
+    partyId: String!,
     # ID of the market where to find the order
     marketId: String!,
+  ): PendingOrder!
+
+  # Send a amend order request into VEGA network, this does not immediately amend an order.
+  # It validates and sends the request out for consensus.
+  orderAmend(
+    # ID of the order to amend
+    id: ID!,
     # ID of the party which created the order
     partyId: String!
+    # New price for this order
+    price: Int!,
+    # New size for this order
+    size: Int!,
+    # New expiration time
+    expiration: String,
   ): PendingOrder!
+
 
   # sign a party in using an username and password, then return a token
   signin(

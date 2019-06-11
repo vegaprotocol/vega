@@ -49,9 +49,6 @@ func (this *AmendOrderRequest) Validate() error {
 	}
 	return nil
 }
-func (this *OrderResponse) Validate() error {
-	return nil
-}
 func (this *LastTradeRequest) Validate() error {
 	return nil
 }

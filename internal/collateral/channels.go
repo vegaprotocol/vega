@@ -117,27 +117,16 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 	// final settle, or MTM settle, makes no difference, it's win/loss still
 	// get the actual trasfer value here, for convenience
 	p := t.t
-	gen, err := e.accountStore.GetAccountsForOwnerByType(p.Owner, types.AccountType_GENERAL)
+	accounts, err := e.getTraderAccountsByAssetAndType(p.Owner, t.Asset(), types.AccountType_MARGIN, types.AccountType_GENERAL, types.AccountType_MARKET)
 	if err != nil {
 		e.log.Error(
-			"Failed to get the general account",
+			"Failed to get trader accounts",
 			logging.String("owner", p.Owner),
 			logging.String("market", e.market),
 			logging.Error(err),
 		)
 		return nil, err
 	}
-	accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, p.Owner)
-	if err != nil {
-		e.log.Error(
-			"could not get accounts for market",
-			logging.String("account-owner", p.Owner),
-			logging.String("market", e.market),
-			logging.Error(err),
-		)
-		return nil, err
-	}
-	accounts = append(accounts, gen...)
 	// set all accounts onto transferT internal type
 	for _, ac := range accounts {
 		switch ac.Type {
@@ -153,15 +142,15 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 		req := types.TransferRequest{
 			FromAccount: []*types.Account{
 				t.margin,
-				t.general,
+				t.market,
 				insurance,
 			},
 			ToAccount: []*types.Account{
 				settle,
 			},
 			Amount:    uint64(-p.Amount.Amount) * p.Size,
-			MinAmount: 0,  // default value, but keep it here explicitly
-			Asset:     "", // TBC
+			MinAmount: 0,            // default value, but keep it here explicitly
+			Asset:     e.market[:3], // TBC
 		}
 		if req.FromAccount[0] == nil || req.FromAccount[1] == nil {
 			return nil, ErrTraderAccountsMissing
@@ -192,7 +181,9 @@ func (e *Engine) getProcessCB(distr *distributor, reference string, settle, insu
 		p := t.t
 		if createTraderAccounts {
 			// ignore errors, the only error ATM is the one telling us this call was redundant
-			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
+			if err := e.AddTraderToMarket(p.Owner); err != nil {
+				return nil, err
+			}
 		}
 		req, err := e.buildTransferRequest(t, settle, insurance)
 		if err != nil {

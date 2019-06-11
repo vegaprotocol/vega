@@ -35,10 +35,10 @@ func (m *MockTradeOrderService) EXPECT() *MockTradeOrderServiceMockRecorder {
 }
 
 // AmendOrder mocks base method
-func (m *MockTradeOrderService) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (bool, error) {
+func (m *MockTradeOrderService) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (*proto.PendingOrder, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1)
-	ret0, _ := ret[0].(bool)
+	ret0, _ := ret[0].(*proto.PendingOrder)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
