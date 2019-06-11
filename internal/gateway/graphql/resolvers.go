@@ -734,7 +734,17 @@ func (r *MyPositionResolver) MinimumMargin(ctx context.Context, obj *types.Marke
 }
 
 func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (*Market, error) {
-	return &Market{ID: obj.MarketID}, nil
+	if obj == nil {
+		return nil, errors.New("invalid market")
+	}
+
+	req := protoapi.MarketByIDRequest{Id: obj.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return MarketFromProto(res.Market)
 }
 
 func (r *MyPositionResolver) absInt64Str(val int64) string {
