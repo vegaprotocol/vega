@@ -99,7 +99,7 @@ func (s *Svc) GetTraderMarketBalance(trader, market string) ([]*types.Account, e
 	}
 	genMap := map[string]*types.Account{}
 	for _, g := range gen {
-		// this is tricky with bad test data, but tests should account for real life scenario's
+		// this is tricky with bad test data, but tests should account for real life scenarios
 		// we shouldn't write sub-optimal prod code to accomodate bad tests
 		genMap[g.Asset] = g
 	}
