@@ -8,8 +8,8 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/matching"
 	"code.vegaprotocol.io/vega/internal/positions"
-	"code.vegaprotocol.io/vega/internal/risk"
 	"code.vegaprotocol.io/vega/internal/settlement"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 )
 
 const (
@@ -30,7 +30,7 @@ type Config struct {
 	Markets MarketConfig
 
 	Matching   matching.Config
-	Risk       risk.Config
+	Risk       storcfg.RiskConfig
 	Position   positions.Config
 	Settlement settlement.Config
 	Collateral collateral.Config
@@ -46,7 +46,7 @@ func NewDefaultConfig(defaultConfigDirPath string) Config {
 			Configs: []string{},
 		},
 		Matching:   matching.NewDefaultConfig(),
-		Risk:       risk.NewDefaultConfig(),
+		Risk:       storcfg.NewDefaultRiskConfig(defaultConfigDirPath),
 		Position:   positions.NewDefaultConfig(),
 		Settlement: settlement.NewDefaultConfig(),
 		Collateral: collateral.NewDefaultConfig(),

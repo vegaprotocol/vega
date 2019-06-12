@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/accounts/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -109,7 +110,7 @@ func testGetTraderAccountsErr(t *testing.T) {
 func getTestService(t *testing.T) *tstService {
 	ctrl := gomock.NewController(t)
 	acc := mocks.NewMockAccountStore(ctrl)
-	conf := accounts.NewDefaultConfig()
+	conf := storcfg.NewDefaultAccountsConfig("somedir")
 	svc := accounts.NewService(logging.NewTestLogger(), conf, acc)
 	return &tstService{
 		Svc:     svc,

@@ -7,21 +7,22 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/logging"
-	types "code.vegaprotocol.io/vega/proto"
-
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+
+	"code.vegaprotocol.io/vega/internal/logging"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Trade is a package internal data struct that implements the TradeStore interface.
 type Trade struct {
-	Config
+	Config storcfg.TradesConfig
 
 	cfgMu           sync.Mutex
 	log             *logging.Logger
-	badger          *badgerStore
+	badger          *BadgerStore
 	subscribers     map[uint64]chan<- []types.Trade
 	subscriberId    uint64
 	buffer          []types.Trade
@@ -32,20 +33,22 @@ type Trade struct {
 // NewTrades is used to initialise and create a TradeStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewTrades(log *logging.Logger, c Config, onCriticalError func()) (*Trade, error) {
+func NewTrades(log *logging.Logger, c storcfg.TradesConfig, onCriticalError func()) (*Trade, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.TradeStoreDirPath)
+	err := InitStoreDirectory(c.Storage.Path)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for trades storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.TradeStoreDirPath, log))
+	bcfg := badgerOptionsFromConfig(c.Storage, log)
+	bcfg.Dir, bcfg.ValueDir = c.Storage.Path, c.Storage.Path
+	db, err := badger.Open(bcfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for trades storage")
 	}
-	bs := badgerStore{db: db}
+	bs := BadgerStore{DB: db}
 	return &Trade{
 		log:             log,
 		Config:          c,
@@ -56,7 +59,7 @@ func NewTrades(log *logging.Logger, c Config, onCriticalError func()) (*Trade, e
 	}, nil
 }
 
-func (t *Trade) ReloadConf(cfg Config) {
+func (t *Trade) ReloadConf(cfg storcfg.TradesConfig) {
 	t.log.Info("reloading configuration")
 	if t.log.GetLevel() != cfg.Level.Get() {
 		t.log.Info("updating log level",
@@ -159,7 +162,7 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 	defer it.Close()
 
 	ts.cfgMu.Lock()
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Storage.Timeout.Duration)
 	ts.cfgMu.Unlock()
 	defer cancel()
 
@@ -241,7 +244,7 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Storage.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -303,7 +306,7 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 // GetByPartyAndId retrieves a trade for a given party and id.
 func (ts *Trade) GetByPartyAndId(ctx context.Context, party string, Id string) (*types.Trade, error) {
 	var trade types.Trade
-	err := ts.badger.db.View(func(txn *badger.Txn) error {
+	err := ts.badger.DB.View(func(txn *badger.Txn) error {
 		partyKey := ts.badger.tradePartyKey(party, Id)
 		marketKeyItem, err := txn.Get(partyKey)
 		if err != nil {
@@ -354,7 +357,7 @@ func (ts *Trade) GetByOrderId(ctx context.Context, orderID string, skip, limit u
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Storage.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -425,7 +428,7 @@ func (ts *Trade) GetMarkPrice(ctx context.Context, market string) (uint64, error
 // Close our connection to the badger database
 // ensuring errors will be returned up the stack.
 func (ts *Trade) Close() error {
-	return ts.badger.db.Close()
+	return ts.badger.DB.Close()
 }
 
 // add a trade to the write-batch/notify buffer.
@@ -502,7 +505,7 @@ func (ts *Trade) writeBatch(batch []types.Trade) error {
 		return err
 	}
 
-	b, err := ts.badger.writeBatch(kv)
+	b, err := ts.badger.WriteBatch(kv)
 	if err != nil {
 		if b == 0 {
 			ts.log.Warn("Failed to insert trade batch; No records were committed, atomicity maintained",

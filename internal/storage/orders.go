@@ -6,21 +6,22 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/logging"
-	types "code.vegaprotocol.io/vega/proto"
-
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+
+	"code.vegaprotocol.io/vega/internal/logging"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Order is a package internal data struct that implements the OrderStore interface.
 type Order struct {
-	Config
+	Config storcfg.OrdersConfig
 
 	cfgMu           sync.Mutex
 	log             *logging.Logger
-	badger          *badgerStore
+	badger          *BadgerStore
 	subscribers     map[uint64]chan<- []types.Order
 	subscriberId    uint64
 	buffer          []types.Order
@@ -32,20 +33,22 @@ type Order struct {
 // NewOrders is used to initialise and create a OrderStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, error) {
+func NewOrders(log *logging.Logger, c storcfg.OrdersConfig, onCriticalError func()) (*Order, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.OrderStoreDirPath)
+	err := InitStoreDirectory(c.Storage.Path)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for orders storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.OrderStoreDirPath, log))
+	bcfg := badgerOptionsFromConfig(c.Storage, log)
+	bcfg.Dir, bcfg.ValueDir = c.Storage.Path, c.Storage.Path
+	db, err := badger.Open(bcfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for orders storage")
 	}
-	bs := badgerStore{db: db}
+	bs := BadgerStore{DB: db}
 	return &Order{
 		log:             log,
 		Config:          c,
@@ -57,7 +60,7 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 	}, nil
 }
 
-func (os *Order) ReloadConf(cfg Config) {
+func (os *Order) ReloadConf(cfg storcfg.OrdersConfig) {
 	os.log.Info("reloading configuration")
 	if os.log.GetLevel() != cfg.Level.Get() {
 		os.log.Info("updating log level",
@@ -159,7 +162,7 @@ func (os *Order) Commit() error {
 // Close our connection to the badger database
 // ensuring errors will be returned up the stack.
 func (os *Order) Close() error {
-	return os.badger.db.Close()
+	return os.badger.DB.Close()
 }
 
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
@@ -177,7 +180,7 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip, limit uin
 	defer it.Close()
 
 	os.cfgMu.Lock()
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Storage.Timeout.Duration)
 	os.cfgMu.Unlock()
 	defer cancel()
 
@@ -260,7 +263,7 @@ func (os *Order) GetByParty(ctx context.Context, party string, skip, limit uint6
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Storage.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 
@@ -315,7 +318,7 @@ func (os *Order) GetByParty(ctx context.Context, party string, skip, limit uint6
 func (os *Order) GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error) {
 	var order types.Order
 
-	err := os.badger.db.View(func(txn *badger.Txn) error {
+	err := os.badger.DB.View(func(txn *badger.Txn) error {
 		partyKey := os.badger.orderPartyKey(party, id)
 		marketKeyItem, err := txn.Get(partyKey)
 		if err != nil {
@@ -354,7 +357,7 @@ func (os *Order) GetByPartyAndId(ctx context.Context, party string, id string) (
 func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
 	var order types.Order
 
-	err := os.badger.db.View(func(txn *badger.Txn) error {
+	err := os.badger.DB.View(func(txn *badger.Txn) error {
 		refKey := os.badger.orderReferenceKey(ref)
 		marketKeyItem, err := txn.Get(refKey)
 		if err != nil {
@@ -411,7 +414,7 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	buyPtr := make([]*types.PriceLevel, 0, len(buy))
 	sellPtr := make([]*types.PriceLevel, 0, len(sell))
 
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Storage.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
 	// 2 routines, each can push one error on here, so buffer to avoid deadlock
@@ -540,7 +543,7 @@ func (os *Order) writeBatch(batch []types.Order) error {
 		return err
 	}
 
-	b, err := os.badger.writeBatch(kv)
+	b, err := os.badger.WriteBatch(kv)
 	if err != nil {
 		if b == 0 {
 			os.log.Warn("Failed to insert order batch; No records were committed, atomicity maintained",

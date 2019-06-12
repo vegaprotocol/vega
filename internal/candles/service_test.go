@@ -6,12 +6,12 @@ import (
 	"sync"
 	"testing"
 
-	types "code.vegaprotocol.io/vega/proto"
-
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/candles/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +40,7 @@ func getTestService(t *testing.T) *testService {
 	// create service, pass in mocks, ignore error
 	svc, err := candles.NewService(
 		log,
-		candles.NewDefaultConfig(),
+		storcfg.NewDefaultCandlesConfig("/tmp"),
 		store,
 	)
 	if err != nil {

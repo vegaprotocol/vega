@@ -9,11 +9,11 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/orders/mocks"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
-
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -131,7 +131,7 @@ func getTestService(t *testing.T) *testService {
 	orderStore := mocks.NewMockOrderStore(ctrl)
 	timeSvc := mocks.NewMockTimeService(ctrl)
 	block := mocks.NewMockBlockchain(ctrl)
-	conf := orders.NewDefaultConfig()
+	conf := storcfg.NewDefaultOrdersConfig("/tmp")
 	svc, err := orders.NewService(log, conf, orderStore, timeSvc, block)
 	if err != nil {
 		t.Fatalf("Failed to get test service: %+v", err)

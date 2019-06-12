@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/events"
-
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/positions"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -20,7 +20,7 @@ type marginChange struct {
 }
 
 type Engine struct {
-	Config
+	Config  storcfg.RiskConfig
 	log     *logging.Logger
 	cfgMu   sync.Mutex
 	model   Model
@@ -31,7 +31,7 @@ type Engine struct {
 
 func NewEngine(
 	log *logging.Logger,
-	config Config,
+	config storcfg.RiskConfig,
 	model Model,
 	initialFactors *types.RiskResult,
 ) *Engine {
@@ -48,7 +48,7 @@ func NewEngine(
 	}
 }
 
-func (e *Engine) ReloadConf(cfg Config) {
+func (e *Engine) ReloadConf(cfg storcfg.RiskConfig) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
 		e.log.Info("updating log level",
@@ -100,7 +100,7 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []positions.Market
 			}
 
 			re.cfgMu.Lock()
-			if re.LogMarginUpdate {
+			if re.Config.LogMarginUpdate {
 				re.log.Debug("Margins updated for position",
 					logging.String("position", fmt.Sprintf("%+v", pos)))
 			}

@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/parties/mocks"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -29,7 +30,7 @@ func getTestService(t *testing.T) *testService {
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := parties.NewService(
 		log,
-		parties.NewDefaultConfig(),
+		storcfg.NewDefaultPartiesConfig("/tmp"),
 		store,
 	)
 	assert.NoError(t, err)

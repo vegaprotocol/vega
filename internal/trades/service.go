@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/trades TradeStore
@@ -31,13 +32,13 @@ type RiskStore interface {
 }
 
 type Svc struct {
-	Config
+	Config     storcfg.TradesConfig
 	log        *logging.Logger
 	tradeStore TradeStore
 	riskStore  RiskStore
 }
 
-func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
+func NewService(log *logging.Logger, config storcfg.TradesConfig, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -50,7 +51,7 @@ func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskS
 	}, nil
 }
 
-func (s *Svc) ReloadConf(cfg Config) {
+func (s *Svc) ReloadConf(cfg storcfg.TradesConfig) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",

@@ -24,7 +24,7 @@ func (ts *Trade) GetTradesBySideBuckets(ctx context.Context, party string) map[s
 		return marketBuckets
 	}
 
-	if ts.LogPositionStoreDebug {
+	if ts.Config.LogPositionStoreDebug {
 		ts.log.Debug(fmt.Sprintf("Total trades by timestamp for party %s = %d", party, len(tradesByTimestamp)))
 	}
 

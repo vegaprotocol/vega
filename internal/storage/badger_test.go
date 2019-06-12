@@ -1,10 +1,12 @@
-package storage
+package storage_test
 
 import (
 	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"code.vegaprotocol.io/vega/internal/storage"
 
 	"github.com/dgraph-io/badger"
 	"github.com/stretchr/testify/require"
@@ -24,7 +26,7 @@ func tempDir(t *testing.T, prefix string) string {
 	panic("Could not find a temp dir")
 }
 
-func runBadgerStoreTest(t *testing.T, opts *badger.Options, test func(t *testing.T, bs *badgerStore)) {
+func runBadgerStoreTest(t *testing.T, opts *badger.Options, test func(t *testing.T, bs *storage.BadgerStore)) {
 	dir := tempDir(t, "badger-test")
 	defer os.RemoveAll(dir)
 
@@ -38,7 +40,7 @@ func runBadgerStoreTest(t *testing.T, opts *badger.Options, test func(t *testing
 	require.NoError(t, err)
 	defer db.Close()
 
-	bs := badgerStore{db: db}
+	bs := storage.BadgerStore{DB: db}
 	test(t, &bs)
 }
 
@@ -52,14 +54,14 @@ func testvalue(prefix string, k int) []byte {
 
 func TestWriteBatch(t *testing.T) {
 
-	runBadgerStoreTest(t, nil, func(t *testing.T, bs *badgerStore) {
+	runBadgerStoreTest(t, nil, func(t *testing.T, bs *storage.BadgerStore) {
 		n := 100000
 		for {
 			kv := make(map[string][]byte)
 			for i := 0; i < n; i++ {
 				kv[testkey("", i)] = testvalue("", i)
 			}
-			b, err := bs.writeBatch(kv)
+			b, err := bs.WriteBatch(kv)
 			require.NoError(t, err)
 			fmt.Printf("Wrote %d records in %d batches.\n", n, b)
 			if b > 1 {

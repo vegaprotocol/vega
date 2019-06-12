@@ -8,8 +8,10 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/execution/mocks"
+	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -37,7 +39,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	candle := mocks.NewMockCandleStore(ctrl)
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyStore(ctrl)
-	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
+	accounts, _ := storage.NewAccounts(log, storcfg.NewDefaultAccountsConfig(fsutil.DefaultVegaDir()))
 	executionConfig := execution.NewDefaultConfig("")
 
 	engine := execution.NewEngine(

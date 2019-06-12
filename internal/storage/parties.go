@@ -5,25 +5,26 @@ import (
 	"fmt"
 	"sync"
 
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Party is used for memory/RAM based parties storage.
 type Party struct {
-	Config
-	db map[string]types.Party
-	mu sync.RWMutex
+	Config storcfg.PartiesConfig
+	db     map[string]types.Party
+	mu     sync.RWMutex
 }
 
 // NewStore returns a concrete implementation of a parties Store.
-func NewParties(config Config) (*Party, error) {
+func NewParties(config storcfg.PartiesConfig) (*Party, error) {
 	return &Party{
 		Config: config,
 		db:     make(map[string]types.Party, 0),
 	}, nil
 }
 
-func (p *Party) ReloadConf(config Config) {
+func (p *Party) ReloadConf(config storcfg.PartiesConfig) {
 	// nothing to do for now
 }
 

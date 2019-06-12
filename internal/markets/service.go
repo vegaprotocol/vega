@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -22,14 +23,14 @@ type OrderStore interface {
 }
 
 type Svc struct {
-	Config
+	Config      storcfg.MarketsConfig
 	log         *logging.Logger
 	marketStore MarketStore
 	orderStore  OrderStore
 }
 
 // NewService creates an market service with the necessary dependencies
-func NewService(log *logging.Logger, config Config, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
+func NewService(log *logging.Logger, config storcfg.MarketsConfig, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -42,7 +43,7 @@ func NewService(log *logging.Logger, config Config, marketStore MarketStore, ord
 	}, nil
 }
 
-func (s *Svc) ReloadConf(cfg Config) {
+func (s *Svc) ReloadConf(cfg storcfg.MarketsConfig) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",

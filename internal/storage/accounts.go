@@ -2,6 +2,7 @@ package storage
 
 import (
 	"code.vegaprotocol.io/vega/internal/logging"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger"
@@ -28,21 +29,23 @@ type accountRecord struct {
 }
 
 type Account struct {
-	Config
+	Config storcfg.AccountsConfig
 
 	log    *logging.Logger
-	badger *badgerStore
+	badger *BadgerStore
 }
 
-func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
+func NewAccounts(log *logging.Logger, c storcfg.AccountsConfig) (*Account, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	if err := InitStoreDirectory(c.AccountStoreDirPath); err != nil {
+	if err := InitStoreDirectory(c.Storage.Path); err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for account storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.AccountStoreDirPath, log))
+	bcfg := badgerOptionsFromConfig(c.Storage, log)
+	bcfg.Dir, bcfg.ValueDir = c.Storage.Path, c.Storage.Path
+	db, err := badger.Open(bcfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for account storage")
 	}
@@ -50,11 +53,11 @@ func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
 	return &Account{
 		log:    log,
 		Config: c,
-		badger: &badgerStore{db: db},
+		badger: &BadgerStore{DB: db},
 	}, nil
 }
 
-func (a *Account) ReloadConf(cfg Config) {
+func (a *Account) ReloadConf(cfg storcfg.AccountsConfig) {
 	a.log.Info("reloading configuration")
 	if a.log.GetLevel() != cfg.Level.Get() {
 		a.log.Info("updating log level",
@@ -73,7 +76,7 @@ func (a *Account) Create(rec *types.Account) error {
 	if err != nil {
 		return err
 	}
-	if _, err := a.badger.writeBatch(records); err != nil {
+	if _, err := a.badger.WriteBatch(records); err != nil {
 		a.log.Error(
 			"Failed to create the given account",
 			logging.String("account-id", rec.Id),
@@ -97,7 +100,7 @@ func (a *Account) createAccounts(accounts ...*types.Account) error {
 	if err != nil {
 		return err
 	}
-	if _, err := a.badger.writeBatch(records); err != nil {
+	if _, err := a.badger.WriteBatch(records); err != nil {
 		a.log.Error(
 			"Failed to create accounts",
 			logging.Error(err),
@@ -115,7 +118,7 @@ func (a *Account) hasAccount(acc *types.Account) (bool, error) {
 	key := a.badger.accountKey(acc.Owner, acc.Asset, market, acc.Type)
 	// set Id here - if account exists, we still want to return the full record with ID'
 	acc.Id = string(key)
-	err := a.badger.db.View(func(txn *badger.Txn) error {
+	err := a.badger.DB.View(func(txn *badger.Txn) error {
 		account, err := txn.Get(key)
 		if err != nil {
 			return err

@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -19,13 +20,13 @@ type CandleStore interface {
 }
 
 type Svc struct {
-	log *logging.Logger
-	Config
+	log          *logging.Logger
+	Config       storcfg.CandlesConfig
 	tradesBuffer map[string][]*types.Trade
 	candleStore  CandleStore
 }
 
-func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*Svc, error) {
+func NewService(log *logging.Logger, config storcfg.CandlesConfig, candleStore CandleStore) (*Svc, error) {
 	if candleStore == nil {
 		return nil, errors.New("candleStore instance is nil when creating candle service instance.")
 	}
@@ -41,7 +42,7 @@ func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*S
 	}, nil
 }
 
-func (s *Svc) ReloadConf(cfg Config) {
+func (s *Svc) ReloadConf(cfg storcfg.CandlesConfig) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",

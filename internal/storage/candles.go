@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -22,11 +23,11 @@ var minSinceTime time.Time = vegatime.UnixNano(minSinceTimestamp)
 
 // Candle is a package internal data struct that implements the CandleStore interface.
 type Candle struct {
-	Config
+	Config storcfg.CandlesConfig
 
 	cfgMu        sync.Mutex
 	log          *logging.Logger
-	badger       *badgerStore
+	badger       *BadgerStore
 	subscribers  map[uint64]*InternalTransport
 	subscriberId uint64
 	queue        []marketCandle
@@ -48,20 +49,22 @@ type marketCandle struct {
 // NewCandles is used to initialise and create a CandleStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewCandles(log *logging.Logger, c Config) (*Candle, error) {
+func NewCandles(log *logging.Logger, c storcfg.CandlesConfig) (*Candle, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.CandleStoreDirPath)
+	err := InitStoreDirectory(c.Storage.Path)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.CandleStoreDirPath, log))
+	bcfg := badgerOptionsFromConfig(c.Storage, log)
+	bcfg.Dir, bcfg.ValueDir = c.Storage.Path, c.Storage.Path
+	db, err := badger.Open(bcfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}
-	bs := badgerStore{db: db}
+	bs := BadgerStore{DB: db}
 	return &Candle{
 		log:         log,
 		Config:      c,
@@ -71,7 +74,7 @@ func NewCandles(log *logging.Logger, c Config) (*Candle, error) {
 	}, nil
 }
 
-func (c *Candle) ReloadConf(cfg Config) {
+func (c *Candle) ReloadConf(cfg storcfg.CandlesConfig) {
 	c.log.Info("reloading configuration")
 	if c.log.GetLevel() != cfg.Level.Get() {
 		c.log.Info("updating log level",
@@ -132,7 +135,7 @@ func (c *Candle) Unsubscribe(id uint64) error {
 // Close can be called to clean up and close any storage
 // connections held by the underlying storage mechanism.
 func (c *Candle) Close() error {
-	return c.badger.db.Close()
+	return c.badger.DB.Close()
 }
 
 // GenerateCandlesFromBuffer will generate all candles for a given market.
@@ -190,7 +193,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 	readTxn := c.badger.readTransaction()
 	defer readTxn.Discard()
 
-	writeBatch := c.badger.db.NewWriteBatch()
+	writeBatch := c.badger.DB.NewWriteBatch()
 	defer writeBatch.Cancel()
 
 	c.mu.Lock()
@@ -279,7 +282,7 @@ func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time,
 	defer it.Close()
 
 	c.cfgMu.Lock()
-	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
+	ctx, cancel := context.WithTimeout(ctx, c.Config.Storage.Timeout.Duration)
 	c.cfgMu.Unlock()
 	defer cancel()
 
@@ -344,7 +347,7 @@ func (c *Candle) generateFetchKey(market string, interval types.Interval, since 
 func (c *Candle) FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error) {
 	var candle types.Candle
 	key := c.badger.lastCandleKey(marketID, interval)
-	err := c.badger.db.View(func(txn *badger.Txn) error {
+	err := c.badger.DB.View(func(txn *badger.Txn) error {
 		lastCandleItem, err := txn.Get(key)
 		if err != nil {
 			return err

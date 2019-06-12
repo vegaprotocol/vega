@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/fsutil"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -73,10 +73,10 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	fullCandleStorePath := filepath.Join(ic.rootPath, storage.CandleStoreDataPath)
-	fullOrderStorePath := filepath.Join(ic.rootPath, storage.OrderStoreDataPath)
-	fullTradeStorePath := filepath.Join(ic.rootPath, storage.TradeStoreDataPath)
-	fullMarketStorePath := filepath.Join(ic.rootPath, storage.MarketStoreDataPath)
+	fullCandleStorePath := filepath.Join(ic.rootPath, storcfg.CandleStoreDataPath)
+	fullOrderStorePath := filepath.Join(ic.rootPath, storcfg.OrderStoreDataPath)
+	fullTradeStorePath := filepath.Join(ic.rootPath, storcfg.TradeStoreDataPath)
+	fullMarketStorePath := filepath.Join(ic.rootPath, storcfg.MarketStoreDataPath)
 
 	// create sub-folders
 	if err := fsutil.EnsureDir(fullCandleStorePath); err != nil {

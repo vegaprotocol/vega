@@ -1,22 +1,23 @@
 package storage
 
 import (
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Risk is used for memory/RAM based risk storage.
 type Risk struct {
-	Config
+	Config storcfg.RiskConfig
 }
 
 // NewRisks returns a concrete implementation of RiskStore.
-func NewRisks(config Config) (*Risk, error) {
+func NewRisks(config storcfg.RiskConfig) (*Risk, error) {
 	return &Risk{
 		Config: config,
 	}, nil
 }
 
-func (r *Risk) ReloadConf(config Config) {
+func (r *Risk) ReloadConf(config storcfg.RiskConfig) {
 	// nothing to do for now
 }
 

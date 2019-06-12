@@ -9,17 +9,17 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/markets"
-
 	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/matching"
 	"code.vegaprotocol.io/vega/internal/positions"
 	"code.vegaprotocol.io/vega/internal/risk"
 	"code.vegaprotocol.io/vega/internal/settlement"
 	"code.vegaprotocol.io/vega/internal/storage"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
@@ -29,7 +29,7 @@ import (
 type Market struct {
 	log *logging.Logger
 
-	riskConfig       risk.Config
+	riskConfig       storcfg.RiskConfig
 	collateralConfig collateral.Config
 	positionConfig   positions.Config
 	settlementConfig settlement.Config
@@ -88,7 +88,7 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
 func NewMarket(
 	log *logging.Logger,
-	riskConfig risk.Config,
+	riskConfig storcfg.RiskConfig,
 	collateralConfig collateral.Config,
 	positionConfig positions.Config,
 	settlementConfig settlement.Config,
@@ -151,7 +151,7 @@ func NewMarket(
 // this is required when hot-reloading any config changes, eg. logger level.
 func (m *Market) ReloadConf(
 	matchingConfig matching.Config,
-	riskConfig risk.Config,
+	riskConfig storcfg.RiskConfig,
 	collateralConfig collateral.Config,
 	positionConfig positions.Config,
 	settlementConfig settlement.Config,

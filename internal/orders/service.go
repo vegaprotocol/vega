@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
-
 	"code.vegaprotocol.io/vega/internal/logging"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
 )
@@ -41,8 +41,8 @@ type Blockchain interface {
 }
 
 type Svc struct {
-	Config
-	log *logging.Logger
+	Config storcfg.OrdersConfig
+	log    *logging.Logger
 
 	blockchain  Blockchain
 	orderStore  OrderStore
@@ -50,7 +50,7 @@ type Svc struct {
 }
 
 // NewService creates an Orders service with the necessary dependencies
-func NewService(log *logging.Logger, config Config, store OrderStore, time TimeService, client Blockchain) (*Svc, error) {
+func NewService(log *logging.Logger, config storcfg.OrdersConfig, store OrderStore, time TimeService, client Blockchain) (*Svc, error) {
 	if client == nil {
 		return nil, errors.New("blockchain client is nil when calling NewService in OrderService")
 	}
@@ -68,7 +68,7 @@ func NewService(log *logging.Logger, config Config, store OrderStore, time TimeS
 	}, nil
 }
 
-func (s *Svc) ReloadConf(cfg Config) {
+func (s *Svc) ReloadConf(cfg storcfg.OrdersConfig) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",

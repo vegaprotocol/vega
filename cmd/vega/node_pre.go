@@ -80,40 +80,40 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	l.configPath, l.conf = configPath, conf
 	l.stats = internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
 	// set up storage, this should be persistent
-	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
+	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Candles); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Storage) })
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Candles) })
 
-	if l.orderStore, err = storage.NewOrders(l.Log, l.conf.Storage, l.cancel); err != nil {
+	if l.orderStore, err = storage.NewOrders(l.Log, l.conf.Orders, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Storage) })
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Orders) })
 
-	if l.tradeStore, err = storage.NewTrades(l.Log, l.conf.Storage, l.cancel); err != nil {
+	if l.tradeStore, err = storage.NewTrades(l.Log, l.conf.Trades, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) })
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Trades) })
 
-	if l.riskStore, err = storage.NewRisks(l.conf.Storage); err != nil {
+	if l.riskStore, err = storage.NewRisks(l.conf.Risk); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) })
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Risk) })
 
-	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage); err != nil {
+	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Markets); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Markets) })
 
-	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
+	if l.partyStore, err = storage.NewParties(l.conf.Parties); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) })
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Parties) })
 
-	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage); err != nil {
+	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Accounts); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) })
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accounts.ReloadConf(cfg.Accounts) })
 
 	return nil
 }

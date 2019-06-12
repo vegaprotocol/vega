@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -15,13 +16,13 @@ type PartyStore interface {
 }
 
 type Svc struct {
-	Config
-	log   *logging.Logger
-	store PartyStore
+	Config storcfg.PartiesConfig
+	log    *logging.Logger
+	store  PartyStore
 }
 
 // NewService creates a Parties service with the necessary dependencies
-func NewService(log *logging.Logger, config Config, store PartyStore) (*Svc, error) {
+func NewService(log *logging.Logger, config storcfg.PartiesConfig, store PartyStore) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -33,7 +34,7 @@ func NewService(log *logging.Logger, config Config, store PartyStore) (*Svc, err
 	}, nil
 }
 
-func (s *Svc) ReloadConf(cfg Config) {
+func (s *Svc) ReloadConf(cfg storcfg.PartiesConfig) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",

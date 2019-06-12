@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/markets/mocks"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -33,7 +34,7 @@ func getTestService(t *testing.T) *testService {
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := markets.NewService(
 		log,
-		markets.NewDefaultConfig(),
+		storcfg.NewDefaultMarketsConfig("/tmp"),
 		market,
 		order,
 	)

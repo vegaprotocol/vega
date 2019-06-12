@@ -1,37 +1,40 @@
 package storage
 
 import (
-	"code.vegaprotocol.io/vega/internal/logging"
-	types "code.vegaprotocol.io/vega/proto"
-
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+
+	"code.vegaprotocol.io/vega/internal/logging"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Market is used for memory/RAM based markets storage.
 type Market struct {
-	Config
+	Config storcfg.MarketsConfig
 
 	log    *logging.Logger
-	badger *badgerStore
+	badger *BadgerStore
 }
 
 // NewMarkets returns a concrete implementation of MarketStore.
-func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
+func NewMarkets(log *logging.Logger, c storcfg.MarketsConfig) (*Market, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.MarketStoreDirPath)
+	err := InitStoreDirectory(c.Storage.Path)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.MarketStoreDirPath, log))
+	bcfg := badgerOptionsFromConfig(c.Storage, log)
+	bcfg.Dir, bcfg.ValueDir = c.Storage.Path, c.Storage.Path
+	db, err := badger.Open(bcfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}
-	bs := badgerStore{db: db}
+	bs := BadgerStore{DB: db}
 	return &Market{
 		log:    log,
 		Config: c,
@@ -39,7 +42,7 @@ func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
 	}, nil
 }
 
-func (m *Market) ReloadConf(cfg Config) {
+func (m *Market) ReloadConf(cfg storcfg.MarketsConfig) {
 	m.log.Info("reloading configuration")
 	if m.log.GetLevel() != cfg.Level.Get() {
 		m.log.Info("updating log level",
@@ -63,7 +66,7 @@ func (ms *Market) Post(market *types.Market) error {
 		return err
 	}
 	marketKey := ms.badger.marketKey(market.Id)
-	err = ms.badger.db.Update(func(txn *badger.Txn) error {
+	err = ms.badger.DB.Update(func(txn *badger.Txn) error {
 		err := txn.Set(marketKey, buf)
 		if err != nil {
 			ms.log.Error("unable to save market in badger",
@@ -83,7 +86,7 @@ func (ms *Market) GetByID(id string) (*types.Market, error) {
 	market := types.Market{}
 	var buf []byte
 	marketKey := ms.badger.marketKey(id)
-	err := ms.badger.db.View(func(txn *badger.Txn) error {
+	err := ms.badger.DB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(marketKey)
 		if err != nil {
 			return err
@@ -116,7 +119,7 @@ func (ms *Market) GetByID(id string) (*types.Market, error) {
 func (ms *Market) GetAll() ([]*types.Market, error) {
 	markets := []*types.Market{}
 	bufs := [][]byte{}
-	err := ms.badger.db.View(func(txn *badger.Txn) error {
+	err := ms.badger.DB.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 10
 		it := txn.NewIterator(opts)
@@ -162,5 +165,5 @@ func (ms *Market) Commit() error {
 // Close can be called to clean up and close any storage
 // connections held by the underlying storage mechanism.
 func (ms *Market) Close() error {
-	return ms.badger.db.Close()
+	return ms.badger.DB.Close()
 }

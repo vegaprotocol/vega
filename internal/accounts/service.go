@@ -3,6 +3,7 @@ package accounts
 import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+	storcfg "code.vegaprotocol.io/vega/internal/storage/config"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -24,13 +25,13 @@ type AccountStore interface {
 
 // Svc - the accounts service itself
 type Svc struct {
-	Config
+	Config  storcfg.AccountsConfig
 	log     *logging.Logger
 	storage AccountStore
 }
 
 // New - create new accounts service
-func NewService(log *logging.Logger, conf Config, storage AccountStore) *Svc {
+func NewService(log *logging.Logger, conf storcfg.AccountsConfig, storage AccountStore) *Svc {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -41,7 +42,7 @@ func NewService(log *logging.Logger, conf Config, storage AccountStore) *Svc {
 	}
 }
 
-func (s *Svc) ReloadConf(cfg Config) {
+func (s *Svc) ReloadConf(cfg storcfg.AccountsConfig) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
