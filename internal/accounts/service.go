@@ -13,7 +13,7 @@ var (
 	ErrOwnerNotInMarket = errors.New("trader has no accounts for given market")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts AccountStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts Accounts
 type AccountStore interface {
 	GetMarketAccountsForOwner(id, market string) ([]*types.Account, error)
 	GetAccountsForOwner(owner string) ([]*types.Account, error)

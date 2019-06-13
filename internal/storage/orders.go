@@ -37,11 +37,11 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.OrderStoreDirPath)
+	err := InitStoreDirectory(c.OrdersDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for orders storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.OrderStoreDirPath, log))
+	db, err := badger.Open(getOptionsFromConfig(c.Orders, c.OrdersDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for orders storage")
 	}
