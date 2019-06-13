@@ -22,8 +22,9 @@ type badgerStore struct {
 	db *badger.DB
 }
 
-// BadgerOptions are params for creating a DB object.
-type BadgerOptions struct {
+// ConfigOptions are params for creating a DB object.
+// todo: Make this struct generic/base options for stores
+type ConfigOptions struct {
 	// Dir                  string // not customisable by end user
 	// ValueDir             string // not customisable by end user
 	SyncWrites              bool
@@ -54,15 +55,15 @@ func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Ite
 	return bs.ascendingIterator(txn)
 }
 
-// DefaultBadgerOptions supplies default badger options to be used for all stores.
-func DefaultBadgerOptions() BadgerOptions {
+// DefaultStoreOptions supplies default options to be used for all stores.
+func DefaultStoreOptions() ConfigOptions {
 	/*
 		Notes:
 		* MaxTableSize: set low to avoid badger grabbing-then-releasing gigs of memory (#147)
 		* ValueThreshold: set low to move most data out of the LSM tree (#147)
 	*/
 	fileio := cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
-	opts := BadgerOptions{
+	opts := ConfigOptions{
 		// Dir:                  TBD,       // string
 		// ValueDir:             TBD,       // string
 		SyncWrites:              true,      // bool
@@ -88,7 +89,7 @@ func DefaultBadgerOptions() BadgerOptions {
 	return opts
 }
 
-func badgerOptionsFromConfig(cfg BadgerOptions, dir string, log *logging.Logger) badger.Options {
+func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) badger.Options {
 	opts := badger.Options{
 		Dir:                     dir,
 		ValueDir:                dir,

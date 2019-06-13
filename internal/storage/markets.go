@@ -23,11 +23,11 @@ func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.MarketStoreDirPath)
+	err := InitStoreDirectory(c.MarketsDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for candles storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.MarketStoreDirPath, log))
+	db, err := badger.Open(getOptionsFromConfig(c.Markets, c.MarketsDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for candles storage")
 	}
