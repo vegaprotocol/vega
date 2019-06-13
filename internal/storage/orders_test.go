@@ -405,7 +405,7 @@ func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-	config.Timeout = encoding.Duration{Duration: time.Nanosecond}
+	config.Timeout = encoding.Duration{Duration: time.Second}
 	log := logging.NewTestLogger()
 	storage.FlushStores(log, config)
 	orderStore, err := storage.NewOrders(log, config, func() {})
