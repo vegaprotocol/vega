@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"github.com/dgraph-io/badger/options"
+
+	cfgencoding "code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -163,4 +166,15 @@ func (ms *Market) Commit() error {
 // connections held by the underlying storage mechanism.
 func (ms *Market) Close() error {
 	return ms.badger.db.Close()
+}
+
+// DefaultMarketStoreOptions supplies default options we use for market stores
+// currently we want to load market value log and LSM tree into RAM.
+// Note: markets total likely to be less than 1000 on a shard, short term.
+func DefaultMarketStoreOptions() ConfigOptions {
+	opts := DefaultStoreOptions()
+	loadToRam := cfgencoding.FileLoadingMode{FileLoadingMode: options.LoadToRAM}
+	opts.TableLoadingMode = loadToRam
+	opts.ValueLogLoadingMode = loadToRam
+	return opts
 }

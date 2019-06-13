@@ -61,7 +61,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
 		Accounts:              DefaultStoreOptions(),
 		Candles:               DefaultStoreOptions(),
-		Markets:               DefaultStoreOptions(),
+		Markets:               DefaultMarketStoreOptions(),
 		Orders:                DefaultStoreOptions(),
 		Trades:                DefaultStoreOptions(),
 		Level:                 encoding.LogLevel{Level: logging.InfoLevel},
