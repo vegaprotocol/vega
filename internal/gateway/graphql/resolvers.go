@@ -1277,3 +1277,7 @@ func (r *MyStatisticsResolver) TotalOrders(ctx context.Context, obj *proto.Stati
 func (r *MyStatisticsResolver) TotalTrades(ctx context.Context, obj *proto.Statistics) (int, error) {
 	return int(obj.TotalTrades), nil
 }
+
+func (r *MyStatisticsResolver) BlockDuration(ctx context.Context, obj *proto.Statistics) (int, error) {
+	return int(obj.BlockDuration), nil
+}

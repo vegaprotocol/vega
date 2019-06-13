@@ -171,6 +171,7 @@ message Statistics {
   string appVersionHash = 21;
   string appVersion = 22;
   string chainVersion = 23;
+  uint64 blockDuration = 24; // nanoseconds
 }
 
 enum ChainStatus {
