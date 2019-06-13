@@ -18,6 +18,7 @@ type Stats struct {
 	totalCreateOrder      uint64
 	totalOrders           uint64
 	totalTrades           uint64
+	blockDuration         uint64 // nanoseconds
 }
 
 func NewStats() *Stats {
@@ -35,6 +36,7 @@ func NewStats() *Stats {
 		totalCreateOrder:      0,
 		totalOrders:           0,
 		totalTrades:           0,
+		blockDuration:         0,
 	}
 }
 
@@ -94,6 +96,10 @@ func (s *Stats) TradesPerSecond() uint64 {
 	return atomic.LoadUint64(&s.tradesPerSecond)
 }
 
+func (s *Stats) BlockDuration() uint64 {
+	return atomic.LoadUint64(&s.blockDuration)
+}
+
 func (s *Stats) addTotalAmendOrder(val uint64) uint64 {
 	return atomic.AddUint64(&s.totalAmendOrder, val)
 }
@@ -120,4 +126,8 @@ func (s *Stats) setOrdersPerSecond(val uint64) {
 
 func (s *Stats) setTradesPerSecond(val uint64) {
 	atomic.StoreUint64(&s.tradesPerSecond, val)
+}
+
+func (s *Stats) setBlockDuration(val uint64) {
+	atomic.StoreUint64(&s.blockDuration, val)
 }
