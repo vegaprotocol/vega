@@ -344,6 +344,7 @@ func (h *Handlers) Statistics(ctx context.Context, request *api.StatisticsReques
 		TotalCreateOrder:      h.Stats.Blockchain.TotalCreateOrder(),
 		TotalOrders:           h.Stats.Blockchain.TotalOrders(),
 		TotalTrades:           h.Stats.Blockchain.TotalTrades(),
+		BlockDuration:         h.Stats.Blockchain.BlockDuration(),
 	}, nil
 }
 

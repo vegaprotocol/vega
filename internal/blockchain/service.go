@@ -238,14 +238,28 @@ func (s *abciService) setBatchStats() {
 	}
 
 	blockDuration := time.Duration(time.Now().UnixNano() - int64(s.currentTimestamp)).Seconds()
-	s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
-	s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
+	if blockDuration <= 0.0 {
+		// Timestamps are inaccurate just after startup (#233).
+		s.stats.setOrdersPerSecond(0)
+		s.stats.setTradesPerSecond(0)
+		s.stats.setBlockDuration(0)
+	} else {
+		s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
+		s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
+		blockDurationNano := blockDuration * float64(time.Second.Nanoseconds())
+		s.stats.setBlockDuration(uint64(blockDurationNano))
+	}
 
 	s.log.Debug("Blockchain service batch stats",
+		logging.Int64("previousTimestamp", s.previousTimestamp.UnixNano()),
+		logging.Int64("currentTimestamp", s.currentTimestamp.UnixNano()),
+		logging.Float64("duration", blockDuration),
+		logging.Int("currentOrdersInBatch", s.currentOrdersInBatch),
+		logging.Int("currentTradesInBatch", s.currentTradesInBatch),
 		logging.Uint64("total-batches", s.totalBatches),
 		logging.Int("avg-orders-batch", s.stats.averageOrdersPerBatch),
-		logging.Uint64("orders-per-secs", s.stats.OrdersPerSecond()),
-		logging.Uint64("trades-per-secs", s.stats.TradesPerSecond()),
+		logging.Uint64("orders-per-sec", s.stats.OrdersPerSecond()),
+		logging.Uint64("trades-per-sec", s.stats.TradesPerSecond()),
 	)
 
 	s.currentOrdersInBatch = 0
