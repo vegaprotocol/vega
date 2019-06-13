@@ -344,6 +344,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 		TotalCreateOrder:      h.Stats.Blockchain.TotalCreateOrder(),
 		TotalOrders:           h.Stats.Blockchain.TotalOrders(),
 		TotalTrades:           h.Stats.Blockchain.TotalTrades(),
+		BlockDuration:         h.Stats.Blockchain.BlockDuration(),
 	}, nil
 }
 

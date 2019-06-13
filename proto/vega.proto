@@ -170,6 +170,7 @@ message Statistics {
     uint64 totalCreateOrder = 20;
     uint64 totalOrders = 21;
     uint64 totalTrades = 22;
+    uint64 blockDuration = 24; // nanoseconds
 }
 
 enum ChainStatus {
