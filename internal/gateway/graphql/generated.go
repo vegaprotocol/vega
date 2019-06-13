@@ -216,6 +216,7 @@ type ComplexityRoot struct {
 		AverageOrdersPerBlock func(childComplexity int) int
 		AverageTxBytes        func(childComplexity int) int
 		BacklogLength         func(childComplexity int) int
+		BlockDuration         func(childComplexity int) int
 		BlockHeight           func(childComplexity int) int
 		ChainVersion          func(childComplexity int) int
 		CurrentTime           func(childComplexity int) int
@@ -371,6 +372,8 @@ type StatisticsResolver interface {
 	TotalCreateOrder(ctx context.Context, obj *proto.Statistics) (int, error)
 	TotalOrders(ctx context.Context, obj *proto.Statistics) (int, error)
 	TotalTrades(ctx context.Context, obj *proto.Statistics) (int, error)
+
+	BlockDuration(ctx context.Context, obj *proto.Statistics) (int, error)
 }
 type SubscriptionResolver interface {
 	Candles(ctx context.Context, marketID string, interval Interval) (<-chan *proto.Candle, error)
@@ -1199,6 +1202,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Statistics.BacklogLength(childComplexity), true
 
+	case "Statistics.BlockDuration":
+		if e.complexity.Statistics.BlockDuration == nil {
+			break
+		}
+
+		return e.complexity.Statistics.BlockDuration(childComplexity), true
+
 	case "Statistics.BlockHeight":
 		if e.complexity.Statistics.BlockHeight == nil {
 			break
@@ -1812,6 +1822,9 @@ type Statistics {
 
   # Version of the chain (semver)
   chainVersion: String!
+
+  # Duration of the last block, in nanoseconds
+  blockDuration: Int!
 }
 
 # A mode where Vega try to execute order as soon as they are received
@@ -6199,6 +6212,33 @@ func (ec *executionContext) _Statistics_chainVersion(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Statistics_blockDuration(ctx context.Context, field graphql.CollectedField, obj *proto.Statistics) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Statistics",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Statistics().BlockDuration(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Subscription_candles(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Field: field,
@@ -9223,6 +9263,20 @@ func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "blockDuration":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Statistics_blockDuration(ctx, field, obj)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
