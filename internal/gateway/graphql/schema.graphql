@@ -235,6 +235,9 @@ type Statistics {
 
   # Version of the chain (semver)
   chainVersion: String!
+
+  # Duration of the last block, in nanoseconds
+  blockDuration: Int!
 }
 
 # A mode where Vega try to execute order as soon as they are received

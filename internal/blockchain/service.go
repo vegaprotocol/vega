@@ -245,9 +245,12 @@ func (s *abciService) setBatchStats() {
 		// Timestamps are inaccurate just after startup (#233).
 		s.stats.setOrdersPerSecond(0)
 		s.stats.setTradesPerSecond(0)
+		s.stats.setBlockDuration(0)
 	} else {
 		s.stats.setOrdersPerSecond(uint64(float64(s.currentOrdersInBatch) / blockDuration))
 		s.stats.setTradesPerSecond(uint64(float64(s.currentTradesInBatch) / blockDuration))
+		blockDurationNano := blockDuration * float64(time.Second.Nanoseconds())
+		s.stats.setBlockDuration(uint64(blockDurationNano))
 	}
 
 	s.log.Debug("Blockchain service batch stats",

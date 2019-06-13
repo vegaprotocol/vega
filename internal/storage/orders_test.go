@@ -32,7 +32,7 @@ func TestStorage_NewOrders(t *testing.T) {
 	assert.NotNil(t, orderStore)
 	assert.Nil(t, err)
 
-	config.OrderStoreDirPath = ""
+	config.OrdersDirPath = ""
 
 	orderStore, err = storage.NewOrders(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, orderStore)
