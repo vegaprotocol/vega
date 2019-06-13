@@ -73,10 +73,10 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	fullCandleStorePath := filepath.Join(ic.rootPath, storage.CandleStoreDataPath)
-	fullOrderStorePath := filepath.Join(ic.rootPath, storage.OrderStoreDataPath)
-	fullTradeStorePath := filepath.Join(ic.rootPath, storage.TradeStoreDataPath)
-	fullMarketStorePath := filepath.Join(ic.rootPath, storage.MarketStoreDataPath)
+	fullCandleStorePath := filepath.Join(ic.rootPath, storage.CandlesDataPath)
+	fullOrderStorePath := filepath.Join(ic.rootPath, storage.OrdersDataPath)
+	fullTradeStorePath := filepath.Join(ic.rootPath, storage.TradesDataPath)
+	fullMarketStorePath := filepath.Join(ic.rootPath, storage.MarketsDataPath)
 
 	// create sub-folders
 	if err := fsutil.EnsureDir(fullCandleStorePath); err != nil {
