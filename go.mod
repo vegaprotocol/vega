@@ -1,7 +1,6 @@
 module code.vegaprotocol.io/vega
 
 require (
-	cloud.google.com/go v0.40.0 // indirect
 	code.vegaprotocol.io/quant v0.1.0
 	github.com/99designs/gqlgen v0.8.3
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
@@ -19,18 +18,15 @@ require (
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogo/protobuf v1.2.1
-	github.com/golang/mock v1.3.1
+	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.1
-	github.com/google/btree v1.0.0 // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
-	github.com/google/pprof v0.0.0-20190515194954-54271f7e092f // indirect
 	github.com/google/protobuf v3.7.0+incompatible // indirect
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmhodges/levigo v0.0.0-20161115193449-c42d9e0ca023 // indirect
-	github.com/kr/pty v1.1.5 // indirect
 	github.com/mwitkow/go-proto-validators v0.0.0-20190212092829-1f388280e944
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.2
@@ -47,23 +43,11 @@ require (
 	github.com/vegaprotocol/modvendor v0.0.1 // indirect
 	github.com/vektah/gqlparser v1.1.2
 	github.com/zannen/toml v0.3.2
-	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
-	golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522 // indirect
-	golang.org/x/image v0.0.0-20190523035834-f03afa92d3ff // indirect
-	golang.org/x/mobile v0.0.0-20190607214518-6fa95d984e88 // indirect
-	golang.org/x/mod v0.1.0 // indirect
-	golang.org/x/net v0.0.0-20190611141213-3f473d35a33a // indirect
-	golang.org/x/sys v0.0.0-20190610200419-93c9922d18ae // indirect
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
-	golang.org/x/tools v0.0.0-20190612232758-d4e310b4a8a5 // indirect
-	google.golang.org/appengine v1.6.1 // indirect
-	google.golang.org/genproto v0.0.0-20190611190212-a7e196e89fd3 // indirect
-	google.golang.org/grpc v1.21.1
-	honnef.co/go/tools v0.0.0-20190607181801-497c8f037f5a // indirect
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+	google.golang.org/grpc v1.19.0
 )
 
 replace (
