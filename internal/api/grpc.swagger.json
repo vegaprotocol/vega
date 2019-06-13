@@ -784,6 +784,10 @@
         "totalTrades": {
           "type": "string",
           "format": "uint64"
+        },
+        "blockDuration": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
