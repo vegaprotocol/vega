@@ -67,8 +67,6 @@ coveragehtml: .testCoverage.html ## Generate global code coverage report in HTML
 
 deps: ## Get the dependencies
 	@go mod download
-	@which modvendor 1>/dev/null || go get github.com/vegaprotocol/modvendor@v0.0.1
-	@which protoc-gen-govalidators 1>/dev/null || go get github.com/mwitkow/go-proto-validators/protoc-gen-govalidators@v0.0.0-20190212092829-1f388280e944
 	@go mod vendor
 	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
 	@modvendor -copy="**/*.proto"
