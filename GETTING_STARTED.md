@@ -1,4 +1,4 @@
-This document is a guide for new Go developers which starts with a vanilla Linux
+This document is a guide for new Go developers. It starts with a vanilla Linux
 or MacOSX installation, and runs through all the steps needed to get a working
 single-node Vega system.
 
@@ -43,11 +43,12 @@ At present (June 2019), Go Modules are in the process of being introduced to the
 Go ecosystem, so things are a little clunky. There are several ways of getting
 things working. The main options are:
 
-* Set `GO111MODULE` to `auto`. Install source that **uses** Go Modules
+* Either: Set `GO111MODULE` to `auto`. Install source that **uses** Go Modules
   **outside** `$GOPATH` and source that **does not use** Go Modules **inside**
   `$GOPATH`.
-* Set `GO111MODULE` to `on`. Install all source **inside** `$GOPATH`. Remember
-  that source that does not use Go Modules will have to be treated differently.
+* Or: Set `GO111MODULE` to `on`. Install all source **inside** `$GOPATH`.
+  Remember that source that does not use Go Modules will have to be treated
+  differently.
 
 This document works with the second option (`GO111MODULE=on`).
 
@@ -100,16 +101,45 @@ vega --version
 
 ## Get tendermint
 
-TBD
+**Required version: 0.31.5**
+
+Download tendermint from https://github.com/tendermint/tendermint/releases/.
+Install the binary somewhere on `$PATH`.
 
 ## Running vega
 
-TBD
+* To create a new config file, use:
+
+  ```bash
+  vega init -f
+  ```
+* To remove vega store content then run a vega node, use:
+
+  ```bash
+  rm -rf "$HOME/.vega/"*store
+  vega node
+  ```
 
 ## Running tendermint
 
-TBD
+* To create a new config file, use:
+  ```bash
+  tendermint init
+  ```
+* To remove chain data (go back to genesis) then run a tendermint node, use:
+
+  ```bash
+  tendermint unsafe_reset_all
+  tendermint node
+  ```
 
 ## Running go-trade-bot
 
-TBD
+Clone go-trade-bot from https://gitlab.com/vega-protocol/go-trade-bot/ into
+`$GOPATH/src`.
+
+Build: `make install`
+
+Run: `go-trade-bot -config scripts/config/bot-localhost-config.yml`
+
+Start traders: `curl --silent -XPUT "http://localhost:8081/v2/traders?action=start"`
