@@ -61,7 +61,7 @@ point `$GOPATH` at this location:
 ```bash
 # Add to $HOME/.bashrc
 export GOPATH="$HOME/go"
-export PATH="$PATH:$HOME/go/bin"
+export PATH="$PATH:$GOPATH/bin"
 export GO111MODULE=on # or auto
 ```
 
