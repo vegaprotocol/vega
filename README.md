@@ -17,6 +17,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 ## Links
 
+- For **new starters**, see [GETTING_STARTED.md](GETTING_STARTED.md).
 - For **updates**, see [CHANGELOG.md](CHANGELOG.md) for major updates, and
   [releases](https://gitlab.com/vega-protocol/trading-core/wikis/Release-notes) for a detailed version history.
 - For **architecture**, please read the design [documentation](ARCHITECTURE.md) to learn about the design for the system and its architecture.
