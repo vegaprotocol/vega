@@ -48,6 +48,7 @@ require (
 	go.uber.org/zap v1.9.1
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 	google.golang.org/grpc v1.19.0
+	gopkg.in/go-playground/assert.v1 v1.2.1
 )
 
 replace (

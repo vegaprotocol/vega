@@ -431,3 +431,36 @@ func (a *Account) getAccountByID(txn *badger.Txn, id string) (*types.Account, er
 	}
 	return &acc, nil
 }
+
+func (a *Account) SaveBatch(accs []types.Account) error {
+	batch := map[string][]byte{}
+
+	for _, acc := range accs {
+		accKey := a.badger.accountKey(
+			acc.Owner, acc.Asset, acc.MarketID, acc.Type,
+		)
+		acc.Id = string(accKey)
+		buf, err := proto.Marshal(&acc)
+		if err != nil {
+			a.log.Error(
+				"Unable to marshal proto account",
+				logging.String("account-id", acc.Id),
+				logging.Error(err))
+		}
+		batch[acc.Id] = buf
+	}
+
+	cnt, err := a.badger.writeBatch(batch)
+	if err != nil {
+		a.log.Error(
+			"Unable to write accounts batch",
+			logging.Error(err),
+			logging.Int("saved-count", cnt),
+			logging.Int("expected-count", len(batch)))
+		return err
+	}
+	a.log.Debug(
+		"New batch of accounts saved",
+		logging.Int("count", cnt))
+	return nil
+}
