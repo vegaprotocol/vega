@@ -39,10 +39,10 @@ func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	if err := InitStoreDirectory(c.AccountStoreDirPath); err != nil {
+	if err := InitStoreDirectory(c.AccountsDirPath); err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for account storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.AccountStoreDirPath, log))
+	db, err := badger.Open(getOptionsFromConfig(c.Accounts, c.AccountsDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for account storage")
 	}

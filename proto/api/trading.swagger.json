@@ -1501,6 +1501,10 @@
         },
         "chainVersion": {
           "type": "string"
+        },
+        "blockDuration": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
