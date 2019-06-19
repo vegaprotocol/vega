@@ -48,7 +48,6 @@ go test ./internal/somedir/
 
 To force a re-run of previously successful tests, add `-count 1`.
 
-
 ## Reasons for moving from mockery to mockgen
 
 TBD (#230)
