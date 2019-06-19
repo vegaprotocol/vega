@@ -6,7 +6,7 @@ PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PRO
 PROTOBUF_VER="1.3.1" # do not add "v" prefix
 
 check_gotools() {
-	# tools = "binary:golocation:version"
+	# tools = "binary:golocation@version"
 	tools="github.com/golang/protobuf@v$PROTOBUF_VER
 github.com/golang/protobuf/protoc-gen-go@v$PROTOBUF_VER
 github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.8.5
