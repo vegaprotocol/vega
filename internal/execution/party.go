@@ -12,7 +12,7 @@ const (
 
 type Collateral interface {
 	CreateTraderAccount(partyID, marketID, asset string) error
-	Credit(partyID, asset string, amount int64)
+	Credit(partyID, asset string, amount int64) int64
 }
 
 type accountKey struct {
@@ -42,7 +42,11 @@ func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 		return err
 	}
 	// then credit the general account
-	p.collateral.Credit(notif.TraderID, defaultAsset, topUpAmout)
+	newBalance := p.collateral.Credit(notif.TraderID, defaultAsset, topUpAmout)
+	p.log.Info("trader account topup",
+		logging.String("traderID", notif.TraderID),
+		logging.Int64("topup-amount", topUpAmout),
+		logging.Int64("new-balance", newBalance))
 
 	// now the markets specific accounts
 	for _, mkt := range p.markets {

@@ -164,6 +164,7 @@ func (g *grpcServer) Start() {
 		log:               g.log,
 		authEnabled:       g.Config.AuthEnabled,
 		tradeOrderService: g.orderService,
+		accountService:    g.accountsService,
 		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc
