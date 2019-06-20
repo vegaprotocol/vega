@@ -56,7 +56,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-func (s *Svc) GetSubscribersCount() int32 {
+func (s *Svc) GetCandleSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }
 

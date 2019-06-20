@@ -244,7 +244,7 @@ func (s *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (ord
 	return o, err
 }
 
-func (s *Svc) GetSubscribersCount() int32 {
+func (s *Svc) GetOrderSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }
 

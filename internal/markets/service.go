@@ -84,7 +84,7 @@ func (s *Svc) GetDepth(ctx context.Context, marketID string) (marketDepth *types
 	return s.orderStore.GetMarketDepth(ctx, m.Id)
 }
 
-func (s *Svc) GetSubscribersCount() int32 {
+func (s *Svc) GetMarketDepthSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscribersCnt)
 }
 

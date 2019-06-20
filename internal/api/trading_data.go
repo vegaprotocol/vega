@@ -48,7 +48,7 @@ type OrderService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
-	GetSubscribersCount() int32
+	GetOrderSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeService
@@ -67,7 +67,7 @@ type TradeService interface {
 type CandleService interface {
 	GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) (candles []*types.Candle, err error)
 	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
-	GetSubscribersCount() int32
+	GetCandleSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api MarketService
@@ -76,7 +76,7 @@ type MarketService interface {
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
-	GetSubscribersCount() int32
+	GetMarketDepthSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api PartyService
@@ -370,11 +370,11 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 		TotalOrders:              h.Stats.Blockchain.TotalOrders(),
 		TotalTrades:              h.Stats.Blockchain.TotalTrades(),
 		BlockDuration:            h.Stats.Blockchain.BlockDuration(),
-		OrderSubscriptions:       h.OrderService.GetSubscribersCount(),
+		OrderSubscriptions:       h.OrderService.GetOrderSubscribersCount(),
 		TradeSubscriptions:       h.TradeService.GetTradeSubscribersCount(),
 		PositionsSubscriptions:   h.TradeService.GetPositionsSubscribersCount(),
-		MarketDepthSubscriptions: h.MarketService.GetSubscribersCount(),
-		CandleSubscriptions:      h.CandleService.GetSubscribersCount(),
+		MarketDepthSubscriptions: h.MarketService.GetMarketDepthSubscribersCount(),
+		CandleSubscriptions:      h.CandleService.GetCandleSubscribersCount(),
 	}, nil
 }
 
