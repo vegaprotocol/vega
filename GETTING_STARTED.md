@@ -80,6 +80,15 @@ https://gitlab.com/profile/keys
 
 ## Get trading-core
 
+The `trading-core` repo uses Vega's `quant` repo. Ensure Go knows to use `ssh`
+instead of `https` when accessing repositories stored at Gitlab:
+
+```bash
+git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
+```
+
+Next, clone `trading-core`:
+
 ```bash
 cd $GOPATH/src
 git clone git@gitlab.com:vega-protocol/trading-core.git vega
