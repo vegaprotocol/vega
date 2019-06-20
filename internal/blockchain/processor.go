@@ -15,6 +15,7 @@ type ProcessorService interface {
 	SubmitOrder(order *types.Order) error
 	CancelOrder(order *types.Order) error
 	AmendOrder(order *types.OrderAmendment) error
+	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
 }
 
 type Processor struct {
@@ -68,6 +69,15 @@ func (p *Processor) getOrderAmendment(payload []byte) (*types.OrderAmendment, er
 	return amendment, nil
 }
 
+func (p *Processor) getNotifyTraderAccount(payload []byte) (*types.NotifyTraderAccount, error) {
+	notif := &types.NotifyTraderAccount{}
+	err := proto.Unmarshal(payload, notif)
+	if err != nil {
+		return nil, errors.Wrap(err, "error decoding order to proto")
+	}
+	return notif, nil
+}
+
 // Validate performs all validation on an incoming transaction payload.
 func (p *Processor) Validate(payload []byte) error {
 	// Pre-validate (safety check)
@@ -84,7 +94,8 @@ func (p *Processor) Validate(payload []byte) error {
 	case
 		SubmitOrderCommand,
 		CancelOrderCommand,
-		AmendOrderCommand:
+		AmendOrderCommand,
+		NotifyTraderAccountCommand:
 		// Add future valid VEGA commands here
 		return nil
 	}
@@ -140,6 +151,15 @@ func (p *Processor) Process(payload []byte) error {
 			return err
 		}
 		err = p.blockchainService.AmendOrder(order)
+		if err != nil {
+			return err
+		}
+	case NotifyTraderAccountCommand:
+		notif, err := p.getNotifyTraderAccount(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.NotifyTraderAccount(notif)
 		if err != nil {
 			return err
 		}

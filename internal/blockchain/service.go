@@ -20,6 +20,7 @@ type Service interface {
 	SubmitOrder(order *types.Order) error
 	CancelOrder(order *types.Order) error
 	AmendOrder(order *types.OrderAmendment) error
+	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
 	ValidateOrder(order *types.Order) error
 	ReloadConf(conf Config)
 }
@@ -35,6 +36,7 @@ type ServiceExecutionEngine interface {
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
+	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Generate() error
 }
 
@@ -131,6 +133,10 @@ func (s *abciService) Commit() error {
 
 	s.log.Debug("ABCI service COMMIT completed")
 	return nil
+}
+
+func (s *abciService) NotifyTraderAccount(notif *types.NotifyTraderAccount) error {
+	return s.execution.NotifyTraderAccount(notif)
 }
 
 func (s *abciService) SubmitOrder(order *types.Order) error {
