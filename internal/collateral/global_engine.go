@@ -34,13 +34,15 @@ func (c *GlobalCollateral) CreateTraderAccount(partyID, marketID, asset string) 
 	return nil
 }
 
-func (c *GlobalCollateral) Credit(partyID, asset string, amount int64) {
+func (c *GlobalCollateral) Credit(partyID, asset string, amount int64) int64 {
 	key := accountKey{"", partyID, asset}
 	balance, ok := c.accs[key]
 	if !ok {
 		c.CreateTraderAccount(partyID, "", asset)
 		balance = 0
 	}
-	c.accs[key] = balance + amount
+	newBalance := balance + amount
+	c.accs[key] = newBalance
 	c.buf.Add(partyID, "", asset, 0)
+	return newBalance
 }
