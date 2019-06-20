@@ -10,6 +10,7 @@ const (
 	defaultAsset = "ETH"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution Collateral
 type Collateral interface {
 	CreateTraderAccount(partyID, marketID, asset string) error
 	Credit(partyID, asset string, amount int64) int64

@@ -2,6 +2,7 @@ package collateral
 
 import "code.vegaprotocol.io/vega/internal/logging"
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buffer_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral AccountBuffer
 type AccountBuffer interface {
 	Add(owner, marketID, asset string, balance int64)
 }
