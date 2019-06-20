@@ -7,7 +7,7 @@ import (
 var (
 	ErrNilTradableInstrument = errors.New("nil tradable instrument")
 	ErrNilInstrument         = errors.New("nil instrument")
-	ErrNilProduct            = errors.New("nil produc")
+	ErrNilProduct            = errors.New("nil product")
 	ErrUnknownAsset          = errors.New("unknown asset")
 )
 
