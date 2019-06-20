@@ -703,6 +703,15 @@
         }
       }
     },
+    "apiNotifyTraderAccountResponse": {
+      "type": "object",
+      "properties": {
+        "submitted": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
     "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {
@@ -1207,6 +1216,14 @@
         "sigma": {
           "type": "number",
           "format": "double"
+        }
+      }
+    },
+    "vegaNotifyTraderAccount": {
+      "type": "object",
+      "properties": {
+        "traderID": {
+          "type": "string"
         }
       }
     },

@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"code.vegaprotocol.io/vega/internal/buffer"
+	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/storage"
@@ -65,6 +67,7 @@ type Engine struct {
 	Config
 
 	markets      map[string]*Market
+	party        *Party
 	orderStore   OrderStore
 	tradeStore   TradeStore
 	candleStore  CandleStore
@@ -72,9 +75,9 @@ type Engine struct {
 	partyStore   PartyStore
 	time         TimeService
 	accountStore *storage.Account
-
 	// metrics
-	blockTime *prometheus.HistogramVec // maybe mask this type a bit -> interface...
+	blockTime  *prometheus.HistogramVec // maybe mask this type a bit -> interface...
+	accountBuf *buffer.Account
 }
 
 // NewEngine takes stores and engines and returns
@@ -105,8 +108,10 @@ func NewEngine(
 		partyStore:   partyStore,
 		time:         time,
 		accountStore: accountStore,
+		accountBuf:   buffer.NewAccount(accountStore),
 	}
 
+	pmkts := []types.Market{}
 	// loads markets from configuration
 	for _, v := range executionConfig.Markets.Configs {
 		path := filepath.Join(executionConfig.Markets.Path, v)
@@ -134,6 +139,7 @@ func NewEngine(
 			e.log.Panic("Unable to submit market",
 				logging.Error(err))
 		}
+		pmkts = append(pmkts, mkt)
 	}
 	if err := e.setMetrics(); err != nil {
 		e.log.Panic(
@@ -141,6 +147,9 @@ func NewEngine(
 			logging.Error(err),
 		)
 	}
+
+	col := collateral.NewGlobalCollateral(log, e.accountBuf)
+	e.party = NewParty(log, col, pmkts)
 
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
@@ -184,6 +193,10 @@ func (e *Engine) ReloadConf(cfg Config) {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
 			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
 	}
+}
+
+func (e *Engine) NotifyTraderAccount(notif *types.NotifyTraderAccount) error {
+	return e.party.NotifyTraderAccount(notif)
 }
 
 func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
@@ -330,6 +343,10 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 // Generate creates any data (including storing state changes) in the underlying stores.
 // TODO(): maybe call this in onChainTimeUpdate, when the chain time is updated
 func (e *Engine) Generate() error {
+	err := e.accountBuf.Flush()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to commit accounts"))
+	}
 
 	for _, mkt := range e.markets {
 		err := e.orderStore.Commit()

@@ -1,6 +1,8 @@
 package accounts
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -22,15 +24,21 @@ type AccountStore interface {
 	GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/internal/account  Blockchain
+type Blockchain interface {
+	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
+}
+
 // Svc - the accounts service itself
 type Svc struct {
 	Config
 	log     *logging.Logger
 	storage AccountStore
+	chain   Blockchain
 }
 
 // New - create new accounts service
-func NewService(log *logging.Logger, conf Config, storage AccountStore) *Svc {
+func NewService(log *logging.Logger, conf Config, storage AccountStore, chain Blockchain) *Svc {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -38,6 +46,7 @@ func NewService(log *logging.Logger, conf Config, storage AccountStore) *Svc {
 		Config:  conf,
 		log:     log,
 		storage: storage,
+		chain:   chain,
 	}
 }
 
@@ -52,6 +61,10 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
+}
+
+func (s *Svc) NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (bool, error) {
+	return s.chain.NotifyTraderAccount(ctx, notif)
 }
 
 func (s *Svc) GetTraderAccounts(id string) ([]*types.Account, error) {

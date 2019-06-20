@@ -19,6 +19,17 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *NotifyTraderAccountRequest) Validate() error {
+	if this.Notif != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Notif); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Notif", err)
+		}
+	}
+	return nil
+}
+func (this *NotifyTraderAccountResponse) Validate() error {
+	return nil
+}
 func (this *SignInRequest) Validate() error {
 	return nil
 }
