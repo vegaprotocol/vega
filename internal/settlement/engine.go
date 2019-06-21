@@ -186,14 +186,16 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*mtmTrans
 }
 
 func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
+	// lock before we can start
+	e.mu.Lock()
 	go func() {
-		e.mu.Lock()
+		// e.mu.Lock()
 		// wipe closed map
 		e.closed = map[string][]*pos{}
-		for pos := range ch {
-			trader := pos.Party()
-			size := pos.Size()
-			price := pos.Price()
+		for ps := range ch {
+			trader := ps.Party()
+			size := ps.Size()
+			price := ps.Price()
 			updatePrice := price
 			// check current position to see if trade closed out some position
 			current := e.getCurrentPosition(trader)
@@ -213,9 +215,9 @@ func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
 					trades = []*pos{}
 				}
 				e.closed[trader] = append(trades, &pos{
-					trader: trader,
-					size:   closed,
-					price:  price,
+					party: trader,
+					size:  closed,
+					price: current.price, // we closed out at the old price vs mark price
 				})
 			}
 			// we've taken the closed out stuff into account, so we can freely update the size here
@@ -242,6 +244,7 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 		price := pos.Price()
 		trader := pos.Party()
 		current := e.getCurrentPosition(trader)
+		// markPrice was already set by positions engine
 		// e.g. position avg -> 90, mark price 100:
 		// short -> (100 - 90) * -10 => -100 ==> MTM_LOSS
 		// long -> (100-90) * 10 => 100 ==> MTM_WIN
@@ -332,7 +335,7 @@ func (e *Engine) getCurrentPosition(trader string) *pos {
 	p, ok := e.pos[trader]
 	if !ok {
 		p = &pos{
-			trader: trader,
+			party: trader,
 		}
 		e.pos[trader] = p
 	}
