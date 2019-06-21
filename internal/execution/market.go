@@ -278,7 +278,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.Trades != nil {
-		// orders can contain several trades, each trade involces 2 traders
+		// orders can contain several trades, each trade involves 2 traders
 		// so there's a max number of N*2 events on the channel where N == number of trades
 		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
 		// now let's set the settlement engine up to listen for trader position changes (closed positions to be settled differently)

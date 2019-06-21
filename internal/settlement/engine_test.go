@@ -37,6 +37,7 @@ func TestMarkToMarket(t *testing.T) {
 	t.Run("Settle positions are pushed onto the slice channel in order", testMarkToMarketOrdered)
 	// -- MTM -> special case for traders getting MTM before changing positions, and trade introducing new trader
 	// TODO Add a test for long <-> short trades, for now we've covered the basics
+	t.Run("Settle MTM on a market with long trader going short and short trader going long", testMTMSwitchPosition)
 	// t.Run("Settle MTM with new and existing trader position combo", testMTMPrefixTradePositions)
 }
 
@@ -223,6 +224,81 @@ func testMarkToMarketOrdered(t *testing.T) {
 	assert.Equal(t, 3, len(shortTransfer)) // all 3 traders should get updated
 }
 
+func testMTMSwitchPosition(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	start := []posValue{
+		{
+			trader: "trader1",
+			size:   5,
+			price:  10000,
+		},
+		{
+			trader: "trader2",
+			size:   -5,
+			price:  10000,
+		},
+		{
+			trader: "neutral",
+			size:   3,
+			price:  10000,
+		},
+		{
+			trader: "closed",
+			size:   0,
+			price:  10000,
+		},
+	}
+	update := []posValue{
+		{
+			trader: "trader1",
+			size:   -1,
+			price:  11000,
+		},
+		{
+			trader: "trader2",
+			size:   1,
+			price:  11000,
+		},
+	}
+	final := []posValue{
+		{
+			trader: "trader1",
+			size:   -1,
+			price:  11000,
+		},
+		{
+			trader: "trader2",
+			size:   1,
+			price:  11000,
+		},
+		{
+			trader: "neutral",
+			size:   3,
+			price:  11000,
+		},
+		{
+			trader: "closed",
+			size:   0,
+			price:  11000,
+		},
+	}
+	init, _ := engine.getMockMarketPositions(start)
+	_, change := engine.getMockMarketPositions(update)
+	_, positions := engine.getMockMarketPositions(final)
+	// set the initial state
+	engine.Update(init)
+	ch := make(chan events.MarketPosition, len(update))
+	engine.ListenClosed(ch)
+	for _, c := range change {
+		ch <- c
+	}
+	close(ch)
+	result := engine.SettleOrder(final[0].price, positions)
+	assert.NotEmpty(t, result)
+	assert.Equal(t, 3, len(result)) // one for each trader with an open position
+}
+
 // {{{
 func (te *testEngine) getExpiryPositions(positions ...posValue) []settlement.MarketPosition {
 	te.positions = make([]*mocks.MockMarketPosition, 0, len(positions))
@@ -237,6 +313,19 @@ func (te *testEngine) getExpiryPositions(positions ...posValue) []settlement.Mar
 		mpSlice = append(mpSlice, pos)
 	}
 	return mpSlice
+}
+
+func (te *testEngine) getMockMarketPositions(data []posValue) ([]settlement.MarketPosition, []events.MarketPosition) {
+	raw, evts := make([]settlement.MarketPosition, 0, len(data)), make([]events.MarketPosition, 0, len(data))
+	for _, pos := range data {
+		mock := mocks.NewMockMarketPosition(te.ctrl)
+		mock.EXPECT().Party().MinTimes(1).Return(pos.trader)
+		mock.EXPECT().Size().MinTimes(1).Return(pos.size)
+		mock.EXPECT().Price().MinTimes(1).Return(pos.price)
+		raw = append(raw, mock)
+		evts = append(evts, mock)
+	}
+	return raw, evts
 }
 
 // Finish - call finish on controller, remove test state (positions)

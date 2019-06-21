@@ -229,7 +229,7 @@ func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
 	}()
 }
 
-// SettleOrder - settlements based on order-level, can take severl update positions, and marks all to market
+// SettleOrder - settlements based on order-level, can take several update positions, and marks all to market
 // if party size and price were both updated (ie party was a trader), we're combining both MTM's (old + new position)
 // and creating a single transfer from that
 func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition) []events.Transfer {
@@ -251,6 +251,10 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 		// short -> (100 - 110) * -10 => 100 ==> MTM_WIN
 		// long -> (100 - 110) * 10 => -100 ==> MTM_LOSS
 		closedOut, _ := closed[trader]
+		// updated price is mark price, mark against that using current known price
+		if price == markPrice {
+			price = current.price
+		}
 		mtmShare := calcMTM(int64(markPrice), size, int64(price), closedOut)
 		// update position
 		current.size = size
