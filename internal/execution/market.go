@@ -278,10 +278,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.Trades != nil {
-		// a trade contains 2 traders, so at most, each trade can introduce 2 new positions to the market
-		// but usually this won't happen, and even if it does, a buffer of 1 should be enough
-		// do this once, we'll use this as a reference for the channel buffer size
-		positionCount := len(m.position.Positions()) + 2*len(confirmation.Trades)
+		// orders can contain several trades, each trade involves 2 traders
+		// so there's a max number of N*2 events on the channel where N == number of trades
+		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
+		// now let's set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
+		m.settlement.ListenClosed(tradersCh)
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -310,14 +311,20 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			// Calculate and set current mark price
 			m.setMarkPrice(trade)
 
-			// Update positions and settlement
-			settle := m.positionAndSettle(trade, positionCount)
-			m.log.Debug("Total length of settle MTM after submit order", logging.Int("settle", len(settle)))
-
-			// Move money after settlement, check risk engine and get margin balances to update (if any)
-			margins := m.collateralAndRisk(settle)
-			m.log.Debug("Total margin accounts to be updated after submit order", logging.Int("risk-update-len", len(margins)))
+			// Update positions (this communicates with settlement via channel)
+			m.position.Update(trade, tradersCh)
 		}
+		close(tradersCh)
+		// now let's get the transfers for MTM settlement
+		positions := m.position.Positions()
+		events := make([]events.MarketPosition, 0, len(positions))
+		for _, p := range positions {
+			events = append(events, p)
+		}
+		settle := m.settlement.SettleOrder(m.markPrice, events)
+		// this belongs outside of trade loop, only call once per order
+		margins := m.collateralAndRisk(settle)
+		m.log.Debug("Total margin accounts to be updated after submit order", logging.Int("risk-update-len", len(margins)))
 	}
 
 	return confirmation, nil
@@ -328,20 +335,6 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 	// in the future this will use varying logic based on market config
 	// the responsibility for calculation could be elsewhere for testability
 	m.markPrice = trade.Price
-}
-
-func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.Transfer {
-	// create channel for positions to populate and settlement to consume
-	positionCh := make(chan events.MarketPosition, posCount)
-	// starting settlement first, the reading routine does more work, so it'll be slower
-	// although, it can be moved down if you really want
-	settleCh := m.settlement.SettleMTM(*trade, m.markPrice, positionCh) // no pointer, trade is RO
-	// Update party positions for trade affected, pushes new positions on channel
-	m.position.Update(trade, positionCh)
-	// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
-	close(positionCh)
-	// this channel is unbuffered, and therefore can be used in bare return
-	return <-settleCh
 }
 
 // this function handles moving money after settle MTM + risk margin updates

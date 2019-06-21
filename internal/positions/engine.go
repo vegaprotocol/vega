@@ -111,7 +111,7 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 		e.positions[trade.Seller] = seller
 	}
 	// mark to market for all open positions
-	e.updatePositions(trade, ch)
+	e.updatePositions(trade)
 	// update long/short position for buyer and seller
 	buyer.size += int64(trade.Size)
 	seller.size -= int64(trade.Size)
@@ -131,20 +131,9 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 }
 
 // iterate over all open positions, for mark to market based on new market price
-func (e *Engine) updatePositions(trade *types.Trade, ch chan<- events.MarketPosition) {
+func (e *Engine) updatePositions(trade *types.Trade) {
 	for _, pos := range e.positions {
-		// no volume (closed out), if price == trade price, that's one thing, only if it equals market price should we ignore it
-		// we don't know where to get that from just yet
-		// there's no MTM settlement required, carry on...
-		if pos.size == 0 {
-			// this trader was closed out already, no MTM applies
-			continue
-		}
-		cpy := *pos
-		// let settlement handle the old position and mark it to market
-		ch <- &cpy
-		// we've passed on the old position to the settlement channel already
-		// now simply update the price on the position
+		// just set the price for all positions here (this shouldn't actually be required, but we'll cross that bridge when we get there
 		pos.price = trade.Price
 	}
 }
