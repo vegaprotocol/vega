@@ -238,6 +238,8 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 	// see if we've got closed out positions
 	e.mu.Lock()
 	closed := e.closed
+	// reset map here in case we're going to call this with just an updated mark price
+	e.closed = map[string][]*pos{}
 	e.mu.Unlock()
 	for _, pos := range positions {
 		size := pos.Size()
