@@ -10,8 +10,10 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/storage"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -70,6 +72,9 @@ type Engine struct {
 	partyStore   PartyStore
 	time         TimeService
 	accountStore *storage.Account
+
+	// metrics
+	blockTime *prometheus.HistogramVec // maybe mask this type a bit -> interface...
 }
 
 // NewEngine takes stores and engines and returns
@@ -130,10 +135,37 @@ func NewEngine(
 				logging.Error(err))
 		}
 	}
+	if err := e.setMetrics(); err != nil {
+		e.log.Panic(
+			"Unable to set up histogram",
+			logging.Error(err),
+		)
+	}
 
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
 	return e
+}
+
+func (e *Engine) setMetrics() error {
+	// instrument with time histogram for blocks
+	h, err := metrics.AddInstrument(
+		metrics.Histogram,
+		namedLogger,                       // name is required
+		metrics.Namespace("vega"),         // namespace, name, subsystem together form label, so this is vega_execution
+		metrics.Vectors("market", "unit"), // unit is block, transaction, order, trade, etc... observe will be nano timestamps
+	)
+	if err != nil {
+		return err
+	}
+	// ensure we got an actual histogram (no vector option provided)
+	vec, err := h.HistogramVec()
+	if err != nil {
+		return err
+	}
+	e.blockTime = vec
+	// e.blockTime.WithLabelValues(mkt.Id, "block").Observe(float64(time.Now().UnixNano()))
+	return nil
 }
 
 func (e *Engine) ReloadConf(cfg Config) {
@@ -201,12 +233,15 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Submit order", logging.Order(*order))
+	pre := time.Now()
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
 
-	return mkt.SubmitOrder(order)
+	conf, err := mkt.SubmitOrder(order)
+	e.blockTime.WithLabelValues(order.MarketID, "order").Observe(float64(time.Now().Sub(pre)))
+	return conf, err
 }
 
 // AmendOrder take order amendment details and attempts to amend the order
@@ -253,9 +288,13 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	e.removeExpiredOrders(t)
 
 	// notify markets of the time expiration
-	for _, mkt := range e.markets {
+	for id, mkt := range e.markets {
 		mkt := mkt
+		pre := time.Now()
 		mkt.OnChainTimeUpdate(t)
+		after := time.Now().Sub(pre)
+		// add time taken for OnChainUpdate for given market
+		e.blockTime.WithLabelValues(id, "block").Observe(float64(after))
 	}
 }
 
