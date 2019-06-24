@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -44,9 +45,10 @@ type Svc struct {
 	Config
 	log *logging.Logger
 
-	blockchain  Blockchain
-	orderStore  OrderStore
-	timeService TimeService
+	blockchain    Blockchain
+	orderStore    OrderStore
+	timeService   TimeService
+	subscriberCnt int32
 }
 
 // NewService creates an Orders service with the necessary dependencies
@@ -242,6 +244,10 @@ func (s *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (ord
 	return o, err
 }
 
+func (s *Svc) GetOrderSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.subscriberCnt)
+}
+
 func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Order, uint64) {
 	orders := make(chan []types.Order)
 	internal := make(chan []types.Order)
@@ -249,6 +255,8 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 
 	retryCount := retries
 	go func() {
+		atomic.AddInt32(&s.subscriberCnt, 1)
+		defer atomic.AddInt32(&s.subscriberCnt, -1)
 		ip := logging.IPAddressFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()

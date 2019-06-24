@@ -1493,6 +1493,26 @@
           "type": "string",
           "format": "uint64"
         },
+        "orderSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "tradeSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "candleSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "marketDepthSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "positionsSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
         "appVersionHash": {
           "type": "string"
         },

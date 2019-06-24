@@ -165,13 +165,18 @@ message Statistics {
   repeated string parties = 15;
   uint64 totalAmendOrder = 16;
   uint64 totalCancelOrder = 17;
-  uint64 totalCreateOrder = 28;
+  uint64 totalCreateOrder = 18;
   uint64 totalOrders = 19;
   uint64 totalTrades = 20;
-  string appVersionHash = 21;
-  string appVersion = 22;
-  string chainVersion = 23;
-  uint64 blockDuration = 24; // nanoseconds
+  int32 orderSubscriptions = 21;
+  int32 tradeSubscriptions = 22;
+  int32 candleSubscriptions = 23;
+  int32 marketDepthSubscriptions = 24;
+  int32 positionsSubscriptions = 25;
+  string appVersionHash = 26;
+  string appVersion = 27;
+  string chainVersion = 28;
+  uint64 blockDuration = 29; // nanoseconds
 }
 
 enum ChainStatus {
