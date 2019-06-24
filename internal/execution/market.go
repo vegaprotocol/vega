@@ -32,7 +32,6 @@ type Market struct {
 	log *logging.Logger
 
 	riskConfig       risk.Config
-	collateralConfig collateral.Config
 	positionConfig   positions.Config
 	settlementConfig settlement.Config
 	matchingConfig   matching.Config
@@ -44,13 +43,15 @@ type Market struct {
 
 	markPrice uint64
 
-	// engines
+	// own engines
 	matching           *matching.OrderBook
 	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
 	position           *positions.Engine
 	settlement         *settlement.Engine
-	collateral         *collateral.Engine
+
+	// deps engines
+	collateral *collateral.Engine
 
 	// stores
 	candles  CandleStore
@@ -94,10 +95,10 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 func NewMarket(
 	log *logging.Logger,
 	riskConfig risk.Config,
-	collateralConfig collateral.Config,
 	positionConfig positions.Config,
 	settlementConfig settlement.Config,
 	matchingConfig matching.Config,
+	collateralEngine *collateral.Engine,
 	mkt *types.Market,
 	candles CandleStore,
 	orders OrderStore,
@@ -116,11 +117,6 @@ func NewMarket(
 	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get market closing time")
-	}
-
-	collateralEngine, err := collateral.New(log, collateralConfig, mkt.Id, accounts)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to set up collateral engine")
 	}
 
 	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
@@ -239,7 +235,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 			)
 			return
 		}
-		transfers, err := m.collateral.Transfer(positions)
+		transfers, err := m.collateral.Transfer(m.GetID(), positions)
 		if err != nil {
 			m.log.Error(
 				"Failed to get ledger movements after settling closed market",
@@ -275,10 +271,13 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		if err := m.parties.Post(&types.Party{Id: order.PartyID}); err != nil {
 			return nil, err
 		}
-		// create accounts if needed
-		if err := m.collateral.AddTraderToMarket(order.PartyID); err != nil {
-			return nil, err
-		}
+		/*
+			// create accounts if needed
+			m.mkt.GetAsset()
+			if err := m.collateral.AddTraderToMarket(m.GetID(), order.PartyID, ); err != nil {
+				return nil, err
+			}
+		*/
 	}
 	m.blockTime.WithLabelValues("parties", "order").Observe(float64(time.Now().Sub(start)))
 	start = time.Now()
@@ -387,7 +386,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	ctx, cancel := context.WithCancel(context.Background())
 	start := time.Now()
 	defer cancel()
-	transferCh, errCh := m.collateral.TransferCh(settle)
+	transferCh, errCh := m.collateral.TransferCh(m.GetID(), settle)
 	go func() {
 		err := <-errCh
 		if err != nil {

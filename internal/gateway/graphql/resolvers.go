@@ -463,8 +463,6 @@ func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 		switch *accType {
 		case AccountTypeMargin:
 			at = types.AccountType_MARGIN
-		case AccountTypeMarket:
-			at = types.AccountType_MARKET
 		case AccountTypeGeneral:
 			at = types.AccountType_GENERAL
 		case AccountTypeInsurance:
@@ -1208,8 +1206,6 @@ func (r *MyAccountResolver) Type(ctx context.Context, obj *proto.Account) (Accou
 	switch obj.Type {
 	case types.AccountType_MARGIN:
 		return AccountTypeMargin, nil
-	case types.AccountType_MARKET:
-		return AccountTypeMarket, nil
 	case types.AccountType_GENERAL:
 		return AccountTypeGeneral, nil
 	case types.AccountType_INSURANCE:

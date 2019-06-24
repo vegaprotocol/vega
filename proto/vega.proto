@@ -230,7 +230,6 @@ enum AccountType {
   INSURANCE = 0;
   SETTLEMENT = 1;
   MARGIN = 2;
-  MARKET = 3;
   GENERAL = 4;
 }
 

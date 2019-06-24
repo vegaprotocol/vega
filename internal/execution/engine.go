@@ -74,6 +74,7 @@ type Engine struct {
 	marketStore  MarketStore
 	partyStore   PartyStore
 	time         TimeService
+	collateral   *collateral.Engine
 	accountStore *storage.Account
 	// metrics
 	blockTime  *prometheus.HistogramVec // maybe mask this type a bit -> interface...
@@ -97,6 +98,15 @@ func NewEngine(
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 
+	accountBuf := buffer.NewAccount(accountStore)
+
+	//  create collateral
+	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf)
+	if err != nil {
+		log.Error("unable to initialize collateral", logging.Error(err))
+		return nil
+	}
+
 	e := &Engine{
 		log:          log,
 		Config:       executionConfig,
@@ -107,8 +117,9 @@ func NewEngine(
 		marketStore:  marketStore,
 		partyStore:   partyStore,
 		time:         time,
+		collateral:   cengine,
 		accountStore: accountStore,
-		accountBuf:   buffer.NewAccount(accountStore),
+		accountBuf:   accountBuf,
 	}
 
 	pmkts := []types.Market{}
@@ -148,8 +159,8 @@ func NewEngine(
 		)
 	}
 
-	col := collateral.NewGlobalCollateral(log, e.accountBuf)
-	e.party = NewParty(log, col, pmkts)
+	// create the party engine
+	e.party = NewParty(log, e.collateral, pmkts)
 
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
@@ -213,10 +224,10 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	mkt, err = NewMarket(
 		e.log,
 		e.Config.Risk,
-		e.Config.Collateral,
 		e.Config.Position,
 		e.Config.Settlement,
 		e.Config.Matching,
+		e.collateral,
 		mktconfig,
 		e.candleStore,
 		e.orderStore,
@@ -242,7 +253,14 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	}
 
 	e.markets[mktconfig.Id] = mkt
-	return nil
+
+	// create market accounts
+	asset, err := mktconfig.GetAsset()
+	if err != nil {
+		return err
+	}
+
+	return e.collateral.CreateMarketAccounts(mktconfig.Id, asset, 0)
 }
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {

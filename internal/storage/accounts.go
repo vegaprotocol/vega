@@ -237,12 +237,6 @@ func (a *Account) CreateTraderMarketAccounts(owner, market string) ([]*types.Acc
 	accounts := []*types.Account{
 		{
 			MarketID: market,
-			Owner:    owner,
-			Asset:    string(market[:3]),
-			Type:     types.AccountType_MARKET,
-		},
-		{
-			MarketID: market,
 			Asset:    string(market[:3]),
 			Owner:    owner,
 			Type:     types.AccountType_MARGIN,
