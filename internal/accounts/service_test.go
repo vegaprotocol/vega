@@ -18,7 +18,6 @@ import (
 var (
 	allTypes = []types.AccountType{
 		types.AccountType_MARGIN,
-		types.AccountType_MARKET,
 		types.AccountType_GENERAL,
 		types.AccountType_INSURANCE,
 		types.AccountType_SETTLEMENT,
