@@ -74,7 +74,8 @@ type Engine struct {
 	accountStore *storage.Account
 
 	// metrics
-	blockTime *prometheus.HistogramVec // maybe mask this type a bit -> interface...
+	blockTime  *prometheus.HistogramVec // maybe mask this type a bit -> interface...
+	orderGauge *prometheus.GaugeVec
 }
 
 // NewEngine takes stores and engines and returns
@@ -166,6 +167,24 @@ func (e *Engine) setMetrics() error {
 	e.blockTime = vec
 	// example of how to use this -> WithLabelValues arguments have to be in the same order the vectors were added in the code above (AddInstrument call)
 	// e.blockTime.WithLabelValues(mkt.Id, "block").Observe(float64(time.Now().UnixNano()))
+	// now add the orders gauge
+	if h, err = metrics.AddInstrument(
+		metrics.Gauge,
+		namedLogger,
+		metrics.Namespace("vega"),
+		metrics.Subsystem("orders"),
+		metrics.Vectors("market"),
+	); err != nil {
+		return err
+	}
+	g, err := h.GaugeVec()
+	if err != nil {
+		return err
+	}
+	e.orderGauge = g
+	// example usage of this simple gauge:
+	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
+	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
 	return nil
 }
 
@@ -234,14 +253,22 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Submit order", logging.Order(*order))
-	pre := time.Now()
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
 
+	if order.Status == types.Order_Active {
+		// we're submitting an active order
+		e.orderGauge.WithLabelValues(order.MarketID).Inc()
+	}
+	pre := time.Now()
 	conf, err := mkt.SubmitOrder(order)
 	e.blockTime.WithLabelValues(order.MarketID, "order").Observe(float64(time.Now().Sub(pre)))
+	// order was filled by submitting it to the market -> the matching engine worked
+	if conf.Order.Status == types.Order_Filled {
+		e.orderGauge.WithLabelValues(order.MarketID).Dec()
+	}
 	return conf, err
 }
 
@@ -260,6 +287,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 		return nil, types.ErrInvalidOrderReference
 	}
+	wasActive := order.Status == types.Order_Active
 	e.log.Debug("Existing order found", logging.Order(*order))
 
 	mkt, ok := e.markets[order.MarketID]
@@ -267,7 +295,17 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		return nil, types.ErrInvalidMarketID
 	}
 
-	return mkt.AmendOrder(orderAmendment, order)
+	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
+	// order status. It's possible order.Status will reflect the new status value if we don't
+	conf, err := mkt.AmendOrder(orderAmendment, order)
+	if err != nil {
+		return nil, err
+	}
+	// order was active, not anymore -> decrement gauge
+	if wasActive && conf.Order.Status != types.Order_Active {
+		e.orderGauge.WithLabelValues(order.MarketID).Dec()
+	}
+	return conf, nil
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
@@ -279,19 +317,29 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 
 	// Cancel order in matching engine
-	return mkt.CancelOrder(order)
+	conf, err := mkt.CancelOrder(order)
+	if err != nil {
+		return nil, err
+	}
+	if conf.Order.Status == types.Order_Cancelled {
+		e.orderGauge.WithLabelValues(order.MarketID).Dec()
+	}
+	return conf, nil
 }
 
 func (e *Engine) onChainTimeUpdate(t time.Time) {
 	e.log.Debug("updating engine on new time update")
 
+	pre := time.Now()
 	// remove expired orders
 	e.removeExpiredOrders(t)
+	// see how long expiring orders actually takes
+	e.blockTime.WithLabelValues("all", "block").Observe(float64(time.Now().Sub(pre)))
 
 	// notify markets of the time expiration
 	for id, mkt := range e.markets {
 		mkt := mkt
-		pre := time.Now()
+		pre = time.Now()
 		mkt.OnChainTimeUpdate(t)
 		after := time.Now().Sub(pre)
 		// add time taken for OnChainUpdate for given market
@@ -321,6 +369,8 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 				logging.Order(order),
 				logging.Error(err))
 		}
+		// order expired, decrement gauge
+		e.orderGauge.WithLabelValues(order.MarketID).Dec()
 	}
 
 	e.log.Debug("Updated expired orders in stores",
