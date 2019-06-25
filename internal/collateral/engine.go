@@ -60,11 +60,12 @@ func accountID(marketID, traderID, asset string, ty types.AccountType) string {
 	}
 
 	var b strings.Builder
-	b.Grow(len(marketID) + len(traderID) + len(asset) + 1)
+	sty := ty.String()
+	b.Grow(len(marketID) + len(traderID) + len(asset) + len(sty))
 	b.WriteString(marketID)
 	b.WriteString(traderID)
 	b.WriteString(asset)
-	b.WriteRune(rune(ty))
+	b.WriteString(sty)
 	return b.String()
 }
 

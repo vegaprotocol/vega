@@ -83,7 +83,6 @@ func (e *Engine) TransferCh(marketID string, transfers []events.Transfer) (<-cha
 				distr.lossDelta += uint64(bacc.Balance)
 				// accounts have been updated when we get response (ledger movements)
 				if err := e.IncrementBalance(bacc.Account.Id, bacc.Balance); err != nil {
-					// if err := e.accountStore.IncrementBalance(bacc.Account.Id, bacc.Balance); err != nil {
 					e.log.Error(
 						"Failed to update target account",
 						logging.String("target-account", bacc.Account.Id),
@@ -121,7 +120,6 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 	// get the actual trasfer value here, for convenience
 	p := t.t
 
-	//	marginAcc, err := e.getTraderAccountsByAssetAndType(p.Owner, t.Asset(), types.AccountType_MARGIN, types.AccountType_GENERAL, types.AccountType_MARKET)
 	marginAcc, err := e.GetAccountByID(accountID(settle.MarketID, p.Owner, t.Asset(), types.AccountType_MARGIN))
 	if err != nil {
 		e.log.Error(

@@ -12,7 +12,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,10 +48,12 @@ var (
 
 type testEngine struct {
 	*collateral.Engine
-	ctrl       *gomock.Controller
-	buf        *mocks.MockAccountBuffer
-	accounts   *mocks.MockAccounts
-	systemAccs []*types.Account
+	ctrl               *gomock.Controller
+	buf                *mocks.MockAccountBuffer
+	accounts           *mocks.MockAccounts
+	systemAccs         []*types.Account
+	marketInsuranceID  string
+	marketSettlementID string
 }
 
 func TestCollateralTransfer(t *testing.T) {
@@ -76,9 +77,7 @@ func TestAddTraderToMarket(t *testing.T) {
 */
 
 func testNew(t *testing.T) {
-	eng := getTestEngine(t, "test-market", nil)
-	eng.Finish()
-	eng = getTestEngine(t, "test-market", errors.New("random error"))
+	eng := getTestEngine(t, "test-market", 0)
 	eng.Finish()
 }
 
@@ -772,26 +771,25 @@ func testProcessBothProRatedMTM(t *testing.T) {
 }
 */
 
-func getTestEngine(t *testing.T, market string, err error) *testEngine {
+func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEngine {
 	ctrl := gomock.NewController(t)
 	buf := mocks.NewMockAccountBuffer(ctrl)
 	conf := collateral.NewDefaultConfig()
 	buf.EXPECT().Add(gomock.Any()).Times(2)
 
-	eng, err2 := collateral.New(logging.NewTestLogger(), conf, buf)
-	assert.Equal(t, err, err2)
-	if err != nil {
-		assert.Nil(t, eng)
-	}
+	eng, err := collateral.New(logging.NewTestLogger(), conf, buf)
+	assert.Nil(t, err)
 
 	// create market and traders used for tests
-	err = eng.CreateMarketAccounts(testMarketID, testMarketAsset, 0)
+	insID, setID := eng.CreateMarketAccounts(testMarketID, testMarketAsset, insuranceBalance)
 	assert.Nil(t, err)
 
 	return &testEngine{
-		Engine: eng,
-		ctrl:   ctrl,
-		buf:    buf,
+		Engine:             eng,
+		ctrl:               ctrl,
+		buf:                buf,
+		marketInsuranceID:  insID,
+		marketSettlementID: setID,
 		// systemAccs: accounts,
 	}
 }
