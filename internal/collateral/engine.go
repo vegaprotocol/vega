@@ -451,58 +451,6 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 	}, nil
 }
 
-/*
-func (e *Engine) getTraderAccountsByAssetAndType(trader, asset string, accTypes ...types.AccountType) ([]*types.Account, error) {
-	ids, err := e.getTraderAccountIDs(asset, trader, accTypes...)
-	if err != nil {
-		return nil, err
-	}
-	accounts := make([]*types.Account, 0, len(ids))
-	for _, id := range ids {
-		acc, err := e.GetAccountByID(id)
-		if err != nil {
-			e.log.Error(
-				"Failed to get account by id",
-				logging.String("account-id", id),
-				logging.Error(err),
-			)
-			return nil, ErrTraderAccountsMissing
-		}
-		accounts = append(accounts, acc)
-	}
-	return accounts, nil
-}
-*/
-
-/*
-func (e *Engine) getTraderAccountIDs(asset, trader string, types ...types.AccountType) ([]string, error) {
-	taccs := e.traderAccounts[trader]
-	// no specific types, get all accounts for asset
-	if len(types) == 0 {
-		ids := make([]string, 0, len(taccs))
-		for _, accs := range taccs {
-			if id, ok := accs[asset]; ok {
-				ids = append(ids, id)
-			}
-		}
-		return ids, nil
-	}
-	ids := make([]string, 0, len(types))
-	for _, t := range types {
-		accs, ok := taccs[t]
-		if !ok {
-			return nil, ErrTraderAccountsMissing
-		}
-		if id, ok := accs[asset]; ok {
-			ids = append(ids, id)
-		} else {
-			return nil, ErrTraderAccountsMissing
-		}
-	}
-	return ids, nil
-}
-*/
-
 // this builds a TransferResponse for a specific request, we collect all of them and aggregate
 func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferResponse, error) {
 	ret := types.TransferResponse{
@@ -588,7 +536,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 	return &ret, nil
 }
 
-// insert and stuff relate to accounts map
+// insert and stuff relate to accounts map from here
 
 func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) error {
 	insID := accountID(marketID, "", asset, types.AccountType_INSURANCE)

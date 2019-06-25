@@ -112,8 +112,6 @@ func testTransferChannelSuccess(t *testing.T) {
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).MinTimes(1).MaxTimes(2).Return(acc, nil)
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil)
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, int64(1666)).Times(1).Return(nil)
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).MinTimes(1).MaxTimes(2).Return(acc, nil)
 		}
 	}
 	for _, acc := range traderAccs {
@@ -125,13 +123,10 @@ func testTransferChannelSuccess(t *testing.T) {
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil).Do(func(_ string, bal int64) {
 				assert.NotZero(t, bal)
 			})
-			fallthrough
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).MinTimes(1).MaxTimes(2).Return(acc, nil)
 		}
 	}
 	transfers := eng.getTestMTMTransfer(pos)
-	resCh, errCh := eng.TransferCh(transfers)
+	resCh, errCh := eng.TransferCh(market, transfers)
 	responses := make([]events.Margin, 0, len(transfers))
 	wg := sync.WaitGroup{}
 	wg.Add(1)

@@ -92,18 +92,18 @@ func testAddTrader(t *testing.T) {
 		switch acc.Type {
 		case types.AccountType_GENERAL:
 			gen = acc
-			eng.accounts.EXPECT().UpdateBalance(acc.Id, general).Times(1).Return(nil)
+			// eng.accounts.EXPECT().UpdateBalance(acc.Id, general).Times(1).Return(nil)
 		case types.AccountType_MARGIN:
 			marg = acc
-			eng.accounts.EXPECT().UpdateBalance(acc.Id, margin).Times(1).Return(nil)
+			// eng.accounts.EXPECT().UpdateBalance(acc.Id, margin).Times(1).Return(nil)
 		}
 	}
 	assert.NotNil(t, gen)
 	assert.NotNil(t, marg)
 	// this trader already exists, skip this stuff
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[0], market).Times(1).Return(nil, errors.New("already exists"))
+	// eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[0], market).Times(1).Return(nil, errors.New("already exists"))
 	// this trader will be set up successfully
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[1], market).Times(1).Return(traderAccs, nil)
+	// eng.accounts.EXPECT().CreateTraderMarketAccounts(traders[1], market).Times(1).Return(traderAccs, nil)
 	// expected balances
 	assert.Error(t, eng.AddTraderToMarket(traders[0]))
 	assert.NoError(t, eng.AddTraderToMarket(traders[1]))
@@ -153,8 +153,6 @@ func testTransferLoss(t *testing.T) {
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil)
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, -2*price).Times(1).Return(nil)
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
 	for _, acc := range traderAccs {
@@ -167,9 +165,6 @@ func testTransferLoss(t *testing.T) {
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil).Do(func(_ string, bal int64) {
 				assert.NotZero(t, bal)
 			})
-			fallthrough
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
 	// now the positions
@@ -238,9 +233,6 @@ func testTransferComplexLoss(t *testing.T) {
 			acc.Balance += half
 			// balance will hit 0, so will be set to 0
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(2).Return(nil)
-			fallthrough
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
 	// now the positions
@@ -495,8 +487,6 @@ func testProcessBoth(t *testing.T) {
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil)
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, 2*price).Times(1).Return(nil)
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
 	for _, acc := range traderAccs {
@@ -508,9 +498,6 @@ func testProcessBoth(t *testing.T) {
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil).Do(func(_ string, bal int64) {
 				assert.NotZero(t, bal)
 			})
-			fallthrough
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
 	// next up, updating the balance of the traders' general accounts
@@ -620,8 +607,6 @@ func testProcessBothProRated(t *testing.T) {
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil)
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, int64(1666)).Times(1).Return(nil)
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
 	for _, acc := range traderAccs {
@@ -633,9 +618,6 @@ func testProcessBothProRated(t *testing.T) {
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil).Do(func(_ string, bal int64) {
 				assert.NotZero(t, bal)
 			})
-			fallthrough
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
 	responses, err := eng.Transfer(pos)
@@ -747,8 +729,6 @@ func testProcessBothProRatedMTM(t *testing.T) {
 			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 			eng.accounts.EXPECT().UpdateBalance(acc.Id, gomock.Any()).Times(1).Return(nil)
 			eng.accounts.EXPECT().IncrementBalance(acc.Id, int64(1666)).Times(1).Return(nil)
-		case types.AccountType_MARKET:
-			eng.accounts.EXPECT().GetAccountByID(acc.Id).Times(1).Return(acc, nil)
 		}
 	}
 	for _, acc := range traderAccs {
