@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,13 +34,13 @@ func (m *MockAccountBuffer) EXPECT() *MockAccountBufferMockRecorder {
 }
 
 // Add mocks base method
-func (m *MockAccountBuffer) Add(arg0, arg1, arg2 string, arg3 int64) {
+func (m *MockAccountBuffer) Add(arg0 proto.Account) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Add", arg0, arg1, arg2, arg3)
+	m.ctrl.Call(m, "Add", arg0)
 }
 
 // Add indicates an expected call of Add
-func (mr *MockAccountBufferMockRecorder) Add(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockAccountBufferMockRecorder) Add(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockAccountBuffer)(nil).Add), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockAccountBuffer)(nil).Add), arg0)
 }

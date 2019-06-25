@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -32,12 +33,27 @@ func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 	return m.recorder
 }
 
-// CreateTraderAccount mocks base method
-func (m *MockCollateral) CreateTraderAccount(arg0, arg1, arg2 string) error {
+// AddTraderToMarket mocks base method
+func (m *MockCollateral) AddTraderToMarket(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTraderAccount", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "AddTraderToMarket", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
+}
+
+// AddTraderToMarket indicates an expected call of AddTraderToMarket
+func (mr *MockCollateralMockRecorder) AddTraderToMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTraderToMarket", reflect.TypeOf((*MockCollateral)(nil).AddTraderToMarket), arg0, arg1, arg2)
+}
+
+// CreateTraderAccount mocks base method
+func (m *MockCollateral) CreateTraderAccount(arg0, arg1, arg2 string) (string, string) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTraderAccount", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(string)
+	return ret0, ret1
 }
 
 // CreateTraderAccount indicates an expected call of CreateTraderAccount
@@ -46,16 +62,31 @@ func (mr *MockCollateralMockRecorder) CreateTraderAccount(arg0, arg1, arg2 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTraderAccount", reflect.TypeOf((*MockCollateral)(nil).CreateTraderAccount), arg0, arg1, arg2)
 }
 
-// Credit mocks base method
-func (m *MockCollateral) Credit(arg0, arg1 string, arg2 int64) int64 {
+// GetAccountByID mocks base method
+func (m *MockCollateral) GetAccountByID(arg0 string) (*proto.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Credit", arg0, arg1, arg2)
-	ret0, _ := ret[0].(int64)
+	ret := m.ctrl.Call(m, "GetAccountByID", arg0)
+	ret0, _ := ret[0].(*proto.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccountByID indicates an expected call of GetAccountByID
+func (mr *MockCollateralMockRecorder) GetAccountByID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountByID", reflect.TypeOf((*MockCollateral)(nil).GetAccountByID), arg0)
+}
+
+// IncrementBalance mocks base method
+func (m *MockCollateral) IncrementBalance(arg0 string, arg1 int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementBalance", arg0, arg1)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Credit indicates an expected call of Credit
-func (mr *MockCollateralMockRecorder) Credit(arg0, arg1, arg2 interface{}) *gomock.Call {
+// IncrementBalance indicates an expected call of IncrementBalance
+func (mr *MockCollateralMockRecorder) IncrementBalance(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Credit", reflect.TypeOf((*MockCollateral)(nil).Credit), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementBalance", reflect.TypeOf((*MockCollateral)(nil).IncrementBalance), arg0, arg1)
 }

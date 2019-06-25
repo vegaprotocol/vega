@@ -69,6 +69,7 @@ func testTransferChannelSuccess(t *testing.T) {
 			Type: types.TransferType_MTM_WIN,
 		},
 	}
+
 	// The, each time we encounter a trader (ie each position aggregate), we'll attempt to create the account
 	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos) / 2).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
 		isTrader := (owner == trader || owner == moneyTrader)
