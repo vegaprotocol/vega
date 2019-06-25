@@ -164,6 +164,7 @@ func (e *Engine) setMetrics() error {
 		return err
 	}
 	e.blockTime = vec
+	// example of how to use this -> WithLabelValues arguments have to be in the same order the vectors were added in the code above (AddInstrument call)
 	// e.blockTime.WithLabelValues(mkt.Id, "block").Observe(float64(time.Now().UnixNano()))
 	return nil
 }

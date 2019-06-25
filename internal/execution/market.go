@@ -172,7 +172,8 @@ func (m *Market) setMetrics() error {
 		return err
 	}
 	m.blockTime = vec
-	// m.blockTime.WithLabelValues(mkt.Id, "block").Observe(float64(time.Now().UnixNano()))
+	// example of how to use this -> WithLabelValues arguments have to be in the same order the vectors were added in the code above (AddInstrument call)
+	// m.blockTime.WithLabelValues("settlement", "order").Observe(float64(time.Now().UnixNano()))
 	return nil
 }
 
