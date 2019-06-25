@@ -20,7 +20,6 @@ func TestTransferChannel(t *testing.T) {
 // most of this function is copied from the MarkToMarket test - we're using channels, sure
 // but the flow should remain the same regardless
 func testTransferChannelSuccess(t *testing.T) {
-	market := "BTCtest-market"
 	trader := "test-trader"
 	moneyTrader := "money-trader"
 	price := int64(1000)
@@ -28,16 +27,20 @@ func testTransferChannelSuccess(t *testing.T) {
 	eng := getTestEngine(t, market, nil)
 	defer eng.Finish()
 
-	systemAccs := eng.systemAccs
-	traderAccs := getTraderAccounts(trader, market)
-	moneyAccs := getTraderAccounts(moneyTrader, market)
+	// create trader accounts
+	buf.EXPECT().Add(gomock.Any()).Times(2)
+	err := eng.Engine.CreateTraderMarketAccounts(testMarketID, trader, testMarketAsset)
+
+	buf.EXPECT().Add(gomock.Any()).Times(2)
+	err := eng.Engine.CreateTraderMarketAccounts(testMarketID, moneyTrader, testMarketAsset)
+
 	pos := []*types.Transfer{
 		{
 			Owner: trader,
 			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: -price,
-				Asset:  "BTC",
+				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_MTM_LOSS,
 		},
@@ -46,7 +49,7 @@ func testTransferChannelSuccess(t *testing.T) {
 			Size:  2,
 			Amount: &types.FinancialAmount{
 				Amount: -price,
-				Asset:  "BTC",
+				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_MTM_LOSS,
 		},
@@ -55,7 +58,7 @@ func testTransferChannelSuccess(t *testing.T) {
 			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: price,
-				Asset:  "BTC",
+				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_MTM_WIN,
 		},
@@ -64,21 +67,24 @@ func testTransferChannelSuccess(t *testing.T) {
 			Size:  2,
 			Amount: &types.FinancialAmount{
 				Amount: price,
-				Asset:  "BTC",
+				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_MTM_WIN,
 		},
 	}
 
-	// The, each time we encounter a trader (ie each position aggregate), we'll attempt to create the account
-	eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos) / 2).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
-		isTrader := (owner == trader || owner == moneyTrader)
-		assert.True(t, isTrader)
-		if owner == trader {
-			return traderAccs, nil
-		}
-		return moneyAccs, nil
-	})
+	/*
+		// The, each time we encounter a trader (ie each position aggregate), we'll attempt to create the account
+		eng.accounts.EXPECT().CreateTraderMarketAccounts(gomock.Any(), market).Times(len(pos) / 2).DoAndReturn(func(owner, market string) ([]*types.Account, error) {
+			isTrader := (owner == trader || owner == moneyTrader)
+			assert.True(t, isTrader)
+			if owner == trader {
+				return traderAccs, nil
+			}
+			return moneyAccs, nil
+		})
+	*/
+
 	// system accounts
 	for _, sacc := range systemAccs {
 		switch sacc.Type {

@@ -538,47 +538,38 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 
 // insert and stuff relate to accounts map from here
 
-func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) error {
-	insID := accountID(marketID, "", asset, types.AccountType_INSURANCE)
-	_, ok := e.accs[insID]
-	if ok {
-		e.log.Error("account already exists",
-			logging.String("marketID", marketID),
-			logging.String("asset", asset))
-		return ErrAccountAlreadyExists
+func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (insuranceID, settleID string) {
+	insuranceID = accountID(marketID, "", asset, types.AccountType_INSURANCE)
+	_, ok := e.accs[insuranceID]
+	if !ok {
+		insAcc := &types.Account{
+			Id:       insuranceID,
+			Asset:    asset,
+			Owner:    storage.SystemOwner,
+			Balance:  insurance,
+			MarketID: marketID,
+			Type:     types.AccountType_INSURANCE,
+		}
+		e.accs[insuranceID] = insAcc
+		e.buf.Add(*insAcc)
+
 	}
-	setID := accountID(marketID, "", asset, types.AccountType_SETTLEMENT)
-	_, ok = e.accs[setID]
-	if ok {
-		e.log.Error("account already exists",
-			logging.String("marketID", marketID),
-			logging.String("asset", asset))
-		return ErrAccountAlreadyExists
+	settleID = accountID(marketID, "", asset, types.AccountType_SETTLEMENT)
+	_, ok = e.accs[settleID]
+	if !ok {
+		setAcc := &types.Account{
+			Id:       settleID,
+			Asset:    asset,
+			Owner:    storage.SystemOwner,
+			Balance:  0,
+			MarketID: marketID,
+			Type:     types.AccountType_SETTLEMENT,
+		}
+		e.accs[settleID] = setAcc
+		e.buf.Add(*setAcc)
 	}
 
-	// none exists, let create them
-	insAcc := &types.Account{
-		Id:       insID,
-		Asset:    asset,
-		Owner:    storage.SystemOwner,
-		Balance:  insurance,
-		MarketID: marketID,
-		Type:     types.AccountType_INSURANCE,
-	}
-	e.accs[insID] = insAcc
-	e.buf.Add(*insAcc)
-
-	setAcc := &types.Account{
-		Id:       setID,
-		Asset:    asset,
-		Owner:    storage.SystemOwner,
-		Balance:  0,
-		MarketID: marketID,
-		Type:     types.AccountType_SETTLEMENT,
-	}
-	e.accs[setID] = setAcc
-	e.buf.Add(*setAcc)
-	return nil
+	return
 }
 
 func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID, generalID string) {

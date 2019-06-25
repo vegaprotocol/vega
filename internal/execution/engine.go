@@ -260,7 +260,10 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		return err
 	}
 
-	return e.collateral.CreateMarketAccounts(mktconfig.Id, asset, 0)
+	// ignore response ids here + this cannot fail
+	_, _ = e.collateral.CreateMarketAccounts(mktconfig.Id, asset, 0)
+
+	return nil
 }
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
