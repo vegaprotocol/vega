@@ -6,7 +6,7 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/buffer AccountStore
 type AccountStore interface {
-	SaveBatch([]types.Account) error
+	SaveBatch([]*types.Account) error
 }
 
 type Account struct {
@@ -31,9 +31,9 @@ func (a *Account) Flush() error {
 	accsToBatch := a.accs
 	a.accs = map[string]types.Account{}
 
-	accs := make([]types.Account, 0, len(accsToBatch))
+	accs := make([]*types.Account, 0, len(accsToBatch))
 	for _, v := range accsToBatch {
-		accs = append(accs, v)
+		accs = append(accs, &v)
 	}
 	return a.store.SaveBatch(accs)
 }

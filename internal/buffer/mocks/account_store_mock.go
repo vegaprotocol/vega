@@ -34,7 +34,7 @@ func (m *MockAccountStore) EXPECT() *MockAccountStoreMockRecorder {
 }
 
 // SaveBatch mocks base method
-func (m *MockAccountStore) SaveBatch(arg0 []proto.Account) error {
+func (m *MockAccountStore) SaveBatch(arg0 []*proto.Account) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveBatch", arg0)
 	ret0, _ := ret[0].(error)
