@@ -428,7 +428,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		return &req, nil
 	}
 
-	marginAcc, err := e.GetAccountByID(accountID("", p.Owner, asset, types.AccountType_MARGIN))
+	marginAcc, err := e.GetAccountByID(accountID(settle.MarketID, p.Owner, asset, types.AccountType_MARGIN))
 	if err != nil {
 		e.log.Error(
 			"Failed to get the margin account",
@@ -629,6 +629,8 @@ func (e *Engine) IncrementBalance(id string, inc int64) error {
 }
 
 func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
+	// fmt.Printf("ACCOUNT -> %v\n", id)
+	// fmt.Printf("ACCOUNTS: %v\n", e.accs)
 	acc, ok := e.accs[id]
 	if !ok {
 		return nil, ErrAccountDoNotExists
