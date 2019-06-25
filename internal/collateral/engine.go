@@ -366,16 +366,16 @@ func (e *Engine) getWinCB(distr *distributor, winResp *types.TransferResponse, s
 		}
 		distr.expWin += uint64(res.Balances[0].Balance)
 		// there's only 1 balance account here (the ToAccount)
-		if err := e.IncrementBalance(res.Balances[0].Account.Id, res.Balances[0].Balance); err != nil {
-			// this account might get accessed concurrently -> use increment
-			e.log.Error(
-				"Failed to increment balance of general account",
-				logging.String("account-id", res.Balances[0].Account.Id),
-				logging.Int64("increment", res.Balances[0].Balance),
-				logging.Error(err),
-			)
-			return err
-		}
+		// if err := e.IncrementBalance(res.Balances[0].Account.Id, res.Balances[0].Balance); err != nil {
+		// 	// this account might get accessed concurrently -> use increment
+		// 	e.log.Error(
+		// 		"Failed to increment balance of general account",
+		// 		logging.String("account-id", res.Balances[0].Account.Id),
+		// 		logging.Int64("increment", res.Balances[0].Balance),
+		// 		logging.Error(err),
+		// 	)
+		// 	return err
+		// }
 		winResp.Transfers = append(winResp.Transfers, res.Transfers...)
 		return nil
 	}
@@ -464,7 +464,13 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 		})
 	}
 	amount := int64(req.Amount)
+	fmt.Print(req.FromAccount)
 	for _, acc := range req.FromAccount {
+		if acc.Type == types.AccountType_SETTLEMENT {
+			fmt.Println("-------------------------")
+			fmt.Print(acc)
+			fmt.Println(amount)
+		}
 		// give each to account an equal share
 		parts := amount / int64(len(req.ToAccount))
 		// add remaining pennies to last ledger movement
@@ -507,7 +513,12 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 			return &ret, nil
 		}
 		if acc.Balance > 0 {
+			fmt.Println("---- foobar")
+			fmt.Println(acc)
+			fmt.Println(acc.Type)
+			fmt.Println(amount)
 			amount -= acc.Balance
+			fmt.Println(amount)
 			// partial amount resolves differently
 			parts = acc.Balance / int64(len(req.ToAccount))
 			if err := e.UpdateBalance(acc.Id, 0); err != nil {
@@ -532,6 +543,9 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 				to.Account.Balance += parts
 				to.Balance += parts
 			}
+		}
+		if amount == 0 {
+			break
 		}
 	}
 	return &ret, nil
