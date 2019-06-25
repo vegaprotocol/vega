@@ -428,10 +428,10 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		return &req, nil
 	}
 
-	generalAcc, err := e.GetAccountByID(accountID("", p.Owner, asset, types.AccountType_GENERAL))
+	marginAcc, err := e.GetAccountByID(accountID("", p.Owner, asset, types.AccountType_MARGIN))
 	if err != nil {
 		e.log.Error(
-			"Failed to get the general account",
+			"Failed to get the margin account",
 			logging.String("owner", p.Owner),
 			logging.String("market", settle.MarketID),
 			logging.Error(err))
@@ -444,7 +444,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			insurance,
 		},
 		ToAccount: []*types.Account{
-			generalAcc,
+			marginAcc,
 		},
 		Amount:    uint64(p.Amount.Amount) * p.Size,
 		MinAmount: 0,     // default value, but keep it here explicitly

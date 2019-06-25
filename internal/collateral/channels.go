@@ -132,6 +132,7 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 	}
 	t.margin = marginAcc
 
+	// we're still getting the general account for risk engine later on
 	generalAcc, err := e.GetAccountByID(accountID("", p.Owner, t.Asset(), types.AccountType_GENERAL))
 	if err != nil {
 		e.log.Error(
@@ -169,7 +170,7 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 			insurance,
 		},
 		ToAccount: []*types.Account{
-			t.general,
+			t.margin,
 		},
 		Amount:    uint64(p.Amount.Amount) * p.Size,
 		MinAmount: 0,  // default value, but keep it here explicitly
