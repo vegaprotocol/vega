@@ -57,6 +57,31 @@
         ]
       }
     },
+    "/markets/{marketID}": {
+      "get": {
+        "summary": "markets",
+        "operationId": "MarketByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/markets/{marketID}/candles": {
       "get": {
         "summary": "candles",

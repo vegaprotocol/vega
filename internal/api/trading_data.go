@@ -686,7 +686,7 @@ func (h *tradingDataService) PositionsSubscribe(
 }
 
 func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
-	mkt, err := validateMarket(ctx, req.Id, h.MarketService)
+	mkt, err := validateMarket(ctx, req.MarketID, h.MarketService)
 	if err != nil {
 		return nil, err
 	}
