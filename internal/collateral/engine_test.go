@@ -1,14 +1,12 @@
 package collateral_test
 
 import (
-	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/collateral/mocks"
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -18,32 +16,6 @@ import (
 const (
 	testMarketID    = "7CPSHJB35AIQBTNMIE6NLFPZGHOYRQ3D"
 	testMarketAsset = "BTC"
-)
-
-var (
-	generalSystem = types.Account{
-		Id:      "system-gen",
-		Owner:   storage.SystemOwner,
-		Balance: 0,
-		Asset:   "BTC",
-		Type:    types.AccountType_GENERAL,
-	}
-
-	settlementSystem = types.Account{
-		Id:      "system-set",
-		Owner:   storage.SystemOwner,
-		Balance: 0,
-		Asset:   "BTC",
-		Type:    types.AccountType_SETTLEMENT,
-	}
-
-	insuranceSystem = types.Account{
-		Id:      "system-ins",
-		Owner:   storage.SystemOwner,
-		Balance: 0,
-		Asset:   "BTC",
-		Type:    types.AccountType_INSURANCE,
-	}
 )
 
 type testEngine struct {
@@ -564,46 +536,4 @@ func getMTMTransfer(transfers []*types.Transfer) []events.Transfer {
 		})
 	}
 	return r
-}
-
-func getSystemAccounts(market string) []*types.Account {
-	return []*types.Account{
-		{
-			Id:       "system1",
-			Owner:    storage.SystemOwner,
-			Balance:  0,
-			Asset:    market[:3],
-			MarketID: market,
-			Type:     types.AccountType_SETTLEMENT,
-		},
-		{
-			Id:       "system2",
-			Owner:    storage.SystemOwner,
-			Balance:  0,
-			Asset:    market[:3],
-			MarketID: market,
-			Type:     types.AccountType_INSURANCE,
-		},
-	}
-}
-
-func getTraderAccounts(trader, market string) []*types.Account {
-	return []*types.Account{
-		{
-			Id:       fmt.Sprintf("%s1", trader),
-			Owner:    trader,
-			Balance:  0,
-			Asset:    market[:3],
-			MarketID: market,
-			Type:     types.AccountType_MARGIN,
-		},
-		{
-			Id:       fmt.Sprintf("%s2", trader),
-			Owner:    trader,
-			Balance:  0,
-			Asset:    market[:3],
-			MarketID: storage.NoMarket,
-			Type:     types.AccountType_GENERAL,
-		},
-	}
 }
