@@ -33,13 +33,13 @@ func (f *Forward) CalculateRiskFactors(
 	rawrf := riskmodelbs.RiskFactorsForward(f.lambd, f.tau, f.params)
 	rf := &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
-			"Ethereum/Ether": &types.RiskFactor{
+			"ETH": &types.RiskFactor{
 				Long:  rawrf.Long,
 				Short: rawrf.Short,
 			},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			"Ethereum/Ether": &types.RiskFactor{
+			"ETH": &types.RiskFactor{
 				Long:  rawrf.Long,
 				Short: rawrf.Short,
 			},

@@ -571,10 +571,10 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) []types.Order {
 func getInitialFactors() *types.RiskResult {
 	return &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
-			"Ethereum/Ether": {Long: 0.15, Short: 0.25},
+			"ETH": {Long: 0.15, Short: 0.25},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			"Ethereum/Ether": {Long: 0.15, Short: 0.25},
+			"ETH": {Long: 0.15, Short: 0.25},
 		},
 	}
 }
