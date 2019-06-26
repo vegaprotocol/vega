@@ -1,4 +1,4 @@
-APPS := dummyriskmodel vega vegabench vegastream vegaccount
+APPS := dummyriskmodel vega vegabench vegaccount vegastream
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
 TAG := $(shell git describe --tags 2>/dev/null)

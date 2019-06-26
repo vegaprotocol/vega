@@ -3,8 +3,8 @@
 cmd/dummyriskmodel/dummyriskmodel
 cmd/vega/vega
 cmd/vegabench/vegabench
+cmd/vegaccount/vegaccount
 cmd/vegastream/vegastream
-cmd/vegastream/vegaccount
 vega-*.log
 .idea/
 *.iws
