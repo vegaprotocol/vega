@@ -67,6 +67,12 @@ func (a *Account) ReloadConf(cfg Config) {
 	a.Config = cfg
 }
 
+// Close our connection to the badger database
+// ensuring errors will be returned up the stack.
+func (a *Account) Close() error {
+	return a.badger.db.Close()
+}
+
 // GetAccountByID - returns a given account by ID (if it exists, obviously)
 func (a *Account) GetAccountByID(id string) (*types.Account, error) {
 	return a.getAccountByID(nil, id)
