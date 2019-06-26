@@ -97,7 +97,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *types.Account, err error) {
-	// asset := marketID[:3]
 
 	insID := accountID(marketID, "", asset, types.AccountType_INSURANCE)
 	setID := accountID(marketID, "", asset, types.AccountType_SETTLEMENT)
@@ -464,13 +463,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 		})
 	}
 	amount := int64(req.Amount)
-	fmt.Print(req.FromAccount)
 	for _, acc := range req.FromAccount {
-		if acc.Type == types.AccountType_SETTLEMENT {
-			fmt.Println("-------------------------")
-			fmt.Print(acc)
-			fmt.Println(amount)
-		}
 		// give each to account an equal share
 		parts := amount / int64(len(req.ToAccount))
 		// add remaining pennies to last ledger movement
@@ -513,12 +506,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 			return &ret, nil
 		}
 		if acc.Balance > 0 {
-			fmt.Println("---- foobar")
-			fmt.Println(acc)
-			fmt.Println(acc.Type)
-			fmt.Println(amount)
 			amount -= acc.Balance
-			fmt.Println(amount)
 			// partial amount resolves differently
 			parts = acc.Balance / int64(len(req.ToAccount))
 			if err := e.UpdateBalance(acc.Id, 0); err != nil {
@@ -643,8 +631,6 @@ func (e *Engine) IncrementBalance(id string, inc int64) error {
 }
 
 func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
-	// fmt.Printf("ACCOUNT -> %v\n", id)
-	// fmt.Printf("ACCOUNTS: %v\n", e.accs)
 	acc, ok := e.accs[id]
 	if !ok {
 		return nil, ErrAccountDoNotExists
