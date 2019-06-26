@@ -402,9 +402,9 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, m.markPrice)
-	m.log.Info("Risk done")
+	// m.log.Info("Risk done")
 	if len(riskUpdates) == 0 {
-		m.log.Warn("probably no risk margin changes due to error")
+		// m.log.Warn("probably no risk margin changes due to error")
 		return nil
 	}
 	m.log.Debug(
