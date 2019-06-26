@@ -29,3 +29,4 @@ COPY --from=builder /go/bin/dummyriskmodel /
 COPY --from=builder /go/bin/vega /
 COPY --from=builder /go/bin/vegabench /
 COPY --from=builder /go/bin/vegastream /
+COPY --from=builder /go/bin/vegaccount /
