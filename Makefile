@@ -1,5 +1,4 @@
-PROJECT_NAME := "vega"
-PKG := "./cmd/$(PROJECT_NAME)"
+APPS := dummyriskmodel vega vegabench vegastream
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
 TAG := $(shell git describe --tags 2>/dev/null)
@@ -73,14 +72,14 @@ deps: ## Get the dependencies
 
 build: proto ## install the binaries in cmd/{progname}/
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@for app in vega vegabench ; do \
+	@for app in $(APPS) ; do \
 		env CGO_ENABLED=0 go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/$$app/$$app" "./cmd/$$app" || exit 1 ; \
 	done
 
 install: proto ## install the binaries in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@for app in vega vegabench ; do \
+	@for app in $(APPS) ; do \
 		env CGO_ENABLED=0 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
 	done
 
@@ -141,11 +140,11 @@ docker: ## Make docker container image from scratch
 	@test -f "$(HOME)/.ssh/id_rsa" || exit 1
 	@docker build \
 		--build-arg SSH_KEY="$$(cat ~/.ssh/id_rsa)" \
-		-t "registry.gitlab.com/vega-protocol/trading-core:latest" \
+		-t "registry.gitlab.com/vega-protocol/trading-core:$(VERSION)" \
 		.
 
 docker_quick: build ## Make docker container image using pre-existing binaries
-	@for app in vega vegabench ; do \
+	@for app in $(APPS) ; do \
 		f="cmd/$$app/$$app" ; \
 		if ! test -f "$$f" ; then \
 			echo "Failed to find: $$f" ; \
@@ -154,10 +153,10 @@ docker_quick: build ## Make docker container image using pre-existing binaries
 		cp -a "$$f" . || exit 1 ; \
 	done
 	@docker build \
-		-t "registry.gitlab.com/vega-protocol/trading-core:latest" \
+		-t "registry.gitlab.com/vega-protocol/trading-core:$(VERSION)" \
 		-f Dockerfile.quick \
 		.
-	@for app in vega vegabench ; do \
+	@for app in $(APPS) ; do \
 		rm -rf "./$$app" ; \
 	done
 
@@ -165,7 +164,7 @@ gettools:
 	@./script/gettools.sh
 
 clean: ## Remove previous build
-	@rm -f ./vega{,bench} ./cmd/{vega/vega,vegabench/vegabench}
+	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" ; done
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
