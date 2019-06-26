@@ -958,7 +958,6 @@
         "INSURANCE",
         "SETTLEMENT",
         "MARGIN",
-        "MARKET",
         "GENERAL"
       ],
       "default": "INSURANCE"
