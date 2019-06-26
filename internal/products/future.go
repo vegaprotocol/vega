@@ -30,6 +30,10 @@ func (f *Future) Value(markPrice uint64) (uint64, error) {
 	return markPrice, nil
 }
 
+func (f *Future) GetAsset() string {
+	return f.Asset
+}
+
 func newFuture(f *types.Future) (*Future, error) {
 	maturity, err := time.Parse(time.RFC3339, f.Maturity)
 	if err != nil {
