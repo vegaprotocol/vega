@@ -33,6 +33,20 @@ func (m *MockProduct) EXPECT() *MockProductMockRecorder {
 	return m.recorder
 }
 
+// GetAsset mocks base method
+func (m *MockProduct) GetAsset() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAsset")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetAsset indicates an expected call of GetAsset
+func (mr *MockProductMockRecorder) GetAsset() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAsset", reflect.TypeOf((*MockProduct)(nil).GetAsset))
+}
+
 // Settle mocks base method
 func (m *MockProduct) Settle(arg0 uint64, arg1 int64) (*proto.FinancialAmount, error) {
 	m.ctrl.T.Helper()

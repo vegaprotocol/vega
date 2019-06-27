@@ -40,6 +40,11 @@ func (b *Client) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 	return b.sendAmendmentCommand(ctx, amendment, AmendOrderCommand)
 }
 
+func (b *Client) NotifyTraderAccount(
+	ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error) {
+	return b.sendNotifyTraderAccountCommand(ctx, notif, NotifyTraderAccountCommand)
+}
+
 func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error) {
 	order.Reference = fmt.Sprintf("%s", uuid.NewV4())
 	_, err := b.sendOrderCommand(ctx, order, SubmitOrderCommand)
@@ -111,6 +116,20 @@ func (b *Client) sendAmendmentCommand(ctx context.Context, amendment *types.Orde
 	}
 	if len(bytes) == 0 {
 		return false, errors.New("order message empty after marshal")
+	}
+
+	return b.sendCommand(ctx, bytes, cmd)
+}
+
+func (b *Client) sendNotifyTraderAccountCommand(
+	ctx context.Context, notif *types.NotifyTraderAccount, cmd Command) (success bool, err error) {
+
+	bytes, err := proto.Marshal(notif)
+	if err != nil {
+		return false, err
+	}
+	if len(bytes) == 0 {
+		return false, errors.New("notify trader account message empty after marshal")
 	}
 
 	return b.sendCommand(ctx, bytes, cmd)

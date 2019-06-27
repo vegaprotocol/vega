@@ -339,6 +339,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	conf := settlement.NewDefaultConfig()
 	prod := mocks.NewMockProduct(ctrl)
 	market := "BTC/DEC19"
+	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })
 	return &testEngine{
 		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market),
 		ctrl:      ctrl,

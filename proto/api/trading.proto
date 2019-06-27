@@ -16,7 +16,16 @@ service trading {
   rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder);
   rpc AmendOrder(AmendOrderRequest) returns (vega.PendingOrder);
   rpc SignIn(SignInRequest) returns (SignInResponse);
+  rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
   // unary calls - read
+}
+
+message NotifyTraderAccountRequest {
+  vega.NotifyTraderAccount notif = 1;
+}
+
+message NotifyTraderAccountResponse {
+  bool submitted = 1;
 }
 
 message SignInRequest {

@@ -124,7 +124,7 @@ publish-docker:
     - docker:dind
   stage: deploy
   script:
-    - for app in dummyriskmodel vega vegabench vegastream ; do
+    - for app in dummyriskmodel vega vegabench vegaccount vegastream ; do
     - f="${BIN_DIR}/$app"
     # single quotes to avoid the colon making a yaml key:value pair.
     - 'if ! test -f "$f" ; then echo "Failed to find: $f" ; exit 1 ; fi'

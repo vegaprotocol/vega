@@ -197,6 +197,10 @@ message PendingOrder {
   string id = 9;
 }
 
+message NotifyTraderAccount {
+  string traderID = 1;
+}
+
 message OrderAmendment {
     string orderID = 1 [(validator.field) = {msg_exists : true}];
     string partyID = 2 [(validator.field) = {msg_exists : true}];
@@ -226,7 +230,6 @@ enum AccountType {
   INSURANCE = 0;
   SETTLEMENT = 1;
   MARGIN = 2;
-  MARKET = 3;
   GENERAL = 4;
 }
 

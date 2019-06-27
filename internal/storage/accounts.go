@@ -67,44 +67,15 @@ func (a *Account) ReloadConf(cfg Config) {
 	a.Config = cfg
 }
 
-// Create an account, adds in all lists simultaneously
-func (a *Account) Create(rec *types.Account) error {
-	records, err := a.createAccountRecords(rec)
-	if err != nil {
-		return err
-	}
-	if _, err := a.badger.writeBatch(records); err != nil {
-		a.log.Error(
-			"Failed to create the given account",
-			logging.String("account-id", rec.Id),
-			logging.Error(err),
-		)
-		return err
-	}
-	return nil
+// Close our connection to the badger database
+// ensuring errors will be returned up the stack.
+func (a *Account) Close() error {
+	return a.badger.db.Close()
 }
 
 // GetAccountByID - returns a given account by ID (if it exists, obviously)
 func (a *Account) GetAccountByID(id string) (*types.Account, error) {
 	return a.getAccountByID(nil, id)
-}
-
-func (a *Account) createAccounts(accounts ...*types.Account) error {
-	if len(accounts) == 0 {
-		return nil
-	}
-	records, err := a.createAccountRecords(accounts...)
-	if err != nil {
-		return err
-	}
-	if _, err := a.badger.writeBatch(records); err != nil {
-		a.log.Error(
-			"Failed to create accounts",
-			logging.Error(err),
-		)
-		return err
-	}
-	return nil
 }
 
 func (a *Account) hasAccount(acc *types.Account) (bool, error) {
@@ -187,91 +158,6 @@ func (a *Account) createAccountRecords(accounts ...*types.Account) (map[string][
 		m[string(assetRef)] = accKey
 	}
 	return m, nil
-}
-
-func (a *Account) CreateMarketAccounts(market string, insuranceBalance int64) ([]*types.Account, error) {
-	// all market accounts that the system should have available to it
-	accounts := []*types.Account{
-		{
-			Owner:    SystemOwner,
-			MarketID: market,
-			Asset:    string(market[:3]),
-			Type:     types.AccountType_INSURANCE,
-			Balance:  insuranceBalance,
-		},
-		{
-			Owner:    SystemOwner,
-			MarketID: NoMarket,
-			Asset:    string(market[:3]),
-			Type:     types.AccountType_GENERAL,
-		},
-		{
-			Owner:    SystemOwner,
-			MarketID: market,
-			Asset:    string(market[:3]),
-			Type:     types.AccountType_SETTLEMENT,
-		},
-	}
-	// This should probably be a single transaction
-	create := make([]*types.Account, 0, len(accounts))
-	for _, acc := range accounts {
-		ok, err := a.hasAccount(acc)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			create = append(create, acc)
-		}
-	}
-	if err := a.createAccounts(create...); err != nil {
-		return nil, err
-	}
-	// don't return just the ones we've created, we should return all the accounts we need
-	return accounts, nil
-}
-
-// CreateTraderMarketAccounts - sets up accounts for trader for a particular market
-// checks general accounts, and creates those, too if needed
-func (a *Account) CreateTraderMarketAccounts(owner, market string) ([]*types.Account, error) {
-	// does this trader actually have any accounts yet?
-	accounts := []*types.Account{
-		{
-			MarketID: market,
-			Owner:    owner,
-			Asset:    string(market[:3]),
-			Type:     types.AccountType_MARKET,
-		},
-		{
-			MarketID: market,
-			Asset:    string(market[:3]),
-			Owner:    owner,
-			Type:     types.AccountType_MARGIN,
-		},
-		{
-			MarketID: NoMarket,
-			Owner:    owner,
-			Asset:    string(market[:3]),
-			Type:     types.AccountType_GENERAL,
-		},
-	}
-	// Again, probably better to put this in a transaction, even though accounts are created
-	// in a deterministic flow (sequential), and as such, this is safe
-	create := make([]*types.Account, 0, len(accounts))
-	for _, acc := range accounts {
-		ok, err := a.hasAccount(acc)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			// no errors returned by check, no account found
-			create = append(create, acc)
-		}
-	}
-	if err := a.createAccounts(create...); err != nil {
-		return nil, err
-	}
-	// again, return not just the created accounts, return all of them
-	return accounts, nil
 }
 
 func (a *Account) GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error) {
@@ -430,4 +316,25 @@ func (a *Account) getAccountByID(txn *badger.Txn, id string) (*types.Account, er
 		return nil, err
 	}
 	return &acc, nil
+}
+
+func (a *Account) SaveBatch(accs []*types.Account) error {
+	batch, err := a.createAccountRecords(accs...)
+	if err != nil {
+		return err
+	}
+
+	cnt, err := a.badger.writeBatch(batch)
+	if err != nil {
+		a.log.Error(
+			"Unable to write accounts batch",
+			logging.Error(err),
+			logging.Int("saved-count", cnt),
+			logging.Int("expected-count", len(batch)))
+		return err
+	}
+	a.log.Debug(
+		"New batch of accounts saved",
+		logging.Int("count", cnt))
+	return nil
 }
