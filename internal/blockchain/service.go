@@ -150,11 +150,13 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	confirmationMessage, errorMessage := s.execution.SubmitOrder(order)
 	if confirmationMessage != nil {
 
-		s.log.Debug("Order confirmed",
-			logging.Order(*order),
-			logging.OrderWithTag(*confirmationMessage.Order, "aggressive-order"),
-			logging.String("passive-trades", fmt.Sprintf("%+v", confirmationMessage.Trades)),
-			logging.String("passive-orders", fmt.Sprintf("%+v", confirmationMessage.PassiveOrdersAffected)))
+		if s.log.GetLevel() == logging.DebugLevel {
+			s.log.Debug("Order confirmed",
+				logging.Order(*order),
+				logging.OrderWithTag(*confirmationMessage.Order, "aggressive-order"),
+				logging.String("passive-trades", fmt.Sprintf("%+v", confirmationMessage.Trades)),
+				logging.String("passive-orders", fmt.Sprintf("%+v", confirmationMessage.PassiveOrdersAffected)))
+		}
 
 		s.currentTradesInBatch += len(confirmationMessage.Trades)
 		s.totalTrades += uint64(s.currentTradesInBatch)

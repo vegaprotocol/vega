@@ -166,7 +166,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
 		if order.Type == types.Order_GTT {
-			b.expiringOrders = append(b.expiringOrders, *order)
+			b.insertExpiringOrder(*order)
 		}
 
 		b.getSide(order.Side).addOrder(order, order.Side)
@@ -212,30 +212,40 @@ func (b *OrderBook) DeleteOrder(order *types.Order) error {
 // RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
 // matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
 func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order {
-	var expiredOrders []types.Order
-	var pendingOrders []types.Order
+	// expiring orders are ordered by expiration time.
+	// so we'll search for the position where the expirationTimestamp would be in the slice
+	// e.g: if our timestamp is 4
+	// []int{1, 2, 3, 4, 4, 4, 4, 6, 7, 8}
+	// ~~~~~~~~~~~~~~~~~~~~~~~~^
+	// Also we add + 1 to the timestamp so it would find the last in the list,
+	// if not the previous example would return
+	// []int{1, 2, 3, 4, 4, 4, 4, 6, 7, 8}
+	// ~~~~~~~~~~~~~~~^
+	// by adding + 1 we actuall get everything which is stricly before the expirationTimestamp
+	i := sort.Search(len(b.expiringOrders), func(i int) bool { return b.expiringOrders[i].ExpiresAt >= expirationTimestamp+1 })
 
-	// linear scan of our expiring orders, prune any that have expired
-	for _, or := range b.expiringOrders {
-		if or.ExpiresAt <= expirationTimestamp {
-			b.DeleteOrder(&or)              // order is removed from the book
-			or.Status = types.Order_Expired // order is marked as expired for storage
-			expiredOrders = append(expiredOrders, or)
-		} else {
-			pendingOrders = append(pendingOrders, or) // order is pending expiry (future)
-		}
+	// make slice with the right size for the expired orders
+	// then copy them
+	expiredOrders := make([]types.Order, i)
+	copy(expiredOrders, b.expiringOrders[:i])
+
+	// delete the orders now
+	for at := range expiredOrders {
+		b.DeleteOrder(&expiredOrders[at])
+		expiredOrders[at].Status = types.Order_Expired
 	}
+
+	// mem move all orders to be expired at the beginning of the slice, so
+	// we do not need to reallocate in the future and we'll just reuse the actual slice.
+	b.expiringOrders = b.expiringOrders[:copy(b.expiringOrders[0:], b.expiringOrders[i:])]
 
 	if b.LogRemovedOrdersDebug {
 		b.log.Debug("Removed expired orders from order book",
 			logging.String("order-book", b.marketID),
 			logging.Int("expired-orders", len(expiredOrders)),
-			logging.Int("remaining-orders", len(pendingOrders)))
+			logging.Int("remaining-orders", len(b.expiringOrders)))
 	}
 
-	// update our list of GTT orders pending expiry, ready for next run.
-	b.expiringOrders = nil
-	b.expiringOrders = pendingOrders
 	return expiredOrders
 }
 
@@ -255,6 +265,24 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 	}
 }
 
+func (b *OrderBook) insertExpiringOrder(ord types.Order) {
+	if len(b.expiringOrders) <= 0 {
+		b.expiringOrders = append(b.expiringOrders, ord)
+		return
+	}
+
+	// first find the position where this should be inserted
+	i := sort.Search(len(b.expiringOrders), func(i int) bool { return b.expiringOrders[i].ExpiresAt >= ord.ExpiresAt })
+
+	// append new elem first to make sure we have enough place
+	// this would reallocate sufficiently then
+	// no risk of this being a empty order, as it's overwritten just next with
+	// the slice insert
+	b.expiringOrders = append(b.expiringOrders, types.Order{})
+	copy(b.expiringOrders[i+1:], b.expiringOrders[i:])
+	b.expiringOrders[i] = ord
+}
+
 func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 	// this will return the index of the first order with an expiry matching the order expiry
 	// e.g: []int{1, 2, 3, 4, 4, 4, 5, 6, 7, 8, 9}
@@ -272,19 +300,6 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 		}
 	}
 	return false
-
-	/*
-		found := -1
-		for idx, or := range b.expiringOrders {
-			if or.Id == order.Id {
-				found = idx
-			}
-		}
-		if found > -1 {
-			b.expiringOrders = append(b.expiringOrders[:found], b.expiringOrders[found+1:]...)
-			return true
-		}
-	*/
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
