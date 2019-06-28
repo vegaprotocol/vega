@@ -120,10 +120,12 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	ch <- buyer
 	ch <- seller
 
-	e.log.Debug("Positions Updated for trade",
-		logging.Trade(*trade),
-		logging.String("buyer-position", fmt.Sprintf("%+v", buyer)),
-		logging.String("seller-position", fmt.Sprintf("%+v", seller)))
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Positions Updated for trade",
+			logging.Trade(*trade),
+			logging.String("buyer-position", fmt.Sprintf("%+v", buyer)),
+			logging.String("seller-position", fmt.Sprintf("%+v", seller)))
+	}
 
 	// we've set all the values now, unlock after logging
 	// because we're working on MarketPosition pointers
