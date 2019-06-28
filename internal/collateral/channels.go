@@ -16,11 +16,12 @@ type collectF func(t *transferT) error
 // transferT internal type, keeps account reference etc...
 type transferT struct {
 	events.Transfer
-	t       *types.Transfer
-	res     *types.TransferResponse
-	margin  *types.Account
-	market  *types.Account
-	general *types.Account
+	marketID string
+	t        *types.Transfer
+	res      *types.TransferResponse
+	margin   *types.Account
+	market   *types.Account
+	general  *types.Account
 }
 
 func (t transferT) Asset() string {
@@ -38,6 +39,10 @@ func (t transferT) GeneralBalance() uint64 {
 // TransferType indicates whether this was a win or a loss
 func (t transferT) TransferaType() types.TransferType {
 	return t.t.Type
+}
+
+func (t transferT) MarketID() string {
+	return t.marketID
 }
 
 func (e *Engine) TransferCh(marketID string, transfers []events.Transfer) (<-chan events.Margin, <-chan error) {
@@ -73,7 +78,7 @@ func (e *Engine) TransferCh(marketID string, transfers []events.Transfer) (<-cha
 		process := e.getProcessCB(distr, reference, settle, insurance, marketID)
 		lossResp, winResp := buildResponses(transfers, settle, insurance)
 		loss := e.lossCB(distr, lossResp, process)
-		winPos, err := processLoss(ch, transfers, loss)
+		winPos, err := processLoss(marketID, ch, transfers, loss)
 		if err != nil {
 			ech <- err
 			return
@@ -106,7 +111,7 @@ func (e *Engine) TransferCh(marketID string, transfers []events.Transfer) (<-cha
 		}
 		winResp.Transfers = make([]*types.LedgerEntry, 0, len(winPos)*2)
 		win := e.winCallback(distr, winResp, process)
-		if err := processWin(ch, winPos, win); err != nil {
+		if err := processWin(marketID, ch, winPos, win); err != nil {
 			ech <- err
 			return
 		}
@@ -255,7 +260,7 @@ func (e *Engine) lossCB(distr *distributor, lossResp *types.TransferResponse, pr
 	}
 }
 
-func processLoss(ch chan<- events.Margin, positions []events.Transfer, cb collectF) ([]events.Transfer, error) {
+func processLoss(marketID string, ch chan<- events.Margin, positions []events.Transfer, cb collectF) ([]events.Transfer, error) {
 	// collect whatever we have until we reach the DEBIT part of the positions
 	for i, p := range positions {
 		if p.Transfer().Type == types.TransferType_WIN || p.Transfer().Type == types.TransferType_MTM_WIN {
@@ -264,6 +269,7 @@ func processLoss(ch chan<- events.Margin, positions []events.Transfer, cb collec
 		t := &transferT{
 			Transfer: p,
 			t:        p.Transfer(),
+			marketID: marketID,
 		}
 		if err := cb(t); err != nil {
 			return nil, err
@@ -275,12 +281,13 @@ func processLoss(ch chan<- events.Margin, positions []events.Transfer, cb collec
 	return nil, nil
 }
 
-func processWin(ch chan<- events.Margin, positions []events.Transfer, cb collectF) error {
+func processWin(marketID string, ch chan<- events.Margin, positions []events.Transfer, cb collectF) error {
 	// this is really simple -> just collect whatever was left
 	for _, p := range positions {
 		t := &transferT{
 			Transfer: p,
 			t:        p.Transfer(),
+			marketID: marketID,
 		}
 		if err := cb(t); err != nil {
 			return err

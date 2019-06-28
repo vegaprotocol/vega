@@ -253,6 +253,8 @@ enum TransferType {
   CLOSE = 2;
   MTM_LOSS = 3;
   MTM_WIN = 4;
+  MARGIN_LOW = 5;
+  MARGIN_HIGH = 6;
 }
 
 message Transfer {

@@ -25,10 +25,12 @@ type Margin interface {
 	Asset() string
 	MarginBalance() uint64
 	GeneralBalance() uint64
+	MarketID() string
 }
 
 // Risk is an event that summarizes everything and an eventual update to margin account.
 type Risk interface {
 	Margin
 	Amount() int64
+	Transfer() *types.Transfer // I know, it's included in the Transfer interface, but this is to make it clear that this particular func is masked at this level
 }
