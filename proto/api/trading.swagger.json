@@ -57,6 +57,31 @@
         ]
       }
     },
+    "/markets/{marketID}": {
+      "get": {
+        "summary": "markets",
+        "operationId": "MarketByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/markets/{marketID}/candles": {
       "get": {
         "summary": "candles",
@@ -703,6 +728,15 @@
         }
       }
     },
+    "apiNotifyTraderAccountResponse": {
+      "type": "object",
+      "properties": {
+        "submitted": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
     "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {
@@ -949,7 +983,6 @@
         "INSURANCE",
         "SETTLEMENT",
         "MARGIN",
-        "MARKET",
         "GENERAL"
       ],
       "default": "INSURANCE"
@@ -1207,6 +1240,14 @@
         "sigma": {
           "type": "number",
           "format": "double"
+        }
+      }
+    },
+    "vegaNotifyTraderAccount": {
+      "type": "object",
+      "properties": {
+        "traderID": {
+          "type": "string"
         }
       }
     },

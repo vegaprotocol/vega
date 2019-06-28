@@ -175,7 +175,7 @@ func (r *MyQueryResolver) Markets(ctx context.Context, id *string) ([]Market, er
 }
 
 func (r *MyQueryResolver) Market(ctx context.Context, id string) (*Market, error) {
-	req := protoapi.MarketByIDRequest{Id: id}
+	req := protoapi.MarketByIDRequest{MarketID: id}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -463,8 +463,6 @@ func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 		switch *accType {
 		case AccountTypeMargin:
 			at = types.AccountType_MARGIN
-		case AccountTypeMarket:
-			at = types.AccountType_MARKET
 		case AccountTypeGeneral:
 			at = types.AccountType_GENERAL
 		case AccountTypeInsurance:
@@ -531,7 +529,7 @@ func (r *MyMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 		return nil, errors.New("invalid market depth")
 	}
 
-	req := protoapi.MarketByIDRequest{Id: md.MarketID}
+	req := protoapi.MarketByIDRequest{MarketID: md.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -738,7 +736,7 @@ func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPositi
 		return nil, errors.New("invalid market")
 	}
 
-	req := protoapi.MarketByIDRequest{Id: obj.MarketID}
+	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -1160,7 +1158,7 @@ func (r *MyPendingOrderResolver) Market(ctx context.Context, pord *proto.Pending
 		return nil, nil
 	}
 
-	req := protoapi.MarketByIDRequest{Id: pord.MarketID}
+	req := protoapi.MarketByIDRequest{MarketID: pord.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -1208,8 +1206,6 @@ func (r *MyAccountResolver) Type(ctx context.Context, obj *proto.Account) (Accou
 	switch obj.Type {
 	case types.AccountType_MARGIN:
 		return AccountTypeMargin, nil
-	case types.AccountType_MARKET:
-		return AccountTypeMarket, nil
 	case types.AccountType_GENERAL:
 		return AccountTypeGeneral, nil
 	case types.AccountType_INSURANCE:

@@ -20,6 +20,7 @@ type Service interface {
 	SubmitOrder(order *types.Order) error
 	CancelOrder(order *types.Order) error
 	AmendOrder(order *types.OrderAmendment) error
+	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
 	ValidateOrder(order *types.Order) error
 	ReloadConf(conf Config)
 }
@@ -35,6 +36,7 @@ type ServiceExecutionEngine interface {
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
+	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
 	Generate() error
 }
 
@@ -133,6 +135,10 @@ func (s *abciService) Commit() error {
 	return nil
 }
 
+func (s *abciService) NotifyTraderAccount(notif *types.NotifyTraderAccount) error {
+	return s.execution.NotifyTraderAccount(notif)
+}
+
 func (s *abciService) SubmitOrder(order *types.Order) error {
 	s.stats.addTotalCreateOrder(1)
 	s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
@@ -144,11 +150,13 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 	confirmationMessage, errorMessage := s.execution.SubmitOrder(order)
 	if confirmationMessage != nil {
 
-		s.log.Debug("Order confirmed",
-			logging.Order(*order),
-			logging.OrderWithTag(*confirmationMessage.Order, "aggressive-order"),
-			logging.String("passive-trades", fmt.Sprintf("%+v", confirmationMessage.Trades)),
-			logging.String("passive-orders", fmt.Sprintf("%+v", confirmationMessage.PassiveOrdersAffected)))
+		if s.log.GetLevel() == logging.DebugLevel {
+			s.log.Debug("Order confirmed",
+				logging.Order(*order),
+				logging.OrderWithTag(*confirmationMessage.Order, "aggressive-order"),
+				logging.String("passive-trades", fmt.Sprintf("%+v", confirmationMessage.Trades)),
+				logging.String("passive-orders", fmt.Sprintf("%+v", confirmationMessage.PassiveOrdersAffected)))
+		}
 
 		s.currentTradesInBatch += len(confirmationMessage.Trades)
 		s.totalTrades += uint64(s.currentTradesInBatch)

@@ -94,6 +94,34 @@ func (mr *MockTradeServiceMockRecorder) GetPositionsByParty(arg0, arg1 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPositionsByParty", reflect.TypeOf((*MockTradeService)(nil).GetPositionsByParty), arg0, arg1)
 }
 
+// GetPositionsSubscribersCount mocks base method
+func (m *MockTradeService) GetPositionsSubscribersCount() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPositionsSubscribersCount")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetPositionsSubscribersCount indicates an expected call of GetPositionsSubscribersCount
+func (mr *MockTradeServiceMockRecorder) GetPositionsSubscribersCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPositionsSubscribersCount", reflect.TypeOf((*MockTradeService)(nil).GetPositionsSubscribersCount))
+}
+
+// GetTradeSubscribersCount mocks base method
+func (m *MockTradeService) GetTradeSubscribersCount() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTradeSubscribersCount")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetTradeSubscribersCount indicates an expected call of GetTradeSubscribersCount
+func (mr *MockTradeServiceMockRecorder) GetTradeSubscribersCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTradeSubscribersCount", reflect.TypeOf((*MockTradeService)(nil).GetTradeSubscribersCount))
+}
+
 // ObservePositions mocks base method
 func (m *MockTradeService) ObservePositions(arg0 context.Context, arg1 int, arg2 string) (<-chan *proto.MarketPosition, uint64) {
 	m.ctrl.T.Helper()

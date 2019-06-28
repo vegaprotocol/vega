@@ -22,6 +22,7 @@ type MarketPosition interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/internal/settlement Product
 type Product interface {
 	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
+	GetAsset() string
 }
 
 // Engine - the main type (of course)
@@ -160,7 +161,7 @@ func (e *Engine) settlePreTrade(markPrice uint64, trade types.Trade) []*mtmTrans
 			Size:  1,
 			Amount: &types.FinancialAmount{
 				Amount: mtmShare,
-				Asset:  e.market[:3],
+				Asset:  e.product.GetAsset(),
 			},
 		}
 		if mtmShare > 0 {
@@ -270,7 +271,7 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 			Size:  1, // this is an absolute delta based on volume, so size is always 1
 			Amount: &types.FinancialAmount{
 				Amount: mtmShare, // current delta -> mark price minus current position average
-				Asset:  e.market[:3],
+				Asset:  e.product.GetAsset(),
 			},
 		}
 		if mtmShare > 0 {
@@ -395,7 +396,7 @@ func (e *Engine) SettleMTM(trade types.Trade, markPrice uint64, ch <-chan events
 				Size:  1, // this is an absolute delta based on volume, so size is always 1
 				Amount: &types.FinancialAmount{
 					Amount: mtmShare, // current delta -> mark price minus current position average
-					Asset:  e.market[:3],
+					Asset:  e.product.GetAsset(),
 				},
 			}
 			if mtmShare > 0 {

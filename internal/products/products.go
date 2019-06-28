@@ -14,6 +14,7 @@ var (
 type Product interface {
 	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
 	Value(markPrice uint64) (uint64, error)
+	GetAsset() string
 }
 
 func New(pp interface{}) (Product, error) {

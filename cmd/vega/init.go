@@ -170,7 +170,7 @@ func createDefaultMarkets(confpath string) error {
 								Event:      "price_changed",
 							},
 						},
-						Asset: "Ethereum/Ether",
+						Asset: "ETH",
 					},
 				},
 			},
@@ -200,7 +200,7 @@ func createDefaultMarkets(confpath string) error {
 					Event:      "price_changed",
 				},
 			},
-			Asset: "Ethereum/Ether",
+			Asset: "ETH",
 		},
 	}
 	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_Forward{
@@ -233,7 +233,7 @@ func createDefaultMarkets(confpath string) error {
 					Event:      "price_changed",
 				},
 			},
-			Asset: "Ethereum/Ether",
+			Asset: "ETH",
 		},
 	}
 	return createDefaultMarket(&mkt, path.Join(confpath, marketBTCDEC19), seq)

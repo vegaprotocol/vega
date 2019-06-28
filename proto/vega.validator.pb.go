@@ -119,6 +119,9 @@ func (this *Statistics) Validate() error {
 func (this *PendingOrder) Validate() error {
 	return nil
 }
+func (this *NotifyTraderAccount) Validate() error {
+	return nil
+}
 func (this *OrderAmendment) Validate() error {
 	if !(this.Size > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
