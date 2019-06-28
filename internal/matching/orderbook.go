@@ -2,6 +2,7 @@ package matching
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -255,17 +256,35 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 }
 
 func (b OrderBook) removePendingGttOrder(order types.Order) bool {
-	found := -1
-	for idx, or := range b.expiringOrders {
-		if or.Id == order.Id {
-			found = idx
+	// this will return the index of the first order with an expiry matching the order expiry
+	// e.g: []int{1, 2, 3, 4, 4, 4, 5, 6, 7, 8, 9}
+	//                     ^ this will return index 3
+	i := sort.Search(len(b.expiringOrders), func(i int) bool { return b.expiringOrders[i].ExpiresAt >= order.ExpiresAt })
+	if i < len(b.expiringOrders) {
+		// orders with the same expiry found, now we need to iterate over the result to find
+		// an order with the same expiry and may the order ID
+		for i <= len(b.expiringOrders) && b.expiringOrders[i].ExpiresAt == order.ExpiresAt {
+			if b.expiringOrders[i].ExpiresAt == order.ExpiresAt {
+				// we found our order, let's remove it
+				b.expiringOrders = b.expiringOrders[:i+copy(b.expiringOrders[i:], b.expiringOrders[i+1:])]
+				return true
+			}
 		}
 	}
-	if found > -1 {
-		b.expiringOrders = append(b.expiringOrders[:found], b.expiringOrders[found+1:]...)
-		return true
-	}
 	return false
+
+	/*
+		found := -1
+		for idx, or := range b.expiringOrders {
+			if or.Id == order.Id {
+				found = idx
+			}
+		}
+		if found > -1 {
+			b.expiringOrders = append(b.expiringOrders[:found], b.expiringOrders[found+1:]...)
+			return true
+		}
+	*/
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {

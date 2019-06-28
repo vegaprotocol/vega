@@ -728,6 +728,15 @@
         }
       }
     },
+    "apiNotifyTraderAccountResponse": {
+      "type": "object",
+      "properties": {
+        "submitted": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
     "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {
@@ -974,7 +983,6 @@
         "INSURANCE",
         "SETTLEMENT",
         "MARGIN",
-        "MARKET",
         "GENERAL"
       ],
       "default": "INSURANCE"
@@ -1232,6 +1240,14 @@
         "sigma": {
           "type": "number",
           "format": "double"
+        }
+      }
+    },
+    "vegaNotifyTraderAccount": {
+      "type": "object",
+      "properties": {
+        "traderID": {
+          "type": "string"
         }
       }
     },

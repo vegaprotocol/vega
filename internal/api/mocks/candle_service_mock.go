@@ -35,6 +35,20 @@ func (m *MockCandleService) EXPECT() *MockCandleServiceMockRecorder {
 	return m.recorder
 }
 
+// GetCandleSubscribersCount mocks base method
+func (m *MockCandleService) GetCandleSubscribersCount() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCandleSubscribersCount")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetCandleSubscribersCount indicates an expected call of GetCandleSubscribersCount
+func (mr *MockCandleServiceMockRecorder) GetCandleSubscribersCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandleSubscribersCount", reflect.TypeOf((*MockCandleService)(nil).GetCandleSubscribersCount))
+}
+
 // GetCandles mocks base method
 func (m *MockCandleService) GetCandles(arg0 context.Context, arg1 string, arg2 time.Time, arg3 proto.Interval) ([]*proto.Candle, error) {
 	m.ctrl.T.Helper()

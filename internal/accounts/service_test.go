@@ -18,7 +18,6 @@ import (
 var (
 	allTypes = []types.AccountType{
 		types.AccountType_MARGIN,
-		types.AccountType_MARKET,
 		types.AccountType_GENERAL,
 		types.AccountType_INSURANCE,
 		types.AccountType_SETTLEMENT,
@@ -109,8 +108,9 @@ func testGetTraderAccountsErr(t *testing.T) {
 func getTestService(t *testing.T) *tstService {
 	ctrl := gomock.NewController(t)
 	acc := mocks.NewMockAccountStore(ctrl)
+	chain := mocks.NewMockBlockchain(ctrl)
 	conf := accounts.NewDefaultConfig()
-	svc := accounts.NewService(logging.NewTestLogger(), conf, acc)
+	svc := accounts.NewService(logging.NewTestLogger(), conf, acc, chain)
 	return &tstService{
 		Svc:     svc,
 		ctrl:    ctrl,
