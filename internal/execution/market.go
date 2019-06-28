@@ -368,7 +368,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		m.blockTime.WithLabelValues("settlement", "order").Observe(float64(time.Now().Sub(start)))
 		// this belongs outside of trade loop, only call once per order
 		margins := m.collateralAndRisk(settle)
-		m.log.Debug("Total margin accounts to be updated after submit order", logging.Int("risk-update-len", len(margins)))
+		if len(margins) > 0 {
+			m.log.Debug(
+				"Total margin accounts that need updating",
+				logging.Int("risk-update-len", len(margins)),
+			)
+		}
 	}
 
 	return confirmation, nil
