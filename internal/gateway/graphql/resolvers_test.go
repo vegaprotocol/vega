@@ -144,7 +144,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	})
 
 	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
-		m, ok := markets[req.Id]
+		m, ok := markets[req.MarketID]
 		assert.True(t, ok)
 		if m == nil {
 			return nil, marketNotExistsErr

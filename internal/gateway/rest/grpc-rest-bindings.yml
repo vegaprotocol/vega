@@ -18,7 +18,7 @@ http:
     # Markets
     - selector: api.trading_data.Markets
       get: '/markets'
-    - selector: api.trading_data.Market
+    - selector: api.trading_data.MarketByID
       get: '/markets/{marketID}'
     - selector: api.trading_data.Candles
       get: '/markets/{marketID}/candles'

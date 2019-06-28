@@ -106,7 +106,7 @@ message LastTradeResponse {
 }
 
 message MarketByIDRequest {
-  string id = 1;
+  string marketID = 1;
 }
 
 message MarketByIDResponse {
