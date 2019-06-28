@@ -212,6 +212,12 @@ func (b *OrderBook) DeleteOrder(order *types.Order) error {
 // RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
 // matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
 func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order {
+	// expiringOrders are ordered, so it the first one ExpiresAt is bigger then the
+	// expirationtimestamp, this means than no order is expired
+	if len(b.expiringOrders) > 0 && b.expiringOrders[0].ExpiresAt > expirationTimestamp {
+		return []types.Order{}
+	}
+
 	// expiring orders are ordered by expiration time.
 	// so we'll search for the position where the expirationTimestamp would be in the slice
 	// e.g: if our timestamp is 4
