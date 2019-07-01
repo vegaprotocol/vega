@@ -17,6 +17,7 @@ type marginAmount struct {
 }
 
 func (e *Engine) getMargins(asset string) (*marginAmount, error) {
+	// the caller of this func already acquired a lock on the mutex
 	factor, ok := e.factors.RiskFactors[asset]
 	if !ok {
 		return nil, ErrNoFactorForAsset

@@ -114,7 +114,6 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []positions.Market
 // mock implementation, this wil return adjustments based on position updates
 func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.Margin, markPrice uint64) []events.Risk {
 	re.mu.Lock()
-	defer re.mu.Unlock()
 	// we can allocate the return value here already
 	// problem is that we don't know whether loss indicates a long/short position
 	// @TODO ^^ Positions should provide this information, so we can pass this through correctly
@@ -126,12 +125,15 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.Margin, ma
 	for {
 		select {
 		case <-ctx.Done():
+			// micro-optimisation perhaps, but hey... it's easy
+			re.mu.Unlock()
 			// this allows us to cancel in case of an error
 			// we're not returning anything, because things didn't go as expected
 			return nil
 		case change, ok := <-ch:
 			// channel is closed, and we've got a nil interface
 			if !ok && change == nil {
+				re.mu.Unlock()
 				return ret
 			}
 			// just read from channel - this is the open position
@@ -150,7 +152,7 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.Margin, ma
 					// @TODO this is debug for now, until we've got the asset format sorted out
 					re.log.Debug(
 						"No factor found for asset",
-						logging.String("assetId", asset),
+						logging.String("asset", asset),
 					)
 					continue
 				}
