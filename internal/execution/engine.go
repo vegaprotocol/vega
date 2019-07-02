@@ -316,12 +316,9 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	e.removeExpiredOrders(t)
 
 	// notify markets of the time expiration
-	for id, mkt := range e.markets {
+	for _, mkt := range e.markets {
 		mkt := mkt
-		pre := time.Now()
 		mkt.OnChainTimeUpdate(t)
-		// add time taken for OnChainUpdate for given market
-		metrics.EngineTimeCounterAdd(pre, id, "execution", "OnChainTimeUpdate")
 	}
 }
 

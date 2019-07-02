@@ -199,6 +199,8 @@ func (m *Market) GetID() string {
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(t time.Time) {
+	start := time.Now()
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -234,24 +236,25 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 				"Failed to get settle positions on market close",
 				logging.Error(err),
 			)
-			return
+		} else {
+			transfers, err := m.collateral.Transfer(m.GetID(), positions)
+			if err != nil {
+				m.log.Error(
+					"Failed to get ledger movements after settling closed market",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err),
+				)
+			} else {
+				// use transfers, unused var thingy
+				m.log.Debug(
+					"Got transfers on market close (%#v)",
+					logging.String("transfers-dump", fmt.Sprintf("%#v", transfers)), // @TODO process these transfers, they contain the ledger movements...
+					logging.String("market-id", m.GetID()),
+				)
+			}
 		}
-		transfers, err := m.collateral.Transfer(m.GetID(), positions)
-		if err != nil {
-			m.log.Error(
-				"Failed to get ledger movements after settling closed market",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err),
-			)
-			return
-		}
-		// use transfers, unused var thingy
-		m.log.Debug(
-			"Got transfers on market close (%#v)",
-			logging.String("transfers-dump", fmt.Sprintf("%#v", transfers)), // @TODO process these transfers, they contain the ledger movements...
-			logging.String("market-id", m.GetID()),
-		)
 	}
+	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "execution", "OnChainTimeUpdate")
 }
 
 // SubmitOrder submits the given order
@@ -261,7 +264,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	startSubmit := time.Now() // do not reset this var
 	defer func() {
-		metrics.EngineTimeCounterAdd(startSubmit, m.mkt.Id, "execution", "submit")
+		metrics.EngineTimeCounterAdd(startSubmit, m.mkt.Id, "execution", "Submit")
 	}()
 
 	if order.MarketID != m.mkt.Id {
