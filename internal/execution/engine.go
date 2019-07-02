@@ -329,9 +329,10 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
+	tnano := t.UnixNano()
 	for _, mkt := range e.markets {
 		expiringOrders = append(
-			expiringOrders, mkt.RemoveExpiredOrders(t.UnixNano())...)
+			expiringOrders, mkt.RemoveExpiredOrders(tnano)...)
 	}
 
 	e.log.Debug("Removed expired orders from matching engine",
