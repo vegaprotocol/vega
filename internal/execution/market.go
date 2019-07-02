@@ -258,6 +258,12 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	// Validate market
 	start := time.Now()
+
+	startSubmit := time.Now() // do not reset this var
+	defer func() {
+		metrics.EngineTimeCounterAdd(startSubmit, m.mkt.Id, "execution", "submit")
+	}()
+
 	if order.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),

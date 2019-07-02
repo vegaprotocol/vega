@@ -246,9 +246,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		// we're submitting an active order
 		metrics.OrderGaugeAdd(1, order.MarketID)
 	}
-	pre := time.Now()
 	conf, err := mkt.SubmitOrder(order)
-	metrics.EngineTimeCounterAdd(pre, order.MarketID, "order")
 	// order was filled by submitting it to the market -> the matching engine worked
 	if conf.Order.Status == types.Order_Filled {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
