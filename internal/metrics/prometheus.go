@@ -24,8 +24,9 @@ var (
 )
 
 var (
-	engineTime *prometheus.CounterVec
-	orderGauge *prometheus.GaugeVec
+	engineTime   *prometheus.CounterVec
+	orderCounter *prometheus.CounterVec
+	orderGauge   *prometheus.GaugeVec
 )
 
 // abstract prometheus types
@@ -312,11 +313,27 @@ func setupMetrics() error {
 	if err != nil {
 		return err
 	}
-	vec, err := h.CounterVec()
+	est, err := h.CounterVec()
 	if err != nil {
 		return err
 	}
-	engineTime = vec
+	engineTime = est
+
+	h, err = AddInstrument(
+		Counter,
+		"orders_total",
+		Namespace("vega"),
+		Vectors("market", "valid"),
+		Help("Number of orders processed"),
+	)
+	if err != nil {
+		return err
+	}
+	ot, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	orderCounter = ot
 
 	// now add the orders gauge
 	h, err = AddInstrument(
@@ -345,6 +362,13 @@ func EngineTimeCounterAdd(start time.Time, labelValues ...string) {
 		return
 	}
 	engineTime.WithLabelValues(labelValues...).Add(time.Now().Sub(start).Seconds())
+}
+
+func OrderCounterInc(labelValues ...string) {
+	if orderCounter == nil {
+		return
+	}
+	orderCounter.WithLabelValues(labelValues...).Inc()
 }
 
 func OrderGaugeAdd(n int, labelValues ...string) {
