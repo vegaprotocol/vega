@@ -10,14 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/metrics"
-
 	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/positions"
 	"code.vegaprotocol.io/vega/internal/risk"
 	"code.vegaprotocol.io/vega/internal/settlement"
