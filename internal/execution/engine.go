@@ -77,7 +77,7 @@ type Engine struct {
 	collateral   *collateral.Engine
 	accountStore *storage.Account
 	// metrics
-	blockTime  *prometheus.HistogramVec // maybe mask this type a bit -> interface...
+	blockTime  *prometheus.CounterVec
 	accountBuf *buffer.Account
 	orderGauge *prometheus.GaugeVec
 }
@@ -171,7 +171,7 @@ func NewEngine(
 func (e *Engine) setMetrics() error {
 	// instrument with time histogram for blocks
 	h, err := metrics.AddInstrument(
-		metrics.Histogram,
+		metrics.Counter,
 		namedLogger,                       // name is required
 		metrics.Namespace("vega"),         // namespace, name, subsystem together form label, so this is vega_execution
 		metrics.Vectors("market", "unit"), // unit is block, transaction, order, trade, etc... observe will be nano timestamps
@@ -179,8 +179,7 @@ func (e *Engine) setMetrics() error {
 	if err != nil {
 		return err
 	}
-	// ensure we got an actual histogram (no vector option provided)
-	vec, err := h.HistogramVec()
+	vec, err := h.CounterVec()
 	if err != nil {
 		return err
 	}
@@ -298,7 +297,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	pre := time.Now()
 	conf, err := mkt.SubmitOrder(order)
-	e.blockTime.WithLabelValues(order.MarketID, "order").Observe(float64(time.Now().Sub(pre)))
+	e.blockTime.WithLabelValues(order.MarketID, "order").Add(float64(time.Now().Sub(pre)))
 	// order was filled by submitting it to the market -> the matching engine worked
 	if conf.Order.Status == types.Order_Filled {
 		e.orderGauge.WithLabelValues(order.MarketID).Dec()
@@ -368,7 +367,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// remove expired orders
 	e.removeExpiredOrders(t)
 	// see how long expiring orders actually takes
-	e.blockTime.WithLabelValues("all", "block").Observe(float64(time.Now().Sub(pre)))
+	e.blockTime.WithLabelValues("all", "block").Add(float64(time.Now().Sub(pre)))
 
 	// notify markets of the time expiration
 	for id, mkt := range e.markets {
@@ -377,7 +376,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 		mkt.OnChainTimeUpdate(t)
 		after := time.Now().Sub(pre)
 		// add time taken for OnChainUpdate for given market
-		e.blockTime.WithLabelValues(id, "block").Observe(float64(after))
+		e.blockTime.WithLabelValues(id, "block").Add(float64(after))
 	}
 }
 
