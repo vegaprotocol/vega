@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/collateral"
@@ -77,8 +76,6 @@ type Engine struct {
 	collateral   *collateral.Engine
 	accountBuf   *buffer.Account
 	accountStore *storage.Account
-	// metrics
-	orderGauge *prometheus.GaugeVec
 }
 
 // NewEngine takes stores and engines and returns
@@ -152,12 +149,6 @@ func NewEngine(
 		}
 		pmkts = append(pmkts, mkt)
 	}
-	if err := e.setMetrics(); err != nil {
-		e.log.Panic(
-			"Unable to set up histogram",
-			logging.Error(err),
-		)
-	}
 
 	// create the party engine
 	e.party = NewParty(log, e.collateral, pmkts)
@@ -165,29 +156,6 @@ func NewEngine(
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
 	return e
-}
-
-func (e *Engine) setMetrics() error {
-	// now add the orders gauge
-	h, err := metrics.AddInstrument(
-		metrics.Gauge,
-		namedLogger,
-		metrics.Namespace("vega"),
-		metrics.Subsystem("orders"),
-		metrics.Vectors("market"),
-	)
-	if err != nil {
-		return err
-	}
-	g, err := h.GaugeVec()
-	if err != nil {
-		return err
-	}
-	e.orderGauge = g
-	// example usage of this simple gauge:
-	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
-	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
-	return nil
 }
 
 func (e *Engine) ReloadConf(cfg Config) {
@@ -276,14 +244,14 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	if order.Status == types.Order_Active {
 		// we're submitting an active order
-		e.orderGauge.WithLabelValues(order.MarketID).Inc()
+		metrics.OrderGaugeAdd(1, order.MarketID)
 	}
 	pre := time.Now()
 	conf, err := mkt.SubmitOrder(order)
 	metrics.EngineTimeCounterAdd(pre, order.MarketID, "order")
 	// order was filled by submitting it to the market -> the matching engine worked
 	if conf.Order.Status == types.Order_Filled {
-		e.orderGauge.WithLabelValues(order.MarketID).Dec()
+		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 	return conf, err
 }
@@ -319,7 +287,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	}
 	// order was active, not anymore -> decrement gauge
 	if wasActive && conf.Order.Status != types.Order_Active {
-		e.orderGauge.WithLabelValues(order.MarketID).Dec()
+		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 	return conf, nil
 }
@@ -338,7 +306,7 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 		return nil, err
 	}
 	if conf.Order.Status == types.Order_Cancelled {
-		e.orderGauge.WithLabelValues(order.MarketID).Dec()
+		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 	return conf, nil
 }
@@ -385,7 +353,7 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 				logging.Error(err))
 		}
 		// order expired, decrement gauge
-		e.orderGauge.WithLabelValues(order.MarketID).Dec()
+		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 
 	e.log.Debug("Updated expired orders in stores",

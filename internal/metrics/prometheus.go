@@ -24,7 +24,8 @@ var (
 )
 
 var (
-	blockTime *prometheus.CounterVec
+	blockTime  *prometheus.CounterVec
+	orderGauge *prometheus.GaugeVec
 )
 
 // abstract prometheus types
@@ -317,9 +318,32 @@ func setupMetrics() error {
 	}
 	blockTime = vec
 
+	// now add the orders gauge
+	h, err = AddInstrument(
+		Gauge,
+		namedLogger,
+		Namespace("vega"),
+		Subsystem("orders"),
+		Vectors("market"),
+	)
+	if err != nil {
+		return err
+	}
+	g, err := h.GaugeVec()
+	if err != nil {
+		return err
+	}
+	orderGauge = g
+	// example usage of this simple gauge:
+	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
+	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
 	return nil
 }
 
 func EngineTimeCounterAdd(start time.Time, labelValues ...string) {
 	blockTime.WithLabelValues(labelValues...).Add(time.Now().Sub(start).Seconds())
+}
+
+func OrderGaugeAdd(n int, labelValues ...string) {
+	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
 }
