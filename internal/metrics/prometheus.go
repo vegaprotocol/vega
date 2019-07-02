@@ -341,9 +341,15 @@ func setupMetrics() error {
 }
 
 func EngineTimeCounterAdd(start time.Time, labelValues ...string) {
+	if engineTime == nil {
+		return
+	}
 	engineTime.WithLabelValues(labelValues...).Add(time.Now().Sub(start).Seconds())
 }
 
 func OrderGaugeAdd(n int, labelValues ...string) {
+	if orderGauge == nil {
+		return
+	}
 	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
 }
