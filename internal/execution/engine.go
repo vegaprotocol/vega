@@ -312,16 +312,13 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 func (e *Engine) onChainTimeUpdate(t time.Time) {
 	e.log.Debug("updating engine on new time update")
 
-	pre := time.Now()
 	// remove expired orders
 	e.removeExpiredOrders(t)
-	// see how long expiring orders actually takes
-	metrics.EngineTimeCounterAdd(pre, "all", "execution", "removeExpiredOrders")
 
 	// notify markets of the time expiration
 	for id, mkt := range e.markets {
 		mkt := mkt
-		pre = time.Now()
+		pre := time.Now()
 		mkt.OnChainTimeUpdate(t)
 		// add time taken for OnChainUpdate for given market
 		metrics.EngineTimeCounterAdd(pre, id, "execution", "OnChainTimeUpdate")
@@ -331,6 +328,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
 func (e *Engine) removeExpiredOrders(t time.Time) {
+	pre := time.Now()
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
@@ -356,6 +354,7 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
+	metrics.EngineTimeCounterAdd(pre, "all", "execution", "removeExpiredOrders")
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.
