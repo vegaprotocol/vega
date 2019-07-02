@@ -143,7 +143,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	startSubmit := time.Now() // do not reset this var
 
 	if err := b.validateOrder(order); err != nil {
-		metrics.EngineTimeCounterAdd(startSubmit, "all", "matching", "Submit")
+		metrics.EngineTimeCounterAdd(startSubmit, b.marketID, "matching", "Submit")
 		return nil, err
 	}
 
@@ -204,7 +204,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
-	metrics.EngineTimeCounterAdd(startSubmit, "all", "matching", "Submit")
+	metrics.EngineTimeCounterAdd(startSubmit, b.marketID, "matching", "Submit")
 	return orderConfirmation, nil
 }
 
