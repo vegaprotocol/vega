@@ -24,7 +24,7 @@ var (
 )
 
 var (
-	blockTime  *prometheus.CounterVec
+	engineTime *prometheus.CounterVec
 	orderGauge *prometheus.GaugeVec
 )
 
@@ -305,9 +305,9 @@ func setupMetrics() error {
 	// instrument with time histogram for blocks
 	h, err := AddInstrument(
 		Counter,
-		"execution",
+		"engine_seconds_total",
 		Namespace("vega"),
-		Vectors("market", "unit"),
+		Vectors("market", "engine", "fn"),
 	)
 	if err != nil {
 		return err
@@ -316,7 +316,7 @@ func setupMetrics() error {
 	if err != nil {
 		return err
 	}
-	blockTime = vec
+	engineTime = vec
 
 	// now add the orders gauge
 	h, err = AddInstrument(
@@ -341,7 +341,7 @@ func setupMetrics() error {
 }
 
 func EngineTimeCounterAdd(start time.Time, labelValues ...string) {
-	blockTime.WithLabelValues(labelValues...).Add(time.Now().Sub(start).Seconds())
+	engineTime.WithLabelValues(labelValues...).Add(time.Now().Sub(start).Seconds())
 }
 
 func OrderGaugeAdd(n int, labelValues ...string) {
