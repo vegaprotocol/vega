@@ -290,7 +290,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		*/
 	}
 	m.blockTime.WithLabelValues("parties", "order").Add(float64(time.Now().Sub(start)))
-	start = time.Now()
 
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
@@ -300,7 +299,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		return nil, err
 	}
-	m.blockTime.WithLabelValues("matching", "order").Add(float64(time.Now().Sub(start)))
 	start = time.Now()
 
 	// Insert aggressive remaining order
