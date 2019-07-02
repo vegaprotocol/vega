@@ -75,10 +75,9 @@ type Engine struct {
 	partyStore   PartyStore
 	time         TimeService
 	collateral   *collateral.Engine
+	accountBuf   *buffer.Account
 	accountStore *storage.Account
 	// metrics
-	blockTime  *prometheus.CounterVec
-	accountBuf *buffer.Account
 	orderGauge *prometheus.GaugeVec
 }
 
@@ -169,31 +168,15 @@ func NewEngine(
 }
 
 func (e *Engine) setMetrics() error {
-	// instrument with time histogram for blocks
-	h, err := metrics.AddInstrument(
-		metrics.Counter,
-		namedLogger,                       // name is required
-		metrics.Namespace("vega"),         // namespace, name, subsystem together form label, so this is vega_execution
-		metrics.Vectors("market", "unit"), // unit is block, transaction, order, trade, etc... observe will be nano timestamps
-	)
-	if err != nil {
-		return err
-	}
-	vec, err := h.CounterVec()
-	if err != nil {
-		return err
-	}
-	e.blockTime = vec
-	// example of how to use this -> WithLabelValues arguments have to be in the same order the vectors were added in the code above (AddInstrument call)
-	// e.blockTime.WithLabelValues(mkt.Id, "block").Observe(float64(time.Now().UnixNano()))
 	// now add the orders gauge
-	if h, err = metrics.AddInstrument(
+	h, err := metrics.AddInstrument(
 		metrics.Gauge,
 		namedLogger,
 		metrics.Namespace("vega"),
 		metrics.Subsystem("orders"),
 		metrics.Vectors("market"),
-	); err != nil {
+	)
+	if err != nil {
 		return err
 	}
 	g, err := h.GaugeVec()
@@ -297,7 +280,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	pre := time.Now()
 	conf, err := mkt.SubmitOrder(order)
-	e.blockTime.WithLabelValues(order.MarketID, "order").Add(float64(time.Now().Sub(pre)))
+	metrics.EngineTimeCounterAdd(pre, order.MarketID, "order")
 	// order was filled by submitting it to the market -> the matching engine worked
 	if conf.Order.Status == types.Order_Filled {
 		e.orderGauge.WithLabelValues(order.MarketID).Dec()
@@ -367,16 +350,15 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// remove expired orders
 	e.removeExpiredOrders(t)
 	// see how long expiring orders actually takes
-	e.blockTime.WithLabelValues("all", "block").Add(float64(time.Now().Sub(pre)))
+	metrics.EngineTimeCounterAdd(pre, "all", "block")
 
 	// notify markets of the time expiration
 	for id, mkt := range e.markets {
 		mkt := mkt
 		pre = time.Now()
 		mkt.OnChainTimeUpdate(t)
-		after := time.Now().Sub(pre)
 		// add time taken for OnChainUpdate for given market
-		e.blockTime.WithLabelValues(id, "block").Add(float64(after))
+		metrics.EngineTimeCounterAdd(pre, id, "block")
 	}
 }
 

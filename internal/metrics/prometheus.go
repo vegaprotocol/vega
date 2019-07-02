@@ -23,6 +23,10 @@ var (
 	ErrInstrumentTypeMismatch = errors.New("instrument is not of the expected type")
 )
 
+var (
+	blockTime *prometheus.CounterVec
+)
+
 // abstract prometheus types
 type instrument int
 
@@ -197,6 +201,10 @@ func Start(conf Config) {
 	if !conf.Enabled {
 		return
 	}
+	err := setupMetrics()
+	if err != nil {
+		panic("could not set up metrics")
+	}
 	http.Handle(conf.Path, promhttp.Handler())
 	go func() {
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", conf.Port), nil))
@@ -290,4 +298,28 @@ func (m mi) SummaryVec() (*prometheus.SummaryVec, error) {
 		return nil, ErrInstrumentTypeMismatch
 	}
 	return m.summaryV, nil
+}
+
+func setupMetrics() error {
+	// instrument with time histogram for blocks
+	h, err := AddInstrument(
+		Counter,
+		"execution",
+		Namespace("vega"),
+		Vectors("market", "unit"),
+	)
+	if err != nil {
+		return err
+	}
+	vec, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	blockTime = vec
+
+	return nil
+}
+
+func EngineTimeCounterAdd(start time.Time, labelValues ...string) {
+	blockTime.WithLabelValues(labelValues...).Add(time.Now().Sub(start).Seconds())
 }
