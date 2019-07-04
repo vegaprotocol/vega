@@ -24,9 +24,10 @@ var (
 )
 
 var (
-	engineTime   *prometheus.CounterVec
-	orderCounter *prometheus.CounterVec
-	orderGauge   *prometheus.GaugeVec
+	unconfirmedTxGauge prometheus.Gauge
+	engineTime         *prometheus.CounterVec
+	orderCounter       *prometheus.CounterVec
+	orderGauge         *prometheus.GaugeVec
 )
 
 // abstract prometheus types
@@ -338,10 +339,10 @@ func setupMetrics() error {
 	// now add the orders gauge
 	h, err = AddInstrument(
 		Gauge,
-		namedLogger,
+		"orders",
 		Namespace("vega"),
-		Subsystem("orders"),
 		Vectors("market"),
+		Help("Number of orders currently being processed"),
 	)
 	if err != nil {
 		return err
@@ -354,6 +355,22 @@ func setupMetrics() error {
 	// example usage of this simple gauge:
 	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
 	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
+
+	h, err = AddInstrument(
+		Gauge,
+		"unconfirmedtx",
+		Namespace("vega"),
+		Help("Number of transactions waiting to be processed"),
+	)
+	if err != nil {
+		return err
+	}
+	utxg, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	unconfirmedTxGauge = utxg
+
 	return nil
 }
 
@@ -376,4 +393,11 @@ func OrderGaugeAdd(n int, labelValues ...string) {
 		return
 	}
 	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
+}
+
+func UnconfirmedTxGaugeSet(n int) {
+	if unconfirmedTxGauge == nil {
+		return
+	}
+	unconfirmedTxGauge.Set(float64(n))
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -16,6 +17,7 @@ import (
 type BlockchainClient interface {
 	Health() (*tmctypes.ResultHealth, error)
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
+	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 }
 
 // Status holds a collection of monitoring services, for checking the state of internal or external resources.
@@ -167,6 +169,14 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 
 	if status == types.ChainStatus_DISCONNECTED {
 		cs.retriesCount -= 1
+	}
+
+	if newStatus == types.ChainStatus_CONNECTED {
+		// Check backlog length
+		utx, err := cs.client.GetUnconfirmedTxCount(context.Background())
+		if err == nil {
+			metrics.UnconfirmedTxGaugeSet(utx)
+		}
 	}
 
 	if status == newStatus {
