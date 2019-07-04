@@ -273,7 +273,9 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		return nil, types.ErrInvalidOrderReference
 	}
 	wasActive := order.Status == types.Order_Active
-	e.log.Debug("Existing order found", logging.Order(*order))
+	if e.log.Check(logging.DebugLevel) {
+		e.log.Debug("Existing order found", logging.Order(*order))
+	}
 
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
