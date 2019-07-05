@@ -11,56 +11,72 @@ var (
 	ErrNoFactorForAsset = errors.New("no risk factors found for given asset")
 )
 
-// long, short, base, max, optimal are all for volume 1
-type marginAmount struct {
+type limit struct {
 	long, short, base, step float64
 }
 
+// there is a system limit, and a trader one
+type marginAmount struct {
+	system limit
+	trader limit
+}
+
 func (e *Engine) getMargins(asset string) (*marginAmount, error) {
-	// the caller of this func already acquired a lock on the mutex
 	factor, ok := e.factors.RiskFactors[asset]
 	if !ok {
 		return nil, ErrNoFactorForAsset
 	}
-	m := marginAmount{
+	sys := limit{
 		long:  factor.Long,
 		short: factor.Short,
 	}
-	if m.long == m.short {
-		m.step = m.long / 10
-		m.base = m.long // we need a base value to calculate optimal/over
-		return &m, nil
-	}
-	// get the abs value of the delta in other cases
-	// for optimal margin value, use the highest of the 2 values
-	if m.long > m.short {
-		m.step = m.long - m.short
-		m.base = m.long
+	if sys.long == sys.short {
+		sys.step = sys.long / 10
+		sys.base = sys.long
+	} else if sys.long > sys.short {
+		sys.step = sys.long - sys.short
+		sys.base = sys.long
 	} else {
-		m.step = m.short - m.long
-		m.base = m.short
+		sys.step = sys.short - sys.long
+		sys.base = sys.short
 	}
-	return &m, nil
+	// just halve the step to 5% or half the delta
+	sys.step /= 2
+	trader := sys
+	// trader values are a bit higher than the standard ones
+	trader.short += sys.step
+	trader.long += sys.step
+	trader.base += sys.step
+	return &marginAmount{
+		system: sys,
+		trader: trader,
+	}, nil
 }
 
-// get amount of money to move to match the risk assessment
 func (m marginAmount) getChange(evt events.Margin, markPrice uint64) *marginChange {
-	volume := evt.Size()
-	absVol := volume
-	if absVol > 0 {
+	vol := evt.Size()
+	if vol == 0 {
+		return nil
+	}
+	absVol := vol
+	if vol > 0 {
 		absVol *= -1
 	}
 	notional := int64(markPrice) * absVol
-	var required uint64
-	if volume < 0 {
-		// trader is short
-		required = uint64(float64(notional) * m.short)
+	var (
+		req uint64
+	)
+	// this is always the minimum required margin for the system
+	sysReq := uint64(float64(notional) * m.system.base)
+	// trader is short
+	if vol < 0 {
+		req = uint64(float64(notional) * m.trader.short)
 	} else {
-		required = uint64(float64(notional) * m.long)
+		req = uint64(float64(notional) * m.trader.long)
 	}
 	balance := evt.MarginBalance()
-	// we've got enough margin, no further action required
-	if balance == required {
+	// spot on, no further action needed
+	if balance == req {
 		return nil
 	}
 	// *if* an amounts needs to be moved, this is the amount...
@@ -68,16 +84,14 @@ func (m marginAmount) getChange(evt events.Margin, markPrice uint64) *marginChan
 		Owner: evt.Party(),
 		Size:  1,
 		Amount: &types.FinancialAmount{
-			Asset:  evt.Asset(),
-			Amount: int64(float64(notional)*(m.base+m.step)) - int64(balance),
+			Asset:     evt.Asset(),
+			Amount:    int64(float64(notional)*(m.trader.base+m.trader.step)) - int64(balance), // add step to trader base again
+			MinAmount: int64(sysReq) - int64(balance),                                          // this is always the minimal amount required by the system
 		},
 		// Type: types.TransferType_MARGIN_{LOW,HIGH}, <-- these types need to be added to the proto
 	}
-	// step := uint64(float64(notional) * m.step)
-	if balance < required {
-		// not enough moneyz... calculate how much we need to transfer
-		// optimal := uint64(float(notional) * (m.base + m.step))
-		// get the optimal margin, subtract the amount
+	// balance of trader is below the minimum trader requirement for long/short position
+	if balance < req {
 		transfer.Type = types.TransferType_MARGIN_LOW
 		return &marginChange{
 			Margin:   evt,
@@ -85,12 +99,13 @@ func (m marginAmount) getChange(evt events.Margin, markPrice uint64) *marginChan
 			transfer: &transfer,
 		}
 	}
-	high := uint64(float64(notional) * (m.base + 2*m.step))
+	high := uint64(float64(notional) * (m.trader.base + 2*m.trader.step)) // twice the step is our margin "overflow" value for now
 	if balance <= high {
-		// more than enough margin, but not enough to move to general account
+		// enough margin, not too much
 		return nil
 	}
-	transfer.Amount.Amount *= -1 // make absolute value
+	transfer.Amount.Amount *= -1 // make absolute value, the balance was more than the margin value after all
+	transfer.Amount.MinAmount *= -1
 	transfer.Type = types.TransferType_MARGIN_HIGH
 	// balance > high -> too much collateral either way, we need to move money
 	return &marginChange{
