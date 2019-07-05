@@ -653,10 +653,12 @@ type Account {
 enum OrderType {
 
     # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
-    FOK,
+    # Currently unsupported
+    # FOK,
 
     # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-    ENE,
+    # Currently unsupported
+    # ENE,
 
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
     GTC,
