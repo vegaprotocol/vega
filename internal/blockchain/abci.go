@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tendermint/tendermint/abci/types"
 )
 
@@ -52,6 +54,9 @@ type AbciApplication struct {
 
 	time            ApplicationTime
 	onCriticalError func()
+
+	// metrics
+	blockHeightCounter prometheus.Counter
 }
 
 func NewApplication(log *logging.Logger, config Config, stats *Stats, proc ApplicationProcessor, svc ApplicationService, time ApplicationTime, onCriticalError func()) *AbciApplication {
@@ -59,7 +64,7 @@ func NewApplication(log *logging.Logger, config Config, stats *Stats, proc Appli
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	return &AbciApplication{
+	app := AbciApplication{
 		log:             log,
 		Config:          config,
 		stats:           stats,
@@ -68,6 +73,33 @@ func NewApplication(log *logging.Logger, config Config, stats *Stats, proc Appli
 		time:            time,
 		onCriticalError: onCriticalError,
 	}
+	if err := app.setMetrics(); err != nil {
+		app.log.Panic(
+			"Unable to set up metrics",
+			logging.Error(err),
+		)
+	}
+
+	return &app
+}
+
+func (s *AbciApplication) setMetrics() error {
+	h, err := metrics.AddInstrument(
+		metrics.Counter,
+		"block_height_total",
+		metrics.Namespace("vega"),
+		metrics.Help("Block height"),
+	)
+	if err != nil {
+		return err
+	}
+	c, err := h.Counter()
+	if err != nil {
+		return err
+	}
+	s.blockHeightCounter = c
+
+	return nil
 }
 
 func (s *AbciApplication) ReloadConf(cfg Config) {
@@ -89,6 +121,7 @@ func (s *AbciApplication) ReloadConf(cfg Config) {
 
 func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
 
+	app.blockHeightCounter.Inc()
 	// We can log more gossiped time info (switchable in config)
 	app.cfgMu.Lock()
 	if app.LogTimeDebug {

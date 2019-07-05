@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/collateral"
@@ -75,10 +74,8 @@ type Engine struct {
 	partyStore   PartyStore
 	time         TimeService
 	collateral   *collateral.Engine
+	accountBuf   *buffer.Account
 	accountStore *storage.Account
-	// metrics
-	blockTime  *prometheus.HistogramVec // maybe mask this type a bit -> interface...
-	accountBuf *buffer.Account
 }
 
 // NewEngine takes stores and engines and returns
@@ -152,12 +149,6 @@ func NewEngine(
 		}
 		pmkts = append(pmkts, mkt)
 	}
-	if err := e.setMetrics(); err != nil {
-		e.log.Panic(
-			"Unable to set up histogram",
-			logging.Error(err),
-		)
-	}
 
 	// create the party engine
 	e.party = NewParty(log, e.collateral, pmkts)
@@ -165,28 +156,6 @@ func NewEngine(
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
 	return e
-}
-
-func (e *Engine) setMetrics() error {
-	// instrument with time histogram for blocks
-	h, err := metrics.AddInstrument(
-		metrics.Histogram,
-		namedLogger,                       // name is required
-		metrics.Namespace("vega"),         // namespace, name, subsystem together form label, so this is vega_execution
-		metrics.Vectors("market", "unit"), // unit is block, transaction, order, trade, etc... observe will be nano timestamps
-	)
-	if err != nil {
-		return err
-	}
-	// ensure we got an actual histogram (no vector option provided)
-	vec, err := h.HistogramVec()
-	if err != nil {
-		return err
-	}
-	e.blockTime = vec
-	// example of how to use this -> WithLabelValues arguments have to be in the same order the vectors were added in the code above (AddInstrument call)
-	// e.blockTime.WithLabelValues(mkt.Id, "block").Observe(float64(time.Now().UnixNano()))
-	return nil
 }
 
 func (e *Engine) ReloadConf(cfg Config) {
@@ -267,15 +236,24 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 }
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	e.log.Debug("Submit order", logging.Order(*order))
-	pre := time.Now()
+	if e.log.Check(logging.DebugLevel) {
+		e.log.Debug("Submit order", logging.Order(*order))
+	}
+
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
 
+	if order.Status == types.Order_Active {
+		// we're submitting an active order
+		metrics.OrderGaugeAdd(1, order.MarketID)
+	}
 	conf, err := mkt.SubmitOrder(order)
-	e.blockTime.WithLabelValues(order.MarketID, "order").Observe(float64(time.Now().Sub(pre)))
+	// order was filled by submitting it to the market -> the matching engine worked
+	if conf.Order.Status == types.Order_Filled {
+		metrics.OrderGaugeAdd(-1, order.MarketID)
+	}
 	return conf, err
 }
 
@@ -294,14 +272,27 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 		return nil, types.ErrInvalidOrderReference
 	}
-	e.log.Debug("Existing order found", logging.Order(*order))
+	wasActive := order.Status == types.Order_Active
+	if e.log.Check(logging.DebugLevel) {
+		e.log.Debug("Existing order found", logging.Order(*order))
+	}
 
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
 
-	return mkt.AmendOrder(orderAmendment, order)
+	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
+	// order status. It's possible order.Status will reflect the new status value if we don't
+	conf, err := mkt.AmendOrder(orderAmendment, order)
+	if err != nil {
+		return nil, err
+	}
+	// order was active, not anymore -> decrement gauge
+	if wasActive && conf.Order.Status != types.Order_Active {
+		metrics.OrderGaugeAdd(-1, order.MarketID)
+	}
+	return conf, nil
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
@@ -313,7 +304,14 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 
 	// Cancel order in matching engine
-	return mkt.CancelOrder(order)
+	conf, err := mkt.CancelOrder(order)
+	if err != nil {
+		return nil, err
+	}
+	if conf.Order.Status == types.Order_Cancelled {
+		metrics.OrderGaugeAdd(-1, order.MarketID)
+	}
+	return conf, nil
 }
 
 func (e *Engine) onChainTimeUpdate(t time.Time) {
@@ -323,25 +321,23 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	e.removeExpiredOrders(t)
 
 	// notify markets of the time expiration
-	for id, mkt := range e.markets {
+	for _, mkt := range e.markets {
 		mkt := mkt
-		pre := time.Now()
 		mkt.OnChainTimeUpdate(t)
-		after := time.Now().Sub(pre)
-		// add time taken for OnChainUpdate for given market
-		e.blockTime.WithLabelValues(id, "block").Observe(float64(after))
 	}
 }
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
 func (e *Engine) removeExpiredOrders(t time.Time) {
+	pre := time.Now()
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
+	tnano := t.UnixNano()
 	for _, mkt := range e.markets {
 		expiringOrders = append(
-			expiringOrders, mkt.RemoveExpiredOrders(t.UnixNano())...)
+			expiringOrders, mkt.RemoveExpiredOrders(tnano)...)
 	}
 
 	e.log.Debug("Removed expired orders from matching engine",
@@ -355,10 +351,13 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 				logging.Order(order),
 				logging.Error(err))
 		}
+		// order expired, decrement gauge
+		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
+	metrics.EngineTimeCounterAdd(pre, "all", "execution", "removeExpiredOrders")
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.

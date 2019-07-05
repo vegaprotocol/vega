@@ -23,6 +23,13 @@ var (
 	ErrInstrumentTypeMismatch = errors.New("instrument is not of the expected type")
 )
 
+var (
+	unconfirmedTxGauge prometheus.Gauge
+	engineTime         *prometheus.CounterVec
+	orderCounter       *prometheus.CounterVec
+	orderGauge         *prometheus.GaugeVec
+)
+
 // abstract prometheus types
 type instrument int
 
@@ -197,6 +204,10 @@ func Start(conf Config) {
 	if !conf.Enabled {
 		return
 	}
+	err := setupMetrics()
+	if err != nil {
+		panic("could not set up metrics")
+	}
 	http.Handle(conf.Path, promhttp.Handler())
 	go func() {
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", conf.Port), nil))
@@ -290,4 +301,103 @@ func (m mi) SummaryVec() (*prometheus.SummaryVec, error) {
 		return nil, ErrInstrumentTypeMismatch
 	}
 	return m.summaryV, nil
+}
+
+func setupMetrics() error {
+	// instrument with time histogram for blocks
+	h, err := AddInstrument(
+		Counter,
+		"engine_seconds_total",
+		Namespace("vega"),
+		Vectors("market", "engine", "fn"),
+	)
+	if err != nil {
+		return err
+	}
+	est, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	engineTime = est
+
+	h, err = AddInstrument(
+		Counter,
+		"orders_total",
+		Namespace("vega"),
+		Vectors("market", "valid"),
+		Help("Number of orders processed"),
+	)
+	if err != nil {
+		return err
+	}
+	ot, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	orderCounter = ot
+
+	// now add the orders gauge
+	h, err = AddInstrument(
+		Gauge,
+		"orders",
+		Namespace("vega"),
+		Vectors("market"),
+		Help("Number of orders currently being processed"),
+	)
+	if err != nil {
+		return err
+	}
+	g, err := h.GaugeVec()
+	if err != nil {
+		return err
+	}
+	orderGauge = g
+	// example usage of this simple gauge:
+	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
+	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
+
+	h, err = AddInstrument(
+		Gauge,
+		"unconfirmedtx",
+		Namespace("vega"),
+		Help("Number of transactions waiting to be processed"),
+	)
+	if err != nil {
+		return err
+	}
+	utxg, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	unconfirmedTxGauge = utxg
+
+	return nil
+}
+
+func EngineTimeCounterAdd(start time.Time, labelValues ...string) {
+	if engineTime == nil {
+		return
+	}
+	engineTime.WithLabelValues(labelValues...).Add(time.Now().Sub(start).Seconds())
+}
+
+func OrderCounterInc(labelValues ...string) {
+	if orderCounter == nil {
+		return
+	}
+	orderCounter.WithLabelValues(labelValues...).Inc()
+}
+
+func OrderGaugeAdd(n int, labelValues ...string) {
+	if orderGauge == nil {
+		return
+	}
+	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
+}
+
+func UnconfirmedTxGaugeSet(n int) {
+	if unconfirmedTxGauge == nil {
+		return
+	}
+	unconfirmedTxGauge.Set(float64(n))
 }
