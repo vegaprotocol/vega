@@ -15,6 +15,7 @@ var (
 	ErrUnimplementedRiskModel = errors.New("unimplemented risk model")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/internal/risk Model
 type Model interface {
 	CalculationInterval() time.Duration
 	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)

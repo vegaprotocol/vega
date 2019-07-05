@@ -20,11 +20,12 @@ const (
 )
 
 var (
-	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
-	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
-	ErrBalanceNotSet         = errors.New("failed to update account balance")
-	ErrAccountDoNotExists    = errors.New("account do not exists")
-	ErrAccountAlreadyExists  = errors.New("account already exists")
+	ErrSystemAccountsMissing     = errors.New("system accounts missing for collateral engine to work")
+	ErrTraderAccountsMissing     = errors.New("trader accounts missing, cannot collect")
+	ErrBalanceNotSet             = errors.New("failed to update account balance")
+	ErrAccountDoNotExists        = errors.New("account do not exists")
+	ErrAccountAlreadyExists      = errors.New("account already exists")
+	ErrInsufficientTraderBalance = errors.New("trader has insufficient balance for margin")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buffer_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral AccountBuffer
@@ -200,6 +201,35 @@ func isSettle(transfer *types.Transfer) bool {
 		return true
 	}
 	return false
+}
+
+func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.MarketPosition, error) {
+	response := make([]*types.TransferResponse, 0, len(updates))
+	closed := make([]events.MarketPosition, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
+	// create "fake" settle account for market ID
+	settle := &types.Account{
+		MarketID: marketID,
+	}
+	for _, update := range updates {
+		transfer := update.Transfer()
+		req, err := e.getTransferRequest(transfer, settle, nil)
+		if err != nil {
+			// log this
+			return nil, nil, err
+		}
+		res, err := e.getLedgerEntries(req)
+		if err != nil {
+			return nil, nil, err
+		}
+		// we didn't manage to top up to even the minimum required system margen, close out trader
+		// we need to be careful with this, only apply this to transfer for low margin
+		if transfer.Type == types.TransferType_MARGIN_LOW && res.Balances[0].Balance < transfer.Amount.MinAmount {
+			closed = append(closed, update) // update interface embeds events.MarketPosition
+		} else {
+			response = append(response, res)
+		}
+	}
+	return response, closed, nil
 }
 
 // collect, handles collects for both market close as mark-to-market stuff
@@ -408,12 +438,18 @@ func collectWin(positions []*types.Transfer, cb collectCB) error {
 func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.Account) (*types.TransferRequest, error) {
 	asset := p.Amount.Asset
 
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+	marginAcc, err := e.GetAccountByID(accountID(settle.MarketID, p.Owner, asset, types.AccountType_MARGIN))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin account",
+			logging.String("owner", p.Owner),
+			logging.String("market", settle.MarketID),
+			logging.Error(err))
+		return nil, err
+	}
 	// final settle, or MTM settle, makes no difference, it's win/loss still
 	if p.Type == types.TransferType_LOSS || p.Type == types.TransferType_MTM_LOSS {
-		marginAcc, err := e.GetAccountByID(accountID(settle.MarketID, p.Owner, asset, types.AccountType_MARGIN))
-		if err != nil {
-			return nil, err
-		}
 		req := types.TransferRequest{
 			FromAccount: []*types.Account{
 				marginAcc, insurance}, // we'll need 2 accounts, last one is insurance pool
@@ -426,28 +462,54 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		}
 		return &req, nil
 	}
-
-	marginAcc, err := e.GetAccountByID(accountID(settle.MarketID, p.Owner, asset, types.AccountType_MARGIN))
+	if p.Type == types.TransferType_WIN || p.Type == types.TransferType_MTM_WIN {
+		return &types.TransferRequest{
+			FromAccount: []*types.Account{
+				settle,
+				insurance,
+			},
+			ToAccount: []*types.Account{
+				marginAcc,
+			},
+			Amount:    uint64(p.Amount.Amount) * p.Size,
+			MinAmount: 0,     // default value, but keep it here explicitly
+			Asset:     asset, // TBC
+		}, nil
+	}
+	// now the margin/risk updates, we need to get the general account
+	genAcc, err := e.GetAccountByID(
+		accountID(settle.MarketID, p.Owner, asset, types.AccountType_GENERAL),
+	)
 	if err != nil {
-		e.log.Error(
-			"Failed to get the margin account",
-			logging.String("owner", p.Owner),
-			logging.String("market", settle.MarketID),
-			logging.Error(err))
 		return nil, err
 	}
-
+	// just in case...
+	if p.Size == 0 {
+		p.Size = 1
+	}
+	if p.Type == types.TransferType_MARGIN_LOW {
+		return &types.TransferRequest{
+			FromAccount: []*types.Account{
+				genAcc,
+			},
+			ToAccount: []*types.Account{
+				marginAcc,
+			},
+			Amount:    uint64(p.Amount.Amount) * p.Size,
+			MinAmount: 0,
+			Asset:     asset,
+		}, nil
+	}
 	return &types.TransferRequest{
 		FromAccount: []*types.Account{
-			settle,
-			insurance,
-		},
-		ToAccount: []*types.Account{
 			marginAcc,
 		},
+		ToAccount: []*types.Account{
+			genAcc,
+		},
 		Amount:    uint64(p.Amount.Amount) * p.Size,
-		MinAmount: 0,     // default value, but keep it here explicitly
-		Asset:     asset, // TBC
+		MinAmount: 0,
+		Asset:     asset,
 	}, nil
 }
 
