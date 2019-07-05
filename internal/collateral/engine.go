@@ -221,7 +221,9 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 		if err != nil {
 			return nil, nil, err
 		}
-		if res.Balances[0].Balance != transfer.Amount.Amount {
+		// we didn't manage to top up to even the minimum required system margen, close out trader
+		// we need to be careful with this, only apply this to transfer for low margin
+		if transfer.Type == types.TransferType_MARGIN_LOW && res.Balances[0].Balance < transfer.Amount.MinAmount {
 			closed = append(closed, update) // update interface embeds events.MarketPosition
 		} else {
 			response = append(response, res)
