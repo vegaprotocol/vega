@@ -59,7 +59,7 @@ func (m marginAmount) getChange(evt events.Margin, markPrice uint64) *marginChan
 		return nil
 	}
 	absVol := vol
-	if vol > 0 {
+	if vol < 0 {
 		absVol *= -1
 	}
 	notional := int64(markPrice) * absVol
