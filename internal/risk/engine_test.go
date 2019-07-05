@@ -49,9 +49,18 @@ var (
 			},
 		},
 	}
+
+	riskMinamount      int64 = 250
+	riskRequiredMargin int64 = 300
 )
 
-func TestMargin(t *testing.T) {
+func TestUpdateMargins(t *testing.T) {
+	t.Run("Top up margin test", testMarginTopup)
+	t.Run("Noop margin test", testMarginNoop)
+	t.Run("Margin too high (overflow)", testMarginOverflow)
+}
+
+func testMarginTopup(t *testing.T) {
 	eng := getTestEngine(t, nil)
 	defer eng.ctrl.Finish()
 	ctx, cfunc := context.WithCancel(context.Background())
@@ -73,6 +82,64 @@ func TestMargin(t *testing.T) {
 	}()
 	resp := eng.UpdateMargins(ctx, ch, evt.price)
 	assert.Equal(t, 1, len(resp))
+	// ensure we get the correct transfer request back, correct amount etc...
+	trans := resp[0].Transfer()
+	assert.Equal(t, riskRequiredMargin-int64(evt.margin), trans.Amount.Amount)
+	assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
+	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
+}
+
+func testMarginNoop(t *testing.T) {
+	eng := getTestEngine(t, nil)
+	defer eng.ctrl.Finish()
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+	ch := make(chan events.Margin, 1)
+	// data := []events.Margin{}
+	evt := testMargin{
+		party:   "trader1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  301,    // more than enough margin to cover the position, not enough to trigger transfer to general
+		general: 100000, // plenty of balance for the transfer anyway
+		market:  "ETH/DEC19",
+	}
+	go func() {
+		ch <- evt
+		close(ch)
+	}()
+	resp := eng.UpdateMargins(ctx, ch, evt.price)
+	assert.Equal(t, 0, len(resp))
+}
+
+func testMarginOverflow(t *testing.T) {
+	eng := getTestEngine(t, nil)
+	defer eng.ctrl.Finish()
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+	ch := make(chan events.Margin, 1)
+	// data := []events.Margin{}
+	evt := testMargin{
+		party:   "trader1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  500,    // required margin will be > 250, so ensure we don't have enough
+		general: 100000, // plenty of balance for the transfer anyway
+		market:  "ETH/DEC19",
+	}
+	go func() {
+		ch <- evt
+		close(ch)
+	}()
+	resp := eng.UpdateMargins(ctx, ch, evt.price)
+	assert.Equal(t, 1, len(resp))
+	// ensure we get the correct transfer request back, correct amount etc...
+	trans := resp[0].Transfer()
+	assert.Equal(t, int64(evt.margin)-riskRequiredMargin, trans.Amount.Amount)
+	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
+	assert.Equal(t, types.TransferType_MARGIN_HIGH, trans.Type)
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
