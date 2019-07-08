@@ -21,6 +21,11 @@ type marginAmount struct {
 	trader limit
 }
 
+// Margins: There are 2 sets of margins: system margins (the minimum collateral required by the system)
+//          and trader facing marings. If a trader falls short of the trader base, we will restore the initial margin
+//          should this not be possible, we need to check if the trader is above the system base, if so, we don't close out the trader
+//          If they are, we close them out. Both these values are used in the calculations and transfer requests, where the amount
+//          is the TRADER facing amount (trader initial balance), and the minimum amount is the SYSTEM base.
 func (e *Engine) getMargins(asset string) (*marginAmount, error) {
 	factor, ok := e.factors.RiskFactors[asset]
 	if !ok {

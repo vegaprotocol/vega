@@ -27,7 +27,6 @@ type Engine struct {
 	model   Model
 	factors *types.RiskResult
 	waiting bool
-	mu      sync.Mutex
 }
 
 func NewEngine(
@@ -80,7 +79,7 @@ func (re *Engine) CalculateFactors(now time.Time) {
 		if re.model.CalculationInterval() > 0 {
 			result.NextUpdateTimestamp = now.Add(re.model.CalculationInterval()).UnixNano()
 		}
-		re.UpdateFactors(result)
+		re.factors = result
 	} else {
 		re.waiting = true
 	}
@@ -90,7 +89,6 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []positions.Market
 	// todo(cdm): fix mark price overflow problems
 	// todo(cdm): return action to possibly return action to update margin elsewhere rather than direct
 
-	re.mu.Lock()
 	for _, pos := range positions {
 		notional := int64(markPrice) * pos.Size()
 		for assetId, factor := range re.factors.RiskFactors {
@@ -108,12 +106,10 @@ func (re *Engine) UpdatePositions(markPrice uint64, positions []positions.Market
 			re.cfgMu.Unlock()
 		}
 	}
-	re.mu.Unlock()
 }
 
 // mock implementation, this wil return adjustments based on position updates
 func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.Margin, markPrice uint64) []events.Risk {
-	re.mu.Lock()
 	// we can allocate the return value here already
 	// problem is that we don't know whether loss indicates a long/short position
 	// @TODO ^^ Positions should provide this information, so we can pass this through correctly
@@ -126,14 +122,12 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.Margin, ma
 		select {
 		case <-ctx.Done():
 			// micro-optimisation perhaps, but hey... it's easy
-			re.mu.Unlock()
 			// this allows us to cancel in case of an error
 			// we're not returning anything, because things didn't go as expected
 			return nil
 		case change, ok := <-ch:
 			// channel is closed, and we've got a nil interface
 			if !ok && change == nil {
-				re.mu.Unlock()
 				return ret
 			}
 			// just read from channel - this is the open position
@@ -165,12 +159,6 @@ func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.Margin, ma
 			ret = append(ret, risk)
 		}
 	}
-}
-
-func (re *Engine) UpdateFactors(result *types.RiskResult) {
-	re.mu.Lock()
-	re.factors = result
-	re.mu.Unlock()
 }
 
 func abs(x int64) int64 {
