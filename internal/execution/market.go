@@ -377,10 +377,15 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		// this belongs outside of trade loop, only call once per order
 		margins := m.collateralAndRisk(settle)
 		if len(margins) > 0 {
+			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
 			m.log.Debug(
-				"Total margin accounts that need updating",
-				logging.Int("risk-update-len", len(margins)),
+				"Updated margin balances",
+				logging.Int("transfer-count", len(transfers)),
+				logging.Int("closed-count", len(closed)),
+				logging.Error(err),
 			)
+			// @TODO -> close out any traders that don't have enough margins left
+			// if no errors were returned
 		}
 	}
 
