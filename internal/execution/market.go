@@ -25,7 +25,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Market struct {
@@ -62,9 +61,6 @@ type Market struct {
 
 	// buffers
 	candlesBuf *buffer.Candle
-
-	// metrics
-	blockTime *prometheus.CounterVec
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -144,33 +140,8 @@ func NewMarket(
 		candlesBuf:         candlesBuf,
 	}
 	SetMarketID(mkt, seq)
-	if err := market.setMetrics(); err != nil {
-		return nil, err
-	}
 
 	return market, nil
-}
-
-func (m *Market) setMetrics() error {
-	// instrument with time histogram for blocks
-	h, err := metrics.AddInstrument(
-		metrics.Counter,
-		namedLogger+m.mkt.Id,              // name is required
-		metrics.Namespace("vega"),         // namespace, name, subsystem together form label, so this is vega_execution
-		metrics.Vectors("engine", "unit"), // engine is the part of the core that is measured, unit is whether we're measuring on an order or trade level
-	)
-	if err != nil {
-		return err
-	}
-	// ensure we got an actual histogram (no vector option provided)
-	vec, err := h.CounterVec()
-	if err != nil {
-		return err
-	}
-	m.blockTime = vec
-	// example of how to use this -> WithLabelValues arguments have to be in the same order the vectors were added in the code above (AddInstrument call)
-	// m.blockTime.WithLabelValues("settlement", "order").Add(float64(time.Now().UnixNano()))
-	return nil
 }
 
 // ReloadConf will trigger a reload of all the config settings in the market and all underlying engines
@@ -258,16 +229,14 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	// Validate market
-	start := time.Now()
 	orderValidity := "invalid"
-
 	startSubmit := time.Now() // do not reset this var
 	defer func() {
 		metrics.EngineTimeCounterAdd(startSubmit, m.mkt.Id, "execution", "Submit")
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
 	}()
 
+	// Validate market
 	if order.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
@@ -277,6 +246,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Verify and add new parties
+	start := time.Now()
 	party, _ := m.parties.GetByID(order.PartyID)
 	if party == nil {
 		if err := m.parties.Post(&types.Party{Id: order.PartyID}); err != nil {
@@ -290,7 +260,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			}
 		*/
 	}
-	m.blockTime.WithLabelValues("parties", "order").Add(float64(time.Now().Sub(start)))
+	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "partystore", "GetByID/Post")
 
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
@@ -319,7 +289,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			}
 		}
 	}
-	m.blockTime.WithLabelValues("orders", "order").Add(float64(time.Now().Sub(start)))
+	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "orderstore", "Post/Put")
 
 	if confirmation.Trades != nil {
 		// orders can contain several trades, each trade involves 2 traders
@@ -344,7 +314,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
-			m.blockTime.WithLabelValues("trades", "trade").Add(float64(time.Now().Sub(start)))
+			metrics.EngineTimeCounterAdd(start, m.mkt.Id, "tradestore", "Post")
 			start = time.Now()
 
 			// Save to trade buffer for generating candles etc
@@ -354,7 +324,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
-			m.blockTime.WithLabelValues("candles", "trade").Add(float64(time.Now().Sub(start)))
+			metrics.EngineTimeCounterAdd(start, m.mkt.Id, "candlestore", "AddTrade")
 			start = time.Now()
 
 			// Calculate and set current mark price
@@ -362,7 +332,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade, tradersCh)
-			m.blockTime.WithLabelValues("positions", "trade").Add(float64(time.Now().Sub(start)))
+			metrics.EngineTimeCounterAdd(start, m.mkt.Id, "positions", "Update")
 		}
 		close(tradersCh)
 		start = time.Now()
@@ -373,7 +343,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			events = append(events, p)
 		}
 		settle := m.settlement.SettleOrder(m.markPrice, events)
-		m.blockTime.WithLabelValues("settlement", "order").Add(float64(time.Now().Sub(start)))
+		metrics.EngineTimeCounterAdd(start, m.mkt.Id, "positions", "Positions+SettleOrder")
 		// this belongs outside of trade loop, only call once per order
 		margins := m.collateralAndRisk(settle)
 		m.log.Debug("Total margin accounts to be updated after submit order", logging.Int("risk-update-len", len(margins)))
@@ -406,7 +376,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 			)
 			cancel()
 		}
-		m.blockTime.WithLabelValues("collateral", "order").Add(float64(time.Now().Sub(start)))
+		metrics.EngineTimeCounterAdd(start, m.mkt.Id, "collateral", "TransferCh")
 	}()
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
