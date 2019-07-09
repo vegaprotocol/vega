@@ -126,9 +126,11 @@ func (i *Instrument) productIntoProto(pinst *proto.Instrument) (err error) {
 func (i *Instrument) IntoProto() (*proto.Instrument, error) {
 	var err error
 	pinst := &proto.Instrument{
-		Id:   i.ID,
-		Code: i.Code,
-		Name: i.Name,
+		Id:        i.ID,
+		Code:      i.Code,
+		Name:      i.Name,
+		BaseName:  i.BaseName,
+		QuoteName: i.QuoteName,
 	}
 	pinst.Metadata, err = i.Metadata.IntoProto()
 	if err != nil {
@@ -303,9 +305,11 @@ func InstrumentFromProto(pi *proto.Instrument) (*Instrument, error) {
 	}
 	var err error
 	i := &Instrument{
-		ID:   pi.Id,
-		Code: pi.Code,
-		Name: pi.Name,
+		ID:        pi.Id,
+		Code:      pi.Code,
+		Name:      pi.Name,
+		BaseName:  pi.BaseName,
+		QuoteName: pi.QuoteName,
 	}
 	meta, err := InstrumentMetadataFromProto(pi.Metadata)
 	if err != nil {

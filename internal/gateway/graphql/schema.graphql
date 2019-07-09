@@ -339,6 +339,12 @@ type Instrument {
   # Full and fairly descriptive name for the instrument
   name: String!
 
+  # String representing the base (e.g. BTCUSD -> BTC is base)
+  baseName: String!
+
+  # String representing the quote (e.g. BTCUSD -> USD is quote)
+  quoteName: String!
+
   # Metadata for this instrument
   metadata: InstrumentMetadata!
 
