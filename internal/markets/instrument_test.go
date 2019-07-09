@@ -12,9 +12,11 @@ import (
 
 func getValidInstrumentProto() *types.Instrument {
 	return &types.Instrument{
-		Id:   "Crypto/BTCUSD/Futures/Dec19",
-		Code: "FX:BTCUSD/DEC19",
-		Name: "December 2019 BTC vs USD future",
+		Id:        "Crypto/BTCUSD/Futures/Dec19",
+		Code:      "FX:BTCUSD/DEC19",
+		Name:      "December 2019 BTC vs USD future",
+		BaseName:  "BTC",
+		QuoteName: "USD",
 		Metadata: &types.InstrumentMetadata{
 			Tags: []string{
 				"asset_class:fx/crypto",
