@@ -1119,6 +1119,12 @@
         "name": {
           "type": "string"
         },
+        "baseName": {
+          "type": "string"
+        },
+        "quoteName": {
+          "type": "string"
+        },
         "metadata": {
           "$ref": "#/definitions/vegaInstrumentMetadata"
         },

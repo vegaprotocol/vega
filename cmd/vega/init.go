@@ -152,9 +152,11 @@ func createDefaultMarkets(confpath string) error {
 		Name: "ETH/DEC19",
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
-				Id:   "Crypto/ETHUSD/Futures/Dec19",
-				Code: "FX:ETHUSD/DEC19",
-				Name: "December 2019 ETH vs USD future",
+				Id:        "Crypto/ETHUSD/Futures/Dec19",
+				Code:      "FX:ETHUSD/DEC19",
+				Name:      "December 2019 ETH vs USD future",
+				BaseName:  "ETH",
+				QuoteName: "USD",
 				Metadata: &proto.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
@@ -191,6 +193,7 @@ func createDefaultMarkets(confpath string) error {
 	mkt.TradableInstrument.Instrument.Id = "FX/GBPUSD/Futures/Jun19"
 	mkt.TradableInstrument.Instrument.Code = "FX:GBPUSD/Jun19"
 	mkt.TradableInstrument.Instrument.Name = "June 2019 GBP vs USD future"
+	mkt.TradableInstrument.Instrument.BaseName = "GBP"
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: &proto.Future{
 			Maturity: "2019-06-30T00:00:00Z",
@@ -224,6 +227,7 @@ func createDefaultMarkets(confpath string) error {
 	mkt.TradableInstrument.Instrument.Id = "Fx/BTCUSD/Futures/Mar20"
 	mkt.TradableInstrument.Instrument.Code = "FX:BTCUSD/MAR20"
 	mkt.TradableInstrument.Instrument.Name = "DEC 2019 BTC vs USD future"
+	mkt.TradableInstrument.Instrument.BaseName = "BTC"
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: &proto.Future{
 			Maturity: "2019-12-31T00:00:00Z",

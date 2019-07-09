@@ -245,6 +245,7 @@ message Account {
 message FinancialAmount {
   int64 amount = 1;
   string asset = 2;
+  int64 minAmount = 3;
 }
 
 enum TransferType {
@@ -253,6 +254,8 @@ enum TransferType {
   CLOSE = 2;
   MTM_LOSS = 3;
   MTM_WIN = 4;
+  MARGIN_LOW = 5;
+  MARGIN_HIGH = 6;
 }
 
 message Transfer {

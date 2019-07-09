@@ -100,11 +100,13 @@ type ComplexityRoot struct {
 	}
 
 	Instrument struct {
-		Code     func(childComplexity int) int
-		ID       func(childComplexity int) int
-		Metadata func(childComplexity int) int
-		Name     func(childComplexity int) int
-		Product  func(childComplexity int) int
+		BaseName  func(childComplexity int) int
+		Code      func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Metadata  func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Product   func(childComplexity int) int
+		QuoteName func(childComplexity int) int
 	}
 
 	InstrumentMetadata struct {
@@ -567,6 +569,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Future.Oracle(childComplexity), true
 
+	case "Instrument.BaseName":
+		if e.complexity.Instrument.BaseName == nil {
+			break
+		}
+
+		return e.complexity.Instrument.BaseName(childComplexity), true
+
 	case "Instrument.Code":
 		if e.complexity.Instrument.Code == nil {
 			break
@@ -601,6 +610,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Instrument.Product(childComplexity), true
+
+	case "Instrument.QuoteName":
+		if e.complexity.Instrument.QuoteName == nil {
+			break
+		}
+
+		return e.complexity.Instrument.QuoteName(childComplexity), true
 
 	case "InstrumentMetadata.Tags":
 		if e.complexity.InstrumentMetadata.Tags == nil {
@@ -1965,6 +1981,12 @@ type Instrument {
 
   # Full and fairly descriptive name for the instrument
   name: String!
+
+  # String representing the base (e.g. BTCUSD -> BTC is base)
+  baseName: String!
+
+  # String representing the quote (e.g. BTCUSD -> USD is quote)
+  quoteName: String!
 
   # Metadata for this instrument
   metadata: InstrumentMetadata!
@@ -3597,6 +3619,60 @@ func (ec *executionContext) _Instrument_name(ctx context.Context, field graphql.
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Instrument_baseName(ctx context.Context, field graphql.CollectedField, obj *Instrument) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Instrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BaseName, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Instrument_quoteName(ctx context.Context, field graphql.CollectedField, obj *Instrument) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Instrument",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuoteName, nil
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8180,6 +8256,16 @@ func (ec *executionContext) _Instrument(ctx context.Context, sel ast.SelectionSe
 			}
 		case "name":
 			out.Values[i] = ec._Instrument_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "baseName":
+			out.Values[i] = ec._Instrument_baseName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "quoteName":
+			out.Values[i] = ec._Instrument_quoteName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
