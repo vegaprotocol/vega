@@ -21,6 +21,10 @@ type Instrument struct {
 	Name     string
 	Metadata *types.InstrumentMetadata
 	Product  products.Product
+
+	// Base and Quote aren't used internally, but might be used later on, so add them here just in case
+	Base  string
+	Quote string
 }
 
 type TradableInstrument struct {
@@ -54,6 +58,8 @@ func NewInstrument(pi *types.Instrument) (*Instrument, error) {
 		Name:     pi.Name,
 		Metadata: pi.Metadata,
 		Product:  product,
+		Base:     pi.BaseName,
+		Quote:    pi.QuoteName,
 	}, err
 }
 

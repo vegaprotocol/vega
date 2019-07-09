@@ -62,11 +62,13 @@ type Future struct {
 func (Future) IsProduct() {}
 
 type Instrument struct {
-	ID       string             `json:"id"`
-	Code     string             `json:"code"`
-	Name     string             `json:"name"`
-	Metadata InstrumentMetadata `json:"metadata"`
-	Product  Product            `json:"product"`
+	ID        string             `json:"id"`
+	Code      string             `json:"code"`
+	Name      string             `json:"name"`
+	BaseName  string             `json:"baseName"`
+	QuoteName string             `json:"quoteName"`
+	Metadata  InstrumentMetadata `json:"metadata"`
+	Product   Product            `json:"product"`
 }
 
 type InstrumentMetadata struct {

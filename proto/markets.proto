@@ -44,7 +44,9 @@ message Instrument {
   string id = 1;
   string code = 2;
   string name = 3;
-  InstrumentMetadata metadata = 4;
+  string baseName = 4;
+  string quoteName = 5;
+  InstrumentMetadata metadata = 6;
   oneof product {
     Future future = 100;
   }
