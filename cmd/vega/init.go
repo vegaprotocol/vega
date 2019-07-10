@@ -149,7 +149,7 @@ func createDefaultMarkets(confpath string) error {
 	}
 
 	mkt := proto.Market{
-		Name: "ETH/DEC19",
+		Name: "ETHUSD/DEC19",
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Id:        "Crypto/ETHUSD/Futures/Dec19",
@@ -189,7 +189,7 @@ func createDefaultMarkets(confpath string) error {
 	}
 	seq++
 
-	mkt.Name = "GBP/JUN19"
+	mkt.Name = "GBPUSD/JUN19"
 	mkt.TradableInstrument.Instrument.Id = "FX/GBPUSD/Futures/Jun19"
 	mkt.TradableInstrument.Instrument.Code = "FX:GBPUSD/Jun19"
 	mkt.TradableInstrument.Instrument.Name = "June 2019 GBP vs USD future"
@@ -223,7 +223,7 @@ func createDefaultMarkets(confpath string) error {
 	}
 	seq++
 
-	mkt.Name = "BTC/DEC19"
+	mkt.Name = "BTCUSD/DEC19"
 	mkt.TradableInstrument.Instrument.Id = "Fx/BTCUSD/Futures/Mar20"
 	mkt.TradableInstrument.Instrument.Code = "FX:BTCUSD/MAR20"
 	mkt.TradableInstrument.Instrument.Name = "DEC 2019 BTC vs USD future"
