@@ -830,7 +830,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 
 }
 
-func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*types.PendingOrder, error) {
+func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, party string, market string) (*types.PendingOrder, error) {
 	order := &types.OrderCancellation{}
 
 	tkn := gateway.TokenFromContext(ctx)
