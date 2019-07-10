@@ -1,7 +1,10 @@
 package gql
 
 import (
+	"strings"
+
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 	"github.com/pkg/errors"
 )
 
@@ -388,4 +391,11 @@ func MarketFromProto(pmkt *proto.Market) (*Market, error) {
 	mkt.TradableInstrument = *tradableInstrument
 
 	return mkt, nil
+}
+
+func (a AccountType) IntoProto() types.AccountType {
+	if !a.IsValid() {
+		return types.AccountType_NO_ACC
+	}
+	return types.AccountType(types.AccountType_value[strings.ToUpper(string(a))])
 }

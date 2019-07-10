@@ -97,6 +97,8 @@ type AccountsService interface {
 	GetTraderAccounts(id string) ([]*types.Account, error)
 	GetTraderAccountsForMarket(trader, market string) ([]*types.Account, error)
 	GetTraderMarketBalance(trader, market string) ([]*types.Account, error)
+	ObserveAccounts(ctx context.Context, retries int, marketID, partyID string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
+	GetAccountSubscribersCount() int32
 }
 
 type tradingDataService struct {
@@ -375,6 +377,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 		PositionsSubscriptions:   h.TradeService.GetPositionsSubscribersCount(),
 		MarketDepthSubscriptions: h.MarketService.GetMarketDepthSubscribersCount(),
 		CandleSubscriptions:      h.CandleService.GetCandleSubscribersCount(),
+		AccountSubscriptions:     h.AccountsService.GetAccountSubscribersCount(),
 	}, nil
 }
 
@@ -387,6 +390,59 @@ func (h *tradingDataService) GetVegaTime(ctx context.Context, request *google_pr
 		Timestamp: ts.UnixNano(),
 	}, nil
 
+}
+
+func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest, srv protoapi.TradingData_AccountsSubscribeServer) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	accountschan, ref := h.AccountsService.ObserveAccounts(
+		ctx, h.Config.StreamRetries, req.MarketID, req.PartyID, req.Type)
+	h.log.Debug("Candles subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	var err error
+
+	for {
+		select {
+		case accounts := <-accountschan:
+			if accounts == nil {
+				err = ErrChannelClosed
+				h.log.Error("accounts subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+			for _, account := range accounts {
+				account := account
+				err = srv.Send(account)
+				if err != nil {
+					h.log.Error("Accounts subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+					return err
+				}
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			h.log.Debug("Accounts subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return ErrServerShutdown
+		}
+
+		if accountschan == nil {
+			h.log.Debug("Accounts subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return ErrStreamClosed
+		}
+	}
 }
 
 func (h *tradingDataService) OrdersSubscribe(

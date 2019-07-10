@@ -1653,6 +1653,18 @@
       },
       "title": "Stream result of apiTradesStream"
     },
+    "vegaAccount": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaAccount"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaAccount"
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {

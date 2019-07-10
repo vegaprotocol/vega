@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"fmt"
+	"sync"
+
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -30,8 +33,11 @@ type accountRecord struct {
 type Account struct {
 	Config
 
-	log    *logging.Logger
-	badger *badgerStore
+	log          *logging.Logger
+	badger       *badgerStore
+	subscribers  map[uint64]chan []*types.Account
+	subscriberID uint64
+	mu           sync.Mutex
 }
 
 func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
@@ -48,9 +54,10 @@ func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
 	}
 
 	return &Account{
-		log:    log,
-		Config: c,
-		badger: &badgerStore{db: db},
+		log:         log,
+		Config:      c,
+		badger:      &badgerStore{db: db},
+		subscribers: map[uint64]chan []*types.Account{},
 	}, nil
 }
 
@@ -336,5 +343,81 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 	a.log.Debug(
 		"New batch of accounts saved",
 		logging.Int("count", cnt))
+
+	a.notify(accs)
+
 	return nil
+}
+
+func (a *Account) notify(accs []*types.Account) error {
+	if len(accs) == 0 {
+		return nil
+	}
+
+	a.mu.Lock()
+	if len(a.subscribers) == 0 {
+		a.log.Debug("No subscribers connected in accounts store")
+		a.mu.Unlock()
+		return nil
+	}
+
+	var ok bool
+	for id, sub := range a.subscribers {
+		select {
+		case sub <- accs:
+			ok = true
+			break
+		default:
+			ok = false
+		}
+		if ok {
+			a.log.Debug("Accounts channel updated for subscriber successfully",
+				logging.Uint64("id", id))
+		} else {
+			a.log.Debug("Accounts channel could not be updated for subscriber",
+				logging.Uint64("id", id))
+		}
+	}
+	a.mu.Unlock()
+
+	return nil
+}
+
+func (a *Account) Subscribe(c chan []*types.Account) uint64 {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	a.subscriberID += 1
+	a.subscribers[a.subscriberID] = c
+
+	a.log.Debug("Account subscriber added in account store",
+		logging.Uint64("subscriber-id", a.subscriberID))
+
+	return a.subscriberID
+}
+
+func (a *Account) Unsubscribe(id uint64) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if len(a.subscribers) == 0 {
+		a.log.Debug("Un-subscribe called in account store, no subscribers connected",
+			logging.Uint64("subscriber-id", id))
+
+		return nil
+	}
+
+	if _, exists := a.subscribers[id]; exists {
+		delete(a.subscribers, id)
+
+		a.log.Debug("Un-subscribe called in account store, subscriber removed",
+			logging.Uint64("subscriber-id", id))
+
+		return nil
+	}
+
+	a.log.Warn("Un-subscribe called in account store, subscriber does not exist",
+		logging.Uint64("subscriber-id", id))
+
+	return errors.New(fmt.Sprintf("Account store subscriber does not exist with id: %d", id))
 }

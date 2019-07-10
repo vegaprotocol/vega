@@ -173,10 +173,11 @@ message Statistics {
   int32 candleSubscriptions = 23;
   int32 marketDepthSubscriptions = 24;
   int32 positionsSubscriptions = 25;
-  string appVersionHash = 26;
-  string appVersion = 27;
-  string chainVersion = 28;
-  uint64 blockDuration = 29; // nanoseconds
+  int32 accountSubscriptions = 26;
+  string appVersionHash = 27;
+  string appVersion = 28;
+  string chainVersion = 29;
+  uint64 blockDuration = 30; // nanoseconds
 }
 
 enum ChainStatus {
@@ -227,9 +228,10 @@ message OrderCancellation {
 }
 
 enum AccountType {
-  INSURANCE = 0;
-  SETTLEMENT = 1;
-  MARGIN = 2;
+  NO_ACC = 0;
+  INSURANCE = 1;
+  SETTLEMENT = 2;
+  MARGIN = 3;
   GENERAL = 4;
 }
 

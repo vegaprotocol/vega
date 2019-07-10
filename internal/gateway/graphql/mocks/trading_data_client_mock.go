@@ -37,6 +37,26 @@ func (m *MockTradingDataClient) EXPECT() *MockTradingDataClientMockRecorder {
 	return m.recorder
 }
 
+// AccountsSubscribe mocks base method
+func (m *MockTradingDataClient) AccountsSubscribe(arg0 context.Context, arg1 *api.AccountsSubscribeRequest, arg2 ...grpc.CallOption) (api.TradingData_AccountsSubscribeClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AccountsSubscribe", varargs...)
+	ret0, _ := ret[0].(api.TradingData_AccountsSubscribeClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AccountsSubscribe indicates an expected call of AccountsSubscribe
+func (mr *MockTradingDataClientMockRecorder) AccountsSubscribe(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).AccountsSubscribe), varargs...)
+}
+
 // Candles mocks base method
 func (m *MockTradingDataClient) Candles(arg0 context.Context, arg1 *api.CandlesRequest, arg2 ...grpc.CallOption) (*api.CandlesResponse, error) {
 	m.ctrl.T.Helper()

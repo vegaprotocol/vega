@@ -134,6 +134,9 @@ func (this *TradesByOrderResponse) Validate() error {
 	}
 	return nil
 }
+func (this *AccountsSubscribeRequest) Validate() error {
+	return nil
+}
 func (this *OrdersSubscribeRequest) Validate() error {
 	return nil
 }

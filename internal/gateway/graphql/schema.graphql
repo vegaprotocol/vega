@@ -100,6 +100,17 @@ type Subscription {
     # ID of the market we want to receive market depth updates for
     marketId: String!
   ): MarketDepth!
+
+  # Subscribe to the accounts updates
+  accounts(
+    # ID of the market from which we want accounts updates
+    marketId: String,
+    # ID of the party from which we want accounts updates
+    partyId: String
+    # Type of the account
+    type: AccountType,
+  ): Account!
+
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
