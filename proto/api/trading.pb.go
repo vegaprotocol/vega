@@ -827,7 +827,7 @@ func (m *AccountsSubscribeRequest) GetType() proto1.AccountType {
 	if m != nil {
 		return m.Type
 	}
-	return proto1.AccountType_INSURANCE
+	return proto1.AccountType_NO_ACC
 }
 
 type OrdersSubscribeRequest struct {
@@ -2024,7 +2024,7 @@ func (m *CollateralRequest) GetType() proto1.AccountType {
 	if m != nil {
 		return m.Type
 	}
-	return proto1.AccountType_INSURANCE
+	return proto1.AccountType_NO_ACC
 }
 
 type CollateralResponse struct {
