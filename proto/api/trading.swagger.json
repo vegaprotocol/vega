@@ -980,12 +980,13 @@
     "vegaAccountType": {
       "type": "string",
       "enum": [
+        "NO_ACC",
         "INSURANCE",
         "SETTLEMENT",
         "MARGIN",
         "GENERAL"
       ],
-      "default": "INSURANCE"
+      "default": "NO_ACC"
     },
     "vegaCandle": {
       "type": "object",
@@ -1557,6 +1558,10 @@
           "format": "int32"
         },
         "positionsSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "accountSubscriptions": {
           "type": "integer",
           "format": "int32"
         },
