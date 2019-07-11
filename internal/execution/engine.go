@@ -11,7 +11,10 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 
+	"code.vegaprotocol.io/vega/internal/buffer"
+	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/storage"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -63,12 +66,15 @@ type Engine struct {
 	Config
 
 	markets      map[string]*Market
+	party        *Party
 	orderStore   OrderStore
 	tradeStore   TradeStore
 	candleStore  CandleStore
 	marketStore  MarketStore
 	partyStore   PartyStore
 	time         TimeService
+	collateral   *collateral.Engine
+	accountBuf   *buffer.Account
 	accountStore *storage.Account
 }
 
@@ -89,6 +95,15 @@ func NewEngine(
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 
+	accountBuf := buffer.NewAccount(accountStore)
+
+	//  create collateral
+	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf)
+	if err != nil {
+		log.Error("unable to initialize collateral", logging.Error(err))
+		return nil
+	}
+
 	e := &Engine{
 		log:          log,
 		Config:       executionConfig,
@@ -99,9 +114,12 @@ func NewEngine(
 		marketStore:  marketStore,
 		partyStore:   partyStore,
 		time:         time,
+		collateral:   cengine,
 		accountStore: accountStore,
+		accountBuf:   accountBuf,
 	}
 
+	pmkts := []types.Market{}
 	// loads markets from configuration
 	for _, v := range executionConfig.Markets.Configs {
 		path := filepath.Join(executionConfig.Markets.Path, v)
@@ -129,7 +147,11 @@ func NewEngine(
 			e.log.Panic("Unable to submit market",
 				logging.Error(err))
 		}
+		pmkts = append(pmkts, mkt)
 	}
+
+	// create the party engine
+	e.party = NewParty(log, e.collateral, pmkts)
 
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
@@ -153,6 +175,10 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 }
 
+func (e *Engine) NotifyTraderAccount(notif *types.NotifyTraderAccount) error {
+	return e.party.NotifyTraderAccount(notif)
+}
+
 func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 
 	// TODO: Check for existing market in MarketStore by Name.
@@ -167,10 +193,10 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	mkt, err = NewMarket(
 		e.log,
 		e.Config.Risk,
-		e.Config.Collateral,
 		e.Config.Position,
 		e.Config.Settlement,
 		e.Config.Matching,
+		e.collateral,
 		mktconfig,
 		e.candleStore,
 		e.orderStore,
@@ -196,17 +222,39 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	}
 
 	e.markets[mktconfig.Id] = mkt
+
+	// create market accounts
+	asset, err := mktconfig.GetAsset()
+	if err != nil {
+		return err
+	}
+
+	// ignore response ids here + this cannot fail
+	_, _ = e.collateral.CreateMarketAccounts(mktconfig.Id, asset, 0)
+
 	return nil
 }
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	e.log.Debug("Submit order", logging.Order(*order))
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Submit order", logging.Order(*order))
+	}
+
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
 
-	return mkt.SubmitOrder(order)
+	if order.Status == types.Order_Active {
+		// we're submitting an active order
+		metrics.OrderGaugeAdd(1, order.MarketID)
+	}
+	conf, err := mkt.SubmitOrder(order)
+	// order was filled by submitting it to the market -> the matching engine worked
+	if conf.Order.Status == types.Order_Filled {
+		metrics.OrderGaugeAdd(-1, order.MarketID)
+	}
+	return conf, err
 }
 
 // AmendOrder take order amendment details and attempts to amend the order
@@ -215,7 +263,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	e.log.Debug("Amend order")
 	// try to get the order first
 	order, err := e.orderStore.GetByPartyAndId(
-		context.Background(), orderAmendment.PartyID, orderAmendment.Id)
+		context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
 	if err != nil {
 		e.log.Error("Invalid order reference",
 			logging.String("id", order.Id),
@@ -224,14 +272,27 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 
 		return nil, types.ErrInvalidOrderReference
 	}
-	e.log.Debug("Existing order found", logging.Order(*order))
+	wasActive := order.Status == types.Order_Active
+	if e.log.Check(logging.DebugLevel) {
+		e.log.Debug("Existing order found", logging.Order(*order))
+	}
 
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
 
-	return mkt.AmendOrder(orderAmendment, order)
+	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
+	// order status. It's possible order.Status will reflect the new status value if we don't
+	conf, err := mkt.AmendOrder(orderAmendment, order)
+	if err != nil {
+		return nil, err
+	}
+	// order was active, not anymore -> decrement gauge
+	if wasActive && conf.Order.Status != types.Order_Active {
+		metrics.OrderGaugeAdd(-1, order.MarketID)
+	}
+	return conf, nil
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
@@ -243,7 +304,14 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 
 	// Cancel order in matching engine
-	return mkt.CancelOrder(order)
+	conf, err := mkt.CancelOrder(order)
+	if err != nil {
+		return nil, err
+	}
+	if conf.Order.Status == types.Order_Cancelled {
+		metrics.OrderGaugeAdd(-1, order.MarketID)
+	}
+	return conf, nil
 }
 
 func (e *Engine) onChainTimeUpdate(t time.Time) {
@@ -262,12 +330,14 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
 func (e *Engine) removeExpiredOrders(t time.Time) {
+	pre := time.Now()
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
+	tnano := t.UnixNano()
 	for _, mkt := range e.markets {
 		expiringOrders = append(
-			expiringOrders, mkt.RemoveExpiredOrders(t.UnixNano())...)
+			expiringOrders, mkt.RemoveExpiredOrders(tnano)...)
 	}
 
 	e.log.Debug("Removed expired orders from matching engine",
@@ -281,15 +351,22 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 				logging.Order(order),
 				logging.Error(err))
 		}
+		// order expired, decrement gauge
+		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
+	metrics.EngineTimeCounterAdd(pre, "all", "execution", "removeExpiredOrders")
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.
 // TODO(): maybe call this in onChainTimeUpdate, when the chain time is updated
 func (e *Engine) Generate() error {
+	err := e.accountBuf.Flush()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to commit accounts"))
+	}
 
 	for _, mkt := range e.markets {
 		err := e.orderStore.Commit()

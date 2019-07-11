@@ -9,10 +9,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// generate this mock so we can write tests more easilyh
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mtm_transfer_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral Transfer
-type MTMTransfer events.Transfer
-
 type processF func(t *transferT) (*types.TransferResponse, error)
 
 type collectF func(t *transferT) error
@@ -20,11 +16,12 @@ type collectF func(t *transferT) error
 // transferT internal type, keeps account reference etc...
 type transferT struct {
 	events.Transfer
-	t       *types.Transfer
-	res     *types.TransferResponse
-	margin  *types.Account
-	market  *types.Account
-	general *types.Account
+	marketID string
+	t        *types.Transfer
+	res      *types.TransferResponse
+	margin   *types.Account
+	market   *types.Account
+	general  *types.Account
 }
 
 func (t transferT) Asset() string {
@@ -44,7 +41,12 @@ func (t transferT) TransferaType() types.TransferType {
 	return t.t.Type
 }
 
-func (e *Engine) TransferCh(transfers []events.Transfer) (<-chan events.Margin, <-chan error) {
+func (t transferT) MarketID() string {
+	return t.marketID
+}
+
+func (e *Engine) TransferCh(marketID string, transfers []events.Transfer) (<-chan events.Margin, <-chan error) {
+
 	ech := make(chan error)
 	// create channel for events
 	ch := make(chan events.Margin, len(transfers))
@@ -59,23 +61,24 @@ func (e *Engine) TransferCh(transfers []events.Transfer) (<-chan events.Margin, 
 		if len(transfers) == 0 {
 			return
 		}
+		asset := transfers[0].Transfer().Amount.Asset
 		// This is where we'll implement everything
-		settle, insurance, err := e.getSystemAccounts()
+		settle, insurance, err := e.getSystemAccounts(marketID, asset)
 		if err != nil {
 			ech <- err
 			return
 		}
-		reference := fmt.Sprintf("%s close", e.market) // ledger moves need to indicate that they happened because market was closed
+		reference := fmt.Sprintf("%s close", marketID) // ledger moves need to indicate that they happened because market was closed
 		// this way we know if we need to check loss response
 		haveLoss := (transfers[0].Transfer().Type == types.TransferType_LOSS || transfers[0].Transfer().Type == types.TransferType_MTM_LOSS)
 		// tracks delta, wins & losses and determines how to distribute losses amongst wins if needed
 		distr := &distributor{}
 		// get a generic setup Callback function to get trader accounts etc...
 		// this returns either an error or a transfer response...
-		process := e.getProcessCB(distr, reference, settle, insurance)
+		process := e.getProcessCB(distr, reference, settle, insurance, marketID)
 		lossResp, winResp := buildResponses(transfers, settle, insurance)
 		loss := e.lossCB(distr, lossResp, process)
-		winPos, err := processLoss(ch, transfers, loss)
+		winPos, err := processLoss(marketID, ch, transfers, loss)
 		if err != nil {
 			ech <- err
 			return
@@ -84,7 +87,7 @@ func (e *Engine) TransferCh(transfers []events.Transfer) (<-chan events.Margin, 
 			for _, bacc := range lossResp.Balances {
 				distr.lossDelta += uint64(bacc.Balance)
 				// accounts have been updated when we get response (ledger movements)
-				if err := e.accountStore.IncrementBalance(bacc.Account.Id, bacc.Balance); err != nil {
+				if err := e.IncrementBalance(bacc.Account.Id, bacc.Balance); err != nil {
 					e.log.Error(
 						"Failed to update target account",
 						logging.String("target-account", bacc.Account.Id),
@@ -108,7 +111,7 @@ func (e *Engine) TransferCh(transfers []events.Transfer) (<-chan events.Margin, 
 		}
 		winResp.Transfers = make([]*types.LedgerEntry, 0, len(winPos)*2)
 		win := e.winCallback(distr, winResp, process)
-		if err := processWin(ch, winPos, win); err != nil {
+		if err := processWin(marketID, ch, winPos, win); err != nil {
 			ech <- err
 			return
 		}
@@ -121,51 +124,44 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 	// final settle, or MTM settle, makes no difference, it's win/loss still
 	// get the actual trasfer value here, for convenience
 	p := t.t
-	gen, err := e.accountStore.GetAccountsForOwnerByType(p.Owner, types.AccountType_GENERAL)
+
+	marginAcc, err := e.GetAccountByID(accountID(settle.MarketID, p.Owner, t.Asset(), types.AccountType_MARGIN))
 	if err != nil {
 		e.log.Error(
-			"Failed to get the general account",
+			"Failed to get trader margin account accounts",
 			logging.String("owner", p.Owner),
-			logging.String("market", e.market),
+			logging.String("market", settle.MarketID),
 			logging.Error(err),
 		)
 		return nil, err
 	}
-	accounts, err := e.accountStore.GetMarketAccountsForOwner(e.market, p.Owner)
+	t.margin = marginAcc
+
+	// we're still getting the general account for risk engine later on
+	generalAcc, err := e.GetAccountByID(accountID("", p.Owner, t.Asset(), types.AccountType_GENERAL))
 	if err != nil {
 		e.log.Error(
-			"could not get accounts for market",
-			logging.String("account-owner", p.Owner),
-			logging.String("market", e.market),
+			"Failed to get trader margin account accounts",
+			logging.String("owner", p.Owner),
+			logging.String("market", settle.MarketID),
 			logging.Error(err),
 		)
 		return nil, err
 	}
-	accounts = append(accounts, gen...)
-	// set all accounts onto transferT internal type
-	for _, ac := range accounts {
-		switch ac.Type {
-		case types.AccountType_MARGIN:
-			t.margin = ac
-		case types.AccountType_GENERAL:
-			t.general = ac
-		case types.AccountType_MARKET:
-			t.market = ac
-		}
-	}
+	t.general = generalAcc
+
 	if p.Type == types.TransferType_LOSS || p.Type == types.TransferType_MTM_LOSS {
 		req := types.TransferRequest{
 			FromAccount: []*types.Account{
 				t.margin,
-				t.general,
 				insurance,
 			},
 			ToAccount: []*types.Account{
 				settle,
 			},
 			Amount:    uint64(-p.Amount.Amount) * p.Size,
-			MinAmount: 0,  // default value, but keep it here explicitly
-			Asset:     "", // TBC
+			MinAmount: 0,         // default value, but keep it here explicitly
+			Asset:     t.Asset(), // TBC
 		}
 		if req.FromAccount[0] == nil || req.FromAccount[1] == nil {
 			return nil, ErrTraderAccountsMissing
@@ -179,7 +175,7 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 			insurance,
 		},
 		ToAccount: []*types.Account{
-			t.general,
+			t.margin,
 		},
 		Amount:    uint64(p.Amount.Amount) * p.Size,
 		MinAmount: 0,  // default value, but keep it here explicitly
@@ -187,24 +183,17 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 	}, nil
 }
 
-func (e *Engine) getProcessCB(distr *distributor, reference string, settle, insurance *types.Account) processF {
-	e.cfgMu.Lock()
-	createTraderAccounts := e.CreateTraderAccounts
-	e.cfgMu.Unlock()
+func (e *Engine) getProcessCB(distr *distributor, reference string, settle, insurance *types.Account, marketID string) processF {
 	// common tasks performed for both win and loss positions
 	return func(t *transferT) (*types.TransferResponse, error) {
 		p := t.t
-		if createTraderAccounts {
-			// ignore errors, the only error ATM is the one telling us this call was redundant
-			_ = e.accountStore.CreateTraderMarketAccounts(p.Owner, e.market)
-		}
 		req, err := e.buildTransferRequest(t, settle, insurance)
 		if err != nil {
 			e.log.Error(
 				"Failed to create the transfer request",
 				logging.String("settlement-type", p.Type.String()),
 				logging.String("trader-id", p.Owner),
-				logging.String("market-id", e.market),
+				logging.String("market-id", marketID),
 				logging.Error(err),
 			)
 			return nil, err
@@ -229,7 +218,7 @@ func (e *Engine) winCallback(distr *distributor, winResp *types.TransferResponse
 		}
 		distr.expWin += uint64(res.Balances[0].Balance)
 		// there's only 1 balance account here (the ToAccount)
-		if err := e.accountStore.IncrementBalance(res.Balances[0].Account.Id, res.Balances[0].Balance); err != nil {
+		if err := e.IncrementBalance(res.Balances[0].Account.Id, res.Balances[0].Balance); err != nil {
 			// this account might get accessed concurrently -> use increment
 			e.log.Error(
 				"Failed to increment balance of general account",
@@ -271,7 +260,7 @@ func (e *Engine) lossCB(distr *distributor, lossResp *types.TransferResponse, pr
 	}
 }
 
-func processLoss(ch chan<- events.Margin, positions []events.Transfer, cb collectF) ([]events.Transfer, error) {
+func processLoss(marketID string, ch chan<- events.Margin, positions []events.Transfer, cb collectF) ([]events.Transfer, error) {
 	// collect whatever we have until we reach the DEBIT part of the positions
 	for i, p := range positions {
 		if p.Transfer().Type == types.TransferType_WIN || p.Transfer().Type == types.TransferType_MTM_WIN {
@@ -280,6 +269,7 @@ func processLoss(ch chan<- events.Margin, positions []events.Transfer, cb collec
 		t := &transferT{
 			Transfer: p,
 			t:        p.Transfer(),
+			marketID: marketID,
 		}
 		if err := cb(t); err != nil {
 			return nil, err
@@ -291,12 +281,13 @@ func processLoss(ch chan<- events.Margin, positions []events.Transfer, cb collec
 	return nil, nil
 }
 
-func processWin(ch chan<- events.Margin, positions []events.Transfer, cb collectF) error {
+func processWin(marketID string, ch chan<- events.Margin, positions []events.Transfer, cb collectF) error {
 	// this is really simple -> just collect whatever was left
 	for _, p := range positions {
 		t := &transferT{
 			Transfer: p,
 			t:        p.Transfer(),
+			marketID: marketID,
 		}
 		if err := cb(t); err != nil {
 			return err

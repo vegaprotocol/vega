@@ -2,20 +2,21 @@ package markets
 
 import (
 	"context"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets ServiceMarketStore
-type ServiceMarketStore interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets MarketStore
+type MarketStore interface {
 	Post(party *types.Market) error
 	GetByID(name string) (*types.Market, error)
 	GetAll() ([]*types.Market, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets ServiceOrderStore
-type ServiceOrderStore interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets OrderStore
+type OrderStore interface {
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
 	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
@@ -23,13 +24,14 @@ type ServiceOrderStore interface {
 
 type Svc struct {
 	Config
-	log         *logging.Logger
-	marketStore ServiceMarketStore
-	orderStore  ServiceOrderStore
+	log            *logging.Logger
+	marketStore    MarketStore
+	orderStore     OrderStore
+	subscribersCnt int32
 }
 
 // NewService creates an market service with the necessary dependencies
-func NewService(log *logging.Logger, config Config, marketStore ServiceMarketStore, orderStore ServiceOrderStore) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -82,6 +84,10 @@ func (s *Svc) GetDepth(ctx context.Context, marketID string) (marketDepth *types
 	return s.orderStore.GetMarketDepth(ctx, m.Id)
 }
 
+func (s *Svc) GetMarketDepthSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.subscribersCnt)
+}
+
 // ObserveDepth provides a way to listen to changes on the Depth of Market for a given market.
 func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-chan *types.MarketDepth, uint64) {
 	depth := make(chan *types.MarketDepth)
@@ -90,6 +96,8 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 
 	retryCount := retries
 	go func() {
+		atomic.AddInt32(&s.subscribersCnt, 1)
+		defer atomic.AddInt32(&s.subscribersCnt, -1)
 		ip := logging.IPAddressFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()

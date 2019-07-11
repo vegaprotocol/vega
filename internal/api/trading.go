@@ -19,18 +19,25 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrAuthRequired       = errors.New("auth required")
 	ErrMissingOrder       = errors.New("missing order in request payload")
+	ErrMissingTraderID    = errors.New("missing trader id")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeOrderService
 type TradeOrderService interface {
-	CreateOrder(ctx context.Context, order *types.OrderSubmission) (*types.PendingOrder, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.PendingOrder, error)
-	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
+	CreateOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
+	CancelOrder(ctx context.Context, cancellation *types.OrderCancellation) (*types.PendingOrder, error)
+	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api  AccountService
+type AccountService interface {
+	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (bool, error)
 }
 
 type tradingService struct {
 	log               *logging.Logger
 	tradeOrderService TradeOrderService
+	accountService    AccountService
 	statusChecker     *monitoring.Status
 
 	authEnabled bool
@@ -69,8 +76,9 @@ func (s *tradingService) SignIn(
 	saltpass := fmt.Sprintf("vega%v", req.Password)
 
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if !s.authEnabled {
-		s.mu.Unlock()
 		return nil, ErrAuthDisabled
 	}
 	for _, v := range s.parties {
@@ -80,11 +88,11 @@ func (s *tradingService) SignIn(
 					logging.String("user-id", v.ID),
 					logging.Error(err),
 				)
+				return nil, ErrInvalidCredentials
 			}
 			tkn = v.Token
 		}
 	}
-	s.mu.Unlock()
 
 	if len(tkn) <= 0 {
 		return nil, ErrInvalidCredentials
@@ -119,8 +127,7 @@ func (s *tradingService) SubmitOrder(
 		}
 	}
 
-	pendingOrder, err := s.tradeOrderService.CreateOrder(ctx, req.Submission)
-	return pendingOrder, err
+	return s.tradeOrderService.CreateOrder(ctx, req.Submission)
 }
 
 // CancelOrder is used to request cancelling an order into the VEGA platform, via consensus.
@@ -147,14 +154,13 @@ func (s *tradingService) CancelOrder(
 		}
 	}
 
-	pendingOrder, err := s.tradeOrderService.CancelOrder(ctx, req.Cancellation)
-	return pendingOrder, err
+	return s.tradeOrderService.CancelOrder(ctx, req.Cancellation)
 }
 
 // AmendOrder is used to request editing an order onto the VEGA platform, via consensus.
 func (s *tradingService) AmendOrder(
 	ctx context.Context, req *protoapi.AmendOrderRequest,
-) (*protoapi.OrderResponse, error) {
+) (*types.PendingOrder, error) {
 
 	if req.Amendment == nil {
 		return nil, ErrMissingOrder
@@ -172,7 +178,22 @@ func (s *tradingService) AmendOrder(
 		}
 	}
 
-	success, err := s.tradeOrderService.AmendOrder(ctx, req.Amendment)
+	return s.tradeOrderService.AmendOrder(ctx, req.Amendment)
+}
 
-	return &protoapi.OrderResponse{Success: success}, err
+func (s *tradingService) NotifyTraderAccount(
+	ctx context.Context, req *protoapi.NotifyTraderAccountRequest,
+) (*protoapi.NotifyTraderAccountResponse, error) {
+	if len(req.Notif.TraderID) <= 0 {
+		return nil, ErrMissingTraderID
+	}
+
+	submitted, err := s.accountService.NotifyTraderAccount(ctx, req.Notif)
+	if err != nil {
+		return nil, err
+	}
+
+	return &protoapi.NotifyTraderAccountResponse{
+		Submitted: submitted,
+	}, nil
 }

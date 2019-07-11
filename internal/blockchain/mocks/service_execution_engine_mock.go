@@ -77,6 +77,20 @@ func (mr *MockServiceExecutionEngineMockRecorder) Generate() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockServiceExecutionEngine)(nil).Generate))
 }
 
+// NotifyTraderAccount mocks base method
+func (m *MockServiceExecutionEngine) NotifyTraderAccount(arg0 *proto.NotifyTraderAccount) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NotifyTraderAccount", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NotifyTraderAccount indicates an expected call of NotifyTraderAccount
+func (mr *MockServiceExecutionEngineMockRecorder) NotifyTraderAccount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyTraderAccount", reflect.TypeOf((*MockServiceExecutionEngine)(nil).NotifyTraderAccount), arg0)
+}
+
 // SubmitOrder mocks base method
 func (m *MockServiceExecutionEngine) SubmitOrder(arg0 *proto.Order) (*proto.OrderConfirmation, error) {
 	m.ctrl.T.Helper()

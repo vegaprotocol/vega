@@ -1,15 +1,10 @@
 ## VEGA - GraphQL schema
 
-# Represents a date/time
-scalar DateTime
-
 schema {
     query: Query,
     subscription: Subscription,
     mutation: Mutation
 }
-
-directive @requireAuth on FIELD
 
 # Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
 type Mutation {
@@ -31,18 +26,34 @@ type Mutation {
     type: OrderType!,
     # exiration of the the order
     expiration: String
-  ): PendingOrder! @requireAuth
+  ): PendingOrder!
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
   # It validates and sends the request out for consensus.
   orderCancel(
     # ID of the order to cancel
     id: ID!,
+    # ID of the party placing the order
+    partyId: String!,
     # ID of the market where to find the order
     marketId: String!,
+  ): PendingOrder!
+
+  # Send a amend order request into VEGA network, this does not immediately amend an order.
+  # It validates and sends the request out for consensus.
+  orderAmend(
+    # ID of the order to amend
+    id: ID!,
     # ID of the party which created the order
     partyId: String!
-  ): PendingOrder! @requireAuth
+    # New price for this order
+    price: Int!,
+    # New size for this order
+    size: Int!,
+    # New expiration time
+    expiration: String,
+  ): PendingOrder!
+
 
   # sign a party in using an username and password, then return a token
   signin(
@@ -89,6 +100,17 @@ type Subscription {
     # ID of the market we want to receive market depth updates for
     marketId: String!
   ): MarketDepth!
+
+  # Subscribe to the accounts updates
+  accounts(
+    # ID of the market from which we want accounts updates
+    marketId: String,
+    # ID of the party from which we want accounts updates
+    partyId: String
+    # Type of the account
+    type: AccountType,
+  ): Account!
+
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -149,6 +171,99 @@ type Query {
     # ID of a party
     id: String!
   ): Party
+
+  # a bunch of statistics about the node
+  statistics: Statistics!
+}
+
+# A bunch of statistics about the node
+type Statistics {
+  # Current block number
+  blockHeight: Int!
+
+  # Number of items in the backlog
+  backlogLength: Int!
+
+  # Total number of peers on the vega network
+  totalPeers: Int!
+
+  # Genesis time of the chain
+  genesisTime: String!
+
+  # Current time (real)
+  currentTime: String!
+
+  # Current time of the chain (decided through consensus)
+  vegaTime: String!
+
+  # Status of the vega application connection with the chain
+  status: String!
+
+  # Number of transaction processed per block
+  txPerBlock: Int!
+
+  # Average size of the transactions
+  averageTxBytes: Int!
+
+  # Average number of orders added per blocks
+  averageOrdersPerBlock: Int!
+
+  # Number of the trades per seconds
+  tradesPerSecond: Int!
+
+  # Number of orders per seconds
+  ordersPerSecond: Int!
+
+  # Total number of markets
+  totalMarkets: Int!
+
+  # Total number of parties
+  totalParties: Int!
+
+  # Traders on the vega network
+  parties: [String]!
+
+  # Total number of amended orders
+  totalAmendOrder: Int!
+
+  # Total number of cancelled orders
+  totalCancelOrder: Int!
+
+  # Total number of orders created
+  totalCreateOrder: Int!
+
+  # Total number of orders
+  totalOrders: Int!
+
+  # Total number of trades
+  totalTrades: Int!
+
+  # Version commit hash of the vega node
+  appVersionHash: String!
+
+  # Version of the vega node (semver)
+  appVersion: String!
+
+  # Version of the chain (semver)
+  chainVersion: String!
+
+  # Duration of the last block, in nanoseconds
+  blockDuration: Int!
+
+  # Number of orders subscriptions
+  orderSubscriptions: Int!
+
+  # Number of trades subscriptions
+  tradeSubscriptions: Int!
+
+  # Number of candles subscriptions
+  candleSubscriptions: Int!
+
+  # Number of market depth subscriptions
+  marketDepthSubscriptions: Int!
+
+  # Number of positions subscriptions
+  positionsSubscriptions: Int!
 }
 
 # A mode where Vega try to execute order as soon as they are received
@@ -235,6 +350,12 @@ type Instrument {
   # Full and fairly descriptive name for the instrument
   name: String!
 
+  # String representing the base (e.g. BTCUSD -> BTC is base)
+  baseName: String!
+
+  # String representing the quote (e.g. BTCUSD -> USD is quote)
+  quoteName: String!
+
   # Metadata for this instrument
   metadata: InstrumentMetadata!
 
@@ -280,6 +401,12 @@ type Market {
     # Pagination last element
     last: Int
   ): [Order!]
+
+  # Get system accounts for a given market (insurance pool, settlement)
+  accounts(
+    # Specify the account type to get a specific account
+    type: AccountType,
+  ): [Account!]
 
   # Trades on a market
   trades (
@@ -395,6 +522,15 @@ type Party {
     first: Int,
     # Pagination last element
     last: Int): [Trade!]
+
+    # get accounts for a given party, filtered if needed
+  accounts(
+    # Market ID - specify what market accounts for the party to return
+    marketID: String,
+    # Filter accounts by type (General account, margin account, etc...)
+    type: AccountType,
+  ): [Account!]
+
 
   # Trading positions relating to a party
   positions: [Position!]
@@ -518,6 +654,18 @@ type Trade {
   createdAt: String!
 }
 
+# An account record
+type Account {
+  # id the id for this account, not useful given the current API, but might be useful
+  id: String!
+  # Balance as string - current account balance (approx. as balances can be updated several times per second)
+  balance: String!
+  # Asset, the "currency"
+  asset: String!
+  # Account type (enum type)
+  type: AccountType!
+}
+
 # Valid order types, these determine what happens when an order is added to the book
 enum OrderType {
 
@@ -589,4 +737,18 @@ enum Interval {
 
   # 1 day interval
   I1D
+}
+
+# The various account types we have (used by collateral)
+enum AccountType {
+  # Insurance pool account - only for party "system"
+  Insurance
+  # Settlement - Again, only for "system" party
+  Settlement
+  # Margin - The leverage account for traders
+  Margin
+  # Market - it's in the spec, but AFAIK, we're not using this currently
+  Market
+  # General account - the actual account containing "unused" monies
+  General
 }

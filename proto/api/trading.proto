@@ -14,9 +14,18 @@ service trading {
   // unary calls - writes
   rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder);
   rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder);
-  rpc AmendOrder(AmendOrderRequest) returns (OrderResponse);
+  rpc AmendOrder(AmendOrderRequest) returns (vega.PendingOrder);
   rpc SignIn(SignInRequest) returns (SignInResponse);
+  rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
   // unary calls - read
+}
+
+message NotifyTraderAccountRequest {
+  vega.NotifyTraderAccount notif = 1;
+}
+
+message NotifyTraderAccountResponse {
+  bool submitted = 1;
 }
 
 message SignInRequest {
@@ -41,11 +50,6 @@ message CancelOrderRequest {
 message AmendOrderRequest {
   vega.OrderAmendment amendment = 1;
   string token = 101;
-}
-
-message OrderResponse {
-  bool success = 1;
-  string reference = 2;
 }
 
 service trading_data {
@@ -86,6 +90,12 @@ service trading_data {
   rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
+  rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
+
+  // collateral/accounts
+  rpc TraderAccounts(CollateralRequest) returns (CollateralResponse);
+  rpc TraderMarketAccounts(CollateralRequest) returns (CollateralResponse);
+  rpc TraderMarketBalance(CollateralRequest) returns (CollateralResponse);
 }
 
 message LastTradeRequest {
@@ -97,7 +107,7 @@ message LastTradeResponse {
 }
 
 message MarketByIDRequest {
-  string id = 1;
+  string marketID = 1;
 }
 
 message MarketByIDResponse {
@@ -132,6 +142,12 @@ message TradesByOrderRequest {
 
 message TradesByOrderResponse {
   repeated vega.Trade trades = 1;
+}
+
+message AccountsSubscribeRequest {
+  string marketID = 1;
+  string partyID = 2;
+  vega.AccountType type = 3;
 }
 
 message OrdersSubscribeRequest {
@@ -179,7 +195,7 @@ message OrdersByPartyResponse {
 
 message OrderByMarketAndIdRequest {
   string marketID = 1 [(validator.field) = {msg_exists : true }];
-  string id = 2 [(validator.field) = {msg_exists : true}];
+  string orderID = 2 [(validator.field) = {msg_exists : true}];
 }
 
 message OrderByMarketAndIdResponse {
@@ -199,7 +215,7 @@ message MarketsResponse {
 }
 
 message CandlesRequest {
-  string market = 1 [(validator.field) = {msg_exists : true}];
+  string marketID = 1 [(validator.field) = {msg_exists : true}];
   int64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
   vega.Interval interval = 3;
 }
@@ -209,7 +225,7 @@ message CandlesResponse {
 }
 
 message MarketDepthRequest {
-  string market = 1 [(validator.field) = {msg_exists: true}];
+  string marketID = 1 [(validator.field) = {msg_exists: true}];
 }
 
 message MarketDepthResponse {
@@ -252,4 +268,14 @@ message OrdersStream {
 
 message TradesStream {
   repeated vega.Trade trades = 1;
+}
+
+message CollateralRequest {
+    string party = 1 [(validator.field) = {msg_exists : true}];
+    string marketID = 2;
+    vega.AccountType type = 3;
+}
+
+message CollateralResponse {
+  repeated vega.Account accounts = 1;
 }

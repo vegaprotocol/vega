@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/accounts"
 	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
@@ -26,18 +27,19 @@ import (
 type grpcServer struct {
 	log *logging.Logger
 	Config
-	stats          *internal.Stats
-	client         *blockchain.Client
-	orderService   *orders.Svc
-	tradeService   *trades.Svc
-	candleService  *candles.Svc
-	marketService  *markets.Svc
-	partyService   *parties.Svc
-	timeService    *vegatime.Svc
-	srv            *grpc.Server
-	statusChecker  *monitoring.Status
-	tradingService *tradingService
-
+	stats              *internal.Stats
+	client             *blockchain.Client
+	orderService       *orders.Svc
+	tradeService       *trades.Svc
+	candleService      *candles.Svc
+	marketService      *markets.Svc
+	partyService       *parties.Svc
+	timeService        *vegatime.Svc
+	srv                *grpc.Server
+	statusChecker      *monitoring.Status
+	tradingService     *tradingService
+	accountsService    *accounts.Svc
+	tradingDataService *tradingDataService
 	// used in order to gracefully close streams
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -54,6 +56,7 @@ func NewGRPCServer(
 	orderService *orders.Svc,
 	tradeService *trades.Svc,
 	candleService *candles.Svc,
+	accountsService *accounts.Svc,
 	statusChecker *monitoring.Status,
 ) *grpcServer {
 	// setup logger
@@ -62,19 +65,20 @@ func NewGRPCServer(
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &grpcServer{
-		log:           log,
-		Config:        config,
-		stats:         stats,
-		client:        client,
-		orderService:  orderService,
-		tradeService:  tradeService,
-		candleService: candleService,
-		timeService:   timeService,
-		marketService: marketService,
-		partyService:  partyService,
-		statusChecker: statusChecker,
-		ctx:           ctx,
-		cfunc:         cfunc,
+		log:             log,
+		Config:          config,
+		stats:           stats,
+		client:          client,
+		orderService:    orderService,
+		tradeService:    tradeService,
+		candleService:   candleService,
+		timeService:     timeService,
+		marketService:   marketService,
+		partyService:    partyService,
+		accountsService: accountsService,
+		statusChecker:   statusChecker,
+		ctx:             ctx,
+		cfunc:           cfunc,
 	}
 }
 
@@ -160,25 +164,28 @@ func (g *grpcServer) Start() {
 		log:               g.log,
 		authEnabled:       g.Config.AuthEnabled,
 		tradeOrderService: g.orderService,
+		accountService:    g.accountsService,
 		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc
 	protoapi.RegisterTradingServer(g.srv, tradingSvc)
 
 	tradingDataSvc := &tradingDataService{
-		log:           g.log,
-		Config:        g.Config,
-		Stats:         g.stats,
-		Client:        g.client,
-		OrderService:  g.orderService,
-		TradeService:  g.tradeService,
-		CandleService: g.candleService,
-		MarketService: g.marketService,
-		PartyService:  g.partyService,
-		TimeService:   g.timeService,
-		statusChecker: g.statusChecker,
-		ctx:           g.ctx,
+		log:             g.log,
+		Config:          g.Config,
+		Stats:           g.stats,
+		Client:          g.client,
+		OrderService:    g.orderService,
+		TradeService:    g.tradeService,
+		CandleService:   g.candleService,
+		MarketService:   g.marketService,
+		PartyService:    g.partyService,
+		TimeService:     g.timeService,
+		AccountsService: g.accountsService,
+		statusChecker:   g.statusChecker,
+		ctx:             g.ctx,
 	}
+	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServer(g.srv, tradingDataSvc)
 
 	err = g.srv.Serve(lis)

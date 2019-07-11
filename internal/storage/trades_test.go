@@ -23,7 +23,7 @@ func TestStorage_NewTrades(t *testing.T) {
 	assert.NotNil(t, tradeStore)
 	assert.Nil(t, err)
 
-	config.TradeStoreDirPath = ""
+	config.TradesDirPath = ""
 
 	tradeStore, err = storage.NewTrades(logging.NewTestLogger(), config, func() {})
 	assert.Nil(t, tradeStore)

@@ -133,7 +133,7 @@ func (p *PartyService) addParty(w http.ResponseWriter, r *http.Request) {
 	}
 	payload.Token, _ = createJWTToken(payload.ID)
 	payloadCpy := payload
-	payload.Pass = bcryptPass(payload.Token)
+	payload.Pass = bcryptPass(payload.Pass)
 
 	p.mu.Lock()
 	// check if it exists then update

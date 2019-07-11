@@ -63,7 +63,7 @@ func (m *FileLoadingMode) UnmarshalText(text []byte) error {
 
 var (
 	// ErrCouldNotMarshal is to be used when marshalling failed
-	ErrCouldNotMarshal = errors.New("Could not marshal value to string")
+	ErrCouldNotMarshal = errors.New("could not marshal value to string")
 )
 
 // MarshalText maps a FileLoadingMode enum value to a string

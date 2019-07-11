@@ -37,14 +37,14 @@ func (m *MockTradingClient) EXPECT() *MockTradingClientMockRecorder {
 }
 
 // AmendOrder mocks base method
-func (m *MockTradingClient) AmendOrder(arg0 context.Context, arg1 *api.AmendOrderRequest, arg2 ...grpc.CallOption) (*api.OrderResponse, error) {
+func (m *MockTradingClient) AmendOrder(arg0 context.Context, arg1 *api.AmendOrderRequest, arg2 ...grpc.CallOption) (*proto.PendingOrder, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "AmendOrder", varargs...)
-	ret0, _ := ret[0].(*api.OrderResponse)
+	ret0, _ := ret[0].(*proto.PendingOrder)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

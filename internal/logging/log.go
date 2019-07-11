@@ -333,6 +333,11 @@ func IPAddressFromContext(ctx context.Context) string {
 	return ""
 }
 
+// Check helps avoid spending CPU time on log entries that will never be printed.
+func (log *Logger) Check(l Level) bool {
+	return log.Logger.Check(l.ZapLevel(), "") != nil
+}
+
 // Errorf implement badger interface
 func (log *Logger) Errorf(s string, args ...interface{}) {
 	if ce := log.Logger.Check(zap.ErrorLevel, ""); ce != nil {

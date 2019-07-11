@@ -182,11 +182,11 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	expired := book.RemoveExpiredOrders(someTimeLater)
 	assert.Len(t, expired, 5)
-	assert.Equal(t, "1", expired[0].Id)
-	assert.Equal(t, "3", expired[1].Id)
+	assert.Equal(t, "8", expired[0].Id)
+	assert.Equal(t, "10", expired[1].Id)
 	assert.Equal(t, "5", expired[2].Id)
-	assert.Equal(t, "8", expired[3].Id)
-	assert.Equal(t, "10", expired[4].Id)
+	assert.Equal(t, "3", expired[3].Id)
+	assert.Equal(t, "1", expired[4].Id)
 }
 
 //test for order validation

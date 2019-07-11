@@ -20,6 +20,14 @@ const (
 
 var (
 	ErrInstrumentNotSupported = errors.New("instrument type unsupported")
+	ErrInstrumentTypeMismatch = errors.New("instrument is not of the expected type")
+)
+
+var (
+	unconfirmedTxGauge prometheus.Gauge
+	engineTime         *prometheus.CounterVec
+	orderCounter       *prometheus.CounterVec
+	orderGauge         *prometheus.GaugeVec
 )
 
 // abstract prometheus types
@@ -35,11 +43,34 @@ type instrumentOpts struct {
 	vectors            []string
 }
 
+type mi struct {
+	gaugeV     *prometheus.GaugeVec
+	gauge      prometheus.Gauge
+	counterV   *prometheus.CounterVec
+	counter    prometheus.Counter
+	histogramV *prometheus.HistogramVec
+	histogram  prometheus.Histogram
+	summaryV   *prometheus.SummaryVec
+	summary    prometheus.Summary
+}
+
+// MetricInstrument - template interface for mi type return value - only mock if needed, and only mock the funcs you use
+type MetricInstrument interface {
+	Gauge() (prometheus.Gauge, error)
+	GaugeVec() (*prometheus.GaugeVec, error)
+	Counter() (prometheus.Counter, error)
+	CounterVec() (*prometheus.CounterVec, error)
+	Histogram() (prometheus.Histogram, error)
+	HistogramVec() (*prometheus.HistogramVec, error)
+	Summary() (prometheus.Summary, error)
+	SummaryVec() (*prometheus.SummaryVec, error)
+}
+
 // InstrumentOption - vararg for instrument options setting
 type InstrumentOption func(o *instrumentOpts)
 
 // Vectors - configuration used to create a vector of a given interface, slice of label names
-func Vectors(labels []string) InstrumentOption {
+func Vectors(labels ...string) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.vectors = labels
 	}
@@ -110,8 +141,9 @@ func BufCap(bc uint32) InstrumentOption {
 
 // AddInstrument, configure and register new metrics instrument
 // this will, over time, be moved to use custom Registries, etc...
-func AddInstrument(t instrument, name string, opts ...InstrumentOption) error {
+func AddInstrument(t instrument, name string, opts ...InstrumentOption) (*mi, error) {
 	var col prometheus.Collector
+	ret := mi{}
 	opt := instrumentOpts{
 		opts: prometheus.Opts{
 			Name: name,
@@ -125,41 +157,56 @@ func AddInstrument(t instrument, name string, opts ...InstrumentOption) error {
 	case Gauge:
 		o := opt.gauge()
 		if len(opt.vectors) == 0 {
-			col = prometheus.NewGauge(o)
+			ret.gauge = prometheus.NewGauge(o)
+			col = ret.gauge
 		} else {
-			col = prometheus.NewGaugeVec(o, opt.vectors)
+			ret.gaugeV = prometheus.NewGaugeVec(o, opt.vectors)
+			col = ret.gaugeV
 		}
 	case Counter:
 		o := opt.counter()
 		if len(opt.vectors) == 0 {
-			col = prometheus.NewCounter(o)
+			ret.counter = prometheus.NewCounter(o)
+			col = ret.counter
 		} else {
-			col = prometheus.NewCounterVec(o, opt.vectors)
+			ret.counterV = prometheus.NewCounterVec(o, opt.vectors)
+			col = ret.counterV
 		}
 	case Histogram:
 		o := opt.histogram()
 		if len(opt.vectors) == 0 {
-			col = prometheus.NewHistogram(o)
+			ret.histogram = prometheus.NewHistogram(o)
+			col = ret.histogram
 		} else {
-			col = prometheus.NewHistogramVec(o, opt.vectors)
+			ret.histogramV = prometheus.NewHistogramVec(o, opt.vectors)
+			col = ret.histogramV
 		}
 	case Summary:
 		o := opt.summary()
 		if len(opt.vectors) == 0 {
-			col = prometheus.NewSummary(o)
+			ret.summary = prometheus.NewSummary(o)
+			col = ret.summary
 		} else {
-			col = prometheus.NewSummaryVec(o, opt.vectors)
+			ret.summaryV = prometheus.NewSummaryVec(o, opt.vectors)
+			col = ret.summaryV
 		}
 	default:
-		return ErrInstrumentNotSupported
+		return nil, ErrInstrumentNotSupported
 	}
-	return prometheus.Register(col)
+	if err := prometheus.Register(col); err != nil {
+		return nil, err
+	}
+	return &ret, nil
 }
 
 // Start enable metrics (given config)
 func Start(conf Config) {
 	if !conf.Enabled {
 		return
+	}
+	err := setupMetrics()
+	if err != nil {
+		panic("could not set up metrics")
 	}
 	http.Handle(conf.Path, promhttp.Handler())
 	go func() {
@@ -198,4 +245,159 @@ func (i instrumentOpts) histogram() prometheus.HistogramOpts {
 		Help:        i.opts.Help,
 		Buckets:     i.buckets,
 	}
+}
+
+func (m mi) Gauge() (prometheus.Gauge, error) {
+	if m.gauge == nil {
+		return nil, ErrInstrumentTypeMismatch
+	}
+	return m.gauge, nil
+}
+
+func (m mi) GaugeVec() (*prometheus.GaugeVec, error) {
+	if m.gaugeV == nil {
+		return nil, ErrInstrumentTypeMismatch
+	}
+	return m.gaugeV, nil
+}
+
+func (m mi) Counter() (prometheus.Counter, error) {
+	if m.counter == nil {
+		return nil, ErrInstrumentTypeMismatch
+	}
+	return m.counter, nil
+}
+
+func (m mi) CounterVec() (*prometheus.CounterVec, error) {
+	if m.counterV == nil {
+		return nil, ErrInstrumentTypeMismatch
+	}
+	return m.counterV, nil
+}
+
+func (m mi) Histogram() (prometheus.Histogram, error) {
+	if m.histogram == nil {
+		return nil, ErrInstrumentTypeMismatch
+	}
+	return m.histogram, nil
+}
+
+func (m mi) HistogramVec() (*prometheus.HistogramVec, error) {
+	if m.histogramV == nil {
+		return nil, ErrInstrumentTypeMismatch
+	}
+	return m.histogramV, nil
+}
+
+func (m mi) Summary() (prometheus.Summary, error) {
+	if m.summary == nil {
+		return nil, ErrInstrumentTypeMismatch
+	}
+	return m.summary, nil
+}
+
+func (m mi) SummaryVec() (*prometheus.SummaryVec, error) {
+	if m.summaryV == nil {
+		return nil, ErrInstrumentTypeMismatch
+	}
+	return m.summaryV, nil
+}
+
+func setupMetrics() error {
+	// instrument with time histogram for blocks
+	h, err := AddInstrument(
+		Counter,
+		"engine_seconds_total",
+		Namespace("vega"),
+		Vectors("market", "engine", "fn"),
+	)
+	if err != nil {
+		return err
+	}
+	est, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	engineTime = est
+
+	h, err = AddInstrument(
+		Counter,
+		"orders_total",
+		Namespace("vega"),
+		Vectors("market", "valid"),
+		Help("Number of orders processed"),
+	)
+	if err != nil {
+		return err
+	}
+	ot, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	orderCounter = ot
+
+	// now add the orders gauge
+	h, err = AddInstrument(
+		Gauge,
+		"orders",
+		Namespace("vega"),
+		Vectors("market"),
+		Help("Number of orders currently being processed"),
+	)
+	if err != nil {
+		return err
+	}
+	g, err := h.GaugeVec()
+	if err != nil {
+		return err
+	}
+	orderGauge = g
+	// example usage of this simple gauge:
+	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
+	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
+
+	h, err = AddInstrument(
+		Gauge,
+		"unconfirmedtx",
+		Namespace("vega"),
+		Help("Number of transactions waiting to be processed"),
+	)
+	if err != nil {
+		return err
+	}
+	utxg, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	unconfirmedTxGauge = utxg
+
+	return nil
+}
+
+func EngineTimeCounterAdd(start time.Time, labelValues ...string) {
+	if engineTime == nil {
+		return
+	}
+	engineTime.WithLabelValues(labelValues...).Add(time.Now().Sub(start).Seconds())
+}
+
+func OrderCounterInc(labelValues ...string) {
+	if orderCounter == nil {
+		return
+	}
+	orderCounter.WithLabelValues(labelValues...).Inc()
+}
+
+func OrderGaugeAdd(n int, labelValues ...string) {
+	if orderGauge == nil {
+		return
+	}
+	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
+}
+
+func UnconfirmedTxGaugeSet(n int) {
+	if unconfirmedTxGauge == nil {
+		return
+	}
+	unconfirmedTxGauge.Set(float64(n))
 }

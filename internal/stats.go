@@ -7,10 +7,11 @@ import (
 
 // Stats ties together all other package level application stats types.
 type Stats struct {
-	log         *logging.Logger
-	Blockchain  *blockchain.Stats
-	version     string
-	versionHash string
+	log          *logging.Logger
+	Blockchain   *blockchain.Stats
+	version      string
+	versionHash  string
+	chainVersion string
 }
 
 func NewStats(logger *logging.Logger, version string, versionHash string) *Stats {
@@ -20,6 +21,14 @@ func NewStats(logger *logging.Logger, version string, versionHash string) *Stats
 		version:     version,
 		versionHash: versionHash,
 	}
+}
+
+func (s *Stats) SetChainVersion(v string) {
+	s.chainVersion = v
+}
+
+func (s *Stats) GetChainVersion() string {
+	return s.chainVersion
 }
 
 func (s *Stats) GetVersion() string {

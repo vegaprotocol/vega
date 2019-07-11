@@ -148,29 +148,36 @@ message MarketPosition {
 }
 
 message Statistics {
-    uint64 blockHeight = 1;
-    uint64 backlogLength = 2;
-    uint64 totalPeers = 3;
-    string genesisTime = 4;
-    string currentTime = 5;
-    string vegaTime = 6;
-    ChainStatus status = 7;
-    uint64 txPerBlock = 8;
-    uint64 averageTxBytes = 9;
-    uint64 averageOrdersPerBlock = 10;
-    uint64 tradesPerSecond = 11;
-    uint64 ordersPerSecond = 12;
-    uint64 totalMarkets = 13;
-    uint64 totalParties = 14;
-    string appVersionHash = 15;
-    string appVersion = 16;
-    repeated string Parties = 17;
-    uint64 totalAmendOrder = 18;
-    uint64 totalCancelOrder = 19;
-    uint64 totalCreateOrder = 20;
-    uint64 totalOrders = 21;
-    uint64 totalTrades = 22;
-    uint64 blockDuration = 24; // nanoseconds
+  uint64 blockHeight = 1;
+  uint64 backlogLength = 2;
+  uint64 totalPeers = 3;
+  string genesisTime = 4;
+  string currentTime = 5;
+  string vegaTime = 6;
+  ChainStatus status = 7;
+  uint64 txPerBlock = 8;
+  uint64 averageTxBytes = 9;
+  uint64 averageOrdersPerBlock = 10;
+  uint64 tradesPerSecond = 11;
+  uint64 ordersPerSecond = 12;
+  uint64 totalMarkets = 13;
+  uint64 totalParties = 14;
+  repeated string parties = 15;
+  uint64 totalAmendOrder = 16;
+  uint64 totalCancelOrder = 17;
+  uint64 totalCreateOrder = 18;
+  uint64 totalOrders = 19;
+  uint64 totalTrades = 20;
+  int32 orderSubscriptions = 21;
+  int32 tradeSubscriptions = 22;
+  int32 candleSubscriptions = 23;
+  int32 marketDepthSubscriptions = 24;
+  int32 positionsSubscriptions = 25;
+  int32 accountSubscriptions = 26;
+  string appVersionHash = 27;
+  string appVersion = 28;
+  string chainVersion = 29;
+  uint64 blockDuration = 30; // nanoseconds
 }
 
 enum ChainStatus {
@@ -191,8 +198,12 @@ message PendingOrder {
   string id = 9;
 }
 
+message NotifyTraderAccount {
+  string traderID = 1;
+}
+
 message OrderAmendment {
-    string id = 1 [(validator.field) = {msg_exists : true}];
+    string orderID = 1 [(validator.field) = {msg_exists : true}];
     string partyID = 2 [(validator.field) = {msg_exists : true}];
     uint64 price = 3;
     uint64 size = 4 [(validator.field) = {int_gt: 0}];
@@ -211,16 +222,16 @@ message OrderSubmission {
 }
 
 message OrderCancellation {
-  string id = 1;
+  string orderID = 1;
   string marketID = 2;
   string partyID = 3;
 }
 
 enum AccountType {
-  INSURANCE = 0;
-  SETTLEMENT = 1;
-  MARGIN = 2;
-  MARKET = 3;
+  NO_ACC = 0;
+  INSURANCE = 1;
+  SETTLEMENT = 2;
+  MARGIN = 3;
   GENERAL = 4;
 }
 
@@ -236,6 +247,7 @@ message Account {
 message FinancialAmount {
   int64 amount = 1;
   string asset = 2;
+  int64 minAmount = 3;
 }
 
 enum TransferType {
@@ -244,6 +256,8 @@ enum TransferType {
   CLOSE = 2;
   MTM_LOSS = 3;
   MTM_WIN = 4;
+  MARGIN_LOW = 5;
+  MARGIN_HIGH = 6;
 }
 
 message Transfer {

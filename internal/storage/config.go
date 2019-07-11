@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	CandleStoreDataPath = "candlestore"
-	MarketStoreDataPath = "marketstore"
-	OrderStoreDataPath  = "orderstore"
-	TradeStoreDataPath  = "tradestore"
+	AccountsDataPath = "accountstore"
+	CandlesDataPath  = "candlestore"
+	MarketsDataPath  = "marketstore"
+	OrdersDataPath   = "orderstore"
+	TradesDataPath   = "tradestore"
 
 	// namedLogger is the identifier for package and should ideally match the package name
 	// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
@@ -29,18 +30,27 @@ const (
 
 // Config provides package level settings, configuration and logging.
 type Config struct {
-	BadgerOptions BadgerOptions
-	Level         encoding.LogLevel
+	Accounts ConfigOptions
+	Candles  ConfigOptions
+	Markets  ConfigOptions
+	Orders   ConfigOptions
+	Trades   ConfigOptions
+	//Parties   ConfigOptions  // Further badger store or hybrid store options
+	//Depth     ConfigOptions  // will go here in the future (examples shown)
+	//Risk      ConfigOptions
+	//Positions ConfigOptions
 
-	OrderStoreDirPath  string
-	TradeStoreDirPath  string
-	CandleStoreDirPath string
-	MarketStoreDirPath string
-	//LogPartyStoreDebug    bool
-	//LogOrderStoreDebug    bool
-	//LogCandleStoreDebug   bool
+	Level encoding.LogLevel
+
+	Timeout cfgencoding.Duration
+
+	AccountsDirPath string
+	CandlesDirPath  string
+	MarketsDirPath  string
+	OrdersDirPath   string
+	TradesDirPath   string
+
 	LogPositionStoreDebug bool
-	Timeout               cfgencoding.Duration
 }
 
 // NewConfig constructs a new Config instance with default parameters.
@@ -49,12 +59,17 @@ type Config struct {
 // where all storage directories are to be read from and written to.
 func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
-		BadgerOptions:         DefaultBadgerOptions(),
+		Accounts:              DefaultStoreOptions(),
+		Candles:               DefaultStoreOptions(),
+		Markets:               DefaultMarketStoreOptions(),
+		Orders:                DefaultStoreOptions(),
+		Trades:                DefaultStoreOptions(),
 		Level:                 encoding.LogLevel{Level: logging.InfoLevel},
-		OrderStoreDirPath:     filepath.Join(defaultStoreDirPath, OrderStoreDataPath),
-		TradeStoreDirPath:     filepath.Join(defaultStoreDirPath, TradeStoreDataPath),
-		CandleStoreDirPath:    filepath.Join(defaultStoreDirPath, CandleStoreDataPath),
-		MarketStoreDirPath:    filepath.Join(defaultStoreDirPath, MarketStoreDataPath),
+		AccountsDirPath:       filepath.Join(defaultStoreDirPath, AccountsDataPath),
+		OrdersDirPath:         filepath.Join(defaultStoreDirPath, OrdersDataPath),
+		TradesDirPath:         filepath.Join(defaultStoreDirPath, TradesDataPath),
+		CandlesDirPath:        filepath.Join(defaultStoreDirPath, CandlesDataPath),
+		MarketsDirPath:        filepath.Join(defaultStoreDirPath, MarketsDataPath),
 		LogPositionStoreDebug: false,
 		Timeout:               cfgencoding.Duration{Duration: defaultStorageAccessTimeout},
 	}
@@ -64,69 +79,36 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 // from disk at the locations specified by the given storage.Config. This is
 // currently used within unit and integration tests to clear between runs.
 func FlushStores(log *logging.Logger, c Config) {
-	err := os.RemoveAll(c.OrderStoreDirPath)
-	if err != nil {
-		log.Error("Failed to flush the order store",
-			logging.String("path", c.OrderStoreDirPath),
-			logging.Error(err))
+	paths := map[string]string{
+		"account": c.AccountsDirPath,
+		"order":   c.OrdersDirPath,
+		"trade":   c.TradesDirPath,
+		"candle":  c.CandlesDirPath,
+		"market":  c.MarketsDirPath,
 	}
-	if _, err := os.Stat(c.OrderStoreDirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(c.OrderStoreDirPath, os.ModePerm)
-		if err != nil {
-			log.Error("Failed to create the order store",
-				logging.String("path", c.OrderStoreDirPath),
-				logging.Error(err))
+	for name, path := range paths {
+		if err := os.RemoveAll(path); err != nil {
+			log.Error(
+				fmt.Sprintf("Failed to flush the %s path", name),
+				logging.String("path", path),
+				logging.Error(err),
+			)
 		}
-	}
-	err = os.RemoveAll(c.TradeStoreDirPath)
-	if err != nil {
-		log.Error("Failed to flush the trade store",
-			logging.String("path", c.TradeStoreDirPath),
-			logging.Error(err))
-	}
-	if _, err := os.Stat(c.TradeStoreDirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(c.TradeStoreDirPath, os.ModePerm)
-		if err != nil {
-			log.Error("Failed to create the trade store",
-				logging.String("path", c.TradeStoreDirPath),
-				logging.Error(err))
-		}
-	}
-	err = os.RemoveAll(c.CandleStoreDirPath)
-	if err != nil {
-		log.Error("Failed to flush the candle store",
-			logging.String("path", c.CandleStoreDirPath),
-			logging.Error(err))
-	}
-	if _, err := os.Stat(c.CandleStoreDirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(c.CandleStoreDirPath, os.ModePerm)
-		if err != nil {
-			log.Error("Failed to create the candle store",
-				logging.String("path", c.TradeStoreDirPath),
-				logging.Error(err))
-		}
-	}
-
-	err = os.RemoveAll(c.MarketStoreDirPath)
-	if err != nil {
-		log.Error("Failed to flush the candle store",
-			logging.String("path", c.MarketStoreDirPath),
-			logging.Error(err))
-	}
-	if _, err := os.Stat(c.MarketStoreDirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(c.MarketStoreDirPath, os.ModePerm)
-		if err != nil {
-			log.Error("Failed to create the market store",
-				logging.String("path", c.MarketStoreDirPath),
-				logging.Error(err))
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			if err = os.MkdirAll(path, os.ModePerm); err != nil {
+				log.Error(
+					fmt.Sprintf("Failed to create the %s store", name),
+					logging.String("path", path),
+					logging.Error(err),
+				)
+			}
 		}
 	}
 }
 
 func InitStoreDirectory(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.MkdirAll(path, os.ModePerm)
-		if err != nil {
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("could not create directory path for badger data store: %s", path))
 		}
 	}
@@ -138,26 +120,30 @@ func InitStoreDirectory(path string) error {
 func NewTestConfig() (Config, error) {
 	// Test configuration for badger stores
 	cfg := Config{
-		BadgerOptions:         DefaultBadgerOptions(),
-		OrderStoreDirPath:     fmt.Sprintf("/tmp/vegatests/orderstore-%v", randSeq(5)),
-		TradeStoreDirPath:     fmt.Sprintf("/tmp/vegatests/tradestore-%v", randSeq(5)),
-		CandleStoreDirPath:    fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
-		MarketStoreDirPath:    fmt.Sprintf("/tmp/vegatests/marketstore-%v", randSeq(5)),
+		Accounts:              DefaultStoreOptions(),
+		Candles:               DefaultStoreOptions(),
+		Markets:               DefaultStoreOptions(),
+		Orders:                DefaultStoreOptions(),
+		Trades:                DefaultStoreOptions(),
+		OrdersDirPath:         fmt.Sprintf("/tmp/vegatests/orderstore-%v", randSeq(5)),
+		TradesDirPath:         fmt.Sprintf("/tmp/vegatests/tradestore-%v", randSeq(5)),
+		CandlesDirPath:        fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
+		MarketsDirPath:        fmt.Sprintf("/tmp/vegatests/marketstore-%v", randSeq(5)),
 		LogPositionStoreDebug: true,
 		Timeout:               cfgencoding.Duration{Duration: defaultStorageAccessTimeout},
 	}
 
-	if err := ensureDir(cfg.CandleStoreDirPath); err != nil {
+	if err := ensureDir(cfg.CandlesDirPath); err != nil {
 		return Config{}, err
 	}
-	if err := ensureDir(cfg.OrderStoreDirPath); err != nil {
+	if err := ensureDir(cfg.OrdersDirPath); err != nil {
 		return Config{}, err
 	}
-	if err := ensureDir(cfg.TradeStoreDirPath); err != nil {
+	if err := ensureDir(cfg.TradesDirPath); err != nil {
 		return Config{}, err
 	}
 
-	if err := ensureDir(cfg.MarketStoreDirPath); err != nil {
+	if err := ensureDir(cfg.MarketsDirPath); err != nil {
 		return Config{}, err
 	}
 

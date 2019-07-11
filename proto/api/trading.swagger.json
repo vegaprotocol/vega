@@ -15,444 +15,7 @@
     "application/json"
   ],
   "paths": {
-    "/amendOrder": {
-      "post": {
-        "operationId": "AmendOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiAmendOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/cancelOrder": {
-      "post": {
-        "operationId": "CancelOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/vegaPendingOrder"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiCancelOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/lastTrade": {
-      "get": {
-        "operationId": "LastTrade",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiLastTradeResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/marketDepth": {
-      "get": {
-        "operationId": "MarketDepth",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiMarketDepthResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "market",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/marketOrder": {
-      "get": {
-        "operationId": "OrderByMarketAndId",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiOrderByMarketAndIdResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/marketOrders": {
-      "get": {
-        "summary": "orders",
-        "operationId": "OrdersByMarket",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiOrdersByMarketResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.skip",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
-            "name": "pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
-            "name": "pagination.descending",
-            "in": "query",
-            "required": false,
-            "type": "boolean",
-            "format": "boolean"
-          },
-          {
-            "name": "open",
-            "in": "query",
-            "required": false,
-            "type": "boolean",
-            "format": "boolean"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/marketTrades": {
-      "get": {
-        "summary": "trades",
-        "operationId": "TradesByMarket",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiTradesByMarketResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.skip",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
-            "name": "pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
-            "name": "pagination.descending",
-            "in": "query",
-            "required": false,
-            "type": "boolean",
-            "format": "boolean"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/markets": {
-      "get": {
-        "operationId": "Markets",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiMarketsResponse"
-            }
-          }
-        },
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/orderByreference": {
-      "get": {
-        "operationId": "OrderByReference",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiOrderByReferenceResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "reference",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/orderTrades": {
-      "get": {
-        "operationId": "TradesByOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiTradesByOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "orderID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/parties": {
-      "get": {
-        "operationId": "Parties",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPartiesResponse"
-            }
-          }
-        },
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/partyOrders": {
-      "get": {
-        "operationId": "OrdersByParty",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiOrdersByPartyResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.skip",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
-            "name": "pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
-            "name": "pagination.descending",
-            "in": "query",
-            "required": false,
-            "type": "boolean",
-            "format": "boolean"
-          },
-          {
-            "name": "open",
-            "in": "query",
-            "required": false,
-            "type": "boolean",
-            "format": "boolean"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/partyPositions": {
-      "get": {
-        "summary": "positions",
-        "operationId": "PositionsByParty",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPositionsByPartyResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/partyTrades": {
-      "get": {
-        "operationId": "TradesByParty",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiTradesByPartyResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.skip",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
-            "name": "pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
-            "name": "pagination.descending",
-            "in": "query",
-            "required": false,
-            "type": "boolean",
-            "format": "boolean"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/signin": {
+    "/auth/token": {
       "post": {
         "operationId": "SignIn",
         "responses": {
@@ -478,15 +41,14 @@
         ]
       }
     },
-    "/statistics": {
+    "/markets": {
       "get": {
-        "summary": "metrics",
-        "operationId": "Statistics",
+        "operationId": "Markets",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/vegaStatistics"
+              "$ref": "#/definitions/apiMarketsResponse"
             }
           }
         },
@@ -495,7 +57,256 @@
         ]
       }
     },
-    "/submitOrder": {
+    "/markets/{marketID}": {
+      "get": {
+        "summary": "markets",
+        "operationId": "MarketByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/markets/{marketID}/candles": {
+      "get": {
+        "summary": "candles",
+        "operationId": "Candles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiCandlesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sinceTimestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "I1M",
+              "I5M",
+              "I15M",
+              "I1H",
+              "I6H",
+              "I1D"
+            ],
+            "default": "I1M"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/markets/{marketID}/depth": {
+      "get": {
+        "operationId": "MarketDepth",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketDepthResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/markets/{marketID}/orders": {
+      "get": {
+        "summary": "orders",
+        "operationId": "OrdersByMarket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiOrdersByMarketResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pagination.skip",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          },
+          {
+            "name": "open",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/markets/{marketID}/orders/{orderID}": {
+      "get": {
+        "operationId": "OrderByMarketAndId",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiOrderByMarketAndIdResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/markets/{marketID}/trades": {
+      "get": {
+        "summary": "trades",
+        "operationId": "TradesByMarket",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiTradesByMarketResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pagination.skip",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/markets/{marketID}/trades/latest": {
+      "get": {
+        "operationId": "LastTrade",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiLastTradeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/orders": {
       "post": {
         "summary": "unary calls - writes",
         "operationId": "SubmitOrder",
@@ -522,7 +333,290 @@
         ]
       }
     },
-    "/vegaTime": {
+    "/orders/{amendment.orderID}": {
+      "put": {
+        "operationId": "AmendOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/vegaPendingOrder"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "amendment.orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiAmendOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/{cancellation.orderID}": {
+      "delete": {
+        "operationId": "CancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/vegaPendingOrder"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cancellation.orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "cancellation.marketID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "cancellation.partyID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/{orderID}/trades": {
+      "get": {
+        "operationId": "TradesByOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiTradesByOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/orders/{reference}": {
+      "get": {
+        "operationId": "OrderByReference",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiOrderByReferenceResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/parties": {
+      "get": {
+        "operationId": "Parties",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPartiesResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/parties/{partyID}/orders": {
+      "get": {
+        "operationId": "OrdersByParty",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiOrdersByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pagination.skip",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          },
+          {
+            "name": "open",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/parties/{partyID}/positions": {
+      "get": {
+        "summary": "positions",
+        "operationId": "PositionsByParty",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPositionsByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/parties/{partyID}/trades": {
+      "get": {
+        "operationId": "TradesByParty",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiTradesByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "marketID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.skip",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.descending",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/statistics": {
+      "get": {
+        "summary": "metrics",
+        "operationId": "Statistics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/vegaStatistics"
+            }
+          }
+        },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/time": {
       "get": {
         "operationId": "GetVegaTime",
         "responses": {
@@ -562,17 +656,6 @@
         }
       }
     },
-    "apiCancelOrderRequest": {
-      "type": "object",
-      "properties": {
-        "cancellation": {
-          "$ref": "#/definitions/vegaOrderCancellation"
-        },
-        "token": {
-          "type": "string"
-        }
-      }
-    },
     "apiCandlesResponse": {
       "type": "object",
       "properties": {
@@ -580,6 +663,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaCandle"
+          }
+        }
+      }
+    },
+    "apiCollateralResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
           }
         }
       }
@@ -634,6 +728,15 @@
         }
       }
     },
+    "apiNotifyTraderAccountResponse": {
+      "type": "object",
+      "properties": {
+        "submitted": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
     "apiOrderByMarketAndIdResponse": {
       "type": "object",
       "properties": {
@@ -647,18 +750,6 @@
       "properties": {
         "order": {
           "$ref": "#/definitions/vegaOrder"
-        }
-      }
-    },
-    "apiOrderResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean",
-          "format": "boolean"
-        },
-        "reference": {
-          "type": "string"
         }
       }
     },
@@ -862,6 +953,41 @@
         }
       }
     },
+    "vegaAccount": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "balance": {
+          "type": "string",
+          "format": "int64"
+        },
+        "asset": {
+          "type": "string"
+        },
+        "marketID": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaAccountType"
+        }
+      }
+    },
+    "vegaAccountType": {
+      "type": "string",
+      "enum": [
+        "NO_ACC",
+        "INSURANCE",
+        "SETTLEMENT",
+        "MARGIN",
+        "GENERAL"
+      ],
+      "default": "NO_ACC"
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -994,6 +1120,12 @@
         "name": {
           "type": "string"
         },
+        "baseName": {
+          "type": "string"
+        },
+        "quoteName": {
+          "type": "string"
+        },
         "metadata": {
           "$ref": "#/definitions/vegaInstrumentMetadata"
         },
@@ -1029,6 +1161,9 @@
       "type": "object",
       "properties": {
         "id": {
+          "type": "string"
+        },
+        "name": {
           "type": "string"
         },
         "tradableInstrument": {
@@ -1115,6 +1250,14 @@
         }
       }
     },
+    "vegaNotifyTraderAccount": {
+      "type": "object",
+      "properties": {
+        "traderID": {
+          "type": "string"
+        }
+      }
+    },
     "vegaOrder": {
       "type": "object",
       "properties": {
@@ -1164,7 +1307,7 @@
     "vegaOrderAmendment": {
       "type": "object",
       "properties": {
-        "id": {
+        "orderID": {
           "type": "string"
         },
         "partyID": {
@@ -1187,7 +1330,7 @@
     "vegaOrderCancellation": {
       "type": "object",
       "properties": {
-        "id": {
+        "orderID": {
           "type": "string"
         },
         "marketID": {
@@ -1372,13 +1515,7 @@
           "type": "string",
           "format": "uint64"
         },
-        "appVersionHash": {
-          "type": "string"
-        },
-        "appVersion": {
-          "type": "string"
-        },
-        "Parties": {
+        "parties": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1401,6 +1538,43 @@
           "format": "uint64"
         },
         "totalTrades": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "orderSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "tradeSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "candleSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "marketDepthSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "positionsSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "accountSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "appVersionHash": {
+          "type": "string"
+        },
+        "appVersion": {
+          "type": "string"
+        },
+        "chainVersion": {
+          "type": "string"
+        },
+        "blockDuration": {
           "type": "string",
           "format": "uint64"
         }
@@ -1483,6 +1657,18 @@
         }
       },
       "title": "Stream result of apiTradesStream"
+    },
+    "vegaAccount": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaAccount"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaAccount"
     },
     "vegaCandle": {
       "type": "object",

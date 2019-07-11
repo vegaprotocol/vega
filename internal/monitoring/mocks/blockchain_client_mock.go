@@ -49,6 +49,21 @@ func (mr *MockBlockchainClientMockRecorder) GetStatus(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatus", reflect.TypeOf((*MockBlockchainClient)(nil).GetStatus), arg0)
 }
 
+// GetUnconfirmedTxCount mocks base method
+func (m *MockBlockchainClient) GetUnconfirmedTxCount(arg0 context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUnconfirmedTxCount", arg0)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUnconfirmedTxCount indicates an expected call of GetUnconfirmedTxCount
+func (mr *MockBlockchainClientMockRecorder) GetUnconfirmedTxCount(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnconfirmedTxCount", reflect.TypeOf((*MockBlockchainClient)(nil).GetUnconfirmedTxCount), arg0)
+}
+
 // Health mocks base method
 func (m *MockBlockchainClient) Health() (*types.ResultHealth, error) {
 	m.ctrl.T.Helper()

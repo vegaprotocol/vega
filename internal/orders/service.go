@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -44,9 +45,10 @@ type Svc struct {
 	Config
 	log *logging.Logger
 
-	blockchain  Blockchain
-	orderStore  OrderStore
-	timeService TimeService
+	blockchain    Blockchain
+	orderStore    OrderStore
+	timeService   TimeService
+	subscriberCnt int32
 }
 
 // NewService creates an Orders service with the necessary dependencies
@@ -123,7 +125,7 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 		return nil, errors.Wrap(err, "order cancellation validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketID, order.Id)
+	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketID, order.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,18 +156,22 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 	}, nil
 }
 
-func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
+func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
 	if err := amendment.Validate(); err != nil {
-		return false, errors.Wrap(err, "order amendment validation failed")
+		return nil, errors.Wrap(err, "order amendment validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.PartyID, amendment.Id)
+	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.PartyID, amendment.OrderID)
 	if err != nil {
-		return false, err
+		return nil, err
+	}
+
+	if o.PartyID != amendment.PartyID {
+		return nil, errors.New("party mis-match cannot cancel order")
 	}
 
 	if o.Status != types.Order_Active {
-		return false, errors.New("order is not active")
+		return nil, errors.New("order is not active")
 	}
 
 	// if order is GTT convert datetime to blockchain ts
@@ -173,12 +179,26 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
-			return false, err
+			return nil, err
 		}
 	}
 
 	// Send edit request by consensus
-	return s.blockchain.AmendOrder(ctx, amendment)
+	if _, err := s.blockchain.AmendOrder(ctx, amendment); err != nil {
+		return nil, err
+	}
+
+	return &types.PendingOrder{
+		Reference: o.Reference,
+		Price:     amendment.Price,
+		Type:      o.Type,
+		Side:      o.Side,
+		MarketID:  o.MarketID,
+		Size:      amendment.Size,
+		PartyID:   o.PartyID,
+		Status:    types.Order_Cancelled,
+		Id:        o.Id,
+	}, nil
 }
 
 func (s *Svc) validateOrderExpirationTS(expiresAt int64) (time.Time, error) {
@@ -224,6 +244,10 @@ func (s *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (ord
 	return o, err
 }
 
+func (s *Svc) GetOrderSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.subscriberCnt)
+}
+
 func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Order, uint64) {
 	orders := make(chan []types.Order)
 	internal := make(chan []types.Order)
@@ -231,6 +255,8 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 
 	retryCount := retries
 	go func() {
+		atomic.AddInt32(&s.subscriberCnt, 1)
+		defer atomic.AddInt32(&s.subscriberCnt, -1)
 		ip := logging.IPAddressFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()

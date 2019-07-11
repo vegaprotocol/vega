@@ -5,17 +5,18 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/binary"
+
 	"fmt"
 	"sync"
 	"time"
-
-	"code.vegaprotocol.io/vega/internal/markets"
 
 	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/matching"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/positions"
 	"code.vegaprotocol.io/vega/internal/risk"
 	"code.vegaprotocol.io/vega/internal/settlement"
@@ -24,13 +25,13 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Market struct {
 	log *logging.Logger
 
 	riskConfig       risk.Config
-	collateralConfig collateral.Config
 	positionConfig   positions.Config
 	settlementConfig settlement.Config
 	matchingConfig   matching.Config
@@ -42,13 +43,15 @@ type Market struct {
 
 	markPrice uint64
 
-	// engines
+	// own engines
 	matching           *matching.OrderBook
 	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
 	position           *positions.Engine
 	settlement         *settlement.Engine
-	collateral         *collateral.Engine
+
+	// deps engines
+	collateral *collateral.Engine
 
 	// stores
 	candles  CandleStore
@@ -59,6 +62,9 @@ type Market struct {
 
 	// buffers
 	candlesBuf *buffer.Candle
+
+	// metrics
+	blockTime *prometheus.CounterVec
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -69,7 +75,7 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 		return err
 	}
 	if len(marketbytes) == 0 {
-		return errors.New("Failed to marshal market")
+		return errors.New("failed to marshal market")
 	}
 
 	seqbytes := make([]byte, 8)
@@ -89,10 +95,10 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 func NewMarket(
 	log *logging.Logger,
 	riskConfig risk.Config,
-	collateralConfig collateral.Config,
 	positionConfig positions.Config,
 	settlementConfig settlement.Config,
 	matchingConfig matching.Config,
+	collateralEngine *collateral.Engine,
 	mkt *types.Market,
 	candles CandleStore,
 	orders OrderStore,
@@ -113,16 +119,11 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
-	collateralEngine, err := collateral.New(log, collateralConfig, mkt.Id, accounts)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to set up collateral engine")
-	}
-
 	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
 
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.RiskModel, getInitialFactors())
 	positionEngine := positions.New(log, positionConfig)
-	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product)
+	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
 
 	market := &Market{
 		log:                log,
@@ -143,8 +144,33 @@ func NewMarket(
 		candlesBuf:         candlesBuf,
 	}
 	SetMarketID(mkt, seq)
+	if err := market.setMetrics(); err != nil {
+		return nil, err
+	}
 
 	return market, nil
+}
+
+func (m *Market) setMetrics() error {
+	// instrument with time histogram for blocks
+	h, err := metrics.AddInstrument(
+		metrics.Counter,
+		namedLogger+m.mkt.Id,              // name is required
+		metrics.Namespace("vega"),         // namespace, name, subsystem together form label, so this is vega_execution
+		metrics.Vectors("engine", "unit"), // engine is the part of the core that is measured, unit is whether we're measuring on an order or trade level
+	)
+	if err != nil {
+		return err
+	}
+	// ensure we got an actual histogram (no vector option provided)
+	vec, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	m.blockTime = vec
+	// example of how to use this -> WithLabelValues arguments have to be in the same order the vectors were added in the code above (AddInstrument call)
+	// m.blockTime.WithLabelValues("settlement", "order").Add(float64(time.Now().UnixNano()))
+	return nil
 }
 
 // ReloadConf will trigger a reload of all the config settings in the market and all underlying engines
@@ -172,6 +198,8 @@ func (m *Market) GetID() string {
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(t time.Time) {
+	start := time.Now()
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -207,29 +235,39 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 				"Failed to get settle positions on market close",
 				logging.Error(err),
 			)
-			return
+		} else {
+			transfers, err := m.collateral.Transfer(m.GetID(), positions)
+			if err != nil {
+				m.log.Error(
+					"Failed to get ledger movements after settling closed market",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err),
+				)
+			} else {
+				// use transfers, unused var thingy
+				m.log.Debug(
+					"Got transfers on market close (%#v)",
+					logging.String("transfers-dump", fmt.Sprintf("%#v", transfers)), // @TODO process these transfers, they contain the ledger movements...
+					logging.String("market-id", m.GetID()),
+				)
+			}
 		}
-		transfers, err := m.collateral.Transfer(positions)
-		if err != nil {
-			m.log.Error(
-				"Failed to get ledger movements after settling closed market",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err),
-			)
-			return
-		}
-		// use transfers, unused var thingy
-		m.log.Debug(
-			"Got transfers on market close (%#v)",
-			logging.String("transfers-dump", fmt.Sprintf("%#v", transfers)), // @TODO process these transfers, they contain the ledger movements...
-			logging.String("market-id", m.GetID()),
-		)
 	}
+	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "execution", "OnChainTimeUpdate")
 }
 
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	// Validate market
+	start := time.Now()
+	orderValidity := "invalid"
+
+	startSubmit := time.Now() // do not reset this var
+	defer func() {
+		metrics.EngineTimeCounterAdd(startSubmit, m.mkt.Id, "execution", "Submit")
+		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
+	}()
+
 	if order.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
@@ -244,11 +282,15 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		if err := m.parties.Post(&types.Party{Id: order.PartyID}); err != nil {
 			return nil, err
 		}
-		// create accounts if needed
-		if err := m.collateral.AddTraderToMarket(order.PartyID); err != nil {
-			return nil, err
-		}
+		/*
+			// create accounts if needed
+			m.mkt.GetAsset()
+			if err := m.collateral.AddTraderToMarket(m.GetID(), order.PartyID, ); err != nil {
+				return nil, err
+			}
+		*/
 	}
+	m.blockTime.WithLabelValues("parties", "order").Add(float64(time.Now().Sub(start)))
 
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
@@ -258,6 +300,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		return nil, err
 	}
+	start = time.Now()
 
 	// Insert aggressive remaining order
 	err = m.orders.Post(*order)
@@ -276,12 +319,14 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			}
 		}
 	}
+	m.blockTime.WithLabelValues("orders", "order").Add(float64(time.Now().Sub(start)))
 
 	if confirmation.Trades != nil {
-		// a trade contains 2 traders, so at most, each trade can introduce 2 new positions to the market
-		// but usually this won't happen, and even if it does, a buffer of 1 should be enough
-		// do this once, we'll use this as a reference for the channel buffer size
-		positionCount := len(m.position.Positions()) + 2*len(confirmation.Trades)
+		// orders can contain several trades, each trade involves 2 traders
+		// so there's a max number of N*2 events on the channel where N == number of trades
+		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
+		// now let's set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
+		m.settlement.ListenClosed(tradersCh)
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -293,11 +338,14 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
+			start := time.Now()
 			if err := m.trades.Post(trade); err != nil {
 				m.log.Error("Failure storing new trade in submit order",
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
+			m.blockTime.WithLabelValues("trades", "trade").Add(float64(time.Now().Sub(start)))
+			start = time.Now()
 
 			// Save to trade buffer for generating candles etc
 			err := m.candlesBuf.AddTrade(*trade)
@@ -306,20 +354,42 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
+			m.blockTime.WithLabelValues("candles", "trade").Add(float64(time.Now().Sub(start)))
+			start = time.Now()
 
 			// Calculate and set current mark price
 			m.setMarkPrice(trade)
 
-			// Update positions and settlement
-			settle := m.positionAndSettle(trade, positionCount)
-			m.log.Debug("Total length of settle MTM after submit order", logging.Int("settle", len(settle)))
-
-			// Move money after settlement, check risk engine and get margin balances to update (if any)
-			margins := m.collateralAndRisk(settle)
-			m.log.Debug("Total margin accounts to be updated after submit order", logging.Int("risk-update-len", len(margins)))
+			// Update positions (this communicates with settlement via channel)
+			m.position.Update(trade, tradersCh)
+			m.blockTime.WithLabelValues("positions", "trade").Add(float64(time.Now().Sub(start)))
+		}
+		close(tradersCh)
+		start = time.Now()
+		// now let's get the transfers for MTM settlement
+		positions := m.position.Positions()
+		events := make([]events.MarketPosition, 0, len(positions))
+		for _, p := range positions {
+			events = append(events, p)
+		}
+		settle := m.settlement.SettleOrder(m.markPrice, events)
+		m.blockTime.WithLabelValues("settlement", "order").Add(float64(time.Now().Sub(start)))
+		// this belongs outside of trade loop, only call once per order
+		margins := m.collateralAndRisk(settle)
+		if len(margins) > 0 {
+			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
+			m.log.Debug(
+				"Updated margin balances",
+				logging.Int("transfer-count", len(transfers)),
+				logging.Int("closed-count", len(closed)),
+				logging.Error(err),
+			)
+			// @TODO -> close out any traders that don't have enough margins left
+			// if no errors were returned
 		}
 	}
 
+	orderValidity = "valid"
 	return confirmation, nil
 }
 
@@ -330,26 +400,13 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 	m.markPrice = trade.Price
 }
 
-func (m *Market) positionAndSettle(trade *types.Trade, posCount int) []events.Transfer {
-	// create channel for positions to populate and settlement to consume
-	positionCh := make(chan events.MarketPosition, posCount)
-	// starting settlement first, the reading routine does more work, so it'll be slower
-	// although, it can be moved down if you really want
-	settleCh := m.settlement.SettleMTM(*trade, m.markPrice, positionCh) // no pointer, trade is RO
-	// Update party positions for trade affected, pushes new positions on channel
-	m.position.Update(trade, positionCh)
-	// when Update returns, the channel has to be closed, so we can read from the settleCh for collateral...
-	close(positionCh)
-	// this channel is unbuffered, and therefore can be used in bare return
-	return <-settleCh
-}
-
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	ctx, cancel := context.WithCancel(context.Background())
+	start := time.Now()
 	defer cancel()
-	transferCh, errCh := m.collateral.TransferCh(settle)
+	transferCh, errCh := m.collateral.TransferCh(m.GetID(), settle)
 	go func() {
 		err := <-errCh
 		if err != nil {
@@ -359,13 +416,14 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 			)
 			cancel()
 		}
+		m.blockTime.WithLabelValues("collateral", "order").Add(float64(time.Now().Sub(start)))
 	}()
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, m.markPrice)
-	m.log.Info("Risk done")
+	// m.log.Info("Risk done")
 	if len(riskUpdates) == 0 {
-		m.log.Warn("probably no risk margin changes due to error")
+		// m.log.Warn("probably no risk margin changes due to error")
 		return nil
 	}
 	m.log.Debug(
@@ -532,10 +590,10 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) []types.Order {
 func getInitialFactors() *types.RiskResult {
 	return &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
-			"Ethereum/Ether": {Long: 0.15, Short: 0.25},
+			"ETH": {Long: 0.15, Short: 0.25},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			"Ethereum/Ether": {Long: 0.15, Short: 0.25},
+			"ETH": {Long: 0.15, Short: 0.25},
 		},
 	}
 }
