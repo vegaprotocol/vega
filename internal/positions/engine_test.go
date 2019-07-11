@@ -58,8 +58,39 @@ func TestUpdatePosition(t *testing.T) {
 	}
 }
 
+func TestRemoveDistressedEmpty(t *testing.T) {
+	data := []events.MarketPosition{
+		mp{
+			party: "test",
+			size:  1,
+			price: 1000,
+		},
+	}
+	e := getTestEngine(t)
+	ret := e.RemoveDistressed(data)
+	assert.Empty(t, ret)
+}
+
 func getTestEngine(t *testing.T) *positions.Engine {
 	return positions.New(
 		logging.NewTestLogger(), positions.NewDefaultConfig(),
 	)
+}
+
+type mp struct {
+	size  int64
+	party string
+	price uint64
+}
+
+func (m mp) Party() string {
+	return m.party
+}
+
+func (m mp) Size() int64 {
+	return m.size
+}
+
+func (m mp) Price() uint64 {
+	return m.price
 }

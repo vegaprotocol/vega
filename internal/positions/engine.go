@@ -132,6 +132,21 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	e.mu.Unlock()
 }
 
+// Removes positions for distressed traders, and returns the most up to date positions we have
+func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.MarketPosition {
+	ret := make([]events.MarketPosition, 0, len(traders))
+	e.mu.Lock()
+	for _, trader := range traders {
+		party := trader.Party()
+		if current, ok := e.positions[party]; ok {
+			ret = append(ret, current)
+		}
+		delete(e.positions, party)
+	}
+	e.mu.Unlock()
+	return ret
+}
+
 // iterate over all open positions, for mark to market based on new market price
 func (e *Engine) updatePositions(trade *types.Trade) {
 	for _, pos := range e.positions {

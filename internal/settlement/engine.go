@@ -293,6 +293,16 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 	return transfers
 }
 
+// RemoveDistressed - remove whatever settlement data we have for distressed traders
+// they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
+func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
+	for _, trader := range traders {
+		key := trader.Party()
+		delete(e.pos, key)
+		delete(e.closed, key) // just in case... shouldn't be needed, but hey...
+	}
+}
+
 func calcMTM(markPrice, size, price int64, closed []*pos) (mtmShare int64) {
 	mtmShare = (markPrice - price) * size
 	for _, c := range closed {
