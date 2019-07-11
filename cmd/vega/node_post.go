@@ -38,6 +38,11 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 			werr = append(werr, errors.Wrap(err, "error closing market store in command."))
 		}
 	}
+	if l.accounts != nil {
+		if err := l.accounts.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing account store in command."))
+		}
+	}
 	if l.pproffhandlr != nil {
 		if err := l.pproffhandlr.Stop(); err != nil {
 			werr = append(werr, errors.Wrap(err, "error stopping pprof"))

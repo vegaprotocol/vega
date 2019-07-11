@@ -17,7 +17,18 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-var ErrChainNotConnected = errors.New("Chain not connected")
+var (
+	ErrChainNotConnected          = errors.New("chain not connected")
+	ErrChannelClosed              = errors.New("channel closed")
+	ErrEmptyMissingMarketID       = errors.New("empty or missing market ID")
+	ErrEmptyMissingOrderID        = errors.New("empty or missing order ID")
+	ErrEmptyMissingOrderReference = errors.New("empty or missing order reference")
+	ErrEmptyMissingPartyID        = errors.New("empty or missing party ID")
+	ErrEmptyMissingSinceTimestamp = errors.New("empty or missing since-timestamp")
+	ErrServerShutdown             = errors.New("server shutdown")
+	ErrStatisticsNotAvailable     = errors.New("statistics not available")
+	ErrStreamClosed               = errors.New("stream closed")
+)
 
 var defaultPagination = protoapi.Pagination{
 	Skip:       0,
@@ -37,6 +48,7 @@ type OrderService interface {
 	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
+	GetOrderSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeService
@@ -47,12 +59,15 @@ type TradeService interface {
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
 	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
+	GetTradeSubscribersCount() int32
+	GetPositionsSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api CandleService
 type CandleService interface {
 	GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) (candles []*types.Candle, err error)
 	ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (candleCh <-chan *types.Candle, ref uint64)
+	GetCandleSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api MarketService
@@ -61,6 +76,7 @@ type MarketService interface {
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
+	GetMarketDepthSubscribersCount() int32
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api PartyService
@@ -76,19 +92,29 @@ type BlockchainClient interface {
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api AccountsService
+type AccountsService interface {
+	GetTraderAccounts(id string) ([]*types.Account, error)
+	GetTraderAccountsForMarket(trader, market string) ([]*types.Account, error)
+	GetTraderMarketBalance(trader, market string) ([]*types.Account, error)
+	ObserveAccounts(ctx context.Context, retries int, marketID, partyID string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
+	GetAccountSubscribersCount() int32
+}
+
 type tradingDataService struct {
-	log           *logging.Logger
-	Config        Config
-	Client        BlockchainClient
-	Stats         *internal.Stats
-	TimeService   VegaTime
-	OrderService  OrderService
-	TradeService  TradeService
-	CandleService CandleService
-	MarketService MarketService
-	PartyService  PartyService
-	statusChecker *monitoring.Status
-	ctx           context.Context
+	log             *logging.Logger
+	Config          Config
+	Client          BlockchainClient
+	Stats           *internal.Stats
+	TimeService     VegaTime
+	OrderService    OrderService
+	TradeService    TradeService
+	CandleService   CandleService
+	MarketService   MarketService
+	PartyService    PartyService
+	AccountsService AccountsService
+	statusChecker   *monitoring.Status
+	ctx             context.Context
 }
 
 // If no limit is provided at the gRPC API level, the system will use this limit instead.
@@ -100,7 +126,7 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersByMarketResponse, error) {
 
 	if request.MarketID == "" {
-		return nil, errors.New("Market empty or missing")
+		return nil, ErrEmptyMissingMarketID
 	}
 
 	p := defaultPagination
@@ -126,7 +152,7 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
 
 	if request.PartyID == "" {
-		return nil, errors.New("Party empty or missing")
+		return nil, ErrEmptyMissingPartyID
 	}
 
 	p := defaultPagination
@@ -165,12 +191,12 @@ func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
 
 	if request.MarketID == "" {
-		return nil, errors.New("Market empty or missing")
+		return nil, ErrEmptyMissingMarketID
 	}
-	if request.Id == "" {
-		return nil, errors.New("Id empty or missing")
+	if request.OrderID == "" {
+		return nil, ErrEmptyMissingOrderID
 	}
-	order, err := h.OrderService.GetByMarketAndId(ctx, request.MarketID, request.Id)
+	order, err := h.OrderService.GetByMarketAndId(ctx, request.MarketID, request.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +208,7 @@ func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 
 func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
 	if req.Reference == "" {
-		return nil, errors.New("missing order reference")
+		return nil, ErrEmptyMissingOrderReference
 	}
 	order, err := h.OrderService.GetByReference(ctx, req.Reference)
 	if err != nil {
@@ -193,21 +219,21 @@ func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi
 	}, nil
 }
 
-// TradeCandles returns trade open/close/volume data for the given time period and interval.
+// Candles returns trade open/close/volume data for the given time period and interval.
 // It will fill in any trade-less intervals with zero based candles. Since time period must be in RFC3339 string format.
 func (h *tradingDataService) Candles(ctx context.Context,
 	request *protoapi.CandlesRequest) (*protoapi.CandlesResponse, error) {
 
-	market := request.Market
-	if market == "" {
-		return nil, errors.New("Market empty or missing")
+	marketID := request.MarketID
+	if marketID == "" {
+		return nil, ErrEmptyMissingMarketID
 	}
 
 	if request.SinceTimestamp == 0 {
-		return nil, errors.New("Since date is missing")
+		return nil, ErrEmptyMissingSinceTimestamp
 	}
 
-	c, err := h.CandleService.GetCandles(ctx, market, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
+	c, err := h.CandleService.GetCandles(ctx, marketID, vegatime.UnixNano(request.SinceTimestamp), request.Interval)
 	if err != nil {
 		return nil, err
 	}
@@ -219,16 +245,16 @@ func (h *tradingDataService) Candles(ctx context.Context,
 }
 
 func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
-	if req.Market == "" {
-		return nil, errors.New("Market empty or missing")
+	if req.MarketID == "" {
+		return nil, ErrEmptyMissingMarketID
 	}
 
 	// Query market depth statistics
-	depth, err := h.MarketService.GetDepth(ctx, req.Market)
+	depth, err := h.MarketService.GetDepth(ctx, req.MarketID)
 	if err != nil {
 		return nil, err
 	}
-	t, err := h.TradeService.GetByMarket(ctx, req.Market, 0, 1, true)
+	t, err := h.TradeService.GetByMarket(ctx, req.MarketID, 0, 1, true)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +273,7 @@ func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 
 func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
 	if request.MarketID == "" {
-		return nil, errors.New("Market empty or missing")
+		return nil, ErrEmptyMissingMarketID
 	}
 
 	p := defaultPagination
@@ -266,7 +292,7 @@ func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoa
 
 func (h *tradingDataService) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
 	if request.PartyID == "" {
-		return nil, errors.New("Party empty or missing")
+		return nil, ErrEmptyMissingPartyID
 	}
 	positions, err := h.TradeService.GetPositionsByParty(ctx, request.PartyID)
 	if err != nil {
@@ -285,7 +311,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 		return nil, err
 	}
 	if h.Stats == nil || h.Stats.Blockchain == nil {
-		return nil, errors.New("Internal error: statistics not available")
+		return nil, ErrStatisticsNotAvailable
 	}
 
 	// Call out to tendermint via rpc client
@@ -322,29 +348,36 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 	}
 
 	return &types.Statistics{
-		BlockHeight:           h.Stats.Blockchain.Height(),
-		BacklogLength:         uint64(backlogLength),
-		TotalPeers:            uint64(numPeers),
-		GenesisTime:           genesisTime,
-		CurrentTime:           vegatime.Format(vegatime.Now()),
-		VegaTime:              vegatime.Format(epochTime),
-		TxPerBlock:            uint64(h.Stats.Blockchain.TotalTxLastBatch()),
-		AverageTxBytes:        uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
-		AverageOrdersPerBlock: uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
-		TradesPerSecond:       uint64(h.Stats.Blockchain.TradesPerSecond()),
-		OrdersPerSecond:       uint64(h.Stats.Blockchain.OrdersPerSecond()),
-		Status:                h.statusChecker.ChainStatus(),
-		TotalMarkets:          uint64(len(m)),
-		TotalParties:          uint64(len(p)),
-		Parties:               partyNames,
-		AppVersionHash:        h.Stats.GetVersionHash(),
-		AppVersion:            h.Stats.GetVersion(),
-		TotalAmendOrder:       h.Stats.Blockchain.TotalAmendOrder(),
-		TotalCancelOrder:      h.Stats.Blockchain.TotalCancelOrder(),
-		TotalCreateOrder:      h.Stats.Blockchain.TotalCreateOrder(),
-		TotalOrders:           h.Stats.Blockchain.TotalOrders(),
-		TotalTrades:           h.Stats.Blockchain.TotalTrades(),
-		BlockDuration:         h.Stats.Blockchain.BlockDuration(),
+		BlockHeight:              h.Stats.Blockchain.Height(),
+		BacklogLength:            uint64(backlogLength),
+		TotalPeers:               uint64(numPeers),
+		GenesisTime:              genesisTime,
+		CurrentTime:              vegatime.Format(vegatime.Now()),
+		VegaTime:                 vegatime.Format(epochTime),
+		TxPerBlock:               uint64(h.Stats.Blockchain.TotalTxLastBatch()),
+		AverageTxBytes:           uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
+		AverageOrdersPerBlock:    uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
+		TradesPerSecond:          uint64(h.Stats.Blockchain.TradesPerSecond()),
+		OrdersPerSecond:          uint64(h.Stats.Blockchain.OrdersPerSecond()),
+		Status:                   h.statusChecker.ChainStatus(),
+		TotalMarkets:             uint64(len(m)),
+		TotalParties:             uint64(len(p)),
+		Parties:                  partyNames,
+		AppVersionHash:           h.Stats.GetVersionHash(),
+		AppVersion:               h.Stats.GetVersion(),
+		ChainVersion:             h.Stats.GetChainVersion(),
+		TotalAmendOrder:          h.Stats.Blockchain.TotalAmendOrder(),
+		TotalCancelOrder:         h.Stats.Blockchain.TotalCancelOrder(),
+		TotalCreateOrder:         h.Stats.Blockchain.TotalCreateOrder(),
+		TotalOrders:              h.Stats.Blockchain.TotalOrders(),
+		TotalTrades:              h.Stats.Blockchain.TotalTrades(),
+		BlockDuration:            h.Stats.Blockchain.BlockDuration(),
+		OrderSubscriptions:       h.OrderService.GetOrderSubscribersCount(),
+		TradeSubscriptions:       h.TradeService.GetTradeSubscribersCount(),
+		PositionsSubscriptions:   h.TradeService.GetPositionsSubscribersCount(),
+		MarketDepthSubscriptions: h.MarketService.GetMarketDepthSubscribersCount(),
+		CandleSubscriptions:      h.CandleService.GetCandleSubscribersCount(),
+		AccountSubscriptions:     h.AccountsService.GetAccountSubscribersCount(),
 	}, nil
 }
 
@@ -357,6 +390,59 @@ func (h *tradingDataService) GetVegaTime(ctx context.Context, request *google_pr
 		Timestamp: ts.UnixNano(),
 	}, nil
 
+}
+
+func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest, srv protoapi.TradingData_AccountsSubscribeServer) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	accountschan, ref := h.AccountsService.ObserveAccounts(
+		ctx, h.Config.StreamRetries, req.MarketID, req.PartyID, req.Type)
+	h.log.Debug("Candles subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	var err error
+
+	for {
+		select {
+		case accounts := <-accountschan:
+			if accounts == nil {
+				err = ErrChannelClosed
+				h.log.Error("accounts subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+			for _, account := range accounts {
+				account := account
+				err = srv.Send(account)
+				if err != nil {
+					h.log.Error("Accounts subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+					return err
+				}
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			h.log.Debug("Accounts subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return ErrServerShutdown
+		}
+
+		if accountschan == nil {
+			h.log.Debug("Accounts subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return ErrStreamClosed
+		}
+	}
 }
 
 func (h *tradingDataService) OrdersSubscribe(
@@ -384,7 +470,7 @@ func (h *tradingDataService) OrdersSubscribe(
 		select {
 		case orders := <-orderschan:
 			if orders == nil {
-				err := errors.New("channel closed")
+				err = ErrChannelClosed
 				h.log.Error("Orders subscriber",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
@@ -396,7 +482,7 @@ func (h *tradingDataService) OrdersSubscribe(
 				v := v
 				out = append(out, &v)
 			}
-			err := srv.Send(&protoapi.OrdersStream{Orders: out})
+			err = srv.Send(&protoapi.OrdersStream{Orders: out})
 			if err != nil {
 				h.log.Error("Orders subscriber - rpc stream error",
 					logging.Error(err),
@@ -412,14 +498,14 @@ func (h *tradingDataService) OrdersSubscribe(
 			)
 			return err
 		case <-h.ctx.Done():
-			return errors.New("server shutdown")
+			return ErrServerShutdown
 		}
 
 		if orderschan == nil {
 			h.log.Debug("Orders subscriber - rpc stream closed",
 				logging.Uint64("ref", ref),
 			)
-			return errors.New("stream closed")
+			return ErrStreamClosed
 		}
 	}
 }
@@ -448,7 +534,7 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 		select {
 		case trades := <-tradeschan:
 			if len(trades) <= 0 {
-				err := errors.New("channel closed")
+				err = ErrChannelClosed
 				h.log.Error("Trades subscriber",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
@@ -461,7 +547,7 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 				v := v
 				out = append(out, &v)
 			}
-			err := srv.Send(&protoapi.TradesStream{Trades: out})
+			err = srv.Send(&protoapi.TradesStream{Trades: out})
 			if err != nil {
 				h.log.Error("Trades subscriber - rpc stream error",
 					logging.Error(err),
@@ -477,14 +563,14 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 			)
 			return err
 		case <-h.ctx.Done():
-			return errors.New("server shutdown")
+			return ErrServerShutdown
 		}
 
 		if tradeschan == nil {
 			h.log.Debug("Trades subscriber - rpc stream closed",
 				logging.Uint64("ref", ref),
 			)
-			return errors.New("stream closed")
+			return ErrStreamClosed
 		}
 	}
 }
@@ -510,7 +596,7 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 		select {
 		case candle := <-candleschan:
 			if candle == nil {
-				err := errors.New("channel closed")
+				err = ErrChannelClosed
 				h.log.Error("Candles subscriber",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
@@ -518,7 +604,7 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 				return err
 			}
 
-			err := srv.Send(candle)
+			err = srv.Send(candle)
 			if err != nil {
 				h.log.Error("Candles subscriber - rpc stream error",
 					logging.Error(err),
@@ -534,14 +620,14 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 			)
 			return err
 		case <-h.ctx.Done():
-			return errors.New("server shutdown")
+			return ErrServerShutdown
 		}
 
 		if candleschan == nil {
 			h.log.Debug("Candles subscriber - rpc stream closed",
 				logging.Uint64("ref", ref),
 			)
-			return errors.New("stream closed")
+			return ErrStreamClosed
 		}
 	}
 }
@@ -567,7 +653,7 @@ func (h *tradingDataService) MarketDepthSubscribe(
 		select {
 		case depth := <-depthchan:
 			if depth == nil {
-				err := errors.New("channel closed")
+				err = ErrChannelClosed
 				h.log.Error("Depth subscriber",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
@@ -592,14 +678,14 @@ func (h *tradingDataService) MarketDepthSubscribe(
 			)
 			return err
 		case <-h.ctx.Done():
-			return errors.New("server shutdown")
+			return ErrServerShutdown
 		}
 
 		if depthchan == nil {
 			h.log.Debug("Depth subscriber - rpc stream closed",
 				logging.Uint64("ref", ref),
 			)
-			return errors.New("stream closed")
+			return ErrStreamClosed
 		}
 	}
 }
@@ -620,7 +706,7 @@ func (h *tradingDataService) PositionsSubscribe(
 		select {
 		case position := <-positionschan:
 			if position == nil {
-				err := errors.New("channel closed")
+				err := ErrChannelClosed
 				h.log.Error("Positions subscriber",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
@@ -643,20 +729,20 @@ func (h *tradingDataService) PositionsSubscribe(
 			)
 			return err
 		case <-h.ctx.Done():
-			return errors.New("server shutdown")
+			return ErrServerShutdown
 		}
 
 		if positionschan == nil {
 			h.log.Debug("Positions subscriber - rpc stream closed",
 				logging.Uint64("ref", ref),
 			)
-			return errors.New("stream closed")
+			return ErrStreamClosed
 		}
 	}
 }
 
 func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
-	mkt, err := validateMarket(ctx, req.Id, h.MarketService)
+	mkt, err := validateMarket(ctx, req.MarketID, h.MarketService)
 	if err != nil {
 		return nil, err
 	}
@@ -717,7 +803,7 @@ func (h *tradingDataService) LastTrade(
 	ctx context.Context, req *protoapi.LastTradeRequest,
 ) (*protoapi.LastTradeResponse, error) {
 	if len(req.MarketID) <= 0 {
-		return nil, errors.New("missing market ID")
+		return nil, ErrEmptyMissingMarketID
 	}
 	t, err := h.TradeService.GetByMarket(ctx, req.MarketID, 0, 1, true)
 	if err != nil {
@@ -731,11 +817,41 @@ func (h *tradingDataService) LastTrade(
 	return &protoapi.LastTradeResponse{}, nil
 }
 
+func (h *tradingDataService) TraderAccounts(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
+	accs, err := h.AccountsService.GetTraderAccounts(req.Party)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.CollateralResponse{
+		Accounts: accs,
+	}, nil
+}
+
+func (h *tradingDataService) TraderMarketAccounts(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
+	accs, err := h.AccountsService.GetTraderAccountsForMarket(req.Party, req.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.CollateralResponse{
+		Accounts: accs,
+	}, nil
+}
+
+func (h *tradingDataService) TraderMarketBalance(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
+	accs, err := h.AccountsService.GetTraderMarketBalance(req.Party, req.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.CollateralResponse{
+		Accounts: accs,
+	}, nil
+}
+
 func validateMarket(ctx context.Context, marketID string, marketService MarketService) (*types.Market, error) {
 	var mkt *types.Market
 	var err error
 	if len(marketID) == 0 {
-		return nil, errors.New("market must not be empty")
+		return nil, ErrEmptyMissingMarketID
 	}
 	mkt, err = marketService.GetByID(ctx, marketID)
 	if err != nil {
@@ -749,7 +865,7 @@ func validateParty(ctx context.Context, partyID string, partyService PartyServic
 	var pty *types.Party
 	var err error
 	if len(partyID) == 0 {
-		return nil, errors.New("party must not be empty")
+		return nil, ErrEmptyMissingPartyID
 	}
 	pty, err = partyService.GetByID(ctx, partyID)
 	if err != nil {

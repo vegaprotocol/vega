@@ -1,5 +1,5 @@
-FROM golang:1.11.5 AS builder
-ENV GO111MODULE="on"
+FROM registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.5 \
+	AS builder
 RUN \
 	git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/" && \
 	mkdir ~/.ssh && chmod 0700 ~/.ssh && \
@@ -17,7 +17,7 @@ COPY internal /go/src/project/internal
 COPY proto /go/src/project/proto
 COPY .asciiart.txt Makefile /go/src/project/
 RUN make deps
-RUN make proto
+RUN make gqlgen proto
 RUN make install
 
 
@@ -25,5 +25,8 @@ FROM scratch
 ENTRYPOINT ["/vega"]
 CMD ["node"]
 EXPOSE 3002/tcp 3003/tcp 3004/tcp 26658/tcp
+COPY --from=builder /go/bin/dummyriskmodel /
 COPY --from=builder /go/bin/vega /
 COPY --from=builder /go/bin/vegabench /
+COPY --from=builder /go/bin/vegaccount /
+COPY --from=builder /go/bin/vegastream /

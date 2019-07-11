@@ -22,6 +22,9 @@ import (
 )
 
 func TestAppStatus(t *testing.T) {
+
+	t.Skip("This test needs to be written with careful regard to race conditions as exposed when using timers (#207, #282, #317)")
+
 	log := logging.NewTestLogger()
 	defer log.Sync()
 

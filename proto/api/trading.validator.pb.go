@@ -19,6 +19,17 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *NotifyTraderAccountRequest) Validate() error {
+	if this.Notif != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Notif); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Notif", err)
+		}
+	}
+	return nil
+}
+func (this *NotifyTraderAccountResponse) Validate() error {
+	return nil
+}
 func (this *SignInRequest) Validate() error {
 	return nil
 }
@@ -47,9 +58,6 @@ func (this *AmendOrderRequest) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("Amendment", err)
 		}
 	}
-	return nil
-}
-func (this *OrderResponse) Validate() error {
 	return nil
 }
 func (this *LastTradeRequest) Validate() error {
@@ -124,6 +132,9 @@ func (this *TradesByOrderResponse) Validate() error {
 			}
 		}
 	}
+	return nil
+}
+func (this *AccountsSubscribeRequest) Validate() error {
 	return nil
 }
 func (this *OrdersSubscribeRequest) Validate() error {
@@ -302,6 +313,19 @@ func (this *TradesStream) Validate() error {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Trades", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *CollateralRequest) Validate() error {
+	return nil
+}
+func (this *CollateralResponse) Validate() error {
+	for _, item := range this.Accounts {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Accounts", err)
 			}
 		}
 	}

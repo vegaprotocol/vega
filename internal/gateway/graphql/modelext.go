@@ -1,15 +1,18 @@
 package gql
 
 import (
+	"strings"
+
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 	"github.com/pkg/errors"
 )
 
 var (
 	ErrNilTradingMode                  = errors.New("nil trading mode")
 	ErrUnimplementedTradingMode        = errors.New("unimplemented trading mode")
-	ErrNilMarket                       = errors.New("nil trading mode")
-	ErrUnimplementedMarket             = errors.New("unimplemented trading mode")
+	ErrNilMarket                       = errors.New("nil market")
+	ErrUnimplementedMarket             = errors.New("unimplemented market")
 	ErrNilTradableInstrument           = errors.New("nil tradable instrument")
 	ErrUnimplementedTradableInstrument = errors.New("unimplemented tradable instrument")
 	ErrNilOracle                       = errors.New("nil oracle")
@@ -126,9 +129,11 @@ func (i *Instrument) productIntoProto(pinst *proto.Instrument) (err error) {
 func (i *Instrument) IntoProto() (*proto.Instrument, error) {
 	var err error
 	pinst := &proto.Instrument{
-		Id:   i.ID,
-		Code: i.Code,
-		Name: i.Name,
+		Id:        i.ID,
+		Code:      i.Code,
+		Name:      i.Name,
+		BaseName:  i.BaseName,
+		QuoteName: i.QuoteName,
 	}
 	pinst.Metadata, err = i.Metadata.IntoProto()
 	if err != nil {
@@ -303,9 +308,11 @@ func InstrumentFromProto(pi *proto.Instrument) (*Instrument, error) {
 	}
 	var err error
 	i := &Instrument{
-		ID:   pi.Id,
-		Code: pi.Code,
-		Name: pi.Name,
+		ID:        pi.Id,
+		Code:      pi.Code,
+		Name:      pi.Name,
+		BaseName:  pi.BaseName,
+		QuoteName: pi.QuoteName,
 	}
 	meta, err := InstrumentMetadataFromProto(pi.Metadata)
 	if err != nil {
@@ -384,4 +391,11 @@ func MarketFromProto(pmkt *proto.Market) (*Market, error) {
 	mkt.TradableInstrument = *tradableInstrument
 
 	return mkt, nil
+}
+
+func (a AccountType) IntoProto() types.AccountType {
+	if !a.IsValid() {
+		return types.AccountType_NO_ACC
+	}
+	return types.AccountType(types.AccountType_value[strings.ToUpper(string(a))])
 }

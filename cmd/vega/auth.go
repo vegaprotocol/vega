@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/gorilla/handlers"
+	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +40,7 @@ func (a *authCommand) Init(c *Cli) {
 func (a *authCommand) runAuth(args []string) error {
 	handler.InitJWT()
 
+	corz := cors.AllowAll()
 	svc := &handler.PartyService{File: a.dbfile}
 	if err := svc.Load(); err != nil {
 		a.Log.Warn("unable to load dbfile, a new one will be created at destinations",
@@ -47,6 +49,7 @@ func (a *authCommand) runAuth(args []string) error {
 	}
 
 	handler := handlers.CombinedLoggingHandler(os.Stdout, svc)
+	handler = corz.Handler(handler)
 
 	s := &http.Server{
 		Addr:    a.address,

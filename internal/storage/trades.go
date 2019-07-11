@@ -37,11 +37,11 @@ func NewTrades(log *logging.Logger, c Config, onCriticalError func()) (*Trade, e
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.TradeStoreDirPath)
+	err := InitStoreDirectory(c.TradesDirPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for trades storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.TradeStoreDirPath, log))
+	db, err := badger.Open(getOptionsFromConfig(c.Trades, c.TradesDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for trades storage")
 	}
