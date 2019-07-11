@@ -33,6 +33,7 @@ func (a *Account) Flush() error {
 
 	accs := make([]*types.Account, 0, len(accsToBatch))
 	for _, v := range accsToBatch {
+		v := v
 		accs = append(accs, &v)
 	}
 	return a.store.SaveBatch(accs)

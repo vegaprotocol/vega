@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"context"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
@@ -22,6 +23,8 @@ type AccountStore interface {
 	GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error)
 	GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error)
 	GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error)
+	Subscribe(c chan []*types.Account) uint64
+	Unsubscribe(id uint64) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts  Blockchain
@@ -32,9 +35,10 @@ type Blockchain interface {
 // Svc - the accounts service itself
 type Svc struct {
 	Config
-	log     *logging.Logger
-	storage AccountStore
-	chain   Blockchain
+	log           *logging.Logger
+	storage       AccountStore
+	chain         Blockchain
+	subscriberCnt int32
 }
 
 // New - create new accounts service
@@ -126,4 +130,85 @@ func (s *Svc) GetTraderMarketBalance(trader, market string) ([]*types.Account, e
 	}
 	accs = append(accs, relevant...)
 	return accs, nil
+}
+
+func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID, partyID string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64) {
+	accounts := make(chan []*types.Account)
+	internal := make(chan []*types.Account)
+	ref = s.storage.Subscribe(internal)
+
+	retryCount := retries
+	go func() {
+		atomic.AddInt32(&s.subscriberCnt, 1)
+		defer atomic.AddInt32(&s.subscriberCnt, -1)
+		ip := logging.IPAddressFromContext(ctx)
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
+		for {
+			select {
+			case <-ctx.Done():
+				s.log.Debug(
+					"Accounts subscriber closed connection",
+					logging.Uint64("id", ref),
+					logging.String("ip-address", ip),
+				)
+				// this error only happens when the subscriber reference doesn't exist
+				// so we can still safely close the channels
+				if err := s.storage.Unsubscribe(ref); err != nil {
+					s.log.Error(
+						"Failure un-subscribing orders subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(internal)
+				close(accounts)
+				return
+			case accs := <-internal:
+				okAccs := make([]*types.Account, 0, len(accs))
+				for _, acc := range accs {
+					acc := acc
+					// if market is not set, or equals item market and party is not set or equals item party
+					if (len(marketID) <= 0 || marketID == acc.MarketID) &&
+						(len(partyID) <= 0 || partyID == acc.Owner) &&
+						(ty == types.AccountType_NO_ACC || ty == acc.Type) {
+						okAccs = append(okAccs, acc)
+					}
+				}
+				select {
+				case accounts <- okAccs:
+					retryCount = retries
+					s.log.Debug(
+						"Accounts for subscriber sent successfully",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+					)
+				default:
+					retryCount--
+					if retryCount == 0 {
+						s.log.Warn(
+							"Account subscriber has hit the retry limit",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+							logging.Int("retries", retries),
+						)
+						cfunc()
+					}
+					// retry counter here
+					s.log.Debug(
+						"Accounts for subscriber not sent",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+					)
+				}
+			}
+		}
+	}()
+
+	return accounts, ref
+
+}
+func (s *Svc) GetAccountSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.subscriberCnt)
 }

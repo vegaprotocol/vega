@@ -107,3 +107,31 @@ func (mr *MockAccountStoreMockRecorder) GetMarketAssetAccounts(arg0, arg1, arg2 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketAssetAccounts", reflect.TypeOf((*MockAccountStore)(nil).GetMarketAssetAccounts), arg0, arg1, arg2)
 }
+
+// Subscribe mocks base method
+func (m *MockAccountStore) Subscribe(arg0 chan []*proto.Account) uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe", arg0)
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// Subscribe indicates an expected call of Subscribe
+func (mr *MockAccountStoreMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockAccountStore)(nil).Subscribe), arg0)
+}
+
+// Unsubscribe mocks base method
+func (m *MockAccountStore) Unsubscribe(arg0 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Unsubscribe", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Unsubscribe indicates an expected call of Unsubscribe
+func (mr *MockAccountStoreMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockAccountStore)(nil).Unsubscribe), arg0)
+}

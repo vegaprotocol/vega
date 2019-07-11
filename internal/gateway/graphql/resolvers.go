@@ -60,6 +60,7 @@ type TradingDataClient interface {
 	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*types.Statistics, error)
 	GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.VegaTimeResponse, error)
 	// streams
+	AccountsSubscribe(ctx context.Context, in *protoapi.AccountsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_AccountsSubscribeClient, error)
 	OrdersSubscribe(ctx context.Context, in *protoapi.OrdersSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_OrdersSubscribeClient, error)
 	TradesSubscribe(ctx context.Context, in *protoapi.TradesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_TradesSubscribeClient, error)
 	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
@@ -830,7 +831,7 @@ func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, par
 
 }
 
-func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, market string, party string) (*types.PendingOrder, error) {
+func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, party string, market string) (*types.PendingOrder, error) {
 	order := &types.OrderCancellation{}
 
 	tkn := gateway.TokenFromContext(ctx)
@@ -927,6 +928,55 @@ func (r *MyMutationResolver) Signin(ctx context.Context, id string, password str
 // BEGIN: Subscription Resolver
 
 type MySubscriptionResolver resolverRoot
+
+func (r *MySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, typeArg *AccountType) (<-chan *proto.Account, error) {
+	var (
+		mkt, pty string
+		ty       types.AccountType
+	)
+
+	if marketID != nil {
+		mkt = *marketID
+	}
+	if partyID != nil {
+		pty = *partyID
+	}
+	if typeArg != nil {
+		ty = typeArg.IntoProto()
+	}
+
+	req := &api.AccountsSubscribeRequest{
+		MarketID: mkt,
+		PartyID:  pty,
+		Type:     ty,
+	}
+	stream, err := r.tradingDataClient.AccountsSubscribe(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	c := make(chan *types.Account)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
+		for {
+			a, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("accounts: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("accounts: stream closed", logging.Error(err))
+				break
+			}
+			c <- a
+		}
+	}()
+
+	return c, nil
+}
 
 func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []types.Order, error) {
 	var (

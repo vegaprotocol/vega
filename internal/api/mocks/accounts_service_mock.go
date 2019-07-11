@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -31,6 +32,20 @@ func NewMockAccountsService(ctrl *gomock.Controller) *MockAccountsService {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockAccountsService) EXPECT() *MockAccountsServiceMockRecorder {
 	return m.recorder
+}
+
+// GetAccountSubscribersCount mocks base method
+func (m *MockAccountsService) GetAccountSubscribersCount() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountSubscribersCount")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetAccountSubscribersCount indicates an expected call of GetAccountSubscribersCount
+func (mr *MockAccountsServiceMockRecorder) GetAccountSubscribersCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountSubscribersCount", reflect.TypeOf((*MockAccountsService)(nil).GetAccountSubscribersCount))
 }
 
 // GetTraderAccounts mocks base method
@@ -76,4 +91,19 @@ func (m *MockAccountsService) GetTraderMarketBalance(arg0, arg1 string) ([]*prot
 func (mr *MockAccountsServiceMockRecorder) GetTraderMarketBalance(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTraderMarketBalance", reflect.TypeOf((*MockAccountsService)(nil).GetTraderMarketBalance), arg0, arg1)
+}
+
+// ObserveAccounts mocks base method
+func (m *MockAccountsService) ObserveAccounts(arg0 context.Context, arg1 int, arg2, arg3 string, arg4 proto.AccountType) (<-chan *proto.Account, uint64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObserveAccounts", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(<-chan *proto.Account)
+	ret1, _ := ret[1].(uint64)
+	return ret0, ret1
+}
+
+// ObserveAccounts indicates an expected call of ObserveAccounts
+func (mr *MockAccountsServiceMockRecorder) ObserveAccounts(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveAccounts", reflect.TypeOf((*MockAccountsService)(nil).ObserveAccounts), arg0, arg1, arg2, arg3, arg4)
 }

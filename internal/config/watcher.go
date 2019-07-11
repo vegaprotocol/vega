@@ -94,6 +94,9 @@ func (w *Watcher) watch(ctx context.Context) error {
 		return err
 	}
 
+	w.log.Info("config watcher started successfully",
+		logging.String("config", w.path))
+
 	go func(log *logging.Logger) {
 		defer watcher.Close()
 		for {
@@ -111,7 +114,7 @@ func (w *Watcher) watch(ctx context.Context) error {
 			case err, _ := <-watcher.Errors:
 				log.Error("config watcher received error event", logging.Error(err))
 			case <-ctx.Done():
-				log.Error("ctx done", logging.Error(err))
+				log.Error("config watcher ctx done", logging.Error(err))
 				return
 			}
 		}

@@ -90,6 +90,7 @@ service trading_data {
   rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
+  rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
 
   // collateral/accounts
   rpc TraderAccounts(CollateralRequest) returns (CollateralResponse);
@@ -141,6 +142,12 @@ message TradesByOrderRequest {
 
 message TradesByOrderResponse {
   repeated vega.Trade trades = 1;
+}
+
+message AccountsSubscribeRequest {
+  string marketID = 1;
+  string partyID = 2;
+  vega.AccountType type = 3;
 }
 
 message OrdersSubscribeRequest {

@@ -23,9 +23,11 @@ var (
 	positions bool
 	depth     bool
 	candles   bool
+	accounts  bool
 
-	party  string
-	market string
+	party   string
+	market  string
+	accType string
 
 	serverAddr string
 
@@ -34,6 +36,7 @@ var (
 )
 
 func init() {
+	flag.BoolVar(&accounts, "accounts", false, "listen to accounts updates")
 	flag.BoolVar(&orders, "orders", false, "listen to newly created orders")
 	flag.BoolVar(&trades, "trades", false, "listen to newly created trades")
 	flag.BoolVar(&positions, "positions", false, "listen to newly created positions")
@@ -41,7 +44,46 @@ func init() {
 	flag.BoolVar(&candles, "candles", false, "listen to newly created candles")
 	flag.StringVar(&party, "party", "extremtrader", "name of the party to listen for updates")
 	flag.StringVar(&market, "market", "BTC/DEC19", "id of the market to listen for updates")
+	flag.StringVar(&accType, "acctype", "NO_ACC", "type of the account we listenning for")
 	flag.StringVar(&serverAddr, "addr", "0.0.0.0:3002", "address of the grpc server")
+}
+
+func startAccounts(ctx context.Context, wg *sync.WaitGroup) error {
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	client := api.NewTradingDataClient(conn)
+	req := &api.AccountsSubscribeRequest{
+		MarketID: market,
+		PartyID:  party,
+		Type:     proto.AccountType(proto.AccountType_value[accType]),
+	}
+	stream, err := client.AccountsSubscribe(ctx, req)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	go func() {
+		defer wg.Done()
+		defer conn.Close()
+		for {
+			o, err := stream.Recv()
+			if err == io.EOF {
+				log.Printf("accounts: stream closed by server err=%v", err)
+				break
+			}
+			if err != nil {
+				log.Printf("accounts: stream closed err=%v", err)
+				break
+			}
+			log.Printf("account: %v", o)
+		}
+
+	}()
+	return nil
 }
 
 func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
@@ -262,7 +304,7 @@ func main() {
 		return
 	}
 
-	if !orders && !trades && !positions && !candles && !depth {
+	if !orders && !trades && !positions && !candles && !depth && !accounts {
 		log.Printf("error: vegastream require at least one resource to listen for")
 		return
 	}
@@ -309,6 +351,14 @@ func main() {
 		wg.Add(1)
 		if err := startDepth(ctx, &wg); err != nil {
 			log.Printf("unable to start depth err=%v", err)
+			return
+		}
+	}
+
+	if accounts {
+		wg.Add(1)
+		if err := startAccounts(ctx, &wg); err != nil {
+			log.Printf("unable to start accounts err=%v", err)
 			return
 		}
 	}

@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	marketETHDEC19 = "ETHDEC19.json"
-	marketGBPJUN19 = "GBPJUN19.json"
-	marketBTCDEC19 = "BTCDEC19.json"
+	marketETHUSDDEC19 = "ETHUSDDEC19.json"
+	marketGBPUSDJUN19 = "GBPUSDDEC19.json"
+	marketGBPEURDEC19 = "GBPEURDEC19.json"
 )
 
 type initCommand struct {
@@ -111,7 +111,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 
 	// setup the defaults markets
 	cfg.Execution.Markets.Configs = []string{
-		marketETHDEC19, marketGBPJUN19, marketBTCDEC19}
+		marketETHUSDDEC19, marketGBPUSDJUN19, marketGBPEURDEC19}
 
 	// write configuration to toml
 	buf := new(bytes.Buffer)
@@ -149,11 +149,11 @@ func createDefaultMarkets(confpath string) error {
 	}
 
 	mkt := proto.Market{
-		Name: "ETH/DEC19",
+		Name: "ETHUSD/DEC19",
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Id:        "Crypto/ETHUSD/Futures/Dec19",
-				Code:      "FX:ETHUSD/DEC19",
+				Code:      "CRYPTO:ETHUSD/DEC19",
 				Name:      "December 2019 ETH vs USD future",
 				BaseName:  "ETH",
 				QuoteName: "USD",
@@ -183,27 +183,27 @@ func createDefaultMarkets(confpath string) error {
 		},
 	}
 
-	err := createDefaultMarket(&mkt, path.Join(confpath, marketETHDEC19), seq)
+	err := createDefaultMarket(&mkt, path.Join(confpath, marketETHUSDDEC19), seq)
 	if err != nil {
 		return err
 	}
 	seq++
 
-	mkt.Name = "GBP/JUN19"
+	mkt.Name = "GBPUSD/JUN19"
 	mkt.TradableInstrument.Instrument.Id = "FX/GBPUSD/Futures/Jun19"
 	mkt.TradableInstrument.Instrument.Code = "FX:GBPUSD/Jun19"
-	mkt.TradableInstrument.Instrument.Name = "June 2019 GBP vs USD future"
+	mkt.TradableInstrument.Instrument.Name = "December 2019 GBP vs USD future"
 	mkt.TradableInstrument.Instrument.BaseName = "GBP"
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: &proto.Future{
-			Maturity: "2019-06-30T00:00:00Z",
+			Maturity: "2019-12-31T00:00:00Z",
 			Oracle: &proto.Future_EthereumEvent{
 				EthereumEvent: &proto.EthereumEvent{
 					ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 					Event:      "price_changed",
 				},
 			},
-			Asset: "ETH",
+			Asset: "USD",
 		},
 	}
 	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_Forward{
@@ -217,17 +217,18 @@ func createDefaultMarkets(confpath string) error {
 			},
 		},
 	}
-	err = createDefaultMarket(&mkt, path.Join(confpath, marketGBPJUN19), seq)
+	err = createDefaultMarket(&mkt, path.Join(confpath, marketGBPUSDJUN19), seq)
 	if err != nil {
 		return err
 	}
 	seq++
 
-	mkt.Name = "BTC/DEC19"
-	mkt.TradableInstrument.Instrument.Id = "Fx/BTCUSD/Futures/Mar20"
-	mkt.TradableInstrument.Instrument.Code = "FX:BTCUSD/MAR20"
-	mkt.TradableInstrument.Instrument.Name = "DEC 2019 BTC vs USD future"
-	mkt.TradableInstrument.Instrument.BaseName = "BTC"
+	mkt.Name = "GBPEUR/DEC19"
+	mkt.TradableInstrument.Instrument.Id = "Fx/GBPEUR/Futures/Dec20"
+	mkt.TradableInstrument.Instrument.Code = "FX:GBPEUR/DEC20"
+	mkt.TradableInstrument.Instrument.Name = "December 2019 GBP vs EUR future"
+	mkt.TradableInstrument.Instrument.BaseName = "GBP"
+	mkt.TradableInstrument.Instrument.QuoteName = "EUR"
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: &proto.Future{
 			Maturity: "2019-12-31T00:00:00Z",
@@ -237,10 +238,10 @@ func createDefaultMarkets(confpath string) error {
 					Event:      "price_changed",
 				},
 			},
-			Asset: "ETH",
+			Asset: "EUR",
 		},
 	}
-	return createDefaultMarket(&mkt, path.Join(confpath, marketBTCDEC19), seq)
+	return createDefaultMarket(&mkt, path.Join(confpath, marketGBPEURDEC19), seq)
 }
 
 func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
