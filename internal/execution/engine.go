@@ -236,7 +236,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 }
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	if e.log.Check(logging.DebugLevel) {
+	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submit order", logging.Order(*order))
 	}
 
