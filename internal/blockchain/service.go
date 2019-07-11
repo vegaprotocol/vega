@@ -105,18 +105,22 @@ func (s *abciService) Begin() error {
 	s.currentTimestamp = currentTime
 	s.previousTimestamp = previousTime
 
-	s.log.Debug("ABCI service BEGIN completed",
-		logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),
-		logging.Int64("previous-timestamp", s.previousTimestamp.UnixNano()),
-		logging.String("current-datetime", vegatime.Format(s.currentTimestamp)),
-		logging.String("previous-datetime", vegatime.Format(s.previousTimestamp)),
-	)
+	if s.log.GetLevel() == logging.DebugLevel {
+		s.log.Debug("ABCI service BEGIN completed",
+			logging.Int64("current-timestamp", s.currentTimestamp.UnixNano()),
+			logging.Int64("previous-timestamp", s.previousTimestamp.UnixNano()),
+			logging.String("current-datetime", vegatime.Format(s.currentTimestamp)),
+			logging.String("previous-datetime", vegatime.Format(s.previousTimestamp)),
+		)
+	}
 
 	return nil
 }
 
 func (s *abciService) ValidateOrder(order *types.Order) error {
-	s.log.Debug("ABCI service validating order", logging.Order(*order))
+	if s.log.GetLevel() == logging.DebugLevel {
+		s.log.Debug("ABCI service validating order", logging.Order(*order))
+	}
 
 	return nil
 }
@@ -141,7 +145,9 @@ func (s *abciService) NotifyTraderAccount(notif *types.NotifyTraderAccount) erro
 
 func (s *abciService) SubmitOrder(order *types.Order) error {
 	s.stats.addTotalCreateOrder(1)
-	s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
+	if s.log.GetLevel() == logging.DebugLevel {
+		s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
+	}
 
 	order.Id = fmt.Sprintf("V%010d-%010d", s.totalBatches, s.totalOrders)
 	order.CreatedAt = s.currentTimestamp.UnixNano()
@@ -181,7 +187,9 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 
 func (s *abciService) CancelOrder(order *types.Order) error {
 	s.stats.addTotalCancelOrder(1)
-	s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
+	if s.log.GetLevel() == logging.DebugLevel {
+		s.log.Debug("Blockchain service received a CANCEL ORDER request", logging.Order(*order))
+	}
 
 	// Submit the cancel new order request to the Vega trading core
 	cancellationMessage, errorMessage := s.execution.CancelOrder(order)
