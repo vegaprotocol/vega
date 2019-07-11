@@ -11,10 +11,11 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 
+	types "code.vegaprotocol.io/vega/proto"
+
+	"code.vegaprotocol.io/vega/internal/engines"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
-
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 var (
@@ -38,7 +39,7 @@ type TradeStore interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution CandleStore
 type CandleStore interface {
 	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
-	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
+	FetchMostRecentCandle(marketID string, interval types.Interval, descending bool) (*types.Candle, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution MarketStore
@@ -61,8 +62,7 @@ type TimeService interface {
 type Engine struct {
 	log *logging.Logger
 	Config
-
-	markets      map[string]*Market
+	markets      map[string]*engines.Market
 	orderStore   OrderStore
 	tradeStore   TradeStore
 	candleStore  CandleStore
@@ -92,7 +92,7 @@ func NewEngine(
 	e := &Engine{
 		log:          log,
 		Config:       executionConfig,
-		markets:      map[string]*Market{},
+		markets:      map[string]*engines.Market{},
 		candleStore:  candleStore,
 		orderStore:   orderStore,
 		tradeStore:   tradeStore,
@@ -120,7 +120,7 @@ func NewEngine(
 				logging.String("config-path", path))
 		}
 
-		e.log.Info("NewModel market loaded from configuation",
+		e.log.Info("New market loaded from configuation",
 			logging.String("market-config", path),
 			logging.String("market-id", mkt.Id))
 
@@ -148,60 +148,40 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 	e.Config = cfg
 	for _, mkt := range e.markets {
-		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
-			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
+		mkt.ReloadConf(cfg.Engines)
 	}
 }
 
-func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
-
-	// TODO: Check for existing market in MarketStore by Name.
-	// if __TBC_MarketExists__(mktconfig.Name) {
-	// 	return ErrMarketAlreadyExist
-	// }
-
-	var mkt *Market
-	var err error
+func (e *Engine) SubmitMarket(mkt *types.Market) error {
+	if _, ok := e.markets[mkt.Id]; ok {
+		return ErrMarketAlreadyExist
+	}
 
 	now, _ := e.time.GetTimeNow()
-	mkt, err = NewMarket(
-		e.log,
-		e.Config.Risk,
-		e.Config.Collateral,
-		e.Config.Position,
-		e.Config.Settlement,
-		e.Config.Matching,
-		mktconfig,
-		e.candleStore,
-		e.orderStore,
-		e.partyStore,
-		e.tradeStore,
-		e.accountStore,
-		now,
-		uint64(len(e.markets)),
-	)
+	var err error
+	e.markets[mkt.Id], err = engines.NewMarket(
+		e.log, e.Config.Engines, mkt, e.candleStore, e.orderStore, e.partyStore, e.tradeStore, e.accountStore, now)
 	if err != nil {
 		e.log.Error("Failed to instanciate market",
-			logging.String("market-name", mktconfig.Name),
+			logging.String("market-id", mkt.Id),
 			logging.Error(err),
 		)
 	}
 
-	err = e.marketStore.Post(mktconfig)
+	err = e.marketStore.Post(mkt)
 	if err != nil {
 		e.log.Error("Failed to add default market to market store",
-			logging.String("market-name", mktconfig.Name),
+			logging.String("market-id", mkt.Id),
 			logging.Error(err),
 		)
 	}
 
-	e.markets[mktconfig.Id] = mkt
 	return nil
 }
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	e.log.Debug("Submit order", logging.Order(*order))
-	mkt, ok := e.markets[order.MarketID]
+	mkt, ok := e.markets[order.Market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
@@ -215,18 +195,18 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 	e.log.Debug("Amend order")
 	// try to get the order first
 	order, err := e.orderStore.GetByPartyAndId(
-		context.Background(), orderAmendment.PartyID, orderAmendment.Id)
+		context.Background(), orderAmendment.Party, orderAmendment.Id)
 	if err != nil {
 		e.log.Error("Invalid order reference",
 			logging.String("id", order.Id),
-			logging.String("party", order.PartyID),
+			logging.String("party", order.Party),
 			logging.Error(err))
 
 		return nil, types.ErrInvalidOrderReference
 	}
 	e.log.Debug("Existing order found", logging.Order(*order))
 
-	mkt, ok := e.markets[order.MarketID]
+	mkt, ok := e.markets[order.Market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
@@ -237,7 +217,7 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
 func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	e.log.Debug("Cancel order")
-	mkt, ok := e.markets[order.MarketID]
+	mkt, ok := e.markets[order.Market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
@@ -261,7 +241,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(t time.Time) {
+func (e *Engine) removeExpiredOrders(t time.Time) error {
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
@@ -285,6 +265,8 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
+
+	return nil
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.

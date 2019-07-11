@@ -1,7 +1,6 @@
 # Vega specific entries
 *.tmp
 cmd/vega/vega
-cmd/vegastream/vegastream
 cmd/vegabench/vegabench
 vega-*.log
 .idea/

@@ -9,12 +9,8 @@ enum Side { Buy = 0; Sell = 1; }
 
 enum Interval { I1M = 0; I5M = 1; I15M = 2; I1H = 3; I6H = 4; I1D = 5; }
 
-message Amount {
-  string value = 1;
-}
-
 message Party {
-    string id = 1 [(validator.field) = {msg_exists : true}];
+    string name = 1 [(validator.field) = {msg_exists : true}];
     repeated MarketPosition positions = 2;
 }
 
@@ -52,8 +48,8 @@ message Order {
   }
 
   string id = 1;
-  string marketID = 2;
-  string partyID = 3;
+  string market = 2;
+  string party = 3;
   Side side = 4;
   uint64 price = 5;
   uint64 size = 6;
@@ -92,7 +88,7 @@ enum OrderError {
 
 message Trade {
     string id = 1;
-    string marketID = 2;
+    string market = 2;
     uint64 price = 3;
     uint64 size = 4;
     string buyer = 5;
@@ -132,13 +128,13 @@ message PriceLevel {
 }
 
 message MarketDepth {
-    string marketID = 1;
+    string   name = 1;
     repeated PriceLevel buy = 2;
     repeated PriceLevel sell = 3;
 }
 
 message MarketPosition {
-    string marketID = 1;
+    string market = 1;
     int64 realisedVolume = 2;
     int64 realisedPNL  = 3;
     int64 unrealisedVolume = 4;
@@ -185,14 +181,14 @@ message PendingOrder {
   Side side = 4;
   string marketID = 5;
   uint64 size = 6;
-  string partyID = 7;
+  string party = 7;
   Order.Status status = 8;
   string id = 9;
 }
 
 message OrderAmendment {
     string id = 1 [(validator.field) = {msg_exists : true}];
-    string partyID = 2 [(validator.field) = {msg_exists : true}];
+    string party = 2 [(validator.field) = {msg_exists : true}];
     uint64 price = 3;
     uint64 size = 4 [(validator.field) = {int_gt: 0}];
     int64 expiresAt = 5;
@@ -200,8 +196,8 @@ message OrderAmendment {
 
 message OrderSubmission {
   string id = 1;
-  string marketID = 2;
-  string partyID = 3;
+  string marketId = 2;
+  string party = 3;
   uint64 price = 4;
   uint64 size = 5;
   Side side = 6;
@@ -211,8 +207,8 @@ message OrderSubmission {
 
 message OrderCancellation {
   string id = 1;
-  string marketID = 2;
-  string partyID = 3;
+  string marketId = 2;
+  string party = 3;
 }
 
 enum AccountType {
@@ -228,28 +224,25 @@ message Account {
   string owner = 2;
   int64 balance = 3;
   string asset = 4;
-  string marketID = 5;
+  string market = 5;
   AccountType type = 6;
 }
 
 message FinancialAmount {
-  int64 amount = 1;
+  uint64 amount = 1;
   string asset = 2;
 }
 
-enum TransferType {
-  LOSS = 0;
-  WIN = 1;
-  CLOSE = 2;
-  MTM_LOSS = 3;
-  MTM_WIN = 4;
+enum SettleType {
+  BUY = 0;
+  SELL = 1;
 }
 
-message Transfer {
+message SettlePosition {
   string owner = 1;
   uint64 size = 2;
   FinancialAmount amount = 3;
-  TransferType type = 4;
+  SettleType type = 4;
 }
 
 message TransferRequest {

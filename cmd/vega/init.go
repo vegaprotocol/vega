@@ -14,16 +14,16 @@ import (
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/proto"
 
+	"github.com/BurntSushi/toml"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
-	"github.com/zannen/toml"
 	"go.uber.org/zap"
 )
 
 const (
-	marketETHDEC19 = "ETHDEC19.json"
-	marketGBPJUN19 = "GBPJUN19.json"
 	marketBTCDEC19 = "BTCDEC19.json"
+	marketETHJUN19 = "ETHJUN19.json"
+	marketEURMAR19 = "EURMAR20.json"
 )
 
 type initCommand struct {
@@ -111,7 +111,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 
 	// setup the defaults markets
 	cfg.Execution.Markets.Configs = []string{
-		marketETHDEC19, marketGBPJUN19, marketBTCDEC19}
+		marketBTCDEC19, marketETHJUN19, marketEURMAR19}
 
 	// write configuration to toml
 	buf := new(bytes.Buffer)
@@ -135,26 +135,13 @@ func (ic *initCommand) runInit(c *Cli) error {
 }
 
 func createDefaultMarkets(confpath string) error {
-	var seq uint64
-	riskModel := &proto.TradableInstrument_Forward{
-		Forward: &proto.Forward{
-			Lambd: 0.01,
-			Tau:   1.0 / 365.25 / 24,
-			Params: &proto.ModelParamsBS{
-				Mu:    0,
-				R:     0.016,
-				Sigma: 0.09,
-			},
-		},
-	}
-
 	mkt := proto.Market{
-		Name: "ETH/DEC19",
+		Id: "BTC/DEC19",
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
-				Id:   "Crypto/ETHUSD/Futures/Dec19",
-				Code: "FX:ETHUSD/DEC19",
-				Name: "December 2019 ETH vs USD future",
+				Id:   "Crypto/BTCUSD/Futures/Dec19",
+				Code: "FX:BTCUSD/DEC19",
+				Name: "December 2019 BTC vs USD future",
 				Metadata: &proto.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
@@ -174,23 +161,25 @@ func createDefaultMarkets(confpath string) error {
 					},
 				},
 			},
-			RiskModel: riskModel,
+			RiskModel: &proto.TradableInstrument_BuiltinFutures{
+				BuiltinFutures: &proto.BuiltinFutures{
+					HistoricVolatility: 0.15,
+				},
+			},
 		},
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
 	}
 
-	err := createDefaultMarket(&mkt, path.Join(confpath, marketETHDEC19), seq)
+	err := createDefaultMarket(&mkt, path.Join(confpath, marketBTCDEC19))
 	if err != nil {
 		return err
 	}
-	seq++
-
-	mkt.Name = "GBP/JUN19"
-	mkt.TradableInstrument.Instrument.Id = "FX/GBPUSD/Futures/Jun19"
-	mkt.TradableInstrument.Instrument.Code = "FX:GBPUSD/Jun19"
-	mkt.TradableInstrument.Instrument.Name = "June 2019 GBP vs USD future"
+	mkt.Id = "ETH/JUN19"
+	mkt.TradableInstrument.Instrument.Id = "Crypto/ETHUSD/Futures/Jun19"
+	mkt.TradableInstrument.Instrument.Code = "FX:ETHUSD/Jun19"
+	mkt.TradableInstrument.Instrument.Name = "June 2019 ETH vs USD future"
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: &proto.Future{
 			Maturity: "2019-06-30T00:00:00Z",
@@ -203,30 +192,17 @@ func createDefaultMarkets(confpath string) error {
 			Asset: "Ethereum/Ether",
 		},
 	}
-	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_Forward{
-		Forward: &proto.Forward{
-			Lambd: 0.01,
-			Tau:   1.0 / 365.25 / 24,
-			Params: &proto.ModelParamsBS{
-				Mu:    0,
-				R:     0.0,
-				Sigma: 0.9,
-			},
-		},
-	}
-	err = createDefaultMarket(&mkt, path.Join(confpath, marketGBPJUN19), seq)
+	err = createDefaultMarket(&mkt, path.Join(confpath, marketETHJUN19))
 	if err != nil {
 		return err
 	}
-	seq++
-
-	mkt.Name = "BTC/DEC19"
-	mkt.TradableInstrument.Instrument.Id = "Fx/BTCUSD/Futures/Mar20"
-	mkt.TradableInstrument.Instrument.Code = "FX:BTCUSD/MAR20"
-	mkt.TradableInstrument.Instrument.Name = "DEC 2019 BTC vs USD future"
+	mkt.Id = "EUR/MAR20"
+	mkt.TradableInstrument.Instrument.Id = "Fx/EURUSD/Futures/Mar20"
+	mkt.TradableInstrument.Instrument.Code = "FX:EURUSD/MAR20"
+	mkt.TradableInstrument.Instrument.Name = "March 2020 EUR vs USD future"
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: &proto.Future{
-			Maturity: "2019-12-31T00:00:00Z",
+			Maturity: "2020-03-31T00:00:00Z",
 			Oracle: &proto.Future_EthereumEvent{
 				EthereumEvent: &proto.EthereumEvent{
 					ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
@@ -236,11 +212,10 @@ func createDefaultMarkets(confpath string) error {
 			Asset: "Ethereum/Ether",
 		},
 	}
-	return createDefaultMarket(&mkt, path.Join(confpath, marketBTCDEC19), seq)
+	return createDefaultMarket(&mkt, path.Join(confpath, marketEURMAR19))
 }
 
-func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
-	execution.SetMarketID(mkt, seq)
+func createDefaultMarket(mkt *proto.Market, path string) error {
 	m := jsonpb.Marshaler{
 		Indent: "  ",
 	}

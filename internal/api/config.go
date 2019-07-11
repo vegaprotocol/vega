@@ -9,15 +9,20 @@ import (
 
 // namedLogger is the identifier for package and should ideally match the package name
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
-const namedLogger = "api.grpc"
+const namedLogger = "api"
 
 type Config struct {
-	Level         encoding.LogLevel
-	Timeout       encoding.Duration
-	Port          int
-	IP            string
-	StreamRetries int
-	AuthEnabled   bool
+	Level   encoding.LogLevel
+	Timeout encoding.Duration
+
+	GraphQLServerPort          int
+	GraphQLServerIpAddress     string
+	GraphQLSubscriptionRetries int
+	RestProxyServerPort        int
+	RestProxyIpAddress         string
+	GrpcServerPort             int
+	GrpcServerIpAddress        string
+	GrpcSubscriptionRetries    int
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -27,9 +32,15 @@ func NewDefaultConfig() Config {
 		Level:   encoding.LogLevel{Level: logging.InfoLevel},
 		Timeout: encoding.Duration{Duration: 5000 * time.Millisecond},
 
-		IP:            "0.0.0.0",
-		Port:          3002,
-		StreamRetries: 3,
-		AuthEnabled:   false,
+		GraphQLServerIpAddress:     "0.0.0.0",
+		GraphQLServerPort:          3004,
+		GraphQLSubscriptionRetries: 3,
+
+		RestProxyIpAddress:  "0.0.0.0",
+		RestProxyServerPort: 3003,
+
+		GrpcServerIpAddress:     "0.0.0.0",
+		GrpcServerPort:          3002,
+		GrpcSubscriptionRetries: 3,
 	}
 }

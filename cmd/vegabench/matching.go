@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/execution/mocks"
-	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
+
+	"code.vegaprotocol.io/vega/internal/execution/mocks"
+	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/golang/mock/gomock"
 )
@@ -38,11 +39,10 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyStore(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
-	executionConfig := execution.NewDefaultConfig("")
-
+	conf := execution.NewDefaultConfig("")
 	engine := execution.NewEngine(
 		log,
-		executionConfig,
+		conf,
 		time,
 		order,
 		trade,
@@ -111,8 +111,8 @@ func BenchmarkMatching(
 			}
 
 			order := &types.Order{
-				MarketID:  marketID,
-				PartyID:   fmt.Sprintf("P%v", timestamp),
+				Market:    marketID,
+				Party:     fmt.Sprintf("P%v", timestamp),
 				Side:      types.Side(rand.Intn(2)),
 				Price:     uint64(rand.Intn(100) + 50),
 				Size:      size,

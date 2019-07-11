@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"github.com/BurntSushi/toml"
 	"github.com/fsnotify/fsnotify"
-	"github.com/zannen/toml"
 )
 
 const (

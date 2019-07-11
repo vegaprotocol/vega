@@ -32,10 +32,10 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	t.Log(fmt.Sprintf("t0 = %s", vegatime.Format(t0)))
 
 	var trades = []*types.Trade{
-		{Id: "1", MarketID: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.UnixNano()},
-		{Id: "2", MarketID: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.Add(20 * time.Second).UnixNano()},
-		{Id: "3", MarketID: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.Add(1 * time.Minute).UnixNano()},
-		{Id: "4", MarketID: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 20*time.Second).UnixNano()},
+		{Id: "1", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.UnixNano()},
+		{Id: "2", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.Add(20 * time.Second).UnixNano()},
+		{Id: "3", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.Add(1 * time.Minute).UnixNano()},
+		{Id: "4", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 20*time.Second).UnixNano()},
 	}
 
 	// create+start a new buffer
@@ -253,14 +253,14 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	t0 := vegatime.UnixNano(1542106800000000000)
 
 	var trades1 = []*types.Trade{
-		{Id: "1", MarketID: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.UnixNano()},
-		{Id: "2", MarketID: testMarket, Price: uint64(99), Size: uint64(100), Timestamp: t0.Add(10 * time.Second).UnixNano()},
-		{Id: "3", MarketID: testMarket, Price: uint64(108), Size: uint64(100), Timestamp: t0.Add(20 * time.Second).UnixNano()},
-		{Id: "4", MarketID: testMarket, Price: uint64(105), Size: uint64(100), Timestamp: t0.Add(30 * time.Second).UnixNano()},
-		{Id: "5", MarketID: testMarket, Price: uint64(110), Size: uint64(100), Timestamp: t0.Add(1 * time.Minute).UnixNano()},
-		{Id: "6", MarketID: testMarket, Price: uint64(112), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 10*time.Second).UnixNano()},
-		{Id: "7", MarketID: testMarket, Price: uint64(113), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 20*time.Second).UnixNano()},
-		{Id: "8", MarketID: testMarket, Price: uint64(109), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 30*time.Second).UnixNano()},
+		{Id: "1", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.UnixNano()},
+		{Id: "2", Market: testMarket, Price: uint64(99), Size: uint64(100), Timestamp: t0.Add(10 * time.Second).UnixNano()},
+		{Id: "3", Market: testMarket, Price: uint64(108), Size: uint64(100), Timestamp: t0.Add(20 * time.Second).UnixNano()},
+		{Id: "4", Market: testMarket, Price: uint64(105), Size: uint64(100), Timestamp: t0.Add(30 * time.Second).UnixNano()},
+		{Id: "5", Market: testMarket, Price: uint64(110), Size: uint64(100), Timestamp: t0.Add(1 * time.Minute).UnixNano()},
+		{Id: "6", Market: testMarket, Price: uint64(112), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 10*time.Second).UnixNano()},
+		{Id: "7", Market: testMarket, Price: uint64(113), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 20*time.Second).UnixNano()},
+		{Id: "8", Market: testMarket, Price: uint64(109), Size: uint64(100), Timestamp: t0.Add(1*time.Minute + 30*time.Second).UnixNano()},
 	}
 
 	buf := buffer.NewCandle(testMarket, candleStore, t0)
@@ -322,14 +322,14 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(800), candles[0].Volume)
 
 	var trades2 = []*types.Trade{
-		{Id: "9", MarketID: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.Add(2*time.Minute + 10*time.Second).UnixNano()},
-		{Id: "10", MarketID: testMarket, Price: uint64(99), Size: uint64(100), Timestamp: t0.Add(2*time.Minute + 20*time.Second).UnixNano()},
-		{Id: "11", MarketID: testMarket, Price: uint64(108), Size: uint64(100), Timestamp: t0.Add(2*time.Minute + 30*time.Second).UnixNano()},
-		{Id: "12", MarketID: testMarket, Price: uint64(105), Size: uint64(100), Timestamp: t0.Add(2*time.Minute + 40*time.Second).UnixNano()},
-		{Id: "13", MarketID: testMarket, Price: uint64(110), Size: uint64(100), Timestamp: t0.Add(3*time.Minute + 10*time.Second).UnixNano()},
-		{Id: "14", MarketID: testMarket, Price: uint64(112), Size: uint64(100), Timestamp: t0.Add(3*time.Minute + 20*time.Second).UnixNano()},
-		{Id: "15", MarketID: testMarket, Price: uint64(113), Size: uint64(100), Timestamp: t0.Add(3*time.Minute + 30*time.Second).UnixNano()},
-		{Id: "16", MarketID: testMarket, Price: uint64(109), Size: uint64(100), Timestamp: t0.Add(3*time.Minute + 40*time.Second).UnixNano()},
+		{Id: "9", Market: testMarket, Price: uint64(100), Size: uint64(100), Timestamp: t0.Add(2*time.Minute + 10*time.Second).UnixNano()},
+		{Id: "10", Market: testMarket, Price: uint64(99), Size: uint64(100), Timestamp: t0.Add(2*time.Minute + 20*time.Second).UnixNano()},
+		{Id: "11", Market: testMarket, Price: uint64(108), Size: uint64(100), Timestamp: t0.Add(2*time.Minute + 30*time.Second).UnixNano()},
+		{Id: "12", Market: testMarket, Price: uint64(105), Size: uint64(100), Timestamp: t0.Add(2*time.Minute + 40*time.Second).UnixNano()},
+		{Id: "13", Market: testMarket, Price: uint64(110), Size: uint64(100), Timestamp: t0.Add(3*time.Minute + 10*time.Second).UnixNano()},
+		{Id: "14", Market: testMarket, Price: uint64(112), Size: uint64(100), Timestamp: t0.Add(3*time.Minute + 20*time.Second).UnixNano()},
+		{Id: "15", Market: testMarket, Price: uint64(113), Size: uint64(100), Timestamp: t0.Add(3*time.Minute + 30*time.Second).UnixNano()},
+		{Id: "16", Market: testMarket, Price: uint64(109), Size: uint64(100), Timestamp: t0.Add(3*time.Minute + 40*time.Second).UnixNano()},
 	}
 
 	assert.Nil(t, err)
@@ -375,14 +375,14 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	assert.Equal(t, uint64(400), candles[3].Volume)
 
 	var trades3 = []*types.Trade{
-		{Id: "17", MarketID: testMarket, Price: uint64(95), Size: uint64(100), Timestamp: t0.Add(4*time.Minute + 10*time.Second).UnixNano()},
-		{Id: "18", MarketID: testMarket, Price: uint64(80), Size: uint64(100), Timestamp: t0.Add(4*time.Minute + 20*time.Second).UnixNano()},
-		{Id: "19", MarketID: testMarket, Price: uint64(120), Size: uint64(100), Timestamp: t0.Add(4*time.Minute + 30*time.Second).UnixNano()},
-		{Id: "20", MarketID: testMarket, Price: uint64(105), Size: uint64(100), Timestamp: t0.Add(4*time.Minute + 40*time.Second).UnixNano()},
-		{Id: "21", MarketID: testMarket, Price: uint64(103), Size: uint64(100), Timestamp: t0.Add(5*time.Minute + 10*time.Second).UnixNano()},
-		{Id: "22", MarketID: testMarket, Price: uint64(101), Size: uint64(100), Timestamp: t0.Add(5*time.Minute + 20*time.Second).UnixNano()},
-		{Id: "23", MarketID: testMarket, Price: uint64(101), Size: uint64(100), Timestamp: t0.Add(5*time.Minute + 30*time.Second).UnixNano()},
-		{Id: "24", MarketID: testMarket, Price: uint64(101), Size: uint64(100), Timestamp: t0.Add(5*time.Minute + 40*time.Second).UnixNano()},
+		{Id: "17", Market: testMarket, Price: uint64(95), Size: uint64(100), Timestamp: t0.Add(4*time.Minute + 10*time.Second).UnixNano()},
+		{Id: "18", Market: testMarket, Price: uint64(80), Size: uint64(100), Timestamp: t0.Add(4*time.Minute + 20*time.Second).UnixNano()},
+		{Id: "19", Market: testMarket, Price: uint64(120), Size: uint64(100), Timestamp: t0.Add(4*time.Minute + 30*time.Second).UnixNano()},
+		{Id: "20", Market: testMarket, Price: uint64(105), Size: uint64(100), Timestamp: t0.Add(4*time.Minute + 40*time.Second).UnixNano()},
+		{Id: "21", Market: testMarket, Price: uint64(103), Size: uint64(100), Timestamp: t0.Add(5*time.Minute + 10*time.Second).UnixNano()},
+		{Id: "22", Market: testMarket, Price: uint64(101), Size: uint64(100), Timestamp: t0.Add(5*time.Minute + 20*time.Second).UnixNano()},
+		{Id: "23", Market: testMarket, Price: uint64(101), Size: uint64(100), Timestamp: t0.Add(5*time.Minute + 30*time.Second).UnixNano()},
+		{Id: "24", Market: testMarket, Price: uint64(101), Size: uint64(100), Timestamp: t0.Add(5*time.Minute + 40*time.Second).UnixNano()},
 	}
 
 	assert.Nil(t, err)

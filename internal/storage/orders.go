@@ -41,7 +41,7 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 	if err != nil {
 		return nil, errors.Wrap(err, "error on init badger database for orders storage")
 	}
-	db, err := badger.Open(badgerOptionsFromConfig(c.BadgerOptions, c.OrderStoreDirPath, log))
+	db, err := badger.Open(customBadgerOptions(c.OrderStoreDirPath, log))
 	if err != nil {
 		return nil, errors.Wrap(err, "error opening badger database for orders storage")
 	}
@@ -57,20 +57,20 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 	}, nil
 }
 
-func (os *Order) ReloadConf(cfg Config) {
-	os.log.Info("reloading configuration")
-	if os.log.GetLevel() != cfg.Level.Get() {
-		os.log.Info("updating log level",
-			logging.String("old", os.log.GetLevel().String()),
+func (o *Order) ReloadConf(cfg Config) {
+	o.log.Info("reloading configuration")
+	if o.log.GetLevel() != cfg.Level.Get() {
+		o.log.Info("updating log level",
+			logging.String("old", o.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		os.log.SetLevel(cfg.Level.Get())
+		o.log.SetLevel(cfg.Level.Get())
 	}
 
 	// only Timeout is really use in here
-	os.cfgMu.Lock()
-	os.Config = cfg
-	os.cfgMu.Unlock()
+	o.cfgMu.Lock()
+	o.Config = cfg
+	o.cfgMu.Unlock()
 }
 
 // Subscribe to a channel of new or updated orders. The subscriber id will be returned as a uint64 value
@@ -113,8 +113,8 @@ func (os *Order) Unsubscribe(id uint64) error {
 // to queue the operation to be committed later.
 func (os *Order) Post(order types.Order) error {
 	// validate an order book (depth of market) exists for order market
-	if exists := os.depth[order.MarketID]; exists == nil {
-		os.depth[order.MarketID] = NewMarketDepth(order.MarketID)
+	if exists := os.depth[order.Market]; exists == nil {
+		os.depth[order.Market] = NewMarketDepth(order.Market)
 	}
 	// with badger we always buffer for future batch insert via Commit()
 	os.addToBuffer(order)
@@ -350,58 +350,13 @@ func (os *Order) GetByPartyAndId(ctx context.Context, party string, id string) (
 	return &order, nil
 }
 
-// GetByreference retrieves an order for a given referefence, any errors will be returned immediately.
-func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
-	var order types.Order
-
-	err := os.badger.db.View(func(txn *badger.Txn) error {
-		refKey := os.badger.orderReferenceKey(ref)
-		marketKeyItem, err := txn.Get(refKey)
-		if err != nil {
-			return err
-		}
-		marketKey, err := marketKeyItem.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
-		orderItem, err := txn.Get(marketKey)
-		if err != nil {
-			return err
-		}
-		orderBuf, err := orderItem.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
-		if err := proto.Unmarshal(orderBuf, &order); err != nil {
-			os.log.Error("Failed to unmarshal order value from badger in order store (getByPartyAndId)",
-				logging.Error(err),
-				logging.String("badger-key", string(refKey)),
-				logging.String("raw-bytes", string(orderBuf)))
-			return err
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &order, nil
-}
-
 // GetMarketDepth calculates and returns order book/depth of market for a given market.
 func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error) {
 
 	// validate
 	depth, ok := os.depth[market]
 	if !ok || depth == nil {
-		// When a market is new with no orders there will not be any market depth/order book
-		// so we do not need to try and calculate the depth cumulative volumes etc
-		return &types.MarketDepth{
-			MarketID: market,
-			Buy:      []*types.PriceLevel{},
-			Sell:     []*types.PriceLevel{},
-		}, nil
+		return nil, errors.New(fmt.Sprintf("market depth for %s does not exist", market))
 	}
 
 	// load from store
@@ -468,9 +423,9 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 
 	// return new re-calculated market depth for each side of order book
 	return &types.MarketDepth{
-		MarketID: market,
-		Buy:      buyPtr,
-		Sell:     sellPtr,
+		Name: market,
+		Buy:  buyPtr,
+		Sell: sellPtr,
 	}, nil
 }
 
@@ -519,14 +474,12 @@ func (os *Order) orderBatchToMap(batch []types.Order) (map[string][]byte, error)
 		if err != nil {
 			return nil, err
 		}
-		marketKey := os.badger.orderMarketKey(order.MarketID, order.Id)
+		marketKey := os.badger.orderMarketKey(order.Market, order.Id)
 		idKey := os.badger.orderIdKey(order.Id)
-		refKey := os.badger.orderReferenceKey(order.Reference)
-		partyKey := os.badger.orderPartyKey(order.PartyID, order.Id)
+		partyKey := os.badger.orderPartyKey(order.Party, order.Id)
 		results[string(marketKey)] = orderBuf
 		results[string(idKey)] = marketKey
 		results[string(partyKey)] = marketKey
-		results[string(refKey)] = marketKey
 	}
 	return results, nil
 }
@@ -556,7 +509,7 @@ func (os *Order) writeBatch(batch []types.Order) error {
 
 	// Depth of market updater
 	for idx := range batch {
-		os.depth[batch[idx].MarketID].Update(batch[idx])
+		os.depth[batch[idx].Market].Update(batch[idx])
 	}
 
 	return nil

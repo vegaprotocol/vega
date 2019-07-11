@@ -17,9 +17,6 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-func (this *Amount) Validate() error {
-	return nil
-}
 func (this *Party) Validate() error {
 	for _, item := range this.Positions {
 		if item != nil {
@@ -137,7 +134,7 @@ func (this *Account) Validate() error {
 func (this *FinancialAmount) Validate() error {
 	return nil
 }
-func (this *Transfer) Validate() error {
+func (this *SettlePosition) Validate() error {
 	if this.Amount != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Amount); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Amount", err)

@@ -52,16 +52,8 @@ message Instrument {
 
 // here start risk models
 
-message ModelParamsBS {
-  double mu = 1;
-  double r = 2;
-  double sigma = 3;
-}
-
-message Forward {
-  double lambd = 1;
-  double tau = 2;
-  ModelParamsBS params = 3;
+message BuiltinFutures {
+  double historicVolatility = 1;
 }
 
 message ExternalRiskModel {
@@ -75,16 +67,15 @@ message ExternalRiskModel {
 message TradableInstrument {
   Instrument instrument = 1;
   oneof riskModel {
-    Forward forward = 100;
+    BuiltinFutures builtinFutures = 100;
     ExternalRiskModel externalRiskModel = 101;
   }
 }
 
 message Market {
   string id = 1;
-  string name = 2;
-  TradableInstrument tradableInstrument = 3;
-  uint64 decimalPlaces = 4;
+  TradableInstrument tradableInstrument = 2;
+  uint64 decimalPlaces = 3;
   oneof tradingMode {
     ContinuousTrading continuous = 100;
     DiscreteTrading discrete = 101;

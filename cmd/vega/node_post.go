@@ -58,7 +58,7 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 }
 
 func (l *NodeCommand) persistentPost(_ *cobra.Command, _ []string) {
-	l.cancel()
+	l.cfunc()
 }
 
 // Error - implement the error interface on the errStack type

@@ -26,14 +26,14 @@ func testObserveAllOrdersSuccess(t *testing.T) {
 	subRef := uint64(1)
 	orders := []proto.Order{
 		{
-			Id:       "order_id1",
-			MarketID: "market1",
-			PartyID:  "party1",
+			Id:     "order_id1",
+			Market: "market1",
+			Party:  "party1",
 		},
 		{
-			Id:       "order_id2",
-			MarketID: "market2",
-			PartyID:  "party2",
+			Id:     "order_id2",
+			Market: "market2",
+			Party:  "party2",
 		},
 	}
 
@@ -75,14 +75,14 @@ func testObservePartialSuccess(t *testing.T) {
 	market, party := "market1", "party1"
 	orders := []proto.Order{
 		{
-			Id:       "order_id1",
-			MarketID: "market1",
-			PartyID:  "party1",
+			Id:     "order_id1",
+			Market: "market1",
+			Party:  "party1",
 		},
 		{
-			Id:       "order_id2",
-			MarketID: "market2",
-			PartyID:  "party2",
+			Id:     "order_id2",
+			Market: "market2",
+			Party:  "party2",
 		},
 	}
 

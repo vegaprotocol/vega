@@ -49,7 +49,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 To install Vega from source, the following software is required:
 
 * `Golang (Go) v1.11.5` - [Installation guide](https://golang.org/doc/install)
-* `Tendermint v0.31.5` - [Installation guide](https://tendermint.com/docs/introduction/install.html)
+* `Tendermint v0.30` - [Installation guide](https://tendermint.com/docs/introduction/install.html)
 
 ### Tendermint ###
 

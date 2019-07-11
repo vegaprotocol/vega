@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/internal/risk/models"
+	"code.vegaprotocol.io/vega/internal/riskmodels"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -38,7 +38,7 @@ func (rm *RiskModel) calculateRiskFactors(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	req := models.CalculateRiskFactorsRequest{}
+	req := riskmodels.CalculateRiskFactorsRequest{}
 	err = json.Unmarshal(body, &req)
 	if err != nil {
 		log.Printf("unable to unmarshal body (/calculationInterval), %v", err)
@@ -64,7 +64,7 @@ func (rm *RiskModel) calculateRiskFactors(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	res := models.CalculateRiskFactorsResponse{
+	res := riskmodels.CalculateRiskFactorsResponse{
 		WasUpdated: true,
 		Result:     current,
 	}
@@ -80,7 +80,7 @@ func (rm *RiskModel) calculateRiskFactors(w http.ResponseWriter, r *http.Request
 func (rm *RiskModel) calculationInterval(w http.ResponseWriter, r *http.Request) {
 	log.Printf("/calculationInterval called")
 
-	resp := models.CalculationIntervalResponse{
+	resp := riskmodels.CalculationIntervalResponse{
 		DurationNano: 50,
 	}
 

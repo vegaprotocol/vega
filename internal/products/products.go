@@ -11,9 +11,13 @@ var (
 	ErrUnimplementedProduct = errors.New("unimplemented product")
 )
 
+type FinancialAmount struct {
+	Asset  string
+	Amount uint64
+}
+
 type Product interface {
-	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
-	Value(markPrice uint64) (uint64, error)
+	Settle(entryPrice uint64, netPosition uint64) (*FinancialAmount, error)
 }
 
 func New(pp interface{}) (Product, error) {
