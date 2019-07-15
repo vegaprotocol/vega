@@ -120,6 +120,11 @@ func Error(val error) zap.Field {
 	return zap.Error(val)
 }
 
+// AccountType constructs a field with the given VEGA market proto value.
+func AccountType(at types.AccountType) zap.Field {
+	return zap.String("account_type", at.String())
+}
+
 // Candle constructs a field with the given VEGA candle proto value.
 func Candle(c types.Candle) zap.Field {
 	return zap.String("candle", c.String())
@@ -135,9 +140,19 @@ func Order(o types.Order) zap.Field {
 	return zap.String("order", o.String())
 }
 
+// OrderID constructs a field with the given VEGA market proto value.
+func OrderID(id string) zap.Field {
+	return zap.String("order_id", id)
+}
+
 // OrderWithTag constructs a field with the given VEGA order proto value and key equal to the tag string.
 func OrderWithTag(o types.Order, tag string) zap.Field {
 	return zap.String(tag, o.String())
+}
+
+// PendingOrder constructs a field with the given VEGA order proto value.
+func PendingOrder(po types.PendingOrder) zap.Field {
+	return zap.String("pendingorder", po.String())
 }
 
 // Trade constructs a field with the given VEGA trade proto value.
@@ -150,9 +165,19 @@ func Market(m types.Market) zap.Field {
 	return zap.String("market", m.String())
 }
 
+// MarketID constructs a field with the given VEGA market proto value.
+func MarketID(id string) zap.Field {
+	return zap.String("market_id", id)
+}
+
 // Party constructs a field with the given VEGA party proto value.
 func Party(p types.Party) zap.Field {
 	return zap.String("party", p.String())
+}
+
+// PartyID constructs a field with the given VEGA market proto value.
+func PartyID(id string) zap.Field {
+	return zap.String("party_id", id)
 }
 
 func Reflect(key string, val interface{}) zap.Field {
