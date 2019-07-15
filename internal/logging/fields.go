@@ -181,5 +181,5 @@ func PartyID(id string) zap.Field {
 }
 
 func Reflect(key string, val interface{}) zap.Field {
-	return zap.Reflect("key", val)
+	return zap.Reflect(key, val)
 }
