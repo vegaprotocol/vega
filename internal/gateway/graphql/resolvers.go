@@ -750,17 +750,14 @@ func (r *MyCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (st
 	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
 func (r *MyCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Interval, error) {
-	if obj == nil {
-		return IntervalI15m, ErrNilCandle
+	if obj != nil {
+		interval := Interval(obj.Interval.String())
+		if interval.IsValid() {
+			return interval, nil
+		}
 	}
-	interval := Interval(obj.Interval.String())
-	if interval.IsValid() {
-		return interval, nil
-	} else {
-		r.log.Debug("Interval conversion from proto to gql type failed, falling back to default: I15m",
-			logging.String("interval", interval.String()))
-		return IntervalI15m, nil
-	}
+	r.log.Debug("nil candle or invalid Interval. Falling back to default: I15m")
+	return IntervalI15m, nil
 }
 
 // END: Candle Resolver
