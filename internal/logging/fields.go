@@ -122,7 +122,7 @@ func Error(val error) zap.Field {
 
 // AccountType constructs a field with the given VEGA market proto value.
 func AccountType(at types.AccountType) zap.Field {
-	return zap.String("account_type", at.String())
+	return zap.String("account-type", at.String())
 }
 
 // Candle constructs a field with the given VEGA candle proto value.
