@@ -142,7 +142,7 @@ func Order(o types.Order) zap.Field {
 
 // OrderID constructs a field with the given VEGA market proto value.
 func OrderID(id string) zap.Field {
-	return zap.String("order_id", id)
+	return zap.String("order-id", id)
 }
 
 // OrderWithTag constructs a field with the given VEGA order proto value and key equal to the tag string.
@@ -167,7 +167,7 @@ func Market(m types.Market) zap.Field {
 
 // MarketID constructs a field with the given VEGA market proto value.
 func MarketID(id string) zap.Field {
-	return zap.String("market_id", id)
+	return zap.String("market-id", id)
 }
 
 // Party constructs a field with the given VEGA party proto value.
@@ -177,7 +177,7 @@ func Party(p types.Party) zap.Field {
 
 // PartyID constructs a field with the given VEGA market proto value.
 func PartyID(id string) zap.Field {
-	return zap.String("party_id", id)
+	return zap.String("party-id", id)
 }
 
 func Reflect(key string, val interface{}) zap.Field {
