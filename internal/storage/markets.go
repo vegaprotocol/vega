@@ -173,8 +173,8 @@ func (ms *Market) Close() error {
 // Note: markets total likely to be less than 1000 on a shard, short term.
 func DefaultMarketStoreOptions() ConfigOptions {
 	opts := DefaultStoreOptions()
-	loadToRam := cfgencoding.FileLoadingMode{FileLoadingMode: options.LoadToRAM}
-	opts.TableLoadingMode = loadToRam
-	opts.ValueLogLoadingMode = loadToRam
+	loadToRAM := cfgencoding.FileLoadingMode{FileLoadingMode: options.LoadToRAM}
+	opts.TableLoadingMode = loadToRAM
+	opts.ValueLogLoadingMode = loadToRAM
 	return opts
 }
