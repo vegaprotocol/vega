@@ -1068,8 +1068,8 @@ func (r *MySubscriptionResolver) Accounts(ctx context.Context, market *string, p
 	stream, err := r.tradingDataClient.AccountsSubscribe(ctx, req)
 	if err != nil {
 		r.log.Debug("Failed to subscribe to accounts",
-			logging.MarketID(*market),
-			logging.PartyID(*party),
+			logging.MarketID(mkt),
+			logging.PartyID(pty),
 			logging.Error(err),
 		)
 		return nil, ErrFailedToSubscribe
@@ -1116,8 +1116,8 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 	stream, err := r.tradingDataClient.OrdersSubscribe(ctx, req)
 	if err != nil {
 		r.log.Debug("Failed to subscribe to orders",
-			logging.MarketID(*market),
-			logging.PartyID(*party),
+			logging.MarketID(mkt),
+			logging.PartyID(pty),
 			logging.Error(err),
 		)
 		return nil, ErrFailedToSubscribe
@@ -1133,16 +1133,16 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 			o, err := stream.Recv()
 			if err == io.EOF {
 				r.log.Debug("orders: stream closed by server",
-					logging.MarketID(*market),
-					logging.PartyID(*party),
+					logging.MarketID(mkt),
+					logging.PartyID(pty),
 					logging.Error(err),
 				)
 				break
 			}
 			if err != nil {
 				r.log.Debug("orders: stream closed",
-					logging.MarketID(*market),
-					logging.PartyID(*party),
+					logging.MarketID(mkt),
+					logging.PartyID(pty),
 					logging.Error(err),
 				)
 				break
@@ -1176,8 +1176,8 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	stream, err := r.tradingDataClient.TradesSubscribe(ctx, req)
 	if err != nil {
 		r.log.Debug("Failed to subscribe to trades",
-			logging.MarketID(*market),
-			logging.PartyID(*party),
+			logging.MarketID(mkt),
+			logging.PartyID(pty),
 			logging.Error(err),
 		)
 		return nil, ErrFailedToSubscribe
@@ -1193,16 +1193,16 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 			t, err := stream.Recv()
 			if err == io.EOF {
 				r.log.Debug("trades: stream closed by server",
-					logging.MarketID(*market),
-					logging.PartyID(*party),
+					logging.MarketID(mkt),
+					logging.PartyID(pty),
 					logging.Error(err),
 				)
 				break
 			}
 			if err != nil {
 				r.log.Debug("trades: stream closed",
-					logging.MarketID(*market),
-					logging.PartyID(*party),
+					logging.MarketID(mkt),
+					logging.PartyID(pty),
 					logging.Error(err),
 				)
 				break
