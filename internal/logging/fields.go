@@ -152,7 +152,7 @@ func OrderWithTag(o types.Order, tag string) zap.Field {
 
 // PendingOrder constructs a field with the given VEGA order proto value.
 func PendingOrder(po types.PendingOrder) zap.Field {
-	return zap.String("pendingorder", po.String())
+	return zap.String("pending-order", po.String())
 }
 
 // Trade constructs a field with the given VEGA trade proto value.
