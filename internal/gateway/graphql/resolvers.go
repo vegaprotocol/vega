@@ -555,9 +555,17 @@ func (r *MyOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, err
 	return Side(obj.Side.String()), nil
 }
 func (r *MyOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market, error) {
-	return &Market{
-		ID: obj.MarketID,
-	}, nil
+	if obj == nil {
+		return nil, errors.New("invalid market")
+	}
+
+	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return MarketFromProto(res.Market)
 }
 func (r *MyOrderResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil

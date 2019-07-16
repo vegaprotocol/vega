@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"sync"
 
+	cfgencoding "code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/options"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 )
@@ -420,4 +422,14 @@ func (a *Account) Unsubscribe(id uint64) error {
 		logging.Uint64("subscriber-id", id))
 
 	return errors.New(fmt.Sprintf("Account store subscriber does not exist with id: %d", id))
+}
+
+// DefaultAccountStoreOptions supplies default options we use for account stores.
+// Currently we want to load account keys and value into RAM.
+func DefaultAccountStoreOptions() ConfigOptions {
+	opts := DefaultStoreOptions()
+	loadToRAM := cfgencoding.FileLoadingMode{FileLoadingMode: options.LoadToRAM}
+	opts.TableLoadingMode = loadToRAM
+	opts.ValueLogLoadingMode = loadToRAM
+	return opts
 }
