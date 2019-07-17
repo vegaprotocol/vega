@@ -27,6 +27,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrTraderDoNotExists = errors.New("trader does not exist")
+)
+
 type Market struct {
 	log *logging.Logger
 
@@ -249,16 +253,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	start := time.Now()
 	party, _ := m.parties.GetByID(order.PartyID)
 	if party == nil {
-		if err := m.parties.Post(&types.Party{Id: order.PartyID}); err != nil {
-			return nil, err
-		}
-		/*
-			// create accounts if needed
-			m.mkt.GetAsset()
-			if err := m.collateral.AddTraderToMarket(m.GetID(), order.PartyID, ); err != nil {
-				return nil, err
-			}
-		*/
+		// trader should be created before even trying to post order
+		return nil, ErrTraderDoNotExists
 	}
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "partystore", "GetByID/Post")
 

@@ -151,7 +151,7 @@ func NewEngine(
 	}
 
 	// create the party engine
-	e.party = NewParty(log, e.collateral, pmkts)
+	e.party = NewParty(log, e.collateral, pmkts, e.partyStore)
 
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
