@@ -3,6 +3,7 @@ package execution
 import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 const (
@@ -27,18 +28,29 @@ type Party struct {
 	log        *logging.Logger
 	collateral Collateral
 	markets    []proto.Market
+	store      PartyStore
 }
 
-func NewParty(log *logging.Logger, col Collateral, markets []proto.Market) *Party {
+func NewParty(
+	log *logging.Logger, col Collateral, markets []proto.Market, store PartyStore,
+) *Party {
 	return &Party{
 		log:        log,
 		collateral: col,
 		markets:    markets,
+		store:      store,
 	}
 }
 
 func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 	alreadyTopUp := map[string]struct{}{}
+
+	// ignore erros as they can only happen when the party already exists
+	err := p.store.Post(&types.Party{Id: notif.TraderID})
+	if err == nil {
+		p.log.Info("New party created",
+			logging.String("party-id", notif.TraderID))
+	}
 
 	for _, mkt := range p.markets {
 		asset, err := mkt.GetAsset()
