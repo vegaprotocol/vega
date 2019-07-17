@@ -432,6 +432,13 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 			logging.Error(err))
 	}
 
+	_, err = m.position.UnregisterOrder(order)
+	if err != nil {
+		m.log.Error("Failure unregistering order in positions engine (cancel)",
+			logging.Order(*order),
+			logging.Error(err))
+	}
+
 	return cancellation, nil
 }
 
