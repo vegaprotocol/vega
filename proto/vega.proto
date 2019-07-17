@@ -41,6 +41,8 @@ message Order {
     GTT = 1;
     ENE = 2;
     FOK = 3;
+    NDT = 4; // Network Distressed Traders
+    NRT = 5; // Network Regular Traders
   }
 
   enum Status {
