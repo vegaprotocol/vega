@@ -250,11 +250,14 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		metrics.OrderGaugeAdd(1, order.MarketID)
 	}
 	conf, err := mkt.SubmitOrder(order)
+	if err != nil {
+		return nil, err
+	}
 	// order was filled by submitting it to the market -> the matching engine worked
 	if conf.Order.Status == types.Order_Filled {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
-	return conf, err
+	return conf, nil
 }
 
 // AmendOrder take order amendment details and attempts to amend the order
