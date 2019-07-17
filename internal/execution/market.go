@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	ErrTraderDoNotExists = errors.New("trader do not exists")
+	ErrTraderDoNotExists = errors.New("trader does not exist")
 )
 
 type Market struct {
