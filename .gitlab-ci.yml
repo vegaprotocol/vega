@@ -20,9 +20,8 @@ cache:
     - ${VENDOR_DIR}
 
 stages:
-  - deps
-  - test
   - build
+  - test
   - deploy
 
 before_script:
@@ -47,10 +46,15 @@ after_script:
   - for d in ${PKGMOD_DIR} ${VENDOR_DIR} ; do echo "There are $(find "$d" | wc -l) files/dirs in $d" ; done
   - rm -rf ~/.ssh
 
-deps:
-  stage: deps
+build_vega:
+  stage: build
   script:
     - make deps
+    - make install
+  artifacts:
+    paths:
+      - ${BIN_DIR}
+    expire_in: 2 weeks
 
 unit_tests:
   stage: test
@@ -101,15 +105,6 @@ vet:
     - make vet
   only:
     - /^(master$|develop$|release/|v[0-9])/
-
-build_vega:
-  stage: build
-  script:
-    - make install
-  artifacts:
-    paths:
-      - ${BIN_DIR}
-    expire_in: 2 weeks
 
 push_to_devnet:
   stage: deploy
