@@ -129,3 +129,5 @@ publish-docker:
     - docker build -t "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" -f Dockerfile.quick . || exit 1
     - docker push "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" || exit 1
     - for app in vega vegabench ; do rm -f "./$app"; done
+  only:
+    - /^(master$|develop$|release/|v[0-9])/
