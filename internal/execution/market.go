@@ -287,6 +287,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "orderstore", "Post/Put")
 
+	m.position.RegisterOrder(order)
+
 	if confirmation.Trades != nil {
 		// orders can contain several trades, each trade involves 2 traders
 		// so there's a max number of N*2 events on the channel where N == number of trades
@@ -426,6 +428,13 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 			logging.Error(err))
 	}
 
+	_, err = m.position.UnregisterOrder(order)
+	if err != nil {
+		m.log.Error("Failure unregistering order in positions engine (cancel)",
+			logging.Order(*order),
+			logging.Error(err))
+	}
+
 	return cancellation, nil
 }
 
@@ -497,6 +506,17 @@ func (m *Market) AmendOrder(
 		newOrder.ExpiresAt = orderAmendment.ExpiresAt
 		expiryChange = true
 	}
+
+	// Unregister existing order to remove order volume from potential position.
+	_, err := m.position.UnregisterOrder(existingOrder)
+	if err != nil {
+		m.log.Error("Failure unregistering existing order in positions engine (amend)",
+			logging.Order(*existingOrder),
+			logging.Error(err))
+	}
+
+	// Register amended order to add order volume to potential position.
+	m.position.RegisterOrder(newOrder)
 
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
