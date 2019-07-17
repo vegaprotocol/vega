@@ -71,6 +71,91 @@ func TestRemoveDistressedEmpty(t *testing.T) {
 	assert.Empty(t, ret)
 }
 
+func TestRegisterUnregiserOrder(t *testing.T) {
+	t.Run("Test sucessful order register", testRegisterOrderSuccessful)
+	t.Run("Test sucessful order unregister", testUnregisterOrderSuccessful)
+	t.Run("Test unsucessful order unregister", testUnregisterOrderUnsuccessful)
+}
+
+func testRegisterOrderSuccessful(t *testing.T) {
+	const (
+		buysize  int64 = 123
+		sellsize int64 = 456
+	)
+	e := getTestEngine(t)
+	orderBuy := proto.Order{
+		PartyID: "test_trader",
+		Side:    proto.Side_Buy,
+		Size:    uint64(buysize),
+	}
+	pos, err := e.RegisterOrder(&orderBuy)
+	assert.NoError(t, err)
+	assert.Equal(t, buysize, pos.Buy())
+	assert.Zero(t, pos.Sell())
+	assert.Zero(t, pos.Price())
+	assert.Zero(t, pos.Size())
+
+	orderSell := proto.Order{
+		PartyID: "test_trader",
+		Side:    proto.Side_Sell,
+		Size:    uint64(sellsize),
+	}
+	pos, err = e.RegisterOrder(&orderSell)
+	assert.NoError(t, err)
+	assert.Equal(t, buysize, pos.Buy())
+	assert.Equal(t, sellsize, pos.Sell())
+	assert.Zero(t, pos.Price())
+	assert.Zero(t, pos.Size())
+
+}
+
+func testUnregisterOrderSuccessful(t *testing.T) {
+	const (
+		buysize  int64 = 123
+		sellsize int64 = 456
+	)
+	e := getTestEngine(t)
+	orderBuy := proto.Order{
+		PartyID: "test_trader",
+		Side:    proto.Side_Buy,
+		Size:    uint64(buysize),
+	}
+	pos, err := e.RegisterOrder(&orderBuy)
+	assert.NoError(t, err)
+	assert.Equal(t, buysize, pos.Buy())
+
+	pos, err = e.UnregisterOrder(&orderBuy)
+	assert.NoError(t, err)
+	assert.Zero(t, pos.Buy())
+
+	orderSell := proto.Order{
+		PartyID: "test_trader",
+		Side:    proto.Side_Sell,
+		Size:    uint64(sellsize),
+	}
+	pos, err = e.RegisterOrder(&orderSell)
+	assert.NoError(t, err)
+	assert.Zero(t, pos.Buy())
+	assert.Equal(t, sellsize, pos.Sell())
+
+	pos, err = e.UnregisterOrder(&orderSell)
+	assert.NoError(t, err)
+	assert.Zero(t, pos.Buy())
+	assert.Zero(t, pos.Sell())
+}
+
+func testUnregisterOrderUnsuccessful(t *testing.T) {
+	e := getTestEngine(t)
+	orderBuy := proto.Order{
+		PartyID: "test_trader",
+		Side:    proto.Side_Buy,
+		Size:    uint64(999),
+	}
+	pos, err := e.UnregisterOrder(&orderBuy)
+	assert.Equal(t, err, positions.ErrPositionNotFound)
+	assert.Nil(t, pos)
+}
+
 func getTestEngine(t *testing.T) *positions.Engine {
 	return positions.New(
 		logging.NewTestLogger(), positions.NewDefaultConfig(),
