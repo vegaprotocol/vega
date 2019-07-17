@@ -2,6 +2,7 @@ package collateral_test
 
 import (
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/collateral/mocks"
@@ -240,7 +241,7 @@ func testDistributeWin(t *testing.T) {
 	// total amount to distribute -> settlement == 2 * price, insurance == 1 * price
 	factor := (3 * price) / 3
 
-	eng.buf.EXPECT().Add(gomock.Any()).Times(2).Do(func(acc types.Account) {
+	eng.buf.EXPECT().Add(gomock.Any()).Times(4).Do(func(acc types.Account) {
 		if acc.Owner == trader && acc.Type == types.AccountType_MARGIN {
 			assert.Equal(t, factor, acc.Balance)
 		}
@@ -320,7 +321,7 @@ func testProcessBoth(t *testing.T) {
 	}
 
 	// next up, updating the balance of the traders' general accounts
-	eng.buf.EXPECT().Add(gomock.Any()).Times(5).Do(func(acc types.Account) {
+	eng.buf.EXPECT().Add(gomock.Any()).Times(7).Do(func(acc types.Account) {
 		if acc.Owner == moneyTrader && acc.Type == types.AccountType_MARGIN {
 			// assert.Equal(t, int64(3000), acc.Balance)
 		}
@@ -399,7 +400,7 @@ func testProcessBothProRated(t *testing.T) {
 		},
 	}
 
-	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
+	eng.buf.EXPECT().Add(gomock.Any()).Times(7)
 	responses, err := eng.Transfer(testMarketID, pos)
 	assert.Equal(t, 2, len(responses))
 	assert.NoError(t, err)
@@ -472,7 +473,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 		},
 	}
 
-	eng.buf.EXPECT().Add(gomock.Any()).Times(5)
+	eng.buf.EXPECT().Add(gomock.Any()).Times(7)
 	// quickly get the interface mocked for this test
 	transfers := getMTMTransfer(pos)
 	responses, err := eng.MarkToMarket(testMarketID, transfers)
@@ -497,7 +498,7 @@ func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEng
 	conf := collateral.NewDefaultConfig()
 	buf.EXPECT().Add(gomock.Any()).Times(2)
 
-	eng, err := collateral.New(logging.NewTestLogger(), conf, buf)
+	eng, err := collateral.New(logging.NewTestLogger(), conf, buf, time.Now())
 	assert.Nil(t, err)
 
 	// create market and traders used for tests

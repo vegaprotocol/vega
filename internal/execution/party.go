@@ -29,17 +29,38 @@ type Party struct {
 	collateral Collateral
 	markets    []proto.Market
 	store      PartyStore
+	parties    map[string]map[string]struct{}
 }
 
 func NewParty(
 	log *logging.Logger, col Collateral, markets []proto.Market, store PartyStore,
 ) *Party {
+	parties := map[string]map[string]struct{}{}
+
+	for _, v := range markets {
+		parties[v.Id] = map[string]struct{}{}
+	}
+
 	return &Party{
 		log:        log,
 		collateral: col,
 		markets:    markets,
 		store:      store,
+		parties:    parties,
 	}
+}
+
+func (p *Party) GetForMarket(mktID string) []string {
+	parties := p.parties[mktID]
+	out := make([]string, 0, len(parties))
+	for k, _ := range parties {
+		out = append(out, k)
+	}
+	return out
+}
+
+func (p *Party) addParty(ptyID, mktID string) {
+	p.parties[mktID][ptyID] = struct{}{}
 }
 
 func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
@@ -53,6 +74,7 @@ func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 	}
 
 	for _, mkt := range p.markets {
+		p.addParty(notif.TraderID, mkt.Id)
 		asset, err := mkt.GetAsset()
 		if err != nil {
 			p.log.Error("unable to get market asset",
