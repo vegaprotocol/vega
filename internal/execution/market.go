@@ -511,6 +511,17 @@ func (m *Market) AmendOrder(
 		expiryChange = true
 	}
 
+	// Unregister existing order to remove order volume from potential position.
+	_, err := m.position.UnregisterOrder(existingOrder)
+	if err != nil {
+		m.log.Error("Failure unregistering existing order in positions engine (amend)",
+			logging.Order(*existingOrder),
+			logging.Error(err))
+	}
+
+	// Register amended order to add order volume to potential position.
+	m.position.RegisterOrder(newOrder)
+
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
