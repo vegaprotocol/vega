@@ -16,6 +16,8 @@ import (
 type MarketPosition interface {
 	Party() string
 	Size() int64
+	Buy() int64
+	Sell() int64
 	Price() uint64
 }
 
@@ -78,10 +80,7 @@ func (e *Engine) updatePosition(p MarketPosition, price uint64) {
 	party := p.Party()
 	ps, ok := e.pos[party]
 	if !ok {
-		ps = &pos{
-			party: party,
-		}
-		e.pos[party] = ps
+		e.pos[party] = newPos(party)
 	}
 	// price can come from either position, or trade (Update vs SettleMTM)
 	ps.price = price
@@ -91,10 +90,7 @@ func (e *Engine) updatePosition(p MarketPosition, price uint64) {
 func (e *Engine) getPosition(party string) pos {
 	ps, ok := e.pos[party]
 	if !ok {
-		ps = &pos{
-			party: party,
-		}
-		e.pos[party] = ps
+		e.pos[party] = newPos(party)
 	}
 	return *ps
 }

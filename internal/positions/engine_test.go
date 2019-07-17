@@ -78,9 +78,9 @@ func getTestEngine(t *testing.T) *positions.Engine {
 }
 
 type mp struct {
-	size  int64
-	party string
-	price uint64
+	size, buy, sell int64
+	party           string
+	price           uint64
 }
 
 func (m mp) Party() string {
@@ -89,6 +89,14 @@ func (m mp) Party() string {
 
 func (m mp) Size() int64 {
 	return m.size
+}
+
+func (m mp) Buy() int64 {
+	return m.buy
+}
+
+func (m mp) Sell() int64 {
+	return m.sell
 }
 
 func (m mp) Price() uint64 {

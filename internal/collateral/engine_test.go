@@ -526,6 +526,8 @@ type mtmFake struct {
 func (m mtmFake) Party() string             { return "" }
 func (m mtmFake) Size() int64               { return 0 }
 func (m mtmFake) Price() uint64             { return 0 }
+func (m mtmFake) Buy() int64                { return 0 }
+func (m mtmFake) Sell() int64               { return 0 }
 func (m mtmFake) Transfer() *types.Transfer { return m.t }
 
 func getMTMTransfer(transfers []*types.Transfer) []events.Transfer {

@@ -1,6 +1,7 @@
 package positions
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -10,11 +11,20 @@ import (
 )
 
 type MarketPosition struct {
-	size    int64
+	// Actual volume
+	size int64
+	// Potential volume (orders not yet accepted/rejected)
+	buy, sell int64
+
 	margins map[string]uint64
 	partyID string
 	price   uint64
 }
+
+// Errors
+var (
+	ErrPositionNotFound = errors.New("position not found")
+)
 
 func (m MarketPosition) String() string {
 	return fmt.Sprintf("size: %v, margins: %v, partyID: %v", m.size, m.margins, m.partyID)
@@ -32,6 +42,14 @@ func (m *MarketPosition) Margins() map[string]uint64 {
 // UpdateMargin updates the margin value for a single asset
 func (m *MarketPosition) UpdateMargin(assetID string, margin uint64) {
 	m.margins[assetID] = margin
+}
+
+func (m MarketPosition) Buy() int64 {
+	return m.buy
+}
+
+func (m MarketPosition) Sell() int64 {
+	return m.sell
 }
 
 func (m MarketPosition) Size() int64 {
@@ -84,6 +102,44 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Unlock()
 }
 
+// RegisterOrder updates the potential positions for a submitted order, as though
+// the order were already accepted.
+// It returns the updated position.
+// The margins+risk engines need the updated position to determine whether the
+// order should be accepted.
+func (e *Engine) RegisterOrder(order *types.Order) (events.MarketPosition, error) {
+	e.mu.Lock()
+	pos, found := e.positions[order.PartyID]
+	if !found {
+		pos = &MarketPosition{partyID: order.PartyID}
+		e.positions[order.PartyID] = pos
+	}
+	if order.Side == types.Side_Buy {
+		pos.buy += int64(order.Size)
+	} else {
+		pos.sell += int64(order.Size)
+	}
+	e.mu.Unlock()
+	return pos, nil
+}
+
+// UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
+// has been rejected by the Risk Engine, or when an order is amended or canceled.
+func (e *Engine) UnregisterOrder(order *types.Order) (events.MarketPosition, error) {
+	e.mu.Lock()
+	pos, found := e.positions[order.PartyID]
+	e.mu.Unlock()
+	if !found {
+		return nil, ErrPositionNotFound
+	}
+	if order.Side == types.Side_Buy {
+		pos.buy -= int64(order.Size)
+	} else {
+		pos.sell -= int64(order.Size)
+	}
+	return pos, nil
+}
+
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
 func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	// Not using defer e.mu.Unlock(), because defer calls add some overhead
@@ -112,9 +168,15 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	}
 	// mark to market for all open positions
 	e.updatePositions(trade)
-	// update long/short position for buyer and seller
+	// Update long/short actual position for buyer and seller.
+	// The buyer's position increases and the seller's position decreases.
 	buyer.size += int64(trade.Size)
 	seller.size -= int64(trade.Size)
+
+	// Update potential positions. Potential positions decrease for both buyer and seller.
+	buyer.buy -= int64(trade.Size)
+	seller.sell -= int64(trade.Size)
+
 	// these positions need to be added, too
 	// in case the price of the trade != mark price
 	ch <- buyer

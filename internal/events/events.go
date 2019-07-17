@@ -8,6 +8,8 @@ import (
 type MarketPosition interface {
 	Party() string
 	Size() int64
+	Buy() int64
+	Sell() int64
 	Price() uint64
 }
 

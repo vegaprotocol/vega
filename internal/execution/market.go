@@ -291,6 +291,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "orderstore", "Post/Put")
 
+	m.position.RegisterOrder(order)
+
 	if confirmation.Trades != nil {
 		// orders can contain several trades, each trade involves 2 traders
 		// so there's a max number of N*2 events on the channel where N == number of trades
