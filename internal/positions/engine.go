@@ -16,7 +16,6 @@ type MarketPosition struct {
 	// Potential volume (orders not yet accepted/rejected)
 	buy, sell int64
 
-	margins map[string]uint64
 	partyID string
 	price   uint64
 }
@@ -27,21 +26,7 @@ var (
 )
 
 func (m MarketPosition) String() string {
-	return fmt.Sprintf("size: %v, margins: %v, partyID: %v", m.size, m.margins, m.partyID)
-}
-
-// Margins returns a copy of the current margins map
-func (m *MarketPosition) Margins() map[string]uint64 {
-	out := make(map[string]uint64, len(m.margins))
-	for k, v := range m.margins {
-		out[k] = v
-	}
-	return out
-}
-
-// UpdateMargin updates the margin value for a single asset
-func (m *MarketPosition) UpdateMargin(assetID string, margin uint64) {
-	m.margins[assetID] = margin
+	return fmt.Sprintf("size: %v, partyID: %v", m.size, m.partyID)
 }
 
 func (m MarketPosition) Buy() int64 {
@@ -152,7 +137,6 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
 		buyer = &MarketPosition{
-			margins: map[string]uint64{},
 			partyID: trade.Buyer,
 		}
 		e.positions[trade.Buyer] = buyer
@@ -161,7 +145,6 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	seller, ok := e.positions[trade.Seller]
 	if !ok {
 		seller = &MarketPosition{
-			margins: map[string]uint64{},
 			partyID: trade.Seller,
 		}
 		e.positions[trade.Seller] = seller

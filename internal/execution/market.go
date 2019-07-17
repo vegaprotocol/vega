@@ -185,7 +185,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 		logging.String("market-id", m.mkt.Id))
 
 	m.risk.CalculateFactors(t)
-	m.risk.UpdatePositions(m.markPrice, m.position.Positions())
 
 	m.log.Debug("Calculated risk factors and updated positions (maybe)",
 		logging.String("market-id", m.mkt.Id))
