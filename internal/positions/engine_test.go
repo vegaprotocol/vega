@@ -94,6 +94,9 @@ func testRegisterOrderSuccessful(t *testing.T) {
 	assert.Zero(t, pos.Sell())
 	assert.Zero(t, pos.Price())
 	assert.Zero(t, pos.Size())
+	positions := e.Positions()
+	assert.Equal(t, 1, len(positions))
+	assert.Equal(t, pos.Buy(), positions[0].Buy())
 
 	orderSell := proto.Order{
 		PartyID: "test_trader",
@@ -106,7 +109,10 @@ func testRegisterOrderSuccessful(t *testing.T) {
 	assert.Equal(t, sellsize, pos.Sell())
 	assert.Zero(t, pos.Price())
 	assert.Zero(t, pos.Size())
-
+	positions = e.Positions()
+	assert.Equal(t, 1, len(positions))
+	assert.Equal(t, pos.Buy(), positions[0].Buy())
+	assert.Equal(t, pos.Sell(), positions[0].Sell())
 }
 
 func testUnregisterOrderSuccessful(t *testing.T) {
