@@ -80,7 +80,8 @@ func (e *Engine) updatePosition(p MarketPosition, price uint64) {
 	party := p.Party()
 	ps, ok := e.pos[party]
 	if !ok {
-		e.pos[party] = newPos(party)
+		ps = newPos(party)
+		e.pos[party] = ps
 	}
 	// price can come from either position, or trade (Update vs SettleMTM)
 	ps.price = price
@@ -211,11 +212,10 @@ func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
 				if !ok {
 					trades = []*pos{}
 				}
-				e.closed[trader] = append(trades, &pos{
-					party: trader,
-					size:  closed,
-					price: current.price, // we closed out at the old price vs mark price
-				})
+				pos := newPos(trader)
+				pos.size = closed
+				pos.price = current.price // we closed out at the old price vs mark price
+				e.closed[trader] = append(trades, pos)
 			}
 			// we've taken the closed out stuff into account, so we can freely update the size here
 			current.size = size
@@ -347,9 +347,7 @@ func getMTMAmount(markPrice, currentPrice, currentSize, newSize, newPrice int64)
 func (e *Engine) getCurrentPosition(trader string) *pos {
 	p, ok := e.pos[trader]
 	if !ok {
-		p = &pos{
-			party: trader,
-		}
+		p = newPos(trader)
 		e.pos[trader] = p
 	}
 	return p
