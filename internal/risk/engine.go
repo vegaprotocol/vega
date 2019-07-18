@@ -2,14 +2,12 @@ package risk
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/events"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/positions"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -82,29 +80,6 @@ func (re *Engine) CalculateFactors(now time.Time) {
 		re.factors = result
 	} else {
 		re.waiting = true
-	}
-}
-
-func (re *Engine) UpdatePositions(markPrice uint64, positions []positions.MarketPosition) {
-	// todo(cdm): fix mark price overflow problems
-	// todo(cdm): return action to possibly return action to update margin elsewhere rather than direct
-
-	for _, pos := range positions {
-		notional := int64(markPrice) * pos.Size()
-		for assetId, factor := range re.factors.RiskFactors {
-			if pos.Size() > 0 {
-				pos.UpdateMargin(assetId, uint64(float64(abs(notional))*factor.Long))
-			} else {
-				pos.UpdateMargin(assetId, uint64(float64(abs(notional))*factor.Short))
-			}
-
-			re.cfgMu.Lock()
-			if re.LogMarginUpdate {
-				re.log.Debug("Margins updated for position",
-					logging.String("position", fmt.Sprintf("%+v", pos)))
-			}
-			re.cfgMu.Unlock()
-		}
 	}
 }
 

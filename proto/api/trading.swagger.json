@@ -41,6 +41,32 @@
         ]
       }
     },
+    "/fountain": {
+      "post": {
+        "operationId": "NotifyTraderAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiNotifyTraderAccountResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiNotifyTraderAccountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/markets": {
       "get": {
         "operationId": "Markets",
@@ -725,6 +751,14 @@
           "items": {
             "$ref": "#/definitions/vegaMarket"
           }
+        }
+      }
+    },
+    "apiNotifyTraderAccountRequest": {
+      "type": "object",
+      "properties": {
+        "notif": {
+          "$ref": "#/definitions/vegaNotifyTraderAccount"
         }
       }
     },
