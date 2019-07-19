@@ -41,8 +41,11 @@ message Order {
     GTT = 1;
     ENE = 2;
     FOK = 3;
-    NDT = 4; // Network Distressed Traders
-    NRT = 5; // Network Regular Traders
+  }
+
+  enum Action {
+    NDT = 0; // Network Distressed Traders
+    NRT = 1; // Network Regular Traders
   }
 
   enum Status {
@@ -61,10 +64,11 @@ message Order {
   uint64 size = 6;
   uint64 remaining = 7;
   Type type = 8;
-  int64 createdAt = 9;
-  Status status = 10;
-  int64 expiresAt = 11;
-  string reference = 12;
+  Action action = 9;
+  int64 createdAt = 10;
+  Status status = 11;
+  int64 expiresAt = 12;
+  string reference = 13;
 }
 
 message OrderCancellationConfirmation {
