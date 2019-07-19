@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
@@ -259,6 +260,59 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 	}
 
 	return expiredOrders
+}
+
+func (b *OrderBook) RemoveDistressedOrders(traders []events.MarketPosition) error {
+	for _, trader := range traders {
+		total := trader.Buy() + trader.Sell()
+		if total == 0 {
+			continue
+		}
+		orders := make([]*types.Order, 0, int(total))
+		if trader.Buy() > 0 {
+			i := int(trader.Buy())
+			for _, l := range b.buy.levels {
+				rm := l.getOrdersByTrader(trader.PartyID())
+				i -= len(rm)
+				orders = append(orders, rm...)
+				if i == 0 {
+					break
+				}
+			}
+		}
+		if trader.Sell() > 0 {
+			i := int(trader.Sell())
+			for _, l := range b.sell.levels {
+				rm := l.getOrdersByTrader(trader.PartyID())
+				i -= len(rm)
+				orders = append(orders, rm...)
+				if i == 0 {
+					break
+				}
+			}
+		}
+		for _, o := range orders {
+			confirm, err := b.CancelOrder(o)
+			if err != nil {
+				b.log.Error(
+					"Failed to cancel a given order for trader",
+					logging.Order(*o),
+					logging.String("trader", trader.Party()),
+					logging.Error(err),
+				)
+				// let's see whether we need to handle this further down
+				continue
+			}
+			if err := b.DeleteOrder(confirm.Order); err != nil {
+				b.log.Error(
+					"Failed to remove cancelled order",
+					logging.Order(*confirm.Order),
+					logging.Error(err),
+				)
+			}
+		}
+	}
+	return nil
 }
 
 func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {
