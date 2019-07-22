@@ -234,8 +234,22 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 			closed = append(closed, update) // update interface embeds events.MarketPosition
 		} else {
 			response = append(response, res)
+			for _, v := range res.GetTransfers() {
+				// increment the to account
+				if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+					e.log.Error(
+						"Failed to increment balance for account",
+						logging.String("account-id", v.ToAccount),
+						logging.Int64("amount", v.Amount),
+						logging.Error(err),
+					)
+					continue
+				}
+			}
+
 		}
 	}
+
 	return response, closed, nil
 }
 
