@@ -241,13 +241,16 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(9).DoAndReturn(func(acc types.Account) {
 
 		fmt.Printf("ACCOUNT: %v\n", acc)
-		// if Margin -> 0
-		if acc.Type == types.AccountType_MARGIN {
-			assert.Equal(t, acc.Balance, int64(0))
+		// if general, is should be back to the original topup as no
+		// trade happend
+		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {
+			// lost monies because oracle return 42 for eth price
+			assert.Equal(t, acc.Balance, int64(999999994200))
 		}
 		// if general, is should be back to the original topup as no
 		// trade happend
-		if acc.Type == types.AccountType_GENERAL {
+		// loose no monies
+		if acc.Type == types.AccountType_GENERAL && party2 == acc.Owner {
 			assert.Equal(t, acc.Balance, int64(1000000000000))
 		}
 	})
