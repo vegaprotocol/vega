@@ -187,6 +187,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	fmt.Printf("closingAt: %v --------------------------- now: %v\n", m.closingAt.Unix(), t.Unix())
 	closed = t.After(m.closingAt)
 	m.closed = closed
 
@@ -230,22 +231,35 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 					logging.Error(err),
 				)
 			} else {
-				// use transfers, unused var thingy
-				m.log.Debug(
-					"Got transfers on market close",
-					logging.String("transfers-dump", fmt.Sprintf("%#v", transfers)),
-					logging.String("market-id", m.GetID()),
-				)
+				if m.log.GetLevel() == logging.DebugLevel {
+					// use transfers, unused var thingy
+					for _, v := range transfers {
+						m.log.Debug(
+							"Got transfers on market close",
+							logging.String("transfer", fmt.Sprintf("%v", *v)),
+							logging.String("market-id", m.GetID()),
+						)
+					}
+				}
 
 				asset, _ := m.mkt.GetAsset()
 				parties := m.partyEngine.GetForMarket(m.GetID())
 				clearMarketTransfers, err := m.collateral.ClearMarket(m.GetID(), asset, parties)
 				if err != nil {
-					m.log.Debug(
-						"Clear market error",
-						logging.String("transfers-dump", fmt.Sprintf("%#v", clearMarketTransfers)),
+					m.log.Error("Clear market error",
 						logging.String("market-id", m.GetID()),
-					)
+						logging.Error(err))
+				} else {
+					if m.log.GetLevel() == logging.DebugLevel {
+						// use transfers, unused var thingy
+						for _, v := range clearMarketTransfers {
+							m.log.Debug(
+								"Market cleared with success",
+								logging.String("transfer", fmt.Sprintf("%v", *v)),
+								logging.String("market-id", m.GetID()),
+							)
+						}
+					}
 				}
 
 			}
@@ -326,6 +340,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		m.settlement.ListenClosed(tradersCh)
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
+			fmt.Printf("------------------------------- TRADE: %v\n", trade)
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
 			if order.Side == types.Side_Buy {
 				trade.BuyOrder = order.Id
