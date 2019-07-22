@@ -192,6 +192,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.closed = closed
 
 	m.currentTime = t
+
 	// TODO(): handle market start time
 
 	m.log.Debug("Calculating risk factors (if required)",
@@ -340,7 +341,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		m.settlement.ListenClosed(tradersCh)
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
-			fmt.Printf("------------------------------- TRADE: %v\n", trade)
+			// fmt.Printf("------------------------------- TRADE: %v\n", trade)
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
 			if order.Side == types.Side_Buy {
 				trade.BuyOrder = order.Id
