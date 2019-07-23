@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func tempDir(t *testing.T, prefix string) string {
+func TempDir(t *testing.T, prefix string) string {
 	baseTempDirs := []string{"/dev/shm", os.TempDir()}
 	for _, baseTempDir := range baseTempDirs {
 		_, err := os.Stat(baseTempDir)
@@ -25,7 +25,7 @@ func tempDir(t *testing.T, prefix string) string {
 }
 
 func runBadgerStoreTest(t *testing.T, opts *badger.Options, test func(t *testing.T, bs *badgerStore)) {
-	dir := tempDir(t, "badger-test")
+	dir := TempDir(t, "badger-test")
 	defer os.RemoveAll(dir)
 
 	if opts == nil {
