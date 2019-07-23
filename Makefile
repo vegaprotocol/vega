@@ -51,14 +51,14 @@ msan: ## Run memory sanitizer
 vet: ## Run go vet
 	@go vet -all ./...
 
-.PRECIOUS: .testCoverage.txt
+.PHONY: .testCoverage.txt
 .testCoverage.txt:
 	@go test -covermode=count -coverprofile="$@" ./...
 	@go tool cover -func="$@"
 
 coverage: .testCoverage.txt ## Generate global code coverage report
 
-.PRECIOUS: .testCoverage.html
+.PHONY: .testCoverage.html
 .testCoverage.html: .testCoverage.txt
 	@go tool cover -html="$^" -o "$@"
 
