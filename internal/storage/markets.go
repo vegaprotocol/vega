@@ -1,13 +1,12 @@
 package storage
 
 import (
-	"github.com/dgraph-io/badger/options"
-
 	cfgencoding "code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/options"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
@@ -28,11 +27,11 @@ func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
 
 	err := InitStoreDirectory(c.MarketsDirPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "error on init badger database for candles storage")
+		return nil, errors.Wrap(err, "error on init badger database for market storage")
 	}
 	db, err := badger.Open(getOptionsFromConfig(c.Markets, c.MarketsDirPath, log))
 	if err != nil {
-		return nil, errors.Wrap(err, "error opening badger database for candles storage")
+		return nil, errors.Wrap(err, "error opening badger database for market storage")
 	}
 	bs := badgerStore{db: db}
 	return &Market{
@@ -59,9 +58,13 @@ func (m *Market) ReloadConf(cfg Config) {
 func (ms *Market) Post(market *types.Market) error {
 	buf, err := proto.Marshal(market)
 	if err != nil {
+		mktID := "nil"
+		if market != nil {
+			mktID = market.Id
+		}
 		ms.log.Error("unable to marshal market",
 			logging.Error(err),
-			logging.String("market-id", market.Id),
+			logging.String("market-id", mktID),
 		)
 		return err
 	}
