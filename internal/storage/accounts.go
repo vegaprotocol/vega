@@ -428,8 +428,7 @@ func (a *Account) Unsubscribe(id uint64) error {
 // Currently we want to load account keys and value into RAM.
 func DefaultAccountStoreOptions() ConfigOptions {
 	opts := DefaultStoreOptions()
-	loadToRAM := cfgencoding.FileLoadingMode{FileLoadingMode: options.LoadToRAM}
-	opts.TableLoadingMode = loadToRAM
-	opts.ValueLogLoadingMode = loadToRAM
+	opts.TableLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.LoadToRAM}
+	opts.ValueLogLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.MemoryMap}
 	return opts
 }
