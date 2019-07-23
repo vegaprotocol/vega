@@ -4,13 +4,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dgraph-io/badger"
-	"github.com/stretchr/testify/assert"
-
 	"code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/dgraph-io/badger"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
