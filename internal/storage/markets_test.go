@@ -20,9 +20,8 @@ const (
 
 func TestMarkets(t *testing.T) {
 	config := storage.Config{
-		Level: encoding.LogLevel{Level: logging.DebugLevel},
-		// TODO: Use storage.DefaultMarketStoreOptions()
-		Markets:        storage.DefaultStoreOptions(),
+		Level:          encoding.LogLevel{Level: logging.DebugLevel},
+		Markets:        storage.DefaultMarketStoreOptions(),
 		MarketsDirPath: storage.TempDir(t, "markets"),
 	}
 	defer os.RemoveAll(config.MarketsDirPath)
