@@ -97,9 +97,10 @@ func (e *Engine) getPosition(party string) pos {
 }
 
 func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
-	e.mu.Lock()
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
+	e.mu.Lock()
 	positions, err := e.settleAll()
+	e.mu.Unlock()
 	if err != nil {
 		e.log.Error(
 			"Something went wrong trying to settle positions",
@@ -107,7 +108,6 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 		)
 		return nil, err
 	}
-	e.mu.Unlock()
 	return positions, nil
 }
 
