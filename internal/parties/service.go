@@ -3,6 +3,7 @@ package parties
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -12,11 +13,6 @@ type PartyStore interface {
 	Post(party *types.Party) error
 	GetByID(id string) (*types.Party, error)
 	GetAll() ([]*types.Party, error)
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  Blockchain
-type Blockchain interface {
-	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
 }
 
 type Svc struct {
@@ -64,4 +60,26 @@ func (s *Svc) GetByID(ctx context.Context, id string) (*types.Party, error) {
 // GetAll returns all parties.
 func (s *Svc) GetAll(ctx context.Context) ([]*types.Party, error) {
 	return s.store.GetAll()
+}
+
+// UpdateParties takes a list of party info (retrieved from the auth server)
+// and adds any missing parties.
+func (s *Svc) UpdateParties(ps []auth.PartyInfo) {
+	ctx := context.Background()
+	for _, pi := range ps {
+		if _, err := s.GetByID(ctx, pi.ID); err == nil {
+			// party exists
+			continue
+		}
+
+		// create party
+		if err := s.CreateParty(ctx, &types.Party{Id: pi.ID}); err != nil {
+			s.log.Warn("Failed to create Party",
+				logging.String("partyID", pi.ID),
+				logging.Error(err),
+			)
+		} else {
+			s.log.Debug("Added Party", logging.String("partyID", pi.ID))
+		}
+	}
 }

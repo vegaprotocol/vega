@@ -2,8 +2,10 @@ package parties_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/parties/mocks"
@@ -84,6 +86,21 @@ func TestPartyService_GetByName(t *testing.T) {
 	party, err := svc.GetByID(svc.ctx, expect.Id)
 	assert.NoError(t, err)
 	assert.Equal(t, expect, party)
+}
+
+func TestPartyService_UpdateParties(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.Finish()
+
+	const pid01 = "pid01"
+
+	ps := []auth.PartyInfo{{ID: pid01}}
+	svc.store.EXPECT().GetByID(pid01).Times(1).Return(nil, errors.New("party not found"))
+	svc.store.EXPECT().Post(&types.Party{Id: pid01}).Times(1).Return(nil)
+	svc.UpdateParties(ps)
+
+	svc.store.EXPECT().GetByID(pid01).Times(1).Return(&types.Party{Id: pid01}, nil)
+	svc.UpdateParties(ps)
 }
 
 func (t *testService) Finish() {

@@ -204,4 +204,5 @@ func (g *grpcServer) Stop() {
 
 func (g *grpcServer) OnPartiesUpdated(ps []auth.PartyInfo) {
 	g.tradingService.UpdateParties(ps)
+	g.partyService.UpdateParties(ps)
 }
