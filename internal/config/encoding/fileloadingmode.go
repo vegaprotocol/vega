@@ -18,10 +18,10 @@ func (m *FileLoadingMode) Get() options.FileLoadingMode {
 
 var (
 	// ErrCouldNotMarshal is to be used when marshalling failed
-	ErrCouldNotMarshal = errors.New("could not marshal value to string")
+	ErrCouldNotMarshalFLM = errors.New("could not marshal FileLoadingMode value to string")
 
 	// ErrCouldNotUnmarshal is to be used when unmarshalling failed
-	ErrCouldNotUnmarshal = errors.New("could not unmarshal value from string")
+	ErrCouldNotUnmarshalFLM = errors.New("could not unmarshal FileLoadingMode value from string")
 )
 
 // UnmarshalText maps a string to a FileLoadingMode enum value
@@ -34,7 +34,7 @@ func (m *FileLoadingMode) UnmarshalText(text []byte) error {
 	case "MemoryMap":
 		m.FileLoadingMode = options.MemoryMap
 	default:
-		return ErrCouldNotUnmarshal
+		return ErrCouldNotUnmarshalFLM
 	}
 	return nil
 }
@@ -50,7 +50,7 @@ func (m FileLoadingMode) MarshalText() ([]byte, error) {
 	case options.MemoryMap:
 		t = "MemoryMap"
 	default:
-		return []byte{}, ErrCouldNotMarshal
+		return []byte{}, ErrCouldNotMarshalFLM
 	}
 	return []byte(t), nil
 }
