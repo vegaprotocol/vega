@@ -95,12 +95,9 @@ git clone git@gitlab.com:vega-protocol/trading-core.git vega
 cd vega
 git status # On branch develop, Your branch is up to date with 'origin/develop'.
 
-make gettools # get the build tools
-
+make gettools_build # get the build tools
 make deps # get the source dependencies
-make gqlgen_check # warning: This may take a minute, with no output.
-make proto_check
-make install
+make install # build the binaries and put them in $GOPATH/bin
 
 # Now check:
 git rev-parse HEAD | cut -b1-8
@@ -141,6 +138,16 @@ Install the binary somewhere on `$PATH`.
   tendermint unsafe_reset_all
   tendermint node
   ```
+
+## Developing trading-core
+
+In order to develop trading core, more tools are needed. Install them with:
+
+```bash
+# get the dev tools
+make gqlgen_check # warning: This may take a minute, with no output.
+make proto_check
+```
 
 ## Running go-trade-bot
 
