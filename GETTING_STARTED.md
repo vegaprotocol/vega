@@ -149,13 +149,13 @@ make gqlgen_check # warning: This may take a minute, with no output.
 make proto_check
 ```
 
-## Running go-trade-bot
+## Running traderbot
 
-Clone go-trade-bot from https://gitlab.com/vega-protocol/go-trade-bot/ into
+Clone traderbot from https://gitlab.com/vega-protocol/traderbot/ into
 `$GOPATH/src`.
 
 Build: `make install`
 
-Run: `go-trade-bot -config scripts/config/bot-localhost-config.yml`
+Run: `traderbot -config configfiles/localhost.yaml`
 
-Start traders: `curl --silent -XPUT "http://localhost:8081/v2/traders?action=start"`
+Start traders: `curl --silent -XPUT "http://localhost:8081/traders?action=start"`
