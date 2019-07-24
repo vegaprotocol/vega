@@ -187,7 +187,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	fmt.Printf("closingAt: %v --------------------------- now: %v\n", m.closingAt.Unix(), t.Unix())
 	closed = t.After(m.closingAt)
 	m.closed = closed
 
