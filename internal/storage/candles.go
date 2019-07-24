@@ -408,8 +408,11 @@ func (c *Candle) notify() error {
 
 		for _, item := range c.queue {
 			item := item
-			// find candle with right interval
-			if item.Candle.Interval != iT.Interval {
+
+			// Note: internal transport is per interval per market
+			// SO we only notify for candle with specified interval and market
+			if item.Candle.Interval != iT.Interval || item.Market != iT.Market {
+				// Skip to next market/candle item
 				continue
 			}
 

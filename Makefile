@@ -24,7 +24,7 @@ else
 	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
-.PHONY: all bench deps build clean docker docker_quick gettools grpc grpc_check help test lint mocks proto_check
+.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check
 
 all: build
 
@@ -51,14 +51,14 @@ msan: ## Run memory sanitizer
 vet: ## Run go vet
 	@go vet -all ./...
 
-.PRECIOUS: .testCoverage.txt
+.PHONY: .testCoverage.txt
 .testCoverage.txt:
 	@go test -covermode=count -coverprofile="$@" ./...
 	@go tool cover -func="$@"
 
 coverage: .testCoverage.txt ## Generate global code coverage report
 
-.PRECIOUS: .testCoverage.html
+.PHONY: .testCoverage.html
 .testCoverage.html: .testCoverage.txt
 	@go tool cover -html="$^" -o "$@"
 
@@ -70,13 +70,13 @@ deps: ## Get the dependencies
 	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
 	@modvendor -copy="**/*.proto"
 
-build: proto ## install the binaries in cmd/{progname}/
+build: ## install the binaries in cmd/{progname}/
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
 	@for app in $(APPS) ; do \
 		env CGO_ENABLED=0 go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/$$app/$$app" "./cmd/$$app" || exit 1 ; \
 	done
 
-install: proto ## install the binaries in GOPATH/bin
+install: ## install the binaries in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"
 	@for app in $(APPS) ; do \
@@ -160,8 +160,13 @@ docker_quick: build ## Make docker container image using pre-existing binaries
 		rm -rf "./$$app" ; \
 	done
 
-gettools:
-	@./script/gettools.sh
+.PHONY: gettools_build
+gettools_build:
+	@./script/gettools.sh build
+
+.PHONY: gettools_develop
+gettools_develop:
+	@./script/gettools.sh develop
 
 clean: ## Remove previous build
 	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" ; done

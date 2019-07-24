@@ -8,16 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/pkg/errors"
-
 	"code.vegaprotocol.io/vega/internal/buffer"
 	"code.vegaprotocol.io/vega/internal/collateral"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/metrics"
 	"code.vegaprotocol.io/vega/internal/storage"
-
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -95,10 +94,40 @@ func NewEngine(
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 
+	pmkts := []types.Market{}
+	// loads markets from configuration
+	for _, v := range executionConfig.Markets.Configs {
+		path := filepath.Join(executionConfig.Markets.Path, v)
+		buf, err := ioutil.ReadFile(path)
+		if err != nil {
+			log.Panic("Unable to read market configuration",
+				logging.Error(err),
+				logging.String("config-path", path))
+		}
+
+		mkt := types.Market{}
+		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
+		if err != nil {
+			log.Panic("Unable to unmarshal market configuration",
+				logging.Error(err),
+				logging.String("config-path", path))
+		}
+
+		log.Info("New market loaded from configuation",
+			logging.String("market-config", path),
+			logging.String("market-id", mkt.Id))
+		pmkts = append(pmkts, mkt)
+	}
+
 	accountBuf := buffer.NewAccount(accountStore)
 
+	now, err := time.GetTimeNow()
+	if err != nil {
+		log.Error("unable to get the time now", logging.Error(err))
+		return nil
+	}
 	//  create collateral
-	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf)
+	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf, now)
 	if err != nil {
 		log.Error("unable to initialize collateral", logging.Error(err))
 		return nil
@@ -115,45 +144,22 @@ func NewEngine(
 		partyStore:   partyStore,
 		time:         time,
 		collateral:   cengine,
+		party:        NewParty(log, cengine, pmkts, partyStore),
 		accountStore: accountStore,
 		accountBuf:   accountBuf,
 	}
 
-	pmkts := []types.Market{}
-	// loads markets from configuration
-	for _, v := range executionConfig.Markets.Configs {
-		path := filepath.Join(executionConfig.Markets.Path, v)
-		buf, err := ioutil.ReadFile(path)
-		if err != nil {
-			e.log.Panic("Unable to read market configuration",
-				logging.Error(err),
-				logging.String("config-path", path))
-		}
-
-		mkt := types.Market{}
-		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
-		if err != nil {
-			e.log.Panic("Unable to unmarshal market configuration",
-				logging.Error(err),
-				logging.String("config-path", path))
-		}
-
-		e.log.Info("NewModel market loaded from configuation",
-			logging.String("market-config", path),
-			logging.String("market-id", mkt.Id))
-
+	for _, mkt := range pmkts {
+		mkt := mkt
 		err = e.SubmitMarket(&mkt)
 		if err != nil {
 			e.log.Panic("Unable to submit market",
 				logging.Error(err))
 		}
-		pmkts = append(pmkts, mkt)
 	}
 
 	// create the party engine
-	e.party = NewParty(log, e.collateral, pmkts)
-
-	e.time.NotifyOnTick(e.onChainTimeUpdate)
+	e.party = NewParty(log, e.collateral, pmkts, e.partyStore)
 
 	return e
 }
@@ -197,12 +203,12 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.Config.Settlement,
 		e.Config.Matching,
 		e.collateral,
+		e.party,
 		mktconfig,
 		e.candleStore,
 		e.orderStore,
 		e.partyStore,
 		e.tradeStore,
-		e.accountStore,
 		now,
 		uint64(len(e.markets)),
 	)
@@ -250,11 +256,14 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		metrics.OrderGaugeAdd(1, order.MarketID)
 	}
 	conf, err := mkt.SubmitOrder(order)
+	if err != nil {
+		return nil, err
+	}
 	// order was filled by submitting it to the market -> the matching engine worked
 	if conf.Order.Status == types.Order_Filled {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
-	return conf, err
+	return conf, nil
 }
 
 // AmendOrder take order amendment details and attempts to amend the order
@@ -317,13 +326,23 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 func (e *Engine) onChainTimeUpdate(t time.Time) {
 	e.log.Debug("updating engine on new time update")
 
+	// update collateral
+	e.collateral.OnChainTimeUpdate(t)
+
 	// remove expired orders
+	// TODO(FIXME): this should be remove, and handled inside the market directly
+	// when call with the new time (see the next for loop)
 	e.removeExpiredOrders(t)
 
 	// notify markets of the time expiration
-	for _, mkt := range e.markets {
+	for mktID, mkt := range e.markets {
 		mkt := mkt
-		mkt.OnChainTimeUpdate(t)
+		closing := mkt.OnChainTimeUpdate(t)
+		if closing {
+			e.log.Info("market is closed, removing from execution engine",
+				logging.String("market-id", mktID))
+			delete(e.markets, mktID)
+		}
 	}
 }
 
@@ -336,8 +355,14 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 	expiringOrders := []types.Order{}
 	tnano := t.UnixNano()
 	for _, mkt := range e.markets {
+		ordrs, err := mkt.RemoveExpiredOrders(tnano)
+		if err != nil {
+			e.log.Error("unable to get remove expired orders",
+				logging.String("market-id", mkt.GetID()),
+				logging.Error(err))
+		}
 		expiringOrders = append(
-			expiringOrders, mkt.RemoveExpiredOrders(tnano)...)
+			expiringOrders, ordrs...)
 	}
 
 	e.log.Debug("Removed expired orders from matching engine",
@@ -368,15 +393,13 @@ func (e *Engine) Generate() error {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit accounts"))
 	}
 
-	for _, mkt := range e.markets {
-		err := e.orderStore.Commit()
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to commit orders for market %s", mkt.GetID()))
-		}
-		err = e.tradeStore.Commit()
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Failed to commit trades for market %s", mkt.GetID()))
-		}
+	err = e.orderStore.Commit()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to commit orders"))
+	}
+	err = e.tradeStore.Commit()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to commit trades"))
 	}
 
 	return nil

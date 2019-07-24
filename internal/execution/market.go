@@ -20,11 +20,19 @@ import (
 	"code.vegaprotocol.io/vega/internal/positions"
 	"code.vegaprotocol.io/vega/internal/risk"
 	"code.vegaprotocol.io/vega/internal/settlement"
-	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+)
+
+var (
+	ErrTraderDoNotExists = errors.New("trader does not exist")
+)
+
+var (
+	ErrMarketClosed = errors.New("market closed")
 )
 
 type Market struct {
@@ -50,17 +58,22 @@ type Market struct {
 	settlement         *settlement.Engine
 
 	// deps engines
-	collateral *collateral.Engine
+	collateral  *collateral.Engine
+	partyEngine *Party
 
 	// stores
-	candles  CandleStore
-	orders   OrderStore
-	parties  PartyStore
-	trades   TradeStore
-	accounts *storage.Account
+	candles CandleStore
+	orders  OrderStore
+	parties PartyStore
+	trades  TradeStore
 
 	// buffers
 	candlesBuf *buffer.Candle
+
+	// metrics
+	blockTime *prometheus.CounterVec
+
+	closed bool
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -95,12 +108,12 @@ func NewMarket(
 	settlementConfig settlement.Config,
 	matchingConfig matching.Config,
 	collateralEngine *collateral.Engine,
+	partyEngine *Party,
 	mkt *types.Market,
 	candles CandleStore,
 	orders OrderStore,
 	parties PartyStore,
 	trades TradeStore,
-	accounts *storage.Account,
 	now time.Time,
 	seq uint64,
 ) (*Market, error) {
@@ -132,11 +145,11 @@ func NewMarket(
 		position:           positionEngine,
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
+		partyEngine:        partyEngine,
 		candles:            candles,
 		orders:             orders,
 		parties:            parties,
 		trades:             trades,
-		accounts:           accounts,
 		candlesBuf:         candlesBuf,
 	}
 	SetMarketID(mkt, seq)
@@ -168,20 +181,24 @@ func (m *Market) GetID() string {
 
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
-func (m *Market) OnChainTimeUpdate(t time.Time) {
+func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	start := time.Now()
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	fmt.Printf("closingAt: %v --------------------------- now: %v\n", m.closingAt.Unix(), t.Unix())
+	closed = t.After(m.closingAt)
+	m.closed = closed
+
 	m.currentTime = t
+
 	// TODO(): handle market start time
 
 	m.log.Debug("Calculating risk factors (if required)",
 		logging.String("market-id", m.mkt.Id))
 
 	m.risk.CalculateFactors(t)
-	m.risk.UpdatePositions(m.markPrice, m.position.Positions())
 
 	m.log.Debug("Calculated risk factors and updated positions (maybe)",
 		logging.String("market-id", m.mkt.Id))
@@ -198,7 +215,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 		m.log.Error("Failed to generate candles from buffer for market", logging.String("market-id", m.GetID()))
 	}
 
-	if t.After(m.closingAt) {
+	if closed {
 		// call settlement and stuff
 		positions, err := m.settlement.Settle(t)
 		if err != nil {
@@ -215,20 +232,51 @@ func (m *Market) OnChainTimeUpdate(t time.Time) {
 					logging.Error(err),
 				)
 			} else {
-				// use transfers, unused var thingy
-				m.log.Debug(
-					"Got transfers on market close (%#v)",
-					logging.String("transfers-dump", fmt.Sprintf("%#v", transfers)), // @TODO process these transfers, they contain the ledger movements...
-					logging.String("market-id", m.GetID()),
-				)
+				if m.log.GetLevel() == logging.DebugLevel {
+					// use transfers, unused var thingy
+					for _, v := range transfers {
+						m.log.Debug(
+							"Got transfers on market close",
+							logging.String("transfer", fmt.Sprintf("%v", *v)),
+							logging.String("market-id", m.GetID()),
+						)
+					}
+				}
+
+				asset, _ := m.mkt.GetAsset()
+				parties := m.partyEngine.GetForMarket(m.GetID())
+				clearMarketTransfers, err := m.collateral.ClearMarket(m.GetID(), asset, parties)
+				if err != nil {
+					m.log.Error("Clear market error",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
+				} else {
+					if m.log.GetLevel() == logging.DebugLevel {
+						// use transfers, unused var thingy
+						for _, v := range clearMarketTransfers {
+							m.log.Debug(
+								"Market cleared with success",
+								logging.String("transfer", fmt.Sprintf("%v", *v)),
+								logging.String("market-id", m.GetID()),
+							)
+						}
+					}
+				}
+
 			}
 		}
 	}
+
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "execution", "OnChainTimeUpdate")
+	return
 }
 
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+	if m.closed {
+		return nil, ErrMarketClosed
+	}
+
 	orderValidity := "invalid"
 	startSubmit := time.Now() // do not reset this var
 	defer func() {
@@ -249,16 +297,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	start := time.Now()
 	party, _ := m.parties.GetByID(order.PartyID)
 	if party == nil {
-		if err := m.parties.Post(&types.Party{Id: order.PartyID}); err != nil {
-			return nil, err
-		}
-		/*
-			// create accounts if needed
-			m.mkt.GetAsset()
-			if err := m.collateral.AddTraderToMarket(m.GetID(), order.PartyID, ); err != nil {
-				return nil, err
-			}
-		*/
+		// trader should be created before even trying to post order
+		return nil, ErrTraderDoNotExists
 	}
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "partystore", "GetByID/Post")
 
@@ -291,6 +331,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "orderstore", "Post/Put")
 
+	m.position.RegisterOrder(order)
+
 	if confirmation.Trades != nil {
 		// orders can contain several trades, each trade involves 2 traders
 		// so there's a max number of N*2 events on the channel where N == number of trades
@@ -299,6 +341,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		m.settlement.ListenClosed(tradersCh)
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
+			// fmt.Printf("------------------------------- TRADE: %v\n", trade)
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
 			if order.Side == types.Side_Buy {
 				trade.BuyOrder = order.Id
@@ -405,6 +448,10 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 
 // CancelOrder cancels the given order
 func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
+	if m.closed {
+		return nil, ErrMarketClosed
+	}
+
 	// Validate Market
 	if order.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
@@ -430,6 +477,13 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 			logging.Error(err))
 	}
 
+	_, err = m.position.UnregisterOrder(order)
+	if err != nil {
+		m.log.Error("Failure unregistering order in positions engine (cancel)",
+			logging.Order(*order),
+			logging.Error(err))
+	}
+
 	return cancellation, nil
 }
 
@@ -451,6 +505,10 @@ func (m *Market) AmendOrder(
 	orderAmendment *types.OrderAmendment,
 	existingOrder *types.Order,
 ) (*types.OrderConfirmation, error) {
+	if m.closed {
+		return nil, ErrMarketClosed
+	}
+
 	// Validate Market
 	if existingOrder.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
@@ -501,6 +559,17 @@ func (m *Market) AmendOrder(
 		newOrder.ExpiresAt = orderAmendment.ExpiresAt
 		expiryChange = true
 	}
+
+	// Unregister existing order to remove order volume from potential position.
+	_, err := m.position.UnregisterOrder(existingOrder)
+	if err != nil {
+		m.log.Error("Failure unregistering existing order in positions engine (amend)",
+			logging.Order(*existingOrder),
+			logging.Error(err))
+	}
+
+	// Register amended order to add order volume to potential position.
+	m.position.RegisterOrder(newOrder)
 
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
@@ -553,8 +622,12 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 }
 
 // RemoveExpiredOrders remove all expired orders from the order book
-func (m *Market) RemoveExpiredOrders(timestamp int64) []types.Order {
-	return m.matching.RemoveExpiredOrders(timestamp)
+func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
+	if m.closed {
+		return nil, ErrMarketClosed
+	}
+
+	return m.matching.RemoveExpiredOrders(timestamp), nil
 }
 
 func getInitialFactors() *types.RiskResult {
