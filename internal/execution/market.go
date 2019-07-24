@@ -298,7 +298,14 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	party, _ := m.parties.GetByID(order.PartyID)
 	if party == nil {
 		// trader should be created before even trying to post order
-		return nil, ErrTraderDoNotExists
+		party = &types.Party{Id: order.PartyID}
+		if err := m.parties.Post(party); err != nil {
+			m.log.Error("Failed to create Party during SubmitOrder",
+				logging.String("partyID", order.PartyID),
+				logging.Error(err),
+			)
+			return nil, err
+		}
 	}
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "partystore", "GetByID/Post")
 
