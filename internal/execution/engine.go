@@ -161,6 +161,9 @@ func NewEngine(
 	// create the party engine
 	e.party = NewParty(log, e.collateral, pmkts, e.partyStore)
 
+	// Add time change event handler
+	e.time.NotifyOnTick(e.onChainTimeUpdate)
+
 	return e
 }
 
