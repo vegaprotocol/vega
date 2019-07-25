@@ -6,7 +6,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 **Vega** provides the following core features:
 
-<img align="right" src="https://vegaprotocol.io/img/concept_header.svg" height="150" style="padding: 0 10px 0 0;">
+<img align="right" src="https://vega.xyz/img/concept_header.svg" height="150" style="padding: 0 10px 0 0;">
 
 - Join a Vega network as a validator or non-consensus node.
 - [Provision](#provisioning) new markets on a network (coming soon)
@@ -22,10 +22,9 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 - For **new starters**, see [GETTING_STARTED.md](GETTING_STARTED.md).
 - For **updates**, see [CHANGELOG.md](CHANGELOG.md) for major updates, and
   [releases](https://gitlab.com/vega-protocol/trading-core/wikis/Release-notes) for a detailed version history.
-- For **architecture**, please read the design [documentation](ARCHITECTURE.md) to learn about the design for the system and its architecture.
-- For **agile process**, please read the engineering [documentation](AGILE.md) or ask on Slack channel `#Engineering` if you need further clarification.
+- For **architecture**, please read the [design documentation](ARCHITECTURE.md) to learn about the design for the system and its architecture.
+- For **agile process**, please read the [engineering documentation](AGILE.md) or ask on Slack channel `#Engineering` if you need further clarification.
 - Please [open an issue](https://gitlab.com/vegaprotocol/trading-core/issues/new) if anything is missing or unclear in this documentation.
-
 
 <details>
   <summary><strong>Table of Contents</strong> (click to expand)</summary>
@@ -33,7 +32,6 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 <!-- toc -->
 
 - [Installation](#installation)
-- [Usage](#usage)
 - [Configuration](#configuration)
 - [APIs](#apis)
 - [Provisioning](#provisioning)
@@ -47,112 +45,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 ## Installation
 
-### Requirements
-
-To install Vega from source, the following software is required:
-
-* `Golang (Go) v1.11.5` - [Installation guide](https://golang.org/doc/install)
-* `Tendermint v0.31.5` - [Installation guide](https://tendermint.com/docs/introduction/install.html)
-
-### Tendermint ###
-
-[Tendermint](https://tendermint.com/docs/introduction/what-is-tendermint.html) performs Byzantine Fault Tolerant (BFT) State Machine Replication (SMR) for arbitrary deterministic, finite state machines. Tendermint core is required for Vega nodes to communicate.
-
-*We recommend downloading a pre-built core binary for your architecture rather than compiling from source, to save time. You can of course install from source if you wish, just make sure you grab the correct version.*
-
-Once installed, check the version. This should match the required version (above):
-
-```bash
-# verify tendermint
-tendermint version
-```
-
-Next, initialise Tendermint core:
-
-```bash
-# initialize tendermint
-tendermint init
-```
-Finally, start Tendermint:
-
-```bash
-# start creating blocks with Tendermint
-tendermint node
-```
-
-Optionally, if you're running a multi node network - configure the Tendermint node settings by editing `genesis.json` and `config.toml`:
-
-```bash
-# Configure tendermint
-cd ~/.tendermint/config
-pico config.toml
-pico genesis.json
-```
-
-Tip: to clear and reset chain data (back to genesis block), run `tendermint unsafe_reset_all`
-
-### Vega
-
-To install or build Vega core, the source code is required. To check out the code, please follow these steps (on a \*nix system):
-
-```bash
-mkdir -p ~/vega
-git clone git@gitlab.com:vega-protocol/trading-core.git ~/vega
-export GOMODULE111=on
-go mod download
-```
-
-Tip: this project uses go module based dependency management, we recommend checking out the source outside of your Go src directory.
-
-### Global
-
-As a globally available command (installed in your Go path):
-
-```bash
-make install
-```
-
-If the build complains about `protoc` or `protoc-gen-go` (e.g. cannot find program, program version mismatch) then run
-
-```bash
-make gettools  # see also: script/gettools.sh
-```
-
-and follow instructions, if any. You may have to install `protoc` manually, but other programs should be installed automatically with `go get`.
-
-### Local
-
-As a single `binary` in your project:
-
-```bash
-make build
-```
-
-## Usage
-
-Run a node:
-
-```bash
-vega node
-```
-
-Initialise a node:
-
-```bash
-vega init
-```
-
-Help for a node:
-
-```bash
-vega help
-```
-
-Version for a node:
-
-```bash
-vega --version
-```
+To install `trading-core` and `tendermint`, see [GETTING_STARTED.md](GETTING_STARTED.md).
 
 ## Configuration
 

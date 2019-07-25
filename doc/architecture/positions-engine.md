@@ -1,6 +1,6 @@
 # Positions Engine
 
-Product Specification: [product/specs/0012-position-resoluton.md](https://gitlab.com/vega-protocol/product/blob/master/specs/0012-position-resoluton.md)
+Product Specification: [product: specs/0012-position-resoluton.md](https://gitlab.com/vega-protocol/product/blob/master/specs/0012-position-resoluton.md)
 
 The Positions Engine maintains a map of `partyID` to `MarketPosition struct`. In
 the struct are:

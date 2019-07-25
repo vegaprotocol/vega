@@ -1,6 +1,9 @@
-This document is a guide for new Go developers. It starts with a vanilla Linux
-or MacOSX installation, and runs through all the steps needed to get a working
-single-node Vega system.
+# Getting Started
+
+This document is a guide for new Go developers.
+
+It starts with a vanilla Linux or MacOSX installation, and runs through all the
+steps needed to get a working single-node Vega system.
 
 A Vega system backend requires Vega (from the `trading-core` repo) and
 `tendermint` (third party open source software providing Byzantine Fault
@@ -10,6 +13,7 @@ Tolerant (BFT) state machine replication, ie Blockchain).
 
 The following OS packages are required:
 
+* `bash` (or a shell of your choice, but this document assumes `bash`)
 * `make`
 
 ## Installing golang
@@ -17,6 +21,7 @@ The following OS packages are required:
 **Required version: 1.11.5**
 
 Get Golang via OS package manager, or directly from from https://golang.org/dl/.
+See also the [Golang installation guide](https://golang.org/doc/install).
 Install it somewhere, then point "`$GOROOT`" at that location:
 
 ```bash
@@ -109,8 +114,17 @@ vega --version
 
 **Required version: 0.31.5**
 
+[Tendermint](https://tendermint.com/docs/introduction/what-is-tendermint.html)
+performs Byzantine Fault Tolerant (BFT) state machine replication (SMR) for
+arbitrary deterministic, finite state machines. It is required for Vega nodes to
+communicate.
+
+It is quicker and easier to download a pre-built binary, rather than compiling
+from source.
+
 Download tendermint from https://github.com/tendermint/tendermint/releases/.
-Install the binary somewhere on `$PATH`.
+Install the binary somewhere on `$PATH`. If needed, see also the
+[Tendermint installation guide](https://tendermint.com/docs/introduction/install.html).
 
 ## Running vega
 
@@ -128,6 +142,12 @@ Install the binary somewhere on `$PATH`.
 
 ## Running tendermint
 
+* The version must match the required version (above). To check the version,
+  use:
+  ```bash
+  tendermint version
+  ```
+
 * To create a new config file, use:
   ```bash
   tendermint init
@@ -138,6 +158,8 @@ Install the binary somewhere on `$PATH`.
   tendermint unsafe_reset_all
   tendermint node
   ```
+* Optional: To run a multi-node network, use `tendermint testnet` to generate
+  config files for nodes.
 
 ## Developing trading-core
 
