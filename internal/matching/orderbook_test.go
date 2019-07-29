@@ -1,10 +1,11 @@
-package matching
+package matching_test
 
 import (
 	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/matching"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -18,18 +19,33 @@ type aggressiveOrderScenario struct {
 	expectedTrades                []types.Trade
 }
 
+type tstOB struct {
+	*matching.OrderBook
+	log *logging.Logger
+}
+
+func (t *tstOB) Finish() {
+	t.log.Sync()
+}
+
 func getCurrentUtcTimestampNano() int64 {
 	return vegatime.Now().UnixNano()
+}
+
+func getTestOrderBook(t *testing.T, market string, proRata bool) *tstOB {
+	tob := tstOB{
+		log: logging.NewTestLogger(),
+	}
+	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, proRata)
+	return &tob
 }
 
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	market := "expiringOrderBookTest"
 	party := "clay-davis"
 
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
-
-	book := NewOrderBook(logger, NewDefaultConfig(), market, true)
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 	currentTimestamp := getCurrentUtcTimestampNano()
 	someTimeLater := currentTimestamp + (1000 * 1000)
 
@@ -191,15 +207,23 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 //test for order validation
 func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
-
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
-
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
-	book.latestTimestamp = 10
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	timeStampOrder := types.Order{
+		Id:        "timestamporderID",
+		MarketID:  market,
+		CreatedAt: 10,
+		Side:      types.Side_Buy,
+		Size:      1,
+	}
+	_, err := book.SubmitOrder(&timeStampOrder)
+	assert.NoError(t, err)
+	// cancel order again, just so we set the timestamp as expected
+	book.CancelOrder(&timeStampOrder)
 
 	invalidTimestampOrdertypes := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		PartyID:   "A",
 		Side:      types.Side_Sell,
 		Price:     100,
@@ -209,19 +233,18 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		CreatedAt: 0,
 		Id:        "id-number-one",
 	}
-	_, err := book.SubmitOrder(invalidTimestampOrdertypes)
+	_, err = book.SubmitOrder(invalidTimestampOrdertypes)
 	assert.Equal(t, types.OrderError_ORDER_OUT_OF_SEQUENCE, err)
 
-	book.latestTimestamp = 0
 	invalidRemainginSizeOrdertypes := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		PartyID:   "A",
 		Side:      types.Side_Sell,
 		Price:     100,
 		Size:      100,
 		Remaining: 300,
 		Type:      types.Order_GTC,
-		CreatedAt: 0,
+		CreatedAt: 10,
 		Id:        "id-number-one",
 	}
 	_, err = book.SubmitOrder(invalidRemainginSizeOrdertypes)
@@ -229,12 +252,12 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 }
 
 func TestOrderBook_DeleteOrder(t *testing.T) {
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 
 	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		PartyID:   "A",
 		Side:      types.Side_Sell,
 		Price:     101,
@@ -255,10 +278,9 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 }
 
 func TestOrderBook_SubmitOrder(t *testing.T) {
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
-
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 
 	const numberOfTimestamps = 3
 	m := make(map[int64][]*types.Order, numberOfTimestamps)
@@ -267,7 +289,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 	m[0] = []*types.Order{
 		// Side Sell
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "A",
 			Side:      types.Side_Sell,
 			Price:     101,
@@ -277,7 +299,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			CreatedAt: 0,
 		},
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "B",
 			Side:      types.Side_Sell,
 			Price:     101,
@@ -287,7 +309,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			CreatedAt: 0,
 		},
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "C",
 			Side:      types.Side_Sell,
 			Price:     102,
@@ -297,7 +319,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			CreatedAt: 0,
 		},
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "D",
 			Side:      types.Side_Sell,
 			Price:     103,
@@ -308,7 +330,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		// Side Buy
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "E",
 			Side:      types.Side_Buy,
 			Price:     99,
@@ -318,7 +340,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			CreatedAt: 0,
 		},
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "F",
 			Side:      types.Side_Buy,
 			Price:     99,
@@ -328,7 +350,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			CreatedAt: 0,
 		},
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "G",
 			Side:      types.Side_Buy,
 			Price:     98,
@@ -343,7 +365,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 	m[1] = []*types.Order{
 		// Side Sell
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "M",
 			Side:      types.Side_Sell,
 			Price:     101,
@@ -354,7 +376,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		// Side Buy
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "N",
 			Side:      types.Side_Buy,
 			Price:     99,
@@ -369,7 +391,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 	m[2] = []*types.Order{
 		// Side Sell
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "R",
 			Side:      types.Side_Sell,
 			Price:     101,
@@ -380,7 +402,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		// Side Buy
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "S",
 			Side:      types.Side_Buy,
 			Price:     99,
@@ -407,7 +429,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "X",
 				Side:      types.Side_Buy,
 				Price:     101,
@@ -418,7 +440,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      50,
 					Buyer:     "X",
@@ -426,7 +448,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Buy,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      50,
 					Buyer:     "X",
@@ -436,7 +458,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "A",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -446,7 +468,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 0,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "B",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -460,7 +482,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		{
 			// lower price is available on the passive side, 2 orders removed, 1 passive remaining
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "Y",
 				Side:      types.Side_Buy,
 				Price:     102,
@@ -471,7 +493,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      50,
 					Buyer:     "Y",
@@ -479,7 +501,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Buy,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      50,
 					Buyer:     "Y",
@@ -487,7 +509,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Buy,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      50,
 					Buyer:     "Y",
@@ -497,7 +519,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "A",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -507,7 +529,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 0,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "B",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -517,7 +539,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 0,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "M",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -531,7 +553,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		{
 			// lower price is available on the passive side, 1 order removed, 1 passive remaining
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "Z",
 				Side:      types.Side_Buy,
 				Price:     102,
@@ -542,7 +564,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      50,
 					Buyer:     "Z",
@@ -550,7 +572,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Buy,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      20,
 					Buyer:     "Z",
@@ -560,7 +582,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "M",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -570,7 +592,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 1,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "R",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -585,7 +607,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			// price level jump, lower price is available on the passive side but its entirely consumed,
 			// 1 order removed, 1 passive remaining at higher price level
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "X",
 				Side:      types.Side_Buy,
 				Price:     102,
@@ -596,7 +618,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      80,
 					Buyer:     "X",
@@ -604,7 +626,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Buy,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     102,
 					Size:      20,
 					Buyer:     "X",
@@ -614,7 +636,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "R",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -624,7 +646,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 2,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "C",
 					Side:      types.Side_Sell,
 					Price:     102,
@@ -638,7 +660,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		{
 			// Sell is agressive, aggressive at lower price than on the book, pro rata at 99, aggressive is removed
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "Y",
 				Side:      types.Side_Sell,
 				Price:     98,
@@ -649,7 +671,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     99,
 					Size:      50,
 					Buyer:     "E",
@@ -657,7 +679,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Sell,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     99,
 					Size:      50,
 					Buyer:     "F",
@@ -667,7 +689,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "E",
 					Side:      types.Side_Buy,
 					Price:     99,
@@ -677,7 +699,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 0,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "F",
 					Side:      types.Side_Buy,
 					Price:     99,
@@ -691,7 +713,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		{
 			// Sell is agressive, aggressive at exact price, all orders at this price level should be hitted plus order should remain on the sell side of the book at 99 level
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "Z",
 				Side:      types.Side_Sell,
 				Price:     99,
@@ -702,7 +724,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     99,
 					Size:      50,
 					Buyer:     "E",
@@ -710,7 +732,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Sell,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     99,
 					Size:      50,
 					Buyer:     "F",
@@ -718,7 +740,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Sell,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     99,
 					Size:      100,
 					Buyer:     "N",
@@ -726,7 +748,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Sell,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     99,
 					Size:      100,
 					Buyer:     "S",
@@ -736,7 +758,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "E",
 					Side:      types.Side_Buy,
 					Price:     99,
@@ -746,7 +768,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 0,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "F",
 					Side:      types.Side_Buy,
 					Price:     99,
@@ -756,7 +778,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 0,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "N",
 					Side:      types.Side_Buy,
 					Price:     99,
@@ -766,7 +788,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 1,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "S",
 					Side:      types.Side_Buy,
 					Price:     99,
@@ -779,7 +801,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "XX",
 				Side:      types.Side_Buy,
 				Price:     102,
@@ -790,7 +812,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     99,
 					Size:      50,
 					Buyer:     "XX",
@@ -798,7 +820,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Buy,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     102,
 					Size:      50,
 					Buyer:     "XX",
@@ -808,7 +830,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "Z",
 					Side:      types.Side_Sell,
 					Price:     99,
@@ -818,7 +840,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 4,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "C",
 					Side:      types.Side_Sell,
 					Price:     102,
@@ -831,7 +853,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		{ // aggressive nonpersistent buy order, hits one price levels and is not added to order book
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "YY",
 				Side:      types.Side_Buy,
 				Price:     103,
@@ -842,7 +864,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     102,
 					Size:      30,
 					Buyer:     "YY",
@@ -850,7 +872,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					Aggressor: types.Side_Buy,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     103,
 					Size:      100,
 					Buyer:     "YY",
@@ -860,7 +882,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "C",
 					Side:      types.Side_Sell,
 					Price:     102,
@@ -870,7 +892,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 					CreatedAt: 0,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "D",
 					Side:      types.Side_Sell,
 					Price:     103,
@@ -883,7 +905,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "XX",
 				Side:      types.Side_Sell,
 				Price:     96,
@@ -897,7 +919,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "XX",
 				Side:      types.Side_Buy,
 				Price:     102,
@@ -911,7 +933,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "ZZ",
 				Side:      types.Side_Sell,
 				Price:     95,
@@ -922,7 +944,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     98,
 					Size:      100,
 					Buyer:     "G",
@@ -932,7 +954,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "G",
 					Side:      types.Side_Buy,
 					Price:     98,
@@ -945,7 +967,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "ZZ",
 				Side:      types.Side_Sell,
 				Price:     95,
@@ -960,7 +982,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		{ // aggressive nonpersistent buy order, at super low price hits one price levels and is not added to order book
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "ZXY",
 				Side:      types.Side_Buy,
 				Price:     95,
@@ -971,7 +993,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     95,
 					Size:      100,
 					Buyer:     "ZXY",
@@ -981,7 +1003,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "ZZ",
 					Side:      types.Side_Sell,
 					Price:     95,
@@ -995,7 +1017,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		},
 		{ // aggressive nonpersistent buy order, hits two price levels and is not added to order book
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "XX",
 				Side:      types.Side_Buy,
 				Price:     102,
@@ -1050,11 +1072,10 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 }
 
 func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
-
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 	newOrder := &types.Order{
 		MarketID:  "invalid",
 		PartyID:   "A",
@@ -1077,15 +1098,17 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 }
 
 func TestOrderBook_CancelSellOrder(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		PartyID:   "A",
 		Side:      types.Side_Sell,
 		Price:     101,
@@ -1114,15 +1137,17 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 }
 
 func TestOrderBook_CancelBuyOrder(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
-
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		PartyID:   "A",
 		Side:      types.Side_Buy,
 		Price:     101,
@@ -1153,12 +1178,13 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
-
 	logger.Debug("BEGIN CANCELLING MARKET MISMATCH ORDER")
 
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 	newOrder := &types.Order{
-		MarketID: "testOrderBook",
+		MarketID: market,
 		Id:       "123456",
 	}
 
@@ -1178,12 +1204,13 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
-
 	logger.Debug("BEGIN CANCELLING INVALID ORDER")
 
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 	newOrder := &types.Order{
-		MarketID: "testOrderBook",
+		MarketID: market,
 		Id:       "id",
 	}
 
@@ -1220,12 +1247,12 @@ func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
 }
 
 func TestOrderBook_AmendOrder(t *testing.T) {
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1245,7 +1272,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1263,12 +1290,12 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1288,7 +1315,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Sell,
 		Price:     100,
@@ -1305,12 +1332,12 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1327,7 +1354,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	fmt.Printf("confirmation : %+v", confirmation)
 
 	editedOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Sell,
 		Price:     100,
@@ -1347,12 +1374,13 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
-
 	logger.Debug("BEGIN AMENDING ORDER")
 
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
 	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1373,7 +1401,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1392,14 +1420,16 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
-
 	logger.Debug("BEGIN AMENDING OUT OF SEQUENCE ORDER")
 
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1421,7 +1451,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1441,14 +1471,16 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 }
 
 func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
-
 	logger.Debug("BEGIN AMEND ORDER INVALID SIZE")
 
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", true)
 	newOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1470,7 +1502,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 
 	editedOrder := &types.Order{
-		MarketID:  "testOrderBook",
+		MarketID:  market,
 		Id:        "123456",
 		Side:      types.Side_Buy,
 		Price:     100,
@@ -1491,12 +1523,13 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 
 // ProRata mode OFF which is a default config for vega ME
 func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market, false)
+	defer book.Finish()
 
-	logger.Debug("BEGIN PRO-RATA MODE OFF")
-
-	book := NewOrderBook(logger, NewDefaultConfig(), "testOrderBook", false)
+	// logger := logging.NewTestLogger()
+	// defer logger.Sync()
+	// logger.Debug("BEGIN PRO-RATA MODE OFF")
 
 	const numberOfTimestamps = 2
 	m := make(map[int64][]*types.Order, numberOfTimestamps)
@@ -1505,7 +1538,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[0] = []*types.Order{
 		// Side Sell
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "A",
 			Side:      types.Side_Sell,
 			Price:     101,
@@ -1515,7 +1548,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt: 0,
 		},
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "B",
 			Side:      types.Side_Sell,
 			Price:     101,
@@ -1526,7 +1559,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "C",
 			Side:      types.Side_Buy,
 			Price:     98,
@@ -1536,7 +1569,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt: 0,
 		},
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "D",
 			Side:      types.Side_Buy,
 			Price:     98,
@@ -1551,7 +1584,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[1] = []*types.Order{
 		// Side Sell
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "E",
 			Side:      types.Side_Sell,
 			Price:     101,
@@ -1562,7 +1595,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
-			MarketID:  "testOrderBook",
+			MarketID:  market,
 			PartyID:   "F",
 			Side:      types.Side_Buy,
 			Price:     99,
@@ -1589,7 +1622,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "M",
 				Side:      types.Side_Buy,
 				Price:     101,
@@ -1600,7 +1633,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      100,
 					Buyer:     "M",
@@ -1610,7 +1643,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "A",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -1624,7 +1657,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "N",
 				Side:      types.Side_Buy,
 				Price:     102,
@@ -1635,7 +1668,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      100,
 					Buyer:     "N",
@@ -1643,7 +1676,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Aggressor: types.Side_Buy,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     101,
 					Size:      100,
 					Buyer:     "N",
@@ -1653,7 +1686,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "B",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -1663,7 +1696,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt: 0,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "E",
 					Side:      types.Side_Sell,
 					Price:     101,
@@ -1677,7 +1710,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "O",
 				Side:      types.Side_Sell,
 				Price:     97,
@@ -1688,7 +1721,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     99,
 					Size:      100,
 					Buyer:     "F",
@@ -1696,7 +1729,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Aggressor: types.Side_Sell,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     98,
 					Size:      100,
 					Buyer:     "C",
@@ -1704,7 +1737,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Aggressor: types.Side_Sell,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     98,
 					Size:      50,
 					Buyer:     "D",
@@ -1714,7 +1747,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "F",
 					Side:      types.Side_Buy,
 					Price:     99,
@@ -1724,7 +1757,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt: 1,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "C",
 					Side:      types.Side_Buy,
 					Price:     98,
@@ -1734,7 +1767,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					CreatedAt: 0,
 				},
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "D",
 					Side:      types.Side_Buy,
 					Price:     98,
@@ -1748,7 +1781,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, NO PRORATA
 			aggressiveOrder: &types.Order{
-				MarketID:  "testOrderBook",
+				MarketID:  market,
 				PartyID:   "X",
 				Side:      types.Side_Sell,
 				Price:     98,
@@ -1759,7 +1792,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedTrades: []types.Trade{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					Price:     98,
 					Size:      50,
 					Buyer:     "D",
@@ -1769,7 +1802,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			},
 			expectedPassiveOrdersAffected: []types.Order{
 				{
-					MarketID:  "testOrderBook",
+					MarketID:  market,
 					PartyID:   "D",
 					Side:      types.Side_Buy,
 					Price:     98,
@@ -1806,15 +1839,22 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		fmt.Println("-> PassiveOrdersAffected:", confirmationtypes.PassiveOrdersAffected)
 		fmt.Printf("Scenario: %d / %d \n", i+1, len(scenario))
 
+		// assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))
 		// trades should match expected trades
-		for i, trade := range confirmationtypes.Trades {
-			expectTrade(t, &s.expectedTrades[i], trade)
+		for i, exp := range s.expectedTrades {
+			expectTrade(t, &exp, confirmationtypes.Trades[i])
 		}
+		// for i, trade := range confirmationtypes.Trades {
+		// expectTrade(t, &s.expectedTrades[i], trade)
+		// }
 
 		// orders affected should match expected values
-		for i, orderAffected := range confirmationtypes.PassiveOrdersAffected {
-			expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
+		for i, exp := range s.expectedPassiveOrdersAffected {
+			expectOrder(t, &exp, confirmationtypes.PassiveOrdersAffected[i])
 		}
+		// for i, orderAffected := range confirmationtypes.PassiveOrdersAffected {
+		// 	expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
+		// }
 
 		// call remove expired orders every scenario
 		book.RemoveExpiredOrders(s.aggressiveOrder.CreatedAt)

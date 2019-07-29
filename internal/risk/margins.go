@@ -2,6 +2,7 @@ package risk
 
 import (
 	"errors"
+	"math"
 
 	"code.vegaprotocol.io/vega/internal/events"
 	types "code.vegaprotocol.io/vega/proto"
@@ -10,6 +11,17 @@ import (
 var (
 	ErrNoFactorForAsset = errors.New("no risk factors found for given asset")
 )
+
+const (
+	marginShort marginSide = iota
+	marginLong
+)
+
+type marginSide int
+
+type limits struct {
+	lower, initial, top uint64
+}
 
 type limit struct {
 	long, short, base, step float64
@@ -56,6 +68,22 @@ func (e *Engine) getMargins(asset string) (*marginAmount, error) {
 		system: sys,
 		trader: trader,
 	}, nil
+}
+
+func (m marginAmount) getTransfer(evt events.Margin, markPrice uint64) *marginChange {
+	// get longest/shortest position
+	long, short := int64(math.Abs(float64(evt.Size()+evt.Buy()))), int64(math.Abs(float64(evt.Size()-evt.Sell())))
+	notionalLong := int64(markPrice) * long
+	notionalShort := int64(markPrice) * short
+	longReq := uint64(float64(notionalLong) * m.system.long)
+	shortReq := uint64(float64(notionalShort) * m.system.short)
+	// marginBalance := evt.MarginBalance()
+	if longReq > shortReq {
+		// use long as min to calculate required margin
+		return nil
+	}
+	// use short as starting point
+	return nil
 }
 
 func (m marginAmount) getChange(evt events.Margin, markPrice uint64) *marginChange {

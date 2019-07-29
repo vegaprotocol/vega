@@ -35,8 +35,8 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, proRataMo
 		log:            log,
 		marketID:       marketID,
 		cfgMu:          &sync.Mutex{},
-		buy:            &OrderBookSide{log: log, proRataMode: proRataMode},
-		sell:           &OrderBookSide{log: log, proRataMode: proRataMode},
+		buy:            &OrderBookSide{log: log, proRataMode: proRataMode, volumePrice: map[uint64]uint64{}},
+		sell:           &OrderBookSide{log: log, proRataMode: proRataMode, volumePrice: map[uint64]uint64{}},
 		Config:         config,
 		expiringOrders: make([]types.Order, 0),
 	}
@@ -272,7 +272,7 @@ func (b *OrderBook) RemoveDistressedOrders(traders []events.MarketPosition) erro
 		if trader.Buy() > 0 {
 			i := int(trader.Buy())
 			for _, l := range b.buy.levels {
-				rm := l.getOrdersByTrader(trader.PartyID())
+				rm := l.getOrdersByTrader(trader.Party())
 				i -= len(rm)
 				orders = append(orders, rm...)
 				if i == 0 {
@@ -283,7 +283,7 @@ func (b *OrderBook) RemoveDistressedOrders(traders []events.MarketPosition) erro
 		if trader.Sell() > 0 {
 			i := int(trader.Sell())
 			for _, l := range b.sell.levels {
-				rm := l.getOrdersByTrader(trader.PartyID())
+				rm := l.getOrdersByTrader(trader.Party())
 				i -= len(rm)
 				orders = append(orders, rm...)
 				if i == 0 {
