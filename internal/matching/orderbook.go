@@ -57,6 +57,13 @@ func (s *OrderBook) ReloadConf(cfg Config) {
 	s.cfgMu.Unlock()
 }
 
+func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) uint64 {
+	if side == types.Side_Buy {
+		return b.buy.getPrice(volume)
+	}
+	return b.sell.getPrice(volume)
+}
+
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.

@@ -29,6 +29,36 @@ type priceVolList struct {
 	val        uint64
 }
 
+func (o *OrderBookSide) getPrice(vol uint64) uint64 {
+	if price, ok := o.volumePrice[vol]; ok {
+		return price
+	}
+	var v, price uint64
+	node := o.list
+	for v < vol {
+		if node.val >= v {
+			price += node.key * (vol - v) // total price == remaining vol multiplied by this price entry
+			o.volumePrice[vol] = price
+			return price
+		}
+		// the value (or pending orders) are not enough to account for the open position
+		// the price thusfar is the sum of orders at this price point multiplied by the total available orders
+		prod := node.key * node.val
+		price += prod
+		// in this case, we can add this to the map, for memoisation
+		o.volumePrice[node.val] = prod
+		// increment v (the running total of volume we've calculated already)
+		v += node.val
+		node = node.next
+		if node == nil {
+			// make sure we don't end up dereferencing a nil ptr
+			break
+		}
+	}
+	o.volumePrice[vol] = price // use v, not vol. If there's no orders on the book, we've only calculated the volumePrice up to this point
+	return price
+}
+
 func (o *OrderBookSide) addPriceVol(vol, price uint64) *priceVolList {
 	var ls *priceVolList
 	if o.list == nil {
@@ -86,9 +116,10 @@ func (l *priceVolList) append(node *priceVolList) {
 			// insert new node:
 			// the previous node is taken from current.prev, the next node is the "current" node
 			// meanwhile, the current.prev.next, and current.prev both reference the new node
-			node.prev, node.next = current.prev, current
-			if current.prev != nil {
-				current.prev.next = node
+			prev := current.prev
+			node.prev, node.next = prev, current
+			if prev != nil {
+				prev.next = node
 			}
 			current.prev = node
 			return
