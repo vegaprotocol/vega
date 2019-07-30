@@ -42,6 +42,7 @@ func getTestOrderBook(t *testing.T, market string, proRata bool) *tstOB {
 
 func TestOrderBook_GetClosePNL(t *testing.T) {
 	t.Run("Get Buy-side close PNL values", getClosePNLBuy)
+	t.Run("Get Sell-side close PNL values", getClosePNLSell)
 }
 
 func getClosePNLBuy(t *testing.T) {
@@ -88,13 +89,68 @@ func getClosePNLBuy(t *testing.T) {
 	}
 	// volume + expected price
 	callExp := map[uint64]uint64{
-		// 3: 100 + 110 + 120,
-		2: 100 + 110,
+		3: 330,
+		2: 210,
 		1: 100,
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
 		price := book.GetClosePNL(vol, types.Side_Buy)
+		assert.Equal(t, exp, price)
+	}
+}
+
+func getClosePNLSell(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	// 3 orders of size 1, 3 different prices
+	orders := []*types.Order{
+		{
+			MarketID:  market,
+			PartyID:   "A",
+			Side:      types.Side_Sell,
+			Price:     100,
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+		},
+		{
+			MarketID:  market,
+			PartyID:   "B",
+			Side:      types.Side_Sell,
+			Price:     110,
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+		},
+		{
+			MarketID:  market,
+			PartyID:   "C",
+			Side:      types.Side_Sell,
+			Price:     120,
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+	// volume + expected price
+	callExp := map[uint64]uint64{
+		3: 330,
+		2: 210,
+		1: 100,
+	}
+	// this calculates the actual volume
+	for vol, exp := range callExp {
+		price := book.GetClosePNL(vol, types.Side_Sell)
 		assert.Equal(t, exp, price)
 	}
 }

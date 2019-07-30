@@ -35,8 +35,8 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, proRataMo
 		log:            log,
 		marketID:       marketID,
 		cfgMu:          &sync.Mutex{},
-		buy:            &OrderBookSide{log: log, proRataMode: proRataMode, volumePrice: map[uint64]uint64{}},
-		sell:           &OrderBookSide{log: log, proRataMode: proRataMode, volumePrice: map[uint64]uint64{}},
+		buy:            &OrderBookSide{log: log, proRataMode: proRataMode},
+		sell:           &OrderBookSide{log: log, proRataMode: proRataMode},
 		Config:         config,
 		expiringOrders: make([]types.Order, 0),
 	}
@@ -58,10 +58,32 @@ func (s *OrderBook) ReloadConf(cfg Config) {
 }
 
 func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) uint64 {
+	var price uint64
+	vol := volume
 	if side == types.Side_Buy {
-		return b.buy.getPrice(volume)
+		levels := b.buy.getLevels()
+		for i := len(levels) - 1; i >= 0; i-- {
+			lvl := levels[i]
+			if lvl.volume >= vol {
+				price += lvl.price * vol
+				return price
+			}
+			price += lvl.price * lvl.volume
+			vol -= lvl.volume
+		}
+		// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
+		return price
 	}
-	return b.sell.getPrice(volume)
+	for _, lvl := range b.sell.getLevels() {
+		if lvl.volume >= vol {
+			price += lvl.price * vol
+			return price
+		}
+		price += lvl.price * lvl.volume
+		vol -= lvl.volume
+	}
+	// if we reach this point, chances are vol != 0, in which case we should return an error
+	return price
 }
 
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
