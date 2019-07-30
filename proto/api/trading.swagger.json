@@ -660,6 +660,14 @@
     }
   },
   "definitions": {
+    "OrderAction": {
+      "type": "string",
+      "enum": [
+        "NDT",
+        "NRT"
+      ],
+      "default": "NDT"
+    },
     "OrderStatus": {
       "type": "string",
       "enum": [
@@ -1321,6 +1329,9 @@
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
+        },
+        "action": {
+          "$ref": "#/definitions/OrderAction"
         },
         "createdAt": {
           "type": "string",
