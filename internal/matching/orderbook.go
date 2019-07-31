@@ -10,6 +10,12 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/pkg/errors"
+)
+
+var (
+	ErrNotEnoughOrders = errors.New("insufficient orders")
 )
 
 type OrderBook struct {
@@ -57,8 +63,11 @@ func (s *OrderBook) ReloadConf(cfg Config) {
 	s.cfgMu.Unlock()
 }
 
-func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) uint64 {
-	var price uint64
+func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) {
+	var (
+		price uint64
+		err   error
+	)
 	vol := volume
 	if side == types.Side_Buy {
 		levels := b.buy.getLevels()
@@ -66,24 +75,31 @@ func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) uint64 {
 			lvl := levels[i]
 			if lvl.volume >= vol {
 				price += lvl.price * vol
-				return price
+				return price, err
 			}
 			price += lvl.price * lvl.volume
 			vol -= lvl.volume
 		}
 		// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
-		return price
+		// still return the price for the volume we could close out, so the caller can make a decision on what to do
+		if vol != 0 {
+			err = ErrNotEnoughOrders
+		}
+		return price, err
 	}
 	for _, lvl := range b.sell.getLevels() {
 		if lvl.volume >= vol {
 			price += lvl.price * vol
-			return price
+			return price, err
 		}
 		price += lvl.price * lvl.volume
 		vol -= lvl.volume
 	}
-	// if we reach this point, chances are vol != 0, in which case we should return an error
-	return price
+	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
+	if vol != 0 {
+		err = ErrNotEnoughOrders
+	}
+	return price, err
 }
 
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
@@ -299,10 +315,10 @@ func (b *OrderBook) RemoveDistressedOrders(traders []events.MarketPosition) erro
 		}
 		orders := make([]*types.Order, 0, int(total))
 		if trader.Buy() > 0 {
-			i := int(trader.Buy())
+			i := trader.Buy()
 			for _, l := range b.buy.levels {
 				rm := l.getOrdersByTrader(trader.Party())
-				i -= len(rm)
+				i -= int64(len(rm))
 				orders = append(orders, rm...)
 				if i == 0 {
 					break
@@ -310,10 +326,10 @@ func (b *OrderBook) RemoveDistressedOrders(traders []events.MarketPosition) erro
 			}
 		}
 		if trader.Sell() > 0 {
-			i := int(trader.Sell())
+			i := trader.Sell()
 			for _, l := range b.sell.levels {
 				rm := l.getOrdersByTrader(trader.Party())
-				i -= len(rm)
+				i -= int64(len(rm))
 				orders = append(orders, rm...)
 				if i == 0 {
 					break

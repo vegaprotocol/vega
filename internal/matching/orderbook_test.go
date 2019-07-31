@@ -43,6 +43,104 @@ func getTestOrderBook(t *testing.T, market string, proRata bool) *tstOB {
 func TestOrderBook_GetClosePNL(t *testing.T) {
 	t.Run("Get Buy-side close PNL values", getClosePNLBuy)
 	t.Run("Get Sell-side close PNL values", getClosePNLSell)
+	t.Run("Get Incomplete close-out-pnl (check error) - Buy", getClosePNLIncompleteBuy)
+	t.Run("Get Incomplete close-out-pnl (check error) - Sell", getClosePNLIncompleteSell)
+}
+
+func getClosePNLIncompleteBuy(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	// 3 orders of size 1, 3 different prices
+	orders := []*types.Order{
+		{
+			MarketID:  market,
+			PartyID:   "A",
+			Side:      types.Side_Buy,
+			Price:     100,
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+		},
+		{
+			MarketID:  market,
+			PartyID:   "B",
+			Side:      types.Side_Buy,
+			Price:     110,
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+	// volume + expected price
+	callExp := map[uint64]uint64{
+		2: 210,
+		1: 100,
+	}
+	// this calculates the actual volume
+	for vol, exp := range callExp {
+		price, err := book.GetClosePNL(vol, types.Side_Buy)
+		assert.Equal(t, exp, price)
+		assert.NoError(t, err)
+	}
+	price, err := book.GetClosePNL(3, types.Side_Buy)
+	assert.Equal(t, callExp[2], price)
+	assert.Equal(t, matching.ErrNotEnoughOrders, err)
+}
+
+func getClosePNLIncompleteSell(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	// 3 orders of size 1, 3 different prices
+	orders := []*types.Order{
+		{
+			MarketID:  market,
+			PartyID:   "A",
+			Side:      types.Side_Sell,
+			Price:     100,
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+		},
+		{
+			MarketID:  market,
+			PartyID:   "B",
+			Side:      types.Side_Sell,
+			Price:     110,
+			Size:      1,
+			Remaining: 1,
+			Type:      types.Order_GTC,
+			CreatedAt: 0,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+	// volume + expected price
+	callExp := map[uint64]uint64{
+		2: 210,
+		1: 100,
+	}
+	// this calculates the actual volume
+	for vol, exp := range callExp {
+		price, err := book.GetClosePNL(vol, types.Side_Sell)
+		assert.Equal(t, exp, price)
+		assert.NoError(t, err)
+	}
+	price, err := book.GetClosePNL(3, types.Side_Sell)
+	assert.Equal(t, callExp[2], price)
+	assert.Equal(t, matching.ErrNotEnoughOrders, err)
 }
 
 func getClosePNLBuy(t *testing.T) {
@@ -95,8 +193,9 @@ func getClosePNLBuy(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price := book.GetClosePNL(vol, types.Side_Buy)
+		price, err := book.GetClosePNL(vol, types.Side_Buy)
 		assert.Equal(t, exp, price)
+		assert.NoError(t, err)
 	}
 }
 
@@ -150,7 +249,8 @@ func getClosePNLSell(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price := book.GetClosePNL(vol, types.Side_Sell)
+		price, err := book.GetClosePNL(vol, types.Side_Sell)
+		assert.NoError(t, err)
 		assert.Equal(t, exp, price)
 	}
 }
