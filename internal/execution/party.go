@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	topUpAmout = 1000000000000
+	topUpAmount = 1000000000000
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution Collateral
@@ -87,7 +87,7 @@ func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 		if _, ok := alreadyTopUp[generalID]; !ok {
 			alreadyTopUp[generalID] = struct{}{}
 			// then credit the general account
-			err = p.collateral.IncrementBalance(generalID, topUpAmout)
+			err = p.collateral.IncrementBalance(generalID, topUpAmount)
 			if err != nil {
 				p.log.Error("unable to topup trader account",
 					logging.Error(err))
@@ -106,7 +106,7 @@ func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 		p.log.Info("trader account topup",
 			logging.String("asset", asset),
 			logging.String("traderID", notif.TraderID),
-			logging.Int64("topup-amount", topUpAmout),
+			logging.Int64("topup-amount", topUpAmount),
 			logging.Int64("new-balance", acc.Balance))
 
 		// now add the trader to the given market (move monies is margin account)

@@ -28,11 +28,8 @@ import (
 )
 
 var (
+	ErrMarketClosed      = errors.New("market closed")
 	ErrTraderDoNotExists = errors.New("trader does not exist")
-)
-
-var (
-	ErrMarketClosed = errors.New("market closed")
 )
 
 type Market struct {
