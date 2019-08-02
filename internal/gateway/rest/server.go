@@ -11,6 +11,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"
+	"go.elastic.co/apm/module/apmhttp"
 	"google.golang.org/grpc"
 )
 
@@ -89,6 +90,10 @@ func (s *restProxyServer) Start() {
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support
 	handler = NewGzipHandler(*logger, handler.(http.HandlerFunc))
+	// APM
+	if s.Config.REST.APMEnabled {
+		handler = apmhttp.Wrap(handler)
+	}
 
 	s.srv = &http.Server{
 		Addr:    restAddr,
