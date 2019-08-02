@@ -17,13 +17,14 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
 	"github.com/zannen/toml"
-	"go.uber.org/zap"
 )
 
 const (
 	marketETHUSDDEC19 = "ETHUSDDEC19.json"
 	marketGBPUSDJUN19 = "GBPUSDDEC19.json"
 	marketGBPEURDEC19 = "GBPEURDEC19.json"
+	//closingAt         = "2019-07-16T10:17:00Z"
+	closingAt = "2019-12-31T00:00:00Z"
 )
 
 type initCommand struct {
@@ -64,7 +65,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	if rootPathExists && ic.force {
-		ic.Log.Info("removing existing configuration", zap.String("path", ic.rootPath))
+		ic.Log.Info("removing existing configuration", logging.String("path", ic.rootPath))
 		os.RemoveAll(ic.rootPath) // ignore any errors here to force removal
 	}
 
@@ -129,7 +130,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	ic.Log.Info("configuration generated successfully", zap.String("path", ic.rootPath))
+	ic.Log.Info("configuration generated successfully", logging.String("path", ic.rootPath))
 
 	return nil
 }
@@ -165,7 +166,7 @@ func createDefaultMarkets(confpath string) error {
 				},
 				Product: &proto.Instrument_Future{
 					Future: &proto.Future{
-						Maturity: "2019-12-31T00:00:00Z",
+						Maturity: closingAt,
 						Oracle: &proto.Future_EthereumEvent{
 							EthereumEvent: &proto.EthereumEvent{
 								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
@@ -196,7 +197,7 @@ func createDefaultMarkets(confpath string) error {
 	mkt.TradableInstrument.Instrument.BaseName = "GBP"
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: &proto.Future{
-			Maturity: "2019-12-31T00:00:00Z",
+			Maturity: closingAt,
 			Oracle: &proto.Future_EthereumEvent{
 				EthereumEvent: &proto.EthereumEvent{
 					ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
@@ -231,7 +232,7 @@ func createDefaultMarkets(confpath string) error {
 	mkt.TradableInstrument.Instrument.QuoteName = "EUR"
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: &proto.Future{
-			Maturity: "2019-12-31T00:00:00Z",
+			Maturity: closingAt,
 			Oracle: &proto.Future_EthereumEvent{
 				EthereumEvent: &proto.EthereumEvent{
 					ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",

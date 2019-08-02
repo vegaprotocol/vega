@@ -25,6 +25,16 @@ func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 	}
 }
 
+func (l *PriceLevel) getOrdersByTrader(trader string) []*types.Order {
+	ret := []*types.Order{}
+	for _, o := range l.orders {
+		if o.PartyID == trader {
+			ret = append(ret, o)
+		}
+	}
+	return ret
+}
+
 func (l *PriceLevel) addOrder(o *types.Order) {
 	// adjust volume by timestamp map for correct pro-rata calculation
 	l.increaseVolumeByTimestamp(o)

@@ -210,3 +210,11 @@ func (e *Engine) Positions() []MarketPosition {
 	e.mu.RUnlock()
 	return out
 }
+
+func (e *Engine) Parties() []string {
+	parties := make([]string, 0, len(e.positions))
+	for _, v := range e.positions {
+		parties = append(parties, v.Party())
+	}
+	return parties
+}

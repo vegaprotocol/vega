@@ -5,6 +5,12 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/pkg/errors"
+)
+
+var (
+	ErrPriceNotFound = errors.New("price-volume pair not found")
 )
 
 type OrderBookSide struct {
@@ -15,12 +21,14 @@ type OrderBookSide struct {
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
+	// update the price-volume map
 	s.getPriceLevel(o.Price, side).addOrder(o)
 }
 
 func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 	priceLevelIndex := -1
 	orderIndex := -1
+	var oldOrder *types.Order
 
 	for idx, priceLevel := range s.levels {
 		if priceLevel.price == orderAmended.Price {
@@ -28,6 +36,7 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 			for j, order := range priceLevel.orders {
 				if order.Id == orderAmended.Id {
 					orderIndex = j
+					oldOrder = order
 					break
 				}
 			}
@@ -39,15 +48,15 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 		return types.ErrOrderNotFound
 	}
 
-	if s.levels[priceLevelIndex].orders[orderIndex].PartyID != orderAmended.PartyID {
+	if oldOrder.PartyID != orderAmended.PartyID {
 		return types.ErrOrderAmendFailure
 	}
 
-	if s.levels[priceLevelIndex].orders[orderIndex].Size < orderAmended.Size {
+	if oldOrder.Size < orderAmended.Size {
 		return types.ErrOrderAmendFailure
 	}
 
-	if s.levels[priceLevelIndex].orders[orderIndex].Reference != orderAmended.Reference {
+	if oldOrder.Reference != orderAmended.Reference {
 		return types.ErrOrderAmendFailure
 	}
 

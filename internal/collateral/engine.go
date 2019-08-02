@@ -47,6 +47,8 @@ type Engine struct {
 
 	accs map[string]*types.Account
 	buf  AccountBuffer
+	// cool be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
+	currentTime int64
 }
 
 func accountID(marketID, traderID, asset string, ty types.AccountType) string {
@@ -70,16 +72,21 @@ func accountID(marketID, traderID, asset string, ty types.AccountType) string {
 	return b.String()
 }
 
-func New(log *logging.Logger, conf Config, buf AccountBuffer) (*Engine, error) {
+func New(log *logging.Logger, conf Config, buf AccountBuffer, now time.Time) (*Engine, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 	return &Engine{
-		log:    log,
-		Config: conf,
-		accs:   make(map[string]*types.Account, initialAccountSize),
-		buf:    buf,
+		log:         log,
+		Config:      conf,
+		accs:        make(map[string]*types.Account, initialAccountSize),
+		buf:         buf,
+		currentTime: now.UnixNano(),
 	}, nil
+}
+
+func (e *Engine) OnChainTimeUpdate(t time.Time) {
+	e.currentTime = t.UnixNano()
 }
 
 func (e *Engine) ReloadConf(cfg Config) {
@@ -227,8 +234,22 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 			closed = append(closed, update) // update interface embeds events.MarketPosition
 		} else {
 			response = append(response, res)
+			for _, v := range res.GetTransfers() {
+				// increment the to account
+				if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+					e.log.Error(
+						"Failed to increment balance for account",
+						logging.String("account-id", v.ToAccount),
+						logging.Int64("amount", v.Amount),
+						logging.Error(err),
+					)
+					continue
+				}
+			}
+
 		}
 	}
+
 	return response, closed, nil
 }
 
@@ -293,7 +314,19 @@ func (e *Engine) collect(marketID string, positions []*types.Transfer) ([]*types
 	// possibly verify balances?
 	for _, b := range winResp.Balances {
 		b.Balance = b.Account.Balance
+
+		// save the balance now
+		if err := e.UpdateBalance(b.Account.Id, b.Balance); err != nil {
+			e.log.Error(
+				"Failed to update target account",
+				logging.String("target-account", b.Account.Id),
+				logging.Int64("balance", b.Balance),
+				logging.Error(err),
+			)
+			return nil, err
+		}
 	}
+
 	if haveLoss {
 		return []*types.TransferResponse{
 			lossResp,
@@ -553,7 +586,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 					Amount:      parts,
 					Reference:   req.Reference,
 					Type:        "settlement",
-					Timestamp:   time.Now().Unix(),
+					Timestamp:   e.currentTime,
 				}
 				ret.Transfers = append(ret.Transfers, lm)
 				to.Balance += parts
@@ -587,7 +620,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 					Amount:      parts,
 					Reference:   req.Reference,
 					Type:        "settlement",
-					Timestamp:   time.Now().Unix(),
+					Timestamp:   e.currentTime,
 				}
 				ret.Transfers = append(ret.Transfers, lm)
 				to.Account.Balance += parts
@@ -599,6 +632,87 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 		}
 	}
 	return &ret, nil
+}
+
+func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.TransferResponse, error) {
+	// creatre a transfer request that we will reuse all the time in order to make allocations smallers
+	req := &types.TransferRequest{
+		FromAccount: make([]*types.Account, 1),
+		ToAccount:   make([]*types.Account, 1),
+		Asset:       asset,
+	}
+
+	// assume we have as much transfer response than parties
+	resps := make([]*types.TransferResponse, 0, len(parties))
+
+	for _, v := range parties {
+		marginAcc, err := e.GetAccountByID(accountID(mktID, v, asset, types.AccountType_MARGIN))
+		if err != nil {
+			e.log.Error(
+				"Failed to get the margin account",
+				logging.String("trader-id", v),
+				logging.String("market-id", mktID),
+				logging.String("asset", asset),
+				logging.Error(err))
+			// just try to do other traders
+			continue
+		}
+
+		generalAcc, err := e.GetAccountByID(accountID("", v, asset, types.AccountType_GENERAL))
+		if err != nil {
+			e.log.Error(
+				"Failed to get the general account",
+				logging.String("trader-id", v),
+				logging.String("market-id", mktID),
+				logging.String("asset", asset),
+				logging.Error(err))
+			// just try to do other traders
+			continue
+		}
+
+		req.FromAccount[0] = marginAcc
+		req.ToAccount[0] = generalAcc
+		req.Amount = uint64(marginAcc.Balance)
+
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("Clearing trader margin account",
+				logging.String("market-id", mktID),
+				logging.String("asset", asset),
+				logging.String("trader-id", v),
+				logging.Int64("margin-before", marginAcc.Balance),
+				logging.Int64("general-before", generalAcc.Balance),
+				logging.Int64("general-after", generalAcc.Balance+marginAcc.Balance))
+		}
+
+		ledgerEntries, err := e.getLedgerEntries(req)
+		if err != nil {
+			e.log.Error(
+				"Failed to move monies from margin to genral account",
+				logging.String("trader-id", v),
+				logging.String("market-id", mktID),
+				logging.String("asset", asset),
+				logging.Error(err))
+			// just try to do other traders
+			continue
+		}
+
+		for _, v := range ledgerEntries.Transfers {
+			// increment the to account
+			if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+				e.log.Error(
+					"Failed to increment balance for account",
+					logging.String("account-id", v.ToAccount),
+					logging.Int64("amount", v.Amount),
+					logging.Error(err),
+				)
+				return nil, err
+			}
+		}
+
+		resps = append(resps, ledgerEntries)
+	}
+
+	return resps, nil
 }
 
 // insert and stuff relate to accounts map from here
