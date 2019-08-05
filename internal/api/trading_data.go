@@ -586,6 +586,8 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 	)
 	if len(req.MarketID) > 0 {
 		marketID = &req.MarketID
+	} else {
+		return ErrEmptyMissingMarketID
 	}
 
 	candleschan, ref := h.CandleService.ObserveCandles(
