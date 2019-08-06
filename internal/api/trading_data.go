@@ -457,6 +457,8 @@ func (h *tradingDataService) OrdersSubscribe(
 	)
 	if len(req.MarketID) > 0 {
 		marketID = &req.MarketID
+	} else {
+		return ErrEmptyMissingMarketID
 	}
 	if len(req.PartyID) > 0 {
 		partyID = &req.PartyID
@@ -521,6 +523,8 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 	)
 	if len(req.MarketID) > 0 {
 		marketID = &req.MarketID
+	} else {
+		return ErrEmptyMissingMarketID
 	}
 	if len(req.PartyID) > 0 {
 		partyID = &req.PartyID
@@ -586,6 +590,8 @@ func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 	)
 	if len(req.MarketID) > 0 {
 		marketID = &req.MarketID
+	} else {
+		return ErrEmptyMissingMarketID
 	}
 
 	candleschan, ref := h.CandleService.ObserveCandles(

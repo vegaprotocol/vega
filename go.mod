@@ -43,6 +43,7 @@ require (
 	github.com/vegaprotocol/modvendor v0.0.1 // indirect
 	github.com/vektah/gqlparser v1.1.2
 	github.com/zannen/toml v0.3.2
+	go.elastic.co/apm/module/apmhttp v1.5.0
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
