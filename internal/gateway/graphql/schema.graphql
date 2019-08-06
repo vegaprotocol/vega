@@ -544,7 +544,7 @@ type Party {
     # get accounts for a given party, filtered if needed
   accounts(
     # Market ID - specify what market accounts for the party to return
-    marketID: String,
+    marketId: String,
     # Filter accounts by type (General account, margin account, etc...)
     type: AccountType,
   ): [Account!]

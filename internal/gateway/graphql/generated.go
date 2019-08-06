@@ -955,7 +955,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Accounts(childComplexity, args["marketID"].(*string), args["type"].(*AccountType)), true
+		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["type"].(*AccountType)), true
 
 	case "Party.ID":
 		if e.complexity.Party.ID == nil {
@@ -2215,7 +2215,7 @@ type Party {
     # get accounts for a given party, filtered if needed
   accounts(
     # Market ID - specify what market accounts for the party to return
-    marketID: String,
+    marketId: String,
     # Filter accounts by type (General account, margin account, etc...)
     type: AccountType,
   ): [Account!]
@@ -2792,13 +2792,13 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["marketID"]; ok {
+	if tmp, ok := rawArgs["marketId"]; ok {
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketID"] = arg0
+	args["marketId"] = arg0
 	var arg1 *AccountType
 	if tmp, ok := rawArgs["type"]; ok {
 		arg1, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
@@ -5094,7 +5094,7 @@ func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Accounts(rctx, obj, args["marketID"].(*string), args["type"].(*AccountType))
+		return ec.resolvers.Party().Accounts(rctx, obj, args["marketId"].(*string), args["type"].(*AccountType))
 	})
 	if resTmp == nil {
 		return graphql.Null
