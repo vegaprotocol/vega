@@ -28,24 +28,6 @@ type Mutation {
     expiration: String
   ): PendingOrder!
 
-  # User orderSubmit instead of orderCreate.
-  orderCreate(
-    # ID of the market to place the order
-    marketId: String!,
-    # ID of the party placing the order
-    partyId: String!,
-    # Price of the asset
-    price: String!,
-    # Size ofthe order
-    size: String!,
-    # Side of the order (Buy or Sell)
-    side: Side!,
-    # Type of the order
-    type: OrderType!,
-    # exiration of the the order
-    expiration: String
-  ): PendingOrder!
-
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
   # It validates and sends the request out for consensus.
   orderCancel(
