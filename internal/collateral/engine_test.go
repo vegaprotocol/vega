@@ -66,20 +66,21 @@ func testAddTrader(t *testing.T) {
 	eng.Engine.UpdateBalance(general, eng.Config.TraderGeneralAccountBalance)
 
 	// add to the market
-	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
+	// eng.buf.EXPECT().Add(gomock.Any()).Times(2)
 	err := eng.Engine.AddTraderToMarket(testMarketID, trader, testMarketAsset)
 
-	expectedMarginBalance := int64(eng.Config.TraderGeneralAccountBalance / 100 * eng.Config.TraderMarginPercent)
-	expectedGeneralBalance := eng.Config.TraderGeneralAccountBalance - expectedMarginBalance
+	// expectedMarginBalance := int64(eng.Config.TraderGeneralAccountBalance / 100 * eng.Config.TraderMarginPercent)
+	// expectedGeneralBalance := eng.Config.TraderGeneralAccountBalance - expectedMarginBalance
+	expectedGeneralBalance := eng.Config.TraderGeneralAccountBalance
 
 	// check the amount on each account now
 	acc, err := eng.Engine.GetAccountByID(margin)
 	assert.Nil(t, err)
-	assert.Equal(t, acc.Balance, expectedMarginBalance)
+	assert.Equal(t, int64(0), acc.Balance)
 
 	acc, err = eng.Engine.GetAccountByID(general)
 	assert.Nil(t, err)
-	assert.Equal(t, acc.Balance, expectedGeneralBalance)
+	assert.Equal(t, expectedGeneralBalance, acc.Balance)
 
 }
 

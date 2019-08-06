@@ -49,6 +49,18 @@ func (m MarketPosition) Price() uint64 {
 	return m.price
 }
 
+// UpdatedPosition returns the updated position using the potential
+// sells and buys
+func (m *MarketPosition) UpdatedPosition(price uint64) *MarketPosition {
+	return &MarketPosition{
+		buy:     0,
+		sell:    0,
+		size:    m.size - m.sell + m.buy,
+		partyID: m.partyID,
+		price:   price,
+	}
+}
+
 type Engine struct {
 	log *logging.Logger
 	Config
@@ -92,25 +104,30 @@ func (e *Engine) ReloadConf(cfg Config) {
 // It returns the updated position.
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
-func (e *Engine) RegisterOrder(order *types.Order) (events.MarketPosition, error) {
+func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 	e.mu.Lock()
 	pos, found := e.positions[order.PartyID]
 	if !found {
 		pos = &MarketPosition{partyID: order.PartyID}
 		e.positions[order.PartyID] = pos
 	}
+	fmt.Printf("ORDER SIDE = %v\n", order.Size)
 	if order.Side == types.Side_Buy {
+		fmt.Printf("POS IN SET: %v\n", pos.buy)
 		pos.buy += int64(order.Size)
+		fmt.Printf("POS IN SET: %v\n", pos.buy)
 	} else {
 		pos.sell += int64(order.Size)
 	}
 	e.mu.Unlock()
+	fmt.Printf("REGISTER ORDER IN: %v\n", *order)
+	fmt.Printf("REGISTER ORDER IN NEW POSITION: %v\n", *pos)
 	return pos, nil
 }
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
-func (e *Engine) UnregisterOrder(order *types.Order) (events.MarketPosition, error) {
+func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
 	e.mu.Lock()
 	pos, found := e.positions[order.PartyID]
 	e.mu.Unlock()

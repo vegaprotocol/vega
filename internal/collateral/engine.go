@@ -26,6 +26,7 @@ var (
 	ErrAccountDoNotExists        = errors.New("account do not exists")
 	ErrAccountAlreadyExists      = errors.New("account already exists")
 	ErrInsufficientTraderBalance = errors.New("trader has insufficient balance for margin")
+	ErrInvalidTransferTypeForOp  = errors.New("invalid transfer type for operation")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buffer_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral AccountBuffer
@@ -132,14 +133,14 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 	// accountID(marketID, traderID, asset string, ty types.AccountType) accountIDT
 	genID := accountID("", traderID, asset, types.AccountType_GENERAL)
 	marginID := accountID(marketID, traderID, asset, types.AccountType_MARGIN)
-	gen, err := e.GetAccountByID(genID)
+	_, err := e.GetAccountByID(genID)
 	if err != nil {
 		e.log.Error(
 			"Trader doesn't have a general account somehow?",
 			logging.String("trader-id", traderID))
 		return ErrTraderAccountsMissing
 	}
-	margin, err := e.GetAccountByID(marginID)
+	_, err = e.GetAccountByID(marginID)
 	if err != nil {
 		e.log.Error(
 			"Trader doesn't have a margin account somehow?",
@@ -148,36 +149,38 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 		return ErrTraderAccountsMissing
 	}
 
-	// let's get the balances we need
-	e.cfgMu.Lock()
-	genBal := e.Config.TraderGeneralAccountBalance
-	marginBal := genBal / 100 * e.Config.TraderMarginPercent
-	e.cfgMu.Unlock()
-	// check to see if there's enough balance on the general account already
-	// if not, add it
-	if gen.Balance < genBal {
-		gen.Balance = genBal
-	}
-	// subtract the margin from the general balance
-	gen.Balance -= marginBal
-	if err := e.UpdateBalance(gen.Id, gen.Balance); err != nil {
-		e.log.Error(
-			"Failed to set new balance for general account",
-			logging.String("trader-id", traderID),
-			logging.String("account-id", gen.Id),
-			logging.Int64("balance", gen.Balance),
-			logging.Error(err))
-		return err
-	}
-	if err := e.UpdateBalance(margin.Id, marginBal); err != nil {
-		e.log.Error(
-			"Failed to set new balance for margin account",
-			logging.String("trader-id", traderID),
-			logging.String("account-id", margin.Id),
-			logging.Int64("balance", marginBal),
-			logging.Error(err))
-		return err
-	}
+	/*
+		// let's get the balances we need
+		e.cfgMu.Lock()
+		genBal := e.Config.TraderGeneralAccountBalance
+		marginBal := genBal / 100 * e.Config.TraderMarginPercent
+		e.cfgMu.Unlock()
+		// check to see if there's enough balance on the general account already
+		// if not, add it
+		if gen.Balance < genBal {
+			gen.Balance = genBal
+		}
+		// subtract the margin from the general balance
+		gen.Balance -= marginBal
+		if err := e.UpdateBalance(gen.Id, gen.Balance); err != nil {
+			e.log.Error(
+				"Failed to set new balance for general account",
+				logging.String("trader-id", traderID),
+				logging.String("account-id", gen.Id),
+				logging.Int64("balance", gen.Balance),
+				logging.Error(err))
+			return err
+		}
+		if err := e.UpdateBalance(margin.Id, marginBal); err != nil {
+			e.log.Error(
+				"Failed to set new balance for margin account",
+				logging.String("trader-id", traderID),
+				logging.String("account-id", margin.Id),
+				logging.Int64("balance", marginBal),
+				logging.Error(err))
+			return err
+		}
+	*/
 	return nil
 }
 
@@ -632,6 +635,88 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 		}
 	}
 	return &ret, nil
+}
+
+func (e *Engine) EnsureMargin(
+	mktID string, risk events.Risk) (*types.TransferResponse, error) {
+	transfer := risk.Transfer()
+	if transfer.Type != types.TransferType_MARGIN_LOW &&
+		transfer.Type != types.TransferType_MARGIN_HIGH {
+		e.log.Error("Unexpected transfer type for ensure margin",
+			logging.String("type", transfer.Type.String()))
+		return nil, ErrInvalidTransferTypeForOp
+	}
+
+	// first get margin account of this trader
+	marginAcc, err := e.GetAccountByID(accountID(mktID, transfer.Owner, risk.Asset(), types.AccountType_MARGIN))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin account",
+			logging.String("trader-id", transfer.Owner),
+			logging.String("market-id", mktID),
+			logging.String("asset", risk.Asset()),
+			logging.Error(err))
+		return nil, err
+	}
+
+	// get the general account of this trader
+	generalAcc, err := e.GetAccountByID(accountID("", transfer.Owner, risk.Asset(), types.AccountType_GENERAL))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general account",
+			logging.String("trader-id", transfer.Owner),
+			logging.String("market-id", mktID),
+			logging.String("asset", risk.Asset()),
+			logging.Error(err))
+		return nil, err
+	}
+
+	if generalAcc.Balance < transfer.Amount.Amount {
+		e.log.Debug("Not enough monies from trader account",
+			logging.String("trader-id", transfer.Owner),
+			logging.String("market-id", mktID),
+			logging.String("asset", risk.Asset()),
+			logging.String("account", generalAcc.Id),
+			logging.Int64("balance", generalAcc.Balance),
+			logging.Int64("expected-amount", transfer.Amount.Amount))
+		return nil, ErrInsufficientTraderBalance
+	}
+
+	// if all checks are ok, create the transfer request
+	req := &types.TransferRequest{
+		FromAccount: []*types.Account{generalAcc},
+		ToAccount:   []*types.Account{marginAcc},
+		Asset:       risk.Asset(),
+		Amount:      uint64(transfer.Amount.Amount - marginAcc.Balance),
+		MinAmount:   uint64(transfer.Amount.MinAmount - marginAcc.Balance),
+		Reference:   fmt.Sprintf("MarginUpdate:%v:%v", transfer.Owner, transfer.Amount.Amount),
+	}
+
+	ledgerEntries, err := e.getLedgerEntries(req)
+	if err != nil {
+		e.log.Error(
+			"Failed to move monies from margin from general account",
+			logging.String("trader-id", transfer.Owner),
+			logging.String("market-id", mktID),
+			logging.String("asset", risk.Asset()),
+			logging.Error(err))
+		return nil, err
+	}
+
+	for _, v := range ledgerEntries.Transfers {
+		// increment the to account
+		if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("account-id", v.ToAccount),
+				logging.Int64("amount", v.Amount),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+	}
+
+	return ledgerEntries, nil
 }
 
 func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.TransferResponse, error) {
