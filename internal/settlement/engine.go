@@ -32,11 +32,12 @@ type Engine struct {
 	log *logging.Logger
 
 	Config
-	mu      *sync.Mutex
-	product Product
-	pos     map[string]*pos
-	closed  map[string][]*pos
-	market  string
+	product  Product
+	pos      map[string]*pos
+	posMu    sync.Mutex
+	closed   map[string][]*pos
+	closedMu sync.Mutex
+	market   string
 }
 
 func New(log *logging.Logger, conf Config, product Product, market string) *Engine {
@@ -47,10 +48,10 @@ func New(log *logging.Logger, conf Config, product Product, market string) *Engi
 	return &Engine{
 		log:     log,
 		Config:  conf,
-		mu:      &sync.Mutex{},
 		product: product,
 		pos:     map[string]*pos{},
 		market:  market,
+		// no need to initialised `closed` map
 	}
 }
 
@@ -69,38 +70,49 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 // Update - takes market positions, keeps track of things
 func (e *Engine) Update(positions []MarketPosition) {
-	e.mu.Lock()
+	e.posMu.Lock()
 	for _, p := range positions {
-		e.updatePosition(p, p.Price())
+		party := p.Party()
+		ps, ok := e.pos[party]
+		if !ok {
+			ps = newPos(party)
+			e.pos[party] = ps
+		}
+		// price can come from either position, or trade (Update vs SettleMTM)
+		ps.price = p.Price()
+		ps.size = p.Size()
 	}
-	e.mu.Unlock()
+	e.posMu.Unlock()
 }
 
-func (e *Engine) updatePosition(p MarketPosition, price uint64) {
-	party := p.Party()
-	ps, ok := e.pos[party]
+func (e *Engine) getCurrentPosition(party string) *pos {
+	e.posMu.Lock()
+	p, ok := e.pos[party]
 	if !ok {
-		ps = newPos(party)
-		e.pos[party] = ps
+		p = newPos(party)
+		e.pos[party] = p
 	}
-	// price can come from either position, or trade (Update vs SettleMTM)
-	ps.price = price
-	ps.size = p.Size()
+	e.posMu.Unlock()
+	return p
 }
 
-func (e *Engine) getPosition(party string) pos {
-	ps, ok := e.pos[party]
-	if !ok {
-		e.pos[party] = newPos(party)
+// RemoveDistressed - remove whatever settlement data we have for distressed traders
+// they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
+func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
+	e.posMu.Lock()
+	e.closedMu.Lock()
+	for _, trader := range traders {
+		key := trader.Party()
+		delete(e.pos, key)
+		delete(e.closed, key)
 	}
-	return *ps
+	e.closedMu.Unlock()
+	e.posMu.Unlock()
 }
 
 func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
-	e.mu.Lock()
 	positions, err := e.settleAll()
-	e.mu.Unlock()
 	if err != nil {
 		e.log.Error(
 			"Something went wrong trying to settle positions",
@@ -113,9 +125,8 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 
 func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
 	// lock before we can start
-	e.mu.Lock()
+	e.closedMu.Lock()
 	go func() {
-		// e.mu.Lock()
 		// wipe closed map
 		e.closed = map[string][]*pos{}
 		for ps := range ch {
@@ -150,7 +161,7 @@ func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
 			// the position price is possibly updated (e.g. if there was no open position prior to this, or trader went from long to short or vice-versa)
 			current.price = updatePrice
 		}
-		e.mu.Unlock()
+		e.closedMu.Unlock()
 	}()
 }
 
@@ -161,11 +172,10 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 	transfers := make([]events.Transfer, 0, len(positions))
 	winTransfers := make([]events.Transfer, 0, len(positions)/2)
 	// see if we've got closed out positions
-	e.mu.Lock()
+	e.closedMu.Lock()
 	closed := e.closed
 	// reset map here in case we're going to call this with just an updated mark price
 	e.closed = map[string][]*pos{}
-	e.mu.Unlock()
 	for _, pos := range positions {
 		size := pos.Size()
 		price := pos.Price()
@@ -213,18 +223,9 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 			})
 		}
 	}
+	e.closedMu.Unlock()
 	transfers = append(transfers, winTransfers...)
 	return transfers
-}
-
-// RemoveDistressed - remove whatever settlement data we have for distressed traders
-// they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
-func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
-	for _, trader := range traders {
-		key := trader.Party()
-		delete(e.pos, key)
-		delete(e.closed, key) // just in case... shouldn't be needed, but hey...
-	}
 }
 
 func calcMTM(markPrice, size, price int64, closed []*pos) (mtmShare int64) {
@@ -236,53 +237,10 @@ func calcMTM(markPrice, size, price int64, closed []*pos) (mtmShare int64) {
 	return
 }
 
-func getMTMAmount(markPrice, currentPrice, currentSize, newSize, newPrice int64) (mtmShare int64) {
-	mtmShare = (markPrice - newPrice) * newSize
-	if currentSize == newSize {
-		return
-	}
-	// trader was long
-	if currentSize > 0 {
-		// trader increased overall long position, no separate MTM required
-		if newSize > currentSize {
-			return
-		}
-		// the trader went from long to short, the only part that we need to MTM is the long position held
-		if newSize < 0 {
-			newSize = 0
-		}
-		// the trader was long, and is now "less long", we need to add the MTM of the delta
-		// so trader went from +10 to +5 => add MTM for 5
-		mtmShare += (markPrice - currentPrice) * (currentSize - newSize)
-		return
-	}
-	// now in case trader was short
-	if newSize < currentSize {
-		// trader went "even more short", nothing needs to be done
-		return
-	}
-	// new size is either zero, or trader went long
-	// we need to MTM the previously held short position
-	if newSize > 0 {
-		newSize = 0
-	}
-	// newSize is still short, but less short than the previous position
-	// add MTM share
-	mtmShare += (markPrice - currentPrice) * (currentSize - newSize)
-	return
-}
-
-func (e *Engine) getCurrentPosition(trader string) *pos {
-	p, ok := e.pos[trader]
-	if !ok {
-		p = newPos(trader)
-		e.pos[trader] = p
-	}
-	return p
-}
-
 // simplified settle call
 func (e *Engine) settleAll() ([]*types.Transfer, error) {
+	e.posMu.Lock()
+	defer e.posMu.Unlock()
 	// there should be as many positions as there are traders (obviously)
 	aggregated := make([]*types.Transfer, 0, len(e.pos))
 	// traders who are in the black should be appended (collect first) obvioulsy.
