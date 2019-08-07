@@ -774,12 +774,6 @@ func (r *MyPositionResolver) direction(val int64) ValueDirection {
 
 type MyMutationResolver resolverRoot
 
-// DEPRECATED: Use OrderSubmit instead.
-func (r *MyMutationResolver) OrderCreate(ctx context.Context, market string, party string, price string,
-	size string, side Side, type_ OrderType, expiration *string) (*types.PendingOrder, error) {
-	return r.OrderSubmit(ctx, market, party, price, size, side, type_, expiration)
-}
-
 func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, party string, price string,
 	size string, side Side, type_ OrderType, expiration *string) (*types.PendingOrder, error) {
 
