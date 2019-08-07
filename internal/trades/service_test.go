@@ -2,6 +2,7 @@ package trades_test
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"testing"
 
@@ -67,6 +68,12 @@ func storageConfig(t *testing.T) storage.Config {
 func TestGetByMarket(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.Finish()
+	cfg := svc.Config
+	cfg.Level.Level = logging.DebugLevel
+	svc.ReloadConf(cfg)
+	cfg.Level.Level = logging.InfoLevel
+	svc.ReloadConf(cfg)
+
 	market := "BTC/DEC19"
 	invalid := "LTC/DEC19"
 	expErr := errors.New("phobos communications link interrupted")
@@ -76,9 +83,9 @@ func TestGetByMarket(t *testing.T) {
 		{Id: "C", MarketID: market, Price: 300},
 	}
 
-	ui0, ui1 := uint64(0), uint64(1)
-	svc.trade.EXPECT().GetByMarket(svc.ctx, market, ui0, ui0, false).Times(1).Return(expect, nil)
-	svc.trade.EXPECT().GetByMarket(svc.ctx, invalid, ui1, ui0, false).Times(1).Return(nil, expErr)
+	ui0, ui1, uiDefault := uint64(0), uint64(1), uint64(svc.Config.PageSizeDefault)
+	svc.trade.EXPECT().GetByMarket(svc.ctx, market, ui0, uiDefault, false).Times(1).Return(expect, nil)
+	svc.trade.EXPECT().GetByMarket(svc.ctx, invalid, ui1, uiDefault, false).Times(1).Return(nil, expErr)
 
 	success, noErr := svc.GetByMarket(svc.ctx, market, 0, 0, false)
 	assert.NoError(t, noErr)
@@ -87,6 +94,9 @@ func TestGetByMarket(t *testing.T) {
 	fail, err := svc.GetByMarket(svc.ctx, invalid, 1, 0, false)
 	assert.Nil(t, fail)
 	assert.Equal(t, expErr, err)
+
+	_, err = svc.GetByMarket(svc.ctx, market, 0, uint64(svc.Config.PageSizeMaximum+1), false)
+	assert.True(t, strings.Contains(err.Error(), "invalid pagination limit"))
 }
 
 func TestTradeService_GetByParty(t *testing.T) {
@@ -109,8 +119,8 @@ func TestTradeService_GetByParty(t *testing.T) {
 		},
 		invalid: nil,
 	}
-	ui0 := uint64(0)
-	svc.trade.EXPECT().GetByParty(svc.ctx, gomock.Any(), ui0, ui0, false, nil).Times(len(expect)).DoAndReturn(func(_ context.Context, party string, _ uint64, _ uint64, _ bool, _ *string) ([]*types.Trade, error) {
+	ui0, uiDefault := uint64(0), uint64(svc.Config.PageSizeDefault)
+	svc.trade.EXPECT().GetByParty(svc.ctx, gomock.Any(), ui0, uiDefault, false, nil).Times(len(expect)).DoAndReturn(func(_ context.Context, party string, _ uint64, _ uint64, _ bool, _ *string) ([]*types.Trade, error) {
 		trades, ok := expect[party]
 		assert.True(t, ok)
 		if trades == nil {
@@ -129,6 +139,9 @@ func TestTradeService_GetByParty(t *testing.T) {
 			assert.Equal(t, exp, trades)
 		}
 	}
+
+	_, err := svc.GetByParty(svc.ctx, partyA, 0, uint64(svc.Config.PageSizeMaximum+1), false, nil)
+	assert.True(t, strings.Contains(err.Error(), "invalid pagination limit"))
 }
 
 func TestObserveTrades(t *testing.T) {
