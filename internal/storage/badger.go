@@ -70,14 +70,14 @@ func DefaultStoreOptions() ConfigOptions {
 		TableLoadingMode:        fileio,    // options.FileLoadingMode, default options.MemoryMap
 		ValueLogLoadingMode:     fileio,    // options.FileLoadingMode, default options.MemoryMap
 		NumVersionsToKeep:       1,         // int
-		MaxTableSize:            16 << 20,  // int64, default 64<<20 (64MB)
+		MaxTableSize:            64 << 20,  // int64, default 64<<20 (64MB)
 		LevelSizeMultiplier:     10,        // int
 		MaxLevels:               7,         // int
-		ValueThreshold:          16,        // int, default 32
-		NumMemtables:            1,         // int, default 5
-		NumLevelZeroTables:      1,         // int, default 5
-		NumLevelZeroTablesStall: 2,         // int, default 10
-		LevelOneSize:            64 << 20,  // int64, default 256<<20
+		ValueThreshold:          32,        // int, default 32
+		NumMemtables:            5,         // int, default 5
+		NumLevelZeroTables:      5,         // int, default 5
+		NumLevelZeroTablesStall: 10,        // int, default 10
+		LevelOneSize:            256 << 20, // int64, default 256<<20
 		ValueLogFileSize:        1<<30 - 1, // int64, default 1<<30-1 (almost 1GB)
 		ValueLogMaxEntries:      1000000,   // uint32
 		NumCompactors:           2,         // int, default 2
