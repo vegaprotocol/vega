@@ -19,7 +19,7 @@ type GatewayServiceConfig struct {
 
 type RESTGatewayServiceConfig struct {
 	ServerConfig
-	Enabled bool
+	Enabled    bool
 	APMEnabled bool
 }
 
