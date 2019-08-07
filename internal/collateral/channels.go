@@ -105,8 +105,8 @@ func (e *Engine) TransferCh(marketID string, transfers []events.Transfer) (<-cha
 				}
 			}
 			if distr.lossDelta != distr.expLoss {
-				e.log.Warn(
-					"Expected to distribute and actual balance mismatch",
+				e.log.Debug(
+					"TransferCh: Expected to distribute and actual balance mismatch",
 					logging.Uint64("expected-balance", distr.expLoss),
 					logging.Uint64("actual-balance", distr.lossDelta),
 				)
@@ -252,8 +252,8 @@ func (e *Engine) lossCB(distr *distributor, lossResp *types.TransferResponse, pr
 		// could increment distr.balanceDelta, but we're iterating over this later on anyway
 		// and we might need to change this to handle multiple balances, best keep it there
 		if uint64(res.Balances[0].Balance) != expAmount {
-			e.log.Warn(
-				"Loss trader accounts for full amount failed",
+			e.log.Debug(
+				"lossCB: Loss trader accounts for full amount failed",
 				logging.String("trader-id", p.Owner),
 				logging.Uint64("expected-amount", expAmount),
 				logging.Int64("actual-amount", res.Balances[0].Balance),
