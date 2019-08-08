@@ -8,15 +8,14 @@ import (
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/accounts"
 	"code.vegaprotocol.io/vega/internal/auth"
-	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
+	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
 	"google.golang.org/grpc"
@@ -28,11 +27,11 @@ type grpcServer struct {
 	log *logging.Logger
 	Config
 	stats              *internal.Stats
-	client             *blockchain.Client
+	client             BlockchainClient
 	orderService       *orders.Svc
 	tradeService       *trades.Svc
 	candleService      *candles.Svc
-	marketService      *markets.Svc
+	marketService      MarketService
 	partyService       *parties.Svc
 	timeService        *vegatime.Svc
 	srv                *grpc.Server
@@ -49,9 +48,9 @@ func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
 	stats *internal.Stats,
-	client *blockchain.Client,
+	client BlockchainClient,
 	timeService *vegatime.Svc,
-	marketService *markets.Svc,
+	marketService MarketService,
 	partyService *parties.Svc,
 	orderService *orders.Svc,
 	tradeService *trades.Svc,
@@ -165,6 +164,7 @@ func (g *grpcServer) Start() {
 		authEnabled:       g.Config.AuthEnabled,
 		tradeOrderService: g.orderService,
 		accountService:    g.accountsService,
+		marketService:     g.marketService,
 		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc
@@ -204,4 +204,8 @@ func (g *grpcServer) Stop() {
 
 func (g *grpcServer) OnPartiesUpdated(ps []auth.PartyInfo) {
 	g.tradingService.UpdateParties(ps)
+}
+
+func (g *grpcServer) SubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*types.PendingOrder, error) {
+	return g.tradingService.SubmitOrder(ctx, req)
 }

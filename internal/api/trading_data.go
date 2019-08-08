@@ -87,9 +87,15 @@ type PartyService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/api BlockchainClient
 type BlockchainClient interface {
+	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
+	CancelOrder(ctx context.Context, order *types.Order) (success bool, err error)
+	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
-	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
+	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
+	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
+	Health() (*tmctypes.ResultHealth, error)
+	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api AccountsService
