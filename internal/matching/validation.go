@@ -1,8 +1,6 @@
 package matching
 
 import (
-	"fmt"
-
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -18,8 +16,6 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) error {
 	}
 
 	if orderMessage.CreatedAt < b.latestTimestamp {
-		fmt.Printf("LATEST TIMESTAMP %v\n", b.latestTimestamp)
-		fmt.Printf("NEW CREATED AT %v\n", orderMessage.CreatedAt)
 		return types.ErrOrderOutOfSequence
 	}
 

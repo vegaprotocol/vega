@@ -149,38 +149,6 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 		return ErrTraderAccountsMissing
 	}
 
-	/*
-		// let's get the balances we need
-		e.cfgMu.Lock()
-		genBal := e.Config.TraderGeneralAccountBalance
-		marginBal := genBal / 100 * e.Config.TraderMarginPercent
-		e.cfgMu.Unlock()
-		// check to see if there's enough balance on the general account already
-		// if not, add it
-		if gen.Balance < genBal {
-			gen.Balance = genBal
-		}
-		// subtract the margin from the general balance
-		gen.Balance -= marginBal
-		if err := e.UpdateBalance(gen.Id, gen.Balance); err != nil {
-			e.log.Error(
-				"Failed to set new balance for general account",
-				logging.String("trader-id", traderID),
-				logging.String("account-id", gen.Id),
-				logging.Int64("balance", gen.Balance),
-				logging.Error(err))
-			return err
-		}
-		if err := e.UpdateBalance(margin.Id, marginBal); err != nil {
-			e.log.Error(
-				"Failed to set new balance for margin account",
-				logging.String("trader-id", traderID),
-				logging.String("account-id", margin.Id),
-				logging.Int64("balance", marginBal),
-				logging.Error(err))
-			return err
-		}
-	*/
 	return nil
 }
 

@@ -111,17 +111,12 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 		pos = &MarketPosition{partyID: order.PartyID}
 		e.positions[order.PartyID] = pos
 	}
-	fmt.Printf("ORDER SIDE = %v\n", order.Size)
 	if order.Side == types.Side_Buy {
-		fmt.Printf("POS IN SET: %v\n", pos.buy)
 		pos.buy += int64(order.Size)
-		fmt.Printf("POS IN SET: %v\n", pos.buy)
 	} else {
 		pos.sell += int64(order.Size)
 	}
 	e.mu.Unlock()
-	fmt.Printf("REGISTER ORDER IN: %v\n", *order)
-	fmt.Printf("REGISTER ORDER IN NEW POSITION: %v\n", *pos)
 	return pos, nil
 }
 

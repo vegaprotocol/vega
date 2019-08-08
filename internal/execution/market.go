@@ -308,10 +308,10 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if err := m.checkMarginForOrder(pos, order); err != nil {
-		_, err = m.position.UnregisterOrder(order)
-		if err != nil {
+		_, err2 := m.position.UnregisterOrder(order)
+		if err2 != nil {
 			m.log.Error("Unable to unregister potentiel trader positions",
-				logging.Error(err),
+				logging.Error(err2),
 				logging.String("market-id", m.GetID()))
 		}
 		m.log.Error("Unable to check/add margin for trader",
@@ -359,7 +359,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		m.settlement.ListenClosed(tradersCh)
 		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
-			// fmt.Printf("------------------------------- TRADE: %v\n", trade)
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
 			if order.Side == types.Side_Buy {
 				trade.BuyOrder = order.Id
@@ -426,7 +425,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 func (m *Market) checkMarginForOrder(
 	pos *positions.MarketPosition, order *types.Order) error {
-	fmt.Printf("ORDER IN CHECK MARGIN: %v\n", *order)
 	newPos := pos.UpdatedPosition(order.Price)
 	if logging.DebugLevel == m.log.GetLevel() {
 		m.log.Debug("New trader position",
@@ -444,7 +442,21 @@ func (m *Market) checkMarginForOrder(
 		return errors.New("unable to get risk updates")
 	}
 	riskUpdate := riskUpdates[0]
-	m.collateral.EnsureMargin(m.GetID(), riskUpdate)
+
+	transferResp, err := m.collateral.EnsureMargin(m.GetID(), riskUpdate)
+	if err != nil {
+		return err
+	}
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Transfers applied for ")
+		for _, v := range transferResp.GetTransfers() {
+			m.log.Debug(
+				"Ensured margin on order with success",
+				logging.String("transfer", fmt.Sprintf("%v", *v)),
+				logging.String("market-id", m.GetID()),
+			)
+		}
+	}
 
 	return nil
 }
@@ -603,7 +615,6 @@ func (m *Market) AmendOrder(
 
 	m.mu.Lock()
 	currentTime := m.currentTime
-	fmt.Printf("CURRENTIME %v\n", currentTime.UnixNano())
 	m.mu.Unlock()
 
 	newOrder := &types.Order{
@@ -692,7 +703,6 @@ func (m *Market) AmendOrder(
 
 func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, error) {
 	m.log.Debug("Cancel/replace order")
-	fmt.Printf("NEW ORDER: %v\n", newOrder)
 
 	cancellation, err := m.CancelOrder(existingOrder)
 	if cancellation == nil || err != nil {
@@ -714,7 +724,6 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 	if err != nil {
 		return &types.OrderConfirmation{}, err
 	}
-	fmt.Printf("POSITION: %v\n", *pos)
 
 	// try to get some margin checked
 	if err := m.checkMarginForOrder(pos, newOrder); err != nil {

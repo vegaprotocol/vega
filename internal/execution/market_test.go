@@ -328,6 +328,64 @@ func TestMarketGetMarginOnNewOrder(t *testing.T) {
 	}
 }
 
+func TestMarketGetMarginOnFailNoFund(t *testing.T) {
+	party1 := "party1"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt)
+	defer tm.ctrl.Finish()
+	// add 2 traders to the party engine
+	// this will create 2 traders, credit their account
+	// and move some monies to the market
+	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(2).Do(func(acc types.Account) {
+		fmt.Printf("Account: %v\n", acc)
+	})
+	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
+	tm.partyEngine.NotifyTraderAccountWithTopUpAmount(&types.NotifyTraderAccount{TraderID: party1}, 0)
+
+	// submit orders
+	// party1 buys
+	// party2 sells
+	orderBuy := &types.Order{
+		Type:      types.Order_GTT,
+		Status:    types.Order_Active,
+		Id:        "",
+		Side:      types.Side_Buy,
+		PartyID:   party1,
+		MarketID:  tm.market.GetID(),
+		Size:      100,
+		Price:     100,
+		Remaining: 100,
+		CreatedAt: now.UnixNano(),
+		ExpiresAt: closingAt.UnixNano(),
+		Reference: "party1-buy-order",
+	}
+
+	// submit orders
+	tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
+		return &types.Party{Id: id}, nil
+	})
+	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
+	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
+		// general account should have less monies as some is use for collateral
+		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {
+			assert.Equal(t, int64(999999996500), acc.Balance)
+		}
+		// margin account should now have monies as it got some from general
+		if acc.Type == types.AccountType_MARGIN && party1 == acc.Owner {
+			assert.Equal(t, int64(3500), acc.Balance)
+		}
+	})
+
+	_, err := tm.market.SubmitOrder(orderBuy)
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "margin check failed")
+}
+
 func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
