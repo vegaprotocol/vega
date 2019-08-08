@@ -15,7 +15,6 @@ import (
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
 	"code.vegaprotocol.io/vega/internal/vegatime"
-	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
 	"google.golang.org/grpc"
@@ -36,7 +35,7 @@ type grpcServer struct {
 	timeService        *vegatime.Svc
 	srv                *grpc.Server
 	statusChecker      *monitoring.Status
-	tradingService     *tradingService
+	TradingService     *tradingService
 	accountsService    *accounts.Svc
 	tradingDataService *tradingDataService
 	// used in order to gracefully close streams
@@ -167,7 +166,7 @@ func (g *grpcServer) Start() {
 		marketService:     g.marketService,
 		statusChecker:     g.statusChecker,
 	}
-	g.tradingService = tradingSvc
+	g.TradingService = tradingSvc
 	protoapi.RegisterTradingServer(g.srv, tradingSvc)
 
 	tradingDataSvc := &tradingDataService{
@@ -203,9 +202,5 @@ func (g *grpcServer) Stop() {
 }
 
 func (g *grpcServer) OnPartiesUpdated(ps []auth.PartyInfo) {
-	g.tradingService.UpdateParties(ps)
-}
-
-func (g *grpcServer) SubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*types.PendingOrder, error) {
-	return g.tradingService.SubmitOrder(ctx, req)
+	g.TradingService.UpdateParties(ps)
 }

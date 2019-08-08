@@ -19,17 +19,7 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-type GRPCServer interface {
-	ReloadConf(cfg api.Config)
-	Start()
-	Stop()
-
-	SubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*types.PendingOrder, error)
-}
-
 func TestSubmitOrder(t *testing.T) {
-	var g GRPCServer
-
 	logger := logging.NewTestLogger()
 	grpcConf := api.NewDefaultConfig()
 	grpcConf.IP = "127.0.0.1"
@@ -49,7 +39,7 @@ func TestSubmitOrder(t *testing.T) {
 	marketService := mocks.NewMockMarketService(mockCtrl)
 	marketService.EXPECT().GetByID(gomock.Any(), "nonexistantmarket").MinTimes(1).Return(nil, api.ErrInvalidMarketID)
 
-	g = api.NewGRPCServer(
+	g := api.NewGRPCServer(
 		logger,
 		grpcConf,
 		internal.NewStats(logger, "ver", "hash"),
@@ -81,7 +71,7 @@ func TestSubmitOrder(t *testing.T) {
 		},
 		Token: "",
 	}
-	pendingOrder, err := g.SubmitOrder(context.Background(), req)
+	pendingOrder, err := g.TradingService.SubmitOrder(context.Background(), req)
 	assert.Equal(t, api.ErrInvalidMarketID, err)
 	assert.Nil(t, pendingOrder)
 
