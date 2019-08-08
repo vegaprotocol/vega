@@ -2,6 +2,8 @@ package api_test
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,13 +19,47 @@ import (
 	"github.com/stretchr/testify/assert"
 	tmp2p "github.com/tendermint/tendermint/p2p"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"google.golang.org/grpc"
 )
 
+func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
+	const maxSleep = 2000 // milliseconds
+
+	req := &protoapi.SubmitOrderRequest{
+		Submission: &types.OrderSubmission{
+			MarketID: "nonexistantmarket",
+		},
+		Token: "",
+	}
+
+	c := protoapi.NewTradingClient(conn)
+	sleepTime := 10 // milliseconds
+	for sleepTime < maxSleep {
+		_, err := c.SubmitOrder(ctx, req)
+		if err == nil {
+			t.Fatalf("Expected some sort of error, but got none.")
+		}
+		if strings.Contains(err.Error(), "invalid market ID") {
+			return
+		}
+		fmt.Printf("Sleeping for %d milliseconds\n", sleepTime)
+		time.Sleep(time.Duration(sleepTime) * time.Millisecond)
+		sleepTime *= 2
+	}
+	if sleepTime >= maxSleep {
+		t.Fatalf("Gave up waiting for gRPC server to respond properly.")
+	}
+}
+
 func TestSubmitOrder(t *testing.T) {
+	const (
+		host = "127.0.0.1"
+		port = 64312
+	)
 	logger := logging.NewTestLogger()
 	grpcConf := api.NewDefaultConfig()
-	grpcConf.IP = "127.0.0.1"
-	grpcConf.Port = 64312
+	grpcConf.IP = host
+	grpcConf.Port = port
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -63,7 +99,14 @@ func TestSubmitOrder(t *testing.T) {
 
 	go g.Start()
 
-	time.Sleep(time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, fmt.Sprintf("%s:%d", host, port), grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		t.Fatalf("Failed to create connection to gRPC server")
+	}
+
+	waitForNode(t, ctx, conn)
 
 	req := &protoapi.SubmitOrderRequest{
 		Submission: &types.OrderSubmission{
@@ -71,8 +114,9 @@ func TestSubmitOrder(t *testing.T) {
 		},
 		Token: "",
 	}
-	pendingOrder, err := g.TradingService.SubmitOrder(context.Background(), req)
-	assert.Equal(t, api.ErrInvalidMarketID, err)
+	c := protoapi.NewTradingClient(conn)
+	pendingOrder, err := c.SubmitOrder(ctx, req)
+	assert.Contains(t, err.Error(), "invalid market ID")
 	assert.Nil(t, pendingOrder)
 
 	g.Stop()
