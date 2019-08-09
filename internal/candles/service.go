@@ -1,8 +1,6 @@
 package candles
 
 import (
-	// "fmt"
-
 	"context"
 	"sync/atomic"
 	"time"
