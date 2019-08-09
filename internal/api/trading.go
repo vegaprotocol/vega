@@ -17,6 +17,7 @@ import (
 var (
 	ErrAuthDisabled       = errors.New("auth disabled")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidMarketID    = errors.New("invalid market ID")
 	ErrAuthRequired       = errors.New("auth required")
 	ErrMissingOrder       = errors.New("missing order in request payload")
 	ErrMissingTraderID    = errors.New("missing trader id")
@@ -38,6 +39,7 @@ type tradingService struct {
 	log               *logging.Logger
 	tradeOrderService TradeOrderService
 	accountService    AccountService
+	marketService     MarketService
 	statusChecker     *monitoring.Status
 
 	authEnabled bool
@@ -125,6 +127,15 @@ func (s *tradingService) SubmitOrder(
 			s.log.Debug("token error", logging.Error(err))
 			return nil, err
 		}
+	}
+
+	// Validate market early
+	_, err := s.marketService.GetByID(ctx, req.Submission.MarketID)
+	if err != nil {
+		s.log.Error("Invalid Market ID during SubmitOrder",
+			logging.String("marketID", req.Submission.MarketID),
+		)
+		return nil, ErrInvalidMarketID
 	}
 
 	return s.tradeOrderService.CreateOrder(ctx, req.Submission)
