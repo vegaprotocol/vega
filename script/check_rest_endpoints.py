@@ -24,7 +24,12 @@ def parse_args():
 def main():
     args = parse_args()
 
-    bindings = yaml.load(open(args.bindings))
+    try:
+        # Try the newer loader. See https://msg.pyyaml.org/load
+        bindings = yaml.load(open(args.bindings), Loader=yaml.FullLoader)
+    except AttributeError:
+        # Fall back on the old (exploitable) loader
+        bindings = yaml.load(open(args.bindings))
     bindings_paths = sorted([
         rule[method]
         for method in ["delete", "get", "post", "put"]
