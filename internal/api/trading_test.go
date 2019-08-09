@@ -8,14 +8,25 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal"
+	"code.vegaprotocol.io/vega/internal/accounts"
 	"code.vegaprotocol.io/vega/internal/api"
 	"code.vegaprotocol.io/vega/internal/api/mocks"
+	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/monitoring"
+	"code.vegaprotocol.io/vega/internal/orders"
+	"code.vegaprotocol.io/vega/internal/parties"
+	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/internal/trades"
+	"code.vegaprotocol.io/vega/internal/vegatime"
+
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	tmp2p "github.com/tendermint/tendermint/p2p"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -51,57 +62,176 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 	}
 }
 
-func TestSubmitOrder(t *testing.T) {
-	const (
-		host = "127.0.0.1"
-		port = 64312
-	)
-	logger := logging.NewTestLogger()
-	grpcConf := api.NewDefaultConfig()
-	grpcConf.IP = host
-	grpcConf.Port = port
+func getTestGRPCServer(t *testing.T, ctx context.Context, port int) (g *api.GRPCServer, tidy func(), err error) {
+	tidy = func() {}
+	path := fmt.Sprintf("vegatest-%d-", port)
+	tempDir, _ /*tidyTempDir */, err := storage.TempDir(path)
+	if err != nil {
+		err = fmt.Errorf("Failed to create tmp dir: %s", err.Error())
+		return
+	}
 
+	conf := config.NewDefaultConfig(tempDir)
+	conf.API.IP = "127.0.0.1"
+	conf.API.Port = port
+
+	logger := logging.NewTestLogger()
+
+	// Mock BlockchainClient
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
-	blockchainClient.EXPECT().Health().MinTimes(1).Return(&tmctypes.ResultHealth{}, nil)
-	blockchainClient.EXPECT().GetStatus(gomock.Any()).MinTimes(1).Return(&tmctypes.ResultStatus{
+	blockchainClient.EXPECT().Health().AnyTimes().Return(&tmctypes.ResultHealth{}, nil)
+	blockchainClient.EXPECT().GetStatus(gomock.Any()).AnyTimes().Return(&tmctypes.ResultStatus{
 		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.31.5"},
 		SyncInfo:      tmctypes.SyncInfo{},
 		ValidatorInfo: tmctypes.ValidatorInfo{},
 	}, nil)
-	blockchainClient.EXPECT().GetUnconfirmedTxCount(gomock.Any()).MinTimes(1).Return(0, nil)
+	blockchainClient.EXPECT().GetUnconfirmedTxCount(gomock.Any()).AnyTimes().Return(0, nil)
 
-	marketService := mocks.NewMockMarketService(mockCtrl)
-	marketService.EXPECT().GetByID(gomock.Any(), "nonexistantmarket").MinTimes(1).Return(nil, api.ErrInvalidMarketID)
+	_, cancel := context.WithCancel(ctx)
+	defer func() {
+		if err != nil {
+			cancel()
+		}
+	}()
 
-	g := api.NewGRPCServer(
+	// Account Store
+	accountStore, err := storage.NewAccounts(logger, conf.Storage)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create account store")
+		return
+	}
+
+	// Candle Store
+	candleStore, err := storage.NewCandles(logger, conf.Storage)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create candle store")
+		return
+	}
+
+	// Market Store
+	marketStore, err := storage.NewMarkets(logger, conf.Storage)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create market store")
+		return
+	}
+
+	// Order Store
+	orderStore, err := storage.NewOrders(logger, conf.Storage, cancel)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create order store")
+		return
+	}
+
+	// Party Store
+	partyStore, err := storage.NewParties(conf.Storage)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create party store")
+		return
+	}
+
+	// Risk Store
+	riskStore, err := storage.NewRisks(conf.Storage)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create risk store")
+		return
+	}
+
+	// Trade Store
+	tradeStore, err := storage.NewTrades(logger, conf.Storage, cancel)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create trade store")
+		return
+	}
+
+	// Account Service
+	accountService := accounts.NewService(logger, conf.Accounts, accountStore, blockchainClient)
+
+	// Candle Service
+	candleService, err := candles.NewService(logger, conf.Candles, candleStore)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create candle service")
+		return
+	}
+
+	// Market Service
+	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create market service")
+		return
+	}
+
+	// Time Service (required for Order Service)
+	timeService := vegatime.NewService(conf.Time)
+
+	// Order Service
+	orderService, err := orders.NewService(logger, conf.Orders, orderStore, timeService, blockchainClient)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create order service")
+		return
+	}
+
+	// Party Service
+	partyService, err := parties.NewService(logger, conf.Parties, partyStore)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create party service")
+		return
+	}
+
+	// Trade Service
+	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, riskStore)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create trade service")
+		return
+	}
+
+	g = api.NewGRPCServer(
 		logger,
-		grpcConf,
+		conf.API,
 		internal.NewStats(logger, "ver", "hash"),
 		blockchainClient,
-		nil, // time
+		timeService,
 		marketService,
-		nil, // party
-		nil, // orders
-		nil, // trades
-		nil, // candles
-		nil, // accounts
+		partyService,
+		orderService,
+		tradeService,
+		candleService,
+		accountService,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {
-		t.Fatalf("Failed to create gRPC server")
+		err = fmt.Errorf("Failed to create gRPC server")
+		return
 	}
-	grpcConf.Level.Level = logging.DebugLevel
-	g.ReloadConf(grpcConf)
-	grpcConf.Level.Level = logging.InfoLevel
-	g.ReloadConf(grpcConf)
+
+	tidy = func() {
+		g.Stop()
+		// tidyTempDir()
+		cancel()
+	}
+
+	return
+}
+
+func TestSubmitOrder(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5) * time.Second)
+	defer cancel()
+
+	g, tidy, err := getTestGRPCServer(t, ctx, 64200)
+	if err != nil {
+		t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+	}
+	defer tidy()
+
+	g.Config.Level.Level = logging.DebugLevel
+	g.ReloadConf(g.Config)
+	g.Config.Level.Level = logging.InfoLevel
+	g.ReloadConf(g.Config)
 
 	go g.Start()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	conn, err := grpc.DialContext(ctx, fmt.Sprintf("%s:%d", host, port), grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.DialContext(ctx, fmt.Sprintf("%s:%d", g.Config.IP, g.Config.Port), grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		t.Fatalf("Failed to create connection to gRPC server")
 	}

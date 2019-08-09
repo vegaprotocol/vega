@@ -22,22 +22,26 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-type grpcServer struct {
-	log *logging.Logger
+type GRPCServer struct {
 	Config
-	stats              *internal.Stats
-	client             BlockchainClient
-	orderService       *orders.Svc
-	tradeService       *trades.Svc
+	TradingService *tradingService
+
+	client BlockchainClient
+	log    *logging.Logger
+	srv    *grpc.Server
+	stats  *internal.Stats
+
+	accountsService    *accounts.Svc
 	candleService      *candles.Svc
 	marketService      MarketService
+	orderService       *orders.Svc
 	partyService       *parties.Svc
 	timeService        *vegatime.Svc
-	srv                *grpc.Server
-	statusChecker      *monitoring.Status
-	TradingService     *tradingService
-	accountsService    *accounts.Svc
+	tradeService       *trades.Svc
 	tradingDataService *tradingDataService
+
+	statusChecker *monitoring.Status
+
 	// used in order to gracefully close streams
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -56,13 +60,13 @@ func NewGRPCServer(
 	candleService *candles.Svc,
 	accountsService *accounts.Svc,
 	statusChecker *monitoring.Status,
-) *grpcServer {
+) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	ctx, cfunc := context.WithCancel(context.Background())
 
-	return &grpcServer{
+	return &GRPCServer{
 		log:             log,
 		Config:          config,
 		stats:           stats,
@@ -80,7 +84,7 @@ func NewGRPCServer(
 	}
 }
 
-func (s *grpcServer) ReloadConf(cfg Config) {
+func (s *GRPCServer) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
@@ -143,7 +147,7 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-func (g *grpcServer) Start() {
+func (g *GRPCServer) Start() {
 
 	ip := g.IP
 	port := g.Port
@@ -193,7 +197,7 @@ func (g *grpcServer) Start() {
 	}
 }
 
-func (g *grpcServer) Stop() {
+func (g *GRPCServer) Stop() {
 	if g.srv != nil {
 		g.log.Info("Stopping gRPC based API")
 		g.cfunc()
@@ -201,6 +205,6 @@ func (g *grpcServer) Stop() {
 	}
 }
 
-func (g *grpcServer) OnPartiesUpdated(ps []auth.PartyInfo) {
+func (g *GRPCServer) OnPartiesUpdated(ps []auth.PartyInfo) {
 	g.TradingService.UpdateParties(ps)
 }
