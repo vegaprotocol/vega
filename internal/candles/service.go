@@ -68,7 +68,6 @@ func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 		Transport: make(chan *types.Candle),
 	}
 	ref := c.candleStore.Subscribe(&iT)
-	retryCount := retries
 
 	go func() {
 		atomic.AddInt32(&c.subscriberCnt, 1)
@@ -96,32 +95,39 @@ func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 				close(candleCh)
 				return
 			case v := <-iT.Transport:
-				select {
-				case candleCh <- v:
-					c.log.Debug(
-						"Candles for subscriber sent successfully",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip),
-					)
-					// reset retry counter
-					retryCount = retries
-				default:
-					retryCount--
-					// no retries left?
-					if retryCount == 0 {
-						c.log.Warn(
-							"Candles subscriber ran out of retries",
+				retryCount := retries
+				for {
+					select {
+					case candleCh <- v:
+						c.log.Debug(
+							"Candles for subscriber sent successfully",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
-							logging.Int("retries", retries),
 						)
-						cfunc()
+						break
+					default:
+						retryCount--
+						// no retries left?
+						if retryCount <= 0 {
+							c.log.Warn(
+								"Candles subscriber ran out of retries",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip),
+								logging.Int("retries", retries),
+							)
+							cfunc()
+							break
+						}
+						time.Sleep(time.Duration(10) * time.Millisecond)
+						c.log.Debug(
+							"Candles for subscriber not sent",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+						)
 					}
-					c.log.Debug(
-						"Candles for subscriber not sent",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip),
-					)
+					if retryCount <= 0 {
+						break
+					}
 				}
 			}
 		}
