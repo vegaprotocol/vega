@@ -24,7 +24,7 @@ else
 	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
-.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check
+.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check rest_check
 
 all: build
 
@@ -133,6 +133,11 @@ proto_check: deps ## proto: Check committed files match just-generated files
 		test -n "$(CI)" && git diff proto/ ; \
 		exit 1 ; \
 	fi
+
+rest_check: internal/gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
+	@python3 script/check_rest_endpoints.py \
+		--bindings internal/gateway/rest/grpc-rest-bindings.yml \
+		--swagger proto/api/trading.swagger.json
 
 # Misc Targets
 

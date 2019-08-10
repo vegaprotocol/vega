@@ -497,6 +497,31 @@
         ]
       }
     },
+    "/parties/{partyID}": {
+      "get": {
+        "summary": "parties",
+        "operationId": "PartyByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPartyByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/parties/{partyID}/orders": {
       "get": {
         "operationId": "OrdersByParty",

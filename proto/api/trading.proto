@@ -115,7 +115,7 @@ message MarketByIDResponse {
 }
 
 message PartyByIDRequest {
-  string id = 1;
+  string partyID = 1;
 }
 
 message PartyByIDResponse {

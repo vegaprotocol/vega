@@ -50,7 +50,7 @@ http:
     # Parties
     - selector: api.trading_data.Parties
       get: '/parties'
-    - selector: api.trading_data.Party
+    - selector: api.trading_data.PartyByID
       get: '/parties/{partyID}'
     - selector: api.trading_data.OrdersByParty
       get: '/parties/{partyID}/orders'

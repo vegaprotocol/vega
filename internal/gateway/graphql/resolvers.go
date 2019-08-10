@@ -205,7 +205,7 @@ func (r *MyQueryResolver) Parties(ctx context.Context, name *string) ([]Party, e
 }
 
 func (r *MyQueryResolver) Party(ctx context.Context, name string) (*Party, error) {
-	req := protoapi.PartyByIDRequest{Id: name}
+	req := protoapi.PartyByIDRequest{PartyID: name}
 	res, err := r.tradingDataClient.PartyByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
