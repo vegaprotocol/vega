@@ -26,6 +26,10 @@ type TradingMode interface {
 	IsTradingMode()
 }
 
+type CheckTokenResponse struct {
+	Ok bool `json:"ok"`
+}
+
 type ContinuousTrading struct {
 	TickSize *int `json:"tickSize"`
 }
@@ -101,10 +105,6 @@ type Party struct {
 	Trades    []proto.Trade          `json:"trades"`
 	Accounts  []proto.Account        `json:"accounts"`
 	Positions []proto.MarketPosition `json:"positions"`
-}
-
-type TokenResponse struct {
-	Ok bool `json:"ok"`
 }
 
 type TradableInstrument struct {

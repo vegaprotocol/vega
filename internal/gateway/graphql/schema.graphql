@@ -176,15 +176,15 @@ type Query {
   statistics: Statistics!
 
   # Check a partyID+Token combination
-  token(
+  checkToken(
     # Party ID
     partyId: String!,
     # Token
     token: String!
-  ): TokenResponse!
+  ): CheckTokenResponse!
 }
 
-type TokenResponse {
+type CheckTokenResponse {
   ok: Boolean!
 }
 
