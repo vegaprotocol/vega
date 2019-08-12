@@ -1,4 +1,4 @@
-# How to add a new gRPC endpoint
+# How to add a new API endpoint (gRPC + GraphQL + REST)
 
 In `proto/api/trading.proto`:
 * Add the endpoint to the `trading` service
