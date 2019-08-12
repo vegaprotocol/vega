@@ -31,14 +31,18 @@ def main():
         # Fall back on the old (exploitable) loader
         bindings = yaml.load(open(args.bindings))
     bindings_paths = sorted([
-        rule[method]
+        (method, rule[method])
         for method in ["delete", "get", "post", "put"]
         for rule in bindings["http"]["rules"]
         if method in rule
     ])
 
     swagger = json.load(open(args.swagger))
-    swagger_paths = sorted(swagger["paths"].keys())
+    swagger_paths = sorted([
+        (method, path)
+        for path in swagger["paths"]
+        for method in swagger["paths"][path]
+    ])
 
     code = 0
     missing = set(swagger_paths) - set(bindings_paths)
