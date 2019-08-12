@@ -97,3 +97,7 @@ Add the endpoint to `interal/gateway/rest/grpc-rest-bindings.yml`.
 Run `make proto` to generate (amonog others) the swagger json file.
 
 Run `make rest_check` to make sure that all the endpoints in the bindings yaml file make it into the swagger json file.
+
+## Test
+
+In `internal/api/trading_test.go`, add a test for the newly created endpoint.

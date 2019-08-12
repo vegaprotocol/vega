@@ -62,10 +62,18 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 	}
 }
 
-func getTestGRPCServer(t *testing.T, ctx context.Context, port int) (g *api.GRPCServer, tidy func(), err error) {
+func getTestGRPCServer(
+	t *testing.T,
+	ctx context.Context,
+	port int,
+	startAndWait bool,
+) (
+	g *api.GRPCServer, tidy func(),
+	conn *grpc.ClientConn, err error,
+) {
 	tidy = func() {}
 	path := fmt.Sprintf("vegatest-%d-", port)
-	tempDir, _ /*tidyTempDir */, err := storage.TempDir(path)
+	tempDir, tidyTempDir, err := storage.TempDir(path)
 	if err != nil {
 		err = fmt.Errorf("Failed to create tmp dir: %s", err.Error())
 		return
@@ -207,18 +215,30 @@ func getTestGRPCServer(t *testing.T, ctx context.Context, port int) (g *api.GRPC
 
 	tidy = func() {
 		g.Stop()
-		// tidyTempDir()
+		tidyTempDir()
 		cancel()
+	}
+
+	if startAndWait {
+		// Start the gRPC server, then wait for it to be ready.
+		go g.Start()
+
+		conn, err = grpc.DialContext(ctx, fmt.Sprintf("%s:%d", g.Config.IP, g.Config.Port), grpc.WithInsecure(), grpc.WithBlock())
+		if err != nil {
+			t.Fatalf("Failed to create connection to gRPC server")
+		}
+
+		waitForNode(t, ctx, conn)
 	}
 
 	return
 }
 
 func TestSubmitOrder(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5) * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
 	defer cancel()
 
-	g, tidy, err := getTestGRPCServer(t, ctx, 64200)
+	g, tidy, conn, err := getTestGRPCServer(t, ctx, 64201, true)
 	if err != nil {
 		t.Fatalf("Failed to get test gRPC server: %s", err.Error())
 	}
@@ -228,15 +248,6 @@ func TestSubmitOrder(t *testing.T) {
 	g.ReloadConf(g.Config)
 	g.Config.Level.Level = logging.InfoLevel
 	g.ReloadConf(g.Config)
-
-	go g.Start()
-
-	conn, err := grpc.DialContext(ctx, fmt.Sprintf("%s:%d", g.Config.IP, g.Config.Port), grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		t.Fatalf("Failed to create connection to gRPC server")
-	}
-
-	waitForNode(t, ctx, conn)
 
 	req := &protoapi.SubmitOrderRequest{
 		Submission: &types.OrderSubmission{
