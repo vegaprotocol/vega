@@ -174,6 +174,18 @@ type Query {
 
   # a bunch of statistics about the node
   statistics: Statistics!
+
+  # Check a partyID+Token combination
+  token(
+    # Party ID
+    partyId: String!,
+    # Token
+    token: String!
+  ): TokenResponse!
+}
+
+type TokenResponse {
+  ok: Boolean!
 }
 
 # A bunch of statistics about the node

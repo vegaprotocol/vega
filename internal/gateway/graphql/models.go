@@ -103,6 +103,10 @@ type Party struct {
 	Positions []proto.MarketPosition `json:"positions"`
 }
 
+type TokenResponse struct {
+	Ok bool `json:"ok"`
+}
+
 type TradableInstrument struct {
 	Instrument Instrument `json:"instrument"`
 	RiskModel  RiskModel  `json:"riskModel"`

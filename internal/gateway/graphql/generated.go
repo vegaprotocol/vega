@@ -210,6 +210,7 @@ type ComplexityRoot struct {
 		Parties    func(childComplexity int, id *string) int
 		Party      func(childComplexity int, id string) int
 		Statistics func(childComplexity int) int
+		Token      func(childComplexity int, partyID string, token string) int
 	}
 
 	Statistics struct {
@@ -251,6 +252,10 @@ type ComplexityRoot struct {
 		Orders      func(childComplexity int, marketID *string, partyID *string) int
 		Positions   func(childComplexity int, partyID string) int
 		Trades      func(childComplexity int, marketID *string, partyID *string) int
+	}
+
+	TokenResponse struct {
+		Ok func(childComplexity int) int
 	}
 
 	TradableInstrument struct {
@@ -360,6 +365,7 @@ type QueryResolver interface {
 	Parties(ctx context.Context, id *string) ([]Party, error)
 	Party(ctx context.Context, id string) (*Party, error)
 	Statistics(ctx context.Context) (*proto.Statistics, error)
+	Token(ctx context.Context, partyID string, token string) (*TokenResponse, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *proto.Statistics) (int, error)
@@ -1190,6 +1196,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Statistics(childComplexity), true
 
+	case "Query.Token":
+		if e.complexity.Query.Token == nil {
+			break
+		}
+
+		args, err := ec.field_Query_token_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Token(childComplexity, args["partyId"].(string), args["token"].(string)), true
+
 	case "Statistics.AppVersion":
 		if e.complexity.Statistics.AppVersion == nil {
 			break
@@ -1464,6 +1482,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.Trades(childComplexity, args["marketId"].(*string), args["partyId"].(*string)), true
+
+	case "TokenResponse.Ok":
+		if e.complexity.TokenResponse.Ok == nil {
+			break
+		}
+
+		return e.complexity.TokenResponse.Ok(childComplexity), true
 
 	case "TradableInstrument.Instrument":
 		if e.complexity.TradableInstrument.Instrument == nil {
@@ -1831,6 +1856,18 @@ type Query {
 
   # a bunch of statistics about the node
   statistics: Statistics!
+
+  # Check a partyID+Token combination
+  token(
+    # Party ID
+    partyId: String!,
+    # Token
+    token: String!
+  ): TokenResponse!
+}
+
+type TokenResponse {
+  ok: Boolean!
 }
 
 # A bunch of statistics about the node
@@ -2859,6 +2896,28 @@ func (ec *executionContext) field_Query_party_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_token_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["token"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["token"] = arg1
 	return args, nil
 }
 
@@ -5722,6 +5781,40 @@ func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql
 	return ec.marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐStatistics(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_token(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_token_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Token(rctx, args["partyId"].(string), args["token"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TokenResponse)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTokenResponse(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -6762,6 +6855,33 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 			w.Write([]byte{'}'})
 		})
 	}
+}
+
+func (ec *executionContext) _TokenResponse_ok(ctx context.Context, field graphql.CollectedField, obj *TokenResponse) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "TokenResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ok, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TradableInstrument_instrument(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) graphql.Marshaler {
@@ -9343,6 +9463,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "token":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_token(ctx, field)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -9706,6 +9840,33 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
+}
+
+var tokenResponseImplementors = []string{"TokenResponse"}
+
+func (ec *executionContext) _TokenResponse(ctx context.Context, sel ast.SelectionSet, obj *TokenResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, tokenResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TokenResponse")
+		case "ok":
+			out.Values[i] = ec._TokenResponse_ok(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
 }
 
 var tradableInstrumentImplementors = []string{"TradableInstrument"}
@@ -10433,6 +10594,20 @@ func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalNTokenResponse2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTokenResponse(ctx context.Context, sel ast.SelectionSet, v TokenResponse) graphql.Marshaler {
+	return ec._TokenResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTokenResponse(ctx context.Context, sel ast.SelectionSet, v *TokenResponse) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TokenResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNTradableInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v TradableInstrument) graphql.Marshaler {
