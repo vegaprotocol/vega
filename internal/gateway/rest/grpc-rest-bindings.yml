@@ -15,7 +15,7 @@ http:
       post: '/auth/token'
       body: "*"
     - selector: api.trading.CheckToken
-      get: '/auth/token/{token}'
+      get: '/auth/token'
 
     # Markets
     - selector: api.trading_data.Markets

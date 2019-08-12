@@ -21,6 +21,10 @@ var (
 	ErrAuthRequired       = errors.New("auth required")
 	ErrMissingOrder       = errors.New("missing order in request payload")
 	ErrMissingTraderID    = errors.New("missing trader id")
+	ErrMissingPartyID     = errors.New("missing party id")
+	ErrMissingPassword    = errors.New("missing password")
+	ErrMissingToken       = errors.New("missing token")
+	ErrMissingUsername    = errors.New("missing username")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeOrderService
@@ -67,19 +71,34 @@ func (s *tradingService) validateToken(partyID string, tkn string) error {
 func (s *tradingService) CheckToken(
 	ctx context.Context, req *protoapi.CheckTokenRequest,
 ) (*protoapi.CheckTokenResponse, error) {
-	return &protoapi.CheckTokenResponse{
-		PartyID: "TBD",
-	}, nil
+	if !s.authEnabled {
+		return nil, ErrAuthDisabled
+	}
+
+	if len(req.PartyID) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+
+	if len(req.Token) <= 0 {
+		return nil, ErrMissingToken
+	}
+
+	err := s.validateToken(req.PartyID, req.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	return &protoapi.CheckTokenResponse{Ok: true}, nil
 }
 
 func (s *tradingService) SignIn(
 	ctx context.Context, req *protoapi.SignInRequest,
 ) (*protoapi.SignInResponse, error) {
 	if len(req.Id) <= 0 {
-		return nil, errors.New("missing username")
+		return nil, ErrMissingUsername
 	}
 	if len(req.Password) <= 0 {
-		return nil, errors.New("missing password")
+		return nil, ErrMissingUsername
 	}
 
 	var tkn string

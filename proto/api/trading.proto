@@ -282,9 +282,10 @@ message CollateralResponse {
 }
 
 message CheckTokenRequest {
-  string token = 1 [(validator.field) = {msg_exists : true}];
+  string partyID = 1 [(validator.field) = {msg_exists : true}];
+  string token = 2 [(validator.field) = {msg_exists : true}];
 }
 
 message CheckTokenResponse {
-  string partyID = 1;
+  bool ok = 1;
 }

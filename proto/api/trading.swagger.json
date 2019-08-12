@@ -16,6 +16,35 @@
   ],
   "paths": {
     "/auth/token": {
+      "get": {
+        "summary": "unary calls - read",
+        "operationId": "CheckToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiCheckTokenResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      },
       "post": {
         "operationId": "SignIn",
         "responses": {
@@ -34,31 +63,6 @@
             "schema": {
               "$ref": "#/definitions/apiSignInRequest"
             }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/auth/token/{token}": {
-      "get": {
-        "summary": "unary calls - read",
-        "operationId": "CheckToken",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiCheckTokenResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "token",
-            "in": "path",
-            "required": true,
-            "type": "string"
           }
         ],
         "tags": [
@@ -754,8 +758,9 @@
     "apiCheckTokenResponse": {
       "type": "object",
       "properties": {
-        "partyID": {
-          "type": "string"
+        "ok": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
