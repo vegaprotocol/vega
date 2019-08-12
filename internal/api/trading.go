@@ -85,6 +85,9 @@ func (s *tradingService) CheckToken(
 
 	err := s.validateToken(req.PartyID, req.Token)
 	if err != nil {
+		if err == ErrInvalidCredentials {
+			return &protoapi.CheckTokenResponse{Ok: false}, nil
+		}
 		return nil, err
 	}
 
