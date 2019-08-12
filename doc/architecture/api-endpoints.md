@@ -61,6 +61,36 @@ typeSomeNewEndpointResponse {
 
 Run `make gqlgen`.
 
+In `internal/gateway/resolvers.go`:
+* Add the endpoint to the `TradingClient` interface
+* Add a function implementation, using the function definition from `generated.go`
+
+```go
+type TradingClient interface {
+  // ...
+  SomeNewEndpoint(context.Context, *api.SomeNewEndpointRequest, ...grpc.CallOption) (*api.SomeNewEndpointResponse, error)
+  // ...
+}
+
+// ...
+
+// <<MQS>> is one of: Mutation, Query, Subscription
+func (r *My<<MQS>>Resolver) SomeNewEndpoint(ctx context.Context, someStr string, someInt int64) (*SomeNewEndpointResponse, error) {
+  req := &protoapi.SomeNewEndpointRequest{
+    // ...
+  }
+
+  response, err := r.tradingClient.SomeNewEndpoint(ctx, req)
+  if err != nil {
+    return nil, err
+  }
+
+  return &SomeNewEndpointResponse{/* ... */}, nil
+}
+```
+
+Make sure mocks are up to date, then run tests: `make mocks test`
+
 ## REST
 Add the endpoint to `interal/gateway/rest/grpc-rest-bindings.yml`.
 
