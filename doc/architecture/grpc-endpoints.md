@@ -1,12 +1,21 @@
 # How to add a new gRPC endpoint
 
-Add `Request` and `Response` messages in `proto/api/trading.proto`: 
+In `proto/api/trading.proto`:
+* Add the endpoint to the `trading` service
+* Add `Request` and `Response` messages
 
 ```proto
+service trading {
+  // ...
+  rpc SomeNewEndpoint(SomeNewEndpointRequest) returns (SomeNewEndpointResponse);
+  // ...
+}
+
+// ...
+
 message SomeNewEndpointRequest {
   string somestr = 1;
   int64 someint = 2;
-
 }
 
 message SomeNewEndpointResponse {
@@ -15,7 +24,8 @@ message SomeNewEndpointResponse {
 }
 ```
 
-Add a function to `internal/api/somefile.go`:
+In `internal/api/somefile.go`:
+* Add the endpoint function implementation
 
 ```go
 func (s *tradingService) SomeNewEndpoint(
@@ -28,12 +38,28 @@ func (s *tradingService) SomeNewEndpoint(
 
 ## GraphQL
 
-Add the endpoint to `internal/gateway/graphql/schema.graphql`.
+In `internal/gateway/graphql/schema.graphql`:
+* Add the endpoint to one of the following sections:
+  * `Mutation`
+  * `Query`
+  * `Subscription`
 
-TBC
+```graphql
+# SomeNewEndpoint does something
+somenewendpoint(
+  # somestring
+  someStr: String!,
+  # someint
+  someInt: Int!
+): SomeNewEndpointResponse!
+
+typeSomeNewEndpointResponse {
+  someAnswer: String!
+  someStringList: [String!]
+}
+```
 
 Run `make gqlgen`.
-
 
 ## REST
 Add the endpoint to `interal/gateway/rest/grpc-rest-bindings.yml`.
