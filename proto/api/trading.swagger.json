@@ -41,6 +41,31 @@
         ]
       }
     },
+    "/auth/token/{token}": {
+      "get": {
+        "summary": "unary calls - read",
+        "operationId": "CheckToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiCheckTokenResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/fountain": {
       "post": {
         "operationId": "NotifyTraderAccount",
@@ -723,6 +748,14 @@
           "items": {
             "$ref": "#/definitions/vegaCandle"
           }
+        }
+      }
+    },
+    "apiCheckTokenResponse": {
+      "type": "object",
+      "properties": {
+        "partyID": {
+          "type": "string"
         }
       }
     },

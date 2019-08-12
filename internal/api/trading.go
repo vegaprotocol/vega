@@ -64,6 +64,14 @@ func (s *tradingService) validateToken(partyID string, tkn string) error {
 	return ErrInvalidCredentials
 }
 
+func (s *tradingService) CheckToken(
+	ctx context.Context, req *protoapi.CheckTokenRequest,
+) (*protoapi.CheckTokenResponse, error) {
+	return &protoapi.CheckTokenResponse{
+		PartyID: "TBD",
+	}, nil
+}
+
 func (s *tradingService) SignIn(
 	ctx context.Context, req *protoapi.SignInRequest,
 ) (*protoapi.SignInResponse, error) {
