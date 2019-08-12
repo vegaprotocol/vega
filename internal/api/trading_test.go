@@ -33,6 +33,11 @@ import (
 	"google.golang.org/grpc"
 )
 
+type GRPCServer interface {
+	Start()
+	Stop()
+}
+
 func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 	const maxSleep = 2000 // milliseconds
 
@@ -68,7 +73,7 @@ func getTestGRPCServer(
 	port int,
 	startAndWait bool,
 ) (
-	g *api.GRPCServer, tidy func(),
+	g GRPCServer, tidy func(),
 	conn *grpc.ClientConn, err error,
 ) {
 	tidy = func() {}
@@ -223,7 +228,7 @@ func getTestGRPCServer(
 		// Start the gRPC server, then wait for it to be ready.
 		go g.Start()
 
-		conn, err = grpc.DialContext(ctx, fmt.Sprintf("%s:%d", g.Config.IP, g.Config.Port), grpc.WithInsecure(), grpc.WithBlock())
+		conn, err = grpc.DialContext(ctx, fmt.Sprintf("%s:%d", conf.API.IP, conf.API.Port), grpc.WithInsecure(), grpc.WithBlock())
 		if err != nil {
 			t.Fatalf("Failed to create connection to gRPC server")
 		}
@@ -243,11 +248,6 @@ func TestSubmitOrder(t *testing.T) {
 		t.Fatalf("Failed to get test gRPC server: %s", err.Error())
 	}
 	defer tidy()
-
-	g.Config.Level.Level = logging.DebugLevel
-	g.ReloadConf(g.Config)
-	g.Config.Level.Level = logging.InfoLevel
-	g.ReloadConf(g.Config)
 
 	req := &protoapi.SubmitOrderRequest{
 		Submission: &types.OrderSubmission{

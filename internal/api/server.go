@@ -22,9 +22,8 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-type GRPCServer struct {
+type grpcServer struct {
 	Config
-	TradingService *tradingService
 
 	client BlockchainClient
 	log    *logging.Logger
@@ -38,6 +37,8 @@ type GRPCServer struct {
 	partyService       *parties.Svc
 	timeService        *vegatime.Svc
 	tradeService       *trades.Svc
+
+	tradingService     *tradingService
 	tradingDataService *tradingDataService
 
 	statusChecker *monitoring.Status
@@ -60,13 +61,13 @@ func NewGRPCServer(
 	candleService *candles.Svc,
 	accountsService *accounts.Svc,
 	statusChecker *monitoring.Status,
-) *GRPCServer {
+) *grpcServer {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	ctx, cfunc := context.WithCancel(context.Background())
 
-	return &GRPCServer{
+	return &grpcServer{
 		log:             log,
 		Config:          config,
 		stats:           stats,
@@ -84,7 +85,7 @@ func NewGRPCServer(
 	}
 }
 
-func (s *GRPCServer) ReloadConf(cfg Config) {
+func (s *grpcServer) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
@@ -147,7 +148,7 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-func (g *GRPCServer) Start() {
+func (g *grpcServer) Start() {
 
 	ip := g.IP
 	port := g.Port
@@ -170,7 +171,7 @@ func (g *GRPCServer) Start() {
 		marketService:     g.marketService,
 		statusChecker:     g.statusChecker,
 	}
-	g.TradingService = tradingSvc
+	g.tradingService = tradingSvc
 	protoapi.RegisterTradingServer(g.srv, tradingSvc)
 
 	tradingDataSvc := &tradingDataService{
@@ -197,7 +198,7 @@ func (g *GRPCServer) Start() {
 	}
 }
 
-func (g *GRPCServer) Stop() {
+func (g *grpcServer) Stop() {
 	if g.srv != nil {
 		g.log.Info("Stopping gRPC based API")
 		g.cfunc()
@@ -205,6 +206,6 @@ func (g *GRPCServer) Stop() {
 	}
 }
 
-func (g *GRPCServer) OnPartiesUpdated(ps []auth.PartyInfo) {
-	g.TradingService.UpdateParties(ps)
+func (g *grpcServer) OnPartiesUpdated(ps []auth.PartyInfo) {
+	g.tradingService.UpdateParties(ps)
 }
