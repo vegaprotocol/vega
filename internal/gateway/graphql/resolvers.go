@@ -31,6 +31,8 @@ type TradingClient interface {
 	CancelOrder(ctx context.Context, in *protoapi.CancelOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
 	AmendOrder(ctx context.Context, in *protoapi.AmendOrderRequest, opts ...grpc.CallOption) (*types.PendingOrder, error)
 	SignIn(ctx context.Context, in *protoapi.SignInRequest, opts ...grpc.CallOption) (*protoapi.SignInResponse, error)
+	// unary calls - reads
+	CheckToken(context.Context, *api.CheckTokenRequest, ...grpc.CallOption) (*api.CheckTokenResponse, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/gateway/graphql TradingDataClient
@@ -222,6 +224,21 @@ func (r *MyQueryResolver) Statistics(ctx context.Context) (*types.Statistics, er
 		return nil, err
 	}
 	return res, nil
+}
+
+
+func (r *MyQueryResolver) CheckToken(ctx context.Context, partyID string, token string) (*CheckTokenResponse, error) {
+	req := &protoapi.CheckTokenRequest{
+		PartyID: partyID,
+		Token:   token,
+	}
+
+	response, err := r.tradingClient.CheckToken(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CheckTokenResponse{Ok: response.Ok}, nil
 }
 
 // END: Root Resolver

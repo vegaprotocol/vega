@@ -16,6 +16,35 @@
   ],
   "paths": {
     "/auth/token": {
+      "get": {
+        "summary": "unary calls - read",
+        "operationId": "CheckToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiCheckTokenResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      },
       "post": {
         "operationId": "SignIn",
         "responses": {
@@ -723,6 +752,15 @@
           "items": {
             "$ref": "#/definitions/vegaCandle"
           }
+        }
+      }
+    },
+    "apiCheckTokenResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },

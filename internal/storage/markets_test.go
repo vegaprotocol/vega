@@ -1,7 +1,6 @@
 package storage_test
 
 import (
-	"os"
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/config/encoding"
@@ -19,12 +18,17 @@ const (
 )
 
 func TestMarkets(t *testing.T) {
+	dir, tidy, err := storage.TempDir("marketstore-test")
+	if err != nil {
+		t.Fatalf("Failed to create tmp dir: %s", err.Error())
+	}
+	defer tidy()
+
 	config := storage.Config{
 		Level:          encoding.LogLevel{Level: logging.DebugLevel},
 		Markets:        storage.DefaultMarketStoreOptions(),
-		MarketsDirPath: storage.TempDir(t, "markets"),
+		MarketsDirPath: dir,
 	}
-	defer os.RemoveAll(config.MarketsDirPath)
 	marketStore, err := storage.NewMarkets(logging.NewTestLogger(), config)
 	assert.NoError(t, err)
 	assert.NotNil(t, marketStore)
