@@ -15,6 +15,7 @@ type Config struct {
 	CreateTraderAccounts        bool
 	TraderGeneralAccountBalance int64
 	TraderMarginPercent         int64 // 1 for 1%, will take TraderGeneralAccountBalance/100 * TraderMarginPercent
+	LogForQAPurposes            bool
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

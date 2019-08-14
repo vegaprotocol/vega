@@ -153,6 +153,30 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 	genBal := e.Config.TraderGeneralAccountBalance
 	marginBal := genBal / 100 * e.Config.TraderMarginPercent
 	e.cfgMu.Unlock()
+
+	if e.Config.LogForQAPurposes {
+		e.log.Info("balance - general",
+			logging.String("trader-id", traderID),
+			logging.String("id", gen.Id),
+			logging.String("owner", gen.Owner),
+			logging.Int64("balance", gen.Balance),
+			logging.String("asset", gen.Asset),
+			logging.String("market-id", gen.MarketID),
+			logging.String("type", types.AccountType_name[int32(gen.Type)]),
+
+		)
+		e.log.Info("balance - margin",
+			logging.String("trader-id", traderID),
+			logging.String("market-id", marketID),
+			logging.String("id", margin.Id),
+			logging.String("owner", margin.Owner),
+			logging.Int64("balance", margin.Balance),
+			logging.String("asset", margin.Asset),
+			logging.String("market-id", margin.MarketID),
+			logging.String("type", types.AccountType_name[int32(margin.Type)]),
+		)
+	}
+
 	// check to see if there's enough balance on the general account already
 	// if not, add it
 	if gen.Balance < genBal {
