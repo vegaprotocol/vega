@@ -151,6 +151,8 @@ func createDefaultMarkets(confpath string) error {
 
 	mkt := proto.Market{
 		Name: "ETHUSD/DEC19",
+		// A currency balance of `1` indicates one US cent, not one US dollar
+		DecimalPlaces: 2,
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Id:        "Crypto/ETHUSD/Futures/Dec19",
@@ -191,6 +193,8 @@ func createDefaultMarkets(confpath string) error {
 	seq++
 
 	mkt.Name = "GBPUSD/JUN19"
+	// A currency balance of `1` indicates one US cent, not one US dollar
+	mkt.DecimalPlaces = 2
 	mkt.TradableInstrument.Instrument.Id = "FX/GBPUSD/Futures/Jun19"
 	mkt.TradableInstrument.Instrument.Code = "FX:GBPUSD/Jun19"
 	mkt.TradableInstrument.Instrument.Name = "December 2019 GBP vs USD future"
@@ -225,6 +229,8 @@ func createDefaultMarkets(confpath string) error {
 	seq++
 
 	mkt.Name = "GBPEUR/DEC19"
+	// A currency balance of `1` indicates one Euro cent, not one Euro
+	mkt.DecimalPlaces = 2
 	mkt.TradableInstrument.Instrument.Id = "Fx/GBPEUR/Futures/Dec20"
 	mkt.TradableInstrument.Instrument.Code = "FX:GBPEUR/DEC20"
 	mkt.TradableInstrument.Instrument.Name = "December 2019 GBP vs EUR future"
