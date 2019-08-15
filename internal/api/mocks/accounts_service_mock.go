@@ -48,34 +48,34 @@ func (mr *MockAccountsServiceMockRecorder) GetAccountSubscribersCount() *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountSubscribersCount", reflect.TypeOf((*MockAccountsService)(nil).GetAccountSubscribersCount))
 }
 
-// GetTraderAccounts mocks base method
-func (m *MockAccountsService) GetTraderAccounts(arg0 string) ([]*proto.Account, error) {
+// GetByParty mocks base method
+func (m *MockAccountsService) GetByParty(arg0 string) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTraderAccounts", arg0)
+	ret := m.ctrl.Call(m, "GetByParty", arg0)
 	ret0, _ := ret[0].([]*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTraderAccounts indicates an expected call of GetTraderAccounts
-func (mr *MockAccountsServiceMockRecorder) GetTraderAccounts(arg0 interface{}) *gomock.Call {
+// GetByParty indicates an expected call of GetByParty
+func (mr *MockAccountsServiceMockRecorder) GetByParty(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTraderAccounts", reflect.TypeOf((*MockAccountsService)(nil).GetTraderAccounts), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByParty", reflect.TypeOf((*MockAccountsService)(nil).GetByParty), arg0)
 }
 
-// GetTraderAccountsForMarket mocks base method
-func (m *MockAccountsService) GetTraderAccountsForMarket(arg0, arg1 string) ([]*proto.Account, error) {
+// GetByPartyAndMarket mocks base method
+func (m *MockAccountsService) GetByPartyAndMarket(arg0, arg1 string) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTraderAccountsForMarket", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByPartyAndMarket", arg0, arg1)
 	ret0, _ := ret[0].([]*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTraderAccountsForMarket indicates an expected call of GetTraderAccountsForMarket
-func (mr *MockAccountsServiceMockRecorder) GetTraderAccountsForMarket(arg0, arg1 interface{}) *gomock.Call {
+// GetByPartyAndMarket indicates an expected call of GetByPartyAndMarket
+func (mr *MockAccountsServiceMockRecorder) GetByPartyAndMarket(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTraderAccountsForMarket", reflect.TypeOf((*MockAccountsService)(nil).GetTraderAccountsForMarket), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndMarket", reflect.TypeOf((*MockAccountsService)(nil).GetByPartyAndMarket), arg0, arg1)
 }
 
 // GetTraderMarketBalance mocks base method

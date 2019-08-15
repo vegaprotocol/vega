@@ -169,20 +169,28 @@ func (a *Account) createAccountRecords(accounts ...*types.Account) (map[string][
 	return m, nil
 }
 
-func (a *Account) GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error) {
-	prefix, valid := a.badger.accountAssetPrefix(owner, asset, false)
-	return a.getByReference(prefix, valid, 3) // at least 3 accounts, I suppose
-}
 
-func (a *Account) GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error) {
-	prefix, valid := a.badger.accountKeyPrefix(owner, asset, market, false)
-	return a.getByReference(prefix, valid, 3)
-}
 
-func (a *Account) GetMarketAccounts(market string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountMarketPrefix(market, false)
-	return a.getByReference(keyPrefix, validFor, 0)
-}
+
+
+
+
+
+
+//func (a *Account) GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error) {
+//	prefix, valid := a.badger.accountAssetPrefix(owner, asset, false)
+//	return a.getByReference(prefix, valid, 3) // at least 3 accounts, I suppose
+//}
+
+//func (a *Account) GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error) {
+//	prefix, valid := a.badger.accountKeyPrefix(owner, asset, market, false)
+//	return a.getByReference(prefix, valid, 3)
+//}
+
+//func (a *Account) GetMarketAccounts(market string) ([]*types.Account, error) {
+//	keyPrefix, validFor := a.badger.accountMarketPrefix(market, false)
+//	return a.getByReference(keyPrefix, validFor, 0)
+//}
 
 func (a *Account) GetMarketAccountsForOwner(market, owner string) ([]*types.Account, error) {
 	keyPrefix, validFor := a.badger.accountReferencePrefix(owner, market, false)

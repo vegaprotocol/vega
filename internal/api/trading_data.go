@@ -100,9 +100,9 @@ type BlockchainClient interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api AccountsService
 type AccountsService interface {
-	GetTraderAccounts(id string) ([]*types.Account, error)
-	GetTraderAccountsForMarket(trader, market string) ([]*types.Account, error)
-	GetTraderMarketBalance(trader, market string) ([]*types.Account, error)
+	GetByParty(partyID string) ([]*types.Account, error)
+	GetByPartyAndMarket(partyID, marketID string) ([]*types.Account, error)
+	GetTraderMarketBalance(partyID, marketID string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
 }
@@ -829,7 +829,7 @@ func (h *tradingDataService) LastTrade(
 }
 
 func (h *tradingDataService) TraderAccounts(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
-	accs, err := h.AccountsService.GetTraderAccounts(req.Party)
+	accs, err := h.AccountsService.GetByParty(req.Party)
 	if err != nil {
 		return nil, err
 	}
@@ -839,7 +839,7 @@ func (h *tradingDataService) TraderAccounts(ctx context.Context, req *protoapi.C
 }
 
 func (h *tradingDataService) TraderMarketAccounts(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
-	accs, err := h.AccountsService.GetTraderAccountsForMarket(req.Party, req.MarketID)
+	accs, err := h.AccountsService.GetByPartyAndMarket(req.Party, req.MarketID)
 	if err != nil {
 		return nil, err
 	}

@@ -52,7 +52,7 @@ func testGetTraderAccountsSuccess(t *testing.T) {
 	general := append(firstMarket[2:3], secondMarket[2:3]...)
 	accounts := append(firstMarket, secondMarket...)
 	svc.storage.EXPECT().GetAccountsForOwner(owner).Times(1).Return(accounts, nil)
-	accs, err := svc.GetTraderAccounts(owner)
+	accs, err := svc.GetByParty(owner)
 	assert.NoError(t, err)
 	assert.Equal(t, accounts, accs)
 	// now see if we get the expected accounts (only BTC accounts) if we get trader balance for a market
@@ -73,7 +73,7 @@ func testGetTraderAccountsErr(t *testing.T) {
 	defer svc.ctrl.Finish()
 	owner := "test"
 	svc.storage.EXPECT().GetAccountsForOwner(owner).Times(1).Return(nil, storage.ErrOwnerNotFound)
-	accs, err := svc.GetTraderAccounts(owner)
+	accs, err := svc.GetByParty(owner)
 	assert.Error(t, err)
 	assert.Nil(t, accs)
 	assert.Equal(t, storage.ErrOwnerNotFound, err)
