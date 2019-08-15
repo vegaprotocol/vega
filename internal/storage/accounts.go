@@ -169,47 +169,42 @@ func (a *Account) createAccountRecords(accounts ...*types.Account) (map[string][
 	return m, nil
 }
 
-
-
-
-
-
-
-
-
+//todo: do we need getByPartyAndAsset ?
 //func (a *Account) GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error) {
 //	prefix, valid := a.badger.accountAssetPrefix(owner, asset, false)
-//	return a.getByReference(prefix, valid, 3) // at least 3 accounts, I suppose
+//	return a.getAccountsForPrefix(prefix, valid, 3) // at least 3 accounts, I suppose
 //}
 
+//todo: do we need getByPartyMarketAndAsset ?
 //func (a *Account) GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error) {
 //	prefix, valid := a.badger.accountKeyPrefix(owner, asset, market, false)
-//	return a.getByReference(prefix, valid, 3)
+//	return a.getAccountsForPrefix(prefix, valid, 3)
 //}
 
+//todo: do we need GetByMarket(market string) - all accounts on a market for all parties?
 //func (a *Account) GetMarketAccounts(market string) ([]*types.Account, error) {
 //	keyPrefix, validFor := a.badger.accountMarketPrefix(market, false)
-//	return a.getByReference(keyPrefix, validFor, 0)
+//	return a.getAccountsForPrefix(keyPrefix, validFor, 0)
 //}
 
-func (a *Account) GetMarketAccountsForOwner(market, owner string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountReferencePrefix(owner, market, false)
+func (a *Account) GetByPartyAndMarket(partyID, marketID string) ([]*types.Account, error) {
+	keyPrefix, validFor := a.badger.accountReferencePrefix(partyID, marketID, false)
 	// an owner will have 3 accounts in a market at most, or a multiple thereof (based on assets), so cap of 3 is sensible
-	return a.getByReference(keyPrefix, validFor, 3)
+	return a.getAccountsForPrefix(keyPrefix, validFor, 3)
 }
 
-func (a *Account) GetAccountsForOwner(owner string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountOwnerPrefix(owner, false)
+func (a *Account) GetByParty(partyID string) ([]*types.Account, error) {
+	keyPrefix, validFor := a.badger.accountOwnerPrefix(partyID, false)
 	// again, cap of 3 is reasonable: 3 per asset, per market, regardless of system/trader ownership
-	return a.getByReference(keyPrefix, validFor, 3)
+	return a.getAccountsForPrefix(keyPrefix, validFor, 3)
 }
 
-func (a *Account) GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountTypePrefix(owner, accType, false)
-	return a.getByReference(keyPrefix, validFor, 0)
+func (a *Account) GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error) {
+	keyPrefix, validFor := a.badger.accountTypePrefix(partyID, accType, false)
+	return a.getAccountsForPrefix(keyPrefix, validFor, 0)
 }
 
-func (a *Account) getByReference(prefix, validFor []byte, capacity int) ([]*types.Account, error) {
+func (a *Account) getAccountsForPrefix(prefix, validFor []byte, capacity int) ([]*types.Account, error) {
 	var err error
 	ret := make([]*types.Account, 0, capacity)
 	txn := a.badger.readTransaction()
@@ -242,35 +237,35 @@ func (a *Account) getByReference(prefix, validFor []byte, capacity int) ([]*type
 	return ret, nil
 }
 
-func (a *Account) UpdateBalance(id string, balance int64) error {
-	txn := a.badger.writeTransaction()
-	defer txn.Discard()
-	var account []byte
-	acc, err := a.getAccountByID(txn, id)
-	// internal func does the logging already
-	if err != nil {
-		return err
-	}
-	// update balance
-	acc.Balance = balance
-	// can't see how this would fail to marshal, but best check...
-	if account, err = proto.Marshal(acc); err != nil {
-		a.log.Error(
-			"Failed to marshal valid account record",
-			logging.Error(err),
-		)
-		return err
-	}
-	if err = txn.Set([]byte(id), account); err != nil {
-		a.log.Error(
-			"Failed to save updated account balance",
-			logging.String("account-id", id),
-			logging.Error(err),
-		)
-		return err
-	}
-	return txn.Commit()
-}
+//func (a *Account) UpdateBalance(id string, balance int64) error {
+//	txn := a.badger.writeTransaction()
+//	defer txn.Discard()
+//	var account []byte
+//	acc, err := a.getAccountByID(txn, id)
+//	// internal func does the logging already
+//	if err != nil {
+//		return err
+//	}
+//	// update balance
+//	acc.Balance = balance
+//	// can't see how this would fail to marshal, but best check...
+//	if account, err = proto.Marshal(acc); err != nil {
+//		a.log.Error(
+//			"Failed to marshal valid account record",
+//			logging.Error(err),
+//		)
+//		return err
+//	}
+//	if err = txn.Set([]byte(id), account); err != nil {
+//		a.log.Error(
+//			"Failed to save updated account balance",
+//			logging.String("account-id", id),
+//			logging.Error(err),
+//		)
+//		return err
+//	}
+//	return txn.Commit()
+//}
 
 func (a *Account) IncrementBalance(id string, inc int64) error {
 	txn := a.badger.writeTransaction()

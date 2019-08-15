@@ -19,9 +19,10 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts AccountStore
 type AccountStore interface {
 
-	GetMarketAccountsForOwner(id, market string) ([]*types.Account, error)
-	GetAccountsForOwner(owner string) ([]*types.Account, error)
-	GetAccountsForOwnerByType(owner string, accType types.AccountType) ([]*types.Account, error)
+	GetByPartyAndMarket(partyID, marketID string) ([]*types.Account, error)
+	GetByParty(partyID string) ([]*types.Account, error)
+	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
+
 	//GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error)
 	//GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error)
 
@@ -79,7 +80,7 @@ func (s *Svc) NotifyTraderAccount(ctx context.Context, nta *types.NotifyTraderAc
 
 // GetByParty returns details of all accounts for a given party (if they have placed orders on VEGA).
 func (s *Svc) GetByParty(partyID string) ([]*types.Account, error) {
-	accounts, err := s.storage.GetAccountsForOwner(partyID)
+	accounts, err := s.storage.GetByParty(partyID)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +90,7 @@ func (s *Svc) GetByParty(partyID string) ([]*types.Account, error) {
 // GetByPartyAndMarket returns all accounts for a given market
 // and party (if they have placed orders on that market on VEGA).
 func (s *Svc) GetByPartyAndMarket(partyID, marketID string) ([]*types.Account, error) {
-	accounts, err := s.storage.GetMarketAccountsForOwner(partyID, marketID)
+	accounts, err := s.storage.GetByPartyAndMarket(partyID, marketID)
 	if err != nil {
 		if err == storage.ErrOwnerNotFound {
 			err = ErrOwnerNotInMarket
@@ -107,7 +108,7 @@ func (s *Svc) GetTraderMarketBalance(partyID, marketID string) ([]*types.Account
 		return nil, err
 	}
 	// Retrieve GENERAL balance for total funds available
-	gen, err := s.storage.GetAccountsForOwnerByType(partyID, types.AccountType_GENERAL)
+	gen, err := s.storage.GetByPartyAndType(partyID, types.AccountType_GENERAL)
 	if err != nil {
 		if err == storage.ErrAccountNotFound {
 			err = ErrNoGeneralAccount
