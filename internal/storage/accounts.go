@@ -14,23 +14,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	noMarket    = "general"
+)
+
 var (
-	ErrDuplicateAccount    = errors.New("account already exists")
-	ErrMarketAccountsExist = errors.New("accounts for market already exist")
 	ErrMarketNotFound      = errors.New("market accounts not found")
 	ErrOwnerNotFound       = errors.New("owner has no known accounts")
 	ErrAccountNotFound     = errors.New("account not found")
 )
-
-const (
-	SystemOwner = "system"
-	NoMarket    = "general"
-)
-
-type accountRecord struct {
-	*types.Account
-	ownerIdx int
-}
 
 type Account struct {
 	Config
@@ -83,91 +75,49 @@ func (a *Account) Close() error {
 }
 
 // GetAccountByID - returns a given account by ID (if it exists, obviously)
-func (a *Account) GetAccountByID(id string) (*types.Account, error) {
-	return a.getAccountByID(nil, id)
-}
+//func (a *Account) GetAccountByID(id string) (*types.Account, error) {
+//	return a.getAccountByID(nil, id)
+//}
 
-func (a *Account) hasAccount(acc *types.Account) (bool, error) {
-	market := acc.MarketID
-	if market == "" {
-		market = NoMarket
-	}
-	key := a.badger.accountKey(acc.Owner, acc.Asset, market, acc.Type)
-	// set Id here - if account exists, we still want to return the full record with ID'
-	acc.Id = string(key)
-	err := a.badger.db.View(func(txn *badger.Txn) error {
-		account, err := txn.Get(key)
-		if err != nil {
-			return err
-		}
-		buf, err := account.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
-		if err := proto.Unmarshal(buf, acc); err != nil {
-			a.log.Error(
-				"Failed to unmarshal account",
-				logging.Error(err),
-				logging.String("badger-key", string(key)),
-				logging.String("raw-bytes", string(buf)))
-			return err
-		}
-		return nil
-	})
-	// no errors, so key exists, and we got the account
-	if err == nil {
-		return true, nil
-	}
-	// key not found, account doesn't exist
-	if err == badger.ErrKeyNotFound {
-		return false, nil
-	}
-	// something went wrong
-	return false, err
-}
+//func (a *Account) hasAccount(acc *types.Account) (bool, error) {
+//	market := acc.MarketID
+//	if market == "" {
+//		market = NoMarket
+//	}
+//	key := a.badger.accountKey(acc.Owner, acc.Asset, market, acc.Type)
+//	// set Id here - if account exists, we still want to return the full record with ID'
+//	acc.Id = string(key)
+//	err := a.badger.db.View(func(txn *badger.Txn) error {
+//		account, err := txn.Get(key)
+//		if err != nil {
+//			return err
+//		}
+//		buf, err := account.ValueCopy(nil)
+//		if err != nil {
+//			return err
+//		}
+//		if err := proto.Unmarshal(buf, acc); err != nil {
+//			a.log.Error(
+//				"Failed to unmarshal account",
+//				logging.Error(err),
+//				logging.String("badger-key", string(key)),
+//				logging.String("raw-bytes", string(buf)))
+//			return err
+//		}
+//		return nil
+//	})
+//	// no errors, so key exists, and we got the account
+//	if err == nil {
+//		return true, nil
+//	}
+//	// key not found, account doesn't exist
+//	if err == badger.ErrKeyNotFound {
+//		return false, nil
+//	}
+//	// something went wrong
+//	return false, err
+//}
 
-func (a *Account) createAccountRecords(accounts ...*types.Account) (map[string][]byte, error) {
-	m := make(map[string][]byte, len(accounts)*5) // each account has its key + 1 reference key, so map == nr of accounts * 2
-	for _, acc := range accounts {
-		// for general accounts, a market isn't specified
-		market := acc.MarketID
-		if market == "" {
-			market = NoMarket
-		}
-		accKey := a.badger.accountKey(
-			acc.Owner, acc.Asset, market, acc.Type,
-		)
-		acc.Id = string(accKey)
-		refKey := a.badger.accountReferenceKey(
-			acc.Owner, market, acc.Asset, acc.Type,
-		)
-		mrefKey := a.badger.accountMarketReferenceKey(
-			market, acc.Owner, acc.Asset, acc.Type,
-		)
-		trefKey := a.badger.accountTypeReferenceKey(
-			acc.Owner, market, acc.Asset, acc.Type,
-		)
-		assetRef := a.badger.accountAssetReferenceKey(
-			acc.Owner, acc.Asset, market, acc.Type,
-		)
-		buf, err := proto.Marshal(acc)
-		if err != nil {
-			a.log.Error("unable to marshal account",
-				logging.String("account-id", acc.Id),
-				logging.Error(err),
-			)
-			return nil, err
-		}
-		// id is the key here
-		m[acc.Id] = buf
-		// reference key points to actual ID
-		m[string(refKey)] = accKey
-		m[string(mrefKey)] = accKey
-		m[string(trefKey)] = accKey
-		m[string(assetRef)] = accKey
-	}
-	return m, nil
-}
 
 //todo: do we need getByPartyAndAsset ?
 //func (a *Account) GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error) {
@@ -267,103 +217,108 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, capacity int) ([
 //	return txn.Commit()
 //}
 
-func (a *Account) IncrementBalance(id string, inc int64) error {
-	txn := a.badger.writeTransaction()
-	defer txn.Discard()
-	var account []byte
-	acc, err := a.getAccountByID(txn, id)
-	if err != nil {
-		return err
-	}
-	// increment balance
-	acc.Balance += inc
-	if account, err = proto.Marshal(acc); err != nil {
-		a.log.Error(
-			"Failed to marshal account record",
-			logging.Error(err),
-			logging.String("account-id", id),
-		)
-		return err
-	}
-	if err = txn.Set([]byte(id), account); err != nil {
-		a.log.Error(
-			"Failed to update account balance",
-			logging.String("account-id", id),
-			logging.Int64("account-balance", acc.Balance),
-			logging.Error(err),
-		)
-		return err
-	}
-	return txn.Commit()
-}
-
-func (a *Account) getAccountByID(txn *badger.Txn, id string) (*types.Account, error) {
-	if txn == nil {
-		// default to read txn if no txn was provided
-		txn = a.badger.readTransaction()
-		defer txn.Discard()
-	}
-	item, err := txn.Get([]byte(id))
-	if err != nil {
-		a.log.Error(
-			"Failed to get account by ID",
-			logging.String("account-id", id),
-			logging.Error(err),
-		)
-		return nil, err
-	}
-	account, err := item.ValueCopy(nil)
-	if err != nil {
-		a.log.Error("Failed to get value for account item", logging.Error(err))
-		return nil, err
-	}
-	var acc types.Account
-	if err := proto.Unmarshal(account, &acc); err != nil {
-		a.log.Error(
-			"Failed to unmarshal account",
-			logging.String("account-id", id),
-			logging.String("account-raw", string(account)),
-			logging.Error(err),
-		)
-		return nil, err
-	}
-	return &acc, nil
-}
+//func (a *Account) IncrementBalance(id string, inc int64) error {
+//	txn := a.badger.writeTransaction()
+//	defer txn.Discard()
+//	var account []byte
+//	acc, err := a.getAccountByID(txn, id)
+//	if err != nil {
+//		return err
+//	}
+//	// increment balance
+//	acc.Balance += inc
+//	if account, err = proto.Marshal(acc); err != nil {
+//		a.log.Error(
+//			"Failed to marshal account record",
+//			logging.Error(err),
+//			logging.String("account-id", id),
+//		)
+//		return err
+//	}
+//	if err = txn.Set([]byte(id), account); err != nil {
+//		a.log.Error(
+//			"Failed to update account balance",
+//			logging.String("account-id", id),
+//			logging.Int64("account-balance", acc.Balance),
+//			logging.Error(err),
+//		)
+//		return err
+//	}
+//	return txn.Commit()
+//}
+//
+//func (a *Account) getAccountByID(txn *badger.Txn, id string) (*types.Account, error) {
+//	if txn == nil {
+//		// default to read txn if no txn was provided
+//		txn = a.badger.readTransaction()
+//		defer txn.Discard()
+//	}
+//	item, err := txn.Get([]byte(id))
+//	if err != nil {
+//		a.log.Error(
+//			"Failed to get account by ID",
+//			logging.String("account-id", id),
+//			logging.Error(err),
+//		)
+//		return nil, err
+//	}
+//	account, err := item.ValueCopy(nil)
+//	if err != nil {
+//		a.log.Error("Failed to get value for account item", logging.Error(err))
+//		return nil, err
+//	}
+//	var acc types.Account
+//	if err := proto.Unmarshal(account, &acc); err != nil {
+//		a.log.Error(
+//			"Failed to unmarshal account",
+//			logging.String("account-id", id),
+//			logging.String("account-raw", string(account)),
+//			logging.Error(err),
+//		)
+//		return nil, err
+//	}
+//	return &acc, nil
+//}
 
 func (a *Account) SaveBatch(accs []*types.Account) error {
-	batch, err := a.createAccountRecords(accs...)
+
+	batch, err := a.parseBatch(accs...)
 	if err != nil {
 		return err
 	}
 
-	cnt, err := a.badger.writeBatch(batch)
+	if logging.DebugLevel == a.log.GetLevel() {
+		// todo: log out each account to be written to store, will include updates?
+	}
+
+	_, err = a.badger.writeBatch(batch)
 	if err != nil {
 		a.log.Error(
 			"Unable to write accounts batch",
 			logging.Error(err),
-			logging.Int("saved-count", cnt),
-			logging.Int("expected-count", len(batch)))
+			logging.Int("batch-size", len(batch)))
 		return err
 	}
-	a.log.Debug(
-		"New batch of accounts saved",
-		logging.Int("count", cnt))
+
+	if logging.DebugLevel == a.log.GetLevel() {
+		a.log.Debug("Accounts store updated", logging.Int("batch-size", len(batch)))
+	}
 
 	a.notify(accs)
 
 	return nil
 }
 
-func (a *Account) notify(accs []*types.Account) error {
+func (a *Account) notify(accs []*types.Account) {
 	if len(accs) == 0 {
-		return nil
+		return
 	}
 
 	a.mu.Lock()
 	if len(a.subscribers) == 0 {
 		a.log.Debug("No subscribers connected in accounts store")
 		a.mu.Unlock()
-		return nil
+		return
 	}
 
 	var ok bool
@@ -384,9 +339,52 @@ func (a *Account) notify(accs []*types.Account) error {
 		}
 	}
 	a.mu.Unlock()
-
-	return nil
+	return
 }
+
+func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, error) {
+	m := make(map[string][]byte, len(accounts)*5)
+	for _, acc := range accounts {
+		// for general accounts, a market isn't specified
+		market := acc.MarketID
+		if market == "" {
+			market = noMarket
+		}
+		accKey := a.badger.accountKey(
+			acc.Owner, acc.Asset, market, acc.Type,
+		)
+		acc.Id = string(accKey)
+		refKey := a.badger.accountReferenceKey(
+			acc.Owner, market, acc.Asset, acc.Type,
+		)
+		mrefKey := a.badger.accountMarketReferenceKey(
+			market, acc.Owner, acc.Asset, acc.Type,
+		)
+		trefKey := a.badger.accountTypeReferenceKey(
+			acc.Owner, market, acc.Asset, acc.Type,
+		)
+		assetRef := a.badger.accountAssetReferenceKey(
+			acc.Owner, acc.Asset, market, acc.Type,
+		)
+		buf, err := proto.Marshal(acc)
+		if err != nil {
+			a.log.Error("unable to marshal account",
+				logging.String("account-id", acc.Id),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		// id is the key here
+		m[acc.Id] = buf
+		// reference key points to actual ID
+		m[string(refKey)] = accKey
+		m[string(mrefKey)] = accKey
+		m[string(trefKey)] = accKey
+		m[string(assetRef)] = accKey
+	}
+	return m, nil
+}
+
 
 func (a *Account) Subscribe(c chan []*types.Account) uint64 {
 	a.mu.Lock()
