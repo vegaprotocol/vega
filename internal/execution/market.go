@@ -442,27 +442,28 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 
 	// Validate total updates, there should only be one as we are checking a single order
 	if len(riskUpdates) != 1 {
-		m.log.Error("Invalid number of risk updates",
-			logging.String("market-id", m.GetID()),
-			logging.Int("risk-updates-count", len(riskUpdates)))
-
-		return errors.New("unable to get risk updates")
-	}
-	riskUpdate := riskUpdates[0]
-
-	transferResp, err := m.collateral.EnsureMargin(m.GetID(), riskUpdate)
-	if err != nil {
-		return err
-	}
-
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Transfers applied for ")
-		for _, v := range transferResp.GetTransfers() {
-			m.log.Debug(
-				"Ensured margin on order with success",
-				logging.String("transfer", fmt.Sprintf("%v", *v)),
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Error("No risk updates",
 				logging.String("market-id", m.GetID()),
-			)
+				logging.Int("risk-updates-count", len(riskUpdates)))
+		}
+	} else {
+		riskUpdate := riskUpdates[0]
+
+		transferResp, err := m.collateral.EnsureMargin(m.GetID(), riskUpdate)
+		if err != nil {
+			return err
+		}
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Transfers applied for ")
+			for _, v := range transferResp.GetTransfers() {
+				m.log.Debug(
+					"Ensured margin on order with success",
+					logging.String("transfer", fmt.Sprintf("%v", *v)),
+					logging.String("market-id", m.GetID()),
+				)
+			}
 		}
 	}
 
