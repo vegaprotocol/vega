@@ -331,3 +331,9 @@ func (this *CollateralResponse) Validate() error {
 	}
 	return nil
 }
+func (this *CheckTokenRequest) Validate() error {
+	return nil
+}
+func (this *CheckTokenResponse) Validate() error {
+	return nil
+}

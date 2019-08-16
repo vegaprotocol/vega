@@ -773,7 +773,7 @@ func (h *tradingDataService) Parties(ctx context.Context, req *google_proto.Empt
 	}, nil
 }
 func (h *tradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
-	pty, err := validateParty(ctx, req.Id, h.PartyService)
+	pty, err := validateParty(ctx, req.PartyID, h.PartyService)
 	if err != nil {
 		return nil, err
 	}

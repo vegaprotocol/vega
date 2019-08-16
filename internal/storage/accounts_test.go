@@ -1,7 +1,6 @@
 package storage_test
 
 import (
-	"os"
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/config/encoding"
@@ -12,12 +11,17 @@ import (
 )
 
 func TestAccounts(t *testing.T) {
+	dir, tidy, err := storage.TempDir("accountstore-test")
+	if err != nil {
+		t.Fatalf("Failed to create tmp dir: %s", err.Error())
+	}
+	defer tidy()
+
 	config := storage.Config{
 		Level:           encoding.LogLevel{Level: logging.DebugLevel},
 		Accounts:        storage.DefaultAccountStoreOptions(),
-		AccountsDirPath: storage.TempDir(t, "accounts"),
+		AccountsDirPath: dir,
 	}
-	defer os.RemoveAll(config.AccountsDirPath)
 	accountStore, err := storage.NewAccounts(logging.NewTestLogger(), config)
 	assert.NoError(t, err)
 	assert.NotNil(t, accountStore)

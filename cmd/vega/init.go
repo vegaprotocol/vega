@@ -42,7 +42,7 @@ func (ic *initCommand) Init(c *Cli) {
 		Short: "Initialize a vega node",
 		Long:  "Generate the minimal configuration required for a vega node to start",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ic.runInit(c)
+			return RunInit(ic.rootPath, ic.force, ic.Log)
 		},
 	}
 
@@ -52,32 +52,32 @@ func (ic *initCommand) Init(c *Cli) {
 
 }
 
-func (ic *initCommand) runInit(c *Cli) error {
-	rootPathExists, err := fsutil.PathExists(ic.rootPath)
+func RunInit(rootPath string, force bool, logger *logging.Logger) error {
+	rootPathExists, err := fsutil.PathExists(rootPath)
 	if err != nil {
 		if _, ok := err.(*fsutil.PathNotFound); !ok {
 			return err
 		}
 	}
 
-	if rootPathExists && !ic.force {
-		return fmt.Errorf("configuration already exists at `%v` please remove it first or re-run using -f", ic.rootPath)
+	if rootPathExists && !force {
+		return fmt.Errorf("configuration already exists at `%v` please remove it first or re-run using -f", rootPath)
 	}
 
-	if rootPathExists && ic.force {
-		ic.Log.Info("removing existing configuration", logging.String("path", ic.rootPath))
-		os.RemoveAll(ic.rootPath) // ignore any errors here to force removal
+	if rootPathExists && force {
+		logger.Info("removing existing configuration", logging.String("path", rootPath))
+		os.RemoveAll(rootPath) // ignore any errors here to force removal
 	}
 
 	// create the root
-	if err := fsutil.EnsureDir(ic.rootPath); err != nil {
+	if err := fsutil.EnsureDir(rootPath); err != nil {
 		return err
 	}
 
-	fullCandleStorePath := filepath.Join(ic.rootPath, storage.CandlesDataPath)
-	fullOrderStorePath := filepath.Join(ic.rootPath, storage.OrdersDataPath)
-	fullTradeStorePath := filepath.Join(ic.rootPath, storage.TradesDataPath)
-	fullMarketStorePath := filepath.Join(ic.rootPath, storage.MarketsDataPath)
+	fullCandleStorePath := filepath.Join(rootPath, storage.CandlesDataPath)
+	fullOrderStorePath := filepath.Join(rootPath, storage.OrdersDataPath)
+	fullTradeStorePath := filepath.Join(rootPath, storage.TradesDataPath)
+	fullMarketStorePath := filepath.Join(rootPath, storage.MarketsDataPath)
 
 	// create sub-folders
 	if err := fsutil.EnsureDir(fullCandleStorePath); err != nil {
@@ -95,7 +95,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 
 	// create default market folder
 	fullDefaultMarketConfigPath :=
-		filepath.Join(ic.rootPath, execution.MarketConfigPath)
+		filepath.Join(rootPath, execution.MarketConfigPath)
 
 	if err := fsutil.EnsureDir(fullDefaultMarketConfigPath); err != nil {
 		return err
@@ -108,7 +108,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// generate a default configuration
-	cfg := config.NewDefaultConfig(ic.rootPath)
+	cfg := config.NewDefaultConfig(rootPath)
 
 	// setup the defaults markets
 	cfg.Execution.Markets.Configs = []string{
@@ -121,7 +121,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 	}
 
 	// create the configuration file
-	f, err := os.Create(filepath.Join(ic.rootPath, "config.toml"))
+	f, err := os.Create(filepath.Join(rootPath, "config.toml"))
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func (ic *initCommand) runInit(c *Cli) error {
 		return err
 	}
 
-	ic.Log.Info("configuration generated successfully", logging.String("path", ic.rootPath))
+	logger.Info("configuration generated successfully", logging.String("path", rootPath))
 
 	return nil
 }
@@ -151,6 +151,8 @@ func createDefaultMarkets(confpath string) error {
 
 	mkt := proto.Market{
 		Name: "ETHUSD/DEC19",
+		// A currency balance of `1` indicates one US cent, not one US dollar
+		DecimalPlaces: 2,
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Id:        "Crypto/ETHUSD/Futures/Dec19",
@@ -191,6 +193,8 @@ func createDefaultMarkets(confpath string) error {
 	seq++
 
 	mkt.Name = "GBPUSD/JUN19"
+	// A currency balance of `1` indicates one US cent, not one US dollar
+	mkt.DecimalPlaces = 2
 	mkt.TradableInstrument.Instrument.Id = "FX/GBPUSD/Futures/Jun19"
 	mkt.TradableInstrument.Instrument.Code = "FX:GBPUSD/Jun19"
 	mkt.TradableInstrument.Instrument.Name = "December 2019 GBP vs USD future"
@@ -225,6 +229,8 @@ func createDefaultMarkets(confpath string) error {
 	seq++
 
 	mkt.Name = "GBPEUR/DEC19"
+	// A currency balance of `1` indicates one Euro cent, not one Euro
+	mkt.DecimalPlaces = 2
 	mkt.TradableInstrument.Instrument.Id = "Fx/GBPEUR/Futures/Dec20"
 	mkt.TradableInstrument.Instrument.Code = "FX:GBPEUR/DEC20"
 	mkt.TradableInstrument.Instrument.Name = "December 2019 GBP vs EUR future"

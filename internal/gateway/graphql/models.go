@@ -26,6 +26,10 @@ type TradingMode interface {
 	IsTradingMode()
 }
 
+type CheckTokenResponse struct {
+	Ok bool `json:"ok"`
+}
+
 type ContinuousTrading struct {
 	TickSize *int `json:"tickSize"`
 }

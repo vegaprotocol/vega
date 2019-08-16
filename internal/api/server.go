@@ -23,21 +23,26 @@ import (
 )
 
 type grpcServer struct {
-	log *logging.Logger
 	Config
-	stats              *internal.Stats
-	client             BlockchainClient
-	orderService       *orders.Svc
-	tradeService       *trades.Svc
+
+	client BlockchainClient
+	log    *logging.Logger
+	srv    *grpc.Server
+	stats  *internal.Stats
+
+	accountsService    *accounts.Svc
 	candleService      *candles.Svc
 	marketService      MarketService
+	orderService       *orders.Svc
 	partyService       *parties.Svc
 	timeService        *vegatime.Svc
-	srv                *grpc.Server
-	statusChecker      *monitoring.Status
-	TradingService     *tradingService
-	accountsService    *accounts.Svc
+	tradeService       *trades.Svc
+
+	tradingService     *tradingService
 	tradingDataService *tradingDataService
+
+	statusChecker *monitoring.Status
+
 	// used in order to gracefully close streams
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -166,7 +171,7 @@ func (g *grpcServer) Start() {
 		marketService:     g.marketService,
 		statusChecker:     g.statusChecker,
 	}
-	g.TradingService = tradingSvc
+	g.tradingService = tradingSvc
 	protoapi.RegisterTradingServer(g.srv, tradingSvc)
 
 	tradingDataSvc := &tradingDataService{
@@ -202,5 +207,5 @@ func (g *grpcServer) Stop() {
 }
 
 func (g *grpcServer) OnPartiesUpdated(ps []auth.PartyInfo) {
-	g.TradingService.UpdateParties(ps)
+	g.tradingService.UpdateParties(ps)
 }
