@@ -131,17 +131,14 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 				Open:     ref,
 				Interval: it,
 			})
-			// avoid race by making sure we've got the channel and we can in fact read the data
-			ready := make(chan struct{})
-			wg.Add(1)
 			svc.store.EXPECT().Subscribe(itMatcher{market: market, interval: it}).Times(1).Return(ref).Do(func(it *storage.InternalTransport) {
 				candles, ok := expectedCandles[it.Market]
 				assert.True(t, ok)
 				for _, c := range candles {
 					if c.Interval == it.Interval {
 						// ensure the candle is pushed onto the channel
+						wg.Add(1)
 						go func(it *storage.InternalTransport) {
-							<-ready
 							it.Transport <- c
 						}(it)
 					}
@@ -151,11 +148,13 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 			svc.store.EXPECT().Unsubscribe(ref).Times(1).Return(nil).Do(func(_ uint64) {
 				wg.Done()
 			})
-			ch, id := svc.ObserveCandles(svc.ctx, 0, &market, &it)
-			close(ready)
+			ch, id := svc.ObserveCandles(svc.ctx, 10, &market, &it)
 			c := <-ch
 			assert.Equal(t, ref, id)
 			// with a second wg, we could do this concurrently, but this is just a test...
+			if c == nil {
+				t.Fatalf("Failed to receive an observed candle")
+			}
 			assert.Equal(t, it, c.Interval)
 			assert.Equal(t, ref, c.Open)
 		}

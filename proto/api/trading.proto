@@ -18,6 +18,7 @@ service trading {
   rpc SignIn(SignInRequest) returns (SignInResponse);
   rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
   // unary calls - read
+  rpc CheckToken(CheckTokenRequest) returns (CheckTokenResponse);
 }
 
 message NotifyTraderAccountRequest {
@@ -115,7 +116,7 @@ message MarketByIDResponse {
 }
 
 message PartyByIDRequest {
-  string id = 1;
+  string partyID = 1;
 }
 
 message PartyByIDResponse {
@@ -278,4 +279,13 @@ message CollateralRequest {
 
 message CollateralResponse {
   repeated vega.Account accounts = 1;
+}
+
+message CheckTokenRequest {
+  string partyID = 1 [(validator.field) = {msg_exists : true}];
+  string token = 2 [(validator.field) = {msg_exists : true}];
+}
+
+message CheckTokenResponse {
+  bool ok = 1;
 }

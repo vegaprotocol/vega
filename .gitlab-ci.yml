@@ -95,6 +95,7 @@ autogen_checks:
   script:
     - code=0
     - make deps
+    - make rest_check || code=1
     - make proto_check || code=1
     - make gqlgen_check || code=1
     - exit "$code"

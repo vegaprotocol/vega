@@ -76,6 +76,26 @@ func (mr *MockTradingClientMockRecorder) CancelOrder(arg0, arg1 interface{}, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockTradingClient)(nil).CancelOrder), varargs...)
 }
 
+// CheckToken mocks base method
+func (m *MockTradingClient) CheckToken(arg0 context.Context, arg1 *api.CheckTokenRequest, arg2 ...grpc.CallOption) (*api.CheckTokenResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CheckToken", varargs...)
+	ret0, _ := ret[0].(*api.CheckTokenResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckToken indicates an expected call of CheckToken
+func (mr *MockTradingClientMockRecorder) CheckToken(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckToken", reflect.TypeOf((*MockTradingClient)(nil).CheckToken), varargs...)
+}
+
 // SignIn mocks base method
 func (m *MockTradingClient) SignIn(arg0 context.Context, arg1 *api.SignInRequest, arg2 ...grpc.CallOption) (*api.SignInResponse, error) {
 	m.ctrl.T.Helper()
