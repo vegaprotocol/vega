@@ -457,14 +457,13 @@ func (h *tradingDataService) OrdersSubscribe(
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
 
+	// Market and Party are optional when subscribing to Orders updates.
 	var (
 		err               error
 		marketID, partyID *string
 	)
 	if len(req.MarketID) > 0 {
 		marketID = &req.MarketID
-	} else {
-		return ErrEmptyMissingMarketID
 	}
 	if len(req.PartyID) > 0 {
 		partyID = &req.PartyID
