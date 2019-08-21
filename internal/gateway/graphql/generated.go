@@ -2446,15 +2446,13 @@ enum Interval {
 
 # The various account types we have (used by collateral)
 enum AccountType {
-  # Insurance pool account - only for party "system"
+  # Insurance pool account - only for "system" party
   Insurance
-  # Settlement - Again, only for "system" party
+  # Settlement - only for "system" party
   Settlement
   # Margin - The leverage account for traders
   Margin
-  # Market - it's in the spec, but AFAIK, we're not using this currently
-  Market
-  # General account - the actual account containing "unused" monies
+  # General account - the account containing "unused" collateral for traders
   General
 }
 `},

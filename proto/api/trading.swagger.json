@@ -733,6 +733,39 @@
       ],
       "default": "Active"
     },
+    "apiAccountsByPartyAndMarketResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
+    "apiAccountsByPartyAndTypeResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
+    "apiAccountsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
     "apiAmendOrderRequest": {
       "type": "object",
       "properties": {
@@ -761,17 +794,6 @@
         "ok": {
           "type": "boolean",
           "format": "boolean"
-        }
-      }
-    },
-    "apiCollateralResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
         }
       }
     },

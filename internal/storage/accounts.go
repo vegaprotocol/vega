@@ -14,16 +14,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	noMarket    = "general"
-)
-
 var (
-	ErrMarketNotFound      = errors.New("market accounts not found")
-	ErrOwnerNotFound       = errors.New("owner has no known accounts")
-	ErrAccountNotFound     = errors.New("account not found")
+	ErrMarketNotFound  = errors.New("no accounts found for market")
+	ErrOwnerNotFound   = errors.New("no accounts found for party")
+	ErrAccountNotFound = errors.New("account not found")
 )
 
+// Data structure representing a collateral account store
 type Account struct {
 	Config
 
@@ -34,8 +31,8 @@ type Account struct {
 	mu           sync.Mutex
 }
 
+// NewAccounts creates a new account store with the logger and configuration specified.
 func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
-	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
@@ -55,6 +52,8 @@ func NewAccounts(log *logging.Logger, c Config) (*Account, error) {
 	}, nil
 }
 
+// ReloadConf will trigger a reload of all the config settings in the account store.
+// Required when hot-reloading any config changes, eg. logger level.
 func (a *Account) ReloadConf(cfg Config) {
 	a.log.Info("reloading configuration")
 	if a.log.GetLevel() != cfg.Level.Get() {
@@ -74,94 +73,56 @@ func (a *Account) Close() error {
 	return a.badger.db.Close()
 }
 
-// GetAccountByID - returns a given account by ID (if it exists, obviously)
-//func (a *Account) GetAccountByID(id string) (*types.Account, error) {
-//	return a.getAccountByID(nil, id)
-//}
-
-//func (a *Account) hasAccount(acc *types.Account) (bool, error) {
-//	market := acc.MarketID
-//	if market == "" {
-//		market = NoMarket
-//	}
-//	key := a.badger.accountKey(acc.Owner, acc.Asset, market, acc.Type)
-//	// set Id here - if account exists, we still want to return the full record with ID'
-//	acc.Id = string(key)
-//	err := a.badger.db.View(func(txn *badger.Txn) error {
-//		account, err := txn.Get(key)
-//		if err != nil {
-//			return err
-//		}
-//		buf, err := account.ValueCopy(nil)
-//		if err != nil {
-//			return err
-//		}
-//		if err := proto.Unmarshal(buf, acc); err != nil {
-//			a.log.Error(
-//				"Failed to unmarshal account",
-//				logging.Error(err),
-//				logging.String("badger-key", string(key)),
-//				logging.String("raw-bytes", string(buf)))
-//			return err
-//		}
-//		return nil
-//	})
-//	// no errors, so key exists, and we got the account
-//	if err == nil {
-//		return true, nil
-//	}
-//	// key not found, account doesn't exist
-//	if err == badger.ErrKeyNotFound {
-//		return false, nil
-//	}
-//	// something went wrong
-//	return false, err
-//}
-
-
-//todo: do we need getByPartyAndAsset ?
-//func (a *Account) GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error) {
-//	prefix, valid := a.badger.accountAssetPrefix(owner, asset, false)
-//	return a.getAccountsForPrefix(prefix, valid, 3) // at least 3 accounts, I suppose
-//}
-
-//todo: do we need getByPartyMarketAndAsset ?
-//func (a *Account) GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error) {
-//	prefix, valid := a.badger.accountKeyPrefix(owner, asset, market, false)
-//	return a.getAccountsForPrefix(prefix, valid, 3)
-//}
-
-//todo: do we need GetByMarket(market string) - all accounts on a market for all parties?
-//func (a *Account) GetMarketAccounts(market string) ([]*types.Account, error) {
-//	keyPrefix, validFor := a.badger.accountMarketPrefix(market, false)
-//	return a.getAccountsForPrefix(keyPrefix, validFor, 0)
-//}
-
-func (a *Account) GetByPartyAndMarket(partyID, marketID string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountReferencePrefix(partyID, marketID, false)
-	// an owner will have 3 accounts in a market at most, or a multiple thereof (based on assets), so cap of 3 is sensible
-	return a.getAccountsForPrefix(keyPrefix, validFor, 3)
-}
-
+// GetByParty returns all accounts for a given party, including MARGIN and GENERAL accounts
 func (a *Account) GetByParty(partyID string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountOwnerPrefix(partyID, false)
-	// again, cap of 3 is reasonable: 3 per asset, per market, regardless of system/trader ownership
+	// Read all GENERAL accounts for party
+	keyPrefix, validFor := a.badger.accountPartyPrefix(types.AccountType_GENERAL, partyID, false)
+	generalAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, 3)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading general accounts for party: %s", partyID))
+	}
+	// Read all MARGIN accounts for party
+	keyPrefix, validFor = a.badger.accountPartyPrefix(types.AccountType_MARGIN, partyID, false)
+	marginAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, 3)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading margin accounts for party: %s", partyID))
+	}
+	return append(generalAccounts, marginAccounts...), nil
+}
+
+// GetByPartyAndMarket will return all accounts (if available) relating to the provided party and market.
+//  - Only MARGIN accounts are supported by this call, as they have market scope.
+func (a *Account) GetByPartyAndMarket(accType types.AccountType, partyID string, marketID string) ([]*types.Account, error) {
+	if accType != types.AccountType_MARGIN {
+		return nil, errors.New("invalid type for query, only MARGIN accounts for a party and market supported")
+	}
+	keyPrefix, validFor := a.badger.accountMarketPartyPrefix(types.AccountType_MARGIN, marketID, partyID, false)
 	return a.getAccountsForPrefix(keyPrefix, validFor, 3)
 }
 
-func (a *Account) GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountTypePrefix(partyID, accType, false)
-	return a.getAccountsForPrefix(keyPrefix, validFor, 0)
+// GetByPartyAndType will return all accounts (if available) relating to the provided party and account type.
+//  - GENERAL and MARGIN accounts are supported by this call, will return all MARGIN accounts for all markets.
+func (a *Account) GetByPartyAndType(accType types.AccountType, partyID string) ([]*types.Account, error) {
+	if accType != types.AccountType_GENERAL && accType != types.AccountType_MARGIN {
+		return nil, errors.New("invalid type for query, only GENERAL and MARGIN accounts for a party supported")
+	}
+	keyPrefix, validFor := a.badger.accountPartyPrefix(accType, partyID, false)
+	return a.getAccountsForPrefix(keyPrefix, validFor, 3)
 }
 
+// getAccountsForPrefix does the work of querying the badger store for creating key prefixes and loading values from
+// the underlying based collateral account store.
 func (a *Account) getAccountsForPrefix(prefix, validFor []byte, capacity int) ([]*types.Account, error) {
 	var err error
 	ret := make([]*types.Account, 0, capacity)
+
 	txn := a.badger.readTransaction()
 	defer txn.Discard()
+
 	it := a.badger.getIterator(txn, false)
 	defer it.Close()
-	keyBuf, accountBuf := []byte{}, []byte{}
+
+	var accountBuf, keyBuf []byte
 	for it.Seek(prefix); it.ValidForPrefix(validFor); it.Next() {
 		if keyBuf, err = it.Item().ValueCopy(keyBuf); err != nil {
 			return nil, err
@@ -184,102 +145,11 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, capacity int) ([
 		}
 		ret = append(ret, &acc)
 	}
+
 	return ret, nil
 }
 
-//func (a *Account) UpdateBalance(id string, balance int64) error {
-//	txn := a.badger.writeTransaction()
-//	defer txn.Discard()
-//	var account []byte
-//	acc, err := a.getAccountByID(txn, id)
-//	// internal func does the logging already
-//	if err != nil {
-//		return err
-//	}
-//	// update balance
-//	acc.Balance = balance
-//	// can't see how this would fail to marshal, but best check...
-//	if account, err = proto.Marshal(acc); err != nil {
-//		a.log.Error(
-//			"Failed to marshal valid account record",
-//			logging.Error(err),
-//		)
-//		return err
-//	}
-//	if err = txn.Set([]byte(id), account); err != nil {
-//		a.log.Error(
-//			"Failed to save updated account balance",
-//			logging.String("account-id", id),
-//			logging.Error(err),
-//		)
-//		return err
-//	}
-//	return txn.Commit()
-//}
-
-//func (a *Account) IncrementBalance(id string, inc int64) error {
-//	txn := a.badger.writeTransaction()
-//	defer txn.Discard()
-//	var account []byte
-//	acc, err := a.getAccountByID(txn, id)
-//	if err != nil {
-//		return err
-//	}
-//	// increment balance
-//	acc.Balance += inc
-//	if account, err = proto.Marshal(acc); err != nil {
-//		a.log.Error(
-//			"Failed to marshal account record",
-//			logging.Error(err),
-//			logging.String("account-id", id),
-//		)
-//		return err
-//	}
-//	if err = txn.Set([]byte(id), account); err != nil {
-//		a.log.Error(
-//			"Failed to update account balance",
-//			logging.String("account-id", id),
-//			logging.Int64("account-balance", acc.Balance),
-//			logging.Error(err),
-//		)
-//		return err
-//	}
-//	return txn.Commit()
-//}
-//
-//func (a *Account) getAccountByID(txn *badger.Txn, id string) (*types.Account, error) {
-//	if txn == nil {
-//		// default to read txn if no txn was provided
-//		txn = a.badger.readTransaction()
-//		defer txn.Discard()
-//	}
-//	item, err := txn.Get([]byte(id))
-//	if err != nil {
-//		a.log.Error(
-//			"Failed to get account by ID",
-//			logging.String("account-id", id),
-//			logging.Error(err),
-//		)
-//		return nil, err
-//	}
-//	account, err := item.ValueCopy(nil)
-//	if err != nil {
-//		a.log.Error("Failed to get value for account item", logging.Error(err))
-//		return nil, err
-//	}
-//	var acc types.Account
-//	if err := proto.Unmarshal(account, &acc); err != nil {
-//		a.log.Error(
-//			"Failed to unmarshal account",
-//			logging.String("account-id", id),
-//			logging.String("account-raw", string(account)),
-//			logging.Error(err),
-//		)
-//		return nil, err
-//	}
-//	return &acc, nil
-//}
-
+// SaveBatch writes a slice of account changes to the underlying store.
 func (a *Account) SaveBatch(accs []*types.Account) error {
 
 	batch, err := a.parseBatch(accs...)
@@ -309,6 +179,8 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 	return nil
 }
 
+// notify is a helper func used to send any updates to any subscribers for mutations of the
+// account store.
 func (a *Account) notify(accs []*types.Account) {
 	if len(accs) == 0 {
 		return
@@ -342,30 +214,27 @@ func (a *Account) notify(accs []*types.Account) {
 	return
 }
 
+// parseBatch takes a list of accounts and outputs the necessary badger keys and values
+// in a slice ready to write down to disk using the generic writeBatch function.
 func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, error) {
-	m := make(map[string][]byte, len(accounts)*5)
+
+	//todo log whats happening here
+
+	batch := make(map[string][]byte)
 	for _, acc := range accounts {
-		// for general accounts, a market isn't specified
+
+		// todo: drop account ID unless its needed in the core
+
+		// todo: is this required, safety checking?
 		market := acc.MarketID
 		if market == "" {
-			market = noMarket
+			a.log.Warn("Account has an empty marketID", logging.Account(*acc))
+			if acc.Type != types.AccountType_GENERAL {
+				a.log.Warn("Not of account type GENERAL")
+			}
 		}
-		accKey := a.badger.accountKey(
-			acc.Owner, acc.Asset, market, acc.Type,
-		)
-		acc.Id = string(accKey)
-		refKey := a.badger.accountReferenceKey(
-			acc.Owner, market, acc.Asset, acc.Type,
-		)
-		mrefKey := a.badger.accountMarketReferenceKey(
-			market, acc.Owner, acc.Asset, acc.Type,
-		)
-		trefKey := a.badger.accountTypeReferenceKey(
-			acc.Owner, market, acc.Asset, acc.Type,
-		)
-		assetRef := a.badger.accountAssetReferenceKey(
-			acc.Owner, acc.Asset, market, acc.Type,
-		)
+
+		// Marshall proto struct to byte buffer for storage
 		buf, err := proto.Marshal(acc)
 		if err != nil {
 			a.log.Error("unable to marshal account",
@@ -374,18 +243,29 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 			)
 			return nil, err
 		}
-		// id is the key here
-		m[acc.Id] = buf
-		// reference key points to actual ID
-		m[string(refKey)] = accKey
-		m[string(mrefKey)] = accKey
-		m[string(trefKey)] = accKey
-		m[string(assetRef)] = accKey
+
+		// Check the type of account and write only the data required for GENERAL accounts.
+		if acc.Type == types.AccountType_GENERAL {
+			// General accounts have no scope of an individual market, they span all markets.
+			generalIdKey := a.badger.accountGeneralIdKey(acc.Owner, acc.Asset)
+			generalAssetKey := a.badger.accountAssetKey(acc.Asset, string(generalIdKey))
+			batch[string(generalIdKey)] = buf
+			batch[string(generalAssetKey)] = generalIdKey
+		}
+		// Check the type of account and write only the data/keys required for MARGIN accounts.
+		if acc.Type == types.AccountType_MARGIN {
+			marginIdKey := a.badger.accountMarginIdKey(acc.Owner, market, acc.Asset)
+			marginMarketKey := a.badger.accountMarketKey(market, string(marginIdKey))
+			marginAssetKey := a.badger.accountAssetKey(acc.Asset, string(marginIdKey))
+			batch[string(marginIdKey)] = buf
+			batch[string(marginMarketKey)] = marginIdKey
+			batch[string(marginAssetKey)] = marginIdKey
+		}
 	}
-	return m, nil
+	return batch, nil
 }
 
-
+// Subscribe to account store updates, any changes will be pushed out on this channel.
 func (a *Account) Subscribe(c chan []*types.Account) uint64 {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -399,6 +279,7 @@ func (a *Account) Subscribe(c chan []*types.Account) uint64 {
 	return a.subscriberID
 }
 
+//Unsubscribe from account store updates.
 func (a *Account) Unsubscribe(id uint64) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -433,3 +314,23 @@ func DefaultAccountStoreOptions() ConfigOptions {
 	opts.ValueLogLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.MemoryMap}
 	return opts
 }
+
+// todo: ------ additional queries reqd?
+
+//todo: do we need getByPartyAndAsset ?
+//func (a *Account) GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error) {
+//	prefix, valid := a.badger.accountAssetPrefix(owner, asset, false)
+//	return a.getAccountsForPrefix(prefix, valid, 3) // at least 3 accounts, I suppose
+//}
+
+//todo: do we need getByPartyMarketAndAsset ?
+//func (a *Account) GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error) {
+//	prefix, valid := a.badger.accountKeyPrefix(owner, asset, market, false)
+//	return a.getAccountsForPrefix(prefix, valid, 3)
+//}
+
+//todo: do we need GetByMarket(market string) - all accounts on a market for all parties?
+//func (a *Account) GetMarketAccounts(market string) ([]*types.Account, error) {
+//	keyPrefix, validFor := a.badger.accountMarketPrefix(market, false)
+//	return a.getAccountsForPrefix(keyPrefix, validFor, 0)
+//}

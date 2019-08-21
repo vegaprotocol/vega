@@ -93,10 +93,10 @@ service trading_data {
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
   rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
 
-  // collateral/accounts
-  rpc TraderAccounts(CollateralRequest) returns (CollateralResponse);
-  rpc TraderMarketAccounts(CollateralRequest) returns (CollateralResponse);
-  rpc TraderMarketBalance(CollateralRequest) returns (CollateralResponse);
+  // accounts
+  rpc AccountsByParty(AccountsByPartyRequest) returns (AccountsByPartyResponse);
+  rpc AccountsByPartyAndMarket(AccountsByPartyAndMarketRequest) returns (AccountsByPartyAndMarketResponse);
+  rpc AccountsByPartyAndType(AccountsByPartyAndTypeRequest) returns (AccountsByPartyAndTypeResponse);
 }
 
 message LastTradeRequest {
@@ -271,13 +271,31 @@ message TradesStream {
   repeated vega.Trade trades = 1;
 }
 
-message CollateralRequest {
-    string party = 1 [(validator.field) = {msg_exists : true}];
-    string marketID = 2;
-    vega.AccountType type = 3;
+message AccountsByPartyRequest {
+  string partyID = 1 [(validator.field) = {msg_exists : true}];
+  vega.AccountType type = 2;
 }
 
-message CollateralResponse {
+message AccountsByPartyResponse {
+  repeated vega.Account accounts = 1;
+}
+
+message AccountsByPartyAndMarketRequest {
+  string partyID = 1 [(validator.field) = {msg_exists : true}];
+  string marketID = 2;
+  vega.AccountType type = 3;
+}
+
+message AccountsByPartyAndMarketResponse {
+  repeated vega.Account accounts = 1;
+}
+
+message AccountsByPartyAndTypeRequest {
+  string partyID = 1 [(validator.field) = {msg_exists : true}];
+  vega.AccountType type = 2;
+}
+
+message AccountsByPartyAndTypeResponse {
   repeated vega.Account accounts = 1;
 }
 

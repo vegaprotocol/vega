@@ -68,10 +68,10 @@ type TradingDataClient interface {
 	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
 	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthSubscribeClient, error)
 	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_PositionsSubscribeClient, error)
-	// collateral
-	TraderAccounts(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
-	TraderMarketAccounts(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
-	TraderMarketBalance(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
+	// accounts
+	AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyResponse, error)
+	AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndMarketResponse, error)
+	AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndTypeResponse, error)
 }
 
 type resolverRoot struct {
@@ -463,47 +463,57 @@ func (r *MyPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.Ma
 
 func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, accType *AccountType) ([]types.Account, error) {
 	if pty == nil {
-		return nil, errors.New("nil party")
+		return nil, errors.New("a party must be specified when querying accounts")
 	}
-	// the call we'll be making
-	call := r.tradingDataClient.TraderAccounts
-	var (
-		market string
-		at     types.AccountType
-	)
-	if marketID != nil {
-		market = *marketID
-		// if a market was given, assume we want the market accounts
-		call = r.tradingDataClient.TraderMarketAccounts
-	}
-	if accType != nil {
-		// if an account type was specified, we'll be getting the balance (hacky, but simplifies this temp API)
-		switch *accType {
-		case AccountTypeMargin:
-			at = types.AccountType_MARGIN
-		case AccountTypeGeneral:
-			at = types.AccountType_GENERAL
-		case AccountTypeInsurance:
-			at = types.AccountType_INSURANCE
-		case AccountTypeSettlement:
-			at = types.AccountType_SETTLEMENT
+	// Ensure default account types values
+	general := AccountTypeGeneral
+	margin := AccountTypeMargin
+	if accType == nil {
+		if marketID != nil {
+			accType = &margin
+		} else {
+			accType = &general
 		}
-		call = r.tradingDataClient.TraderMarketBalance
 	}
-	req := protoapi.CollateralRequest{
-		Party:    pty.ID,
-		MarketID: market,
-		Type:     at,
+	// Depending on Accounts params, select the correct gRPC call
+	switch *accType {
+	case AccountTypeMargin:
+		if marketID == nil {
+			return nil, errors.New("a market must be specified when querying for a margin account")
+		}
+		req := protoapi.AccountsByPartyAndMarketRequest{
+			PartyID:  pty.ID,
+			MarketID: *marketID,
+			Type:     types.AccountType_MARGIN,
+		}
+		resp, err := r.tradingDataClient.AccountsByPartyAndMarket(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
+		accounts := make([]types.Account, 0, len(resp.Accounts))
+		for _, acc := range resp.Accounts {
+			accounts = append(accounts, *acc)
+		}
+		return accounts, nil
+	case AccountTypeGeneral:
+		req := protoapi.AccountsByPartyRequest{
+			PartyID: pty.ID,
+			Type:    types.AccountType_GENERAL,
+		}
+		resp, err := r.tradingDataClient.AccountsByParty(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
+		accounts := make([]types.Account, 0, len(resp.Accounts))
+		for _, acc := range resp.Accounts {
+			accounts = append(accounts, *acc)
+		}
+		return accounts, nil
 	}
-	resp, err := call(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-	accounts := make([]types.Account, 0, len(resp.Accounts))
-	for _, acc := range resp.Accounts {
-		accounts = append(accounts, *acc)
-	}
-	return accounts, nil
+	//Note: there's currently no read store for the following account types
+	// AccountTypeInsurance
+	// AccountTypeSettlement
+	return nil, errors.New("account type specified is not supported")
 }
 
 // END: Party Resolver

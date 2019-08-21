@@ -12,20 +12,19 @@ import (
 )
 
 var (
-	ErrNoGeneralAccount = errors.New("no general accounts for trader")
-	ErrOwnerNotInMarket = errors.New("trader has no accounts for given market")
+	ErrNoGeneralAccount = errors.New("general accounts not found for party")
+	ErrOwnerNotInMarket = errors.New("party has no accounts for market")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts AccountStore
 type AccountStore interface {
-
-	GetByPartyAndMarket(partyID, marketID string) ([]*types.Account, error)
 	GetByParty(partyID string) ([]*types.Account, error)
-	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
+	GetByPartyAndMarket(accType types.AccountType, partyID string, marketID string) ([]*types.Account, error)
+	GetByPartyAndType(accType types.AccountType, partyID string) ([]*types.Account, error)
 
+	//todo: asset based query
 	//GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error)
 	//GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error)
-
 
 	Subscribe(c chan []*types.Account) uint64
 	Unsubscribe(id uint64) error
@@ -89,8 +88,8 @@ func (s *Svc) GetByParty(partyID string) ([]*types.Account, error) {
 
 // GetByPartyAndMarket returns all accounts for a given market
 // and party (if they have placed orders on that market on VEGA).
-func (s *Svc) GetByPartyAndMarket(partyID, marketID string) ([]*types.Account, error) {
-	accounts, err := s.storage.GetByPartyAndMarket(partyID, marketID)
+func (s *Svc) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error) {
+	accounts, err := s.storage.GetByPartyAndMarket(types.AccountType_MARGIN, partyID, marketID)
 	if err != nil {
 		if err == storage.ErrOwnerNotFound {
 			err = ErrOwnerNotInMarket
@@ -100,37 +99,16 @@ func (s *Svc) GetByPartyAndMarket(partyID, marketID string) ([]*types.Account, e
 	return accounts, nil
 }
 
-// todo: what is this function about!?
-func (s *Svc) GetTraderMarketBalance(partyID, marketID string) ([]*types.Account, error) {
-	// Find all accounts for a party on given market, so we can get the total balance available breakdown
-	accounts, err := s.GetByPartyAndMarket(partyID, marketID)
+// GetByPartyAndType returns all accounts for a given type (on all markets)
+// and party (if they have placed orders on that market on VEGA).
+func (s *Svc) GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error) {
+	accounts, err := s.storage.GetByPartyAndType(accType, partyID)
 	if err != nil {
-		return nil, err
-	}
-	// Retrieve GENERAL balance for total funds available
-	gen, err := s.storage.GetByPartyAndType(partyID, types.AccountType_GENERAL)
-	if err != nil {
-		if err == storage.ErrAccountNotFound {
-			err = ErrNoGeneralAccount
+		if err == storage.ErrOwnerNotFound {
+			err = ErrOwnerNotInMarket
 		}
 		return nil, err
 	}
-	genMap := map[string]*types.Account{}
-	for _, g := range gen {
-		// this is tricky with bad test data, but tests should account for real life scenario's
-		// we shouldn't write sub-optimal prod code to accommodate bad tests
-		genMap[g.Asset] = g
-	}
-	// check base assets for accounts in market, only use general accounts with relevant asset
-	relevant := make([]*types.Account, 0, len(gen))
-	for _, a := range accounts {
-		if g, ok := genMap[a.Asset]; ok {
-			relevant = append(relevant, g)
-			// add general account once, remove from map after we're done here
-			delete(genMap, a.Asset)
-		}
-	}
-	accounts = append(accounts, relevant...)
 	return accounts, nil
 }
 
