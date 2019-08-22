@@ -48,23 +48,38 @@ func (mr *MockAccountStoreMockRecorder) GetByParty(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByParty", reflect.TypeOf((*MockAccountStore)(nil).GetByParty), arg0)
 }
 
-// GetByPartyAndMarket mocks base method
-func (m *MockAccountStore) GetByPartyAndMarket(arg0 proto.AccountType, arg1, arg2 string) ([]*proto.Account, error) {
+// GetByPartyAndAsset mocks base method
+func (m *MockAccountStore) GetByPartyAndAsset(arg0, arg1 string) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByPartyAndMarket", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetByPartyAndAsset", arg0, arg1)
+	ret0, _ := ret[0].([]*proto.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByPartyAndAsset indicates an expected call of GetByPartyAndAsset
+func (mr *MockAccountStoreMockRecorder) GetByPartyAndAsset(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndAsset", reflect.TypeOf((*MockAccountStore)(nil).GetByPartyAndAsset), arg0, arg1)
+}
+
+// GetByPartyAndMarket mocks base method
+func (m *MockAccountStore) GetByPartyAndMarket(arg0, arg1 string) ([]*proto.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByPartyAndMarket", arg0, arg1)
 	ret0, _ := ret[0].([]*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByPartyAndMarket indicates an expected call of GetByPartyAndMarket
-func (mr *MockAccountStoreMockRecorder) GetByPartyAndMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockAccountStoreMockRecorder) GetByPartyAndMarket(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndMarket", reflect.TypeOf((*MockAccountStore)(nil).GetByPartyAndMarket), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndMarket", reflect.TypeOf((*MockAccountStore)(nil).GetByPartyAndMarket), arg0, arg1)
 }
 
 // GetByPartyAndType mocks base method
-func (m *MockAccountStore) GetByPartyAndType(arg0 proto.AccountType, arg1 string) ([]*proto.Account, error) {
+func (m *MockAccountStore) GetByPartyAndType(arg0 string, arg1 proto.AccountType) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByPartyAndType", arg0, arg1)
 	ret0, _ := ret[0].([]*proto.Account)

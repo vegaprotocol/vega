@@ -77,13 +77,13 @@ func (a *Account) Close() error {
 func (a *Account) GetByParty(partyID string) ([]*types.Account, error) {
 	// Read all GENERAL accounts for party
 	keyPrefix, validFor := a.badger.accountPartyPrefix(types.AccountType_GENERAL, partyID, false)
-	generalAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, 3)
+	generalAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading general accounts for party: %s", partyID))
 	}
 	// Read all MARGIN accounts for party
 	keyPrefix, validFor = a.badger.accountPartyPrefix(types.AccountType_MARGIN, partyID, false)
-	marginAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, 3)
+	marginAccounts, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading margin accounts for party: %s", partyID))
 	}
@@ -91,30 +91,33 @@ func (a *Account) GetByParty(partyID string) ([]*types.Account, error) {
 }
 
 // GetByPartyAndMarket will return all accounts (if available) relating to the provided party and market.
-//  - Only MARGIN accounts are supported by this call, as they have market scope.
-func (a *Account) GetByPartyAndMarket(accType types.AccountType, partyID string, marketID string) ([]*types.Account, error) {
-	if accType != types.AccountType_MARGIN {
-		return nil, errors.New("invalid type for query, only MARGIN accounts for a party and market supported")
-	}
+//  - Only MARGIN accounts are returned by this call, as they have market scope.
+func (a *Account) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error) {
 	keyPrefix, validFor := a.badger.accountMarketPartyPrefix(types.AccountType_MARGIN, marketID, partyID, false)
-	return a.getAccountsForPrefix(keyPrefix, validFor, 3)
+	return a.getAccountsForPrefix(keyPrefix, validFor, true)
 }
 
 // GetByPartyAndType will return all accounts (if available) relating to the provided party and account type.
 //  - GENERAL and MARGIN accounts are supported by this call, will return all MARGIN accounts for all markets.
-func (a *Account) GetByPartyAndType(accType types.AccountType, partyID string) ([]*types.Account, error) {
+func (a *Account) GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error) {
 	if accType != types.AccountType_GENERAL && accType != types.AccountType_MARGIN {
 		return nil, errors.New("invalid type for query, only GENERAL and MARGIN accounts for a party supported")
 	}
 	keyPrefix, validFor := a.badger.accountPartyPrefix(accType, partyID, false)
-	return a.getAccountsForPrefix(keyPrefix, validFor, 3)
+	return a.getAccountsForPrefix(keyPrefix, validFor, true)
 }
 
-// getAccountsForPrefix does the work of querying the badger store for creating key prefixes and loading values from
-// the underlying based collateral account store.
-func (a *Account) getAccountsForPrefix(prefix, validFor []byte, capacity int) ([]*types.Account, error) {
+// GetByPartyAndAsset will return all accounts (if available) relating to the provided party and asset.
+func (a *Account) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error) {
+	return nil, nil
+}
+
+
+// getAccountsForPartyPrefix does the work of querying the badger store for key prefixes
+// and loading direct values from the underlying based collateral account store.
+func (a *Account) getAccountsForPrefix(prefix, validFor []byte, byReference bool) ([]*types.Account, error) {
 	var err error
-	ret := make([]*types.Account, 0, capacity)
+	ret := make([]*types.Account, 0)
 
 	txn := a.badger.readTransaction()
 	defer txn.Discard()
@@ -122,27 +125,37 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, capacity int) ([
 	it := a.badger.getIterator(txn, false)
 	defer it.Close()
 
-	var accountBuf, keyBuf []byte
+	var accountBuf []byte
 	for it.Seek(prefix); it.ValidForPrefix(validFor); it.Next() {
-		if keyBuf, err = it.Item().ValueCopy(keyBuf); err != nil {
-			return nil, err
-		}
-		item, err := txn.Get(keyBuf)
-		if err != nil {
-			return nil, err
-		}
-		if accountBuf, err = item.ValueCopy(accountBuf); err != nil {
-			return nil, err
+		// If loading the data indirectly via a secondary index reference
+		// then the caller must set `byReference` to true
+ 		if byReference {
+			var keyBuf []byte
+			if keyBuf, err = it.Item().ValueCopy(keyBuf); err != nil {
+				return nil, err
+			}
+			item, err := txn.Get(keyBuf)
+			if err != nil {
+				return nil, err
+			}
+			if accountBuf, err = item.ValueCopy(accountBuf); err != nil {
+				return nil, err
+			}
+		} else {
+			if accountBuf, err = it.Item().ValueCopy(accountBuf); err != nil {
+				return nil, err
+			}
 		}
 		var acc types.Account
 		if err := proto.Unmarshal(accountBuf, &acc); err != nil {
-			a.log.Error(
-				"Failed to unmarshal account",
-				logging.String("account-id", string(keyBuf)),
+			a.log.Error("Failed to unmarshal account value from badger in account store",
 				logging.Error(err),
-			)
+				logging.String("badger-key", string(it.Item().Key())),
+				logging.String("raw-bytes", string(accountBuf)))
+
 			return nil, err
 		}
+
 		ret = append(ret, &acc)
 	}
 
@@ -152,13 +165,25 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, capacity int) ([
 // SaveBatch writes a slice of account changes to the underlying store.
 func (a *Account) SaveBatch(accs []*types.Account) error {
 
+	if logging.DebugLevel == a.log.GetLevel() {
+		for _, acc := range accs {
+			a.log.Debug("", logging.Account(*acc))
+		}
+	}
+
 	batch, err := a.parseBatch(accs...)
 	if err != nil {
+		a.log.Error(
+			"Unable to parse accounts batch",
+			logging.Error(err),
+			logging.Int("batch-size", len(accs)))
 		return err
 	}
 
 	if logging.DebugLevel == a.log.GetLevel() {
-		// todo: log out each account to be written to store, will include updates?
+		for key, data := range batch {
+			a.log.Debug("", logging.String("key", key), logging.String("data", string(data)))
+		}
 	}
 
 	_, err = a.badger.writeBatch(batch)
@@ -166,12 +191,12 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 		a.log.Error(
 			"Unable to write accounts batch",
 			logging.Error(err),
-			logging.Int("batch-size", len(batch)))
+			logging.Int("batch-size", len(accs)))
 		return err
 	}
 
 	if logging.DebugLevel == a.log.GetLevel() {
-		a.log.Debug("Accounts store updated", logging.Int("batch-size", len(batch)))
+		a.log.Debug("Accounts store updated", logging.Int("batch-size", len(accs)))
 	}
 
 	a.notify(accs)
@@ -217,21 +242,14 @@ func (a *Account) notify(accs []*types.Account) {
 // parseBatch takes a list of accounts and outputs the necessary badger keys and values
 // in a slice ready to write down to disk using the generic writeBatch function.
 func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, error) {
-
-	//todo log whats happening here
-
 	batch := make(map[string][]byte)
 	for _, acc := range accounts {
 
-		// todo: drop account ID unless its needed in the core
-
-		// todo: is this required, safety checking?
-		market := acc.MarketID
-		if market == "" {
-			a.log.Warn("Account has an empty marketID", logging.Account(*acc))
-			if acc.Type != types.AccountType_GENERAL {
-				a.log.Warn("Not of account type GENERAL")
-			}
+		// Validate marketID as only MARGIN accounts should have a marketID specified
+		if acc.MarketID == "" && acc.Type != types.AccountType_GENERAL {
+			err := errors.New(fmt.Sprintf("general account should not have a market"))
+			a.log.Error(err.Error(), logging.Account(*acc))
+			return nil, err
 		}
 
 		// Marshall proto struct to byte buffer for storage
@@ -254,8 +272,8 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		}
 		// Check the type of account and write only the data/keys required for MARGIN accounts.
 		if acc.Type == types.AccountType_MARGIN {
-			marginIdKey := a.badger.accountMarginIdKey(acc.Owner, market, acc.Asset)
-			marginMarketKey := a.badger.accountMarketKey(market, string(marginIdKey))
+			marginIdKey := a.badger.accountMarginIdKey(acc.Owner, acc.MarketID, acc.Asset)
+			marginMarketKey := a.badger.accountMarketKey(acc.MarketID, string(marginIdKey))
 			marginAssetKey := a.badger.accountAssetKey(acc.Asset, string(marginIdKey))
 			batch[string(marginIdKey)] = buf
 			batch[string(marginMarketKey)] = marginIdKey

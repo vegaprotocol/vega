@@ -63,6 +63,21 @@ func (mr *MockAccountsServiceMockRecorder) GetByParty(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByParty", reflect.TypeOf((*MockAccountsService)(nil).GetByParty), arg0)
 }
 
+// GetByPartyAndAsset mocks base method
+func (m *MockAccountsService) GetByPartyAndAsset(arg0, arg1 string) ([]*proto.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByPartyAndAsset", arg0, arg1)
+	ret0, _ := ret[0].([]*proto.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByPartyAndAsset indicates an expected call of GetByPartyAndAsset
+func (mr *MockAccountsServiceMockRecorder) GetByPartyAndAsset(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndAsset", reflect.TypeOf((*MockAccountsService)(nil).GetByPartyAndAsset), arg0, arg1)
+}
+
 // GetByPartyAndMarket mocks base method
 func (m *MockAccountsService) GetByPartyAndMarket(arg0, arg1 string) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
@@ -78,19 +93,19 @@ func (mr *MockAccountsServiceMockRecorder) GetByPartyAndMarket(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndMarket", reflect.TypeOf((*MockAccountsService)(nil).GetByPartyAndMarket), arg0, arg1)
 }
 
-// GetTraderMarketBalance mocks base method
-func (m *MockAccountsService) GetTraderMarketBalance(arg0, arg1 string) ([]*proto.Account, error) {
+// GetByPartyAndType mocks base method
+func (m *MockAccountsService) GetByPartyAndType(arg0 string, arg1 proto.AccountType) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTraderMarketBalance", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByPartyAndType", arg0, arg1)
 	ret0, _ := ret[0].([]*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTraderMarketBalance indicates an expected call of GetTraderMarketBalance
-func (mr *MockAccountsServiceMockRecorder) GetTraderMarketBalance(arg0, arg1 interface{}) *gomock.Call {
+// GetByPartyAndType indicates an expected call of GetByPartyAndType
+func (mr *MockAccountsServiceMockRecorder) GetByPartyAndType(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTraderMarketBalance", reflect.TypeOf((*MockAccountsService)(nil).GetTraderMarketBalance), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndType", reflect.TypeOf((*MockAccountsService)(nil).GetByPartyAndType), arg0, arg1)
 }
 
 // ObserveAccounts mocks base method

@@ -63,7 +63,7 @@ func testGetTraderAccountsSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, all, accs)
 	// now see if we get the expected accounts (only BTC accounts) if we get trader balance for a market
-	svc.storage.EXPECT().GetByPartyAndMarket(types.AccountType_MARGIN, owner, market1).Times(1).Return(firstMarket[:2], nil)           // get the first 2
+	svc.storage.EXPECT().GetByPartyAndMarket(owner, market1).Times(1).Return(firstMarket[:2], nil)           // get the first 2
 	accs, err = svc.GetByPartyAndMarket(owner, market1)
 	assert.NoError(t, err)
 	assert.Equal(t, len(firstMarket), len(accs))
@@ -86,14 +86,14 @@ func testGetTraderAccountsErr(t *testing.T) {
 
 	// accounts not set up, so we can test the errors for trader market balance here, too
 	market := "BTC/DEC19"
-	svc.storage.EXPECT().GetByPartyAndMarket(types.AccountType_MARGIN, owner, market).Times(1).Return(nil, storage.ErrOwnerNotFound)
+	svc.storage.EXPECT().GetByPartyAndMarket(owner, market).Times(1).Return(nil, storage.ErrOwnerNotFound)
 	accs, err = svc.GetByPartyAndMarket(owner, market)
 	assert.Nil(t, accs)
 	assert.Error(t, err)
 
 	// check we're returning the correct error
 	assert.Equal(t, accounts.ErrOwnerNotInMarket, err)
-	svc.storage.EXPECT().GetByPartyAndMarket(types.AccountType_MARGIN, owner, market).Times(1).Return(nil, storage.ErrMarketNotFound)
+	svc.storage.EXPECT().GetByPartyAndMarket(owner, market).Times(1).Return(nil, storage.ErrMarketNotFound)
 	accs, err = svc.GetByPartyAndMarket(owner, market)
 	assert.Nil(t, accs)
 	assert.Equal(t, storage.ErrMarketNotFound, err)
@@ -101,14 +101,14 @@ func testGetTraderAccountsErr(t *testing.T) {
 	// now error cases on general account
 	// no general account
 	traderAccs := getTestAccounts(owner, market, traderTypes[:2]...) // do not create general account
-	svc.storage.EXPECT().GetByPartyAndMarket(types.AccountType_MARGIN, owner, market).Times(1).Return(traderAccs, nil)
+	svc.storage.EXPECT().GetByPartyAndMarket(owner, market).Times(1).Return(traderAccs, nil)
 	svc.storage.EXPECT().GetByPartyAndType(owner, types.AccountType_GENERAL).Times(1).Return(nil, storage.ErrAccountNotFound)
 	accs, err = svc.GetByPartyAndMarket(owner, market)
 	assert.Nil(t, accs)
 	assert.Equal(t, accounts.ErrNoGeneralAccount, err)
 
 	// owner not found when getting general type account (should be impossible)
-	svc.storage.EXPECT().GetByPartyAndMarket(types.AccountType_MARGIN, owner, market).Times(1).Return(traderAccs, nil)
+	svc.storage.EXPECT().GetByPartyAndMarket(owner, market).Times(1).Return(traderAccs, nil)
 	svc.storage.EXPECT().GetByPartyAndType(owner, types.AccountType_GENERAL).Times(1).Return(nil, storage.ErrOwnerNotFound)
 	accs, err = svc.GetByPartyAndMarket(owner, market)
 	assert.Nil(t, accs)

@@ -5,7 +5,6 @@ import (
 	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -19,12 +18,9 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts AccountStore
 type AccountStore interface {
 	GetByParty(partyID string) ([]*types.Account, error)
-	GetByPartyAndMarket(accType types.AccountType, partyID string, marketID string) ([]*types.Account, error)
-	GetByPartyAndType(accType types.AccountType, partyID string) ([]*types.Account, error)
-
-	//todo: asset based query
-	//GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error)
-	//GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error)
+	GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error)
+	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
+	GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error)
 
 	Subscribe(c chan []*types.Account) uint64
 	Unsubscribe(id uint64) error
@@ -35,7 +31,7 @@ type Blockchain interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
 }
 
-// Svc is the underlying data struct for the accounts service / business logic.
+// Account service business logic.
 type Svc struct {
 	Config
 	log           *logging.Logger
@@ -46,7 +42,6 @@ type Svc struct {
 
 // NewService creates an instance of the accounts service.
 func NewService(log *logging.Logger, conf Config, storage AccountStore, chain Blockchain) *Svc {
-	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 	return &Svc{
@@ -89,11 +84,8 @@ func (s *Svc) GetByParty(partyID string) ([]*types.Account, error) {
 // GetByPartyAndMarket returns all accounts for a given market
 // and party (if they have placed orders on that market on VEGA).
 func (s *Svc) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error) {
-	accounts, err := s.storage.GetByPartyAndMarket(types.AccountType_MARGIN, partyID, marketID)
+	accounts, err := s.storage.GetByPartyAndMarket(partyID, marketID)
 	if err != nil {
-		if err == storage.ErrOwnerNotFound {
-			err = ErrOwnerNotInMarket
-		}
 		return nil, err
 	}
 	return accounts, nil
@@ -102,11 +94,18 @@ func (s *Svc) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Acc
 // GetByPartyAndType returns all accounts for a given type (on all markets)
 // and party (if they have placed orders on that market on VEGA).
 func (s *Svc) GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error) {
-	accounts, err := s.storage.GetByPartyAndType(accType, partyID)
+	accounts, err := s.storage.GetByPartyAndType(partyID, accType)
 	if err != nil {
-		if err == storage.ErrOwnerNotFound {
-			err = ErrOwnerNotInMarket
-		}
+		return nil, err
+	}
+	return accounts, nil
+}
+
+// GetByPartyAndAsset returns all accounts for a given asset (on all markets)
+// and party (if they have placed orders on that market on VEGA).
+func (s *Svc) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error) {
+	accounts, err := s.storage.GetByPartyAndAsset(partyID, asset)
+	if err != nil {
 		return nil, err
 	}
 	return accounts, nil
@@ -202,12 +201,3 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 func (s *Svc) GetAccountSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }
-
-// todo: these methods appear not referenced anywhere
-//func (s *Svc) GetTraderAssetBalance(id, asset string) ([]*types.Account, error) {
-//	return s.storage.GetAccountsByOwnerAndAsset(id, asset)
-//}
-
-//func (s *Svc) GetTraderMarketAssetBalance(id, asset, market string) ([]*types.Account, error) {
-//	return s.storage.GetMarketAssetAccounts(id, asset, market)
-//}

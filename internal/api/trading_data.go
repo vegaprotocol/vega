@@ -101,8 +101,9 @@ type BlockchainClient interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api AccountsService
 type AccountsService interface {
 	GetByParty(partyID string) ([]*types.Account, error)
-	GetByPartyAndMarket(accType types.AccountType, partyID string, marketID string) ([]*types.Account, error)
-	GetByPartyAndType(accType types.AccountType, partyID string) ([]*types.Account, error)
+	GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error)
+	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
+	GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
 }
@@ -405,7 +406,7 @@ func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 
 	accountschan, ref := h.AccountsService.ObserveAccounts(
 		ctx, h.Config.StreamRetries, req.MarketID, req.PartyID, req.Type)
-	h.log.Debug("Candles subscriber - new rpc stream", logging.Uint64("ref", ref))
+	h.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	var err error
 
@@ -839,7 +840,7 @@ func (h *tradingDataService) AccountsByParty(ctx context.Context, req *protoapi.
 }
 
 func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsByPartyAndMarketResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndMarket(req.Type, req.PartyID, req.MarketID)
+	accs, err := h.AccountsService.GetByPartyAndMarket(req.PartyID, req.MarketID)
 	if err != nil {
 		return nil, err
 	}
@@ -849,7 +850,7 @@ func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *
 }
 
 func (h *tradingDataService) AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest) (*protoapi.AccountsByPartyAndTypeResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndType(req.Type, req.PartyID)
+	accs, err := h.AccountsService.GetByPartyAndType(req.PartyID, req.Type)
 	if err != nil {
 		return nil, err
 	}
