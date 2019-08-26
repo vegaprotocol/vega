@@ -143,23 +143,6 @@ func (bs *badgerStore) assetPrefix(asset string, descending bool) (keyPrefix []b
 	return bs.getPrefix("A", asset, descending)
 }
 
-func (bs *badgerStore) accountPartyPrefix(accType types.AccountType, party string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
-	return bs.getPrefix(bs.getAccountTypePrefix(accType), party, descending)
-}
-
-func (bs *badgerStore) accountMarketPartyPrefix(accType types.AccountType, marketID string, partyID string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
-	validForPrefix = []byte(fmt.Sprintf("%s:%s_M:%s_", bs.getAccountTypePrefix(accType), partyID, marketID))
-	keyPrefix = validForPrefix
-	if descending {
-		keyPrefix = append(keyPrefix, 0xFF)
-	}
-	return keyPrefix, validForPrefix
-}
-
-// ---------              TODO            ---------
-// --------- THESE COMPOSITES NEED FIXING ---------
-
-
 func (bs *badgerStore) getPrefix(modifier string, prefix string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
 	validForPrefix = []byte(fmt.Sprintf("%s:%s_", modifier, prefix))
 	keyPrefix = validForPrefix
@@ -178,6 +161,27 @@ func (bs *badgerStore) candlePrefix(market string, interval types.Interval, desc
 	return keyPrefix, validForPrefix
 }
 
+func (bs *badgerStore) accountPartyPrefix(accType types.AccountType, party string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	return bs.getPrefix(bs.getAccountTypePrefix(accType), party, descending)
+}
+
+func (bs *badgerStore) accountPartyMarketPrefix(accType types.AccountType, partyID string, marketID string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	validForPrefix = []byte(fmt.Sprintf("%s:%s_M:%s_", bs.getAccountTypePrefix(accType), partyID, marketID))
+	keyPrefix = validForPrefix
+	if descending {
+		keyPrefix = append(keyPrefix, 0xFF)
+	}
+	return keyPrefix, validForPrefix
+}
+
+func (bs *badgerStore) accountPartyAssetPrefix(partyID string, asset string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	validForPrefix = []byte(fmt.Sprintf("A:%s_%s_ID:", asset, partyID))
+	keyPrefix = validForPrefix
+	if descending {
+		keyPrefix = append(keyPrefix, 0xFF)
+	}
+	return keyPrefix, validForPrefix
+}
 
 func (bs *badgerStore) readTransaction() *badger.Txn {
 	return bs.db.NewTransaction(false)
@@ -258,10 +262,10 @@ func (bs *badgerStore) accountMarginIdKey(partyID string, marketID string, asset
 func (bs *badgerStore) accountMarketKey(market string, accountID string) []byte {
 	return []byte(fmt.Sprintf("M:%s_ID:%s", market, accountID))
 }
-// accountAssetKey is used to provide an index of all accounts for a particular asset.
+// accountAssetKey is used to provide an index of accounts for a particular asset.
 // Used by both general and margin accounts.
-func (bs *badgerStore) accountAssetKey(assetID string, accountID string) []byte {
-	return []byte(fmt.Sprintf("A:%s_ID:%s", assetID, accountID))
+func (bs *badgerStore) accountAssetKey(assetID string, partyID string, accountID string) []byte {
+	return []byte(fmt.Sprintf("A:%s_%s_ID:%s", assetID, partyID, accountID))
 }
 
 // getAccountTypePrefix returns the correct code for a particular account type.

@@ -93,8 +93,8 @@ func (a *Account) GetByParty(partyID string) ([]*types.Account, error) {
 // GetByPartyAndMarket will return all accounts (if available) relating to the provided party and market.
 //  - Only MARGIN accounts are returned by this call, as they have market scope.
 func (a *Account) GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountMarketPartyPrefix(types.AccountType_MARGIN, marketID, partyID, false)
-	return a.getAccountsForPrefix(keyPrefix, validFor, true)
+	keyPrefix, validFor := a.badger.accountPartyMarketPrefix(types.AccountType_MARGIN, partyID, marketID, false)
+	return a.getAccountsForPrefix(keyPrefix, validFor, false)
 }
 
 // GetByPartyAndType will return all accounts (if available) relating to the provided party and account type.
@@ -104,14 +104,14 @@ func (a *Account) GetByPartyAndType(partyID string, accType types.AccountType) (
 		return nil, errors.New("invalid type for query, only GENERAL and MARGIN accounts for a party supported")
 	}
 	keyPrefix, validFor := a.badger.accountPartyPrefix(accType, partyID, false)
-	return a.getAccountsForPrefix(keyPrefix, validFor, true)
+	return a.getAccountsForPrefix(keyPrefix, validFor, false)
 }
 
 // GetByPartyAndAsset will return all accounts (if available) relating to the provided party and asset.
 func (a *Account) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error) {
-	return nil, nil
+	keyPrefix, validFor := a.badger.accountPartyAssetPrefix(partyID, asset, false)
+	return a.getAccountsForPrefix(keyPrefix, validFor, true)
 }
-
 
 // getAccountsForPartyPrefix does the work of querying the badger store for key prefixes
 // and loading direct values from the underlying based collateral account store.
@@ -152,7 +152,6 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, byReference bool
 				logging.Error(err),
 				logging.String("badger-key", string(it.Item().Key())),
 				logging.String("raw-bytes", string(accountBuf)))
-
 			return nil, err
 		}
 
@@ -266,7 +265,7 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		if acc.Type == types.AccountType_GENERAL {
 			// General accounts have no scope of an individual market, they span all markets.
 			generalIdKey := a.badger.accountGeneralIdKey(acc.Owner, acc.Asset)
-			generalAssetKey := a.badger.accountAssetKey(acc.Asset, string(generalIdKey))
+			generalAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(generalIdKey))
 			batch[string(generalIdKey)] = buf
 			batch[string(generalAssetKey)] = generalIdKey
 		}
@@ -274,7 +273,7 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		if acc.Type == types.AccountType_MARGIN {
 			marginIdKey := a.badger.accountMarginIdKey(acc.Owner, acc.MarketID, acc.Asset)
 			marginMarketKey := a.badger.accountMarketKey(acc.MarketID, string(marginIdKey))
-			marginAssetKey := a.badger.accountAssetKey(acc.Asset, string(marginIdKey))
+			marginAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(marginIdKey))
 			batch[string(marginIdKey)] = buf
 			batch[string(marginMarketKey)] = marginIdKey
 			batch[string(marginAssetKey)] = marginIdKey

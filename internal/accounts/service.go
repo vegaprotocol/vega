@@ -158,7 +158,6 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 				filtered := make([]*types.Account, 0, len(accs))
 				for _, acc := range accs {
 					acc := acc
-					// todo: split this out into separate func?
 					if (len(marketID) <= 0 || marketID == acc.MarketID) &&
 						(len(partyID) <= 0 || partyID == acc.Owner) &&
 						(ty == types.AccountType_NO_ACC || ty == acc.Type) {

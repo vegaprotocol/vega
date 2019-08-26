@@ -13,6 +13,8 @@ import (
 
 
 const (
+	testAccountParty1  = "g0ldman"
+	testAccountParty2  = "m3tr0"
 	testAccountStore   = "accountstore-test"
 	testAccountMarket1 = "m@rk3t1"
 	testAccountMarket2 = "tr@d1nG"
@@ -21,61 +23,99 @@ const (
 	testAssetEUR       = "EUR"
 )
 
-//
-//func TestMarkets(t *testing.T) {
-//	dir, tidy, err := storage.TempDir("marketstore-test")
-//	if err != nil {
-//		t.Fatalf("Failed to create tmp dir: %s", err.Error())
-//	}
-//	defer tidy()
-//
-//	config := storage.Config{
-//		Level:          encoding.LogLevel{Level: logging.DebugLevel},
-//		Markets:        storage.DefaultMarketStoreOptions(),
-//		MarketsDirPath: dir,
-//	}
-//	marketStore, err := storage.NewMarkets(logging.NewTestLogger(), config)
-//	assert.NoError(t, err)
-//	assert.NotNil(t, marketStore)
-//	if marketStore == nil {
-//		t.Fatalf("Could not create market store. Giving up.")
-//	}
-//	defer marketStore.Close()
-//
-//	err = marketStore.Commit() // no-op for in-memory store
-//	assert.NoError(t, err)
-//
-//	config.Level.Level = logging.InfoLevel
-//	marketStore.ReloadConf(config)
-//
-//	mkt := types.Market{
-//		Id:   testMarketId,
-//		Name: testMarketName,
-//	}
-//	err = marketStore.Post(&mkt)
-//	assert.NoError(t, err)
-//
-//	mkt2, err := marketStore.GetByID("nonexistant_market")
-//	assert.Equal(t, badger.ErrKeyNotFound, err)
-//	assert.Nil(t, mkt2)
-//
-//	mkt3, err := marketStore.GetByID(testMarketId)
-//	assert.NoError(t, err)
-//	assert.NotNil(t, mkt3)
-//	assert.Equal(t, mkt.Id, mkt3.Id)
-//
-//	mkts, err := marketStore.GetAll()
-//	assert.NoError(t, err)
-//	assert.NotNil(t, mkts)
-//	assert.Equal(t, 1, len(mkts))
-//	assert.Equal(t, mkt.Id, mkts[0].Id)
-//
-//	err = marketStore.Post(nil)
-//	assert.Error(t, err)
-//}
+func TestAccount_GetByPartyAndAsset(t *testing.T) {
+	dir, tidy := createTmpDir(t, testAccountStore)
+	defer tidy()
 
-func TestAccount_New(t *testing.T) {
+	accountStore := createAccountStore(t, dir)
 
+	err := accountStore.SaveBatch(getTestAccounts())
+	assert.Nil(t, err)
+
+	accs, err := accountStore.GetByPartyAndAsset(testAccountParty2, testAssetEUR)
+	assert.Nil(t, err)
+	assert.Len(t, accs, 2)
+	assert.Equal(t, accs[0].Asset, testAssetEUR)
+	assert.Equal(t, accs[1].Asset, testAssetEUR)
+
+	accs, err = accountStore.GetByPartyAndAsset(testAccountParty1, testAssetEUR)
+	assert.Nil(t, err)
+	assert.Len(t, accs, 0)
+
+	accs, err = accountStore.GetByPartyAndAsset(testAccountParty1, testAssetUSD)
+	assert.Nil(t, err)
+	assert.Len(t, accs, 2)
+	assert.Equal(t, accs[0].Asset, testAssetUSD)
+	assert.Equal(t, accs[1].Asset, testAssetUSD)
+
+	accs, err = accountStore.GetByPartyAndAsset(testAccountParty1, testAssetGBP)
+	assert.Nil(t, err)
+	assert.Len(t, accs, 2)
+	assert.Equal(t, accs[0].Asset, testAssetGBP)
+	assert.Equal(t, accs[1].Asset, testAssetGBP)
+
+	err = accountStore.Close()
+	assert.NoError(t, err)
+}
+
+func TestAccount_GetByPartyAndType(t *testing.T) {
+	invalid := "invalid type for query"
+
+	dir, tidy := createTmpDir(t, testAccountStore)
+	defer tidy()
+
+	accountStore := createAccountStore(t, dir)
+
+	err := accountStore.SaveBatch(getTestAccounts())
+	assert.Nil(t, err)
+
+	// General accounts
+	accs, err := accountStore.GetByPartyAndType(testAccountParty1, types.AccountType_GENERAL)
+	assert.Nil(t, err)
+	assert.Len(t, accs, 2)
+
+	// Margin accounts
+	accs, err = accountStore.GetByPartyAndType(testAccountParty1, types.AccountType_MARGIN)
+	assert.Nil(t, err)
+	assert.Len(t, accs, 2)
+
+	// Invalid account type
+	accs, err = accountStore.GetByPartyAndType(testAccountParty2, types.AccountType_INSURANCE)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), invalid)
+	assert.Nil(t, accs)
+
+	// Invalid account type
+	accs, err = accountStore.GetByPartyAndType(testAccountParty2, types.AccountType_SETTLEMENT)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), invalid)
+	assert.Nil(t, accs)
+
+	err = accountStore.Close()
+	assert.NoError(t, err)
+}
+
+func TestAccount_GetByPartyAndMarket(t *testing.T) {
+	dir, tidy := createTmpDir(t, testAccountStore)
+	defer tidy()
+
+	accountStore := createAccountStore(t, dir)
+
+	err := accountStore.SaveBatch(getTestAccounts())
+	assert.Nil(t, err)
+
+	accs, err := accountStore.GetByPartyAndMarket(testAccountParty1, testAccountMarket1)
+	assert.Nil(t, err)
+	assert.Len(t, accs, 1)
+	assert.Equal(t, testAccountMarket1, accs[0].MarketID)
+
+	accs, err = accountStore.GetByPartyAndMarket(testAccountParty1, testAccountMarket2)
+	assert.Nil(t, err)
+	assert.Len(t, accs, 1)
+	assert.Equal(t, testAccountMarket2, accs[0].MarketID)
+
+	err = accountStore.Close()
+	assert.NoError(t, err)
 }
 
 func TestAccount_GetByParty(t *testing.T) {
@@ -87,42 +127,58 @@ func TestAccount_GetByParty(t *testing.T) {
 	err := accountStore.SaveBatch(getTestAccounts())
 	assert.Nil(t, err)
 
-	accs, err := accountStore.GetByParty(testParty)
+	accs, err := accountStore.GetByParty(testAccountParty1)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 4)
 	assert.Equal(t, testAccountMarket1, accs[0].MarketID)
 
 	err = accountStore.Close()
 	assert.NoError(t, err)
-
-
 }
 
 func getTestAccounts() []*types.Account {
 	accs := []*types.Account {
 		{
-			Owner: testParty,
+			Owner: testAccountParty1,
 			MarketID: testAccountMarket1,
 			Type: types.AccountType_GENERAL,
 			Asset: testAssetGBP,
+			Balance: 1024,
 		},
 		{
-			Owner: testParty,
+			Owner: testAccountParty1,
 			MarketID: testAccountMarket1,
 			Type: types.AccountType_MARGIN,
 			Asset: testAssetGBP,
+			Balance: 1024,
 		},
 		{
-			Owner: testParty,
+			Owner: testAccountParty1,
 			MarketID: testAccountMarket2,
 			Type: types.AccountType_GENERAL,
 			Asset: testAssetUSD,
+			Balance: 1,
 		},
 		{
-			Owner: testParty,
+			Owner: testAccountParty1,
 			MarketID: testAccountMarket2,
 			Type: types.AccountType_MARGIN,
 			Asset: testAssetUSD,
+			Balance: 9,
+		},
+		{
+			Owner: testAccountParty2,
+			MarketID: testAccountMarket2,
+			Type: types.AccountType_GENERAL,
+			Asset: testAssetEUR,
+			Balance: 2048,
+		},
+		{
+			Owner: testAccountParty2,
+			MarketID: testAccountMarket2,
+			Type: types.AccountType_MARGIN,
+			Asset: testAssetEUR,
+			Balance: 1024,
 		},
 	}
 	return accs
@@ -151,5 +207,4 @@ func createAccountStore(t *testing.T, dir string) *storage.Account {
 	}
 
 	return accountStore
-
 }
