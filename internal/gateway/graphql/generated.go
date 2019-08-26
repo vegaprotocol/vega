@@ -170,7 +170,7 @@ type ComplexityRoot struct {
 	}
 
 	Party struct {
-		Accounts  func(childComplexity int, marketID *string, typeArg *AccountType) int
+		Accounts  func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
 		ID        func(childComplexity int) int
 		Orders    func(childComplexity int, open *bool, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
@@ -250,7 +250,7 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		Accounts    func(childComplexity int, marketID *string, partyID *string, typeArg *AccountType) int
+		Accounts    func(childComplexity int, marketID *string, partyID *string, asset *string, typeArg *AccountType) int
 		Candles     func(childComplexity int, marketID string, interval Interval) int
 		MarketDepth func(childComplexity int, marketID string) int
 		Orders      func(childComplexity int, marketID *string, partyID *string) int
@@ -330,7 +330,7 @@ type OrderResolver interface {
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, open *bool, skip *int, first *int, last *int) ([]proto.Order, error)
 	Trades(ctx context.Context, obj *Party, marketID *string, skip *int, first *int, last *int) ([]proto.Trade, error)
-	Accounts(ctx context.Context, obj *Party, marketID *string, typeArg *AccountType) ([]proto.Account, error)
+	Accounts(ctx context.Context, obj *Party, marketID *string, asset *string, typeArg *AccountType) ([]proto.Account, error)
 	Positions(ctx context.Context, obj *Party) ([]proto.MarketPosition, error)
 }
 type PendingOrderResolver interface {
@@ -395,7 +395,7 @@ type SubscriptionResolver interface {
 	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []proto.Trade, error)
 	Positions(ctx context.Context, partyID string) (<-chan *proto.MarketPosition, error)
 	MarketDepth(ctx context.Context, marketID string) (<-chan *proto.MarketDepth, error)
-	Accounts(ctx context.Context, marketID *string, partyID *string, typeArg *AccountType) (<-chan *proto.Account, error)
+	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *proto.Trade) (*Market, error)
@@ -954,7 +954,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["type"].(*AccountType)), true
+		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*AccountType)), true
 
 	case "Party.ID":
 		if e.complexity.Party.ID == nil {
@@ -1428,7 +1428,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Accounts(childComplexity, args["marketId"].(*string), args["partyId"].(*string), args["type"].(*AccountType)), true
+		return e.complexity.Subscription.Accounts(childComplexity, args["marketId"].(*string), args["partyId"].(*string), args["asset"].(*string), args["type"].(*AccountType)), true
 
 	case "Subscription.Candles":
 		if e.complexity.Subscription.Candles == nil {
@@ -1788,9 +1788,11 @@ type Subscription {
     # ID of the market from which we want accounts updates
     marketId: String,
     # ID of the party from which we want accounts updates
-    partyId: String
+    partyId: String,
+    # Asset code
+    asset: String,
     # Type of the account
-    type: AccountType,
+    type: AccountType
   ): Account!
 
 }
@@ -2107,7 +2109,7 @@ type Market {
     last: Int
   ): [Order!]
 
-  # Get system accounts for a given market (insurance pool, settlement)
+  # Get accounts for a party or market
   accounts(
     # Specify the account type to get a specific account
     type: AccountType,
@@ -2228,14 +2230,15 @@ type Party {
     # Pagination last element
     last: Int): [Trade!]
 
-    # get accounts for a given party, filtered if needed
+  # Collateral accounts relating to a party
   accounts(
-    # Market ID - specify what market accounts for the party to return
+    # ID of the market (used when specifying a margin account for a party)
     marketId: String,
+    # Asset (USD, EUR etc)
+    asset: String,
     # Filter accounts by type (General account, margin account, etc...)
     type: AccountType,
   ): [Account!]
-
 
   # Trading positions relating to a party
   positions: [Position!]
@@ -2751,14 +2754,22 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 		}
 	}
 	args["marketId"] = arg0
-	var arg1 *AccountType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg1, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+	var arg1 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg1
+	args["asset"] = arg1
+	var arg2 *AccountType
+	if tmp, ok := rawArgs["type"]; ok {
+		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg2
 	return args, nil
 }
 
@@ -2949,14 +2960,22 @@ func (ec *executionContext) field_Subscription_accounts_args(ctx context.Context
 		}
 	}
 	args["partyId"] = arg1
-	var arg2 *AccountType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+	var arg2 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg2
+	args["asset"] = arg2
+	var arg3 *AccountType
+	if tmp, ok := rawArgs["type"]; ok {
+		arg3, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg3
 	return args, nil
 }
 
@@ -5061,7 +5080,7 @@ func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Accounts(rctx, obj, args["marketId"].(*string), args["type"].(*AccountType))
+		return ec.resolvers.Party().Accounts(rctx, obj, args["marketId"].(*string), args["asset"].(*string), args["type"].(*AccountType))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -6873,7 +6892,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
 	//          and Tracer stack
 	rctx := ctx
-	results, err := ec.resolvers.Subscription().Accounts(rctx, args["marketId"].(*string), args["partyId"].(*string), args["type"].(*AccountType))
+	results, err := ec.resolvers.Subscription().Accounts(rctx, args["marketId"].(*string), args["partyId"].(*string), args["asset"].(*string), args["type"].(*AccountType))
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil

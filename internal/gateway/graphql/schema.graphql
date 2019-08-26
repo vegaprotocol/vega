@@ -106,9 +106,11 @@ type Subscription {
     # ID of the market from which we want accounts updates
     marketId: String,
     # ID of the party from which we want accounts updates
-    partyId: String
+    partyId: String,
+    # Asset code
+    asset: String,
     # Type of the account
-    type: AccountType,
+    type: AccountType
   ): Account!
 
 }
@@ -425,7 +427,7 @@ type Market {
     last: Int
   ): [Order!]
 
-  # Get system accounts for a given market (insurance pool, settlement)
+  # Get accounts for a party or market
   accounts(
     # Specify the account type to get a specific account
     type: AccountType,
@@ -546,14 +548,15 @@ type Party {
     # Pagination last element
     last: Int): [Trade!]
 
-    # get accounts for a given party, filtered if needed
+  # Collateral accounts relating to a party
   accounts(
-    # Market ID - specify what market accounts for the party to return
+    # ID of the market (used when specifying a margin account for a party)
     marketId: String,
+    # Asset (USD, EUR etc)
+    asset: String,
     # Filter accounts by type (General account, margin account, etc...)
     type: AccountType,
   ): [Account!]
-
 
   # Trading positions relating to a party
   positions: [Position!]

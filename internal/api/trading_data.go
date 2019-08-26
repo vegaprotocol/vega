@@ -104,7 +104,7 @@ type AccountsService interface {
 	GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error)
 	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
 	GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error)
-	ObserveAccounts(ctx context.Context, retries int, marketID, partyID string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
+	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
 }
 
@@ -405,7 +405,7 @@ func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 	defer cfunc()
 
 	accountschan, ref := h.AccountsService.ObserveAccounts(
-		ctx, h.Config.StreamRetries, req.MarketID, req.PartyID, req.Type)
+		ctx, h.Config.StreamRetries, req.MarketID, req.PartyID, req.Asset, req.Type)
 	h.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	var err error
@@ -855,6 +855,16 @@ func (h *tradingDataService) AccountsByPartyAndType(ctx context.Context, req *pr
 		return nil, err
 	}
 	return &protoapi.AccountsByPartyAndTypeResponse{
+		Accounts: accs,
+	}, nil
+}
+
+func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsByPartyAndAssetResponse, error) {
+	accs, err := h.AccountsService.GetByPartyAndAsset(req.PartyID, req.Asset)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.AccountsByPartyAndAssetResponse{
 		Accounts: accs,
 	}, nil
 }

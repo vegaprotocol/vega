@@ -57,6 +57,26 @@ func (mr *MockTradingDataClientMockRecorder) AccountsByParty(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsByParty", reflect.TypeOf((*MockTradingDataClient)(nil).AccountsByParty), varargs...)
 }
 
+// AccountsByPartyAndAsset mocks base method
+func (m *MockTradingDataClient) AccountsByPartyAndAsset(arg0 context.Context, arg1 *api.AccountsByPartyAndAssetRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyAndAssetResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AccountsByPartyAndAsset", varargs...)
+	ret0, _ := ret[0].(*api.AccountsByPartyAndAssetResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AccountsByPartyAndAsset indicates an expected call of AccountsByPartyAndAsset
+func (mr *MockTradingDataClientMockRecorder) AccountsByPartyAndAsset(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsByPartyAndAsset", reflect.TypeOf((*MockTradingDataClient)(nil).AccountsByPartyAndAsset), varargs...)
+}
+
 // AccountsByPartyAndMarket mocks base method
 func (m *MockTradingDataClient) AccountsByPartyAndMarket(arg0 context.Context, arg1 *api.AccountsByPartyAndMarketRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyAndMarketResponse, error) {
 	m.ctrl.T.Helper()

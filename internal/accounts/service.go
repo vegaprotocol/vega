@@ -119,9 +119,12 @@ func (s *Svc) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account
 //  c) A particular market (specify empty marketID)
 //  d) A particular party and market (specify marketID and partyID pair)
 //  e) Any of the above combinations but with an optional account type e.g. AccountType.GENERAL
+//  f) Filter by asset e.g. USD
 //
 // This function is typically used by the gRPC (or GraphQL) asynchronous streaming APIs.
-func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string, partyID string, ty types.AccountType) (accountCh <-chan []*types.Account, ref uint64) {
+func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
+	partyID string, asset string, ty types.AccountType) (accountCh <-chan []*types.Account, ref uint64) {
+
 	accounts := make(chan []*types.Account)
 	internal := make(chan []*types.Account)
 	ref = s.storage.Subscribe(internal)
@@ -160,6 +163,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 					acc := acc
 					if (len(marketID) <= 0 || marketID == acc.MarketID) &&
 						(len(partyID) <= 0 || partyID == acc.Owner) &&
+						(len(asset) <= 0 || asset == acc.Asset) &&
 						(ty == types.AccountType_NO_ACC || ty == acc.Type) {
 						filtered = append(filtered, acc)
 					}

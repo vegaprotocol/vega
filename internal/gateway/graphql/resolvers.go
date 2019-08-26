@@ -72,6 +72,7 @@ type TradingDataClient interface {
 	AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyResponse, error)
 	AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndMarketResponse, error)
 	AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndTypeResponse, error)
+	AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndAssetResponse, error)
 }
 
 type resolverRoot struct {
@@ -461,7 +462,7 @@ func (r *MyPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.Ma
 
 }
 
-func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, accType *AccountType) ([]types.Account, error) {
+func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, asset *string, accType *AccountType) ([]types.Account, error) {
 	if pty == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
@@ -492,7 +493,9 @@ func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 		}
 		accounts := make([]types.Account, 0, len(resp.Accounts))
 		for _, acc := range resp.Accounts {
-			accounts = append(accounts, *acc)
+			if asset == nil || acc.Asset == *asset {
+				accounts = append(accounts, *acc)
+			}
 		}
 		return accounts, nil
 	case AccountTypeGeneral:
@@ -506,7 +509,9 @@ func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 		}
 		accounts := make([]types.Account, 0, len(resp.Accounts))
 		for _, acc := range resp.Accounts {
-			accounts = append(accounts, *acc)
+			if asset == nil || acc.Asset == *asset {
+				accounts = append(accounts, *acc)
+			}
 		}
 		return accounts, nil
 	}
@@ -964,7 +969,7 @@ func (r *MyMutationResolver) Signin(ctx context.Context, id string, password str
 
 type MySubscriptionResolver resolverRoot
 
-func (r *MySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, typeArg *AccountType) (<-chan *proto.Account, error) {
+func (r *MySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error) {
 	var (
 		mkt, pty string
 		ty       types.AccountType
