@@ -427,6 +427,119 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	return confirmation, nil
 }
 
+// resolveClosedOutTraders - the traders with the given market position who haven't got sufficient collateral
+// need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
+// this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
+func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
+	// cancel pending orders for traders
+	if err := m.matching.RemoveDistressedOrders(closed); err != nil {
+		// @TODO log this here?
+		return err
+	}
+	// get the actual position, so we can work out what the total position of the market is going to be
+	var networkPos int64
+	for _, pos := range closed {
+		networkPos += pos.Size()
+	}
+	if networkPos == 0 {
+		// remove accounts, and return
+		// @TODO implement the removal stuff
+		return nil
+	}
+	remaining := uint64(networkPos)
+	side := types.Side_Buy
+	if networkPos < 0 {
+		side = types.Side_Sell
+		remaining = uint64(-networkPos)
+	}
+	// network order
+	// @TODO this order is more of a placeholder than an actual final version
+	// of the network order we'll be using
+	no := &types.Order{
+		MarketID:  m.GetID(),
+		PartyID:   "", // network is not a party as such
+		Side:      side,
+		Price:     m.markPrice, // get the orderbook to calculate the correct price here
+		Remaining: remaining,
+		CreatedAt: m.currentTime.UnixNano(), // not sure if it's UnixNano or Unix here...
+		Status:    types.Order_Active,
+		Reference: "network trade", // @TODO find a decent reference?
+	}
+	// Send the aggressive order into matching engine
+	confirmation, err := m.matching.SubmitOrder(&order)
+	if err != nil {
+		m.log.Error("Failure after submitting order to matching engine",
+			logging.Order(order),
+			logging.Error(err))
+
+		return err
+	}
+	// store network order, too??
+	if err := m.orders.Post(order); err != nil {
+		m.log.Error("Failure storing new order in submit order", logging.Error(err))
+	}
+
+	if confirmation.PassiveOrdersAffected != nil {
+		// Insert or update passive orders siting on the book
+		for _, order := range confirmation.PassiveOrdersAffected {
+			err := m.orders.Put(order)
+			if err != nil {
+				m.log.Fatal("Failure storing order update in submit order",
+					logging.Order(order),
+					logging.Error(err))
+			}
+		}
+	}
+
+	if confirmation.Trades != nil {
+		// Orders can contain several trades, each trade involves 2 traders
+		// so there's a max number of N*2 events on the channel where N == number of trades
+		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
+		// Set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
+		// @TODO settlement engine needs to be checked here @TODO
+		// possibly this is using the mark price incorrectly
+		m.settlement.ListenClosed(tradersCh)
+		// Insert all trades resulted from the executed order
+		for idx, trade := range confirmation.Trades {
+			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
+			if order.Side == types.Side_Buy {
+				trade.BuyOrder = order.Id
+				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
+			} else {
+				trade.SellOrder = order.Id
+				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
+			}
+
+			if err := m.trades.Post(trade); err != nil {
+				m.log.Error("Failure storing new trade in submit order",
+					logging.Trade(*trade),
+					logging.Error(err))
+			}
+
+			// Save to trade buffer for generating candles etc
+			err := m.candlesBuf.AddTrade(*trade)
+			if err != nil {
+				m.log.Error("Failure adding trade to candle buffer after submit order",
+					logging.Trade(*trade),
+					logging.Error(err))
+			}
+			// we skip setting the mark price when the network is trading
+
+			// Update positions (this communicates with settlement via channel)
+			m.position.Update(trade, tradersCh)
+		}
+		close(tradersCh)
+	}
+
+	// @NOTE MTM settlements don't have to happen here
+	// same goes for collateral and risk
+	// what needs to go here is the second half of settlements:
+	// @TODO:
+	// 			1. Clear trader accounts -> move to insurance pool
+	// 			2. Remove distressed traders completely from market
+	return nil
+}
+
 func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
 	newPos := pos.UpdatedPosition(order.Price)
 
