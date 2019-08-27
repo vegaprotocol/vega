@@ -331,23 +331,3 @@ func DefaultAccountStoreOptions() ConfigOptions {
 	opts.ValueLogLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.MemoryMap}
 	return opts
 }
-
-// todo: ------ additional queries reqd?
-
-//todo: do we need getByPartyAndAsset ?
-//func (a *Account) GetAccountsByOwnerAndAsset(owner, asset string) ([]*types.Account, error) {
-//	prefix, valid := a.badger.accountAssetPrefix(owner, asset, false)
-//	return a.getAccountsForPrefix(prefix, valid, 3) // at least 3 accounts, I suppose
-//}
-
-//todo: do we need getByPartyMarketAndAsset ?
-//func (a *Account) GetMarketAssetAccounts(owner, asset, market string) ([]*types.Account, error) {
-//	prefix, valid := a.badger.accountKeyPrefix(owner, asset, market, false)
-//	return a.getAccountsForPrefix(prefix, valid, 3)
-//}
-
-//todo: do we need GetByMarket(market string) - all accounts on a market for all parties?
-//func (a *Account) GetMarketAccounts(market string) ([]*types.Account, error) {
-//	keyPrefix, validFor := a.badger.accountMarketPrefix(market, false)
-//	return a.getAccountsForPrefix(keyPrefix, validFor, 0)
-//}

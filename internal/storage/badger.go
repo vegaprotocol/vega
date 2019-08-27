@@ -23,7 +23,6 @@ type badgerStore struct {
 }
 
 // ConfigOptions are params for creating a DB object.
-// todo: Make this struct generic/base options for stores
 type ConfigOptions struct {
 	// Dir                  string // not customisable by end user
 	// ValueDir             string // not customisable by end user
@@ -309,7 +308,7 @@ func (bs *badgerStore) writeBatch(kv map[string][]byte) (int, error) {
 			if err != badger.ErrTxnTooBig {
 				return 0, err
 			}
-			// Start a new transaction WITHOUT commiting any previous ones, in order
+			// Start a new transaction WITHOUT committing any previous ones, in order
 			// to maintain atomicity.
 			txn = bs.writeTransaction()
 			defer txn.Discard()
@@ -322,7 +321,7 @@ func (bs *badgerStore) writeBatch(kv map[string][]byte) (int, error) {
 	}
 
 	// At this point, we have filled one or more transactions with the all the kv
-	// pairs, and we have commited none of the transactions.
+	// pairs, and we have committed none of the transactions.
 	for j, tx := range txns {
 		if err := tx.Commit(); err != nil {
 			// This is very bad. We committed some transactions, but have now failed

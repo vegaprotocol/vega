@@ -176,7 +176,6 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 			return nil, nil
 		default:
 			if tradeBuf, err = it.Item().ValueCopy(tradeBuf); err != nil {
-				// @TODO log this error
 				return nil, err
 			}
 			var trade types.Trade

@@ -6,13 +6,6 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
-)
-
-var (
-	ErrNoGeneralAccount = errors.New("general accounts not found for party")
-	ErrOwnerNotInMarket = errors.New("party has no accounts for market")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts AccountStore
@@ -119,7 +112,7 @@ func (s *Svc) GetByPartyAndAsset(partyID string, asset string) ([]*types.Account
 //  c) A particular market (specify empty marketID)
 //  d) A particular party and market (specify marketID and partyID pair)
 //  e) Any of the above combinations but with an optional account type e.g. AccountType.GENERAL
-//  f) Filter by asset e.g. USD
+//  f) Optionally filter results by asset code e.g. USD
 //
 // This function is typically used by the gRPC (or GraphQL) asynchronous streaming APIs.
 func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
@@ -200,7 +193,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 
 }
 
-// todo: godoc and check where this should be used? eg. stats
+// GetAccountSubscribersCount returns the total number of active subscribers for ObserveAccounts.
 func (s *Svc) GetAccountSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }

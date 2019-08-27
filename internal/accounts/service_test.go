@@ -14,7 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// just all account types as vars, so we don't have to clutter the tests with too many arguments when getting account return values
+// just all account types as vars, so we don't have to clutter
+// the tests with too many arguments when getting account return values
 var (
 	allTypes = []types.AccountType{
 		types.AccountType_MARGIN,
@@ -24,15 +25,7 @@ var (
 		types.AccountType_SETTLEMENT,
 	}
 
-	// todo check this, the old tests had insurance accounts for parties?
 	traderTypes = allTypes[:2]
-
-	// trader has first 3 account types
-	//traderTypes = allTypes[:3]
-	// system has general, insurance, settlement
-	systemTypes = allTypes[2:]
-	// just general type for non-market specific accounts
-	nomarketTypes = allTypes[2:3]
 )
 
 type tstService struct {
@@ -55,7 +48,6 @@ func testGetTraderAccountsSuccess(t *testing.T) {
 	firstMarket := getTestAccounts(owner, market1, traderTypes...)
 	secondMarket := getTestAccounts(owner, market2, traderTypes...)
 
-	//general := append(firstMarket[2:2], secondMarket[2:2]...)
 	all := append(firstMarket, secondMarket...)
 
 	svc.storage.EXPECT().GetByParty(owner).Times(1).Return(all, nil)
@@ -63,7 +55,7 @@ func testGetTraderAccountsSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, all, accs)
 	// now see if we get the expected accounts (only BTC accounts) if we get trader balance for a market
-	svc.storage.EXPECT().GetByPartyAndMarket(owner, market1).Times(1).Return(firstMarket[:2], nil)           // get the first 2
+	svc.storage.EXPECT().GetByPartyAndMarket(owner, market1).Times(1).Return(firstMarket[:2], nil)
 	accs, err = svc.GetByPartyAndMarket(owner, market1)
 	assert.NoError(t, err)
 	assert.Equal(t, len(firstMarket), len(accs))
