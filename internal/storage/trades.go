@@ -56,20 +56,20 @@ func NewTrades(log *logging.Logger, c Config, onCriticalError func()) (*Trade, e
 	}, nil
 }
 
-func (t *Trade) ReloadConf(cfg Config) {
-	t.log.Info("reloading configuration")
-	if t.log.GetLevel() != cfg.Level.Get() {
-		t.log.Info("updating log level",
-			logging.String("old", t.log.GetLevel().String()),
+func (ts *Trade) ReloadConf(cfg Config) {
+	ts.log.Info("reloading configuration")
+	if ts.log.GetLevel() != cfg.Level.Get() {
+		ts.log.Info("updating log level",
+			logging.String("old", ts.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		t.log.SetLevel(cfg.Level.Get())
+		ts.log.SetLevel(cfg.Level.Get())
 	}
 
 	// only Timeout is really use in here
-	t.cfgMu.Lock()
-	t.Config = cfg
-	t.cfgMu.Unlock()
+	ts.cfgMu.Lock()
+	ts.Config = cfg
+	ts.cfgMu.Unlock()
 }
 
 // Subscribe to a channel of new or updated trades. The subscriber id will be returned as a uint64 value
@@ -153,17 +153,15 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 	)
 	result := make([]*types.Trade, 0, int(limit))
 
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	defer cancel()
+	deadline, _ := ctx.Deadline()
+
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
+
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
-
-	ts.cfgMu.Lock()
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
-	ts.cfgMu.Unlock()
-	defer cancel()
-
-	deadline, _ := ctx.Deadline()
 
 	marketPrefix, validForPrefix := ts.badger.marketPrefix(market, descending)
 	tradeBuf := []byte{}
@@ -227,22 +225,19 @@ func (ts *Trade) GetByMarketAndId(ctx context.Context, market string, Id string)
 // GetByParty retrieves trades for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error) {
-	// get results cap
-	var (
-		err error
-	)
+	var err error
 	tmk, kLen := ts.getTradeMarketFilter(market)
 	result := make([]*types.Trade, 0, int(limit))
+
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
-
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
-	defer cancel()
-	deadline, _ := ctx.Deadline()
 
 	// reuse these buffers, slices will get reallocated, so if the buffer is big enough
 	// next calls won't alloc memory again
@@ -285,7 +280,6 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 
 				return nil, err
 			}
-			// skip matches if needed
 			if skip != 0 {
 				skip--
 				continue
@@ -316,7 +310,6 @@ func (ts *Trade) GetByPartyAndId(ctx context.Context, party string, Id string) (
 		if err != nil {
 			return err
 		}
-
 		tradeBuf, err := tradeItem.ValueCopy(nil)
 		if err != nil {
 			return err
@@ -342,20 +335,19 @@ func (ts *Trade) GetByPartyAndId(ctx context.Context, party string, Id string) (
 // GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
 // Provide optional query filters to refine the data set further (if required), any errors will be returned immediately.
 func (ts *Trade) GetByOrderId(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error) {
-	var (
-		err error
-	)
+	var err error
 	tmk, kLen := ts.getTradeMarketFilter(market)
 	result := make([]*types.Trade, 0, int(limit))
+
+	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
+	defer cancel()
+	deadline, _ := ctx.Deadline()
+
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
 	it := ts.badger.getIterator(txn, descending)
 	defer it.Close()
-
-	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
-	defer cancel()
-	deadline, _ := ctx.Deadline()
 
 	orderPrefix, validForPrefix := ts.badger.orderPrefix(orderID, descending)
 	marketKey, tradeBuf := []byte{}, []byte{}

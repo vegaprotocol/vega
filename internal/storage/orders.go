@@ -33,7 +33,6 @@ type Order struct {
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
 func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, error) {
-	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
@@ -67,7 +66,6 @@ func (os *Order) ReloadConf(cfg Config) {
 		os.log.SetLevel(cfg.Level.Get())
 	}
 
-	// only Timeout is really use in here
 	os.cfgMu.Lock()
 	os.Config = cfg
 	os.cfgMu.Unlock()
@@ -165,10 +163,13 @@ func (os *Order) Close() error {
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error) {
-	var (
-		err error
-	)
+	var err error
 	result := make([]*types.Order, 0, int(limit))
+
+	os.cfgMu.Lock()
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
+	os.cfgMu.Unlock()
+	defer cancel()
 
 	txn := os.badger.readTransaction()
 	defer txn.Discard()
@@ -176,13 +177,7 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip, limit uin
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	os.cfgMu.Lock()
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
-	os.cfgMu.Unlock()
-	defer cancel()
-
 	deadline, _ := ctx.Deadline()
-
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
 	orderBuf := []byte{}
 	openOnly := open != nil && *open
@@ -248,21 +243,19 @@ func (os *Order) GetByMarketAndId(ctx context.Context, market string, id string)
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error) {
-	var (
-		err error
-	)
+	var err error
 	openOnly := open != nil && *open
 	result := make([]*types.Order, 0, int(limit))
+
+	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
+	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	txn := os.badger.readTransaction()
 	defer txn.Discard()
 
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
-
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
-	defer cancel()
-	deadline, _ := ctx.Deadline()
 
 	partyPrefix, validForPrefix := os.badger.partyPrefix(party, descending)
 	marketKey, orderBuf := []byte{}, []byte{}
@@ -350,7 +343,7 @@ func (os *Order) GetByPartyAndId(ctx context.Context, party string, id string) (
 	return &order, nil
 }
 
-// GetByreference retrieves an order for a given referefence, any errors will be returned immediately.
+// GetByReference retrieves an order for a given reference, any errors will be returned immediately.
 func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
 	var order types.Order
 

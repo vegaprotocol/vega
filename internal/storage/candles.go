@@ -18,7 +18,7 @@ import (
 // Monday, January 1, 2018 12:00:01 AM GMT+00:00
 const minSinceTimestamp int64 = 1514764801000
 
-var minSinceTime time.Time = vegatime.UnixNano(minSinceTimestamp)
+var minSinceTime = vegatime.UnixNano(minSinceTimestamp)
 
 // Candle is a package internal data struct that implements the CandleStore interface.
 type Candle struct {

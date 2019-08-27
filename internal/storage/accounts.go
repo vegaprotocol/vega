@@ -17,7 +17,6 @@ import (
 var (
 	ErrMarketNotFound  = errors.New("no accounts found for market")
 	ErrOwnerNotFound   = errors.New("no accounts found for party")
-	ErrAccountNotFound = errors.New("account not found")
 )
 
 // Data structure representing a collateral account store
