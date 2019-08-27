@@ -686,10 +686,10 @@ type Account {
   balance: String!
   # Asset, the "currency"
   asset: String!
-  # Account type (enum type)
+  # Account type (General, Margin, etc)
   type: AccountType!
-  # ID of the market for the account (only relevant for margin accounts)
-  marketID: String!
+  # Market (only relevant to margin accounts)
+  market: Market
 }
 
 # Valid order types, these determine what happens when an order is added to the book

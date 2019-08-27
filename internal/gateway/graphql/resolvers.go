@@ -588,7 +588,7 @@ func (r *MyOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, err
 }
 func (r *MyOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market, error) {
 	if obj == nil {
-		return nil, errors.New("invalid market")
+		return nil, errors.New("invalid order")
 	}
 
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
@@ -653,7 +653,17 @@ func (r *MyOrderResolver) Party(ctx context.Context, ord *types.Order) (*Party, 
 type MyTradeResolver resolverRoot
 
 func (r *MyTradeResolver) Market(ctx context.Context, obj *types.Trade) (*Market, error) {
-	return &Market{ID: obj.MarketID}, nil
+	if obj == nil {
+		return nil, errors.New("invalid trade")
+	}
+
+	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return MarketFromProto(res.Market)
 }
 func (r *MyTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side, error) {
 	return Side(obj.Aggressor.String()), nil
@@ -774,7 +784,7 @@ func (r *MyPositionResolver) MinimumMargin(ctx context.Context, obj *types.Marke
 
 func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (*Market, error) {
 	if obj == nil {
-		return nil, errors.New("invalid market")
+		return nil, errors.New("invalid position")
 	}
 
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
@@ -1245,7 +1255,7 @@ func (r *MyPendingOrderResolver) Side(ctx context.Context, obj *proto.PendingOrd
 
 func (r *MyPendingOrderResolver) Market(ctx context.Context, pord *proto.PendingOrder) (*Market, error) {
 	if pord == nil {
-		return nil, nil
+		return nil, errors.New("invalid pending order")
 	}
 
 	req := protoapi.MarketByIDRequest{MarketID: pord.MarketID}
@@ -1288,6 +1298,25 @@ type MyAccountResolver resolverRoot
 func (r *MyAccountResolver) Balance(ctx context.Context, acc *proto.Account) (string, error) {
 	bal := fmt.Sprintf("%d", acc.Balance)
 	return bal, nil
+}
+
+func (r *MyAccountResolver) Market(ctx context.Context, acc *proto.Account) (*Market, error) {
+	if acc == nil {
+		return nil, errors.New("invalid account")
+	}
+
+	// Only margin accounts have a market relation
+	if acc.Type == types.AccountType_MARGIN {
+		req := protoapi.MarketByIDRequest{MarketID: acc.MarketID}
+		res, err := r.tradingDataClient.MarketByID(ctx, &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, err
+		}
+		return MarketFromProto(res.Market)
+	}
+
+	return nil, nil
 }
 
 func (r *MyAccountResolver) Type(ctx context.Context, obj *proto.Account) (AccountType, error) {
