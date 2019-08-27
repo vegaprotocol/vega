@@ -57,10 +57,10 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Account struct {
-		Asset   func(childComplexity int) int
-		Balance func(childComplexity int) int
-		Id      func(childComplexity int) int
-		Type    func(childComplexity int) int
+		Asset    func(childComplexity int) int
+		Balance  func(childComplexity int) int
+		MarketID func(childComplexity int) int
+		Type     func(childComplexity int) int
 	}
 
 	Candle struct {
@@ -437,12 +437,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Account.Balance(childComplexity), true
 
-	case "Account.Id":
-		if e.complexity.Account.Id == nil {
+	case "Account.MarketID":
+		if e.complexity.Account.MarketID == nil {
 			break
 		}
 
-		return e.complexity.Account.Id(childComplexity), true
+		return e.complexity.Account.MarketID(childComplexity), true
 
 	case "Account.Type":
 		if e.complexity.Account.Type == nil {
@@ -2364,14 +2364,14 @@ type Trade {
 
 # An account record
 type Account {
-  # id the id for this account, not useful given the current API, but might be useful
-  id: String!
   # Balance as string - current account balance (approx. as balances can be updated several times per second)
   balance: String!
   # Asset, the "currency"
   asset: String!
   # Account type (enum type)
   type: AccountType!
+  # ID of the market for the account (only relevant for margin accounts)
+  marketID: String!
 }
 
 # Valid order types, these determine what happens when an order is added to the book
@@ -3105,33 +3105,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Account_id(ctx context.Context, field graphql.CollectedField, obj *proto.Account) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Account",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Id, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Account_balance(ctx context.Context, field graphql.CollectedField, obj *proto.Account) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -3211,6 +3184,33 @@ func (ec *executionContext) _Account_type(ctx context.Context, field graphql.Col
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Account_marketID(ctx context.Context, field graphql.CollectedField, obj *proto.Account) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Account",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Candle) graphql.Marshaler {
@@ -8142,11 +8142,6 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Account")
-		case "id":
-			out.Values[i] = ec._Account_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
 		case "balance":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -8180,6 +8175,11 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 				}
 				return res
 			})
+		case "marketID":
+			out.Values[i] = ec._Account_marketID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

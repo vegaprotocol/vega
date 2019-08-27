@@ -1283,7 +1283,6 @@ func (r *MyPendingOrderResolver) Status(ctx context.Context, obj *proto.PendingO
 
 // START: Account Resolver
 
-// MyAccountResolver - seems to be required by gqlgen, but we're not using this ATM
 type MyAccountResolver resolverRoot
 
 func (r *MyAccountResolver) Balance(ctx context.Context, acc *proto.Account) (string, error) {

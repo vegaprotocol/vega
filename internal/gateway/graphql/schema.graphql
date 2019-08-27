@@ -682,14 +682,14 @@ type Trade {
 
 # An account record
 type Account {
-  # id the id for this account, not useful given the current API, but might be useful
-  id: String!
   # Balance as string - current account balance (approx. as balances can be updated several times per second)
   balance: String!
   # Asset, the "currency"
   asset: String!
   # Account type (enum type)
   type: AccountType!
+  # ID of the market for the account (only relevant for margin accounts)
+  marketID: String!
 }
 
 # Valid order types, these determine what happens when an order is added to the book
