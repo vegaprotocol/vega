@@ -492,7 +492,7 @@ func (m *Market) collateralAndRiskForOrder(settle []events.Transfer, price uint6
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, price)
 	if len(riskUpdates) == 0 {
-		m.log.Warn("No risk updates after call to Update Margins in collateralAndRisk()")
+		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil
 	}
 	if m.log.GetLevel() == logging.DebugLevel {
@@ -539,7 +539,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, m.markPrice)
 	if len(riskUpdates) == 0 {
-		m.log.Warn("No risk updates after call to Update Margins in collateralAndRisk()")
+		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil
 	}
 	return riskUpdates

@@ -33,79 +33,64 @@ func (m *MockAccountStore) EXPECT() *MockAccountStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAccountsByOwnerAndAsset mocks base method
-func (m *MockAccountStore) GetAccountsByOwnerAndAsset(arg0, arg1 string) ([]*proto.Account, error) {
+// GetByParty mocks base method
+func (m *MockAccountStore) GetByParty(arg0 string) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccountsByOwnerAndAsset", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByParty", arg0)
 	ret0, _ := ret[0].([]*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAccountsByOwnerAndAsset indicates an expected call of GetAccountsByOwnerAndAsset
-func (mr *MockAccountStoreMockRecorder) GetAccountsByOwnerAndAsset(arg0, arg1 interface{}) *gomock.Call {
+// GetByParty indicates an expected call of GetByParty
+func (mr *MockAccountStoreMockRecorder) GetByParty(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountsByOwnerAndAsset", reflect.TypeOf((*MockAccountStore)(nil).GetAccountsByOwnerAndAsset), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByParty", reflect.TypeOf((*MockAccountStore)(nil).GetByParty), arg0)
 }
 
-// GetAccountsForOwner mocks base method
-func (m *MockAccountStore) GetAccountsForOwner(arg0 string) ([]*proto.Account, error) {
+// GetByPartyAndAsset mocks base method
+func (m *MockAccountStore) GetByPartyAndAsset(arg0, arg1 string) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccountsForOwner", arg0)
+	ret := m.ctrl.Call(m, "GetByPartyAndAsset", arg0, arg1)
 	ret0, _ := ret[0].([]*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAccountsForOwner indicates an expected call of GetAccountsForOwner
-func (mr *MockAccountStoreMockRecorder) GetAccountsForOwner(arg0 interface{}) *gomock.Call {
+// GetByPartyAndAsset indicates an expected call of GetByPartyAndAsset
+func (mr *MockAccountStoreMockRecorder) GetByPartyAndAsset(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountsForOwner", reflect.TypeOf((*MockAccountStore)(nil).GetAccountsForOwner), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndAsset", reflect.TypeOf((*MockAccountStore)(nil).GetByPartyAndAsset), arg0, arg1)
 }
 
-// GetAccountsForOwnerByType mocks base method
-func (m *MockAccountStore) GetAccountsForOwnerByType(arg0 string, arg1 proto.AccountType) ([]*proto.Account, error) {
+// GetByPartyAndMarket mocks base method
+func (m *MockAccountStore) GetByPartyAndMarket(arg0, arg1 string) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccountsForOwnerByType", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByPartyAndMarket", arg0, arg1)
 	ret0, _ := ret[0].([]*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAccountsForOwnerByType indicates an expected call of GetAccountsForOwnerByType
-func (mr *MockAccountStoreMockRecorder) GetAccountsForOwnerByType(arg0, arg1 interface{}) *gomock.Call {
+// GetByPartyAndMarket indicates an expected call of GetByPartyAndMarket
+func (mr *MockAccountStoreMockRecorder) GetByPartyAndMarket(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountsForOwnerByType", reflect.TypeOf((*MockAccountStore)(nil).GetAccountsForOwnerByType), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndMarket", reflect.TypeOf((*MockAccountStore)(nil).GetByPartyAndMarket), arg0, arg1)
 }
 
-// GetMarketAccountsForOwner mocks base method
-func (m *MockAccountStore) GetMarketAccountsForOwner(arg0, arg1 string) ([]*proto.Account, error) {
+// GetByPartyAndType mocks base method
+func (m *MockAccountStore) GetByPartyAndType(arg0 string, arg1 proto.AccountType) ([]*proto.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMarketAccountsForOwner", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByPartyAndType", arg0, arg1)
 	ret0, _ := ret[0].([]*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetMarketAccountsForOwner indicates an expected call of GetMarketAccountsForOwner
-func (mr *MockAccountStoreMockRecorder) GetMarketAccountsForOwner(arg0, arg1 interface{}) *gomock.Call {
+// GetByPartyAndType indicates an expected call of GetByPartyAndType
+func (mr *MockAccountStoreMockRecorder) GetByPartyAndType(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketAccountsForOwner", reflect.TypeOf((*MockAccountStore)(nil).GetMarketAccountsForOwner), arg0, arg1)
-}
-
-// GetMarketAssetAccounts mocks base method
-func (m *MockAccountStore) GetMarketAssetAccounts(arg0, arg1, arg2 string) ([]*proto.Account, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMarketAssetAccounts", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]*proto.Account)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetMarketAssetAccounts indicates an expected call of GetMarketAssetAccounts
-func (mr *MockAccountStoreMockRecorder) GetMarketAssetAccounts(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketAssetAccounts", reflect.TypeOf((*MockAccountStore)(nil).GetMarketAssetAccounts), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndType", reflect.TypeOf((*MockAccountStore)(nil).GetByPartyAndType), arg0, arg1)
 }
 
 // Subscribe mocks base method
