@@ -38,18 +38,18 @@ func convertInterval(interval Interval) (types.Interval, error) {
 	}
 }
 
-func parseOrderType(orderType *OrderType) (types.Order_TimeInForce, error) {
-	switch *orderType {
-	case OrderTypeGtc:
+func parseOrderTimeInForce(timeInForce *OrderTimeInForce) (types.Order_TimeInForce, error) {
+	switch *timeInForce {
+	case OrderTimeInForceGtc:
 		return types.Order_GTC, nil
-	case OrderTypeGtt:
+	case OrderTimeInForceGtt:
 		return types.Order_GTT, nil
-	case OrderTypeEne:
+	case OrderTimeInForceEne:
 		return types.Order_ENE, nil
-	case OrderTypeFok:
+	case OrderTimeInForceFok:
 		return types.Order_FOK, nil
 	default:
-		return types.Order_GTC, errors.New(fmt.Sprintf("unknown type: %s", orderType.String()))
+		return types.Order_GTC, errors.New(fmt.Sprintf("unknown type: %s", timeInForce.String()))
 	}
 }
 

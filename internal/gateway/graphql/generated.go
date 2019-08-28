@@ -147,26 +147,26 @@ type ComplexityRoot struct {
 	Mutation struct {
 		OrderAmend  func(childComplexity int, id string, partyID string, price int, size int, expiration *string) int
 		OrderCancel func(childComplexity int, id string, partyID string, marketID string) int
-		OrderSubmit func(childComplexity int, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) int
+		OrderSubmit func(childComplexity int, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string) int
 		Signin      func(childComplexity int, id string, password string) int
 	}
 
 	Order struct {
-		CreatedAt func(childComplexity int) int
-		Datetime  func(childComplexity int) int
-		ExpiresAt func(childComplexity int) int
-		Id        func(childComplexity int) int
-		Market    func(childComplexity int) int
-		Party     func(childComplexity int) int
-		Price     func(childComplexity int) int
-		Reference func(childComplexity int) int
-		Remaining func(childComplexity int) int
-		Side      func(childComplexity int) int
-		Size      func(childComplexity int) int
-		Status    func(childComplexity int) int
-		Timestamp func(childComplexity int) int
-		Trades    func(childComplexity int) int
-		Type      func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		Datetime    func(childComplexity int) int
+		ExpiresAt   func(childComplexity int) int
+		Id          func(childComplexity int) int
+		Market      func(childComplexity int) int
+		Party       func(childComplexity int) int
+		Price       func(childComplexity int) int
+		Reference   func(childComplexity int) int
+		Remaining   func(childComplexity int) int
+		Side        func(childComplexity int) int
+		Size        func(childComplexity int) int
+		Status      func(childComplexity int) int
+		TimeInForce func(childComplexity int) int
+		Timestamp   func(childComplexity int) int
+		Trades      func(childComplexity int) int
 	}
 
 	Party struct {
@@ -178,15 +178,15 @@ type ComplexityRoot struct {
 	}
 
 	PendingOrder struct {
-		Id        func(childComplexity int) int
-		Market    func(childComplexity int) int
-		Party     func(childComplexity int) int
-		Price     func(childComplexity int) int
-		Reference func(childComplexity int) int
-		Side      func(childComplexity int) int
-		Size      func(childComplexity int) int
-		Status    func(childComplexity int) int
-		Type      func(childComplexity int) int
+		Id          func(childComplexity int) int
+		Market      func(childComplexity int) int
+		Party       func(childComplexity int) int
+		Price       func(childComplexity int) int
+		Reference   func(childComplexity int) int
+		Side        func(childComplexity int) int
+		Size        func(childComplexity int) int
+		Status      func(childComplexity int) int
+		TimeInForce func(childComplexity int) int
 	}
 
 	Position struct {
@@ -306,14 +306,14 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	OrderSubmit(ctx context.Context, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) (*proto.PendingOrder, error)
+	OrderSubmit(ctx context.Context, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
 	OrderAmend(ctx context.Context, id string, partyID string, price int, size int, expiration *string) (*proto.PendingOrder, error)
 	Signin(ctx context.Context, id string, password string) (string, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *proto.Order) (string, error)
-	Type(ctx context.Context, obj *proto.Order) (OrderType, error)
+	TimeInForce(ctx context.Context, obj *proto.Order) (OrderTimeInForce, error)
 	Side(ctx context.Context, obj *proto.Order) (Side, error)
 	Market(ctx context.Context, obj *proto.Order) (*Market, error)
 	Size(ctx context.Context, obj *proto.Order) (string, error)
@@ -335,7 +335,7 @@ type PartyResolver interface {
 }
 type PendingOrderResolver interface {
 	Price(ctx context.Context, obj *proto.PendingOrder) (*string, error)
-	Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error)
+	TimeInForce(ctx context.Context, obj *proto.PendingOrder) (*OrderTimeInForce, error)
 	Side(ctx context.Context, obj *proto.PendingOrder) (*Side, error)
 	Market(ctx context.Context, obj *proto.PendingOrder) (*Market, error)
 	Size(ctx context.Context, obj *proto.PendingOrder) (*string, error)
@@ -825,7 +825,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string)), true
+		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string)), true
 
 	case "Mutation.Signin":
 		if e.complexity.Mutation.Signin == nil {
@@ -923,6 +923,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Status(childComplexity), true
 
+	case "Order.TimeInForce":
+		if e.complexity.Order.TimeInForce == nil {
+			break
+		}
+
+		return e.complexity.Order.TimeInForce(childComplexity), true
+
 	case "Order.Timestamp":
 		if e.complexity.Order.Timestamp == nil {
 			break
@@ -936,13 +943,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.Trades(childComplexity), true
-
-	case "Order.Type":
-		if e.complexity.Order.Type == nil {
-			break
-		}
-
-		return e.complexity.Order.Type(childComplexity), true
 
 	case "Party.Accounts":
 		if e.complexity.Party.Accounts == nil {
@@ -1050,12 +1050,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PendingOrder.Status(childComplexity), true
 
-	case "PendingOrder.Type":
-		if e.complexity.PendingOrder.Type == nil {
+	case "PendingOrder.TimeInForce":
+		if e.complexity.PendingOrder.TimeInForce == nil {
 			break
 		}
 
-		return e.complexity.PendingOrder.Type(childComplexity), true
+		return e.complexity.PendingOrder.TimeInForce(childComplexity), true
 
 	case "Position.AverageEntryPrice":
 		if e.complexity.Position.AverageEntryPrice == nil {
@@ -1704,8 +1704,8 @@ type Mutation {
     size: String!,
     # Side of the order (Buy or Sell)
     side: Side!,
-    # Type of the order
-    type: OrderType!,
+    # TimeInForce of the order
+    timeInForce: OrderTimeInForce!,
     # exiration of the the order
     expiration: String
   ): PendingOrder!
@@ -1807,8 +1807,8 @@ type PendingOrder {
   # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
   price: String
 
-  # The type of order (determines how and if it executes, and whether it persists on the book)
-  type: OrderType
+  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  timeInForce: OrderTimeInForce
 
   # Whether the order is to buy or sell
   side: Side
@@ -2285,8 +2285,8 @@ type Order {
   # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
   price: String!
 
-  # The type of order (determines how and if it executes, and whether it persists on the book)
-  type: OrderType!
+  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  timeInForce: OrderTimeInForce!
 
   # Whether the order is to buy or sell
   side: Side!
@@ -2372,7 +2372,7 @@ type Account {
 }
 
 # Valid order types, these determine what happens when an order is added to the book
-enum OrderType {
+enum OrderTimeInForce {
 
     # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
     FOK,
@@ -2701,14 +2701,14 @@ func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context,
 		}
 	}
 	args["side"] = arg4
-	var arg5 OrderType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg5, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
+	var arg5 OrderTimeInForce
+	if tmp, ok := rawArgs["timeInForce"]; ok {
+		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg5
+	args["timeInForce"] = arg5
 	var arg6 *string
 	if tmp, ok := rawArgs["expiration"]; ok {
 		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
@@ -4439,7 +4439,7 @@ func (ec *executionContext) _Mutation_orderSubmit(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string))
+		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4609,7 +4609,7 @@ func (ec *executionContext) _Order_price(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_timeInForce(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4622,7 +4622,7 @@ func (ec *executionContext) _Order_type(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Order().Type(rctx, obj)
+		return ec.resolvers.Order().TimeInForce(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4630,10 +4630,10 @@ func (ec *executionContext) _Order_type(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(OrderType)
+	res := resTmp.(OrderTimeInForce)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+	return ec.marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_side(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
@@ -5173,7 +5173,7 @@ func (ec *executionContext) _PendingOrder_price(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PendingOrder_type(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+func (ec *executionContext) _PendingOrder_timeInForce(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -5186,15 +5186,15 @@ func (ec *executionContext) _PendingOrder_type(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().Type(rctx, obj)
+		return ec.resolvers.PendingOrder().TimeInForce(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*OrderType)
+	res := resTmp.(*OrderTimeInForce)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+	return ec.marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PendingOrder_side(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
@@ -8847,7 +8847,7 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
-		case "type":
+		case "timeInForce":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -8855,7 +8855,7 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Order_type(ctx, field, obj)
+				res = ec._Order_timeInForce(ctx, field, obj)
 				if res == graphql.Null {
 					invalid = true
 				}
@@ -9125,7 +9125,7 @@ func (ec *executionContext) _PendingOrder(ctx context.Context, sel ast.Selection
 				res = ec._PendingOrder_price(ctx, field, obj)
 				return res
 			})
-		case "type":
+		case "timeInForce":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -9133,7 +9133,7 @@ func (ec *executionContext) _PendingOrder(ctx context.Context, sel ast.Selection
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._PendingOrder_type(ctx, field, obj)
+				res = ec._PendingOrder_timeInForce(ctx, field, obj)
 				return res
 			})
 		case "side":
@@ -10459,12 +10459,12 @@ func (ec *executionContext) marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvega�
 	return v
 }
 
-func (ec *executionContext) unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
-	var res OrderType
+func (ec *executionContext) unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (OrderTimeInForce, error) {
+	var res OrderTimeInForce
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v OrderType) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v OrderTimeInForce) graphql.Marshaler {
 	return v
 }
 
@@ -11132,24 +11132,24 @@ func (ec *executionContext) marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return v
 }
 
-func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
-	var res OrderType
+func (ec *executionContext) unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (OrderTimeInForce, error) {
+	var res OrderTimeInForce
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v OrderType) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v OrderTimeInForce) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (*OrderType, error) {
+func (ec *executionContext) unmarshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (*OrderTimeInForce, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, v)
+	res, err := ec.unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v *OrderType) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v *OrderTimeInForce) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
