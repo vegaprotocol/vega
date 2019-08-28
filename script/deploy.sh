@@ -17,9 +17,9 @@
 # Optional vars:
 # - "$SLACK_HOOK_URL" for sending Slack notifications
 
-pushd "$(realpath "$(dirname "$0")")"
+pushd "$(realpath "$(dirname "$0")")" 1>/dev/null || exit 1
 source bash_functions.sh
-popd 1>/dev/null
+popd 1>/dev/null || exit 1
 
 check_apps() {
 	# Check required programs
