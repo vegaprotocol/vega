@@ -118,7 +118,5 @@ gitlab_ci="${GITLAB_CI:-false}"
 if test "$gitlab_ci" == "true" ; then
 	echo "Sending slack notification"
 	pipeline_url="${CI_PIPELINE_URL:-[failed to get pipeline URL]}"
-	slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between $branch1 and $branch2 (see $pipeline_url for details)"
+	slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\` (see $pipeline_url for details)"
 fi
-
-exit 1
