@@ -2,6 +2,10 @@
 
 # This file should be sourced, not run.
 
+json_escape() {
+	echo -n "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+}
+
 slack_notify() {
 	slack_hook_url="${SLACK_HOOK_URL:-}"
 	if test -z "$slack_hook_url" ; then

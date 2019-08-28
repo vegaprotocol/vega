@@ -134,10 +134,6 @@ traders_action() {
 	esac
 }
 
-json_escape() {
-	echo -n "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
-}
-
 ssh_setup() {
 	eval "$(ssh-agent -s)"
 
