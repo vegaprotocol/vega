@@ -415,7 +415,7 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
 	return &types.OrderConfirmation{
-		Order: order,
+		Order:                 order,
 		PassiveOrdersAffected: impactedOrders,
 		Trades:                trades,
 	}
