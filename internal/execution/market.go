@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -461,28 +462,36 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		networkPos += pos.Size()
 	}
 	if networkPos == 0 {
-		// remove accounts, and return
-		// @TODO implement the removal stuff
+		// remove accounts, positions and return
+		_ = e.positions.RemoveDistressed(closed)
+		// @TODO handle response value, contains all ledger movements
+		if _, err := e.collateral.RemoveDistressed(closed, m.GetID(), m.mkt.GetAsset()); err != nil {
+			m.log.Error(
+				"Failed to remove distressed accounts cleanly",
+				logging.Error(err),
+			)
+			return err
+		}
 		return nil
-	}
-	remaining := uint64(networkPos)
-	side := types.Side_Buy
-	if networkPos < 0 {
-		side = types.Side_Sell
-		remaining = uint64(-networkPos)
 	}
 	// network order
 	// @TODO this order is more of a placeholder than an actual final version
 	// of the network order we'll be using
 	no := &types.Order{
-		MarketID:  m.GetID(),
-		PartyID:   "", // network is not a party as such
-		Side:      side,
-		Price:     m.markPrice, // get the orderbook to calculate the correct price here
-		Remaining: remaining,
-		CreatedAt: m.currentTime.UnixNano(), // not sure if it's UnixNano or Unix here...
-		Status:    types.Order_Active,
-		Reference: "network trade", // @TODO find a decent reference?
+		MarketID:    m.GetID(),
+		PartyID:     "",              // network is not a party as such
+		Side:        types.Side_Sell, // assume sell, price is zero in that case anyway
+		Remaining:   uint64(math.Abs(float64(networkPos))),
+		CreatedAt:   m.currentTime.UnixNano(), // @TODO this should be the block time!!!
+		Status:      types.Order_Active,
+		Reference:   "network trade", // @TODO find a decent reference?
+		Action:      types.Order_NRT, // specify action -> network is trading with regular traders
+		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
+	}
+	// we need to buy, specify side + max price
+	if networkPos < 0 {
+		no.Side = types.Side_Buy
+		no.Price = math.MaxUint64
 	}
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(&order)
@@ -553,9 +562,17 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	// @NOTE MTM settlements don't have to happen here
 	// same goes for collateral and risk
 	// what needs to go here is the second half of settlements:
-	// @TODO:
-	// 			1. Clear trader accounts -> move to insurance pool
-	// 			2. Remove distressed traders completely from market
+
+	// remove accounts, positions, and return
+	_ = e.positions.RemoveDistressed(closed)
+	// @TODO handle response value, contains all ledger movements
+	if _, err := e.collateral.RemoveDistressed(closed, m.GetID(), m.mkt.GetAsset()); err != nil {
+		m.log.Error(
+			"Failed to remove distressed accounts cleanly",
+			logging.Error(err),
+		)
+		return err
+	}
 	return nil
 }
 
