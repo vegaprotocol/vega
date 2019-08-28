@@ -23,7 +23,7 @@ type Mutation {
     # Side of the order (Buy or Sell)
     side: Side!,
     # TimeInForce of the order
-    timeInForce: OrderType!,
+    timeInForce: OrderTimeInForce!,
     # exiration of the the order
     expiration: String
   ): PendingOrder!
@@ -126,7 +126,7 @@ type PendingOrder {
   price: String
 
   # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
-  timeInForce: OrderType
+  timeInForce: OrderTimeInForce
 
   # Whether the order is to buy or sell
   side: Side
@@ -604,7 +604,7 @@ type Order {
   price: String!
 
   # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
-  timeInForce: OrderType!
+  timeInForce: OrderTimeInForce!
 
   # Whether the order is to buy or sell
   side: Side!
@@ -690,7 +690,7 @@ type Account {
 }
 
 # Valid order types, these determine what happens when an order is added to the book
-enum OrderType {
+enum OrderTimeInForce {
 
     # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
     FOK,

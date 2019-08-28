@@ -38,7 +38,7 @@ func convertInterval(interval Interval) (types.Interval, error) {
 	}
 }
 
-func parseOrderType(orderType *OrderType) (types.Order_Type, error) {
+func parseOrderType(orderType *OrderType) (types.Order_TimeInForce, error) {
 	switch *orderType {
 	case OrderTypeGtc:
 		return types.Order_GTC, nil
