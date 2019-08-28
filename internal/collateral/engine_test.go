@@ -47,6 +47,11 @@ func TestAddTraderToMarket(t *testing.T) {
 	t.Run("Successful calls adding new traders (one duplicate, one actual new)", testAddTrader)
 }
 
+func TestRemoveDistressed(t *testing.T) {
+	t.Run("Successfully remove distressed trader and transfer balance", testRemoveDistressedBalance)
+	t.Run("Successfully remove distressed trader, no balance transfer", testRemoveDistressedNoBalance)
+}
+
 func testNew(t *testing.T) {
 	eng := getTestEngine(t, "test-market", 0)
 	eng.Finish()
@@ -492,6 +497,75 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	assert.Equal(t, 2, len(resp.Transfers))
 }
 
+func testRemoveDistressedBalance(t *testing.T) {
+	trader := "test-trader"
+
+	insBalance := int64(1000)
+	eng := getTestEngine(t, testMarketID, insBalance)
+	defer eng.Finish()
+
+	// create trader accounts (calls buf.Add twice), and add balance (calls it a third time)
+	eng.buf.EXPECT().Add(gomock.Any()).Times(3)
+	marginID, _ := eng.CreateTraderAccount(trader, testMarketID, testMarketAsset)
+
+	// add balance to margin account for trader
+	err := eng.Engine.IncrementBalance(marginID, 100)
+	assert.Nil(t, err)
+
+	// set up calls expected to buffer: add the update of the balance, of system account (insurance) and one with the margin account set to 0
+	eng.buf.EXPECT().Add(gomock.Any()).Times(2).Do(func(acc types.Account) {
+		// this is the trader account, we expect the balance to be 0
+		if acc.Id == marginID {
+			assert.Zero(t, acc.Balance)
+		} else {
+			// we expect the insurance balance to get the 100 balance from the margin account added to it
+			assert.Equal(t, insBalance+100, acc.Balance)
+		}
+	})
+	// events:
+	data := []events.MarketPosition{
+		marketPositionFake{
+			party: trader,
+		},
+	}
+	resp, err := eng.RemoveDistressed(data, testMarketID, testMarketAsset)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(resp.Transfers))
+
+	// check if account was deleted
+	_, err = eng.GetAccountByID(marginID)
+	assert.Error(t, err)
+	assert.Equal(t, collateral.ErrAccountDoNotExists, err)
+}
+
+func testRemoveDistressedNoBalance(t *testing.T) {
+	trader := "test-trader"
+
+	insBalance := int64(1000)
+	eng := getTestEngine(t, testMarketID, insBalance)
+	defer eng.Finish()
+
+	// create trader accounts (calls buf.Add twice), and add balance (calls it a third time)
+	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
+	marginID, _ := eng.CreateTraderAccount(trader, testMarketID, testMarketAsset)
+
+	// no balance on margin account, so we don't expect there to be any balance updates in the buffer either
+	// set up calls expected to buffer: add the update of the balance, of system account (insurance) and one with the margin account set to 0
+	data := []events.MarketPosition{
+		marketPositionFake{
+			party: trader,
+		},
+	}
+	resp, err := eng.RemoveDistressed(data, testMarketID, testMarketAsset)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(resp.Transfers))
+
+	// check if account was deleted
+	_, err = eng.GetAccountByID(marginID)
+	assert.Error(t, err)
+	assert.Equal(t, collateral.ErrAccountDoNotExists, err)
+}
+
 func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEngine {
 	ctrl := gomock.NewController(t)
 	buf := mocks.NewMockAccountBuffer(ctrl)
@@ -519,6 +593,18 @@ func (te *testEngine) Finish() {
 	te.systemAccs = nil
 	te.ctrl.Finish()
 }
+
+type marketPositionFake struct {
+	party           string
+	size, buy, sell int64
+	price           uint64
+}
+
+func (m marketPositionFake) Party() string { return m.party }
+func (m marketPositionFake) Size() int64   { return m.size }
+func (m marketPositionFake) Buy() int64    { return m.buy }
+func (m marketPositionFake) Sell() int64   { return m.sell }
+func (m marketPositionFake) Price() uint64 { return m.price }
 
 type mtmFake struct {
 	t *types.Transfer
