@@ -100,9 +100,15 @@ autogen_checks:
     - make gqlgen_check || code=1
     - b2="$CI_COMMIT_REF_NAME"
     - case "$b2" in
-    - master) b1="" ;;
-    - develop) b1="master" ;;
-    - '*) b1="develop" ;;'
+    - master)
+    - b1=""
+    - ;;
+    - develop)
+    - b1="master"
+    - ;;
+    - '*)'
+    - b1="develop"
+    - ;;
     - esac
     - if test -n "$b1" ; then
     - 'bash scripts/diff_file.sh https://gitlab.com/api/v4 "$GITLAB_API_TOKEN" 5726034 "$b1" "$b2" internal/gateway/graphql/schema.graphql || code=1'
