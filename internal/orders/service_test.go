@@ -20,13 +20,13 @@ import (
 
 var (
 	orderSubmission = types.OrderSubmission{
-		Id:       "order_id",
-		MarketID: "market_id",
-		PartyID:  "party",
-		Price:    10000,
-		Size:     1,
-		Side:     types.Side(1),
-		Type:     types.Order_GTT,
+		Id:          "order_id",
+		MarketID:    "market_id",
+		PartyID:     "party",
+		Price:       10000,
+		Size:        1,
+		Side:        types.Side(1),
+		TimeInForce: types.Order_GTT,
 	}
 )
 
@@ -60,14 +60,14 @@ func testOrderSuccess(t *testing.T) {
 	order.ExpiresAt = expires.UnixNano()
 	matcher := orderMatcher{
 		e: types.Order{
-			Id:        order.Id,
-			MarketID:  order.MarketID,
-			PartyID:   order.PartyID,
-			Price:     order.Price,
-			Size:      order.Size,
-			Side:      order.Side,
-			Type:      order.Type,
-			ExpiresAt: expires.UnixNano(),
+			Id:          order.Id,
+			MarketID:    order.MarketID,
+			PartyID:     order.PartyID,
+			Price:       order.Price,
+			Size:        order.Size,
+			Side:        order.Side,
+			TimeInForce: order.TimeInForce,
+			ExpiresAt:   expires.UnixNano(),
 		},
 	}
 	svc := getTestService(t)
@@ -105,14 +105,14 @@ func testOrderBlockchainError(t *testing.T) {
 	order.ExpiresAt = expires.UnixNano()
 	matcher := orderMatcher{
 		e: types.Order{
-			Id:        order.Id,
-			MarketID:  order.MarketID,
-			PartyID:   order.PartyID,
-			Price:     order.Price,
-			Size:      order.Size,
-			Side:      order.Side,
-			Type:      order.Type,
-			ExpiresAt: expires.UnixNano(),
+			Id:          order.Id,
+			MarketID:    order.MarketID,
+			PartyID:     order.PartyID,
+			Price:       order.Price,
+			Size:        order.Size,
+			Side:        order.Side,
+			TimeInForce: order.TimeInForce,
+			ExpiresAt:   expires.UnixNano(),
 		},
 	}
 	svc := getTestService(t)

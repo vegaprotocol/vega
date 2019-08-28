@@ -22,8 +22,8 @@ type Mutation {
     size: String!,
     # Side of the order (Buy or Sell)
     side: Side!,
-    # Type of the order
-    type: OrderType!,
+    # TimeInForce of the order
+    timeInForce: OrderType!,
     # exiration of the the order
     expiration: String
   ): PendingOrder!
@@ -125,8 +125,8 @@ type PendingOrder {
   # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
   price: String
 
-  # The type of order (determines how and if it executes, and whether it persists on the book)
-  type: OrderType
+  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  timeInForce: OrderType
 
   # Whether the order is to buy or sell
   side: Side
@@ -603,8 +603,8 @@ type Order {
   # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
   price: String!
 
-  # The type of order (determines how and if it executes, and whether it persists on the book)
-  type: OrderType!
+  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  timeInForce: OrderType!
 
   # Whether the order is to buy or sell
   side: Side!

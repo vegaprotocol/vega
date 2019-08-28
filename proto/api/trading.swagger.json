@@ -733,6 +733,16 @@
       ],
       "default": "Active"
     },
+    "OrderTimeInForce": {
+      "type": "string",
+      "enum": [
+        "GTC",
+        "GTT",
+        "ENE",
+        "FOK"
+      ],
+      "default": "GTC"
+    },
     "apiAmendOrderRequest": {
       "type": "object",
       "properties": {
@@ -1390,8 +1400,8 @@
           "type": "string",
           "format": "uint64"
         },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
+        "timeInForce": {
+          "$ref": "#/definitions/OrderTimeInForce"
         },
         "action": {
           "$ref": "#/definitions/OrderAction"
@@ -1472,24 +1482,14 @@
         "side": {
           "$ref": "#/definitions/vegaSide"
         },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
+        "TimeInForce": {
+          "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
           "type": "string",
           "format": "int64"
         }
       }
-    },
-    "vegaOrderType": {
-      "type": "string",
-      "enum": [
-        "GTC",
-        "GTT",
-        "ENE",
-        "FOK"
-      ],
-      "default": "GTC"
     },
     "vegaParty": {
       "type": "object",
@@ -1515,8 +1515,8 @@
           "type": "string",
           "format": "uint64"
         },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
+        "TimeInForce": {
+          "$ref": "#/definitions/OrderTimeInForce"
         },
         "side": {
           "$ref": "#/definitions/vegaSide"

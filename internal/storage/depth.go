@@ -26,7 +26,7 @@ func NewMarketDepth(name string) *Depth {
 // Update the market depth with the given order information. If the order already exists at a price level
 // it will be updated. Note: The total cumulative volume for the market depth is calculated elsewhere.
 func (md *Depth) Update(order types.Order) {
-	if order.Type != types.Order_ENE && order.Type != types.Order_FOK {
+	if order.TimeInForce != types.Order_ENE && order.TimeInForce != types.Order_FOK {
 		if order.Side == types.Side_Buy {
 			md.updateBuySide(order)
 		} else {

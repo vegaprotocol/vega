@@ -226,7 +226,6 @@ func (r *MyQueryResolver) Statistics(ctx context.Context) (*types.Statistics, er
 	return res, nil
 }
 
-
 func (r *MyQueryResolver) CheckToken(ctx context.Context, partyID string, token string) (*CheckTokenResponse, error) {
 	req := &protoapi.CheckTokenRequest{
 		PartyID: partyID,
@@ -566,7 +565,7 @@ func (r *MyOrderResolver) Price(ctx context.Context, obj *types.Order) (string, 
 	return strconv.FormatUint(obj.Price, 10), nil
 }
 func (r *MyOrderResolver) Type(ctx context.Context, obj *types.Order) (OrderType, error) {
-	return OrderType(obj.Type.String()), nil
+	return OrderType(obj.TimeInForce.String()), nil
 }
 func (r *MyOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
 	return Side(obj.Side.String()), nil
@@ -820,7 +819,7 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	order.PartyID = party
-	order.Type, err = parseOrderType(&type_)
+	order.TimeInForce, err = parseOrderType(&type_)
 	if err != nil {
 		return nil, err
 	}
@@ -830,7 +829,7 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	}
 
 	// GTT must have an expiration value
-	if order.Type == types.Order_GTT && expiration != nil {
+	if order.TimeInForce == types.Order_GTT && expiration != nil {
 		expiresAt, err := vegatime.Parse(*expiration)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
@@ -1214,7 +1213,7 @@ func (r *MyPendingOrderResolver) Price(ctx context.Context, obj *proto.PendingOr
 
 func (r *MyPendingOrderResolver) Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error) {
 	if obj != nil {
-		ot := OrderType(obj.Type.String())
+		ot := OrderType(obj.TimeInForce.String())
 		return &ot, nil
 	}
 	return nil, ErrNilPendingOrder

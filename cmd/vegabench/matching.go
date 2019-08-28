@@ -111,14 +111,14 @@ func BenchmarkMatching(
 			}
 
 			order := &types.Order{
-				MarketID:  marketID,
-				PartyID:   fmt.Sprintf("P%v", timestamp),
-				Side:      types.Side(rand.Intn(2)),
-				Price:     uint64(rand.Intn(100) + 50),
-				Size:      size,
-				Remaining: size,
-				Type:      types.Order_GTC,
-				CreatedAt: timestamp,
+				MarketID:    marketID,
+				PartyID:     fmt.Sprintf("P%v", timestamp),
+				Side:        types.Side(rand.Intn(2)),
+				Price:       uint64(rand.Intn(100) + 50),
+				Size:        size,
+				Remaining:   size,
+				TimeInForce: types.Order_GTC,
+				CreatedAt:   timestamp,
 			}
 			start := vegatime.Now()
 			executionEngine.SubmitOrder(order)
