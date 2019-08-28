@@ -910,7 +910,6 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	return &acccpy, nil
 }
 
-// not sure about the second arg (update)
 func (e *Engine) removeAccount(id string) error {
 	delete(e.accs, id)
 	return nil
