@@ -272,18 +272,16 @@ func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time,
 	fetchKey := c.generateFetchKey(market, interval, since)
 	prefix, _ := c.badger.candlePrefix(market, interval, false)
 
+	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
+	defer cancel()
+	deadline, _ := ctx.Deadline()
+
+
 	txn := c.badger.readTransaction()
 	defer txn.Discard()
 
 	it := c.badger.getIterator(txn, false)
 	defer it.Close()
-
-	c.cfgMu.Lock()
-	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
-	c.cfgMu.Unlock()
-	defer cancel()
-
-	deadline, _ := ctx.Deadline()
 
 	var candles []*types.Candle
 	for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {

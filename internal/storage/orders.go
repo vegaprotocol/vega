@@ -162,14 +162,15 @@ func (os *Order) Close() error {
 
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *Order) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+func (os *Order) GetByMarket(ctx context.Context, market string, skip,
+	limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+
 	var err error
 	result := make([]*types.Order, 0, int(limit))
 
-	os.cfgMu.Lock()
 	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
-	os.cfgMu.Unlock()
 	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	txn := os.badger.readTransaction()
 	defer txn.Discard()
@@ -177,7 +178,6 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip, limit uin
 	it := os.badger.getIterator(txn, descending)
 	defer it.Close()
 
-	deadline, _ := ctx.Deadline()
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
 	orderBuf := []byte{}
 	openOnly := open != nil && *open
@@ -242,7 +242,9 @@ func (os *Order) GetByMarketAndId(ctx context.Context, market string, id string)
 
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
-func (os *Order) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+func (os *Order) GetByParty(ctx context.Context, party string, skip uint64,
+	limit uint64, descending bool, open *bool) ([]*types.Order, error) {
+
 	var err error
 	openOnly := open != nil && *open
 	result := make([]*types.Order, 0, int(limit))
