@@ -520,9 +520,9 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	}
 
 	if confirmation.Trades != nil {
-		// Orders can contain several trades, each trade involves 2 traders
-		// so there's a max number of N*2 events on the channel where N == number of trades
-		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
+		// this is an order with a trader and the network, there's only 1 position that can possibly change, so the only position changes
+		// are the counter parties of this given trade (non-distressed traders), and they need to pass through MTM at the end
+		tradersCh := make(chan events.MarketPosition, len(confirmation.Trades))
 		// Set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
 		// @TODO settlement engine needs to be checked here @TODO
 		// possibly this is using the mark price incorrectly
@@ -559,7 +559,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		close(tradersCh)
 	}
 
-	// @NOTE MTM settlements don't have to happen here
+	// @NOTE MTM settlements don't have to happen here just yet, first we have to close the accounts of bankrupt traders
 	// same goes for collateral and risk
 	// what needs to go here is the second half of settlements:
 
