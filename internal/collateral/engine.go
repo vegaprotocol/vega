@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/events"
-	"code.vegaprotocol.io/vega/internal/storage"
-
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -17,6 +15,8 @@ import (
 
 const (
 	initialAccountSize = 4096
+	systemOwner = "system"
+	noMarket    = "general"
 )
 
 var (
@@ -55,12 +55,12 @@ type Engine struct {
 func accountID(marketID, traderID, asset string, ty types.AccountType) string {
 	// if no marketID -> trader general account
 	if len(marketID) <= 0 {
-		marketID = storage.NoMarket
+		marketID = noMarket
 	}
 
 	// market account
 	if len(traderID) <= 0 {
-		traderID = storage.SystemOwner
+		traderID = systemOwner
 	}
 
 	var b strings.Builder
@@ -777,7 +777,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (
 		insAcc := &types.Account{
 			Id:       insuranceID,
 			Asset:    asset,
-			Owner:    storage.SystemOwner,
+			Owner:    systemOwner,
 			Balance:  insurance,
 			MarketID: marketID,
 			Type:     types.AccountType_INSURANCE,
@@ -792,7 +792,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (
 		setAcc := &types.Account{
 			Id:       settleID,
 			Asset:    asset,
-			Owner:    storage.SystemOwner,
+			Owner:    systemOwner,
 			Balance:  0,
 			MarketID: marketID,
 			Type:     types.AccountType_SETTLEMENT,
@@ -821,13 +821,13 @@ func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID
 		e.buf.Add(*acc)
 	}
 
-	generalID = accountID(storage.NoMarket, traderID, asset, types.AccountType_GENERAL)
+	generalID = accountID(noMarket, traderID, asset, types.AccountType_GENERAL)
 	_, ok = e.accs[generalID]
 	if !ok {
 		acc := &types.Account{
 			Id:       generalID,
 			Asset:    asset,
-			MarketID: storage.NoMarket,
+			MarketID: noMarket,
 			Balance:  0,
 			Owner:    traderID,
 			Type:     types.AccountType_GENERAL,

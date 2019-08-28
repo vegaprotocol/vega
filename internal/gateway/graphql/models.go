@@ -118,7 +118,6 @@ const (
 	AccountTypeInsurance  AccountType = "Insurance"
 	AccountTypeSettlement AccountType = "Settlement"
 	AccountTypeMargin     AccountType = "Margin"
-	AccountTypeMarket     AccountType = "Market"
 	AccountTypeGeneral    AccountType = "General"
 )
 
@@ -126,13 +125,12 @@ var AllAccountType = []AccountType{
 	AccountTypeInsurance,
 	AccountTypeSettlement,
 	AccountTypeMargin,
-	AccountTypeMarket,
 	AccountTypeGeneral,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeMarket, AccountTypeGeneral:
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral:
 		return true
 	}
 	return false

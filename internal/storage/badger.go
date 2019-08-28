@@ -23,7 +23,6 @@ type badgerStore struct {
 }
 
 // ConfigOptions are params for creating a DB object.
-// todo: Make this struct generic/base options for stores
 type ConfigOptions struct {
 	// Dir                  string // not customisable by end user
 	// ValueDir             string // not customisable by end user
@@ -139,28 +138,8 @@ func (bs *badgerStore) orderPrefix(order string, descending bool) (keyPrefix []b
 	return bs.getPrefix("O", order, descending)
 }
 
-func (bs *badgerStore) accountMarketPrefix(market string, descending bool) ([]byte, []byte) {
-	return bs.getPrefix("AMR", market, descending)
-}
-
-func (bs *badgerStore) accountOwnerPrefix(owner string, descending bool) ([]byte, []byte) {
-	return bs.getPrefix("AR", owner, descending)
-}
-
-func (bs *badgerStore) accountTypePrefix(owner string, accountType types.AccountType, descending bool) ([]byte, []byte) {
-	return bs.getPrefix("ATR", fmt.Sprintf("%s:%s", owner, accountType.String()), descending)
-}
-
-func (bs *badgerStore) accountReferencePrefix(owner, market string, descending bool) ([]byte, []byte) {
-	return bs.getPrefix("AR", fmt.Sprintf("%s:%s", owner, market), descending)
-}
-
-func (bs *badgerStore) accountAssetPrefix(owner, asset string, descending bool) ([]byte, []byte) {
-	return bs.getPrefix("AA", fmt.Sprintf("%s:%s", owner, asset), descending)
-}
-
-func (bs *badgerStore) accountKeyPrefix(owner, asset, market string, descending bool) ([]byte, []byte) {
-	return bs.getPrefix("A", fmt.Sprintf("%s:%s:%s", owner, asset, market), descending)
+func (bs *badgerStore) assetPrefix(asset string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	return bs.getPrefix("A", asset, descending)
 }
 
 func (bs *badgerStore) getPrefix(modifier string, prefix string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
@@ -181,6 +160,28 @@ func (bs *badgerStore) candlePrefix(market string, interval types.Interval, desc
 	return keyPrefix, validForPrefix
 }
 
+func (bs *badgerStore) accountPartyPrefix(accType types.AccountType, party string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	return bs.getPrefix(bs.getAccountTypePrefix(accType), party, descending)
+}
+
+func (bs *badgerStore) accountPartyMarketPrefix(accType types.AccountType, partyID string, marketID string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	validForPrefix = []byte(fmt.Sprintf("%s:%s_M:%s_", bs.getAccountTypePrefix(accType), partyID, marketID))
+	keyPrefix = validForPrefix
+	if descending {
+		keyPrefix = append(keyPrefix, 0xFF)
+	}
+	return keyPrefix, validForPrefix
+}
+
+func (bs *badgerStore) accountPartyAssetPrefix(partyID string, asset string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
+	validForPrefix = []byte(fmt.Sprintf("A:%s_%s_ID:", asset, partyID))
+	keyPrefix = validForPrefix
+	if descending {
+		keyPrefix = append(keyPrefix, 0xFF)
+	}
+	return keyPrefix, validForPrefix
+}
+
 func (bs *badgerStore) readTransaction() *badger.Txn {
 	return bs.db.NewTransaction(false)
 }
@@ -189,38 +190,24 @@ func (bs *badgerStore) writeTransaction() *badger.Txn {
 	return bs.db.NewTransaction(true)
 }
 
-func (bs *badgerStore) accountTypeReferenceKey(owner, market, asset string, accountType types.AccountType) []byte {
-	return []byte(fmt.Sprintf("ATR:%s:%s:%s:%s", owner, accountType.String(), asset, market))
+// Market store keys
+
+func (bs *badgerStore) marketKey(marketID string) []byte {
+	return []byte(fmt.Sprintf("ID:%v", marketID))
 }
 
-func (bs *badgerStore) accountMarketReferenceKey(market, owner, asset string, accountType types.AccountType) []byte {
-	return []byte(fmt.Sprintf("AMR:%s:%s:%s:%s", market, owner, asset, accountType.String()))
-}
-
-func (bs *badgerStore) accountReferenceKey(owner, market, asset string, accountType types.AccountType) []byte {
-	return []byte(fmt.Sprintf("AR:%s:%s:%s:%s", owner, market, asset, accountType.String()))
-}
-
-func (bs *badgerStore) accountAssetReferenceKey(owner, asset, market string, accountType types.AccountType) []byte {
-	return []byte(fmt.Sprintf("AA:%s:%s:%s:%s", owner, asset, market, accountType.String()))
-}
-
-func (bs *badgerStore) accountKey(owner, asset, market string, accountType types.AccountType) []byte {
-	return []byte(fmt.Sprintf("A:%s:%s:%s:%s", owner, asset, market, accountType.String()))
-}
+// Candle store keys
 
 func (bs *badgerStore) lastCandleKey(
 	marketID string, interval types.Interval) []byte {
 	return []byte(fmt.Sprintf("LCM:%s_I:%s", marketID, interval.String()))
 }
 
-func (bs *badgerStore) marketKey(marketID string) []byte {
-	return []byte(fmt.Sprintf("MID:%v", marketID))
-}
-
 func (bs *badgerStore) candleKey(market string, interval types.Interval, timestamp int64) []byte {
 	return []byte(fmt.Sprintf("M:%s_I:%s_T:%d", market, interval.String(), timestamp))
 }
+
+// Order store keys
 
 func (bs *badgerStore) orderMarketKey(market string, Id string) []byte {
 	return []byte(fmt.Sprintf("M:%s_ID:%s", market, Id))
@@ -238,6 +225,8 @@ func (bs *badgerStore) orderPartyKey(party string, Id string) []byte {
 	return []byte(fmt.Sprintf("P:%s_ID:%s", party, Id))
 }
 
+// Trade store keys
+
 func (bs *badgerStore) tradeMarketKey(market string, Id string) []byte {
 	return []byte(fmt.Sprintf("M:%s_ID:%s", market, Id))
 }
@@ -254,7 +243,48 @@ func (bs *badgerStore) tradeOrderIdKey(orderId, Id string) []byte {
 	return []byte(fmt.Sprintf("O:%s_ID:%s", orderId, Id))
 }
 
-// writeBatch writes an arbitrarily large map to a Barger store, using as many
+// Account store keys
+
+// accountGeneralKey relates only to a party and asset, no market index/references
+func (bs *badgerStore) accountGeneralIdKey(partyID string, assetID string) []byte {
+	return []byte(fmt.Sprintf("%s:%s_A:%s",
+		bs.getAccountTypePrefix(types.AccountType_GENERAL), partyID, assetID))
+}
+// accountMarginKey is composed from a party market and asset, has a market index (future work could add an asset index)
+func (bs *badgerStore) accountMarginIdKey(partyID string, marketID string, assetID string) []byte {
+	return []byte(fmt.Sprintf("%s:%s_M:%s_A:%s",
+		bs.getAccountTypePrefix(types.AccountType_MARGIN), partyID, marketID, assetID))
+}
+// accountMarketKey is used to provide an index of all accounts for a particular market (no party scope).
+// Id should be a reference to the accountMarginIdKey generated above, general accounts span
+// all of VEGA without having market scope. Currently used for MARGIN type only.
+func (bs *badgerStore) accountMarketKey(market string, accountID string) []byte {
+	return []byte(fmt.Sprintf("M:%s_ID:%s", market, accountID))
+}
+// accountAssetKey is used to provide an index of accounts for a particular asset.
+// Used by both general and margin accounts.
+func (bs *badgerStore) accountAssetKey(assetID string, partyID string, accountID string) []byte {
+	return []byte(fmt.Sprintf("A:%s_%s_ID:%s", assetID, partyID, accountID))
+}
+
+// getAccountTypePrefix returns the correct code for a particular account type.
+// Currently we only write GENERAL and MARGIN type records to store.
+func (bs *badgerStore) getAccountTypePrefix(accType types.AccountType) string {
+	switch accType {
+	case types.AccountType_MARGIN:
+		return "MP"
+	case types.AccountType_SETTLEMENT:
+		return "SP"
+	case types.AccountType_INSURANCE:
+		return "IP"
+	case types.AccountType_GENERAL:
+		return "GP"
+	default:
+		return "ERR"
+	}
+}
+
+// writeBatch writes an arbitrarily large map to a Badger store, using as many
 // transactions as necessary.
 //
 // Return values:
@@ -278,7 +308,7 @@ func (bs *badgerStore) writeBatch(kv map[string][]byte) (int, error) {
 			if err != badger.ErrTxnTooBig {
 				return 0, err
 			}
-			// Start a new transaction WITHOUT commiting any previous ones, in order
+			// Start a new transaction WITHOUT committing any previous ones, in order
 			// to maintain atomicity.
 			txn = bs.writeTransaction()
 			defer txn.Discard()
@@ -291,7 +321,7 @@ func (bs *badgerStore) writeBatch(kv map[string][]byte) (int, error) {
 	}
 
 	// At this point, we have filled one or more transactions with the all the kv
-	// pairs, and we have commited none of the transactions.
+	// pairs, and we have committed none of the transactions.
 	for j, tx := range txns {
 		if err := tx.Commit(); err != nil {
 			// This is very bad. We committed some transactions, but have now failed
