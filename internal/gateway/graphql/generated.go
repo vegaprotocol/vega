@@ -1683,8 +1683,8 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `## VEGA - GraphQL schema
 
 schema {
-    query: Query,
-    subscription: Subscription,
+    query: Query
+    subscription: Subscription
     mutation: Mutation
 }
 
@@ -1695,17 +1695,17 @@ type Mutation {
   # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
   orderSubmit(
     # ID of the market to place the order
-    marketId: String!,
+    marketId: String!
     # ID of the party placing the order
-    partyId: String!,
+    partyId: String!
     # Price of the asset
-    price: String!,
+    price: String!
     # Size ofthe order
-    size: String!,
+    size: String!
     # Side of the order (Buy or Sell)
-    side: Side!,
+    side: Side!
     # TimeInForce of the order
-    timeInForce: OrderTimeInForce!,
+    timeInForce: OrderTimeInForce!
     # exiration of the the order
     expiration: String
   ): PendingOrder!
@@ -1714,33 +1714,33 @@ type Mutation {
   # It validates and sends the request out for consensus.
   orderCancel(
     # ID of the order to cancel
-    id: ID!,
+    id: ID!
     # ID of the party placing the order
-    partyId: String!,
+    partyId: String!
     # ID of the market where to find the order
-    marketId: String!,
+    marketId: String!
   ): PendingOrder!
 
   # Send a amend order request into VEGA network, this does not immediately amend an order.
   # It validates and sends the request out for consensus.
   orderAmend(
     # ID of the order to amend
-    id: ID!,
+    id: ID!
     # ID of the party which created the order
     partyId: String!
     # New price for this order
-    price: Int!,
+    price: Int!
     # New size for this order
-    size: Int!,
+    size: Int!
     # New expiration time
-    expiration: String,
+    expiration: String
   ): PendingOrder!
 
 
   # sign a party in using an username and password, then return a token
   signin(
     # ID of the party to get logged in
-    id: String!,
+    id: String!
     # Password of the party
     password: String!): String!
 }
@@ -1750,7 +1750,7 @@ type Subscription {
   # Subscribe to the candles updates
   candles(
     # ID of the market we want to listen candles for
-    marketId: String!,
+    marketId: String!
     # Interval of the candles we want to listen for
     interval: Interval!
   ): Candle!
@@ -1758,7 +1758,7 @@ type Subscription {
   # Subscribe to orders updates
   orders(
     # ID of the market from which we want orders updates
-    marketId: String,
+    marketId: String
     # ID of the party from which we want orders updates
     partyId: String
   ): [Order!]
@@ -1766,7 +1766,7 @@ type Subscription {
   # Subscribe to the trades updates
   trades(
     # ID of the market from which we want trades updates
-    marketId: String,
+    marketId: String
     # ID of the party from which we want trades updates
     partyId: String
   ): [Trade!]
@@ -1786,11 +1786,11 @@ type Subscription {
   # Subscribe to the accounts updates
   accounts(
     # ID of the market from which we want accounts updates
-    marketId: String,
+    marketId: String
     # ID of the party from which we want accounts updates
     partyId: String
     # Type of the account
-    type: AccountType,
+    type: AccountType
   ): Account!
 
 }
@@ -1860,7 +1860,7 @@ type Query {
   # Check a partyID+Token combination
   checkToken(
     # Party ID
-    partyId: String!,
+    partyId: String!
     # Token
     token: String!
   ): CheckTokenResponse!
@@ -2098,11 +2098,11 @@ type Market {
   # Orders on a market
   orders (
     # Filter open orders only
-    open: Boolean,
+    open: Boolean
     # Pagination skip
-    skip: Int,
+    skip: Int
     # Pagination first element
-    first: Int,
+    first: Int
     # Pagination last element
     last: Int
   ): [Order!]
@@ -2110,15 +2110,15 @@ type Market {
   # Get system accounts for a given market (insurance pool, settlement)
   accounts(
     # Specify the account type to get a specific account
-    type: AccountType,
+    type: AccountType
   ): [Account!]
 
   # Trades on a market
   trades (
     # Pagination skip
-    skip: Int,
+    skip: Int
     # Pagination first element
-    first: Int,
+    first: Int
     # Pagination last element
     last: Int): [Trade!]
 
@@ -2128,7 +2128,7 @@ type Market {
   # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
   candles (
     # RFC3339Nano encoded time from when to get candles
-    since: String!,
+    since: String!
     # Interval of the candles
     interval: Interval!
   ): [Candle]
@@ -2136,7 +2136,7 @@ type Market {
   # Query an order by reference for the given market
   orderByReference (
     # reference of the order
-    reference: String!,
+    reference: String!
   ): Order!
 }
 
@@ -2209,31 +2209,31 @@ type Party {
   # Orders relating to a party
   orders(
     # Is the order still open or not
-    open: Boolean,
+    open: Boolean
     # Pagination skip
-    skip: Int,
+    skip: Int
     # Pagination first element
-    first: Int,
+    first: Int
     # Pagination last element
     last: Int): [Order!]
 
   # Trades relating to a party (specifically where party is either buyer OR seller)
   trades(
     # ID of the market we want to get trades for
-    marketId: String,
+    marketId: String
     # Pagination skip
-    skip: Int,
+    skip: Int
     # Pagination first element
-    first: Int,
+    first: Int
     # Pagination last element
     last: Int): [Trade!]
 
     # get accounts for a given party, filtered if needed
   accounts(
     # Market ID - specify what market accounts for the party to return
-    marketId: String,
+    marketId: String
     # Filter accounts by type (General account, margin account, etc...)
-    type: AccountType,
+    type: AccountType
   ): [Account!]
 
 
@@ -2375,17 +2375,17 @@ type Account {
 enum OrderTimeInForce {
 
     # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
-    FOK,
+    FOK
 
     # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-    ENE,
+    ENE
 
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
-    GTC,
+    GTC
 
     # This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
     # NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
-    GTT,
+    GTT
 }
 
 # Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order.
@@ -2393,19 +2393,19 @@ enum OrderStatus {
 
     # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
     # Active does not necessarily mean it's still on the order book.
-    Active,
+    Active
 
     # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
-    Cancelled,
+    Cancelled
 
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
-    Expired,
+    Expired
 
     # This order was of type ENE or FOK and could not be processed by the matching engine due to lack of liquidity.
-    Stopped,
+    Stopped
 
     # This order is fully filled with remaining equals zero.
-    Filled,
+    Filled
 }
 
 # Whether the placer of an order is aiming to buy or sell on the market
