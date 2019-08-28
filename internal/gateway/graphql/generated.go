@@ -1681,8 +1681,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `### AGC: This is a change ###
-## VEGA - GraphQL schema
+	&ast.Source{Name: "schema.graphql", Input: `## VEGA - GraphQL schema
 
 schema {
     query: Query
