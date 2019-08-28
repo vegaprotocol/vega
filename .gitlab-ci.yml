@@ -99,20 +99,8 @@ autogen_checks:
     - make proto_check || code=1
     - make gqlgen_check || code=1
     - b2="$CI_COMMIT_REF_NAME"
-    - case "$b2" in
-    - master)
-    - b1=""
-    - ;;
-    - develop)
-    - b1="master"
-    - ;;
-    - '*)'
-    - b1="develop"
-    - ;;
-    - esac
-    - if test -n "$b1" ; then
-    - 'bash scripts/diff_file.sh https://gitlab.com/api/v4 "$GITLAB_API_TOKEN" 5726034 "$b1" "$b2" internal/gateway/graphql/schema.graphql || code=1'
-    - fi
+    - if test "$b2" == master ; then b1="" ; elif test "$b2" == develop ; then b1=master ; else b1="develop" ; fi
+    - 'if test -n "$b1" ; then bash scripts/diff_file.sh https://gitlab.com/api/v4 "$GITLAB_API_TOKEN" 5726034 "$b1" "$b2" internal/gateway/graphql/schema.graphql || code=1 ; fi'
     - exit "$code"
 
 vet:
