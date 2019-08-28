@@ -106,9 +106,11 @@ type Subscription {
     # ID of the market from which we want accounts updates
     marketId: String,
     # ID of the party from which we want accounts updates
-    partyId: String
+    partyId: String,
+    # Asset code
+    asset: String,
     # Type of the account
-    type: AccountType,
+    type: AccountType
   ): Account!
 
 }
@@ -425,7 +427,7 @@ type Market {
     last: Int
   ): [Order!]
 
-  # Get system accounts for a given market (insurance pool, settlement)
+  # Get accounts for a party or market
   accounts(
     # Specify the account type to get a specific account
     type: AccountType,
@@ -546,14 +548,15 @@ type Party {
     # Pagination last element
     last: Int): [Trade!]
 
-    # get accounts for a given party, filtered if needed
+  # Collateral accounts relating to a party
   accounts(
-    # Market ID - specify what market accounts for the party to return
+    # ID of the market (used when specifying a margin account for a party)
     marketId: String,
+    # Asset (USD, EUR etc)
+    asset: String,
     # Filter accounts by type (General account, margin account, etc...)
     type: AccountType,
   ): [Account!]
-
 
   # Trading positions relating to a party
   positions: [Position!]
@@ -679,14 +682,14 @@ type Trade {
 
 # An account record
 type Account {
-  # id the id for this account, not useful given the current API, but might be useful
-  id: String!
   # Balance as string - current account balance (approx. as balances can be updated several times per second)
   balance: String!
   # Asset, the "currency"
   asset: String!
-  # Account type (enum type)
+  # Account type (General, Margin, etc)
   type: AccountType!
+  # Market (only relevant to margin accounts)
+  market: Market
 }
 
 # Valid order types, these determine what happens when an order is added to the book
@@ -764,14 +767,12 @@ enum Interval {
 
 # The various account types we have (used by collateral)
 enum AccountType {
-  # Insurance pool account - only for party "system"
+  # Insurance pool account - only for "system" party
   Insurance
-  # Settlement - Again, only for "system" party
+  # Settlement - only for "system" party
   Settlement
   # Margin - The leverage account for traders
   Margin
-  # Market - it's in the spec, but AFAIK, we're not using this currently
-  Market
-  # General account - the actual account containing "unused" monies
+  # General account - the account containing "unused" collateral for traders
   General
 }

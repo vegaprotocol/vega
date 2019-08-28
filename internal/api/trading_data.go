@@ -100,10 +100,11 @@ type BlockchainClient interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api AccountsService
 type AccountsService interface {
-	GetTraderAccounts(id string) ([]*types.Account, error)
-	GetTraderAccountsForMarket(trader, market string) ([]*types.Account, error)
-	GetTraderMarketBalance(trader, market string) ([]*types.Account, error)
-	ObserveAccounts(ctx context.Context, retries int, marketID, partyID string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
+	GetByParty(partyID string) ([]*types.Account, error)
+	GetByPartyAndMarket(partyID string, marketID string) ([]*types.Account, error)
+	GetByPartyAndType(partyID string, accType types.AccountType) ([]*types.Account, error)
+	GetByPartyAndAsset(partyID string, asset string) ([]*types.Account, error)
+	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
 }
 
@@ -404,8 +405,8 @@ func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 	defer cfunc()
 
 	accountschan, ref := h.AccountsService.ObserveAccounts(
-		ctx, h.Config.StreamRetries, req.MarketID, req.PartyID, req.Type)
-	h.log.Debug("Candles subscriber - new rpc stream", logging.Uint64("ref", ref))
+		ctx, h.Config.StreamRetries, req.MarketID, req.PartyID, req.Asset, req.Type)
+	h.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
 
 	var err error
 
@@ -828,32 +829,42 @@ func (h *tradingDataService) LastTrade(
 	return &protoapi.LastTradeResponse{}, nil
 }
 
-func (h *tradingDataService) TraderAccounts(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
-	accs, err := h.AccountsService.GetTraderAccounts(req.Party)
+func (h *tradingDataService) AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest) (*protoapi.AccountsByPartyResponse, error) {
+	accs, err := h.AccountsService.GetByParty(req.PartyID)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.CollateralResponse{
+	return &protoapi.AccountsByPartyResponse{
 		Accounts: accs,
 	}, nil
 }
 
-func (h *tradingDataService) TraderMarketAccounts(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
-	accs, err := h.AccountsService.GetTraderAccountsForMarket(req.Party, req.MarketID)
+func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsByPartyAndMarketResponse, error) {
+	accs, err := h.AccountsService.GetByPartyAndMarket(req.PartyID, req.MarketID)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.CollateralResponse{
+	return &protoapi.AccountsByPartyAndMarketResponse{
 		Accounts: accs,
 	}, nil
 }
 
-func (h *tradingDataService) TraderMarketBalance(ctx context.Context, req *protoapi.CollateralRequest) (*protoapi.CollateralResponse, error) {
-	accs, err := h.AccountsService.GetTraderMarketBalance(req.Party, req.MarketID)
+func (h *tradingDataService) AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest) (*protoapi.AccountsByPartyAndTypeResponse, error) {
+	accs, err := h.AccountsService.GetByPartyAndType(req.PartyID, req.Type)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.CollateralResponse{
+	return &protoapi.AccountsByPartyAndTypeResponse{
+		Accounts: accs,
+	}, nil
+}
+
+func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsByPartyAndAssetResponse, error) {
+	accs, err := h.AccountsService.GetByPartyAndAsset(req.PartyID, req.Asset)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.AccountsByPartyAndAssetResponse{
 		Accounts: accs,
 	}, nil
 }
