@@ -215,6 +215,6 @@ func (l PriceLevel) print(log *logging.Logger) {
 		}
 
 		log.Debug(fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s\n",
-			o.PartyID, side, o.Price, o.Size, o.Remaining, o.Type, o.CreatedAt, o.Id))
+			o.PartyID, side, o.Price, o.Size, o.Remaining, o.TimeInForce, o.CreatedAt, o.Id))
 	}
 }
