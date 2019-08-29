@@ -551,6 +551,45 @@
         ]
       }
     },
+    "/parties/{partyID}/accounts": {
+      "get": {
+        "summary": "accounts",
+        "operationId": "AccountsByParty",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAccountsByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NO_ACC",
+              "INSURANCE",
+              "SETTLEMENT",
+              "MARGIN",
+              "GENERAL"
+            ],
+            "default": "NO_ACC"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/parties/{partyID}/orders": {
       "get": {
         "operationId": "OrdersByParty",
@@ -743,6 +782,50 @@
       ],
       "default": "GTC"
     },
+    "apiAccountsByPartyAndAssetResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
+    "apiAccountsByPartyAndMarketResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
+    "apiAccountsByPartyAndTypeResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
+    "apiAccountsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
     "apiAmendOrderRequest": {
       "type": "object",
       "properties": {
@@ -771,17 +854,6 @@
         "ok": {
           "type": "boolean",
           "format": "boolean"
-        }
-      }
-    },
-    "apiCollateralResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
         }
       }
     },

@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"os"
+	"syscall"
 
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/accounts"
@@ -78,6 +79,16 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 
 	// assign config vars
 	l.configPath, l.conf = configPath, conf
+
+	// Set ulimits
+	if err = l.SetUlimits(); err != nil {
+		l.Log.Warn("Unable to set ulimits",
+			logging.Error(err))
+	} else {
+		l.Log.Debug("Set ulimits",
+			logging.Uint64("nofile", l.conf.UlimitNOFile))
+	}
+
 	l.stats = internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
 	// set up storage, this should be persistent
 	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
@@ -158,5 +169,13 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) })
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts, l.blockchainClient)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) })
+	return
+}
+
+func (l *NodeCommand) SetUlimits() (err error) {
+	var nofile syscall.Rlimit
+	nofile.Max = l.conf.UlimitNOFile
+	nofile.Cur = l.conf.UlimitNOFile
+	err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &nofile)
 	return
 }
