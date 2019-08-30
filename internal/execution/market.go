@@ -492,7 +492,7 @@ func (m *Market) collateralAndRiskForOrder(settle []events.Transfer, price uint6
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, price)
 	if len(riskUpdates) == 0 {
-		m.log.Warn("No risk updates after call to Update Margins in collateralAndRisk()")
+		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil
 	}
 	if m.log.GetLevel() == logging.DebugLevel {
@@ -539,7 +539,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, m.markPrice)
 	if len(riskUpdates) == 0 {
-		m.log.Warn("No risk updates after call to Update Margins in collateralAndRisk()")
+		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil
 	}
 	return riskUpdates
@@ -621,18 +621,18 @@ func (m *Market) AmendOrder(
 	m.mu.Unlock()
 
 	newOrder := &types.Order{
-		Id:        existingOrder.Id,
-		MarketID:  existingOrder.MarketID,
-		PartyID:   existingOrder.PartyID,
-		Side:      existingOrder.Side,
-		Price:     existingOrder.Price,
-		Size:      existingOrder.Size,
-		Remaining: existingOrder.Remaining,
-		Type:      existingOrder.Type,
-		CreatedAt: currentTime.UnixNano(),
-		Status:    existingOrder.Status,
-		ExpiresAt: existingOrder.ExpiresAt,
-		Reference: existingOrder.Reference,
+		Id:          existingOrder.Id,
+		MarketID:    existingOrder.MarketID,
+		PartyID:     existingOrder.PartyID,
+		Side:        existingOrder.Side,
+		Price:       existingOrder.Price,
+		Size:        existingOrder.Size,
+		Remaining:   existingOrder.Remaining,
+		TimeInForce: existingOrder.TimeInForce,
+		CreatedAt:   currentTime.UnixNano(),
+		Status:      existingOrder.Status,
+		ExpiresAt:   existingOrder.ExpiresAt,
+		Reference:   existingOrder.Reference,
 	}
 	var (
 		priceShift, sizeIncrease, sizeDecrease, expiryChange = false, false, false, false
@@ -654,7 +654,7 @@ func (m *Market) AmendOrder(
 		}
 	}
 
-	if newOrder.Type == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
+	if newOrder.TimeInForce == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
 		newOrder.ExpiresAt = orderAmendment.ExpiresAt
 		expiryChange = true
 	}

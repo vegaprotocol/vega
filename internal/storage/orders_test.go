@@ -278,17 +278,17 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 	defer newOrderStore.Close()
 
 	order := &types.Order{
-		Id:        "d41d8cd98f00b204e9800998ecf8427b",
-		MarketID:  testMarket,
-		PartyID:   testPartyA,
-		Side:      types.Side_Buy,
-		Price:     100,
-		Size:      1000,
-		Remaining: 0,
-		Type:      types.Order_GTC,
-		CreatedAt: 0,
-		Status:    types.Order_Active,
-		Reference: "123123-34334343-1231231",
+		Id:          "d41d8cd98f00b204e9800998ecf8427b",
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1000,
+		Remaining:   0,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
+		Reference:   "123123-34334343-1231231",
 	}
 
 	err = newOrderStore.Post(*order)
@@ -336,45 +336,45 @@ func TestStorage_GetMarketDepth(t *testing.T) {
 	defer orderStore.Close()
 
 	order1 := &types.Order{
-		Id:        "d41d8cd98f00b204e9800998ecf8427b",
-		MarketID:  testMarket,
-		PartyID:   testPartyA,
-		Side:      types.Side_Buy,
-		Price:     100,
-		Size:      1000,
-		Remaining: 1000,
-		Type:      types.Order_GTC,
-		CreatedAt: 0,
-		Status:    types.Order_Active,
-		Reference: "123123-34334343-1231231",
+		Id:          "d41d8cd98f00b204e9800998ecf8427b",
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1000,
+		Remaining:   1000,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
+		Reference:   "123123-34334343-1231231",
 	}
 
 	order2 := &types.Order{
-		Id:        "d41d8cd98f00b204e9800998ecf8427c",
-		MarketID:  testMarket,
-		PartyID:   testPartyA,
-		Side:      types.Side_Buy,
-		Price:     100,
-		Size:      1000,
-		Remaining: 1000,
-		Type:      types.Order_GTC,
-		CreatedAt: 0,
-		Status:    types.Order_Active,
-		Reference: "123123-34334343-1231232",
+		Id:          "d41d8cd98f00b204e9800998ecf8427c",
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1000,
+		Remaining:   1000,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
+		Reference:   "123123-34334343-1231232",
 	}
 
 	order3 := &types.Order{
-		Id:        "d41d8cd98f00b204e9800998hhf8427c",
-		MarketID:  testMarket,
-		PartyID:   testPartyB,
-		Side:      types.Side_Sell,
-		Price:     9999,
-		Size:      20,
-		Remaining: 20,
-		Type:      types.Order_GTC,
-		CreatedAt: 0,
-		Status:    types.Order_Active,
-		Reference: "123123-34334343-1231232",
+		Id:          "d41d8cd98f00b204e9800998hhf8427c",
+		MarketID:    testMarket,
+		PartyID:     testPartyB,
+		Side:        types.Side_Sell,
+		Price:       9999,
+		Size:        20,
+		Remaining:   20,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
+		Reference:   "123123-34334343-1231232",
 	}
 
 	err = orderStore.Post(*order1)
@@ -413,17 +413,17 @@ func TestStorage_GetMarketDepthWithTimeout(t *testing.T) {
 	defer orderStore.Close()
 
 	order := &types.Order{
-		Id:        "d41d8cd98f00b204e9800998ecf8427b",
-		MarketID:  testMarket,
-		PartyID:   testPartyA,
-		Side:      types.Side_Buy,
-		Price:     100,
-		Size:      1000,
-		Remaining: 1000,
-		Type:      types.Order_GTC,
-		CreatedAt: 0,
-		Status:    types.Order_Active,
-		Reference: "123123-34334343-1231231",
+		Id:          "d41d8cd98f00b204e9800998ecf8427b",
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        1000,
+		Remaining:   1000,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
+		Reference:   "123123-34334343-1231231",
 	}
 
 	err = orderStore.Post(*order)

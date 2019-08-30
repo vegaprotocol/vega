@@ -51,6 +51,7 @@ type Config struct {
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
+	UlimitNOFile   uint64 `tomlcp:"Set the max number of open files (see: ulimit -n)"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
@@ -80,5 +81,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Auth:           auth.NewDefaultConfig(),
 		Metrics:        metrics.NewDefaultConfig(),
 		GatewayEnabled: true,
+		UlimitNOFile:   8192,
 	}
 }

@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/events"
-	"code.vegaprotocol.io/vega/internal/storage"
-
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -17,6 +15,8 @@ import (
 
 const (
 	initialAccountSize = 4096
+	systemOwner = "system"
+	noMarket    = "general"
 )
 
 var (
@@ -55,12 +55,12 @@ type Engine struct {
 func accountID(marketID, traderID, asset string, ty types.AccountType) string {
 	// if no marketID -> trader general account
 	if len(marketID) <= 0 {
-		marketID = storage.NoMarket
+		marketID = noMarket
 	}
 
 	// market account
 	if len(traderID) <= 0 {
-		traderID = storage.SystemOwner
+		traderID = systemOwner
 	}
 
 	var b strings.Builder
@@ -777,7 +777,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (
 		insAcc := &types.Account{
 			Id:       insuranceID,
 			Asset:    asset,
-			Owner:    storage.SystemOwner,
+			Owner:    systemOwner,
 			Balance:  insurance,
 			MarketID: marketID,
 			Type:     types.AccountType_INSURANCE,
@@ -792,7 +792,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (
 		setAcc := &types.Account{
 			Id:       settleID,
 			Asset:    asset,
-			Owner:    storage.SystemOwner,
+			Owner:    systemOwner,
 			Balance:  0,
 			MarketID: marketID,
 			Type:     types.AccountType_SETTLEMENT,
@@ -821,13 +821,13 @@ func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID
 		e.buf.Add(*acc)
 	}
 
-	generalID = accountID(storage.NoMarket, traderID, asset, types.AccountType_GENERAL)
+	generalID = accountID(noMarket, traderID, asset, types.AccountType_GENERAL)
 	_, ok = e.accs[generalID]
 	if !ok {
 		acc := &types.Account{
 			Id:       generalID,
 			Asset:    asset,
-			MarketID: storage.NoMarket,
+			MarketID: noMarket,
 			Balance:  0,
 			Owner:    traderID,
 			Type:     types.AccountType_GENERAL,
@@ -837,6 +837,48 @@ func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID
 	}
 
 	return
+}
+
+func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
+	tl := len(traders)
+	if tl == 0 {
+		return nil, nil
+	}
+	// insurance account is the one we're after
+	_, ins, err := e.getSystemAccounts(marketID, asset)
+	if err != nil {
+		return nil, err
+	}
+	resp := types.TransferResponse{
+		Transfers: make([]*types.LedgerEntry, 0, tl),
+	}
+	for _, trader := range traders {
+		acc, err := e.GetAccountByID(accountID(marketID, trader.Party(), asset, types.AccountType_MARGIN))
+		if err != nil {
+			return nil, err
+		}
+		// only create a ledger move if the balance is greater than zero
+		if acc.Balance > 0 {
+			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
+				FromAccount: acc.Id,
+				ToAccount:   ins.Id,
+				Amount:      acc.Balance,
+				Reference:   "close-out distressed",
+				Type:        "",                    // @TODO determine this value
+				Timestamp:   time.Now().UnixNano(), // @TODO Unix or UnixNano?
+			})
+			if err := e.IncrementBalance(ins.Id, acc.Balance); err != nil {
+				return nil, err
+			}
+			if err := e.UpdateBalance(acc.Id, 0); err != nil {
+				return nil, err
+			}
+		}
+		if err := e.removeAccount(acc.Id); err != nil {
+			return nil, err
+		}
+	}
+	return &resp, nil
 }
 
 func (e *Engine) UpdateBalance(id string, balance int64) error {
@@ -866,4 +908,9 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	}
 	acccpy := *acc
 	return &acccpy, nil
+}
+
+func (e *Engine) removeAccount(id string) error {
+	delete(e.accs, id)
+	return nil
 }

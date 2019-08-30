@@ -155,6 +155,11 @@ func Party(p types.Party) zap.Field {
 	return zap.String("party", p.String())
 }
 
+// Account constructs a field with the given VEGA account proto value.
+func Account(a types.Account) zap.Field {
+	return zap.String("account", a.String())
+}
+
 func Reflect(key string, val interface{}) zap.Field {
 	return zap.Reflect("key", val)
 }

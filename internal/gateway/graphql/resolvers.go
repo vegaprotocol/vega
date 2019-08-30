@@ -68,10 +68,11 @@ type TradingDataClient interface {
 	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
 	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthSubscribeClient, error)
 	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_PositionsSubscribeClient, error)
-	// collateral
-	TraderAccounts(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
-	TraderMarketAccounts(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
-	TraderMarketBalance(ctx context.Context, req *protoapi.CollateralRequest, opts ...grpc.CallOption) (*protoapi.CollateralResponse, error)
+	// accounts
+	AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyResponse, error)
+	AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndMarketResponse, error)
+	AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndTypeResponse, error)
+	AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndAssetResponse, error)
 }
 
 type resolverRoot struct {
@@ -225,7 +226,6 @@ func (r *MyQueryResolver) Statistics(ctx context.Context) (*types.Statistics, er
 	}
 	return res, nil
 }
-
 
 func (r *MyQueryResolver) CheckToken(ctx context.Context, partyID string, token string) (*CheckTokenResponse, error) {
 	req := &protoapi.CheckTokenRequest{
@@ -461,49 +461,63 @@ func (r *MyPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.Ma
 
 }
 
-func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, accType *AccountType) ([]types.Account, error) {
+func (r *MyPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, asset *string, accType *AccountType) ([]types.Account, error) {
 	if pty == nil {
-		return nil, errors.New("nil party")
+		return nil, errors.New("a party must be specified when querying accounts")
 	}
-	// the call we'll be making
-	call := r.tradingDataClient.TraderAccounts
-	var (
-		market string
-		at     types.AccountType
-	)
-	if marketID != nil {
-		market = *marketID
-		// if a market was given, assume we want the market accounts
-		call = r.tradingDataClient.TraderMarketAccounts
-	}
-	if accType != nil {
-		// if an account type was specified, we'll be getting the balance (hacky, but simplifies this temp API)
-		switch *accType {
-		case AccountTypeMargin:
-			at = types.AccountType_MARGIN
-		case AccountTypeGeneral:
-			at = types.AccountType_GENERAL
-		case AccountTypeInsurance:
-			at = types.AccountType_INSURANCE
-		case AccountTypeSettlement:
-			at = types.AccountType_SETTLEMENT
+	// Ensure default account types values
+	general := AccountTypeGeneral
+	margin := AccountTypeMargin
+	if accType == nil {
+		if marketID != nil {
+			accType = &margin
+		} else {
+			accType = &general
 		}
-		call = r.tradingDataClient.TraderMarketBalance
 	}
-	req := protoapi.CollateralRequest{
-		Party:    pty.ID,
-		MarketID: market,
-		Type:     at,
+	// Depending on Accounts params, select the correct gRPC call
+	switch *accType {
+	case AccountTypeMargin:
+		if marketID == nil {
+			return nil, errors.New("a market must be specified when querying for a margin account")
+		}
+		req := protoapi.AccountsByPartyAndMarketRequest{
+			PartyID:  pty.ID,
+			MarketID: *marketID,
+			Type:     types.AccountType_MARGIN,
+		}
+		resp, err := r.tradingDataClient.AccountsByPartyAndMarket(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
+		accounts := make([]types.Account, 0, len(resp.Accounts))
+		for _, acc := range resp.Accounts {
+			if asset == nil || acc.Asset == *asset {
+				accounts = append(accounts, *acc)
+			}
+		}
+		return accounts, nil
+	case AccountTypeGeneral:
+		req := protoapi.AccountsByPartyRequest{
+			PartyID: pty.ID,
+			Type:    types.AccountType_GENERAL,
+		}
+		resp, err := r.tradingDataClient.AccountsByParty(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
+		accounts := make([]types.Account, 0, len(resp.Accounts))
+		for _, acc := range resp.Accounts {
+			if asset == nil || acc.Asset == *asset {
+				accounts = append(accounts, *acc)
+			}
+		}
+		return accounts, nil
 	}
-	resp, err := call(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-	accounts := make([]types.Account, 0, len(resp.Accounts))
-	for _, acc := range resp.Accounts {
-		accounts = append(accounts, *acc)
-	}
-	return accounts, nil
+	//Note: there's currently no read store for the following account types
+	// AccountTypeInsurance
+	// AccountTypeSettlement
+	return nil, errors.New("account type specified is not supported")
 }
 
 // END: Party Resolver
@@ -565,15 +579,15 @@ type MyOrderResolver resolverRoot
 func (r *MyOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Price, 10), nil
 }
-func (r *MyOrderResolver) Type(ctx context.Context, obj *types.Order) (OrderType, error) {
-	return OrderType(obj.Type.String()), nil
+func (r *MyOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
+	return OrderTimeInForce(obj.TimeInForce.String()), nil
 }
 func (r *MyOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
 	return Side(obj.Side.String()), nil
 }
 func (r *MyOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market, error) {
 	if obj == nil {
-		return nil, errors.New("invalid market")
+		return nil, errors.New("invalid order")
 	}
 
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
@@ -638,7 +652,17 @@ func (r *MyOrderResolver) Party(ctx context.Context, ord *types.Order) (*Party, 
 type MyTradeResolver resolverRoot
 
 func (r *MyTradeResolver) Market(ctx context.Context, obj *types.Trade) (*Market, error) {
-	return &Market{ID: obj.MarketID}, nil
+	if obj == nil {
+		return nil, errors.New("invalid trade")
+	}
+
+	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return MarketFromProto(res.Market)
 }
 func (r *MyTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side, error) {
 	return Side(obj.Aggressor.String()), nil
@@ -759,7 +783,7 @@ func (r *MyPositionResolver) MinimumMargin(ctx context.Context, obj *types.Marke
 
 func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPosition) (*Market, error) {
 	if obj == nil {
-		return nil, errors.New("invalid market")
+		return nil, errors.New("invalid position")
 	}
 
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
@@ -792,7 +816,7 @@ func (r *MyPositionResolver) direction(val int64) ValueDirection {
 type MyMutationResolver resolverRoot
 
 func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, party string, price string,
-	size string, side Side, type_ OrderType, expiration *string) (*types.PendingOrder, error) {
+	size string, side Side, type_ OrderTimeInForce, expiration *string) (*types.PendingOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -820,7 +844,7 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	order.PartyID = party
-	order.Type, err = parseOrderType(&type_)
+	order.TimeInForce, err = parseOrderTimeInForce(&type_)
 	if err != nil {
 		return nil, err
 	}
@@ -830,7 +854,7 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	}
 
 	// GTT must have an expiration value
-	if order.Type == types.Order_GTT && expiration != nil {
+	if order.TimeInForce == types.Order_GTT && expiration != nil {
 		expiresAt, err := vegatime.Parse(*expiration)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
@@ -954,7 +978,7 @@ func (r *MyMutationResolver) Signin(ctx context.Context, id string, password str
 
 type MySubscriptionResolver resolverRoot
 
-func (r *MySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, typeArg *AccountType) (<-chan *proto.Account, error) {
+func (r *MySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error) {
 	var (
 		mkt, pty string
 		ty       types.AccountType
@@ -1173,7 +1197,8 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 		MarketID: market,
 		Interval: pinterval,
 	}
-	stream, err := r.tradingDataClient.CandlesSubscribe(ctx, req)
+	// Use a new timeout-free context here, otherwise all subscriptions will time out.
+	stream, err := r.tradingDataClient.CandlesSubscribe(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
@@ -1212,9 +1237,9 @@ func (r *MyPendingOrderResolver) Price(ctx context.Context, obj *proto.PendingOr
 	return nil, ErrNilPendingOrder
 }
 
-func (r *MyPendingOrderResolver) Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error) {
+func (r *MyPendingOrderResolver) TimeInForce(ctx context.Context, obj *proto.PendingOrder) (*OrderTimeInForce, error) {
 	if obj != nil {
-		ot := OrderType(obj.Type.String())
+		ot := OrderTimeInForce(obj.TimeInForce.String())
 		return &ot, nil
 	}
 	return nil, ErrNilPendingOrder
@@ -1230,7 +1255,7 @@ func (r *MyPendingOrderResolver) Side(ctx context.Context, obj *proto.PendingOrd
 
 func (r *MyPendingOrderResolver) Market(ctx context.Context, pord *proto.PendingOrder) (*Market, error) {
 	if pord == nil {
-		return nil, nil
+		return nil, errors.New("invalid pending order")
 	}
 
 	req := protoapi.MarketByIDRequest{MarketID: pord.MarketID}
@@ -1268,12 +1293,30 @@ func (r *MyPendingOrderResolver) Status(ctx context.Context, obj *proto.PendingO
 
 // START: Account Resolver
 
-// MyAccountResolver - seems to be required by gqlgen, but we're not using this ATM
 type MyAccountResolver resolverRoot
 
 func (r *MyAccountResolver) Balance(ctx context.Context, acc *proto.Account) (string, error) {
 	bal := fmt.Sprintf("%d", acc.Balance)
 	return bal, nil
+}
+
+func (r *MyAccountResolver) Market(ctx context.Context, acc *proto.Account) (*Market, error) {
+	if acc == nil {
+		return nil, errors.New("invalid account")
+	}
+
+	// Only margin accounts have a market relation
+	if acc.Type == types.AccountType_MARGIN {
+		req := protoapi.MarketByIDRequest{MarketID: acc.MarketID}
+		res, err := r.tradingDataClient.MarketByID(ctx, &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, err
+		}
+		return MarketFromProto(res.Market)
+	}
+
+	return nil, nil
 }
 
 func (r *MyAccountResolver) Type(ctx context.Context, obj *proto.Account) (AccountType, error) {
