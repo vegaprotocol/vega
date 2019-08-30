@@ -172,10 +172,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	return
 }
 
-func (l *NodeCommand) SetUlimits() (err error) {
-	var nofile syscall.Rlimit
-	nofile.Max = l.conf.UlimitNOFile
-	nofile.Cur = l.conf.UlimitNOFile
-	err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &nofile)
-	return
+// SetUlimits sets limits (within OS-specified limits):
+// * nofile - max number of open files - for badger LSM tree
+func (l *NodeCommand) SetUlimits() error {
+	return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &syscall.Rlimit{
+		Max: l.conf.UlimitNOFile,
+		Cur: l.conf.UlimitNOFile,
+	})
 }
