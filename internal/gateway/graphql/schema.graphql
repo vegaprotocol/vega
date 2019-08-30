@@ -733,17 +733,15 @@ enum OrderStatus {
 }
 
 enum OrderType {
-  ## TRADER - the standard order (trader placed an order)
-  TRADER
+  ## MARKET - the default order type
+  MARKET
 
   ## LIMIT - mentioned in ticket, but as yet unused order type
   LIMIT
 
   ## NETWORK - used for distressed traders, an order placed by the network to close out distressed traders
+  ## similar to MARKET order, only no party is attached to the order as such
   NETWORK
-
-  ## MARKET - type mentioned in #407, as yet unused
-  MARKET
 }
 
 # Whether the placer of an order is aiming to buy or sell on the market

@@ -55,16 +55,14 @@ func parseOrderTimeInForce(timeInForce OrderTimeInForce) (types.Order_TimeInForc
 
 func parseOrderType(ot *OrderType) (types.Order_Type, error) {
 	switch *ot {
-	case OrderTypeTrader:
-		return types.Order_TRADER, nil
+	case OrderTypeMarket:
+		return types.Order_MARKET, nil
 	case OrderTypeLimit:
 		return types.Order_LIMIT, nil
 	case OrderTypeNetwork:
 		return types.Order_NETWORK, nil
-	case OrderTypeMarket:
-		return types.Order_MARKET, nil
 	}
-	return types.Order_TRADER, errors.Errorf("unknown type: %s", ot)
+	return types.Order_MARKET, errors.Errorf("unknown type: %s", ot)
 }
 
 func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {

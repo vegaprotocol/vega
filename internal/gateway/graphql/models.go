@@ -301,22 +301,20 @@ func (e OrderTimeInForce) MarshalGQL(w io.Writer) {
 type OrderType string
 
 const (
-	OrderTypeTrader  OrderType = "TRADER"
+	OrderTypeMarket  OrderType = "MARKET"
 	OrderTypeLimit   OrderType = "LIMIT"
 	OrderTypeNetwork OrderType = "NETWORK"
-	OrderTypeMarket  OrderType = "MARKET"
 )
 
 var AllOrderType = []OrderType{
-	OrderTypeTrader,
+	OrderTypeMarket,
 	OrderTypeLimit,
 	OrderTypeNetwork,
-	OrderTypeMarket,
 }
 
 func (e OrderType) IsValid() bool {
 	switch e {
-	case OrderTypeTrader, OrderTypeLimit, OrderTypeNetwork, OrderTypeMarket:
+	case OrderTypeMarket, OrderTypeLimit, OrderTypeNetwork:
 		return true
 	}
 	return false

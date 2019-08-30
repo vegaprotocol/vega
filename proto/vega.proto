@@ -44,10 +44,9 @@ message Order {
   }
 
   enum Type {
-    TRADER  = 0; // Regular, trader order
+    MARKET  = 0; // Market order type
     LIMIT   = 1; // Limit order
     NETWORK = 2; // order where the initiating party is the network (used for distressed traders)
-    MARKET  = 3; // Market order type
   }
 
   enum Status {

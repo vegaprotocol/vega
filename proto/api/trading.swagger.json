@@ -1558,12 +1558,11 @@
     "vegaOrderType": {
       "type": "string",
       "enum": [
-        "TRADER",
+        "MARKET",
         "LIMIT",
-        "NETWORK",
-        "MARKET"
+        "NETWORK"
       ],
-      "default": "TRADER"
+      "default": "MARKET"
     },
     "vegaParty": {
       "type": "object",
