@@ -298,6 +298,51 @@ func (e OrderTimeInForce) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type OrderType string
+
+const (
+	OrderTypeTrader  OrderType = "TRADER"
+	OrderTypeLimit   OrderType = "LIMIT"
+	OrderTypeNetwork OrderType = "NETWORK"
+	OrderTypeMarket  OrderType = "MARKET"
+)
+
+var AllOrderType = []OrderType{
+	OrderTypeTrader,
+	OrderTypeLimit,
+	OrderTypeNetwork,
+	OrderTypeMarket,
+}
+
+func (e OrderType) IsValid() bool {
+	switch e {
+	case OrderTypeTrader, OrderTypeLimit, OrderTypeNetwork, OrderTypeMarket:
+		return true
+	}
+	return false
+}
+
+func (e OrderType) String() string {
+	return string(e)
+}
+
+func (e *OrderType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderType", str)
+	}
+	return nil
+}
+
+func (e OrderType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type Side string
 
 const (
