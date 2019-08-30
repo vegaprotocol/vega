@@ -18,6 +18,7 @@
 # - "$SLACK_HOOK_URL" for sending Slack notifications
 
 pushd "$(realpath "$(dirname "$0")")" 1>/dev/null || exit 1
+# shellcheck disable=SC1091
 source bash_functions.sh
 popd 1>/dev/null || exit 1
 

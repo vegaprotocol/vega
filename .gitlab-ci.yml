@@ -98,8 +98,7 @@ autogen_checks:
     - make rest_check || code=1
     - make proto_check || code=1
     - make gqlgen_check || code=1
-    - b2="$CI_COMMIT_REF_NAME" ; if test "$b2" == master ; then b1="" ; elif test "$b2" == develop ; then b1=master ; else b1="develop" ; fi
-    - 'if test -n "$b1" ; then bash script/diff_file.sh https://gitlab.com/api/v4 "$GITLAB_API_TOKEN" 5726034 "$b1" "$b2" internal/gateway/graphql/schema.graphql || code=1 ; fi'
+    - bash script/diff_graphqlschema.sh || code=1
     - exit "$code"
 
 vet:
@@ -118,7 +117,13 @@ push_to_devnet:
         "${BIN_DIR}/vegaccount:/home/vega/current/:0755"
         "${BIN_DIR}/vegastream:/home/vega/current/:0755"
     # Nasty auth hack. Single quotes to avoid yaml k:v pair.
-    - 'for u in $VEGANET_USERS ; do echo -e "\n== $u ==" ; ${BIN_DIR}/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$u" ; curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $VEGA_AUTH_MASTERTOKEN" -d "{\"id\": \"$u\", \"password\": \"123\"}" https://auth.d.vega.xyz ; echo ; done'
+    - 'for u in $VEGANET_USERS ; do
+            echo -e "\n== $u ==" ;
+            ${BIN_DIR}/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$u" ;
+            curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $VEGA_AUTH_MASTERTOKEN"
+                -d "{\"id\": \"$u\", \"password\": \"123\"}" https://auth.d.vega.xyz ;
+            echo ;
+        done'
   only:
     - /^develop$/  # VERY IMPORTANT: Only the develop branch should be deployed to devnet.
 
