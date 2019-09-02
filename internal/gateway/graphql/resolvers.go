@@ -582,6 +582,12 @@ func (r *MyOrderResolver) Price(ctx context.Context, obj *types.Order) (string, 
 func (r *MyOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
 	return OrderTimeInForce(obj.TimeInForce.String()), nil
 }
+
+func (r *MyOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderType, error) {
+	t := OrderType(obj.Type.String())
+	return &t, nil
+}
+
 func (r *MyOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
 	return Side(obj.Side.String()), nil
 }
@@ -816,7 +822,7 @@ func (r *MyPositionResolver) direction(val int64) ValueDirection {
 type MyMutationResolver resolverRoot
 
 func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, party string, price string,
-	size string, side Side, type_ OrderTimeInForce, expiration *string) (*types.PendingOrder, error) {
+	size string, side Side, timeInForce OrderTimeInForce, expiration *string) (*types.PendingOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -844,12 +850,10 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	order.PartyID = party
-	order.TimeInForce, err = parseOrderTimeInForce(&type_)
-	if err != nil {
+	if order.TimeInForce, err = parseOrderTimeInForce(timeInForce); err != nil {
 		return nil, err
 	}
-	order.Side, err = parseSide(&side)
-	if err != nil {
+	if order.Side, err = parseSide(&side); err != nil {
 		return nil, err
 	}
 

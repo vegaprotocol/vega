@@ -167,6 +167,7 @@ type ComplexityRoot struct {
 		TimeInForce func(childComplexity int) int
 		Timestamp   func(childComplexity int) int
 		Trades      func(childComplexity int) int
+		Type        func(childComplexity int) int
 	}
 
 	Party struct {
@@ -327,6 +328,7 @@ type OrderResolver interface {
 	Status(ctx context.Context, obj *proto.Order) (OrderStatus, error)
 
 	Trades(ctx context.Context, obj *proto.Order) ([]*proto.Trade, error)
+	Type(ctx context.Context, obj *proto.Order) (*OrderType, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, open *bool, skip *int, first *int, last *int) ([]proto.Order, error)
@@ -944,6 +946,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.Trades(childComplexity), true
+
+	case "Order.Type":
+		if e.complexity.Order.Type == nil {
+			break
+		}
+
+		return e.complexity.Order.Type(childComplexity), true
 
 	case "Party.Accounts":
 		if e.complexity.Party.Accounts == nil {
@@ -2327,6 +2336,9 @@ type Order {
 
   # Trades relating to this order
   trades: [Trade]
+
+  # Type the order type (defaults to TRADER)
+  type: OrderType
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
@@ -2410,6 +2422,18 @@ enum OrderStatus {
 
     # This order is fully filled with remaining equals zero.
     Filled
+}
+
+enum OrderType {
+  ## MARKET - the default order type
+  MARKET
+
+  ## LIMIT - mentioned in ticket, but as yet unused order type
+  LIMIT
+
+  ## NETWORK - used for distressed traders, an order placed by the network to close out distressed traders
+  ## similar to MARKET order, only no party is attached to the order as such
+  NETWORK
 }
 
 # Whether the placer of an order is aiming to buy or sell on the market
@@ -4967,6 +4991,30 @@ func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.Col
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().Type(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OrderType)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *Party) graphql.Marshaler {
@@ -9035,6 +9083,17 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				res = ec._Order_trades(ctx, field, obj)
 				return res
 			})
+		case "type":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_type(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11171,6 +11230,30 @@ func (ec *executionContext) unmarshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗ
 }
 
 func (ec *executionContext) marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v *OrderTimeInForce) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
+	var res OrderType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v OrderType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (*OrderType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v *OrderType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

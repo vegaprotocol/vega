@@ -644,6 +644,9 @@ type Order {
 
   # Trades relating to this order
   trades: [Trade]
+
+  # Type the order type (defaults to TRADER)
+  type: OrderType
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
@@ -727,6 +730,18 @@ enum OrderStatus {
 
     # This order is fully filled with remaining equals zero.
     Filled
+}
+
+enum OrderType {
+  ## MARKET - the default order type
+  MARKET
+
+  ## LIMIT - mentioned in ticket, but as yet unused order type
+  LIMIT
+
+  ## NETWORK - used for distressed traders, an order placed by the network to close out distressed traders
+  ## similar to MARKET order, only no party is attached to the order as such
+  NETWORK
 }
 
 # Whether the placer of an order is aiming to buy or sell on the market

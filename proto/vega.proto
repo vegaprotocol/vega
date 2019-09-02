@@ -43,9 +43,10 @@ message Order {
     FOK = 3;
   }
 
-  enum Action {
-    NDT = 0; // Network Distressed Traders
-    NRT = 1; // Network Regular Traders
+  enum Type {
+    MARKET  = 0; // Market order type
+    LIMIT   = 1; // Limit order
+    NETWORK = 2; // order where the initiating party is the network (used for distressed traders)
   }
 
   enum Status {
@@ -64,7 +65,7 @@ message Order {
   uint64 size = 6;
   uint64 remaining = 7;
   TimeInForce timeInForce  = 8;
-  Action action = 9;
+  Type type = 9;
   int64 createdAt = 10;
   Status status = 11;
   int64 expiresAt = 12;
