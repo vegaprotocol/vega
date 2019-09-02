@@ -460,19 +460,19 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	// of the network order we'll be using
 	no := &types.Order{
 		MarketID:    m.GetID(),
-		PartyID:     "",              // network is not a party as such
-		Side:        types.Side_Sell, // assume sell, price is zero in that case anyway
 		Remaining:   uint64(math.Abs(float64(networkPos))),
-		CreatedAt:   m.currentTime.UnixNano(), // @TODO this should be the block time!!!
 		Status:      types.Order_Active,
-		Reference:   "network trade", // @TODO find a decent reference?
-		Action:      types.Order_NRT, // specify action -> network is trading with regular traders
-		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
+		PartyID:     "",                       // network is not a party as such
+		Side:        types.Side_Sell,          // assume sell, price is zero in that case anyway
+		CreatedAt:   m.currentTime.UnixNano(), // @TODO this should be the block time!!!
+		Reference:   "network trade",          // @TODO find a decent reference?
+		TimeInForce: types.Order_FOK,          // this is an all-or-nothing order, so TIF == FOK
+		Type:        types.Order_NETWORK,
 	}
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
 		no.Side = types.Side_Buy
-		no.Price = math.MaxUint64
+		no.Price = math.MaxUint64 // probably don't need this anymore
 	}
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(&order)
