@@ -753,14 +753,6 @@
     }
   },
   "definitions": {
-    "OrderAction": {
-      "type": "string",
-      "enum": [
-        "NDT",
-        "NRT"
-      ],
-      "default": "NDT"
-    },
     "OrderStatus": {
       "type": "string",
       "enum": [
@@ -1475,8 +1467,8 @@
         "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
-        "action": {
-          "$ref": "#/definitions/OrderAction"
+        "type": {
+          "$ref": "#/definitions/vegaOrderType"
         },
         "createdAt": {
           "type": "string",
@@ -1562,6 +1554,15 @@
           "format": "int64"
         }
       }
+    },
+    "vegaOrderType": {
+      "type": "string",
+      "enum": [
+        "MARKET",
+        "LIMIT",
+        "NETWORK"
+      ],
+      "default": "MARKET"
     },
     "vegaParty": {
       "type": "object",
