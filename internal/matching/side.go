@@ -136,17 +136,28 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
 
 	var (
-		trades            []*types.Trade
-		impactedOrders    []*types.Order
-		lastTradedPrice   uint64
-		totalVolumeToFill uint64
+		trades                  []*types.Trade
+		impactedOrders          []*types.Order
+		lastTradedPrice         uint64
+		totalVolumeToFill       uint64
+		totalPrice, totalVolume uint64
 	)
 
 	if agg.TimeInForce == types.Order_FOK {
+		totalVolume = agg.Remaining
 
 		if agg.Side == types.Side_Sell {
 			for _, level := range s.levels {
-				if level.price >= agg.Price {
+				// in case of network trades, we want to calculate an accruate average price to return
+				if agg.Type == types.Order_NETWORK {
+					totalVolumeToFill += level.volume
+					factor := totalVolume
+					if level.volume < totalVolume {
+						factor = level.volume
+						totalVolume -= level.volume
+					}
+					totalPrice += level.price * factor
+				} else if level.price >= agg.Price {
 					totalVolumeToFill += level.volume
 				}
 			}
@@ -154,10 +165,24 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 
 		if agg.Side == types.Side_Buy {
 			for _, level := range s.levels {
-				if level.price <= agg.Price {
+				// in case of network trades, we want to calculate an accruate average price to return
+				if agg.Type == types.Order_NETWORK {
+					totalVolumeToFill += level.volume
+					factor := totalVolume
+					if level.volume < totalVolume {
+						factor = level.volume
+						totalVolume -= level.volume
+					}
+					totalPrice += level.price * factor
+				} else if level.price <= agg.Price {
 					totalVolumeToFill += level.volume
 				}
 			}
+		}
+
+		if agg.Type == types.Order_NETWORK {
+			// set avg price for order
+			agg.Price = totalPrice / agg.Remaining
 		}
 
 		s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))

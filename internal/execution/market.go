@@ -463,9 +463,10 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	}
 	if networkPos == 0 {
 		// remove accounts, positions and return
-		_ = e.positions.RemoveDistressed(closed)
+		_ = m.position.RemoveDistressed(closed)
 		// @TODO handle response value, contains all ledger movements
-		if _, err := e.collateral.RemoveDistressed(closed, m.GetID(), m.mkt.GetAsset()); err != nil {
+		asset, _ := m.mkt.GetAsset()
+		if _, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset); err != nil {
 			m.log.Error(
 				"Failed to remove distressed accounts cleanly",
 				logging.Error(err),
@@ -477,7 +478,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	// network order
 	// @TODO this order is more of a placeholder than an actual final version
 	// of the network order we'll be using
-	no := &types.Order{
+	no := types.Order{
 		MarketID:    m.GetID(),
 		Remaining:   uint64(math.Abs(float64(networkPos))),
 		Status:      types.Order_Active,
@@ -488,32 +489,35 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		TimeInForce: types.Order_FOK,          // this is an all-or-nothing order, so TIF == FOK
 		Type:        types.Order_NETWORK,
 	}
+	no.Size = no.Remaining
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
 		no.Side = types.Side_Buy
 		no.Price = math.MaxUint64 // probably don't need this anymore
 	}
 	// Send the aggressive order into matching engine
-	confirmation, err := m.matching.SubmitOrder(&order)
+	confirmation, err := m.matching.SubmitOrder(&no)
 	if err != nil {
 		m.log.Error("Failure after submitting order to matching engine",
-			logging.Order(order),
+			logging.Order(no),
 			logging.Error(err))
 
 		return err
 	}
+	// @NOTE: At this point, the network order was updated by the orderbook
+	// the price field now contains the average trade price at which the order was fulfilled
 	// store network order, too??
-	if err := m.orders.Post(order); err != nil {
+	if err := m.orders.Post(no); err != nil {
 		m.log.Error("Failure storing new order in submit order", logging.Error(err))
 	}
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			err := m.orders.Put(order)
+			err := m.orders.Put(*order)
 			if err != nil {
 				m.log.Fatal("Failure storing order update in submit order",
-					logging.Order(order),
+					logging.Order(*order),
 					logging.Error(err))
 			}
 		}
@@ -529,12 +533,12 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		m.settlement.ListenClosed(tradersCh)
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
-			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
-			if order.Side == types.Side_Buy {
-				trade.BuyOrder = order.Id
+			trade.Id = fmt.Sprintf("%s-%010d", no.Id, idx)
+			if no.Side == types.Side_Buy {
+				trade.BuyOrder = no.Id
 				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
 			} else {
-				trade.SellOrder = order.Id
+				trade.SellOrder = no.Id
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
@@ -560,13 +564,15 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	}
 
 	// @NOTE MTM settlements don't have to happen here just yet, first we have to close the accounts of bankrupt traders
+	// but we do have to settle, settle against average trade price??? @TODO Check specs
 	// same goes for collateral and risk
 	// what needs to go here is the second half of settlements:
 
 	// remove accounts, positions, and return
-	_ = e.positions.RemoveDistressed(closed)
+	_ = m.position.RemoveDistressed(closed)
 	// @TODO handle response value, contains all ledger movements
-	if _, err := e.collateral.RemoveDistressed(closed, m.GetID(), m.mkt.GetAsset()); err != nil {
+	asset, _ := m.mkt.GetAsset()
+	if _, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset); err != nil {
 		m.log.Error(
 			"Failed to remove distressed accounts cleanly",
 			logging.Error(err),
