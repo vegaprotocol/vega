@@ -2394,7 +2394,7 @@ enum OrderTimeInForce {
     FOK
 
     # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-    ENE
+    IOC
 
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
     GTC
@@ -2417,7 +2417,7 @@ enum OrderStatus {
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
     Expired
 
-    # This order was of type ENE or FOK and could not be processed by the matching engine due to lack of liquidity.
+    # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
     Stopped
 
     # This order is fully filled with remaining equals zero.
