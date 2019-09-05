@@ -39,7 +39,7 @@ message Order {
   enum TimeInForce {
     GTC = 0;
     GTT = 1;
-    ENE = 2;
+    IOC = 2;
     FOK = 3;
   }
 

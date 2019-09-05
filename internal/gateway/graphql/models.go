@@ -257,21 +257,21 @@ type OrderTimeInForce string
 
 const (
 	OrderTimeInForceFok OrderTimeInForce = "FOK"
-	OrderTimeInForceEne OrderTimeInForce = "ENE"
+	OrderTimeInForceIoc OrderTimeInForce = "IOC"
 	OrderTimeInForceGtc OrderTimeInForce = "GTC"
 	OrderTimeInForceGtt OrderTimeInForce = "GTT"
 )
 
 var AllOrderTimeInForce = []OrderTimeInForce{
 	OrderTimeInForceFok,
-	OrderTimeInForceEne,
+	OrderTimeInForceIoc,
 	OrderTimeInForceGtc,
 	OrderTimeInForceGtt,
 }
 
 func (e OrderTimeInForce) IsValid() bool {
 	switch e {
-	case OrderTimeInForceFok, OrderTimeInForceEne, OrderTimeInForceGtc, OrderTimeInForceGtt:
+	case OrderTimeInForceFok, OrderTimeInForceIoc, OrderTimeInForceGtc, OrderTimeInForceGtt:
 		return true
 	}
 	return false
