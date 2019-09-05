@@ -1074,7 +1074,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       103,
 				Size:        200,
 				Remaining:   200,
-				TimeInForce: types.Order_ENE, // nonpersistent
+				TimeInForce: types.Order_IOC, // nonpersistent
 				CreatedAt:   5,
 			},
 			expectedTrades: []types.Trade{
@@ -1154,7 +1154,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       95,
 				Size:        200,
 				Remaining:   200,
-				TimeInForce: types.Order_ENE, // nonpersistent
+				TimeInForce: types.Order_IOC, // nonpersistent
 				CreatedAt:   5,
 			},
 			expectedTrades: []types.Trade{
