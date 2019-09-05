@@ -563,15 +563,11 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		close(tradersCh)
 	}
 
-	// @NOTE MTM settlements don't have to happen here just yet, first we have to close the accounts of bankrupt traders
-	// but we do have to settle, settle against average trade price??? @TODO Check specs
-	// same goes for collateral and risk
-	// what needs to go here is the second half of settlements:
-
-	// remove accounts, positions, and return
+	// remove accounts, positions, any funds left on the distressed accounts will be moved to the
+	// insurance pool, which needs to happen before we settle the non-distressed traders
 	_ = m.position.RemoveDistressed(closed)
-	// @TODO handle response value, contains all ledger movements
 	asset, _ := m.mkt.GetAsset()
+	// @TODO handle response value, contains all ledger movements
 	if _, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset); err != nil {
 		m.log.Error(
 			"Failed to remove distressed accounts cleanly",
@@ -579,7 +575,20 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		)
 		return err
 	}
-	return nil
+	// get the updated positions
+	pos := m.position.Positions()
+	evt := make([]events.MarketPosition, 0, len(pos))
+	for _, p := range pos {
+		evt = append(evt, p)
+	}
+	// settle MTM, the positions have changed
+	settle := m.settlement.SettleOrder(m.markPrice, evt)
+	// we're not interested in the events here, they're used for margin updates
+	// we know the margin requirements will be met, and come the next block
+	// margins will automatically be checked anyway
+	_, errCh := m.collateral.TransferCh(m.GetID(), settle)
+	// return an error if an error was pushed onto the channel
+	return <-errCh
 }
 
 func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
