@@ -233,7 +233,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// update order statuses based on the order types if they didn't trade
-	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_ENE) && order.Remaining == order.Size {
+	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC) && order.Remaining == order.Size {
 		order.Status = types.Order_Stopped
 	}
 

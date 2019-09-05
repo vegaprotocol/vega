@@ -769,7 +769,7 @@
       "enum": [
         "GTC",
         "GTT",
-        "ENE",
+        "IOC",
         "FOK"
       ],
       "default": "GTC"

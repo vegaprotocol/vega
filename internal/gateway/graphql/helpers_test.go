@@ -63,7 +63,7 @@ func TestParseOrderTimeInForce(t *testing.T) {
 	ene := OrderTimeInForceEne
 	orderType, err = parseOrderTimeInForce(ene)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_ENE, orderType)
+	assert.Equal(t, types.Order_IOC, orderType)
 	gtt := OrderTimeInForceGtt
 	orderType, err = parseOrderTimeInForce(gtt)
 	assert.Nil(t, err)
