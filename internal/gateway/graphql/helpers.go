@@ -44,7 +44,7 @@ func parseOrderTimeInForce(timeInForce OrderTimeInForce) (types.Order_TimeInForc
 		return types.Order_GTC, nil
 	case OrderTimeInForceGtt:
 		return types.Order_GTT, nil
-	case OrderTimeInForceEne:
+	case OrderTimeInForceIoc:
 		return types.Order_IOC, nil
 	case OrderTimeInForceFok:
 		return types.Order_FOK, nil
