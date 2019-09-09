@@ -198,13 +198,6 @@ func (r *Engine) UpdateMarginsOnSettlement(
 	return ret
 }
 
-func abs(x int64) int64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
 func (m marginChange) Amount() int64 {
 	return m.amount
 }

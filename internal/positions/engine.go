@@ -49,18 +49,6 @@ func (m MarketPosition) Price() uint64 {
 	return m.price
 }
 
-// UpdatedPosition returns the updated position using the potential
-// sells and buys
-func (m *MarketPosition) UpdatedPosition(price uint64) *MarketPosition {
-	return &MarketPosition{
-		buy:     0,
-		sell:    0,
-		size:    m.size - m.sell + m.buy,
-		partyID: m.partyID,
-		price:   price,
-	}
-}
-
 type Engine struct {
 	log *logging.Logger
 	Config

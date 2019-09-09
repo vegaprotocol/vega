@@ -135,7 +135,7 @@ func NewMarket(
 		log:                log,
 		mkt:                mkt,
 		closingAt:          closingAt,
-		currentTime:        time.Time{},
+		currentTime:        now,
 		matching:           book,
 		tradableInstrument: tradableInstrument,
 		risk:               riskEngine,
@@ -149,7 +149,10 @@ func NewMarket(
 		trades:             trades,
 		candlesBuf:         candlesBuf,
 	}
-	SetMarketID(mkt, seq)
+	err = SetMarketID(mkt, seq)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to set market identifier")
+	}
 
 	return market, nil
 }
@@ -321,6 +324,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		return nil, ErrMarginCheckFailed
 	}
 
+	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
 		m.log.Error("Failure after submitting order to matching engine",
@@ -338,7 +342,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.PassiveOrdersAffected != nil {
-		// Insert all passive orders siting on the book
+		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			err := m.orders.Put(*order)
 			if err != nil {
@@ -350,17 +354,14 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "orderstore", "Post/Put")
 
-	m.position.RegisterOrder(order)
-
 	if confirmation.Trades != nil {
-		// orders can contain several trades, each trade involves 2 traders
+		// Orders can contain several trades, each trade involves 2 traders
 		// so there's a max number of N*2 events on the channel where N == number of trades
 		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
-		// now let's set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
+		// Now let's set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
 		m.settlement.ListenClosed(tradersCh)
-		// insert all trades resulted from the executed order
+		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
-			// fmt.Printf("------------------------------- TRADE: %v\n", trade)
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
 			if order.Side == types.Side_Buy {
 				trade.BuyOrder = order.Id
@@ -406,7 +407,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		}
 		settle := m.settlement.SettleOrder(m.markPrice, events)
 		metrics.EngineTimeCounterAdd(start, m.mkt.Id, "positions", "Positions+SettleOrder")
-		// this belongs outside of trade loop, only call once per order
+		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
 		if len(margins) > 0 {
 			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
@@ -581,7 +582,6 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 			logging.Order(*order),
 			logging.Error(err))
 	}
-
 	_, err = m.position.UnregisterOrder(order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",
@@ -627,18 +627,18 @@ func (m *Market) AmendOrder(
 	m.mu.Unlock()
 
 	newOrder := &types.Order{
-		Id:        existingOrder.Id,
-		MarketID:  existingOrder.MarketID,
-		PartyID:   existingOrder.PartyID,
-		Side:      existingOrder.Side,
-		Price:     existingOrder.Price,
-		Size:      existingOrder.Size,
-		Remaining: existingOrder.Remaining,
-		Type:      existingOrder.Type,
-		CreatedAt: currentTime.UnixNano(),
-		Status:    existingOrder.Status,
-		ExpiresAt: existingOrder.ExpiresAt,
-		Reference: existingOrder.Reference,
+		Id:          existingOrder.Id,
+		MarketID:    existingOrder.MarketID,
+		PartyID:     existingOrder.PartyID,
+		Side:        existingOrder.Side,
+		Price:       existingOrder.Price,
+		Size:        existingOrder.Size,
+		Remaining:   existingOrder.Remaining,
+		TimeInForce: existingOrder.TimeInForce,
+		CreatedAt:   currentTime.UnixNano(),
+		Status:      existingOrder.Status,
+		ExpiresAt:   existingOrder.ExpiresAt,
+		Reference:   existingOrder.Reference,
 	}
 	var (
 		priceShift, sizeIncrease, sizeDecrease, expiryChange = false, false, false, false
@@ -673,9 +673,6 @@ func (m *Market) AmendOrder(
 			logging.Error(err))
 	}
 
-	// Register amended order to add order volume to potential position.
-	m.position.RegisterOrder(newOrder)
-
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
@@ -709,7 +706,12 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (*type
 }
 
 func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
-	err := m.matching.AmendOrder(newOrder)
+	_, err := m.position.RegisterOrder(newOrder)
+	if err != nil {
+		return &types.OrderConfirmation{}, err
+	}
+
+	err = m.matching.AmendOrder(newOrder)
 	if err != nil {
 		m.log.Error("Failure after amend order from matching engine (amend-in-place)",
 			logging.OrderWithTag(*newOrder, "new-order"),
@@ -718,10 +720,10 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 	}
 	err = m.orders.Put(*newOrder)
 	if err != nil {
-		m.log.Error("Failure storing order update in execution engine (amend-in-place)",
+		m.log.Error("Failure storing order update in orders store (amend-in-place)",
 			logging.Order(*newOrder),
 			logging.Error(err))
-		// todo: txn or othe   r strategy (https://gitlab.com/vega-prxotocol/trading-core/issues/160)
+		// todo: txn or other strategy (https://gitlab.com/vega-prxotocol/trading-core/issues/160)
 	}
 	return &types.OrderConfirmation{}, nil
 }
