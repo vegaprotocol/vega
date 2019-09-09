@@ -91,14 +91,14 @@ func (s *Svc) CreateOrder(
 		return nil, errors.Wrap(err, "order validation failed")
 	}
 	order := types.Order{
-		Id:        orderSubmission.Id,
-		MarketID:  orderSubmission.MarketID,
-		PartyID:   orderSubmission.PartyID,
-		Price:     orderSubmission.Price,
-		Size:      orderSubmission.Size,
-		Side:      orderSubmission.Side,
-		Type:      orderSubmission.Type,
-		ExpiresAt: orderSubmission.ExpiresAt,
+		Id:          orderSubmission.Id,
+		MarketID:    orderSubmission.MarketID,
+		PartyID:     orderSubmission.PartyID,
+		Price:       orderSubmission.Price,
+		Size:        orderSubmission.Size,
+		Side:        orderSubmission.Side,
+		TimeInForce: orderSubmission.TimeInForce,
+		ExpiresAt:   orderSubmission.ExpiresAt,
 	}
 
 	// Set defaults, prevent unwanted external manipulation
@@ -107,7 +107,7 @@ func (s *Svc) CreateOrder(
 	order.CreatedAt = 0
 	order.Reference = ""
 
-	if order.Type == types.Order_GTT {
+	if order.TimeInForce == types.Order_GTT {
 		_, err := s.validateOrderExpirationTS(order.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
@@ -144,15 +144,15 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 	}
 
 	return &types.PendingOrder{
-		Reference: o.Reference,
-		Price:     o.Price,
-		Type:      o.Type,
-		Side:      o.Side,
-		MarketID:  o.MarketID,
-		Size:      o.Size,
-		PartyID:   o.PartyID,
-		Status:    types.Order_Cancelled,
-		Id:        o.Id,
+		Reference:   o.Reference,
+		Price:       o.Price,
+		TimeInForce: o.TimeInForce,
+		Side:        o.Side,
+		MarketID:    o.MarketID,
+		Size:        o.Size,
+		PartyID:     o.PartyID,
+		Status:      types.Order_Cancelled,
+		Id:          o.Id,
 	}, nil
 }
 
@@ -175,7 +175,7 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 	}
 
 	// if order is GTT convert datetime to blockchain ts
-	if o.Type == types.Order_GTT {
+	if o.TimeInForce == types.Order_GTT {
 		_, err := s.validateOrderExpirationTS(amendment.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
@@ -189,15 +189,15 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 	}
 
 	return &types.PendingOrder{
-		Reference: o.Reference,
-		Price:     amendment.Price,
-		Type:      o.Type,
-		Side:      o.Side,
-		MarketID:  o.MarketID,
-		Size:      amendment.Size,
-		PartyID:   o.PartyID,
-		Status:    types.Order_Cancelled,
-		Id:        o.Id,
+		Reference:   o.Reference,
+		Price:       amendment.Price,
+		TimeInForce: o.TimeInForce,
+		Side:        o.Side,
+		MarketID:    o.MarketID,
+		Size:        amendment.Size,
+		PartyID:     o.PartyID,
+		Status:      types.Order_Cancelled,
+		Id:          o.Id,
 	}, nil
 }
 

@@ -6,6 +6,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/execution"
@@ -17,14 +19,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
 	"github.com/zannen/toml"
-)
-
-const (
-	marketETHUSDDEC19 = "ETHUSDDEC19.json"
-	marketGBPUSDJUN19 = "GBPUSDDEC19.json"
-	marketGBPEURDEC19 = "GBPEURDEC19.json"
-	//closingAt         = "2019-07-16T10:17:00Z"
-	closingAt = "2019-12-31T00:00:00Z"
 )
 
 type initCommand struct {
@@ -102,7 +96,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	}
 
 	// generate default market config
-	err = createDefaultMarkets(fullDefaultMarketConfigPath)
+	filenames, err := createDefaultMarkets(fullDefaultMarketConfigPath)
 	if err != nil {
 		return err
 	}
@@ -111,8 +105,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	cfg := config.NewDefaultConfig(rootPath)
 
 	// setup the defaults markets
-	cfg.Execution.Markets.Configs = []string{
-		marketETHUSDDEC19, marketGBPUSDJUN19, marketGBPEURDEC19}
+	cfg.Execution.Markets.Configs = filenames
 
 	// write configuration to toml
 	buf := new(bytes.Buffer)
@@ -135,114 +128,95 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	return nil
 }
 
-func createDefaultMarkets(confpath string) error {
-	var seq uint64
-	riskModel := &proto.TradableInstrument_Forward{
-		Forward: &proto.Forward{
-			Lambd: 0.01,
-			Tau:   1.0 / 365.25 / 24,
-			Params: &proto.ModelParamsBS{
-				Mu:    0,
-				R:     0.016,
-				Sigma: 0.09,
-			},
+func createDefaultMarkets(confpath string) ([]string, error) {
+	type marketSkeleton struct {
+		decimalPlaces uint64
+		baseName      string
+		quoteName     string
+		maturity      time.Time
+	}
+
+	// If decimalPlaces==2, then a currency balance of `1` indicates one Euro cent, not one Euro
+	skels := []marketSkeleton{
+		{
+			decimalPlaces: 2,
+			baseName:      "ETH",
+			quoteName:     "USD",
+			maturity:      time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
+		},
+		{
+			decimalPlaces: 2,
+			baseName:      "GBP",
+			quoteName:     "USD",
+			maturity:      time.Date(2020, 6, 30, 23, 59, 59, 0, time.UTC),
+		},
+		{
+			decimalPlaces: 2,
+			baseName:      "GBP",
+			quoteName:     "EUR",
+			maturity:      time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
 	}
 
-	mkt := proto.Market{
-		Name: "ETHUSD/DEC19",
-		TradableInstrument: &proto.TradableInstrument{
-			Instrument: &proto.Instrument{
-				Id:        "Crypto/ETHUSD/Futures/Dec19",
-				Code:      "CRYPTO:ETHUSD/DEC19",
-				Name:      "December 2019 ETH vs USD future",
-				BaseName:  "ETH",
-				QuoteName: "USD",
-				Metadata: &proto.InstrumentMetadata{
-					Tags: []string{
-						"asset_class:fx/crypto",
-						"product:futures",
-					},
-				},
-				Product: &proto.Instrument_Future{
-					Future: &proto.Future{
-						Maturity: closingAt,
-						Oracle: &proto.Future_EthereumEvent{
-							EthereumEvent: &proto.EthereumEvent{
-								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-								Event:      "price_changed",
-							},
+	filenames := make([]string, len(skels))
+
+	for seq, skel := range skels {
+		monYear := skel.maturity.Format("Jan06")
+		monYearUpper := strings.ToUpper(monYear)
+
+		mkt := proto.Market{
+			Name:          fmt.Sprintf("%s%s/%s", skel.baseName, skel.quoteName, monYearUpper),
+			DecimalPlaces: skel.decimalPlaces,
+			TradableInstrument: &proto.TradableInstrument{
+				Instrument: &proto.Instrument{
+					Id:        fmt.Sprintf("Crypto/%s%s/Futures/%s", skel.baseName, skel.quoteName, monYear),
+					Code:      fmt.Sprintf("CRYPTO:%s%s/%s", skel.baseName, skel.quoteName, monYearUpper),
+					Name:      fmt.Sprintf("%s %s vs %s future", skel.maturity.Format("January 2006"), skel.baseName, skel.quoteName),
+					BaseName:  skel.baseName,
+					QuoteName: skel.quoteName,
+					Metadata: &proto.InstrumentMetadata{
+						Tags: []string{
+							"asset_class:fx/crypto",
+							"product:futures",
 						},
-						Asset: "ETH",
+					},
+					Product: &proto.Instrument_Future{
+						Future: &proto.Future{
+							Maturity: skel.maturity.Format("2006-01-02T15:04:05Z"),
+							Oracle: &proto.Future_EthereumEvent{
+								EthereumEvent: &proto.EthereumEvent{
+									ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+									Event:      "price_changed",
+								},
+							},
+							Asset: "ETH", // always ETH
+						},
+					},
+				},
+				RiskModel: &proto.TradableInstrument_Forward{
+					Forward: &proto.Forward{
+						Lambd: 0.01,
+						Tau:   1.0 / 365.25 / 24,
+						Params: &proto.ModelParamsBS{
+							Mu:    0,
+							R:     0.016,
+							Sigma: 0.09,
+						},
 					},
 				},
 			},
-			RiskModel: riskModel,
-		},
-		TradingMode: &proto.Market_Continuous{
-			Continuous: &proto.ContinuousTrading{},
-		},
+			TradingMode: &proto.Market_Continuous{
+				Continuous: &proto.ContinuousTrading{},
+			},
+		}
+		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)
+		err := createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	err := createDefaultMarket(&mkt, path.Join(confpath, marketETHUSDDEC19), seq)
-	if err != nil {
-		return err
-	}
-	seq++
-
-	mkt.Name = "GBPUSD/JUN19"
-	mkt.TradableInstrument.Instrument.Id = "FX/GBPUSD/Futures/Jun19"
-	mkt.TradableInstrument.Instrument.Code = "FX:GBPUSD/Jun19"
-	mkt.TradableInstrument.Instrument.Name = "December 2019 GBP vs USD future"
-	mkt.TradableInstrument.Instrument.BaseName = "GBP"
-	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
-		Future: &proto.Future{
-			Maturity: closingAt,
-			Oracle: &proto.Future_EthereumEvent{
-				EthereumEvent: &proto.EthereumEvent{
-					ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-					Event:      "price_changed",
-				},
-			},
-			Asset: "USD",
-		},
-	}
-	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_Forward{
-		Forward: &proto.Forward{
-			Lambd: 0.01,
-			Tau:   1.0 / 365.25 / 24,
-			Params: &proto.ModelParamsBS{
-				Mu:    0,
-				R:     0.0,
-				Sigma: 0.9,
-			},
-		},
-	}
-	err = createDefaultMarket(&mkt, path.Join(confpath, marketGBPUSDJUN19), seq)
-	if err != nil {
-		return err
-	}
-	seq++
-
-	mkt.Name = "GBPEUR/DEC19"
-	mkt.TradableInstrument.Instrument.Id = "Fx/GBPEUR/Futures/Dec20"
-	mkt.TradableInstrument.Instrument.Code = "FX:GBPEUR/DEC20"
-	mkt.TradableInstrument.Instrument.Name = "December 2019 GBP vs EUR future"
-	mkt.TradableInstrument.Instrument.BaseName = "GBP"
-	mkt.TradableInstrument.Instrument.QuoteName = "EUR"
-	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
-		Future: &proto.Future{
-			Maturity: closingAt,
-			Oracle: &proto.Future_EthereumEvent{
-				EthereumEvent: &proto.EthereumEvent{
-					ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-					Event:      "price_changed",
-				},
-			},
-			Asset: "EUR",
-		},
-	}
-	return createDefaultMarket(&mkt, path.Join(confpath, marketGBPEURDEC19), seq)
+	return filenames, nil
 }
 
 func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {

@@ -118,7 +118,6 @@ const (
 	AccountTypeInsurance  AccountType = "Insurance"
 	AccountTypeSettlement AccountType = "Settlement"
 	AccountTypeMargin     AccountType = "Margin"
-	AccountTypeMarket     AccountType = "Market"
 	AccountTypeGeneral    AccountType = "General"
 )
 
@@ -126,13 +125,12 @@ var AllAccountType = []AccountType{
 	AccountTypeInsurance,
 	AccountTypeSettlement,
 	AccountTypeMargin,
-	AccountTypeMarket,
 	AccountTypeGeneral,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeMarket, AccountTypeGeneral:
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral:
 		return true
 	}
 	return false
@@ -255,25 +253,68 @@ func (e OrderStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type OrderTimeInForce string
+
+const (
+	OrderTimeInForceFok OrderTimeInForce = "FOK"
+	OrderTimeInForceIoc OrderTimeInForce = "IOC"
+	OrderTimeInForceGtc OrderTimeInForce = "GTC"
+	OrderTimeInForceGtt OrderTimeInForce = "GTT"
+)
+
+var AllOrderTimeInForce = []OrderTimeInForce{
+	OrderTimeInForceFok,
+	OrderTimeInForceIoc,
+	OrderTimeInForceGtc,
+	OrderTimeInForceGtt,
+}
+
+func (e OrderTimeInForce) IsValid() bool {
+	switch e {
+	case OrderTimeInForceFok, OrderTimeInForceIoc, OrderTimeInForceGtc, OrderTimeInForceGtt:
+		return true
+	}
+	return false
+}
+
+func (e OrderTimeInForce) String() string {
+	return string(e)
+}
+
+func (e *OrderTimeInForce) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderTimeInForce(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderTimeInForce", str)
+	}
+	return nil
+}
+
+func (e OrderTimeInForce) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type OrderType string
 
 const (
-	OrderTypeFok OrderType = "FOK"
-	OrderTypeEne OrderType = "ENE"
-	OrderTypeGtc OrderType = "GTC"
-	OrderTypeGtt OrderType = "GTT"
+	OrderTypeMarket  OrderType = "MARKET"
+	OrderTypeLimit   OrderType = "LIMIT"
+	OrderTypeNetwork OrderType = "NETWORK"
 )
 
 var AllOrderType = []OrderType{
-	OrderTypeFok,
-	OrderTypeEne,
-	OrderTypeGtc,
-	OrderTypeGtt,
+	OrderTypeMarket,
+	OrderTypeLimit,
+	OrderTypeNetwork,
 }
 
 func (e OrderType) IsValid() bool {
 	switch e {
-	case OrderTypeFok, OrderTypeEne, OrderTypeGtc, OrderTypeGtt:
+	case OrderTypeMarket, OrderTypeLimit, OrderTypeNetwork:
 		return true
 	}
 	return false

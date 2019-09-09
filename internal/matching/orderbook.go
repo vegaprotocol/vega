@@ -213,10 +213,10 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// if order is persistent type add to order book to the correct side
-	if (order.Type == types.Order_GTC || order.Type == types.Order_GTT) && order.Remaining > 0 {
+	if (order.TimeInForce == types.Order_GTC || order.TimeInForce == types.Order_GTT) && order.Remaining > 0 {
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
-		if order.Type == types.Order_GTT {
+		if order.TimeInForce == types.Order_GTT {
 			b.insertExpiringOrder(*order)
 		}
 
@@ -233,7 +233,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// update order statuses based on the order types if they didn't trade
-	if (order.Type == types.Order_FOK || order.Type == types.Order_ENE) && order.Remaining == order.Size {
+	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC) && order.Remaining == order.Size {
 		order.Status = types.Order_Stopped
 	}
 
@@ -243,7 +243,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 			// Ensure any fully filled impacted GTT orders are removed
 			// from internal matching engine pending orders list
-			if impactedOrders[idx].Type == types.Order_GTT {
+			if impactedOrders[idx].TimeInForce == types.Order_GTT {
 				b.removePendingGttOrder(*impactedOrders[idx])
 			}
 		}
@@ -415,7 +415,7 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
 	return &types.OrderConfirmation{
-		Order:                 order,
+		Order: order,
 		PassiveOrdersAffected: impactedOrders,
 		Trades:                trades,
 	}

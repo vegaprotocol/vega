@@ -181,29 +181,29 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 
 	// Arrange seed orders & trades
 	orderA := &types.Order{
-		Id:        "d41d8cd98f00b204e9800998ecf9999a",
-		MarketID:  testMarket,
-		PartyID:   testPartyA,
-		Side:      types.Side_Sell,
-		Price:     100,
-		Size:      1000,
-		Remaining: 1000,
-		Type:      types.Order_GTC,
-		CreatedAt: 0,
-		Status:    types.Order_Active,
+		Id:          "d41d8cd98f00b204e9800998ecf9999a",
+		MarketID:    testMarket,
+		PartyID:     testPartyA,
+		Side:        types.Side_Sell,
+		Price:       100,
+		Size:        1000,
+		Remaining:   1000,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   0,
+		Status:      types.Order_Active,
 	}
 
 	orderB := &types.Order{
-		Id:        "d41d8cd98f00b204e9800998ecf8427h",
-		MarketID:  testMarket,
-		PartyID:   testPartyB,
-		Side:      types.Side_Buy,
-		Price:     100,
-		Size:      100,
-		Remaining: 100,
-		Type:      types.Order_GTC,
-		CreatedAt: 1,
-		Status:    types.Order_Active,
+		Id:          "d41d8cd98f00b204e9800998ecf8427h",
+		MarketID:    testMarket,
+		PartyID:     testPartyB,
+		Side:        types.Side_Buy,
+		Price:       100,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_GTC,
+		CreatedAt:   1,
+		Status:      types.Order_Active,
 	}
 
 	trade1 := &types.Trade{

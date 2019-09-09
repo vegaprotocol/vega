@@ -142,7 +142,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		totalVolumeToFill uint64
 	)
 
-	if agg.Type == types.Order_FOK {
+	if agg.TimeInForce == types.Order_FOK {
 
 		if agg.Side == types.Side_Sell {
 			for _, level := range s.levels {
