@@ -193,7 +193,8 @@ func isSettle(transfer *types.Transfer) bool {
 	return false
 }
 
-func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.MarketPosition, error) {
+func (e *Engine) MarginUpdate(marketID string, updates []events.Risk,
+) ([]*types.TransferResponse, []events.MarketPosition, error) {
 	response := make([]*types.TransferResponse, 0, len(updates))
 	closed := make([]events.MarketPosition, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
 	// create "fake" settle account for market ID
@@ -213,7 +214,15 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.
 		}
 		// we didn't manage to top up to even the minimum required system margen, close out trader
 		// we need to be careful with this, only apply this to transfer for low margin
-		if transfer.Type == types.TransferType_MARGIN_LOW && res.Balances[0].Balance < transfer.Amount.MinAmount {
+		// the MinAmount in the transfer is always set to 0 but in 2 case:
+		// - first when a new order is created, the MinAmount is the same than Amount, which is
+		//   what's required to reach the InitialMargin level
+		// - second when a trader margin is under the MaintenanceLevel, the MinAmount is supposed
+		//   to be at least to get back to the search level, and the amount will be enough to reach
+		//   InitialMargin
+		// In both case either the order will not be accepted, or the trader will be closed
+		if transfer.Type == types.TransferType_MARGIN_LOW &&
+			res.Balances[0].Balance < (int64(update.MarginBalance())+transfer.Amount.MinAmount) {
 			closed = append(closed, update) // update interface embeds events.MarketPosition
 		} else {
 			response = append(response, res)
@@ -492,9 +501,10 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			Asset:     asset, // TBC
 		}, nil
 	}
+
 	// now the margin/risk updates, we need to get the general account
 	genAcc, err := e.GetAccountByID(
-		accountID(settle.MarketID, p.Owner, asset, types.AccountType_GENERAL),
+		accountID("", p.Owner, asset, types.AccountType_GENERAL),
 	)
 	if err != nil {
 		return nil, err
@@ -512,7 +522,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 				marginAcc,
 			},
 			Amount:    uint64(p.Amount.Amount) * p.Size,
-			MinAmount: 0,
+			MinAmount: uint64(p.Amount.MinAmount),
 			Asset:     asset,
 		}, nil
 	}
@@ -524,7 +534,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			genAcc,
 		},
 		Amount:    uint64(p.Amount.Amount) * p.Size,
-		MinAmount: 0,
+		MinAmount: uint64(p.Amount.MinAmount),
 		Asset:     asset,
 	}, nil
 }
@@ -615,88 +625,6 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 		}
 	}
 	return &ret, nil
-}
-
-func (e *Engine) EnsureMargin(
-	mktID string, risk events.Risk) (*types.TransferResponse, error) {
-	transfer := risk.Transfer()
-	if transfer.Type != types.TransferType_MARGIN_LOW &&
-		transfer.Type != types.TransferType_MARGIN_HIGH {
-		e.log.Error("Unexpected transfer type for ensure margin",
-			logging.String("type", transfer.Type.String()))
-		return nil, ErrInvalidTransferTypeForOp
-	}
-
-	// first get margin account of this trader
-	marginAcc, err := e.GetAccountByID(accountID(mktID, transfer.Owner, risk.Asset(), types.AccountType_MARGIN))
-	if err != nil {
-		e.log.Error(
-			"Failed to get the margin account",
-			logging.String("trader-id", transfer.Owner),
-			logging.String("market-id", mktID),
-			logging.String("asset", risk.Asset()),
-			logging.Error(err))
-		return nil, err
-	}
-
-	// get the general account of this trader
-	generalAcc, err := e.GetAccountByID(accountID("", transfer.Owner, risk.Asset(), types.AccountType_GENERAL))
-	if err != nil {
-		e.log.Error(
-			"Failed to get the general account",
-			logging.String("trader-id", transfer.Owner),
-			logging.String("market-id", mktID),
-			logging.String("asset", risk.Asset()),
-			logging.Error(err))
-		return nil, err
-	}
-
-	if generalAcc.Balance < transfer.Amount.Amount {
-		e.log.Debug("Not enough monies from trader account",
-			logging.String("trader-id", transfer.Owner),
-			logging.String("market-id", mktID),
-			logging.String("asset", risk.Asset()),
-			logging.String("account", generalAcc.Id),
-			logging.Int64("balance", generalAcc.Balance),
-			logging.Int64("expected-amount", transfer.Amount.Amount))
-		return nil, ErrInsufficientTraderBalance
-	}
-
-	// if all checks are ok, create the transfer request
-	req := &types.TransferRequest{
-		FromAccount: []*types.Account{generalAcc},
-		ToAccount:   []*types.Account{marginAcc},
-		Asset:       risk.Asset(),
-		Amount:      uint64(transfer.Amount.Amount - marginAcc.Balance),
-		MinAmount:   uint64(transfer.Amount.MinAmount - marginAcc.Balance),
-		Reference:   fmt.Sprintf("MarginUpdate:%v:%v", transfer.Owner, transfer.Amount.Amount),
-	}
-
-	ledgerEntries, err := e.getLedgerEntries(req)
-	if err != nil {
-		e.log.Error(
-			"Failed to move monies from margin from general account",
-			logging.String("trader-id", transfer.Owner),
-			logging.String("market-id", mktID),
-			logging.String("asset", risk.Asset()),
-			logging.Error(err))
-		return nil, err
-	}
-
-	for _, v := range ledgerEntries.Transfers {
-		// increment the to account
-		if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
-			e.log.Error(
-				"Failed to increment balance for account",
-				logging.String("account-id", v.ToAccount),
-				logging.Int64("amount", v.Amount),
-				logging.Error(err),
-			)
-			return nil, err
-		}
-	}
-
-	return ledgerEntries, nil
 }
 
 func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.TransferResponse, error) {

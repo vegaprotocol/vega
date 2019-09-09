@@ -410,12 +410,24 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		margins := m.collateralAndRisk(settle)
 		if len(margins) > 0 {
 			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
-			m.log.Debug(
-				"Updated margin balances",
-				logging.Int("transfer-count", len(transfers)),
-				logging.Int("closed-count", len(closed)),
-				logging.Error(err),
-			)
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug(
+					"Updated margin balances",
+					logging.Int("transfer-count", len(transfers)),
+					logging.Int("closed-count", len(closed)),
+					logging.Error(err),
+				)
+				for _, tr := range transfers {
+					for _, v := range tr.GetTransfers() {
+						m.log.Debug(
+							"Ensured margin on order with success",
+							logging.String("transfer", fmt.Sprintf("%v", *v)),
+							logging.String("market-id", m.GetID()),
+						)
+					}
+				}
+			}
+
 			// @TODO -> close out any traders that don't have enough margins left
 			// if no errors were returned
 		}
@@ -438,19 +450,26 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 	} else {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
-		transferResp, err := m.collateral.EnsureMargin(m.GetID(), riskUpdate)
+		transferResps, close, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})
 		if err != nil {
 			return err
+		}
+		// if closeout list is != 0 then we return an error as well, it means the trader did not have enough
+		// monies to reach the InitialMargin
+		if 0 != len(close) {
+			return ErrMarginCheckFailed
 		}
 
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Transfers applied for ")
-			for _, v := range transferResp.GetTransfers() {
-				m.log.Debug(
-					"Ensured margin on order with success",
-					logging.String("transfer", fmt.Sprintf("%v", *v)),
-					logging.String("market-id", m.GetID()),
-				)
+			for _, tr := range transferResps {
+				for _, v := range tr.GetTransfers() {
+					m.log.Debug(
+						"Ensured margin on order with success",
+						logging.String("transfer", fmt.Sprintf("%v", *v)),
+						logging.String("market-id", m.GetID()),
+					)
+				}
 			}
 		}
 	}
