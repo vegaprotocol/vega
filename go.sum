@@ -8,6 +8,8 @@ github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7/go.mod h1:bOv
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+github.com/DATA-DOG/godog v0.7.13 h1:JmgpKcra7Vf3yzI9vPsWyoQRx13tyKziHtXWDCUUgok=
+github.com/DATA-DOG/godog v0.7.13/go.mod h1:z2OZ6a3X0/YAKVqLfVzYBwFt3j6uSt3Xrqa7XTtcQE0=
 github.com/EVODelavega/modvendor v0.0.0-20180827175348-07a105bce74a h1:pksWLKJk+EMVN+kb9pHry8V6sLtYa2LtHBWn+0IPckE=
 github.com/EVODelavega/modvendor v0.0.0-20180827175348-07a105bce74a/go.mod h1:iTv+KoD55Rr5NW/P2WlDEJQ2Wa7+LRblD6/u/xJl/i0=
 github.com/EVODelavega/modvendor v0.0.0-20190325161303-a714b85df02e h1:6Vvkv8ApkkZQj7ovd7b8GwkyLz/aHBvzd/cwmW1Fp+k=
