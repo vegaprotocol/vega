@@ -148,6 +148,7 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 			logging.String("Market", marketID))
 		return ErrTraderAccountsMissing
 	}
+
 	return nil
 }
 
