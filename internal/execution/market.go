@@ -676,8 +676,18 @@ func (m *Market) AmendOrder(
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		return m.orderCancelReplace(existingOrder, newOrder)
+		ret, err := m.orderCancelReplace(existingOrder, newOrder)
+		if err != nil {
+			// register back old order
+			_, err2 := m.position.RegisterOrder(existingOrder)
+			if err2 != nil {
+				m.log.Error("unable to register back the order after an error occured while trying to cancelAndReplace",
+					logging.Error(err2))
+			}
+		}
+		return ret, err
 	}
+
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease {
