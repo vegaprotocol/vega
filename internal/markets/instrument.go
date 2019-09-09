@@ -28,8 +28,9 @@ type Instrument struct {
 }
 
 type TradableInstrument struct {
-	Instrument *Instrument
-	RiskModel  risk.Model
+	Instrument       *Instrument
+	MarginCalculator *types.MarginCalculator
+	RiskModel        risk.Model
 }
 
 func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (*TradableInstrument, error) {
@@ -42,8 +43,9 @@ func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (
 		return nil, errors.Wrap(err, "unable to instantiate risk model")
 	}
 	return &TradableInstrument{
-		Instrument: instrument,
-		RiskModel:  riskModel,
+		Instrument:       instrument,
+		MarginCalculator: pti.MarginCalculator,
+		RiskModel:        riskModel,
 	}, nil
 }
 

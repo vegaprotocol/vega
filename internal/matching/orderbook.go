@@ -63,7 +63,7 @@ func (s *OrderBook) ReloadConf(cfg Config) {
 	s.cfgMu.Unlock()
 }
 
-func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) {
+func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, error) {
 	var (
 		price uint64
 		err   error

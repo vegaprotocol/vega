@@ -12,6 +12,10 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+type orderbook interface {
+	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
+}
+
 type marginChange struct {
 	events.Margin       // previous event that caused this change
 	amount        int64 // the amount we need to move (positive is move to margin, neg == move to general)
@@ -20,29 +24,35 @@ type marginChange struct {
 
 type Engine struct {
 	Config
-	log     *logging.Logger
-	cfgMu   sync.Mutex
-	model   Model
-	factors *types.RiskResult
-	waiting bool
+	marginCalculator *types.MarginCalculator
+	log              *logging.Logger
+	cfgMu            sync.Mutex
+	model            Model
+	factors          *types.RiskResult
+	waiting          bool
+	ob               orderbook
 }
 
 func NewEngine(
 	log *logging.Logger,
 	config Config,
+	marginCalculator *types.MarginCalculator,
 	model Model,
 	initialFactors *types.RiskResult,
+	ob orderbook,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	return &Engine{
-		log:     log,
-		Config:  config,
-		factors: initialFactors,
-		model:   model,
-		waiting: false,
+		log:              log,
+		Config:           config,
+		marginCalculator: marginCalculator,
+		factors:          initialFactors,
+		model:            model,
+		waiting:          false,
+		ob:               ob,
 	}
 }
 
@@ -62,7 +72,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 func (re *Engine) CalculateFactors(now time.Time) {
-
 	// don't calculate risk factors if we are before or at the next update time (calcs are before
 	// processing and we calc factors after the time so we wait for time > nextUpdateTime) OR if we are
 	// already waiting on risk calcs
@@ -83,57 +92,110 @@ func (re *Engine) CalculateFactors(now time.Time) {
 	}
 }
 
-// mock implementation, this wil return adjustments based on position updates
-func (re *Engine) UpdateMargins(ctx context.Context, ch <-chan events.Margin, markPrice uint64) []events.Risk {
-	// we can allocate the return value here already
-	// problem is that we don't know whether loss indicates a long/short position
-	// @TODO ^^ Positions should provide this information, so we can pass this through correctly
-	factors := map[string]*marginAmount{}
-	ret := make([]events.Risk, 0, cap(ch))
-	var err error
+// UpdateMarginOnNewOrder calculate the new margin requirement for a single order
+// this is intended to be used when a new order is created in order to ensure the
+// trader margin account is at least at the InitialMargin level before the order is added to the book.
+func (r *Engine) UpdateMarginsOnNewOrder(e events.Margin, markPrice uint64) events.Risk {
+	if e == nil {
+		return nil
+	}
+
+	margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
+
+	curBalance := e.MarginBalance()
+	// margins are sufficient, nothing to update
+	if int64(curBalance) > margins.InitialMargin {
+		return nil
+	}
+
+	// margin is < that InitialMargin so we create a transfer request to top it up.
+	trnsfr := &types.Transfer{
+		Owner: e.Party(),
+		Size:  1,
+		Type:  types.TransferType_MARGIN_LOW,
+		Amount: &types.FinancialAmount{
+			Asset:     e.Asset(),
+			Amount:    margins.InitialMargin - int64(curBalance),
+			MinAmount: margins.InitialMargin - int64(curBalance),
+		},
+	}
+
+	return &marginChange{
+		Margin:   e,
+		amount:   trnsfr.Amount.Amount,
+		transfer: trnsfr,
+	}
+}
+
+// UpdateMarginsOnSettlement ensure the margin requirement over all positions.
+// margins updates are based on the following requirement
+//  ---------------------------------------------------------------------------------------
+// | 1 | SearchLevel < CurMargin < InitialMargin | nothing to do / no risk for the network |
+// | 2 | CurMargin < SearchLevel                 | set margin to InitalLevel               |
+// | 3 | CurMargin > ReleaseLevel                | release up to the InitialLevel          |
+//  ---------------------------------------------------------------------------------------
+// In the case where the CurMargin is smaller to the MaintenanceLevel after trying to
+// move monies later, we'll need to close out the trader but that cannot be figured out
+// now only in later when we try to move monies from the general account.
+func (r *Engine) UpdateMarginsOnSettlement(
+	ctx context.Context, evts []events.Margin, markPrice uint64) []events.Risk {
+	ret := make([]events.Risk, 0, len(evts))
+	// var err error
 	// this will keep going until we've closed this channel
 	// this can be the result of an error, or being "finished"
-	for {
-		select {
-		case <-ctx.Done():
-			// micro-optimisation perhaps, but hey... it's easy
-			// this allows us to cancel in case of an error
-			// we're not returning anything, because things didn't go as expected
-			return nil
-		case change, ok := <-ch:
-			// channel is closed, and we've got a nil interface
-			if !ok && change == nil {
-				return ret
-			}
-			// just read from channel - this is the open position
-			size := change.Size()
-			// closed out, shouldn't be on this channel in the first place
-			// but it's better to check anyway
-			if size == 0 {
-				continue
-			}
-			asset := change.Asset()
-			factor, ok := factors[asset]
-			if !ok {
-				factor, err = re.getMargins(asset)
-				if err != nil {
-					// not sure what to do about these
-					// @TODO this is debug for now, until we've got the asset format sorted out
-					re.log.Debug(
-						"No factor found for asset",
-						logging.String("asset", asset),
-					)
-					continue
-				}
-				factors[asset] = factor
-			}
-			risk := factor.getChange(change, markPrice)
-			if risk == nil {
-				continue
-			}
-			ret = append(ret, risk)
+	for _, e := range evts {
+		// channel is closed, and we've got a nil interface
+		margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
+		curMargin := int64(e.MarginBalance())
+		// case 1 -> nothing to do margins are sufficient
+		if curMargin > margins.SearchLevel && curMargin < margins.InitialMargin {
+			continue
 		}
+
+		var trnsfr *types.Transfer
+		// case 3 -> not enough margin
+		if curMargin < margins.SearchLevel {
+			// first calculate minimal amount, which will be specified in the case we are under
+			// the maintenance level
+			var minAmount int64
+			if curMargin < margins.MarginMaintenance {
+				minAmount = margins.MarginMaintenance - curMargin
+			}
+
+			// then the rest is common if we are before or after MaintenanceLevel,
+			// we try to reach the InitialMargin level
+			trnsfr = &types.Transfer{
+				Owner: e.Party(),
+				Size:  1,
+				Type:  types.TransferType_MARGIN_LOW,
+				Amount: &types.FinancialAmount{
+					Asset:     e.Asset(),
+					Amount:    margins.InitialMargin - curMargin,
+					MinAmount: minAmount,
+				},
+			}
+
+		} else if curMargin > margins.ReleaseLevel { // case 3 -> release some colateral
+			trnsfr = &types.Transfer{
+				Owner: e.Party(),
+				Size:  1,
+				Type:  types.TransferType_MARGIN_HIGH,
+				Amount: &types.FinancialAmount{
+					Asset:     e.Asset(),
+					Amount:    curMargin - margins.ReleaseLevel,
+					MinAmount: 0,
+				},
+			}
+		}
+
+		risk := &marginChange{
+			Margin:   e,
+			amount:   trnsfr.Amount.Amount,
+			transfer: trnsfr,
+		}
+		ret = append(ret, risk)
 	}
+	return ret
 }
 
 func abs(x int64) int64 {

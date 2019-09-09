@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/binary"
+
 	"fmt"
 	"sync"
 	"time"
@@ -28,7 +29,6 @@ import (
 var (
 	ErrMarketClosed      = errors.New("market closed")
 	ErrTraderDoNotExists = errors.New("trader does not exist")
-	ErrMarginCheckFailed = errors.New("margin check failed")
 )
 
 type Market struct {
@@ -70,26 +70,26 @@ type Market struct {
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
-func SetMarketID(marketCfg *types.Market, seq uint64) error {
-	marketCfg.Id = ""
-	marketBytes, err := proto.Marshal(marketCfg)
+func SetMarketID(marketcfg *types.Market, seq uint64) error {
+	marketcfg.Id = ""
+	marketbytes, err := proto.Marshal(marketcfg)
 	if err != nil {
 		return err
 	}
-	if len(marketBytes) == 0 {
+	if len(marketbytes) == 0 {
 		return errors.New("failed to marshal market")
 	}
 
-	seqBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(seqBytes, seq)
+	seqbytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(seqbytes, seq)
 
 	h := sha256.New()
-	h.Write(marketBytes)
-	h.Write(seqBytes)
+	h.Write(marketbytes)
+	h.Write(seqbytes)
 
 	d := h.Sum(nil)
 	d = d[:20]
-	marketCfg.Id = base32.StdEncoding.EncodeToString(d)
+	marketcfg.Id = base32.StdEncoding.EncodeToString(d)
 	return nil
 }
 
@@ -121,8 +121,12 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
+	book := matching.NewOrderBook(log, matchingConfig, mkt.Id, false)
+
 	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
-	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.RiskModel, getInitialFactors())
+
+	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
+		tradableInstrument.RiskModel, getInitialFactors(), book)
 	positionEngine := positions.New(log, positionConfig)
 	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
 
@@ -130,8 +134,8 @@ func NewMarket(
 		log:                log,
 		mkt:                mkt,
 		closingAt:          closingAt,
-		currentTime:        now,
-		matching:           matching.NewOrderBook(log, matchingConfig, mkt.Id, false),
+		currentTime:        time.Time{},
+		matching:           book,
 		tradableInstrument: tradableInstrument,
 		risk:               riskEngine,
 		position:           positionEngine,
@@ -144,11 +148,7 @@ func NewMarket(
 		trades:             trades,
 		candlesBuf:         candlesBuf,
 	}
-
-	err = SetMarketID(mkt, seq)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to set market identifier")
-	}
+	SetMarketID(mkt, seq)
 
 	return market, nil
 }
@@ -211,15 +211,15 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	}
 
 	if closed {
-		// market has closed, perform settlement
-		pos, err := m.settlement.Settle(t)
+		// call settlement and stuff
+		positions, err := m.settlement.Settle(t)
 		if err != nil {
 			m.log.Error(
 				"Failed to get settle positions on market close",
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.Transfer(m.GetID(), pos)
+			transfers, err := m.collateral.Transfer(m.GetID(), positions)
 			if err != nil {
 				m.log.Error(
 					"Failed to get ledger movements after settling closed market",
@@ -228,6 +228,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				)
 			} else {
 				if m.log.GetLevel() == logging.DebugLevel {
+					// use transfers, unused var thingy
 					for _, v := range transfers {
 						m.log.Debug(
 							"Got transfers on market close",
@@ -246,6 +247,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 						logging.Error(err))
 				} else {
 					if m.log.GetLevel() == logging.DebugLevel {
+						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
 							m.log.Debug(
 								"Market cleared with success",
@@ -271,7 +273,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	orderValidity := "invalid"
-	startSubmit := time.Now() // please do not reset this var
+	startSubmit := time.Now() // do not reset this var
 	defer func() {
 		metrics.EngineTimeCounterAdd(startSubmit, m.mkt.Id, "execution", "Submit")
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
@@ -290,36 +292,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	start := time.Now()
 	party, _ := m.parties.GetByID(order.PartyID)
 	if party == nil {
-		// Trader should be created before even trying to post order
+		// trader should be created before even trying to post order
 		return nil, ErrTraderDoNotExists
 	}
-
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "partystore", "GetByID/Post")
 
-	// Register order as potential positions
-	pos, err := m.position.RegisterOrder(order)
-	if err != nil {
-		m.log.Error("Unable to register potential trader position",
-			logging.Error(err),
-			logging.String("market-id", m.GetID()))
-		return nil, ErrMarginCheckFailed
-	}
-
-	// Perform check and allocate margin
-	if err := m.checkMarginForOrder(pos, order); err != nil {
-		_, err2 := m.position.UnregisterOrder(order)
-		if err2 != nil {
-			m.log.Error("Unable to unregister potential trader positions",
-				logging.Error(err2),
-				logging.String("market-id", m.GetID()))
-		}
-		m.log.Error("Unable to check/add margin for trader",
-			logging.Error(err),
-			logging.String("market-id", m.GetID()))
-		return nil, ErrMarginCheckFailed
-	}
-
-	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
 		m.log.Error("Failure after submitting order to matching engine",
@@ -337,7 +314,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.PassiveOrdersAffected != nil {
-		// Insert or update passive orders siting on the book
+		// Insert all passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
 			err := m.orders.Put(*order)
 			if err != nil {
@@ -349,14 +326,17 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "orderstore", "Post/Put")
 
+	m.position.RegisterOrder(order)
+
 	if confirmation.Trades != nil {
-		// Orders can contain several trades, each trade involves 2 traders
+		// orders can contain several trades, each trade involves 2 traders
 		// so there's a max number of N*2 events on the channel where N == number of trades
 		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
-		// Set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
+		// now let's set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
 		m.settlement.ListenClosed(tradersCh)
-		// Insert all trades resulted from the executed order
+		// insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
+			// fmt.Printf("------------------------------- TRADE: %v\n", trade)
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
 			if order.Side == types.Side_Buy {
 				trade.BuyOrder = order.Id
@@ -394,17 +374,15 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		}
 		close(tradersCh)
 		start = time.Now()
-
-		// Get the transfers for MTM settlement
-		pos := m.position.Positions()
-		evt := make([]events.MarketPosition, 0, len(pos))
-		for _, p := range pos {
-			evt = append(evt, p)
+		// now let's get the transfers for MTM settlement
+		positions := m.position.Positions()
+		events := make([]events.MarketPosition, 0, len(positions))
+		for _, p := range positions {
+			events = append(events, p)
 		}
-		settle := m.settlement.SettleOrder(m.markPrice, evt)
+		settle := m.settlement.SettleOrder(m.markPrice, events)
 		metrics.EngineTimeCounterAdd(start, m.mkt.Id, "positions", "Positions+SettleOrder")
-
-		// Only process collateral and risk once per order, not for every trade
+		// this belongs outside of trade loop, only call once per order
 		margins := m.collateralAndRisk(settle)
 		if len(margins) > 0 {
 			transfers, closed, err := m.collateral.MarginUpdate(m.GetID(), margins)
@@ -421,89 +399,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	orderValidity = "valid"
 	return confirmation, nil
-}
-
-func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
-	newPos := pos.UpdatedPosition(order.Price)
-
-	if logging.DebugLevel == m.log.GetLevel() {
-		m.log.Debug("New trader position",
-			logging.String("pos", fmt.Sprintf("%#v", newPos)))
-	}
-
-	settle := m.settlement.SettleOrder(m.markPrice, []events.MarketPosition{newPos})
-
-	// Use actual price of the order to calculate risk
-	riskUpdates := m.collateralAndRiskForOrder(settle, order.Price)
-
-	// Validate total updates, there should only be one as we are checking a single order
-	if len(riskUpdates) != 1 {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Error("No risk updates",
-				logging.String("market-id", m.GetID()),
-				logging.Int("risk-updates-count", len(riskUpdates)))
-		}
-	} else {
-		riskUpdate := riskUpdates[0]
-
-		transferResp, err := m.collateral.EnsureMargin(m.GetID(), riskUpdate)
-		if err != nil {
-			return err
-		}
-
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Transfers applied for ")
-			for _, v := range transferResp.GetTransfers() {
-				m.log.Debug(
-					"Ensured margin on order with success",
-					logging.String("transfer", fmt.Sprintf("%v", *v)),
-					logging.String("market-id", m.GetID()),
-				)
-			}
-		}
-	}
-
-	return nil
-}
-
-// this function handles moving money after settle MTM + risk margin updates
-// but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRiskForOrder(settle []events.Transfer, price uint64) []events.Risk {
-	ctx, cancel := context.WithCancel(context.Background())
-	start := time.Now()
-	defer cancel()
-	transferCh, errCh := m.collateral.TransferCh(m.GetID(), settle)
-	go func() {
-		err := <-errCh
-		if err != nil {
-			m.log.Error(
-				"Error in collateral when processing settle MTM transfers",
-				logging.Error(err),
-			)
-			cancel()
-		}
-		metrics.EngineTimeCounterAdd(start, m.mkt.Id, "collateral", "TransferCh")
-	}()
-	// let risk engine do its thing here - it returns a slice of money that needs
-	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, price)
-	if len(riskUpdates) == 0 {
-		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
-		return nil
-	}
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Got margins transfers")
-		for _, v := range riskUpdates {
-			transfer := v.Transfer()
-			m.log.Debug(
-				"New margin transfer on order new/amend",
-				logging.String("transfer", fmt.Sprintf("%v", *transfer)),
-				logging.String("market-id", m.GetID()),
-			)
-		}
-	}
-
-	return riskUpdates
 }
 
 func (m *Market) setMarkPrice(trade *types.Trade) {
@@ -524,7 +419,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 		err := <-errCh
 		if err != nil {
 			m.log.Error(
-				"Error in collateral when processing settle MTM transfers",
+				"Some error in collateral when processing settle MTM transfers",
 				logging.Error(err),
 			)
 			cancel()
@@ -534,10 +429,15 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, m.markPrice)
+	// m.log.Info("Risk done")
 	if len(riskUpdates) == 0 {
-		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
+		// m.log.Warn("probably no risk margin changes due to error")
 		return nil
 	}
+	m.log.Debug(
+		"Got more stuff to do in collateral",
+		logging.String("dump stuff", fmt.Sprintf("%#v", riskUpdates)),
+	)
 	return riskUpdates
 }
 
@@ -617,18 +517,18 @@ func (m *Market) AmendOrder(
 	m.mu.Unlock()
 
 	newOrder := &types.Order{
-		Id:          existingOrder.Id,
-		MarketID:    existingOrder.MarketID,
-		PartyID:     existingOrder.PartyID,
-		Side:        existingOrder.Side,
-		Price:       existingOrder.Price,
-		Size:        existingOrder.Size,
-		Remaining:   existingOrder.Remaining,
-		TimeInForce: existingOrder.TimeInForce,
-		CreatedAt:   currentTime.UnixNano(),
-		Status:      existingOrder.Status,
-		ExpiresAt:   existingOrder.ExpiresAt,
-		Reference:   existingOrder.Reference,
+		Id:        existingOrder.Id,
+		MarketID:  existingOrder.MarketID,
+		PartyID:   existingOrder.PartyID,
+		Side:      existingOrder.Side,
+		Price:     existingOrder.Price,
+		Size:      existingOrder.Size,
+		Remaining: existingOrder.Remaining,
+		Type:      existingOrder.Type,
+		CreatedAt: currentTime.UnixNano(),
+		Status:    existingOrder.Status,
+		ExpiresAt: existingOrder.ExpiresAt,
+		Reference: existingOrder.Reference,
 	}
 	var (
 		priceShift, sizeIncrease, sizeDecrease, expiryChange = false, false, false, false
@@ -650,14 +550,11 @@ func (m *Market) AmendOrder(
 		}
 	}
 
-	if newOrder.TimeInForce == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
+	if newOrder.Type == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
 		newOrder.ExpiresAt = orderAmendment.ExpiresAt
 		expiryChange = true
 	}
 
-	// always unregister order, it will be registered again later on
-	// even implicitly by calling SubmitOrder again with orderCancelAndReplace
-	// or explicitly in orderAmendInplace
 	// Unregister existing order to remove order volume from potential position.
 	_, err := m.position.UnregisterOrder(existingOrder)
 	if err != nil {
@@ -666,33 +563,18 @@ func (m *Market) AmendOrder(
 			logging.Error(err))
 	}
 
+	// Register amended order to add order volume to potential position.
+	m.position.RegisterOrder(newOrder)
+
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		ret, err := m.orderCancelReplace(existingOrder, newOrder)
-		if err != nil {
-			// register back old order
-			_, err2 := m.position.RegisterOrder(existingOrder)
-			if err2 != nil {
-				m.log.Error("unable to register back the order after an error occured while trying to cancelAndReplace",
-					logging.Error(err2))
-			}
-		}
-		return ret, err
+		return m.orderCancelReplace(existingOrder, newOrder)
 	}
-
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
 	if expiryChange || sizeDecrease {
-		ret, err := m.orderAmendInPlace(newOrder)
-		if err != nil {
-			_, err2 := m.position.RegisterOrder(existingOrder)
-			if err2 != nil {
-				m.log.Error("unable register back order after an error occured trying amend an order in place",
-					logging.Error(err2))
-			}
-			return ret, err
-		}
+		return m.orderAmendInPlace(newOrder)
 	}
 
 	m.log.Error("Order amendment not allowed", logging.Order(*existingOrder))
@@ -717,28 +599,7 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (*type
 }
 
 func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
-	// risk stuff
-	// Register amended order to add order volume to potential position.
-	pos, err := m.position.RegisterOrder(newOrder)
-	if err != nil {
-		return &types.OrderConfirmation{}, err
-	}
-
-	// try to get some margin checked
-	if err := m.checkMarginForOrder(pos, newOrder); err != nil {
-		_, err = m.position.UnregisterOrder(newOrder)
-		if err != nil {
-			m.log.Error("Unable to unregister potential trader positions",
-				logging.Error(err),
-				logging.String("market-id", m.GetID()))
-		}
-		m.log.Error("Unable to check/add margin for trader",
-			logging.Error(err),
-			logging.String("market-id", m.GetID()))
-		return nil, ErrMarginCheckFailed
-	}
-
-	err = m.matching.AmendOrder(newOrder)
+	err := m.matching.AmendOrder(newOrder)
 	if err != nil {
 		m.log.Error("Failure after amend order from matching engine (amend-in-place)",
 			logging.OrderWithTag(*newOrder, "new-order"),
@@ -747,10 +608,10 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 	}
 	err = m.orders.Put(*newOrder)
 	if err != nil {
-		m.log.Error("Failure storing order update in orders store (amend-in-place)",
+		m.log.Error("Failure storing order update in execution engine (amend-in-place)",
 			logging.Order(*newOrder),
 			logging.Error(err))
-		// todo: txn or other strategy (https://gitlab.com/vega-protocol/trading-core/issues/160)
+		// todo: txn or othe   r strategy (https://gitlab.com/vega-prxotocol/trading-core/issues/160)
 	}
 	return &types.OrderConfirmation{}, nil
 }
