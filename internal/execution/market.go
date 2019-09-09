@@ -29,6 +29,7 @@ import (
 var (
 	ErrMarketClosed      = errors.New("market closed")
 	ErrTraderDoNotExists = errors.New("trader does not exist")
+	ErrMarginCheckFailed = errors.New("margin check failed")
 )
 
 type Market struct {
@@ -297,6 +298,29 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "partystore", "GetByID/Post")
 
+	// Register order as potential positions
+	pos, err := m.position.RegisterOrder(order)
+	if err != nil {
+		m.log.Error("Unable to register potential trader position",
+			logging.Error(err),
+			logging.String("market-id", m.GetID()))
+		return nil, ErrMarginCheckFailed
+	}
+
+	// Perform check and allocate margin
+	if err := m.checkMarginForOrder(pos, order); err != nil {
+		_, err2 := m.position.UnregisterOrder(order)
+		if err2 != nil {
+			m.log.Error("Unable to unregister potential trader positions",
+				logging.Error(err2),
+				logging.String("market-id", m.GetID()))
+		}
+		m.log.Error("Unable to check/add margin for trader",
+			logging.Error(err),
+			logging.String("market-id", m.GetID()))
+		return nil, ErrMarginCheckFailed
+	}
+
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
 		m.log.Error("Failure after submitting order to matching engine",
@@ -401,6 +425,69 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	return confirmation, nil
 }
 
+func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
+	settle := m.settlement.SettleOrder(m.markPrice, []events.MarketPosition{pos})
+
+	// Use actual price of the order to calculate risk
+	riskUpdate := m.collateralAndRiskForOrder(settle, order.Price)
+	if riskUpdate == nil {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("No risk updates",
+				logging.String("market-id", m.GetID()))
+		}
+	} else {
+		// this should always be a increase to the InitialMargin
+		// if it does fail, we need to return an error straight away
+		transferResp, err := m.collateral.EnsureMargin(m.GetID(), riskUpdate)
+		if err != nil {
+			return err
+		}
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Transfers applied for ")
+			for _, v := range transferResp.GetTransfers() {
+				m.log.Debug(
+					"Ensured margin on order with success",
+					logging.String("transfer", fmt.Sprintf("%v", *v)),
+					logging.String("market-id", m.GetID()),
+				)
+			}
+		}
+	}
+
+	return nil
+}
+
+// this function handles moving money after settle MTM + risk margin updates
+// but does not move the money between trader accounts (ie not to/from margin accounts after risk)
+func (m *Market) collateralAndRiskForOrder(settle []events.Transfer, price uint64) events.Risk {
+
+	start := time.Now()
+	defer metrics.EngineTimeCounterAdd(start, m.mkt.Id, "collateral", "TransferCh")
+
+	transferCh, _ := m.collateral.TransferCh(m.GetID(), settle)
+	e := <-transferCh
+
+	// let risk engine do its thing here - it returns a slice of money that needs
+	// to be moved to and from margin accounts
+	riskUpdate := m.risk.UpdateMarginOnNewOrder(e, price)
+	if riskUpdate == nil {
+		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
+		return nil
+	}
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Got margins transfer on new order")
+		transfer := riskUpdate.Transfer()
+		m.log.Debug(
+			"New margin transfer on order new/amend",
+			logging.String("transfer", fmt.Sprintf("%v", *transfer)),
+			logging.String("market-id", m.GetID()),
+		)
+	}
+
+	return riskUpdate
+}
+
 func (m *Market) setMarkPrice(trade *types.Trade) {
 	// The current mark price calculation is simply the last trade
 	// in the future this will use varying logic based on market config
@@ -426,18 +513,22 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 		}
 		metrics.EngineTimeCounterAdd(start, m.mkt.Id, "collateral", "TransferCh")
 	}()
+
+	evts := []events.Margin{}
+	// iterate over all events until channel close
+	for e := range transferCh {
+		evts = append(evts, e)
+	}
+
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMargins(ctx, transferCh, m.markPrice)
-	// m.log.Info("Risk done")
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.markPrice)
 	if len(riskUpdates) == 0 {
-		// m.log.Warn("probably no risk margin changes due to error")
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
+		}
 		return nil
 	}
-	m.log.Debug(
-		"Got more stuff to do in collateral",
-		logging.String("dump stuff", fmt.Sprintf("%#v", riskUpdates)),
-	)
 	return riskUpdates
 }
 
@@ -550,7 +641,7 @@ func (m *Market) AmendOrder(
 		}
 	}
 
-	if newOrder.Type == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
+	if newOrder.TimeInForce == types.Order_GTT && orderAmendment.ExpiresAt != 0 {
 		newOrder.ExpiresAt = orderAmendment.ExpiresAt
 		expiryChange = true
 	}

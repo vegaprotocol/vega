@@ -95,7 +95,7 @@ func (re *Engine) CalculateFactors(now time.Time) {
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // trader margin account is at least at the InitialMargin level before the order is added to the book.
-func (r *Engine) UpdateMarginsOnNewOrder(e events.Margin, markPrice uint64) events.Risk {
+func (r *Engine) UpdateMarginOnNewOrder(e events.Margin, markPrice uint64) events.Risk {
 	if e == nil {
 		return nil
 	}

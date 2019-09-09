@@ -158,13 +158,6 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			maturity:      time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 		},
 	}
-	marginCalculation := &proto.MarginCalculator{
-		ScalingFactors: &proto.ScalingFactors{
-			SearchLevel:       1.1,
-			InitialMargin:     1.2,
-			CollateralRelease: 1.4,
-		},
-	}
 
 	filenames := make([]string, len(skels))
 
@@ -211,7 +204,13 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 							Sigma: 0.09,
 						},
 					},
-					MarginCalculation: marginCalculation,
+				},
+				MarginCalculator: &proto.MarginCalculator{
+					ScalingFactors: &proto.ScalingFactors{
+						SearchLevel:       1.1,
+						InitialMargin:     1.2,
+						CollateralRelease: 1.4,
+					},
 				},
 			},
 			TradingMode: &proto.Market_Continuous{
