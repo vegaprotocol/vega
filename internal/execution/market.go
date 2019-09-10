@@ -27,9 +27,10 @@ import (
 )
 
 var (
-	ErrMarketClosed      = errors.New("market closed")
-	ErrTraderDoNotExists = errors.New("trader does not exist")
-	ErrMarginCheckFailed = errors.New("margin check failed")
+	ErrMarketClosed            = errors.New("market closed")
+	ErrTraderDoNotExists       = errors.New("trader does not exist")
+	ErrMarginCheckFailed       = errors.New("margin check failed")
+	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
 )
 
 type Market struct {
@@ -117,6 +118,10 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate a new market")
 	}
 
+	if tradableInstrument.Instrument.InitialMarkPrice == 0 {
+		return nil, ErrInvalidInitialMarkPrice
+	}
+
 	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get market closing time")
@@ -136,6 +141,7 @@ func NewMarket(
 		mkt:                mkt,
 		closingAt:          closingAt,
 		currentTime:        now,
+		markPrice:          tradableInstrument.Instrument.InitialMarkPrice,
 		matching:           book,
 		tradableInstrument: tradableInstrument,
 		risk:               riskEngine,
@@ -439,16 +445,20 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 }
 
 func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
-	settle := m.settlement.SettleOrder(m.markPrice, []events.MarketPosition{pos})
+	fmt.Printf("POSITION: %v\n", pos)
+	// settle := m.settlement.SettleOrder(m.markPrice, []events.MarketPosition{pos.UpdatedPosition(m.)})
+	settle := m.settlement.SettleOrder(order.Price, []events.MarketPosition{pos.UpdatedPosition(order.Price)})
 
 	// Use actual price of the order to calculate risk
 	riskUpdate := m.collateralAndRiskForOrder(settle, order.Price)
 	if riskUpdate == nil {
+		fmt.Printf("RISK UPDATE NIL\n")
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates",
 				logging.String("market-id", m.GetID()))
 		}
 	} else {
+		fmt.Printf("RISK UPDATE NOT NIL\n")
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
 		transferResps, close, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})

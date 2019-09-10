@@ -47,6 +47,7 @@ message Instrument {
   string baseName = 4;
   string quoteName = 5;
   InstrumentMetadata metadata = 6;
+  uint64 initialMarkPrice = 7;
   oneof product {
     Future future = 100;
   }

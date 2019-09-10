@@ -16,11 +16,12 @@ var (
 )
 
 type Instrument struct {
-	ID       string
-	Code     string
-	Name     string
-	Metadata *types.InstrumentMetadata
-	Product  products.Product
+	ID               string
+	Code             string
+	Name             string
+	Metadata         *types.InstrumentMetadata
+	InitialMarkPrice uint64
+	Product          products.Product
 
 	// Base and Quote aren't used internally, but might be used later on, so add them here just in case
 	Base  string
