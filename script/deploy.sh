@@ -6,7 +6,7 @@
 # 	-v "$HOME/go/src/vega:/go/src/project" \
 # 	-w /go/src/project \
 # 	--entrypoint /bin/bash \
-# 	registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.5 \
+# 	registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13 \
 # 	-c 'make install && ./.deploy.sh devnet vega "/go/bin/vega:/home/vega/current/:0755"'
 
 # Required vars (or files named the same as the var plus ".tmp"):
