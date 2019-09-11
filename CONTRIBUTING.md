@@ -11,8 +11,8 @@ the Issue or in the WIP MR.
 
 Pairing and early review is encouraged.
 
-Add tests! Aim for overall test coverage to go _up_. At a bare minimum, the main
-code path of each function should be tested.
+Add tests! Aim for overall test coverage to go _up_. At a bare minimum, the
+main/longest code path of each function should be tested.
 
-When ready, create a merge requst (or remove the WIP from the existing one), ask
+When ready, create a merge request (or remove the WIP from the existing one), ask
 for review on Slack, discuss suggestions, get the branch merged.
