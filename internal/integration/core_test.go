@@ -51,6 +51,7 @@ type tstSetup struct {
 	parties    *mocks.MockPartyStore
 	accounts   *cmocks.MockAccountBuffer
 	accountIDs map[string]struct{}
+	traderAccs map[string]map[proto.AccountType]*proto.Account
 
 	// we need to call this engine directly
 	colE *collateral.Engine
@@ -91,6 +92,7 @@ func getMock(market *proto.Market) *tstSetup {
 		parties:    parties,
 		accounts:   accounts,
 		accountIDs: map[string]struct{}{},
+		traderAccs: map[string]map[proto.AccountType]*proto.Account{},
 		colE:       colE,
 	}
 
@@ -212,11 +214,14 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 			continue
 		}
 		// it's safe to ignore this error for now
-		// _ = accounts.CreateTraderMarketAccounts(row.Cells[0].Value, market)
-		pos, err := strconv.Atoi(row.Cells[1].Value)
-		if err != nil {
-			return err
-		}
+		// pos, err := strconv.Atoi(row.Cells[1].Value)
+		// if err != nil {
+		// return err
+		// }
+		// mark, err := strconv.Atoi(row.Cells[5].Value)
+		// if err != nil {
+		// return err
+		// }
 		margin, err := strconv.ParseInt(row.Cells[2].Value, 10, 64)
 		if err != nil {
 			return err
@@ -225,68 +230,57 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		if err != nil {
 			return err
 		}
-		mark, err := strconv.Atoi(row.Cells[5].Value)
-		if err != nil {
-			return err
-		}
 		// highest net pos
 		if pos > maxPos {
 			maxPos = pos
 		}
-		ts := traderState{
-			general:   general,
-			margin:    margin,
-			markPrice: mark,
-			pos:       pos,
+		core.accounts.EXPECT().Add(gomock.Any()).Times(2)
+		marginBal, generalBal := core.colE.CreateTraderAccount(row.Cells[0].Value, market, core.Asset)
+		core.accounts.EXPECT().Add(gomock.Any()).Times(2)
+		_ = core.colE.IncrementBalance(margin, marginBal)
+		_ = core.colE.IncrementBalance(general, generalBal)
+		// add trader accounts to map - this is the state they should have now
+		core.traderAccs[rows.Cells[0].Value] = map[proto.AccountType]*proto.Account{
+			proto.AccountType_MARGIN: &proto.Account{
+				Id:      margin,
+				Type:    proto.AccountType_MARGIN,
+				Balance: marginBal,
+			},
+			proto.AccountType_GENERAL: &proto.Account{
+				Id:      general,
+				Type:    proto.AccountType_GENERAL,
+				Balance: generalBal,
+			},
 		}
-		gen := []*proto.Account{&proto.Account{}}
-		mAcc := []*proto.Account{&proto.Account{}}
+		// this is creating the positions and setting mark price... we can't do that just yet here
 		// make sure there's ample margin balance to get to the positions we need
-		// get accounts:
-		// gen, err := accounts.GetAccountsForOwnerByType(row.Cells[0].Value, proto.AccountType_GENERAL)
-		// if err != nil {
-		// return err
-		// }
-		// mAcc, err := accounts.GetAccountsForOwnerByType(row.Cells[0].Value, proto.AccountType_MARGIN)
-		// if err != nil {
-		// return err
-		// }
-		// there's only 1 account for these owners, we've just set them up
-		// if err := accounts.UpdateBalance(gen[0].Id, int64(100*maxPos)); err != nil {
-		// return err
-		// }
-		// if err := accounts.UpdateBalance(mAcc[0].Id, int64(10*maxPos)); err != nil {
-		// return err
-		// }
-		ts.gAcc = gen[0]
-		ts.mAcc = mAcc[0]
-		// add to states
-		side := proto.Side_Buy
-		vol := ts.pos
-		if pos < 0 {
-			side = proto.Side_Sell
-			// absolute value for volume
-			vol *= -1
-		}
-		traderStates[row.Cells[0].Value] = ts
-		order := proto.Order{
-			Id:        uuid.NewV4().String(),
-			MarketID:  market,
-			PartyID:   row.Cells[0].Value,
-			Side:      side,
-			Price:     1,
-			Size:      uint64(vol),
-			ExpiresAt: tomorrow.Unix(),
-		}
+		// 	// add to states
+		// 	side := proto.Side_Buy
+		// 	vol := ts.pos
+		// 	if pos < 0 {
+		// 		side = proto.Side_Sell
+		// 		// absolute value for volume
+		// 		vol *= -1
+		// 	}
+		// 	traderStates[row.Cells[0].Value] = ts
+		// 	order := proto.Order{
+		// 		Id:        uuid.NewV4().String(),
+		// 		MarketID:  market,
+		// 		PartyID:   row.Cells[0].Value,
+		// 		Side:      side,
+		// 		Price:     1,
+		// 		Size:      uint64(vol),
+		// 		ExpiresAt: tomorrow.Unix(),
+		// 	}
 		// get order ready to submit
-		orders = append(orders, &order)
+		// orders = append(orders, &order)
 	}
 	// ok, submit some 'fake' orders, ensuring that the traders' positions all match up
-	for _, o := range orders {
-		if _, err := core.SubmitOrder(o); err != nil {
-			return err
-		}
-	}
+	// for _, o := range orders {
+	// 	if _, err := core.SubmitOrder(o); err != nil {
+	// 		return err
+	// 	}
+	// }
 	// update their account balances, so we have established the traders' states
 	// for _, ts := range traderStates {
 	// if err := accounts.UpdateBalance(ts.gAcc.Id, ts.general); err != nil {
