@@ -2,7 +2,6 @@ package risk
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -149,12 +148,10 @@ func (r *Engine) UpdateMarginsOnSettlement(
 		// channel is closed, and we've got a nil interface
 		margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
 		curMargin := int64(e.MarginBalance())
-		fmt.Printf("MARGINS: %v\n", margins)
 		// case 1 -> nothing to do margins are sufficient
 		if curMargin >= margins.SearchLevel && curMargin < margins.ReleaseLevel {
 			continue
 		}
-		fmt.Printf("CURRMARGIN: %v\n", curMargin)
 
 		var trnsfr *types.Transfer
 		// case 2 -> not enough margin

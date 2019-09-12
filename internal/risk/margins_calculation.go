@@ -1,8 +1,6 @@
 package risk
 
 import (
-	"fmt"
-
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -29,7 +27,6 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 	lngMaintenance := lngCloseoutPNL + e.Size()*int64(rf.Long*float64(markPrice))
 	shtMaintenance := shtCloseoutPNL + e.Size()*int64(rf.Long*float64(markPrice))
 
-	fmt.Printf("lngMaintenance:%v, shrtMaintenance: %v\n", lngMaintenance, shtMaintenance)
 	if lngMaintenance > shtMaintenance {
 		return newMarginLevels(lngMaintenance, r.marginCalculator.ScalingFactors)
 	}
@@ -49,7 +46,6 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 func (r *Engine) calculateCloseoutPNL(
 	e events.Margin, markPrice int64) (lngCloseoutPNL, shrtCloseoutPNL int64) {
 	size := e.Size()
-	fmt.Printf("CALCULATE: size: %v, buy: %v, sell: %v\n", size, e.Buy(), e.Sell())
 	potentialLong := size + e.Buy()
 	potentialShort := size - e.Sell()
 
@@ -60,8 +56,6 @@ func (r *Engine) calculateCloseoutPNL(
 				logging.Error(err))
 		}
 		lngCloseoutPNL = potentialLong * (int64(closeoutPrice) - markPrice)
-		fmt.Printf("CLOSEOUT PNL LONG: %v | closeoutPrice=%v | markPrice=%v\n",
-			lngCloseoutPNL, closeoutPrice, markPrice)
 	}
 
 	if potentialShort < 0 {
@@ -72,7 +66,6 @@ func (r *Engine) calculateCloseoutPNL(
 
 		}
 		shrtCloseoutPNL = potentialShort * (int64(closeoutPrice) - markPrice)
-		fmt.Printf("CLOSEOUT PNL SHORT: %v\n", shrtCloseoutPNL)
 	}
 
 	return
