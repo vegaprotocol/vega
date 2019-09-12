@@ -1340,6 +1340,31 @@
       ],
       "default": "I1M"
     },
+    "vegaLedgerEntry": {
+      "type": "object",
+      "properties": {
+        "fromAccount": {
+          "type": "string"
+        },
+        "toAccount": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "vegaMarginCalculator": {
       "type": "object",
       "properties": {
@@ -1847,6 +1872,35 @@
           "format": "int64"
         }
       }
+    },
+    "vegaTransferBalance": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/vegaAccount"
+        },
+        "balance": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "vegaTransferResponse": {
+      "type": "object",
+      "properties": {
+        "transfers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLedgerEntry"
+          }
+        },
+        "balances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTransferBalance"
+          }
+        }
+      }
     }
   },
   "x-stream-definitions": {
@@ -1921,6 +1975,18 @@
         }
       },
       "title": "Stream result of vegaMarketPosition"
+    },
+    "vegaTransferResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaTransferResponse"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaTransferResponse"
     }
   }
 }

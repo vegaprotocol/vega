@@ -92,6 +92,7 @@ service trading_data {
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
   rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
+  rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
 
   // accounts
   rpc AccountsByParty(AccountsByPartyRequest) returns (AccountsByPartyResponse);

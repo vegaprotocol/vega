@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
+	"code.vegaprotocol.io/vega/internal/transfers"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -151,6 +152,13 @@ func getTestGRPCServer(
 		return
 	}
 
+	// Risk Store
+	transferResponseStore, err := storage.NewTransferResponses(logger, conf.Storage)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create risk store")
+		return
+	}
+
 	// Trade Store
 	tradeStore, err := storage.NewTrades(logger, conf.Storage, cancel)
 	if err != nil {
@@ -199,6 +207,13 @@ func getTestGRPCServer(
 		return
 	}
 
+	// TransferResponse Service
+	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create trade service")
+		return
+	}
+
 	g = api.NewGRPCServer(
 		logger,
 		conf.API,
@@ -211,6 +226,7 @@ func getTestGRPCServer(
 		tradeService,
 		candleService,
 		accountService,
+		transferResponseService,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {
