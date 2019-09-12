@@ -15,8 +15,8 @@ import (
 
 const (
 	initialAccountSize = 4096
-	systemOwner = "system"
-	noMarket    = "general"
+	systemOwner        = "system"
+	noMarket           = "general"
 )
 
 var (
@@ -864,8 +864,8 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 				ToAccount:   ins.Id,
 				Amount:      acc.Balance,
 				Reference:   "close-out distressed",
-				Type:        "",                    // @TODO determine this value
-				Timestamp:   time.Now().UnixNano(), // @TODO Unix or UnixNano?
+				Type:        "", // @TODO determine this value
+				Timestamp:   e.currentTime,
 			})
 			if err := e.IncrementBalance(ins.Id, acc.Balance); err != nil {
 				return nil, err
