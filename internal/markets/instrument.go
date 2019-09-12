@@ -56,13 +56,14 @@ func NewInstrument(pi *types.Instrument) (*Instrument, error) {
 		return nil, errors.Wrap(err, "unable to instanciate product from instrument configuration")
 	}
 	return &Instrument{
-		ID:       pi.Id,
-		Code:     pi.Code,
-		Name:     pi.Name,
-		Metadata: pi.Metadata,
-		Product:  product,
-		Base:     pi.BaseName,
-		Quote:    pi.QuoteName,
+		ID:               pi.Id,
+		Code:             pi.Code,
+		Name:             pi.Name,
+		Metadata:         pi.Metadata,
+		Product:          product,
+		Base:             pi.BaseName,
+		Quote:            pi.QuoteName,
+		InitialMarkPrice: pi.InitialMarkPrice,
 	}, err
 }
 

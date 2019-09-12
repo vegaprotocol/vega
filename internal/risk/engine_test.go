@@ -16,8 +16,9 @@ import (
 
 type testEngine struct {
 	*risk.Engine
-	ctrl  *gomock.Controller
-	model *mocks.MockModel
+	ctrl      *gomock.Controller
+	model     *mocks.MockModel
+	orderbook *mocks.MockOrderbook
 }
 
 // implements the events.Margin interface
@@ -52,8 +53,9 @@ var (
 		},
 	}
 
-	riskMinamount      int64 = 250
-	riskRequiredMargin int64 = 300
+	riskMinamount      int64  = 250
+	riskRequiredMargin int64  = 300
+	markPrice          uint64 = 100
 )
 
 func TestUpdateMargins(t *testing.T) {
@@ -67,27 +69,27 @@ func testMarginTopup(t *testing.T) {
 	defer eng.ctrl.Finish()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
-	ch := make(chan events.Margin, 1)
-	// data := []events.Margin{}
 	evt := testMargin{
 		party:   "trader1",
 		size:    1,
 		price:   1000,
 		asset:   "ETH",
-		margin:  180,    // required margin will be > 250, so ensure we don't have enough
+		margin:  10,     // required margin will be > 30 so ensure we don't have enough
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
-	go func() {
-		ch <- evt
-		close(ch)
-	}()
-	resp := eng.UpdateMargins(ctx, ch, evt.price)
+	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
+		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
+			return markPrice, nil
+		})
+	evts := []events.Margin{evt}
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, riskRequiredMargin-int64(evt.margin), trans.Amount.Amount)
-	assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
+	assert.Equal(t, int64(20), trans.Amount.Amount)
+	// min = 15 so we go back to search level
+	assert.Equal(t, int64(15), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_LOW, trans.Type)
 }
 
@@ -96,22 +98,22 @@ func testMarginNoop(t *testing.T) {
 	defer eng.ctrl.Finish()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
-	ch := make(chan events.Margin, 1)
-	// data := []events.Margin{}
 	evt := testMargin{
 		party:   "trader1",
 		size:    1,
 		price:   1000,
 		asset:   "ETH",
-		margin:  301,    // more than enough margin to cover the position, not enough to trigger transfer to general
+		margin:  30,     // more than enough margin to cover the position, not enough to trigger transfer to general
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
-	go func() {
-		ch <- evt
-		close(ch)
-	}()
-	resp := eng.UpdateMargins(ctx, ch, evt.price)
+	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
+		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
+			return markPrice, nil
+		})
+
+	evts := []events.Margin{evt}
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
 	assert.Equal(t, 0, len(resp))
 }
 
@@ -120,26 +122,25 @@ func testMarginOverflow(t *testing.T) {
 	defer eng.ctrl.Finish()
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
-	ch := make(chan events.Margin, 1)
-	// data := []events.Margin{}
 	evt := testMargin{
 		party:   "trader1",
 		size:    1,
 		price:   1000,
 		asset:   "ETH",
-		margin:  500,    // required margin will be > 250, so ensure we don't have enough
+		margin:  500,    // required margin will be > 35 (release), so ensure we don't have enough
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
-	go func() {
-		ch <- evt
-		close(ch)
-	}()
-	resp := eng.UpdateMargins(ctx, ch, evt.price)
+	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
+		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
+			return markPrice, nil
+		})
+	evts := []events.Margin{evt}
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(evt.margin)-riskRequiredMargin, trans.Amount.Amount)
+	assert.Equal(t, int64(465), trans.Amount.Amount)
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_HIGH, trans.Type)
 }
@@ -152,16 +153,30 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
 	conf := risk.NewDefaultConfig()
+	ob := mocks.NewMockOrderbook(ctrl)
 	engine := risk.NewEngine(
 		logging.NewTestLogger(),
 		conf,
+		getMarginCalculator(),
 		model,
 		initialRisk,
+		ob,
 	)
 	return &testEngine{
-		Engine: engine,
-		ctrl:   ctrl,
-		model:  model,
+		Engine:    engine,
+		ctrl:      ctrl,
+		model:     model,
+		orderbook: ob,
+	}
+}
+
+func getMarginCalculator() *types.MarginCalculator {
+	return &types.MarginCalculator{
+		ScalingFactors: &types.ScalingFactors{
+			SearchLevel:       1.1,
+			InitialMargin:     1.2,
+			CollateralRelease: 1.4,
+		},
 	}
 }
 

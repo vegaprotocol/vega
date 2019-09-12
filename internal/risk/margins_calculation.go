@@ -1,6 +1,8 @@
 package risk
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -27,6 +29,7 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 	lngMaintenance := lngCloseoutPNL + e.Size()*int64(rf.Long*float64(markPrice))
 	shtMaintenance := shtCloseoutPNL + e.Size()*int64(rf.Long*float64(markPrice))
 
+	fmt.Printf("lngMaintenance:%v, shrtMaintenance: %v\n", lngMaintenance, shtMaintenance)
 	if lngMaintenance > shtMaintenance {
 		return newMarginLevels(lngMaintenance, r.marginCalculator.ScalingFactors)
 	}
@@ -46,26 +49,30 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 func (r *Engine) calculateCloseoutPNL(
 	e events.Margin, markPrice int64) (lngCloseoutPNL, shrtCloseoutPNL int64) {
 	size := e.Size()
+	fmt.Printf("CALCULATE: size: %v, buy: %v, sell: %v\n", size, e.Buy(), e.Sell())
 	potentialLong := size + e.Buy()
 	potentialShort := size - e.Sell()
 
-	if potentialLong != 0 {
+	if potentialLong > 0 {
 		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(potentialLong), types.Side_Buy)
 		if err != nil {
 			r.log.Warn("got non critical error from GetCloseoutPrice for Buy side",
 				logging.Error(err))
 		}
-		lngCloseoutPNL = int64(closeoutPrice) - (potentialLong * markPrice)
+		lngCloseoutPNL = potentialLong * (int64(closeoutPrice) - markPrice)
+		fmt.Printf("CLOSEOUT PNL LONG: %v | closeoutPrice=%v | markPrice=%v\n",
+			lngCloseoutPNL, closeoutPrice, markPrice)
 	}
 
-	if potentialShort != 0 {
+	if potentialShort < 0 {
 		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(potentialShort), types.Side_Sell)
 		if err != nil {
 			r.log.Warn("got non critical error from GetCloseoutPrice for Sell side",
 				logging.Error(err))
 
 		}
-		shrtCloseoutPNL = int64(closeoutPrice) - (potentialShort * markPrice)
+		shrtCloseoutPNL = potentialShort * (int64(closeoutPrice) - markPrice)
+		fmt.Printf("CLOSEOUT PNL SHORT: %v\n", shrtCloseoutPNL)
 	}
 
 	return

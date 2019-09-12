@@ -26,7 +26,8 @@ var (
 )
 
 func (m MarketPosition) String() string {
-	return fmt.Sprintf("size: %v, partyID: %v", m.size, m.partyID)
+	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
+		m.size, m.buy, m.sell, m.price, m.partyID)
 }
 
 func (m MarketPosition) Buy() int64 {
@@ -47,6 +48,18 @@ func (m MarketPosition) Party() string {
 
 func (m MarketPosition) Price() uint64 {
 	return m.price
+}
+
+// UpdatedPosition returns the updated position using the potential
+// sells and buys
+func (m *MarketPosition) UpdatedPosition(price uint64) *MarketPosition {
+	return &MarketPosition{
+		buy:     0,
+		sell:    0,
+		size:    m.size - m.sell + m.buy,
+		partyID: m.partyID,
+		price:   price,
+	}
 }
 
 type Engine struct {

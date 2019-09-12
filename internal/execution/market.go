@@ -127,7 +127,8 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
-	book := matching.NewOrderBook(log, matchingConfig, mkt.Id, false)
+	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
+		tradableInstrument.Instrument.InitialMarkPrice, false)
 
 	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
 
@@ -446,11 +447,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
 	fmt.Printf("POSITION: %v\n", pos)
-	// settle := m.settlement.SettleOrder(m.markPrice, []events.MarketPosition{pos.UpdatedPosition(m.)})
-	settle := m.settlement.SettleOrder(order.Price, []events.MarketPosition{pos.UpdatedPosition(order.Price)})
+	settle := m.settlement.SettleOrder(m.markPrice, []events.MarketPosition{pos.UpdatedPosition(m.markPrice)})
 
-	// Use actual price of the order to calculate risk
-	riskUpdate := m.collateralAndRiskForOrder(settle, order.Price)
+	riskUpdate := m.collateralAndRiskForOrder(settle, m.markPrice)
 	if riskUpdate == nil {
 		fmt.Printf("RISK UPDATE NIL\n")
 		if m.log.GetLevel() == logging.DebugLevel {

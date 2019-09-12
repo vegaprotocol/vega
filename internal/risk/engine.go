@@ -2,6 +2,7 @@ package risk
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -12,7 +13,8 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-type orderbook interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/internal/risk Orderbook
+type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
 }
 
@@ -30,7 +32,7 @@ type Engine struct {
 	model            Model
 	factors          *types.RiskResult
 	waiting          bool
-	ob               orderbook
+	ob               Orderbook
 }
 
 func NewEngine(
@@ -39,7 +41,7 @@ func NewEngine(
 	marginCalculator *types.MarginCalculator,
 	model Model,
 	initialFactors *types.RiskResult,
-	ob orderbook,
+	ob Orderbook,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -147,14 +149,16 @@ func (r *Engine) UpdateMarginsOnSettlement(
 		// channel is closed, and we've got a nil interface
 		margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
 		curMargin := int64(e.MarginBalance())
+		fmt.Printf("MARGINS: %v\n", margins)
 		// case 1 -> nothing to do margins are sufficient
-		if curMargin > margins.SearchLevel && curMargin < margins.InitialMargin {
+		if curMargin >= margins.SearchLevel && curMargin < margins.ReleaseLevel {
 			continue
 		}
+		fmt.Printf("CURRMARGIN: %v\n", curMargin)
 
 		var trnsfr *types.Transfer
-		// case 3 -> not enough margin
-		if curMargin < margins.SearchLevel {
+		// case 2 -> not enough margin
+		if curMargin <= margins.SearchLevel {
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
 			var minAmount int64
@@ -175,7 +179,7 @@ func (r *Engine) UpdateMarginsOnSettlement(
 				},
 			}
 
-		} else if curMargin > margins.ReleaseLevel { // case 3 -> release some colateral
+		} else if curMargin >= margins.ReleaseLevel { // case 3 -> release some colateral
 			trnsfr = &types.Transfer{
 				Owner: e.Party(),
 				Size:  1,

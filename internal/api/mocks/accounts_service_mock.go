@@ -109,16 +109,16 @@ func (mr *MockAccountsServiceMockRecorder) GetByPartyAndType(arg0, arg1 interfac
 }
 
 // ObserveAccounts mocks base method
-func (m *MockAccountsService) ObserveAccounts(arg0 context.Context, arg1 int, arg2, arg3 string, arg4 proto.AccountType) (<-chan []*proto.Account, uint64) {
+func (m *MockAccountsService) ObserveAccounts(arg0 context.Context, arg1 int, arg2, arg3, arg4 string, arg5 proto.AccountType) (<-chan []*proto.Account, uint64) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ObserveAccounts", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "ObserveAccounts", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(<-chan []*proto.Account)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }
 
 // ObserveAccounts indicates an expected call of ObserveAccounts
-func (mr *MockAccountsServiceMockRecorder) ObserveAccounts(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockAccountsServiceMockRecorder) ObserveAccounts(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveAccounts", reflect.TypeOf((*MockAccountsService)(nil).ObserveAccounts), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveAccounts", reflect.TypeOf((*MockAccountsService)(nil).ObserveAccounts), arg0, arg1, arg2, arg3, arg4, arg5)
 }
