@@ -24,7 +24,7 @@ syntax() {
 }
 
 for app in base64 curl diff jq python3 ; do
-	if ! which "$app" 1>/dev/null ; then
+	if ! command -v "$app" 1>/dev/null ; then
 		echo "Error: Need program: $app"
 		exit 1
 	fi
@@ -105,8 +105,8 @@ echo "$file1data" | jq -r .content | base64 --decode >"$file1tmpname"
 echo "$file2data" | jq -r .content | base64 --decode >"$file2tmpname" 
 
 echo "Files differ between branch $branch1 and $branch2:"
-diff -u --label "$filename $branch1" --label "$filename $branch2" "$file1tmpname" "$file2tmpname"
-rm -f "$file1tmpname" "$file2tmpname"
+diffname="$(mktemp)"
+diff -u --label "$filename $branch1" --label "$filename $branch2" "$file1tmpname" "$file2tmpname" | tee "$diffname"
 
 echo
 echo "Latest commit: $(echo "$file1data" | jq .commit_id) (repo $branch1)"
@@ -119,5 +119,6 @@ gitlab_ci="${GITLAB_CI:-false}"
 if test "$gitlab_ci" == "true" ; then
 	echo "Sending slack notification"
 	pipeline_url="${CI_PIPELINE_URL:-[failed to get pipeline URL]}"
-	slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\` (see $pipeline_url for details)"
+	slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\` (see \`autogen_checks\` from $pipeline_url for details)\\n\`\`\`\\n$(cat "$diffname")\`\`\`"
 fi
+rm -f "$file1tmpname" "$file2tmpname" "$diffname"
