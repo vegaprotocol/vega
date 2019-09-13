@@ -295,6 +295,7 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 
 func theFollowingOrders(orderT *gherkin.DataTable) error {
 	tomorrow := time.Now().Add(time.Hour * 24)
+	core := reporter.core
 	market := core.GetID()
 	// build + place all orders
 	for _, row := range orderT.Rows {
@@ -313,6 +314,10 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 		if err != nil {
 			return err
 		}
+		expTrades, err := strconv.Atoi(row.Cells[4].Value)
+		if err != nil {
+			return err
+		}
 		order := proto.Order{
 			Id:        uuid.NewV4().String(),
 			MarketID:  market,
@@ -322,15 +327,67 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 			Size:      uint64(vol),
 			ExpiresAt: tomorrow.Unix(),
 		}
-		if _, err := core.SubmitOrder(&order); err != nil {
+		result, err := core.SubmitOrder(&order)
+		if err != nil {
 			return err
+		}
+		if len(result.Trades) != expTrades {
+			return fmt.Errorf("expected %d trades, instead saw %d", expTrades, len(result.Trades))
 		}
 	}
 	return nil
 }
 
+func tradersLiability(liablityTbl *gherkin.DataTable) error {
+	for _, row := range liablityTbl.Rows {
+		// skip header
+		if row.Cells[0].Value == "trader" {
+			continue
+		}
+		trader := row.Cells[0].Value
+		margin, err := strconv.ParseInt(row.Cells[4].Value, 10, 64)
+		if err != nil {
+			return err
+		}
+		general, err := strconv.ParseInt(row.Cells[4].Value, 10, 64)
+		if err != nil {
+			return err
+		}
+		accounts := reporter.traderAccs[trader]
+		acc, err := reporter.colE.GetAccountByID(accounts[proto.AccountType_MARGIN].Id)
+		if err != nil {
+			return err
+		}
+		// sync margin account state
+		reporter.traderAccs[trader][proto.AccountType_MARGIN] = acc
+		if acc.Balance != margin {
+			return fmt.Errorf("expected %s margin account balance to be %d, instead saw %d", trader, margin, acc.Balance)
+		}
+		acc, err = reporter.colE.GetAccountByID(accounts[proto.AccountType_GENERAL].Id)
+		if err != nil {
+			return err
+		}
+		if acc.Balance != general {
+			return fmt.Errorf("expected %s general account balance to be %d, instead saw %d", trader, general, acc.Balance)
+		}
+		// sync general account state
+		reporter.traderAccs[trader][proto.AccountType_GENERAL] = acc
+	}
+}
+
+func hasNotBeenAddedToTheMarket(trader string) error {
+	accounts := reporter.traderAccs[trader]
+	acc, err := reporter.colE.GetAccountByID(accounts[proto.AccountType_MARGIN].Id)
+	if err != nil || acc.Balance == 0 {
+		return nil
+	}
+	return fmt.Errorf("didn't expect %s to hava a margin account with balance, instead saw %d", trader, acc.Balance)
+}
+
 func iCheckTheUpdatedBalancesAndPositions() error {
-	return godog.ErrPending
+	// not sure if we need this step
+	return nil
+	// return godog.ErrPending
 }
 
 func iExpectToSee(arg1 *gherkin.DataTable) error {
@@ -358,6 +415,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the system accounts:$`, theSystemAccounts)
 	s.Step(`^traders have the following state:$`, tradersHaveTheFollowingState)
 	s.Step(`^the following orders:$`, theFollowingOrders)
+	s.Step(`^I expect the trader to have a margin liability:$`, tradersLiability)
+	s.Step(`^"([^"]*)" has not been added to the market$`, hasNotBeenAddedToTheMarket)
 	s.Step(`^I check the updated balances and positions$`, iCheckTheUpdatedBalancesAndPositions)
 	s.Step(`^I expect to see:$`, iExpectToSee)
 }
