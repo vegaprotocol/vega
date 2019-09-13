@@ -23,7 +23,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -66,9 +65,6 @@ type Market struct {
 
 	// buffers
 	candlesBuf *buffer.Candle
-
-	// metrics
-	blockTime *prometheus.CounterVec
 
 	closed bool
 }
