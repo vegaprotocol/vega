@@ -585,7 +585,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	// currently just logging ledger movements, will be added to a stream storage engine in time
 	m.log.Debug(
 		"Legder movements after removing distressed traders",
-		logging.String("legder-dump", fmt.Sptrinf("%#v", movements.Transfers)),
+		logging.String("legder-dump", fmt.Sprintf("%#v", movements.Transfers)),
 	)
 	// get the updated positions
 	pos := m.position.Positions()
