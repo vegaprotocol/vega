@@ -46,6 +46,7 @@ func (ic *initCommand) Init(c *Cli) {
 
 }
 
+// RunInit initialises vega config files - config.toml and markets/*.json.
 func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	rootPathExists, err := fsutil.PathExists(rootPath)
 	if err != nil {
