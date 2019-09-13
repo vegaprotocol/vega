@@ -434,7 +434,10 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	// cancel pending orders for traders
 	if err := m.matching.RemoveDistressedOrders(closed); err != nil {
-		// @TODO log this here?
+		m.log.Error(
+			"Failed to remove distressed traders from the orderbook",
+			logging.Error(err),
+		)
 		return err
 	}
 	// get the actual position, so we can work out what the total position of the market is going to be
