@@ -1,7 +1,7 @@
 /*
 Command vegastream connects to a gRPC server and subscribes to various streams (accounts, orders, trades etc).
 
-For the accounts subscription, specify account type, market and party.
+For the accounts subscription, specify account type, and optionally market and/or party.
 
 For the orders and trades subscriptions, specify market and party.
 
@@ -69,12 +69,6 @@ func init() {
 }
 
 func startAccounts(ctx context.Context, wg *sync.WaitGroup) error {
-	if len(market) <= 0 {
-		return ErrMissingMarket
-	}
-	if len(party) <= 0 {
-		return ErrMissingParty
-	}
 	if len(accType) <= 0 {
 		return ErrMissingAccountType
 	}
@@ -86,8 +80,8 @@ func startAccounts(ctx context.Context, wg *sync.WaitGroup) error {
 
 	client := api.NewTradingDataClient(conn)
 	req := &api.AccountsSubscribeRequest{
-		MarketID: market,
-		PartyID:  party,
+		MarketID: market, // optional
+		PartyID:  party,  // optional
 		Type:     proto.AccountType(proto.AccountType_value[accType]),
 	}
 	stream, err := client.AccountsSubscribe(ctx, req)
