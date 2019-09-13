@@ -1,16 +1,15 @@
 package storage_test
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
 	"testing"
 
 	"code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
 )
-
 
 const (
 	testAccountParty1  = "g0ldman"
@@ -24,12 +23,15 @@ const (
 )
 
 func TestAccount_GetByPartyAndAsset(t *testing.T) {
-	dir, tidy := createTmpDir(t, testAccountStore)
+	dir, tidy, err := storage.TempDir(testAccountStore)
+	if err != nil {
+		t.Fatalf("Error creating tmp dir for account store")
+	}
 	defer tidy()
 
 	accountStore := createAccountStore(t, dir)
 
-	err := accountStore.SaveBatch(getTestAccounts())
+	err = accountStore.SaveBatch(getTestAccounts())
 	assert.Nil(t, err)
 
 	accs, err := accountStore.GetByPartyAndAsset(testAccountParty2, testAssetEUR)
@@ -61,12 +63,15 @@ func TestAccount_GetByPartyAndAsset(t *testing.T) {
 func TestAccount_GetByPartyAndType(t *testing.T) {
 	invalid := "invalid type for query"
 
-	dir, tidy := createTmpDir(t, testAccountStore)
+	dir, tidy, err := storage.TempDir(testAccountStore)
+	if err != nil {
+		t.Fatalf("Error creating tmp dir for account store")
+	}
 	defer tidy()
 
 	accountStore := createAccountStore(t, dir)
 
-	err := accountStore.SaveBatch(getTestAccounts())
+	err = accountStore.SaveBatch(getTestAccounts())
 	assert.Nil(t, err)
 
 	// General accounts
@@ -96,12 +101,15 @@ func TestAccount_GetByPartyAndType(t *testing.T) {
 }
 
 func TestAccount_GetByPartyAndMarket(t *testing.T) {
-	dir, tidy := createTmpDir(t, testAccountStore)
+	dir, tidy, err := storage.TempDir(testAccountStore)
+	if err != nil {
+		t.Fatalf("Error creating tmp dir for account store")
+	}
 	defer tidy()
 
 	accountStore := createAccountStore(t, dir)
 
-	err := accountStore.SaveBatch(getTestAccounts())
+	err = accountStore.SaveBatch(getTestAccounts())
 	assert.Nil(t, err)
 
 	accs, err := accountStore.GetByPartyAndMarket(testAccountParty1, testAccountMarket1)
@@ -119,12 +127,15 @@ func TestAccount_GetByPartyAndMarket(t *testing.T) {
 }
 
 func TestAccount_GetByParty(t *testing.T) {
-	dir, tidy := createTmpDir(t, testAccountStore)
+	dir, tidy, err := storage.TempDir(testAccountStore)
+	if err != nil {
+		t.Fatalf("Error creating tmp dir for account store")
+	}
 	defer tidy()
 
 	accountStore := createAccountStore(t, dir)
 
-	err := accountStore.SaveBatch(getTestAccounts())
+	err = accountStore.SaveBatch(getTestAccounts())
 	assert.Nil(t, err)
 
 	accs, err := accountStore.GetByParty(testAccountParty1)
@@ -137,59 +148,51 @@ func TestAccount_GetByParty(t *testing.T) {
 }
 
 func getTestAccounts() []*types.Account {
-	accs := []*types.Account {
+	accs := []*types.Account{
 		{
-			Owner: testAccountParty1,
+			Owner:    testAccountParty1,
 			MarketID: testAccountMarket1,
-			Type: types.AccountType_GENERAL,
-			Asset: testAssetGBP,
-			Balance: 1024,
+			Type:     types.AccountType_GENERAL,
+			Asset:    testAssetGBP,
+			Balance:  1024,
 		},
 		{
-			Owner: testAccountParty1,
+			Owner:    testAccountParty1,
 			MarketID: testAccountMarket1,
-			Type: types.AccountType_MARGIN,
-			Asset: testAssetGBP,
-			Balance: 1024,
+			Type:     types.AccountType_MARGIN,
+			Asset:    testAssetGBP,
+			Balance:  1024,
 		},
 		{
-			Owner: testAccountParty1,
+			Owner:    testAccountParty1,
 			MarketID: testAccountMarket2,
-			Type: types.AccountType_GENERAL,
-			Asset: testAssetUSD,
-			Balance: 1,
+			Type:     types.AccountType_GENERAL,
+			Asset:    testAssetUSD,
+			Balance:  1,
 		},
 		{
-			Owner: testAccountParty1,
+			Owner:    testAccountParty1,
 			MarketID: testAccountMarket2,
-			Type: types.AccountType_MARGIN,
-			Asset: testAssetUSD,
-			Balance: 9,
+			Type:     types.AccountType_MARGIN,
+			Asset:    testAssetUSD,
+			Balance:  9,
 		},
 		{
-			Owner: testAccountParty2,
+			Owner:    testAccountParty2,
 			MarketID: testAccountMarket2,
-			Type: types.AccountType_GENERAL,
-			Asset: testAssetEUR,
-			Balance: 2048,
+			Type:     types.AccountType_GENERAL,
+			Asset:    testAssetEUR,
+			Balance:  2048,
 		},
 		{
-			Owner: testAccountParty2,
+			Owner:    testAccountParty2,
 			MarketID: testAccountMarket2,
-			Type: types.AccountType_MARGIN,
-			Asset: testAssetEUR,
-			Balance: 1024,
+			Type:     types.AccountType_MARGIN,
+			Asset:    testAssetEUR,
+			Balance:  1024,
 		},
 	}
 	return accs
-}
-
-func createTmpDir(t *testing.T, storePath string) (string, func()) {
-	dir, tidy, err := storage.TempDir(storePath)
-	if err != nil {
-		t.Fatalf("Failed to create tmp dir: %s", err.Error())
-	}
-	return dir, tidy
 }
 
 func createAccountStore(t *testing.T, dir string) *storage.Account {
