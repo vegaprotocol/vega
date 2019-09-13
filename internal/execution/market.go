@@ -144,6 +144,7 @@ func NewMarket(
 		trades:             trades,
 		candlesBuf:         candlesBuf,
 	}
+
 	err = SetMarketID(mkt, seq)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to set market identifier")
@@ -271,7 +272,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	orderValidity := "invalid"
 	startSubmit := time.Now() // please do not reset this var
-
 	defer func() {
 		metrics.EngineTimeCounterAdd(startSubmit, m.mkt.Id, "execution", "Submit")
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
