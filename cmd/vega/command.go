@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Command defines a vega command, e.g. "init", "node" etc
 type Command interface {
 	Init(*Cli)
 	Cmd() *cobra.Command

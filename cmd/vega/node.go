@@ -194,7 +194,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	// cleanup gateway
 	if l.conf.GatewayEnabled {
 		if gty != nil {
-			gty.Stop()
+			gty.stop()
 		}
 	}
 
