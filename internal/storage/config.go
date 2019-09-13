@@ -53,13 +53,13 @@ type Config struct {
 	LogPositionStoreDebug bool
 }
 
-// NewConfig constructs a new Config instance with default parameters.
+// NewDefaultConfig constructs a new Config instance with default parameters.
 // This constructor is used by the vega application code. Logger is a
 // pointer to a logging instance and defaultStoreDirPath is the root directory
 // where all storage directories are to be read from and written to.
 func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
-		Accounts:              DefaultStoreOptions(),
+		Accounts:              DefaultAccountStoreOptions(),
 		Candles:               DefaultStoreOptions(),
 		Markets:               DefaultMarketStoreOptions(),
 		Orders:                DefaultStoreOptions(),

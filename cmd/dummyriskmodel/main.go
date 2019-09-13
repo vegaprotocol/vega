@@ -1,3 +1,10 @@
+/*
+Command dummyriskmodel serves a dummy risk model on a local socket.
+
+Syntax:
+
+    dummyriskmodel -sockpath /path/to/dummyriskmodel.sock
+*/
 package main
 
 import (
@@ -37,9 +44,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	handler := NewRiskModel()
 	s := http.Server{
-		Handler: handler,
+		Handler: NewRiskModel(),
 	}
 	// be sure to close once we exit or the socket file will not be destroyed
 	defer s.Shutdown(context.Background())

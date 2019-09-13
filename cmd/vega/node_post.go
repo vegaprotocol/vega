@@ -1,4 +1,3 @@
-// This file will contain all hooks WRT "shutdown"
 package main
 
 import (

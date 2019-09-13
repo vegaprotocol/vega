@@ -2,11 +2,11 @@ package settlement_test
 
 import (
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/events"
-
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/settlement"
 	"code.vegaprotocol.io/vega/internal/settlement/mocks"
@@ -326,6 +326,61 @@ func (te *testEngine) getMockMarketPositions(data []posValue) ([]settlement.Mark
 		evts = append(evts, mock)
 	}
 	return raw, evts
+}
+
+func TestConcurrent(t *testing.T) {
+	const N = 10
+
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price uint64, size int64) (*types.FinancialAmount, error) {
+		return &types.FinancialAmount{Amount: 0}, nil
+	})
+
+	cfg := engine.Config
+	cfg.Level.Level = logging.DebugLevel
+	engine.ReloadConf(cfg)
+	cfg.Level.Level = logging.InfoLevel
+	engine.ReloadConf(cfg)
+
+	var wg sync.WaitGroup
+
+	now := time.Now()
+	wg.Add(N * 3)
+	for i := 0; i < N; i++ {
+		data := []posValue{
+			{
+				trader: "testtrader1",
+				price:  1234,
+				size:   100,
+			},
+			{
+				trader: "testtrader2",
+				price:  1235,
+				size:   0,
+			},
+		}
+		raw, evts := engine.getMockMarketPositions(data)
+
+		go func() {
+			defer wg.Done()
+			// Update requires posMu
+			engine.Update(raw)
+		}()
+		go func() {
+			defer wg.Done()
+			// RemoveDistressed requires posMu and closedMu
+			engine.RemoveDistressed(evts)
+		}()
+		go func() {
+			defer wg.Done()
+			// Settle requires posMu
+			_, err := engine.Settle(now)
+			assert.NoError(t, err)
+		}()
+	}
+
+	wg.Wait()
 }
 
 // Finish - call finish on controller, remove test state (positions)

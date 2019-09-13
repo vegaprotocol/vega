@@ -17,9 +17,14 @@ import (
 var (
 	ErrAuthDisabled       = errors.New("auth disabled")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidMarketID    = errors.New("invalid market ID")
 	ErrAuthRequired       = errors.New("auth required")
 	ErrMissingOrder       = errors.New("missing order in request payload")
 	ErrMissingTraderID    = errors.New("missing trader id")
+	ErrMissingPartyID     = errors.New("missing party id")
+	ErrMissingPassword    = errors.New("missing password")
+	ErrMissingToken       = errors.New("missing token")
+	ErrMissingUsername    = errors.New("missing username")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeOrderService
@@ -38,6 +43,7 @@ type tradingService struct {
 	log               *logging.Logger
 	tradeOrderService TradeOrderService
 	accountService    AccountService
+	marketService     MarketService
 	statusChecker     *monitoring.Status
 
 	authEnabled bool
@@ -62,14 +68,40 @@ func (s *tradingService) validateToken(partyID string, tkn string) error {
 	return ErrInvalidCredentials
 }
 
+func (s *tradingService) CheckToken(
+	ctx context.Context, req *protoapi.CheckTokenRequest,
+) (*protoapi.CheckTokenResponse, error) {
+	if !s.authEnabled {
+		return nil, ErrAuthDisabled
+	}
+
+	if len(req.PartyID) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+
+	if len(req.Token) <= 0 {
+		return nil, ErrMissingToken
+	}
+
+	err := s.validateToken(req.PartyID, req.Token)
+	if err != nil {
+		if err == ErrInvalidCredentials {
+			return &protoapi.CheckTokenResponse{Ok: false}, nil
+		}
+		return nil, err
+	}
+
+	return &protoapi.CheckTokenResponse{Ok: true}, nil
+}
+
 func (s *tradingService) SignIn(
 	ctx context.Context, req *protoapi.SignInRequest,
 ) (*protoapi.SignInResponse, error) {
 	if len(req.Id) <= 0 {
-		return nil, errors.New("missing username")
+		return nil, ErrMissingUsername
 	}
 	if len(req.Password) <= 0 {
-		return nil, errors.New("missing password")
+		return nil, ErrMissingUsername
 	}
 
 	var tkn string
@@ -125,6 +157,15 @@ func (s *tradingService) SubmitOrder(
 			s.log.Debug("token error", logging.Error(err))
 			return nil, err
 		}
+	}
+
+	// Validate market early
+	_, err := s.marketService.GetByID(ctx, req.Submission.MarketID)
+	if err != nil {
+		s.log.Error("Invalid Market ID during SubmitOrder",
+			logging.String("marketID", req.Submission.MarketID),
+		)
+		return nil, ErrInvalidMarketID
 	}
 
 	return s.tradeOrderService.CreateOrder(ctx, req.Submission)

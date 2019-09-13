@@ -18,7 +18,7 @@ import (
 // Monday, January 1, 2018 12:00:01 AM GMT+00:00
 const minSinceTimestamp int64 = 1514764801000
 
-var minSinceTime time.Time = vegatime.UnixNano(minSinceTimestamp)
+var minSinceTime = vegatime.UnixNano(minSinceTimestamp)
 
 // Candle is a package internal data struct that implements the CandleStore interface.
 type Candle struct {
@@ -272,18 +272,16 @@ func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time,
 	fetchKey := c.generateFetchKey(market, interval, since)
 	prefix, _ := c.badger.candlePrefix(market, interval, false)
 
+	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
+	defer cancel()
+	deadline, _ := ctx.Deadline()
+
+
 	txn := c.badger.readTransaction()
 	defer txn.Discard()
 
 	it := c.badger.getIterator(txn, false)
 	defer it.Close()
-
-	c.cfgMu.Lock()
-	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
-	c.cfgMu.Unlock()
-	defer cancel()
-
-	deadline, _ := ctx.Deadline()
 
 	var candles []*types.Candle
 	for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {
@@ -408,8 +406,11 @@ func (c *Candle) notify() error {
 
 		for _, item := range c.queue {
 			item := item
-			// find candle with right interval
-			if item.Candle.Interval != iT.Interval {
+
+			// Note: internal transport is per interval per market
+			// SO we only notify for candle with specified interval and market
+			if item.Candle.Interval != iT.Interval || item.Market != iT.Market {
+				// Skip to next market/candle item
 				continue
 			}
 

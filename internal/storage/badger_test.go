@@ -2,31 +2,18 @@ package storage
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/dgraph-io/badger"
 	"github.com/stretchr/testify/require"
 )
 
-func tempDir(t *testing.T, prefix string) string {
-	baseTempDirs := []string{"/dev/shm", os.TempDir()}
-	for _, baseTempDir := range baseTempDirs {
-		_, err := os.Stat(baseTempDir)
-		if err == nil {
-			dir, err := ioutil.TempDir(baseTempDir, prefix)
-			require.NoError(t, err)
-			return dir
-			// Remember: defer os.RemoveAll(dir)
-		}
-	}
-	panic("Could not find a temp dir")
-}
-
 func runBadgerStoreTest(t *testing.T, opts *badger.Options, test func(t *testing.T, bs *badgerStore)) {
-	dir := tempDir(t, "badger-test")
-	defer os.RemoveAll(dir)
+	dir, tidy, err := TempDir("badger-test")
+	if err != nil {
+		t.Fatalf("Failed to create tmp dir: %s", err.Error())
+	}
+	defer tidy()
 
 	if opts == nil {
 		cpy := badger.DefaultOptions

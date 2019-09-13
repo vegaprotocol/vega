@@ -66,7 +66,25 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
+func (t *Svc) checkPagination(limit *uint64) error {
+	if *limit == 0 {
+		*limit = t.Config.PageSizeDefault
+		// Do not return yet. The default may have been set to a number greater
+		// than the maximum.
+	}
+
+	if *limit > t.Config.PageSizeMaximum {
+		return fmt.Errorf("invalid pagination limit: %d is greater than %d", *limit, t.Config.PageSizeMaximum)
+	}
+
+	return nil
+}
+
 func (t *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error) {
+	if err = t.checkPagination(&limit); err != nil {
+		return nil, err
+	}
+
 	trades, err = t.tradeStore.GetByMarket(ctx, market, skip, limit, descending)
 	if err != nil {
 		return nil, err
@@ -75,6 +93,10 @@ func (t *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64
 }
 
 func (t *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) (trades []*types.Trade, err error) {
+	if err = t.checkPagination(&limit); err != nil {
+		return nil, err
+	}
+
 	trades, err = t.tradeStore.GetByParty(ctx, party, skip, limit, descending, market)
 	if err != nil {
 		return nil, err

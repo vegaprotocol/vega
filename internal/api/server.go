@@ -8,10 +8,8 @@ import (
 	"code.vegaprotocol.io/vega/internal"
 	"code.vegaprotocol.io/vega/internal/accounts"
 	"code.vegaprotocol.io/vega/internal/auth"
-	"code.vegaprotocol.io/vega/internal/blockchain"
 	"code.vegaprotocol.io/vega/internal/candles"
 	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/markets"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
@@ -25,21 +23,26 @@ import (
 )
 
 type grpcServer struct {
-	log *logging.Logger
 	Config
-	stats              *internal.Stats
-	client             *blockchain.Client
-	orderService       *orders.Svc
-	tradeService       *trades.Svc
+
+	client BlockchainClient
+	log    *logging.Logger
+	srv    *grpc.Server
+	stats  *internal.Stats
+
+	accountsService    *accounts.Svc
 	candleService      *candles.Svc
-	marketService      *markets.Svc
+	marketService      MarketService
+	orderService       *orders.Svc
 	partyService       *parties.Svc
 	timeService        *vegatime.Svc
-	srv                *grpc.Server
-	statusChecker      *monitoring.Status
+	tradeService       *trades.Svc
+
 	tradingService     *tradingService
-	accountsService    *accounts.Svc
 	tradingDataService *tradingDataService
+
+	statusChecker *monitoring.Status
+
 	// used in order to gracefully close streams
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -49,9 +52,9 @@ func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
 	stats *internal.Stats,
-	client *blockchain.Client,
+	client BlockchainClient,
 	timeService *vegatime.Svc,
-	marketService *markets.Svc,
+	marketService MarketService,
 	partyService *parties.Svc,
 	orderService *orders.Svc,
 	tradeService *trades.Svc,
@@ -165,6 +168,7 @@ func (g *grpcServer) Start() {
 		authEnabled:       g.Config.AuthEnabled,
 		tradeOrderService: g.orderService,
 		accountService:    g.accountsService,
+		marketService:     g.marketService,
 		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc

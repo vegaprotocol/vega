@@ -6,6 +6,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// See positions.MarketPosition
 type pos struct {
 	party string
 	size  int64
@@ -15,6 +16,12 @@ type pos struct {
 type mtmTransfer struct {
 	events.MarketPosition
 	transfer *types.Transfer
+}
+
+func newPos(partyID string) *pos {
+	return &pos{
+		party: partyID,
+	}
 }
 
 // Party - part of the MarketPosition interface, used to update position after SettlePreTrade

@@ -8,11 +8,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Option uses to define the global options.
+// Option defines the global options.
 type Option struct {
 	Debug bool
 }
 
+// Cli defines the client.
 type Cli struct {
 	Option
 	rootCmd     *cobra.Command
@@ -27,8 +28,11 @@ const (
 )
 
 var (
+	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
 	VersionHash = ""
-	Version     = ""
+
+	// Version specifies the version used to build the application. See VERSION in Makefile for details.
+	Version = ""
 )
 
 var aboutVega = `
@@ -75,7 +79,7 @@ func (c *Cli) Run() error {
 	return c.rootCmd.Execute()
 }
 
-// AddCommand add a sub-command.
+// AddCommand adds a sub-command.
 func (c *Cli) AddCommand(parent, child Command) {
 	child.Init(c)
 

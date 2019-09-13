@@ -17,12 +17,18 @@ type GatewayServiceConfig struct {
 	Enabled bool
 }
 
+type RESTGatewayServiceConfig struct {
+	ServerConfig
+	Enabled    bool
+	APMEnabled bool
+}
+
 type Config struct {
 	Level                    encoding.LogLevel
 	Timeout                  encoding.Duration
 	Node                     ServerConfig
 	GraphQL                  GatewayServiceConfig
-	REST                     GatewayServiceConfig
+	REST                     RESTGatewayServiceConfig
 	SubscriptionRetries      int
 	GraphQLPlaygroundEnabled bool
 }
@@ -40,12 +46,13 @@ func NewDefaultConfig() Config {
 			},
 			Enabled: true,
 		},
-		REST: GatewayServiceConfig{
+		REST: RESTGatewayServiceConfig{
 			ServerConfig: ServerConfig{
 				IP:   "0.0.0.0",
 				Port: 3003,
 			},
-			Enabled: true,
+			Enabled:    true,
+			APMEnabled: true,
 		},
 		Node: ServerConfig{
 			IP:   "0.0.0.0",

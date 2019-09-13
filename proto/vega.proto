@@ -36,11 +36,17 @@ message RiskResult {
 }
 
 message Order {
-  enum Type {
+  enum TimeInForce {
     GTC = 0;
     GTT = 1;
-    ENE = 2;
+    IOC = 2;
     FOK = 3;
+  }
+
+  enum Type {
+    MARKET  = 0; // Market order type
+    LIMIT   = 1; // Limit order
+    NETWORK = 2; // order where the initiating party is the network (used for distressed traders)
   }
 
   enum Status {
@@ -58,11 +64,12 @@ message Order {
   uint64 price = 5;
   uint64 size = 6;
   uint64 remaining = 7;
-  Type type = 8;
-  int64 createdAt = 9;
-  Status status = 10;
-  int64 expiresAt = 11;
-  string reference = 12;
+  TimeInForce timeInForce  = 8;
+  Type type = 9;
+  int64 createdAt = 10;
+  Status status = 11;
+  int64 expiresAt = 12;
+  string reference = 13;
 }
 
 message OrderCancellationConfirmation {
@@ -189,7 +196,7 @@ enum ChainStatus {
 message PendingOrder {
   string reference = 1;
   uint64 price = 2;
-  Order.Type type = 3;
+  Order.TimeInForce TimeInForce = 3;
   Side side = 4;
   string marketID = 5;
   uint64 size = 6;
@@ -217,7 +224,7 @@ message OrderSubmission {
   uint64 price = 4;
   uint64 size = 5;
   Side side = 6;
-  Order.Type type = 7;
+  Order.TimeInForce TimeInForce = 7;
   int64 expiresAt = 8;
 }
 

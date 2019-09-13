@@ -16,6 +16,35 @@
   ],
   "paths": {
     "/auth/token": {
+      "get": {
+        "summary": "unary calls - read",
+        "operationId": "CheckToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiCheckTokenResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      },
       "post": {
         "operationId": "SignIn",
         "responses": {
@@ -33,6 +62,32 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/apiSignInRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/fountain": {
+      "post": {
+        "operationId": "NotifyTraderAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiNotifyTraderAccountResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiNotifyTraderAccountRequest"
             }
           }
         ],
@@ -471,6 +526,70 @@
         ]
       }
     },
+    "/parties/{partyID}": {
+      "get": {
+        "summary": "parties",
+        "operationId": "PartyByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPartyByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/parties/{partyID}/accounts": {
+      "get": {
+        "summary": "accounts",
+        "operationId": "AccountsByParty",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAccountsByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NO_ACC",
+              "INSURANCE",
+              "SETTLEMENT",
+              "MARGIN",
+              "GENERAL"
+            ],
+            "default": "NO_ACC"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/parties/{partyID}/orders": {
       "get": {
         "operationId": "OrdersByParty",
@@ -645,6 +764,60 @@
       ],
       "default": "Active"
     },
+    "OrderTimeInForce": {
+      "type": "string",
+      "enum": [
+        "GTC",
+        "GTT",
+        "IOC",
+        "FOK"
+      ],
+      "default": "GTC"
+    },
+    "apiAccountsByPartyAndAssetResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
+    "apiAccountsByPartyAndMarketResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
+    "apiAccountsByPartyAndTypeResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
+    "apiAccountsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
     "apiAmendOrderRequest": {
       "type": "object",
       "properties": {
@@ -667,14 +840,12 @@
         }
       }
     },
-    "apiCollateralResponse": {
+    "apiCheckTokenResponse": {
       "type": "object",
       "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
+        "ok": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
@@ -725,6 +896,14 @@
           "items": {
             "$ref": "#/definitions/vegaMarket"
           }
+        }
+      }
+    },
+    "apiNotifyTraderAccountRequest": {
+      "type": "object",
+      "properties": {
+        "notif": {
+          "$ref": "#/definitions/vegaNotifyTraderAccount"
         }
       }
     },
@@ -1285,6 +1464,9 @@
           "type": "string",
           "format": "uint64"
         },
+        "timeInForce": {
+          "$ref": "#/definitions/OrderTimeInForce"
+        },
         "type": {
           "$ref": "#/definitions/vegaOrderType"
         },
@@ -1364,8 +1546,8 @@
         "side": {
           "$ref": "#/definitions/vegaSide"
         },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
+        "TimeInForce": {
+          "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
           "type": "string",
@@ -1376,12 +1558,11 @@
     "vegaOrderType": {
       "type": "string",
       "enum": [
-        "GTC",
-        "GTT",
-        "ENE",
-        "FOK"
+        "MARKET",
+        "LIMIT",
+        "NETWORK"
       ],
-      "default": "GTC"
+      "default": "MARKET"
     },
     "vegaParty": {
       "type": "object",
@@ -1407,8 +1588,8 @@
           "type": "string",
           "format": "uint64"
         },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType"
+        "TimeInForce": {
+          "$ref": "#/definitions/OrderTimeInForce"
         },
         "side": {
           "$ref": "#/definitions/vegaSide"

@@ -24,6 +24,8 @@ type testEngine struct {
 type testMargin struct {
 	party    string
 	size     int64
+	buy      int64
+	sell     int64
 	price    uint64
 	transfer *types.Transfer
 	asset    string
@@ -185,6 +187,14 @@ func (m testMargin) GeneralBalance() uint64 {
 
 func (m testMargin) Price() uint64 {
 	return m.price
+}
+
+func (m testMargin) Buy() int64 {
+	return m.buy
+}
+
+func (m testMargin) Sell() int64 {
+	return m.sell
 }
 
 func (m testMargin) Size() int64 {

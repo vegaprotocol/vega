@@ -14,6 +14,8 @@ http:
     - selector: api.trading.SignIn
       post: '/auth/token'
       body: "*"
+    - selector: api.trading.CheckToken
+      get: '/auth/token'
 
     # Markets
     - selector: api.trading_data.Markets
@@ -50,7 +52,7 @@ http:
     # Parties
     - selector: api.trading_data.Parties
       get: '/parties'
-    - selector: api.trading_data.Party
+    - selector: api.trading_data.PartyByID
       get: '/parties/{partyID}'
     - selector: api.trading_data.OrdersByParty
       get: '/parties/{partyID}/orders'
@@ -58,8 +60,13 @@ http:
       get: '/parties/{partyID}/positions'
     - selector: api.trading_data.TradesByParty
       get: '/parties/{partyID}/trades'
+    - selector: api.trading_data.AccountsByParty
+      get: '/parties/{partyID}/accounts'
 
     # Miscellaneous
+    - selector: api.trading.NotifyTraderAccount
+      post: '/fountain'
+      body: "*"
     - selector: api.trading_data.Statistics
       get: '/statistics'
     - selector: api.trading_data.GetVegaTime
