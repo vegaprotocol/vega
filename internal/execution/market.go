@@ -445,7 +445,6 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	if networkPos == 0 {
 		// remove accounts, positions and return
 		closed = m.position.RemoveDistressed(closed)
-		// @TODO handle response value, contains all ledger movements
 		asset, _ := m.mkt.GetAsset()
 		if _, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset); err != nil {
 			m.log.Error(
@@ -487,7 +486,6 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	}
 	// @NOTE: At this point, the network order was updated by the orderbook
 	// the price field now contains the average trade price at which the order was fulfilled
-	// store network order, too??
 	if err := m.orders.Post(no); err != nil {
 		m.log.Error("Failure storing new order in submit order", logging.Error(err))
 	}
@@ -509,8 +507,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		// are the counter parties of this given trade (non-distressed traders), and they need to pass through MTM at the end
 		tradersCh := make(chan events.MarketPosition, len(confirmation.Trades))
 		// Set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
-		// @TODO settlement engine needs to be checked here @TODO
-		// possibly this is using the mark price incorrectly
+		// settlement engine needs to be checked here
 		m.settlement.ListenClosed(tradersCh)
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
@@ -553,16 +550,21 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	}
 	// remove accounts, positions, any funds left on the distressed accounts will be moved to the
 	// insurance pool, which needs to happen before we settle the non-distressed traders
-	_ = m.position.RemoveDistressed(closed)
+	closed = m.position.RemoveDistressed(closed)
 	asset, _ := m.mkt.GetAsset()
-	// @TODO handle response value, contains all ledger movements
-	if _, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset); err != nil {
+	movements, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset)
+	if err != nil {
 		m.log.Error(
 			"Failed to remove distressed accounts cleanly",
 			logging.Error(err),
 		)
 		return err
 	}
+	// currently just logging ledger movements, will be added to a stream storage engine in time
+	m.log.Debug(
+		"Legder movements after removing distressed traders",
+		logging.String("legder-dump", fmt.Sptrinf("%#v", movements.Transfers)),
+	)
 	// get the updated positions
 	pos := m.position.Positions()
 	evt := make([]events.MarketPosition, 0, len(pos))
