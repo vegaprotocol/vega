@@ -152,7 +152,6 @@ func getTestGRPCServer(
 		return
 	}
 
-	// Risk Store
 	transferResponseStore, err := storage.NewTransferResponses(logger, conf.Storage)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create risk store")
