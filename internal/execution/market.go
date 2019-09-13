@@ -33,6 +33,8 @@ var (
 	ErrMarginCheckFailed       = errors.New("margin check failed")
 	ErrMarginCheckInsufficient = errors.New("insufficient margin")
 	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
+
+	networkPartyID = "network"
 )
 
 type Market struct {
@@ -468,13 +470,19 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		// remove accounts, positions and return
 		closed = m.position.RemoveDistressed(closed)
 		asset, _ := m.mkt.GetAsset()
-		if _, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset); err != nil {
+		movements, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset)
+		if err != nil {
 			m.log.Error(
 				"Failed to remove distressed accounts cleanly",
 				logging.Error(err),
 			)
 			return err
 		}
+		// currently just logging ledger movements, will be added to a stream storage engine in time
+		m.log.Debug(
+			"Legder movements after removing distressed traders",
+			logging.String("legder-dump", fmt.Sprintf("%#v", movements.Transfers)),
+		)
 		return nil
 	}
 	// network order
@@ -485,7 +493,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		MarketID:    m.GetID(),
 		Remaining:   size,
 		Status:      types.Order_Active,
-		PartyID:     "",              // network is not a party as such
+		PartyID:     networkPartyID,  // network is not a party as such
 		Side:        types.Side_Sell, // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out liquidity sourcing",
@@ -613,7 +621,7 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		MarketID:    m.GetID(),
 		Remaining:   size,
 		Status:      types.Order_Active,
-		PartyID:     "",   // network is not a party as such
+		PartyID:     networkPartyID,
 		Side:        side, // assume sell, price is zero in that case anyway
 		Price:       settleOrder.Price,
 		CreatedAt:   m.currentTime.UnixNano(),
