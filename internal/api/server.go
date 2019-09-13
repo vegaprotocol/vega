@@ -30,13 +30,13 @@ type grpcServer struct {
 	srv    *grpc.Server
 	stats  *internal.Stats
 
-	accountsService    *accounts.Svc
-	candleService      *candles.Svc
-	marketService      MarketService
-	orderService       *orders.Svc
-	partyService       *parties.Svc
-	timeService        *vegatime.Svc
-	tradeService       *trades.Svc
+	accountsService *accounts.Svc
+	candleService   *candles.Svc
+	marketService   MarketService
+	orderService    *orders.Svc
+	partyService    *parties.Svc
+	timeService     *vegatime.Svc
+	tradeService    *trades.Svc
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
