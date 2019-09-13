@@ -59,7 +59,7 @@ func (r *Engine) calculateCloseoutPNL(
 	}
 
 	if potentialShort < 0 {
-		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(potentialShort), types.Side_Sell)
+		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(-potentialShort), types.Side_Sell)
 		if err != nil {
 			r.log.Warn("got non critical error from GetCloseoutPrice for Sell side",
 				logging.Error(err))
