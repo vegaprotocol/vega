@@ -69,11 +69,12 @@ func (g *gatewayCommand) runGateway(args []string) error {
 	}
 
 	waitSig(ctx, g.Log)
-	gty.Stop()
+	gty.stop()
 
 	return nil
 }
 
+// Gateway contains all the gateway objects, currently GraphQL and REST.
 type Gateway struct {
 	gqlSrv  gatewaySrv
 	restSrv gatewaySrv
@@ -109,7 +110,7 @@ func startGateway(log *logging.Logger, cfg gateway.Config) (*Gateway, error) {
 
 }
 
-func (g *Gateway) Stop() {
+func (g *Gateway) stop() {
 	if g.restSrv != nil {
 		g.restSrv.Stop()
 	}

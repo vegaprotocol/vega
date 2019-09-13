@@ -54,14 +54,14 @@ func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.Pe
 	}
 
 	return &types.PendingOrder{
-		Reference: order.Reference,
-		Price:     order.Price,
-		Type:      order.Type,
-		Side:      order.Side,
-		MarketID:  order.MarketID,
-		Size:      order.Size,
-		PartyID:   order.PartyID,
-		Status:    order.Status,
+		Reference:   order.Reference,
+		Price:       order.Price,
+		TimeInForce: order.TimeInForce,
+		Side:        order.Side,
+		MarketID:    order.MarketID,
+		Size:        order.Size,
+		PartyID:     order.PartyID,
+		Status:      order.Status,
 	}, nil
 }
 

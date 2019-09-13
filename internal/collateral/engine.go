@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/events"
-	"code.vegaprotocol.io/vega/internal/storage"
-
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -17,6 +15,8 @@ import (
 
 const (
 	initialAccountSize = 4096
+	systemOwner        = "system"
+	noMarket           = "general"
 )
 
 var (
@@ -26,6 +26,7 @@ var (
 	ErrAccountDoNotExists        = errors.New("account do not exists")
 	ErrAccountAlreadyExists      = errors.New("account already exists")
 	ErrInsufficientTraderBalance = errors.New("trader has insufficient balance for margin")
+	ErrInvalidTransferTypeForOp  = errors.New("invalid transfer type for operation")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buffer_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral AccountBuffer
@@ -54,12 +55,12 @@ type Engine struct {
 func accountID(marketID, traderID, asset string, ty types.AccountType) string {
 	// if no marketID -> trader general account
 	if len(marketID) <= 0 {
-		marketID = storage.NoMarket
+		marketID = noMarket
 	}
 
 	// market account
 	if len(traderID) <= 0 {
-		traderID = storage.SystemOwner
+		traderID = systemOwner
 	}
 
 	var b strings.Builder
@@ -112,14 +113,26 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 	var ok bool
 	insurance, ok = e.accs[insID]
 	if !ok {
-		fmt.Printf("asset: %s - accounts: %#v\n", asset, e.accs)
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing system account",
+				logging.String("asset", asset),
+				logging.String("id", insID),
+				logging.String("market", marketID),
+			)
+		}
 		err = ErrSystemAccountsMissing
 		return
 	}
 
 	settle, ok = e.accs[setID]
 	if !ok {
-		fmt.Printf("asset: %s - accounts: %#v\n", asset, e.accs)
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing system account",
+				logging.String("asset", asset),
+				logging.String("id", setID),
+				logging.String("market", marketID),
+			)
+		}
 		err = ErrSystemAccountsMissing
 		return
 	}
@@ -132,14 +145,14 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 	// accountID(marketID, traderID, asset string, ty types.AccountType) accountIDT
 	genID := accountID("", traderID, asset, types.AccountType_GENERAL)
 	marginID := accountID(marketID, traderID, asset, types.AccountType_MARGIN)
-	gen, err := e.GetAccountByID(genID)
+	_, err := e.GetAccountByID(genID)
 	if err != nil {
 		e.log.Error(
 			"Trader doesn't have a general account somehow?",
 			logging.String("trader-id", traderID))
 		return ErrTraderAccountsMissing
 	}
-	margin, err := e.GetAccountByID(marginID)
+	_, err = e.GetAccountByID(marginID)
 	if err != nil {
 		e.log.Error(
 			"Trader doesn't have a margin account somehow?",
@@ -148,36 +161,6 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 		return ErrTraderAccountsMissing
 	}
 
-	// let's get the balances we need
-	e.cfgMu.Lock()
-	genBal := e.Config.TraderGeneralAccountBalance
-	marginBal := genBal / 100 * e.Config.TraderMarginPercent
-	e.cfgMu.Unlock()
-	// check to see if there's enough balance on the general account already
-	// if not, add it
-	if gen.Balance < genBal {
-		gen.Balance = genBal
-	}
-	// subtract the margin from the general balance
-	gen.Balance -= marginBal
-	if err := e.UpdateBalance(gen.Id, gen.Balance); err != nil {
-		e.log.Error(
-			"Failed to set new balance for general account",
-			logging.String("trader-id", traderID),
-			logging.String("account-id", gen.Id),
-			logging.Int64("balance", gen.Balance),
-			logging.Error(err))
-		return err
-	}
-	if err := e.UpdateBalance(margin.Id, marginBal); err != nil {
-		e.log.Error(
-			"Failed to set new balance for margin account",
-			logging.String("trader-id", traderID),
-			logging.String("account-id", margin.Id),
-			logging.Int64("balance", marginBal),
-			logging.Error(err))
-		return err
-	}
 	return nil
 }
 
@@ -634,6 +617,88 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 	return &ret, nil
 }
 
+func (e *Engine) EnsureMargin(
+	mktID string, risk events.Risk) (*types.TransferResponse, error) {
+	transfer := risk.Transfer()
+	if transfer.Type != types.TransferType_MARGIN_LOW &&
+		transfer.Type != types.TransferType_MARGIN_HIGH {
+		e.log.Error("Unexpected transfer type for ensure margin",
+			logging.String("type", transfer.Type.String()))
+		return nil, ErrInvalidTransferTypeForOp
+	}
+
+	// first get margin account of this trader
+	marginAcc, err := e.GetAccountByID(accountID(mktID, transfer.Owner, risk.Asset(), types.AccountType_MARGIN))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin account",
+			logging.String("trader-id", transfer.Owner),
+			logging.String("market-id", mktID),
+			logging.String("asset", risk.Asset()),
+			logging.Error(err))
+		return nil, err
+	}
+
+	// get the general account of this trader
+	generalAcc, err := e.GetAccountByID(accountID("", transfer.Owner, risk.Asset(), types.AccountType_GENERAL))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general account",
+			logging.String("trader-id", transfer.Owner),
+			logging.String("market-id", mktID),
+			logging.String("asset", risk.Asset()),
+			logging.Error(err))
+		return nil, err
+	}
+
+	if generalAcc.Balance < transfer.Amount.Amount {
+		e.log.Debug("Not enough monies from trader account",
+			logging.String("trader-id", transfer.Owner),
+			logging.String("market-id", mktID),
+			logging.String("asset", risk.Asset()),
+			logging.String("account", generalAcc.Id),
+			logging.Int64("balance", generalAcc.Balance),
+			logging.Int64("expected-amount", transfer.Amount.Amount))
+		return nil, ErrInsufficientTraderBalance
+	}
+
+	// if all checks are ok, create the transfer request
+	req := &types.TransferRequest{
+		FromAccount: []*types.Account{generalAcc},
+		ToAccount:   []*types.Account{marginAcc},
+		Asset:       risk.Asset(),
+		Amount:      uint64(transfer.Amount.Amount - marginAcc.Balance),
+		MinAmount:   uint64(transfer.Amount.MinAmount - marginAcc.Balance),
+		Reference:   fmt.Sprintf("MarginUpdate:%v:%v", transfer.Owner, transfer.Amount.Amount),
+	}
+
+	ledgerEntries, err := e.getLedgerEntries(req)
+	if err != nil {
+		e.log.Error(
+			"Failed to move monies from margin from general account",
+			logging.String("trader-id", transfer.Owner),
+			logging.String("market-id", mktID),
+			logging.String("asset", risk.Asset()),
+			logging.Error(err))
+		return nil, err
+	}
+
+	for _, v := range ledgerEntries.Transfers {
+		// increment the to account
+		if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("account-id", v.ToAccount),
+				logging.Int64("amount", v.Amount),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+	}
+
+	return ledgerEntries, nil
+}
+
 func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.TransferResponse, error) {
 	// creatre a transfer request that we will reuse all the time in order to make allocations smallers
 	req := &types.TransferRequest{
@@ -724,7 +789,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (
 		insAcc := &types.Account{
 			Id:       insuranceID,
 			Asset:    asset,
-			Owner:    storage.SystemOwner,
+			Owner:    systemOwner,
 			Balance:  insurance,
 			MarketID: marketID,
 			Type:     types.AccountType_INSURANCE,
@@ -739,7 +804,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (
 		setAcc := &types.Account{
 			Id:       settleID,
 			Asset:    asset,
-			Owner:    storage.SystemOwner,
+			Owner:    systemOwner,
 			Balance:  0,
 			MarketID: marketID,
 			Type:     types.AccountType_SETTLEMENT,
@@ -768,13 +833,13 @@ func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID
 		e.buf.Add(*acc)
 	}
 
-	generalID = accountID(storage.NoMarket, traderID, asset, types.AccountType_GENERAL)
+	generalID = accountID(noMarket, traderID, asset, types.AccountType_GENERAL)
 	_, ok = e.accs[generalID]
 	if !ok {
 		acc := &types.Account{
 			Id:       generalID,
 			Asset:    asset,
-			MarketID: storage.NoMarket,
+			MarketID: noMarket,
 			Balance:  0,
 			Owner:    traderID,
 			Type:     types.AccountType_GENERAL,
@@ -784,6 +849,48 @@ func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID
 	}
 
 	return
+}
+
+func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
+	tl := len(traders)
+	if tl == 0 {
+		return nil, nil
+	}
+	// insurance account is the one we're after
+	_, ins, err := e.getSystemAccounts(marketID, asset)
+	if err != nil {
+		return nil, err
+	}
+	resp := types.TransferResponse{
+		Transfers: make([]*types.LedgerEntry, 0, tl),
+	}
+	for _, trader := range traders {
+		acc, err := e.GetAccountByID(accountID(marketID, trader.Party(), asset, types.AccountType_MARGIN))
+		if err != nil {
+			return nil, err
+		}
+		// only create a ledger move if the balance is greater than zero
+		if acc.Balance > 0 {
+			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
+				FromAccount: acc.Id,
+				ToAccount:   ins.Id,
+				Amount:      acc.Balance,
+				Reference:   "close-out distressed",
+				Type:        "", // @TODO determine this value
+				Timestamp:   e.currentTime,
+			})
+			if err := e.IncrementBalance(ins.Id, acc.Balance); err != nil {
+				return nil, err
+			}
+			if err := e.UpdateBalance(acc.Id, 0); err != nil {
+				return nil, err
+			}
+		}
+		if err := e.removeAccount(acc.Id); err != nil {
+			return nil, err
+		}
+	}
+	return &resp, nil
 }
 
 func (e *Engine) UpdateBalance(id string, balance int64) error {
@@ -813,4 +920,9 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	}
 	acccpy := *acc
 	return &acccpy, nil
+}
+
+func (e *Engine) removeAccount(id string) error {
+	delete(e.accs, id)
+	return nil
 }

@@ -63,7 +63,16 @@ func (p *Party) addParty(ptyID, mktID string) {
 	p.parties[mktID][ptyID] = struct{}{}
 }
 
+func (p *Party) NotifyTraderAccountWithTopUpAmount(
+	notif *proto.NotifyTraderAccount, amount int64) error {
+	return p.notifyTraderAccount(notif, amount)
+}
+
 func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
+	return p.notifyTraderAccount(notif, topUpAmount)
+}
+
+func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int64) error {
 	alreadyTopUp := map[string]struct{}{}
 
 	// ignore erros as they can only happen when the party already exists
@@ -87,7 +96,7 @@ func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 		if _, ok := alreadyTopUp[generalID]; !ok {
 			alreadyTopUp[generalID] = struct{}{}
 			// then credit the general account
-			err = p.collateral.IncrementBalance(generalID, topUpAmount)
+			err = p.collateral.IncrementBalance(generalID, amount)
 			if err != nil {
 				p.log.Error("unable to topup trader account",
 					logging.Error(err))
@@ -106,7 +115,7 @@ func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 		p.log.Info("trader account topup",
 			logging.String("asset", asset),
 			logging.String("traderID", notif.TraderID),
-			logging.Int64("topup-amount", topUpAmount),
+			logging.Int64("topup-amount", amount),
 			logging.Int64("new-balance", acc.Balance))
 
 		// now add the trader to the given market (move monies is margin account)

@@ -59,7 +59,7 @@ type ComplexityRoot struct {
 	Account struct {
 		Asset   func(childComplexity int) int
 		Balance func(childComplexity int) int
-		Id      func(childComplexity int) int
+		Market  func(childComplexity int) int
 		Type    func(childComplexity int) int
 	}
 
@@ -72,6 +72,10 @@ type ComplexityRoot struct {
 		Open      func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 		Volume    func(childComplexity int) int
+	}
+
+	CheckTokenResponse struct {
+		Ok func(childComplexity int) int
 	}
 
 	ContinuousTrading struct {
@@ -143,30 +147,31 @@ type ComplexityRoot struct {
 	Mutation struct {
 		OrderAmend  func(childComplexity int, id string, partyID string, price int, size int, expiration *string) int
 		OrderCancel func(childComplexity int, id string, partyID string, marketID string) int
-		OrderSubmit func(childComplexity int, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) int
+		OrderSubmit func(childComplexity int, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string) int
 		Signin      func(childComplexity int, id string, password string) int
 	}
 
 	Order struct {
-		CreatedAt func(childComplexity int) int
-		Datetime  func(childComplexity int) int
-		ExpiresAt func(childComplexity int) int
-		Id        func(childComplexity int) int
-		Market    func(childComplexity int) int
-		Party     func(childComplexity int) int
-		Price     func(childComplexity int) int
-		Reference func(childComplexity int) int
-		Remaining func(childComplexity int) int
-		Side      func(childComplexity int) int
-		Size      func(childComplexity int) int
-		Status    func(childComplexity int) int
-		Timestamp func(childComplexity int) int
-		Trades    func(childComplexity int) int
-		Type      func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		Datetime    func(childComplexity int) int
+		ExpiresAt   func(childComplexity int) int
+		Id          func(childComplexity int) int
+		Market      func(childComplexity int) int
+		Party       func(childComplexity int) int
+		Price       func(childComplexity int) int
+		Reference   func(childComplexity int) int
+		Remaining   func(childComplexity int) int
+		Side        func(childComplexity int) int
+		Size        func(childComplexity int) int
+		Status      func(childComplexity int) int
+		TimeInForce func(childComplexity int) int
+		Timestamp   func(childComplexity int) int
+		Trades      func(childComplexity int) int
+		Type        func(childComplexity int) int
 	}
 
 	Party struct {
-		Accounts  func(childComplexity int, marketID *string, typeArg *AccountType) int
+		Accounts  func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
 		ID        func(childComplexity int) int
 		Orders    func(childComplexity int, open *bool, skip *int, first *int, last *int) int
 		Positions func(childComplexity int) int
@@ -174,15 +179,15 @@ type ComplexityRoot struct {
 	}
 
 	PendingOrder struct {
-		Id        func(childComplexity int) int
-		Market    func(childComplexity int) int
-		Party     func(childComplexity int) int
-		Price     func(childComplexity int) int
-		Reference func(childComplexity int) int
-		Side      func(childComplexity int) int
-		Size      func(childComplexity int) int
-		Status    func(childComplexity int) int
-		Type      func(childComplexity int) int
+		Id          func(childComplexity int) int
+		Market      func(childComplexity int) int
+		Party       func(childComplexity int) int
+		Price       func(childComplexity int) int
+		Reference   func(childComplexity int) int
+		Side        func(childComplexity int) int
+		Size        func(childComplexity int) int
+		Status      func(childComplexity int) int
+		TimeInForce func(childComplexity int) int
 	}
 
 	Position struct {
@@ -205,6 +210,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		CheckToken func(childComplexity int, partyID string, token string) int
 		Market     func(childComplexity int, id string) int
 		Markets    func(childComplexity int, id *string) int
 		Parties    func(childComplexity int, id *string) int
@@ -245,7 +251,7 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		Accounts    func(childComplexity int, marketID *string, partyID *string, typeArg *AccountType) int
+		Accounts    func(childComplexity int, marketID *string, partyID *string, asset *string, typeArg *AccountType) int
 		Candles     func(childComplexity int, marketID string, interval Interval) int
 		MarketDepth func(childComplexity int, marketID string) int
 		Orders      func(childComplexity int, marketID *string, partyID *string) int
@@ -276,6 +282,7 @@ type AccountResolver interface {
 	Balance(ctx context.Context, obj *proto.Account) (string, error)
 
 	Type(ctx context.Context, obj *proto.Account) (AccountType, error)
+	Market(ctx context.Context, obj *proto.Account) (*Market, error)
 }
 type CandleResolver interface {
 	Timestamp(ctx context.Context, obj *proto.Candle) (string, error)
@@ -301,14 +308,14 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	OrderSubmit(ctx context.Context, marketID string, partyID string, price string, size string, side Side, typeArg OrderType, expiration *string) (*proto.PendingOrder, error)
+	OrderSubmit(ctx context.Context, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
 	OrderAmend(ctx context.Context, id string, partyID string, price int, size int, expiration *string) (*proto.PendingOrder, error)
 	Signin(ctx context.Context, id string, password string) (string, error)
 }
 type OrderResolver interface {
 	Price(ctx context.Context, obj *proto.Order) (string, error)
-	Type(ctx context.Context, obj *proto.Order) (OrderType, error)
+	TimeInForce(ctx context.Context, obj *proto.Order) (OrderTimeInForce, error)
 	Side(ctx context.Context, obj *proto.Order) (Side, error)
 	Market(ctx context.Context, obj *proto.Order) (*Market, error)
 	Size(ctx context.Context, obj *proto.Order) (string, error)
@@ -321,16 +328,17 @@ type OrderResolver interface {
 	Status(ctx context.Context, obj *proto.Order) (OrderStatus, error)
 
 	Trades(ctx context.Context, obj *proto.Order) ([]*proto.Trade, error)
+	Type(ctx context.Context, obj *proto.Order) (*OrderType, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, open *bool, skip *int, first *int, last *int) ([]proto.Order, error)
 	Trades(ctx context.Context, obj *Party, marketID *string, skip *int, first *int, last *int) ([]proto.Trade, error)
-	Accounts(ctx context.Context, obj *Party, marketID *string, typeArg *AccountType) ([]proto.Account, error)
+	Accounts(ctx context.Context, obj *Party, marketID *string, asset *string, typeArg *AccountType) ([]proto.Account, error)
 	Positions(ctx context.Context, obj *Party) ([]proto.MarketPosition, error)
 }
 type PendingOrderResolver interface {
 	Price(ctx context.Context, obj *proto.PendingOrder) (*string, error)
-	Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error)
+	TimeInForce(ctx context.Context, obj *proto.PendingOrder) (*OrderTimeInForce, error)
 	Side(ctx context.Context, obj *proto.PendingOrder) (*Side, error)
 	Market(ctx context.Context, obj *proto.PendingOrder) (*Market, error)
 	Size(ctx context.Context, obj *proto.PendingOrder) (*string, error)
@@ -360,6 +368,7 @@ type QueryResolver interface {
 	Parties(ctx context.Context, id *string) ([]Party, error)
 	Party(ctx context.Context, id string) (*Party, error)
 	Statistics(ctx context.Context) (*proto.Statistics, error)
+	CheckToken(ctx context.Context, partyID string, token string) (*CheckTokenResponse, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *proto.Statistics) (int, error)
@@ -389,7 +398,7 @@ type SubscriptionResolver interface {
 	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []proto.Trade, error)
 	Positions(ctx context.Context, partyID string) (<-chan *proto.MarketPosition, error)
 	MarketDepth(ctx context.Context, marketID string) (<-chan *proto.MarketDepth, error)
-	Accounts(ctx context.Context, marketID *string, partyID *string, typeArg *AccountType) (<-chan *proto.Account, error)
+	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *proto.Trade) (*Market, error)
@@ -431,12 +440,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Account.Balance(childComplexity), true
 
-	case "Account.Id":
-		if e.complexity.Account.Id == nil {
+	case "Account.Market":
+		if e.complexity.Account.Market == nil {
 			break
 		}
 
-		return e.complexity.Account.Id(childComplexity), true
+		return e.complexity.Account.Market(childComplexity), true
 
 	case "Account.Type":
 		if e.complexity.Account.Type == nil {
@@ -500,6 +509,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Candle.Volume(childComplexity), true
+
+	case "CheckTokenResponse.Ok":
+		if e.complexity.CheckTokenResponse.Ok == nil {
+			break
+		}
+
+		return e.complexity.CheckTokenResponse.Ok(childComplexity), true
 
 	case "ContinuousTrading.TickSize":
 		if e.complexity.ContinuousTrading.TickSize == nil {
@@ -812,7 +828,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string)), true
+		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string)), true
 
 	case "Mutation.Signin":
 		if e.complexity.Mutation.Signin == nil {
@@ -910,6 +926,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Status(childComplexity), true
 
+	case "Order.TimeInForce":
+		if e.complexity.Order.TimeInForce == nil {
+			break
+		}
+
+		return e.complexity.Order.TimeInForce(childComplexity), true
+
 	case "Order.Timestamp":
 		if e.complexity.Order.Timestamp == nil {
 			break
@@ -941,7 +964,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["type"].(*AccountType)), true
+		return e.complexity.Party.Accounts(childComplexity, args["marketId"].(*string), args["asset"].(*string), args["type"].(*AccountType)), true
 
 	case "Party.ID":
 		if e.complexity.Party.ID == nil {
@@ -1037,12 +1060,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PendingOrder.Status(childComplexity), true
 
-	case "PendingOrder.Type":
-		if e.complexity.PendingOrder.Type == nil {
+	case "PendingOrder.TimeInForce":
+		if e.complexity.PendingOrder.TimeInForce == nil {
 			break
 		}
 
-		return e.complexity.PendingOrder.Type(childComplexity), true
+		return e.complexity.PendingOrder.TimeInForce(childComplexity), true
 
 	case "Position.AverageEntryPrice":
 		if e.complexity.Position.AverageEntryPrice == nil {
@@ -1134,6 +1157,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PriceLevel.Volume(childComplexity), true
+
+	case "Query.CheckToken":
+		if e.complexity.Query.CheckToken == nil {
+			break
+		}
+
+		args, err := ec.field_Query_checkToken_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CheckToken(childComplexity, args["partyId"].(string), args["token"].(string)), true
 
 	case "Query.Market":
 		if e.complexity.Query.Market == nil {
@@ -1403,7 +1438,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Accounts(childComplexity, args["marketId"].(*string), args["partyId"].(*string), args["type"].(*AccountType)), true
+		return e.complexity.Subscription.Accounts(childComplexity, args["marketId"].(*string), args["partyId"].(*string), args["asset"].(*string), args["type"].(*AccountType)), true
 
 	case "Subscription.Candles":
 		if e.complexity.Subscription.Candles == nil {
@@ -1658,8 +1693,8 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `## VEGA - GraphQL schema
 
 schema {
-    query: Query,
-    subscription: Subscription,
+    query: Query
+    subscription: Subscription
     mutation: Mutation
 }
 
@@ -1670,17 +1705,17 @@ type Mutation {
   # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
   orderSubmit(
     # ID of the market to place the order
-    marketId: String!,
+    marketId: String!
     # ID of the party placing the order
-    partyId: String!,
+    partyId: String!
     # Price of the asset
-    price: String!,
+    price: String!
     # Size ofthe order
-    size: String!,
+    size: String!
     # Side of the order (Buy or Sell)
-    side: Side!,
-    # Type of the order
-    type: OrderType!,
+    side: Side!
+    # TimeInForce of the order
+    timeInForce: OrderTimeInForce!
     # exiration of the the order
     expiration: String
   ): PendingOrder!
@@ -1689,33 +1724,33 @@ type Mutation {
   # It validates and sends the request out for consensus.
   orderCancel(
     # ID of the order to cancel
-    id: ID!,
+    id: ID!
     # ID of the party placing the order
-    partyId: String!,
+    partyId: String!
     # ID of the market where to find the order
-    marketId: String!,
+    marketId: String!
   ): PendingOrder!
 
   # Send a amend order request into VEGA network, this does not immediately amend an order.
   # It validates and sends the request out for consensus.
   orderAmend(
     # ID of the order to amend
-    id: ID!,
+    id: ID!
     # ID of the party which created the order
     partyId: String!
     # New price for this order
-    price: Int!,
+    price: Int!
     # New size for this order
-    size: Int!,
+    size: Int!
     # New expiration time
-    expiration: String,
+    expiration: String
   ): PendingOrder!
 
 
   # sign a party in using an username and password, then return a token
   signin(
     # ID of the party to get logged in
-    id: String!,
+    id: String!
     # Password of the party
     password: String!): String!
 }
@@ -1725,7 +1760,7 @@ type Subscription {
   # Subscribe to the candles updates
   candles(
     # ID of the market we want to listen candles for
-    marketId: String!,
+    marketId: String!
     # Interval of the candles we want to listen for
     interval: Interval!
   ): Candle!
@@ -1733,7 +1768,7 @@ type Subscription {
   # Subscribe to orders updates
   orders(
     # ID of the market from which we want orders updates
-    marketId: String,
+    marketId: String
     # ID of the party from which we want orders updates
     partyId: String
   ): [Order!]
@@ -1741,7 +1776,7 @@ type Subscription {
   # Subscribe to the trades updates
   trades(
     # ID of the market from which we want trades updates
-    marketId: String,
+    marketId: String
     # ID of the party from which we want trades updates
     partyId: String
   ): [Trade!]
@@ -1761,11 +1796,13 @@ type Subscription {
   # Subscribe to the accounts updates
   accounts(
     # ID of the market from which we want accounts updates
-    marketId: String,
+    marketId: String
     # ID of the party from which we want accounts updates
-    partyId: String
+    partyId: String,
+    # Asset code
+    asset: String,
     # Type of the account
-    type: AccountType,
+    type: AccountType
   ): Account!
 
 }
@@ -1782,8 +1819,8 @@ type PendingOrder {
   # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
   price: String
 
-  # The type of order (determines how and if it executes, and whether it persists on the book)
-  type: OrderType
+  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  timeInForce: OrderTimeInForce
 
   # Whether the order is to buy or sell
   side: Side
@@ -1831,6 +1868,18 @@ type Query {
 
   # a bunch of statistics about the node
   statistics: Statistics!
+
+  # Check a partyID+Token combination
+  checkToken(
+    # Party ID
+    partyId: String!
+    # Token
+    token: String!
+  ): CheckTokenResponse!
+}
+
+type CheckTokenResponse {
+  ok: Boolean!
 }
 
 # A bunch of statistics about the node
@@ -2044,33 +2093,44 @@ type Market {
   # Definitions and required configuration for the trading mode
   tradingMode: TradingMode!
 
-  #  number of decimals places for price quotes, e.g. if quote currency is USD and decimal places is 2 then prices are quoted in integer numbers of cents. (uint64)
+  # decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct number denominated in the currency of the Market. (uint64)
+  # Examples:
+  #   Currency     Balance  decimalPlaces  Real Balance
+  #   GBP              100              0       GBP 100
+  #   GBP              100              2       GBP   1.00
+  #   GBP              100              4       GBP   0.01
+  #   GBP                1              4       GBP   0.0001   (  0.01p  )
+  #
+  #   GBX (pence)      100              0       GBP   1.00     (100p     )
+  #   GBX (pence)      100              2       GBP   0.01     (  1p     )
+  #   GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
+  #   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
   decimalPlaces: Int!
 
   # Orders on a market
   orders (
     # Filter open orders only
-    open: Boolean,
+    open: Boolean
     # Pagination skip
-    skip: Int,
+    skip: Int
     # Pagination first element
-    first: Int,
+    first: Int
     # Pagination last element
     last: Int
   ): [Order!]
 
-  # Get system accounts for a given market (insurance pool, settlement)
+  # Get accounts for a party or market
   accounts(
     # Specify the account type to get a specific account
-    type: AccountType,
+    type: AccountType
   ): [Account!]
 
   # Trades on a market
   trades (
     # Pagination skip
-    skip: Int,
+    skip: Int
     # Pagination first element
-    first: Int,
+    first: Int
     # Pagination last element
     last: Int): [Trade!]
 
@@ -2080,7 +2140,7 @@ type Market {
   # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
   candles (
     # RFC3339Nano encoded time from when to get candles
-    since: String!,
+    since: String!
     # Interval of the candles
     interval: Interval!
   ): [Candle]
@@ -2088,7 +2148,7 @@ type Market {
   # Query an order by reference for the given market
   orderByReference (
     # reference of the order
-    reference: String!,
+    reference: String!
   ): Order!
 }
 
@@ -2161,33 +2221,34 @@ type Party {
   # Orders relating to a party
   orders(
     # Is the order still open or not
-    open: Boolean,
+    open: Boolean
     # Pagination skip
-    skip: Int,
+    skip: Int
     # Pagination first element
-    first: Int,
+    first: Int
     # Pagination last element
     last: Int): [Order!]
 
   # Trades relating to a party (specifically where party is either buyer OR seller)
   trades(
     # ID of the market we want to get trades for
-    marketId: String,
+    marketId: String
     # Pagination skip
-    skip: Int,
+    skip: Int
     # Pagination first element
-    first: Int,
+    first: Int
     # Pagination last element
     last: Int): [Trade!]
 
-    # get accounts for a given party, filtered if needed
+  # Collateral accounts relating to a party
   accounts(
     # Market ID - specify what market accounts for the party to return
-    marketId: String,
+    marketId: String
+    # Asset (USD, EUR etc)
+    asset: String,
     # Filter accounts by type (General account, margin account, etc...)
-    type: AccountType,
+    type: AccountType
   ): [Account!]
-
 
   # Trading positions relating to a party
   positions: [Position!]
@@ -2237,8 +2298,8 @@ type Order {
   # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
   price: String!
 
-  # The type of order (determines how and if it executes, and whether it persists on the book)
-  type: OrderType!
+  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  timeInForce: OrderTimeInForce!
 
   # Whether the order is to buy or sell
   side: Side!
@@ -2275,6 +2336,9 @@ type Order {
 
   # Trades relating to this order
   trades: [Trade]
+
+  # Type the order type (defaults to TRADER)
+  type: OrderType
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
@@ -2313,31 +2377,31 @@ type Trade {
 
 # An account record
 type Account {
-  # id the id for this account, not useful given the current API, but might be useful
-  id: String!
   # Balance as string - current account balance (approx. as balances can be updated several times per second)
   balance: String!
   # Asset, the "currency"
   asset: String!
-  # Account type (enum type)
+  # Account type (General, Margin, etc)
   type: AccountType!
+  # Market (only relevant to margin accounts)
+  market: Market
 }
 
 # Valid order types, these determine what happens when an order is added to the book
-enum OrderType {
+enum OrderTimeInForce {
 
     # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
-    FOK,
+    FOK
 
     # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-    ENE,
+    IOC
 
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
-    GTC,
+    GTC
 
     # This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
     # NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
-    GTT,
+    GTT
 }
 
 # Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order.
@@ -2345,19 +2409,31 @@ enum OrderStatus {
 
     # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
     # Active does not necessarily mean it's still on the order book.
-    Active,
+    Active
 
     # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
-    Cancelled,
+    Cancelled
 
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
-    Expired,
+    Expired
 
-    # This order was of type ENE or FOK and could not be processed by the matching engine due to lack of liquidity.
-    Stopped,
+    # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
+    Stopped
 
     # This order is fully filled with remaining equals zero.
-    Filled,
+    Filled
+}
+
+enum OrderType {
+  ## MARKET - the default order type
+  MARKET
+
+  ## LIMIT - mentioned in ticket, but as yet unused order type
+  LIMIT
+
+  ## NETWORK - used for distressed traders, an order placed by the network to close out distressed traders
+  ## similar to MARKET order, only no party is attached to the order as such
+  NETWORK
 }
 
 # Whether the placer of an order is aiming to buy or sell on the market
@@ -2398,15 +2474,13 @@ enum Interval {
 
 # The various account types we have (used by collateral)
 enum AccountType {
-  # Insurance pool account - only for party "system"
+  # Insurance pool account - only for "system" party
   Insurance
-  # Settlement - Again, only for "system" party
+  # Settlement - only for "system" party
   Settlement
   # Margin - The leverage account for traders
   Margin
-  # Market - it's in the spec, but AFAIK, we're not using this currently
-  Market
-  # General account - the actual account containing "unused" monies
+  # General account - the account containing "unused" collateral for traders
   General
 }
 `},
@@ -2653,14 +2727,14 @@ func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context,
 		}
 	}
 	args["side"] = arg4
-	var arg5 OrderType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg5, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
+	var arg5 OrderTimeInForce
+	if tmp, ok := rawArgs["timeInForce"]; ok {
+		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg5
+	args["timeInForce"] = arg5
 	var arg6 *string
 	if tmp, ok := rawArgs["expiration"]; ok {
 		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
@@ -2705,14 +2779,22 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 		}
 	}
 	args["marketId"] = arg0
-	var arg1 *AccountType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg1, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+	var arg1 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg1
+	args["asset"] = arg1
+	var arg2 *AccountType
+	if tmp, ok := rawArgs["type"]; ok {
+		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg2
 	return args, nil
 }
 
@@ -2806,6 +2888,28 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_checkToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["token"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["token"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_market_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2881,14 +2985,22 @@ func (ec *executionContext) field_Subscription_accounts_args(ctx context.Context
 		}
 	}
 	args["partyId"] = arg1
-	var arg2 *AccountType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+	var arg2 *string
+	if tmp, ok := rawArgs["asset"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg2
+	args["asset"] = arg2
+	var arg3 *AccountType
+	if tmp, ok := rawArgs["type"]; ok {
+		arg3, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg3
 	return args, nil
 }
 
@@ -3018,33 +3130,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Account_id(ctx context.Context, field graphql.CollectedField, obj *proto.Account) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object:   "Account",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Id, nil
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Account_balance(ctx context.Context, field graphql.CollectedField, obj *proto.Account) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -3124,6 +3209,30 @@ func (ec *executionContext) _Account_type(ctx context.Context, field graphql.Col
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Account_market(ctx context.Context, field graphql.CollectedField, obj *proto.Account) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Account",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Account().Market(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Market)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Candle) graphql.Marshaler {
@@ -3340,6 +3449,33 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInterval(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CheckTokenResponse_ok(ctx context.Context, field graphql.CollectedField, obj *CheckTokenResponse) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "CheckTokenResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ok, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ContinuousTrading_tickSize(ctx context.Context, field graphql.CollectedField, obj *ContinuousTrading) graphql.Marshaler {
@@ -4342,7 +4478,7 @@ func (ec *executionContext) _Mutation_orderSubmit(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["type"].(OrderType), args["expiration"].(*string))
+		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4512,7 +4648,7 @@ func (ec *executionContext) _Order_price(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
+func (ec *executionContext) _Order_timeInForce(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -4525,7 +4661,7 @@ func (ec *executionContext) _Order_type(ctx context.Context, field graphql.Colle
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Order().Type(rctx, obj)
+		return ec.resolvers.Order().TimeInForce(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4533,10 +4669,10 @@ func (ec *executionContext) _Order_type(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(OrderType)
+	res := resTmp.(OrderTimeInForce)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+	return ec.marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_side(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
@@ -4857,6 +4993,30 @@ func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.Col
 	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().Type(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OrderType)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *Party) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -4966,7 +5126,7 @@ func (ec *executionContext) _Party_accounts(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Accounts(rctx, obj, args["marketId"].(*string), args["type"].(*AccountType))
+		return ec.resolvers.Party().Accounts(rctx, obj, args["marketId"].(*string), args["asset"].(*string), args["type"].(*AccountType))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -5076,7 +5236,7 @@ func (ec *executionContext) _PendingOrder_price(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PendingOrder_type(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+func (ec *executionContext) _PendingOrder_timeInForce(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -5089,15 +5249,15 @@ func (ec *executionContext) _PendingOrder_type(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PendingOrder().Type(rctx, obj)
+		return ec.resolvers.PendingOrder().TimeInForce(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*OrderType)
+	res := resTmp.(*OrderTimeInForce)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+	return ec.marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PendingOrder_side(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
@@ -5720,6 +5880,40 @@ func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐStatistics(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_checkToken(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_checkToken_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CheckToken(rctx, args["partyId"].(string), args["token"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*CheckTokenResponse)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNCheckTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -6744,7 +6938,7 @@ func (ec *executionContext) _Subscription_accounts(ctx context.Context, field gr
 	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
 	//          and Tracer stack
 	rctx := ctx
-	results, err := ec.resolvers.Subscription().Accounts(rctx, args["marketId"].(*string), args["partyId"].(*string), args["type"].(*AccountType))
+	results, err := ec.resolvers.Subscription().Accounts(rctx, args["marketId"].(*string), args["partyId"].(*string), args["asset"].(*string), args["type"].(*AccountType))
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -7994,11 +8188,6 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Account")
-		case "id":
-			out.Values[i] = ec._Account_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
 		case "balance":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -8030,6 +8219,17 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 				if res == graphql.Null {
 					invalid = true
 				}
+				return res
+			})
+		case "market":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Account_market(ctx, field, obj)
 				return res
 			})
 		default:
@@ -8157,6 +8357,33 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 				}
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+var checkTokenResponseImplementors = []string{"CheckTokenResponse"}
+
+func (ec *executionContext) _CheckTokenResponse(ctx context.Context, sel ast.SelectionSet, obj *CheckTokenResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, checkTokenResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	invalid := false
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CheckTokenResponse")
+		case "ok":
+			out.Values[i] = ec._CheckTokenResponse_ok(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8689,7 +8916,7 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
-		case "type":
+		case "timeInForce":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -8697,7 +8924,7 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Order_type(ctx, field, obj)
+				res = ec._Order_timeInForce(ctx, field, obj)
 				if res == graphql.Null {
 					invalid = true
 				}
@@ -8856,6 +9083,17 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				res = ec._Order_trades(ctx, field, obj)
 				return res
 			})
+		case "type":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_type(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8967,7 +9205,7 @@ func (ec *executionContext) _PendingOrder(ctx context.Context, sel ast.Selection
 				res = ec._PendingOrder_price(ctx, field, obj)
 				return res
 			})
-		case "type":
+		case "timeInForce":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -8975,7 +9213,7 @@ func (ec *executionContext) _PendingOrder(ctx context.Context, sel ast.Selection
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._PendingOrder_type(ctx, field, obj)
+				res = ec._PendingOrder_timeInForce(ctx, field, obj)
 				return res
 			})
 		case "side":
@@ -9338,6 +9576,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_statistics(ctx, field)
+				if res == graphql.Null {
+					invalid = true
+				}
+				return res
+			})
+		case "checkToken":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_checkToken(ctx, field)
 				if res == graphql.Null {
 					invalid = true
 				}
@@ -10165,6 +10417,20 @@ func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._Candle(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNCheckTokenResponse2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx context.Context, sel ast.SelectionSet, v CheckTokenResponse) graphql.Marshaler {
+	return ec._CheckTokenResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCheckTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx context.Context, sel ast.SelectionSet, v *CheckTokenResponse) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._CheckTokenResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	return graphql.UnmarshalFloat(v)
 }
@@ -10273,12 +10539,12 @@ func (ec *executionContext) marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvega�
 	return v
 }
 
-func (ec *executionContext) unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
-	var res OrderType
+func (ec *executionContext) unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (OrderTimeInForce, error) {
+	var res OrderTimeInForce
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v OrderType) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v OrderTimeInForce) graphql.Marshaler {
 	return v
 }
 
@@ -10940,6 +11206,30 @@ func (ec *executionContext) unmarshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋ
 }
 
 func (ec *executionContext) marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v *OrderStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (OrderTimeInForce, error) {
+	var res OrderTimeInForce
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v OrderTimeInForce) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (*OrderTimeInForce, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v *OrderTimeInForce) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

@@ -135,7 +135,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	}
 
 	root.tradingDataClient.EXPECT().PartyByID(gomock.Any(), gomock.Any()).Times(len(parties)).DoAndReturn(func(_ context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
-		m, ok := parties[req.Id]
+		m, ok := parties[req.PartyID]
 		assert.True(t, ok)
 		if m == nil {
 			return nil, partyNotExistsErr

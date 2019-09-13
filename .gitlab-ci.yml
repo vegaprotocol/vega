@@ -1,5 +1,5 @@
 ---
-image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.5
+image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
 
 variables:
   CGO_ENABLED: "0"
@@ -95,8 +95,10 @@ autogen_checks:
   script:
     - code=0
     - make deps
+    - make rest_check || code=1
     - make proto_check || code=1
     - make gqlgen_check || code=1
+    - bash script/diff_graphqlschema.sh || code=1
     - exit "$code"
 
 vet:
@@ -115,7 +117,13 @@ push_to_devnet:
         "${BIN_DIR}/vegaccount:/home/vega/current/:0755"
         "${BIN_DIR}/vegastream:/home/vega/current/:0755"
     # Nasty auth hack. Single quotes to avoid yaml k:v pair.
-    - 'for u in $VEGANET_USERS ; do echo -e "\n== $u ==" ; ${BIN_DIR}/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$u" ; curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $VEGA_AUTH_MASTERTOKEN" -d "{\"id\": \"$u\", \"password\": \"123\"}" https://auth.d.vega.xyz ; echo ; done'
+    - 'for u in $VEGANET_USERS ; do
+        echo -e "\n== $u ==" ;
+        ${BIN_DIR}/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$u" ;
+        curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $VEGA_AUTH_MASTERTOKEN"
+          -d "{\"id\": \"$u\", \"password\": \"123\"}" https://auth.d.vega.xyz ;
+        echo ;
+      done'
   only:
     - /^develop$/  # VERY IMPORTANT: Only the develop branch should be deployed to devnet.
 
@@ -125,15 +133,15 @@ publish-docker:
     - docker:dind
   stage: deploy
   script:
-    - for app in dummyriskmodel vega vegabench vegaccount vegastream ; do
-    - f="${BIN_DIR}/$app"
-    # single quotes to avoid the colon making a yaml key:value pair.
-    - 'if ! test -f "$f" ; then echo "Failed to find: $f" ; exit 1 ; fi'
-    - cp -a "$f" . || exit 1
-    - done
-    - docker login -u gitlab-ci-token -p "${CI_JOB_TOKEN}" registry.gitlab.com || exit 1
-    - docker build -t "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" -f Dockerfile.quick . || exit 1
-    - docker push "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" || exit 1
+    - 'for app in dummyriskmodel vega vegabench vegaccount vegastream ; do
+        f="${BIN_DIR}/$app" ;
+        if ! test -f "$f" ; then echo "Failed to find: $f" ; exit 1 ; fi ;
+        cp -a "$f" . || exit 1 ;
+      done'
+    # Ignore docker fails (devops-infra#26)
+    - docker login -u gitlab-ci-token -p "${CI_JOB_TOKEN}" registry.gitlab.com || exit 0
+    - docker build -t "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" -f Dockerfile.quick . || exit 0
+    - docker push "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" || exit 0
     - for app in vega vegabench ; do rm -f "./$app"; done
   only:
-    - /^(master$|develop$|release/|v[0-9])/
+    - /^(master$|develop$|release/v[0-9])/

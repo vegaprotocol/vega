@@ -55,25 +55,25 @@ func TestParseOrderStatus(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestParseOrderType(t *testing.T) {
-	fok := OrderTypeFok
-	orderType, err := parseOrderType(&fok)
+func TestParseOrderTimeInForce(t *testing.T) {
+	fok := OrderTimeInForceFok
+	orderType, err := parseOrderTimeInForce(fok)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_FOK, orderType)
-	ene := OrderTypeEne
-	orderType, err = parseOrderType(&ene)
+	ioc := OrderTimeInForceIoc
+	orderType, err = parseOrderTimeInForce(ioc)
 	assert.Nil(t, err)
-	assert.Equal(t, types.Order_ENE, orderType)
-	gtt := OrderTypeGtt
-	orderType, err = parseOrderType(&gtt)
+	assert.Equal(t, types.Order_IOC, orderType)
+	gtt := OrderTimeInForceGtt
+	orderType, err = parseOrderTimeInForce(gtt)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_GTT, orderType)
-	gtc := OrderTypeGtc
-	orderType, err = parseOrderType(&gtc)
+	gtc := OrderTimeInForceGtc
+	orderType, err = parseOrderTimeInForce(gtc)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_GTC, orderType)
-	unknown := OrderType("好到时候")
-	orderType, err = parseOrderType(&unknown)
+	unknown := OrderTimeInForce("好到时候")
+	orderType, err = parseOrderTimeInForce(unknown)
 	assert.Error(t, err)
 
 }
