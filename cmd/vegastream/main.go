@@ -1,3 +1,18 @@
+/*
+Command vegastream connects to a gRPC server and subscribes to various streams (accounts, orders, trades etc).
+
+For the accounts subscription, specify account type, market and party.
+
+For the orders and trades subscriptions, specify market and party.
+
+For the positions subscription, specify party.
+
+For the candles and (market) depth subscriptions, specify market.
+
+Syntax:
+
+    vegastream -addr somenode.somenet.vega.xyz:3002 [plus other options...]
+*/
 package main
 
 import (
@@ -30,9 +45,13 @@ var (
 	accType string
 
 	serverAddr string
+)
 
-	ErrMissingMarket = errors.New("missing market parameter")
-	ErrMissingParty  = errors.New("missing party parameter")
+// Error for missing program arguments
+var (
+	ErrMissingAccountType = errors.New("missing account type")
+	ErrMissingMarket      = errors.New("missing market")
+	ErrMissingParty       = errors.New("missing party")
 )
 
 func init() {
@@ -42,13 +61,24 @@ func init() {
 	flag.BoolVar(&positions, "positions", false, "listen to newly created positions")
 	flag.BoolVar(&depth, "depth", false, "listen to market depth")
 	flag.BoolVar(&candles, "candles", false, "listen to newly created candles")
-	flag.StringVar(&party, "party", "extremtrader", "name of the party to listen for updates")
-	flag.StringVar(&market, "market", "BTC/DEC19", "id of the market to listen for updates")
+
+	flag.StringVar(&party, "party", "", "name of the party to listen for updates")
+	flag.StringVar(&market, "market", "", "id of the market to listen for updates")
 	flag.StringVar(&accType, "acctype", "NO_ACC", "type of the account we listenning for")
-	flag.StringVar(&serverAddr, "addr", "0.0.0.0:3002", "address of the grpc server")
+	flag.StringVar(&serverAddr, "addr", "127.0.0.1:3002", "address of the grpc server")
 }
 
 func startAccounts(ctx context.Context, wg *sync.WaitGroup) error {
+	if len(market) <= 0 {
+		return ErrMissingMarket
+	}
+	if len(party) <= 0 {
+		return ErrMissingParty
+	}
+	if len(accType) <= 0 {
+		return ErrMissingAccountType
+	}
+
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return err

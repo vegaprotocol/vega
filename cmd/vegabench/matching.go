@@ -63,7 +63,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	}
 }
 
-func BenchmarkMatching(
+func benchmarkMatching(
 	numberOfOrders int,
 	b *testing.B,
 	quiet bool,
