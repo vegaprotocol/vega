@@ -444,7 +444,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	}
 	if networkPos == 0 {
 		// remove accounts, positions and return
-		_ = m.position.RemoveDistressed(closed)
+		closed = m.position.RemoveDistressed(closed)
 		// @TODO handle response value, contains all ledger movements
 		asset, _ := m.mkt.GetAsset()
 		if _, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset); err != nil {
@@ -459,22 +459,22 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	// network order
 	// @TODO this order is more of a placeholder than an actual final version
 	// of the network order we'll be using
+	size := uint64(math.Abs(float64(networkPos)))
 	no := types.Order{
 		MarketID:    m.GetID(),
-		Remaining:   uint64(math.Abs(float64(networkPos))),
+		Remaining:   size,
 		Status:      types.Order_Active,
-		PartyID:     "",                       // network is not a party as such
-		Side:        types.Side_Sell,          // assume sell, price is zero in that case anyway
-		CreatedAt:   m.currentTime.UnixNano(), // @TODO this should be the block time!!!
-		Reference:   "network trade",          // @TODO find a decent reference?
-		TimeInForce: types.Order_FOK,          // this is an all-or-nothing order, so TIF == FOK
+		PartyID:     "",              // network is not a party as such
+		Side:        types.Side_Sell, // assume sell, price is zero in that case anyway
+		CreatedAt:   m.currentTime.UnixNano(),
+		Reference:   "close-out liquidity sourcing",
+		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
 		Type:        types.Order_NETWORK,
 	}
 	no.Size = no.Remaining
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
 		no.Side = types.Side_Buy
-		no.Price = math.MaxUint64 // probably don't need this anymore
 	}
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(&no)
@@ -544,6 +544,13 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		close(tradersCh)
 	}
 
+	if err := m.zeroOutNetwork(size, closed, &no); err != nil {
+		m.log.Error(
+			"Failed to create closing order with distressed traders",
+			logging.Error(err),
+		)
+		return err
+	}
 	// remove accounts, positions, any funds left on the distressed accounts will be moved to the
 	// insurance pool, which needs to happen before we settle the non-distressed traders
 	_ = m.position.RemoveDistressed(closed)
@@ -570,6 +577,66 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	_, errCh := m.collateral.TransferCh(m.GetID(), settle)
 	// return an error if an error was pushed onto the channel
 	return <-errCh
+}
+
+func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, settleOrder *types.Order) error {
+	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), false)
+	side := types.Side_Sell
+	if settleOrder.Side == side {
+		side = types.Side_Buy
+	}
+	order := types.Order{
+		MarketID:    m.GetID(),
+		Remaining:   size,
+		Status:      types.Order_Active,
+		PartyID:     "",   // network is not a party as such
+		Side:        side, // assume sell, price is zero in that case anyway
+		Price:       settleOrder.Price,
+		CreatedAt:   m.currentTime.UnixNano(),
+		Reference:   "close-out distressed",
+		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
+		Type:        types.Order_NETWORK,
+	}
+	order.Size = order.Remaining
+	if _, err := tmpOrderBook.SubmitOrder(&order); err != nil {
+		return err
+	}
+	if err := m.orders.Post(order); err != nil {
+		return err
+	}
+	// traders need to take the opposing side
+	side = settleOrder.Side
+	// @TODO get trader positions, submit orders for each
+	for _, trader := range traders {
+		to := types.Order{
+			MarketID:    m.GetID(),
+			Remaining:   uint64(math.Abs(float64(trader.Size()))),
+			Status:      types.Order_Active,
+			PartyID:     trader.Party(),
+			Side:        side,              // assume sell, price is zero in that case anyway
+			Price:       settleOrder.Price, // average price
+			CreatedAt:   m.currentTime.UnixNano(),
+			Reference:   "close-out distressed",
+			TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
+			Type:        types.Order_LIMIT,
+		}
+		to.Size = to.Remaining
+		// store the trader order, too
+		if err := m.orders.Post(to); err != nil {
+			return err
+		}
+		res, err := tmpOrderBook.SubmitOrder(&to)
+		if err != nil {
+			return err
+		}
+		// now store the resulting trades:
+		for _, trade := range res.Trades {
+			if err := m.trades.Post(trade); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
