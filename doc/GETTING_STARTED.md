@@ -18,7 +18,7 @@ The following OS packages are required:
 
 ## Installing golang
 
-**Required version: 1.11.5**
+**Required version: 1.11.13**
 
 Get Golang via OS package manager, or directly from from https://golang.org/dl/.
 See also the [Golang installation guide](https://golang.org/doc/install).
@@ -26,7 +26,7 @@ Install it somewhere, then point "`$GOROOT`" at that location:
 
 ```bash
 # Add to $HOME/.bashrc:
-export GOROOT="/path/to/your/go1.11.5"
+export GOROOT="/path/to/your/go1.11.13"
 export PATH="$PATH:$GOROOT/bin"
 ```
 
@@ -34,12 +34,12 @@ Ensure you have `go`, `godoc` and `gofmt`:
 
 ```bash
 $ which go godoc gofmt
-/path/to/your/go1.11.5/bin/go
-/path/to/your/go1.11.5/bin/godoc
-/path/to/your/go1.11.5/bin/gofmt
+/path/to/your/go1.11.13/bin/go
+/path/to/your/go1.11.13/bin/godoc
+/path/to/your/go1.11.13/bin/gofmt
 
 $ go version
-go version go1.11.5 linux/amd64
+go version go1.11.13 linux/amd64
 ```
 
 ## Set up Go source paths and Go Modules

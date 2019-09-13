@@ -1,5 +1,5 @@
 ---
-image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.5
+image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
 
 variables:
   CGO_ENABLED: "0"

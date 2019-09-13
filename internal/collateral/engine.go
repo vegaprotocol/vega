@@ -113,14 +113,26 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 	var ok bool
 	insurance, ok = e.accs[insID]
 	if !ok {
-		fmt.Printf("asset: %s - accounts: %#v\n", asset, e.accs)
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing system account",
+				logging.String("asset", asset),
+				logging.String("id", insID),
+				logging.String("market", marketID),
+			)
+		}
 		err = ErrSystemAccountsMissing
 		return
 	}
 
 	settle, ok = e.accs[setID]
 	if !ok {
-		fmt.Printf("asset: %s - accounts: %#v\n", asset, e.accs)
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing system account",
+				logging.String("asset", asset),
+				logging.String("id", setID),
+				logging.String("market", marketID),
+			)
+		}
 		err = ErrSystemAccountsMissing
 		return
 	}
@@ -864,8 +876,8 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 				ToAccount:   ins.Id,
 				Amount:      acc.Balance,
 				Reference:   "close-out distressed",
-				Type:        "",                    // @TODO determine this value
-				Timestamp:   time.Now().UnixNano(), // @TODO Unix or UnixNano?
+				Type:        "", // @TODO determine this value
+				Timestamp:   e.currentTime,
 			})
 			if err := e.IncrementBalance(ins.Id, acc.Balance); err != nil {
 				return nil, err

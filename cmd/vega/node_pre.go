@@ -1,4 +1,3 @@
-// This file contains the pre-run hooks for the command. It's where all the stuff gets bootstrapped, basically
 package main
 
 import (
