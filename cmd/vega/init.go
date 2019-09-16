@@ -130,7 +130,11 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {
-	// If decimalPlaces==2, then a currency balance of `1` indicates one Euro cent, not one Euro
+	/*
+		Notes on default markets:
+		- If decimalPlaces==2, then a currency balance of `1` indicates one Euro cent, not one Euro
+		- Maturity dates should be not all the same, for variety.
+	*/
 	skels := []struct {
 		decimalPlaces    uint64
 		baseName         string
@@ -149,7 +153,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			decimalPlaces:    2,
 			baseName:         "GBP",
 			quoteName:        "USD",
-			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
+			maturity:         time.Date(2020, 6, 30, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice: 10,
 		},
 		{
