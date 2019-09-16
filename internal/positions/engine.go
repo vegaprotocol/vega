@@ -26,7 +26,8 @@ var (
 )
 
 func (m MarketPosition) String() string {
-	return fmt.Sprintf("size: %v, partyID: %v", m.size, m.partyID)
+	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
+		m.size, m.buy, m.sell, m.price, m.partyID)
 }
 
 func (m MarketPosition) Buy() int64 {

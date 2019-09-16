@@ -68,10 +68,26 @@ func (this *ExternalRiskModel) Validate() error {
 	// Validation of proto3 map<> fields is unsupported.
 	return nil
 }
+func (this *ScalingFactors) Validate() error {
+	return nil
+}
+func (this *MarginCalculator) Validate() error {
+	if this.ScalingFactors != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.ScalingFactors); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("ScalingFactors", err)
+		}
+	}
+	return nil
+}
 func (this *TradableInstrument) Validate() error {
 	if this.Instrument != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Instrument); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Instrument", err)
+		}
+	}
+	if this.MarginCalculator != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarginCalculator); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("MarginCalculator", err)
 		}
 	}
 	if oneOfNester, ok := this.GetRiskModel().(*TradableInstrument_Forward); ok {

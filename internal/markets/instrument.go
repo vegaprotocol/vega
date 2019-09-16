@@ -16,11 +16,12 @@ var (
 )
 
 type Instrument struct {
-	ID       string
-	Code     string
-	Name     string
-	Metadata *types.InstrumentMetadata
-	Product  products.Product
+	ID               string
+	Code             string
+	Name             string
+	Metadata         *types.InstrumentMetadata
+	InitialMarkPrice uint64
+	Product          products.Product
 
 	// Base and Quote aren't used internally, but might be used later on, so add them here just in case
 	Base  string
@@ -28,8 +29,9 @@ type Instrument struct {
 }
 
 type TradableInstrument struct {
-	Instrument *Instrument
-	RiskModel  risk.Model
+	Instrument       *Instrument
+	MarginCalculator *types.MarginCalculator
+	RiskModel        risk.Model
 }
 
 func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (*TradableInstrument, error) {
@@ -42,8 +44,9 @@ func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (
 		return nil, errors.Wrap(err, "unable to instantiate risk model")
 	}
 	return &TradableInstrument{
-		Instrument: instrument,
-		RiskModel:  riskModel,
+		Instrument:       instrument,
+		MarginCalculator: pti.MarginCalculator,
+		RiskModel:        riskModel,
 	}, nil
 }
 
@@ -53,13 +56,14 @@ func NewInstrument(pi *types.Instrument) (*Instrument, error) {
 		return nil, errors.Wrap(err, "unable to instanciate product from instrument configuration")
 	}
 	return &Instrument{
-		ID:       pi.Id,
-		Code:     pi.Code,
-		Name:     pi.Name,
-		Metadata: pi.Metadata,
-		Product:  product,
-		Base:     pi.BaseName,
-		Quote:    pi.QuoteName,
+		ID:               pi.Id,
+		Code:             pi.Code,
+		Name:             pi.Name,
+		Metadata:         pi.Metadata,
+		Product:          product,
+		Base:             pi.BaseName,
+		Quote:            pi.QuoteName,
+		InitialMarkPrice: pi.InitialMarkPrice,
 	}, err
 }
 

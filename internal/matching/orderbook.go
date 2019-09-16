@@ -31,20 +31,26 @@ type OrderBook struct {
 	expiringOrders  []types.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
 }
 
-// Create an order book with a given name
-func NewOrderBook(log *logging.Logger, config Config, marketID string, proRataMode bool) *OrderBook {
+// NewOrderBook create an order book with a given name
+// TODO(jeremy): At the moment it takes as a parameter the initialMarkPrice from the market
+// framework. This is used in order to calculate the CloseoutPNL when there's no volume in the
+// book. It's currently set to the lastTradedPrice, so once a trade happen it naturally get
+// updated and the new markPrice will be used there.
+func NewOrderBook(log *logging.Logger, config Config, marketID string,
+	initialMarkPrice uint64, proRataMode bool) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	return &OrderBook{
-		log:            log,
-		marketID:       marketID,
-		cfgMu:          &sync.Mutex{},
-		buy:            &OrderBookSide{log: log, proRataMode: proRataMode},
-		sell:           &OrderBookSide{log: log, proRataMode: proRataMode},
-		Config:         config,
-		expiringOrders: make([]types.Order, 0),
+		log:             log,
+		marketID:        marketID,
+		cfgMu:           &sync.Mutex{},
+		buy:             &OrderBookSide{log: log, proRataMode: proRataMode},
+		sell:            &OrderBookSide{log: log, proRataMode: proRataMode},
+		Config:          config,
+		expiringOrders:  make([]types.Order, 0),
+		lastTradedPrice: initialMarkPrice,
 	}
 }
 
@@ -63,7 +69,7 @@ func (s *OrderBook) ReloadConf(cfg Config) {
 	s.cfgMu.Unlock()
 }
 
-func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) {
+func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, error) {
 	var (
 		price uint64
 		err   error
@@ -75,7 +81,7 @@ func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) 
 			lvl := levels[i]
 			if lvl.volume >= vol {
 				price += lvl.price * vol
-				return price, err
+				return price / volume, err
 			}
 			price += lvl.price * lvl.volume
 			vol -= lvl.volume
@@ -84,13 +90,19 @@ func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) 
 		// still return the price for the volume we could close out, so the caller can make a decision on what to do
 		if vol != 0 {
 			err = ErrNotEnoughOrders
+			// TODO(jeremy): there's no orders in the book so return the markPrice
+			// this is a temporary fix for nicenet and this behaviour will need
+			// to be properaly specified and handled in the future.
+			if vol == volume {
+				return b.lastTradedPrice, err
+			}
 		}
-		return price, err
+		return price / (volume - vol), err
 	}
 	for _, lvl := range b.sell.getLevels() {
 		if lvl.volume >= vol {
 			price += lvl.price * vol
-			return price, err
+			return price / volume, err
 		}
 		price += lvl.price * lvl.volume
 		vol -= lvl.volume
@@ -98,8 +110,15 @@ func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) 
 	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
 	if vol != 0 {
 		err = ErrNotEnoughOrders
+		// TODO(jeremy): there's no orders in the book so return the markPrice
+		// this is a temporary fix for nicenet and this behaviour will need
+		// to be properaly specified and handled in the future.
+		if vol == volume {
+			return b.lastTradedPrice, err
+		}
+
 	}
-	return price, err
+	return price / (volume - vol), err
 }
 
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
@@ -415,7 +434,7 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
 	return &types.OrderConfirmation{
-		Order: order,
+		Order:                 order,
 		PassiveOrdersAffected: impactedOrders,
 		Trades:                trades,
 	}

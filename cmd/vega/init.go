@@ -130,32 +130,34 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {
-	type marketSkeleton struct {
-		decimalPlaces uint64
-		baseName      string
-		quoteName     string
-		maturity      time.Time
-	}
-
 	// If decimalPlaces==2, then a currency balance of `1` indicates one Euro cent, not one Euro
-	skels := []marketSkeleton{
+	skels := []struct {
+		decimalPlaces    uint64
+		baseName         string
+		quoteName        string
+		maturity         time.Time
+		initialMarkPrice uint64
+	}{
 		{
-			decimalPlaces: 2,
-			baseName:      "ETH",
-			quoteName:     "USD",
-			maturity:      time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
+			decimalPlaces:    2,
+			baseName:         "ETH",
+			quoteName:        "USD",
+			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
+			initialMarkPrice: 200,
 		},
 		{
-			decimalPlaces: 2,
-			baseName:      "GBP",
-			quoteName:     "USD",
-			maturity:      time.Date(2020, 6, 30, 23, 59, 59, 0, time.UTC),
+			decimalPlaces:    2,
+			baseName:         "GBP",
+			quoteName:        "USD",
+			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
+			initialMarkPrice: 10,
 		},
 		{
-			decimalPlaces: 2,
-			baseName:      "GBP",
-			quoteName:     "EUR",
-			maturity:      time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
+			decimalPlaces:    2,
+			baseName:         "GBP",
+			quoteName:        "EUR",
+			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
+			initialMarkPrice: 5,
 		},
 	}
 
@@ -181,6 +183,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 							"product:futures",
 						},
 					},
+					InitialMarkPrice: skel.initialMarkPrice,
 					Product: &proto.Instrument_Future{
 						Future: &proto.Future{
 							Maturity: skel.maturity.Format("2006-01-02T15:04:05Z"),
@@ -203,6 +206,13 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 							R:     0.016,
 							Sigma: 0.09,
 						},
+					},
+				},
+				MarginCalculator: &proto.MarginCalculator{
+					ScalingFactors: &proto.ScalingFactors{
+						SearchLevel:       1.1,
+						InitialMargin:     1.2,
+						CollateralRelease: 1.4,
 					},
 				},
 			},
