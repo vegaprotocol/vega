@@ -87,8 +87,8 @@ func (s *Svc) CreateOrder(
 	ctx context.Context,
 	orderSubmission *types.OrderSubmission,
 ) (*types.PendingOrder, error) {
-	if err := orderSubmission.Validate(); err != nil {
-		return nil, errors.Wrap(err, "order validation failed")
+	if err := s.validateOrderSubmission(orderSubmission); err != nil {
+		return nil, err
 	}
 	order := types.Order{
 		Id:          orderSubmission.Id,
@@ -106,17 +106,32 @@ func (s *Svc) CreateOrder(
 	order.Status = types.Order_Active
 	order.CreatedAt = 0
 	order.Reference = ""
+	// Call out to the blockchain package/layer and use internal client to gain consensus
+	return s.blockchain.CreateOrder(ctx, &order)
+}
 
-	if order.TimeInForce == types.Order_GTT {
-		_, err := s.validateOrderExpirationTS(order.ExpiresAt)
+func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
+	if err := sub.Validate(); err != nil {
+		return errors.Wrap(err, "order validation failed")
+	}
+	if sub.TimeInForce == types.Order_GTT {
+		_, err := s.validateOrderExpirationTS(sub.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
-			return nil, err
+			return err
 		}
 	}
 
-	// Call out to the blockchain package/layer and use internal client to gain consensus
-	return s.blockchain.CreateOrder(ctx, &order)
+	// TODO(Jeremy): uncomment once the Type is added back to the order
+	// basically when work on Market Orders start
+	// if sub.Type == types.Order_MARKET && sub.Price != 0 {
+	// 	return errors.New("invalid market order (no price required)")
+	// }
+	// if sub.Types == types.Order_LIMIT && sub.Price != 0 {
+	// 	return errors.New("invalid limit order (missing required price)")
+	// }
+
+	return nil
 }
 
 // CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
