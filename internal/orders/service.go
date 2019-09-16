@@ -98,6 +98,7 @@ func (s *Svc) CreateOrder(
 		Size:        orderSubmission.Size,
 		Side:        orderSubmission.Side,
 		TimeInForce: orderSubmission.TimeInForce,
+		Type:        orderSubmission.Type,
 		ExpiresAt:   orderSubmission.ExpiresAt,
 	}
 

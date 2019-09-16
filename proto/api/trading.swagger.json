@@ -1575,7 +1575,7 @@
         "price": {
           "type": "string",
           "format": "uint64",
-          "title": "do not enfore that, as Market Order will not have price specified"
+          "title": "do not enforce that price, as Market Order will not have price specified"
         },
         "size": {
           "type": "string",
@@ -1592,6 +1592,9 @@
           "type": "string",
           "format": "int64",
           "title": "do not enforce as not always required\naltho at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaOrderType"
         }
       }
     },

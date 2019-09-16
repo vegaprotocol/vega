@@ -821,8 +821,9 @@ func (r *MyPositionResolver) direction(val int64) ValueDirection {
 
 type MyMutationResolver resolverRoot
 
-func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, party string, price string,
-	size string, side Side, timeInForce OrderTimeInForce, expiration *string) (*types.PendingOrder, error) {
+func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, party string,
+	price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string,
+	ty OrderType) (*types.PendingOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -854,6 +855,9 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 		return nil, err
 	}
 	if order.Side, err = parseSide(&side); err != nil {
+		return nil, err
+	}
+	if order.Type, err = parseOrderType(ty); err != nil {
 		return nil, err
 	}
 
