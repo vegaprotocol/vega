@@ -209,14 +209,16 @@ func (app *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
 // root of the data returned by the DeliverTx requests, or both]
 //
 func (app *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
-	err := app.processor.Process(txn)
-	if err != nil {
-		app.log.Error("Error when validating payload in DeliverTx", logging.Error(err))
-		return types.ResponseDeliverTx{Code: AbciTxnValidationFailure}
-	}
+	app.size += 1 // Always increment size first, ensure appHash is consistent
 	txLength := len(txn)
 	app.setTxStats(txLength)
-	app.size += 1
+
+	err := app.processor.Process(txn)
+	if err != nil {
+		app.log.Error("Error during processing of DeliverTx", logging.Error(err))
+		return types.ResponseDeliverTx{Code: AbciTxnValidationFailure}
+	}
+
 	return types.ResponseDeliverTx{Code: AbciTxnOK}
 }
 
