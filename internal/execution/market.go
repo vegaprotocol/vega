@@ -692,12 +692,18 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 
-	// fmt.Printf("POSITION: %v\n", pos)
-	settle := m.settlement.SettleOrder(m.markPrice, []events.MarketPosition{pos.UpdatedPosition(m.markPrice)})
+	asset, err := m.mkt.GetAsset()
+	if err != nil {
+		return err
+	}
 
-	riskUpdate := m.collateralAndRiskForOrder(settle, m.markPrice)
+	e, err := m.collateral.GetPartyMargin(pos, asset, m.GetID())
+	if err != nil {
+		return err
+	}
+
+	riskUpdate := m.collateralAndRiskForOrder(e, m.markPrice)
 	if riskUpdate == nil {
-		// fmt.Printf("RISK UPDATE NIL\n")
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates",
 				logging.String("market-id", m.GetID()))
@@ -742,12 +748,12 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRiskForOrder(settle []events.Transfer, price uint64) events.Risk {
+func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
 	defer timer.EngineTimeCounterAdd()
 
-	transferCh, _ := m.collateral.TransferCh(m.GetID(), settle)
-	e := <-transferCh
+	// transferCh, _ := m.collateral.TransferCh(m.GetID(), settle)
+	// e := <-transferCh
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
@@ -760,7 +766,7 @@ func (m *Market) collateralAndRiskForOrder(settle []events.Transfer, price uint6
 		m.log.Debug("Got margins transfer on new order")
 		transfer := riskUpdate.Transfer()
 		m.log.Debug(
-			"New margin transfer on order new/amend",
+			"New margin transfer on order submit",
 			logging.String("transfer", fmt.Sprintf("%v", *transfer)),
 			logging.String("market-id", m.GetID()),
 		)
@@ -937,26 +943,10 @@ func (m *Market) AmendOrder(
 		expiryChange = true
 	}
 
-	// Unregister existing order to remove order volume from potential position.
-	_, err := m.position.UnregisterOrder(existingOrder)
-	if err != nil {
-		m.log.Error("Failure unregistering existing order in positions engine (amend)",
-			logging.Order(*existingOrder),
-			logging.Error(err))
-	}
-
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
 		ret, err := m.orderCancelReplace(existingOrder, newOrder)
-		if err != nil {
-			// register back old order
-			_, err2 := m.position.RegisterOrder(existingOrder)
-			if err2 != nil {
-				m.log.Error("unable to register back the order after an error occured while trying to cancelAndReplace",
-					logging.Error(err2))
-			}
-		}
 		return ret, err
 	}
 

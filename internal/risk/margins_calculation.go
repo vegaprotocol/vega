@@ -13,8 +13,8 @@ type MarginLevels struct {
 	ReleaseLevel      int64
 }
 
-func newMarginLevels(maintenance int64, scalingFactors *types.ScalingFactors) MarginLevels {
-	return MarginLevels{
+func newMarginLevels(maintenance int64, scalingFactors *types.ScalingFactors) *MarginLevels {
+	return &MarginLevels{
 		MarginMaintenance: maintenance,
 		SearchLevel:       int64(float64(maintenance) * scalingFactors.SearchLevel),
 		InitialMargin:     int64(float64(maintenance) * scalingFactors.InitialMargin),
@@ -22,16 +22,39 @@ func newMarginLevels(maintenance int64, scalingFactors *types.ScalingFactors) Ma
 	}
 }
 
-func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor) MarginLevels {
-	lngCloseoutPNL, shtCloseoutPNL := r.calculateCloseoutPNL(e, markPrice)
-	lngMaintenance := lngCloseoutPNL + e.Size()*int64(rf.Long*float64(markPrice))
-	shtMaintenance := shtCloseoutPNL + e.Size()*int64(rf.Long*float64(markPrice))
+func abs(i int64) int64 {
+	if i <= 0 {
+		return -i
+	}
+	return i
+}
 
-	if lngMaintenance > shtMaintenance {
+// return nil if no updates are needed
+func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor) *MarginLevels {
+	lngCloseoutPNL, shtCloseoutPNL := r.calculateCloseoutPNL(e, markPrice)
+	// specs do not reflect that at the momebt, but we get the absolute value of the
+	// closeoutPNL following a discussion with tamlyn
+	lngMaintenance := abs(lngCloseoutPNL) + (e.Size()+e.Buy())*int64(rf.Long*float64(markPrice))
+	shtMaintenance := abs(shtCloseoutPNL) + (e.Size()-e.Sell())*int64(rf.Short*float64(markPrice))
+
+	r.log.Info("margins calculations",
+		logging.String("partyID", e.Party()),
+		logging.Int64("lng-closeout-pnl", lngCloseoutPNL),
+		logging.Int64("sht-closeout-pnl", shtCloseoutPNL),
+		logging.Int64("lng-maintenance", lngMaintenance),
+		logging.Int64("sht-maintenance", shtMaintenance),
+	)
+
+	// we return new marginlevels which will produce monies movement
+	// only in the long or short maintenance is positive
+	// if both are negative, this will mean that no margin updates are required
+	if lngMaintenance > shtMaintenance && lngMaintenance > 0 {
 		return newMarginLevels(lngMaintenance, r.marginCalculator.ScalingFactors)
 	}
-
-	return newMarginLevels(shtMaintenance, r.marginCalculator.ScalingFactors)
+	if shtMaintenance > 0 {
+		return newMarginLevels(shtMaintenance, r.marginCalculator.ScalingFactors)
+	}
+	return nil
 }
 
 // calculateCloseoutPNL
@@ -50,7 +73,7 @@ func (r *Engine) calculateCloseoutPNL(
 	potentialShort := size - e.Sell()
 
 	if potentialLong > 0 {
-		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(potentialLong), types.Side_Buy)
+		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(potentialLong), types.Side_Sell)
 		if err != nil {
 			r.log.Warn("got non critical error from GetCloseoutPrice for Buy side",
 				logging.Error(err))
@@ -59,7 +82,7 @@ func (r *Engine) calculateCloseoutPNL(
 	}
 
 	if potentialShort < 0 {
-		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(-potentialShort), types.Side_Sell)
+		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(-potentialShort), types.Side_Buy)
 		if err != nil {
 			r.log.Warn("got non critical error from GetCloseoutPrice for Sell side",
 				logging.Error(err))

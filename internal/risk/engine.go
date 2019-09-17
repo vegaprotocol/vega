@@ -102,10 +102,14 @@ func (r *Engine) UpdateMarginOnNewOrder(e events.Margin, markPrice uint64) event
 	}
 
 	margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
+	// no margins updates, nothing to do then
+	if margins == nil {
+		return nil
+	}
 
 	curBalance := e.MarginBalance()
 	// margins are sufficient, nothing to update
-	if int64(curBalance) > margins.InitialMargin {
+	if int64(curBalance) >= margins.InitialMargin {
 		return nil
 	}
 
@@ -147,6 +151,10 @@ func (r *Engine) UpdateMarginsOnSettlement(
 	for _, e := range evts {
 		// channel is closed, and we've got a nil interface
 		margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
+		// no margins updates, nothing to do then
+		if margins == nil {
+			continue
+		}
 		curMargin := int64(e.MarginBalance())
 		// case 1 -> nothing to do margins are sufficient
 		if curMargin >= margins.SearchLevel && curMargin < margins.ReleaseLevel {
