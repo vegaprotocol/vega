@@ -147,7 +147,7 @@ print_check: ## Check for fmt.Print functions in Go code
 		-name cmd -prune -o \
 		-name '*_test.go' -prune -o \
 		-name '*.go' -print0 | \
-		xargs -0 grep fmt.Print | \
+		xargs -0 grep -E '^([^/]|/[^/])*fmt.Print' | \
 		tee "$$f" && \
 	count="$$(wc -l <"$$f")" && \
 	rm -f "$$f" && \
