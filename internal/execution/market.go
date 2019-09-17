@@ -38,7 +38,8 @@ var (
 )
 
 type Market struct {
-	log *logging.Logger
+	log   *logging.Logger
+	idgen *idgenerator
 
 	riskConfig       risk.Config
 	positionConfig   positions.Config
@@ -143,6 +144,7 @@ func NewMarket(
 
 	market := &Market{
 		log:                log,
+		idgen:              newIDGen(),
 		mkt:                mkt,
 		closingAt:          closingAt,
 		currentTime:        now,
@@ -197,6 +199,8 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	// update block time on id generator
+	m.idgen.updateTime(t)
 
 	closed = t.After(m.closingAt)
 	m.closed = closed
@@ -346,6 +350,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	start = time.Now()
 
+	// set order ID
+	m.idgen.setID(order)
+
 	// Insert aggressive remaining order
 	err = m.orders.Post(*order)
 	if err != nil {
@@ -452,7 +459,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // resolveClosedOutTraders - the traders with the given market position who haven't got sufficient collateral
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
-func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
+// pass in the order which caused traders to be distressed
+func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *types.Order) error {
 	// cancel pending orders for traders
 	if err := m.matching.RemoveDistressedOrders(closed); err != nil {
 		m.log.Error(
@@ -496,11 +504,12 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		PartyID:     networkPartyID,  // network is not a party as such
 		Side:        types.Side_Sell, // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
-		Reference:   "close-out liquidity sourcing",
-		TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
+		Reference:   fmt.Sprintf("LS-%s", o.Id), // liquidity sourcing, reference the order which caused the problem
+		TimeInForce: types.Order_FOK,            // this is an all-or-nothing order, so TIF == FOK
 		Type:        types.Order_NETWORK,
 	}
 	no.Size = no.Remaining
+	m.idgen.setID(&no)
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
 		no.Side = types.Side_Buy
@@ -571,7 +580,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 		close(tradersCh)
 	}
 
-	if err := m.zeroOutNetwork(size, closed, &no); err != nil {
+	if err := m.zeroOutNetwork(size, closed, &no, o); err != nil {
 		m.log.Error(
 			"Failed to create closing order with distressed traders",
 			logging.Error(err),
@@ -614,7 +623,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition) error {
 	return <-errCh
 }
 
-func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, settleOrder *types.Order) error {
+func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, settleOrder, initial *types.Order) error {
 	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), false)
 	side := types.Side_Sell
 	if settleOrder.Side == side {
@@ -642,7 +651,7 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 	// traders need to take the opposing side
 	side = settleOrder.Side
 	// @TODO get trader positions, submit orders for each
-	for _, trader := range traders {
+	for i, trader := range traders {
 		to := types.Order{
 			MarketID:    m.GetID(),
 			Remaining:   uint64(math.Abs(float64(trader.Size()))),
@@ -651,11 +660,12 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 			Side:        side,              // assume sell, price is zero in that case anyway
 			Price:       settleOrder.Price, // average price
 			CreatedAt:   m.currentTime.UnixNano(),
-			Reference:   "close-out distressed",
+			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.Id),
 			TimeInForce: types.Order_FOK, // this is an all-or-nothing order, so TIF == FOK
 			Type:        types.Order_LIMIT,
 		}
 		to.Size = to.Remaining
+		m.idgen.setID(&to)
 		// store the trader order, too
 		if err := m.orders.Post(to); err != nil {
 			return err
