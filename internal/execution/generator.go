@@ -10,7 +10,7 @@ import (
 // no mutex required, markets work deterministically, and sequentially
 type idgenerator struct {
 	now    time.Time
-	block  uint64
+	blocks uint64
 	orders uint64
 }
 
