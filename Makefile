@@ -141,6 +141,18 @@ rest_check: internal/gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagg
 
 # Misc Targets
 
+print_check: ## Check for fmt.Print functions in Go code
+	@f="$$(mktemp)" && \
+	find -name vendor -prune -o \
+		-name cmd -prune -o \
+		-name '*_test.go' -prune -o \
+		-name '*.go' -print0 | \
+		xargs -0 grep fmt.Print | \
+		tee "$$f" && \
+	count="$$(wc -l <"$$f")" && \
+	rm -f "$$f" && \
+	if test "$$count" -gt 0 ; then exit 1 ; fi
+
 docker: ## Make docker container image from scratch
 	@test -f "$(HOME)/.ssh/id_rsa" || exit 1
 	@docker build \
