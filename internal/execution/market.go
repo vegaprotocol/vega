@@ -446,18 +446,18 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 }
 
 func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
-	fmt.Printf("POSITION: %v\n", pos)
+	// fmt.Printf("POSITION: %v\n", pos)
 	settle := m.settlement.SettleOrder(m.markPrice, []events.MarketPosition{pos.UpdatedPosition(m.markPrice)})
 
 	riskUpdate := m.collateralAndRiskForOrder(settle, m.markPrice)
 	if riskUpdate == nil {
-		fmt.Printf("RISK UPDATE NIL\n")
+		// fmt.Printf("RISK UPDATE NIL\n")
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates",
 				logging.String("market-id", m.GetID()))
 		}
 	} else {
-		fmt.Printf("RISK UPDATE NOT NIL\n")
+		// fmt.Printf("RISK UPDATE NOT NIL\n")
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
 		transferResps, close, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})
