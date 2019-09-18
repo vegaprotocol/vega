@@ -4,6 +4,7 @@ package core_test
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -99,7 +100,31 @@ func getMock(market *proto.Market) *tstSetup {
 	return setup
 }
 
-func theMarket(market string) error {
+func theMarket(setup *gherking.DataTable) error {
+	var (
+		market                   string
+		markPrice                uint64 // @TODO this needs to be part of the market definition somehow
+		forward                  proto.Forward
+		release, initial, search float64
+	)
+	forward.Params = &proto.ModelParamsBS{}
+	for _, row := range setup.Rows {
+		// skip header
+		if row.Cells[0].Value == "name" {
+			continue
+		}
+		// | name      | markprice | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
+		market = row.Cells[0].Value
+		markPrice, _ = strconv.ParseUint(row.Cells[1].Value, 10, 64)
+		forward.Lambd, _ = strconv.ParseFloat(row.Cells[2].Value, 64)
+		forward.Tau, _ = strconv.ParseFloat(row.Cells[3].Value, 64)
+		forward.Params.Mu, _ = strconv.ParseFloat(row.Cells[4].Value, 64)
+		forward.Params.R, _ = strconv.ParseFloat(row.Cells[5].Value, 64)
+		forward.Params.Sigma, _ = strconv.ParseFloat(row.Cells[6].Value, 64)
+		release, _ = strconv.ParseFloat(row.Cells[7].Value, 64)
+		initial, _ = strconv.ParseFloat(row.Cells[8].Value, 64)
+		search, _ = strconv.ParseFloat(row.Cells[9].Value, 64)
+	}
 	parts := strings.Split(market, "/")
 	mkt := &proto.Market{
 		Id:   market,
@@ -124,26 +149,21 @@ func theMarket(market string) error {
 								Event:      "price_changed",
 							},
 						},
-						Asset: "ETH",
+						Asset: parts[0],
 					},
 				},
 			},
 			RiskModel: &proto.TradableInstrument_Forward{
-				Forward: &proto.Forward{
-					Lambd: 0.01,
-					Tau:   1.0 / 365.25 / 24,
-					Params: &proto.ModelParamsBS{
-						Mu:    0,
-						R:     0.016,
-						Sigma: 0.09,
-					},
-				},
+				Forward: &forward,
 			},
 		},
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
 	}
+	//   mu=0,r=0,sigma=3.6907199
+	// tau: 0.000114077
+	// lamd: .01
 	log := logging.NewTestLogger()
 	// the controller needs the reporter to report on errors or clunk out with fatal
 	setup := getMock(mkt)
@@ -345,11 +365,11 @@ func tradersLiability(liablityTbl *gherkin.DataTable) error {
 			continue
 		}
 		trader := row.Cells[0].Value
-		margin, err := strconv.ParseInt(row.Cells[4].Value, 10, 64)
+		margin, err := strconv.ParseFloat(row.Cells[4].Value, 64)
 		if err != nil {
 			return err
 		}
-		general, err := strconv.ParseInt(row.Cells[4].Value, 10, 64)
+		general, err := strconv.ParseFloat(row.Cells[4].Value, 64)
 		if err != nil {
 			return err
 		}
@@ -358,17 +378,19 @@ func tradersLiability(liablityTbl *gherkin.DataTable) error {
 		if err != nil {
 			return err
 		}
+		marginR, marginF := uint64(math.Round(margin)), uint64(math.Floor(margin))
+		generalR, generalF := uint64(marh.Round(general)), uint64(math.Floor(general))
 		// sync margin account state
 		reporter.traderAccs[trader][proto.AccountType_MARGIN] = acc
-		if acc.Balance != margin {
-			return fmt.Errorf("expected %s margin account balance to be %d, instead saw %d", trader, margin, acc.Balance)
+		if acc.Balance != marginR && acc.Balance != marginF {
+			return fmt.Errorf("expected %s margin account balance to be %f (%d or %d) instead saw %d", trader, margin, marginR, marginF, acc.Balance)
 		}
 		acc, err = reporter.colE.GetAccountByID(accounts[proto.AccountType_GENERAL].Id)
 		if err != nil {
 			return err
 		}
-		if acc.Balance != general {
-			return fmt.Errorf("expected %s general account balance to be %d, instead saw %d", trader, general, acc.Balance)
+		if acc.Balance != generalR && acc.Balance != generalF {
+			return fmt.Errorf("expected %s general account balance to be %f (%d or %d), instead saw %d", trader, general, generalR, generalF, acc.Balance)
 		}
 		// sync general account state
 		reporter.traderAccs[trader][proto.AccountType_GENERAL] = acc
@@ -411,7 +433,7 @@ func FeatureContext(s *godog.Suite) {
 			reporter.Fatalf("some mock assertion failed: %v", reporter.err)
 		}
 	})
-	s.Step(`^the market ([A-Z\\]{7})$`, theMarket)
+	s.Step(`^the market:$`, theMarket)
 	s.Step(`^the system accounts:$`, theSystemAccounts)
 	s.Step(`^traders have the following state:$`, tradersHaveTheFollowingState)
 	s.Step(`^the following orders:$`, theFollowingOrders)
