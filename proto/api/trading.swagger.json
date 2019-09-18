@@ -1549,21 +1549,24 @@
         },
         "price": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "do not enfore that, as Market Order will not have price specified"
         },
         "size": {
           "type": "string",
           "format": "uint64"
         },
         "side": {
-          "$ref": "#/definitions/vegaSide"
+          "$ref": "#/definitions/vegaSide",
+          "description": "make sur for both that they are non nil and the value is part of the respective enums."
         },
         "TimeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "do not enforce as not always required\naltho at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
         }
       }
     },

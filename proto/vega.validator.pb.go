@@ -123,15 +123,51 @@ func (this *NotifyTraderAccount) Validate() error {
 	return nil
 }
 func (this *OrderAmendment) Validate() error {
+	if this.OrderID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("OrderID", fmt.Errorf(`value '%v' must not be an empty string`, this.OrderID))
+	}
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	if !(this.Price > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("Price", fmt.Errorf(`value '%v' must be greater than '0'`, this.Price))
+	}
 	if !(this.Size > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
 	}
 	return nil
 }
 func (this *OrderSubmission) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	if !(this.Price > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("Price", fmt.Errorf(`value '%v' must be greater than '0'`, this.Price))
+	}
+	if !(this.Size > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
+	}
+	if _, ok := Side_name[int32(this.Side)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("Side", fmt.Errorf(`value '%v' must be a valid Side field`, this.Side))
+	}
+	if _, ok := Order_TimeInForce_name[int32(this.TimeInForce)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("TimeInForce", fmt.Errorf(`value '%v' must be a valid Order_TimeInForce field`, this.TimeInForce))
+	}
 	return nil
 }
 func (this *OrderCancellation) Validate() error {
+	if this.OrderID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("OrderID", fmt.Errorf(`value '%v' must not be an empty string`, this.OrderID))
+	}
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
 	return nil
 }
 func (this *Account) Validate() error {
