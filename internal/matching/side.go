@@ -5,12 +5,6 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
-)
-
-var (
-	ErrPriceNotFound = errors.New("price-volume pair not found")
 )
 
 type OrderBookSide struct {
@@ -44,7 +38,7 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 		}
 	}
 
-	if priceLevelIndex == -1 || orderIndex == -1 {
+	if oldOrder == nil || priceLevelIndex == -1 || orderIndex == -1 {
 		return types.ErrOrderNotFound
 	}
 
@@ -136,17 +130,28 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
 
 	var (
-		trades            []*types.Trade
-		impactedOrders    []*types.Order
-		lastTradedPrice   uint64
-		totalVolumeToFill uint64
+		trades                  []*types.Trade
+		impactedOrders          []*types.Order
+		lastTradedPrice         uint64
+		totalVolumeToFill       uint64
+		totalPrice, totalVolume uint64
 	)
 
 	if agg.TimeInForce == types.Order_FOK {
+		totalVolume = agg.Remaining
 
 		if agg.Side == types.Side_Sell {
 			for _, level := range s.levels {
-				if level.price >= agg.Price {
+				// in case of network trades, we want to calculate an accurate average price to return
+				if agg.Type == types.Order_NETWORK {
+					totalVolumeToFill += level.volume
+					factor := totalVolume
+					if level.volume < totalVolume {
+						factor = level.volume
+						totalVolume -= level.volume
+					}
+					totalPrice += level.price * factor
+				} else if level.price >= agg.Price {
 					totalVolumeToFill += level.volume
 				}
 			}
@@ -154,13 +159,29 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 
 		if agg.Side == types.Side_Buy {
 			for _, level := range s.levels {
-				if level.price <= agg.Price {
+				// in case of network trades, we want to calculate an accurate average price to return
+				if agg.Type == types.Order_NETWORK {
+					totalVolumeToFill += level.volume
+					factor := totalVolume
+					if level.volume < totalVolume {
+						factor = level.volume
+						totalVolume -= level.volume
+					}
+					totalPrice += level.price * factor
+				} else if level.price <= agg.Price {
 					totalVolumeToFill += level.volume
 				}
 			}
 		}
 
-		s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))
+		if agg.Type == types.Order_NETWORK {
+			// set avg price for order
+			agg.Price = totalPrice / agg.Remaining
+		}
+
+		if s.log.GetLevel() == logging.DebugLevel {
+			s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))
+		}
 
 		if totalVolumeToFill <= agg.Remaining {
 			return trades, impactedOrders, 0

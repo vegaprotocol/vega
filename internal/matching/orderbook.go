@@ -111,8 +111,8 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 	if vol != 0 {
 		err = ErrNotEnoughOrders
 		// TODO(jeremy): there's no orders in the book so return the markPrice
-		// this is a temporary fix for nicenet and this behaviour will need
-		// to be properaly specified and handled in the future.
+		// this is a temporary fix for nice-net and this behaviour will need
+		// to be properly specified and handled in the future.
 		if vol == volume {
 			return b.lastTradedPrice, err
 		}
