@@ -698,12 +698,12 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 	} else {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
-		transferResps, close, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})
+		transferResps, closePositions, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})
 		if err != nil {
 			return err
 		}
 
-		if 0 != len(close) {
+		if 0 != len(closePositions) {
 
 			// if closeout list is != 0 then we return an error as well, it means the trader did not have enough
 			// monies to reach the InitialMargin

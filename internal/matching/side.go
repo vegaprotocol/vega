@@ -5,12 +5,6 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
-)
-
-var (
-	ErrPriceNotFound = errors.New("price-volume pair not found")
 )
 
 type OrderBookSide struct {
@@ -44,7 +38,7 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 		}
 	}
 
-	if priceLevelIndex == -1 || orderIndex == -1 {
+	if oldOrder == nil || priceLevelIndex == -1 || orderIndex == -1 {
 		return types.ErrOrderNotFound
 	}
 
@@ -148,7 +142,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 
 		if agg.Side == types.Side_Sell {
 			for _, level := range s.levels {
-				// in case of network trades, we want to calculate an accruate average price to return
+				// in case of network trades, we want to calculate an accurate average price to return
 				if agg.Type == types.Order_NETWORK {
 					totalVolumeToFill += level.volume
 					factor := totalVolume
@@ -165,7 +159,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 
 		if agg.Side == types.Side_Buy {
 			for _, level := range s.levels {
-				// in case of network trades, we want to calculate an accruate average price to return
+				// in case of network trades, we want to calculate an accurate average price to return
 				if agg.Type == types.Order_NETWORK {
 					totalVolumeToFill += level.volume
 					factor := totalVolume
@@ -185,7 +179,9 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 			agg.Price = totalPrice / agg.Remaining
 		}
 
-		s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))
+		if s.log.GetLevel() == logging.DebugLevel {
+			s.log.Debug(fmt.Sprintf("totalVolumeToFill %d until price %d, remaining %d\n", totalVolumeToFill, agg.Price, agg.Remaining))
+		}
 
 		if totalVolumeToFill <= agg.Remaining {
 			return trades, impactedOrders, 0
