@@ -30,6 +30,7 @@ var (
 	ErrMarketClosed            = errors.New("market closed")
 	ErrTraderDoNotExists       = errors.New("trader does not exist")
 	ErrMarginCheckFailed       = errors.New("margin check failed")
+	ErrMarginCheckInsufficient = errors.New("insufficient margin")
 	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
 )
 
@@ -312,22 +313,22 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
 		m.log.Error("Unable to register potential trader position",
-			logging.Error(err),
-			logging.String("market-id", m.GetID()))
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
 		return nil, ErrMarginCheckFailed
 	}
 
 	// Perform check and allocate margin
 	if err := m.checkMarginForOrder(pos, order); err != nil {
-		_, err2 := m.position.UnregisterOrder(order)
-		if err2 != nil {
+		_, err1 := m.position.UnregisterOrder(order)
+		if err1 != nil {
 			m.log.Error("Unable to unregister potential trader positions",
-				logging.Error(err2),
-				logging.String("market-id", m.GetID()))
+				logging.String("market-id", m.GetID()),
+				logging.Error(err1))
 		}
 		m.log.Error("Unable to check/add margin for trader",
-			logging.Error(err),
-			logging.String("market-id", m.GetID()))
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
 		return nil, ErrMarginCheckFailed
 	}
 
@@ -457,17 +458,23 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 				logging.String("market-id", m.GetID()))
 		}
 	} else {
-		// fmt.Printf("RISK UPDATE NOT NIL\n")
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
 		transferResps, close, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})
 		if err != nil {
 			return err
 		}
-		// if closeout list is != 0 then we return an error as well, it means the trader did not have enough
-		// monies to reach the InitialMargin
+
 		if 0 != len(close) {
-			return ErrMarginCheckFailed
+
+			// if closeout list is != 0 then we return an error as well, it means the trader did not have enough
+			// monies to reach the InitialMargin
+
+			m.log.Error("party did not have enough collateral to reach the InitialMargin",
+				logging.Order(*order),
+				logging.String("market-id", m.GetID()))
+
+			return ErrMarginCheckInsufficient
 		}
 
 		if m.log.GetLevel() == logging.DebugLevel {
