@@ -624,7 +624,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *type
 }
 
 func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, settleOrder, initial *types.Order) error {
-	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), false)
+	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), m.markPrice, false)
 	side := types.Side_Sell
 	if settleOrder.Side == side {
 		side = types.Side_Buy
