@@ -312,9 +312,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
-		detail := "Unable to register potential trader position"
-		m.log.Error(detail,
-			logging.String("cause", detail),
+		m.log.Error("Unable to register potential trader position",
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
@@ -324,15 +322,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if err := m.checkMarginForOrder(pos, order); err != nil {
 		_, err1 := m.position.UnregisterOrder(order)
 		if err1 != nil {
-			detail := "Unable to unregister potential trader positions"
-			m.log.Error(detail,
-				logging.String("cause", detail),
+			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err1))
 		}
-		detail := "Unable to check/add margin for trader"
-		m.log.Error(detail,
-			logging.String("cause", detail),
+		m.log.Error("Unable to check/add margin for trader",
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
