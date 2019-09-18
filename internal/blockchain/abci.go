@@ -216,7 +216,7 @@ func (app *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
 	err := app.processor.Process(txn)
 	if err != nil {
 		app.log.Error("Error during processing of DeliverTx", logging.Error(err))
-		return types.ResponseDeliverTx{Code: AbciTxnValidationFailure}
+		//return types.ResponseDeliverTx{Code: AbciTxnValidationFailure} // todo: revisit this as part of #414 (gitlab.com/vega-protocol/trading-core/issues/414)
 	}
 
 	return types.ResponseDeliverTx{Code: AbciTxnOK}
