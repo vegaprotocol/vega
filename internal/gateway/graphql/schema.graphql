@@ -27,7 +27,7 @@ type Mutation {
     # exiration of the the order
     expiration: String
     # type of the order
-    types: OrderType
+    type: OrderType
   ): PendingOrder!
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
@@ -147,6 +147,9 @@ type PendingOrder {
 
   # The status of an order, for example 'Active'
   status: OrderStatus
+
+  # The type of the order
+  type: OrderType
 }
 
 # Queries allow a caller to read data and filter data via GraphQL.

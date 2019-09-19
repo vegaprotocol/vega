@@ -1245,6 +1245,14 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 
 type MyPendingOrderResolver resolverRoot
 
+func (r *MyPendingOrderResolver) Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error) {
+	if obj != nil {
+		ot := OrderType(obj.Type.String())
+		return &ot, nil
+	}
+	return nil, ErrNilPendingOrder
+}
+
 func (r *MyPendingOrderResolver) Price(ctx context.Context, obj *proto.PendingOrder) (*string, error) {
 	if obj != nil {
 		str := fmt.Sprintf("%v", obj.Price)

@@ -203,6 +203,7 @@ message PendingOrder {
   string partyID = 7;
   Order.Status status = 8;
   string id = 9;
+  Order.Type type = 10;
 }
 
 message NotifyTraderAccount {
