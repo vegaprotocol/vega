@@ -1652,6 +1652,9 @@
         },
         "id": {
           "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaOrderType"
         }
       }
     },
