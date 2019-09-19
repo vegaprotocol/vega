@@ -29,67 +29,49 @@ func abs(i int64) int64 {
 	return i
 }
 
-// return nil if no updates are needed
+// Implementation of the margin calculator per specs:
+// https://gitlab.com/vega-protocol/product/blob/master/specs/0019-margin-calculator.md
 func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor) *MarginLevels {
-	lngCloseoutPNL, shtCloseoutPNL := r.calculateCloseoutPNL(e, markPrice)
-	// specs do not reflect that at the momebt, but we get the absolute value of the
-	// closeoutPNL following a discussion with tamlyn
-	lngMaintenance := abs(lngCloseoutPNL) + (e.Size()+e.Buy())*int64(rf.Long*float64(markPrice))
-	shtMaintenance := abs(shtCloseoutPNL) + (e.Size()-e.Sell())*int64(rf.Short*float64(markPrice))
-
-	r.log.Info("margins calculations",
-		logging.String("partyID", e.Party()),
-		logging.Int64("lng-closeout-pnl", lngCloseoutPNL),
-		logging.Int64("sht-closeout-pnl", shtCloseoutPNL),
-		logging.Int64("lng-maintenance", lngMaintenance),
-		logging.Int64("sht-maintenance", shtMaintenance),
+	var (
+		marginMaintenanceLng int64
+		marginMaintenanceSht int64
 	)
+	openPos := e.Size()
+	// calculate both long and short riskiest positions
+	riskiestLng := openPos + e.Buy()
+	riskiestSht := openPos - e.Sell()
 
-	// we return new marginlevels which will produce monies movement
-	// only in the long or short maintenance is positive
-	// if both are negative, this will mean that no margin updates are required
-	if lngMaintenance > shtMaintenance && lngMaintenance > 0 {
-		return newMarginLevels(lngMaintenance, r.marginCalculator.ScalingFactors)
-	}
-	if shtMaintenance > 0 {
-		return newMarginLevels(shtMaintenance, r.marginCalculator.ScalingFactors)
-	}
-	return nil
-}
-
-// calculateCloseoutPNL
-// closeoutPNL = position_size * (Product.value(closeout_price) - Product.value(current_price))
-// in here all errors are logged only, as the GetCloseountPrice return an error if there is not
-// enough Order in the book
-//
-// altho the specs says:
-// if there is insufficient order book volume for this closeout_price to be calculated for an
-// individual trader, the closeout_price is the price that would be achieved for as much of
-// the volume that could theoretically be closed
-func (r *Engine) calculateCloseoutPNL(
-	e events.Margin, markPrice int64) (lngCloseoutPNL, shrtCloseoutPNL int64) {
-	size := e.Size()
-	potentialLong := size + e.Buy()
-	potentialShort := size - e.Sell()
-
-	if potentialLong > 0 {
-		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(potentialLong), types.Side_Sell)
+	// calculate margin maintenance long only if riskiest is > 0
+	// marginMaintenanceLng will be 0 by default
+	if riskiestLng > 0 {
+		exitPrice, err := r.ob.GetCloseoutPrice(uint64(riskiestLng), types.Side_Sell)
 		if err != nil {
 			r.log.Warn("got non critical error from GetCloseoutPrice for Buy side",
 				logging.Error(err))
 		}
-		lngCloseoutPNL = potentialLong * (int64(closeoutPrice) - markPrice)
-	}
+		slippagePerUnit := int64(exitPrice) - markPrice
+		marginMaintenanceLng = openPos*(slippagePerUnit+int64(rf.Long*float64(markPrice))) + e.Buy()*int64(rf.Long*float64(markPrice))
 
-	if potentialShort < 0 {
-		closeoutPrice, err := r.ob.GetCloseoutPrice(uint64(-potentialShort), types.Side_Buy)
+	}
+	// calculate margin maintenace short only if riskiest is < 0
+	// marginMaintenanceSht will be 0 by default
+	if riskiestSht < 0 {
+		exitPrice, err := r.ob.GetCloseoutPrice(uint64(-riskiestSht), types.Side_Buy)
 		if err != nil {
-			r.log.Warn("got non critical error from GetCloseoutPrice for Sell side",
+			r.log.Warn("got non critical error from GetCloseoutPrice for Buy side",
 				logging.Error(err))
-
 		}
-		shrtCloseoutPNL = potentialShort * (int64(closeoutPrice) - markPrice)
+		slippagePerUnit := int64(exitPrice) - markPrice
+		marginMaintenanceSht = openPos*(slippagePerUnit+int64(rf.Short*float64(markPrice))) + e.Sell()*int64(rf.Short*float64(markPrice))
 	}
 
-	return
+	// the greatest liability is the most positive number
+	if marginMaintenanceLng > marginMaintenanceSht && marginMaintenanceLng > 0 {
+		return newMarginLevels(marginMaintenanceLng, r.marginCalculator.ScalingFactors)
+	}
+	if marginMaintenanceSht > 0 {
+		return newMarginLevels(marginMaintenanceSht, r.marginCalculator.ScalingFactors)
+	}
+
+	return nil
 }
