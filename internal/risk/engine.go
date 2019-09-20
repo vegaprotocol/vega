@@ -106,6 +106,13 @@ func (r *Engine) UpdateMarginOnNewOrder(e events.Margin, markPrice uint64) event
 	if margins == nil {
 		return nil
 	}
+	if r.log.GetLevel() == logging.DebugLevel {
+		r.log.Debug("margins calculated on new order",
+			logging.String("trader-id", e.Party()),
+			logging.String("market-id", e.MarketID()),
+			logging.Reflect("margins", *margins),
+		)
+	}
 
 	curBalance := e.MarginBalance()
 	// margins are sufficient, nothing to update
@@ -155,6 +162,14 @@ func (r *Engine) UpdateMarginsOnSettlement(
 		if margins == nil {
 			continue
 		}
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("margins calculated on settlement",
+				logging.String("trader-id", e.Party()),
+				logging.String("market-id", e.MarketID()),
+				logging.Reflect("margins", *margins),
+			)
+		}
+
 		curMargin := int64(e.MarginBalance())
 		// case 1 -> nothing to do margins are sufficient
 		if curMargin >= margins.SearchLevel && curMargin < margins.ReleaseLevel {

@@ -22,13 +22,6 @@ func newMarginLevels(maintenance int64, scalingFactors *types.ScalingFactors) *M
 	}
 }
 
-func abs(i int64) int64 {
-	if i <= 0 {
-		return -i
-	}
-	return i
-}
-
 // Implementation of the margin calculator per specs:
 // https://gitlab.com/vega-protocol/product/blob/master/specs/0019-margin-calculator.md
 func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor) *MarginLevels {
@@ -50,7 +43,9 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 				logging.Error(err))
 		}
 		slippagePerUnit := int64(exitPrice) - markPrice
-		marginMaintenanceLng = openPos*(slippagePerUnit+int64(rf.Long*float64(markPrice))) + e.Buy()*int64(rf.Long*float64(markPrice))
+		marginMaintenanceLng = openPos*
+			(slippagePerUnit+int64(rf.Long*float64(markPrice))) +
+			(e.Buy() * int64(rf.Long*float64(markPrice)))
 
 	}
 	// calculate margin maintenace short only if riskiest is < 0
@@ -62,7 +57,9 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 				logging.Error(err))
 		}
 		slippagePerUnit := int64(exitPrice) - markPrice
-		marginMaintenanceSht = openPos*(slippagePerUnit+int64(rf.Short*float64(markPrice))) + e.Sell()*int64(rf.Short*float64(markPrice))
+		marginMaintenanceSht = openPos*
+			(slippagePerUnit+int64(rf.Short*float64(markPrice))) +
+			(e.Sell() * int64(rf.Short*float64(markPrice)))
 	}
 
 	// the greatest liability is the most positive number

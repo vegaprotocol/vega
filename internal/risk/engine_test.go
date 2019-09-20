@@ -62,6 +62,7 @@ func TestUpdateMargins(t *testing.T) {
 	t.Run("Top up margin test", testMarginTopup)
 	t.Run("Noop margin test", testMarginNoop)
 	t.Run("Margin too high (overflow)", testMarginOverflow)
+	t.Run("Update Margin with orders in book", testMarginWithOrderInBook)
 }
 
 func testMarginTopup(t *testing.T) {
@@ -138,11 +139,18 @@ func testMarginOverflow(t *testing.T) {
 	evts := []events.Margin{evt}
 	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
 	assert.Equal(t, 1, len(resp))
+
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
 	assert.Equal(t, int64(465), trans.Amount.Amount)
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_MARGIN_HIGH, trans.Type)
+}
+
+// implementation of the test from the specs
+// https://gitlab.com/vega-protocol/product/blob/master/specs/0019-margin-calculator.md#pseudo-code-examples
+func testMarginWithOrderInBook(t *testing.T) {
+
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
