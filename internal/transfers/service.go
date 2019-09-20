@@ -3,6 +3,7 @@ package transfers
 import (
 	"context"
 	"sync/atomic"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -82,29 +83,36 @@ func (s *Svc) ObserveTransferResponses(
 				close(transfers)
 				return
 			case tmptrs := <-internal:
-				select {
-				case transfers <- tmptrs:
-					retryCount = retries
-					s.log.Debug(
-						"TransferResponses for subscriber sent successfully",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip),
-					)
-				default:
-					retryCount--
-					if retryCount == 0 {
-						s.log.Warn(
-							"TransferResponses subscriber has hit the retry limit",
+				retryCount = retries
+				success := false
+				for !success && retryCount > 0 {
+					select {
+					case transfers <- tmptrs:
+						s.log.Debug(
+							"TransferResponses for subscriber sent successfully",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
-							logging.Int("retries", retries))
-
-						cancel()
+						)
+						success = true
+					default:
+						retryCount--
+						if retryCount > 0 {
+							s.log.Debug(
+								"TransferResponses for subscriber not sent",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip))
+							time.Sleep(time.Duration(10) * time.Millisecond)
+						}
 					}
-					s.log.Debug(
-						"TransferResponses for subscriber not sent",
+				}
+				if retryCount <= 0 {
+					s.log.Warn(
+						"TransferResponses subscriber has hit the retry limit",
 						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
+						logging.String("ip-address", ip),
+						logging.Int("retries", retries))
+					cancel()
+					break
 				}
 			}
 		}
