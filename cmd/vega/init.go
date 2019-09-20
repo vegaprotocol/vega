@@ -143,21 +143,21 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		initialMarkPrice uint64
 	}{
 		{
-			decimalPlaces:    5,
+			decimalPlaces:    2,
 			baseName:         "ETH",
 			quoteName:        "USD",
 			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice: 200,
 		},
 		{
-			decimalPlaces:    5,
+			decimalPlaces:    2,
 			baseName:         "GBP",
 			quoteName:        "USD",
 			maturity:         time.Date(2020, 6, 30, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice: 10,
 		},
 		{
-			decimalPlaces:    5,
+			decimalPlaces:    2,
 			baseName:         "GBP",
 			quoteName:        "EUR",
 			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
