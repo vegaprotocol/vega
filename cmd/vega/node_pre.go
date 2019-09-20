@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/pprof"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
+	"code.vegaprotocol.io/vega/internal/transfers"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/spf13/cobra"
@@ -125,6 +126,11 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) })
 
+	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
+		return
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
+
 	return nil
 }
 
@@ -168,6 +174,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) })
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts, l.blockchainClient)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) })
+	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
 	return
 }
 

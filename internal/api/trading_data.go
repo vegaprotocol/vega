@@ -12,6 +12,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	google_proto "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -108,20 +109,26 @@ type AccountsService interface {
 	GetAccountSubscribersCount() int32
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TransferResponseService
+type TransferResponseService interface {
+	ObserveTransferResponses(ctx context.Context, retries int) (<-chan []*types.TransferResponse, uint64)
+}
+
 type tradingDataService struct {
-	log             *logging.Logger
-	Config          Config
-	Client          BlockchainClient
-	Stats           *internal.Stats
-	TimeService     VegaTime
-	OrderService    OrderService
-	TradeService    TradeService
-	CandleService   CandleService
-	MarketService   MarketService
-	PartyService    PartyService
-	AccountsService AccountsService
-	statusChecker   *monitoring.Status
-	ctx             context.Context
+	log                     *logging.Logger
+	Config                  Config
+	Client                  BlockchainClient
+	Stats                   *internal.Stats
+	TimeService             VegaTime
+	OrderService            OrderService
+	TradeService            TradeService
+	CandleService           CandleService
+	MarketService           MarketService
+	PartyService            PartyService
+	AccountsService         AccountsService
+	TransferResponseService TransferResponseService
+	statusChecker           *monitoring.Status
+	ctx                     context.Context
 }
 
 // If no limit is provided at the gRPC API level, the system will use this limit instead.
@@ -397,6 +404,59 @@ func (h *tradingDataService) GetVegaTime(ctx context.Context, request *google_pr
 		Timestamp: ts.UnixNano(),
 	}, nil
 
+}
+
+func (h *tradingDataService) TransferResponsesSubscribe(
+	req *empty.Empty, srv protoapi.TradingData_TransferResponsesSubscribeServer) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	transferResponseschan, ref := h.TransferResponseService.ObserveTransferResponses(
+		ctx, h.Config.StreamRetries)
+	h.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
+	var err error
+
+	for {
+		select {
+		case transferResponses := <-transferResponseschan:
+			if transferResponses == nil {
+				err = ErrChannelClosed
+				h.log.Error("transferResponses subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+			for _, tr := range transferResponses {
+				tr := tr
+				err = srv.Send(tr)
+				if err != nil {
+					h.log.Error("TransferResponses subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+					return err
+				}
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			h.log.Debug("TransferResponses subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return ErrServerShutdown
+		}
+
+		if transferResponseschan == nil {
+			h.log.Debug("TransferResponses subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return ErrStreamClosed
+		}
+	}
 }
 
 func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest, srv protoapi.TradingData_AccountsSubscribeServer) error {

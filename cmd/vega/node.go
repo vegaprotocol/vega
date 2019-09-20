@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/pprof"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
+	"code.vegaprotocol.io/vega/internal/transfers"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 
 	"github.com/pkg/errors"
@@ -37,22 +38,24 @@ type NodeCommand struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	accounts    *storage.Account
-	candleStore *storage.Candle
-	orderStore  *storage.Order
-	marketStore *storage.Market
-	tradeStore  *storage.Trade
-	partyStore  *storage.Party
-	riskStore   *storage.Risk
+	accounts              *storage.Account
+	candleStore           *storage.Candle
+	orderStore            *storage.Order
+	marketStore           *storage.Market
+	tradeStore            *storage.Trade
+	partyStore            *storage.Party
+	riskStore             *storage.Risk
+	transferResponseStore *storage.TransferResponse
 
-	candleService   *candles.Svc
-	tradeService    *trades.Svc
-	marketService   *markets.Svc
-	orderService    *orders.Svc
-	partyService    *parties.Svc
-	timeService     *vegatime.Svc
-	auth            *auth.Svc
-	accountsService *accounts.Svc
+	candleService    *candles.Svc
+	tradeService     *trades.Svc
+	marketService    *markets.Svc
+	orderService     *orders.Svc
+	partyService     *parties.Svc
+	timeService      *vegatime.Svc
+	auth             *auth.Svc
+	accountsService  *accounts.Svc
+	transfersService *transfers.Svc
 
 	blockchainClient *blockchain.Client
 
@@ -107,6 +110,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.marketStore,
 		l.partyStore,
 		l.accounts,
+		l.transferResponseStore,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { executionEngine.ReloadConf(cfg.Execution) })
 
@@ -163,6 +167,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.tradeService,
 		l.candleService,
 		l.accountsService,
+		l.transfersService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

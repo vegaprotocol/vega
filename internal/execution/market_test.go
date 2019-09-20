@@ -28,12 +28,13 @@ type testMarket struct {
 	ctrl       *gomock.Controller
 	accountBuf *collateralmocks.MockAccountBuffer
 
-	collateraEngine *collateral.Engine
-	partyEngine     *execution.Party
-	candleStore     *mocks.MockCandleStore
-	orderStore      *mocks.MockOrderStore
-	partyStore      *mocks.MockPartyStore
-	tradeStore      *mocks.MockTradeStore
+	collateraEngine       *collateral.Engine
+	partyEngine           *execution.Party
+	candleStore           *mocks.MockCandleStore
+	orderStore            *mocks.MockOrderStore
+	partyStore            *mocks.MockPartyStore
+	tradeStore            *mocks.MockTradeStore
+	transferResponseStore *mocks.MockTransferResponseStore
 
 	now time.Time
 }
@@ -51,6 +52,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	orderStore := mocks.NewMockOrderStore(ctrl)
 	partyStore := mocks.NewMockPartyStore(ctrl)
 	tradeStore := mocks.NewMockTradeStore(ctrl)
+	transferResponseStore := mocks.NewMockTransferResponseStore(ctrl)
 
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
@@ -61,7 +63,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore, orderStore,
-		partyStore, tradeStore, now, 0,
+		partyStore, tradeStore, transferResponseStore, now, 0,
 	)
 
 	asset, err := mkts[0].GetAsset()
@@ -72,18 +74,18 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	_, _ = collateralEngine.CreateMarketAccounts(mktEngine.GetID(), asset, 0)
 
 	return &testMarket{
-		market:          mktEngine,
-		log:             log,
-		ctrl:            ctrl,
-		accountBuf:      accountBuf,
-		collateraEngine: collateralEngine,
-		partyEngine:     partyEngine,
-		candleStore:     candleStore,
-		orderStore:      orderStore,
-		partyStore:      partyStore,
-		tradeStore:      tradeStore,
-
-		now: now,
+		market:                mktEngine,
+		log:                   log,
+		ctrl:                  ctrl,
+		accountBuf:            accountBuf,
+		collateraEngine:       collateralEngine,
+		partyEngine:           partyEngine,
+		candleStore:           candleStore,
+		orderStore:            orderStore,
+		partyStore:            partyStore,
+		tradeStore:            tradeStore,
+		transferResponseStore: transferResponseStore,
+		now:                   now,
 	}
 }
 
@@ -159,6 +161,7 @@ func TestMarketClosing(t *testing.T) {
 	tm.partyStore.EXPECT().Post(gomock.Any()).Times(2).Return(nil)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
+	tm.transferResponseStore.EXPECT().SaveBatch(gomock.Any()).Times(1).Return(nil)
 
 	tm.candleStore.EXPECT().GenerateCandlesFromBuffer(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	// check account gets updated
@@ -234,6 +237,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
 	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.transferResponseStore.EXPECT().SaveBatch(gomock.Any()).Times(1).Return(nil)
 
 	// close the market nowks
 	// check account gets updated

@@ -65,13 +65,15 @@ type Market struct {
 	partyEngine *Party
 
 	// stores
-	candles CandleStore
-	orders  OrderStore
-	parties PartyStore
-	trades  TradeStore
+	candles           CandleStore
+	orders            OrderStore
+	parties           PartyStore
+	trades            TradeStore
+	transferResponses TransferResponseStore
 
 	// buffers
-	candlesBuf *buffer.Candle
+	candlesBuf           *buffer.Candle
+	transferResponsesBuf *buffer.TransferResponse
 
 	closed bool
 }
@@ -114,6 +116,7 @@ func NewMarket(
 	orders OrderStore,
 	parties PartyStore,
 	trades TradeStore,
+	transferResponseStore TransferResponseStore,
 	now time.Time,
 	seq uint64,
 ) (*Market, error) {
@@ -136,31 +139,32 @@ func NewMarket(
 		tradableInstrument.Instrument.InitialMarkPrice, false)
 
 	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
-
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel, getInitialFactors(), book)
+	transferResponsesBuf := buffer.NewTransferResponse(transferResponseStore)
 	positionEngine := positions.New(log, positionConfig)
 	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
 
 	market := &Market{
-		log:                log,
-		idgen:              newIDGen(),
-		mkt:                mkt,
-		closingAt:          closingAt,
-		currentTime:        now,
-		markPrice:          tradableInstrument.Instrument.InitialMarkPrice,
-		matching:           book,
-		tradableInstrument: tradableInstrument,
-		risk:               riskEngine,
-		position:           positionEngine,
-		settlement:         settleEngine,
-		collateral:         collateralEngine,
-		partyEngine:        partyEngine,
-		candles:            candles,
-		orders:             orders,
-		parties:            parties,
-		trades:             trades,
-		candlesBuf:         candlesBuf,
+		log:                  log,
+		idgen:                newIDGen(),
+		mkt:                  mkt,
+		closingAt:            closingAt,
+		currentTime:          now,
+		markPrice:            tradableInstrument.Instrument.InitialMarkPrice,
+		matching:             book,
+		tradableInstrument:   tradableInstrument,
+		risk:                 riskEngine,
+		position:             positionEngine,
+		settlement:           settleEngine,
+		collateral:           collateralEngine,
+		partyEngine:          partyEngine,
+		candles:              candles,
+		orders:               orders,
+		parties:              parties,
+		trades:               trades,
+		candlesBuf:           candlesBuf,
+		transferResponsesBuf: transferResponsesBuf,
 	}
 	err = SetMarketID(mkt, seq)
 	if err != nil {
@@ -246,6 +250,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 					logging.Error(err),
 				)
 			} else {
+				m.transferResponsesBuf.Add(transfers)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
 					for _, v := range transfers {
@@ -265,6 +270,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
+					m.transferResponsesBuf.Add(clearMarketTransfers)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
@@ -281,6 +287,8 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 		}
 	}
 
+	// flush the transfer response buf
+	m.transferResponsesBuf.Flush()
 	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "execution", "OnChainTimeUpdate")
 	return
 }
@@ -446,7 +454,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					}
 				}
 			}
-
+			if err != nil && 0 != len(transfers) {
+				m.transferResponsesBuf.Add(transfers)
+			}
 			// @TODO -> close out any traders that don't have enough margins left
 			// if no errors were returned
 		}
@@ -702,6 +712,7 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		if err != nil {
 			return err
 		}
+		m.transferResponsesBuf.Add(transferResps)
 
 		if 0 != len(closePositions) {
 

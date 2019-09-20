@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	ErrMarketNotFound  = errors.New("no accounts found for market")
-	ErrOwnerNotFound   = errors.New("no accounts found for party")
+	ErrMarketNotFound = errors.New("no accounts found for market")
+	ErrOwnerNotFound  = errors.New("no accounts found for party")
 )
 
 // Data structure representing a collateral account store
@@ -128,7 +128,7 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, byReference bool
 	for it.Seek(prefix); it.ValidForPrefix(validFor); it.Next() {
 		// If loading the data indirectly via a secondary index reference
 		// then the caller must set `byReference` to true
- 		if byReference {
+		if byReference {
 			var keyBuf []byte
 			if keyBuf, err = it.Item().ValueCopy(keyBuf); err != nil {
 				return nil, err

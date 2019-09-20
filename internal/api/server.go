@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/orders"
 	"code.vegaprotocol.io/vega/internal/parties"
 	"code.vegaprotocol.io/vega/internal/trades"
+	"code.vegaprotocol.io/vega/internal/transfers"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
@@ -30,13 +31,14 @@ type grpcServer struct {
 	srv    *grpc.Server
 	stats  *internal.Stats
 
-	accountsService *accounts.Svc
-	candleService   *candles.Svc
-	marketService   MarketService
-	orderService    *orders.Svc
-	partyService    *parties.Svc
-	timeService     *vegatime.Svc
-	tradeService    *trades.Svc
+	accountsService         *accounts.Svc
+	candleService           *candles.Svc
+	marketService           MarketService
+	orderService            *orders.Svc
+	partyService            *parties.Svc
+	timeService             *vegatime.Svc
+	tradeService            *trades.Svc
+	transferResponseService *transfers.Svc
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -60,6 +62,7 @@ func NewGRPCServer(
 	tradeService *trades.Svc,
 	candleService *candles.Svc,
 	accountsService *accounts.Svc,
+	transferResponseService *transfers.Svc,
 	statusChecker *monitoring.Status,
 ) *grpcServer {
 	// setup logger
@@ -68,20 +71,21 @@ func NewGRPCServer(
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &grpcServer{
-		log:             log,
-		Config:          config,
-		stats:           stats,
-		client:          client,
-		orderService:    orderService,
-		tradeService:    tradeService,
-		candleService:   candleService,
-		timeService:     timeService,
-		marketService:   marketService,
-		partyService:    partyService,
-		accountsService: accountsService,
-		statusChecker:   statusChecker,
-		ctx:             ctx,
-		cfunc:           cfunc,
+		log:                     log,
+		Config:                  config,
+		stats:                   stats,
+		client:                  client,
+		orderService:            orderService,
+		tradeService:            tradeService,
+		candleService:           candleService,
+		timeService:             timeService,
+		marketService:           marketService,
+		partyService:            partyService,
+		accountsService:         accountsService,
+		transferResponseService: transferResponseService,
+		statusChecker:           statusChecker,
+		ctx:                     ctx,
+		cfunc:                   cfunc,
 	}
 }
 
@@ -175,19 +179,20 @@ func (g *grpcServer) Start() {
 	protoapi.RegisterTradingServer(g.srv, tradingSvc)
 
 	tradingDataSvc := &tradingDataService{
-		log:             g.log,
-		Config:          g.Config,
-		Stats:           g.stats,
-		Client:          g.client,
-		OrderService:    g.orderService,
-		TradeService:    g.tradeService,
-		CandleService:   g.candleService,
-		MarketService:   g.marketService,
-		PartyService:    g.partyService,
-		TimeService:     g.timeService,
-		AccountsService: g.accountsService,
-		statusChecker:   g.statusChecker,
-		ctx:             g.ctx,
+		log:                     g.log,
+		Config:                  g.Config,
+		Stats:                   g.stats,
+		Client:                  g.client,
+		OrderService:            g.orderService,
+		TradeService:            g.tradeService,
+		CandleService:           g.candleService,
+		MarketService:           g.marketService,
+		PartyService:            g.partyService,
+		TimeService:             g.timeService,
+		AccountsService:         g.accountsService,
+		TransferResponseService: g.transferResponseService,
+		statusChecker:           g.statusChecker,
+		ctx:                     g.ctx,
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServer(g.srv, tradingDataSvc)
