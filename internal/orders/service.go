@@ -133,7 +133,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		(sub.TimeInForce != types.Order_FOK && sub.TimeInForce != types.Order_IOC) {
 		return ErrInvalidTimeInForceForMarketOrder
 	}
-	if sub.Type == types.Order_LIMIT && sub.Price != 0 {
+	if sub.Type == types.Order_LIMIT && sub.Price == 0 {
 		return ErrInvalidPriceForLimitOrder
 	}
 

@@ -1601,11 +1601,11 @@
     "vegaOrderType": {
       "type": "string",
       "enum": [
-        "MARKET",
         "LIMIT",
+        "MARKET",
         "NETWORK"
       ],
-      "default": "MARKET"
+      "default": "LIMIT"
     },
     "vegaParty": {
       "type": "object",
