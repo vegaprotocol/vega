@@ -35,4 +35,5 @@ type Risk interface {
 	Margin
 	Amount() int64
 	Transfer() *types.Transfer // I know, it's included in the Transfer interface, but this is to make it clear that this particular func is masked at this level
+	MarginLevels() *types.MarginLevels
 }

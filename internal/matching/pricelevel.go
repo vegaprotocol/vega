@@ -41,7 +41,6 @@ func (l *PriceLevel) addOrder(o *types.Order) {
 	l.increaseVolumeByTimestamp(o)
 	// add orders to slice of orders on this price level
 	l.orders = append(l.orders, o)
-
 	l.volume += o.Remaining
 }
 

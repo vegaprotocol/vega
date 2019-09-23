@@ -241,7 +241,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 	// close the market nowks
 	// check account gets updated
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(2).DoAndReturn(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(4).DoAndReturn(func(acc types.Account) {
 		fmt.Printf("ACCOUNT1: %v\n", acc)
 	})
 

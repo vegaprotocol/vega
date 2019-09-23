@@ -2,10 +2,13 @@ package risk_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"code.vegaprotocol.io/vega/internal/config"
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/matching"
 	"code.vegaprotocol.io/vega/internal/risk"
 	"code.vegaprotocol.io/vega/internal/risk/mocks"
 	types "code.vegaprotocol.io/vega/proto"
@@ -150,7 +153,103 @@ func testMarginOverflow(t *testing.T) {
 // implementation of the test from the specs
 // https://gitlab.com/vega-protocol/product/blob/master/specs/0019-margin-calculator.md#pseudo-code-examples
 func testMarginWithOrderInBook(t *testing.T) {
+	// custom risk factors
+	r := &types.RiskResult{
+		RiskFactors: map[string]*types.RiskFactor{
+			"ETH": {
+				Market: "ETH/DEC19",
+				Short:  .11,
+				Long:   .10,
+			},
+		},
+		PredictedNextRiskFactors: map[string]*types.RiskFactor{
+			"ETH": {
+				Market: "ETH/DEC19",
+				Short:  .11,
+				Long:   .10,
+			},
+		},
+	}
+	// custom scaling factor
+	mc := &types.MarginCalculator{
+		ScalingFactors: &types.ScalingFactors{
+			SearchLevel:       1.1,
+			InitialMargin:     1.2,
+			CollateralRelease: 1.3,
+		},
+	}
 
+	var markPrice int64 = 144
+
+	// list of order in the book before the test happen
+	ordersInBook := []struct {
+		volume int64
+		price  int64
+		tid    string
+		side   types.Side
+	}{
+		// asks
+		// {volume: 3, price: 258, tid: "t1", side: types.Side_Sell},
+		// {volume: 5, price: 240, tid: "t2", side: types.Side_Sell},
+		// {volume: 3, price: 188, tid: "t3", side: types.Side_Sell},
+		// bids
+
+		{volume: 1, price: 120, tid: "t4", side: types.Side_Buy},
+		{volume: 4, price: 240, tid: "t5", side: types.Side_Buy},
+		{volume: 7, price: 258, tid: "t6", side: types.Side_Buy},
+	}
+
+	marketID := "testingmarket"
+
+	conf := config.NewDefaultConfig("")
+	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	model := mocks.NewMockModel(ctrl)
+
+	// instanciate the book then fil it with the orders
+
+	book := matching.NewOrderBook(
+		log, conf.Matching, marketID, uint64(markPrice), false)
+
+	for _, v := range ordersInBook {
+		o := &types.Order{
+			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
+			MarketID:    marketID,
+			Side:        v.side,
+			Price:       uint64(v.price),
+			Size:        uint64(v.volume),
+			Remaining:   uint64(v.volume),
+			TimeInForce: types.Order_GTT,
+			Type:        types.Order_LIMIT,
+			Status:      types.Order_Active,
+			ExpiresAt:   10000,
+		}
+		_, err := book.SubmitOrder(o)
+		assert.Nil(t, err)
+	}
+
+	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book)
+	evt := testMargin{
+		party:   "tx",
+		size:    10,
+		buy:     4,
+		sell:    8,
+		price:   144,
+		asset:   "ETH",
+		margin:  500,
+		general: 100000,
+		market:  "ETH/DEC19",
+	}
+	riskevt := testE.UpdateMarginOnNewOrder(evt, uint64(markPrice))
+	assert.NotNil(t, riskevt)
+	if riskevt == nil {
+		t.Fatal("expecting non nil risk update")
+	}
+	margins := riskevt.MarginLevels()
+	assert.Equal(t, int64(1074), margins.MaintenanceMargin)
+	assert.Equal(t, int64(1074*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
+	assert.Equal(t, int64(1074*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
+	assert.Equal(t, int64(1074*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
