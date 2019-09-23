@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -106,6 +107,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
 func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
+	defer metrics.EngineTimeCounterAdd("-", "positions", "RegisterOrder")()
 	e.mu.Lock()
 	pos, found := e.positions[order.PartyID]
 	if !found {
@@ -124,6 +126,7 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
 func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
+	defer metrics.EngineTimeCounterAdd("-", "positions", "UnregisterOrder")()
 	e.mu.Lock()
 	pos, found := e.positions[order.PartyID]
 	e.mu.Unlock()
@@ -215,6 +218,7 @@ func (e *Engine) updatePositions(trade *types.Trade) {
 
 // just the logic to update buyer, will eventually return the MarketPosition we need to push
 func (e *Engine) Positions() []MarketPosition {
+	defer metrics.EngineTimeCounterAdd("-", "positions", "Positions")()
 	e.mu.RLock()
 	out := make([]MarketPosition, 0, len(e.positions))
 	for _, value := range e.positions {

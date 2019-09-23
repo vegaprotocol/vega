@@ -199,7 +199,7 @@ func (m *Market) GetID() string {
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
-	start := time.Now()
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "OnChainTimeUpdate")()
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -289,20 +289,19 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	// flush the transfer response buf
 	m.transferResponsesBuf.Flush()
-	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "execution", "OnChainTimeUpdate")
 	return
 }
 
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "SubmitOrder")()
+
 	if m.closed {
 		return nil, ErrMarketClosed
 	}
 
 	orderValidity := "invalid"
-	startSubmit := time.Now() // do not reset this var
 	defer func() {
-		metrics.EngineTimeCounterAdd(startSubmit, m.mkt.Id, "execution", "Submit")
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
 	}()
 
@@ -316,13 +315,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Verify and add new parties
-	start := time.Now()
 	party, _ := m.parties.GetByID(order.PartyID)
 	if party == nil {
 		// trader should be created before even trying to post order
 		return nil, ErrTraderDoNotExists
 	}
-	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "partystore", "GetByID/Post")
 
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
@@ -356,7 +353,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		return nil, err
 	}
-	start = time.Now()
 
 	// set order ID
 	m.idgen.setID(order)
@@ -378,7 +374,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			}
 		}
 	}
-	metrics.EngineTimeCounterAdd(start, m.mkt.Id, "orderstore", "Post/Put")
 
 	if confirmation.Trades != nil {
 		// Orders can contain several trades, each trade involves 2 traders
@@ -397,14 +392,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			start := time.Now()
 			if err := m.trades.Post(trade); err != nil {
 				m.log.Error("Failure storing new trade in submit order",
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
-			metrics.EngineTimeCounterAdd(start, m.mkt.Id, "tradestore", "Post")
-			start = time.Now()
 
 			// Save to trade buffer for generating candles etc
 			err := m.candlesBuf.AddTrade(*trade)
@@ -413,18 +405,14 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
-			metrics.EngineTimeCounterAdd(start, m.mkt.Id, "candlestore", "AddTrade")
-			start = time.Now()
 
 			// Calculate and set current mark price
 			m.setMarkPrice(trade)
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade, tradersCh)
-			metrics.EngineTimeCounterAdd(start, m.mkt.Id, "positions", "Update")
 		}
 		close(tradersCh)
-		start = time.Now()
 		// now let's get the transfers for MTM settlement
 		positions := m.position.Positions()
 		events := make([]events.MarketPosition, 0, len(positions))
@@ -432,7 +420,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			events = append(events, p)
 		}
 		settle := m.settlement.SettleOrder(m.markPrice, events)
-		metrics.EngineTimeCounterAdd(start, m.mkt.Id, "positions", "Positions+SettleOrder")
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
 		if len(margins) > 0 {
@@ -462,7 +449,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		}
 	}
 
-	orderValidity = "valid"
+	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
 }
 
@@ -471,6 +458,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
 // pass in the order which caused traders to be distressed
 func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *types.Order) error {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "resolveClosedOutTraders")()
 	// cancel pending orders for traders
 	if err := m.matching.RemoveDistressedOrders(closed); err != nil {
 		m.log.Error(
@@ -634,6 +622,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *type
 }
 
 func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, settleOrder, initial *types.Order) error {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "zeroOutNetwork")()
 	tmpOrderBook := matching.NewOrderBook(m.log, m.matchingConfig, m.GetID(), m.markPrice, false)
 	side := types.Side_Sell
 	if settleOrder.Side == side {
@@ -695,6 +684,7 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 }
 
 func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types.Order) error {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "checkMarginForOrder")()
 	// fmt.Printf("POSITION: %v\n", pos)
 	settle := m.settlement.SettleOrder(m.markPrice, []events.MarketPosition{pos.UpdatedPosition(m.markPrice)})
 
@@ -746,9 +736,7 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRiskForOrder(settle []events.Transfer, price uint64) events.Risk {
-
-	start := time.Now()
-	defer metrics.EngineTimeCounterAdd(start, m.mkt.Id, "collateral", "TransferCh")
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "collateralAndRiskForOrder")()
 
 	transferCh, _ := m.collateral.TransferCh(m.GetID(), settle)
 	e := <-transferCh
@@ -783,8 +771,8 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "collateralAndRisk")()
 	ctx, cancel := context.WithCancel(context.Background())
-	start := time.Now()
 	defer cancel()
 	transferCh, errCh := m.collateral.TransferCh(m.GetID(), settle)
 	go func() {
@@ -796,7 +784,6 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 			)
 			cancel()
 		}
-		metrics.EngineTimeCounterAdd(start, m.mkt.Id, "collateral", "TransferCh")
 	}()
 
 	evts := []events.Margin{}
@@ -819,6 +806,7 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 
 // CancelOrder cancels the given order
 func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "CancelOrder")()
 	if m.closed {
 		return nil, ErrMarketClosed
 	}
@@ -859,6 +847,7 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 
 // DeleteOrder delete the given order from the order book
 func (m *Market) DeleteOrder(order *types.Order) error {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "DeleteOrder")()
 	// Validate Market
 	if order.MarketID != m.mkt.Id {
 		m.log.Error("Market ID mismatch",
@@ -875,6 +864,7 @@ func (m *Market) AmendOrder(
 	orderAmendment *types.OrderAmendment,
 	existingOrder *types.Order,
 ) (*types.OrderConfirmation, error) {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "AmendOrder")()
 	if m.closed {
 		return nil, ErrMarketClosed
 	}
@@ -965,6 +955,7 @@ func (m *Market) AmendOrder(
 }
 
 func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (*types.OrderConfirmation, error) {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "orderCancelReplace")()
 	m.log.Debug("Cancel/replace order")
 
 	cancellation, err := m.CancelOrder(existingOrder)
@@ -981,6 +972,7 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (*type
 }
 
 func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmation, error) {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "orderAmendInPlace")()
 	_, err := m.position.RegisterOrder(newOrder)
 	if err != nil {
 		return &types.OrderConfirmation{}, err
@@ -1005,6 +997,7 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 
 // RemoveExpiredOrders remove all expired orders from the order book
 func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
+	defer metrics.EngineTimeCounterAdd(m.mkt.Id, "market", "RemoveExpiredOrders")()
 	if m.closed {
 		return nil, ErrMarketClosed
 	}

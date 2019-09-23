@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -205,10 +204,9 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	startSubmit := time.Now() // do not reset this var
+	defer metrics.EngineTimeCounterAdd(b.marketID, "matching", "SubmitOrder")()
 
 	if err := b.validateOrder(order); err != nil {
-		metrics.EngineTimeCounterAdd(startSubmit, b.marketID, "matching", "Submit")
 		return nil, err
 	}
 
@@ -269,7 +267,6 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
-	metrics.EngineTimeCounterAdd(startSubmit, b.marketID, "matching", "Submit")
 	return orderConfirmation, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -41,6 +42,7 @@ func (ms *Party) Post(party *types.Party) error {
 
 // GetByID searches for the given party by id/name in the mem-store.
 func (ms *Party) GetByID(id string) (*types.Party, error) {
+	defer metrics.EngineTimeCounterAdd("-", "partystore", "GetByID")()
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 

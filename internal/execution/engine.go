@@ -254,6 +254,9 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 }
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+	// order.MarketID may or may not be valid.
+	defer metrics.EngineTimeCounterAdd(order.MarketID, "execution", "SubmitOrder")()
+
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submit order", logging.Order(*order))
 	}
@@ -336,6 +339,8 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 }
 
 func (e *Engine) onChainTimeUpdate(t time.Time) {
+	defer metrics.EngineTimeCounterAdd("?", "execution", "onChainTimeUpdate")()
+
 	e.log.Debug("updating engine on new time update")
 
 	// update collateral
@@ -361,7 +366,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
 func (e *Engine) removeExpiredOrders(t time.Time) {
-	pre := time.Now()
+	defer metrics.EngineTimeCounterAdd("all", "execution", "removeExpiredOrders")()
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
@@ -394,7 +399,6 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
-	metrics.EngineTimeCounterAdd(pre, "all", "execution", "removeExpiredOrders")
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.

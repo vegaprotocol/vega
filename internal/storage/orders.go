@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger"
@@ -110,6 +111,7 @@ func (os *Order) Unsubscribe(id uint64) error {
 // Post adds an order to the badger store, adds
 // to queue the operation to be committed later.
 func (os *Order) Post(order types.Order) error {
+	defer metrics.EngineTimeCounterAdd("-", "orderstore", "Post")()
 	// validate an order book (depth of market) exists for order market
 	if exists := os.depth[order.MarketID]; exists == nil {
 		os.depth[order.MarketID] = NewMarketDepth(order.MarketID)
@@ -122,6 +124,7 @@ func (os *Order) Post(order types.Order) error {
 // Put updates an order in the badger store, adds
 // to queue the operation to be committed later.
 func (os *Order) Put(order types.Order) error {
+	defer metrics.EngineTimeCounterAdd("-", "orderstore", "Put")()
 	os.addToBuffer(order)
 	return nil
 }
@@ -129,6 +132,7 @@ func (os *Order) Put(order types.Order) error {
 // Commit saves any operations that are queued to badger store, and includes all updates.
 // It will also call notify() to push updated data to any subscribers.
 func (os *Order) Commit() error {
+	defer metrics.EngineTimeCounterAdd("-", "orderstore", "Commit")()
 	if len(os.buffer) == 0 {
 		return nil
 	}
