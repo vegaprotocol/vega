@@ -120,6 +120,29 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 	return price / (volume - vol), err
 }
 
+// MarketOrderPrice return the price that would be applied for a market
+// order based on the specified side.
+// In the case of a Buy side, the highest sell price will be returned
+// In the case of a Sell side, the lowest buy price will be returned
+// TODO(jeremy): we won't be able to place an order if there is no order available
+// in the meantime to make this function not failing we will return the
+// initialMarkPrice / lastTradePrice in this case, this will fail later on when trying to
+// place the order, by doing this we do not implement any more logic at this level
+func (b *OrderBook) MarketOrderPrice(s types.Side) uint64 {
+	if s == types.Side_Buy {
+		p, err := b.sell.getHighestOrderPrice(types.Side_Sell)
+		if err != nil {
+			return b.lastTradedPrice
+		}
+		return p
+	}
+	p, err := b.buy.getLowestOrderPrice(types.Side_Buy)
+	if err != nil {
+		return b.lastTradedPrice
+	}
+	return p
+}
+
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
