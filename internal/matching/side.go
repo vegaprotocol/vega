@@ -2,6 +2,7 @@ package matching
 
 import (
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/metrics"
@@ -123,39 +124,27 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 }
 
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
-	//todo: use binary search of price levels (gitlab.com/vega-protocol/trading-core/issues/90)
-	at := -1
+	var i int
 	if side == types.Side_Buy {
-		// buy side levels should be ordered in descending
-		for i, level := range s.levels {
-			if level.price > price {
-				continue
-			}
-			if level.price == price {
-				return level
-			}
-			at = i
-			break
-		}
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
 	} else {
 		// sell side levels should be ordered in ascending
-		for i, level := range s.levels {
-			if level.price < price {
-				continue
-			}
-			if level.price == price {
-				return level
-			}
-			at = i
-			break
-		}
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
 	}
+
+	// we found the level just return it.
+	if i < len(s.levels) && s.levels[i].price == price {
+		return s.levels[i]
+	}
+
+	// append new elem first to make sure we have enough place
+	// this would reallocate sufficiently then
+	// no risk of this being a empty order, as it's overwritten just next with
+	// the slice insert
 	level := NewPriceLevel(price, s.proRataMode)
-	if at == -1 {
-		s.levels = append(s.levels, level)
-		return level
-	}
-	s.levels = append(s.levels[:at], append([]*PriceLevel{level}, s.levels[at:]...)...)
+	s.levels = append(s.levels, nil)
+	copy(s.levels[i+1:], s.levels[i:])
+	s.levels[i] = level
 	return level
 }
 
