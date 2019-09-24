@@ -144,6 +144,7 @@ func (os *Order) Commit() (err error) {
 	}
 	items := os.buffer
 	os.buffer = make([]types.Order, 0)
+	os.mu.Unlock()
 
 	err = os.writeBatch(items)
 	if err != nil {
@@ -155,7 +156,6 @@ func (os *Order) Commit() (err error) {
 	} else {
 		err = os.notify(items)
 	}
-	os.mu.Unlock()
 	timer.EngineTimeCounterAdd()
 	return
 }
@@ -483,13 +483,14 @@ func (os *Order) addToBuffer(o types.Order) {
 }
 
 // notify sends order updates to all subscribers.
-// Assumption: os.mu is already held.
 func (os *Order) notify(items []types.Order) error {
 	if len(items) == 0 {
 		return nil
 	}
 
+	os.mu.Lock()
 	if os.subscribers == nil || len(os.subscribers) == 0 {
+		os.mu.Unlock()
 		os.log.Debug("No subscribers connected in order store")
 		return nil
 	}
@@ -511,6 +512,7 @@ func (os *Order) notify(items []types.Order) error {
 				logging.Uint64("id", id))
 		}
 	}
+	os.mu.Unlock()
 	return nil
 }
 
