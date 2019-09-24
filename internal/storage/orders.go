@@ -134,14 +134,15 @@ func (os *Order) Put(order types.Order) error {
 // Commit saves any operations that are queued to badger store, and includes all updates.
 // It will also call notify() to push updated data to any subscribers.
 func (os *Order) Commit() (err error) {
-	if len(os.buffer) == 0 {
-		return
-	}
 	timer := metrics.NewTimeCounter("-", "orderstore", "Commit")
 	os.mu.Lock()
+	if len(os.buffer) == 0 {
+		os.mu.Unlock()
+		timer.EngineTimeCounterAdd()
+		return
+	}
 	items := os.buffer
 	os.buffer = make([]types.Order, 0)
-	os.mu.Unlock()
 
 	err = os.writeBatch(items)
 	if err != nil {
@@ -153,6 +154,7 @@ func (os *Order) Commit() (err error) {
 	} else {
 		err = os.notify(items)
 	}
+	os.mu.Unlock()
 	timer.EngineTimeCounterAdd()
 	return
 }
@@ -479,7 +481,8 @@ func (os *Order) addToBuffer(o types.Order) {
 	os.mu.Unlock()
 }
 
-// notify any subscribers of order updates.
+// notify sends order updates to all subscribers.
+// Assumption: os.mu is already held.
 func (os *Order) notify(items []types.Order) error {
 	if len(items) == 0 {
 		return nil
