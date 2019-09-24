@@ -229,3 +229,6 @@ func (this *TransferResponse) Validate() error {
 	}
 	return nil
 }
+func (this *MarginLevels) Validate() error {
+	return nil
+}

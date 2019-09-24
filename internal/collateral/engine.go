@@ -193,6 +193,34 @@ func isSettle(transfer *types.Transfer) bool {
 	return false
 }
 
+func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
+	genID := accountID("", pos.Party(), asset, types.AccountType_GENERAL)
+	marginID := accountID(marketID, pos.Party(), asset, types.AccountType_MARGIN)
+	genAcc, err := e.GetAccountByID(genID)
+	if err != nil {
+		e.log.Error(
+			"Party doesn't have a general account somehow?",
+			logging.String("party-id", pos.Party()))
+		return nil, ErrTraderAccountsMissing
+	}
+	marAcc, err := e.GetAccountByID(marginID)
+	if err != nil {
+		e.log.Error(
+			"Party doesn't have a margin account somehow?",
+			logging.String("party-id", pos.Party()),
+			logging.String("marke-id", marketID))
+		return nil, ErrTraderAccountsMissing
+	}
+
+	return newOrderMarginUpdate{
+		pos,
+		marAcc,
+		genAcc,
+		asset,
+		marketID,
+	}, nil
+}
+
 func (e *Engine) MarginUpdate(marketID string, updates []events.Risk,
 ) ([]*types.TransferResponse, []events.MarketPosition, error) {
 	response := make([]*types.TransferResponse, 0, len(updates))
@@ -222,7 +250,7 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk,
 		//   InitialMargin
 		// In both case either the order will not be accepted, or the trader will be closed
 		if transfer.Type == types.TransferType_MARGIN_LOW &&
-			res.Balances[0].Balance < (int64(update.MarginBalance())+transfer.Amount.MinAmount) {
+			res.Balances[0].Account.Balance < (int64(update.MarginBalance())+transfer.Amount.MinAmount) {
 			closed = append(closed, update) // update interface embeds events.MarketPosition
 		} else {
 			response = append(response, res)

@@ -17,6 +17,7 @@ type OrderBookSide struct {
 
 func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
 	// update the price-volume map
+
 	s.getPriceLevel(o.Price, side).addOrder(o)
 }
 

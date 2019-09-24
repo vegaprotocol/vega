@@ -21,6 +21,7 @@ type marginChange struct {
 	events.Margin       // previous event that caused this change
 	amount        int64 // the amount we need to move (positive is move to margin, neg == move to general)
 	transfer      *types.Transfer
+	margins       *types.MarginLevels
 }
 
 type Engine struct {
@@ -102,10 +103,21 @@ func (r *Engine) UpdateMarginOnNewOrder(e events.Margin, markPrice uint64) event
 	}
 
 	margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
+	// no margins updates, nothing to do then
+	if margins == nil {
+		return nil
+	}
+	if r.log.GetLevel() == logging.DebugLevel {
+		r.log.Debug("margins calculated on new order",
+			logging.String("party-id", e.Party()),
+			logging.String("market-id", e.MarketID()),
+			logging.Reflect("margins", *margins),
+		)
+	}
 
 	curBalance := e.MarginBalance()
 	// margins are sufficient, nothing to update
-	if int64(curBalance) > margins.InitialMargin {
+	if int64(curBalance) >= margins.InitialMargin {
 		return nil
 	}
 
@@ -125,6 +137,7 @@ func (r *Engine) UpdateMarginOnNewOrder(e events.Margin, markPrice uint64) event
 		Margin:   e,
 		amount:   trnsfr.Amount.Amount,
 		transfer: trnsfr,
+		margins:  margins,
 	}
 }
 
@@ -147,9 +160,21 @@ func (r *Engine) UpdateMarginsOnSettlement(
 	for _, e := range evts {
 		// channel is closed, and we've got a nil interface
 		margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
+		// no margins updates, nothing to do then
+		if margins == nil {
+			continue
+		}
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("margins calculated on settlement",
+				logging.String("party-id", e.Party()),
+				logging.String("market-id", e.MarketID()),
+				logging.Reflect("margins", *margins),
+			)
+		}
+
 		curMargin := int64(e.MarginBalance())
 		// case 1 -> nothing to do margins are sufficient
-		if curMargin >= margins.SearchLevel && curMargin < margins.ReleaseLevel {
+		if curMargin >= margins.SearchLevel && curMargin < margins.CollateralReleaseLevel {
 			continue
 		}
 
@@ -159,8 +184,8 @@ func (r *Engine) UpdateMarginsOnSettlement(
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
 			var minAmount int64
-			if curMargin < margins.MarginMaintenance {
-				minAmount = margins.MarginMaintenance - curMargin
+			if curMargin < margins.MaintenanceMargin {
+				minAmount = margins.MaintenanceMargin - curMargin
 			}
 
 			// then the rest is common if we are before or after MaintenanceLevel,
@@ -176,14 +201,14 @@ func (r *Engine) UpdateMarginsOnSettlement(
 				},
 			}
 
-		} else if curMargin >= margins.ReleaseLevel { // case 3 -> release some colateral
+		} else if curMargin >= margins.CollateralReleaseLevel { // case 3 -> release some colateral
 			trnsfr = &types.Transfer{
 				Owner: e.Party(),
 				Size:  1,
 				Type:  types.TransferType_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
 					Asset:     e.Asset(),
-					Amount:    curMargin - margins.ReleaseLevel,
+					Amount:    curMargin - margins.CollateralReleaseLevel,
 					MinAmount: 0,
 				},
 			}
@@ -193,6 +218,7 @@ func (r *Engine) UpdateMarginsOnSettlement(
 			Margin:   e,
 			amount:   trnsfr.Amount.Amount,
 			transfer: trnsfr,
+			margins:  margins,
 		}
 		ret = append(ret, risk)
 	}
@@ -206,4 +232,8 @@ func (m marginChange) Amount() int64 {
 // Transfer - it's actually part of the embedded interface already, but we have to mask it, because this type contains another transfer
 func (m marginChange) Transfer() *types.Transfer {
 	return m.transfer
+}
+
+func (m marginChange) MarginLevels() *types.MarginLevels {
+	return m.margins
 }

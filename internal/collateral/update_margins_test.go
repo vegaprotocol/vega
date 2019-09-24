@@ -342,3 +342,7 @@ func (m fakeMarginChange) Transfer() *types.Transfer {
 func (m fakeMarginChange) MarginBalance() uint64 {
 	return m.marginBalance
 }
+
+func (m fakeMarginChange) MarginLevels() *types.MarginLevels {
+	return nil
+}

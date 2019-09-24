@@ -305,3 +305,10 @@ message TransferResponse {
   repeated LedgerEntry transfers = 1;
   repeated TransferBalance balances = 2;
 }
+
+message MarginLevels {
+  int64 maintenanceMargin = 1;
+  int64 searchLevel = 2;
+  int64 initialMargin = 3;
+  int64 collateralReleaseLevel = 4;
+}
