@@ -265,7 +265,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		// trade happend
 		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {
 			// less monies
-			assert.Equal(t, int64(999999998320), acc.Balance)
+			assert.Equal(t, int64(999999998218), acc.Balance)
 		}
 		// if general, is should be back to the original topup as no
 		// trade happend
@@ -327,11 +327,11 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// general account should have less monies as some is use for collateral
 		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {
-			assert.Equal(t, int64(999999998320), acc.Balance)
+			assert.Equal(t, int64(999999998218), acc.Balance)
 		}
 		// margin account should now have monies as it got some from general
 		if acc.Type == types.AccountType_MARGIN && party1 == acc.Owner {
-			assert.Equal(t, int64(1680), acc.Balance)
+			assert.Equal(t, int64(1782), acc.Balance)
 		}
 	})
 
@@ -446,11 +446,11 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		fmt.Printf("ACCOUNT: %v\n", acc)
 		// general account should have less monies as some is use for collateral
 		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {
-			assert.Equal(t, int64(999999998320), acc.Balance)
+			assert.Equal(t, int64(999999998218), acc.Balance)
 		}
 		// margin account should now have monies as it got some from general
 		if acc.Type == types.AccountType_MARGIN && party1 == acc.Owner {
-			assert.Equal(t, int64(1680), acc.Balance)
+			assert.Equal(t, int64(1782), acc.Balance)
 		}
 	})
 
@@ -475,13 +475,13 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		fmt.Printf("ACCOUNT: %v\n", acc)
 		// // general account should have less monies as some is use for collateral
 		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {
-			assert.Equal(t, int64(999999996640), acc.Balance)
+			assert.Equal(t, int64(999999996436), acc.Balance)
 		}
 		// // margin account should now have monies as it got some from general
 
 		if acc.Type == types.AccountType_MARGIN && party1 == acc.Owner {
-			if acc.Balance != 3360 && acc.Balance != 0 {
-				t.Error("unexpected balance")
+			if acc.Balance != 3564 && acc.Balance != 0 {
+				t.Errorf("unexpected balance: %v", acc.Balance)
 			}
 		}
 	})

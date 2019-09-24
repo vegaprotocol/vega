@@ -22,37 +22,45 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 		marginMaintenanceLng int64
 		marginMaintenanceSht int64
 	)
-	openPos := e.Size()
+	openVolume := e.Size()
 	// calculate both long and short riskiest positions
-	riskiestLng := openPos + e.Buy()
-	riskiestSht := openPos - e.Sell()
+	riskiestLng := openVolume + e.Buy()
+	riskiestSht := openVolume - e.Sell()
 
 	// calculate margin maintenance long only if riskiest is > 0
 	// marginMaintenanceLng will be 0 by default
 	if riskiestLng > 0 {
-		exitPrice, err := r.ob.GetCloseoutPrice(uint64(riskiestLng), types.Side_Buy)
-		if err != nil {
-			r.log.Warn("got non critical error from GetCloseoutPrice for Buy side",
-				logging.Error(err))
+		var (
+			slippageVolume  = max(openVolume, 0)
+			slippagePerUnit int64
+		)
+		if slippageVolume > 0 {
+			exitPrice, err := r.ob.GetCloseoutPrice(uint64(slippageVolume), types.Side_Buy)
+			if err != nil {
+				r.log.Warn("got non critical error from GetCloseoutPrice for Buy side",
+					logging.Error(err))
+			}
+			slippagePerUnit = int64(exitPrice) - markPrice
 		}
-		slippagePerUnit := int64(exitPrice) - markPrice
-		marginMaintenanceLng = openPos*
-			(slippagePerUnit+int64(rf.Long*float64(markPrice))) +
-			(e.Buy() * int64(rf.Long*float64(markPrice)))
-
+		marginMaintenanceLng = int64(float64(slippageVolume)*(float64(slippagePerUnit)+(rf.Long*float64(markPrice))) + (float64(e.Buy()) * rf.Long * float64(markPrice)))
 	}
 	// calculate margin maintenace short only if riskiest is < 0
 	// marginMaintenanceSht will be 0 by default
 	if riskiestSht < 0 {
-		exitPrice, err := r.ob.GetCloseoutPrice(uint64(-riskiestSht), types.Side_Sell)
-		if err != nil {
-			r.log.Warn("got non critical error from GetCloseoutPrice for Sell side",
-				logging.Error(err))
+		var (
+			slippageVolume  = min(openVolume, 0)
+			slippagePerUnit int64
+		)
+		slippageVolume = -slippageVolume
+		if slippageVolume < 0 {
+			exitPrice, err := r.ob.GetCloseoutPrice(uint64(slippageVolume), types.Side_Sell)
+			if err != nil {
+				r.log.Warn("got non critical error from GetCloseoutPrice for Sell side",
+					logging.Error(err))
+			}
+			slippagePerUnit = int64(exitPrice) - markPrice
 		}
-		slippagePerUnit := int64(exitPrice) - markPrice
-		marginMaintenanceSht = openPos*
-			(slippagePerUnit+int64(rf.Short*float64(markPrice))) +
-			(e.Sell() * int64(rf.Short*float64(markPrice)))
+		marginMaintenanceSht = int64(float64(-slippageVolume)*(float64(slippagePerUnit)+(rf.Short*float64(markPrice))) + (float64(e.Sell()) * rf.Short * float64(markPrice)))
 	}
 
 	// the greatest liability is the most positive number
@@ -64,4 +72,18 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 	}
 
 	return nil
+}
+
+func max(a, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func min(a, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
 }

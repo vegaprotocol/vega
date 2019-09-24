@@ -246,10 +246,10 @@ func testMarginWithOrderInBook(t *testing.T) {
 		t.Fatal("expecting non nil risk update")
 	}
 	margins := riskevt.MarginLevels()
-	assert.Equal(t, int64(1074), margins.MaintenanceMargin)
-	assert.Equal(t, int64(1074*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
-	assert.Equal(t, int64(1074*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
-	assert.Equal(t, int64(1074*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
+	assert.Equal(t, int64(1131), margins.MaintenanceMargin)
+	assert.Equal(t, int64(1131*mc.ScalingFactors.SearchLevel), margins.SearchLevel)
+	assert.Equal(t, int64(1131*mc.ScalingFactors.InitialMargin), margins.InitialMargin)
+	assert.Equal(t, int64(1131*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel)
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
