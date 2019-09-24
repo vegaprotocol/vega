@@ -92,40 +92,45 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 }
 
 func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
-	//todo: use binary search of expiring price levels (https://gitlab.com/vega-protocol/trading-core/issues/132)
-	toDelete := -1
-	toRemove := -1
-	for idx, priceLevel := range s.levels {
-		if priceLevel.price == o.Price {
-			for j, order := range priceLevel.orders {
-				if order.Id == o.Id {
-					toRemove = j
-					break
-				}
-			}
-			if toRemove != -1 {
-				priceLevel.removeOrder(toRemove)
-			}
-			if len(priceLevel.orders) == 0 {
-				toDelete = idx
-			}
+	// first  we try to find the pricelevel of the order
+	var i int
+	if o.Side == types.Side_Buy {
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= o.Price })
+	} else {
+		// sell side levels should be ordered in ascending
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= o.Price })
+	}
+	// we did not found the level
+	// then the order do not exists in the price level
+	if i >= len(s.levels) {
+		return types.ErrOrderNotFound
+	}
+
+	// now iterate over the orders in the pricelevel to find the actual order
+	oidx := -1
+	for j, order := range s.levels[i].orders {
+		if order.Id == o.Id {
+			oidx = j
 			break
 		}
 	}
-	if toDelete != -1 {
-		copy(s.levels[toDelete:], s.levels[toDelete+1:])
-		s.levels = s.levels[:len(s.levels)-1]
 
+	// remove the order from the
+	if oidx != -1 {
+		s.levels[i].removeOrder(oidx)
 	}
-	if toRemove == -1 {
-		return types.ErrOrderNotFound
+
+	if len(s.levels[i].orders) <= 0 {
+		s.levels = s.levels[:i+copy(s.levels[i:], s.levels[i+1:])]
 	}
+
 	return nil
 }
 
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
 	var i int
 	if side == types.Side_Buy {
+		// buy side levels should be ordered in descending
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
 	} else {
 		// sell side levels should be ordered in ascending
