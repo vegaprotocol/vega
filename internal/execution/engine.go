@@ -255,7 +255,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	// order.MarketID may or may not be valid.
-	defer metrics.EngineTimeCounterAdd(order.MarketID, "execution", "SubmitOrder")()
+	start := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submit order", logging.Order(*order))
@@ -263,6 +263,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
+		metrics.EngineTimeCounterAdd(start)
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -278,6 +279,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if conf.Order.Status == types.Order_Filled {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
+	metrics.EngineTimeCounterAdd()
 	return conf, nil
 }
 
