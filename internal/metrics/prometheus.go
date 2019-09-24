@@ -374,13 +374,6 @@ func setupMetrics() error {
 	return nil
 }
 
-func EngineTimeCounterAdd(start time.Time, labelValues ...string) {
-	if engineTime == nil {
-		return
-	}
-	engineTime.WithLabelValues(labelValues...).Add(time.Now().Sub(start).Seconds())
-}
-
 func OrderCounterInc(labelValues ...string) {
 	if orderCounter == nil {
 		return

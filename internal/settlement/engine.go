@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -169,6 +170,8 @@ func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
 // if party size and price were both updated (ie party was a trader), we're combining both MTM's (old + new position)
 // and creating a single transfer from that
 func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition) []events.Transfer {
+	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
+
 	transfers := make([]events.Transfer, 0, len(positions))
 	winTransfers := make([]events.Transfer, 0, len(positions)/2)
 	// see if we've got closed out positions
@@ -225,6 +228,7 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 	}
 	e.closedMu.Unlock()
 	transfers = append(transfers, winTransfers...)
+	timer.EngineTimeCounterAdd()
 	return transfers
 }
 

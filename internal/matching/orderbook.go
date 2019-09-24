@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -205,10 +204,10 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	startSubmit := time.Now() // do not reset this var
+	timer := metrics.NewTimeCounter(b.marketID, "matching", "SubmitOrder")
 
 	if err := b.validateOrder(order); err != nil {
-		metrics.EngineTimeCounterAdd(startSubmit, b.marketID, "matching", "Submit")
+		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 
@@ -269,7 +268,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
-	metrics.EngineTimeCounterAdd(startSubmit, b.marketID, "matching", "Submit")
+	timer.EngineTimeCounterAdd()
 	return orderConfirmation, nil
 }
 
@@ -396,8 +395,10 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 }
 
 func (b *OrderBook) insertExpiringOrder(ord types.Order) {
+	timer := metrics.NewTimeCounter(b.marketID, "matching", "insertExpiringOrder")
 	if len(b.expiringOrders) <= 0 {
 		b.expiringOrders = append(b.expiringOrders, ord)
+		timer.EngineTimeCounterAdd()
 		return
 	}
 
@@ -411,6 +412,7 @@ func (b *OrderBook) insertExpiringOrder(ord types.Order) {
 	b.expiringOrders = append(b.expiringOrders, types.Order{})
 	copy(b.expiringOrders[i+1:], b.expiringOrders[i:])
 	b.expiringOrders[i] = ord
+	timer.EngineTimeCounterAdd()
 }
 
 func (b OrderBook) removePendingGttOrder(order types.Order) bool {
