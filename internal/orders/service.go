@@ -28,8 +28,8 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  OrderStore
 type OrderStore interface {
-	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error)
-	GetByPartyAndId(ctx context.Context, party, id string) (*types.Order, error)
+	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Order, error)
+	GetByPartyAndID(ctx context.Context, party, id string) (*types.Order, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
 	GetByReference(ctx context.Context, ref string) (*types.Order, error)
@@ -146,7 +146,7 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 		return nil, errors.Wrap(err, "order cancellation validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketID, order.OrderID)
+	o, err := s.orderStore.GetByMarketAndID(ctx, order.MarketID, order.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 		return nil, errors.Wrap(err, "order amendment validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.PartyID, amendment.OrderID)
+	o, err := s.orderStore.GetByPartyAndID(ctx, amendment.PartyID, amendment.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, 
 }
 
 func (s *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error) {
-	o, err := s.orderStore.GetByMarketAndId(ctx, market, id)
+	o, err := s.orderStore.GetByMarketAndID(ctx, market, id)
 	if err != nil {
 		return &types.Order{}, err
 	}
@@ -258,7 +258,7 @@ func (s *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (o
 }
 
 func (s *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error) {
-	o, err := s.orderStore.GetByPartyAndId(ctx, party, id)
+	o, err := s.orderStore.GetByPartyAndID(ctx, party, id)
 	if err != nil {
 		return &types.Order{}, err
 	}
