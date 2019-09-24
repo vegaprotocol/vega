@@ -134,24 +134,24 @@ func (os *Order) Put(order types.Order) error {
 // Commit saves any operations that are queued to badger store, and includes all updates.
 // It will also call notify() to push updated data to any subscribers.
 func (os *Order) Commit() (err error) {
+	if len(os.buffer) == 0 {
+		return
+	}
 	timer := metrics.NewTimeCounter("-", "orderstore", "Commit")
+	os.mu.Lock()
+	items := os.buffer
+	os.buffer = make([]types.Order, 0)
+	os.mu.Unlock()
 
-	if len(os.buffer) > 0 {
-		os.mu.Lock()
-		items := os.buffer
-		os.buffer = make([]types.Order, 0)
-		os.mu.Unlock()
-
-		err = os.writeBatch(items)
-		if err != nil {
-			os.log.Error(
-				"unable to write batch in order badger store",
-				logging.Error(err),
-			)
-			os.onCriticalError()
-		} else {
-			err = os.notify(items)
-		}
+	err = os.writeBatch(items)
+	if err != nil {
+		os.log.Error(
+			"unable to write batch in order badger store",
+			logging.Error(err),
+		)
+		os.onCriticalError()
+	} else {
+		err = os.notify(items)
 	}
 	timer.EngineTimeCounterAdd()
 	return

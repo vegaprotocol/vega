@@ -122,23 +122,24 @@ func (ts *Trade) Post(trade *types.Trade) error {
 // Commit saves any operations that are queued to badger store, and includes all updates.
 // It will also call notify() to push updated data to any subscribers.
 func (ts *Trade) Commit() (err error) {
+	if len(ts.buffer) == 0 {
+		return
+	}
 	timer := metrics.NewTimeCounter("-", "tradestore", "Commit")
-	if len(ts.buffer) > 0 {
-		ts.mu.Lock()
-		items := ts.buffer
-		ts.buffer = []types.Trade{}
-		ts.mu.Unlock()
+	ts.mu.Lock()
+	items := ts.buffer
+	ts.buffer = []types.Trade{}
+	ts.mu.Unlock()
 
-		err = ts.writeBatch(items)
-		if err != nil {
-			ts.log.Error(
-				"badger store error on write",
-				logging.Error(err),
-			)
-			ts.onCriticalError()
-		} else {
-			err = ts.notify(items)
-		}
+	err = ts.writeBatch(items)
+	if err != nil {
+		ts.log.Error(
+			"badger store error on write",
+			logging.Error(err),
+		)
+		ts.onCriticalError()
+	} else {
+		err = ts.notify(items)
 	}
 	timer.EngineTimeCounterAdd()
 	return
