@@ -76,7 +76,7 @@ func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp int64, trade *type
 }
 
 func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Trade, impactedOrders []*types.Order) {
-	defer metrics.EngineTimeCounterAdd("-", "matching", "PriceLevel.uncross")()
+	timer := metrics.NewTimeCounter("-", "matching", "PriceLevel.uncross")
 
 	var (
 		toRemove []int
@@ -143,6 +143,7 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		l.orders = l.orders[:len(l.orders)-removed]
 	}
 
+	timer.EngineTimeCounterAdd()
 	return agg.Remaining == 0, trades, impactedOrders
 }
 

@@ -374,23 +374,6 @@ func setupMetrics() error {
 	return nil
 }
 
-/*
-EngineTimeCounterAdd is used to time a function.
-e.g.
-	func DoSomething() {
-		start := metrics.NewTimeCounter("x", "y", "z")
-		// do something
-		metrics.EngineTimeCounterAdd(start)
-	}
-*/
-func EngineTimeCounterAdd(tc *TimeCounter, labelValues ...string) {
-	// Check that the metric has been set up. (Testing does not use metrics.)
-	if engineTime == nil {
-		return
-	}
-	engineTime.WithLabelValues(tc.labelValues...).Add(time.Now().Sub(tc.start).Seconds())
-}
-
 func OrderCounterInc(labelValues ...string) {
 	if orderCounter == nil {
 		return

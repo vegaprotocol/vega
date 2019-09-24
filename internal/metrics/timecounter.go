@@ -18,3 +18,20 @@ func NewTimeCounter(labelValues ...string) *TimeCounter {
 		start:       time.Now(),
 	}
 }
+
+/*
+EngineTimeCounterAdd is used to time a function.
+e.g.
+	func DoSomething() {
+		timer := metrics.NewTimeCounter("x", "y", "z")
+		// do something
+		timer.EngineTimeCounterAdd()
+	}
+*/
+func (tc *TimeCounter) EngineTimeCounterAdd() {
+	// Check that the metric has been set up. (Testing does not use metrics.)
+	if engineTime == nil {
+		return
+	}
+	engineTime.WithLabelValues(tc.labelValues...).Add(time.Now().Sub(tc.start).Seconds())
+}

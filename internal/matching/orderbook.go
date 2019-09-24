@@ -204,9 +204,10 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	defer metrics.EngineTimeCounterAdd(b.marketID, "matching", "SubmitOrder")()
+	timer := metrics.NewTimeCounter(b.marketID, "matching", "SubmitOrder")
 
 	if err := b.validateOrder(order); err != nil {
+		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 
@@ -267,6 +268,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
+	timer.EngineTimeCounterAdd()
 	return orderConfirmation, nil
 }
 
@@ -393,9 +395,10 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 }
 
 func (b *OrderBook) insertExpiringOrder(ord types.Order) {
-	defer metrics.EngineTimeCounterAdd(b.marketID, "matching", "insertExpiringOrder")()
+	timer := metrics.NewTimeCounter(b.marketID, "matching", "insertExpiringOrder")
 	if len(b.expiringOrders) <= 0 {
 		b.expiringOrders = append(b.expiringOrders, ord)
+		timer.EngineTimeCounterAdd()
 		return
 	}
 
@@ -409,6 +412,7 @@ func (b *OrderBook) insertExpiringOrder(ord types.Order) {
 	b.expiringOrders = append(b.expiringOrders, types.Order{})
 	copy(b.expiringOrders[i+1:], b.expiringOrders[i:])
 	b.expiringOrders[i] = ord
+	timer.EngineTimeCounterAdd()
 }
 
 func (b OrderBook) removePendingGttOrder(order types.Order) bool {

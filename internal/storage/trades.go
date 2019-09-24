@@ -112,39 +112,36 @@ func (ts *Trade) Unsubscribe(id uint64) error {
 // Post adds an trade to the badger store, adds
 // to queue the operation to be committed later.
 func (ts *Trade) Post(trade *types.Trade) error {
-	defer metrics.EngineTimeCounterAdd("-", "tradestore", "Post")()
+	timer := metrics.NewTimeCounter("-", "tradestore", "Post")
 	// with badger we always buffer for future batch insert via Commit()
 	ts.addToBuffer(*trade)
+	timer.EngineTimeCounterAdd()
 	return nil
 }
 
 // Commit saves any operations that are queued to badger store, and includes all updates.
 // It will also call notify() to push updated data to any subscribers.
-func (ts *Trade) Commit() error {
-	defer metrics.EngineTimeCounterAdd("-", "tradestore", "Commit")()
-	if len(ts.buffer) == 0 {
-		return nil
-	}
+func (ts *Trade) Commit() (err error) {
+	timer := metrics.NewTimeCounter("-", "tradestore", "Commit")
+	if len(ts.buffer) > 0 {
+		ts.mu.Lock()
+		items := ts.buffer
+		ts.buffer = []types.Trade{}
+		ts.mu.Unlock()
 
-	ts.mu.Lock()
-	items := ts.buffer
-	ts.buffer = []types.Trade{}
-	ts.mu.Unlock()
-
-	err := ts.writeBatch(items)
-	if err != nil {
-		ts.log.Error(
-			"badger store error on write",
-			logging.Error(err),
-		)
-		ts.onCriticalError()
-		return err
+		err = ts.writeBatch(items)
+		if err != nil {
+			ts.log.Error(
+				"badger store error on write",
+				logging.Error(err),
+			)
+			ts.onCriticalError()
+		} else {
+			err = ts.notify(items)
+		}
 	}
-	err = ts.notify(items)
-	if err != nil {
-		return err
-	}
-	return nil
+	timer.EngineTimeCounterAdd()
+	return
 }
 
 // GetByMarket retrieves trades for a given market. Provide optional query filters to

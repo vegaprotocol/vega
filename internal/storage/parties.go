@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
@@ -16,7 +15,7 @@ type Party struct {
 	mu sync.RWMutex
 }
 
-// NewStore returns a concrete implementation of a parties Store.
+// NewParties returns a concrete implementation of a parties Store.
 func NewParties(config Config) (*Party, error) {
 	return &Party{
 		Config: config,
@@ -29,38 +28,42 @@ func (p *Party) ReloadConf(config Config) {
 }
 
 // Post saves a given party to the mem-store.
-func (ms *Party) Post(party *types.Party) error {
-	ms.mu.Lock()
-	defer ms.mu.Unlock()
+func (p *Party) Post(party *types.Party) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-	if _, exists := ms.db[party.Id]; exists {
-		return errors.New(fmt.Sprintf("party %s already exists in store", party.Id))
+	if _, exists := p.db[party.Id]; exists {
+		return fmt.Errorf("party %s already exists in store", party.Id)
 	}
-	ms.db[party.Id] = *party
+	p.db[party.Id] = *party
 	return nil
 }
 
 // GetByID searches for the given party by id/name in the mem-store.
-func (ms *Party) GetByID(id string) (*types.Party, error) {
-	defer metrics.EngineTimeCounterAdd("-", "partystore", "GetByID")()
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
+func (p *Party) GetByID(id string) (party *types.Party, err error) {
+	timer := metrics.NewTimeCounter("-", "partystore", "GetByID")
 
-	if _, exists := ms.db[id]; !exists {
-		return nil, errors.New(fmt.Sprintf("party %s not found in store", id))
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	pty, exists := p.db[id]
+	if !exists {
+		err = fmt.Errorf("party %s not found in store", id)
+	} else {
+		party = &pty
 	}
-	party := ms.db[id]
-	return &party, nil
+	timer.EngineTimeCounterAdd()
+	return
 }
 
 // GetAll returns all parties in the mem-store.
-func (ms *Party) GetAll() ([]*types.Party, error) {
-	ms.mu.RLock()
-	defer ms.mu.RUnlock()
+func (p *Party) GetAll() ([]*types.Party, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 
-	res := make([]*types.Party, 0, len(ms.db))
-	for k := range ms.db {
-		kv := ms.db[k]
+	res := make([]*types.Party, 0, len(p.db))
+	for k := range p.db {
+		kv := p.db[k]
 		res = append(res, &kv)
 	}
 	return res, nil

@@ -111,51 +111,50 @@ func (os *Order) Unsubscribe(id uint64) error {
 // Post adds an order to the badger store, adds
 // to queue the operation to be committed later.
 func (os *Order) Post(order types.Order) error {
-	defer metrics.EngineTimeCounterAdd("-", "orderstore", "Post")()
+	timer := metrics.NewTimeCounter("-", "orderstore", "Post")
 	// validate an order book (depth of market) exists for order market
 	if exists := os.depth[order.MarketID]; exists == nil {
 		os.depth[order.MarketID] = NewMarketDepth(order.MarketID)
 	}
 	// with badger we always buffer for future batch insert via Commit()
 	os.addToBuffer(order)
+	timer.EngineTimeCounterAdd()
 	return nil
 }
 
 // Put updates an order in the badger store, adds
 // to queue the operation to be committed later.
 func (os *Order) Put(order types.Order) error {
-	defer metrics.EngineTimeCounterAdd("-", "orderstore", "Put")()
+	timer := metrics.NewTimeCounter("-", "orderstore", "Put")
 	os.addToBuffer(order)
+	timer.EngineTimeCounterAdd()
 	return nil
 }
 
 // Commit saves any operations that are queued to badger store, and includes all updates.
 // It will also call notify() to push updated data to any subscribers.
-func (os *Order) Commit() error {
-	defer metrics.EngineTimeCounterAdd("-", "orderstore", "Commit")()
-	if len(os.buffer) == 0 {
-		return nil
-	}
+func (os *Order) Commit() (err error) {
+	timer := metrics.NewTimeCounter("-", "orderstore", "Commit")
 
-	os.mu.Lock()
-	items := os.buffer
-	os.buffer = make([]types.Order, 0)
-	os.mu.Unlock()
+	if len(os.buffer) > 0 {
+		os.mu.Lock()
+		items := os.buffer
+		os.buffer = make([]types.Order, 0)
+		os.mu.Unlock()
 
-	err := os.writeBatch(items)
-	if err != nil {
-		os.log.Error(
-			"unable to write batch in order badger store",
-			logging.Error(err),
-		)
-		os.onCriticalError()
-		return err
+		err = os.writeBatch(items)
+		if err != nil {
+			os.log.Error(
+				"unable to write batch in order badger store",
+				logging.Error(err),
+			)
+			os.onCriticalError()
+		} else {
+			err = os.notify(items)
+		}
 	}
-	err = os.notify(items)
-	if err != nil {
-		return err
-	}
-	return nil
+	timer.EngineTimeCounterAdd()
+	return
 }
 
 // Close our connection to the badger database

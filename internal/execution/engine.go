@@ -255,7 +255,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	// order.MarketID may or may not be valid.
-	start := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
+	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submit order", logging.Order(*order))
@@ -263,7 +263,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
-		metrics.EngineTimeCounterAdd(start)
+		timer.EngineTimeCounterAdd()
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -273,13 +273,14 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	conf, err := mkt.SubmitOrder(order)
 	if err != nil {
+		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 	// order was filled by submitting it to the market -> the matching engine worked
 	if conf.Order.Status == types.Order_Filled {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
-	metrics.EngineTimeCounterAdd()
+	timer.EngineTimeCounterAdd()
 	return conf, nil
 }
 
@@ -341,7 +342,7 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 }
 
 func (e *Engine) onChainTimeUpdate(t time.Time) {
-	defer metrics.EngineTimeCounterAdd("?", "execution", "onChainTimeUpdate")()
+	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
 
 	e.log.Debug("updating engine on new time update")
 
@@ -363,12 +364,13 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 			delete(e.markets, mktID)
 		}
 	}
+	timer.EngineTimeCounterAdd()
 }
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
 func (e *Engine) removeExpiredOrders(t time.Time) {
-	defer metrics.EngineTimeCounterAdd("all", "execution", "removeExpiredOrders")()
+	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
@@ -401,6 +403,7 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
+	timer.EngineTimeCounterAdd()
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.

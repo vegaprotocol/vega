@@ -129,7 +129,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 }
 
 func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
-	defer metrics.EngineTimeCounterAdd("-", "matching", "OrderBookSide.uncross")()
+	timer := metrics.NewTimeCounter("-", "matching", "OrderBookSide.uncross")
 
 	var (
 		trades                  []*types.Trade
@@ -186,6 +186,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		}
 
 		if totalVolumeToFill <= agg.Remaining {
+			timer.EngineTimeCounterAdd()
 			return trades, impactedOrders, 0
 		}
 	}
@@ -225,6 +226,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 	if len(trades) > 0 {
 		lastTradedPrice = trades[len(trades)-1].Price
 	}
+	timer.EngineTimeCounterAdd()
 	return trades, impactedOrders, lastTradedPrice
 }
 
