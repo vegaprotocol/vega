@@ -694,7 +694,7 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to get risk updates")
 	}
 
 	e, err := m.collateral.GetPartyMargin(pos, asset, m.GetID())
@@ -713,7 +713,7 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		// if it does fail, we need to return an error straight away
 		transferResps, closePositions, err := m.collateral.MarginUpdate(m.GetID(), []events.Risk{riskUpdate})
 		if err != nil {
-			return err
+			return errors.Wrap(err, "unable to get risk updates")
 		}
 		m.transferResponsesBuf.Add(transferResps)
 

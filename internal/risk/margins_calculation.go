@@ -51,9 +51,9 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 			slippageVolume  = min(openVolume, 0)
 			slippagePerUnit int64
 		)
-		slippageVolume = -slippageVolume
+		// slippageVolume would be negative we abs it in the next phase
 		if slippageVolume < 0 {
-			exitPrice, err := r.ob.GetCloseoutPrice(uint64(slippageVolume), types.Side_Sell)
+			exitPrice, err := r.ob.GetCloseoutPrice(uint64(-slippageVolume), types.Side_Sell)
 			if err != nil {
 				r.log.Warn("got non critical error from GetCloseoutPrice for Sell side",
 					logging.Error(err))

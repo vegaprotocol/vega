@@ -199,16 +199,16 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 	genAcc, err := e.GetAccountByID(genID)
 	if err != nil {
 		e.log.Error(
-			"Trader doesn't have a general account somehow?",
-			logging.String("trader-id", pos.Party()))
+			"Party doesn't have a general account somehow?",
+			logging.String("party-id", pos.Party()))
 		return nil, ErrTraderAccountsMissing
 	}
 	marAcc, err := e.GetAccountByID(marginID)
 	if err != nil {
 		e.log.Error(
-			"Trader doesn't have a margin account somehow?",
-			logging.String("trader-id", pos.Party()),
-			logging.String("Market", marketID))
+			"Party doesn't have a margin account somehow?",
+			logging.String("party-id", pos.Party()),
+			logging.String("marke-id", marketID))
 		return nil, ErrTraderAccountsMissing
 	}
 

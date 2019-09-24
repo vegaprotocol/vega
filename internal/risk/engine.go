@@ -109,7 +109,7 @@ func (r *Engine) UpdateMarginOnNewOrder(e events.Margin, markPrice uint64) event
 	}
 	if r.log.GetLevel() == logging.DebugLevel {
 		r.log.Debug("margins calculated on new order",
-			logging.String("trader-id", e.Party()),
+			logging.String("party-id", e.Party()),
 			logging.String("market-id", e.MarketID()),
 			logging.Reflect("margins", *margins),
 		)
@@ -166,7 +166,7 @@ func (r *Engine) UpdateMarginsOnSettlement(
 		}
 		if r.log.GetLevel() == logging.DebugLevel {
 			r.log.Debug("margins calculated on settlement",
-				logging.String("trader-id", e.Party()),
+				logging.String("party-id", e.Party()),
 				logging.String("market-id", e.MarketID()),
 				logging.Reflect("margins", *margins),
 			)
