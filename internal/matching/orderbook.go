@@ -393,6 +393,7 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 }
 
 func (b *OrderBook) insertExpiringOrder(ord types.Order) {
+	defer metrics.EngineTimeCounterAdd(b.marketID, "matching", "insertExpiringOrder")()
 	if len(b.expiringOrders) <= 0 {
 		b.expiringOrders = append(b.expiringOrders, ord)
 		return

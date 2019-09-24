@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -128,6 +129,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 }
 
 func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64) {
+	defer metrics.EngineTimeCounterAdd("-", "matching", "OrderBookSide.uncross")()
 
 	var (
 		trades                  []*types.Trade
