@@ -647,7 +647,7 @@ func (r *MyOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 	req := protoapi.TradesByOrderRequest{OrderID: ord.Id}
 	res, err := r.tradingDataClient.TradesByOrder(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		r.log.Error("tradingDataClient.TradesByOrder failed", logging.Error(err))
 		return nil, err
 	}
 	return res.Trades, nil
@@ -675,7 +675,7 @@ func (r *MyTradeResolver) Market(ctx context.Context, obj *types.Trade) (*Market
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		r.log.Error("tradingDataClient.MarketByID failed", logging.Error(err))
 		return nil, err
 	}
 	return MarketFromProto(res.Market)
@@ -805,7 +805,7 @@ func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPositi
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		r.log.Error("tradingDataClient.MarketByID failed", logging.Error(err))
 		return nil, err
 	}
 	return MarketFromProto(res.Market)
@@ -883,7 +883,7 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	if order.TimeInForce == types.Order_GTT && expiration != nil {
 		expiresAt, err := vegatime.Parse(*expiration)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
 		}
 
 		// move to pure timestamps or convert an RFC format shortly
@@ -898,7 +898,7 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	pendingOrder, err := r.tradingClient.SubmitOrder(ctx, &req)
 	if err != nil {
-		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+		r.log.Error("tradingClient.SubmitOrder failed", logging.Error(err))
 		return nil, err
 	}
 
@@ -934,6 +934,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, party s
 	}
 	pendingOrder, err := r.tradingClient.CancelOrder(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingClient.CancelOrder failed", logging.Error(err))
 		return nil, err
 	}
 
@@ -966,7 +967,7 @@ func (r *MyMutationResolver) OrderAmend(ctx context.Context, id string, party st
 	if expiration != nil {
 		expiresAt, err := vegatime.Parse(*expiration)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
 		}
 		// move to pure timestamps or convert an RFC format shortly
 		order.ExpiresAt = expiresAt.UnixNano()
@@ -978,6 +979,7 @@ func (r *MyMutationResolver) OrderAmend(ctx context.Context, id string, party st
 	}
 	pendingOrder, err := r.tradingClient.AmendOrder(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingClient.AmendOrder failed", logging.Error(err))
 		return nil, err
 	}
 
@@ -992,6 +994,7 @@ func (r *MyMutationResolver) Signin(ctx context.Context, id string, password str
 
 	res, err := r.tradingClient.SignIn(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingClient.SignIn failed", logging.Error(err))
 		return "", err
 	}
 
@@ -1295,7 +1298,7 @@ func (r *MyPendingOrderResolver) Market(ctx context.Context, pord *proto.Pending
 	req := protoapi.MarketByIDRequest{MarketID: pord.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		r.log.Error("tradingDataClient.MarketByID failed", logging.Error(err))
 		return nil, err
 	}
 	return MarketFromProto(res.Market)
@@ -1344,7 +1347,7 @@ func (r *MyAccountResolver) Market(ctx context.Context, acc *proto.Account) (*Ma
 		req := protoapi.MarketByIDRequest{MarketID: acc.MarketID}
 		res, err := r.tradingDataClient.MarketByID(ctx, &req)
 		if err != nil {
-			r.log.Error("tradingData client", logging.Error(err))
+			r.log.Error("tradingDataClient.MarketByID failed", logging.Error(err))
 			return nil, err
 		}
 		return MarketFromProto(res.Market)
