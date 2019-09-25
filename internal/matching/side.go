@@ -2,6 +2,7 @@ package matching
 
 import (
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/metrics"
@@ -91,71 +92,64 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 }
 
 func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
-	//todo: use binary search of expiring price levels (https://gitlab.com/vega-protocol/trading-core/issues/132)
-	toDelete := -1
-	toRemove := -1
-	for idx, priceLevel := range s.levels {
-		if priceLevel.price == o.Price {
-			for j, order := range priceLevel.orders {
-				if order.Id == o.Id {
-					toRemove = j
-					break
-				}
-			}
-			if toRemove != -1 {
-				priceLevel.removeOrder(toRemove)
-			}
-			if len(priceLevel.orders) == 0 {
-				toDelete = idx
-			}
+	// first  we try to find the pricelevel of the order
+	var i int
+	if o.Side == types.Side_Buy {
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= o.Price })
+	} else {
+		// sell side levels should be ordered in ascending
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= o.Price })
+	}
+	// we did not found the level
+	// then the order do not exists in the price level
+	if i >= len(s.levels) {
+		return types.ErrOrderNotFound
+	}
+
+	// now iterate over the orders in the pricelevel to find the actual order
+	oidx := -1
+	for j, order := range s.levels[i].orders {
+		if order.Id == o.Id {
+			oidx = j
 			break
 		}
 	}
-	if toDelete != -1 {
-		copy(s.levels[toDelete:], s.levels[toDelete+1:])
-		s.levels = s.levels[:len(s.levels)-1]
 
+	// remove the order from the
+	if oidx != -1 {
+		s.levels[i].removeOrder(oidx)
 	}
-	if toRemove == -1 {
-		return types.ErrOrderNotFound
+
+	if len(s.levels[i].orders) <= 0 {
+		s.levels = s.levels[:i+copy(s.levels[i:], s.levels[i+1:])]
 	}
+
 	return nil
 }
 
 func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel {
-	//todo: use binary search of price levels (gitlab.com/vega-protocol/trading-core/issues/90)
-	at := -1
+	var i int
 	if side == types.Side_Buy {
 		// buy side levels should be ordered in descending
-		for i, level := range s.levels {
-			if level.price > price {
-				continue
-			}
-			if level.price == price {
-				return level
-			}
-			at = i
-			break
-		}
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
 	} else {
 		// sell side levels should be ordered in ascending
-		for i, level := range s.levels {
-			if level.price < price {
-				continue
-			}
-			if level.price == price {
-				return level
-			}
-			at = i
-			break
-		}
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
 	}
+
+	// we found the level just return it.
+	if i < len(s.levels) && s.levels[i].price == price {
+		return s.levels[i]
+	}
+
+	// append new elem first to make sure we have enough place
+	// this would reallocate sufficiently then
+	// no risk of this being a empty order, as it's overwritten just next with
+	// the slice insert
 	level := NewPriceLevel(price, s.proRataMode)
-	if at == -1 {
-		s.levels = append(s.levels, level)
-		return level
-	}
-	s.levels = append(s.levels[:at], append([]*PriceLevel{level}, s.levels[at:]...)...)
+	s.levels = append(s.levels, nil)
+	copy(s.levels[i+1:], s.levels[i:])
+	s.levels[i] = level
 	return level
 }
 
