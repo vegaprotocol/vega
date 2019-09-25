@@ -11,17 +11,17 @@ the struct are:
 For tracking actual and potential volume:
 
 * `RegisterOrder`, called in `SubmitOrder` and `AmendOrder`, adds to the `buy`
-  xor `sell` potential volume
+xor `sell` potential volume
 * `UnregisterOrder`, called in `AmendOrder` and `CancelOrder`, subtracts from
-  the `buy` xor `sell` potential volume
+the `buy` xor `sell` potential volume
 * `Update` deals with an accepted order and does the following:
-  * transfers actual volume from the seller to the buyer:
-    ```go
+* transfers actual volume from the seller to the buyer:
+```go
     buyer.size += int64(trade.Size)  // increase
     seller.size -= int64(trade.Size) // decrease
     ```
-  * decreases potential volume for both the buyer and seller:
-    ```go
+* decreases potential volume for both the buyer and seller:
+```go
     buyer.buy -= int64(trade.Size)   // decrease
     seller.sell -= int64(trade.Size) // decrease
     ```
