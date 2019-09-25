@@ -1213,8 +1213,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 		MarketID: market,
 		Interval: pinterval,
 	}
-	// Use a new timeout-free context here, otherwise all subscriptions will time out.
-	stream, err := r.tradingDataClient.CandlesSubscribe(context.Background(), req)
+	stream, err := r.tradingDataClient.CandlesSubscribe(ctx, req)
 	if err != nil {
 		return nil, err
 	}
