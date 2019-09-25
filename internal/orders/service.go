@@ -14,8 +14,11 @@ import (
 )
 
 var (
-	ErrInvalidExpirationDTFmt = errors.New("invalid expiration datetime format")
-	ErrInvalidExpirationDT    = errors.New("invalid expiration datetime")
+	ErrInvalidExpirationDTFmt           = errors.New("invalid expiration datetime format")
+	ErrInvalidExpirationDT              = errors.New("invalid expiration datetime")
+	ErrInvalidTimeInForceForMarketOrder = errors.New("invalid time in for for market order (expected: FOK/IOC)")
+	ErrInvalidPriceForLimitOrder        = errors.New("invalid limit order (missing required price)")
+	ErrInvalidPriceForMarketOrder       = errors.New("invalid market order (no price required)")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders TimeService
@@ -98,6 +101,7 @@ func (s *Svc) CreateOrder(
 		Size:        orderSubmission.Size,
 		Side:        orderSubmission.Side,
 		TimeInForce: orderSubmission.TimeInForce,
+		Type:        orderSubmission.Type,
 		ExpiresAt:   orderSubmission.ExpiresAt,
 	}
 
@@ -122,14 +126,16 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		}
 	}
 
-	// TODO(Jeremy): uncomment once the Type is added back to the order
-	// basically when work on Market Orders start
-	// if sub.Type == types.Order_MARKET && sub.Price != 0 {
-	// 	return errors.New("invalid market order (no price required)")
-	// }
-	// if sub.Types == types.Order_LIMIT && sub.Price != 0 {
-	// 	return errors.New("invalid limit order (missing required price)")
-	// }
+	if sub.Type == types.Order_MARKET && sub.Price != 0 {
+		return ErrInvalidPriceForMarketOrder
+	}
+	if sub.Type == types.Order_MARKET &&
+		(sub.TimeInForce != types.Order_FOK && sub.TimeInForce != types.Order_IOC) {
+		return ErrInvalidTimeInForceForMarketOrder
+	}
+	if sub.Type == types.Order_LIMIT && sub.Price == 0 {
+		return ErrInvalidPriceForLimitOrder
+	}
 
 	return nil
 }

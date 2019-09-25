@@ -53,16 +53,17 @@ func parseOrderTimeInForce(timeInForce OrderTimeInForce) (types.Order_TimeInForc
 	}
 }
 
-func parseOrderType(ot *OrderType) (types.Order_Type, error) {
-	switch *ot {
-	case OrderTypeMarket:
-		return types.Order_MARKET, nil
+func parseOrderType(ty OrderType) (types.Order_Type, error) {
+	switch ty {
 	case OrderTypeLimit:
 		return types.Order_LIMIT, nil
-	case OrderTypeNetwork:
-		return types.Order_NETWORK, nil
+	case OrderTypeMarket:
+		return types.Order_MARKET, nil
+	default:
+		// handle types.Order_NETWORK as an error here, as we do not expected
+		// it to be set by through the API, only by the core internally
+		return 0, errors.New(fmt.Sprintf("unknown type: %s", ty.String()))
 	}
-	return types.Order_MARKET, errors.Errorf("unknown type: %s", ot)
 }
 
 func parseOrderStatus(orderStatus *OrderStatus) (types.Order_Status, error) {

@@ -6,6 +6,12 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
+	"github.com/pkg/errors"
+)
+
+var (
+	ErrPriceNotFound = errors.New("price-volume pair not found")
+	ErrNoOrder       = errors.New("no orders in the book side")
 )
 
 type OrderBookSide struct {
@@ -19,6 +25,30 @@ func (s *OrderBookSide) addOrder(o *types.Order, side types.Side) {
 	// update the price-volume map
 
 	s.getPriceLevel(o.Price, side).addOrder(o)
+}
+
+func (s *OrderBookSide) getHighestOrderPrice(side types.Side) (uint64, error) {
+	if len(s.levels) <= 0 {
+		return 0, ErrNoOrder
+	}
+	// buy order descending
+	if side == types.Side_Buy {
+		return s.levels[0].price, nil
+	}
+	// sell order ascending
+	return s.levels[len(s.levels)-1].price, nil
+}
+
+func (s *OrderBookSide) getLowestOrderPrice(side types.Side) (uint64, error) {
+	if len(s.levels) <= 0 {
+		return 0, ErrNoOrder
+	}
+	// buy order descending
+	if side == types.Side_Buy {
+		return s.levels[len(s.levels)-1].price, nil
+	}
+	// sell order ascending
+	return s.levels[0].price, nil
 }
 
 func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
