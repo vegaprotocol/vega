@@ -23,7 +23,7 @@ type Order struct {
 	log             *logging.Logger
 	badger          *badgerStore
 	subscribers     map[uint64]chan<- []types.Order
-	subscriberId    uint64
+	subscriberID    uint64
 	buffer          []types.Order
 	depth           map[string]*Depth
 	mu              sync.Mutex
@@ -57,6 +57,7 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 	}, nil
 }
 
+// ReloadConf reloads the config, watches for a changed loglevel.
 func (os *Order) ReloadConf(cfg Config) {
 	os.log.Info("reloading configuration")
 	if os.log.GetLevel() != cfg.Level.Get() {
@@ -78,13 +79,13 @@ func (os *Order) Subscribe(orders chan<- []types.Order) uint64 {
 	os.mu.Lock()
 	defer os.mu.Unlock()
 
-	os.subscriberId = os.subscriberId + 1
-	os.subscribers[os.subscriberId] = orders
+	os.subscriberID = os.subscriberID + 1
+	os.subscribers[os.subscriberID] = orders
 
 	os.log.Debug("Orders subscriber added in order store",
-		logging.Uint64("subscriber-id", os.subscriberId))
+		logging.Uint64("subscriber-id", os.subscriberID))
 
-	return os.subscriberId
+	return os.subscriberID
 }
 
 // Unsubscribe from an orders channel. Provide the subscriber id you wish to stop receiving new events for.
@@ -134,11 +135,13 @@ func (os *Order) Put(order types.Order) error {
 // Commit saves any operations that are queued to badger store, and includes all updates.
 // It will also call notify() to push updated data to any subscribers.
 func (os *Order) Commit() (err error) {
-	if len(os.buffer) == 0 {
-		return
-	}
 	timer := metrics.NewTimeCounter("-", "orderstore", "Commit")
 	os.mu.Lock()
+	if len(os.buffer) == 0 {
+		os.mu.Unlock()
+		timer.EngineTimeCounterAdd()
+		return
+	}
 	items := os.buffer
 	os.buffer = make([]types.Order, 0)
 	os.mu.Unlock()
@@ -220,8 +223,8 @@ func (os *Order) GetByMarket(ctx context.Context, market string, skip,
 	return result, nil
 }
 
-// GetByMarketAndId retrieves an order for a given Market and id, any errors will be returned immediately.
-func (os *Order) GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error) {
+// GetByMarketAndID retrieves an order for a given Market and id, any errors will be returned immediately.
+func (os *Order) GetByMarketAndID(ctx context.Context, market string, id string) (*types.Order, error) {
 	var order types.Order
 
 	txn := os.badger.readTransaction()
@@ -309,8 +312,8 @@ func (os *Order) GetByParty(ctx context.Context, party string, skip uint64,
 	return result, nil
 }
 
-// GetByPartyAndId retrieves a trade for a given Party and id, any errors will be returned immediately.
-func (os *Order) GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error) {
+// GetByPartyAndID retrieves a trade for a given Party and id, any errors will be returned immediately.
+func (os *Order) GetByPartyAndID(ctx context.Context, party string, id string) (*types.Order, error) {
 	var order types.Order
 
 	err := os.badger.db.View(func(txn *badger.Txn) error {
@@ -479,13 +482,15 @@ func (os *Order) addToBuffer(o types.Order) {
 	os.mu.Unlock()
 }
 
-// notify any subscribers of order updates.
+// notify sends order updates to all subscribers.
 func (os *Order) notify(items []types.Order) error {
 	if len(items) == 0 {
 		return nil
 	}
 
+	os.mu.Lock()
 	if os.subscribers == nil || len(os.subscribers) == 0 {
+		os.mu.Unlock()
 		os.log.Debug("No subscribers connected in order store")
 		return nil
 	}
@@ -507,6 +512,7 @@ func (os *Order) notify(items []types.Order) error {
 				logging.Uint64("id", id))
 		}
 	}
+	os.mu.Unlock()
 	return nil
 }
 

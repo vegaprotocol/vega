@@ -25,7 +25,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution OrderStore
 type OrderStore interface {
-	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error)
+	GetByPartyAndID(ctx context.Context, party string, id string) (*types.Order, error)
 	Post(order types.Order) error
 	Put(order types.Order) error
 	Commit() error
@@ -289,7 +289,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
 	// try to get the order first
-	order, err := e.orderStore.GetByPartyAndId(
+	order, err := e.orderStore.GetByPartyAndID(
 		context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
 	if err != nil {
 		e.log.Error("Invalid order reference",
