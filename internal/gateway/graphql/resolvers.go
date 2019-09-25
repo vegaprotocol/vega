@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"code.vegaprotocol.io/vega/internal/gateway"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -144,6 +145,15 @@ func (r *resolverRoot) Account() AccountResolver {
 
 func (r *resolverRoot) Statistics() StatisticsResolver {
 	return (*MyStatisticsResolver)(r)
+}
+
+// llog checkes an error message for certain strings that should be different log levels.
+func llog(log *logging.Logger, message string, err error) {
+	errFunc := log.Error
+	if strings.Contains(err.Error(), "context canceled") {
+		errFunc = log.Debug
+	}
+	errFunc(message, logging.Error(err))
 }
 
 // BEGIN: Query Resolver
@@ -549,7 +559,7 @@ func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 	req := protoapi.LastTradeRequest{MarketID: md.MarketID}
 	res, err := r.tradingDataClient.LastTrade(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		llog(r.log, "tradingDataClient.LastTrade failed", err)
 		return nil, err
 	}
 
@@ -1033,7 +1043,7 @@ func (r *MySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				break
 			}
 			if err != nil {
-				r.log.Error("accounts: stream closed", logging.Error(err))
+				llog(r.log, "Accounts: stream closed", err)
 				break
 			}
 			c <- a
@@ -1076,7 +1086,7 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				break
 			}
 			if err != nil {
-				r.log.Error("orders: stream closed", logging.Error(err))
+				llog(r.log, "Orders: stream closed", err)
 				break
 			}
 			out := make([]types.Order, 0, len(o.Orders))
@@ -1123,7 +1133,7 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 				break
 			}
 			if err != nil {
-				r.log.Error("trades: stream closed", logging.Error(err))
+				llog(r.log, "Trades: stream closed", err)
 				break
 			}
 			out := make([]types.Trade, 0, len(t.Trades))
@@ -1160,7 +1170,7 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 				break
 			}
 			if err != nil {
-				r.log.Error("positions: stream closed", logging.Error(err))
+				llog(r.log, "Positions: stream closed", err)
 				break
 			}
 			c <- t
@@ -1192,7 +1202,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 				break
 			}
 			if err != nil {
-				r.log.Error("marketDepth: stream closed", logging.Error(err))
+				llog(r.log, "MarketDepth: stream closed", err)
 				break
 			}
 			c <- md
@@ -1232,7 +1242,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 				break
 			}
 			if err != nil {
-				r.log.Error("candles: stream closed", logging.Error(err))
+				llog(r.log, "Candles: stream closed", err)
 				break
 			}
 			c <- cdl
