@@ -11,7 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
