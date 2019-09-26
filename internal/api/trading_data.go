@@ -54,7 +54,7 @@ type OrderService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeService
 type TradeService interface {
-	GetByOrderId(ctx context.Context, orderID string) ([]*types.Trade, error)
+	GetByOrderID(ctx context.Context, orderID string) ([]*types.Trade, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
@@ -862,7 +862,7 @@ func (h *tradingDataService) TradesByParty(
 func (h *tradingDataService) TradesByOrder(
 	ctx context.Context, req *protoapi.TradesByOrderRequest,
 ) (*protoapi.TradesByOrderResponse, error) {
-	trades, err := h.TradeService.GetByOrderId(ctx, req.OrderID)
+	trades, err := h.TradeService.GetByOrderID(ctx, req.OrderID)
 	if err != nil {
 		return nil, err
 	}

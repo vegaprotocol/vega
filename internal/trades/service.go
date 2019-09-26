@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TradeStore represents an abstraction over a trade storage
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/trades TradeStore
 type TradeStore interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) ([]*types.Trade, error)
@@ -26,11 +27,13 @@ type TradeStore interface {
 	Unsubscribe(id uint64) error
 }
 
+// RiskStore represents an abstraction over a Risk storage
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/trades RiskStore
 type RiskStore interface {
 	GetByMarket(market string) (*types.RiskFactor, error)
 }
 
+// Svc is the service handling trades
 type Svc struct {
 	Config
 	log                     *logging.Logger
@@ -40,6 +43,7 @@ type Svc struct {
 	tradeSubscribersCnt     int32
 }
 
+// NewService instanciate a new Trades service
 func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -53,6 +57,7 @@ func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskS
 	}, nil
 }
 
+// ReloadConf update the internal configuration of the service
 func (s *Svc) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -66,94 +71,102 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-func (t *Svc) checkPagination(limit *uint64) error {
+func (s *Svc) checkPagination(limit *uint64) error {
 	if *limit == 0 {
-		*limit = t.Config.PageSizeDefault
+		*limit = s.Config.PageSizeDefault
 		// Do not return yet. The default may have been set to a number greater
 		// than the maximum.
 	}
 
-	if *limit > t.Config.PageSizeMaximum {
-		return fmt.Errorf("invalid pagination limit: %d is greater than %d", *limit, t.Config.PageSizeMaximum)
+	if *limit > s.Config.PageSizeMaximum {
+		return fmt.Errorf("invalid pagination limit: %d is greater than %d", *limit, s.Config.PageSizeMaximum)
 	}
 
 	return nil
 }
 
-func (t *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error) {
-	if err = t.checkPagination(&limit); err != nil {
+//GetByMarket returns a list of trades for a given market
+func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error) {
+	if err = s.checkPagination(&limit); err != nil {
 		return nil, err
 	}
 
-	trades, err = t.tradeStore.GetByMarket(ctx, market, skip, limit, descending)
+	trades, err = s.tradeStore.GetByMarket(ctx, market, skip, limit, descending)
 	if err != nil {
 		return nil, err
 	}
 	return trades, err
 }
 
-func (t *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) (trades []*types.Trade, err error) {
-	if err = t.checkPagination(&limit); err != nil {
+// GetByParty returns a list of trade for a given party
+func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) (trades []*types.Trade, err error) {
+	if err = s.checkPagination(&limit); err != nil {
 		return nil, err
 	}
 
-	trades, err = t.tradeStore.GetByParty(ctx, party, skip, limit, descending, market)
+	trades, err = s.tradeStore.GetByParty(ctx, party, skip, limit, descending, market)
 	if err != nil {
 		return nil, err
 	}
 	return trades, err
 }
 
-func (t *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
-	trade, err = t.tradeStore.GetByMarketAndId(ctx, market, id)
+// GetByMarketAndID return a single trade per its ID and the market it was created in
+func (s *Svc) GetByMarketAndID(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
+	trade, err = s.tradeStore.GetByMarketAndId(ctx, market, id)
 	if err != nil {
 		return &types.Trade{}, err
 	}
 	return trade, err
 }
 
-func (t *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (trade *types.Trade, err error) {
-	trade, err = t.tradeStore.GetByPartyAndId(ctx, party, id)
+// GetByPartyAndID returns a single trade, filter through a party ID and the trade ID
+func (s *Svc) GetByPartyAndID(ctx context.Context, party string, id string) (trade *types.Trade, err error) {
+	trade, err = s.tradeStore.GetByPartyAndId(ctx, party, id)
 	if err != nil {
 		return &types.Trade{}, err
 	}
 	return trade, err
 }
 
-func (t *Svc) GetByOrderId(ctx context.Context, orderId string) (trades []*types.Trade, err error) {
-	trades, err = t.tradeStore.GetByOrderId(ctx, orderId, 0, 0, false, nil)
+// GetByOrderID return a list of trades filter by order ID (even the buy or sell side of the trade)
+func (s *Svc) GetByOrderID(ctx context.Context, orderID string) (trades []*types.Trade, err error) {
+	trades, err = s.tradeStore.GetByOrderId(ctx, orderID, 0, 0, false, nil)
 	if err != nil {
 		return nil, err
 	}
 	return trades, err
 }
 
+// GetTradeSubscribersCount return the count of subscribers to the Trades updates
 func (s *Svc) GetTradeSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.tradeSubscribersCnt)
 }
 
-func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Trade, uint64) {
+// ObserveTrades return a channel to the caller through which it will receive notification
+// on all trades happening in the system.
+func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Trade, uint64) {
 	trades := make(chan []types.Trade)
 	internal := make(chan []types.Trade)
-	ref := t.tradeStore.Subscribe(internal)
+	ref := s.tradeStore.Subscribe(internal)
 	retryCount := retries
 
 	go func() {
-		atomic.AddInt32(&t.tradeSubscribersCnt, 1)
-		defer atomic.AddInt32(&t.tradeSubscribersCnt, -1)
+		atomic.AddInt32(&s.tradeSubscribersCnt, 1)
+		defer atomic.AddInt32(&s.tradeSubscribersCnt, -1)
 		ip := logging.IPAddressFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {
 			select {
 			case <-ctx.Done():
-				t.log.Debug(
+				s.log.Debug(
 					"Trades subscriber closed connection",
 					logging.Uint64("id", ref),
 					logging.String("ip-address", ip),
 				)
-				if err := t.tradeStore.Unsubscribe(ref); err != nil {
-					t.log.Error(
+				if err := s.tradeStore.Unsubscribe(ref); err != nil {
+					s.log.Error(
 						"Failure un-subscribing trades subscriber when context.Done()",
 						logging.Uint64("id", ref),
 						logging.String("ip-address", ip),
@@ -178,7 +191,7 @@ func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 				select {
 				case trades <- validatedTrades:
 					retryCount = retries
-					t.log.Debug(
+					s.log.Debug(
 						"Trades for subscriber sent successfully",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
@@ -186,7 +199,7 @@ func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 				default:
 					retryCount--
 					if retryCount == 0 {
-						t.log.Warn(
+						s.log.Warn(
 							"Trades subscriber has hit the retry limit",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
@@ -194,7 +207,7 @@ func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 						)
 						cfunc()
 					}
-					t.log.Debug(
+					s.log.Debug(
 						"Trades for subscriber not sent",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
@@ -207,32 +220,35 @@ func (t *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 	return trades, ref
 }
 
+// GetPositionsSubscribersCount return the number of subscriber to the positions observer
 func (s *Svc) GetPositionsSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.positionsSubscribersCnt)
 }
 
-func (t *Svc) ObservePositions(ctx context.Context, retries int, party string) (<-chan *types.MarketPosition, uint64) {
+// ObservePositions return a channel through which all positions are streamed to the caller
+// when they get updated
+func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (<-chan *types.MarketPosition, uint64) {
 	positions := make(chan *types.MarketPosition)
 	internal := make(chan []types.Trade)
-	ref := t.tradeStore.Subscribe(internal)
+	ref := s.tradeStore.Subscribe(internal)
 	retryCount := retries
 
 	go func() {
-		atomic.AddInt32(&t.positionsSubscribersCnt, 1)
-		defer atomic.AddInt32(&t.positionsSubscribersCnt, -1)
+		atomic.AddInt32(&s.positionsSubscribersCnt, 1)
+		defer atomic.AddInt32(&s.positionsSubscribersCnt, -1)
 		ip := logging.IPAddressFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {
 			select {
 			case <-ctx.Done():
-				t.log.Debug(
+				s.log.Debug(
 					"Positions subscriber closed connection",
 					logging.Uint64("id", ref),
 					logging.String("ip-address", ip),
 				)
-				if err := t.tradeStore.Unsubscribe(ref); err != nil {
-					t.log.Error(
+				if err := s.tradeStore.Unsubscribe(ref); err != nil {
+					s.log.Error(
 						"Failure un-subscribing positions subscriber when context.Done()",
 						logging.Uint64("id", ref),
 						logging.String("ip-address", ip),
@@ -243,9 +259,9 @@ func (t *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 				close(positions)
 				return
 			case <-internal: // again, we're using this channel to detect state changes, the data itself isn't relevant
-				mapOfMarketPositions, err := t.GetPositionsByParty(ctx, party)
+				mapOfMarketPositions, err := s.GetPositionsByParty(ctx, party)
 				if err != nil {
-					t.log.Error(
+					s.log.Error(
 						"Failed to get positions for subscriber (getPositionsByParty)",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
@@ -258,7 +274,7 @@ func (t *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 					select {
 					case positions <- marketPositions:
 						retryCount = retries
-						t.log.Debug(
+						s.log.Debug(
 							"Positions for subscriber sent successfully",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
@@ -266,7 +282,7 @@ func (t *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 					default:
 						retryCount--
 						if retryCount == 0 {
-							t.log.Warn(
+							s.log.Warn(
 								"Positions subscriber has hit the retry limit",
 								logging.Uint64("ref", ref),
 								logging.String("ip-address", ip),
@@ -274,7 +290,7 @@ func (t *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 							)
 							cfunc()
 						}
-						t.log.Debug(
+						s.log.Debug(
 							"Positions for subscriber not sent",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
@@ -288,12 +304,13 @@ func (t *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 	return positions, ref
 }
 
-func (t *Svc) GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error) {
+// GetPositionsByParty returns a list of positions for a given party
+func (s *Svc) GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error) {
 
-	t.log.Debug("Calculate positions for party",
+	s.log.Debug("Calculate positions for party",
 		logging.String("party-id", party))
 
-	marketBuckets := t.tradeStore.GetTradesBySideBuckets(ctx, party)
+	marketBuckets := s.tradeStore.GetTradesBySideBuckets(ctx, party)
 
 	var (
 		OpenVolumeSign                int8
@@ -306,7 +323,7 @@ func (t *Svc) GetPositionsByParty(ctx context.Context, party string) (positions 
 		forwardRiskMargin             float64
 	)
 
-	t.log.Debug("Loaded market buckets for party",
+	s.log.Debug("Loaded market buckets for party",
 		logging.String("party-id", party),
 		logging.Int("total-buckets", len(marketBuckets)))
 
@@ -333,29 +350,29 @@ func (t *Svc) GetPositionsByParty(ctx context.Context, party string) (positions 
 		if OpenVolumeSign == 1 {
 			//// calculate avg entry price for closed and open contracts when position is long
 			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
-				t.calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket, OpenContracts, ClosedContracts)
+				s.calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket, OpenContracts, ClosedContracts)
 		}
 
 		// net
 		if OpenVolumeSign == 0 {
 			//// calculate avg entry price for closed and open contracts when position is net
 			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
-				t.calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket, OpenContracts, ClosedContracts)
+				s.calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket, OpenContracts, ClosedContracts)
 		}
 
 		// short
 		if OpenVolumeSign == -1 {
 			//// calculate avg entry price for closed and open contracts when position is short
 			deltaAverageEntryPrice, avgEntryPriceForOpenContracts =
-				t.calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket, OpenContracts, ClosedContracts)
+				s.calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket, OpenContracts, ClosedContracts)
 		}
 
-		markPrice, _ = t.tradeStore.GetMarkPrice(ctx, market)
+		markPrice, _ = s.tradeStore.GetMarkPrice(ctx, market)
 		if markPrice == 0 {
 			continue
 		}
 
-		riskFactor, err = t.getRiskFactorByMarketAndPositionSign(ctx, market, OpenVolumeSign)
+		riskFactor, err = s.getRiskFactorByMarketAndPositionSign(ctx, market, OpenVolumeSign)
 		if err != nil {
 			return nil, err
 		}
@@ -380,17 +397,17 @@ func (t *Svc) GetPositionsByParty(ctx context.Context, party string) (positions 
 		positions = append(positions, marketPositions)
 	}
 
-	t.log.Debug("Positions for party calculated",
+	s.log.Debug("Positions for party calculated",
 		logging.String("party-id", party),
 		logging.Int("total-buckets", len(positions)))
 
 	return positions, nil
 }
 
-func (t *Svc) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) (float64, error) {
-	rf, err := t.riskStore.GetByMarket(market)
+func (s *Svc) getRiskFactorByMarketAndPositionSign(ctx context.Context, market string, openVolumeSign int8) (float64, error) {
+	rf, err := s.riskStore.GetByMarket(market)
 	if err != nil {
-		t.log.Error("Failed to obtain risk factors from risk engine",
+		s.log.Error("Failed to obtain risk factors from risk engine",
 			logging.String("market-id", market))
 		return -1, errors.Wrap(err, fmt.Sprintf("Failed to obtain risk factors from risk engine for market: %s", market))
 	}
@@ -411,7 +428,7 @@ func (t *Svc) getRiskFactorByMarketAndPositionSign(ctx context.Context, market s
 	return riskFactor, nil
 }
 
-func (t *Svc) calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *storage.MarketBucket,
+func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *storage.MarketBucket,
 	OpenContracts, ClosedContracts int64) (float64, float64) {
 
 	var (
@@ -461,7 +478,7 @@ func (t *Svc) calculateVolumeEntryPriceWeightedAveragesForLong(marketBucket *sto
 	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
 }
 
-func (t *Svc) calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket *storage.MarketBucket,
+func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket *storage.MarketBucket,
 	OpenContracts, ClosedContracts int64) (float64, float64) {
 
 	var (
@@ -489,7 +506,7 @@ func (t *Svc) calculateVolumeEntryPriceWeightedAveragesForNet(marketBucket *stor
 	return deltaAverageEntryPrice, avgEntryPriceForOpenContracts
 }
 
-func (t *Svc) calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket *storage.MarketBucket,
+func (s *Svc) calculateVolumeEntryPriceWeightedAveragesForShort(marketBucket *storage.MarketBucket,
 	OpenContracts, ClosedContracts int64) (float64, float64) {
 
 	var (
