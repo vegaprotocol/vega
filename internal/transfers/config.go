@@ -9,6 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "transfers"
 
+// Config represent the configuration of the Transfers service.
 type Config struct {
 	Level encoding.LogLevel
 }
