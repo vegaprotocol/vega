@@ -14,8 +14,6 @@ import (
 
 const (
 	initialAccountSize = 4096
-	// systemOwner        = "system"
-	// noMarket           = "general"
 	// use weird character here, maybe non-displayable ones in the future
 	// if needed
 	systemOwner = "*"
