@@ -18,7 +18,6 @@ require (
 	github.com/go-kit/kit v0.8.0 // indirect
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/gogo/protobuf v1.3.0
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.2
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
@@ -42,7 +41,6 @@ require (
 	github.com/tendermint/go-amino v0.14.1 // indirect
 	github.com/tendermint/tendermint v0.31.5
 	github.com/vegaprotocol/modvendor v0.0.1 // indirect
-	github.com/vektah/gqlparser v1.1.2
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.5.0
 	go.uber.org/atomic v1.3.2 // indirect
