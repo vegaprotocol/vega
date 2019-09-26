@@ -163,9 +163,12 @@ func (i *Instrument) IntoProto() (*proto.Instrument, error) {
 		BaseName:  i.BaseName,
 		QuoteName: i.QuoteName,
 	}
-	pinst.Metadata, err = i.Metadata.IntoProto()
-	if err != nil {
-		return nil, err
+
+	if i.Metadata != nil {
+		pinst.Metadata, err = i.Metadata.IntoProto()
+		if err != nil {
+			return nil, err
+		}
 	}
 	err = i.productIntoProto(pinst)
 	if err != nil {
@@ -208,9 +211,11 @@ func (ti *TradableInstrument) riskModelIntoProto(
 func (ti *TradableInstrument) IntoProto() (*proto.TradableInstrument, error) {
 	var err error
 	pti := &proto.TradableInstrument{}
-	pti.Instrument, err = ti.Instrument.IntoProto()
-	if err != nil {
-		return nil, err
+	if ti.Instrument != nil {
+		pti.Instrument, err = ti.Instrument.IntoProto()
+		if err != nil {
+			return nil, err
+		}
 	}
 	err = ti.riskModelIntoProto(pti)
 	if err != nil {
@@ -229,9 +234,11 @@ func (m *Market) IntoProto() (*proto.Market, error) {
 		return nil, err
 	}
 
-	pmkt.TradableInstrument, err = m.TradableInstrument.IntoProto()
-	if err != nil {
-		return nil, err
+	if m.TradableInstrument != nil {
+		pmkt.TradableInstrument, err = m.TradableInstrument.IntoProto()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return pmkt, nil
@@ -359,7 +366,7 @@ func InstrumentFromProto(pi *proto.Instrument) (*Instrument, error) {
 	if err != nil {
 		return nil, err
 	}
-	i.Metadata = *meta
+	i.Metadata = meta
 	i.Product, err = ProductFromProto(pi.Product)
 	if err != nil {
 		return nil, err
@@ -373,7 +380,7 @@ func ForwardFromProto(f *proto.Forward) (*Forward, error) {
 	return &Forward{
 		Lambd: f.Lambd,
 		Tau:   f.Tau,
-		Params: ModelParamsBs{
+		Params: &ModelParamsBs{
 			Mu:    f.Params.Mu,
 			R:     f.Params.R,
 			Sigma: f.Params.Sigma,
@@ -406,7 +413,7 @@ func TradableInstrumentFromProto(pti *proto.TradableInstrument) (*TradableInstru
 	if err != nil {
 		return nil, err
 	}
-	ti.Instrument = *instrument
+	ti.Instrument = instrument
 	ti.RiskModel, err = RiskModelFromProto(pti.RiskModel)
 	if err != nil {
 		return nil, err
@@ -433,7 +440,7 @@ func MarketFromProto(pmkt *proto.Market) (*Market, error) {
 	if err != nil {
 		return nil, err
 	}
-	mkt.TradableInstrument = *tradableInstrument
+	mkt.TradableInstrument = tradableInstrument
 
 	return mkt, nil
 }
