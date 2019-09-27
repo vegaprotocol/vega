@@ -18,10 +18,10 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/trades TradeStore
 type TradeStore interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) ([]*types.Trade, error)
-	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Trade, error)
+	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Trade, error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error)
-	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Trade, error)
-	GetByOrderId(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error)
+	GetByPartyAndID(ctx context.Context, party string, id string) (*types.Trade, error)
+	GetByOrderID(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error)
 	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*storage.MarketBucket
 	GetMarkPrice(ctx context.Context, market string) (uint64, error)
 	Subscribe(trades chan<- []types.Trade) uint64
@@ -114,7 +114,7 @@ func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, 
 
 // GetByMarketAndID return a single trade per its ID and the market it was created in
 func (s *Svc) GetByMarketAndID(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
-	trade, err = s.tradeStore.GetByMarketAndId(ctx, market, id)
+	trade, err = s.tradeStore.GetByMarketAndID(ctx, market, id)
 	if err != nil {
 		return &types.Trade{}, err
 	}
@@ -123,7 +123,7 @@ func (s *Svc) GetByMarketAndID(ctx context.Context, market string, id string) (t
 
 // GetByPartyAndID returns a single trade, filter through a party ID and the trade ID
 func (s *Svc) GetByPartyAndID(ctx context.Context, party string, id string) (trade *types.Trade, err error) {
-	trade, err = s.tradeStore.GetByPartyAndId(ctx, party, id)
+	trade, err = s.tradeStore.GetByPartyAndID(ctx, party, id)
 	if err != nil {
 		return &types.Trade{}, err
 	}
@@ -132,7 +132,7 @@ func (s *Svc) GetByPartyAndID(ctx context.Context, party string, id string) (tra
 
 // GetByOrderID return a list of trades filter by order ID (even the buy or sell side of the trade)
 func (s *Svc) GetByOrderID(ctx context.Context, orderID string) (trades []*types.Trade, err error) {
-	trades, err = s.tradeStore.GetByOrderId(ctx, orderID, 0, 0, false, nil)
+	trades, err = s.tradeStore.GetByOrderID(ctx, orderID, 0, 0, false, nil)
 	if err != nil {
 		return nil, err
 	}

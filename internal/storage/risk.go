@@ -16,6 +16,7 @@ func NewRisks(config Config) (*Risk, error) {
 	}, nil
 }
 
+// ReloadConf update the internal configuration of the risk
 func (r *Risk) ReloadConf(config Config) {
 	// nothing to do for now
 }

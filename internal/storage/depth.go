@@ -25,25 +25,25 @@ func NewMarketDepth(name string) *Depth {
 
 // Update the market depth with the given order information. If the order already exists at a price level
 // it will be updated. Note: The total cumulative volume for the market depth is calculated elsewhere.
-func (md *Depth) Update(order types.Order) {
+func (d *Depth) Update(order types.Order) {
 	if order.TimeInForce != types.Order_IOC && order.TimeInForce != types.Order_FOK {
 		if order.Side == types.Side_Buy {
-			md.updateBuySide(order)
+			d.updateBuySide(order)
 		} else {
-			md.updateSellSide(order)
+			d.updateSellSide(order)
 		}
 	}
 }
 
 // Called by Update to do the iteration over price levels and update the buy side of the market depth with
 // order information. We now use a map of orderId => remaining to no longer need a DB lookup elsewhere.
-func (md *Depth) updateBuySide(order types.Order) {
+func (d *Depth) updateBuySide(order types.Order) {
 	var at = -1
-	orderInvalid := md.isInvalid(order)
+	orderInvalid := d.isInvalid(order)
 
 	// search through existing price/depth levels to find a position to insert
 	found := false
-	for idx, priceLevel := range md.Buy {
+	for idx, priceLevel := range d.Buy {
 		if priceLevel.Price > order.Price {
 			continue
 		}
@@ -59,27 +59,27 @@ func (md *Depth) updateBuySide(order types.Order) {
 		delta := uint64(0)
 
 		// check if there's a previous order at this price level
-		if existingRemaining, ok := md.Buy[at].orders[order.Id]; ok {
+		if existingRemaining, ok := d.Buy[at].orders[order.Id]; ok {
 			// check if order is now fully filled or not trade-able status
 			if orderInvalid {
 				// order doesn't exist for price so remove from existing map
-				md.Buy[at].Volume -= existingRemaining
-				md.Buy[at].NumberOfOrders--
-				delete(md.Buy[at].orders, order.Id)
+				d.Buy[at].Volume -= existingRemaining
+				d.Buy[at].NumberOfOrders--
+				delete(d.Buy[at].orders, order.Id)
 			} else {
-				delta = md.Buy[at].orders[order.Id] - order.Remaining
-				md.Buy[at].orders[order.Id] = order.Remaining
-				md.Buy[at].Volume -= delta
+				delta = d.Buy[at].orders[order.Id] - order.Remaining
+				d.Buy[at].orders[order.Id] = order.Remaining
+				d.Buy[at].Volume -= delta
 			}
 		} else if !orderInvalid {
-			md.Buy[at].orders[order.Id] = order.Remaining
-			md.Buy[at].Volume += order.Remaining
-			md.Buy[at].NumberOfOrders++
+			d.Buy[at].orders[order.Id] = order.Remaining
+			d.Buy[at].Volume += order.Remaining
+			d.Buy[at].NumberOfOrders++
 		}
 
 		// check and remove empty price levels from slice
-		if md.Buy[at].NumberOfOrders == 0 || md.Buy[at].Volume == 0 {
-			md.Buy = append(md.Buy[:at], md.Buy[at+1:]...)
+		if d.Buy[at].NumberOfOrders == 0 || d.Buy[at].Volume == 0 {
+			d.Buy = append(d.Buy[:at], d.Buy[at+1:]...)
 		}
 		return
 	}
@@ -102,22 +102,22 @@ func (md *Depth) updateBuySide(order types.Order) {
 
 	if at == -1 {
 		// create a new MarketDepthLevel, non exist
-		md.Buy = append(md.Buy, depthLevel)
+		d.Buy = append(d.Buy, depthLevel)
 		return
 	}
 	// create new MarketDepthLevel for price at at appropriate position in slice
-	md.Buy = append(md.Buy[:at], append([]MarketDepthLevel{depthLevel}, md.Buy[at:]...)...)
+	d.Buy = append(d.Buy[:at], append([]MarketDepthLevel{depthLevel}, d.Buy[at:]...)...)
 }
 
 // Called by Update to do the iteration over price levels and update the sell side of the market depth with
 // order information. We now use a map of orderId => remaining to no longer need a DB lookup elsewhere.
-func (md *Depth) updateSellSide(order types.Order) {
+func (d *Depth) updateSellSide(order types.Order) {
 	var at = -1
-	orderInvalid := md.isInvalid(order)
+	orderInvalid := d.isInvalid(order)
 
 	// search through existing price/depth levels to find a position to insert
 	found := false
-	for idx, priceLevel := range md.Sell {
+	for idx, priceLevel := range d.Sell {
 		if priceLevel.Price < order.Price {
 			continue
 		}
@@ -133,27 +133,27 @@ func (md *Depth) updateSellSide(order types.Order) {
 		delta := uint64(0)
 
 		// check if there's a previous order at this price level
-		if existingRemaining, ok := md.Sell[at].orders[order.Id]; ok {
+		if existingRemaining, ok := d.Sell[at].orders[order.Id]; ok {
 			// check if order is now fully filled or not trade-able status
 			if orderInvalid {
 				// order doesn't exist for price so remove from existing map
-				md.Sell[at].Volume -= existingRemaining
-				md.Sell[at].NumberOfOrders--
-				delete(md.Sell[at].orders, order.Id)
+				d.Sell[at].Volume -= existingRemaining
+				d.Sell[at].NumberOfOrders--
+				delete(d.Sell[at].orders, order.Id)
 			} else {
-				delta = md.Sell[at].orders[order.Id] - order.Remaining
-				md.Sell[at].orders[order.Id] = order.Remaining
-				md.Sell[at].Volume -= delta
+				delta = d.Sell[at].orders[order.Id] - order.Remaining
+				d.Sell[at].orders[order.Id] = order.Remaining
+				d.Sell[at].Volume -= delta
 			}
 		} else if !orderInvalid {
-			md.Sell[at].orders[order.Id] = order.Remaining
-			md.Sell[at].Volume += order.Remaining
-			md.Sell[at].NumberOfOrders++
+			d.Sell[at].orders[order.Id] = order.Remaining
+			d.Sell[at].Volume += order.Remaining
+			d.Sell[at].NumberOfOrders++
 		}
 
 		// check and remove empty price levels from slice
-		if md.Sell[at].NumberOfOrders == 0 || md.Sell[at].Volume == 0 {
-			md.Sell = append(md.Sell[:at], md.Sell[at+1:]...)
+		if d.Sell[at].NumberOfOrders == 0 || d.Sell[at].Volume == 0 {
+			d.Sell = append(d.Sell[:at], d.Sell[at+1:]...)
 		}
 		return
 	}
@@ -170,26 +170,28 @@ func (md *Depth) updateSellSide(order types.Order) {
 
 	if at == -1 {
 		// create a new MarketDepthLevel, non exist
-		md.Sell = append(md.Sell, depthLevel)
+		d.Sell = append(d.Sell, depthLevel)
 	} else {
 		// create new MarketDepthLevel for price at at appropriate position in slice
-		md.Sell = append(md.Sell[:at], append([]MarketDepthLevel{depthLevel}, md.Sell[at:]...)...)
+		d.Sell = append(d.Sell[:at], append([]MarketDepthLevel{depthLevel}, d.Sell[at:]...)...)
 	}
 }
 
-// The buy side price levels (and additional information such as orders, remaining volumes) for the market.
-func (md *Depth) BuySide() []MarketDepthLevel {
-	return md.Buy
+// BuySide The buy side price levels (and additional information such as orders,
+// remaining volumes) for the market.
+func (d *Depth) BuySide() []MarketDepthLevel {
+	return d.Buy
 }
 
-// The sell side price levels (and additional information such as orders, remaining volumes) for the market.
-func (md *Depth) SellSide() []MarketDepthLevel {
-	return md.Sell
+// SellSide The sell side price levels (and additional information such as
+// orders, remaining volumes) for the market.
+func (d *Depth) SellSide() []MarketDepthLevel {
+	return d.Sell
 }
 
 // Helper to check for orders that have zero remaining, or a status such as cancelled etc.
 // When calculating depth for a side they shouldn't be included (and removed if already exist).
 // A fresh order with zero remaining will never be added to a price level.
-func (md *Depth) isInvalid(order types.Order) bool {
+func (d *Depth) isInvalid(order types.Order) bool {
 	return order.Remaining == uint64(0) || order.Status == types.Order_Cancelled || order.Status == types.Order_Expired
 }

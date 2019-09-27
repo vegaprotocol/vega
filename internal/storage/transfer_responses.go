@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TransferResponse is responsible for storing the ledger entries
 type TransferResponse struct {
 	Config
 	log          *logging.Logger
@@ -17,6 +18,7 @@ type TransferResponse struct {
 	mu           sync.Mutex
 }
 
+// NewTransferResponses instanciate a new TransferResponse
 func NewTransferResponses(log *logging.Logger, cfg Config) (*TransferResponse, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -28,20 +30,22 @@ func NewTransferResponses(log *logging.Logger, cfg Config) (*TransferResponse, e
 	}, nil
 }
 
-func (a *TransferResponse) ReloadConf(cfg Config) {
-	a.log.Info("reloading configuration")
-	if a.log.GetLevel() != cfg.Level.Get() {
-		a.log.Info("updating log level",
-			logging.String("old", a.log.GetLevel().String()),
+// ReloadConf update the internal configuration of the transfer responses
+func (t *TransferResponse) ReloadConf(cfg Config) {
+	t.log.Info("reloading configuration")
+	if t.log.GetLevel() != cfg.Level.Get() {
+		t.log.Info("updating log level",
+			logging.String("old", t.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		a.log.SetLevel(cfg.Level.Get())
+		t.log.SetLevel(cfg.Level.Get())
 	}
 
-	a.Config = cfg
+	t.Config = cfg
 }
 
-func (a *TransferResponse) Close() error {
+// Close the underlying storage
+func (t *TransferResponse) Close() error {
 	// nothing to do at the moment, just keep it in par with the other store apis
 	return nil
 }
@@ -79,11 +83,12 @@ func (t *TransferResponse) notify(trs []*types.TransferResponse) {
 	return
 }
 
+// Subscribe add a new subscriber to the transfer response updates stream
 func (t *TransferResponse) Subscribe(c chan []*types.TransferResponse) uint64 {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.subscriberID += 1
+	t.subscriberID++
 	t.subscribers[t.subscriberID] = c
 
 	t.log.Debug("TransferResponse subscriber added in transfer response store",
@@ -92,6 +97,7 @@ func (t *TransferResponse) Subscribe(c chan []*types.TransferResponse) uint64 {
 	return t.subscriberID
 }
 
+// Unsubscribe remove a subscriber from the transfer response updates stream
 func (t *TransferResponse) Unsubscribe(id uint64) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -117,6 +123,7 @@ func (t *TransferResponse) Unsubscribe(id uint64) error {
 	return errors.New(fmt.Sprintf("TransferResponse store subscriber does not exist with id: %d", id))
 }
 
+// SaveBatch save a new batch of transfer response
 func (t *TransferResponse) SaveBatch(trs []*types.TransferResponse) error {
 	t.notify(trs)
 	return nil
