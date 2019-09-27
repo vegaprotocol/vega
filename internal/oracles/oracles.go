@@ -7,14 +7,19 @@ import (
 )
 
 var (
-	ErrNilOracle           = errors.New("nil oracle")
+	// ErrNilOracle signals that the oracle to instanciate was nil
+	ErrNilOracle = errors.New("nil oracle")
+	// ErrUnimplementedOracle signals that the oracle specified
+	// is still not implemented by the market framework
 	ErrUnimplementedOracle = errors.New("unimplemented oracle")
 )
 
+// Oracle is an abstraction of an oracle
 type Oracle interface {
 	SettlementPrice() (uint64, error)
 }
 
+// New instanciate a new oracle from a market framework configuration
 func New(po interface{}) (Oracle, error) {
 	if po == nil {
 		return nil, ErrNilOracle

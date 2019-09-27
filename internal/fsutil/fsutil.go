@@ -10,19 +10,22 @@ const (
 	dirPerms = 0700
 )
 
+// PathNotFound represent an error when a fd cannot be found
+// on the user filesystem
 type PathNotFound struct {
 	path string
 }
 
+// Error return an human readable formating of the error
 func (err *PathNotFound) Error() string {
 	return fmt.Sprintf("not found: %s", err.path)
 }
 
-// defaultVegaDir returns the location to vega config files and data files:
-//	binary is in /usr/bin/ -> look for /etc/vega/config.toml
-//	binary is in /usr/local/vega/bin/ -> look for /usr/local/vega/etc/config.toml
-//	binary is in /usr/local/bin/ -> look for /usr/local/etc/vega/config.toml
-//	otherwise, look for $HOME/.vega/config.toml
+// DefaultVegaDir returns the location to vega config files and data files:
+// binary is in /usr/bin/ -> look for /etc/vega/config.toml
+// binary is in /usr/local/vega/bin/ -> look for /usr/local/vega/etc/config.toml
+// binary is in /usr/local/bin/ -> look for /usr/local/etc/vega/config.toml
+// otherwise, look for $HOME/.vega/config.toml
 func DefaultVegaDir() string {
 	ex, err := os.Executable()
 	if err != nil {
@@ -41,7 +44,7 @@ func DefaultVegaDir() string {
 	return os.ExpandEnv("$HOME/.vega")
 }
 
-// ensureDir will make sure a directory exists or is created at a given filesystem path.
+// EnsureDir will make sure a directory exists or is created at a given filesystem path.
 func EnsureDir(path string) error {
 	_, err := os.Stat(path)
 	if err != nil {
@@ -53,7 +56,7 @@ func EnsureDir(path string) error {
 	return nil
 }
 
-// pathExists returns whether a link exists at a given filesystem path.
+// PathExists returns whether a link exists at a given filesystem path.
 func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
