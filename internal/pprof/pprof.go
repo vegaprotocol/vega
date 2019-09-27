@@ -2,6 +2,9 @@ package pprof
 
 import (
 	"net/http"
+	// import pprof globally because it's used to init the package
+	// and this comment is mostly here as well in order to make
+	// golint very many much happy
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
@@ -21,6 +24,7 @@ const (
 	namedLogger = "pprof"
 )
 
+// Config represent the configuration of the pprof package
 type Config struct {
 	Level       encoding.LogLevel
 	Enabled     bool
@@ -28,6 +32,7 @@ type Config struct {
 	ProfilesDir string
 }
 
+// Pprofhandler is handling pprof profile management
 type Pprofhandler struct {
 	Config
 
@@ -86,6 +91,7 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	return p, nil
 }
 
+// ReloadConf update the configuration of the pprof package
 func (p *Pprofhandler) ReloadConf(cfg Config) {
 	p.log.Info("reloading configuration")
 	if p.log.GetLevel() != cfg.Level.Get() {
