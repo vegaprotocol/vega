@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"code.vegaprotocol.io/vega/internal/gateway"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -144,6 +145,15 @@ func (r *resolverRoot) Account() AccountResolver {
 
 func (r *resolverRoot) Statistics() StatisticsResolver {
 	return (*MyStatisticsResolver)(r)
+}
+
+// llog checkes an error message for certain strings that should be different log levels.
+func llog(log *logging.Logger, message string, err error) {
+	errFunc := log.Error
+	if strings.Contains(err.Error(), "context canceled") {
+		errFunc = log.Debug
+	}
+	errFunc(message, logging.Error(err))
 }
 
 // BEGIN: Query Resolver
@@ -549,7 +559,7 @@ func (r *MyMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 	req := protoapi.LastTradeRequest{MarketID: md.MarketID}
 	res, err := r.tradingDataClient.LastTrade(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		llog(r.log, "tradingDataClient.LastTrade failed", err)
 		return nil, err
 	}
 
@@ -637,7 +647,7 @@ func (r *MyOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*type
 	req := protoapi.TradesByOrderRequest{OrderID: ord.Id}
 	res, err := r.tradingDataClient.TradesByOrder(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		r.log.Error("tradingDataClient.TradesByOrder failed", logging.Error(err))
 		return nil, err
 	}
 	return res.Trades, nil
@@ -665,7 +675,7 @@ func (r *MyTradeResolver) Market(ctx context.Context, obj *types.Trade) (*Market
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		r.log.Error("tradingDataClient.MarketByID failed", logging.Error(err))
 		return nil, err
 	}
 	return MarketFromProto(res.Market)
@@ -795,7 +805,7 @@ func (r *MyPositionResolver) Market(ctx context.Context, obj *types.MarketPositi
 	req := protoapi.MarketByIDRequest{MarketID: obj.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		r.log.Error("tradingDataClient.MarketByID failed", logging.Error(err))
 		return nil, err
 	}
 	return MarketFromProto(res.Market)
@@ -873,7 +883,7 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	if order.TimeInForce == types.Order_GTT && expiration != nil {
 		expiresAt, err := vegatime.Parse(*expiration)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
 		}
 
 		// move to pure timestamps or convert an RFC format shortly
@@ -888,7 +898,7 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	pendingOrder, err := r.tradingClient.SubmitOrder(ctx, &req)
 	if err != nil {
-		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+		r.log.Error("tradingClient.SubmitOrder failed", logging.Error(err))
 		return nil, err
 	}
 
@@ -924,6 +934,7 @@ func (r *MyMutationResolver) OrderCancel(ctx context.Context, id string, party s
 	}
 	pendingOrder, err := r.tradingClient.CancelOrder(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingClient.CancelOrder failed", logging.Error(err))
 		return nil, err
 	}
 
@@ -956,7 +967,7 @@ func (r *MyMutationResolver) OrderAmend(ctx context.Context, id string, party st
 	if expiration != nil {
 		expiresAt, err := vegatime.Parse(*expiration)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration))
+			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
 		}
 		// move to pure timestamps or convert an RFC format shortly
 		order.ExpiresAt = expiresAt.UnixNano()
@@ -968,6 +979,7 @@ func (r *MyMutationResolver) OrderAmend(ctx context.Context, id string, party st
 	}
 	pendingOrder, err := r.tradingClient.AmendOrder(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingClient.AmendOrder failed", logging.Error(err))
 		return nil, err
 	}
 
@@ -982,6 +994,7 @@ func (r *MyMutationResolver) Signin(ctx context.Context, id string, password str
 
 	res, err := r.tradingClient.SignIn(ctx, &req)
 	if err != nil {
+		r.log.Error("tradingClient.SignIn failed", logging.Error(err))
 		return "", err
 	}
 
@@ -1033,7 +1046,7 @@ func (r *MySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				break
 			}
 			if err != nil {
-				r.log.Error("accounts: stream closed", logging.Error(err))
+				llog(r.log, "Accounts: stream closed", err)
 				break
 			}
 			c <- a
@@ -1076,7 +1089,7 @@ func (r *MySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				break
 			}
 			if err != nil {
-				r.log.Error("orders: stream closed", logging.Error(err))
+				llog(r.log, "Orders: stream closed", err)
 				break
 			}
 			out := make([]types.Order, 0, len(o.Orders))
@@ -1123,7 +1136,7 @@ func (r *MySubscriptionResolver) Trades(ctx context.Context, market *string, par
 				break
 			}
 			if err != nil {
-				r.log.Error("trades: stream closed", logging.Error(err))
+				llog(r.log, "Trades: stream closed", err)
 				break
 			}
 			out := make([]types.Trade, 0, len(t.Trades))
@@ -1160,7 +1173,7 @@ func (r *MySubscriptionResolver) Positions(ctx context.Context, party string) (<
 				break
 			}
 			if err != nil {
-				r.log.Error("positions: stream closed", logging.Error(err))
+				llog(r.log, "Positions: stream closed", err)
 				break
 			}
 			c <- t
@@ -1192,7 +1205,7 @@ func (r *MySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 				break
 			}
 			if err != nil {
-				r.log.Error("marketDepth: stream closed", logging.Error(err))
+				llog(r.log, "MarketDepth: stream closed", err)
 				break
 			}
 			c <- md
@@ -1231,7 +1244,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 				break
 			}
 			if err != nil {
-				r.log.Error("candles: stream closed", logging.Error(err))
+				llog(r.log, "Candles: stream closed", err)
 				break
 			}
 			c <- cdl
@@ -1284,7 +1297,7 @@ func (r *MyPendingOrderResolver) Market(ctx context.Context, pord *proto.Pending
 	req := protoapi.MarketByIDRequest{MarketID: pord.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
+		r.log.Error("tradingDataClient.MarketByID failed", logging.Error(err))
 		return nil, err
 	}
 	return MarketFromProto(res.Market)
@@ -1333,7 +1346,7 @@ func (r *MyAccountResolver) Market(ctx context.Context, acc *proto.Account) (*Ma
 		req := protoapi.MarketByIDRequest{MarketID: acc.MarketID}
 		res, err := r.tradingDataClient.MarketByID(ctx, &req)
 		if err != nil {
-			r.log.Error("tradingData client", logging.Error(err))
+			r.log.Error("tradingDataClient.MarketByID failed", logging.Error(err))
 			return nil, err
 		}
 		return MarketFromProto(res.Market)
