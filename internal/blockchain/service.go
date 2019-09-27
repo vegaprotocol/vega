@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Service represent the Blockchain service
 type Service interface {
 	Begin() error
 	Commit() error
@@ -25,12 +26,14 @@ type Service interface {
 	ReloadConf(conf Config)
 }
 
+// ServiceTime ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceTime
 type ServiceTime interface {
 	GetTimeNow() (time.Time, error)
 	GetTimeLastBatch() (time.Time, error)
 }
 
+// ServiceExecutionEngine ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/service_execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ServiceExecutionEngine
 type ServiceExecutionEngine interface {
 	SubmitOrder(order *types.Order) (*types.OrderConfirmation, error)
@@ -59,6 +62,7 @@ type abciService struct {
 	totalTrades          uint64
 }
 
+// NewService instanciate a new blockchain service
 func NewService(log *logging.Logger, conf Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) Service {
 	// setup logger
 	log = log.Named(namedLogger)
