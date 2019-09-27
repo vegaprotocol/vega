@@ -48,19 +48,19 @@ func (mr *MockOrderStoreMockRecorder) Commit() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockOrderStore)(nil).Commit))
 }
 
-// GetByPartyAndId mocks base method
-func (m *MockOrderStore) GetByPartyAndId(arg0 context.Context, arg1, arg2 string) (*proto.Order, error) {
+// GetByPartyAndID mocks base method
+func (m *MockOrderStore) GetByPartyAndID(arg0 context.Context, arg1, arg2 string) (*proto.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByPartyAndId", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetByPartyAndID", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*proto.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByPartyAndId indicates an expected call of GetByPartyAndId
-func (mr *MockOrderStoreMockRecorder) GetByPartyAndId(arg0, arg1, arg2 interface{}) *gomock.Call {
+// GetByPartyAndID indicates an expected call of GetByPartyAndID
+func (mr *MockOrderStoreMockRecorder) GetByPartyAndID(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndId", reflect.TypeOf((*MockOrderStore)(nil).GetByPartyAndId), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndID", reflect.TypeOf((*MockOrderStore)(nil).GetByPartyAndID), arg0, arg1, arg2)
 }
 
 // Post mocks base method

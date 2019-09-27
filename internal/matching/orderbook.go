@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -31,20 +30,26 @@ type OrderBook struct {
 	expiringOrders  []types.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
 }
 
-// Create an order book with a given name
-func NewOrderBook(log *logging.Logger, config Config, marketID string, proRataMode bool) *OrderBook {
+// NewOrderBook create an order book with a given name
+// TODO(jeremy): At the moment it takes as a parameter the initialMarkPrice from the market
+// framework. This is used in order to calculate the CloseoutPNL when there's no volume in the
+// book. It's currently set to the lastTradedPrice, so once a trade happen it naturally get
+// updated and the new markPrice will be used there.
+func NewOrderBook(log *logging.Logger, config Config, marketID string,
+	initialMarkPrice uint64, proRataMode bool) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	return &OrderBook{
-		log:            log,
-		marketID:       marketID,
-		cfgMu:          &sync.Mutex{},
-		buy:            &OrderBookSide{log: log, proRataMode: proRataMode},
-		sell:           &OrderBookSide{log: log, proRataMode: proRataMode},
-		Config:         config,
-		expiringOrders: make([]types.Order, 0),
+		log:             log,
+		marketID:        marketID,
+		cfgMu:           &sync.Mutex{},
+		buy:             &OrderBookSide{log: log, proRataMode: proRataMode},
+		sell:            &OrderBookSide{log: log, proRataMode: proRataMode},
+		Config:          config,
+		expiringOrders:  make([]types.Order, 0),
+		lastTradedPrice: initialMarkPrice,
 	}
 }
 
@@ -63,7 +68,7 @@ func (s *OrderBook) ReloadConf(cfg Config) {
 	s.cfgMu.Unlock()
 }
 
-func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) {
+func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, error) {
 	var (
 		price uint64
 		err   error
@@ -75,7 +80,7 @@ func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) 
 			lvl := levels[i]
 			if lvl.volume >= vol {
 				price += lvl.price * vol
-				return price, err
+				return price / volume, err
 			}
 			price += lvl.price * lvl.volume
 			vol -= lvl.volume
@@ -84,13 +89,19 @@ func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) 
 		// still return the price for the volume we could close out, so the caller can make a decision on what to do
 		if vol != 0 {
 			err = ErrNotEnoughOrders
+			// TODO(jeremy): there's no orders in the book so return the markPrice
+			// this is a temporary fix for nicenet and this behaviour will need
+			// to be properaly specified and handled in the future.
+			if vol == volume {
+				return b.lastTradedPrice, err
+			}
 		}
-		return price, err
+		return price / (volume - vol), err
 	}
 	for _, lvl := range b.sell.getLevels() {
 		if lvl.volume >= vol {
 			price += lvl.price * vol
-			return price, err
+			return price / volume, err
 		}
 		price += lvl.price * lvl.volume
 		vol -= lvl.volume
@@ -98,8 +109,38 @@ func (b *OrderBook) GetClosePNL(volume uint64, side types.Side) (uint64, error) 
 	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
 	if vol != 0 {
 		err = ErrNotEnoughOrders
+		// TODO(jeremy): there's no orders in the book so return the markPrice
+		// this is a temporary fix for nice-net and this behaviour will need
+		// to be properly specified and handled in the future.
+		if vol == volume {
+			return b.lastTradedPrice, err
+		}
+
 	}
-	return price, err
+	return price / (volume - vol), err
+}
+
+// MarketOrderPrice return the price that would be applied for a market
+// order based on the specified side.
+// In the case of a Buy side, the highest sell price will be returned
+// In the case of a Sell side, the lowest buy price will be returned
+// TODO(jeremy): we won't be able to place an order if there is no order available
+// in the meantime to make this function not failing we will return the
+// initialMarkPrice / lastTradePrice in this case, this will fail later on when trying to
+// place the order, by doing this we do not implement any more logic at this level
+func (b *OrderBook) MarketOrderPrice(s types.Side) uint64 {
+	if s == types.Side_Buy {
+		p, err := b.sell.getHighestOrderPrice(types.Side_Sell)
+		if err != nil {
+			return b.lastTradedPrice
+		}
+		return p
+	}
+	p, err := b.buy.getLowestOrderPrice(types.Side_Buy)
+	if err != nil {
+		return b.lastTradedPrice
+	}
+	return p
 }
 
 // Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
@@ -186,10 +227,10 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 
 // Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	startSubmit := time.Now() // do not reset this var
+	timer := metrics.NewTimeCounter(b.marketID, "matching", "SubmitOrder")
 
 	if err := b.validateOrder(order); err != nil {
-		metrics.EngineTimeCounterAdd(startSubmit, b.marketID, "matching", "Submit")
+		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 
@@ -233,7 +274,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// update order statuses based on the order types if they didn't trade
-	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_ENE) && order.Remaining == order.Size {
+	if (order.TimeInForce == types.Order_FOK || order.TimeInForce == types.Order_IOC) && order.Remaining == order.Size {
 		order.Status = types.Order_Stopped
 	}
 
@@ -250,7 +291,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
-	metrics.EngineTimeCounterAdd(startSubmit, b.marketID, "matching", "Submit")
+	timer.EngineTimeCounterAdd()
 	return orderConfirmation, nil
 }
 
@@ -377,8 +418,10 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 }
 
 func (b *OrderBook) insertExpiringOrder(ord types.Order) {
+	timer := metrics.NewTimeCounter(b.marketID, "matching", "insertExpiringOrder")
 	if len(b.expiringOrders) <= 0 {
 		b.expiringOrders = append(b.expiringOrders, ord)
+		timer.EngineTimeCounterAdd()
 		return
 	}
 
@@ -392,6 +435,7 @@ func (b *OrderBook) insertExpiringOrder(ord types.Order) {
 	b.expiringOrders = append(b.expiringOrders, types.Order{})
 	copy(b.expiringOrders[i+1:], b.expiringOrders[i:])
 	b.expiringOrders[i] = ord
+	timer.EngineTimeCounterAdd()
 }
 
 func (b OrderBook) removePendingGttOrder(order types.Order) bool {
@@ -415,7 +459,7 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
 	return &types.OrderConfirmation{
-		Order: order,
+		Order:                 order,
 		PassiveOrdersAffected: impactedOrders,
 		Trades:                trades,
 	}

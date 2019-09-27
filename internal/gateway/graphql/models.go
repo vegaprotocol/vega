@@ -257,21 +257,21 @@ type OrderTimeInForce string
 
 const (
 	OrderTimeInForceFok OrderTimeInForce = "FOK"
-	OrderTimeInForceEne OrderTimeInForce = "ENE"
+	OrderTimeInForceIoc OrderTimeInForce = "IOC"
 	OrderTimeInForceGtc OrderTimeInForce = "GTC"
 	OrderTimeInForceGtt OrderTimeInForce = "GTT"
 )
 
 var AllOrderTimeInForce = []OrderTimeInForce{
 	OrderTimeInForceFok,
-	OrderTimeInForceEne,
+	OrderTimeInForceIoc,
 	OrderTimeInForceGtc,
 	OrderTimeInForceGtt,
 }
 
 func (e OrderTimeInForce) IsValid() bool {
 	switch e {
-	case OrderTimeInForceFok, OrderTimeInForceEne, OrderTimeInForceGtc, OrderTimeInForceGtt:
+	case OrderTimeInForceFok, OrderTimeInForceIoc, OrderTimeInForceGtc, OrderTimeInForceGtt:
 		return true
 	}
 	return false
@@ -295,6 +295,49 @@ func (e *OrderTimeInForce) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OrderTimeInForce) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OrderType string
+
+const (
+	OrderTypeMarket  OrderType = "MARKET"
+	OrderTypeLimit   OrderType = "LIMIT"
+	OrderTypeNetwork OrderType = "NETWORK"
+)
+
+var AllOrderType = []OrderType{
+	OrderTypeMarket,
+	OrderTypeLimit,
+	OrderTypeNetwork,
+}
+
+func (e OrderType) IsValid() bool {
+	switch e {
+	case OrderTypeMarket, OrderTypeLimit, OrderTypeNetwork:
+		return true
+	}
+	return false
+}
+
+func (e OrderType) String() string {
+	return string(e)
+}
+
+func (e *OrderType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderType", str)
+	}
+	return nil
+}
+
+func (e OrderType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

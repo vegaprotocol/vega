@@ -77,6 +77,9 @@ func testOrderSuccess(t *testing.T) {
 	svc.block.EXPECT().CreateOrder(gomock.Any(), matcher).Times(1).Return(pre, nil)
 	pendingOrder, err := svc.svc.CreateOrder(context.Background(), &order)
 	assert.NotNil(t, pendingOrder)
+	if pendingOrder == nil {
+		t.FailNow()
+	}
 	assert.NoError(t, err)
 	assert.Equal(t, pre.Reference, pendingOrder.Reference)
 }

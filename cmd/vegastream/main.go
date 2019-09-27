@@ -1,18 +1,37 @@
+/*
+Command vegastream connects to a gRPC server and subscribes to various streams (accounts, orders, trades etc).
+
+For the accounts subscription, specify account type, and optionally market and/or party.
+
+For the orders and trades subscriptions, specify market and party.
+
+For the positions subscription, specify party.
+
+For the candles and (market) depth subscriptions, specify market.
+
+Syntax:
+
+    vegastream -addr somenode.somenet.vega.xyz:3002 [plus other options...]
+*/
 package main
 
 import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
+	"code.vegaprotocol.io/vega/internal/vegatime"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
+	"github.com/golang/protobuf/ptypes/empty"
 
 	"google.golang.org/grpc"
 )
@@ -24,31 +43,96 @@ var (
 	depth     bool
 	candles   bool
 	accounts  bool
+	transfers bool
 
 	party   string
 	market  string
 	accType string
 
 	serverAddr string
+)
 
-	ErrMissingMarket = errors.New("missing market parameter")
-	ErrMissingParty  = errors.New("missing party parameter")
+// Error for missing program arguments
+var (
+	ErrMissingAccountType = errors.New("missing account type")
+	ErrMissingMarket      = errors.New("missing market")
+	ErrMissingParty       = errors.New("missing party")
 )
 
 func init() {
 	flag.BoolVar(&accounts, "accounts", false, "listen to accounts updates")
+	flag.BoolVar(&transfers, "transfers", false, "listen to transfer responses updates")
 	flag.BoolVar(&orders, "orders", false, "listen to newly created orders")
 	flag.BoolVar(&trades, "trades", false, "listen to newly created trades")
 	flag.BoolVar(&positions, "positions", false, "listen to newly created positions")
 	flag.BoolVar(&depth, "depth", false, "listen to market depth")
 	flag.BoolVar(&candles, "candles", false, "listen to newly created candles")
-	flag.StringVar(&party, "party", "extremtrader", "name of the party to listen for updates")
-	flag.StringVar(&market, "market", "BTC/DEC19", "id of the market to listen for updates")
+
+	flag.StringVar(&party, "party", "", "name of the party to listen for updates")
+	flag.StringVar(&market, "market", "", "id of the market to listen for updates")
 	flag.StringVar(&accType, "acctype", "NO_ACC", "type of the account we listenning for")
-	flag.StringVar(&serverAddr, "addr", "0.0.0.0:3002", "address of the grpc server")
+	flag.StringVar(&serverAddr, "addr", "127.0.0.1:3002", "address of the grpc server")
+}
+
+type TransferResponseWrapper proto.TransferResponse
+
+func (tw TransferResponseWrapper) String() string {
+	t := proto.TransferResponse(tw)
+	var b strings.Builder
+	fmt.Fprintf(&b, "transfers:\n")
+	for _, v := range t.Transfers {
+		tm := vegatime.UnixNano(v.Timestamp)
+		fmt.Fprintf(&b, "from=%v to=%v amount=%v reference=%v type=%v timestamp=%v\n",
+			v.FromAccount, v.ToAccount, v.Amount, v.Reference, v.Type, tm)
+	}
+	fmt.Fprintf(&b, "balances:\n")
+	for _, v := range t.Balances {
+		acc := v.Account
+		fmt.Fprintf(&b, "id=%v owner=%v balance=%v asset=%v marketID=%v type=%v newbalance=%v\n",
+			acc.Id, acc.Owner, acc.Balance, acc.Asset, acc.MarketID, acc.Type.String(), v.Balance)
+
+	}
+	return b.String()
+}
+
+func startTransferResponses(ctx context.Context, wg *sync.WaitGroup) error {
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	client := api.NewTradingDataClient(conn)
+	stream, err := client.TransferResponsesSubscribe(ctx, &empty.Empty{})
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	go func() {
+		defer wg.Done()
+		defer conn.Close()
+		for {
+			o, err := stream.Recv()
+			if err == io.EOF {
+				log.Printf("transfer responses: stream closed by server err=%v", err)
+				break
+			}
+			if err != nil {
+				log.Printf("transfer responses: stream closed err=%v", err)
+				break
+			}
+			log.Printf("new transfer responses: \n%v", TransferResponseWrapper(*o).String())
+		}
+
+	}()
+	return nil
 }
 
 func startAccounts(ctx context.Context, wg *sync.WaitGroup) error {
+	if len(accType) <= 0 {
+		return ErrMissingAccountType
+	}
+
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return err
@@ -56,8 +140,8 @@ func startAccounts(ctx context.Context, wg *sync.WaitGroup) error {
 
 	client := api.NewTradingDataClient(conn)
 	req := &api.AccountsSubscribeRequest{
-		MarketID: market,
-		PartyID:  party,
+		MarketID: market, // optional
+		PartyID:  party,  // optional
 		Type:     proto.AccountType(proto.AccountType_value[accType]),
 	}
 	stream, err := client.AccountsSubscribe(ctx, req)
@@ -304,7 +388,7 @@ func main() {
 		return
 	}
 
-	if !orders && !trades && !positions && !candles && !depth && !accounts {
+	if !orders && !trades && !positions && !candles && !depth && !accounts && !transfers {
 		log.Printf("error: vegastream require at least one resource to listen for")
 		return
 	}
@@ -359,6 +443,14 @@ func main() {
 		wg.Add(1)
 		if err := startAccounts(ctx, &wg); err != nil {
 			log.Printf("unable to start accounts err=%v", err)
+			return
+		}
+	}
+
+	if transfers {
+		wg.Add(1)
+		if err := startTransferResponses(ctx, &wg); err != nil {
+			log.Printf("unable to start transfer responses err=%v", err)
 			return
 		}
 	}

@@ -14,8 +14,11 @@ import (
 )
 
 var (
-	ErrInvalidExpirationDTFmt = errors.New("invalid expiration datetime format")
-	ErrInvalidExpirationDT    = errors.New("invalid expiration datetime")
+	ErrInvalidExpirationDTFmt           = errors.New("invalid expiration datetime format")
+	ErrInvalidExpirationDT              = errors.New("invalid expiration datetime")
+	ErrInvalidTimeInForceForMarketOrder = errors.New("invalid time in for for market order (expected: FOK/IOC)")
+	ErrInvalidPriceForLimitOrder        = errors.New("invalid limit order (missing required price)")
+	ErrInvalidPriceForMarketOrder       = errors.New("invalid market order (no price required)")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders TimeService
@@ -25,8 +28,8 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  OrderStore
 type OrderStore interface {
-	GetByMarketAndId(ctx context.Context, market string, id string) (*types.Order, error)
-	GetByPartyAndId(ctx context.Context, party, id string) (*types.Order, error)
+	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Order, error)
+	GetByPartyAndID(ctx context.Context, party, id string) (*types.Order, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) ([]*types.Order, error)
 	GetByReference(ctx context.Context, ref string) (*types.Order, error)
@@ -87,8 +90,8 @@ func (s *Svc) CreateOrder(
 	ctx context.Context,
 	orderSubmission *types.OrderSubmission,
 ) (*types.PendingOrder, error) {
-	if err := orderSubmission.Validate(); err != nil {
-		return nil, errors.Wrap(err, "order validation failed")
+	if err := s.validateOrderSubmission(orderSubmission); err != nil {
+		return nil, err
 	}
 	order := types.Order{
 		Id:          orderSubmission.Id,
@@ -98,6 +101,7 @@ func (s *Svc) CreateOrder(
 		Size:        orderSubmission.Size,
 		Side:        orderSubmission.Side,
 		TimeInForce: orderSubmission.TimeInForce,
+		Type:        orderSubmission.Type,
 		ExpiresAt:   orderSubmission.ExpiresAt,
 	}
 
@@ -106,17 +110,34 @@ func (s *Svc) CreateOrder(
 	order.Status = types.Order_Active
 	order.CreatedAt = 0
 	order.Reference = ""
+	// Call out to the blockchain package/layer and use internal client to gain consensus
+	return s.blockchain.CreateOrder(ctx, &order)
+}
 
-	if order.TimeInForce == types.Order_GTT {
-		_, err := s.validateOrderExpirationTS(order.ExpiresAt)
+func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
+	if err := sub.Validate(); err != nil {
+		return errors.Wrap(err, "order validation failed")
+	}
+	if sub.TimeInForce == types.Order_GTT {
+		_, err := s.validateOrderExpirationTS(sub.ExpiresAt)
 		if err != nil {
 			s.log.Error("unable to get expiration time", logging.Error(err))
-			return nil, err
+			return err
 		}
 	}
 
-	// Call out to the blockchain package/layer and use internal client to gain consensus
-	return s.blockchain.CreateOrder(ctx, &order)
+	if sub.Type == types.Order_MARKET && sub.Price != 0 {
+		return ErrInvalidPriceForMarketOrder
+	}
+	if sub.Type == types.Order_MARKET &&
+		(sub.TimeInForce != types.Order_FOK && sub.TimeInForce != types.Order_IOC) {
+		return ErrInvalidTimeInForceForMarketOrder
+	}
+	if sub.Type == types.Order_LIMIT && sub.Price == 0 {
+		return ErrInvalidPriceForLimitOrder
+	}
+
+	return nil
 }
 
 // CancelOrder requires valid ID, Market, Party on an attempt to cancel the given active order via consensus
@@ -125,7 +146,7 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 		return nil, errors.Wrap(err, "order cancellation validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByMarketAndId(ctx, order.MarketID, order.OrderID)
+	o, err := s.orderStore.GetByMarketAndID(ctx, order.MarketID, order.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +182,7 @@ func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (
 		return nil, errors.Wrap(err, "order amendment validation failed")
 	}
 	// Validate order exists using read store
-	o, err := s.orderStore.GetByPartyAndId(ctx, amendment.PartyID, amendment.OrderID)
+	o, err := s.orderStore.GetByPartyAndID(ctx, amendment.PartyID, amendment.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +250,7 @@ func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, 
 }
 
 func (s *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error) {
-	o, err := s.orderStore.GetByMarketAndId(ctx, market, id)
+	o, err := s.orderStore.GetByMarketAndID(ctx, market, id)
 	if err != nil {
 		return &types.Order{}, err
 	}
@@ -237,7 +258,7 @@ func (s *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (o
 }
 
 func (s *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error) {
-	o, err := s.orderStore.GetByPartyAndId(ctx, party, id)
+	o, err := s.orderStore.GetByPartyAndID(ctx, party, id)
 	if err != nil {
 		return &types.Order{}, err
 	}

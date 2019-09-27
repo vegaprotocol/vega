@@ -47,6 +47,7 @@ message Instrument {
   string baseName = 4;
   string quoteName = 5;
   InstrumentMetadata metadata = 6;
+  uint64 initialMarkPrice = 7;
   oneof product {
     Future future = 100;
   }
@@ -74,8 +75,19 @@ message ExternalRiskModel {
 
 // here ends risk models
 
+message ScalingFactors {
+  double searchLevel = 1;
+  double initialMargin = 2;
+  double collateralRelease = 3;
+}
+
+message MarginCalculator {
+  ScalingFactors scalingFactors = 1;
+}
+
 message TradableInstrument {
   Instrument instrument = 1;
+  MarginCalculator marginCalculator = 2;
   oneof riskModel {
     Forward forward = 100;
     ExternalRiskModel externalRiskModel = 101;

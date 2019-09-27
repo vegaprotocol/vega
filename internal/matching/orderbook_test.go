@@ -12,6 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	markPrice = 10
+)
+
 // launch aggressiveOrder orders from both sides to fully clear the order book
 type aggressiveOrderScenario struct {
 	aggressiveOrder               *types.Order
@@ -36,7 +40,7 @@ func getTestOrderBook(t *testing.T, market string, proRata bool) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, proRata)
+	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, markPrice, proRata)
 	return &tob
 }
 
@@ -45,6 +49,106 @@ func TestOrderBook_GetClosePNL(t *testing.T) {
 	t.Run("Get Sell-side close PNL values", getClosePNLSell)
 	t.Run("Get Incomplete close-out-pnl (check error) - Buy", getClosePNLIncompleteBuy)
 	t.Run("Get Incomplete close-out-pnl (check error) - Sell", getClosePNLIncompleteSell)
+	t.Run("Get Market order price - Buy", testGetMarketOrderPriceBuy)
+	t.Run("Get Market order price - Sell", testGetMarketOrderPriceSell)
+	t.Run("Get Market order price - empty book", testGetMarketOrderPriceEmptyBook)
+}
+
+func testGetMarketOrderPriceBuy(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	// 3 orders of size 1, 3 different prices
+	orders := []*types.Order{
+		{
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_Sell,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Sell,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Sell,
+			Price:       300,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+
+	price := book.MarketOrderPrice(types.Side_Buy)
+	assert.Equal(t, uint64(300), price)
+}
+
+func testGetMarketOrderPriceSell(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	// 3 orders of size 1, 3 different prices
+	orders := []*types.Order{
+		{
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_Buy,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Buy,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+		{
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_Buy,
+			Price:       300,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+
+	price := book.MarketOrderPrice(types.Side_Sell)
+	assert.Equal(t, uint64(100), price)
+}
+
+func testGetMarketOrderPriceEmptyBook(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market, true)
+	defer book.Finish()
+	price := book.MarketOrderPrice(types.Side_Sell)
+	// empty book will return initialMarkPrice
+	assert.Equal(t, uint64(10), price)
 }
 
 func getClosePNLIncompleteBuy(t *testing.T) {
@@ -81,16 +185,16 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	}
 	// volume + expected price
 	callExp := map[uint64]uint64{
-		2: 210,
+		2: 210 / 2,
 		1: 100,
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.GetClosePNL(vol, types.Side_Buy)
+		price, err := book.GetCloseoutPrice(vol, types.Side_Buy)
 		assert.Equal(t, exp, price)
 		assert.NoError(t, err)
 	}
-	price, err := book.GetClosePNL(3, types.Side_Buy)
+	price, err := book.GetCloseoutPrice(3, types.Side_Buy)
 	assert.Equal(t, callExp[2], price)
 	assert.Equal(t, matching.ErrNotEnoughOrders, err)
 }
@@ -129,16 +233,16 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	}
 	// volume + expected price
 	callExp := map[uint64]uint64{
-		2: 210,
+		2: 210 / 2,
 		1: 100,
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.GetClosePNL(vol, types.Side_Sell)
+		price, err := book.GetCloseoutPrice(vol, types.Side_Sell)
 		assert.Equal(t, exp, price)
 		assert.NoError(t, err)
 	}
-	price, err := book.GetClosePNL(3, types.Side_Sell)
+	price, err := book.GetCloseoutPrice(3, types.Side_Sell)
 	assert.Equal(t, callExp[2], price)
 	assert.Equal(t, matching.ErrNotEnoughOrders, err)
 }
@@ -187,13 +291,13 @@ func getClosePNLBuy(t *testing.T) {
 	}
 	// volume + expected price
 	callExp := map[uint64]uint64{
-		3: 330,
-		2: 210,
+		3: 330 / 3,
+		2: 210 / 2,
 		1: 100,
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.GetClosePNL(vol, types.Side_Buy)
+		price, err := book.GetCloseoutPrice(vol, types.Side_Buy)
 		assert.Equal(t, exp, price)
 		assert.NoError(t, err)
 	}
@@ -243,13 +347,13 @@ func getClosePNLSell(t *testing.T) {
 	}
 	// volume + expected price
 	callExp := map[uint64]uint64{
-		3: 330,
-		2: 210,
+		3: 330 / 3,
+		2: 210 / 2,
 		1: 100,
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.GetClosePNL(vol, types.Side_Sell)
+		price, err := book.GetCloseoutPrice(vol, types.Side_Sell)
 		assert.NoError(t, err)
 		assert.Equal(t, exp, price)
 	}
@@ -1074,7 +1178,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       103,
 				Size:        200,
 				Remaining:   200,
-				TimeInForce: types.Order_ENE, // nonpersistent
+				TimeInForce: types.Order_IOC, // nonpersistent
 				CreatedAt:   5,
 			},
 			expectedTrades: []types.Trade{
@@ -1154,7 +1258,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 				Price:       95,
 				Size:        200,
 				Remaining:   200,
-				TimeInForce: types.Order_ENE, // nonpersistent
+				TimeInForce: types.Order_IOC, // nonpersistent
 				CreatedAt:   5,
 			},
 			expectedTrades: []types.Trade{

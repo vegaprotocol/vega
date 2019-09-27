@@ -753,14 +753,6 @@
     }
   },
   "definitions": {
-    "OrderAction": {
-      "type": "string",
-      "enum": [
-        "NDT",
-        "NRT"
-      ],
-      "default": "NDT"
-    },
     "OrderStatus": {
       "type": "string",
       "enum": [
@@ -777,7 +769,7 @@
       "enum": [
         "GTC",
         "GTT",
-        "ENE",
+        "IOC",
         "FOK"
       ],
       "default": "GTC"
@@ -1316,6 +1308,10 @@
         "metadata": {
           "$ref": "#/definitions/vegaInstrumentMetadata"
         },
+        "initialMarkPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
         "future": {
           "$ref": "#/definitions/vegaFuture"
         }
@@ -1343,6 +1339,39 @@
         "I1D"
       ],
       "default": "I1M"
+    },
+    "vegaLedgerEntry": {
+      "type": "object",
+      "properties": {
+        "fromAccount": {
+          "type": "string"
+        },
+        "toAccount": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "vegaMarginCalculator": {
+      "type": "object",
+      "properties": {
+        "scalingFactors": {
+          "$ref": "#/definitions/vegaScalingFactors"
+        }
+      }
     },
     "vegaMarket": {
       "type": "object",
@@ -1475,8 +1504,8 @@
         "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
-        "action": {
-          "$ref": "#/definitions/OrderAction"
+        "type": {
+          "$ref": "#/definitions/vegaOrderType"
         },
         "createdAt": {
           "type": "string",
@@ -1545,23 +1574,38 @@
         },
         "price": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "do not enforce that price, as Market Order will not have price specified"
         },
         "size": {
           "type": "string",
           "format": "uint64"
         },
         "side": {
-          "$ref": "#/definitions/vegaSide"
+          "$ref": "#/definitions/vegaSide",
+          "description": "make sur for both that they are non nil and the value is part of the respective enums."
         },
         "TimeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "do not enforce as not always required\naltho at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaOrderType"
         }
       }
+    },
+    "vegaOrderType": {
+      "type": "string",
+      "enum": [
+        "LIMIT",
+        "MARKET",
+        "NETWORK"
+      ],
+      "default": "LIMIT"
     },
     "vegaParty": {
       "type": "object",
@@ -1608,6 +1652,9 @@
         },
         "id": {
           "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaOrderType"
         }
       }
     },
@@ -1629,6 +1676,23 @@
         "cumulativeVolume": {
           "type": "string",
           "format": "uint64"
+        }
+      }
+    },
+    "vegaScalingFactors": {
+      "type": "object",
+      "properties": {
+        "searchLevel": {
+          "type": "number",
+          "format": "double"
+        },
+        "initialMargin": {
+          "type": "number",
+          "format": "double"
+        },
+        "collateralRelease": {
+          "type": "number",
+          "format": "double"
         }
       }
     },
@@ -1766,6 +1830,9 @@
         "instrument": {
           "$ref": "#/definitions/vegaInstrument"
         },
+        "marginCalculator": {
+          "$ref": "#/definitions/vegaMarginCalculator"
+        },
         "forward": {
           "$ref": "#/definitions/vegaForward"
         },
@@ -1809,6 +1876,35 @@
         "timestamp": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "vegaTransferBalance": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/vegaAccount"
+        },
+        "balance": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "vegaTransferResponse": {
+      "type": "object",
+      "properties": {
+        "transfers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLedgerEntry"
+          }
+        },
+        "balances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTransferBalance"
+          }
         }
       }
     }
@@ -1885,6 +1981,18 @@
         }
       },
       "title": "Stream result of vegaMarketPosition"
+    },
+    "vegaTransferResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaTransferResponse"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaTransferResponse"
     }
   }
 }

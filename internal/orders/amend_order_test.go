@@ -49,7 +49,7 @@ func testAmendOrderSuccess(t *testing.T) {
 		Status:      proto.Order_Active,
 		TimeInForce: proto.Order_GTT,
 	}
-	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	svc.block.EXPECT().AmendOrder(gomock.Any(), amendMatcher{e: arg}).Times(1).Return(true, nil)
 
@@ -73,7 +73,7 @@ func testAmendOrderExpired(t *testing.T) {
 		Status:      proto.Order_Active,
 		TimeInForce: proto.Order_GTT,
 	}
-	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 
 	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
@@ -95,7 +95,7 @@ func testAmendOrderNotActive(t *testing.T) {
 		PartyID:  arg.PartyID,
 		Status:   proto.Order_Expired,
 	}
-	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
 
 	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)
 	assert.Nil(t, pendingOrder)
@@ -129,7 +129,7 @@ func testAmendOrderTimeSvcErr(t *testing.T) {
 		Status:      proto.Order_Active,
 		TimeInForce: proto.Order_GTT,
 	}
-	svc.orderStore.EXPECT().GetByPartyAndId(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByPartyAndID(gomock.Any(), arg.PartyID, arg.OrderID).Times(1).Return(&order, nil)
 	svc.timeSvc.EXPECT().GetTimeNow().Times(1).Return(now, expErr)
 
 	pendingOrder, err := svc.svc.AmendOrder(context.Background(), &arg)

@@ -26,6 +26,8 @@ type Mutation {
     timeInForce: OrderTimeInForce!
     # exiration of the the order
     expiration: String
+    # type of the order
+    type: OrderType
   ): PendingOrder!
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
@@ -145,6 +147,9 @@ type PendingOrder {
 
   # The status of an order, for example 'Active'
   status: OrderStatus
+
+  # The type of the order
+  type: OrderType
 }
 
 # Queries allow a caller to read data and filter data via GraphQL.
@@ -644,6 +649,9 @@ type Order {
 
   # Trades relating to this order
   trades: [Trade]
+
+  # Type the order type (defaults to TRADER)
+  type: OrderType
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
@@ -699,7 +707,7 @@ enum OrderTimeInForce {
     FOK
 
     # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-    ENE
+    IOC
 
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
     GTC
@@ -722,11 +730,23 @@ enum OrderStatus {
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
     Expired
 
-    # This order was of type ENE or FOK and could not be processed by the matching engine due to lack of liquidity.
+    # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
     Stopped
 
     # This order is fully filled with remaining equals zero.
     Filled
+}
+
+enum OrderType {
+  ## MARKET - the default order type
+  MARKET
+
+  ## LIMIT - mentioned in ticket, but as yet unused order type
+  LIMIT
+
+  ## NETWORK - used for distressed traders, an order placed by the network to close out distressed traders
+  ## similar to MARKET order, only no party is attached to the order as such
+  NETWORK
 }
 
 # Whether the placer of an order is aiming to buy or sell on the market

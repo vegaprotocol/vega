@@ -62,6 +62,7 @@ func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.Pe
 		Size:        order.Size,
 		PartyID:     order.PartyID,
 		Status:      order.Status,
+		Type:        order.Type,
 	}, nil
 }
 

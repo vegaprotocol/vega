@@ -1,4 +1,6 @@
-// cmd/vegabench/main.go
+/*
+Command vegabench runs benchmarking tests on the Matching engine.
+*/
 package main
 
 import "flag"
@@ -11,5 +13,5 @@ func main() {
 
 	flag.Parse()
 
-	BenchmarkMatching(*numberOfOrders, nil, false, *uniform, *reportDuration)
+	benchmarkMatching(*numberOfOrders, nil, false, *uniform, *reportDuration)
 }

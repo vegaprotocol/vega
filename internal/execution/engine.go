@@ -25,7 +25,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution OrderStore
 type OrderStore interface {
-	GetByPartyAndId(ctx context.Context, party string, id string) (*types.Order, error)
+	GetByPartyAndID(ctx context.Context, party string, id string) (*types.Order, error)
 	Post(order types.Order) error
 	Put(order types.Order) error
 	Commit() error
@@ -60,21 +60,27 @@ type TimeService interface {
 	NotifyOnTick(f func(time.Time))
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution TransferResponseStore
+type TransferResponseStore interface {
+	SaveBatch([]*types.TransferResponse) error
+}
+
 type Engine struct {
 	log *logging.Logger
 	Config
 
-	markets      map[string]*Market
-	party        *Party
-	orderStore   OrderStore
-	tradeStore   TradeStore
-	candleStore  CandleStore
-	marketStore  MarketStore
-	partyStore   PartyStore
-	time         TimeService
-	collateral   *collateral.Engine
-	accountBuf   *buffer.Account
-	accountStore *storage.Account
+	markets               map[string]*Market
+	party                 *Party
+	orderStore            OrderStore
+	tradeStore            TradeStore
+	candleStore           CandleStore
+	marketStore           MarketStore
+	partyStore            PartyStore
+	time                  TimeService
+	collateral            *collateral.Engine
+	accountBuf            *buffer.Account
+	accountStore          *storage.Account
+	transferResponseStore TransferResponseStore
 }
 
 // NewEngine takes stores and engines and returns
@@ -89,6 +95,7 @@ func NewEngine(
 	marketStore MarketStore,
 	partyStore PartyStore,
 	accountStore *storage.Account,
+	transferResponseStore TransferResponseStore,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -134,19 +141,20 @@ func NewEngine(
 	}
 
 	e := &Engine{
-		log:          log,
-		Config:       executionConfig,
-		markets:      map[string]*Market{},
-		candleStore:  candleStore,
-		orderStore:   orderStore,
-		tradeStore:   tradeStore,
-		marketStore:  marketStore,
-		partyStore:   partyStore,
-		time:         time,
-		collateral:   cengine,
-		party:        NewParty(log, cengine, pmkts, partyStore),
-		accountStore: accountStore,
-		accountBuf:   accountBuf,
+		log:                   log,
+		Config:                executionConfig,
+		markets:               map[string]*Market{},
+		candleStore:           candleStore,
+		orderStore:            orderStore,
+		tradeStore:            tradeStore,
+		marketStore:           marketStore,
+		partyStore:            partyStore,
+		time:                  time,
+		collateral:            cengine,
+		party:                 NewParty(log, cengine, pmkts, partyStore),
+		accountStore:          accountStore,
+		accountBuf:            accountBuf,
+		transferResponseStore: transferResponseStore,
 	}
 
 	for _, mkt := range pmkts {
@@ -212,6 +220,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.orderStore,
 		e.partyStore,
 		e.tradeStore,
+		e.transferResponseStore,
 		now,
 		uint64(len(e.markets)),
 	)
@@ -245,12 +254,16 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 }
 
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
+	// order.MarketID may or may not be valid.
+	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
+
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submit order", logging.Order(*order))
 	}
 
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
+		timer.EngineTimeCounterAdd()
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -260,12 +273,14 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 	conf, err := mkt.SubmitOrder(order)
 	if err != nil {
+		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 	// order was filled by submitting it to the market -> the matching engine worked
 	if conf.Order.Status == types.Order_Filled {
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
+	timer.EngineTimeCounterAdd()
 	return conf, nil
 }
 
@@ -274,7 +289,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
 	// try to get the order first
-	order, err := e.orderStore.GetByPartyAndId(
+	order, err := e.orderStore.GetByPartyAndID(
 		context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
 	if err != nil {
 		e.log.Error("Invalid order reference",
@@ -327,6 +342,8 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 }
 
 func (e *Engine) onChainTimeUpdate(t time.Time) {
+	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
+
 	e.log.Debug("updating engine on new time update")
 
 	// update collateral
@@ -347,12 +364,13 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 			delete(e.markets, mktID)
 		}
 	}
+	timer.EngineTimeCounterAdd()
 }
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
 func (e *Engine) removeExpiredOrders(t time.Time) {
-	pre := time.Now()
+	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
 	e.log.Debug("Removing expiring orders from matching engine")
 
 	expiringOrders := []types.Order{}
@@ -385,7 +403,7 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 
 	e.log.Debug("Updated expired orders in stores",
 		logging.Int("orders-removed", len(expiringOrders)))
-	metrics.EngineTimeCounterAdd(pre, "all", "execution", "removeExpiredOrders")
+	timer.EngineTimeCounterAdd()
 }
 
 // Generate creates any data (including storing state changes) in the underlying stores.

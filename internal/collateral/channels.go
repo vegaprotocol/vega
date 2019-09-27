@@ -132,7 +132,7 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 	// get the actual trasfer value here, for convenience
 	p := t.t
 
-	marginAcc, err := e.GetAccountByID(accountID(settle.MarketID, p.Owner, t.Asset(), types.AccountType_MARGIN))
+	marginAcc, err := e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, t.Asset(), types.AccountType_MARGIN))
 	if err != nil {
 		e.log.Error(
 			"Failed to get trader margin account accounts",
@@ -145,7 +145,7 @@ func (e *Engine) buildTransferRequest(t *transferT, settle, insurance *types.Acc
 	t.margin = marginAcc
 
 	// we're still getting the general account for risk engine later on
-	generalAcc, err := e.GetAccountByID(accountID("", p.Owner, t.Asset(), types.AccountType_GENERAL))
+	generalAcc, err := e.GetAccountByID(e.accountID("", p.Owner, t.Asset(), types.AccountType_GENERAL))
 	if err != nil {
 		e.log.Error(
 			"Failed to get trader margin account accounts",

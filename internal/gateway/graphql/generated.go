@@ -147,7 +147,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		OrderAmend  func(childComplexity int, id string, partyID string, price int, size int, expiration *string) int
 		OrderCancel func(childComplexity int, id string, partyID string, marketID string) int
-		OrderSubmit func(childComplexity int, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string) int
+		OrderSubmit func(childComplexity int, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg *OrderType) int
 		Signin      func(childComplexity int, id string, password string) int
 	}
 
@@ -167,6 +167,7 @@ type ComplexityRoot struct {
 		TimeInForce func(childComplexity int) int
 		Timestamp   func(childComplexity int) int
 		Trades      func(childComplexity int) int
+		Type        func(childComplexity int) int
 	}
 
 	Party struct {
@@ -187,6 +188,7 @@ type ComplexityRoot struct {
 		Size        func(childComplexity int) int
 		Status      func(childComplexity int) int
 		TimeInForce func(childComplexity int) int
+		Type        func(childComplexity int) int
 	}
 
 	Position struct {
@@ -307,7 +309,7 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	OrderSubmit(ctx context.Context, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string) (*proto.PendingOrder, error)
+	OrderSubmit(ctx context.Context, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg *OrderType) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
 	OrderAmend(ctx context.Context, id string, partyID string, price int, size int, expiration *string) (*proto.PendingOrder, error)
 	Signin(ctx context.Context, id string, password string) (string, error)
@@ -327,6 +329,7 @@ type OrderResolver interface {
 	Status(ctx context.Context, obj *proto.Order) (OrderStatus, error)
 
 	Trades(ctx context.Context, obj *proto.Order) ([]*proto.Trade, error)
+	Type(ctx context.Context, obj *proto.Order) (*OrderType, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, open *bool, skip *int, first *int, last *int) ([]proto.Order, error)
@@ -342,6 +345,7 @@ type PendingOrderResolver interface {
 	Size(ctx context.Context, obj *proto.PendingOrder) (*string, error)
 	Party(ctx context.Context, obj *proto.PendingOrder) (*Party, error)
 	Status(ctx context.Context, obj *proto.PendingOrder) (*OrderStatus, error)
+	Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *proto.MarketPosition) (*Market, error)
@@ -826,7 +830,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string)), true
+		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(*OrderType)), true
 
 	case "Mutation.Signin":
 		if e.complexity.Mutation.Signin == nil {
@@ -945,6 +949,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Trades(childComplexity), true
 
+	case "Order.Type":
+		if e.complexity.Order.Type == nil {
+			break
+		}
+
+		return e.complexity.Order.Type(childComplexity), true
+
 	case "Party.Accounts":
 		if e.complexity.Party.Accounts == nil {
 			break
@@ -1057,6 +1068,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PendingOrder.TimeInForce(childComplexity), true
+
+	case "PendingOrder.Type":
+		if e.complexity.PendingOrder.Type == nil {
+			break
+		}
+
+		return e.complexity.PendingOrder.Type(childComplexity), true
 
 	case "Position.AverageEntryPrice":
 		if e.complexity.Position.AverageEntryPrice == nil {
@@ -1709,6 +1727,8 @@ type Mutation {
     timeInForce: OrderTimeInForce!
     # exiration of the the order
     expiration: String
+    # type of the order
+    type: OrderType
   ): PendingOrder!
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
@@ -1828,6 +1848,9 @@ type PendingOrder {
 
   # The status of an order, for example 'Active'
   status: OrderStatus
+
+  # The type of the order
+  type: OrderType
 }
 
 # Queries allow a caller to read data and filter data via GraphQL.
@@ -2327,6 +2350,9 @@ type Order {
 
   # Trades relating to this order
   trades: [Trade]
+
+  # Type the order type (defaults to TRADER)
+  type: OrderType
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
@@ -2382,7 +2408,7 @@ enum OrderTimeInForce {
     FOK
 
     # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
-    ENE
+    IOC
 
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
     GTC
@@ -2405,11 +2431,23 @@ enum OrderStatus {
     # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
     Expired
 
-    # This order was of type ENE or FOK and could not be processed by the matching engine due to lack of liquidity.
+    # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
     Stopped
 
     # This order is fully filled with remaining equals zero.
     Filled
+}
+
+enum OrderType {
+  ## MARKET - the default order type
+  MARKET
+
+  ## LIMIT - mentioned in ticket, but as yet unused order type
+  LIMIT
+
+  ## NETWORK - used for distressed traders, an order placed by the network to close out distressed traders
+  ## similar to MARKET order, only no party is attached to the order as such
+  NETWORK
 }
 
 # Whether the placer of an order is aiming to buy or sell on the market
@@ -2719,6 +2757,14 @@ func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context,
 		}
 	}
 	args["expiration"] = arg6
+	var arg7 *OrderType
+	if tmp, ok := rawArgs["type"]; ok {
+		arg7, err = ec.unmarshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg7
 	return args, nil
 }
 
@@ -4454,7 +4500,7 @@ func (ec *executionContext) _Mutation_orderSubmit(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string))
+		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(*OrderType))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -4969,6 +5015,30 @@ func (ec *executionContext) _Order_trades(ctx context.Context, field graphql.Col
 	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Order_type(ctx context.Context, field graphql.CollectedField, obj *proto.Order) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().Type(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OrderType)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *Party) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -5330,6 +5400,30 @@ func (ec *executionContext) _PendingOrder_status(ctx context.Context, field grap
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PendingOrder_type(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object:   "PendingOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PendingOrder().Type(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*OrderType)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketPosition) graphql.Marshaler {
@@ -9035,6 +9129,17 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				res = ec._Order_trades(ctx, field, obj)
 				return res
 			})
+		case "type":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_type(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9210,6 +9315,17 @@ func (ec *executionContext) _PendingOrder(ctx context.Context, sel ast.Selection
 					}
 				}()
 				res = ec._PendingOrder_status(ctx, field, obj)
+				return res
+			})
+		case "type":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PendingOrder_type(ctx, field, obj)
 				return res
 			})
 		default:
@@ -11171,6 +11287,30 @@ func (ec *executionContext) unmarshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗ
 }
 
 func (ec *executionContext) marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v *OrderTimeInForce) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
+	var res OrderType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v OrderType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (*OrderType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v *OrderType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

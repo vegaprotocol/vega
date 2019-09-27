@@ -38,18 +38,31 @@ func convertInterval(interval Interval) (types.Interval, error) {
 	}
 }
 
-func parseOrderTimeInForce(timeInForce *OrderTimeInForce) (types.Order_TimeInForce, error) {
-	switch *timeInForce {
+func parseOrderTimeInForce(timeInForce OrderTimeInForce) (types.Order_TimeInForce, error) {
+	switch timeInForce {
 	case OrderTimeInForceGtc:
 		return types.Order_GTC, nil
 	case OrderTimeInForceGtt:
 		return types.Order_GTT, nil
-	case OrderTimeInForceEne:
-		return types.Order_ENE, nil
+	case OrderTimeInForceIoc:
+		return types.Order_IOC, nil
 	case OrderTimeInForceFok:
 		return types.Order_FOK, nil
 	default:
 		return types.Order_GTC, errors.New(fmt.Sprintf("unknown type: %s", timeInForce.String()))
+	}
+}
+
+func parseOrderType(ty OrderType) (types.Order_Type, error) {
+	switch ty {
+	case OrderTypeLimit:
+		return types.Order_LIMIT, nil
+	case OrderTypeMarket:
+		return types.Order_MARKET, nil
+	default:
+		// handle types.Order_NETWORK as an error here, as we do not expected
+		// it to be set by through the API, only by the core internally
+		return 0, errors.New(fmt.Sprintf("unknown type: %s", ty.String()))
 	}
 }
 

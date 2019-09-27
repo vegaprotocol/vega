@@ -45,7 +45,7 @@ func testCancelOrderSuccess(t *testing.T) {
 		Remaining: 1,
 	}
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	svc.block.EXPECT().CancelOrder(gomock.Any(), cancelMatcher{e: order}).Times(1).Return(true, nil)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.NotNil(t, pendingOrder)
@@ -59,7 +59,7 @@ func testCancelOrderNotFound(t *testing.T) {
 	arg := cancel
 	osErr := errors.New("orderStore error")
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(nil, osErr)
+	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(nil, osErr)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
@@ -79,7 +79,7 @@ func testCancelOrderDuplicate(t *testing.T) {
 		Remaining: 1,
 	}
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
@@ -98,7 +98,7 @@ func testCancelOrderFilled(t *testing.T) {
 		Remaining: 0,
 	}
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)
@@ -117,7 +117,7 @@ func testCancelOrderPartyMismatch(t *testing.T) {
 		Remaining: 1,
 	}
 
-	svc.orderStore.EXPECT().GetByMarketAndId(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
+	svc.orderStore.EXPECT().GetByMarketAndID(gomock.Any(), arg.MarketID, arg.OrderID).Times(1).Return(&order, nil)
 	pendingOrder, err := svc.svc.CancelOrder(ctx, &arg)
 	assert.Nil(t, pendingOrder)
 	assert.Error(t, err)

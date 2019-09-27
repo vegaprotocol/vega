@@ -1,5 +1,5 @@
 ---
-image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.5
+image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
 
 variables:
   CGO_ENABLED: "0"
@@ -85,6 +85,7 @@ code_coverage:
 lint_code:
   stage: test
   script:
+    - make print_check || exit 1
     - export PATH="${PATH}:${BIN_DIR}"
     - make lint || true  # Ignore lint failure for now (see #196)
   only:

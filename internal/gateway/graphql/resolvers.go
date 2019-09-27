@@ -582,6 +582,12 @@ func (r *MyOrderResolver) Price(ctx context.Context, obj *types.Order) (string, 
 func (r *MyOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
 	return OrderTimeInForce(obj.TimeInForce.String()), nil
 }
+
+func (r *MyOrderResolver) Type(ctx context.Context, obj *types.Order) (*OrderType, error) {
+	t := OrderType(obj.Type.String())
+	return &t, nil
+}
+
 func (r *MyOrderResolver) Side(ctx context.Context, obj *types.Order) (Side, error) {
 	return Side(obj.Side.String()), nil
 }
@@ -815,8 +821,9 @@ func (r *MyPositionResolver) direction(val int64) ValueDirection {
 
 type MyMutationResolver resolverRoot
 
-func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, party string, price string,
-	size string, side Side, type_ OrderTimeInForce, expiration *string) (*types.PendingOrder, error) {
+func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, party string,
+	price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string,
+	ty *OrderType) (*types.PendingOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -844,13 +851,22 @@ func (r *MyMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	// todo: add party-store/party-service validation (gitlab.com/vega-protocol/trading-core/issues/175)
 
 	order.PartyID = party
-	order.TimeInForce, err = parseOrderTimeInForce(&type_)
-	if err != nil {
+	if order.TimeInForce, err = parseOrderTimeInForce(timeInForce); err != nil {
 		return nil, err
 	}
-	order.Side, err = parseSide(&side)
-	if err != nil {
+	if order.Side, err = parseSide(&side); err != nil {
 		return nil, err
+	}
+	// TODO(jeremy): at the moment the ty parameter is maybe null as having a nullable gql
+	// field here ease the transition to set order type that was not required before.
+	// In the future this field will be non-nullable.
+	// In the meantime default to the old behaviour (LIMIT)
+	if ty == nil {
+		order.Type = types.Order_LIMIT
+	} else {
+		if order.Type, err = parseOrderType(*ty); err != nil {
+			return nil, err
+		}
 	}
 
 	// GTT must have an expiration value
@@ -1197,8 +1213,7 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 		MarketID: market,
 		Interval: pinterval,
 	}
-	// Use a new timeout-free context here, otherwise all subscriptions will time out.
-	stream, err := r.tradingDataClient.CandlesSubscribe(context.Background(), req)
+	stream, err := r.tradingDataClient.CandlesSubscribe(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1228,6 +1243,14 @@ func (r *MySubscriptionResolver) Candles(ctx context.Context, market string, int
 }
 
 type MyPendingOrderResolver resolverRoot
+
+func (r *MyPendingOrderResolver) Type(ctx context.Context, obj *proto.PendingOrder) (*OrderType, error) {
+	if obj != nil {
+		ot := OrderType(obj.Type.String())
+		return &ot, nil
+	}
+	return nil, ErrNilPendingOrder
+}
 
 func (r *MyPendingOrderResolver) Price(ctx context.Context, obj *proto.PendingOrder) (*string, error) {
 	if obj != nil {

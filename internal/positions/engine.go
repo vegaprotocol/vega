@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/events"
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -26,7 +27,8 @@ var (
 )
 
 func (m MarketPosition) String() string {
-	return fmt.Sprintf("size: %v, partyID: %v", m.size, m.partyID)
+	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
+		m.size, m.buy, m.sell, m.price, m.partyID)
 }
 
 func (m MarketPosition) Buy() int64 {
@@ -105,6 +107,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
 func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
+	timer := metrics.NewTimeCounter("-", "positions", "RegisterOrder")
 	e.mu.Lock()
 	pos, found := e.positions[order.PartyID]
 	if !found {
@@ -117,24 +120,28 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 		pos.sell += int64(order.Size)
 	}
 	e.mu.Unlock()
+	timer.EngineTimeCounterAdd()
 	return pos, nil
 }
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
-func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
+func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err error) {
+	timer := metrics.NewTimeCounter("-", "positions", "UnregisterOrder")
 	e.mu.Lock()
 	pos, found := e.positions[order.PartyID]
 	e.mu.Unlock()
 	if !found {
-		return nil, ErrPositionNotFound
-	}
-	if order.Side == types.Side_Buy {
-		pos.buy -= int64(order.Size)
+		err = ErrPositionNotFound
 	} else {
-		pos.sell -= int64(order.Size)
+		if order.Side == types.Side_Buy {
+			pos.buy -= int64(order.Size)
+		} else {
+			pos.sell -= int64(order.Size)
+		}
 	}
-	return pos, nil
+	timer.EngineTimeCounterAdd()
+	return
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
@@ -214,12 +221,14 @@ func (e *Engine) updatePositions(trade *types.Trade) {
 
 // just the logic to update buyer, will eventually return the MarketPosition we need to push
 func (e *Engine) Positions() []MarketPosition {
+	timer := metrics.NewTimeCounter("-", "positions", "Positions")
 	e.mu.RLock()
 	out := make([]MarketPosition, 0, len(e.positions))
 	for _, value := range e.positions {
 		out = append(out, *value)
 	}
 	e.mu.RUnlock()
+	timer.EngineTimeCounterAdd()
 	return out
 }
 

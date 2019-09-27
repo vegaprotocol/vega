@@ -206,9 +206,11 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 					logging.Candle(candle),
 					logging.Error(err))
 			} else {
-				c.log.Debug("New candle inserted in candle store",
-					logging.Candle(candle),
-					logging.String("badger-key", string(badgerKey)))
+				if c.log.GetLevel() == logging.DebugLevel {
+					c.log.Debug("New candle inserted in candle store",
+						logging.Candle(candle),
+						logging.String("badger-key", string(badgerKey)))
+				}
 			}
 			c.queueEvent(marketID, candle)
 		}
@@ -223,10 +225,12 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 					logging.CandleWithTag(*candleDb, "existing-candle"),
 					logging.Error(err))
 			} else {
-				c.log.Debug("Candle updated in candle store",
-					logging.Candle(candle),
-					logging.CandleWithTag(*candleDb, "existing-candle"),
-					logging.String("badger-key", string(badgerKey)))
+				if c.log.GetLevel() == logging.DebugLevel {
+					c.log.Debug("Candle updated in candle store",
+						logging.Candle(candle),
+						logging.CandleWithTag(*candleDb, "existing-candle"),
+						logging.String("badger-key", string(badgerKey)))
+				}
 			}
 
 			c.queueEvent(marketID, *candleDb)
@@ -275,7 +279,6 @@ func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time,
 	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
 	defer cancel()
 	deadline, _ := ctx.Deadline()
-
 
 	txn := c.badger.readTransaction()
 	defer txn.Discard()

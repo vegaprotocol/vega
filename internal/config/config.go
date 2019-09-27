@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/settlement"
 	"code.vegaprotocol.io/vega/internal/storage"
 	"code.vegaprotocol.io/vega/internal/trades"
+	"code.vegaprotocol.io/vega/internal/transfers"
 	"code.vegaprotocol.io/vega/internal/vegatime"
 )
 
@@ -48,6 +49,7 @@ type Config struct {
 	Gateway    gateway.Config
 	Auth       auth.Config
 	Metrics    metrics.Config
+	Transfers  transfers.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -80,6 +82,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Collateral:     collateral.NewDefaultConfig(),
 		Auth:           auth.NewDefaultConfig(),
 		Metrics:        metrics.NewDefaultConfig(),
+		Transfers:      transfers.NewDefaultConfig(),
 		GatewayEnabled: true,
 		UlimitNOFile:   8192,
 	}

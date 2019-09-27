@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/internal/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -40,7 +41,6 @@ func (l *PriceLevel) addOrder(o *types.Order) {
 	l.increaseVolumeByTimestamp(o)
 	// add orders to slice of orders on this price level
 	l.orders = append(l.orders, o)
-
 	l.volume += o.Remaining
 }
 
@@ -75,6 +75,7 @@ func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp int64, trade *type
 }
 
 func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Trade, impactedOrders []*types.Order) {
+	timer := metrics.NewTimeCounter("-", "matching", "PriceLevel.uncross")
 
 	var (
 		toRemove []int
@@ -141,6 +142,7 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		l.orders = l.orders[:len(l.orders)-removed]
 	}
 
+	timer.EngineTimeCounterAdd()
 	return agg.Remaining == 0, trades, impactedOrders
 }
 
