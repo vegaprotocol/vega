@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -64,7 +65,7 @@ func (s *Svc) ObserveTransferResponses(
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
-		ip := logging.IPAddressFromContext(ctx)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		for {

@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -74,7 +75,7 @@ func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 		defer atomic.AddInt32(&c.subscriberCnt, -1)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
-		ip := logging.IPAddressFromContext(ctx)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		for {
 			select {
 			case <-ctx.Done():

@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync/atomic"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -98,7 +99,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 	go func() {
 		atomic.AddInt32(&s.subscribersCnt, 1)
 		defer atomic.AddInt32(&s.subscribersCnt, -1)
-		ip := logging.IPAddressFromContext(ctx)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {

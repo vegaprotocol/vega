@@ -15,18 +15,25 @@ import (
 )
 
 var (
-	ErrAuthDisabled       = errors.New("auth disabled")
+	// ErrAuthDisabled signals to the caller that the authentication is disabled
+	ErrAuthDisabled = errors.New("auth disabled")
+	// ErrInvalidCredentials signals that the credentials specified by the client are invalid
 	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrInvalidMarketID    = errors.New("invalid market ID")
-	ErrAuthRequired       = errors.New("auth required")
-	ErrMissingOrder       = errors.New("missing order in request payload")
-	ErrMissingTraderID    = errors.New("missing trader id")
-	ErrMissingPartyID     = errors.New("missing party id")
-	ErrMissingPassword    = errors.New("missing password")
-	ErrMissingToken       = errors.New("missing token")
-	ErrMissingUsername    = errors.New("missing username")
+	// ErrInvalidMarketID signals that the market ID does not exists
+	ErrInvalidMarketID = errors.New("invalid market ID")
+	// ErrAuthRequired signals that authentication is required to reach this endpoint
+	ErrAuthRequired = errors.New("auth required")
+	// ErrMissingOrder signals that the actual payload is expected to contains an order
+	ErrMissingOrder = errors.New("missing order in request payload")
+	// ErrMissingTraderID signals that the payload is expected to contain a trader id
+	ErrMissingTraderID = errors.New("missing trader id")
+	// ErrMissingPartyID signals that the payload is expected to contain a party id
+	ErrMissingPartyID = errors.New("missing party id")
+	// ErrMissingToken signals that a token was required but is missing with this request
+	ErrMissingToken = errors.New("missing token")
 )
 
+// TradeOrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeOrderService
 type TradeOrderService interface {
 	CreateOrder(ctx context.Context, submission *types.OrderSubmission) (*types.PendingOrder, error)
@@ -34,6 +41,7 @@ type TradeOrderService interface {
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error)
 }
 
+// AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api  AccountService
 type AccountService interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (bool, error)
@@ -98,10 +106,10 @@ func (s *tradingService) SignIn(
 	ctx context.Context, req *protoapi.SignInRequest,
 ) (*protoapi.SignInResponse, error) {
 	if len(req.Id) <= 0 {
-		return nil, ErrMissingUsername
+		return nil, ErrInvalidCredentials
 	}
 	if len(req.Password) <= 0 {
-		return nil, ErrMissingUsername
+		return nil, ErrInvalidCredentials
 	}
 
 	var tkn string

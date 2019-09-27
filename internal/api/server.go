@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/internal/accounts"
 	"code.vegaprotocol.io/vega/internal/auth"
 	"code.vegaprotocol.io/vega/internal/candles"
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/monitoring"
 	"code.vegaprotocol.io/vega/internal/orders"
@@ -23,7 +24,8 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-type grpcServer struct {
+// GRPCServer represent the grpc api provided by the vega node
+type GRPCServer struct {
 	Config
 
 	client BlockchainClient
@@ -50,6 +52,7 @@ type grpcServer struct {
 	cfunc context.CancelFunc
 }
 
+// NewGRPCServer create a new instance of the GPRC api for the vega node
 func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
@@ -64,13 +67,13 @@ func NewGRPCServer(
 	accountsService *accounts.Svc,
 	transferResponseService *transfers.Svc,
 	statusChecker *monitoring.Status,
-) *grpcServer {
+) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	ctx, cfunc := context.WithCancel(context.Background())
 
-	return &grpcServer{
+	return &GRPCServer{
 		log:                     log,
 		Config:                  config,
 		stats:                   stats,
@@ -89,19 +92,20 @@ func NewGRPCServer(
 	}
 }
 
-func (s *grpcServer) ReloadConf(cfg Config) {
-	s.log.Info("reloading configuration")
-	if s.log.GetLevel() != cfg.Level.Get() {
-		s.log.Info("updating log level",
-			logging.String("old", s.log.GetLevel().String()),
+// ReloadConf update the internal configuration of the GRPC server
+func (g *GRPCServer) ReloadConf(cfg Config) {
+	g.log.Info("reloading configuration")
+	if g.log.GetLevel() != cfg.Level.Get() {
+		g.log.Info("updating log level",
+			logging.String("old", g.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		s.log.SetLevel(cfg.Level.Get())
+		g.log.SetLevel(cfg.Level.Get())
 	}
 
 	// TODO(): not updating the the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
-	s.Config = cfg
+	g.Config = cfg
 }
 
 func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
@@ -138,7 +142,7 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 			}
 		}
 
-		ctx = context.WithValue(ctx, "remote-ip-addr", ip)
+		ctx = contextutil.WithRemoteIPAddr(ctx, ip)
 
 		// Calls the handler
 		h, err := handler(ctx, req)
@@ -152,7 +156,8 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-func (g *grpcServer) Start() {
+// Start start the grpc server
+func (g *GRPCServer) Start() {
 
 	ip := g.IP
 	port := g.Port
@@ -203,7 +208,8 @@ func (g *grpcServer) Start() {
 	}
 }
 
-func (g *grpcServer) Stop() {
+// Stop stops the GRPC server
+func (g *GRPCServer) Stop() {
 	if g.srv != nil {
 		g.log.Info("Stopping gRPC based API")
 		g.cfunc()
@@ -211,6 +217,8 @@ func (g *grpcServer) Stop() {
 	}
 }
 
-func (g *grpcServer) OnPartiesUpdated(ps []auth.PartyInfo) {
+// OnPartiesUpdated is used as a callback in order to notify the
+// GRPC server of new credentials for the list of parties
+func (g *GRPCServer) OnPartiesUpdated(ps []auth.PartyInfo) {
 	g.tradingService.UpdateParties(ps)
 }

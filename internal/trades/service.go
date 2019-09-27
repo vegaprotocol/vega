@@ -6,6 +6,7 @@ import (
 	"math"
 	"sync/atomic"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -154,7 +155,7 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 	go func() {
 		atomic.AddInt32(&s.tradeSubscribersCnt, 1)
 		defer atomic.AddInt32(&s.tradeSubscribersCnt, -1)
-		ip := logging.IPAddressFromContext(ctx)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {
@@ -236,7 +237,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 	go func() {
 		atomic.AddInt32(&s.positionsSubscribersCnt, 1)
 		defer atomic.AddInt32(&s.positionsSubscribersCnt, -1)
-		ip := logging.IPAddressFromContext(ctx)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {

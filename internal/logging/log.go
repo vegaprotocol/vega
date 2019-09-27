@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -321,16 +320,6 @@ func NewLoggerFromConfig(config Config) *Logger {
 
 	// Default:
 	return NewDevLogger()
-}
-
-// IPAddressFromContext attempts to access the 'remote-ip-addr' value that we
-// inject into a calling context via a pipelined handlers. Only GraphQL API
-// supported at present.
-func IPAddressFromContext(ctx context.Context) string {
-	if ctx.Value("remote-ip-addr") != nil {
-		return ctx.Value("remote-ip-addr").(string)
-	}
-	return ""
 }
 
 // Check helps avoid spending CPU time on log entries that will never be printed.

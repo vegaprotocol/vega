@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 )
 
@@ -75,7 +76,7 @@ func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 		}
 
 		if found {
-			r = r.WithContext(context.WithValue(r.Context(), "remote-ip-addr", ip))
+			r = r.WithContext(contextutil.WithRemoteIPAddr(r.Context(), ip))
 		}
 		next.ServeHTTP(w, r)
 	})
