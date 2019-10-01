@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	"code.vegaprotocol.io/vega/internal/storage"
 	types "code.vegaprotocol.io/vega/proto"
@@ -12,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// CandleStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/candles CandleStore
 type CandleStore interface {
 	Subscribe(iT *storage.InternalTransport) uint64
@@ -19,6 +21,7 @@ type CandleStore interface {
 	GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) ([]*types.Candle, error)
 }
 
+// Svc represent the candles service
 type Svc struct {
 	log *logging.Logger
 	Config
@@ -27,9 +30,10 @@ type Svc struct {
 	subscriberCnt int32
 }
 
+// NewService instanciate a new candles service
 func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*Svc, error) {
 	if candleStore == nil {
-		return nil, errors.New("candleStore instance is nil when creating candle service instance.")
+		return nil, errors.New("candleStore instance is nil when creating candle service instance")
 	}
 
 	// setup logger
@@ -43,6 +47,7 @@ func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*S
 	}, nil
 }
 
+// ReloadConf will update the internal configuration of the service
 func (s *Svc) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -56,35 +61,37 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
+// GetCandleSubscribersCount returns the number of subscriber to the candles streeam
 func (s *Svc) GetCandleSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }
 
-func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
+// ObserveCandles add a new subscriber to the stream of candles updates
+func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, interval *types.Interval) (<-chan *types.Candle, uint64) {
 	candleCh := make(chan *types.Candle)
 	iT := storage.InternalTransport{
 		Market:    *market,
 		Interval:  *interval,
 		Transport: make(chan *types.Candle),
 	}
-	ref := c.candleStore.Subscribe(&iT)
+	ref := s.candleStore.Subscribe(&iT)
 
 	go func() {
-		atomic.AddInt32(&c.subscriberCnt, 1)
-		defer atomic.AddInt32(&c.subscriberCnt, -1)
+		atomic.AddInt32(&s.subscriberCnt, 1)
+		defer atomic.AddInt32(&s.subscriberCnt, -1)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
-		ip := logging.IPAddressFromContext(ctx)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		for {
 			select {
 			case <-ctx.Done():
-				c.log.Debug(
+				s.log.Debug(
 					"Candles subscriber closed connection",
 					logging.Uint64("id", ref),
 					logging.String("ip-address", ip),
 				)
-				if err := c.candleStore.Unsubscribe(ref); err != nil {
-					c.log.Error(
+				if err := s.candleStore.Unsubscribe(ref); err != nil {
+					s.log.Error(
 						"Failure un-subscribing candles subscriber when context.Done()",
 						logging.Uint64("id", ref),
 						logging.String("ip-address", ip),
@@ -100,7 +107,7 @@ func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 				for !success && retryCount > 0 {
 					select {
 					case candleCh <- v:
-						c.log.Debug(
+						s.log.Debug(
 							"Candles for subscriber sent successfully",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
@@ -109,7 +116,7 @@ func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 					default:
 						retryCount--
 						if retryCount > 0 {
-							c.log.Debug(
+							s.log.Debug(
 								"Candles for subscriber not sent",
 								logging.Uint64("ref", ref),
 								logging.String("ip-address", ip),
@@ -119,7 +126,7 @@ func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 					}
 				}
 				if retryCount <= 0 {
-					c.log.Warn(
+					s.log.Warn(
 						"Candles subscriber ran out of retries",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
@@ -135,11 +142,12 @@ func (c *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 	return candleCh, ref
 }
 
-func (c *Svc) GetCandles(ctx context.Context, market string,
+// GetCandles returns the candles for a given market, time, interval
+func (s *Svc) GetCandles(ctx context.Context, market string,
 	since time.Time, interval types.Interval) (candles []*types.Candle, err error) {
 
 	// sinceTimestamp must be valid and not older than market genesis timestamp
 	// interval check if from range of valid intervals
 
-	return c.candleStore.GetCandles(ctx, market, since, interval)
+	return s.candleStore.GetCandles(ctx, market, since, interval)
 }

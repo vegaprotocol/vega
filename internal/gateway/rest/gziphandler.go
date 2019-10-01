@@ -64,7 +64,7 @@ func (gzr *gzipResponseWriter) Flush() {
 	}
 }
 
-func NewGzipHandler(logger logging.Logger, fn http.HandlerFunc) http.HandlerFunc {
+func newGzipHandler(logger logging.Logger, fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			fn(w, r)

@@ -12,9 +12,12 @@ import (
 )
 
 var (
+	// ErrNoMarketClosingTime signal that the instrument is invalid as missing
+	// a market closing time
 	ErrNoMarketClosingTime = errors.New("no market closing time")
 )
 
+// Instrument represent an instrument used in a market
 type Instrument struct {
 	ID               string
 	Code             string
@@ -28,12 +31,15 @@ type Instrument struct {
 	Quote string
 }
 
+// TradableInstrument represent an instrument to be trade in a market
 type TradableInstrument struct {
 	Instrument       *Instrument
 	MarginCalculator *types.MarginCalculator
 	RiskModel        risk.Model
 }
 
+// NewTradableInstrument will instanciate a new tradable instrument
+// using a market framework configuration for a tradable instrument
 func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (*TradableInstrument, error) {
 	instrument, err := NewInstrument(pti.Instrument)
 	if err != nil {
@@ -50,6 +56,8 @@ func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (
 	}, nil
 }
 
+// NewInstrument will instanciate a new instrument
+// using a market framework configuration for a instrument
 func NewInstrument(pi *types.Instrument) (*Instrument, error) {
 	product, err := products.New(pi.Product)
 	if err != nil {
@@ -67,6 +75,7 @@ func NewInstrument(pi *types.Instrument) (*Instrument, error) {
 	}, err
 }
 
+// GetMarketClosingTime return the maturity of the product
 func (i *Instrument) GetMarketClosingTime() (time.Time, error) {
 	switch p := i.Product.(type) {
 	case *products.Future:

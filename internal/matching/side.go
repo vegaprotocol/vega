@@ -11,10 +11,13 @@ import (
 )
 
 var (
+	// ErrPriceNotFound signals that a price was not found on the book side
 	ErrPriceNotFound = errors.New("price-volume pair not found")
-	ErrNoOrder       = errors.New("no orders in the book side")
+	// ErrNoOrder signals that there's no orders on the book side.
+	ErrNoOrder = errors.New("no orders in the book side")
 )
 
+// OrderBookSide reprenset a side of the book, either Sell or Buy
 type OrderBookSide struct {
 	log *logging.Logger
 	// Config
@@ -91,6 +94,7 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 	return nil
 }
 
+// RemoveOrder will remove an order from the book
 func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 	// first  we try to find the pricelevel of the order
 	var i int

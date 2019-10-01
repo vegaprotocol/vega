@@ -183,7 +183,7 @@ func getTestGRPCServer(
 	}
 
 	// Time Service (required for Order Service)
-	timeService := vegatime.NewService(conf.Time)
+	timeService := vegatime.New(conf.Time)
 
 	// Order Service
 	orderService, err := orders.NewService(logger, conf.Orders, orderStore, timeService, blockchainClient)

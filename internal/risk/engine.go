@@ -12,6 +12,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// Orderbook represent an abstraction over the orderbook
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/internal/risk Orderbook
 type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
@@ -24,6 +25,7 @@ type marginChange struct {
 	margins       *types.MarginLevels
 }
 
+// Engine is the risk engine
 type Engine struct {
 	Config
 	marginCalculator *types.MarginCalculator
@@ -35,6 +37,7 @@ type Engine struct {
 	ob               Orderbook
 }
 
+// NewEngine instanciate a new risk engine
 func NewEngine(
 	log *logging.Logger,
 	config Config,
@@ -58,6 +61,7 @@ func NewEngine(
 	}
 }
 
+// ReloadConf update the internal configuration of the risk engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -73,49 +77,50 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Unlock()
 }
 
-func (re *Engine) CalculateFactors(now time.Time) {
+// CalculateFactors trigger the calculation of the risk factors
+func (e *Engine) CalculateFactors(now time.Time) {
 	// don't calculate risk factors if we are before or at the next update time (calcs are before
 	// processing and we calc factors after the time so we wait for time > nextUpdateTime) OR if we are
 	// already waiting on risk calcs
 	// NB: for continuous risk calcs nextUpdateTime will be 0 so we will always find time > nextUpdateTime
-	if re.waiting || now.Before(vegatime.UnixNano(re.factors.NextUpdateTimestamp)) {
+	if e.waiting || now.Before(vegatime.UnixNano(e.factors.NextUpdateTimestamp)) {
 		return
 	}
 
-	wasCalculated, result := re.model.CalculateRiskFactors(re.factors)
+	wasCalculated, result := e.model.CalculateRiskFactors(e.factors)
 	if wasCalculated {
-		re.waiting = false
-		if re.model.CalculationInterval() > 0 {
-			result.NextUpdateTimestamp = now.Add(re.model.CalculationInterval()).UnixNano()
+		e.waiting = false
+		if e.model.CalculationInterval() > 0 {
+			result.NextUpdateTimestamp = now.Add(e.model.CalculationInterval()).UnixNano()
 		}
-		re.factors = result
+		e.factors = result
 	} else {
-		re.waiting = true
+		e.waiting = true
 	}
 }
 
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // trader margin account is at least at the InitialMargin level before the order is added to the book.
-func (r *Engine) UpdateMarginOnNewOrder(e events.Margin, markPrice uint64) events.Risk {
-	if e == nil {
+func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) events.Risk {
+	if evt == nil {
 		return nil
 	}
 
-	margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
+	margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
 	// no margins updates, nothing to do then
 	if margins == nil {
 		return nil
 	}
-	if r.log.GetLevel() == logging.DebugLevel {
-		r.log.Debug("margins calculated on new order",
-			logging.String("party-id", e.Party()),
-			logging.String("market-id", e.MarketID()),
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("margins calculated on new order",
+			logging.String("party-id", evt.Party()),
+			logging.String("market-id", evt.MarketID()),
 			logging.Reflect("margins", *margins),
 		)
 	}
 
-	curBalance := e.MarginBalance()
+	curBalance := evt.MarginBalance()
 	// margins are sufficient, nothing to update
 	if int64(curBalance) >= margins.InitialMargin {
 		return nil
@@ -123,18 +128,18 @@ func (r *Engine) UpdateMarginOnNewOrder(e events.Margin, markPrice uint64) event
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
 	trnsfr := &types.Transfer{
-		Owner: e.Party(),
+		Owner: evt.Party(),
 		Size:  1,
 		Type:  types.TransferType_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
-			Asset:     e.Asset(),
+			Asset:     evt.Asset(),
 			Amount:    margins.InitialMargin - int64(curBalance),
 			MinAmount: margins.InitialMargin - int64(curBalance),
 		},
 	}
 
 	return &marginChange{
-		Margin:   e,
+		Margin:   evt,
 		amount:   trnsfr.Amount.Amount,
 		transfer: trnsfr,
 		margins:  margins,
@@ -151,28 +156,28 @@ func (r *Engine) UpdateMarginOnNewOrder(e events.Margin, markPrice uint64) event
 // In the case where the CurMargin is smaller to the MaintenanceLevel after trying to
 // move monies later, we'll need to close out the trader but that cannot be figured out
 // now only in later when we try to move monies from the general account.
-func (r *Engine) UpdateMarginsOnSettlement(
+func (e *Engine) UpdateMarginsOnSettlement(
 	ctx context.Context, evts []events.Margin, markPrice uint64) []events.Risk {
 	ret := make([]events.Risk, 0, len(evts))
 	// var err error
 	// this will keep going until we've closed this channel
 	// this can be the result of an error, or being "finished"
-	for _, e := range evts {
+	for _, evt := range evts {
 		// channel is closed, and we've got a nil interface
-		margins := r.calculateMargins(e, int64(markPrice), *r.factors.RiskFactors[e.Asset()])
+		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
 		// no margins updates, nothing to do then
 		if margins == nil {
 			continue
 		}
-		if r.log.GetLevel() == logging.DebugLevel {
-			r.log.Debug("margins calculated on settlement",
-				logging.String("party-id", e.Party()),
-				logging.String("market-id", e.MarketID()),
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("margins calculated on settlement",
+				logging.String("party-id", evt.Party()),
+				logging.String("market-id", evt.MarketID()),
 				logging.Reflect("margins", *margins),
 			)
 		}
 
-		curMargin := int64(e.MarginBalance())
+		curMargin := int64(evt.MarginBalance())
 		// case 1 -> nothing to do margins are sufficient
 		if curMargin >= margins.SearchLevel && curMargin < margins.CollateralReleaseLevel {
 			continue
@@ -191,11 +196,11 @@ func (r *Engine) UpdateMarginsOnSettlement(
 			// then the rest is common if we are before or after MaintenanceLevel,
 			// we try to reach the InitialMargin level
 			trnsfr = &types.Transfer{
-				Owner: e.Party(),
+				Owner: evt.Party(),
 				Size:  1,
 				Type:  types.TransferType_MARGIN_LOW,
 				Amount: &types.FinancialAmount{
-					Asset:     e.Asset(),
+					Asset:     evt.Asset(),
 					Amount:    margins.InitialMargin - curMargin,
 					MinAmount: minAmount,
 				},
@@ -203,11 +208,11 @@ func (r *Engine) UpdateMarginsOnSettlement(
 
 		} else if curMargin >= margins.CollateralReleaseLevel { // case 3 -> release some colateral
 			trnsfr = &types.Transfer{
-				Owner: e.Party(),
+				Owner: evt.Party(),
 				Size:  1,
 				Type:  types.TransferType_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
-					Asset:     e.Asset(),
+					Asset:     evt.Asset(),
 					Amount:    curMargin - margins.CollateralReleaseLevel,
 					MinAmount: 0,
 				},
@@ -215,7 +220,7 @@ func (r *Engine) UpdateMarginsOnSettlement(
 		}
 
 		risk := &marginChange{
-			Margin:   e,
+			Margin:   evt,
 			amount:   trnsfr.Amount.Amount,
 			transfer: trnsfr,
 			margins:  margins,

@@ -49,19 +49,19 @@ func (mr *MockTradeServiceMockRecorder) GetByMarket(arg0, arg1, arg2, arg3, arg4
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByMarket", reflect.TypeOf((*MockTradeService)(nil).GetByMarket), arg0, arg1, arg2, arg3, arg4)
 }
 
-// GetByOrderId mocks base method
-func (m *MockTradeService) GetByOrderId(arg0 context.Context, arg1 string) ([]*proto.Trade, error) {
+// GetByOrderID mocks base method
+func (m *MockTradeService) GetByOrderID(arg0 context.Context, arg1 string) ([]*proto.Trade, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByOrderId", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByOrderID", arg0, arg1)
 	ret0, _ := ret[0].([]*proto.Trade)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByOrderId indicates an expected call of GetByOrderId
-func (mr *MockTradeServiceMockRecorder) GetByOrderId(arg0, arg1 interface{}) *gomock.Call {
+// GetByOrderID indicates an expected call of GetByOrderID
+func (mr *MockTradeServiceMockRecorder) GetByOrderID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByOrderId", reflect.TypeOf((*MockTradeService)(nil).GetByOrderId), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByOrderID", reflect.TypeOf((*MockTradeService)(nil).GetByOrderID), arg0, arg1)
 }
 
 // GetByParty mocks base method

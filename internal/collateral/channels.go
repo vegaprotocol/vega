@@ -13,6 +13,7 @@ type processF func(t *transferT) (*types.TransferResponse, error)
 
 type collectF func(t *transferT) error
 
+// Transfer ...
 // this go-generate and interface is here to ensure that we're generating the correct Transfer interface for tests here
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mtm_transfer_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral Transfer
 type Transfer interface {
@@ -52,6 +53,7 @@ func (t transferT) MarketID() string {
 	return t.marketID
 }
 
+// TransferCh will process all transfer and sent through a channels acceptiung margin events
 func (e *Engine) TransferCh(marketID string, transfers []events.Transfer) (<-chan events.Margin, <-chan error) {
 
 	ech := make(chan error)

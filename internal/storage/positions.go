@@ -7,6 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// MarketBucket ...
 type MarketBucket struct {
 	Buys                []*types.Trade
 	Sells               []*types.Trade
@@ -15,6 +16,7 @@ type MarketBucket struct {
 	MinimumContractSize int64
 }
 
+// GetTradesBySideBuckets ...
 func (ts *Trade) GetTradesBySideBuckets(ctx context.Context, party string) map[string]*MarketBucket {
 
 	marketBuckets := make(map[string]*MarketBucket, 0)

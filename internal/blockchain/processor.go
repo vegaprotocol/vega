@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ProcessorService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/processor_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ProcessorService
 type ProcessorService interface {
 	SubmitOrder(order *types.Order) error
@@ -18,6 +19,7 @@ type ProcessorService interface {
 	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
 }
 
+// Processor handle processing of all transaction sent through the node
 type Processor struct {
 	log *logging.Logger
 	Config
@@ -25,6 +27,7 @@ type Processor struct {
 	seenPayloads      map[string]byte
 }
 
+// NewProcessor intanciate a new transactions processor
 func NewProcessor(log *logging.Logger, config Config, blockchainService ProcessorService) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -38,6 +41,7 @@ func NewProcessor(log *logging.Logger, config Config, blockchainService Processo
 	}
 }
 
+// ReloadConf update the internal configuration of the processor
 func (p *Processor) ReloadConf(cfg Config) {
 	p.log.Info("reloading configuration")
 	if p.log.GetLevel() != cfg.Level.Get() {
@@ -81,7 +85,7 @@ func (p *Processor) getNotifyTraderAccount(payload []byte) (*types.NotifyTraderA
 // Validate performs all validation on an incoming transaction payload.
 func (p *Processor) Validate(payload []byte) error {
 	// Pre-validate (safety check)
-	if err, seen := p.hasSeen(payload); seen {
+	if seen, err := p.hasSeen(payload); seen {
 		return errors.Wrap(err, "error during hasSeen (validate)")
 	}
 	// Attempt to decode transaction payload
@@ -109,7 +113,7 @@ func (p *Processor) Validate(payload []byte) error {
 // the underlying blockchain service handlers e.g. submit order, etc.
 func (p *Processor) Process(payload []byte) error {
 	// Pre-validate (safety check)
-	if err, seen := p.hasSeen(payload); seen {
+	if seen, err := p.hasSeen(payload); seen {
 		return errors.Wrap(err, "error during hasSeen (process)")
 	}
 
@@ -173,19 +177,20 @@ func (p *Processor) Process(payload []byte) error {
 }
 
 // hasSeen helper performs duplicate checking on an incoming transaction payload.
-func (p *Processor) hasSeen(payload []byte) (error, bool) {
+func (p *Processor) hasSeen(payload []byte) (bool, error) {
 	// All vega transactions are prefixed with a unique hash, using
 	// this means we do not have to re-compute each time for seen keys
 	payloadHash, err := p.payloadHash(payload)
 	if err != nil {
-		return err, true
+		return true, err
 	}
 	// Safety checks at business level to ensure duplicate transaction
 	// payloads do not pass through to application core
-	if err, exists := p.payloadExists(payloadHash); exists {
-		return err, true
+	if exists, err := p.payloadExists(payloadHash); exists {
+		return true, err
 	}
-	return nil, false
+
+	return false, nil
 }
 
 // payloadHash attempts to extract the unique hash at the start of all vega transactions.
@@ -203,13 +208,13 @@ func (p *Processor) payloadHash(payload []byte) (*string, error) {
 // recommended by tendermint team that an abci application has additional checking
 // just like this to ensure duplicate transaction payloads do not pass through
 // to the application core.
-func (p *Processor) payloadExists(payloadHash *string) (error, bool) {
+func (p *Processor) payloadExists(payloadHash *string) (bool, error) {
 	if _, exists := p.seenPayloads[*payloadHash]; exists {
 		p.log.Warn("Transaction payload exists", logging.String("payload-hash", *payloadHash))
 		err := errors.New(fmt.Sprintf("txn payload exists: %s", *payloadHash))
-		return err, true
+		return true, err
 	}
-	return nil, false
+	return false, nil
 }
 
 // txDecode is takes the raw payload bytes and decodes the contents using a pre-defined

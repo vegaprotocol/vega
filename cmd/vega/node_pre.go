@@ -143,7 +143,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		}
 	}()
 	// this doesn't fail
-	l.timeService = vegatime.NewService(l.conf.Time)
+	l.timeService = vegatime.New(l.conf.Time)
 	if l.blockchainClient, err = blockchain.NewClient(&l.conf.Blockchain); err != nil {
 		return
 	}

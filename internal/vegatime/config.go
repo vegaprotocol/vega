@@ -10,6 +10,7 @@ import (
 // I've called this package name 'time'.
 const namedLogger = "time"
 
+// Config represent the configuration of vegatime service
 type Config struct {
 	Level encoding.LogLevel
 }

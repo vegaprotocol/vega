@@ -19,16 +19,32 @@ import (
 )
 
 var (
-	ErrChainNotConnected          = errors.New("chain not connected")
-	ErrChannelClosed              = errors.New("channel closed")
-	ErrEmptyMissingMarketID       = errors.New("empty or missing market ID")
-	ErrEmptyMissingOrderID        = errors.New("empty or missing order ID")
+	// ErrChainNotConnected signals to the user that he cannot access a given endpoint
+	// which require the chain, but the chain is actually offline
+	ErrChainNotConnected = errors.New("chain not connected")
+	// ErrChannelClosed signals that the channel streaming data is closed
+	ErrChannelClosed = errors.New("channel closed")
+	// ErrEmptyMissingMarketID signals to the caller that the request expected a
+	// market id but the field is missing or empty
+	ErrEmptyMissingMarketID = errors.New("empty or missing market ID")
+	// ErrEmptyMissingOrderID signals to the caller that the request expected an
+	// order id but the field is missing or empty
+	ErrEmptyMissingOrderID = errors.New("empty or missing order ID")
+	// ErrEmptyMissingOrderReference signals to the caller that the request expected an
+	// order reference but the field is missing or empty
 	ErrEmptyMissingOrderReference = errors.New("empty or missing order reference")
-	ErrEmptyMissingPartyID        = errors.New("empty or missing party ID")
+	// ErrEmptyMissingPartyID signals to the caller that the request expected a
+	// party id but the field is missing or empty
+	ErrEmptyMissingPartyID = errors.New("empty or missing party ID")
+	// ErrEmptyMissingSinceTimestamp signals to the caller that the request expected a
+	// timestamp but the field is missing or empty
 	ErrEmptyMissingSinceTimestamp = errors.New("empty or missing since-timestamp")
-	ErrServerShutdown             = errors.New("server shutdown")
-	ErrStatisticsNotAvailable     = errors.New("statistics not available")
-	ErrStreamClosed               = errors.New("stream closed")
+	// ErrServerShutdown signals to the client that the server  is shutting down
+	ErrServerShutdown = errors.New("server shutdown")
+	// ErrStatisticsNotAvailable signals to the users that the stats endpoint is not available
+	ErrStatisticsNotAvailable = errors.New("statistics not available")
+	// ErrStreamClosed signals to the users that the grpc stream is closing
+	ErrStreamClosed = errors.New("stream closed")
 )
 
 var defaultPagination = protoapi.Pagination{
@@ -37,24 +53,27 @@ var defaultPagination = protoapi.Pagination{
 	Descending: true,
 }
 
+// VegaTime ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/vega_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/api VegaTime
 type VegaTime interface {
 	GetTimeNow() (time.Time, error)
 }
 
+// OrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api OrderService
 type OrderService interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
-	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
+	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 	GetOrderSubscribersCount() int32
 }
 
+// TradeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TradeService
 type TradeService interface {
-	GetByOrderId(ctx context.Context, orderID string) ([]*types.Trade, error)
+	GetByOrderID(ctx context.Context, orderID string) ([]*types.Trade, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
@@ -64,6 +83,7 @@ type TradeService interface {
 	GetPositionsSubscribersCount() int32
 }
 
+// CandleService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api CandleService
 type CandleService interface {
 	GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) (candles []*types.Candle, err error)
@@ -71,6 +91,7 @@ type CandleService interface {
 	GetCandleSubscribersCount() int32
 }
 
+// MarketService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api MarketService
 type MarketService interface {
 	GetByID(ctx context.Context, name string) (*types.Market, error)
@@ -80,12 +101,14 @@ type MarketService interface {
 	GetMarketDepthSubscribersCount() int32
 }
 
+// PartyService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api PartyService
 type PartyService interface {
 	GetByID(ctx context.Context, id string) (*types.Party, error)
 	GetAll(ctx context.Context) ([]*types.Party, error)
 }
 
+// BlockchainClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/api BlockchainClient
 type BlockchainClient interface {
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
@@ -99,6 +122,7 @@ type BlockchainClient interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
 }
 
+// AccountsService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api AccountsService
 type AccountsService interface {
 	GetByParty(partyID string) ([]*types.Account, error)
@@ -109,6 +133,7 @@ type AccountsService interface {
 	GetAccountSubscribersCount() int32
 }
 
+// TransferResponseService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api TransferResponseService
 type TransferResponseService interface {
 	ObserveTransferResponses(ctx context.Context, retries int) (<-chan []*types.TransferResponse, uint64)
@@ -199,7 +224,7 @@ func (h *tradingDataService) Markets(ctx context.Context, request *google_proto.
 	}, nil
 }
 
-// OrdersByMarketAndId searches for the given order by Id and Market. If found it will return
+// OrdersByMarketAndID searches for the given order by Id and Market. If found it will return
 // an Order types otherwise it will return an error.
 func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
@@ -210,7 +235,7 @@ func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 	if request.OrderID == "" {
 		return nil, ErrEmptyMissingOrderID
 	}
-	order, err := h.OrderService.GetByMarketAndId(ctx, request.MarketID, request.OrderID)
+	order, err := h.OrderService.GetByMarketAndID(ctx, request.MarketID, request.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -862,7 +887,7 @@ func (h *tradingDataService) TradesByParty(
 func (h *tradingDataService) TradesByOrder(
 	ctx context.Context, req *protoapi.TradesByOrderRequest,
 ) (*protoapi.TradesByOrderResponse, error) {
-	trades, err := h.TradeService.GetByOrderId(ctx, req.OrderID)
+	trades, err := h.TradeService.GetByOrderID(ctx, req.OrderID)
 	if err != nil {
 		return nil, err
 	}

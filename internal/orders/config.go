@@ -9,6 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "orders"
 
+// Config represents the configuration of the Orders service
 type Config struct {
 	Level cfgencoding.LogLevel
 }

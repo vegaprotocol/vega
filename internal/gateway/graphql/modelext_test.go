@@ -80,7 +80,9 @@ func TestModelConverters(t *testing.T) {
 	})
 
 	t.Run("TradableInstrument.IntoProto nil inners types", func(t *testing.T) {
-		ti := gql.TradableInstrument{}
+		ti := gql.TradableInstrument{
+			Instrument: &gql.Instrument{},
+		}
 		pti, err := ti.IntoProto()
 		assert.Nil(t, pti)
 		assert.NotNil(t, err)
@@ -101,7 +103,7 @@ func TestModelConverters(t *testing.T) {
 
 	t.Run("TradableIstrument.IntoProto", func(t *testing.T) {
 		ti := gql.TradableInstrument{
-			Instrument: gql.Instrument{
+			Instrument: &gql.Instrument{
 				Product: &gql.Future{
 					Maturity: "asdasdas",
 					Asset:    "Ethereum/Ether",
@@ -114,7 +116,7 @@ func TestModelConverters(t *testing.T) {
 			RiskModel: &gql.Forward{
 				Lambd: 0.01,
 				Tau:   1.0 / 365.25 / 24,
-				Params: gql.ModelParamsBs{
+				Params: &gql.ModelParamsBs{
 					Mu:    0,
 					R:     0.016,
 					Sigma: 0.09,
@@ -129,8 +131,8 @@ func TestModelConverters(t *testing.T) {
 	t.Run("Market.IntoProto", func(t *testing.T) {
 		mkt := gql.Market{
 			TradingMode: &gql.ContinuousTrading{TickSize: intptr(123)},
-			TradableInstrument: gql.TradableInstrument{
-				Instrument: gql.Instrument{
+			TradableInstrument: &gql.TradableInstrument{
+				Instrument: &gql.Instrument{
 					Product: &gql.Future{
 						Maturity: "asdasdas",
 						Asset:    "Ethereum/Ether",
@@ -143,7 +145,7 @@ func TestModelConverters(t *testing.T) {
 				RiskModel: &gql.Forward{
 					Lambd: 0.01,
 					Tau:   1.0 / 365.25 / 24,
-					Params: gql.ModelParamsBs{
+					Params: &gql.ModelParamsBs{
 						Mu:    0,
 						R:     0.016,
 						Sigma: 0.09,

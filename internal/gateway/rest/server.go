@@ -19,25 +19,28 @@ const (
 	namedLogger = "gateway.restproxy"
 )
 
-type restProxyServer struct {
+// ProxyServer implement a rest server acting as a proxy to the grpc api
+type ProxyServer struct {
 	log *logging.Logger
 	gateway.Config
 	srv *http.Server
 }
 
-func NewRestProxyServer(log *logging.Logger, config gateway.Config) *restProxyServer {
+// NewProxyServer returns a new instance of the rest proxy server
+func NewProxyServer(log *logging.Logger, config gateway.Config) *ProxyServer {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	return &restProxyServer{
+	return &ProxyServer{
 		log:    log,
 		Config: config,
 		srv:    nil,
 	}
 }
 
-func (s *restProxyServer) ReloadConf(cfg gateway.Config) {
+// ReloadConf update the internal configuration of the server
+func (s *ProxyServer) ReloadConf(cfg gateway.Config) {
 	s.log.Info("reloading confioguration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
@@ -52,7 +55,8 @@ func (s *restProxyServer) ReloadConf(cfg gateway.Config) {
 	s.Config = cfg
 }
 
-func (s *restProxyServer) Start() {
+// Start start the server
+func (s *ProxyServer) Start() {
 	logger := s.log
 
 	logger.Info("Starting REST<>GRPC based API",
@@ -89,7 +93,7 @@ func (s *restProxyServer) Start() {
 	handler = gateway.TokenMiddleware(logger, handler)
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support
-	handler = NewGzipHandler(*logger, handler.(http.HandlerFunc))
+	handler = newGzipHandler(*logger, handler.(http.HandlerFunc))
 	// APM
 	if s.Config.REST.APMEnabled {
 		handler = apmhttp.Wrap(handler)
@@ -108,7 +112,8 @@ func (s *restProxyServer) Start() {
 
 }
 
-func (s *restProxyServer) Stop() {
+// Stop stops the server
+func (s *ProxyServer) Stop() {
 	if s.srv != nil {
 		s.log.Info("Stopping REST<>GRPC based API")
 

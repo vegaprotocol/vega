@@ -17,6 +17,7 @@ const (
 	namedLogger    = "cfgwatcher"
 )
 
+// Watcher is looking for updates in the configurations files
 type Watcher struct {
 	log  *logging.Logger
 	cfg  Config
@@ -26,6 +27,7 @@ type Watcher struct {
 	mu                 sync.Mutex
 }
 
+// NewFromFile instanciate a new watcher from the vega config files
 func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath string, path string) (*Watcher, error) {
 	watcherlog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
@@ -50,6 +52,7 @@ func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath s
 	return w, nil
 }
 
+// Get return the last update of the configuraton
 func (w *Watcher) Get() Config {
 	w.mu.Lock()
 	conf := w.cfg
@@ -57,6 +60,7 @@ func (w *Watcher) Get() Config {
 	return conf
 }
 
+// OnConfigUpdate register a function to be called when the configuration is getting updated
 func (w *Watcher) OnConfigUpdate(f func(Config)) {
 	w.mu.Lock()
 	w.cfgUpdateListeners = append(w.cfgUpdateListeners, f)

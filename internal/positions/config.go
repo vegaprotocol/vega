@@ -9,6 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "position"
 
+// Config represents the configuration of the position engine
 type Config struct {
 	Level             encoding.LogLevel
 	LogPositionUpdate bool

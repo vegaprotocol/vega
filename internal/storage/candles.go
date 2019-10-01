@@ -11,7 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -28,7 +28,7 @@ type Candle struct {
 	log          *logging.Logger
 	badger       *badgerStore
 	subscribers  map[uint64]*InternalTransport
-	subscriberId uint64
+	subscriberID uint64
 	queue        []marketCandle
 	mu           sync.Mutex
 }
@@ -71,6 +71,7 @@ func NewCandles(log *logging.Logger, c Config) (*Candle, error) {
 	}, nil
 }
 
+// ReloadConf update the internal Candle configuration
 func (c *Candle) ReloadConf(cfg Config) {
 	c.log.Info("reloading configuration")
 	if c.log.GetLevel() != cfg.Level.Get() {
@@ -93,13 +94,13 @@ func (c *Candle) Subscribe(iT *InternalTransport) uint64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.subscriberId = c.subscriberId + 1
-	c.subscribers[c.subscriberId] = iT
+	c.subscriberID++
+	c.subscribers[c.subscriberID] = iT
 
 	c.log.Debug("Candle subscriber added in candle store",
-		logging.Uint64("subscriber-id", c.subscriberId))
+		logging.Uint64("subscriber-id", c.subscriberID))
 
-	return c.subscriberId
+	return c.subscriberID
 }
 
 // Unsubscribe from a candles channel. Provide the subscriber id you wish to stop receiving new events for.
@@ -342,6 +343,7 @@ func (c *Candle) generateFetchKey(market string, interval types.Interval, since 
 
 }
 
+// FetchLastCandle return the last candle store for a given market and interval
 func (c *Candle) FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error) {
 	var candle types.Candle
 	key := c.badger.lastCandleKey(marketID, interval)

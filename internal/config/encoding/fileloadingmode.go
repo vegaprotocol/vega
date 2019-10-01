@@ -6,6 +6,13 @@ import (
 	"github.com/dgraph-io/badger/options"
 )
 
+var (
+	// ErrCouldNotMarshalFLM is to be used when marshalling failed
+	ErrCouldNotMarshalFLM = errors.New("could not marshal FileLoadingMode value to string")
+	// ErrCouldNotUnmarshalFLM is to be used when unmarshalling failed
+	ErrCouldNotUnmarshalFLM = errors.New("could not unmarshal FileLoadingMode value from string")
+)
+
 // FileLoadingMode is for storing a badger.FileLoadingMode as a string in a config file
 type FileLoadingMode struct {
 	options.FileLoadingMode
@@ -15,14 +22,6 @@ type FileLoadingMode struct {
 func (m *FileLoadingMode) Get() options.FileLoadingMode {
 	return m.FileLoadingMode
 }
-
-var (
-	// ErrCouldNotMarshal is to be used when marshalling failed
-	ErrCouldNotMarshalFLM = errors.New("could not marshal FileLoadingMode value to string")
-
-	// ErrCouldNotUnmarshal is to be used when unmarshalling failed
-	ErrCouldNotUnmarshalFLM = errors.New("could not unmarshal FileLoadingMode value from string")
-)
 
 // UnmarshalText maps a string to a FileLoadingMode enum value
 func (m *FileLoadingMode) UnmarshalText(text []byte) error {

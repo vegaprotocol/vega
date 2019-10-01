@@ -11,6 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// MarketPosition reprensent the position of a party inside a market
 type MarketPosition struct {
 	// Actual volume
 	size int64
@@ -23,30 +24,37 @@ type MarketPosition struct {
 
 // Errors
 var (
+	// ErrPositionNotFound signal that a position was not found for a given party.
 	ErrPositionNotFound = errors.New("position not found")
 )
 
+// String returns a string representation of a market
 func (m MarketPosition) String() string {
 	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
 		m.size, m.buy, m.sell, m.price, m.partyID)
 }
 
+// Buy will returns the potential buys for a given position
 func (m MarketPosition) Buy() int64 {
 	return m.buy
 }
 
+// Sell returns the potential sells for the position
 func (m MarketPosition) Sell() int64 {
 	return m.sell
 }
 
+// Size returns the current size of the position
 func (m MarketPosition) Size() int64 {
 	return m.size
 }
 
+// Party returns the party to which this positions is associated
 func (m MarketPosition) Party() string {
 	return m.partyID
 }
 
+// Price returns the current price for this position
 func (m MarketPosition) Price() uint64 {
 	return m.price
 }
@@ -63,6 +71,7 @@ func (m *MarketPosition) UpdatedPosition(price uint64) *MarketPosition {
 	}
 }
 
+// Engine represents the positions engine
 type Engine struct {
 	log *logging.Logger
 	Config
@@ -73,6 +82,7 @@ type Engine struct {
 	positions map[string]*MarketPosition
 }
 
+// New instanciate a new positions engine
 func New(log *logging.Logger, config Config) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -86,6 +96,7 @@ func New(log *logging.Logger, config Config) *Engine {
 	}
 }
 
+// ReloadConf update the internal configuration of the positions engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -196,7 +207,7 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	e.mu.Unlock()
 }
 
-// Removes positions for distressed traders, and returns the most up to date positions we have
+// RemoveDistressed Removes positions for distressed traders, and returns the most up to date positions we have
 func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.MarketPosition {
 	ret := make([]events.MarketPosition, 0, len(traders))
 	e.mu.Lock()
@@ -219,7 +230,7 @@ func (e *Engine) updatePositions(trade *types.Trade) {
 	}
 }
 
-// just the logic to update buyer, will eventually return the MarketPosition we need to push
+// Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push
 func (e *Engine) Positions() []MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "Positions")
 	e.mu.RLock()
@@ -232,6 +243,7 @@ func (e *Engine) Positions() []MarketPosition {
 	return out
 }
 
+// Parties returns a list of all the parties in the position engine
 func (e *Engine) Parties() []string {
 	parties := make([]string, 0, len(e.positions))
 	for _, v := range e.positions {
