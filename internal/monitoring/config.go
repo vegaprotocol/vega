@@ -11,6 +11,7 @@ const (
 	namedLogger = "monitoring"
 )
 
+// Config represents the configuration of the monitoring package
 type Config struct {
 	Level    encoding.LogLevel
 	Interval encoding.Duration

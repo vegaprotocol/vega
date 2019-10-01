@@ -9,6 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "markets"
 
+// Config represent the configuration of the market service
 type Config struct {
 	Level encoding.LogLevel
 }

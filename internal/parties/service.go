@@ -7,6 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// PartyStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/part_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/parties PartyStore
 type PartyStore interface {
 	Post(party *types.Party) error
@@ -14,11 +15,13 @@ type PartyStore interface {
 	GetAll() ([]*types.Party, error)
 }
 
+// Blockchain ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  Blockchain
 type Blockchain interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
 }
 
+// Svc represents the party service
 type Svc struct {
 	Config
 	log   *logging.Logger
@@ -38,6 +41,7 @@ func NewService(log *logging.Logger, config Config, store PartyStore) (*Svc, err
 	}, nil
 }
 
+// ReloadConf updates the internal configuration of the service
 func (s *Svc) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {

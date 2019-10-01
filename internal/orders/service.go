@@ -15,18 +15,25 @@ import (
 )
 
 var (
-	ErrInvalidExpirationDTFmt           = errors.New("invalid expiration datetime format")
-	ErrInvalidExpirationDT              = errors.New("invalid expiration datetime")
+	// ErrInvalidExpirationDTFmt signals that the time format was invalid
+	ErrInvalidExpirationDTFmt = errors.New("invalid expiration datetime format")
+	// ErrInvalidExpirationDT signals that the time format was invalid
+	ErrInvalidExpirationDT = errors.New("invalid expiration datetime")
+	// ErrInvalidTimeInForceForMarketOrder signals that the time in force used with a market order is not accepted
 	ErrInvalidTimeInForceForMarketOrder = errors.New("invalid time in for for market order (expected: FOK/IOC)")
-	ErrInvalidPriceForLimitOrder        = errors.New("invalid limit order (missing required price)")
-	ErrInvalidPriceForMarketOrder       = errors.New("invalid market order (no price required)")
+	// ErrInvalidPriceForLimitOrder signal that a a price was missing for a limit order
+	ErrInvalidPriceForLimitOrder = errors.New("invalid limit order (missing required price)")
+	// ErrInvalidPriceForMarketOrder signals that a price was specified for a market order but not price is required
+	ErrInvalidPriceForMarketOrder = errors.New("invalid market order (no price required)")
 )
 
+// TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
 }
 
+// OrderStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  OrderStore
 type OrderStore interface {
 	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Order, error)
@@ -38,6 +45,7 @@ type OrderStore interface {
 	Unsubscribe(id uint64) error
 }
 
+// Blockchain ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/internal/orders  Blockchain
 type Blockchain interface {
 	CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error)
@@ -45,6 +53,7 @@ type Blockchain interface {
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
 }
 
+// Svc represents the order service
 type Svc struct {
 	Config
 	log *logging.Logger
@@ -74,6 +83,7 @@ func NewService(log *logging.Logger, config Config, store OrderStore, time TimeS
 	}, nil
 }
 
+// ReloadConf update the internal configuration of the order service
 func (s *Svc) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -87,6 +97,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
+// CreateOrder validate and create a new order
 func (s *Svc) CreateOrder(
 	ctx context.Context,
 	orderSubmission *types.OrderSubmission,
@@ -178,6 +189,7 @@ func (s *Svc) CancelOrder(ctx context.Context, order *types.OrderCancellation) (
 	}, nil
 }
 
+// AmendOrder validate and amend an existing order
 func (s *Svc) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (*types.PendingOrder, error) {
 	if err := amendment.Validate(); err != nil {
 		return nil, errors.Wrap(err, "order amendment validation failed")
@@ -238,19 +250,23 @@ func (s *Svc) validateOrderExpirationTS(expiresAt int64) (time.Time, error) {
 	return exp, nil
 }
 
+// GetByReference find an order from the store using its reference
 func (s *Svc) GetByReference(ctx context.Context, ref string) (*types.Order, error) {
 	return s.orderStore.GetByReference(ctx, ref)
 }
 
+// GetByMarket returns a list of order for a given market
 func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetByMarket(ctx, market, skip, limit, descending, open)
 }
 
+// GetByParty returns a list of order for a given party
 func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error) {
 	return s.orderStore.GetByParty(ctx, party, skip, limit, descending, open)
 }
 
-func (s *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error) {
+// GetByMarketAndID find a order using a marketID and an order id
+func (s *Svc) GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error) {
 	o, err := s.orderStore.GetByMarketAndID(ctx, market, id)
 	if err != nil {
 		return &types.Order{}, err
@@ -258,7 +274,8 @@ func (s *Svc) GetByMarketAndId(ctx context.Context, market string, id string) (o
 	return o, err
 }
 
-func (s *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (order *types.Order, err error) {
+// GetByPartyAndID find an order using a party id and an order id
+func (s *Svc) GetByPartyAndID(ctx context.Context, party string, id string) (order *types.Order, err error) {
 	o, err := s.orderStore.GetByPartyAndID(ctx, party, id)
 	if err != nil {
 		return &types.Order{}, err
@@ -266,10 +283,13 @@ func (s *Svc) GetByPartyAndId(ctx context.Context, party string, id string) (ord
 	return o, err
 }
 
+// GetOrderSubscribersCount return the number of subscribers to the
+// orders updates stream
 func (s *Svc) GetOrderSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }
 
+// ObserveOrders add a new subscriber to the stream of order updates
 func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Order, uint64) {
 	orders := make(chan []types.Order)
 	internal := make(chan []types.Order)

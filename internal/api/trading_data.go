@@ -64,7 +64,7 @@ type VegaTime interface {
 type OrderService interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
-	GetByMarketAndId(ctx context.Context, market string, id string) (order *types.Order, err error)
+	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
 	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
 	GetOrderSubscribersCount() int32
@@ -224,7 +224,7 @@ func (h *tradingDataService) Markets(ctx context.Context, request *google_proto.
 	}, nil
 }
 
-// OrdersByMarketAndId searches for the given order by Id and Market. If found it will return
+// OrdersByMarketAndID searches for the given order by Id and Market. If found it will return
 // an Order types otherwise it will return an error.
 func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
@@ -235,7 +235,7 @@ func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 	if request.OrderID == "" {
 		return nil, ErrEmptyMissingOrderID
 	}
-	order, err := h.OrderService.GetByMarketAndId(ctx, request.MarketID, request.OrderID)
+	order, err := h.OrderService.GetByMarketAndID(ctx, request.MarketID, request.OrderID)
 	if err != nil {
 		return nil, err
 	}
