@@ -5,15 +5,18 @@ import (
 
 	"code.vegaprotocol.io/vega/internal/oracles"
 	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/pkg/errors"
 )
 
+// Future represent a Future as describe by the market framework
 type Future struct {
 	Asset    string
 	Maturity time.Time
 	Oracle   oracles.Oracle
 }
 
+// Settle a position against the future
 func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error) {
 	settlementPrice, err := f.Oracle.SettlementPrice()
 	if err != nil {
@@ -30,6 +33,7 @@ func (f *Future) Value(markPrice uint64) (uint64, error) {
 	return markPrice, nil
 }
 
+// GetAsset return the asset used by the future
 func (f *Future) GetAsset() string {
 	return f.Asset
 }

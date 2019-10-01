@@ -51,7 +51,7 @@ func TestStorage_GetTradesByOrderId(t *testing.T) {
 	defer tradeStore.Close()
 
 	insertTestData(t, orderStore, tradeStore)
-	trades, err := tradeStore.GetByOrderId(context.Background(), "d41d8cd98f00b204e9800998ecf9999a", 0, 0, false, nil)
+	trades, err := tradeStore.GetByOrderID(context.Background(), "d41d8cd98f00b204e9800998ecf9999a", 0, 0, false, nil)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 6, len(trades))

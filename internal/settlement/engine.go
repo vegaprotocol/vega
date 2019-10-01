@@ -13,6 +13,7 @@ import (
 
 // We should really use a type from the proto package for this, although, these mocks are kind of easy to set up :)
 
+// MarketPosition ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/internal/settlement MarketPosition
 type MarketPosition interface {
 	Party() string
@@ -22,6 +23,7 @@ type MarketPosition interface {
 	Price() uint64
 }
 
+// Product ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/internal/settlement Product
 type Product interface {
 	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
@@ -41,6 +43,7 @@ type Engine struct {
 	market   string
 }
 
+// New instanciate a new instance of the settlement engine
 func New(log *logging.Logger, conf Config, product Product, market string) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -56,6 +59,7 @@ func New(log *logging.Logger, conf Config, product Product, market string) *Engi
 	}
 }
 
+// ReloadConf update the internal configuration of the settlement engined
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -111,6 +115,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
 	e.posMu.Unlock()
 }
 
+// Settle run settlement over all the positions
 func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
 	positions, err := e.settleAll()
@@ -124,6 +129,8 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 	return positions, nil
 }
 
+// ListenClosed listen to all positions for distressed trader
+// needing to be closed
 func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
 	// lock before we can start
 	e.closedMu.Lock()

@@ -9,6 +9,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// PriceLevel represents all the Orders placed at a given price.
 type PriceLevel struct {
 	price             uint64
 	proRataMode       bool
@@ -17,6 +18,7 @@ type PriceLevel struct {
 	volume            uint64
 }
 
+// NewPriceLevel instanciate a new PriceLevel
 func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 	return &PriceLevel{
 		price:             price,

@@ -4,10 +4,12 @@ import (
 	"context"
 	"sync/atomic"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// MarketStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets MarketStore
 type MarketStore interface {
 	Post(party *types.Market) error
@@ -15,6 +17,7 @@ type MarketStore interface {
 	GetAll() ([]*types.Market, error)
 }
 
+// OrderStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/markets OrderStore
 type OrderStore interface {
 	Subscribe(orders chan<- []types.Order) uint64
@@ -22,6 +25,7 @@ type OrderStore interface {
 	GetMarketDepth(ctx context.Context, market string) (*types.MarketDepth, error)
 }
 
+// Svc represent the market service
 type Svc struct {
 	Config
 	log            *logging.Logger
@@ -44,6 +48,7 @@ func NewService(log *logging.Logger, config Config, marketStore MarketStore, ord
 	}, nil
 }
 
+// ReloadConf update the market service internal configuration
 func (s *Svc) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -84,6 +89,8 @@ func (s *Svc) GetDepth(ctx context.Context, marketID string) (marketDepth *types
 	return s.orderStore.GetMarketDepth(ctx, m.Id)
 }
 
+// GetMarketDepthSubscribersCount return the number of subscribers to the
+// market depths updates
 func (s *Svc) GetMarketDepthSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscribersCnt)
 }
@@ -98,7 +105,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 	go func() {
 		atomic.AddInt32(&s.subscribersCnt, 1)
 		defer atomic.AddInt32(&s.subscribersCnt, -1)
-		ip := logging.IPAddressFromContext(ctx)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		ctx, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {
@@ -158,6 +165,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 	return depth, ref
 }
 
+// ObserveMarkets ...
 func (s *Svc) ObserveMarkets(ctx context.Context) (markets <-chan []types.Market, ref uint64) {
 	return nil, 0
 }

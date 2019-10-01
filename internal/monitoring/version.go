@@ -17,11 +17,13 @@ var defaultChainVersion = ChainVersion{
 	Max: maxVersion,
 }
 
+// ChainVersion represents a required version for the chain
 type ChainVersion struct {
 	Min semver.Version
 	Max semver.Version
 }
 
+// Check validate that they chain respect the minimal version required
 func (c ChainVersion) Check(vstr string) error {
 	vstr = stripVPrefix(vstr)
 

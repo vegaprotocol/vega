@@ -9,6 +9,7 @@ import (
 	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
+// Server is an abstraction over the abci server
 type Server struct {
 	log *logging.Logger
 	Config
@@ -16,6 +17,7 @@ type Server struct {
 	srv  cmn.Service
 }
 
+// NewServer instanciate a new server
 func NewServer(log *logging.Logger, config Config, stats *Stats, app *AbciApplication) *Server {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -29,6 +31,7 @@ func NewServer(log *logging.Logger, config Config, stats *Stats, app *AbciApplic
 	}
 }
 
+// ReloadConf update the internal configuration
 func (s *Server) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -66,6 +69,7 @@ func (s *Server) Start() error {
 	return nil
 }
 
+// Stop the abci server
 func (s *Server) Stop() {
 	if s.srv != nil {
 		s.log.Info("Stopping abci-blockchain socket server")

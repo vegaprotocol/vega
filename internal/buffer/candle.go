@@ -19,10 +19,12 @@ var supportedIntervals = [6]types.Interval{
 	types.Interval_I1D,  // 1 day
 }
 
+// CandleStore ...
 type CandleStore interface {
 	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
 }
 
+// Candle is a buffer for the candles produces by vega
 type Candle struct {
 	buf       map[string]types.Candle
 	marketID  string
@@ -31,6 +33,7 @@ type Candle struct {
 	lastTrade types.Trade
 }
 
+// NewCandle instanciate a new candles buffer
 func NewCandle(marketID string, store CandleStore, now time.Time) *Candle {
 	candl := &Candle{
 		buf:      map[string]types.Candle{},
@@ -46,6 +49,7 @@ func (c *Candle) reset() {
 	c.buf = map[string]types.Candle{}
 }
 
+// Start will start producing candles at the given time
 func (c *Candle) Start(timestamp time.Time) (map[string]types.Candle, error) {
 	c.mu.Lock()
 	roundedTimestamps := GetMapOfIntervalsToRoundedTimestamps(timestamp)
@@ -77,7 +81,7 @@ func (c *Candle) Start(timestamp time.Time) (map[string]types.Candle, error) {
 	return previous, nil
 }
 
-// AddTradeToBuffer adds a trade to the trades buffer for the given market.
+// AddTrade adds a trade to the trades buffer for the given market.
 func (c *Candle) AddTrade(trade types.Trade) error {
 	for _, interval := range supportedIntervals {
 		roundedTradeTime := vegatime.RoundToNearest(vegatime.UnixNano(trade.Timestamp), interval)
@@ -114,7 +118,7 @@ func GetMapOfIntervalsToRoundedTimestamps(timestamp time.Time) map[types.Interva
 	return timestamps
 }
 
-// getBufferKey returns the custom formatted buffer key for internal trade to timestamp mapping.
+// bufferKey returns the custom formatted buffer key for internal trade to timestamp mapping.
 func bufferKey(timestamp time.Time, interval types.Interval) string {
 	return fmt.Sprintf("%d:%s", timestamp.UnixNano(), interval.String())
 }

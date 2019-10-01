@@ -5,16 +5,19 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// TransferResponseStore represent an abstraction over a transfer response storage
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/transfers TransferResponseStore
 type TransferResponseStore interface {
 	Subscribe(c chan []*types.TransferResponse) uint64
 	Unsubscribe(id uint64) error
 }
 
+// Svc is the service handling all the transfer responses (leger movement)
 type Svc struct {
 	Config
 	log           *logging.Logger
@@ -22,6 +25,7 @@ type Svc struct {
 	subscriberCnt int32
 }
 
+// NewService retunrs a new instance of the transfer response service
 func NewService(log *logging.Logger, cfg Config, store TransferResponseStore) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -46,6 +50,9 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
+// ObserveTransferResponses start a new goroutine and return a channels
+// allowing the caller to listen to all new TransferResponse created by the
+// core
 func (s *Svc) ObserveTransferResponses(
 	ctx context.Context, retries int,
 ) (<-chan []*types.TransferResponse, uint64) {
@@ -58,7 +65,7 @@ func (s *Svc) ObserveTransferResponses(
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
-		ip := logging.IPAddressFromContext(ctx)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		for {
@@ -121,6 +128,8 @@ func (s *Svc) ObserveTransferResponses(
 	return transfers, ref
 }
 
+// GetTransferResponsesSubscribersCount return the number of subscribers to the
+// transfer responses updates.
 func (s *Svc) GetTransferResponsesSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }

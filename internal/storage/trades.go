@@ -24,7 +24,7 @@ type Trade struct {
 	log             *logging.Logger
 	badger          *badgerStore
 	subscribers     map[uint64]chan<- []types.Trade
-	subscriberId    uint64
+	subscriberID    uint64
 	buffer          []types.Trade
 	mu              sync.Mutex
 	onCriticalError func()
@@ -57,6 +57,7 @@ func NewTrades(log *logging.Logger, c Config, onCriticalError func()) (*Trade, e
 	}, nil
 }
 
+// ReloadConf update the internal configuration of the trade
 func (ts *Trade) ReloadConf(cfg Config) {
 	ts.log.Info("reloading configuration")
 	if ts.log.GetLevel() != cfg.Level.Get() {
@@ -79,13 +80,13 @@ func (ts *Trade) Subscribe(trades chan<- []types.Trade) uint64 {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	ts.subscriberId = ts.subscriberId + 1
-	ts.subscribers[ts.subscriberId] = trades
+	ts.subscriberID++
+	ts.subscribers[ts.subscriberID] = trades
 
 	ts.log.Debug("Trades subscriber added in order store",
-		logging.Uint64("subscriber-id", ts.subscriberId))
+		logging.Uint64("subscriber-id", ts.subscriberID))
 
-	return ts.subscriberId
+	return ts.subscriberID
 }
 
 // Unsubscribe from an trades channel. Provide the subscriber id you wish to stop receiving new events for.
@@ -199,14 +200,14 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 	return result, nil
 }
 
-// GetByMarketAndId retrieves a trade for a given market and id, any errors will be returned immediately.
-func (ts *Trade) GetByMarketAndId(ctx context.Context, market string, Id string) (*types.Trade, error) {
+// GetByMarketAndID retrieves a trade for a given market and id, any errors will be returned immediately.
+func (ts *Trade) GetByMarketAndID(ctx context.Context, market string, id string) (*types.Trade, error) {
 	var trade types.Trade
 
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
-	marketKey := ts.badger.tradeMarketKey(market, Id)
+	marketKey := ts.badger.tradeMarketKey(market, id)
 	item, err := txn.Get(marketKey)
 	if err != nil {
 		return nil, err
@@ -294,11 +295,11 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 	return result, nil
 }
 
-// GetByPartyAndId retrieves a trade for a given party and id.
-func (ts *Trade) GetByPartyAndId(ctx context.Context, party string, Id string) (*types.Trade, error) {
+// GetByPartyAndID retrieves a trade for a given party and id.
+func (ts *Trade) GetByPartyAndID(ctx context.Context, party string, id string) (*types.Trade, error) {
 	var trade types.Trade
 	err := ts.badger.db.View(func(txn *badger.Txn) error {
-		partyKey := ts.badger.tradePartyKey(party, Id)
+		partyKey := ts.badger.tradePartyKey(party, id)
 		marketKeyItem, err := txn.Get(partyKey)
 		if err != nil {
 			return err
@@ -333,9 +334,9 @@ func (ts *Trade) GetByPartyAndId(ctx context.Context, party string, Id string) (
 	return &trade, nil
 }
 
-// GetByOrderId retrieves trades relating to the given order id - buy order Id or sell order Id.
+// GetByOrderID retrieves trades relating to the given order id - buy order Id or sell order Id.
 // Provide optional query filters to refine the data set further (if required), any errors will be returned immediately.
-func (ts *Trade) GetByOrderId(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error) {
+func (ts *Trade) GetByOrderID(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error) {
 	var err error
 	tmk, kLen := ts.getTradeMarketFilter(market)
 	result := make([]*types.Trade, 0, int(limit))
@@ -467,13 +468,13 @@ func (ts *Trade) tradeBatchToMap(batch []types.Trade) (map[string][]byte, error)
 		// Market Index
 		marketKey := ts.badger.tradeMarketKey(trade.MarketID, trade.Id)
 		// Trade Id index
-		idKey := ts.badger.tradeIdKey(trade.Id)
+		idKey := ts.badger.tradeIDKey(trade.Id)
 		// Party indexes (buyer and seller as parties)
 		buyerPartyKey := ts.badger.tradePartyKey(trade.Buyer, trade.Id)
 		sellerPartyKey := ts.badger.tradePartyKey(trade.Seller, trade.Id)
 		// OrderId indexes (relate to both buy and sell orders)
-		buyOrderKey := ts.badger.tradeOrderIdKey(trade.BuyOrder, trade.Id)
-		sellOrderKey := ts.badger.tradeOrderIdKey(trade.SellOrder, trade.Id)
+		buyOrderKey := ts.badger.tradeOrderIDKey(trade.BuyOrder, trade.Id)
+		sellOrderKey := ts.badger.tradeOrderIDKey(trade.SellOrder, trade.Id)
 
 		results[string(marketKey)] = tradeBuf
 		results[string(idKey)] = marketKey

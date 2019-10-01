@@ -15,11 +15,15 @@ import (
 )
 
 var (
+	// ErrMarketNotFound signals that the market related to the
+	// the account we were looking for does not exist
 	ErrMarketNotFound = errors.New("no accounts found for market")
-	ErrOwnerNotFound  = errors.New("no accounts found for party")
+	// ErrOwnerNotFound signals that the owner related to the
+	// account we were looking for does not exists
+	ErrOwnerNotFound = errors.New("no accounts found for party")
 )
 
-// Data structure representing a collateral account store
+// Account represents a collateral account store
 type Account struct {
 	Config
 
@@ -263,19 +267,19 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		// Check the type of account and write only the data required for GENERAL accounts.
 		if acc.Type == types.AccountType_GENERAL {
 			// General accounts have no scope of an individual market, they span all markets.
-			generalIdKey := a.badger.accountGeneralIdKey(acc.Owner, acc.Asset)
-			generalAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(generalIdKey))
-			batch[string(generalIdKey)] = buf
-			batch[string(generalAssetKey)] = generalIdKey
+			generalIDKey := a.badger.accountGeneralIDKey(acc.Owner, acc.Asset)
+			generalAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(generalIDKey))
+			batch[string(generalIDKey)] = buf
+			batch[string(generalAssetKey)] = generalIDKey
 		}
 		// Check the type of account and write only the data/keys required for MARGIN accounts.
 		if acc.Type == types.AccountType_MARGIN {
-			marginIdKey := a.badger.accountMarginIdKey(acc.Owner, acc.MarketID, acc.Asset)
-			marginMarketKey := a.badger.accountMarketKey(acc.MarketID, string(marginIdKey))
-			marginAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(marginIdKey))
-			batch[string(marginIdKey)] = buf
-			batch[string(marginMarketKey)] = marginIdKey
-			batch[string(marginAssetKey)] = marginIdKey
+			marginIDKey := a.badger.accountMarginIDKey(acc.Owner, acc.MarketID, acc.Asset)
+			marginMarketKey := a.badger.accountMarketKey(acc.MarketID, string(marginIDKey))
+			marginAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(marginIDKey))
+			batch[string(marginIDKey)] = buf
+			batch[string(marginMarketKey)] = marginIDKey
+			batch[string(marginAssetKey)] = marginIDKey
 		}
 	}
 	return batch, nil
@@ -286,7 +290,7 @@ func (a *Account) Subscribe(c chan []*types.Account) uint64 {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	a.subscriberID += 1
+	a.subscriberID++
 	a.subscribers[a.subscriberID] = c
 
 	a.log.Debug("Account subscriber added in account store",

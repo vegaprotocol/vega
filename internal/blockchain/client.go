@@ -16,11 +16,13 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
+// Client abstract all communication to the blockchain
 type Client struct {
 	*Config
 	tmClient *tmRPC.HTTP
 }
 
+// NewClient instanciate a new blockchain client
 func NewClient(config *Config) (*Client, error) {
 	if config.ClientAddr == "" {
 		return nil, errors.New("abci client addr is empty in config")
@@ -32,19 +34,23 @@ func NewClient(config *Config) (*Client, error) {
 	return &Client{Config: config, tmClient: cli}, nil
 }
 
+// CancelOrder will send a cancel order transaction to the blockchain
 func (b *Client) CancelOrder(ctx context.Context, order *types.Order) (success bool, err error) {
 	return b.sendOrderCommand(ctx, order, CancelOrderCommand)
 }
 
+// AmendOrder will send an amend order transaction to the blockchain
 func (b *Client) AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error) {
 	return b.sendAmendmentCommand(ctx, amendment, AmendOrderCommand)
 }
 
+// NotifyTraderAccount will send a Notifytraderaccount transaction to the blockchain
 func (b *Client) NotifyTraderAccount(
 	ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error) {
 	return b.sendNotifyTraderAccountCommand(ctx, notif, NotifyTraderAccountCommand)
 }
 
+// CreateOrder will send a submit order transaction to the blockchain
 func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error) {
 	order.Reference = fmt.Sprintf("%s", uuid.NewV4())
 	_, err := b.sendOrderCommand(ctx, order, SubmitOrderCommand)
@@ -66,6 +72,7 @@ func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.Pe
 	}, nil
 }
 
+// GetGenesisTime will retrieve the genesis time from the blockchain
 func (b *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	res, err := b.tmClient.Genesis()
 	if err != nil {
@@ -74,14 +81,17 @@ func (b *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err
 	return res.Genesis.GenesisTime.UTC(), nil
 }
 
+// GetStatus returns the current status of the chain
 func (b *Client) GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) {
 	return b.tmClient.Status()
 }
 
+// GetNetworkInfo return information of the current network
 func (b *Client) GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error) {
 	return b.tmClient.NetInfo()
 }
 
+// GetUnconfirmedTxCount return the current count of unconfirmed transactions
 func (b *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err error) {
 	res, err := b.tmClient.NumUnconfirmedTxs()
 	if err != nil {
@@ -90,6 +100,7 @@ func (b *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 	return res.Count, err
 }
 
+// Health returns the result of the health endpoint of the chain
 func (b *Client) Health() (*tmctypes.ResultHealth, error) {
 	return b.tmClient.Health()
 }

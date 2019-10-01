@@ -4,10 +4,12 @@ import (
 	"context"
 	"sync/atomic"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// AccountStore represents a store for the accounts
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts AccountStore
 type AccountStore interface {
 	GetByParty(partyID string) ([]*types.Account, error)
@@ -19,12 +21,13 @@ type AccountStore interface {
 	Unsubscribe(id uint64) error
 }
 
+// Blockchain represent en abstraction over a chain
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts  Blockchain
 type Blockchain interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
 }
 
-// Account service business logic.
+// Svc implements the Account service business logic.
 type Svc struct {
 	Config
 	log           *logging.Logger
@@ -126,7 +129,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
-		ip := logging.IPAddressFromContext(ctx)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		for {
