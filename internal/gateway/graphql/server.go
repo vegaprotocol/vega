@@ -68,7 +68,7 @@ func New(
 
 // ReloadConf update the internal configuration of the graphql server
 func (g *GraphServer) ReloadConf(cfg gateway.Config) {
-	g.log.Info("reloading confioguration")
+	g.log.Info("reloading configuration")
 	if g.log.GetLevel() != cfg.Level.Get() {
 		g.log.Info("updating log level",
 			logging.String("old", g.log.GetLevel().String()),
