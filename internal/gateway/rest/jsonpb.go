@@ -7,13 +7,12 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 )
 
 // JSONPb is a runtime.Marshaler which marshals/unmarshals into/from
-// JSON with "github.com/gogo/protobuf/jsonpb".
 type JSONPb jsonpb.Marshaler
 
 // ContentType always returns "application/json".
