@@ -125,7 +125,6 @@ func NewMarket(
 	trades TradeStore,
 	transferResponseStore TransferResponseStore,
 	now time.Time,
-	seq uint64,
 ) (*Market, error) {
 
 	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
@@ -172,10 +171,6 @@ func NewMarket(
 		trades:               trades,
 		candlesBuf:           candlesBuf,
 		transferResponsesBuf: transferResponsesBuf,
-	}
-	err = SetMarketID(mkt, seq)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to set market identifier")
 	}
 
 	return market, nil
