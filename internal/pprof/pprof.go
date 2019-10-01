@@ -62,8 +62,8 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	log.SetLevel(config.Level.Get())
 
 	t := time.Now()
-	memprofileFile := fmt.Sprintf("%s-%s%s", memprofileName, t.Format("Mon-02-2006-15-04-05"), profileExt)
-	cpuprofileFile := fmt.Sprintf("%s-%s%s", cpuprofileName, t.Format("Mon-02-2006-15-04-05"), profileExt)
+	memprofileFile := fmt.Sprintf("%s-%s%s", memprofileName, t.Format("2006-01-02-15-04-05"), profileExt)
+	cpuprofileFile := fmt.Sprintf("%s-%s%s", cpuprofileName, t.Format("2006-01-02-15-04-05"), profileExt)
 
 	p := &Pprofhandler{
 		log:            log,
