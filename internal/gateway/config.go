@@ -7,27 +7,31 @@ import (
 	"code.vegaprotocol.io/vega/internal/logging"
 )
 
+// ServerConfig represent the configuration of a server in vega
 type ServerConfig struct {
 	Port int
 	IP   string
 }
 
-type GatewayServiceConfig struct {
+// GraphqlServiceConfig represents the configuration of the gateway
+type GraphqlServiceConfig struct {
 	ServerConfig
 	Enabled bool
 }
 
+// RESTGatewayServiceConfig represent the configuration of the rest service
 type RESTGatewayServiceConfig struct {
 	ServerConfig
 	Enabled    bool
 	APMEnabled bool
 }
 
+// Config represents the general configuration for the gateway
 type Config struct {
 	Level                    encoding.LogLevel
 	Timeout                  encoding.Duration
 	Node                     ServerConfig
-	GraphQL                  GatewayServiceConfig
+	GraphQL                  GraphqlServiceConfig
 	REST                     RESTGatewayServiceConfig
 	SubscriptionRetries      int
 	GraphQLPlaygroundEnabled bool
@@ -39,7 +43,7 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level:   encoding.LogLevel{Level: logging.InfoLevel},
 		Timeout: encoding.Duration{Duration: 5 * time.Second},
-		GraphQL: GatewayServiceConfig{
+		GraphQL: GraphqlServiceConfig{
 			ServerConfig: ServerConfig{
 				IP:   "0.0.0.0",
 				Port: 3004,
