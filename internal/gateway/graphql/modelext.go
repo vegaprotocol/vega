@@ -9,30 +9,53 @@ import (
 )
 
 var (
-	ErrNilTradingMode                  = errors.New("nil trading mode")
-	ErrUnimplementedTradingMode        = errors.New("unimplemented trading mode")
-	ErrNilMarket                       = errors.New("nil market")
-	ErrUnimplementedMarket             = errors.New("unimplemented market")
-	ErrNilTradableInstrument           = errors.New("nil tradable instrument")
+	// ErrNilTradingMode ...
+	ErrNilTradingMode = errors.New("nil trading mode")
+	// ErrUnimplementedTradingMode ...
+	ErrUnimplementedTradingMode = errors.New("unimplemented trading mode")
+	// ErrNilMarket ...
+	ErrNilMarket = errors.New("nil market")
+	// ErrUnimplementedMarket ...
+	ErrUnimplementedMarket = errors.New("unimplemented market")
+	// ErrNilTradableInstrument ...
+	ErrNilTradableInstrument = errors.New("nil tradable instrument")
+	// ErrUnimplementedTradableInstrument ...
 	ErrUnimplementedTradableInstrument = errors.New("unimplemented tradable instrument")
-	ErrNilOracle                       = errors.New("nil oracle")
-	ErrUnimplementedOracle             = errors.New("unimplemented oracle")
-	ErrNilProduct                      = errors.New("nil product")
-	ErrUnimplementedProduct            = errors.New("unimplemented product")
-	ErrNilRiskModel                    = errors.New("nil risk model")
-	ErrUnimplementedRiskModel          = errors.New("unimplemented risk model")
-	ErrNilInstrumentMetadata           = errors.New("nil instrument metadata")
+	// ErrNilOracle ..
+	ErrNilOracle = errors.New("nil oracle")
+	// ErrUnimplementedOracle ...
+	ErrUnimplementedOracle = errors.New("unimplemented oracle")
+	// ErrNilProduct ...
+	ErrNilProduct = errors.New("nil product")
+	// ErrUnimplementedProduct ...
+	ErrUnimplementedProduct = errors.New("unimplemented product")
+	// ErrNilRiskModel ...
+	ErrNilRiskModel = errors.New("nil risk model")
+	// ErrUnimplementedRiskModel ...
+	ErrUnimplementedRiskModel = errors.New("unimplemented risk model")
+	// ErrNilInstrumentMetadata ...
+	ErrNilInstrumentMetadata = errors.New("nil instrument metadata")
+	// ErrUnimplementedInstrumentMetadata ...
 	ErrUnimplementedInstrumentMetadata = errors.New("unimplemented instrument metadata")
-	ErrNilEthereumEvent                = errors.New("nil ethereum event")
-	ErrUnimplementedEthereumEvent      = errors.New("unimplemented ethereum event")
-	ErrNilFuture                       = errors.New("nil future")
-	ErrUnimplementedFuture             = errors.New("unimplemented future")
-	ErrNilInstrument                   = errors.New("nil instrument")
-	ErrUnimplementedInstrument         = errors.New("unimplemented instrument")
-	ErrNilDiscreteTradingDuration      = errors.New("nil discrete trading duration")
-	ErrNilContinuousTradingTickSize    = errors.New("nil continuous trading ticksize")
+	// ErrNilEthereumEvent ...
+	ErrNilEthereumEvent = errors.New("nil ethereum event")
+	// ErrUnimplementedEthereumEvent ...
+	ErrUnimplementedEthereumEvent = errors.New("unimplemented ethereum event")
+	// ErrNilFuture ...
+	ErrNilFuture = errors.New("nil future")
+	// ErrUnimplementedFuture ...
+	ErrUnimplementedFuture = errors.New("unimplemented future")
+	// ErrNilInstrument ...
+	ErrNilInstrument = errors.New("nil instrument")
+	// ErrUnimplementedInstrument ...
+	ErrUnimplementedInstrument = errors.New("unimplemented instrument")
+	// ErrNilDiscreteTradingDuration ...
+	ErrNilDiscreteTradingDuration = errors.New("nil discrete trading duration")
+	// ErrNilContinuousTradingTickSize ...
+	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading ticksize")
 )
 
+// IntoProto ...
 func (ct *ContinuousTrading) IntoProto() (*proto.Market_Continuous, error) {
 	if ct.TickSize == nil {
 		return nil, ErrNilContinuousTradingTickSize
@@ -40,6 +63,7 @@ func (ct *ContinuousTrading) IntoProto() (*proto.Market_Continuous, error) {
 	return &proto.Market_Continuous{Continuous: &proto.ContinuousTrading{TickSize: uint64(*ct.TickSize)}}, nil
 }
 
+// IntoProto ...
 func (dt *DiscreteTrading) IntoProto() (*proto.Market_Discrete, error) {
 	if dt.Duration == nil {
 		return nil, ErrNilDiscreteTradingDuration
@@ -66,6 +90,7 @@ func (m *Market) tradingModeIntoProto(mkt *proto.Market) (err error) {
 	return err
 }
 
+// IntoProto ...
 func (ee *EthereumEvent) IntoProto() (*proto.Future_EthereumEvent, error) {
 	return &proto.Future_EthereumEvent{
 		EthereumEvent: &proto.EthereumEvent{
@@ -89,6 +114,7 @@ func (f *Future) oracleIntoProto(pf *proto.Future) (err error) {
 
 }
 
+// IntoProto ...
 func (f *Future) IntoProto() (*proto.Instrument_Future, error) {
 	var err error
 	pf := &proto.Future{
@@ -103,6 +129,7 @@ func (f *Future) IntoProto() (*proto.Instrument_Future, error) {
 	return &proto.Instrument_Future{Future: pf}, err
 }
 
+// IntoProto ...
 func (im *InstrumentMetadata) IntoProto() (*proto.InstrumentMetadata, error) {
 	pim := &proto.InstrumentMetadata{
 		Tags: []string{},
@@ -126,6 +153,7 @@ func (i *Instrument) productIntoProto(pinst *proto.Instrument) (err error) {
 	return err
 }
 
+// IntoProto ...
 func (i *Instrument) IntoProto() (*proto.Instrument, error) {
 	var err error
 	pinst := &proto.Instrument{
@@ -147,6 +175,7 @@ func (i *Instrument) IntoProto() (*proto.Instrument, error) {
 	return pinst, err
 }
 
+// IntoProto ...
 func (f *Forward) IntoProto() (*proto.TradableInstrument_Forward, error) {
 	return &proto.TradableInstrument_Forward{
 		Forward: &proto.Forward{
@@ -175,6 +204,7 @@ func (ti *TradableInstrument) riskModelIntoProto(
 	return err
 }
 
+// IntoProto ...
 func (ti *TradableInstrument) IntoProto() (*proto.TradableInstrument, error) {
 	var err error
 	pti := &proto.TradableInstrument{}
@@ -190,6 +220,7 @@ func (ti *TradableInstrument) IntoProto() (*proto.TradableInstrument, error) {
 	return pti, nil
 }
 
+// IntoProto ...
 func (m *Market) IntoProto() (*proto.Market, error) {
 	var err error
 	pmkt := &proto.Market{}
@@ -206,10 +237,13 @@ func (m *Market) IntoProto() (*proto.Market, error) {
 	return pmkt, nil
 }
 
+// ContinuousTradingFromProto ...
 func ContinuousTradingFromProto(pct *proto.ContinuousTrading) (*ContinuousTrading, error) {
 	ts := int(pct.TickSize)
 	return &ContinuousTrading{TickSize: &ts}, nil
 }
+
+// DiscreteTradingFromProto ...
 func DiscreteTradingFromProto(pdt *proto.DiscreteTrading) (*DiscreteTrading, error) {
 	dur := int(pdt.Duration)
 	return &DiscreteTrading{
@@ -217,6 +251,7 @@ func DiscreteTradingFromProto(pdt *proto.DiscreteTrading) (*DiscreteTrading, err
 	}, nil
 }
 
+// TradingModeFromProto ...
 func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
 	if ptm == nil {
 		return nil, ErrNilTradingMode
@@ -232,6 +267,7 @@ func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
 	}
 }
 
+// InstrumentMetadataFromProto ...
 func InstrumentMetadataFromProto(pim *proto.InstrumentMetadata) (*InstrumentMetadata, error) {
 	if pim == nil {
 		return nil, ErrNilInstrumentMetadata
@@ -248,6 +284,7 @@ func InstrumentMetadataFromProto(pim *proto.InstrumentMetadata) (*InstrumentMeta
 	return im, nil
 }
 
+// EthereumEventFromProto ...
 func EthereumEventFromProto(pee *proto.EthereumEvent) (*EthereumEvent, error) {
 	if pee == nil {
 		return nil, ErrNilEthereumEvent
@@ -259,6 +296,7 @@ func EthereumEventFromProto(pee *proto.EthereumEvent) (*EthereumEvent, error) {
 	}, nil
 }
 
+// OracleFromProto ...
 func OracleFromProto(o interface{}) (Oracle, error) {
 	if o == nil {
 		return nil, ErrNilOracle
@@ -272,6 +310,7 @@ func OracleFromProto(o interface{}) (Oracle, error) {
 	}
 }
 
+// FutureFromProto ...
 func FutureFromProto(pf *proto.Future) (*Future, error) {
 	if pf == nil {
 		return nil, ErrNilFuture
@@ -289,6 +328,7 @@ func FutureFromProto(pf *proto.Future) (*Future, error) {
 	return f, nil
 }
 
+// ProductFromProto ...
 func ProductFromProto(pp interface{}) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct
@@ -302,6 +342,7 @@ func ProductFromProto(pp interface{}) (Product, error) {
 	}
 }
 
+// InstrumentFromProto ...
 func InstrumentFromProto(pi *proto.Instrument) (*Instrument, error) {
 	if pi == nil {
 		return nil, ErrNilInstrument
@@ -327,6 +368,7 @@ func InstrumentFromProto(pi *proto.Instrument) (*Instrument, error) {
 	return i, nil
 }
 
+// ForwardFromProto ...
 func ForwardFromProto(f *proto.Forward) (*Forward, error) {
 	return &Forward{
 		Lambd: f.Lambd,
@@ -339,6 +381,7 @@ func ForwardFromProto(f *proto.Forward) (*Forward, error) {
 	}, nil
 }
 
+// RiskModelFromProto ...
 func RiskModelFromProto(rm interface{}) (RiskModel, error) {
 	if rm == nil {
 		return nil, ErrNilRiskModel
@@ -352,6 +395,7 @@ func RiskModelFromProto(rm interface{}) (RiskModel, error) {
 	}
 }
 
+// TradableInstrumentFromProto ...
 func TradableInstrumentFromProto(pti *proto.TradableInstrument) (*TradableInstrument, error) {
 	if pti == nil {
 		return nil, ErrNilTradableInstrument
@@ -370,6 +414,7 @@ func TradableInstrumentFromProto(pti *proto.TradableInstrument) (*TradableInstru
 	return ti, nil
 }
 
+// MarketFromProto ...
 func MarketFromProto(pmkt *proto.Market) (*Market, error) {
 	if pmkt == nil {
 		return nil, ErrNilMarket
@@ -393,6 +438,7 @@ func MarketFromProto(pmkt *proto.Market) (*Market, error) {
 	return mkt, nil
 }
 
+// IntoProto ...
 func (a AccountType) IntoProto() types.AccountType {
 	if !a.IsValid() {
 		return types.AccountType_NO_ACC

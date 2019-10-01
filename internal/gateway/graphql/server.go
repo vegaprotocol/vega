@@ -25,7 +25,8 @@ const (
 	namedLogger = "gateway.gql"
 )
 
-type graphServer struct {
+// GraphServer is the graphql server
+type GraphServer struct {
 	gateway.Config
 
 	log               *logging.Logger
@@ -34,10 +35,11 @@ type graphServer struct {
 	srv               *http.Server
 }
 
+// New returns a new instance of the grapqhl server
 func New(
 	log *logging.Logger,
 	config gateway.Config,
-) (*graphServer, error) {
+) (*GraphServer, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -56,7 +58,7 @@ func New(
 	}
 	tradingClient := api.NewTradingClient(tconn)
 
-	return &graphServer{
+	return &GraphServer{
 		log:               log,
 		Config:            config,
 		tradingClient:     tradingClient,
@@ -64,22 +66,24 @@ func New(
 	}, nil
 }
 
-func (s *graphServer) ReloadConf(cfg gateway.Config) {
-	s.log.Info("reloading confioguration")
-	if s.log.GetLevel() != cfg.Level.Get() {
-		s.log.Info("updating log level",
-			logging.String("old", s.log.GetLevel().String()),
+// ReloadConf update the internal configuration of the graphql server
+func (g *GraphServer) ReloadConf(cfg gateway.Config) {
+	g.log.Info("reloading confioguration")
+	if g.log.GetLevel() != cfg.Level.Get() {
+		g.log.Info("updating log level",
+			logging.String("old", g.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		s.log.SetLevel(cfg.Level.Get())
+		g.log.SetLevel(cfg.Level.Get())
 	}
 
 	// TODO(): not updating the the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
-	s.Config = cfg
+	g.Config = cfg
 }
 
-func (g *graphServer) Start() {
+// Start start the server in order receive http request
+func (g *GraphServer) Start() {
 	// <--- cors support - configure for production
 	corz := cors.AllowAll()
 	var up = websocket.Upgrader{
@@ -156,7 +160,8 @@ func (g *graphServer) Start() {
 	}
 }
 
-func (g *graphServer) Stop() {
+// Stop will close the http server gracefully
+func (g *GraphServer) Stop() {
 	if g.srv != nil {
 		g.log.Info("Stopping GraphQL based API")
 		if err := g.srv.Shutdown(context.Background()); err != nil {
