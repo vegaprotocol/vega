@@ -1,7 +1,10 @@
 package pprof
 
 import (
+	"fmt"
 	"net/http"
+	"time"
+
 	// import pprof globally because it's used to init the package
 	// and this comment is mostly here as well in order to make
 	// golint very many much happy
@@ -18,8 +21,9 @@ import (
 
 const (
 	pprofDir       = "pprof"
-	memprofileFile = "mem.pprof"
-	cpuprofileFile = "cpu.pprof"
+	memprofileName = "mem"
+	cpuprofileName = "cpu"
+	profileExt     = ".pprof"
 
 	namedLogger = "pprof"
 )
@@ -56,6 +60,10 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
+
+	t := time.Now()
+	memprofileFile := fmt.Sprintf("%s-%s%s", memprofileName, t.Format("Mon-02-2006-15-04-05"), profileExt)
+	cpuprofileFile := fmt.Sprintf("%s-%s%s", cpuprofileName, t.Format("Mon-02-2006-15-04-05"), profileExt)
 
 	p := &Pprofhandler{
 		log:            log,
