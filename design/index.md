@@ -6,7 +6,7 @@ Our core protocol implementation aims to be a reflection on the protocol design 
 
 The following diagram shows how the various components of this implementation interact with each other at a high level.
 
-![Vega core protocol architecture](diagrams/design-architecture-191003001.png "Vega core protocol architecture")
+![Vega core protocol architecture](diagrams/design-architecture-191003001.svg "Vega core protocol architecture")
 
 ## Modelling the domain
 
