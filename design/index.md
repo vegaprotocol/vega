@@ -1,20 +1,20 @@
 # Vega core architecture
 
-The core protocol implementation aims to be a reflection on the protocol design outlined in the Vega Whitepaper.
-
-This implementation is written in Golang.
+Our core protocol implementation aims to be a reflection on the protocol design outlined in the whitepaper. It is currently written in Golang.
 
 ## Component relationships
 
-The following diagram (figure 1a) shows how the various components of this implementation interact with each other at a high level.
+The following diagram shows how the various components of this implementation interact with each other at a high level.
 
-## Package structure
+![Vega core protocol architecture](diagrams/design-architecture-191003001.png "Vega core protocol architecture")
 
-Each directory inside internal is a package within our application, these packages represent a domain within the app.
+## Modelling the domain
+
+Much of the application lives in the /internal directory. Each sub-directory is a package and these packages represent a discrete domain or concept from the whitepaper.
 
 ### Design documentation
 
+In order to document the design, each package should have a single markdown file in the /design directory
+
 1. Matching package (matching.md)
 2. Position package (positions.md)
-
-WIP
