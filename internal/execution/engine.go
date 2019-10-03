@@ -20,9 +20,11 @@ import (
 )
 
 var (
+	// ErrMarketAlreadyExist signals that a market already exist
 	ErrMarketAlreadyExist = errors.New("market already exist")
 )
 
+// OrderStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution OrderStore
 type OrderStore interface {
 	GetByPartyAndID(ctx context.Context, party string, id string) (*types.Order, error)
@@ -31,40 +33,47 @@ type OrderStore interface {
 	Commit() error
 }
 
+// TradeStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution TradeStore
 type TradeStore interface {
 	Commit() error
 	Post(trade *types.Trade) error
 }
 
+// CandleStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution CandleStore
 type CandleStore interface {
 	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
 	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
 }
 
+// MarketStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution MarketStore
 type MarketStore interface {
 	Post(party *types.Market) error
 }
 
+// PartyStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution PartyStore
 type PartyStore interface {
 	GetByID(id string) (*types.Party, error)
 	Post(party *types.Party) error
 }
 
+// TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
 	NotifyOnTick(f func(time.Time))
 }
 
+// TransferResponseStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution TransferResponseStore
 type TransferResponseStore interface {
 	SaveBatch([]*types.TransferResponse) error
 }
 
+// Engine is the execution engine
 type Engine struct {
 	log *logging.Logger
 	Config
@@ -175,6 +184,8 @@ func NewEngine(
 	return e
 }
 
+// ReloadConf updates the internal configuration of the execution
+// engine and its dependencies
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -192,10 +203,12 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 }
 
+// NotifyTraderAccount notify the engine to create a new account for a party
 func (e *Engine) NotifyTraderAccount(notif *types.NotifyTraderAccount) error {
 	return e.party.NotifyTraderAccount(notif)
 }
 
+// SubmitMarket will submit a new market configuration to the network
 func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 
 	// TODO: Check for existing market in MarketStore by Name.
@@ -222,7 +235,6 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.tradeStore,
 		e.transferResponseStore,
 		now,
-		uint64(len(e.markets)),
 	)
 	if err != nil {
 		e.log.Error("Failed to instanciate market",
@@ -253,6 +265,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	return nil
 }
 
+// SubmitOrder submit a new order to the vega trading core
 func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	// order.MarketID may or may not be valid.
 	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")

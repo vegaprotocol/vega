@@ -50,9 +50,9 @@ type EthereumEvent struct {
 func (EthereumEvent) IsOracle() {}
 
 type Forward struct {
-	Lambd  float64       `json:"lambd"`
-	Tau    float64       `json:"Tau"`
-	Params ModelParamsBs `json:"params"`
+	Lambd  float64        `json:"lambd"`
+	Tau    float64        `json:"Tau"`
+	Params *ModelParamsBs `json:"params"`
 }
 
 func (Forward) IsRiskModel() {}
@@ -66,13 +66,13 @@ type Future struct {
 func (Future) IsProduct() {}
 
 type Instrument struct {
-	ID        string             `json:"id"`
-	Code      string             `json:"code"`
-	Name      string             `json:"name"`
-	BaseName  string             `json:"baseName"`
-	QuoteName string             `json:"quoteName"`
-	Metadata  InstrumentMetadata `json:"metadata"`
-	Product   Product            `json:"product"`
+	ID        string              `json:"id"`
+	Code      string              `json:"code"`
+	Name      string              `json:"name"`
+	BaseName  string              `json:"baseName"`
+	QuoteName string              `json:"quoteName"`
+	Metadata  *InstrumentMetadata `json:"metadata"`
+	Product   Product             `json:"product"`
 }
 
 type InstrumentMetadata struct {
@@ -80,17 +80,17 @@ type InstrumentMetadata struct {
 }
 
 type Market struct {
-	ID                 string             `json:"id"`
-	Name               string             `json:"name"`
-	TradableInstrument TradableInstrument `json:"tradableInstrument"`
-	TradingMode        TradingMode        `json:"tradingMode"`
-	DecimalPlaces      int                `json:"decimalPlaces"`
-	Orders             []proto.Order      `json:"orders"`
-	Accounts           []proto.Account    `json:"accounts"`
-	Trades             []proto.Trade      `json:"trades"`
-	Depth              proto.MarketDepth  `json:"depth"`
-	Candles            []*proto.Candle    `json:"candles"`
-	OrderByReference   proto.Order        `json:"orderByReference"`
+	ID                 string              `json:"id"`
+	Name               string              `json:"name"`
+	TradableInstrument *TradableInstrument `json:"tradableInstrument"`
+	TradingMode        TradingMode         `json:"tradingMode"`
+	DecimalPlaces      int                 `json:"decimalPlaces"`
+	Orders             []*proto.Order      `json:"orders"`
+	Accounts           []*proto.Account    `json:"accounts"`
+	Trades             []*proto.Trade      `json:"trades"`
+	Depth              *proto.MarketDepth  `json:"depth"`
+	Candles            []*proto.Candle     `json:"candles"`
+	OrderByReference   *proto.Order        `json:"orderByReference"`
 }
 
 type ModelParamsBs struct {
@@ -100,16 +100,16 @@ type ModelParamsBs struct {
 }
 
 type Party struct {
-	ID        string                 `json:"id"`
-	Orders    []proto.Order          `json:"orders"`
-	Trades    []proto.Trade          `json:"trades"`
-	Accounts  []proto.Account        `json:"accounts"`
-	Positions []proto.MarketPosition `json:"positions"`
+	ID        string                  `json:"id"`
+	Orders    []*proto.Order          `json:"orders"`
+	Trades    []*proto.Trade          `json:"trades"`
+	Accounts  []*proto.Account        `json:"accounts"`
+	Positions []*proto.MarketPosition `json:"positions"`
 }
 
 type TradableInstrument struct {
-	Instrument Instrument `json:"instrument"`
-	RiskModel  RiskModel  `json:"riskModel"`
+	Instrument *Instrument `json:"instrument"`
+	RiskModel  RiskModel   `json:"riskModel"`
 }
 
 type AccountType string

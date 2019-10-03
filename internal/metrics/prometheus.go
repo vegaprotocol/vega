@@ -12,14 +12,20 @@ import (
 )
 
 const (
+	// Gauge ...
 	Gauge instrument = iota
+	// Counter ...
 	Counter
+	// Histogram ...
 	Histogram
+	// Summary ...
 	Summary
 )
 
 var (
+	// ErrInstrumentNotSupported signals the specified instrument is not yet supported
 	ErrInstrumentNotSupported = errors.New("instrument type unsupported")
+	// ErrInstrumentTypeMismatch signal the type of the instrument is not expected
 	ErrInstrumentTypeMismatch = errors.New("instrument is not of the expected type")
 )
 
@@ -97,7 +103,7 @@ func Subsystem(s string) InstrumentOption {
 	}
 }
 
-// Set labels for instrument (similar to vector, but with given values)
+// Labels set labels for instrument (similar to vector, but with given values)
 func Labels(labels map[string]string) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.opts.ConstLabels = prometheus.Labels(labels)
@@ -139,7 +145,7 @@ func BufCap(bc uint32) InstrumentOption {
 	}
 }
 
-// AddInstrument, configure and register new metrics instrument
+// AddInstrument  configure and register new metrics instrument
 // this will, over time, be moved to use custom Registries, etc...
 func AddInstrument(t instrument, name string, opts ...InstrumentOption) (*mi, error) {
 	var col prometheus.Collector
@@ -247,6 +253,7 @@ func (i instrumentOpts) histogram() prometheus.HistogramOpts {
 	}
 }
 
+// Gauge returns a prometheus Gauge instrument
 func (m mi) Gauge() (prometheus.Gauge, error) {
 	if m.gauge == nil {
 		return nil, ErrInstrumentTypeMismatch
@@ -254,6 +261,7 @@ func (m mi) Gauge() (prometheus.Gauge, error) {
 	return m.gauge, nil
 }
 
+// GaugeVec returns a prometheus GaugeVec instrument
 func (m mi) GaugeVec() (*prometheus.GaugeVec, error) {
 	if m.gaugeV == nil {
 		return nil, ErrInstrumentTypeMismatch
@@ -261,6 +269,7 @@ func (m mi) GaugeVec() (*prometheus.GaugeVec, error) {
 	return m.gaugeV, nil
 }
 
+// Counter returns a prometheus Counter instrument
 func (m mi) Counter() (prometheus.Counter, error) {
 	if m.counter == nil {
 		return nil, ErrInstrumentTypeMismatch
@@ -268,6 +277,7 @@ func (m mi) Counter() (prometheus.Counter, error) {
 	return m.counter, nil
 }
 
+// CounterVec returns a prometheus CounterVec instrument
 func (m mi) CounterVec() (*prometheus.CounterVec, error) {
 	if m.counterV == nil {
 		return nil, ErrInstrumentTypeMismatch
@@ -374,6 +384,7 @@ func setupMetrics() error {
 	return nil
 }
 
+// OrderCounterInc increments the order counter
 func OrderCounterInc(labelValues ...string) {
 	if orderCounter == nil {
 		return
@@ -381,6 +392,7 @@ func OrderCounterInc(labelValues ...string) {
 	orderCounter.WithLabelValues(labelValues...).Inc()
 }
 
+// OrderGaugeAdd incement the order gauge
 func OrderGaugeAdd(n int, labelValues ...string) {
 	if orderGauge == nil {
 		return
@@ -388,6 +400,7 @@ func OrderGaugeAdd(n int, labelValues ...string) {
 	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
 }
 
+// UnconfirmedTxGaugeSet update the number of unconfirmed transactions
 func UnconfirmedTxGaugeSet(n int) {
 	if unconfirmedTxGauge == nil {
 		return

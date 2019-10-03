@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
 )
 
@@ -15,15 +16,19 @@ type tokenKeyTy int
 
 var tokenKey tokenKeyTy
 
+// TokenFromContext extract a token from the context
 func TokenFromContext(ctx context.Context) string {
 	u, _ := ctx.Value(tokenKey).(string)
 	return u
 }
 
+// AddTokenToContext adds a new token to the given context
 func AddTokenToContext(ctx context.Context, tkn string) context.Context {
 	return context.WithValue(ctx, tokenKey, tkn)
 }
 
+// TokenMiddleware is used to add middleware checking for token in the
+// processing of the http request
 func TokenMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -49,6 +54,8 @@ func TokenMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	})
 }
 
+// RemoteAddrMiddleware is a middleware adding to the current request context the
+// address of the caller
 func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -75,7 +82,7 @@ func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 		}
 
 		if found {
-			r = r.WithContext(context.WithValue(r.Context(), "remote-ip-addr", ip))
+			r = r.WithContext(contextutil.WithRemoteIPAddr(r.Context(), ip))
 		}
 		next.ServeHTTP(w, r)
 	})

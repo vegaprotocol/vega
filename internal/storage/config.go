@@ -15,11 +15,16 @@ import (
 )
 
 const (
+	// AccountsDataPath is the default path for the account store files
 	AccountsDataPath = "accountstore"
-	CandlesDataPath  = "candlestore"
-	MarketsDataPath  = "marketstore"
-	OrdersDataPath   = "orderstore"
-	TradesDataPath   = "tradestore"
+	// CandlesDataPath is the default path for the candle store files
+	CandlesDataPath = "candlestore"
+	// MarketsDataPath is the default path for the market store files
+	MarketsDataPath = "marketstore"
+	// OrdersDataPath is the default path for the order store files
+	OrdersDataPath = "orderstore"
+	// TradesDataPath is the default path for the trade store files
+	TradesDataPath = "tradestore"
 
 	// namedLogger is the identifier for package and should ideally match the package name
 	// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
@@ -106,6 +111,7 @@ func FlushStores(log *logging.Logger, c Config) {
 	}
 }
 
+// InitStoreDirectory create a directory if it does not already exists on the filesystem
 func InitStoreDirectory(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(path, os.ModePerm); err != nil {

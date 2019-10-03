@@ -41,6 +41,7 @@ func NewMarkets(log *logging.Logger, c Config) (*Market, error) {
 	}, nil
 }
 
+// ReloadConf update the internal conf of the market
 func (m *Market) ReloadConf(cfg Config) {
 	m.log.Info("reloading configuration")
 	if m.log.GetLevel() != cfg.Level.Get() {
@@ -55,24 +56,24 @@ func (m *Market) ReloadConf(cfg Config) {
 }
 
 // Post saves a given market to the mem-store.
-func (ms *Market) Post(market *types.Market) error {
+func (m *Market) Post(market *types.Market) error {
 	buf, err := proto.Marshal(market)
 	if err != nil {
 		mktID := "nil"
 		if market != nil {
 			mktID = market.Id
 		}
-		ms.log.Error("unable to marshal market",
+		m.log.Error("unable to marshal market",
 			logging.Error(err),
 			logging.String("market-id", mktID),
 		)
 		return err
 	}
-	marketKey := ms.badger.marketKey(market.Id)
-	err = ms.badger.db.Update(func(txn *badger.Txn) error {
+	marketKey := m.badger.marketKey(market.Id)
+	err = m.badger.db.Update(func(txn *badger.Txn) error {
 		err := txn.Set(marketKey, buf)
 		if err != nil {
-			ms.log.Error("unable to save market in badger",
+			m.log.Error("unable to save market in badger",
 				logging.Error(err),
 				logging.String("market-id", market.Id),
 			)
@@ -85,11 +86,11 @@ func (ms *Market) Post(market *types.Market) error {
 }
 
 // GetByID searches for the given market by id in the mem-store.
-func (ms *Market) GetByID(id string) (*types.Market, error) {
+func (m *Market) GetByID(id string) (*types.Market, error) {
 	market := types.Market{}
 	var buf []byte
-	marketKey := ms.badger.marketKey(id)
-	err := ms.badger.db.View(func(txn *badger.Txn) error {
+	marketKey := m.badger.marketKey(id)
+	err := m.badger.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(marketKey)
 		if err != nil {
 			return err
@@ -100,7 +101,7 @@ func (ms *Market) GetByID(id string) (*types.Market, error) {
 	})
 
 	if err != nil {
-		ms.log.Error("unable to get market from badger store",
+		m.log.Error("unable to get market from badger store",
 			logging.Error(err),
 			logging.String("market-id", id),
 		)
@@ -109,7 +110,7 @@ func (ms *Market) GetByID(id string) (*types.Market, error) {
 
 	err = proto.Unmarshal(buf, &market)
 	if err != nil {
-		ms.log.Error("unable to unmarshal market from badger store",
+		m.log.Error("unable to unmarshal market from badger store",
 			logging.Error(err),
 			logging.String("market-id", id),
 		)
@@ -119,10 +120,10 @@ func (ms *Market) GetByID(id string) (*types.Market, error) {
 }
 
 // GetAll returns all markets in the badger store.
-func (ms *Market) GetAll() ([]*types.Market, error) {
+func (m *Market) GetAll() ([]*types.Market, error) {
 	markets := []*types.Market{}
 	bufs := [][]byte{}
-	err := ms.badger.db.View(func(txn *badger.Txn) error {
+	err := m.badger.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 10
 		it := txn.NewIterator(opts)
@@ -139,7 +140,7 @@ func (ms *Market) GetAll() ([]*types.Market, error) {
 	})
 
 	if err != nil {
-		ms.log.Error("unable to get all markets", logging.Error(err))
+		m.log.Error("unable to get all markets", logging.Error(err))
 		return nil, err
 	}
 
@@ -147,7 +148,7 @@ func (ms *Market) GetAll() ([]*types.Market, error) {
 		mkt := types.Market{}
 		err := proto.Unmarshal(buf, &mkt)
 		if err != nil {
-			ms.log.Error("unable to unmarshal market from badger store",
+			m.log.Error("unable to unmarshal market from badger store",
 				logging.Error(err),
 			)
 			return nil, err
@@ -160,15 +161,15 @@ func (ms *Market) GetAll() ([]*types.Market, error) {
 
 // Commit typically saves any operations that are queued to underlying storage,
 // if supported by underlying storage implementation.
-func (ms *Market) Commit() error {
+func (m *Market) Commit() error {
 	// Not required with a mem-store implementation.
 	return nil
 }
 
 // Close can be called to clean up and close any storage
 // connections held by the underlying storage mechanism.
-func (ms *Market) Close() error {
-	return ms.badger.db.Close()
+func (m *Market) Close() error {
+	return m.badger.db.Close()
 }
 
 // DefaultMarketStoreOptions supplies default options we use for market stores

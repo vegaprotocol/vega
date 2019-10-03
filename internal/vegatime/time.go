@@ -52,6 +52,7 @@ func Format(t time.Time) string {
 	return t.In(time.UTC).Format(time.RFC3339Nano)
 }
 
+// RoundToNearest round an actual time to the nearest interval
 func RoundToNearest(t time.Time, interval types.Interval) time.Time {
 	switch interval {
 	case types.Interval_I1M:

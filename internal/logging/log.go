@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -11,6 +10,9 @@ import (
 )
 
 var (
+	// ErrInvalidLogLevel signal that the log level used is not valid
+	// as cannot be unmarshal from a string, or not one of the level
+	// provided in this package
 	ErrInvalidLogLevel = errors.New("invalid log level")
 )
 
@@ -36,6 +38,7 @@ const (
 	FatalLevel Level = 5
 )
 
+// ParseLevel parse a log level from a string
 func ParseLevel(l string) (Level, error) {
 	l = strings.ToLower(l)
 	switch l {
@@ -56,6 +59,7 @@ func ParseLevel(l string) (Level, error) {
 	}
 }
 
+// String marshal a log level to a string representation
 func (l Level) String() string {
 	switch l {
 	case DebugLevel:
@@ -75,10 +79,12 @@ func (l Level) String() string {
 	}
 }
 
+// ZapLevel return the log level of internal zap level
 func (l *Level) ZapLevel() zapcore.Level {
 	return zapcore.Level(*l)
 }
 
+// Logger is an abstraction on to of the zap logger
 type Logger struct {
 	*zap.Logger
 	config      *zap.Config
@@ -86,6 +92,7 @@ type Logger struct {
 	name        string
 }
 
+// Clone will clone the internal logger
 func (log *Logger) Clone() *Logger {
 	newConfig := cloneConfig(log.config)
 	newLogger, err := newConfig.Build()
@@ -95,22 +102,29 @@ func (log *Logger) Clone() *Logger {
 	return New(newLogger, newConfig, log.environment, log.name)
 }
 
+// GetLevel returns the log level
 func (log *Logger) GetLevel() Level {
 	return (Level)(log.config.Level.Level())
 }
 
+// GetLevelString return a string representation of the current
+// log level
 func (log *Logger) GetLevelString() string {
 	return log.config.Level.String()
 }
 
+// GetEnvironment returns the current environment name
 func (log *Logger) GetEnvironment() string {
 	return log.environment
 }
 
+// GetName return the name of this logger
 func (log *Logger) GetName() string {
 	return log.name
 }
 
+// Named instanciate a new logger by cloning it first
+// and name it with the string specified
 func (log *Logger) Named(name string) *Logger {
 	c := log.Clone()
 	newName := ""
@@ -124,6 +138,7 @@ func (log *Logger) Named(name string) *Logger {
 	return c
 }
 
+// New instanciate a new logger
 func New(zaplogger *zap.Logger, zapconfig *zap.Config, environment, name string) *Logger {
 	return &Logger{
 		Logger:      zaplogger,
@@ -133,6 +148,7 @@ func New(zaplogger *zap.Logger, zapconfig *zap.Config, environment, name string)
 	}
 }
 
+// SetLevel change the level of this logger
 func (log *Logger) SetLevel(level Level) {
 	lvl := (zapcore.Level)(level)
 	if log.config.Level.Level() == lvl {
@@ -141,6 +157,7 @@ func (log *Logger) SetLevel(level Level) {
 	log.config.Level.SetLevel(lvl)
 }
 
+// With will add default field to each logs
 func (log *Logger) With(fields ...zap.Field) *Logger {
 	c := log.Clone()
 	c.Logger = c.Logger.With(fields...)
@@ -321,16 +338,6 @@ func NewLoggerFromConfig(config Config) *Logger {
 
 	// Default:
 	return NewDevLogger()
-}
-
-// IPAddressFromContext attempts to access the 'remote-ip-addr' value that we
-// inject into a calling context via a pipelined handlers. Only GraphQL API
-// supported at present.
-func IPAddressFromContext(ctx context.Context) string {
-	if ctx.Value("remote-ip-addr") != nil {
-		return ctx.Value("remote-ip-addr").(string)
-	}
-	return ""
 }
 
 // Check helps avoid spending CPU time on log entries that will never be printed.

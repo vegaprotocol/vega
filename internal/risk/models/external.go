@@ -15,6 +15,8 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+// External represent an external risk model
+// connection is done throug a unix domain socket
 type External struct {
 	log    *logging.Logger
 	client *http.Client
@@ -26,23 +28,31 @@ type External struct {
 	Config  map[string]string
 }
 
+// SetupRequest represent the request used to setup the risk model
 type SetupRequest struct {
 	Config map[string]string `json:"config"`
 }
 
+// CalculationIntervalResponse is the response sent by the risk model
+// when requested with the calculation interval
 type CalculationIntervalResponse struct {
 	DurationNano uint64 `json:"duration_nano"`
 }
 
+// CalculateRiskFactorsRequest is the request send to the risk model
+// in order to instruct them to calculate new risk factors
 type CalculateRiskFactorsRequest struct {
 	Current *types.RiskResult `json:"current"`
 }
 
+// CalculateRiskFactorsResponse is the type use by the risk model
+// in order to return the newly calculated risk factors
 type CalculateRiskFactorsResponse struct {
 	WasUpdated bool              `json:"was_calculated"`
 	Result     *types.RiskResult `json:"result"`
 }
 
+// NewExternal instanciate a new connection with an external risk model
 func NewExternal(log *logging.Logger, pe *types.ExternalRiskModel) (*External, error) {
 	tr := &http.Transport{
 		Dial: func(proto, addr string) (conn net.Conn, err error) {
@@ -106,6 +116,7 @@ func (e *External) setup() error {
 	return nil
 }
 
+// CalculationInterval returns the calculation interval of the risk model
 func (e *External) CalculationInterval() time.Duration {
 	if !e.getIsSetup() {
 		if err := e.setup(); err != nil {
@@ -160,6 +171,8 @@ func (e *External) CalculationInterval() time.Duration {
 	return time.Duration(ciresp.DurationNano)
 }
 
+// CalculateRiskFactors calls the risk model in order to retrieve
+// new risk factors
 func (e *External) CalculateRiskFactors(
 	current *types.RiskResult) (bool, *types.RiskResult) {
 	if !e.getIsSetup() {

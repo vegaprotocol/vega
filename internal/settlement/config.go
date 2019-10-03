@@ -9,6 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "settlement"
 
+// Config represent the configuration of the settlement engine
 type Config struct {
 	Level encoding.LogLevel
 }

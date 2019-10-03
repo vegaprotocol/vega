@@ -1,7 +1,13 @@
 package pprof
 
 import (
+	"fmt"
 	"net/http"
+	"time"
+
+	// import pprof globally because it's used to init the package
+	// and this comment is mostly here as well in order to make
+	// golint very many much happy
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
@@ -15,12 +21,14 @@ import (
 
 const (
 	pprofDir       = "pprof"
-	memprofileFile = "mem.pprof"
-	cpuprofileFile = "cpu.pprof"
+	memprofileName = "mem"
+	cpuprofileName = "cpu"
+	profileExt     = ".pprof"
 
 	namedLogger = "pprof"
 )
 
+// Config represent the configuration of the pprof package
 type Config struct {
 	Level       encoding.LogLevel
 	Enabled     bool
@@ -28,6 +36,7 @@ type Config struct {
 	ProfilesDir string
 }
 
+// Pprofhandler is handling pprof profile management
 type Pprofhandler struct {
 	Config
 
@@ -51,6 +60,10 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
+
+	t := time.Now()
+	memprofileFile := fmt.Sprintf("%s-%s%s", memprofileName, t.Format("2006-01-02-15-04-05"), profileExt)
+	cpuprofileFile := fmt.Sprintf("%s-%s%s", cpuprofileName, t.Format("2006-01-02-15-04-05"), profileExt)
 
 	p := &Pprofhandler{
 		log:            log,
@@ -86,6 +99,7 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	return p, nil
 }
 
+// ReloadConf update the configuration of the pprof package
 func (p *Pprofhandler) ReloadConf(cfg Config) {
 	p.log.Info("reloading configuration")
 	if p.log.GetLevel() != cfg.Level.Get() {

@@ -15,6 +15,8 @@ import (
 const badgerNamedLogger = "badger"
 
 var (
+	// ErrTimeoutReached signals that at timeout occurs while processing
+	// the badger query
 	ErrTimeoutReached = errors.New("context cancelled due to timeout")
 )
 
@@ -209,58 +211,61 @@ func (bs *badgerStore) candleKey(market string, interval types.Interval, timesta
 
 // Order store keys
 
-func (bs *badgerStore) orderMarketKey(market string, Id string) []byte {
-	return []byte(fmt.Sprintf("M:%s_ID:%s", market, Id))
+func (bs *badgerStore) orderMarketKey(market string, ID string) []byte {
+	return []byte(fmt.Sprintf("M:%s_ID:%s", market, ID))
 }
 
 func (bs *badgerStore) orderReferenceKey(ref string) []byte {
 	return []byte(fmt.Sprintf("R:%s", ref))
 }
 
-func (bs *badgerStore) orderIdKey(Id string) []byte {
-	return []byte(fmt.Sprintf("ID:%s", Id))
+func (bs *badgerStore) orderIDKey(ID string) []byte {
+	return []byte(fmt.Sprintf("ID:%s", ID))
 }
 
-func (bs *badgerStore) orderPartyKey(party string, Id string) []byte {
-	return []byte(fmt.Sprintf("P:%s_ID:%s", party, Id))
+func (bs *badgerStore) orderPartyKey(party string, ID string) []byte {
+	return []byte(fmt.Sprintf("P:%s_ID:%s", party, ID))
 }
 
 // Trade store keys
 
-func (bs *badgerStore) tradeMarketKey(market string, Id string) []byte {
-	return []byte(fmt.Sprintf("M:%s_ID:%s", market, Id))
+func (bs *badgerStore) tradeMarketKey(market string, ID string) []byte {
+	return []byte(fmt.Sprintf("M:%s_ID:%s", market, ID))
 }
 
-func (bs *badgerStore) tradeIdKey(Id string) []byte {
-	return []byte(fmt.Sprintf("ID:%s", Id))
+func (bs *badgerStore) tradeIDKey(ID string) []byte {
+	return []byte(fmt.Sprintf("ID:%s", ID))
 }
 
-func (bs *badgerStore) tradePartyKey(party, Id string) []byte {
-	return []byte(fmt.Sprintf("P:%s_ID:%s", party, Id))
+func (bs *badgerStore) tradePartyKey(party, ID string) []byte {
+	return []byte(fmt.Sprintf("P:%s_ID:%s", party, ID))
 }
 
-func (bs *badgerStore) tradeOrderIdKey(orderId, Id string) []byte {
-	return []byte(fmt.Sprintf("O:%s_ID:%s", orderId, Id))
+func (bs *badgerStore) tradeOrderIDKey(orderID, ID string) []byte {
+	return []byte(fmt.Sprintf("O:%s_ID:%s", orderID, ID))
 }
 
 // Account store keys
 
 // accountGeneralKey relates only to a party and asset, no market index/references
-func (bs *badgerStore) accountGeneralIdKey(partyID string, assetID string) []byte {
+func (bs *badgerStore) accountGeneralIDKey(partyID string, assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_A:%s",
 		bs.getAccountTypePrefix(types.AccountType_GENERAL), partyID, assetID))
 }
+
 // accountMarginKey is composed from a party market and asset, has a market index (future work could add an asset index)
-func (bs *badgerStore) accountMarginIdKey(partyID string, marketID string, assetID string) []byte {
+func (bs *badgerStore) accountMarginIDKey(partyID string, marketID string, assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_M:%s_A:%s",
 		bs.getAccountTypePrefix(types.AccountType_MARGIN), partyID, marketID, assetID))
 }
+
 // accountMarketKey is used to provide an index of all accounts for a particular market (no party scope).
 // Id should be a reference to the accountMarginIdKey generated above, general accounts span
 // all of VEGA without having market scope. Currently used for MARGIN type only.
 func (bs *badgerStore) accountMarketKey(market string, accountID string) []byte {
 	return []byte(fmt.Sprintf("M:%s_ID:%s", market, accountID))
 }
+
 // accountAssetKey is used to provide an index of accounts for a particular asset.
 // Used by both general and margin accounts.
 func (bs *badgerStore) accountAssetKey(assetID string, partyID string, accountID string) []byte {

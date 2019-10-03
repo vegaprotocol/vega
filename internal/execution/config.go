@@ -15,15 +15,18 @@ import (
 const (
 	// namedLogger is the identifier for package and should ideally match the package name
 	// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
-	namedLogger      = "execution"
+	namedLogger = "execution"
+	// MarketConfigPath is the default path in the config folder for the market configurations
 	MarketConfigPath = "markets"
 )
 
+// MarketConfig represents the configuration of the markets
 type MarketConfig struct {
 	Path    string
 	Configs []string
 }
 
+// Config is the configuraton of the execution package
 type Config struct {
 	Level encoding.LogLevel
 

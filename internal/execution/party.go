@@ -10,6 +10,7 @@ const (
 	topUpAmount = 1000000000000
 )
 
+// Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/internal/execution Collateral
 type Collateral interface {
 	CreateTraderAccount(partyID, marketID, asset string) (string, string)
@@ -24,6 +25,7 @@ type accountKey struct {
 	asset    string
 }
 
+// Party holds the list of parties in the system
 type Party struct {
 	log        *logging.Logger
 	collateral Collateral
@@ -32,6 +34,7 @@ type Party struct {
 	parties    map[string]map[string]struct{}
 }
 
+// NewParty instanciate a new party
 func NewParty(
 	log *logging.Logger, col Collateral, markets []proto.Market, store PartyStore,
 ) *Party {
@@ -50,10 +53,11 @@ func NewParty(
 	}
 }
 
+// GetForMarket returns the list of all the parties in a given market
 func (p *Party) GetForMarket(mktID string) []string {
 	parties := p.parties[mktID]
 	out := make([]string, 0, len(parties))
-	for k, _ := range parties {
+	for k := range parties {
 		out = append(out, k)
 	}
 	return out
@@ -63,11 +67,15 @@ func (p *Party) addParty(ptyID, mktID string) {
 	p.parties[mktID][ptyID] = struct{}{}
 }
 
+// NotifyTraderAccountWithTopUpAmount will create a new party in the system
+// and topup it general account with the given amount
 func (p *Party) NotifyTraderAccountWithTopUpAmount(
 	notif *proto.NotifyTraderAccount, amount int64) error {
 	return p.notifyTraderAccount(notif, amount)
 }
 
+// NotifyTraderAccount will create a new party in the system
+// and topup it general account with the default amount
 func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 	return p.notifyTraderAccount(notif, topUpAmount)
 }

@@ -13,6 +13,7 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
+// BlockchainClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/internal/monitoring BlockchainClient
 type BlockchainClient interface {
 	Health() (*tmctypes.ResultHealth, error)
@@ -73,6 +74,7 @@ func New(log *logging.Logger, conf Config, clt BlockchainClient) *Status {
 	return s
 }
 
+// ReloadConf update the internal configuration of the status
 func (s *Status) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -89,10 +91,13 @@ func (s *Status) ReloadConf(cfg Config) {
 	s.blockchain.cfgMu.Unlock()
 }
 
+// OnChainDisconnect register a function to call back once the chain is disconnected
 func (s *Status) OnChainDisconnect(f func()) {
 	s.blockchain.onChainDisconnect = f
 }
 
+// OnChainVersionObtained register a function to call back once the chain version
+// vega connected too is acquired
 func (s *Status) OnChainVersionObtained(f func(string)) {
 	s.blockchain.OnChainVersionObtained(f)
 }
@@ -103,22 +108,25 @@ func (s *Status) Stop() {
 	s.blockchain.Stop()
 }
 
+// ChainStatus will return the current chain status
 func (s *Status) ChainStatus() types.ChainStatus {
 	return s.blockchain.Status()
 }
 
-func (s *ChainStatus) OnChainVersionObtained(f func(string)) {
-	s.mu.Lock()
-	s.callbacks = append(s.callbacks, f)
-	s.mu.Unlock()
+// OnChainVersionObtained will register a list of function to call back once
+// the chain version is acquired
+func (cs *ChainStatus) OnChainVersionObtained(f func(string)) {
+	cs.mu.Lock()
+	cs.callbacks = append(cs.callbacks, f)
+	cs.mu.Unlock()
 }
 
-func (s *ChainStatus) notifyChainVersion(v string) {
-	s.mu.Lock()
-	for _, f := range s.callbacks {
+func (cs *ChainStatus) notifyChainVersion(v string) {
+	cs.mu.Lock()
+	for _, f := range cs.callbacks {
 		f(v)
 	}
-	s.mu.Unlock()
+	cs.mu.Unlock()
 }
 
 // Status returns the current status of the underlying Blockchain connection.
@@ -168,7 +176,7 @@ func (cs *ChainStatus) tick(status types.ChainStatus) types.ChainStatus {
 	}
 
 	if status == types.ChainStatus_DISCONNECTED {
-		cs.retriesCount -= 1
+		cs.retriesCount--
 	}
 
 	if newStatus == types.ChainStatus_CONNECTED {

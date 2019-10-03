@@ -160,6 +160,11 @@ func Account(a types.Account) zap.Field {
 	return zap.String("account", a.String())
 }
 
+// Reflect constructs a field by running reflection over all the
+// field of value passed as a parameter.
+// This should never be used we basic log level,
+// only in the case of Debuf log level, and with guards on  top
+// of the actual log call for this level
 func Reflect(key string, val interface{}) zap.Field {
-	return zap.Reflect("key", val)
+	return zap.Reflect(key, val)
 }

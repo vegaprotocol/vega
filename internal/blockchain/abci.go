@@ -13,31 +13,36 @@ import (
 )
 
 const (
-	// Custom return codes for the abci application, any non-zero code is an error.
-	AbciTxnOK                uint32 = 0
+	// AbciTxnOK Custom return codes for the abci application, any non-zero code is an error.
+	AbciTxnOK uint32 = 0
+	// AbciTxnValidationFailure ...
 	AbciTxnValidationFailure uint32 = 51
 
 	// Maximum sample size for average calculation, used in statistics (average tx per block etc).
 	statsSampleSize = 5000
 )
 
+// ApplicationService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/application_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationService
 type ApplicationService interface {
 	Begin() error
 	Commit() error
 }
 
+// ApplicationProcessor ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/application_processor_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationProcessor
 type ApplicationProcessor interface {
 	Process(payload []byte) error
 	Validate(payload []byte) error
 }
 
+// ApplicationTime ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/application_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationTime
 type ApplicationTime interface {
 	SetTimeNow(epochTimeNano time.Time)
 }
 
+// AbciApplication represent the application connection to the chain through the abci api
 type AbciApplication struct {
 	types.BaseApplication
 	Config
@@ -59,6 +64,7 @@ type AbciApplication struct {
 	blockHeightCounter prometheus.Counter
 }
 
+// NewApplication returns a new instance of the Abci application
 func NewApplication(log *logging.Logger, config Config, stats *Stats, proc ApplicationProcessor, svc ApplicationService, time ApplicationTime, onCriticalError func()) *AbciApplication {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -83,7 +89,7 @@ func NewApplication(log *logging.Logger, config Config, stats *Stats, proc Appli
 	return &app
 }
 
-func (s *AbciApplication) setMetrics() error {
+func (a *AbciApplication) setMetrics() error {
 	h, err := metrics.AddInstrument(
 		metrics.Counter,
 		"block_height_total",
@@ -97,50 +103,52 @@ func (s *AbciApplication) setMetrics() error {
 	if err != nil {
 		return err
 	}
-	s.blockHeightCounter = c
+	a.blockHeightCounter = c
 
 	return nil
 }
 
-func (s *AbciApplication) ReloadConf(cfg Config) {
-	s.log.Info("reloading configuration")
-	if s.log.GetLevel() != cfg.Level.Get() {
-		s.log.Info("updating log level",
-			logging.String("old", s.log.GetLevel().String()),
+// ReloadConf update the internal configuration of the node
+func (a *AbciApplication) ReloadConf(cfg Config) {
+	a.log.Info("reloading configuration")
+	if a.log.GetLevel() != cfg.Level.Get() {
+		a.log.Info("updating log level",
+			logging.String("old", a.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		s.log.SetLevel(cfg.Level.Get())
+		a.log.SetLevel(cfg.Level.Get())
 	}
 
 	// TODO(): not updating the the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
-	s.cfgMu.Lock()
-	s.Config = cfg
-	s.cfgMu.Unlock()
+	a.cfgMu.Lock()
+	a.Config = cfg
+	a.cfgMu.Unlock()
 }
 
-func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
+// BeginBlock is called by the chain once the new block is starting
+func (a *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
 
-	app.blockHeightCounter.Inc()
+	a.blockHeightCounter.Inc()
 	// We can log more gossiped time info (switchable in config)
-	app.cfgMu.Lock()
-	if app.LogTimeDebug {
-		app.log.Debug("Block time for height",
+	a.cfgMu.Lock()
+	if a.LogTimeDebug {
+		a.log.Debug("Block time for height",
 			logging.Int64("height", beginBlock.Header.Height),
 			logging.Int64("num-txs", beginBlock.Header.NumTxs),
 			logging.Int64("epoch-nano", beginBlock.Header.Time.UnixNano()),
 			logging.String("time", beginBlock.Header.Time.String()))
 	}
-	app.cfgMu.Unlock()
+	a.cfgMu.Unlock()
 
 	// Set time provided by ABCI block header (consensus will have been reached on block time)
 	epochNow := beginBlock.Header.Time
-	app.time.SetTimeNow(epochNow)
+	a.time.SetTimeNow(epochNow)
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has begun
-	if err := app.service.Begin(); err != nil {
-		app.log.Error("Failure on blockchain service begin", logging.Error(err))
-		app.onCriticalError()
+	if err := a.service.Begin(); err != nil {
+		a.log.Error("Failure on blockchain service begin", logging.Error(err))
+		a.onCriticalError()
 	}
 
 	return types.ResponseBeginBlock{}
@@ -150,6 +158,8 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 //	return types.ResponseEndBlock{}
 //}
 
+// CheckTx is called when a new transaction if beeing gossip by the chain to the
+// abci application
 // Mempool Connection
 //
 // A transaction is received by a validator from a client into its own
@@ -173,15 +183,17 @@ func (app *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types
 // in the mempool, removing any that were included in the block, and re-run
 // the rest using CheckTx against the post-Commit mempool state]
 //
-func (app *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
-	err := app.processor.Validate(txn)
+func (a *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
+	err := a.processor.Validate(txn)
 	if err != nil {
-		app.log.Error("Error when validating payload in CheckTx", logging.Error(err))
+		a.log.Error("Error when validating payload in CheckTx", logging.Error(err))
 		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
 	}
 	return types.ResponseCheckTx{Code: AbciTxnOK}
 }
 
+// DeliverTx is called by the chain once the block have been accepted
+// in order to actually deliver the transaction to the abci application
 // Consensus Connection
 // Step 1: DeliverTx
 //
@@ -208,20 +220,21 @@ func (app *AbciApplication) CheckTx(txn []byte) types.ResponseCheckTx {
 // results of DeliverTx, be it a bitarray of non-OK transactions, or a merkle
 // root of the data returned by the DeliverTx requests, or both]
 //
-func (app *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
-	app.size += 1 // Always increment size first, ensure appHash is consistent
+func (a *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
+	a.size++ // Always increment size first, ensure appHash is consistent
 	txLength := len(txn)
-	app.setTxStats(txLength)
+	a.setTxStats(txLength)
 
-	err := app.processor.Process(txn)
+	err := a.processor.Process(txn)
 	if err != nil {
-		app.log.Error("Error during processing of DeliverTx", logging.Error(err))
+		a.log.Error("Error during processing of DeliverTx", logging.Error(err))
 		//return types.ResponseDeliverTx{Code: AbciTxnValidationFailure} // todo: revisit this as part of #414 (gitlab.com/vega-protocol/trading-core/issues/414)
 	}
 
 	return types.ResponseDeliverTx{Code: AbciTxnOK}
 }
 
+// Commit is called once the block have been accepted, and is persisted in the chain
 // Consensus Connection
 // Step 2: Commit the block and persist to disk.
 //
@@ -245,78 +258,78 @@ func (app *AbciApplication) DeliverTx(txn []byte) types.ResponseDeliverTx {
 // The option to have all transactions replayed from some previous block is
 // the job of the Handshake.
 //
-func (app *AbciApplication) Commit() types.ResponseCommit {
+func (a *AbciApplication) Commit() types.ResponseCommit {
 	appHash := make([]byte, 8)
-	binary.PutVarint(appHash, app.size)
-	app.appHash = appHash
-	app.stats.height += 1
+	binary.PutVarint(appHash, a.size)
+	a.appHash = appHash
+	a.stats.height++
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has completed
-	if err := app.service.Commit(); err != nil {
-		app.log.Error("Error on blockchain service Commit", logging.Error(err))
+	if err := a.service.Commit(); err != nil {
+		a.log.Error("Error on blockchain service Commit", logging.Error(err))
 	}
 
 	// todo: when an error happens on service commit should we return a different response to ABCI? (gitlab.com/vega-protocol/trading-core/issues/179)
 
-	app.setBatchStats()
+	a.setBatchStats()
 	return types.ResponseCommit{Data: appHash}
 }
 
 // setBatchStats is used to calculate any statistics that should be
 // recorded once per batch, typically called from commit.
-func (app *AbciApplication) setBatchStats() {
+func (a *AbciApplication) setBatchStats() {
 	// Calculate the average total txn per batch, over n blocks
-	if app.txTotals == nil {
-		app.txTotals = make([]int, 0)
+	if a.txTotals == nil {
+		a.txTotals = make([]int, 0)
 	}
-	app.txTotals = append(app.txTotals, app.stats.totalTxLastBatch)
+	a.txTotals = append(a.txTotals, a.stats.totalTxLastBatch)
 	totalTx := 0
-	for _, itx := range app.txTotals {
+	for _, itx := range a.txTotals {
 		totalTx += itx
 	}
-	averageTxTotal := totalTx / len(app.txTotals)
+	averageTxTotal := totalTx / len(a.txTotals)
 
-	app.log.Debug("Batch stats for height",
-		logging.Uint64("height", app.stats.height),
+	a.log.Debug("Batch stats for height",
+		logging.Uint64("height", a.stats.height),
 		logging.Int("average-tx-total", averageTxTotal))
 
-	app.stats.averageTxPerBatch = averageTxTotal
-	app.stats.totalTxLastBatch = app.stats.totalTxCurrentBatch
-	app.stats.totalTxCurrentBatch = 0
+	a.stats.averageTxPerBatch = averageTxTotal
+	a.stats.totalTxLastBatch = a.stats.totalTxCurrentBatch
+	a.stats.totalTxCurrentBatch = 0
 
 	// MAX sample size for avg calculation is defined as const.
-	if len(app.txTotals) == statsSampleSize {
-		app.txTotals = nil
+	if len(a.txTotals) == statsSampleSize {
+		a.txTotals = nil
 	}
 }
 
 // setTxStats is used to calculate any statistics that should be
 // recorded once per transaction delivery.
-func (app *AbciApplication) setTxStats(txLength int) {
-	app.stats.totalTxCurrentBatch++
-	if app.txSizes == nil {
-		app.txSizes = make([]int, 0)
+func (a *AbciApplication) setTxStats(txLength int) {
+	a.stats.totalTxCurrentBatch++
+	if a.txSizes == nil {
+		a.txSizes = make([]int, 0)
 	}
-	app.txSizes = append(app.txSizes, txLength)
+	a.txSizes = append(a.txSizes, txLength)
 	totalTx := 0
-	for _, itx := range app.txSizes {
+	for _, itx := range a.txSizes {
 		totalTx += itx
 	}
-	averageTxBytes := totalTx / len(app.txSizes)
+	averageTxBytes := totalTx / len(a.txSizes)
 
-	app.log.Debug("Transaction stats for height",
-		logging.Uint64("height", app.stats.height),
+	a.log.Debug("Transaction stats for height",
+		logging.Uint64("height", a.stats.height),
 		logging.Int("average-tx-bytes", averageTxBytes))
 
-	app.stats.averageTxSizeBytes = averageTxBytes
+	a.stats.averageTxSizeBytes = averageTxBytes
 
 	// MAX sample size for avg calculation is defined as const.
-	if len(app.txSizes) == statsSampleSize {
-		app.txSizes = nil
+	if len(a.txSizes) == statsSampleSize {
+		a.txSizes = nil
 	}
 }
 
 // Stats - expose unexported stats field, temp fix for testing
-func (app *AbciApplication) Stats() *Stats {
-	return app.stats
+func (a *AbciApplication) Stats() *Stats {
+	return a.stats
 }

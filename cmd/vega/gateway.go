@@ -86,7 +86,7 @@ func startGateway(log *logging.Logger, cfg gateway.Config) (*Gateway, error) {
 		err             error
 	)
 	if cfg.REST.Enabled {
-		restSrv = rest.NewRestProxyServer(log, cfg)
+		restSrv = rest.NewProxyServer(log, cfg)
 	}
 
 	if cfg.GraphQL.Enabled {

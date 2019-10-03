@@ -28,15 +28,22 @@ import (
 )
 
 var (
-	ErrMarketClosed            = errors.New("market closed")
-	ErrTraderDoNotExists       = errors.New("trader does not exist")
-	ErrMarginCheckFailed       = errors.New("margin check failed")
+	// ErrMarketClosed signals that an action have been tried to be applied on a closed market
+	ErrMarketClosed = errors.New("market closed")
+	// ErrTraderDoNotExists signals that the trader used does not exists
+	ErrTraderDoNotExists = errors.New("trader does not exist")
+	// ErrMarginCheckFailed signals that a margin check for a position failed
+	ErrMarginCheckFailed = errors.New("margin check failed")
+	// ErrMarginCheckInsufficient signals that a margin had not enough funds
 	ErrMarginCheckInsufficient = errors.New("insufficient margin")
+	// ErrInvalidInitialMarkPrice signals that the initial mark price for a market is invalid
 	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
 
 	networkPartyID = "network"
 )
 
+// Market represents an instance of a market in vega and is in charge of calling
+// the engines in order to process all transctiona
 type Market struct {
 	log   *logging.Logger
 	idgen *idgenerator
@@ -118,7 +125,6 @@ func NewMarket(
 	trades TradeStore,
 	transferResponseStore TransferResponseStore,
 	now time.Time,
-	seq uint64,
 ) (*Market, error) {
 
 	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
@@ -165,10 +171,6 @@ func NewMarket(
 		trades:               trades,
 		candlesBuf:           candlesBuf,
 		transferResponsesBuf: transferResponsesBuf,
-	}
-	err = SetMarketID(mkt, seq)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to set market identifier")
 	}
 
 	return market, nil

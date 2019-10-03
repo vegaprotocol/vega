@@ -11,10 +11,13 @@ import (
 )
 
 var (
+	// ErrPriceNotFound signals that a price was not found on the book side
 	ErrPriceNotFound = errors.New("price-volume pair not found")
-	ErrNoOrder       = errors.New("no orders in the book side")
+	// ErrNoOrder signals that there's no orders on the book side.
+	ErrNoOrder = errors.New("no orders in the book side")
 )
 
+// OrderBookSide reprenset a side of the book, either Sell or Buy
 type OrderBookSide struct {
 	log *logging.Logger
 	// Config
@@ -91,6 +94,7 @@ func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 	return nil
 }
 
+// RemoveOrder will remove an order from the book
 func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 	// first  we try to find the pricelevel of the order
 	var i int
@@ -106,18 +110,28 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 		return types.ErrOrderNotFound
 	}
 
-	// now iterate over the orders in the pricelevel to find the actual order
-	oidx := -1
-	for j, order := range s.levels[i].orders {
-		if order.Id == o.Id {
-			oidx = j
+	// orders are order by timestamp (CreatedAt)
+	oidx := sort.Search(len(s.levels[i].orders), func(j int) bool {
+		return s.levels[i].orders[j].CreatedAt >= o.CreatedAt
+	})
+	// we did not find the order
+	if oidx >= len(s.levels[i].orders) {
+		return types.ErrOrderNotFound
+	}
+	// now we may have a few orders with the same timestamp
+	// lets iterate over them in order to find the right one
+	finaloidx := -1
+	for oidx < len(s.levels[i].orders) && s.levels[i].orders[oidx].CreatedAt == o.CreatedAt {
+		if s.levels[i].orders[oidx].Id == o.Id {
+			finaloidx = oidx
 			break
 		}
+		oidx += 1
 	}
 
 	// remove the order from the
-	if oidx != -1 {
-		s.levels[i].removeOrder(oidx)
+	if finaloidx != -1 {
+		s.levels[i].removeOrder(finaloidx)
 	}
 
 	if len(s.levels[i].orders) <= 0 {

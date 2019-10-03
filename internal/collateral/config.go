@@ -9,6 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "collateral"
 
+// Config represent the configuration of the collateral engine
 type Config struct {
 	Level encoding.LogLevel
 	// Auto-create trader accounts if needed?

@@ -14,9 +14,12 @@ import (
 )
 
 var (
+	// ErrNotEnoughOrders signals that not enough orders were
+	// in the book to achieve a given operation
 	ErrNotEnoughOrders = errors.New("insufficient orders")
 )
 
+// OrderBook represents the book holding all orders in the system.
 type OrderBook struct {
 	log *logging.Logger
 	Config
@@ -53,21 +56,25 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 	}
 }
 
-func (s *OrderBook) ReloadConf(cfg Config) {
-	s.log.Info("reloading configuration")
-	if s.log.GetLevel() != cfg.Level.Get() {
-		s.log.Info("updating log level",
-			logging.String("old", s.log.GetLevel().String()),
+// ReloadConf is used in order to reload the internal configuration of
+// the OrderBook
+func (b *OrderBook) ReloadConf(cfg Config) {
+	b.log.Info("reloading configuration")
+	if b.log.GetLevel() != cfg.Level.Get() {
+		b.log.Info("updating log level",
+			logging.String("old", b.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		s.log.SetLevel(cfg.Level.Get())
+		b.log.SetLevel(cfg.Level.Get())
 	}
 
-	s.cfgMu.Lock()
-	s.Config = cfg
-	s.cfgMu.Unlock()
+	b.cfgMu.Lock()
+	b.Config = cfg
+	b.cfgMu.Unlock()
 }
 
+// GetCloseoutPrice returns the exit price which would be achieved for a given
+// volume and give side of the book
 func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, error) {
 	var (
 		price uint64
@@ -143,7 +150,7 @@ func (b *OrderBook) MarketOrderPrice(s types.Side) uint64 {
 	return p
 }
 
-// Cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
+// CancelOrder cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
@@ -192,6 +199,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	return result, nil
 }
 
+// AmendOrder amend an order which is an active order on the book
 func (b *OrderBook) AmendOrder(order *types.Order) error {
 	if err := b.validateOrder(order); err != nil {
 		b.log.Error("Order validation failure",
@@ -225,7 +233,7 @@ func (b *OrderBook) AmendOrder(order *types.Order) error {
 	return nil
 }
 
-// Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
+// SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "SubmitOrder")
 
@@ -295,6 +303,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	return orderConfirmation, nil
 }
 
+// DeleteOrder remove a given order on a given side from the book
 func (b *OrderBook) DeleteOrder(order *types.Order) error {
 	err := b.getSide(order.Side).RemoveOrder(order)
 	return err
@@ -348,6 +357,7 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 	return expiredOrders
 }
 
+// RemoveDistressedOrders remove from the book all order holding distressed positions
 func (b *OrderBook) RemoveDistressedOrders(traders []events.MarketPosition) error {
 	for _, trader := range traders {
 		total := trader.Buy() + trader.Sell()
@@ -404,17 +414,15 @@ func (b *OrderBook) RemoveDistressedOrders(traders []events.MarketPosition) erro
 func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {
 	if orderSide == types.Side_Buy {
 		return b.buy
-	} else {
-		return b.sell
 	}
+	return b.sell
 }
 
 func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 	if orderSide == types.Side_Buy {
 		return b.sell
-	} else {
-		return b.buy
 	}
+	return b.buy
 }
 
 func (b *OrderBook) insertExpiringOrder(ord types.Order) {
@@ -465,6 +473,9 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 	}
 }
 
+// PrintState prints the actual state of the book.
+// this should be use only in debug / non production environment as it
+// rely a lot on logging
 func (b *OrderBook) PrintState(types string) {
 	b.log.Debug(fmt.Sprintf("%s", types))
 	b.log.Debug("------------------------------------------------------------")

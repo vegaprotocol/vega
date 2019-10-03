@@ -2,7 +2,6 @@ package collateral
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -15,20 +14,34 @@ import (
 
 const (
 	initialAccountSize = 4096
-	systemOwner        = "system"
-	noMarket           = "general"
+	// use weird character here, maybe non-displayable ones in the future
+	// if needed
+	systemOwner = "*"
+	noMarket    = "!"
 )
 
 var (
-	ErrSystemAccountsMissing     = errors.New("system accounts missing for collateral engine to work")
-	ErrTraderAccountsMissing     = errors.New("trader accounts missing, cannot collect")
-	ErrBalanceNotSet             = errors.New("failed to update account balance")
-	ErrAccountDoNotExists        = errors.New("account do not exists")
-	ErrAccountAlreadyExists      = errors.New("account already exists")
+	// ErrSystemAccountsMissing signals that a system account is missing, which may means that the
+	// collateral engine have not been initialized properly
+	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
+	// ErrTraderAccountsMissing signals that the accounts for this trader do not exists
+	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
+	// ErrBalanceNotSet signals that the collateral failed to update an account balance
+	ErrBalanceNotSet = errors.New("failed to update account balance")
+	// ErrAccountDoNotExists signals that an account par of a transfer do not exists
+	ErrAccountDoNotExists = errors.New("account do not exists")
+	// ErrAccountAlreadyExists signals that the collateral has been instructed to created
+	// an account which already exists
+	ErrAccountAlreadyExists = errors.New("account already exists")
+	// ErrInsufficientTraderBalance signals that the collateral have been instructed to transfer
+	// funds to a trader margin account but the trader general account do not
+	// have sufficient balance
 	ErrInsufficientTraderBalance = errors.New("trader has insufficient balance for margin")
-	ErrInvalidTransferTypeForOp  = errors.New("invalid transfer type for operation")
+	// ErrInvalidTransferTypeForOp signals that the transfer type is not valid for the current operation
+	ErrInvalidTransferTypeForOp = errors.New("invalid transfer type for operation")
 )
 
+// AccountBuffer ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buffer_mock.go -package mocks code.vegaprotocol.io/vega/internal/collateral AccountBuffer
 type AccountBuffer interface {
 	Add(types.Account)
@@ -37,6 +50,7 @@ type AccountBuffer interface {
 type collectCB func(p *types.Transfer) error
 type setupF func(*types.Transfer) (*types.TransferResponse, error)
 
+// Engine is handling the power of the collateral
 type Engine struct {
 	Config
 	log   *logging.Logger
@@ -50,29 +64,31 @@ type Engine struct {
 	buf  AccountBuffer
 	// cool be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
 	currentTime int64
+
+	idbuf []byte
 }
 
-func accountID(marketID, traderID, asset string, ty types.AccountType) string {
-	// if no marketID -> trader general account
+func (e *Engine) accountID(marketID, partyID, asset string, ty types.AccountType) string {
 	if len(marketID) <= 0 {
 		marketID = noMarket
 	}
 
 	// market account
-	if len(traderID) <= 0 {
-		traderID = systemOwner
+	if len(partyID) <= 0 {
+		partyID = systemOwner
 	}
 
-	var b strings.Builder
-	sty := ty.String()
-	b.Grow(len(marketID) + len(traderID) + len(asset) + len(sty))
-	b.WriteString(marketID)
-	b.WriteString(traderID)
-	b.WriteString(asset)
-	b.WriteString(sty)
-	return b.String()
+	copy(e.idbuf, marketID)
+	ln := len(marketID)
+	copy(e.idbuf[ln:], partyID)
+	ln += len(partyID)
+	copy(e.idbuf[ln:], asset)
+	ln += len(asset)
+	e.idbuf[ln] = byte(ty + 48)
+	return string(e.idbuf[:ln+1])
 }
 
+// New instanciate a new collateral engine
 func New(log *logging.Logger, conf Config, buf AccountBuffer, now time.Time) (*Engine, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -83,13 +99,17 @@ func New(log *logging.Logger, conf Config, buf AccountBuffer, now time.Time) (*E
 		accs:        make(map[string]*types.Account, initialAccountSize),
 		buf:         buf,
 		currentTime: now.UnixNano(),
+		idbuf:       make([]byte, 256),
 	}, nil
 }
 
+// OnChainTimeUpdate is used to be specified as a callback in over services
+// in order to be called when the chain time is updated (basically EndBlock)
 func (e *Engine) OnChainTimeUpdate(t time.Time) {
 	e.currentTime = t.UnixNano()
 }
 
+// ReloadConf upadte the internal configuraton of the collateral engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -107,8 +127,8 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *types.Account, err error) {
 
-	insID := accountID(marketID, "", asset, types.AccountType_INSURANCE)
-	setID := accountID(marketID, "", asset, types.AccountType_SETTLEMENT)
+	insID := e.accountID(marketID, "", asset, types.AccountType_INSURANCE)
+	setID := e.accountID(marketID, "", asset, types.AccountType_SETTLEMENT)
 
 	var ok bool
 	insurance, ok = e.accs[insID]
@@ -143,8 +163,8 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 // AddTraderToMarket - when a new trader enters a market, ensure general + margin accounts both exist
 func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 	// accountID(marketID, traderID, asset string, ty types.AccountType) accountIDT
-	genID := accountID("", traderID, asset, types.AccountType_GENERAL)
-	marginID := accountID(marketID, traderID, asset, types.AccountType_MARGIN)
+	genID := e.accountID("", traderID, asset, types.AccountType_GENERAL)
+	marginID := e.accountID(marketID, traderID, asset, types.AccountType_MARGIN)
 	_, err := e.GetAccountByID(genID)
 	if err != nil {
 		e.log.Error(
@@ -164,6 +184,7 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 	return nil
 }
 
+// MarkToMarket will run the mark to market settlement over a given set of positions
 func (e *Engine) MarkToMarket(marketID string, positions []events.Transfer) ([]*types.TransferResponse, error) {
 	// for now, this is the same as collect, but once we finish the closing positions bit in positions/settlement
 	// we'll first handle the close settlement, then the updated positions for mark-to-market
@@ -174,6 +195,7 @@ func (e *Engine) MarkToMarket(marketID string, positions []events.Transfer) ([]*
 	return e.Transfer(marketID, transfers)
 }
 
+// Transfer will process the list of transfer instructed by other engines
 func (e *Engine) Transfer(marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
 	if len(transfers) == 0 {
 		return nil, nil
@@ -193,9 +215,10 @@ func isSettle(transfer *types.Transfer) bool {
 	return false
 }
 
+// GetPartyMargin will return the current margin for a given party
 func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
-	genID := accountID("", pos.Party(), asset, types.AccountType_GENERAL)
-	marginID := accountID(marketID, pos.Party(), asset, types.AccountType_MARGIN)
+	genID := e.accountID("", pos.Party(), asset, types.AccountType_GENERAL)
+	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountType_MARGIN)
 	genAcc, err := e.GetAccountByID(genID)
 	if err != nil {
 		e.log.Error(
@@ -221,6 +244,7 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 	}, nil
 }
 
+// MarginUpdate will run the margin updates over a set of risk events (margin updates)
 func (e *Engine) MarginUpdate(marketID string, updates []events.Risk,
 ) ([]*types.TransferResponse, []events.MarketPosition, error) {
 	response := make([]*types.TransferResponse, 0, len(updates))
@@ -492,7 +516,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 	asset := p.Amount.Asset
 
 	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
-	marginAcc, err := e.GetAccountByID(accountID(settle.MarketID, p.Owner, asset, types.AccountType_MARGIN))
+	marginAcc, err := e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_MARGIN))
 	if err != nil {
 		e.log.Error(
 			"Failed to get the margin account",
@@ -532,7 +556,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 
 	// now the margin/risk updates, we need to get the general account
 	genAcc, err := e.GetAccountByID(
-		accountID("", p.Owner, asset, types.AccountType_GENERAL),
+		e.accountID("", p.Owner, asset, types.AccountType_GENERAL),
 	)
 	if err != nil {
 		return nil, err
@@ -655,6 +679,8 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 	return &ret, nil
 }
 
+// ClearMarket will remove all monies or accounts for parties allocated for a market (margin accounts)
+// when the market reach end of life (maturity)
 func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.TransferResponse, error) {
 	// creatre a transfer request that we will reuse all the time in order to make allocations smallers
 	req := &types.TransferRequest{
@@ -667,7 +693,7 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 	resps := make([]*types.TransferResponse, 0, len(parties))
 
 	for _, v := range parties {
-		marginAcc, err := e.GetAccountByID(accountID(mktID, v, asset, types.AccountType_MARGIN))
+		marginAcc, err := e.GetAccountByID(e.accountID(mktID, v, asset, types.AccountType_MARGIN))
 		if err != nil {
 			e.log.Error(
 				"Failed to get the margin account",
@@ -679,7 +705,7 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 			continue
 		}
 
-		generalAcc, err := e.GetAccountByID(accountID("", v, asset, types.AccountType_GENERAL))
+		generalAcc, err := e.GetAccountByID(e.accountID("", v, asset, types.AccountType_GENERAL))
 		if err != nil {
 			e.log.Error(
 				"Failed to get the general account",
@@ -738,8 +764,10 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 
 // insert and stuff relate to accounts map from here
 
+// CreateMarketAccounts will create all required accounts for a market once
+// a new market is accepted through the network
 func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (insuranceID, settleID string) {
-	insuranceID = accountID(marketID, "", asset, types.AccountType_INSURANCE)
+	insuranceID = e.accountID(marketID, "", asset, types.AccountType_INSURANCE)
 	_, ok := e.accs[insuranceID]
 	if !ok {
 		insAcc := &types.Account{
@@ -754,7 +782,7 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (
 		e.buf.Add(*insAcc)
 
 	}
-	settleID = accountID(marketID, "", asset, types.AccountType_SETTLEMENT)
+	settleID = e.accountID(marketID, "", asset, types.AccountType_SETTLEMENT)
 	_, ok = e.accs[settleID]
 	if !ok {
 		setAcc := &types.Account{
@@ -772,9 +800,11 @@ func (e *Engine) CreateMarketAccounts(marketID, asset string, insurance int64) (
 	return
 }
 
+// CreateTraderAccount will create trader accounts for a given market
+// basically one account per market, per asset for each trader
 func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID, generalID string) {
 	// first margin account
-	marginID = accountID(marketID, traderID, asset, types.AccountType_MARGIN)
+	marginID = e.accountID(marketID, traderID, asset, types.AccountType_MARGIN)
 	_, ok := e.accs[marginID]
 	if !ok {
 		acc := &types.Account{
@@ -789,7 +819,7 @@ func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID
 		e.buf.Add(*acc)
 	}
 
-	generalID = accountID(noMarket, traderID, asset, types.AccountType_GENERAL)
+	generalID = e.accountID(noMarket, traderID, asset, types.AccountType_GENERAL)
 	_, ok = e.accs[generalID]
 	if !ok {
 		acc := &types.Account{
@@ -807,6 +837,8 @@ func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID
 	return
 }
 
+// RemoveDistressed will remove all distressed trader in the event positions
+// for a given market and asset
 func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
 	tl := len(traders)
 	if tl == 0 {
@@ -821,7 +853,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 		Transfers: make([]*types.LedgerEntry, 0, tl),
 	}
 	for _, trader := range traders {
-		acc, err := e.GetAccountByID(accountID(marketID, trader.Party(), asset, types.AccountType_MARGIN))
+		acc, err := e.GetAccountByID(e.accountID(marketID, trader.Party(), asset, types.AccountType_MARGIN))
 		if err != nil {
 			return nil, err
 		}
@@ -849,6 +881,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 	return &resp, nil
 }
 
+// UpdateBalance will update the balance of a given account
 func (e *Engine) UpdateBalance(id string, balance int64) error {
 	acc, ok := e.accs[id]
 	if !ok {
@@ -859,6 +892,8 @@ func (e *Engine) UpdateBalance(id string, balance int64) error {
 	return nil
 }
 
+// IncrementBalance will increment the balance of a given account
+// using the given value
 func (e *Engine) IncrementBalance(id string, inc int64) error {
 	acc, ok := e.accs[id]
 	if !ok {
@@ -869,6 +904,7 @@ func (e *Engine) IncrementBalance(id string, inc int64) error {
 	return nil
 }
 
+// GetAccountByID will return an account using the given id
 func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	acc, ok := e.accs[id]
 	if !ok {

@@ -10,6 +10,7 @@ func noop() {
 	// NO-OP
 }
 
+// TempDir will create a temporary folderwith the give prefix
 func TempDir(prefix string) (string, func(), error) {
 	baseTempDirs := []string{"/dev/shm", os.TempDir()}
 	for _, baseTempDir := range baseTempDirs {
@@ -24,4 +25,3 @@ func TempDir(prefix string) (string, func(), error) {
 	}
 	return "", noop, fmt.Errorf("Could not find a temp dir")
 }
-
