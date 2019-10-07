@@ -17,8 +17,18 @@ service trading {
   rpc AmendOrder(AmendOrderRequest) returns (vega.PendingOrder);
   rpc SignIn(SignInRequest) returns (SignInResponse);
   rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
+  rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
   // unary calls - read
   rpc CheckToken(CheckTokenRequest) returns (CheckTokenResponse);
+}
+
+message WithdrawRequest {
+  string token = 1;
+  vega.Withdraw withdraw = 2;
+}
+
+message WithdrawResponse {
+  bool success = 1;
 }
 
 message NotifyTraderAccountRequest {

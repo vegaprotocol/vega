@@ -2,14 +2,12 @@ package execution
 
 import (
 	"fmt"
-	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// no mutex required, markets work deterministically, and sequentially
+// IDgenerator no mutex required, markets work deterministically, and sequentially
 type idgenerator struct {
-	now    time.Time
 	blocks uint64
 	orders uint64
 }
@@ -20,9 +18,8 @@ func newIDGen() *idgenerator {
 	return &idgenerator{}
 }
 
-// updateTime - set new block time, increases block count, too
-func (i *idgenerator) updateTime(t time.Time) {
-	i.now = t
+// NewBlock ...
+func (i *idgenerator) newBlock() {
 	i.blocks++
 }
 
@@ -30,8 +27,4 @@ func (i *idgenerator) updateTime(t time.Time) {
 func (i *idgenerator) setID(o *types.Order) {
 	i.orders++
 	o.Id = fmt.Sprintf("V%010d-%010d", i.blocks, i.orders)
-	// just make sure this is set
-	if o.CreatedAt == 0 {
-		o.CreatedAt = i.now.UnixNano()
-	}
 }

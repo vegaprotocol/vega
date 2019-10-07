@@ -208,6 +208,18 @@ func (e *Engine) NotifyTraderAccount(notif *types.NotifyTraderAccount) error {
 	return e.party.NotifyTraderAccount(notif)
 }
 
+func (e *Engine) Withdraw(w *types.Withdraw) error {
+	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
+	if err != nil {
+		e.log.Error("something happend durinmg withdrawal",
+			logging.String("party-id", w.PartyID),
+			logging.Uint64("amount", w.Amount),
+			logging.Error(err),
+		)
+	}
+	return err
+}
+
 // SubmitMarket will submit a new market configuration to the network
 func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 

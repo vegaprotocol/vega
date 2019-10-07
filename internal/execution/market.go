@@ -206,8 +206,9 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	// update block time on id generator
-	m.idgen.updateTime(t)
+	m.idgen.newBlock()
 
 	closed = t.After(m.closingAt)
 	m.closed = closed
@@ -365,6 +366,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	// set order ID
 	m.idgen.setID(order)
+	order.CreatedAt = m.currentTime.UnixNano()
 
 	// Insert aggressive remaining order
 	err = m.orders.Post(*order)
@@ -453,8 +455,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			if err != nil && 0 != len(transfers) {
 				m.transferResponsesBuf.Add(transfers)
 			}
-			// @TODO -> close out any traders that don't have enough margins left
-			// if no errors were returned
+			err = m.resolveClosedOutTraders(closed, order)
+			if err != nil {
+				m.log.Error("unable to close out traders",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
 		}
 	}
 
@@ -496,10 +502,12 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *type
 			return err
 		}
 		// currently just logging ledger movements, will be added to a stream storage engine in time
-		m.log.Debug(
-			"Legder movements after removing distressed traders",
-			logging.String("legder-dump", fmt.Sprintf("%#v", movements.Transfers)),
-		)
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug(
+				"Legder movements after removing distressed traders",
+				logging.String("legder-dump", fmt.Sprintf("%#v", movements.Transfers)),
+			)
+		}
 		return nil
 	}
 	// network order

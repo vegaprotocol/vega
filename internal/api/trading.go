@@ -33,6 +33,11 @@ var (
 	ErrMissingToken = errors.New("missing token")
 	// ErrMalformedRequest signals that the request was malformed
 	ErrMalformedRequest = errors.New("malformed request")
+	// ErrInvalidWithdrawAmount signals that the amount of money to withdraw is invalid
+	// usualy the party specified an amount of 0
+	ErrInvalidWithdrawAmount = errors.New("invalid withdraw amount (must be > 0)")
+	// ErrMissingAsset signals that an asset was required but not specified
+	ErrMissingAsset = errors.New("missing asset")
 )
 
 // TradeOrderService ...
@@ -47,6 +52,7 @@ type TradeOrderService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/internal/api  AccountService
 type AccountService interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (bool, error)
+	Withdraw(context.Context, *types.Withdraw) (bool, error)
 }
 
 type tradingService struct {
@@ -259,5 +265,41 @@ func (s *tradingService) NotifyTraderAccount(
 
 	return &protoapi.NotifyTraderAccountResponse{
 		Submitted: submitted,
+	}, nil
+}
+
+func (s *tradingService) Withdraw(
+	ctx context.Context, req *protoapi.WithdrawRequest,
+) (*protoapi.WithdrawResponse, error) {
+	if len(req.Withdraw.PartyID) <= 0 {
+		return nil, ErrMissingTraderID
+	}
+	if len(req.Withdraw.Asset) <= 0 {
+		return nil, ErrMissingAsset
+	}
+
+	if req.Withdraw.Amount == 0 {
+		return nil, ErrInvalidWithdrawAmount
+	}
+
+	// check auth if required
+	if s.authEnabled {
+		if len(req.Token) <= 0 {
+			s.log.Debug("missing token")
+			return nil, errors.New("missing auth token")
+		}
+		if err := s.validateToken(req.Withdraw.PartyID, req.Token); err != nil {
+			s.log.Debug("token error", logging.Error(err))
+			return nil, err
+		}
+	}
+
+	ok, err := s.accountService.Withdraw(ctx, req.Withdraw)
+	if err != nil {
+		return nil, err
+	}
+
+	return &protoapi.WithdrawResponse{
+		Success: ok,
 	}, nil
 }

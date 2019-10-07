@@ -210,6 +210,12 @@ message NotifyTraderAccount {
   string traderID = 1;
 }
 
+message Withdraw {
+  string partyID = 1;
+  uint64 amount = 2;
+  string asset = 3;
+}
+
 message OrderAmendment {
   string orderID = 1 [(validator.field) = {string_not_empty : true}];
   string partyID = 2 [(validator.field) = {string_not_empty: true}];
