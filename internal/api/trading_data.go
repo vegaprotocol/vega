@@ -120,6 +120,7 @@ type BlockchainClient interface {
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 	Health() (*tmctypes.ResultHealth, error)
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
+	Withdraw(context.Context, *types.Withdraw) (success bool, err error)
 }
 
 // AccountsService ...
