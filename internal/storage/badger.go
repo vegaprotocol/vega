@@ -46,6 +46,7 @@ type ConfigOptions struct {
 	CompactL0OnClose        bool
 	ReadOnly                bool
 	Truncate                bool
+	LogRotatesToFlush       int32
 	// Logger               logging.Logger // not customisable by end user
 }
 
@@ -78,6 +79,7 @@ func DefaultStoreOptions() ConfigOptions {
 		CompactL0OnClose:        true,      // bool
 		ReadOnly:                false,     // bool
 		Truncate:                false,     // bool
+		LogRotatesToFlush:       2,         // int32, default 2
 		// Logger:               TBD,       // Logger, default defaultLogger
 	}
 	return opts
@@ -124,8 +126,10 @@ func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) ba
 		CompactL0OnClose:        cfg.CompactL0OnClose,
 		ReadOnly:                cfg.ReadOnly,
 		Truncate:                cfg.Truncate,
+		LogRotatesToFlush:       2,
 		Logger:                  log.Named(badgerNamedLogger),
 	}
+
 	return opts
 }
 

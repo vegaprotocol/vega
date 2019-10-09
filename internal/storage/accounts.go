@@ -210,7 +210,6 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 	if a.batchCountForGC >= maxBatchesUntilValueLogGC {
 		go func() {
 			a.log.Info("Account store value log garbage collection",
-				logging.String("status", "attempt"),
 				logging.Int("batch-count-for-gc", a.batchCountForGC))
 
 			err := a.badger.GarbageCollectValueLog()
@@ -219,9 +218,6 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 					logging.Error(err))
 			} else {
 				a.batchCountForGC = 0
-				a.log.Info("Account store value log garbage collection",
-					logging.String("status", "success"),
-					logging.Int("batch-count-for-gc", a.batchCountForGC))
 			}
 		}()
 	}
