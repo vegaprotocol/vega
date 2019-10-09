@@ -31,6 +31,8 @@ var (
 	ErrMissingPartyID = errors.New("missing party id")
 	// ErrMissingToken signals that a token was required but is missing with this request
 	ErrMissingToken = errors.New("missing token")
+	// ErrMalformedRequest signals that a token was required but is missing with this request
+	ErrMalformedRequest = errors.New("malformed request")
 )
 
 // TradeOrderService ...
@@ -79,14 +81,15 @@ func (s *tradingService) validateToken(partyID string, tkn string) error {
 func (s *tradingService) CheckToken(
 	ctx context.Context, req *protoapi.CheckTokenRequest,
 ) (*protoapi.CheckTokenResponse, error) {
+	if req == nil {
+		return nil, ErrMalformedRequest
+	}
 	if !s.authEnabled {
 		return nil, ErrAuthDisabled
 	}
-
 	if len(req.PartyID) <= 0 {
 		return nil, ErrMissingPartyID
 	}
-
 	if len(req.Token) <= 0 {
 		return nil, ErrMissingToken
 	}
@@ -105,6 +108,9 @@ func (s *tradingService) CheckToken(
 func (s *tradingService) SignIn(
 	ctx context.Context, req *protoapi.SignInRequest,
 ) (*protoapi.SignInResponse, error) {
+	if req == nil {
+		return nil, ErrMalformedRequest
+	}
 	if len(req.Id) <= 0 {
 		return nil, ErrInvalidCredentials
 	}
@@ -147,10 +153,12 @@ func (s *tradingService) SignIn(
 func (s *tradingService) SubmitOrder(
 	ctx context.Context, req *protoapi.SubmitOrderRequest,
 ) (*types.PendingOrder, error) {
+	if req == nil {
+		return nil, ErrMalformedRequest
+	}
 	if s.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
-
 	if req.Submission == nil {
 		return nil, ErrMissingOrder
 	}
@@ -183,10 +191,12 @@ func (s *tradingService) SubmitOrder(
 func (s *tradingService) CancelOrder(
 	ctx context.Context, req *protoapi.CancelOrderRequest,
 ) (*types.PendingOrder, error) {
+	if req == nil {
+		return nil, ErrMalformedRequest
+	}
 	if s.statusChecker.ChainStatus() != types.ChainStatus_CONNECTED {
 		return nil, ErrChainNotConnected
 	}
-
 	if req.Cancellation == nil {
 		return nil, ErrMissingOrder
 	}
@@ -210,7 +220,9 @@ func (s *tradingService) CancelOrder(
 func (s *tradingService) AmendOrder(
 	ctx context.Context, req *protoapi.AmendOrderRequest,
 ) (*types.PendingOrder, error) {
-
+	if req == nil {
+		return nil, ErrMalformedRequest
+	}
 	if req.Amendment == nil {
 		return nil, ErrMissingOrder
 	}
@@ -233,6 +245,9 @@ func (s *tradingService) AmendOrder(
 func (s *tradingService) NotifyTraderAccount(
 	ctx context.Context, req *protoapi.NotifyTraderAccountRequest,
 ) (*protoapi.NotifyTraderAccountResponse, error) {
+	if req == nil || req.Notif == nil {
+		return nil, ErrMalformedRequest
+	}
 	if len(req.Notif.TraderID) <= 0 {
 		return nil, ErrMissingTraderID
 	}

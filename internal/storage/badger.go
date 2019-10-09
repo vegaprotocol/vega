@@ -49,13 +49,6 @@ type ConfigOptions struct {
 	// Logger               logging.Logger // not customisable by end user
 }
 
-func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Iterator {
-	if descending {
-		return bs.descendingIterator(txn)
-	}
-	return bs.ascendingIterator(txn)
-}
-
 // DefaultStoreOptions supplies default options to be used for all stores.
 func DefaultStoreOptions() ConfigOptions {
 	/*
@@ -88,6 +81,25 @@ func DefaultStoreOptions() ConfigOptions {
 		// Logger:               TBD,       // Logger, default defaultLogger
 	}
 	return opts
+}
+
+//GarbageCollectValueLog triggers a value log garbage collection.
+//We ignore errors reported when no rewrites are triggered, and if GC is already running.
+func (bs *badgerStore) GarbageCollectValueLog() error {
+	err := bs.db.RunValueLogGC(0.5)
+	if err != nil &&
+		err != badger.ErrNoRewrite &&
+		err != badger.ErrRejected {
+		return err
+	}
+	return nil
+}
+
+func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Iterator {
+	if descending {
+		return bs.descendingIterator(txn)
+	}
+	return bs.ascendingIterator(txn)
 }
 
 func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) badger.Options {

@@ -23,15 +23,20 @@ var (
 	ErrOwnerNotFound = errors.New("no accounts found for party")
 )
 
+// Total number of batches to save/process before we try
+// and garbage collect the BadgerDB value log files.
+const maxBatchesUntilValueLogGC = 300
+
 // Account represents a collateral account store
 type Account struct {
 	Config
 
-	log          *logging.Logger
-	badger       *badgerStore
-	subscribers  map[uint64]chan []*types.Account
-	subscriberID uint64
-	mu           sync.Mutex
+	log             *logging.Logger
+	badger          *badgerStore
+	subscribers     map[uint64]chan []*types.Account
+	subscriberID    uint64
+	mu              sync.Mutex
+	batchCountForGC int
 }
 
 // NewAccounts creates a new account store with the logger and configuration specified.
@@ -166,13 +171,12 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, byReference bool
 
 // SaveBatch writes a slice of account changes to the underlying store.
 func (a *Account) SaveBatch(accs []*types.Account) error {
-
-	if logging.DebugLevel == a.log.GetLevel() {
-		for _, acc := range accs {
-			a.log.Debug("", logging.Account(*acc))
-		}
+	if len(accs) == 0 {
+		// Sanity check, no need to do any processing on an empty batch.
+		return nil
 	}
 
+	a.batchCountForGC++
 	batch, err := a.parseBatch(accs...)
 	if err != nil {
 		a.log.Error(
@@ -199,6 +203,27 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 
 	if logging.DebugLevel == a.log.GetLevel() {
 		a.log.Debug("Accounts store updated", logging.Int("batch-size", len(accs)))
+	}
+
+	// Using a batch counter ties the clean up to the average
+	// expected size of a batch of account updates, not just time.
+	if a.batchCountForGC >= maxBatchesUntilValueLogGC {
+		go func() {
+			a.log.Info("Account store value log garbage collection",
+				logging.String("status", "attempt"),
+				logging.Int("batch-count-for-gc", a.batchCountForGC))
+
+			err := a.badger.GarbageCollectValueLog()
+			if err != nil {
+				a.log.Error("Unexpected problem running valueLogGC on accounts-store",
+					logging.Error(err))
+			} else {
+				a.batchCountForGC = 0
+				a.log.Info("Account store value log garbage collection",
+					logging.String("status", "success"),
+					logging.Int("batch-count-for-gc", a.batchCountForGC))
+			}
+		}()
 	}
 
 	a.notify(accs)
@@ -327,10 +352,14 @@ func (a *Account) Unsubscribe(id uint64) error {
 }
 
 // DefaultAccountStoreOptions supplies default options we use for account stores.
-// Currently we want to load account keys and value into RAM.
+// Vega has custom settings to aid with valueLogGC
 func DefaultAccountStoreOptions() ConfigOptions {
 	opts := DefaultStoreOptions()
-	opts.TableLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.LoadToRAM}
-	opts.ValueLogLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.MemoryMap}
+	opts.TableLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
+	opts.ValueLogLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
+	// The following params optimise account store for valueLogGC
+	opts.LevelSizeMultiplier = 2
+	opts.NumLevelZeroTables = 1
+	opts.NumLevelZeroTablesStall = 2
 	return opts
 }
