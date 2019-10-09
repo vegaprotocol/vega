@@ -235,7 +235,6 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.tradeStore,
 		e.transferResponseStore,
 		now,
-		uint64(len(e.markets)),
 	)
 	if err != nil {
 		e.log.Error("Failed to instanciate market",

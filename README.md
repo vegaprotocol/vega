@@ -1,12 +1,10 @@
 # Vega
 
-Version 0.10.0.
+Version 0.10.1.
 
 A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
 
 **Vega** provides the following core features:
-
-<img align="right" src="https://vega.xyz/img/concept_header.svg" height="150" style="padding: 0 10px 0 0;">
 
 - Join a Vega network as a validator or non-consensus node.
 - [Provision](#provisioning) new markets on a network (coming soon)
@@ -19,7 +17,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 ## Links
 
-- For **new starters**, see [GETTING_STARTED.md](doc/GETTING_STARTED.md).
+- For **new starters**, see [GETTING_STARTED.md](GETTING_STARTED.md).
 - For **updates**, see [CHANGELOG.md](CHANGELOG.md) for major updates, and
   [releases](https://gitlab.com/vega-protocol/trading-core/wikis/Release-notes) for a detailed version history.
 - For **architecture**, please read the [design documentation](ARCHITECTURE.md) to learn about the design for the system and its architecture.
@@ -45,7 +43,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 ## Installation
 
-To install `trading-core` and `tendermint`, see [GETTING_STARTED.md](doc/GETTING_STARTED.md).
+To install `trading-core` and `tendermint`, see [GETTING_STARTED.md](GETTING_STARTED.md).
 
 ## Configuration
 

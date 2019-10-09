@@ -1,4 +1,4 @@
-# Matching engine
+# Matching package 
 
 A trade matching engine matches up order bids and offers to generate trades. Matching engines allocate trades among competing bids and offers at the same price.
 

@@ -2,7 +2,7 @@ module code.vegaprotocol.io/vega
 
 require (
 	code.vegaprotocol.io/quant v0.1.0
-	github.com/99designs/gqlgen v0.8.3
+	github.com/99designs/gqlgen v0.10.1
 	github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 // indirect
 	github.com/DATA-DOG/godog v0.7.13 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
@@ -18,7 +18,6 @@ require (
 	github.com/go-kit/kit v0.8.0 // indirect
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/gogo/protobuf v1.3.0
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.2
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect

@@ -178,13 +178,13 @@ func (r *VegaResolverRoot) Statistics() StatisticsResolver {
 
 type myQueryResolver VegaResolverRoot
 
-func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]Market, error) {
+func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, error) {
 	if id != nil {
 		mkt, err := r.Market(ctx, *id)
 		if err != nil {
 			return nil, err
 		}
-		return []Market{*mkt}, nil
+		return []*Market{mkt}, nil
 
 	}
 	res, err := r.tradingDataClient.Markets(ctx, &empty.Empty{})
@@ -193,14 +193,14 @@ func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]Market, er
 		return nil, err
 	}
 
-	m := make([]Market, 0, len(res.Markets))
+	m := make([]*Market, 0, len(res.Markets))
 	for _, pmarket := range res.Markets {
 		market, err := MarketFromProto(pmarket)
 		if err != nil {
 			r.log.Error("unable to convert market from proto", logging.Error(err))
 			return nil, err
 		}
-		m = append(m, *market)
+		m = append(m, market)
 	}
 
 	return m, nil
@@ -222,7 +222,7 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 	return market, nil
 }
 
-func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]Party, error) {
+func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*Party, error) {
 	if name == nil {
 		return nil, errors.New("all parties not implemented")
 	}
@@ -230,8 +230,8 @@ func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]Party, e
 	if err != nil {
 		return nil, err
 	}
-	return []Party{
-		{ID: pty.ID},
+	return []*Party{
+		&Party{ID: pty.ID},
 	}, nil
 }
 
@@ -277,7 +277,7 @@ type myMarketResolver VegaResolverRoot
 
 func (r *myMarketResolver) Orders(
 	ctx context.Context, market *Market, open *bool, skip *int, first *int, last *int,
-) ([]types.Order, error) {
+) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
 	openOnly := open != nil && *open
 	req := protoapi.OrdersByMarketRequest{
@@ -290,16 +290,11 @@ func (r *myMarketResolver) Orders(
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	outorders := make([]types.Order, 0, len(res.Orders))
-	for _, v := range res.Orders {
-		v := v
-		outorders = append(outorders, *v)
-	}
-	return outorders, nil
+	return res.Orders, nil
 }
 
 func (r *myMarketResolver) Trades(ctx context.Context, market *Market,
-	skip *int, first *int, last *int) ([]types.Trade, error) {
+	skip *int, first *int, last *int) ([]*types.Trade, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.TradesByMarketRequest{
 		MarketID:   market.ID,
@@ -311,12 +306,7 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *Market,
 		return nil, err
 	}
 
-	outtrades := make([]types.Trade, 0, len(res.Trades))
-	for _, v := range res.Trades {
-		v := v
-		outtrades = append(outtrades, *v)
-	}
-	return outtrades, nil
+	return res.Trades, nil
 }
 
 func (r *myMarketResolver) Depth(ctx context.Context, market *Market) (*types.MarketDepth, error) {
@@ -386,7 +376,7 @@ func (r *myMarketResolver) OrderByReference(ctx context.Context, market *Market,
 	return res.Order, nil
 }
 
-func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, accType *AccountType) ([]types.Account, error) {
+func (r *myMarketResolver) Accounts(ctx context.Context, market *Market, accType *AccountType) ([]*types.Account, error) {
 	return nil, errors.New("not implemented yet")
 }
 
@@ -418,7 +408,7 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 }
 
 func (r *myPartyResolver) Orders(ctx context.Context, party *Party,
-	open *bool, skip *int, first *int, last *int) ([]types.Order, error) {
+	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
 
 	p := makePagination(skip, first, last)
 	openOnly := open != nil && *open
@@ -433,16 +423,16 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *Party,
 		return nil, err
 	}
 
-	outorders := make([]types.Order, 0, len(res.Orders))
+	outorders := make([]*types.Order, 0, len(res.Orders))
 	for _, v := range res.Orders {
 		v := v
-		outorders = append(outorders, *v)
+		outorders = append(outorders, v)
 	}
 	return outorders, nil
 }
 
 func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
-	market *string, skip *int, first *int, last *int) ([]types.Trade, error) {
+	market *string, skip *int, first *int, last *int) ([]*types.Trade, error) {
 
 	var mkt string
 	if market != nil {
@@ -461,15 +451,10 @@ func (r *myPartyResolver) Trades(ctx context.Context, party *Party,
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-	outtrades := make([]types.Trade, 0, len(res.Trades))
-	for _, v := range res.Trades {
-		v := v
-		outtrades = append(outtrades, *v)
-	}
-	return outtrades, nil
+	return res.Trades, nil
 }
 
-func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.MarketPosition, error) {
+func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]*types.MarketPosition, error) {
 	if pty == nil {
 		return nil, errors.New("nil party")
 	}
@@ -479,17 +464,10 @@ func (r *myPartyResolver) Positions(ctx context.Context, pty *Party) ([]types.Ma
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
 	}
-
-	retpos := make([]types.MarketPosition, 0, len(res.Positions))
-	for _, v := range res.Positions {
-		v := v
-		retpos = append(retpos, *v)
-	}
-	return retpos, nil
-
+	return res.Positions, nil
 }
 
-func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, asset *string, accType *AccountType) ([]types.Account, error) {
+func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *string, asset *string, accType *AccountType) ([]*types.Account, error) {
 	if pty == nil {
 		return nil, errors.New("a party must be specified when querying accounts")
 	}
@@ -518,10 +496,10 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 		if err != nil {
 			return nil, err
 		}
-		accounts := make([]types.Account, 0, len(resp.Accounts))
+		accounts := make([]*types.Account, 0, len(resp.Accounts))
 		for _, acc := range resp.Accounts {
 			if asset == nil || acc.Asset == *asset {
-				accounts = append(accounts, *acc)
+				accounts = append(accounts, acc)
 			}
 		}
 		return accounts, nil
@@ -534,10 +512,11 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 		if err != nil {
 			return nil, err
 		}
-		accounts := make([]types.Account, 0, len(resp.Accounts))
+		accounts := make([]*types.Account, 0, len(resp.Accounts))
 		for _, acc := range resp.Accounts {
+			acc := acc
 			if asset == nil || acc.Asset == *asset {
-				accounts = append(accounts, *acc)
+				accounts = append(accounts, acc)
 			}
 		}
 		return accounts, nil
@@ -1070,7 +1049,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []types.Order, error) {
+func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []*types.Order, error) {
 	var (
 		mkt, pty string
 	)
@@ -1090,7 +1069,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 		return nil, err
 	}
 
-	c := make(chan []types.Order)
+	c := make(chan []*types.Order)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -1106,18 +1085,14 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			out := make([]types.Order, 0, len(o.Orders))
-			for _, v := range o.Orders {
-				out = append(out, *v)
-			}
-			c <- out
+			c <- o.Orders
 		}
 	}()
 
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []types.Trade, error) {
+func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []*types.Trade, error) {
 	var (
 		mkt, pty string
 	)
@@ -1137,7 +1112,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 		return nil, err
 	}
 
-	c := make(chan []types.Trade)
+	c := make(chan []*types.Trade)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -1153,12 +1128,7 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 				r.log.Error("trades: stream closed", logging.Error(err))
 				break
 			}
-			out := make([]types.Trade, 0, len(t.Trades))
-			for _, v := range t.Trades {
-				out = append(out, *v)
-			}
-
-			c <- out
+			c <- t.Trades
 		}
 	}()
 
