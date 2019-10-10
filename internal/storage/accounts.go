@@ -208,10 +208,10 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 
 	// Using a batch counter ties the clean up to the average
 	// expected size of a batch of account updates, not just time.
-	if a.batchCountForGC >= maxBatchesUntilValueLogGC {
+	if atomic.LoadInt32(&a.batchCountForGC) >= maxBatchesUntilValueLogGC {
 		go func() {
 			a.log.Info("Account store value log garbage collection",
-				logging.Int32("batch-count-for-gc", a.batchCountForGC))
+				logging.Int32("attempt", atomic.LoadInt32(&a.batchCountForGC)-maxBatchesUntilValueLogGC))
 
 			err := a.badger.GarbageCollectValueLog()
 			if err != nil {
