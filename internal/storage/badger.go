@@ -46,14 +46,8 @@ type ConfigOptions struct {
 	CompactL0OnClose        bool
 	ReadOnly                bool
 	Truncate                bool
+	LogRotatesToFlush       int32
 	// Logger               logging.Logger // not customisable by end user
-}
-
-func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Iterator {
-	if descending {
-		return bs.descendingIterator(txn)
-	}
-	return bs.ascendingIterator(txn)
 }
 
 // DefaultStoreOptions supplies default options to be used for all stores.
@@ -85,9 +79,29 @@ func DefaultStoreOptions() ConfigOptions {
 		CompactL0OnClose:        true,      // bool
 		ReadOnly:                false,     // bool
 		Truncate:                false,     // bool
+		LogRotatesToFlush:       2,         // int32, default 2
 		// Logger:               TBD,       // Logger, default defaultLogger
 	}
 	return opts
+}
+
+// GarbageCollectValueLog triggers a value log garbage collection.
+//We ignore errors reported when no rewrites are triggered, and if GC is already running.
+func (bs *badgerStore) GarbageCollectValueLog() error {
+	err := bs.db.RunValueLogGC(0.5)
+	if err != nil &&
+		err != badger.ErrNoRewrite &&
+		err != badger.ErrRejected {
+		return err
+	}
+	return nil
+}
+
+func (bs *badgerStore) getIterator(txn *badger.Txn, descending bool) *badger.Iterator {
+	if descending {
+		return bs.descendingIterator(txn)
+	}
+	return bs.ascendingIterator(txn)
 }
 
 func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) badger.Options {
@@ -112,8 +126,10 @@ func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) ba
 		CompactL0OnClose:        cfg.CompactL0OnClose,
 		ReadOnly:                cfg.ReadOnly,
 		Truncate:                cfg.Truncate,
+		LogRotatesToFlush:       2,
 		Logger:                  log.Named(badgerNamedLogger),
 	}
+
 	return opts
 }
 
