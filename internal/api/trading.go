@@ -31,7 +31,7 @@ var (
 	ErrMissingPartyID = errors.New("missing party id")
 	// ErrMissingToken signals that a token was required but is missing with this request
 	ErrMissingToken = errors.New("missing token")
-	// ErrMalformedRequest signals that a token was required but is missing with this request
+	// ErrMalformedRequest signals that the request was malformed
 	ErrMalformedRequest = errors.New("malformed request")
 )
 
