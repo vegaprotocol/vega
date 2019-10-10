@@ -164,14 +164,14 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 		if err != nil {
 			return err
 		}
-		if err = wb.Set(badgerKey, candleBuf, 0); err != nil {
+		if err = wb.Set(badgerKey, candleBuf); err != nil {
 			return err
 		}
 		return nil
 	}
 
 	updateLastCandle := func(wb *badger.WriteBatch, key []byte, candleKey []byte) error {
-		if err := wb.Set(key, candleKey, 0); err != nil {
+		if err := wb.Set(key, candleKey); err != nil {
 			return err
 		}
 		return nil
@@ -182,7 +182,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 		if err != nil {
 			return err
 		}
-		if err = wb.Set(badgerKey, candleBuf, 0); err != nil {
+		if err = wb.Set(badgerKey, candleBuf); err != nil {
 			return err
 		}
 		return nil
@@ -247,7 +247,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 				logging.String("interval", candle.Interval.String()),
 			)
 		} else {
-			c.log.Debug("last candle updatedx",
+			c.log.Debug("last candle updated",
 				logging.String("market-id", marketID),
 				logging.String("interval", candle.Interval.String()),
 			)

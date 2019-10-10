@@ -16,7 +16,7 @@ func runBadgerStoreTest(t *testing.T, opts *badger.Options, test func(t *testing
 	defer tidy()
 
 	if opts == nil {
-		cpy := badger.DefaultOptions
+		cpy := badger.DefaultOptions("")
 		opts = &cpy
 	}
 	opts.Dir, opts.ValueDir = dir, dir
