@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 
 	cfgencoding "code.vegaprotocol.io/vega/internal/config/encoding"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -36,7 +37,7 @@ type Account struct {
 	subscribers     map[uint64]chan []*types.Account
 	subscriberID    uint64
 	mu              sync.Mutex
-	batchCountForGC int
+	batchCountForGC int32
 }
 
 // NewAccounts creates a new account store with the logger and configuration specified.
@@ -176,7 +177,7 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 		return nil
 	}
 
-	a.batchCountForGC++
+	atomic.AddInt32(&a.batchCountForGC, 1)
 	batch, err := a.parseBatch(accs...)
 	if err != nil {
 		a.log.Error(
@@ -210,14 +211,14 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 	if a.batchCountForGC >= maxBatchesUntilValueLogGC {
 		go func() {
 			a.log.Info("Account store value log garbage collection",
-				logging.Int("batch-count-for-gc", a.batchCountForGC))
+				logging.Int32("batch-count-for-gc", a.batchCountForGC))
 
 			err := a.badger.GarbageCollectValueLog()
 			if err != nil {
 				a.log.Error("Unexpected problem running valueLogGC on accounts-store",
 					logging.Error(err))
 			} else {
-				a.batchCountForGC = 0
+				atomic.StoreInt32(&a.batchCountForGC, 0)
 			}
 		}()
 	}
