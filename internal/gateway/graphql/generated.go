@@ -2335,7 +2335,7 @@ type Order {
   reference: String!
 
   # Trades relating to this order
-  trades: [Trade]
+  trades: [Trade!]
 
   # Type the order type (defaults to TRADER)
   type: OrderType
