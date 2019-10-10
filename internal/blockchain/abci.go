@@ -29,13 +29,6 @@ type ApplicationService interface {
 	Commit() error
 }
 
-// ApplicationProcessor ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_processor_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationProcessor
-type ApplicationProcessor interface {
-	Process(payload []byte) error
-	Validate(payload []byte) error
-}
-
 // ApplicationTime ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/application_time_mock.go -package mocks code.vegaprotocol.io/vega/internal/blockchain ApplicationTime
 type ApplicationTime interface {
@@ -50,7 +43,7 @@ type AbciApplication struct {
 	cfgMu     sync.Mutex
 	log       *logging.Logger
 	stats     *Stats
-	processor ApplicationProcessor
+	processor *Processor
 	service   ApplicationService
 	appHash   []byte
 	size      int64
@@ -65,7 +58,10 @@ type AbciApplication struct {
 }
 
 // NewApplication returns a new instance of the Abci application
-func NewApplication(log *logging.Logger, config Config, stats *Stats, proc ApplicationProcessor, svc ApplicationService, time ApplicationTime, onCriticalError func()) *AbciApplication {
+func NewApplication(log *logging.Logger,
+	config Config, stats *Stats, proc *Processor, svc ApplicationService,
+	time ApplicationTime, onCriticalError func()) *AbciApplication {
+
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -272,6 +268,7 @@ func (a *AbciApplication) Commit() types.ResponseCommit {
 	// todo: when an error happens on service commit should we return a different response to ABCI? (gitlab.com/vega-protocol/trading-core/issues/179)
 
 	a.setBatchStats()
+	a.processor.resetSeenPayloads()
 	return types.ResponseCommit{Data: appHash}
 }
 
