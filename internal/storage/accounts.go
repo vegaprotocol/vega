@@ -320,7 +320,7 @@ func (a *Account) Subscribe(c chan []*types.Account) uint64 {
 	return a.subscriberID
 }
 
-//Unsubscribe from account store updates.
+// Unsubscribe from account store updates.
 func (a *Account) Unsubscribe(id uint64) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
