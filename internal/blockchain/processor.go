@@ -27,7 +27,7 @@ type Processor struct {
 	seenPayloads      map[string]byte
 }
 
-// NewProcessor intanciate a new transactions processor
+// NewProcessor instantiates a new transactions processor
 func NewProcessor(log *logging.Logger, config Config, blockchainService ProcessorService) *Processor {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -215,6 +215,12 @@ func (p *Processor) payloadExists(payloadHash *string) (bool, error) {
 		return true, err
 	}
 	return false, nil
+}
+
+// resetSeenPayloads is used to reset the map containing the list of keys for payloads
+// seen in the current batch, seenPayloads is a safety check for dupes per batch.
+func (p *Processor) resetSeenPayloads() {
+	p.seenPayloads = map[string]byte{}
 }
 
 // txDecode is takes the raw payload bytes and decodes the contents using a pre-defined
