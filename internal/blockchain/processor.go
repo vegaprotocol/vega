@@ -109,7 +109,8 @@ func (p *Processor) Validate(payload []byte) error {
 		SubmitOrderCommand,
 		CancelOrderCommand,
 		AmendOrderCommand,
-		NotifyTraderAccountCommand:
+		NotifyTraderAccountCommand,
+		WithdrawCommand:
 		// Add future valid VEGA commands here
 		return nil
 	}
