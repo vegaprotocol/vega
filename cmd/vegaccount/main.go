@@ -21,14 +21,16 @@ import (
 var (
 	addr     string
 	traderID string
-	withdraw uint64
+	withdraw bool
 	asset    string
+	amount   uint64
 )
 
 func init() {
 	flag.StringVar(&addr, "addr", "localhost:3002", "address of the node grpc api")
 	flag.StringVar(&traderID, "traderid", "", "traderid of the account we want to top up")
-	flag.Uint64Var(&withdraw, "withdraw", 0, "withdraw the given amount from the trader account")
+	flag.BoolVar(&withdraw, "withdraw", false, "withdraw the given amount from the trader account")
+	flag.Uint64Var(&amount, "amount", 0, "amount to withdraw / topup")
 	flag.StringVar(&asset, "asset", "", "asset to withdraw monies from, work in pair with withdraw")
 }
 
@@ -53,10 +55,11 @@ func main() {
 
 	client := api.NewTradingClient(conn)
 
-	if withdraw == 0 {
+	if !withdraw {
 		req := &api.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
 				TraderID: traderID,
+				Amount:   amount,
 			},
 		}
 
@@ -74,7 +77,7 @@ func main() {
 			Withdraw: &types.Withdraw{
 				PartyID: traderID,
 				Asset:   asset,
-				Amount:  withdraw,
+				Amount:  amount,
 			},
 		}
 		_, err = client.Withdraw(context.Background(), req)

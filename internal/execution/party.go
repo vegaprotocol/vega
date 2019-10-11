@@ -77,7 +77,10 @@ func (p *Party) NotifyTraderAccountWithTopUpAmount(
 // NotifyTraderAccount will create a new party in the system
 // and topup it general account with the default amount
 func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
-	return p.notifyTraderAccount(notif, topUpAmount)
+	if notif.Amount == 0 {
+		return p.notifyTraderAccount(notif, topUpAmount)
+	}
+	return p.notifyTraderAccount(notif, int64(notif.Amount))
 }
 
 func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int64) error {
@@ -100,7 +103,6 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 		}
 		// create account
 		_, generalID := p.collateral.CreateTraderAccount(notif.TraderID, mkt.Id, asset)
-
 		if _, ok := alreadyTopUp[generalID]; !ok {
 			alreadyTopUp[generalID] = struct{}{}
 			// then credit the general account
@@ -110,21 +112,20 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 					logging.Error(err))
 				return err
 			}
-		}
-
-		acc, err := p.collateral.GetAccountByID(generalID)
-		if err != nil {
-			p.log.Error("unable to get trader account",
-				logging.String("traderID", notif.TraderID),
+			acc, err := p.collateral.GetAccountByID(generalID)
+			if err != nil {
+				p.log.Error("unable to get trader account",
+					logging.String("traderID", notif.TraderID),
+					logging.String("asset", asset),
+					logging.Error(err))
+				return err
+			}
+			p.log.Info("trader account topup",
 				logging.String("asset", asset),
-				logging.Error(err))
-			return err
+				logging.String("traderID", notif.TraderID),
+				logging.Int64("topup-amount", amount),
+				logging.Int64("new-balance", acc.Balance))
 		}
-		p.log.Info("trader account topup",
-			logging.String("asset", asset),
-			logging.String("traderID", notif.TraderID),
-			logging.Int64("topup-amount", amount),
-			logging.Int64("new-balance", acc.Balance))
 
 		// now add the trader to the given market (move monies is margin account)
 		err = p.collateral.AddTraderToMarket(mkt.Id, notif.TraderID, asset)
