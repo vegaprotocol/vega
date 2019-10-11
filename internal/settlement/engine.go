@@ -21,6 +21,7 @@ type MarketPosition interface {
 	Buy() int64
 	Sell() int64
 	Price() uint64
+	ClearPotentials()
 }
 
 // Product ...

@@ -193,3 +193,5 @@ func (m mp) Sell() int64 {
 func (m mp) Price() uint64 {
 	return m.price
 }
+
+func (m mp) ClearPotentials() {}

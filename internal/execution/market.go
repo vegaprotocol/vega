@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/binary"
-
 	"fmt"
 	"math"
 	"sync"
@@ -472,18 +471,56 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
 // pass in the order which caused traders to be distressed
-func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *types.Order) error {
+func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o *types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "resolveClosedOutTraders")
 	defer timer.EngineTimeCounterAdd()
 
+	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
+	for _, v := range distressedMarginEvts {
+		distressedPos = append(distressedPos, v)
+	}
 	// cancel pending orders for traders
-	if err := m.matching.RemoveDistressedOrders(closed); err != nil {
+	rmorders, err := m.matching.RemoveDistressedOrders(distressedPos)
+	if err != nil {
 		m.log.Error(
 			"Failed to remove distressed traders from the orderbook",
 			logging.Error(err),
 		)
 		return err
 	}
+
+	mktID := m.GetID()
+	// remove the orders from the positions engine
+	for _, v := range rmorders {
+		_, err = m.position.UnregisterOrder(v)
+		if err != nil {
+			m.log.Error("unable to unregister order for a distressed party",
+				logging.String("party-id", v.PartyID),
+				logging.String("market-id", mktID),
+				logging.String("order-id", v.Id),
+			)
+		}
+	}
+
+	// then remove potentials buys/sell in all the distressed, and recalculate risks
+	for _, v := range distressedMarginEvts {
+		v.ClearPotentials()
+	}
+
+	// now that we closed orders, let's run the risk engine again
+	// so it'll separate the positions still in distress from the
+	// which have acceptable margins
+	okPos, closed := m.risk.ExpectMargins(distressedMarginEvts, m.markPrice)
+
+	if m.log.GetLevel() == logging.DebugLevel {
+		for _, v := range okPos {
+			m.log.Debug("previously distressed party have now an acceptable margin",
+				logging.String("market-id", mktID),
+				logging.String("party-id", v.Party()),
+			)
+		}
+	}
+
 	// get the actual position, so we can work out what the total position of the market is going to be
 	var networkPos int64
 	for _, pos := range closed {

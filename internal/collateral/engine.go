@@ -246,9 +246,9 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 
 // MarginUpdate will run the margin updates over a set of risk events (margin updates)
 func (e *Engine) MarginUpdate(marketID string, updates []events.Risk,
-) ([]*types.TransferResponse, []events.MarketPosition, error) {
+) ([]*types.TransferResponse, []events.Margin, error) {
 	response := make([]*types.TransferResponse, 0, len(updates))
-	closed := make([]events.MarketPosition, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
+	closed := make([]events.Margin, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
 	// create "fake" settle account for market ID
 	settle := &types.Account{
 		MarketID: marketID,

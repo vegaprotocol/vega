@@ -358,7 +358,10 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 }
 
 // RemoveDistressedOrders remove from the book all order holding distressed positions
-func (b *OrderBook) RemoveDistressedOrders(traders []events.MarketPosition) error {
+func (b *OrderBook) RemoveDistressedOrders(
+	traders []events.MarketPosition) ([]*types.Order, error) {
+	rmorders := []*types.Order{}
+
 	for _, trader := range traders {
 		total := trader.Buy() + trader.Sell()
 		if total == 0 {
@@ -407,8 +410,9 @@ func (b *OrderBook) RemoveDistressedOrders(traders []events.MarketPosition) erro
 				)
 			}
 		}
+		rmorders = append(rmorders, orders...)
 	}
-	return nil
+	return rmorders, nil
 }
 
 func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {

@@ -282,18 +282,6 @@ func (s *tradingService) Withdraw(
 		return nil, ErrInvalidWithdrawAmount
 	}
 
-	// check auth if required
-	if s.authEnabled {
-		if len(req.Token) <= 0 {
-			s.log.Debug("missing token")
-			return nil, errors.New("missing auth token")
-		}
-		if err := s.validateToken(req.Withdraw.PartyID, req.Token); err != nil {
-			s.log.Debug("token error", logging.Error(err))
-			return nil, err
-		}
-	}
-
 	ok, err := s.accountService.Withdraw(ctx, req.Withdraw)
 	if err != nil {
 		return nil, err

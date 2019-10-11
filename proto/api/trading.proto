@@ -23,8 +23,7 @@ service trading {
 }
 
 message WithdrawRequest {
-  string token = 1;
-  vega.Withdraw withdraw = 2;
+  vega.Withdraw withdraw = 1;
 }
 
 message WithdrawResponse {
