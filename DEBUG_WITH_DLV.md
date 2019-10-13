@@ -33,7 +33,12 @@ Once you have sucessfully installed `V E G A` with `tendermint` these are the st
     ```bash
     DEBUGVEGA=yes make build
     ```
-- Now open ideally two terminal windows. In the first one launch `tendermint` as you normally would. To hard-reset the chain and start from scratch use `tendermint unsafe_reset_all && tendermint init && tendermint node  2>./tendermint.stderr.out 1>./tendermint.stdout.out`. Now launch the `dlv` debugger with `V E G A` by running
+- Now open ideally two terminal windows. In the first one launch `tendermint` as you normally would. To hard-reset the chain and start from scratch use
+
+    ```bash
+    tendermint unsafe_reset_all && tendermint init && tendermint node 2>./tendermint.stderr.out 1>./tendermint.stdout.out
+    ```
+    Now launch the `dlv` debugger with `V E G A` by running
 
     ```bash
     dlv exec /path/to/vega/cmd/vega/vega-dbg --headless --listen=:2345 --log --api-version=2 -- node
