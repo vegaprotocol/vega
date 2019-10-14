@@ -62,21 +62,17 @@ func (l *PriceLevel) removeOrder(index int) {
 }
 
 func (l *PriceLevel) increaseVolumeByTimestamp(o *types.Order) {
-	// if no volume, let's just add it first
-	if len(l.volumeAtTimestamp) <= 0 {
+	// if no volume, or last timestamp is different than the current timestamp
+	// which means there's no volume for a given timestamp at the moment
+	if len(l.volumeAtTimestamp) <= 0 ||
+		l.volumeAtTimestamp[len(l.volumeAtTimestamp)-1].ts != o.CreatedAt {
 		l.volumeAtTimestamp = append(l.volumeAtTimestamp, tsVolPair{ts: o.CreatedAt, vol: o.Remaining})
 		return
 	}
 
-	// first check if the last one have the same timestamp, which can be possible
+	// then the last one have the same timestamp, which can be possible
 	// if other orders with the same price have been placed in the block
-	if l.volumeAtTimestamp[len(l.volumeAtTimestamp)-1].ts == o.CreatedAt {
-		l.volumeAtTimestamp[len(l.volumeAtTimestamp)-1].vol += o.Remaining
-		return
-	}
-
-	// no volume for the given timestamp, add a new one
-	l.volumeAtTimestamp = append(l.volumeAtTimestamp, tsVolPair{ts: o.CreatedAt, vol: o.Remaining})
+	l.volumeAtTimestamp[len(l.volumeAtTimestamp)-1].vol += o.Remaining
 }
 
 // in this function it is very much likely that we want to decrease the volume in the first
