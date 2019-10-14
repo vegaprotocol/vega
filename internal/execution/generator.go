@@ -7,24 +7,24 @@ import (
 )
 
 // IDgenerator no mutex required, markets work deterministically, and sequentially
-type idgenerator struct {
+type IDgenerator struct {
 	blocks uint64
 	orders uint64
 }
 
 // we don't really need this func, but we want to abstract/obscure
 // this type as much as possible
-func newIDGen() *idgenerator {
-	return &idgenerator{}
+func NewIDGen() *IDgenerator {
+	return &IDgenerator{}
 }
 
 // NewBlock ...
-func (i *idgenerator) newBlock() {
+func (i *IDgenerator) NewBlock() {
 	i.blocks++
 }
 
 // setID - sets id on an order, and increments total order count
-func (i *idgenerator) setID(o *types.Order) {
+func (i *IDgenerator) SetID(o *types.Order) {
 	i.orders++
 	o.Id = fmt.Sprintf("V%010d-%010d", i.blocks, i.orders)
 }

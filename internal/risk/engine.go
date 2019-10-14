@@ -235,6 +235,8 @@ func (e *Engine) UpdateMarginsOnSettlement(
 func (e *Engine) ExpectMargins(
 	evts []events.Margin, markPrice uint64,
 ) (okMargins []events.Margin, distressedPositions []events.MarketPosition) {
+	okMargins = make([]events.Margin, 0, len(evts)/2)
+	distressedPositions = make([]events.MarketPosition, 0, len(evts)/2)
 	for _, evt := range evts {
 		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
 		// no margins updates, nothing to do then

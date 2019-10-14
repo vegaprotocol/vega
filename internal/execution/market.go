@@ -45,7 +45,7 @@ var (
 // the engines in order to process all transctiona
 type Market struct {
 	log   *logging.Logger
-	idgen *idgenerator
+	idgen *IDgenerator
 
 	riskConfig       risk.Config
 	positionConfig   positions.Config
@@ -124,6 +124,7 @@ func NewMarket(
 	trades TradeStore,
 	transferResponseStore TransferResponseStore,
 	now time.Time,
+	idgen *IDgenerator,
 ) (*Market, error) {
 
 	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
@@ -153,7 +154,7 @@ func NewMarket(
 
 	market := &Market{
 		log:                  log,
-		idgen:                newIDGen(),
+		idgen:                idgen,
 		mkt:                  mkt,
 		closingAt:            closingAt,
 		currentTime:          now,
@@ -205,9 +206,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
-
-	// update block time on id generator
-	m.idgen.newBlock()
 
 	closed = t.After(m.closingAt)
 	m.closed = closed
@@ -364,7 +362,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// set order ID
-	m.idgen.setID(order)
+	m.idgen.SetID(order)
 	order.CreatedAt = m.currentTime.UnixNano()
 
 	// Insert aggressive remaining order
@@ -563,7 +561,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		Type:        types.Order_NETWORK,
 	}
 	no.Size = no.Remaining
-	m.idgen.setID(&no)
+	m.idgen.SetID(&no)
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
 		no.Side = types.Side_Buy
@@ -722,7 +720,7 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 			Type:        types.Order_LIMIT,
 		}
 		to.Size = to.Remaining
-		m.idgen.setID(&to)
+		m.idgen.SetID(&to)
 		// store the trader order, too
 		if err := m.orders.Post(to); err != nil {
 			return err

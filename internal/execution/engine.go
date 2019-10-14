@@ -90,6 +90,7 @@ type Engine struct {
 	accountBuf            *buffer.Account
 	accountStore          *storage.Account
 	transferResponseStore TransferResponseStore
+	idgen                 *IDgenerator
 }
 
 // NewEngine takes stores and engines and returns
@@ -164,6 +165,7 @@ func NewEngine(
 		accountStore:          accountStore,
 		accountBuf:            accountBuf,
 		transferResponseStore: transferResponseStore,
+		idgen:                 NewIDGen(),
 	}
 
 	for _, mkt := range pmkts {
@@ -247,6 +249,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.tradeStore,
 		e.transferResponseStore,
 		now,
+		e.idgen,
 	)
 	if err != nil {
 		e.log.Error("Failed to instanciate market",
@@ -368,6 +371,9 @@ func (e *Engine) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 
 func (e *Engine) onChainTimeUpdate(t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
+
+	// update block time on id generator
+	e.idgen.NewBlock()
 
 	e.log.Debug("updating engine on new time update")
 
