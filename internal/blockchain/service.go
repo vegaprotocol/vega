@@ -159,8 +159,6 @@ func (s *abciService) SubmitOrder(order *types.Order) error {
 		s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
 	}
 
-	// s.idgen.SetID(order)
-	// order.Id = fmt.Sprintf("V%010d-%010d", s.totalBatches, s.totalOrders)
 	order.CreatedAt = s.currentTimestamp.UnixNano()
 
 	// Submit the create order request to the execution engine

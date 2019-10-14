@@ -115,14 +115,14 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 			acc, err := p.collateral.GetAccountByID(generalID)
 			if err != nil {
 				p.log.Error("unable to get trader account",
-					logging.String("traderID", notif.TraderID),
+					logging.String("party-id", notif.TraderID),
 					logging.String("asset", asset),
 					logging.Error(err))
 				return err
 			}
-			p.log.Info("trader account topup",
+			p.log.Info("party-id account topup",
 				logging.String("asset", asset),
-				logging.String("traderID", notif.TraderID),
+				logging.String("party-id", notif.TraderID),
 				logging.Int64("topup-amount", amount),
 				logging.Int64("new-balance", acc.Balance))
 		}
@@ -131,7 +131,7 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 		err = p.collateral.AddTraderToMarket(mkt.Id, notif.TraderID, asset)
 		if err != nil {
 			p.log.Error("unable to add trader to market",
-				logging.String("traderID", notif.TraderID),
+				logging.String("party-id", notif.TraderID),
 				logging.String("asset", asset),
 				logging.String("marketID", mkt.Id),
 				logging.Error(err))

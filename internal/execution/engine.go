@@ -373,7 +373,7 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
 
 	// update block time on id generator
-	e.idgen.NewBlock()
+	e.idgen.NewBatch()
 
 	e.log.Debug("updating engine on new time update")
 

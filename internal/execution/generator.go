@@ -8,8 +8,8 @@ import (
 
 // IDgenerator no mutex required, markets work deterministically, and sequentially
 type IDgenerator struct {
-	blocks uint64
-	orders uint64
+	batches uint64
+	orders  uint64
 }
 
 // we don't really need this func, but we want to abstract/obscure
@@ -19,12 +19,12 @@ func NewIDGen() *IDgenerator {
 }
 
 // NewBlock ...
-func (i *IDgenerator) NewBlock() {
-	i.blocks++
+func (i *IDgenerator) NewBatch() {
+	i.batches++
 }
 
 // setID - sets id on an order, and increments total order count
 func (i *IDgenerator) SetID(o *types.Order) {
 	i.orders++
-	o.Id = fmt.Sprintf("V%010d-%010d", i.blocks, i.orders)
+	o.Id = fmt.Sprintf("V%010d-%010d", i.batches, i.orders)
 }
