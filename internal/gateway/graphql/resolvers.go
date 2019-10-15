@@ -829,7 +829,7 @@ type myMutationResolver VegaResolverRoot
 
 func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, party string,
 	price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string,
-	ty *OrderType) (*types.PendingOrder, error) {
+	ty OrderType) (*types.PendingOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -863,16 +863,8 @@ func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	if order.Side, err = parseSide(&side); err != nil {
 		return nil, err
 	}
-	// TODO(jeremy): at the moment the ty parameter is maybe null as having a nullable gql
-	// field here ease the transition to set order type that was not required before.
-	// In the future this field will be non-nullable.
-	// In the meantime default to the old behaviour (LIMIT)
-	if ty == nil {
-		order.Type = types.Order_LIMIT
-	} else {
-		if order.Type, err = parseOrderType(*ty); err != nil {
-			return nil, err
-		}
+	if order.Type, err = parseOrderType(ty); err != nil {
+		return nil, err
 	}
 
 	// GTT must have an expiration value
