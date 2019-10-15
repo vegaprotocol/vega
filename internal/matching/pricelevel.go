@@ -242,8 +242,6 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		// Schedule order for deletion
 		if order.Remaining == 0 {
 			toRemove = append(toRemove, i)
-			// FIXME(jeremy): this should not be useful anymore
-			// l.decreaseVolumeByTimestamp(order)
 		}
 
 		// Update Volumes for the price level
