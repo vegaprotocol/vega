@@ -107,6 +107,17 @@ type Party struct {
 	Positions []*proto.MarketPosition `json:"positions"`
 }
 
+type SimpleRiskModel struct {
+	Params *SimpleRiskModelParams `json:"params"`
+}
+
+func (SimpleRiskModel) IsRiskModel() {}
+
+type SimpleRiskModelParams struct {
+	FactorLong  float64 `json:"factorLong"`
+	FactorShort float64 `json:"factorShort"`
+}
+
 type TradableInstrument struct {
 	Instrument *Instrument `json:"instrument"`
 	RiskModel  RiskModel   `json:"riskModel"`

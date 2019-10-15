@@ -388,15 +388,26 @@ func ForwardFromProto(f *proto.Forward) (*Forward, error) {
 	}, nil
 }
 
+// SimpleRiskModelFromProto ...
+func SimpleRiskModelFromProto(f *proto.SimpleRiskModel) (*SimpleRiskModel, error) {
+	return &SimpleRiskModel{
+		Params: &SimpleRiskModelParams{
+			FactorLong:  f.Params.FactorLong,
+			FactorShort: f.Params.FactorShort,
+		},
+	}, nil
+}
+
 // RiskModelFromProto ...
 func RiskModelFromProto(rm interface{}) (RiskModel, error) {
 	if rm == nil {
 		return nil, ErrNilRiskModel
 	}
-
 	switch rmimpl := rm.(type) {
 	case *proto.TradableInstrument_Forward:
 		return ForwardFromProto(rmimpl.Forward)
+	case *proto.TradableInstrument_SimpleRiskModel:
+		return SimpleRiskModelFromProto(rmimpl.SimpleRiskModel)
 	default:
 		return nil, ErrUnimplementedRiskModel
 	}
