@@ -171,13 +171,6 @@ func startAccounts(ctx context.Context, wg *sync.WaitGroup) error {
 }
 
 func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
-	if len(market) <= 0 {
-		return ErrMissingMarket
-	}
-	if len(party) <= 0 {
-		return ErrMissingParty
-	}
-
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return err
@@ -215,12 +208,6 @@ func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
 }
 
 func startTrades(ctx context.Context, wg *sync.WaitGroup) error {
-	if len(market) <= 0 {
-		return ErrMissingMarket
-	}
-	if len(party) <= 0 {
-		return ErrMissingParty
-	}
 
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
