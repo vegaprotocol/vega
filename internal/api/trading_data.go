@@ -615,8 +615,6 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 	)
 	if len(req.MarketID) > 0 {
 		marketID = &req.MarketID
-	} else {
-		return ErrEmptyMissingMarketID
 	}
 	if len(req.PartyID) > 0 {
 		partyID = &req.PartyID
