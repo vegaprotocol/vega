@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/collateral"
-	cmocks "code.vegaprotocol.io/vega/internal/collateral/mocks"
+	// cmocks "code.vegaprotocol.io/vega/internal/collateral/mocks"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/execution/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -39,15 +39,16 @@ type tstReporter struct {
 }
 
 type tstSetup struct {
-	market     *proto.Market
-	ctrl       *gomock.Controller
-	core       *execution.Market
-	candles    *mocks.MockCandleStore
-	orders     *mocks.MockOrderStore
-	trades     *mocks.MockTradeStore
-	parties    *mocks.MockPartyStore
-	transfer   *mocks.MockTransferResponseStore
-	accounts   *cmocks.MockAccountBuffer
+	market   *proto.Market
+	ctrl     *gomock.Controller
+	core     *execution.Market
+	candles  *mocks.MockCandleStore
+	orders   *mocks.MockOrderStore
+	trades   *mocks.MockTradeStore
+	parties  *mocks.MockPartyStore
+	transfer *mocks.MockTransferResponseStore
+	accounts *accStub
+	// accounts   *cmocks.MockAccountBuffer
 	accountIDs map[string]struct{}
 	traderAccs map[string]map[proto.AccountType]*proto.Account
 
@@ -73,7 +74,8 @@ func getMock(market *proto.Market) *tstSetup {
 	orders := mocks.NewMockOrderStore(ctrl)
 	trades := mocks.NewMockTradeStore(ctrl)
 	parties := mocks.NewMockPartyStore(ctrl)
-	accounts := cmocks.NewMockAccountBuffer(ctrl)
+	accounts := NewAccountStub()
+	// accounts := cmocks.NewMockAccountBuffer(ctrl)
 	transfer := mocks.NewMockTransferResponseStore(ctrl)
 	colE, _ := collateral.New(
 		logging.NewTestLogger(),
@@ -202,28 +204,13 @@ func theMarket(mSetup *gherkin.DataTable) error {
 }
 
 func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
-	// we're expecting 2 accounts to be created: a system insurance and general account
-	// types required
-	reqT := map[proto.AccountType]bool{
-		proto.AccountType_SETTLEMENT: false,
-		proto.AccountType_INSURANCE:  false,
-	}
-	setup.accounts.EXPECT().Add(gomock.Any()).Times(2).DoAndReturn(func(a proto.Account) {
-		setup.accountIDs[a.Id] = struct{}{}
-		if _, ok := reqT[a.Type]; !ok {
-			reporter.err = fmt.Errorf("account type %s unexpectedly created when creating system accounts", a.Type.String())
-		} else {
-			reqT[a.Type] = true
-		}
-	})
+	// we currently have N accounts, creating system accounts should create 2 more accounts
+	current := len(setup.accounts.data)
 	// this should create market accounts, currently same way it's done in execution engine (register market)
-	// we can ignore the lines here safely
 	asset, _ := setup.market.GetAsset()
 	_, _ = setup.colE.CreateMarketAccounts(setup.core.GetID(), asset, 0)
-	for t, ok := range reqT {
-		if !ok && reporter.err == nil {
-			reporter.err = fmt.Errorf("creating system accounts failed to create %s account", t.String())
-		}
+	if len(setup.accounts.data) != current+2 {
+		reporter.err = fmt.Errorf("error creating system accounts")
 	}
 	return reporter.err
 }
@@ -251,11 +238,11 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		// if err != nil {
 		// return err
 		// }
-		margin, err := strconv.ParseInt(row.Cells[2].Value, 10, 64)
+		marginBal, err := strconv.ParseInt(row.Cells[2].Value, 10, 64)
 		if err != nil {
 			return err
 		}
-		general, err := strconv.ParseInt(row.Cells[3].Value, 10, 64)
+		generalBal, err := strconv.ParseInt(row.Cells[3].Value, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -263,27 +250,21 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		if pos > maxPos {
 			maxPos = pos
 		}
-		setup.accounts.EXPECT().Add(gomock.Any()).MinTimes(2).Do(func(acc proto.Account) {
-			if _, ok := setup.traderAccs[acc.Owner]; !ok {
-				setup.traderAccs[acc.Owner] = map[proto.AccountType]*proto.Account{}
-			}
-			setup.traderAccs[acc.Owner][acc.Type] = &acc
-		})
 		asset, _ := setup.market.GetAsset()
-		marginBal, generalBal := setup.colE.CreateTraderAccount(row.Cells[0].Value, market, asset)
-		_ = setup.colE.IncrementBalance(marginBal, margin)
-		_ = setup.colE.IncrementBalance(generalBal, general)
+		margin, general := setup.colE.CreateTraderAccount(row.Cells[0].Value, market, asset)
+		_ = setup.colE.IncrementBalance(margin, marginBal)
+		_ = setup.colE.IncrementBalance(general, generalBal)
 		// add trader accounts to map - this is the state they should have now
 		setup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{
 			proto.AccountType_MARGIN: &proto.Account{
-				Id:      marginBal,
+				Id:      margin,
 				Type:    proto.AccountType_MARGIN,
-				Balance: margin,
+				Balance: marginBal,
 			},
 			proto.AccountType_GENERAL: &proto.Account{
-				Id:      generalBal,
+				Id:      general,
 				Type:    proto.AccountType_GENERAL,
-				Balance: general,
+				Balance: generalBal,
 			},
 		}
 		// this is creating the positions and setting mark price... we can't do that just yet here

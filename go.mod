@@ -3,7 +3,7 @@ module code.vegaprotocol.io/vega
 require (
 	code.vegaprotocol.io/quant v0.1.0
 	github.com/99designs/gqlgen v0.10.1
-	github.com/DATA-DOG/godog v0.7.13 // indirect
+	github.com/DATA-DOG/godog v0.7.13
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
