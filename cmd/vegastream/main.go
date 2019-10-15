@@ -170,6 +170,23 @@ func startAccounts(ctx context.Context, wg *sync.WaitGroup) error {
 	return nil
 }
 
+type OrdersWrapper api.OrdersStream
+
+func (ow OrdersWrapper) String() string {
+	o := api.OrdersStream(ow)
+	var b strings.Builder
+	for _, v := range o.Orders {
+		ts := vegatime.UnixNano(v.CreatedAt)
+		tsat := vegatime.UnixNano(v.ExpiresAt)
+		fmt.Fprintf(&b, "id=%v marketID=%v partyID=%v price=%v size=%v remaining=%v TIF=%v type=%v createdAt=%v status=%v expiresAt=%v reference=%v\n",
+			v.Id, v.MarketID, v.PartyID, v.Price, v.Size, v.Remaining, v.TimeInForce.String(),
+			v.Type.String(), ts, v.Status.String(), tsat, v.Reference,
+		)
+
+	}
+	return b.String()
+}
+
 func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
@@ -200,11 +217,27 @@ func startOrders(ctx context.Context, wg *sync.WaitGroup) error {
 				log.Printf("orders: stream closed err=%v", err)
 				break
 			}
-			log.Printf("order: %v", o)
+			log.Printf("new orders: \n%v", OrdersWrapper(*o).String())
 		}
 
 	}()
 	return nil
+}
+
+type TradesWrapper api.TradesStream
+
+func (tw TradesWrapper) String() string {
+	t := api.TradesStream(tw)
+	var b strings.Builder
+	for _, v := range t.Trades {
+		ts := vegatime.UnixNano(v.Timestamp)
+		fmt.Fprintf(&b, "id=%v marketID=%v price=%v size=%v buyer=%v seller=%v buyOrder=%v sellOrder=%v timestamp=%v\n",
+			v.Id, v.MarketID, v.Price, v.Size, v.Buyer, v.Seller,
+			v.BuyOrder, v.SellOrder, ts,
+		)
+
+	}
+	return b.String()
 }
 
 func startTrades(ctx context.Context, wg *sync.WaitGroup) error {
@@ -238,7 +271,7 @@ func startTrades(ctx context.Context, wg *sync.WaitGroup) error {
 				log.Printf("trades: stream closed err=%v", err)
 				break
 			}
-			log.Printf("trade: %v", o)
+			log.Printf("new trades: \n%v", TradesWrapper(*o).String())
 		}
 
 	}()
