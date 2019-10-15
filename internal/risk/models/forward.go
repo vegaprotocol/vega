@@ -13,7 +13,7 @@ type Forward struct {
 	params     riskmodelbs.ModelParamsBS
 }
 
-// NewBuiltinFutures instanciate a new builtin future
+// NewBuiltinFutures instantiate a new builtin future
 func NewBuiltinFutures(pf *types.Forward) (*Forward, error) {
 	return &Forward{
 		lambd: pf.Lambd,
