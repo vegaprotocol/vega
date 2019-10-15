@@ -220,6 +220,15 @@ type ComplexityRoot struct {
 		Statistics func(childComplexity int) int
 	}
 
+	SimpleRiskModel struct {
+		Params func(childComplexity int) int
+	}
+
+	SimpleRiskModelParams struct {
+		FactorLong  func(childComplexity int) int
+		FactorShort func(childComplexity int) int
+	}
+
 	Statistics struct {
 		AppVersion               func(childComplexity int) int
 		AppVersionHash           func(childComplexity int) int
@@ -1235,6 +1244,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Statistics(childComplexity), true
 
+	case "SimpleRiskModel.params":
+		if e.complexity.SimpleRiskModel.Params == nil {
+			break
+		}
+
+		return e.complexity.SimpleRiskModel.Params(childComplexity), true
+
+	case "SimpleRiskModelParams.factorLong":
+		if e.complexity.SimpleRiskModelParams.FactorLong == nil {
+			break
+		}
+
+		return e.complexity.SimpleRiskModelParams.FactorLong(childComplexity), true
+
+	case "SimpleRiskModelParams.factorShort":
+		if e.complexity.SimpleRiskModelParams.FactorShort == nil {
+			break
+		}
+
+		return e.complexity.SimpleRiskModelParams.FactorShort(childComplexity), true
+
 	case "Statistics.appVersion":
 		if e.complexity.Statistics.AppVersion == nil {
 			break
@@ -1998,19 +2028,34 @@ type ModelParamsBS {
   sigma: Float!
 }
 
+# Parameters for the simple risk model
+type SimpleRiskModelParams {
+  # Risk factor for long
+  factorLong: Float!
+  # Risk factor for short
+  factorShort: Float!
+}
+
+
 # A type of risk model for futures trading
 type Forward {
-  # lambd parameter of the risk model
+  # Lambda parameter of the risk model
   lambd: Float!
   # Tau parameter of the risk model
   Tau: Float!
-  # Params for the risl model
+  # Params for the forward risk model
   params: ModelParamsBS!
 }
 
-union RiskModel = Forward
+# A type of simple/dummy risk model where we can specify the risk factor long and short in params
+type SimpleRiskModel {
+  # Params for the simple risk model
+  params: SimpleRiskModelParams!
+}
 
-# A set of metadat to associate to an instruments
+union RiskModel = Forward | SimpleRiskModel
+
+# A set of metadata to associate to an instruments
 type InstrumentMetadata {
 
   # An arbitrary list of tags to associated to associate to the Instrument (string list)
@@ -7057,6 +7102,117 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _SimpleRiskModel_params(ctx context.Context, field graphql.CollectedField, obj *SimpleRiskModel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SimpleRiskModel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Params, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*SimpleRiskModelParams)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SimpleRiskModelParams_factorLong(ctx context.Context, field graphql.CollectedField, obj *SimpleRiskModelParams) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SimpleRiskModelParams",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FactorLong, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SimpleRiskModelParams_factorShort(ctx context.Context, field graphql.CollectedField, obj *SimpleRiskModelParams) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SimpleRiskModelParams",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FactorShort, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Statistics_blockHeight(ctx context.Context, field graphql.CollectedField, obj *proto.Statistics) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -10075,6 +10231,10 @@ func (ec *executionContext) _RiskModel(ctx context.Context, sel ast.SelectionSet
 		return ec._Forward(ctx, sel, &obj)
 	case *Forward:
 		return ec._Forward(ctx, sel, obj)
+	case SimpleRiskModel:
+		return ec._SimpleRiskModel(ctx, sel, &obj)
+	case *SimpleRiskModel:
+		return ec._SimpleRiskModel(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -11545,6 +11705,65 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var simpleRiskModelImplementors = []string{"SimpleRiskModel", "RiskModel"}
+
+func (ec *executionContext) _SimpleRiskModel(ctx context.Context, sel ast.SelectionSet, obj *SimpleRiskModel) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, simpleRiskModelImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SimpleRiskModel")
+		case "params":
+			out.Values[i] = ec._SimpleRiskModel_params(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var simpleRiskModelParamsImplementors = []string{"SimpleRiskModelParams"}
+
+func (ec *executionContext) _SimpleRiskModelParams(ctx context.Context, sel ast.SelectionSet, obj *SimpleRiskModelParams) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, simpleRiskModelParamsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SimpleRiskModelParams")
+		case "factorLong":
+			out.Values[i] = ec._SimpleRiskModelParams_factorLong(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "factorShort":
+			out.Values[i] = ec._SimpleRiskModelParams_factorShort(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var statisticsImplementors = []string{"Statistics"}
 
 func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSet, obj *proto.Statistics) graphql.Marshaler {
@@ -12632,6 +12851,20 @@ func (ec *executionContext) unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋint
 
 func (ec *executionContext) marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx context.Context, sel ast.SelectionSet, v Side) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNSimpleRiskModelParams2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx context.Context, sel ast.SelectionSet, v SimpleRiskModelParams) graphql.Marshaler {
+	return ec._SimpleRiskModelParams(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx context.Context, sel ast.SelectionSet, v *SimpleRiskModelParams) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._SimpleRiskModelParams(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNStatistics2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐStatistics(ctx context.Context, sel ast.SelectionSet, v proto.Statistics) graphql.Marshaler {

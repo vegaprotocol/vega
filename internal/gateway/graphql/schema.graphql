@@ -311,19 +311,34 @@ type ModelParamsBS {
   sigma: Float!
 }
 
+# Parameters for the simple risk model
+type SimpleRiskModelParams {
+  # Risk factor for long
+  factorLong: Float!
+  # Risk factor for short
+  factorShort: Float!
+}
+
+
 # A type of risk model for futures trading
 type Forward {
-  # lambd parameter of the risk model
+  # Lambda parameter of the risk model
   lambd: Float!
   # Tau parameter of the risk model
   Tau: Float!
-  # Params for the risl model
+  # Params for the forward risk model
   params: ModelParamsBS!
 }
 
-union RiskModel = Forward
+# A type of simple/dummy risk model where we can specify the risk factor long and short in params
+type SimpleRiskModel {
+  # Params for the simple risk model
+  params: SimpleRiskModelParams!
+}
 
-# A set of metadat to associate to an instruments
+union RiskModel = Forward | SimpleRiskModel
+
+# A set of metadata to associate to an instruments
 type InstrumentMetadata {
 
   # An arbitrary list of tags to associated to associate to the Instrument (string list)
