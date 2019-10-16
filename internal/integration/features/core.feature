@@ -1,4 +1,4 @@
-Feature: Test trading-core flow
+Feature: Test trading-core flow with future risk model
 
     Background:
         ## mark price will be set on instrument, given + data table
@@ -30,7 +30,7 @@ Feature: Test trading-core flow
         Given the following orders:
             | trader  | type | volume | price | resulting trades |
             | trader1 | sell | 1      | 1010  | 0                |
-            | trader2 | buy  | 1      | 1030  | 0                |
+            | trader2 | buy  | 1      | 1005  | 0                |
         Then I expect the trader to have a margin liability:
             | trader  | position | buy | sell | margin | general |
             | trader1 | 0        | 0   | 1    | 130    | 99870   |
@@ -51,6 +51,6 @@ Feature: Test trading-core flow
             | trader3 | buy  | 1      | 1020  | 1                |
         Then I expect the trader to have a margin liability:
             | trader  | position | buy | sell | margin | general |
-            | trader1 | -2       | 0   | 0    | 269    | 99741   |
-            | trader2 | 1        | 0   | 0    | 135    | 99865   |
-            | trader3 | 1        | 0   | 0    | 135    | 99865   |
+            | trader1 | -2       | 0   | 0    | 262    | 99738   |
+            | trader2 | 1        | 0   | 0    | 120    | 99880   |
+            | trader3 | 1        | 0   | 0    | 117    | 99883   |

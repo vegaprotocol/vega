@@ -43,8 +43,8 @@ type tstSetup struct {
 	ctrl     *gomock.Controller
 	core     *execution.Market
 	candles  *mocks.MockCandleStore
-	orders   *mocks.MockOrderStore
-	trades   *mocks.MockTradeStore
+	orders   *orderStub
+	trades   *tradeStub
 	parties  *mocks.MockPartyStore
 	transfer *mocks.MockTransferResponseStore
 	accounts *accStub
@@ -71,8 +71,10 @@ func getMock(market *proto.Market) *tstSetup {
 	// the controller needs the reporter to report on errors or clunk out with fatal
 	ctrl := gomock.NewController(&reporter)
 	candles := mocks.NewMockCandleStore(ctrl)
-	orders := mocks.NewMockOrderStore(ctrl)
-	trades := mocks.NewMockTradeStore(ctrl)
+	// orders := mocks.NewMockOrderStore(ctrl)
+	orders := NewOrderStub()
+	// trades := mocks.NewMockTradeStore(ctrl)
+	trades := NewTradeStub()
 	parties := mocks.NewMockPartyStore(ctrl)
 	accounts := NewAccountStub()
 	// accounts := cmocks.NewMockAccountBuffer(ctrl)
@@ -317,7 +319,6 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 	if orderT.Rows[0].Cells[0].Value == "trader" {
 		calls--
 	}
-	setup.orders.EXPECT().Post(gomock.Any()).Times(calls).Return(nil)
 	// build + place all orders
 	for _, row := range orderT.Rows {
 		if row.Cells[0].Value == "trader" {
@@ -348,20 +349,24 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 			return err
 		}
 		order := proto.Order{
-			Id:        uuid.NewV4().String(),
-			MarketID:  market,
-			PartyID:   row.Cells[0].Value,
-			Side:      side,
-			Price:     uint64(price),
-			Size:      uint64(vol),
-			ExpiresAt: tomorrow.Unix(),
+			Id:          uuid.NewV4().String(),
+			MarketID:    market,
+			PartyID:     row.Cells[0].Value,
+			Side:        side,
+			Price:       uint64(price),
+			Size:        uint64(vol),
+			Remaining:   uint64(vol),
+			ExpiresAt:   tomorrow.Unix(),
+			Type:        proto.Order_LIMIT,
+			TimeInForce: proto.Order_GTT,
+			CreatedAt:   time.Now().UnixNano(),
 		}
 		result, err := core.SubmitOrder(&order)
 		if err != nil {
 			return err
 		}
 		if len(result.Trades) != expTrades {
-			return fmt.Errorf("expected %d trades, instead saw %d", expTrades, len(result.Trades))
+			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", expTrades, len(result.Trades), *result)
 		}
 	}
 	return nil
