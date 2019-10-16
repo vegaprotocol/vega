@@ -23,7 +23,7 @@ Feature: Test trading-core flow
             | trader1 | sell | 1      | 1010  | 0                |
         Then I expect the trader to have a margin liability:
             | trader  | position | buy | sell | margin | general |
-            | trader1 | 0        | 0   | 1    | 132    | 99868   |
+            | trader1 | 0        | 0   | 1    | 130    | 99870   |
         And "trader2" has not been added to the market
 
     Scenario: two traders place orders at different prices
@@ -33,8 +33,8 @@ Feature: Test trading-core flow
             | trader2 | buy  | 1      | 1030  | 0                |
         Then I expect the trader to have a margin liability:
             | trader  | position | buy | sell | margin | general |
-            | trader 1| 0        | 0   | 1    | 132    | 99868   |
-            | trader 2| 0        | 1   | 0    | 120    | 99880   |
+            | trader1 | 0        | 0   | 1    | 130    | 99870   |
+            | trader2 | 0        | 1   | 0    | 120    | 99880   |
         And "trader3" has not been added to the market
 
     Scenario: Three traders place orders, resulting in two trade
@@ -44,7 +44,7 @@ Feature: Test trading-core flow
             | trader1 | sell | 1      | 1020  | 0                |
         Then I expect the trader to have a margin liability:
             | trader  | position | buy | sell | margin | general |
-            | trader1 | 0        | 0   | 2    | 269    | 99741   |
+            | trader1 | 0        | 0   | 2    | 262    | 99738   |
         When I place the following orders:
             | trader  | type | volume | price | resulting trades |
             | trader2 | buy  | 1      | 980   | 1                |
