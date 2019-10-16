@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+
 	"log"
 	"os"
 
@@ -9,6 +11,7 @@ import (
 )
 
 var app = cli.NewApp()
+var ErrNotImplemented = errors.New("NotImplemented")
 
 func main() {
 	info()
@@ -44,27 +47,39 @@ func commands() {
 					Destination: &optionalOutputFile,
 				},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
+				dir, err := os.Getwd()
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println(dir)
 				if c.NArg() > 0 {
-					fmt.Println("SubmitInstructions", c.Args())
+					contents, err := readFiles(c.Args())
+					if err != nil {
+						return err
+					}
+					fmt.Println(contents)
+					return ErrNotImplemented
 					if optionalOutputFile != "" {
-						fmt.Println("-extract:", optionalOutputFile)
+						return ErrNotImplemented
 					}
 				} else {
 					cli.ShowCommandHelp(c, submit)
 				}
+				return nil
 			},
 		},
 		{
 			Name:    extract,
 			Aliases: []string{extract[:1]},
 			Usage:   "Save instrution results to a JSON file",
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				if c.NArg() > 0 {
 					fmt.Println("Extractdata", c.Args())
 				} else {
 					cli.ShowCommandHelp(c, extract)
 				}
+				return nil
 			},
 		},
 	}
