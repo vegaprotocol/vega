@@ -9,13 +9,15 @@ import (
 // Simple represents a dummy risk model with fixed risk params.
 type Simple struct {
 	factorLong, factorShort float64
+	asset                   string
 }
 
 // NewSimple instantiates a new simple/dummy risk model with fixed risk params.
-func NewSimple(ps *types.SimpleRiskModel) (*Simple, error) {
+func NewSimple(ps *types.SimpleRiskModel, asset string) (*Simple, error) {
 	return &Simple{
 		factorLong:  ps.Params.FactorLong,
 		factorShort: ps.Params.FactorShort,
+		asset:       asset,
 	}, nil
 }
 
@@ -28,13 +30,13 @@ func (f *Simple) CalculationInterval() time.Duration {
 func (f *Simple) CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult) {
 	rf := &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
-			"ETH": &types.RiskFactor{
+			f.asset: &types.RiskFactor{
 				Long:  f.factorLong,
 				Short: f.factorShort,
 			},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			"ETH": &types.RiskFactor{
+			f.asset: &types.RiskFactor{
 				Long:  f.factorLong,
 				Short: f.factorShort,
 			},
