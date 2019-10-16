@@ -69,6 +69,9 @@ func (l *PriceLevel) removeOrder(index int) {
 		if l.volumeAtTimestamp[i].vol > l.orders[index].Remaining {
 			l.volumeAtTimestamp[i].vol -= l.orders[index].Remaining
 		} else {
+			// volume == 0, remove it from the list
+			// also this is not a  typo:
+			// https://github.com/golang/go/wiki/SliceTricks#delete
 			l.volumeAtTimestamp = l.volumeAtTimestamp[:i+copy(l.volumeAtTimestamp[i:], l.volumeAtTimestamp[i+1:])]
 		}
 	}
