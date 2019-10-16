@@ -5,12 +5,12 @@ Feature: Test trading-core flow with future risk model
         ## With these values, we get risk factors:
         ## short=0.11000000665311127, long=0.10036253585651489
         Given the market:
-            | name      | markprice | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
-            | ETH/DEC19 | 1000      | 0.01 | 0.000114077 | 0  | 0 | 3.6907199 | 1.4            | 1.2            | 1.1           |
+            | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
+            | ETH/DEC19 | 1000      | future     | 0.01 | 0.000114077 | 0  | 0 | 3.6907199 | 1.4            | 1.2            | 1.1           |
         And the system accounts:
             | type       | asset | balance |
-            | settlement |  ETH  | 0       |
-            | insurance  |  ETH  | 0       |
+            | settlement | ETH   | 0       |
+            | insurance  | ETH   | 0       |
         And traders have the following state:
             | trader  | position | margin | general | asset | markprice |
             | trader1 | 0        | 0      | 100000  | ETH   | 1000      |

@@ -121,14 +121,14 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		// | name      | markprice | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
 		market = row.Cells[0].Value
 		markPrice, _ = strconv.ParseUint(row.Cells[1].Value, 10, 64)
-		forward.Lambd, _ = strconv.ParseFloat(row.Cells[2].Value, 64)
-		forward.Tau, _ = strconv.ParseFloat(row.Cells[3].Value, 64)
-		forward.Params.Mu, _ = strconv.ParseFloat(row.Cells[4].Value, 64)
-		forward.Params.R, _ = strconv.ParseFloat(row.Cells[5].Value, 64)
-		forward.Params.Sigma, _ = strconv.ParseFloat(row.Cells[6].Value, 64)
-		release, _ = strconv.ParseFloat(row.Cells[7].Value, 64)
-		initial, _ = strconv.ParseFloat(row.Cells[8].Value, 64)
-		search, _ = strconv.ParseFloat(row.Cells[9].Value, 64)
+		forward.Lambd, _ = strconv.ParseFloat(row.Cells[3].Value, 64)
+		forward.Tau, _ = strconv.ParseFloat(row.Cells[4].Value, 64)
+		forward.Params.Mu, _ = strconv.ParseFloat(row.Cells[5].Value, 64)
+		forward.Params.R, _ = strconv.ParseFloat(row.Cells[6].Value, 64)
+		forward.Params.Sigma, _ = strconv.ParseFloat(row.Cells[7].Value, 64)
+		release, _ = strconv.ParseFloat(row.Cells[8].Value, 64)
+		initial, _ = strconv.ParseFloat(row.Cells[9].Value, 64)
+		search, _ = strconv.ParseFloat(row.Cells[10].Value, 64)
 	}
 	parts := strings.Split(market, "/")
 	mkt := &proto.Market{
