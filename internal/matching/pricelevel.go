@@ -56,7 +56,27 @@ func (l *PriceLevel) addOrder(o *types.Order) {
 }
 
 func (l *PriceLevel) removeOrder(index int) {
+	// decrease total volume
 	l.volume -= l.orders[index].Remaining
+
+	// search the volumeAtTimestamp for this index
+	ts := l.orders[index].CreatedAt
+	i := sort.Search(len(l.volumeAtTimestamp), func(i int) bool {
+		return l.volumeAtTimestamp[i].ts >= ts
+	})
+	// if we found it, we decrease the volume at timestamp
+	if i < len(l.volumeAtTimestamp) && l.volumeAtTimestamp[i].ts == ts {
+		if l.volumeAtTimestamp[i].vol > l.orders[index].Remaining {
+			l.volumeAtTimestamp[i].vol -= l.orders[index].Remaining
+		} else {
+			// volume == 0, remove it from the list
+			// also this is not a  typo:
+			// https://github.com/golang/go/wiki/SliceTricks#delete
+			l.volumeAtTimestamp = l.volumeAtTimestamp[:i+copy(l.volumeAtTimestamp[i:], l.volumeAtTimestamp[i+1:])]
+		}
+	}
+
+	// remove the orders at index
 	copy(l.orders[index:], l.orders[index+1:])
 	l.orders = l.orders[:len(l.orders)-1]
 }
