@@ -1,75 +1,67 @@
 {
   "schemaVersion": "0.0.1",
+  "description": "Example set of instructions with two parties submiting matching orders on the same market followed by query retrieving trades from that market - expecting one trade",
   "instructions": [
     {
       "instruction": "NotifyTraderAccount",
-      "arguments": [
-        {
-          "NotifyTraderAccountRequest": {
-            "notif": {
-              "traderID": "trader1"
-            }
+      "message": {
+        "NotifyTraderAccountRequest": {
+          "notif": {
+            "traderID": "trader1"
           }
         }
-      ]
+      }
     },
     {
       "instruction": "SubmitOrder",
-      "arguments": [
-        {
-          "SubmitOrderRequest": {
-            "submission": {
-              "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
-              "PartyID": "trader1",
-              "Price": 100,
-              "Size": 3,
-              "Side": "Sell",
-              "TimeInForce": "GTC",
-              "ExpiresAt": "2030-12-31T23:59:59.999Z"
-            }
+      "message": {
+        "SubmitOrderRequest": {
+          "submission": {
+            "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
+            "PartyID": "trader1",
+            "Price": 100,
+            "Size": 3,
+            "Side": "Sell",
+            "TimeInForce": "GTC",
+            "ExpiresAt": "2030-12-31T23:59:59.999Z"
           }
         }
-      ]
+      }
     },
     {
       "instruction": "NotifyTraderAccount",
-      "arguments": [
-        {
-          "NotifyTraderAccountRequest": {
-            "notif": {
-              "traderID": "trader1"
-            }
+      "message": {
+        "NotifyTraderAccountRequest": {
+          "notif": {
+            "traderID": "trader1"
           }
         }
-      ]
+      }
     },
     {
       "instruction": "SubmitOrder",
-      "arguments": [
-        {
-          "SubmitOrderRequest": {
-            "submission": {
-              "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
-              "PartyID": "trader2",
-              "Price": 100,
-              "Size": 3,
-              "Side": "Buy",
-              "TimeInForce": "GTC",
-              "ExpiresAt": "2030-12-31T23:59:59.999Z"
-            }
+      "description": "Submit matching buy order so that a trade gets generated",
+      "message": {
+        "SubmitOrderRequest": {
+          "submission": {
+            "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
+            "PartyID": "trader2",
+            "Price": 100,
+            "Size": 3,
+            "Side": "Buy",
+            "TimeInForce": "GTC",
+            "ExpiresAt": "2030-12-31T23:59:59.999Z"
           }
-        },
-        {
-          "instruction": "TradesByMarket",
-          "arguments": [
-            {
-              "TradesByMarketRequest": {
-                "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL"
-              }
-            }
-          ]
         }
-      ]
+      }
+    },
+    {
+      "instruction": "TradesByMarket",
+      "message": {
+        "TradesByMarketRequest": {
+          "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL"
+        }
+      }
     }
   ]
 }
