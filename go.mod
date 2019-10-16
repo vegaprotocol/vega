@@ -37,6 +37,7 @@ require (
 	github.com/tendermint/go-amino v0.14.1 // indirect
 	github.com/tendermint/tendermint v0.31.5
 	github.com/vegaprotocol/modvendor v0.0.1 // indirect
+	github.com/vektah/gqlparser v1.1.2
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.5.0
 	go.uber.org/atomic v1.3.2 // indirect
