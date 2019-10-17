@@ -3,6 +3,7 @@ package markets
 import (
 	"context"
 	"sync/atomic"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -101,7 +102,6 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
-	retryCount := retries
 	go func() {
 		atomic.AddInt32(&s.subscribersCnt, 1)
 		defer atomic.AddInt32(&s.subscribersCnt, -1)
@@ -138,25 +138,38 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 					)
 					continue
 				}
-				select {
-				case depth <- d:
-					retryCount = retries
-					s.log.Debug(
-						"Market depth for subscriber sent successfully",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip),
-					)
-				default:
-					retryCount--
-					if retryCount == 0 {
-						s.log.Warn(
-							"Market depth subscriber has hit the retry limit",
+				retryCount := retries
+				success := false
+				for !success && retryCount > 0 {
+					select {
+					case depth <- d:
+						s.log.Debug(
+							"Market depth for subscriber sent successfully",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
-							logging.Int("retries", retries),
 						)
-						cfunc()
+						success = true
+					default:
+						retryCount--
+						if retryCount > 0 {
+							s.log.Debug(
+								"Market depth for subscriber not sent",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip),
+							)
+							time.Sleep(time.Duration(10) * time.Millisecond)
+						}
 					}
+				}
+				if retryCount <= 0 {
+					s.log.Warn(
+						"Market depth subscriber has hit the retry limit",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+						logging.Int("retries", retries),
+					)
+					cfunc()
+					break
 				}
 			}
 		}

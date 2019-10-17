@@ -3,6 +3,7 @@ package accounts
 import (
 	"context"
 	"sync/atomic"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -125,7 +126,6 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 	internal := make(chan []*types.Account)
 	ref = s.storage.Subscribe(internal)
 
-	retryCount := retries
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
@@ -164,30 +164,39 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 						filtered = append(filtered, acc)
 					}
 				}
-				select {
-				case accounts <- filtered:
-					retryCount = retries
-					s.log.Debug(
-						"Accounts for subscriber sent successfully",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip),
-					)
-				default:
-					retryCount--
-					if retryCount == 0 {
-						s.log.Warn(
-							"Account subscriber has hit the retry limit",
+				retryCount := retries
+				success := false
+				if !success && retryCount > 0 {
+					select {
+					case accounts <- filtered:
+						retryCount = retries
+						s.log.Debug(
+							"Accounts for subscriber sent successfully",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
-							logging.Int("retries", retries))
-
-						cancel()
+						)
+						success = true
+					default:
+						retryCount--
+						if retryCount > 0 {
+							s.log.Debug(
+								"Accounts for subscriber not sent",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip))
+						}
+						time.Sleep(time.Duration(10) * time.Millisecond)
 					}
-					s.log.Debug(
-						"Accounts for subscriber not sent",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip))
 				}
+				if retryCount <= 0 {
+					s.log.Warn(
+						"Account subscriber has hit the retry limit",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+						logging.Int("retries", retries))
+					cancel()
+					break
+				}
+
 			}
 		}
 	}()

@@ -295,7 +295,6 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
-	retryCount := retries
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
@@ -335,31 +334,38 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 				if len(validatedOrders) == 0 {
 					continue
 				}
-				select {
-				case orders <- validatedOrders:
-					retryCount = retries
-					s.log.Debug(
-						"Orders for subscriber sent successfully",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip),
-					)
-				default:
-					retryCount--
-					if retryCount == 0 {
-						s.log.Warn(
-							"Order subscriber has hit the retry limit",
+				retryCount := retries
+				success := false
+				if !success && retryCount > 0 {
+					select {
+					case orders <- validatedOrders:
+						s.log.Debug(
+							"Orders for subscriber sent successfully",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
-							logging.Int("retries", retries),
 						)
-						cfunc()
+						success = true
+					default:
+						retryCount--
+						if retryCount > 0 {
+							s.log.Debug(
+								"Orders for subscriber not sent",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip),
+							)
+						}
+						time.Sleep(time.Duration(10) * time.Millisecond)
 					}
-					// retry counter here
-					s.log.Debug(
-						"Orders for subscriber not sent",
+				}
+				if retryCount <= 0 {
+					s.log.Warn(
+						"Order subscriber has hit the retry limit",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
+						logging.Int("retries", retries),
 					)
+					cfunc()
+					break
 				}
 			}
 		}
