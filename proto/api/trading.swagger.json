@@ -1704,6 +1704,27 @@
       ],
       "default": "Buy"
     },
+    "vegaSimpleModelParams": {
+      "type": "object",
+      "properties": {
+        "factorLong": {
+          "type": "number",
+          "format": "double"
+        },
+        "factorShort": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "vegaSimpleRiskModel": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "$ref": "#/definitions/vegaSimpleModelParams"
+        }
+      }
+    },
     "vegaStatistics": {
       "type": "object",
       "properties": {
@@ -1838,6 +1859,9 @@
         },
         "externalRiskModel": {
           "$ref": "#/definitions/vegaExternalRiskModel"
+        },
+        "simpleRiskModel": {
+          "$ref": "#/definitions/vegaSimpleRiskModel"
         }
       }
     },

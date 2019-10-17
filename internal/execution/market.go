@@ -145,8 +145,9 @@ func NewMarket(
 		tradableInstrument.Instrument.InitialMarkPrice, false)
 
 	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
+	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
-		tradableInstrument.RiskModel, getInitialFactors(), book)
+		tradableInstrument.RiskModel, getInitialFactors(asset), book)
 	transferResponsesBuf := buffer.NewTransferResponse(transferResponseStore)
 	positionEngine := positions.New(log, positionConfig)
 	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
@@ -1030,13 +1031,13 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) (orderList []types.Order, 
 	return
 }
 
-func getInitialFactors() *types.RiskResult {
+func getInitialFactors(asset string) *types.RiskResult {
 	return &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
-			"ETH": {Long: 0.15, Short: 0.25},
+			asset: {Long: 0.15, Short: 0.25},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			"ETH": {Long: 0.15, Short: 0.25},
+			asset: {Long: 0.15, Short: 0.25},
 		},
 	}
 }

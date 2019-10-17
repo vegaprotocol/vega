@@ -3,17 +3,27 @@ package matching
 import (
 	"fmt"
 	"math"
+	"sort"
 
 	"code.vegaprotocol.io/vega/internal/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
+
+const (
+	volumeAtTimestampInitialCap = 4096
+)
+
+type tsVolPair struct {
+	ts  int64
+	vol uint64
+}
 
 // PriceLevel represents all the Orders placed at a given price.
 type PriceLevel struct {
 	price             uint64
 	proRataMode       bool
 	orders            []*types.Order
-	volumeAtTimestamp map[int64]uint64
+	volumeAtTimestamp []tsVolPair
 	volume            uint64
 }
 
@@ -23,7 +33,7 @@ func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 		price:             price,
 		proRataMode:       proRataMode,
 		orders:            []*types.Order{},
-		volumeAtTimestamp: map[int64]uint64{},
+		volumeAtTimestamp: make([]tsVolPair, 0, volumeAtTimestampInitialCap),
 	}
 }
 
@@ -46,44 +56,178 @@ func (l *PriceLevel) addOrder(o *types.Order) {
 }
 
 func (l *PriceLevel) removeOrder(index int) {
+	// decrease total volume
 	l.volume -= l.orders[index].Remaining
+
+	// search the volumeAtTimestamp for this index
+	ts := l.orders[index].CreatedAt
+	i := sort.Search(len(l.volumeAtTimestamp), func(i int) bool {
+		return l.volumeAtTimestamp[i].ts >= ts
+	})
+	// if we found it, we decrease the volume at timestamp
+	if i < len(l.volumeAtTimestamp) && l.volumeAtTimestamp[i].ts == ts {
+		if l.volumeAtTimestamp[i].vol > l.orders[index].Remaining {
+			l.volumeAtTimestamp[i].vol -= l.orders[index].Remaining
+		} else {
+			// volume == 0, remove it from the list
+			// also this is not a  typo:
+			// https://github.com/golang/go/wiki/SliceTricks#delete
+			l.volumeAtTimestamp = l.volumeAtTimestamp[:i+copy(l.volumeAtTimestamp[i:], l.volumeAtTimestamp[i+1:])]
+		}
+	}
+
+	// remove the orders at index
 	copy(l.orders[index:], l.orders[index+1:])
 	l.orders = l.orders[:len(l.orders)-1]
 }
 
 func (l *PriceLevel) increaseVolumeByTimestamp(o *types.Order) {
-	if vbt, exists := l.volumeAtTimestamp[o.CreatedAt]; exists {
-		l.volumeAtTimestamp[o.CreatedAt] = vbt + o.Remaining
-	} else {
-		l.volumeAtTimestamp[o.CreatedAt] = o.Remaining
+	// if no volume, or last timestamp is different than the current timestamp
+	// which means there's no volume for a given timestamp at the moment
+	if len(l.volumeAtTimestamp) <= 0 ||
+		l.volumeAtTimestamp[len(l.volumeAtTimestamp)-1].ts != o.CreatedAt {
+		l.volumeAtTimestamp = append(l.volumeAtTimestamp, tsVolPair{ts: o.CreatedAt, vol: o.Remaining})
+		return
 	}
+
+	// then the last one have the same timestamp, which can be possible
+	// if other orders with the same price have been placed in the block
+	l.volumeAtTimestamp[len(l.volumeAtTimestamp)-1].vol += o.Remaining
 }
 
+// in this function it is very much likely that we want to decrease the volume in the first
+// time stamp or maybe one of the first as while uncrossing the first few timestamps may
+// endup beeing at a 0 volume before beeing remove from the map.
+// once we found the first time stamp not beeing == 0, then if it is not the expected
+// timestamp, then we will use a binary search to find the correct timestamp as we
+// most likely are in the use case where we remove an order which can be any timestamp
 func (l *PriceLevel) decreaseVolumeByTimestamp(o *types.Order) {
-	if vbt, exists := l.volumeAtTimestamp[o.CreatedAt]; exists {
-		if vbt <= o.Remaining {
-			delete(l.volumeAtTimestamp, o.CreatedAt)
-		} else {
-			l.volumeAtTimestamp[o.CreatedAt] = vbt - o.Remaining
-		}
+	var idx int
+
+	// return if with have an empty slice
+	if len(l.volumeAtTimestamp) <= 0 {
+		// that should never happend as we never call this with no volume bust stilll ...
+		return
 	}
+
+	// figure out where is the first valid timestamp in there
+	// most likely we'll do 0 iteration in here
+	for ; idx < len(l.volumeAtTimestamp) &&
+		l.volumeAtTimestamp[idx].vol == 0; idx++ {
+	}
+	if idx >= len(l.volumeAtTimestamp) {
+		// this should neverhappend as weshould always have enough volume when trying to decrease
+		// , that's weird and should most likely not happend, but you know let's just make sure
+		// we do not go out of bound ...
+		return
+	}
+
+	// so now we check the timestamp
+	if l.volumeAtTimestamp[idx].ts == o.CreatedAt {
+		if l.volumeAtTimestamp[idx].vol <= o.Remaining {
+			// FIXME(jeremy): need to make sure we remove the field if it goes < 0
+			l.volumeAtTimestamp[idx].vol = 0
+		} else {
+			l.volumeAtTimestamp[idx].vol -= o.Remaining
+		}
+		return
+	}
+
+	// last case to handle, we did not find the timestamp first
+	// this means we try to delete an order not uncrossing, so let's just remove
+	i := sort.Search(len(l.volumeAtTimestamp), func(i int) bool {
+		return l.volumeAtTimestamp[i].ts >= o.CreatedAt
+	})
+
+	// make sure we found it
+	if i >= len(l.volumeAtTimestamp) &&
+		l.volumeAtTimestamp[i].ts != o.CreatedAt {
+		// ok we did not find the actual timestamp, that must be a problem
+		// but is never supposed to happend
+		return
+	}
+
+	// update the pair now as we found it
+	if l.volumeAtTimestamp[i].vol <= o.Remaining {
+		// FIXME(jeremy): need to make sure we remove the field if it goes < 0
+		l.volumeAtTimestamp[i].vol = 0
+		return
+	}
+	l.volumeAtTimestamp[i].vol -= o.Remaining
 }
 
 func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp int64, trade *types.Trade) {
-	if vbt, exists := l.volumeAtTimestamp[currentTimestamp]; exists {
-		l.volumeAtTimestamp[currentTimestamp] = vbt - trade.Size
+	var idx int
+
+	// return if with have an empty slice
+	if len(l.volumeAtTimestamp) <= 0 {
+		// that should never happend as we never call this with no volume bust stilll ...
+		return
 	}
+
+	// figure out where is the first valid timestamp in there
+	// most likely we'll do 0 iteration in here
+	for ; idx < len(l.volumeAtTimestamp) &&
+		l.volumeAtTimestamp[idx].vol == 0; idx++ {
+	}
+	if idx >= len(l.volumeAtTimestamp) {
+		// this should neverhappend as weshould always have enough volume when trying to decrease
+		// , that's weird and should most likely not happend, but you know let's just make sure
+		// we do not go out of bound ...
+		return
+	}
+
+	// so now we check the timestamp
+	if l.volumeAtTimestamp[idx].ts == currentTimestamp {
+		if l.volumeAtTimestamp[idx].vol <= trade.Size {
+			// FIXME(jeremy): need to make sure we remove the field if it goes < 0
+			l.volumeAtTimestamp[idx].vol = 0
+		} else {
+			l.volumeAtTimestamp[idx].vol -= trade.Size
+		}
+		return
+	}
+
+	// last case to handle, we did not find the timestamp first
+	// this means we try to delete an order not uncrossing, so let's just remove
+	i := sort.Search(len(l.volumeAtTimestamp), func(i int) bool {
+		return l.volumeAtTimestamp[i].ts >= currentTimestamp
+	})
+
+	// make sure we found it
+	if i >= len(l.volumeAtTimestamp) &&
+		l.volumeAtTimestamp[i].ts != currentTimestamp {
+		// ok we did not find the actual timestamp, that must be a problem
+		// but is never supposed to happend
+		return
+	}
+
+	// update the pair now as we found it
+	if l.volumeAtTimestamp[i].vol <= trade.Size {
+		// FIXME(jeremy): need to make sure we remove the field if it goes < 0
+		l.volumeAtTimestamp[i].vol = 0
+		return
+	}
+
+	l.volumeAtTimestamp[i].vol -= trade.Size
 }
 
 func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Trade, impactedOrders []*types.Order) {
+	// for some reason sometimes it seems the pricelevels are not deleted when getting empty
+	// no big deal, just return early
+	if len(l.orders) <= 0 {
+		return
+	}
+
 	var (
 		toRemove []int
 		removed  int
 	)
 
 	// start from earliest timestamp
-	currentTimestamp := l.earliestTimestamp()
-	totalVolumeAtTimestamp := l.volumeAtTimestamp[currentTimestamp]
+	tsIdx := 0
+	totalVolumeAtTimestamp := l.volumeAtTimestamp[tsIdx].vol
+	currentTimestamp := l.volumeAtTimestamp[tsIdx].ts
 	volumeToShare := agg.Remaining
 
 	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
@@ -92,11 +236,12 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		// See if we are at a new top timestamp
 		if currentTimestamp != order.CreatedAt {
 			// if consumed all orders on the current timestamp, delete exhausted timestamp and proceed to the next one
-			delete(l.volumeAtTimestamp, currentTimestamp)
 			// assign new timestamp
 			currentTimestamp = order.CreatedAt
+			// increase the volumeAtTimestamp index
+			tsIdx += 1
 			// assign new volume at timestamp
-			totalVolumeAtTimestamp = l.volumeAtTimestamp[currentTimestamp]
+			totalVolumeAtTimestamp = l.volumeAtTimestamp[tsIdx].vol
 			volumeToShare = agg.Remaining
 		}
 
@@ -117,7 +262,6 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		// Schedule order for deletion
 		if order.Remaining == 0 {
 			toRemove = append(toRemove, i)
-			l.decreaseVolumeByTimestamp(order)
 		}
 
 		// Update Volumes for the price level
@@ -133,6 +277,9 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		}
 	}
 
+	// FIXME(jeremy): these need to be optimized, we can make a single copy
+	// just by keep the index of the last order which is to remove as they
+	// are all order, then just copy the second part of the slice in the actual s[0]
 	if len(toRemove) > 0 {
 		for _, idx := range toRemove {
 			copy(l.orders[idx-removed:], l.orders[idx-removed+1:])
@@ -141,6 +288,13 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		l.orders = l.orders[:len(l.orders)-removed]
 	}
 
+	// remove the unused timestamps now
+	// first check if the last tsIdx was actually with 0 volume, if not
+	// we need to include it from the remaining stuff
+	if l.volumeAtTimestamp[tsIdx].vol == 0 {
+		tsIdx++
+	}
+	l.volumeAtTimestamp = l.volumeAtTimestamp[:copy(l.volumeAtTimestamp[0:], l.volumeAtTimestamp[tsIdx:])]
 	return agg.Remaining == 0, trades, impactedOrders
 }
 
