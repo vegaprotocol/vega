@@ -118,7 +118,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		if row.Cells[0].Value == "name" {
 			continue
 		}
-		// | name      | markprice | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
+		// | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
 		market = row.Cells[0].Value
 		markPrice, _ = strconv.ParseUint(row.Cells[1].Value, 10, 64)
 		forward.Lambd, _ = strconv.ParseFloat(row.Cells[3].Value, 64)
