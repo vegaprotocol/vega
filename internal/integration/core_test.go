@@ -105,41 +105,71 @@ func getMock(market *proto.Market) *tstSetup {
 	return setup
 }
 
-func theMarket(mSetup *gherkin.DataTable) error {
-	var (
-		market                   string
-		markPrice                uint64 // @TODO this needs to be part of the market definition somehow
-		forward                  proto.Forward
-		release, initial, search float64
-	)
-	forward.Params = &proto.ModelParamsBS{}
-	for _, row := range mSetup.Rows {
-		// skip header
-		if row.Cells[0].Value == "name" {
-			continue
-		}
-		// | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
-		market = row.Cells[0].Value
-		markPrice, _ = strconv.ParseUint(row.Cells[1].Value, 10, 64)
-		forward.Lambd, _ = strconv.ParseFloat(row.Cells[3].Value, 64)
-		forward.Tau, _ = strconv.ParseFloat(row.Cells[4].Value, 64)
-		forward.Params.Mu, _ = strconv.ParseFloat(row.Cells[5].Value, 64)
-		forward.Params.R, _ = strconv.ParseFloat(row.Cells[6].Value, 64)
-		forward.Params.Sigma, _ = strconv.ParseFloat(row.Cells[7].Value, 64)
-		release, _ = strconv.ParseFloat(row.Cells[8].Value, 64)
-		initial, _ = strconv.ParseFloat(row.Cells[9].Value, 64)
-		search, _ = strconv.ParseFloat(row.Cells[10].Value, 64)
+func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
+	// the header of the feature file (ie where to find the data in the row) looks like this:
+	// | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
+
+	// general stuff like name, ID, code, asset, and initial mark price
+	mkt.Name = row.Cells[0].Value
+	parts := strings.Split(mkt.Name, "/")
+	mkt.Id = fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1])
+	mkt.TradableInstrument.Instrument.Code = fmt.Sprintf("FX:%s%s", parts[0], parts[1])
+	prod := mkt.TradableInstrument.Instrument.GetFuture()
+	prod.Asset = parts[0]
+	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
+		Future: prod,
+	} // set asset, reassign the product
+	mkt.TradableInstrument.Instrument.InitialMarkPrice, _ = strconv.ParseUint(row.Cells[1].Value, 10, 64)
+
+	// wheter it's lambd/tau or short/long depends on the risk model
+	lambdShort, _ := strconv.ParseFloat(row.Cells[3].Value, 64)
+	tauLong, _ := strconv.ParseFloat(row.Cells[4].Value, 64)
+	// we'll always need to use these
+	release, _ := strconv.ParseFloat(row.Cells[8].Value, 64)
+	initial, _ := strconv.ParseFloat(row.Cells[9].Value, 64)
+	search, _ := strconv.ParseFloat(row.Cells[10].Value, 64)
+
+	// set scaling factors
+	mkt.TradableInstrument.MarginCalculator.ScalingFactors = &proto.ScalingFactors{
+		SearchLevel:       search,
+		InitialMargin:     initial,
+		CollateralRelease: release,
 	}
-	parts := strings.Split(market, "/")
+
+	// simple risk model:
+	if row.Cells[2].Value == "simple" {
+		mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_SimpleRiskModel{
+			SimpleRiskModel: &proto.SimpleRiskModel{
+				Params: &proto.SimpleModelParams{
+					FactorLong:  tauLong,
+					FactorShort: lambdShort,
+				},
+			},
+		}
+		return
+	}
+	// for now, default to/assume future (forward risk model)
+	mu, _ := strconv.ParseFloat(row.Cells[5].Value, 64)
+	r, _ := strconv.ParseFloat(row.Cells[6].Value, 64)
+	sigma, _ := strconv.ParseFloat(row.Cells[7].Value, 64)
+	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_Forward{
+		Forward: &proto.Forward{
+			Lambd: lambdShort,
+			Tau:   tauLong,
+			Params: &proto.ModelParamsBS{
+				Mu:    mu,
+				R:     r,
+				Sigma: sigma,
+			},
+		},
+	}
+}
+
+func theMarket(mSetup *gherkin.DataTable) error {
+	// generic market config, ready to be populated with specs from scenario
 	mkt := &proto.Market{
-		Id:   market,
-		Name: market,
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
-				Id:               fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1]),
-				Code:             fmt.Sprintf("FX:%s%s", parts[0], parts[1]),
-				Name:             "December 2019 test future",
-				InitialMarkPrice: markPrice,
 				Metadata: &proto.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
@@ -155,28 +185,22 @@ func theMarket(mSetup *gherkin.DataTable) error {
 								Event:      "price_changed",
 							},
 						},
-						Asset: parts[0],
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_Forward{
-				Forward: &forward,
-			},
-			MarginCalculator: &proto.MarginCalculator{
-				ScalingFactors: &proto.ScalingFactors{
-					SearchLevel:       search,
-					InitialMargin:     initial,
-					CollateralRelease: release,
-				},
-			},
+			MarginCalculator: &proto.MarginCalculator{},
 		},
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
 	}
-	//   mu=0,r=0,sigma=3.6907199
-	// tau: 0.000114077
-	// lamd: .01
+	for _, row := range mSetup.Rows {
+		// skip header
+		if row.Cells[0].Value == "name" {
+			continue
+		}
+		initialiseMarket(row, mkt)
+	}
 	log := logging.NewTestLogger()
 	// the controller needs the reporter to report on errors or clunk out with fatal
 	setup = getMock(mkt)
