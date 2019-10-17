@@ -166,7 +166,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 				}
 				retryCount := retries
 				success := false
-				if !success && retryCount > 0 {
+				for !success && retryCount >= 0 {
 					select {
 					case accounts <- filtered:
 						retryCount = retries
@@ -187,7 +187,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 						time.Sleep(time.Duration(10) * time.Millisecond)
 					}
 				}
-				if retryCount <= 0 {
+				if !success && retryCount <= 0 {
 					s.log.Warn(
 						"Account subscriber has hit the retry limit",
 						logging.Uint64("ref", ref),

@@ -104,7 +104,7 @@ func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 			case v := <-iT.Transport:
 				retryCount := retries
 				success := false
-				for !success && retryCount > 0 {
+				for !success && retryCount >= 0 {
 					select {
 					case candleCh <- v:
 						s.log.Debug(
@@ -125,7 +125,7 @@ func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 						}
 					}
 				}
-				if retryCount <= 0 {
+				if !success && retryCount <= 0 {
 					s.log.Warn(
 						"Candles subscriber ran out of retries",
 						logging.Uint64("ref", ref),

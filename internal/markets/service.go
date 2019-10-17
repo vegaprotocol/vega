@@ -140,7 +140,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 				}
 				retryCount := retries
 				success := false
-				for !success && retryCount > 0 {
+				for !success && retryCount >= 0 {
 					select {
 					case depth <- d:
 						s.log.Debug(
@@ -151,7 +151,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 						success = true
 					default:
 						retryCount--
-						if retryCount > 0 {
+						if retryCount >= 0 {
 							s.log.Debug(
 								"Market depth for subscriber not sent",
 								logging.Uint64("ref", ref),
@@ -161,7 +161,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 						}
 					}
 				}
-				if retryCount <= 0 {
+				if !success && retryCount <= 0 {
 					s.log.Warn(
 						"Market depth subscriber has hit the retry limit",
 						logging.Uint64("ref", ref),

@@ -191,7 +191,7 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 				}
 				retryCount := retries
 				success := false
-				for !success && retryCount > 0 {
+				for !success && retryCount >= 0 {
 					select {
 					case trades <- validatedTrades:
 						s.log.Debug(
@@ -202,7 +202,7 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 						success = true
 					default:
 						retryCount--
-						if retryCount > 0 {
+						if retryCount >= 0 {
 							s.log.Debug(
 								"Trades for subscriber not sent",
 								logging.Uint64("ref", ref),
@@ -212,7 +212,7 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 						}
 					}
 				}
-				if retryCount <= 0 {
+				if !success && retryCount <= 0 {
 					s.log.Warn(
 						"Trades subscriber has hit the retry limit",
 						logging.Uint64("ref", ref),

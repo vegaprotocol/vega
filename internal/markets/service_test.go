@@ -163,7 +163,7 @@ func testMarketObserveDepthSuccess(t *testing.T) {
 		wg.Done()
 	})
 
-	depthCh, ref := svc.ObserveDepth(svc.ctx, 1, marketArg)
+	depthCh, ref := svc.ObserveDepth(svc.ctx, 0, marketArg)
 	assert.Equal(t, uint64(1), ref) // should be returned straight from the orderStore mock
 	// whatever was in the channel, we're expecting that to be accessible here, too
 	chDepth := <-depthCh

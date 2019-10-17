@@ -50,7 +50,7 @@ func testObserveAllOrdersSuccess(t *testing.T) {
 		done <- struct{}{}
 	})
 	// all orders
-	ch, ref := svc.svc.ObserveOrders(ctx, 1, nil, nil)
+	ch, ref := svc.svc.ObserveOrders(ctx, 0, nil, nil)
 	close(ready)
 	gotOrders := <-ch
 	assert.Equal(t, subRef, ref)
@@ -99,7 +99,7 @@ func testObservePartialSuccess(t *testing.T) {
 		done <- struct{}{}
 	})
 	// all orders
-	ch, ref := svc.svc.ObserveOrders(ctx, 1, &market, &party)
+	ch, ref := svc.svc.ObserveOrders(ctx, 0, &market, &party)
 	close(ready)
 	gotOrders := <-ch
 	assert.Equal(t, subRef, ref)

@@ -336,7 +336,7 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 				}
 				retryCount := retries
 				success := false
-				for !success && retryCount > 0 {
+				for !success && retryCount >= 0 {
 					select {
 					case orders <- validatedOrders:
 						s.log.Debug(
@@ -347,7 +347,7 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 						success = true
 					default:
 						retryCount--
-						if retryCount > 0 {
+						if retryCount >= 0 {
 							s.log.Debug(
 								"Orders for subscriber not sent",
 								logging.Uint64("ref", ref),
@@ -357,7 +357,7 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 						time.Sleep(time.Duration(10) * time.Millisecond)
 					}
 				}
-				if retryCount <= 0 {
+				if !success && retryCount <= 0 {
 					s.log.Warn(
 						"Order subscriber has hit the retry limit",
 						logging.Uint64("ref", ref),
