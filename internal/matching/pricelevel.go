@@ -9,10 +9,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-const (
-	volumeAtTimestampInitialCap = 4096
-)
-
 type tsVolPair struct {
 	ts  int64
 	vol uint64
@@ -33,7 +29,7 @@ func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 		price:             price,
 		proRataMode:       proRataMode,
 		orders:            []*types.Order{},
-		volumeAtTimestamp: make([]tsVolPair, 0, volumeAtTimestampInitialCap),
+		volumeAtTimestamp: []tsVolPair{},
 	}
 }
 
