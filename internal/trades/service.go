@@ -191,10 +191,9 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 				}
 				retryCount := retries
 				success := false
-				if !success && retryCount > 0 {
+				for !success && retryCount > 0 {
 					select {
 					case trades <- validatedTrades:
-						retryCount = retries
 						s.log.Debug(
 							"Trades for subscriber sent successfully",
 							logging.Uint64("ref", ref),
@@ -283,7 +282,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 					marketPositions := marketPositions
 					retryCount := retries
 					success := false
-					if !success && retryCount > 0 {
+					for !success && retryCount > 0 {
 						select {
 						case positions <- marketPositions:
 							s.log.Debug(

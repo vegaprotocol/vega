@@ -336,7 +336,7 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 				}
 				retryCount := retries
 				success := false
-				if !success && retryCount > 0 {
+				for !success && retryCount > 0 {
 					select {
 					case orders <- validatedOrders:
 						s.log.Debug(

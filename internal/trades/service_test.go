@@ -188,7 +188,7 @@ func testObserveTradesSuccess(t *testing.T) {
 	svc.trade.EXPECT().Unsubscribe(ref).Times(1).Return(nil).Do(func(_ uint64) {
 		wg.Done()
 	})
-	ch, rref := svc.ObserveTrades(ctx, 0, nil, nil)
+	ch, rref := svc.ObserveTrades(ctx, 1, nil, nil)
 	// wait for data on channel
 	gotTrades := <-ch
 	// ensure we got the data we expected
@@ -300,7 +300,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 		wg.Done()
 	})
 	// filter by market and party
-	ch, rref := svc.ObserveTrades(ctx, 0, &filterMarket, &buyer)
+	ch, rref := svc.ObserveTrades(ctx, 1, &filterMarket, &buyer)
 	// wait for data on channel
 	gotTrades := <-ch
 	// ensure we got the data we expected
