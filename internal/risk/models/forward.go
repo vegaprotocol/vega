@@ -11,10 +11,11 @@ import (
 type Forward struct {
 	lambd, tau float64
 	params     riskmodelbs.ModelParamsBS
+	asset      string
 }
 
-// NewBuiltinFutures instanciate a new builtin future
-func NewBuiltinFutures(pf *types.Forward) (*Forward, error) {
+// NewBuiltinFutures instantiate a new builtin future
+func NewBuiltinFutures(pf *types.Forward, asset string) (*Forward, error) {
 	return &Forward{
 		lambd: pf.Lambd,
 		tau:   pf.Tau,
@@ -23,6 +24,7 @@ func NewBuiltinFutures(pf *types.Forward) (*Forward, error) {
 			R:     pf.Params.R,
 			Sigma: pf.Params.Sigma,
 		},
+		asset: asset,
 	}, nil
 }
 
@@ -39,13 +41,13 @@ func (f *Forward) CalculateRiskFactors(
 	rawrf := riskmodelbs.RiskFactorsForward(f.lambd, f.tau, f.params)
 	rf := &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
-			"ETH": &types.RiskFactor{
+			f.asset: &types.RiskFactor{
 				Long:  rawrf.Long,
 				Short: rawrf.Short,
 			},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			"ETH": &types.RiskFactor{
+			f.asset: &types.RiskFactor{
 				Long:  rawrf.Long,
 				Short: rawrf.Short,
 			},
