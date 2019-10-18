@@ -26,7 +26,7 @@ func NewAccount(store AccountStore) *Account {
 
 // Add adds a new account to the buffer
 func (a *Account) Add(acc types.Account) {
-	key := acc.Id // set the key to the internal account type, set by the colateral
+	key := acc.Id // set the key to the internal account type, set by the collateral
 	acc.Id = ""   // reset the actual id to be set by the storage later on
 	a.accs[key] = acc
 }

@@ -138,28 +138,32 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 	skels := []struct {
 		decimalPlaces    uint64
 		baseName         string
+		settlementAsset  string
 		quoteName        string
 		maturity         time.Time
 		initialMarkPrice uint64
 	}{
 		{
-			decimalPlaces:    2,
+			decimalPlaces:    5,
 			baseName:         "ETH",
 			quoteName:        "USD",
+			settlementAsset:  "VUSD",
 			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice: 200,
 		},
 		{
-			decimalPlaces:    2,
+			decimalPlaces:    5,
 			baseName:         "GBP",
 			quoteName:        "USD",
+			settlementAsset:  "VUSD",
 			maturity:         time.Date(2020, 6, 30, 22, 59, 59, 0, time.UTC),
 			initialMarkPrice: 10,
 		},
 		{
-			decimalPlaces:    2,
-			baseName:         "GBP",
-			quoteName:        "EUR",
+			decimalPlaces:    5,
+			baseName:         "ETH",
+			quoteName:        "BTC",
+			settlementAsset:  "BTC",
 			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice: 5,
 		},
@@ -197,7 +201,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 									Event:      "price_changed",
 								},
 							},
-							Asset: "ETH", // always ETH
+							Asset: skel.settlementAsset,
 						},
 					},
 				},

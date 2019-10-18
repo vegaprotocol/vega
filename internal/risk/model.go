@@ -24,17 +24,19 @@ type Model interface {
 	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)
 }
 
-// NewModel instanciate a new risk model from a market framework configuration
-func NewModel(log *logging.Logger, prm interface{}) (Model, error) {
+// NewModel instantiate a new risk model from a market framework configuration
+func NewModel(log *logging.Logger, prm interface{}, asset string) (Model, error) {
 	if prm == nil {
 		return nil, ErrNilRiskModel
 	}
 
 	switch rm := prm.(type) {
 	case *types.TradableInstrument_Forward:
-		return models.NewBuiltinFutures(rm.Forward)
+		return models.NewBuiltinFutures(rm.Forward, asset)
 	case *types.TradableInstrument_ExternalRiskModel:
 		return models.NewExternal(log, rm.ExternalRiskModel)
+	case *types.TradableInstrument_SimpleRiskModel:
+		return models.NewSimple(rm.SimpleRiskModel, asset)
 	default:
 		return nil, ErrUnimplementedRiskModel
 	}

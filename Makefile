@@ -71,9 +71,20 @@ deps: ## Get the dependencies
 	@modvendor -copy="**/*.proto"
 
 build: ## install the binaries in cmd/{progname}/
-	@echo "Version: ${VERSION} (${VERSION_HASH})"
-	@for app in $(APPS) ; do \
-		env CGO_ENABLED=0 go build -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" -o "./cmd/$$app/$$app" "./cmd/$$app" || exit 1 ; \
+	@v="${VERSION}" vh="${VERSION_HASH}" gcflags="" suffix="" ; \
+	if test -n "$$DEBUGVEGA" ; then \
+		gcflags="all=-N -l" ; \
+		suffix="-dbg" ; \
+		v="debug-$$v" ; \
+	fi ; \
+	ldflags="-X main.Version=$$v -X main.VersionHash=$$vh" ; \
+	echo "Version: $$v ($$vh)" ; \
+	for app in $(APPS) ; do \
+		env CGO_ENABLED=0 go build -v \
+			-ldflags "$$ldflags" \
+			-gcflags "$$gcflags" \
+			-o "./cmd/$$app/$$app$$suffix" "./cmd/$$app" \
+			|| exit 1 ; \
 	done
 
 install: ## install the binaries in GOPATH/bin
@@ -186,7 +197,7 @@ gettools_develop:
 	@./script/gettools.sh develop
 
 clean: ## Remove previous build
-	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" ; done
+	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app-dbg" ; done
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

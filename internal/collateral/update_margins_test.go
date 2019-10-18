@@ -235,9 +235,9 @@ func testCloseOutZoneTopUpInsufficient(t *testing.T) {
 	}
 
 	// the amount needed was not available and a minimal amount was specified
-	// however there is not enough money in the general account even to fullfill the minimum
+	// however there is not enough money in the general account even to fulfill the minimum
 	// amount.
-	// the money should be move, altho the trader will be returned in the list of traders
+	// the money should be moved, although the trader will be returned in the list of traders
 	// distressed
 	eng.buf.EXPECT().Add(gomock.Any()).Times(3).DoAndReturn(func(acc types.Account) {
 		if acc.Type == types.AccountType_GENERAL && traderID == acc.Owner {

@@ -98,8 +98,7 @@ func (l *NodeCommand) addFlags() {
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
-	// check node_pre.go, that's where everything gets bootstrapped
-	// Execution engine (broker operation at runtime etc)
+	// See node_pre.go, that's where everything gets bootstrapped for the node
 	executionEngine := execution.NewEngine(
 		l.Log,
 		l.conf.Execution,
