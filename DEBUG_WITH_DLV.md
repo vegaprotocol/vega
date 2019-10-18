@@ -1,30 +1,30 @@
 # Debugging with dlv
 
-This document is a guide describing how to debug with `dlv` and `VSCode`. 
+This document is a guide describing how to debug with `dlv` and `VSCode`.
 
-You will need to read and follow instructions in `GETTING_STARTED.md` first. 
+You will need to read and follow instructions in `GETTING_STARTED.md` first.
 
-Once you have sucessfully installed `V E G A` with `tendermint` these are the steps to let you debug. 
+Once you have sucessfully installed `V E G A` with `tendermint` these are the steps to let you debug.
 
 - Install `dlv` if you've not already done so. In `VSCode` you can do this by launching the "Command Pallete" and running `Go: Install/Update Tools`, select `dlv`, press Ok.
-- Use "Command Pallete" to run `Debug: Open launch.json`. If you didn't already have a launch.json file, this will create one with the below default configuration which can be used to debug the current package. Enter the following into `launch.json` (which will be by default created inside `vega/.vscode/`): 
+- Use "Command Pallete" to run `Debug: Open launch.json`. If you didn't already have a launch.json file, this will create one with the below default configuration which can be used to debug the current package. Enter the following into `launch.json` (which will be by default created inside `vega/.vscode/`):
 
     ```json
     {
-    	"version": "0.2.0",
-    	"configurations": [
-    		{
-    			"name": "Debug V E G A",
-    			"type": "go",
-    			"request": "attach",
-    			"mode": "remote",
-    			"remotePath": "/path/to/vega", // trading-core
-    			"port": 2345,
-    			"host": "127.0.0.1",
-    			"showLog":true,
-    			"trace":"log"
-    		}		
-    	]
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Debug V E G A",
+                "type": "go",
+                "request": "attach",
+                "mode": "remote",
+                "remotePath": "/path/to/vega", // trading-core
+                "port": 2345,
+                "host": "127.0.0.1",
+                "showLog":true,
+                "trace":"log"
+            }
+        ]
     }
     ```
     Edit the `"remotePath"` appropriately to reflect where your trading-core source code lives.
@@ -53,4 +53,4 @@ Once you have sucessfully installed `V E G A` with `tendermint` these are the st
     Got a connection, launched process /path/to/vega/cmd/vega/vega (pid = 35671).
     ```
 - Finally in `VSCode` open the Debug panel and run the `Debug V E G A` configuration created in the 2nd step above. At this point `V E G A` should be running.
-- Test that `V E G A` is running as expected by e.g. visiting `http://localhost:3003/statistics` or trying something in the GraphQL playground at `http://localhost:3004/`. If all is well you should be able to create users, place orders etc. as normal. More to the point breakpoints, call stack and variables should be usable as normal in `VSCode`. 
+- Test that `V E G A` is running as expected by e.g. visiting `http://localhost:3003/statistics` or trying something in the GraphQL playground at `http://localhost:3004/`. If all is well you should be able to create users, place orders etc. as normal. More to the point breakpoints, call stack and variables should be usable as normal in `VSCode`.
