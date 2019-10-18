@@ -145,4 +145,4 @@ publish-docker:
     - docker push "registry.gitlab.com/vega-protocol/trading-core:${CI_COMMIT_REF_SLUG}" || exit 0
     - for app in vega vegabench ; do rm -f "./$app"; done
   only:
-    - /^(master$|develop$|release/v[0-9])/
+    - /^(master$|develop$|release/|v[0-9])/
