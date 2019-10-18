@@ -72,9 +72,9 @@ func TestRemoveDistressedEmpty(t *testing.T) {
 }
 
 func TestRegisterUnregiserOrder(t *testing.T) {
-	t.Run("Test sucessful order register", testRegisterOrderSuccessful)
-	t.Run("Test sucessful order unregister", testUnregisterOrderSuccessful)
-	t.Run("Test unsucessful order unregister", testUnregisterOrderUnsuccessful)
+	t.Run("Test successful order register", testRegisterOrderSuccessful)
+	t.Run("Test successful order unregister", testUnregisterOrderSuccessful)
+	t.Run("Test unsuccessful order unregister", testUnregisterOrderUnsuccessful)
 }
 
 func testRegisterOrderSuccessful(t *testing.T) {

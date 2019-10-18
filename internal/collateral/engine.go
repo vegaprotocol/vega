@@ -109,7 +109,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) {
 	e.currentTime = t.UnixNano()
 }
 
-// ReloadConf upadte the internal configuraton of the collateral engine
+// ReloadConf upadte the internal configuration of the collateral engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {

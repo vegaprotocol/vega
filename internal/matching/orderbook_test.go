@@ -977,7 +977,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 		},
 		{
-			// Sell is agressive, aggressive at lower price than on the book, pro rata at 99, aggressive is removed
+			// Sell is aggressive, aggressive at lower price than on the book, pro rata at 99, aggressive is removed
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "Y",
@@ -1030,7 +1030,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 			},
 		},
 		{
-			// Sell is agressive, aggressive at exact price, all orders at this price level should be hitted plus order should remain on the sell side of the book at 99 level
+			// Sell is aggressive, aggressive at exact price, all orders at this price level should be hitted plus order should remain on the sell side of the book at 99 level
 			aggressiveOrder: &types.Order{
 				MarketID:    market,
 				PartyID:     "Z",
@@ -1370,7 +1370,7 @@ func TestOrderBook_SubmitOrder(t *testing.T) {
 		assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))
 
 		fmt.Println("CONFIRMATION types:")
-		fmt.Println("-> Aggresive:", confirmationtypes.Order)
+		fmt.Println("-> Aggressive:", confirmationtypes.Order)
 		fmt.Println("-> Trades :", confirmationtypes.Trades)
 		fmt.Println("-> PassiveOrdersAffected:", confirmationtypes.PassiveOrdersAffected)
 		fmt.Printf("Scenario: %d / %d \n", i+1, len(scenario))
@@ -2153,7 +2153,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))
 
 		fmt.Println("CONFIRMATION types:")
-		fmt.Println("-> Aggresive:", confirmationtypes.Order)
+		fmt.Println("-> Aggressive:", confirmationtypes.Order)
 		fmt.Println("-> Trades :", confirmationtypes.Trades)
 		fmt.Println("-> PassiveOrdersAffected:", confirmationtypes.PassiveOrdersAffected)
 		fmt.Printf("Scenario: %d / %d \n", i+1, len(scenario))

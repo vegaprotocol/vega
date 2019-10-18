@@ -170,7 +170,7 @@ func TestMarketClosing(t *testing.T) {
 			assert.Equal(t, acc.Balance, int64(0))
 		}
 		// if general, is should be back to the original topup as no
-		// trade happend
+		// trade happened
 		if acc.Type == types.AccountType_GENERAL {
 			assert.Equal(t, acc.Balance, int64(1000000000000))
 		}
@@ -261,13 +261,13 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 		fmt.Printf("ACCOUNT: %v\n", acc)
 		// if general, is should be back to the original topup as no
-		// trade happend
+		// trade happened
 		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {
 			// less monies
 			assert.Equal(t, int64(999999998218), acc.Balance)
 		}
 		// if general, is should be back to the original topup as no
-		// trade happend
+		// trade happened
 		// loose no monies
 		if acc.Type == types.AccountType_GENERAL && party2 == acc.Owner {
 			assert.Equal(t, int64(1000000000000), acc.Balance)

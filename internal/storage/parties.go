@@ -23,7 +23,7 @@ func NewParties(config Config) (*Party, error) {
 	}, nil
 }
 
-// ReloadConf update the internal configuraton of the party
+// ReloadConf update the internal configuration of the party
 func (p *Party) ReloadConf(config Config) {
 	// nothing to do for now
 }
