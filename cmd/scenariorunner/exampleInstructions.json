@@ -33,7 +33,7 @@
       "message": {
         "NotifyTraderAccountRequest": {
           "notif": {
-            "traderID": "trader1"
+            "traderID": "trader2"
           }
         }
       }
