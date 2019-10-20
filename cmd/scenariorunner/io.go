@@ -1,6 +1,6 @@
 package main
 
-import(
+import (
 	"io/ioutil"
 
 	"github.com/hashicorp/go-multierror"
