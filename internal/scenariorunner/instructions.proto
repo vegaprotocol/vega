@@ -7,14 +7,16 @@ import "google/protobuf/any.proto";
 import "vega/proto/vega.proto";
 
 message Instruction {
-    string Type = 1;
-    google.protobuf.Any Message = 2;
-    string Description = 3;
+    string Description = 1;
+    string Request = 2;
+    google.protobuf.Any Message = 3;
+
 }
 
 message InstructionSet {
-    repeated Instruction Instructions = 1;
-    string Description = 2;
+    string Description = 1;
+    repeated Instruction Instructions = 2;
+
 }
 
 message InstructionResult {
@@ -33,6 +35,7 @@ message Metadata {
 }
 
 message ResultSet {
-    repeated InstructionResult ResultSet = 1;
-    Metadata Summary = 2;
+    Metadata Summary = 1;
+    repeated InstructionResult ResultSet = 2;
+
 }
