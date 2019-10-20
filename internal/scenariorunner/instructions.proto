@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package scenariorunner;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/any.proto";
+import "vega/proto/vega.proto";
+
+message Instruction {
+    string Type = 1;
+    google.protobuf.Any Message = 2;
+    string Description = 3;
+}
+
+message InstructionSet {
+    repeated Instruction Instructions = 1;
+    string Description = 2;
+}
+
+message InstructionResult {
+    google.protobuf.Any Response = 1;
+    string Error = 2;
+    google.protobuf.Any Instruction = 3;
+}
+
+message Metadata {
+    int32 InstructionsProcessed = 1;
+    int32 InstructionsOmitted = 2;
+    int32 TradesGenerated = 3;
+    int64 ProcessingTimeInSeconds = 4;
+    google.protobuf.Duration ProcessingTime = 5;
+    vega.MarketDepth FinalOrderBook = 6;
+}
+
+message ResultSet {
+    repeated InstructionResult ResultSet = 1;
+    Metadata Summary = 2;
+}
