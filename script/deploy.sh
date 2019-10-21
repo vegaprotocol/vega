@@ -62,20 +62,13 @@ install_files() {
 
 			echo "$host: $src -> $dstfullpath ($perm)"
 
-			# Rename existing file
-			# Note: $(date) is in single quotes so it is expanded on the remote host
-			ssh "$sshuser@$host" \
-				'test -f "'"$dstfullpath"'" && mv "'"$dstfullpath"'" "'"$dstfullpath"'-$(date "+%Y.%m.%d-%H.%M.%S")"'
+			# Set file permissions
+			chmod "$perm" "$src"
 
 			# Copy new file
 			rsync -avz "$src" "$sshuser@$host:$dstdir"
-
-			# Set file permissions
-			ssh "$sshuser@$host" \
-				'chmod "'"$perm"'" "'"$dstfullpath"'"'
 		done
 	done
-
 }
 
 nodeloop() {
