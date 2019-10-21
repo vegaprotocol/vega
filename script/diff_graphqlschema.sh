@@ -1,9 +1,14 @@
 #!/bin/bash
 
-branch2="${CI_COMMIT_REF_NAME:-notset}"
+# Use var provided by GitLab.
+branch2="${CI_COMMIT_REF_NAME:-}"
+if test -z "$branch2" ; then
+	# Use var provided by Drone.
+	branch2="${CI_COMMIT_BRANCH:-giveup}"
+fi
 case "$branch2" in
-	notset)
-		echo "Need env var CI_COMMIT_REF_NAME"
+	giveup)
+		echo "Need env var CI_COMMIT_REF_NAME or CI_COMMIT_BRANCH"
 		exit 1
 		;;
 	develop)

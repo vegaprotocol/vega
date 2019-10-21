@@ -17,11 +17,22 @@ else
 	# In CI
 	ifeq ($(TAG),)
 		# No tag, so make one
-		VERSION := interim-$(CI_COMMIT_REF_SLUG)
+		ifeq ($(DRONE),)
+			# Gitlab
+			VERSION := interim-$(CI_COMMIT_REF_SLUG)
+		else
+			VERSION := interim-$(CI_COMMIT_BRANCH)
+		endif
 	else
 		VERSION := $(TAG)
 	endif
-	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
+
+	ifeq ($(DRONE),)
+		# Gitlab
+		VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
+	else
+		VERSION_HASH := $(shell echo "$(CI_COMMIT_SHA)" | cut -b1-8)
+	endif
 endif
 
 .PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check rest_check
