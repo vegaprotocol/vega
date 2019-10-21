@@ -55,6 +55,6 @@ func unmarshall(r io.Reader) (*sr.InstructionSet, error) {
 }
 
 func marshall(result *sr.ResultSet, out io.Writer) error {
-	m := jsonpb.Marshaler{Indent: "  "}
+	m := jsonpb.Marshaler{Indent: "  ", EmitDefaults: true}
 	return m.Marshal(out, result)
 }

@@ -47,8 +47,6 @@ require (
 	go.uber.org/zap v1.9.1
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
-	golang.org/x/tools v0.0.0-20190329200012-0ec5c269d481 // indirect
 	google.golang.org/grpc v1.19.0
 )
 

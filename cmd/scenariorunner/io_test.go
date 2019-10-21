@@ -4,7 +4,6 @@ import (
 	"log"
 	"strings"
 	"testing"
-	"time"
 
 	sr "code.vegaprotocol.io/vega/internal/scenariorunner"
 	types "code.vegaprotocol.io/vega/proto"
@@ -64,7 +63,7 @@ func TestUnmarshall(t *testing.T) {
 		log.Fatalln("Failed to create a new instruction: ", err)
 	}
 	instr2.Description = "Submit a sell order"
-	expected := sr.InstructionSet{
+	expected := &sr.InstructionSet{
 		Instructions: []*sr.Instruction{
 			instr1,
 			instr2,
@@ -91,10 +90,11 @@ func TestUnmarshall(t *testing.T) {
 		"submission": {
 		"marketID": "Market1",
 		"partyID": "trader1",
-		"price": "100",
-		"size": "3",
+		"price": 100,
+		"size": 3,
 		"side": "Sell",
-		"expiresAt": "1924991999000000000"
+		"TimeInForce": "GTC",
+		"expiresAt": 1924991999000000000
 		}
 	}
 	}
@@ -104,13 +104,14 @@ func TestUnmarshall(t *testing.T) {
 	actual, err := unmarshall(data)
 
 	assert.NoError(t, err)
-	assert.ObjectsAreEqualValues(expected, actual)
+	assert.EqualValues(t, expected, actual)
 }
 
 func TestMarshal(t *testing.T) {
 	expected := string(`{
   "summary": {
     "instructionsProcessed": "2",
+    "instructionsOmitted": "0",
     "tradesGenerated": "1",
     "processingTime": "3s",
     "finalOrderBook": {
@@ -137,46 +138,70 @@ func TestMarshal(t *testing.T) {
     {
       "response": {
         "@type": "vega.PendingOrder",
+        "reference": "",
         "price": "100",
+        "TimeInForce": "GTC",
         "side": "Sell",
         "marketID": "Market1",
+        "size": "3",
         "partyID": "trader1",
-        "id": "order1"
+        "status": "Active",
+        "id": "order1",
+        "type": "LIMIT"
       },
+      "error": "",
       "instruction": {
+        "description": "",
         "request": "trading.SubmitOrder",
         "message": {
           "@type": "api.SubmitOrderRequest",
           "submission": {
+            "id": "",
             "marketID": "Market1",
             "partyID": "trader1",
             "price": "100",
             "size": "3",
             "side": "Sell",
-            "expiresAt": "1924991999000000000"
-          }
+            "TimeInForce": "GTC",
+            "expiresAt": "1924991999000000000",
+            "type": "LIMIT"
+          },
+          "token": ""
         }
       }
     },
     {
       "response": {
         "@type": "vega.PendingOrder",
+        "reference": "",
         "price": "100",
+        "TimeInForce": "GTC",
+        "side": "Buy",
         "marketID": "Market1",
+        "size": "3",
         "partyID": "trader2",
-        "id": "order2"
+        "status": "Active",
+        "id": "order2",
+        "type": "LIMIT"
       },
+      "error": "",
       "instruction": {
+        "description": "",
         "request": "trading.SubmitOrder",
         "message": {
           "@type": "api.SubmitOrderRequest",
           "submission": {
+            "id": "",
             "marketID": "Market1",
             "partyID": "trader2",
             "price": "100",
             "size": "3",
-            "expiresAt": "1924991999000000000"
-          }
+            "side": "Buy",
+            "TimeInForce": "GTC",
+            "expiresAt": "1924991999000000000",
+            "type": "LIMIT"
+          },
+          "token": ""
         }
       }
     }
@@ -193,7 +218,7 @@ func TestMarshal(t *testing.T) {
 				Size:        3,
 				Side:        types.Side_Sell,
 				TimeInForce: types.Order_GTC,
-				ExpiresAt:   time.Date(2030, 12, 31, 23, 59, 59, 0, time.UTC).UnixNano(),
+				ExpiresAt:   1924991999000000000,
 			},
 		})
 	if err != nil {
@@ -210,7 +235,7 @@ func TestMarshal(t *testing.T) {
 				Size:        3,
 				Side:        types.Side_Buy,
 				TimeInForce: types.Order_GTC,
-				ExpiresAt:   time.Date(2030, 12, 31, 23, 59, 59, 0, time.UTC).UnixNano(),
+				ExpiresAt:   1924991999000000000,
 			},
 		})
 	if err != nil {
@@ -222,6 +247,7 @@ func TestMarshal(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Side:        types.Side_Sell,
 		MarketID:    "Market1",
+		Size:        3,
 		PartyID:     "trader1",
 		Status:      types.Order_Active,
 		Id:          "order1",
@@ -233,6 +259,7 @@ func TestMarshal(t *testing.T) {
 		TimeInForce: types.Order_GTC,
 		Side:        types.Side_Buy,
 		MarketID:    "Market1",
+		Size:        3,
 		PartyID:     "trader2",
 		Status:      types.Order_Active,
 		Id:          "order2",
