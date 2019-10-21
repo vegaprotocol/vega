@@ -4,56 +4,48 @@
     {
       "Request": "trading.NotifyTraderAccount",
       "Message": {
-        "NotifyTraderAccountRequest": {
-          "@type": "api.NotifyTraderAccountRequest",
-          "notif": {
-            "traderID": "trader1"
-          }
+        "@type": "api.NotifyTraderAccountRequest",
+        "notif": {
+          "traderID": "trader1"
         }
       }
     },
     {
       "Request": "trading.SubmitOrder",
       "Message": {
-        "SubmitOrderRequest": {
-          "@type": "api.SubmitOrderRequest",
-          "submission": {
-            "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
-            "PartyID": "trader1",
-            "Price": 100,
-            "Size": 3,
-            "Side": "Sell",
-            "TimeInForce": "GTC",
-            "ExpiresAt": 1924991999000000000
-          }
+        "@type": "api.SubmitOrderRequest",
+        "submission": {
+          "marketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
+          "partyID": "trader1",
+          "price": 100,
+          "size": 3,
+          "side": "Sell",
+          "TimeInForce": "GTC",
+          "expiresAt": 1924991999000000000
         }
       }
     },
     {
       "Request": "trading.NotifyTraderAccount",
       "Message": {
-        "NotifyTraderAccountRequest": {
-          "@type": "api.NotifyTraderAccountRequest",
-          "notif": {
-            "traderID": "trader2"
-          }
+        "@type": "api.NotifyTraderAccountRequest",
+        "notif": {
+          "traderID": "trader2"
         }
       }
     },
     {
       "Request": "trading.SubmitOrder",
       "Message": {
-        "SubmitOrderRequest": {
-          "@type": "api.SubmitOrderRequest",
-          "submission": {
-            "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
-            "PartyID": "trader2",
-            "Price": 100,
-            "Size": 3,
-            "Side": "Buy",
-            "TimeInForce": "GTC",
-            "ExpiresAt": 1924991999000000000
-          }
+        "@type": "api.SubmitOrderRequest",
+        "submission": {
+          "marketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
+          "partyID": "trader2",
+          "price": 100,
+          "size": 3,
+          "side": "Buy",
+          "TimeInForce": "GTC",
+          "expiresAt": 1924991999000000000
         }
       }
     },
@@ -61,9 +53,7 @@
       "Request": "trading_data.TradesByMarket",
       "Message": {
         "@type": "api.TradesByMarketRequest",
-        "TradesByMarketRequest": {
-          "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL"
-        }
+        "marketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL"
       }
     }
   ]

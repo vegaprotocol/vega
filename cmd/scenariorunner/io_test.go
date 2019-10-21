@@ -25,7 +25,13 @@ func TestReadFilesFailsWithFakePaths(t *testing.T) {
 }
 
 func TestReadFiles(t *testing.T) {
-	ProcessFiles([]string{"exampleInstructions.json"})
+	files := []string{"exampleInstructions.json", "exampleInstructions.json"}
+	instrSet, err := ProcessFiles(files)
+	assert.NoError(t, err)
+	assert.Equal(t, len(files), len(instrSet))
+	assert.Equal(t, 2, len(files))
+	assert.NotNil(t, instrSet[0])
+	assert.EqualValues(t, instrSet[0], instrSet[1])
 }
 
 func TestUnmarshall(t *testing.T) {
