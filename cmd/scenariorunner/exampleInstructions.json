@@ -1,9 +1,9 @@
 {
-  "Description": "Example set of instructions with two parties submiting matching orders on the same market followed by query retrieving trades from that market - expecting one trade",
-  "Instructions": [
+  "description": "Example set of instructions with two parties submiting matching orders on the same market followed by query retrieving trades from that market - expecting one trade",
+  "instructions": [
     {
-      "Request": "trading.NotifyTraderAccount",
-      "Message": {
+      "request": "trading.NotifyTraderAccount",
+      "message": {
         "@type": "api.NotifyTraderAccountRequest",
         "notif": {
           "traderID": "trader1"
@@ -11,8 +11,8 @@
       }
     },
     {
-      "Request": "trading.SubmitOrder",
-      "Message": {
+      "request": "trading.SubmitOrder",
+      "message": {
         "@type": "api.SubmitOrderRequest",
         "submission": {
           "marketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
@@ -26,8 +26,8 @@
       }
     },
     {
-      "Request": "trading.NotifyTraderAccount",
-      "Message": {
+      "request": "trading.NotifyTraderAccount",
+      "message": {
         "@type": "api.NotifyTraderAccountRequest",
         "notif": {
           "traderID": "trader2"
@@ -35,8 +35,8 @@
       }
     },
     {
-      "Request": "trading.SubmitOrder",
-      "Message": {
+      "request": "trading.SubmitOrder",
+      "message": {
         "@type": "api.SubmitOrderRequest",
         "submission": {
           "marketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
@@ -50,8 +50,8 @@
       }
     },
     {
-      "Request": "trading_data.TradesByMarket",
-      "Message": {
+      "request": "trading_data.TradesByMarket",
+      "message": {
         "@type": "api.TradesByMarketRequest",
         "marketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL"
       }

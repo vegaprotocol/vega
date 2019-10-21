@@ -72,11 +72,11 @@ func TestUnmarshall(t *testing.T) {
 		Description: "Test instructions",
 	}
 	data := strings.NewReader(`{
-	"Description": "Test instructions",
-	"Instructions": [
+	"description": "Test instructions",
+	"instructions": [
 	{
-	"Request": "trading.NotifyTraderAccount",
-	"Message": {
+	"request": "trading.NotifyTraderAccount",
+	"message": {
 		"@type": "api.NotifyTraderAccountRequest",
 		"notif": {
 		"traderID": "trader1"
@@ -84,9 +84,9 @@ func TestUnmarshall(t *testing.T) {
 	}
 	},
 	{
-	"Description": "Submit a sell order",
-	"Request": "trading.SubmitOrder",
-	"Message": {
+	"description": "Submit a sell order",
+	"request": "trading.SubmitOrder",
+	"message": {
 		"@type": "api.SubmitOrderRequest",
 		"submission": {
 		"marketID": "Market1",
@@ -109,11 +109,11 @@ func TestUnmarshall(t *testing.T) {
 
 func TestMarshal(t *testing.T) {
 	expected := string(`{
-  "Summary": {
-    "InstructionsProcessed": "2",
-    "TradesGenerated": "1",
-    "ProcessingTime": "3s",
-    "FinalOrderBook": {
+  "summary": {
+    "instructionsProcessed": "2",
+    "tradesGenerated": "1",
+    "processingTime": "3s",
+    "finalOrderBook": {
       "marketID": "Market1",
       "buy": [
         {
@@ -133,9 +133,9 @@ func TestMarshal(t *testing.T) {
       ]
     }
   },
-  "Results": [
+  "results": [
     {
-      "Response": {
+      "response": {
         "@type": "vega.PendingOrder",
         "price": "100",
         "side": "Sell",
@@ -143,9 +143,9 @@ func TestMarshal(t *testing.T) {
         "partyID": "trader1",
         "id": "order1"
       },
-      "Instruction": {
-        "Request": "trading.SubmitOrder",
-        "Message": {
+      "instruction": {
+        "request": "trading.SubmitOrder",
+        "message": {
           "@type": "api.SubmitOrderRequest",
           "submission": {
             "marketID": "Market1",
@@ -159,16 +159,16 @@ func TestMarshal(t *testing.T) {
       }
     },
     {
-      "Response": {
+      "response": {
         "@type": "vega.PendingOrder",
         "price": "100",
         "marketID": "Market1",
         "partyID": "trader2",
         "id": "order2"
       },
-      "Instruction": {
-        "Request": "trading.SubmitOrder",
-        "Message": {
+      "instruction": {
+        "request": "trading.SubmitOrder",
+        "message": {
           "@type": "api.SubmitOrderRequest",
           "submission": {
             "marketID": "Market1",

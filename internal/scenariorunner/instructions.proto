@@ -7,33 +7,33 @@ import "google/protobuf/any.proto";
 import "vega/proto/vega.proto";
 
 message Instruction {
-    string Description = 1;
-    string Request = 2;
-    google.protobuf.Any Message = 3;
+    string description = 1;
+    string request = 2;
+    google.protobuf.Any message = 3;
 
 }
 
 message InstructionSet {
-    string Description = 1;
-    repeated Instruction Instructions = 2;
+    string description = 1;
+    repeated Instruction instructions = 2;
 
 }
 
 message InstructionResult {
-    google.protobuf.Any Response = 1;
-    string Error = 2;
-    Instruction Instruction = 3;
+    google.protobuf.Any response = 1;
+    string error = 2;
+    Instruction instruction = 3;
 }
 
 message Metadata {
-    uint64 InstructionsProcessed = 1;
-    uint64 InstructionsOmitted = 2;
-    uint64 TradesGenerated = 3;
-    google.protobuf.Duration ProcessingTime = 5;
-    vega.MarketDepth FinalOrderBook = 6;
+    uint64 instructionsProcessed = 1;
+    uint64 instructionsOmitted = 2;
+    uint64 tradesGenerated = 3;
+    google.protobuf.Duration processingTime = 5;
+    vega.MarketDepth finalOrderBook = 6;
 }
 
 message ResultSet {
-    Metadata Summary = 1;
-    repeated InstructionResult Results = 2;
+    Metadata summary = 1;
+    repeated InstructionResult results = 2;
 }
