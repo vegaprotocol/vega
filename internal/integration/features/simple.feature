@@ -23,7 +23,7 @@ Feature: Test trading-core flow with simple risk model
             | trader1 | 0        | 0   | 1    | 132    | 99868   |
         And "trader2" has not been added to the market
 
-    Scenario: two traders place orders at different prices
+    Scenario: two traders place orders at different prices, lower buy price (no trade is created)
         Given the following orders:
             | trader  | type | volume | price | resulting trades |
             | trader1 | sell | 1      | 1010  | 0                |
@@ -51,3 +51,15 @@ Feature: Test trading-core flow with simple risk model
             | trader1 | -2       | 0   | 0    | 264    | 99736   |
             | trader2 | 1        | 0   | 0    | 120    | 99880   |
             | trader3 | 1        | 0   | 0    | 117    | 99883   |
+
+    Scenario: two traders place orders at different prices, with a higher buy price (creates trade)
+        Given the following orders:
+            | trader  | type | volume | price | resulting trades |
+            | trader1 | sell | 1      | 1010  | 0                |
+            | trader2 | buy  | 1      | 1012  | 1                |
+        Then I expect the trader to have a margin liability:
+            | trader  | position | buy | sell | margin | general |
+            | trader1 | -1       | 0   | 0    | 132    | 99868   |
+            | trader2 | 1        | 0   | 0    | 120    | 99880   |
+        And "trader3" has not been added to the market
+

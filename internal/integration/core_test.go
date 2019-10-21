@@ -443,16 +443,6 @@ func hasNotBeenAddedToTheMarket(trader string) error {
 	return fmt.Errorf("didn't expect %s to hava a margin account with balance, instead saw %d", trader, acc.Balance)
 }
 
-func iCheckTheUpdatedBalancesAndPositions() error {
-	// not sure if we need this step
-	return nil
-	// return godog.ErrPending
-}
-
-func iExpectToSee(arg1 *gherkin.DataTable) error {
-	return godog.ErrPending
-}
-
 func FeatureContext(s *godog.Suite) {
 	// each step changes the output from the reporter
 	// so we know where a mock failed
@@ -477,8 +467,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I place the following orders:$`, theFollowingOrders)
 	s.Step(`^I expect the trader to have a margin liability:$`, tradersLiability)
 	s.Step(`^"([^"]*)" has not been added to the market$`, hasNotBeenAddedToTheMarket)
-	s.Step(`^I check the updated balances and positions$`, iCheckTheUpdatedBalancesAndPositions)
-	s.Step(`^I expect to see:$`, iExpectToSee)
 }
 
 func (t tstReporter) Errorf(format string, args ...interface{}) {
