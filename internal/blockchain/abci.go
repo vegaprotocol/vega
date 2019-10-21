@@ -154,7 +154,7 @@ func (a *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.R
 //	return types.ResponseEndBlock{}
 //}
 
-// CheckTx is called when a new transaction if beeing gossip by the chain to the
+// CheckTx is called when a new transaction is being gossiped by the chain to the
 // abci application
 // Mempool Connection
 //

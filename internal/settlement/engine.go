@@ -254,7 +254,7 @@ func (e *Engine) settleAll() ([]*types.Transfer, error) {
 	defer e.posMu.Unlock()
 	// there should be as many positions as there are traders (obviously)
 	aggregated := make([]*types.Transfer, 0, len(e.pos))
-	// traders who are in the black should be appended (collect first) obvioulsy.
+	// traders who are in the black should be appended (collect first).
 	// The split won't always be 50-50, but it's a reasonable approximation
 	owed := make([]*types.Transfer, 0, len(e.pos)/2)
 	for party, pos := range e.pos {

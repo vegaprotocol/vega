@@ -26,7 +26,7 @@ type MarketConfig struct {
 	Configs []string
 }
 
-// Config is the configuraton of the execution package
+// Config is the configuration of the execution package
 type Config struct {
 	Level encoding.LogLevel
 

@@ -118,22 +118,19 @@ func getMarkets(closingAt time.Time) []proto.Market {
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_Forward{
-				Forward: &proto.Forward{
-					Lambd: 0.01,
-					Tau:   1.0 / 365.25 / 24,
-					Params: &proto.ModelParamsBS{
-						Mu:    0,
-						R:     0.016,
-						Sigma: 0.09,
-					},
-				},
-			},
 			MarginCalculator: &proto.MarginCalculator{
 				ScalingFactors: &proto.ScalingFactors{
 					SearchLevel:       1.1,
 					InitialMargin:     1.2,
 					CollateralRelease: 1.4,
+				},
+			},
+			RiskModel: &proto.TradableInstrument_SimpleRiskModel{
+				SimpleRiskModel: &proto.SimpleRiskModel{
+					Params: &proto.SimpleModelParams{
+						FactorLong:  0.15,
+						FactorShort: 0.25,
+					},
 				},
 			},
 		},
@@ -170,7 +167,7 @@ func TestMarketClosing(t *testing.T) {
 			assert.Equal(t, acc.Balance, int64(0))
 		}
 		// if general, is should be back to the original topup as no
-		// trade happend
+		// trade happened
 		if acc.Type == types.AccountType_GENERAL {
 			assert.Equal(t, acc.Balance, int64(1000000000000))
 		}
@@ -261,13 +258,13 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 		fmt.Printf("ACCOUNT: %v\n", acc)
 		// if general, is should be back to the original topup as no
-		// trade happend
+		// trade happened
 		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {
 			// less monies
 			assert.Equal(t, int64(999999998218), acc.Balance)
 		}
 		// if general, is should be back to the original topup as no
-		// trade happend
+		// trade happened
 		// loose no monies
 		if acc.Type == types.AccountType_GENERAL && party2 == acc.Owner {
 			assert.Equal(t, int64(1000000000000), acc.Balance)

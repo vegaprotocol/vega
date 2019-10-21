@@ -9,10 +9,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-const (
-	volumeAtTimestampInitialCap = 4096
-)
-
 type tsVolPair struct {
 	ts  int64
 	vol uint64
@@ -33,7 +29,7 @@ func NewPriceLevel(price uint64, proRataMode bool) *PriceLevel {
 		price:             price,
 		proRataMode:       proRataMode,
 		orders:            []*types.Order{},
-		volumeAtTimestamp: make([]tsVolPair, 0, volumeAtTimestampInitialCap),
+		volumeAtTimestamp: []tsVolPair{},
 	}
 }
 
@@ -97,8 +93,8 @@ func (l *PriceLevel) increaseVolumeByTimestamp(o *types.Order) {
 
 // in this function it is very much likely that we want to decrease the volume in the first
 // time stamp or maybe one of the first as while uncrossing the first few timestamps may
-// endup beeing at a 0 volume before beeing remove from the map.
-// once we found the first time stamp not beeing == 0, then if it is not the expected
+// end up being at a 0 volume before being removed from the map.
+// once we found the first time stamp not being == 0, then if it is not the expected
 // timestamp, then we will use a binary search to find the correct timestamp as we
 // most likely are in the use case where we remove an order which can be any timestamp
 func (l *PriceLevel) decreaseVolumeByTimestamp(o *types.Order) {
@@ -116,9 +112,8 @@ func (l *PriceLevel) decreaseVolumeByTimestamp(o *types.Order) {
 		l.volumeAtTimestamp[idx].vol == 0; idx++ {
 	}
 	if idx >= len(l.volumeAtTimestamp) {
-		// this should neverhappend as weshould always have enough volume when trying to decrease
-		// , that's weird and should most likely not happend, but you know let's just make sure
-		// we do not go out of bound ...
+		// this should never happen as we should always have enough volume when trying to decrease
+		// , that's weird and should most likely not happen, but let's make sure we do not go out of bound ...
 		return
 	}
 
@@ -142,8 +137,8 @@ func (l *PriceLevel) decreaseVolumeByTimestamp(o *types.Order) {
 	// make sure we found it
 	if i >= len(l.volumeAtTimestamp) &&
 		l.volumeAtTimestamp[i].ts != o.CreatedAt {
-		// ok we did not find the actual timestamp, that must be a problem
-		// but is never supposed to happend
+		// we did not find the timestamp, that must be a problem
+		// but is never supposed to happen
 		return
 	}
 
@@ -161,7 +156,7 @@ func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp int64, trade *type
 
 	// return if with have an empty slice
 	if len(l.volumeAtTimestamp) <= 0 {
-		// that should never happend as we never call this with no volume bust stilll ...
+		// that should never happen as we never call this with no volume, but still ...
 		return
 	}
 
@@ -171,9 +166,8 @@ func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp int64, trade *type
 		l.volumeAtTimestamp[idx].vol == 0; idx++ {
 	}
 	if idx >= len(l.volumeAtTimestamp) {
-		// this should neverhappend as weshould always have enough volume when trying to decrease
-		// , that's weird and should most likely not happend, but you know let's just make sure
-		// we do not go out of bound ...
+		// this should never happen as we should always have enough volume when trying to decrease
+		// , that's weird and should most likely not happen, but let's make sure we do not go out of bound ...
 		return
 	}
 
@@ -198,7 +192,7 @@ func (l *PriceLevel) adjustVolumeByTimestamp(currentTimestamp int64, trade *type
 	if i >= len(l.volumeAtTimestamp) &&
 		l.volumeAtTimestamp[i].ts != currentTimestamp {
 		// ok we did not find the actual timestamp, that must be a problem
-		// but is never supposed to happend
+		// but is never supposed to happen
 		return
 	}
 

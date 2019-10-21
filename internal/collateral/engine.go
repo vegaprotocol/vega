@@ -109,7 +109,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) {
 	e.currentTime = t.UnixNano()
 }
 
-// ReloadConf upadte the internal configuraton of the collateral engine
+// ReloadConf upadte the internal configuration of the collateral engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -536,6 +536,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			Amount:    uint64(-p.Amount.Amount) * p.Size,
 			MinAmount: 0,     // default value, but keep it here explicitly
 			Asset:     asset, // TBC
+			Reference: p.Type.String(),
 		}
 		return &req, nil
 	}
@@ -551,6 +552,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			Amount:    uint64(p.Amount.Amount) * p.Size,
 			MinAmount: 0,     // default value, but keep it here explicitly
 			Asset:     asset, // TBC
+			Reference: p.Type.String(),
 		}, nil
 	}
 
@@ -576,6 +578,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			Amount:    uint64(p.Amount.Amount) * p.Size,
 			MinAmount: uint64(p.Amount.MinAmount),
 			Asset:     asset,
+			Reference: p.Type.String(),
 		}, nil
 	}
 	return &types.TransferRequest{
@@ -588,6 +591,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		Amount:    uint64(p.Amount.Amount) * p.Size,
 		MinAmount: uint64(p.Amount.MinAmount),
 		Asset:     asset,
+		Reference: p.Type.String(),
 	}, nil
 }
 

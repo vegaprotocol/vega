@@ -44,7 +44,7 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 		}
 		marginMaintenanceLng = int64(float64(slippageVolume)*(float64(slippagePerUnit)+(rf.Long*float64(markPrice))) + (float64(e.Buy()) * rf.Long * float64(markPrice)))
 	}
-	// calculate margin maintenace short only if riskiest is < 0
+	// calculate margin maintenance short only if riskiest is < 0
 	// marginMaintenanceSht will be 0 by default
 	if riskiestSht < 0 {
 		var (

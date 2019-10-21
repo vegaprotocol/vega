@@ -52,7 +52,7 @@ func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath s
 	return w, nil
 }
 
-// Get return the last update of the configuraton
+// Get return the last update of the configuration
 func (w *Watcher) Get() Config {
 	w.mu.Lock()
 	conf := w.cfg

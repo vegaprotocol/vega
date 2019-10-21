@@ -206,7 +206,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				},
 			}
 
-		} else if curMargin >= margins.CollateralReleaseLevel { // case 3 -> release some colateral
+		} else if curMargin >= margins.CollateralReleaseLevel { // case 3 -> release some collateral
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),
 				Size:  1,
