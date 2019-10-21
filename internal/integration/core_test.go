@@ -220,6 +220,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		setup.trades,
 		setup.transfer,
 		time.Now(),
+		execution.NewIDGen(),
 	)
 	if err != nil {
 		return err

@@ -351,6 +351,10 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		return nil, ErrMarginCheckFailed
 	}
 
+	// set order ID
+	m.idgen.SetID(order)
+	order.CreatedAt = m.currentTime.UnixNano()
+
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
@@ -360,10 +364,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		return nil, err
 	}
-
-	// set order ID
-	m.idgen.SetID(order)
-	order.CreatedAt = m.currentTime.UnixNano()
 
 	// Insert aggressive remaining order
 	err = m.orders.Post(*order)
