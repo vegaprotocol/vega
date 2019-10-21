@@ -2,7 +2,7 @@ module code.vegaprotocol.io/vega
 
 require (
 	code.vegaprotocol.io/quant v0.1.0
-	github.com/99designs/gqlgen v0.10.1
+	github.com/99designs/gqlgen v0.8.3
 	github.com/DATA-DOG/godog v0.7.13 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible
@@ -46,6 +46,9 @@ require (
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
+	golang.org/x/tools v0.0.0-20190329200012-0ec5c269d481 // indirect
 	google.golang.org/grpc v1.19.0
 )
 
