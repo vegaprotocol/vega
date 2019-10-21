@@ -22,20 +22,18 @@ message InstructionSet {
 message InstructionResult {
     google.protobuf.Any Response = 1;
     string Error = 2;
-    google.protobuf.Any Instruction = 3;
+    Instruction Instruction = 3;
 }
 
 message Metadata {
-    int32 InstructionsProcessed = 1;
-    int32 InstructionsOmitted = 2;
-    int32 TradesGenerated = 3;
-    int64 ProcessingTimeInSeconds = 4;
+    uint64 InstructionsProcessed = 1;
+    uint64 InstructionsOmitted = 2;
+    uint64 TradesGenerated = 3;
     google.protobuf.Duration ProcessingTime = 5;
     vega.MarketDepth FinalOrderBook = 6;
 }
 
 message ResultSet {
     Metadata Summary = 1;
-    repeated InstructionResult ResultSet = 2;
-
+    repeated InstructionResult Results = 2;
 }
