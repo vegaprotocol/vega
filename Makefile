@@ -35,7 +35,7 @@ lint: ## Lint the files
 bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
 
-test: deps ## Run unit tests
+test: ## Run unit tests
 	@go test ./...
 
 race: ## Run data race detector
@@ -94,7 +94,7 @@ install: ## install the binaries in GOPATH/bin
 		env CGO_ENABLED=0 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
 	done
 
-gqlgen: deps ## run gqlgen
+gqlgen: ## run gqlgen
 	@cd ./internal/gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
 
 gqlgen_check: ## GraphQL: Check committed files match just-generated files
@@ -134,7 +134,7 @@ proto/api/trading.pb.gw.go: proto/api/trading.proto internal/gateway/rest/grpc-r
 proto/api/trading.swagger.json: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
 	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
-proto_check: deps ## proto: Check committed files match just-generated files
+proto_check: ## proto: Check committed files match just-generated files
 	@find proto -name '*.proto' -exec touch '{}' ';' ; \
 	find internal/gateway/rest/ -name '*.yml' -exec touch '{}' ';' ; \
 	make proto 1>/dev/null || exit 1 ; \
