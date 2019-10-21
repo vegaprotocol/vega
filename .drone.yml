@@ -15,7 +15,7 @@ environment:
   GOARCH: amd64
 
 steps:
-  - name: prepare
+  - name: build
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     pull: always
     volumes:
@@ -37,17 +37,9 @@ steps:
       - echo "$${GITLAB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - echo "$${GITLAB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
       - env |sort
-
-  - name: build
-    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
-    volumes:
-      - name: gopkg
-        path: /go/pkg
-    commands:
       - make deps
       - make install
-    depends_on:
-      - prepare
+    depends_on: []
 
   - name: test
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -73,6 +65,7 @@ steps:
         - master
         - develop
         - release/*
+        - 491-implement-drone-ci-config
 
   - name: msan
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -88,6 +81,7 @@ steps:
         - master
         - develop
         - release/*
+        - 491-implement-drone-ci-config
 
   - name: coverage
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -103,6 +97,7 @@ steps:
         - master
         - develop
         - release/*
+        - 491-implement-drone-ci-config
 
   - name: lint
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -145,6 +140,7 @@ steps:
         - master
         - develop
         - release/*
+        - 491-implement-drone-ci-config
 
   - name: push_to_devnet
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -198,7 +194,9 @@ steps:
       - vet
     when:
       branch:
+        - master
         - develop
+        - 491-implement-drone-ci-config
 
 
 volumes:
