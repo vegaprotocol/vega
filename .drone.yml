@@ -8,6 +8,12 @@ platform:
   arch: amd64
   os: linux
 
+environment:
+  CGO_ENABLED: "0"
+  GO111MODULE: "on"
+  GOOS: linux
+  GOARCH: amd64
+
 steps:
   - name: prepare
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -16,10 +22,6 @@ steps:
       - name: gocache
         path: /go
     environment:
-      CGO_ENABLED: "0"
-      GO111MODULE: "on"
-      GOOS: linux
-      GOARCH: amd64
       GITLAB_DEPLOY_SSH_KNOWN_HOSTS:
         from_secret: GITLAB_DEPLOY_SSH_KNOWN_HOSTS
       GITLAB_DEPLOY_SSH_PRIVATE_KEY:
@@ -34,7 +36,7 @@ steps:
           echo "Need env var GITLAB_DEPLOY_SSH_KNOWN_HOSTS to have one or more host keys" ; exit 1 ; fi
       - echo "$${GITLAB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - echo "$${GITLAB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
-      - echo "On with the show."
+      - export PATH="$$PATH:/go/bin"
 
   - name: build
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -42,6 +44,7 @@ steps:
       - name: gocache
         path: /go
     commands:
+      - make deps
       - make install
     depends_on:
       - prepare
@@ -120,7 +123,6 @@ steps:
         path: /go
     commands:
       - code=0
-      - make deps
       - make rest_check || code=1
       - make proto_check || code=1
       - make gqlgen_check || code=1
