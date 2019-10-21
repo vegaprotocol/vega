@@ -1,11 +1,11 @@
 {
-  "schemaVersion": "0.0.1",
-  "description": "Example set of instructions with two parties submiting matching orders on the same market followed by query retrieving trades from that market - expecting one trade",
-  "instructions": [
+  "Description": "Example set of instructions with two parties submiting matching orders on the same market followed by query retrieving trades from that market - expecting one trade",
+  "Instructions": [
     {
-      "instruction": "NotifyTraderAccount",
-      "message": {
+      "Request": "trading.NotifyTraderAccount",
+      "Message": {
         "NotifyTraderAccountRequest": {
+          "@type": "api.NotifyTraderAccountRequest",
           "notif": {
             "traderID": "trader1"
           }
@@ -13,9 +13,10 @@
       }
     },
     {
-      "instruction": "SubmitOrder",
-      "message": {
+      "Request": "trading.SubmitOrder",
+      "Message": {
         "SubmitOrderRequest": {
+          "@type": "api.SubmitOrderRequest",
           "submission": {
             "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
             "PartyID": "trader1",
@@ -23,15 +24,16 @@
             "Size": 3,
             "Side": "Sell",
             "TimeInForce": "GTC",
-            "ExpiresAt": "2030-12-31T23:59:59.999Z"
+            "ExpiresAt": 1924991999000000000
           }
         }
       }
     },
     {
-      "instruction": "NotifyTraderAccount",
-      "message": {
+      "Request": "trading.NotifyTraderAccount",
+      "Message": {
         "NotifyTraderAccountRequest": {
+          "@type": "api.NotifyTraderAccountRequest",
           "notif": {
             "traderID": "trader2"
           }
@@ -39,10 +41,10 @@
       }
     },
     {
-      "instruction": "SubmitOrder",
-      "description": "Submit matching buy order so that a trade gets generated",
-      "message": {
+      "Request": "trading.SubmitOrder",
+      "Message": {
         "SubmitOrderRequest": {
+          "@type": "api.SubmitOrderRequest",
           "submission": {
             "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
             "PartyID": "trader2",
@@ -50,14 +52,15 @@
             "Size": 3,
             "Side": "Buy",
             "TimeInForce": "GTC",
-            "ExpiresAt": "2030-12-31T23:59:59.999Z"
+            "ExpiresAt": 1924991999000000000
           }
         }
       }
     },
     {
-      "instruction": "TradesByMarket",
-      "message": {
+      "Request": "trading_data.TradesByMarket",
+      "Message": {
+        "@type": "api.TradesByMarketRequest",
         "TradesByMarketRequest": {
           "MarketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL"
         }
