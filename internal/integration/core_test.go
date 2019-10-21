@@ -1,5 +1,3 @@
-// +build ignore
-
 package core_test
 
 import (
@@ -10,7 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/internal/collateral"
-	cmocks "code.vegaprotocol.io/vega/internal/collateral/mocks"
+	// cmocks "code.vegaprotocol.io/vega/internal/collateral/mocks"
 	"code.vegaprotocol.io/vega/internal/execution"
 	"code.vegaprotocol.io/vega/internal/execution/mocks"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -22,7 +20,6 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/DATA-DOG/godog"
-	// _ "github.com/DATA-DOG/godog/cmd/godog"
 	"github.com/DATA-DOG/godog/gherkin"
 	"github.com/golang/mock/gomock"
 	uuid "github.com/satori/go.uuid"
@@ -42,14 +39,16 @@ type tstReporter struct {
 }
 
 type tstSetup struct {
-	market     *proto.Market
-	ctrl       *gomock.Controller
-	core       *execution.Market
-	candles    *mocks.MockCandleStore
-	orders     *mocks.MockOrderStore
-	trades     *mocks.MockTradeStore
-	parties    *mocks.MockPartyStore
-	accounts   *cmocks.MockAccountBuffer
+	market   *proto.Market
+	ctrl     *gomock.Controller
+	core     *execution.Market
+	candles  *mocks.MockCandleStore
+	orders   *orderStub
+	trades   *tradeStub
+	parties  *mocks.MockPartyStore
+	transfer *mocks.MockTransferResponseStore
+	accounts *accStub
+	// accounts   *cmocks.MockAccountBuffer
 	accountIDs map[string]struct{}
 	traderAccs map[string]map[proto.AccountType]*proto.Account
 
@@ -72,16 +71,22 @@ func getMock(market *proto.Market) *tstSetup {
 	// the controller needs the reporter to report on errors or clunk out with fatal
 	ctrl := gomock.NewController(&reporter)
 	candles := mocks.NewMockCandleStore(ctrl)
-	orders := mocks.NewMockOrderStore(ctrl)
-	trades := mocks.NewMockTradeStore(ctrl)
+	// orders := mocks.NewMockOrderStore(ctrl)
+	orders := NewOrderStub()
+	// trades := mocks.NewMockTradeStore(ctrl)
+	trades := NewTradeStub()
 	parties := mocks.NewMockPartyStore(ctrl)
-	accounts := cmocks.NewMockAccountBuffer(ctrl)
+	accounts := NewAccountStub()
+	// accounts := cmocks.NewMockAccountBuffer(ctrl)
+	transfer := mocks.NewMockTransferResponseStore(ctrl)
 	colE, _ := collateral.New(
 		logging.NewTestLogger(),
 		collateral.NewDefaultConfig(),
 		accounts,
 		time.Now(),
 	)
+	// mock call to get the last candle
+	candles.EXPECT().FetchLastCandle(gomock.Any(), gomock.Any()).MinTimes(1).Return(&proto.Candle{}, nil)
 
 	setup := &tstSetup{
 		market:     market,
@@ -90,6 +95,7 @@ func getMock(market *proto.Market) *tstSetup {
 		orders:     orders,
 		trades:     trades,
 		parties:    parties,
+		transfer:   transfer,
 		accounts:   accounts,
 		accountIDs: map[string]struct{}{},
 		traderAccs: map[string]map[proto.AccountType]*proto.Account{},
@@ -99,16 +105,71 @@ func getMock(market *proto.Market) *tstSetup {
 	return setup
 }
 
-func theMarket(market string) error {
-	parts := strings.Split(market, "/")
+func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
+	// the header of the feature file (ie where to find the data in the row) looks like this:
+	// | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
+
+	// general stuff like name, ID, code, asset, and initial mark price
+	mkt.Name = row.Cells[0].Value
+	parts := strings.Split(mkt.Name, "/")
+	mkt.Id = fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1])
+	mkt.TradableInstrument.Instrument.Code = fmt.Sprintf("FX:%s%s", parts[0], parts[1])
+	prod := mkt.TradableInstrument.Instrument.GetFuture()
+	prod.Asset = parts[0]
+	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
+		Future: prod,
+	} // set asset, reassign the product
+	mkt.TradableInstrument.Instrument.InitialMarkPrice, _ = strconv.ParseUint(row.Cells[1].Value, 10, 64)
+
+	// wheter it's lambd/tau or short/long depends on the risk model
+	lambdShort, _ := strconv.ParseFloat(row.Cells[3].Value, 64)
+	tauLong, _ := strconv.ParseFloat(row.Cells[4].Value, 64)
+	// we'll always need to use these
+	release, _ := strconv.ParseFloat(row.Cells[8].Value, 64)
+	initial, _ := strconv.ParseFloat(row.Cells[9].Value, 64)
+	search, _ := strconv.ParseFloat(row.Cells[10].Value, 64)
+
+	// set scaling factors
+	mkt.TradableInstrument.MarginCalculator.ScalingFactors = &proto.ScalingFactors{
+		SearchLevel:       search,
+		InitialMargin:     initial,
+		CollateralRelease: release,
+	}
+
+	// simple risk model:
+	if row.Cells[2].Value == "simple" {
+		mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_SimpleRiskModel{
+			SimpleRiskModel: &proto.SimpleRiskModel{
+				Params: &proto.SimpleModelParams{
+					FactorLong:  tauLong,
+					FactorShort: lambdShort,
+				},
+			},
+		}
+		return
+	}
+	// for now, default to/assume future (forward risk model)
+	mu, _ := strconv.ParseFloat(row.Cells[5].Value, 64)
+	r, _ := strconv.ParseFloat(row.Cells[6].Value, 64)
+	sigma, _ := strconv.ParseFloat(row.Cells[7].Value, 64)
+	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_Forward{
+		Forward: &proto.Forward{
+			Lambd: lambdShort,
+			Tau:   tauLong,
+			Params: &proto.ModelParamsBS{
+				Mu:    mu,
+				R:     r,
+				Sigma: sigma,
+			},
+		},
+	}
+}
+
+func theMarket(mSetup *gherkin.DataTable) error {
+	// generic market config, ready to be populated with specs from scenario
 	mkt := &proto.Market{
-		Id:   market,
-		Name: market,
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
-				Id:   fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1]),
-				Code: fmt.Sprintf("FX:%s%s", parts[0], parts[1]),
-				Name: "December 2019 test future",
 				Metadata: &proto.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
@@ -124,29 +185,25 @@ func theMarket(market string) error {
 								Event:      "price_changed",
 							},
 						},
-						Asset: "ETH",
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_Forward{
-				Forward: &proto.Forward{
-					Lambd: 0.01,
-					Tau:   1.0 / 365.25 / 24,
-					Params: &proto.ModelParamsBS{
-						Mu:    0,
-						R:     0.016,
-						Sigma: 0.09,
-					},
-				},
-			},
+			MarginCalculator: &proto.MarginCalculator{},
 		},
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
 	}
+	for _, row := range mSetup.Rows {
+		// skip header
+		if row.Cells[0].Value == "name" {
+			continue
+		}
+		initialiseMarket(row, mkt)
+	}
 	log := logging.NewTestLogger()
 	// the controller needs the reporter to report on errors or clunk out with fatal
-	setup := getMock(mkt)
+	setup = getMock(mkt)
 	party := execution.NewParty(log, setup.colE, []proto.Market{*mkt}, setup.parties)
 	m, err := execution.NewMarket(
 		log,
@@ -161,8 +218,8 @@ func theMarket(market string) error {
 		setup.orders,
 		setup.parties,
 		setup.trades,
+		setup.transfer,
 		time.Now(),
-		1, // seq?
 	)
 	if err != nil {
 		return err
@@ -173,28 +230,13 @@ func theMarket(market string) error {
 }
 
 func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
-	// we're expecting 2 accounts to be created: a system insurance and general account
-	// types required
-	reqT := map[proto.AccountType]bool{
-		proto.AccountType_SETTLEMENT: false,
-		proto.AccountType_INSURANCE:  false,
-	}
-	setup.accounts.EXPECT().Add(gomock.Any()).Times(2).Do(func(a proto.Account) {
-		setup.accountIDs[a.Id] = struct{}{}
-		if _, ok := reqT[a.Type]; !ok {
-			reporter.err = fmt.Errorf("account type %s unexpectedly created when creating system accounts", a.Type.String())
-		} else {
-			reqT[a.Type] = true
-		}
-	})
+	// we currently have N accounts, creating system accounts should create 2 more accounts
+	current := len(setup.accounts.data)
 	// this should create market accounts, currently same way it's done in execution engine (register market)
-	// we can ignore the lines here safely
 	asset, _ := setup.market.GetAsset()
 	_, _ = setup.colE.CreateMarketAccounts(setup.core.GetID(), asset, 0)
-	for t, ok := range reqT {
-		if !ok && reporter.err == nil {
-			reporter.err = fmt.Errorf("creating system accounts failed to create %s account", t.String())
-		}
+	if len(setup.accounts.data) != current+2 {
+		reporter.err = fmt.Errorf("error creating system accounts")
 	}
 	return reporter.err
 }
@@ -204,29 +246,29 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 	// damn... positions engine is not open here, let's just ram through the trades, and update the balances after the fact
 	market := core.GetID()
 	maxPos := 100 // ensure we can move 100 positions either long or short, doesn't really matter which way
-	traderStates := map[string]traderState{}
-	tomorrow := time.Now().Add(time.Hour * 24)
+	// traderStates := map[string]traderState{}
+	// tomorrow := time.Now().Add(time.Hour * 24)
 	// each position will be put down as an order
-	orders := make([]*proto.Order, 0, len(traders.Rows))
+	// orders := make([]*proto.Order, 0, len(traders.Rows))
 	for _, row := range traders.Rows {
 		// skip first row
 		if row.Cells[0].Value == "trader" {
 			continue
 		}
 		// it's safe to ignore this error for now
-		// pos, err := strconv.Atoi(row.Cells[1].Value)
-		// if err != nil {
-		// return err
-		// }
+		pos, err := strconv.Atoi(row.Cells[1].Value)
+		if err != nil {
+			return err
+		}
 		// mark, err := strconv.Atoi(row.Cells[5].Value)
 		// if err != nil {
 		// return err
 		// }
-		margin, err := strconv.ParseInt(row.Cells[2].Value, 10, 64)
+		marginBal, err := strconv.ParseInt(row.Cells[2].Value, 10, 64)
 		if err != nil {
 			return err
 		}
-		general, err := strconv.ParseInt(row.Cells[3].Value, 10, 64)
+		generalBal, err := strconv.ParseInt(row.Cells[3].Value, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -234,13 +276,12 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		if pos > maxPos {
 			maxPos = pos
 		}
-		core.accounts.EXPECT().Add(gomock.Any()).Times(2)
-		marginBal, generalBal := core.colE.CreateTraderAccount(row.Cells[0].Value, market, core.Asset)
-		core.accounts.EXPECT().Add(gomock.Any()).Times(2)
-		_ = core.colE.IncrementBalance(margin, marginBal)
-		_ = core.colE.IncrementBalance(general, generalBal)
+		asset, _ := setup.market.GetAsset()
+		margin, general := setup.colE.CreateTraderAccount(row.Cells[0].Value, market, asset)
+		_ = setup.colE.IncrementBalance(margin, marginBal)
+		_ = setup.colE.IncrementBalance(general, generalBal)
 		// add trader accounts to map - this is the state they should have now
-		core.traderAccs[rows.Cells[0].Value] = map[proto.AccountType]*proto.Account{
+		setup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{
 			proto.AccountType_MARGIN: &proto.Account{
 				Id:      margin,
 				Type:    proto.AccountType_MARGIN,
@@ -295,12 +336,26 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 
 func theFollowingOrders(orderT *gherkin.DataTable) error {
 	tomorrow := time.Now().Add(time.Hour * 24)
+	core := setup.core
 	market := core.GetID()
+	calls := len(orderT.Rows)
+	// if the first row is a header row, exclude from the call count
+	if orderT.Rows[0].Cells[0].Value == "trader" {
+		calls--
+	}
 	// build + place all orders
 	for _, row := range orderT.Rows {
 		if row.Cells[0].Value == "trader" {
 			continue
 		}
+		// else expect call to get party
+		setup.parties.EXPECT().GetByID(row.Cells[0].Value).Times(1).Return(
+			&proto.Party{
+				Id: row.Cells[0].Value,
+			},
+			nil,
+		)
+
 		side := proto.Side_Buy
 		if row.Cells[1].Value == "sell" {
 			side = proto.Side_Sell
@@ -313,28 +368,79 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 		if err != nil {
 			return err
 		}
-		order := proto.Order{
-			Id:        uuid.NewV4().String(),
-			MarketID:  market,
-			PartyID:   row.Cells[0].Value,
-			Side:      side,
-			Price:     uint64(price),
-			Size:      uint64(vol),
-			ExpiresAt: tomorrow.Unix(),
-		}
-		if _, err := core.SubmitOrder(&order); err != nil {
+		expTrades, err := strconv.Atoi(row.Cells[4].Value)
+		if err != nil {
 			return err
+		}
+		order := proto.Order{
+			Id:          uuid.NewV4().String(),
+			MarketID:    market,
+			PartyID:     row.Cells[0].Value,
+			Side:        side,
+			Price:       uint64(price),
+			Size:        uint64(vol),
+			Remaining:   uint64(vol),
+			ExpiresAt:   tomorrow.Unix(),
+			Type:        proto.Order_LIMIT,
+			TimeInForce: proto.Order_GTT,
+			CreatedAt:   time.Now().UnixNano(),
+		}
+		result, err := core.SubmitOrder(&order)
+		if err != nil {
+			return err
+		}
+		if len(result.Trades) != expTrades {
+			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", expTrades, len(result.Trades), *result)
 		}
 	}
 	return nil
 }
 
-func iCheckTheUpdatedBalancesAndPositions() error {
-	return godog.ErrPending
+func tradersLiability(liablityTbl *gherkin.DataTable) error {
+	for _, row := range liablityTbl.Rows {
+		// skip header
+		if row.Cells[0].Value == "trader" {
+			continue
+		}
+		trader := row.Cells[0].Value
+		margin, err := strconv.ParseInt(row.Cells[4].Value, 10, 64)
+		if err != nil {
+			return err
+		}
+		general, err := strconv.ParseInt(row.Cells[5].Value, 10, 64)
+		if err != nil {
+			return err
+		}
+		accounts := setup.traderAccs[trader]
+		acc, err := setup.colE.GetAccountByID(accounts[proto.AccountType_MARGIN].Id)
+		if err != nil {
+			return err
+		}
+		// sync margin account state
+		setup.traderAccs[trader][proto.AccountType_MARGIN] = acc
+		if acc.Balance != margin {
+			return fmt.Errorf("expected %s margin account balance to be %d instead saw %d", trader, margin, acc.Balance)
+		}
+		acc, err = setup.colE.GetAccountByID(accounts[proto.AccountType_GENERAL].Id)
+		if err != nil {
+			return err
+		}
+		if acc.Balance != general {
+			return fmt.Errorf("expected %s general account balance to be %d, instead saw %d", trader, general, acc.Balance)
+		}
+		// sync general account state
+		setup.traderAccs[trader][proto.AccountType_GENERAL] = acc
+	}
+	return nil
 }
 
-func iExpectToSee(arg1 *gherkin.DataTable) error {
-	return godog.ErrPending
+func hasNotBeenAddedToTheMarket(trader string) error {
+	accounts := setup.traderAccs[trader]
+	acc, err := setup.colE.GetAccountByID(accounts[proto.AccountType_MARGIN].Id)
+	if err != nil || acc.Balance == 0 {
+		return nil
+	}
+	return fmt.Errorf("didn't expect %s to hava a margin account with balance, instead saw %d", trader, acc.Balance)
 }
 
 func FeatureContext(s *godog.Suite) {
@@ -354,12 +460,13 @@ func FeatureContext(s *godog.Suite) {
 			reporter.Fatalf("some mock assertion failed: %v", reporter.err)
 		}
 	})
-	s.Step(`^the market ([A-Z\\]{7})$`, theMarket)
+	s.Step(`^the market:$`, theMarket)
 	s.Step(`^the system accounts:$`, theSystemAccounts)
 	s.Step(`^traders have the following state:$`, tradersHaveTheFollowingState)
 	s.Step(`^the following orders:$`, theFollowingOrders)
-	s.Step(`^I check the updated balances and positions$`, iCheckTheUpdatedBalancesAndPositions)
-	s.Step(`^I expect to see:$`, iExpectToSee)
+	s.Step(`^I place the following orders:$`, theFollowingOrders)
+	s.Step(`^I expect the trader to have a margin liability:$`, tradersLiability)
+	s.Step(`^"([^"]*)" has not been added to the market$`, hasNotBeenAddedToTheMarket)
 }
 
 func (t tstReporter) Errorf(format string, args ...interface{}) {

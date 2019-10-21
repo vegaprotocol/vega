@@ -118,22 +118,19 @@ func getMarkets(closingAt time.Time) []proto.Market {
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_Forward{
-				Forward: &proto.Forward{
-					Lambd: 0.01,
-					Tau:   1.0 / 365.25 / 24,
-					Params: &proto.ModelParamsBS{
-						Mu:    0,
-						R:     0.016,
-						Sigma: 0.09,
-					},
-				},
-			},
 			MarginCalculator: &proto.MarginCalculator{
 				ScalingFactors: &proto.ScalingFactors{
 					SearchLevel:       1.1,
 					InitialMargin:     1.2,
 					CollateralRelease: 1.4,
+				},
+			},
+			RiskModel: &proto.TradableInstrument_SimpleRiskModel{
+				SimpleRiskModel: &proto.SimpleRiskModel{
+					Params: &proto.SimpleModelParams{
+						FactorLong:  0.15,
+						FactorShort: 0.25,
+					},
 				},
 			},
 		},

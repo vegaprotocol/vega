@@ -147,7 +147,7 @@ func NewMarket(
 	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
-		tradableInstrument.RiskModel, getInitialFactors(asset), book)
+		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book)
 	transferResponsesBuf := buffer.NewTransferResponse(transferResponseStore)
 	positionEngine := positions.New(log, positionConfig)
 	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
@@ -1031,7 +1031,18 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) (orderList []types.Order, 
 	return
 }
 
-func getInitialFactors(asset string) *types.RiskResult {
+// create an actual risk model, and calculate the risk factors
+// if something goes wrong, return the hard-coded values of old
+func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *types.RiskResult {
+	rm, err := risk.NewModel(log, mkt.TradableInstrument.RiskModel, asset)
+	// @TODO log this error
+	if err != nil {
+		return nil
+	}
+	if ok, fact := rm.CalculateRiskFactors(nil); ok {
+		return fact
+	}
+	// default to hard-coded risk factors
 	return &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
 			asset: {Long: 0.15, Short: 0.25},
