@@ -28,6 +28,23 @@ func TestPositionsEngineAcceptanceCriteria(t *testing.T) {
 	// NOTE: this will not be tested, as we do not remove a position from the engine when it reach 0
 	// Opening and closing positions for multiple traders, maintains position size for all open (non-zero) positions
 	t.Run("Does not change position size for a wash trade (buyer = seller)", testWashTradeDoNotChangePosition)
+
+	//No active buy orders, a new buy order is added to the order book
+	t.Run("Active buy orders, a new buy order is added to the order book", testNewOrderAddedToTheBook)
+	t.Run("Active sell orders, a new sell order is added to the order book", testNewOrderAddedToTheBook)
+	t.Run("Active buy order, an order initiated by another trader causes a partial amount of the existing buy order to trade.", testNewTradePartialAmountOfExistingOrderTraded)
+	t.Run("Active sell order, an order initiated by another trader causes a partial amount of the existing sell order to trade.", testNewTradePartialAmountOfExistingOrderTraded)
+	t.Run("Active buy order, an order initiated by another trader causes the full amount of the existing buy order to trade.", testTradeCauseTheFullAmountOfOrderToTrade)
+	t.Run("Active sell order, an order initiated by another trader causes the full amount of the existing sell order to trade.", testTradeCauseTheFullAmountOfOrderToTrade)
+	t.Run("Active buy orders, an existing order is cancelled", testOrderCancelled)
+	t.Run("Active sell orders, an existing order is cancelled", testOrderCancelled)
+
+	// NOTE: these nexts tests needs the integration test to be ran
+	// Active buy orders, an existing buy order is amended which increases its size.
+	// Active buy orders, an existing buy order is amended which decreases its size.
+	// Active buy orders, an existing buy order's price is amended such that it trades a partial amount.
+	// Active buy orders, an existing buy order's price is amended such that it trades in full.
+	// Active buy orders, an existing order expires
 }
 
 func testTradeOccurIncreaseShortAndLong(t *testing.T) {
@@ -559,5 +576,394 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 			}
 		}
 	}
+}
 
+func testNewOrderAddedToTheBook(t *testing.T) {
+	engine := getTestEngine(t)
+	traderA := "trader_a"
+	traderB := "trader_b"
+	cases := []struct {
+		order        types.Order
+		expectedBuy  int64
+		expectedSell int64
+		expectedSize int64
+	}{
+		{
+			// add an original buy order for A
+			order: types.Order{
+				Size:    10,
+				PartyID: traderA,
+				Side:    types.Side_Buy,
+			},
+			expectedBuy:  10,
+			expectedSell: 0,
+			expectedSize: 0,
+		},
+		{
+			// add and originak sell order for B
+			order: types.Order{
+				Size:    16,
+				PartyID: traderB,
+				Side:    types.Side_Sell,
+			},
+			expectedBuy:  0,
+			expectedSell: 16,
+			expectedSize: 0,
+		},
+		{
+			// update buy order for A
+			order: types.Order{
+				Size:    17,
+				PartyID: traderA,
+				Side:    types.Side_Buy,
+			},
+			expectedBuy:  27,
+			expectedSell: 0,
+			expectedSize: 0,
+		},
+		{
+			// update sell order for B
+			order: types.Order{
+				Size:    5,
+				PartyID: traderB,
+				Side:    types.Side_Sell,
+			},
+			expectedBuy:  0,
+			expectedSell: 21,
+			expectedSize: 0,
+		},
+	}
+
+	// no potions exists at the moment:
+	assert.Empty(t, engine.Positions())
+
+	for _, c := range cases {
+		pos, err := engine.RegisterOrder(&c.order)
+		assert.NoError(t, err)
+		assert.Equal(t, c.expectedBuy, pos.Buy())
+		assert.Equal(t, c.expectedSell, pos.Sell())
+		assert.Equal(t, c.expectedSize, pos.Size())
+	}
+}
+
+func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
+	engine := getTestEngine(t)
+	traderA := "trader_a"
+	traderB := "trader_b"
+	cases := struct {
+		orders  []types.Order
+		expects map[string]struct {
+			expectedBuy  int64
+			expectedSell int64
+			expectedSize int64
+		}
+	}{
+		orders: []types.Order{
+			{
+				Size:    10,
+				PartyID: traderA,
+				Side:    types.Side_Buy,
+			},
+			{
+				Size:    16,
+				PartyID: traderB,
+				Side:    types.Side_Sell,
+			},
+		},
+		expects: map[string]struct {
+			expectedBuy  int64
+			expectedSell int64
+			expectedSize int64
+		}{
+			traderA: {
+				expectedBuy:  10,
+				expectedSell: 0,
+				expectedSize: 0,
+			},
+			traderB: {
+				expectedBuy:  0,
+				expectedSell: 16,
+				expectedSize: 0,
+			},
+		},
+	}
+
+	// no potions exists at the moment:
+	assert.Empty(t, engine.Positions())
+
+	for i, c := range cases.orders {
+		_, err := engine.RegisterOrder(&c)
+		assert.NoError(t, err)
+		// ensure we have 1 position with 1 potential buy of size 10 for traderA
+		pos := engine.Positions()
+		assert.Len(t, pos, i+1)
+		for _, v := range pos {
+
+			assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
+			assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
+			assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())
+		}
+	}
+	// add a trade for a size of 3,
+	// potential buy should be 7, size 3
+	trade := proto.Trade{
+		Id:        "trade_i1",
+		MarketID:  "market_id",
+		Price:     100,
+		Size:      3,
+		Buyer:     traderA,
+		Seller:    traderB,
+		BuyOrder:  "buy_order_id1",
+		SellOrder: "sell_order_id1",
+		Timestamp: time.Now().Unix(),
+	}
+
+	// add the trade
+	ch := make(chan events.MarketPosition, 2)
+	wg := sync.WaitGroup{}
+	positions := make([]settlement.MarketPosition, 0, 2)
+	wg.Add(1)
+	go func() {
+		for p := range ch {
+			positions = append(positions, p)
+		}
+		wg.Done()
+	}()
+	// call an update on the positions with the trade
+	engine.Update(&trade, ch)
+	close(ch)
+	wg.Wait()
+	assert.Empty(t, ch)
+	pos := engine.Positions()
+	assert.Equal(t, 2, len(pos))
+	assert.Equal(t, 2, len(positions))
+
+	// check size of positions
+	for _, p := range pos {
+		if p.Party() == traderA {
+			assert.Equal(t, int64(3), p.Size())
+			assert.Equal(t, int64(7), p.Buy())
+		} else if p.Party() == traderB {
+			assert.Equal(t, int64(-3), p.Size())
+			assert.Equal(t, int64(13), p.Sell())
+		}
+	}
+}
+
+func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
+	engine := getTestEngine(t)
+	traderA := "trader_a"
+	traderB := "trader_b"
+	cases := struct {
+		orders  []types.Order
+		expects map[string]struct {
+			expectedBuy  int64
+			expectedSell int64
+			expectedSize int64
+		}
+	}{
+		orders: []types.Order{
+			{
+				Size:    10,
+				PartyID: traderA,
+				Side:    types.Side_Buy,
+			},
+			{
+				Size:    10,
+				PartyID: traderB,
+				Side:    types.Side_Sell,
+			},
+		},
+		expects: map[string]struct {
+			expectedBuy  int64
+			expectedSell int64
+			expectedSize int64
+		}{
+			traderA: {
+				expectedBuy:  10,
+				expectedSell: 0,
+				expectedSize: 0,
+			},
+			traderB: {
+				expectedBuy:  0,
+				expectedSell: 10,
+				expectedSize: 0,
+			},
+		},
+	}
+
+	// no potions exists at the moment:
+	assert.Empty(t, engine.Positions())
+
+	for i, c := range cases.orders {
+		_, err := engine.RegisterOrder(&c)
+		assert.NoError(t, err)
+		// ensure we have 1 position with 1 potential buy of size 10 for traderA
+		pos := engine.Positions()
+		assert.Len(t, pos, i+1)
+		for _, v := range pos {
+
+			assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
+			assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
+			assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())
+		}
+	}
+	// add a trade for a size of 3,
+	// potential buy should be 7, size 3
+	trade := proto.Trade{
+		Id:        "trade_i1",
+		MarketID:  "market_id",
+		Price:     100,
+		Size:      10,
+		Buyer:     traderA,
+		Seller:    traderB,
+		BuyOrder:  "buy_order_id1",
+		SellOrder: "sell_order_id1",
+		Timestamp: time.Now().Unix(),
+	}
+
+	// add the trade
+	ch := make(chan events.MarketPosition, 2)
+	wg := sync.WaitGroup{}
+	positions := make([]settlement.MarketPosition, 0, 2)
+	wg.Add(1)
+	go func() {
+		for p := range ch {
+			positions = append(positions, p)
+		}
+		wg.Done()
+	}()
+	// call an update on the positions with the trade
+	engine.Update(&trade, ch)
+	close(ch)
+	wg.Wait()
+	assert.Empty(t, ch)
+	pos := engine.Positions()
+	assert.Equal(t, 2, len(pos))
+	assert.Equal(t, 2, len(positions))
+
+	// check size of positions
+	for _, p := range pos {
+		if p.Party() == traderA {
+			assert.Equal(t, int64(10), p.Size())
+			assert.Equal(t, int64(0), p.Buy())
+		} else if p.Party() == traderB {
+			assert.Equal(t, int64(-10), p.Size())
+			assert.Equal(t, int64(0), p.Sell())
+		}
+	}
+}
+
+func testOrderCancelled(t *testing.T) {
+	engine := getTestEngine(t)
+	traderA := "trader_a"
+	traderB := "trader_b"
+	cases := struct {
+		orders  []types.Order
+		expects map[string]struct {
+			expectedBuy  int64
+			expectedSell int64
+			expectedSize int64
+		}
+	}{
+		orders: []types.Order{
+			{
+				Size:    10,
+				PartyID: traderA,
+				Side:    types.Side_Buy,
+			},
+			{
+				Size:    10,
+				PartyID: traderB,
+				Side:    types.Side_Sell,
+			},
+		},
+		expects: map[string]struct {
+			expectedBuy  int64
+			expectedSell int64
+			expectedSize int64
+		}{
+			traderA: {
+				expectedBuy:  10,
+				expectedSell: 0,
+				expectedSize: 0,
+			},
+			traderB: {
+				expectedBuy:  0,
+				expectedSell: 10,
+				expectedSize: 0,
+			},
+		},
+	}
+
+	// no potions exists at the moment:
+	assert.Empty(t, engine.Positions())
+
+	// first add the orders
+	for i, c := range cases.orders {
+		_, err := engine.RegisterOrder(&c)
+		assert.NoError(t, err)
+		// ensure we have 1 position with 1 potential buy of size 10 for traderA
+		pos := engine.Positions()
+		assert.Len(t, pos, i+1)
+		for _, v := range pos {
+
+			assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
+			assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
+			assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())
+		}
+	}
+
+	// then remove them
+	cases = struct {
+		orders  []types.Order
+		expects map[string]struct {
+			expectedBuy  int64
+			expectedSell int64
+			expectedSize int64
+		}
+	}{
+		orders: []types.Order{
+			{
+				Size:    10,
+				PartyID: traderA,
+				Side:    types.Side_Buy,
+			},
+			{
+				Size:    10,
+				PartyID: traderB,
+				Side:    types.Side_Sell,
+			},
+		},
+		expects: map[string]struct {
+			expectedBuy  int64
+			expectedSell int64
+			expectedSize int64
+		}{
+			traderA: {
+				expectedBuy:  0,
+				expectedSell: 0,
+				expectedSize: 0,
+			},
+			traderB: {
+				expectedBuy:  0,
+				expectedSell: 0,
+				expectedSize: 0,
+			},
+		},
+	}
+
+	// first add the orders
+	for _, c := range cases.orders {
+		_, err := engine.UnregisterOrder(&c)
+		assert.NoError(t, err)
+	}
+
+	// test everything is back to 0 once orders are unregistered
+	pos := engine.Positions()
+	for _, v := range pos {
+		assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
+		assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
+		assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())
+	}
 }
