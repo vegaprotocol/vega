@@ -384,11 +384,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.Trades != nil {
-		// Orders can contain several trades, each trade involves 2 traders
-		// so there's a max number of N*2 events on the channel where N == number of trades
-		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
-		// Now let's set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
-		// m.settlement.ListenClosed(tradersCh)
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -418,9 +413,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			m.setMarkPrice(trade)
 
 			// Update positions (this communicates with settlement via channel)
-			m.position.Update(trade, tradersCh)
+			m.position.Update(trade)
 		}
-		close(tradersCh)
 		// now let's get the transfers for MTM settlement
 		positions := m.position.Positions()
 		events := make([]events.MarketPosition, 0, len(positions))
@@ -533,6 +527,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	if networkPos == 0 {
 		// remove accounts, positions and return
 		closed = m.position.RemoveDistressed(closed)
+		// @TODO settlement engine needs to remove distressed traders here
 		asset, _ := m.mkt.GetAsset()
 		movements, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset)
 		if err != nil {
@@ -600,12 +595,6 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	}
 
 	if confirmation.Trades != nil {
-		// this is an order with a trader and the network, there's only 1 position that can possibly change, so the only position changes
-		// are the counter parties of this given trade (non-distressed traders), and they need to pass through MTM at the end
-		tradersCh := make(chan events.MarketPosition, len(confirmation.Trades))
-		// Set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
-		// settlement engine needs to be checked here
-		m.settlement.ListenClosed(tradersCh)
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", no.Id, idx)
@@ -633,9 +622,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			// we skip setting the mark price when the network is trading
 
 			// Update positions (this communicates with settlement via channel)
-			m.position.Update(trade, tradersCh)
+			m.position.Update(trade)
 		}
-		close(tradersCh)
 	}
 
 	if err := m.zeroOutNetwork(size, closed, &no, o); err != nil {

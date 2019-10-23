@@ -2,12 +2,9 @@ package positions_test
 
 import (
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/events"
-	"code.vegaprotocol.io/vega/internal/settlement"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/stretchr/testify/assert"
@@ -90,21 +87,8 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		ch := make(chan events.MarketPosition, 2)
-		wg := sync.WaitGroup{}
-		positions := make([]settlement.MarketPosition, 0, 2)
-		wg.Add(1)
-		go func() {
-			for p := range ch {
-				positions = append(positions, p)
-			}
-			wg.Done()
-		}()
 		// call an update on the positions with the trade
-		engine.Update(&c.trade, ch)
-		close(ch)
-		wg.Wait()
-		assert.Empty(t, ch)
+		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -164,21 +148,8 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		ch := make(chan events.MarketPosition, 2)
-		wg := sync.WaitGroup{}
-		positions := make([]settlement.MarketPosition, 0, 2)
-		wg.Add(1)
-		go func() {
-			for p := range ch {
-				positions = append(positions, p)
-			}
-			wg.Done()
-		}()
 		// call an update on the positions with the trade
-		engine.Update(&c.trade, ch)
-		close(ch)
-		wg.Wait()
-		assert.Empty(t, ch)
+		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -238,21 +209,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		ch := make(chan events.MarketPosition, 2)
-		wg := sync.WaitGroup{}
-		positions := make([]settlement.MarketPosition, 0, 2)
-		wg.Add(1)
-		go func() {
-			for p := range ch {
-				positions = append(positions, p)
-			}
-			wg.Done()
-		}()
-		// call an update on the positions with the trade
-		engine.Update(&c.trade, ch)
-		close(ch)
-		wg.Wait()
-		assert.Empty(t, ch)
+		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -312,21 +269,8 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		ch := make(chan events.MarketPosition, 2)
-		wg := sync.WaitGroup{}
-		positions := make([]settlement.MarketPosition, 0, 2)
-		wg.Add(1)
-		go func() {
-			for p := range ch {
-				positions = append(positions, p)
-			}
-			wg.Done()
-		}()
 		// call an update on the positions with the trade
-		engine.Update(&c.trade, ch)
-		close(ch)
-		wg.Wait()
-		assert.Empty(t, ch)
+		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -370,21 +314,7 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	// now create a trade an make sure the positions are created an correct
-	ch := make(chan events.MarketPosition, 2)
-	wg := sync.WaitGroup{}
-	positions := make([]settlement.MarketPosition, 0, 2)
-	wg.Add(1)
-	go func() {
-		for p := range ch {
-			positions = append(positions, p)
-		}
-		wg.Done()
-	}()
-	// call an update on the positions with the trade
-	engine.Update(&c.trade, ch)
-	close(ch)
-	wg.Wait()
-	assert.Empty(t, ch)
+	positions := engine.Update(&c.trade)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))
@@ -470,21 +400,7 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		ch := make(chan events.MarketPosition, 2)
-		wg := sync.WaitGroup{}
-		positions := make([]settlement.MarketPosition, 0, 2)
-		wg.Add(1)
-		go func() {
-			for p := range ch {
-				positions = append(positions, p)
-			}
-			wg.Done()
-		}()
-		// call an update on the positions with the trade
-		engine.Update(&c.trade, ch)
-		close(ch)
-		wg.Wait()
-		assert.Empty(t, ch)
+		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, c.posSize, len(pos), fmt.Sprintf("all pos trade: %v", c.trade.Id))
 		assert.Equal(t, 2, len(positions), fmt.Sprintf("chan trade: %v", c.trade.Id))
@@ -548,21 +464,8 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		ch := make(chan events.MarketPosition, 2)
-		wg := sync.WaitGroup{}
-		positions := make([]settlement.MarketPosition, 0, 2)
-		wg.Add(1)
-		go func() {
-			for p := range ch {
-				positions = append(positions, p)
-			}
-			wg.Done()
-		}()
 		// call an update on the positions with the trade
-		engine.Update(&c.trade, ch)
-		close(ch)
-		wg.Wait()
-		assert.Empty(t, ch)
+		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -719,21 +622,8 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 	}
 
 	// add the trade
-	ch := make(chan events.MarketPosition, 2)
-	wg := sync.WaitGroup{}
-	positions := make([]settlement.MarketPosition, 0, 2)
-	wg.Add(1)
-	go func() {
-		for p := range ch {
-			positions = append(positions, p)
-		}
-		wg.Done()
-	}()
 	// call an update on the positions with the trade
-	engine.Update(&trade, ch)
-	close(ch)
-	wg.Wait()
-	assert.Empty(t, ch)
+	positions := engine.Update(&trade)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))
@@ -823,21 +713,8 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 	}
 
 	// add the trade
-	ch := make(chan events.MarketPosition, 2)
-	wg := sync.WaitGroup{}
-	positions := make([]settlement.MarketPosition, 0, 2)
-	wg.Add(1)
-	go func() {
-		for p := range ch {
-			positions = append(positions, p)
-		}
-		wg.Done()
-	}()
 	// call an update on the positions with the trade
-	engine.Update(&trade, ch)
-	close(ch)
-	wg.Wait()
-	assert.Empty(t, ch)
+	positions := engine.Update(&trade)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))

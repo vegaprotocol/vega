@@ -149,7 +149,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
-func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
+func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	// Not using defer e.mu.Unlock(), because defer calls add some overhead
 	// and this is called for each transaction, so we want to optimise as much as possible
 	// there aren't multiple returns here anyway, so just unlock as and when it's needed
@@ -182,11 +182,12 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	seller.sell -= int64(trade.Size)
 
 	// mark to market for all open positions
-	e.updatePositions(trade, ch)
+	e.updatePositions(trade)
 
-	// for now
-	ch <- *buyer
-	ch <- *seller
+	ret := []events.MarketPosition{
+		*buyer,
+		*seller,
+	}
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
@@ -198,6 +199,7 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	// we've set all the values now, unlock after logging
 	// because we're working on MarketPosition pointers
 	e.mu.Unlock()
+	return ret
 }
 
 // RemoveDistressed Removes positions for distressed traders, and returns the most up to date positions we have
@@ -216,7 +218,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 }
 
 // iterate over all open positions, for mark to market based on new market price
-func (e *Engine) updatePositions(trade *types.Trade, ch chan<- events.MarketPosition) {
+func (e *Engine) updatePositions(trade *types.Trade) {
 	for _, pos := range e.positions {
 		// just set the price for all positions here (this shouldn't actually be required, but we'll cross that bridge when we get there
 		pos.price = trade.Price
