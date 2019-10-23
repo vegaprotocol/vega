@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-
 	"log"
 	"os"
 
@@ -54,12 +53,12 @@ func commands() {
 				}
 				fmt.Println(dir)
 				if c.NArg() > 0 {
-					contents, err := readFiles(c.Args())
+					instructions, err := ProcessFiles(c.Args())
 					if err != nil {
 						return err
 					}
-					fmt.Println(contents)
-					return ErrNotImplemented
+					sr = sr
+
 					if optionalOutputFile != "" {
 						return ErrNotImplemented
 					}
