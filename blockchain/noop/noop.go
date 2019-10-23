@@ -138,7 +138,7 @@ func (n *NOOPChain) GetUnconfirmedTxCount(context.Context) (int, error) {
 }
 
 func (n *NOOPChain) Health() (*tmctypes.ResultHealth, error) {
-	return nil, nil
+	return &tmctypes.ResultHealth{}, nil
 }
 
 func (n *NOOPChain) SendTransaction(ctx context.Context, tx []byte) (bool, error) {

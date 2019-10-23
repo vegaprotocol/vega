@@ -165,7 +165,6 @@ func (c *Client) sendWithdrawCommand(
 }
 
 func (c *Client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (success bool, err error) {
-
 	// Tendermint requires unique transactions so we pre-pend a guid + pipe to the byte array.
 	// It's split on arrival out of consensus along with a byte that represents command e.g. cancel order
 	bytes, err = txEncode(bytes, cmd)
