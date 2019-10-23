@@ -184,6 +184,10 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	// mark to market for all open positions
 	e.updatePositions(trade, ch)
 
+	// for now
+	ch <- *buyer
+	ch <- *seller
+
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
 			logging.Trade(*trade),
@@ -216,7 +220,6 @@ func (e *Engine) updatePositions(trade *types.Trade, ch chan<- events.MarketPosi
 	for _, pos := range e.positions {
 		// just set the price for all positions here (this shouldn't actually be required, but we'll cross that bridge when we get there
 		pos.price = trade.Price
-		ch <- pos
 	}
 }
 
@@ -226,7 +229,9 @@ func (e *Engine) Positions() []MarketPosition {
 	e.mu.RLock()
 	out := make([]MarketPosition, 0, len(e.positions))
 	for _, value := range e.positions {
-		out = append(out, *value)
+		if value.size != 0 || value.buy != 0 || value.sell != 0 {
+			out = append(out, *value)
+		}
 	}
 	e.mu.RUnlock()
 	timer.EngineTimeCounterAdd()

@@ -189,7 +189,7 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 	e.closed = map[string][]*pos{}
 	for _, pos := range positions {
 		size := pos.Size()
-		// price := pos.Price()
+		price := pos.Price()
 		trader := pos.Party()
 		current := e.getCurrentPosition(trader)
 		// markPrice was already set by positions engine
@@ -204,9 +204,9 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 		// 	price = current.price
 		// }
 		// first we MTM the old position, exclude closed positions
-		mtmShare := calcMTM(int64(markPrice), current.size, int64(current.price), closedOut)
+		mtmShare := calcMTM(int64(markPrice), current.size, int64(current.price), nil)
 		// now MTM the new position if needed
-		// mtmShare += calcMTM(int64(markPrice), size, int64(price), closedOut)
+		mtmShare += calcMTM(int64(markPrice), size, int64(price), closedOut)
 		// update position
 		current.size = size
 		current.price = markPrice

@@ -388,16 +388,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		// so there's a max number of N*2 events on the channel where N == number of trades
 		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
 		// Now let's set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
-		m.settlement.ListenClosed(tradersCh)
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		settleEvents := make([]events.MarketPosition, 0, 2*len(confirmation.Trades))
-		go func() {
-			for e := range tradersCh {
-				settleEvents = append(settleEvents, e)
-			}
-			wg.Done()
-		}()
+		// m.settlement.ListenClosed(tradersCh)
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -431,20 +422,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		}
 		close(tradersCh)
 		// now let's get the transfers for MTM settlement
-		wg.Wait()
-		// positions := m.position.Positions()
-		// events := make([]events.MarketPosition, 0, len(positions))
-		// for _, p := range positions {
-		// 	events = append(events, p)
-		// }
-		// settle := m.settlement.SettleOrder(m.markPrice, events)
-		settle := m.settlement.SettleOrder(m.markPrice, settleEvents)
-		if len(settle) != 0 {
-			m.log.Debug(
-				"Settlement stuff",
-				logging.Int("nr of settlement", len(settle)),
-			)
+		positions := m.position.Positions()
+		events := make([]events.MarketPosition, 0, len(positions))
+		for _, p := range positions {
+			events = append(events, p)
 		}
+		settle := m.settlement.SettleOrder(m.markPrice, events)
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
 		if len(margins) > 0 {
