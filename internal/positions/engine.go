@@ -172,8 +172,6 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 		}
 		e.positions[trade.Seller] = seller
 	}
-	// mark to market for all open positions
-	e.updatePositions(trade)
 	// Update long/short actual position for buyer and seller.
 	// The buyer's position increases and the seller's position decreases.
 	buyer.size += int64(trade.Size)
@@ -183,10 +181,8 @@ func (e *Engine) Update(trade *types.Trade, ch chan<- events.MarketPosition) {
 	buyer.buy -= int64(trade.Size)
 	seller.sell -= int64(trade.Size)
 
-	// these positions need to be added, too
-	// in case the price of the trade != mark price
-	ch <- buyer
-	ch <- seller
+	// mark to market for all open positions
+	e.updatePositions(trade, ch)
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
@@ -216,10 +212,11 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 }
 
 // iterate over all open positions, for mark to market based on new market price
-func (e *Engine) updatePositions(trade *types.Trade) {
+func (e *Engine) updatePositions(trade *types.Trade, ch chan<- events.MarketPosition) {
 	for _, pos := range e.positions {
 		// just set the price for all positions here (this shouldn't actually be required, but we'll cross that bridge when we get there
 		pos.price = trade.Price
+		ch <- pos
 	}
 }
 
