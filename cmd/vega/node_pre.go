@@ -6,7 +6,6 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/fsutil"
@@ -144,11 +143,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}()
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
-	if l.blockchainClient, err = blockchain.NewClient(&l.conf.Blockchain); err != nil {
-		return
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.timeService.ReloadConf(cfg.Time) })
-
+	/*
+		if l.blockchainClient, err = blockchain.NewClient(&l.conf.Blockchain); err != nil {
+			return
+		}
+		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.timeService.ReloadConf(cfg.Time) })
+	*/
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
 		return

@@ -57,6 +57,7 @@ type NodeCommand struct {
 	accountsService  *accounts.Svc
 	transfersService *transfers.Svc
 
+	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
 
 	pproffhandlr *pprof.Pprofhandler
@@ -113,29 +114,43 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { executionEngine.ReloadConf(cfg.Execution) })
 
-	// ABCI<>blockchain server
-	bcService := blockchain.NewService(l.Log, l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcService.ReloadConf(cfg.Blockchain) })
+	/*
+		// ABCI<>blockchain server
+		bcService := blockchain.NewService(l.Log, l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
+		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcService.ReloadConf(cfg.Blockchain) })
 
-	bcProcessor := blockchain.NewProcessor(l.Log, l.conf.Blockchain, bcService)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcProcessor.ReloadConf(cfg.Blockchain) })
 
-	bcApp := blockchain.NewApplication(
-		l.Log,
-		l.conf.Blockchain,
-		l.stats.Blockchain,
-		bcProcessor,
-		bcService,
-		l.timeService,
-		l.cancel,
-	)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcApp.ReloadConf(cfg.Blockchain) })
+		bcProcessor := blockchain.NewProcessor(l.Log, l.conf.Blockchain, bcService)
+		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcProcessor.ReloadConf(cfg.Blockchain) })
 
-	socketServer := blockchain.NewServer(l.Log, l.conf.Blockchain, l.stats.Blockchain, bcApp)
-	if err := socketServer.Start(); err != nil {
-		return errors.Wrap(err, "ABCI socket server error")
+		bcApp := blockchain.NewApplication(
+			l.Log,
+			l.conf.Blockchain,
+			l.stats.Blockchain,
+			bcProcessor,
+			bcService,
+			l.timeService,
+			l.cancel,
+		)
+		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcApp.ReloadConf(cfg.Blockchain) })
+
+		socketServer := blockchain.NewServer(l.Log, l.conf.Blockchain, l.stats.Blockchain, bcApp)
+		if err := socketServer.Start(); err != nil {
+			return errors.Wrap(err, "ABCI socket server error")
+		}
+		l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { socketServer.ReloadConf(cfg.Blockchain) })
+	*/
+
+	// start the chain now
+	var err error
+	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, executionEngine, l.timeService, l.stats.Blockchain, l.cancel)
+	if err != nil {
+		return errors.Wrap(err, "unable to start the blockchain")
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { socketServer.ReloadConf(cfg.Blockchain) })
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.blockchain.ReloadConf(cfg.Blockchain) })
+
+	// get the chain client as well.
+	l.blockchainClient = l.blockchain.Client()
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
@@ -144,7 +159,6 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.stats.SetChainVersion(v)
 	})
 
-	var err error
 	if l.conf.Auth.Enabled {
 		l.auth, err = auth.New(l.ctx, l.Log, l.conf.Auth)
 		if err != nil {
@@ -192,7 +206,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	// Clean up and close resources
 	grpcServer.Stop()
-	socketServer.Stop()
+	l.blockchain.Stop()
 	statusChecker.Stop()
 
 	// cleanup gateway

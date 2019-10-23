@@ -3,9 +3,9 @@ package blockchain
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
@@ -237,7 +237,7 @@ func (p *Processor) payloadExists(payloadHash *string) (bool, error) {
 
 // resetSeenPayloads is used to reset the map containing the list of keys for payloads
 // seen in the current batch, seenPayloads is a safety check for dupes per batch.
-func (p *Processor) resetSeenPayloads() {
+func (p *Processor) ResetSeenPayloads() {
 	p.seenPayloads = map[string]byte{}
 }
 

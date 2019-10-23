@@ -1,9 +1,9 @@
-package blockchain
+package tm
 
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/internal/logging"
 
 	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -11,14 +11,14 @@ import (
 
 // Server is an abstraction over the abci server
 type Server struct {
-	log *logging.Logger
 	Config
+	log  *logging.Logger
 	abci *AbciApplication
 	srv  cmn.Service
 }
 
 // NewServer instanciate a new server
-func NewServer(log *logging.Logger, config Config, stats *Stats, app *AbciApplication) *Server {
+func NewServer(log *logging.Logger, config Config, app *AbciApplication) *Server {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())

@@ -47,10 +47,19 @@ func (s *Stats) Height() uint64 {
 	return s.height
 }
 
+// IncHeight increment the height of the chain
+func (s *Stats) IncHeight() {
+	s.height++
+}
+
 // AverageTxSizeBytes return the average size in bytes of the
 // transaction sent to vega
 func (s *Stats) AverageTxSizeBytes() int {
 	return s.averageTxSizeBytes
+}
+
+func (s *Stats) SetAverageTxSizeBytes(i int) {
+	s.averageTxSizeBytes = i
 }
 
 // AverageTxPerBatch return the average number of
@@ -59,10 +68,30 @@ func (s *Stats) AverageTxPerBatch() int {
 	return s.averageTxPerBatch
 }
 
+func (s *Stats) SetAverageTxPerBatch(i int) {
+	s.averageTxPerBatch = i
+}
+
 // TotalTxLastBatch return the number of transaction
 // processed in the last accepted block in the chain
 func (s *Stats) TotalTxLastBatch() int {
 	return s.totalTxLastBatch
+}
+
+func (s *Stats) SetTotalTxLastBatch(i int) {
+	s.totalTxLastBatch = i
+}
+
+func (s *Stats) SetTotalTxCurrentBatch(i int) {
+	s.totalTxCurrentBatch = i
+}
+
+func (s *Stats) TotalTxCurrentBatch() int {
+	return s.totalTxCurrentBatch
+}
+
+func (s *Stats) IncTotalTxCurrentBatch() {
+	s.totalTxCurrentBatch++
 }
 
 // TotalOrdersLastBatch returns the number of orders
