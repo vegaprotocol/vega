@@ -8,12 +8,6 @@ platform:
   arch: amd64
   os: linux
 
-environment:
-  CGO_ENABLED: "0"
-  GO111MODULE: "on"
-  GOOS: linux
-  GOARCH: amd64
-
 steps:
   - name: build
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -37,13 +31,14 @@ steps:
       - echo "$${GITLAB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - echo "$${GITLAB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
       - unset GITLAB_DEPLOY_SSH_KNOWN_HOSTS GITLAB_DEPLOY_SSH_PRIVATE_KEY
+      - export CGO_ENABLED=0 GO111MODULE=on GOOS=linux GOARCH=amd64
       - env |sort
       - make deps
-      - make install
+      - make build
     depends_on: []
 
-  # Lightweight tests to be run on all branches.
-  - name: test_light
+  # Tests to be run on *all* branches.
+  - name: test
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     volumes:
       - name: gopkg
@@ -52,6 +47,7 @@ steps:
       GITLAB_API_TOKEN:
         from_secret: GITLAB_API_TOKEN
     commands:
+      - env |sort
       - make test
       - make coveragehtml
       # More small checks. Run all, instead of exitng after first failure.
@@ -66,7 +62,7 @@ steps:
     depends_on:
       - build
 
-  # Heavyweight tests to be run on main branches only.
+  # Tests to be run only on *main* branches.
   - name: test_heavy
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     volumes:
@@ -100,7 +96,7 @@ steps:
           echo ;
         done'
     depends_on:
-      - test_light
+      - test
       - test_heavy
     when:
       branch:
@@ -112,18 +108,18 @@ steps:
     commands:
       - apps="$$(find cmd -maxdepth 1 -and -not -name cmd | awk -F/ '{print $$2}')"
       - 'for app in $$apps ; do
-          f="/go/bin/$$app" ;
+          f="cmd/$$app/$$app" ;
           if ! test -f "$$f" ; then echo "Failed to find: $$f" ; exit 1 ; fi ;
           cp -a "$f$" . || exit 1 ;
         done'
       - imgtag="$${DRONE_BRANCH}"
-      - if test -z "$$imgtag" ; then imgtag="$${DRPNE_TAG}" ; fi
+      - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
       - if test -z "$$imgtag" ; then exit 1 ; fi
       - docker build -t "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" -f Dockerfile.quick . || exit 0
       - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
       - for app in $$apps ; do rm -f "./$app"; done
     depends_on:
-      - test_light
+      - test
       - test_heavy
     when:
       branch:
