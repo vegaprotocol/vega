@@ -9,7 +9,7 @@ gettools_build() {
 	# These are the minimum tools required to build trading-core.
 
 	# tools = "golocation@version"
-	tools="github.com/vegaprotocol/modvendor@v0.0.1"
+	tools="github.com/vegaprotocol/modvendor@v0.0.2"
 	# Note: Make sure the above tools and versions match the ones in devops-infra/docker/cipipeline/Dockerfile
 	echo "$tools" | while read -r toolurl ; do
 		go get "$toolurl"

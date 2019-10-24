@@ -230,6 +230,39 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	return ret
 }
 
+// ExpectMargin is used in the case some traders are in a distressed positions
+// in this situation we will only check if the trader margin is > to the maintenance margin
+func (e *Engine) ExpectMargins(
+	evts []events.Margin, markPrice uint64,
+) (okMargins []events.Margin, distressedPositions []events.MarketPosition) {
+	okMargins = make([]events.Margin, 0, len(evts)/2)
+	distressedPositions = make([]events.MarketPosition, 0, len(evts)/2)
+	for _, evt := range evts {
+		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
+		// no margins updates, nothing to do then
+		if margins == nil {
+			okMargins = append(okMargins, evt)
+			continue
+		}
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("margins calculated",
+				logging.String("party-id", evt.Party()),
+				logging.String("market-id", evt.MarketID()),
+				logging.Reflect("margins", *margins),
+			)
+		}
+
+		curMargin := int64(evt.MarginBalance())
+		if curMargin > margins.MaintenanceMargin {
+			okMargins = append(okMargins, evt)
+		} else {
+			distressedPositions = append(distressedPositions, evt)
+		}
+	}
+
+	return
+}
+
 func (m marginChange) Amount() int64 {
 	return m.amount
 }

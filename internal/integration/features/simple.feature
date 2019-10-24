@@ -22,6 +22,7 @@ Feature: Test trading-core flow with simple risk model
             | trader  | position | buy | sell | margin | general |
             | trader1 | 0        | 0   | 1    | 132    | 99868   |
         And "trader2" has not been added to the market
+        And the mark price is "1000"
 
     Scenario: two traders place orders at different prices, lower buy price (no trade is created)
         Given the following orders:
@@ -33,6 +34,7 @@ Feature: Test trading-core flow with simple risk model
             | trader1 | 0        | 0   | 1    | 132    | 99868   |
             | trader2 | 0        | 1   | 0    | 120    | 99880   |
         And "trader3" has not been added to the market
+        And the mark price is "1000"
 
     Scenario: Three traders place orders, resulting in two trade
         Given the following orders:
@@ -48,9 +50,10 @@ Feature: Test trading-core flow with simple risk model
             | trader3 | buy  | 1      | 1020  | 1                |
         Then I expect the trader to have a margin liability:
             | trader  | position | buy | sell | margin | general |
-            | trader1 | -2       | 0   | 0    | 264    | 99736   |
-            | trader2 | 1        | 0   | 0    | 120    | 99880   |
+            | trader1 | -2       | 0   | 0    | 268    | 99692   |
+            | trader2 | 1        | 0   | 0    | 142    | 99898   |
             | trader3 | 1        | 0   | 0    | 117    | 99883   |
+        And the mark price is "1020"
 
     Scenario: two traders place orders at different prices, with a higher buy price (creates trade)
         Given the following orders:
@@ -62,4 +65,5 @@ Feature: Test trading-core flow with simple risk model
             | trader1 | -1       | 0   | 0    | 132    | 99868   |
             | trader2 | 1        | 0   | 0    | 120    | 99880   |
         And "trader3" has not been added to the market
+        And the mark price is "1010"
 

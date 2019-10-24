@@ -9,7 +9,6 @@ require (
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/ethereum/go-ethereum v1.8.22 // indirect
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-kit/kit v0.8.0 // indirect
@@ -18,7 +17,6 @@ require (
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.2
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
-	github.com/google/protobuf v3.7.0+incompatible // indirect
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
@@ -36,7 +34,6 @@ require (
 	github.com/syndtr/goleveldb v0.0.0-20190203031304-2f17a3356c66 // indirect
 	github.com/tendermint/go-amino v0.14.1 // indirect
 	github.com/tendermint/tendermint v0.31.5
-	github.com/vegaprotocol/modvendor v0.0.1 // indirect
 	github.com/vektah/gqlparser v1.1.2
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.5.0

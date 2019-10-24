@@ -220,6 +220,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		setup.trades,
 		setup.transfer,
 		time.Now(),
+		execution.NewIDGen(),
 	)
 	if err != nil {
 		return err
@@ -443,6 +444,14 @@ func hasNotBeenAddedToTheMarket(trader string) error {
 	return fmt.Errorf("didn't expect %s to hava a margin account with balance, instead saw %d", trader, acc.Balance)
 }
 
+func theMarkPriceIs(markPrice string) error {
+	price, _ := strconv.ParseUint(markPrice, 10, 64)
+	if setup.core.GetMarkPrice() != price {
+		return fmt.Errorf("expected mark price of %d instead saw %d", price, setup.core.GetMarkPrice())
+	}
+	return nil
+}
+
 func FeatureContext(s *godog.Suite) {
 	// each step changes the output from the reporter
 	// so we know where a mock failed
@@ -467,6 +476,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I place the following orders:$`, theFollowingOrders)
 	s.Step(`^I expect the trader to have a margin liability:$`, tradersLiability)
 	s.Step(`^"([^"]*)" has not been added to the market$`, hasNotBeenAddedToTheMarket)
+	s.Step(`^the mark price is "([^"]+)"$`, theMarkPriceIs)
 }
 
 func (t tstReporter) Errorf(format string, args ...interface{}) {

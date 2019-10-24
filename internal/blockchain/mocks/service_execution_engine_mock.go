@@ -105,3 +105,17 @@ func (mr *MockServiceExecutionEngineMockRecorder) SubmitOrder(arg0 interface{}) 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockServiceExecutionEngine)(nil).SubmitOrder), arg0)
 }
+
+// Withdraw mocks base method
+func (m *MockServiceExecutionEngine) Withdraw(arg0 *proto.Withdraw) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Withdraw", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Withdraw indicates an expected call of Withdraw
+func (mr *MockServiceExecutionEngineMockRecorder) Withdraw(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdraw", reflect.TypeOf((*MockServiceExecutionEngine)(nil).Withdraw), arg0)
+}

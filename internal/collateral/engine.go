@@ -246,9 +246,9 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 
 // MarginUpdate will run the margin updates over a set of risk events (margin updates)
 func (e *Engine) MarginUpdate(marketID string, updates []events.Risk,
-) ([]*types.TransferResponse, []events.MarketPosition, error) {
+) ([]*types.TransferResponse, []events.Margin, error) {
 	response := make([]*types.TransferResponse, 0, len(updates))
-	closed := make([]events.MarketPosition, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
+	closed := make([]events.Margin, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
 	// create "fake" settle account for market ID
 	settle := &types.Account{
 		MarketID: marketID,
@@ -883,6 +883,30 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition, marketID, ass
 		}
 	}
 	return &resp, nil
+}
+
+// Withdraw will remove the specified amount from the trader
+// general account
+func (e *Engine) Withdraw(partyID, asset string, amount uint64) error {
+	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_GENERAL))
+	if err != nil {
+		return ErrAccountDoNotExists
+	}
+
+	// check we have more money than required to withdraw
+	if uint64(acc.Balance) < amount {
+		// if we have less balance than required to withdraw, just set it to 0
+		// and return an error
+		if err := e.UpdateBalance(acc.Id, 0); err != nil {
+			return err
+		}
+		return fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
+	}
+
+	if err := e.IncrementBalance(acc.Id, -int64(amount)); err != nil {
+		return err
+	}
+	return nil
 }
 
 // UpdateBalance will update the balance of a given account
