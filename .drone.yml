@@ -150,7 +150,7 @@ steps:
         - 491-implement-drone-ci-config
 
 services:
-  docker:
+  - name: docker
     image: docker:dind
     privileged: true
     command: [ '-H', 'unix:///drone/docker.sock' ]
