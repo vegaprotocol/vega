@@ -37,6 +37,7 @@ steps:
       - unset GITLAB_DEPLOY_SSH_KNOWN_HOSTS GITLAB_DEPLOY_SSH_PRIVATE_KEY
       - make deps
       - make build
+      - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
     depends_on: []
 
   # Tests to be run on *all* branches.
@@ -59,7 +60,6 @@ steps:
       - make print_check || code=1
       - make rest_check || code=1
       - make proto_check || code=1
-      - make gqlgen_check || code=1
       - bash script/diff_graphqlschema.sh || code=1  # requires GITLAB_API_TOKEN
       - /usr/local/bin/multilint || code=1
       - make lint || true  # Ignore lint failure for now (see #196)
