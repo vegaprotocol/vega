@@ -54,7 +54,6 @@ steps:
         from_secret: GITLAB_API_TOKEN
     commands:
       - make test
-      - make coveragehtml
       # More small checks. Run all, instead of exitng after first failure.
       - code=0
       - make print_check || code=1
