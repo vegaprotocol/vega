@@ -388,7 +388,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		}
 	}
 
-	if confirmation.Trades != nil {
+	if len(confirmation.Trades) > 0 {
+
+		// Calculate and set current mark price
+		m.setMarkPrice(confirmation.Trades[len(confirmation.Trades)-1])
+
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -414,19 +418,14 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					logging.Error(err))
 			}
 
-			// Calculate and set current mark price
-			m.setMarkPrice(trade)
-
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
 		}
+
 		// now let's get the transfers for MTM settlement
-		positions := m.position.Positions()
-		events := make([]events.MarketPosition, 0, len(positions))
-		for _, p := range positions {
-			events = append(events, p)
-		}
+		events := m.position.UpdateMarkPrice(m.markPrice)
 		settle := m.settlement.SettleOrder(m.markPrice, events)
+
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
 		if len(margins) > 0 {
@@ -659,11 +658,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		)
 	}
 	// get the updated positions
-	pos := m.position.Positions()
-	evt := make([]events.MarketPosition, 0, len(pos))
-	for _, p := range pos {
-		evt = append(evt, p)
-	}
+	evt := m.position.Positions()
 	// settle MTM, the positions have changed
 	settle := m.settlement.SettleOrder(m.markPrice, evt)
 	// we're not interested in the events here, they're used for margin updates

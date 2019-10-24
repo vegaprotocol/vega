@@ -181,9 +181,6 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	buyer.buy -= int64(trade.Size)
 	seller.sell -= int64(trade.Size)
 
-	// mark to market for all open positions
-	e.updatePositions(trade)
-
 	ret := []events.MarketPosition{
 		*buyer,
 		*seller,
@@ -217,6 +214,19 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 	return ret
 }
 
+// UpdateMarkPrice update the mark price on all positions and return a slice
+// of the updated positions
+func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
+	e.mu.RLock()
+	out := make([]events.MarketPosition, 0, len(e.positions))
+	for _, pos := range e.positions {
+		pos.price = markPrice
+		out = append(out, *pos)
+	}
+	e.mu.RUnlock()
+	return out
+}
+
 // iterate over all open positions, for mark to market based on new market price
 func (e *Engine) updatePositions(trade *types.Trade) {
 	for _, pos := range e.positions {
@@ -226,10 +236,10 @@ func (e *Engine) updatePositions(trade *types.Trade) {
 }
 
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push
-func (e *Engine) Positions() []MarketPosition {
+func (e *Engine) Positions() []events.MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "Positions")
 	e.mu.RLock()
-	out := make([]MarketPosition, 0, len(e.positions))
+	out := make([]events.MarketPosition, 0, len(e.positions))
 	for _, value := range e.positions {
 		if value.size != 0 || value.buy != 0 || value.sell != 0 {
 			out = append(out, *value)
