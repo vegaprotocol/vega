@@ -12,7 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-const badgerNamedLogger = "badger"
+const (
+	// Total number of batches to save/process before we try
+	// and garbage collect the BadgerDB value log files.
+	maxBatchesUntilValueLogGC = 300
+	// The identifier/name for BadgerDB logging.
+	badgerNamedLogger = "badger"
+)
 
 var (
 	// ErrTimeoutReached signals that at timeout occurs while processing
@@ -97,7 +103,7 @@ func DefaultStoreOptions() ConfigOptions {
 	opts.NumLevelZeroTables = 1
 	opts.NumLevelZeroTablesStall = 2
 
- */
+*/
 
 // GarbageCollectValueLog triggers a value log garbage collection.
 //We ignore errors reported when no rewrites are triggered, and if GC is already running.
