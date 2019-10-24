@@ -91,7 +91,6 @@ steps:
         - master
         - develop
         - release/*
-        - 491-implement-drone-ci-config  # TBD: remove
 
   - name: push_to_devnet
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -147,7 +146,6 @@ steps:
       branch:
         - master
         - develop
-        - 491-implement-drone-ci-config  # TBD: remove
 
 volumes:
   - name: gopkg
