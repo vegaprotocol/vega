@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/internal/risk/models"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/risk/models"
 )
 
 // RiskModel specifies a risk model handler which can be used as a http.Server.Handler.

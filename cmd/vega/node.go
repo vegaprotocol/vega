@@ -7,25 +7,25 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/accounts"
-	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/auth"
-	"code.vegaprotocol.io/vega/internal/blockchain"
-	"code.vegaprotocol.io/vega/internal/candles"
-	"code.vegaprotocol.io/vega/internal/config"
-	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/metrics"
-	"code.vegaprotocol.io/vega/internal/monitoring"
-	"code.vegaprotocol.io/vega/internal/orders"
-	"code.vegaprotocol.io/vega/internal/parties"
-	"code.vegaprotocol.io/vega/internal/pprof"
-	"code.vegaprotocol.io/vega/internal/storage"
-	"code.vegaprotocol.io/vega/internal/trades"
-	"code.vegaprotocol.io/vega/internal/transfers"
-	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/auth"
+	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/orders"
+	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/trades"
+	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -62,7 +62,7 @@ type NodeCommand struct {
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
 	conf         config.Config
-	stats        *internal.Stats
+	stats        *stats.Stats
 	withPPROF    bool
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher

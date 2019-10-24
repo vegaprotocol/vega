@@ -3,7 +3,7 @@ package main
 import (
 	"strings"
 
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
