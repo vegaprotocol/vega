@@ -40,6 +40,18 @@ steps:
       - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
     depends_on: []
 
+  - name: docker
+    image: docker:dind
+    privileged: true
+    command: ['-H', 'unix:///drone/docker.sock']
+    depends_on: []
+    detach: true
+    when:
+      branch:
+        - master
+        - develop
+        - 491-implement-drone-ci-config
+
   # Tests to be run on *all* branches.
   - name: test
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -148,12 +160,6 @@ steps:
         - master
         - develop
         - 491-implement-drone-ci-config
-
-services:
-  - name: docker
-    image: docker:dind
-    privileged: true
-    command: [ '-H', 'unix:///drone/docker.sock' ]
 
 volumes:
   - name: gopkg
