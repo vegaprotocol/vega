@@ -25,6 +25,7 @@ Feature: Test trading-core flow with future risk model
             | trader  | position | buy | sell | margin | general |
             | trader1 | 0        | 0   | 1    | 130    | 99870   |
         And "trader2" has not been added to the market
+        And the mark price is "1000"
 
     Scenario: two traders place orders at different prices
         Given the following orders:
@@ -36,6 +37,7 @@ Feature: Test trading-core flow with future risk model
             | trader1 | 0        | 0   | 1    | 130    | 99870   |
             | trader2 | 0        | 1   | 0    | 120    | 99880   |
         And "trader3" has not been added to the market
+        And the mark price is "1000"
 
     Scenario: Three traders place orders, resulting in two trade
         Given the following orders:
@@ -54,3 +56,4 @@ Feature: Test trading-core flow with future risk model
             | trader1 | -2       | 0   | 0    | 268    | 99692   |
             | trader2 | 1        | 0   | 0    | 142    | 99898   |
             | trader3 | 1        | 0   | 0    | 117    | 99883   |
+        And the mark price is "1020"
