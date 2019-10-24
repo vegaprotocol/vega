@@ -13,8 +13,8 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
