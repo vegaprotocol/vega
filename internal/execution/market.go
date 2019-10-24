@@ -530,9 +530,12 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	}
 	if networkPos == 0 {
 		// remove accounts, positions and return
+		// from settlement engine first
+		m.settlement.RemoveDistressed(closed)
+		// then from positions
 		closed = m.position.RemoveDistressed(closed)
-		// @TODO settlement engine needs to remove distressed traders here
 		asset, _ := m.mkt.GetAsset()
+		// finally remove from collateral (moving funds where needed)
 		movements, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset)
 		if err != nil {
 			m.log.Error(
