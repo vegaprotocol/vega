@@ -3,35 +3,38 @@ PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
 TAG := $(shell git describe --tags 2>/dev/null)
 
-# See https://docs.gitlab.com/ce/ci/variables/README.html for CI vars.
 ifeq ($(CI),)
 	# Not in CI
-	ifeq ($(TAG),)
-		# No tag, so make one
-		VERSION := dev-$(USER)
-	else
-		VERSION := dev-$(TAG)
-	endif
+	VERSION := dev-$(USER)
 	VERSION_HASH := $(shell git rev-parse HEAD | cut -b1-8)
 else
 	# In CI
-	ifeq ($(TAG),)
-		# No tag, so make one
-		ifeq ($(DRONE),)
-			# Gitlab
-			VERSION := interim-$(CI_COMMIT_REF_SLUG)
+	ifneq ($(GITLAB_CI),)
+		# In Gitlab: https://docs.gitlab.com/ce/ci/variables/predefined_variables.html
+
+		ifneq ($(TAG),)
+			VERSION := $(TAG)
 		else
+			# No tag, so make one
+			VERSION := interim-$(CI_COMMIT_REF_SLUG)
+		endif
+		VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
+
+	else ifneq ($(DRONE),)
+		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
+
+		ifneq ($(TAG),)
+			VERSION := $(TAG)
+		else
+			# No tag, so make one
 			VERSION := interim-$(CI_COMMIT_BRANCH)
 		endif
-	else
-		VERSION := $(TAG)
-	endif
-
-	ifeq ($(DRONE),)
-		# Gitlab
-		VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
-	else
 		VERSION_HASH := $(shell echo "$(CI_COMMIT_SHA)" | cut -b1-8)
+
+	else
+		# In an unknown CI
+		VERSION := unknown-CI
+		VERSION_HASH := unknown-CI
 	endif
 endif
 
