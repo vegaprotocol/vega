@@ -62,6 +62,7 @@ steps:
       - make proto_check || code=1
       - make gqlgen_check || code=1
       - bash script/diff_graphqlschema.sh || code=1  # requires GITLAB_API_TOKEN
+      - /usr/local/bin/multilint || code=1
       - make lint || true  # Ignore lint failure for now (see #196)
       - exit "$code"
     depends_on:
