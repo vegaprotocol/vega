@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/internal/risk/models"
+	"code.vegaprotocol.io/vega/risk/models"
 	types "code.vegaprotocol.io/vega/proto"
 )
 

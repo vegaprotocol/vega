@@ -28,7 +28,7 @@ import (
 	"sync"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/vegatime"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
 	"github.com/golang/protobuf/ptypes/empty"
