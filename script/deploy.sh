@@ -26,7 +26,7 @@ check_apps() {
 	# Check required programs
 	apps=( rsync scp ssh )
 	for app in "${apps[@]}" ; do
-		if ! which "$app" 1>/dev/null ; then
+		if ! command -v "$app" 1>/dev/null ; then
 			failure "Program missing: $app"
 		fi
 	done
