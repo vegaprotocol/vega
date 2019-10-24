@@ -144,6 +144,8 @@ steps:
         path: /dockersock
     environment:
       DOCKER_HOST: unix:///dockersock/docker.sock
+      DOCKER_CONFIG_JSON:
+        from_secret: docker_config_json
     commands:
       - apps="$$(find cmd -maxdepth 1 -and -not -name cmd | awk -F/ '{print $$2}')"
       - 'for app in $$apps ; do
@@ -154,8 +156,8 @@ steps:
       - imgtag="$${DRONE_BRANCH}"
       - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
       - if test -z "$$imgtag" ; then exit 1 ; fi
-      - sleep 3600 || true
       - docker build -t "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" -f Dockerfile.quick . || exit 0
+      - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
       - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
       - for app in $$apps ; do rm -f "./$app"; done
     depends_on:
