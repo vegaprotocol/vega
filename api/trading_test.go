@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega"
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/api/mocks"
@@ -18,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
@@ -216,7 +216,7 @@ func getTestGRPCServer(
 	g = api.NewGRPCServer(
 		logger,
 		conf.API,
-		internal.NewStats(logger, "ver", "hash"),
+		stats.New(logger, "ver", "hash"),
 		blockchainClient,
 		timeService,
 		marketService,
