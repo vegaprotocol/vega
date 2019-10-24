@@ -125,7 +125,8 @@ steps:
   - name: publish_docker
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline-docker:stable
     volumes: []
-    environment: {}
+    environment:
+      DOCKER_HOST: unix:///drone/docker.sock
     commands:
       - apps="$$(find cmd -maxdepth 1 -and -not -name cmd | awk -F/ '{print $$2}')"
       - 'for app in $$apps ; do
@@ -146,6 +147,13 @@ steps:
       branch:
         - master
         - develop
+        - 491-implement-drone-ci-config
+
+services:
+  docker:
+    image: docker:dind
+    privileged: true
+    command: [ '-H', 'unix:///drone/docker.sock' ]
 
 volumes:
   - name: gopkg
