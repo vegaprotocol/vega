@@ -1,4 +1,4 @@
-package internal
+package stats
 
 import (
 	"code.vegaprotocol.io/vega/blockchain"
@@ -15,7 +15,7 @@ type Stats struct {
 }
 
 // NewStats instanciates a new Stats
-func NewStats(logger *logging.Logger, version string, versionHash string) *Stats {
+func New(logger *logging.Logger, version string, versionHash string) *Stats {
 	return &Stats{
 		log:         logger,
 		Blockchain:  blockchain.NewStats(),

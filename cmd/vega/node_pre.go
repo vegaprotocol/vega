@@ -5,7 +5,6 @@ import (
 	"os"
 	"syscall"
 
-	"code.vegaprotocol.io/vega"
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
@@ -16,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
@@ -89,7 +89,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	l.stats = internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
+	l.stats = stats.New(l.Log, l.cli.version, l.cli.versionHash)
 	// set up storage, this should be persistent
 	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
 		return

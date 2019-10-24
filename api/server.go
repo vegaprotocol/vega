@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 
-	"code.vegaprotocol.io/vega"
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/candles"
@@ -15,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -31,7 +31,7 @@ type GRPCServer struct {
 	client BlockchainClient
 	log    *logging.Logger
 	srv    *grpc.Server
-	stats  *internal.Stats
+	stats  *stats.Stats
 
 	accountsService         *accounts.Svc
 	candleService           *candles.Svc
@@ -56,7 +56,7 @@ type GRPCServer struct {
 func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
-	stats *internal.Stats,
+	stats *stats.Stats,
 	client BlockchainClient,
 	timeService *vegatime.Svc,
 	marketService MarketService,

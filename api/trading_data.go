@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -144,7 +144,7 @@ type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
 	Client                  BlockchainClient
-	Stats                   *internal.Stats
+	Stats                   *stats.Stats
 	TimeService             VegaTime
 	OrderService            OrderService
 	TradeService            TradeService

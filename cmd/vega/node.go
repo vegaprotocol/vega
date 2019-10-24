@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/vega"
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/auth"
@@ -22,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
@@ -62,7 +62,7 @@ type NodeCommand struct {
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
 	conf         config.Config
-	stats        *internal.Stats
+	stats        *stats.Stats
 	withPPROF    bool
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
