@@ -18,9 +18,9 @@ import (
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/positions"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"

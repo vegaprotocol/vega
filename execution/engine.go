@@ -12,8 +12,8 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/storage"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"

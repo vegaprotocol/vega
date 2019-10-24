@@ -8,9 +8,9 @@ import (
 
 	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/vegatime"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
 )

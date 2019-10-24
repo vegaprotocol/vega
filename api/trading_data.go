@@ -8,9 +8,9 @@ import (
 	"code.vegaprotocol.io/vega"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
-	"code.vegaprotocol.io/vega/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	google_proto "github.com/golang/protobuf/ptypes/empty"

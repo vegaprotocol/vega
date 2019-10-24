@@ -5,8 +5,8 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/products"
-	"code.vegaprotocol.io/vega/risk"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/risk"
 
 	"github.com/pkg/errors"
 )

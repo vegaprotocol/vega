@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/storage"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -9,8 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/orders/mocks"
-	"code.vegaprotocol.io/vega/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/mock/gomock"
 

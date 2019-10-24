@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/vegatime"
 )
 
 // Currently we support 6 interval durations for trading candles on VEGA, as follows:

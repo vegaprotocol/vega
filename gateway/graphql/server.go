@@ -9,9 +9,9 @@ import (
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/vegatime"
 	"code.vegaprotocol.io/vega/proto/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/vegatime"
 	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"

@@ -8,9 +8,9 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/settlement/mocks"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

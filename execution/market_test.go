@@ -12,10 +12,10 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/risk"
-	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/risk"
+	"code.vegaprotocol.io/vega/settlement"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"

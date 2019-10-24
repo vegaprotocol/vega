@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/vegatime"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

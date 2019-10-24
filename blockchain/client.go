@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/proto"
 	uuid "github.com/satori/go.uuid"

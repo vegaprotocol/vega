@@ -14,10 +14,10 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"

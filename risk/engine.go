@@ -8,8 +8,8 @@ import (
 	"code.vegaprotocol.io/vega/events"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/vegatime"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/vegatime"
 )
 
 // Orderbook represent an abstraction over the orderbook
