@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sync/atomic"
+	"time"
 
 	"code.vegaprotocol.io/vega/internal/contextutil"
 	"code.vegaprotocol.io/vega/internal/logging"
@@ -150,7 +151,6 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 	trades := make(chan []types.Trade)
 	internal := make(chan []types.Trade)
 	ref := s.tradeStore.Subscribe(internal)
-	retryCount := retries
 
 	go func() {
 		atomic.AddInt32(&s.tradeSubscribersCnt, 1)
@@ -189,31 +189,40 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 				if len(validatedTrades) == 0 {
 					continue
 				}
-				select {
-				case trades <- validatedTrades:
-					retryCount = retries
-					s.log.Debug(
-						"Trades for subscriber sent successfully",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip),
-					)
-				default:
-					retryCount--
-					if retryCount == 0 {
-						s.log.Warn(
-							"Trades subscriber has hit the retry limit",
+				retryCount := retries
+				success := false
+				for !success && retryCount >= 0 {
+					select {
+					case trades <- validatedTrades:
+						s.log.Debug(
+							"Trades for subscriber sent successfully",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
-							logging.Int("retries", retries),
 						)
-						cfunc()
+						success = true
+					default:
+						retryCount--
+						if retryCount >= 0 {
+							s.log.Debug(
+								"Trades for subscriber not sent",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip),
+							)
+							time.Sleep(time.Duration(10) * time.Millisecond)
+						}
 					}
-					s.log.Debug(
-						"Trades for subscriber not sent",
+				}
+				if !success && retryCount <= 0 {
+					s.log.Warn(
+						"Trades subscriber has hit the retry limit",
 						logging.Uint64("ref", ref),
 						logging.String("ip-address", ip),
+						logging.Int("retries", retries),
 					)
+					cfunc()
+					break
 				}
+
 			}
 		}
 	}()
@@ -232,7 +241,6 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 	positions := make(chan *types.MarketPosition)
 	internal := make(chan []types.Trade)
 	ref := s.tradeStore.Subscribe(internal)
-	retryCount := retries
 
 	go func() {
 		atomic.AddInt32(&s.positionsSubscribersCnt, 1)
@@ -272,31 +280,40 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 				}
 				for _, marketPositions := range mapOfMarketPositions {
 					marketPositions := marketPositions
-					select {
-					case positions <- marketPositions:
-						retryCount = retries
-						s.log.Debug(
-							"Positions for subscriber sent successfully",
-							logging.Uint64("ref", ref),
-							logging.String("ip-address", ip),
-						)
-					default:
-						retryCount--
-						if retryCount == 0 {
-							s.log.Warn(
-								"Positions subscriber has hit the retry limit",
+					retryCount := retries
+					success := false
+					for !success && retryCount > 0 {
+						select {
+						case positions <- marketPositions:
+							s.log.Debug(
+								"Positions for subscriber sent successfully",
 								logging.Uint64("ref", ref),
 								logging.String("ip-address", ip),
-								logging.Int("retries", retries),
 							)
-							cfunc()
+							success = true
+						default:
+							retryCount--
+							if retryCount > 0 {
+								s.log.Debug(
+									"Positions for subscriber not sent",
+									logging.Uint64("ref", ref),
+									logging.String("ip-address", ip),
+								)
+								time.Sleep(time.Duration(10) * time.Millisecond)
+							}
 						}
-						s.log.Debug(
-							"Positions for subscriber not sent",
+					}
+					if retryCount <= 0 {
+						s.log.Warn(
+							"Positions subscriber has hit the retry limit",
 							logging.Uint64("ref", ref),
 							logging.String("ip-address", ip),
+							logging.Int("retries", retries),
 						)
+						cfunc()
+						break
 					}
+
 				}
 			}
 		}
