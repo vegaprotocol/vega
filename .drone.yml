@@ -50,10 +50,11 @@ steps:
     depends_on: []
     detach: true
     when:
-      branch:
-        - master
-        - develop
-        - 491-implement-drone-ci-config
+      ref:
+        - refs/heads/master
+        - refs/heads/develop
+        - refs/heads/491-implement-drone-ci-config
+        - refs/tags/*
 
   # Tests to be run on *all* branches.
   - name: test
@@ -102,10 +103,12 @@ steps:
     depends_on:
       - build
     when:
-      branch:
-        - master
-        - develop
-        - release/*
+      ref:
+        - refs/heads/master
+        - refs/heads/develop
+        - refs/heads/release/*
+        - refs/heads/491-implement-drone-ci-config
+        - refs/tags/*
 
   - name: push_to_devnet
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
@@ -164,10 +167,11 @@ steps:
       - test
       - test_heavy
     when:
-      branch:
-        - master
-        - develop
-        - 491-implement-drone-ci-config
+      ref:
+        - refs/heads/master
+        - refs/heads/develop
+        - refs/heads/491-implement-drone-ci-config
+        - refs/tags/*
 
 volumes:
   - name: dockersock
