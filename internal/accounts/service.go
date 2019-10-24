@@ -25,6 +25,7 @@ type AccountStore interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/internal/accounts  Blockchain
 type Blockchain interface {
 	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
+	Withdraw(context.Context, *types.Withdraw) (bool, error)
 }
 
 // Svc implements the Account service business logic.
@@ -66,6 +67,13 @@ func (s *Svc) ReloadConf(cfg Config) {
 // NOTE: this functionality should be removed in the future, or updated when we have test ether wallets.
 func (s *Svc) NotifyTraderAccount(ctx context.Context, nta *types.NotifyTraderAccount) (bool, error) {
 	return s.chain.NotifyTraderAccount(ctx, nta)
+}
+
+// Withdraw perform a request through he blockchain in order to remove collateral from
+// a trader general account
+// NOTE: this functionality should be removed in the future, or updated when we have test ether wallets.
+func (s *Svc) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
+	return s.chain.Withdraw(ctx, w)
 }
 
 // GetByParty returns details of all accounts for a given party (if they have placed orders on VEGA).

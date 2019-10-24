@@ -11,6 +11,7 @@ type MarketPosition interface {
 	Buy() int64
 	Sell() int64
 	Price() uint64
+	ClearPotentials()
 }
 
 // Transfer is an event passed on by settlement engine, contains position

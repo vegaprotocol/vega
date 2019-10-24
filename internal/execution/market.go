@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/binary"
-
 	"fmt"
 	"math"
 	"sync"
@@ -46,7 +45,7 @@ var (
 // the engines in order to process all transctiona
 type Market struct {
 	log   *logging.Logger
-	idgen *idgenerator
+	idgen *IDgenerator
 
 	riskConfig       risk.Config
 	positionConfig   positions.Config
@@ -125,6 +124,7 @@ func NewMarket(
 	trades TradeStore,
 	transferResponseStore TransferResponseStore,
 	now time.Time,
+	idgen *IDgenerator,
 ) (*Market, error) {
 
 	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
@@ -154,7 +154,7 @@ func NewMarket(
 
 	market := &Market{
 		log:                  log,
-		idgen:                newIDGen(),
+		idgen:                idgen,
 		mkt:                  mkt,
 		closingAt:            closingAt,
 		currentTime:          now,
@@ -175,6 +175,11 @@ func NewMarket(
 	}
 
 	return market, nil
+}
+
+// GetMarkPrice - quick fix add this here to ensure the mark price has indeed updated
+func (m *Market) GetMarkPrice() uint64 {
+	return m.markPrice
 }
 
 // ReloadConf will trigger a reload of all the config settings in the market and all underlying engines
@@ -206,8 +211,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	// update block time on id generator
-	m.idgen.updateTime(t)
 
 	closed = t.After(m.closingAt)
 	m.closed = closed
@@ -353,6 +356,10 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		return nil, ErrMarginCheckFailed
 	}
 
+	// set order ID
+	m.idgen.SetID(order)
+	order.CreatedAt = m.currentTime.UnixNano()
+
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
@@ -362,9 +369,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		return nil, err
 	}
-
-	// set order ID
-	m.idgen.setID(order)
 
 	// Insert aggressive remaining order
 	err = m.orders.Post(*order)
@@ -385,11 +389,6 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	if confirmation.Trades != nil {
-		// Orders can contain several trades, each trade involves 2 traders
-		// so there's a max number of N*2 events on the channel where N == number of trades
-		tradersCh := make(chan events.MarketPosition, 2*len(confirmation.Trades))
-		// Now let's set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
-		m.settlement.ListenClosed(tradersCh)
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
@@ -419,9 +418,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			m.setMarkPrice(trade)
 
 			// Update positions (this communicates with settlement via channel)
-			m.position.Update(trade, tradersCh)
+			m.position.Update(trade)
 		}
-		close(tradersCh)
 		// now let's get the transfers for MTM settlement
 		positions := m.position.Positions()
 		events := make([]events.MarketPosition, 0, len(positions))
@@ -453,8 +451,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			if err != nil && 0 != len(transfers) {
 				m.transferResponsesBuf.Add(transfers)
 			}
-			// @TODO -> close out any traders that don't have enough margins left
-			// if no errors were returned
+			err = m.resolveClosedOutTraders(closed, order)
+			if err != nil {
+				m.log.Error("unable to close out traders",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
 		}
 	}
 
@@ -466,18 +468,62 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
 // pass in the order which caused traders to be distressed
-func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *types.Order) error {
+func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o *types.Order) error {
+	if len(distressedMarginEvts) == 0 {
+		return nil
+	}
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "resolveClosedOutTraders")
 	defer timer.EngineTimeCounterAdd()
 
+	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
+	for _, v := range distressedMarginEvts {
+		distressedPos = append(distressedPos, v)
+	}
 	// cancel pending orders for traders
-	if err := m.matching.RemoveDistressedOrders(closed); err != nil {
+	rmorders, err := m.matching.RemoveDistressedOrders(distressedPos)
+	if err != nil {
 		m.log.Error(
 			"Failed to remove distressed traders from the orderbook",
 			logging.Error(err),
 		)
 		return err
 	}
+	if len(rmorders) == 0 {
+		return nil
+	}
+
+	mktID := m.GetID()
+	// remove the orders from the positions engine
+	for _, v := range rmorders {
+		_, err = m.position.UnregisterOrder(v)
+		if err != nil {
+			m.log.Error("unable to unregister order for a distressed party",
+				logging.String("party-id", v.PartyID),
+				logging.String("market-id", mktID),
+				logging.String("order-id", v.Id),
+			)
+		}
+	}
+
+	// then remove potentials buys/sell in all the distressed, and recalculate risks
+	for _, v := range distressedMarginEvts {
+		v.ClearPotentials()
+	}
+
+	// now that we closed orders, let's run the risk engine again
+	// so it'll separate the positions still in distress from the
+	// which have acceptable margins
+	okPos, closed := m.risk.ExpectMargins(distressedMarginEvts, m.markPrice)
+
+	if m.log.GetLevel() == logging.DebugLevel {
+		for _, v := range okPos {
+			m.log.Debug("previously distressed party have now an acceptable margin",
+				logging.String("market-id", mktID),
+				logging.String("party-id", v.Party()),
+			)
+		}
+	}
+
 	// get the actual position, so we can work out what the total position of the market is going to be
 	var networkPos int64
 	for _, pos := range closed {
@@ -486,6 +532,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *type
 	if networkPos == 0 {
 		// remove accounts, positions and return
 		closed = m.position.RemoveDistressed(closed)
+		// @TODO settlement engine needs to remove distressed traders here
 		asset, _ := m.mkt.GetAsset()
 		movements, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset)
 		if err != nil {
@@ -496,10 +543,12 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *type
 			return err
 		}
 		// currently just logging ledger movements, will be added to a stream storage engine in time
-		m.log.Debug(
-			"Legder movements after removing distressed traders",
-			logging.String("legder-dump", fmt.Sprintf("%#v", movements.Transfers)),
-		)
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug(
+				"Legder movements after removing distressed traders",
+				logging.String("legder-dump", fmt.Sprintf("%#v", movements.Transfers)),
+			)
+		}
 		return nil
 	}
 	// network order
@@ -518,7 +567,7 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *type
 		Type:        types.Order_NETWORK,
 	}
 	no.Size = no.Remaining
-	m.idgen.setID(&no)
+	m.idgen.SetID(&no)
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
 		no.Side = types.Side_Buy
@@ -551,12 +600,6 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *type
 	}
 
 	if confirmation.Trades != nil {
-		// this is an order with a trader and the network, there's only 1 position that can possibly change, so the only position changes
-		// are the counter parties of this given trade (non-distressed traders), and they need to pass through MTM at the end
-		tradersCh := make(chan events.MarketPosition, len(confirmation.Trades))
-		// Set the settlement engine up to listen for trader position changes (closed positions to be settled differently)
-		// settlement engine needs to be checked here
-		m.settlement.ListenClosed(tradersCh)
 		// Insert all trades resulted from the executed order
 		for idx, trade := range confirmation.Trades {
 			trade.Id = fmt.Sprintf("%s-%010d", no.Id, idx)
@@ -584,9 +627,8 @@ func (m *Market) resolveClosedOutTraders(closed []events.MarketPosition, o *type
 			// we skip setting the mark price when the network is trading
 
 			// Update positions (this communicates with settlement via channel)
-			m.position.Update(trade, tradersCh)
+			m.position.Update(trade)
 		}
-		close(tradersCh)
 	}
 
 	if err := m.zeroOutNetwork(size, closed, &no, o); err != nil {
@@ -677,7 +719,7 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 			Type:        types.Order_LIMIT,
 		}
 		to.Size = to.Remaining
-		m.idgen.setID(&to)
+		m.idgen.SetID(&to)
 		// store the trader order, too
 		if err := m.orders.Post(to); err != nil {
 			return err

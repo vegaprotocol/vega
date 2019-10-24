@@ -600,11 +600,12 @@ type marketPositionFake struct {
 	price           uint64
 }
 
-func (m marketPositionFake) Party() string { return m.party }
-func (m marketPositionFake) Size() int64   { return m.size }
-func (m marketPositionFake) Buy() int64    { return m.buy }
-func (m marketPositionFake) Sell() int64   { return m.sell }
-func (m marketPositionFake) Price() uint64 { return m.price }
+func (m marketPositionFake) Party() string    { return m.party }
+func (m marketPositionFake) Size() int64      { return m.size }
+func (m marketPositionFake) Buy() int64       { return m.buy }
+func (m marketPositionFake) Sell() int64      { return m.sell }
+func (m marketPositionFake) Price() uint64    { return m.price }
+func (m marketPositionFake) ClearPotentials() {}
 
 type mtmFake struct {
 	t *types.Transfer
@@ -615,6 +616,7 @@ func (m mtmFake) Size() int64               { return 0 }
 func (m mtmFake) Price() uint64             { return 0 }
 func (m mtmFake) Buy() int64                { return 0 }
 func (m mtmFake) Sell() int64               { return 0 }
+func (m mtmFake) ClearPotentials()          {}
 func (m mtmFake) Transfer() *types.Transfer { return m.t }
 
 func getMTMTransfer(transfers []*types.Transfer) []events.Transfer {

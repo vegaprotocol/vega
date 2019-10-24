@@ -47,6 +47,18 @@ func (mr *MockTransferMockRecorder) Buy() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Buy", reflect.TypeOf((*MockTransfer)(nil).Buy))
 }
 
+// ClearPotentials mocks base method
+func (m *MockTransfer) ClearPotentials() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ClearPotentials")
+}
+
+// ClearPotentials indicates an expected call of ClearPotentials
+func (mr *MockTransferMockRecorder) ClearPotentials() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearPotentials", reflect.TypeOf((*MockTransfer)(nil).ClearPotentials))
+}
+
 // Party mocks base method
 func (m *MockTransfer) Party() string {
 	m.ctrl.T.Helper()

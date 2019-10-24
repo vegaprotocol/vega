@@ -323,6 +323,8 @@ func (m testMargin) Size() int64 {
 	return m.size
 }
 
+func (m testMargin) ClearPotentials() {}
+
 func (m testMargin) Transfer() *types.Transfer {
 	return m.transfer
 }

@@ -21,6 +21,7 @@ type MarketPosition interface {
 	Buy() int64
 	Sell() int64
 	Price() uint64
+	ClearPotentials()
 }
 
 // Product ...
@@ -199,10 +200,13 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 		// long -> (100 - 110) * 10 => -100 ==> MTM_LOSS
 		closedOut, _ := closed[trader]
 		// updated price is mark price, mark against that using current known price
-		if price == markPrice {
-			price = current.price
-		}
-		mtmShare := calcMTM(int64(markPrice), size, int64(price), closedOut)
+		// if price == markPrice {
+		// 	price = current.price
+		// }
+		// first we MTM the old position, exclude closed positions
+		mtmShare := calcMTM(int64(markPrice), current.size, int64(current.price), nil)
+		// now MTM the new position if needed
+		mtmShare += calcMTM(int64(markPrice), size, int64(price), closedOut)
 		// update position
 		current.size = size
 		current.price = markPrice
@@ -239,6 +243,9 @@ func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition
 	return transfers
 }
 
+// calcMTM only handles futures ATM. The formula is simple:
+// amount =  prev_vol * (current_price - prev_mark_price) + SUM(new_trade := range trades)( new_trade(i).volume(party)*(current_price - new_trade(i).price )
+// given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 func calcMTM(markPrice, size, price int64, closed []*pos) (mtmShare int64) {
 	mtmShare = (markPrice - price) * size
 	for _, c := range closed {

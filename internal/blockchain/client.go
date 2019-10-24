@@ -50,6 +50,11 @@ func (b *Client) NotifyTraderAccount(
 	return b.sendNotifyTraderAccountCommand(ctx, notif, NotifyTraderAccountCommand)
 }
 
+// Withdraw will send a Withdraw transaction to the blockchain
+func (b *Client) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
+	return b.sendWithdrawCommand(ctx, w, WithdrawCommand)
+}
+
 // CreateOrder will send a submit order transaction to the blockchain
 func (b *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error) {
 	order.Reference = fmt.Sprintf("%s", uuid.NewV4())
@@ -142,6 +147,20 @@ func (b *Client) sendNotifyTraderAccountCommand(
 	}
 	if len(bytes) == 0 {
 		return false, errors.New("notify trader account message empty after marshal")
+	}
+
+	return b.sendCommand(ctx, bytes, cmd)
+}
+
+func (b *Client) sendWithdrawCommand(
+	ctx context.Context, w *types.Withdraw, cmd Command) (success bool, err error) {
+
+	bytes, err := proto.Marshal(w)
+	if err != nil {
+		return false, err
+	}
+	if len(bytes) == 0 {
+		return false, errors.New("withdraw message empty after marshal")
 	}
 
 	return b.sendCommand(ctx, bytes, cmd)

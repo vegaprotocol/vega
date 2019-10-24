@@ -17,6 +17,7 @@ type ProcessorService interface {
 	CancelOrder(order *types.Order) error
 	AmendOrder(order *types.OrderAmendment) error
 	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
+	Withdraw(*types.Withdraw) error
 }
 
 // Processor handle processing of all transaction sent through the node
@@ -82,6 +83,15 @@ func (p *Processor) getNotifyTraderAccount(payload []byte) (*types.NotifyTraderA
 	return notif, nil
 }
 
+func (p *Processor) getWithdraw(payload []byte) (*types.Withdraw, error) {
+	w := &types.Withdraw{}
+	err := proto.Unmarshal(payload, w)
+	if err != nil {
+		return nil, errors.Wrap(err, "error decoding order to proto")
+	}
+	return w, nil
+}
+
 // Validate performs all validation on an incoming transaction payload.
 func (p *Processor) Validate(payload []byte) error {
 	// Pre-validate (safety check)
@@ -99,7 +109,8 @@ func (p *Processor) Validate(payload []byte) error {
 		SubmitOrderCommand,
 		CancelOrderCommand,
 		AmendOrderCommand,
-		NotifyTraderAccountCommand:
+		NotifyTraderAccountCommand,
+		WithdrawCommand:
 		// Add future valid VEGA commands here
 		return nil
 	}
@@ -167,8 +178,15 @@ func (p *Processor) Process(payload []byte) error {
 		if err != nil {
 			return err
 		}
-	//case FutureVegaCommand
-	// Note: Future valid VEGA commands here
+	case WithdrawCommand:
+		w, err := p.getWithdraw(data)
+		if err != nil {
+			return err
+		}
+		err = p.blockchainService.Withdraw(w)
+		if err != nil {
+			return err
+		}
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", string(cmd)))
 		return errors.New(fmt.Sprintf("Unknown command received: %s", cmd))

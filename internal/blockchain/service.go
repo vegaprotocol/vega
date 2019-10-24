@@ -22,6 +22,7 @@ type Service interface {
 	CancelOrder(order *types.Order) error
 	AmendOrder(order *types.OrderAmendment) error
 	NotifyTraderAccount(notify *types.NotifyTraderAccount) error
+	Withdraw(*types.Withdraw) error
 	ValidateOrder(order *types.Order) error
 	ReloadConf(conf Config)
 }
@@ -40,6 +41,7 @@ type ServiceExecutionEngine interface {
 	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
+	Withdraw(*types.Withdraw) error
 	Generate() error
 }
 
@@ -147,13 +149,16 @@ func (s *abciService) NotifyTraderAccount(notif *types.NotifyTraderAccount) erro
 	return s.execution.NotifyTraderAccount(notif)
 }
 
+func (s *abciService) Withdraw(notif *types.Withdraw) error {
+	return s.execution.Withdraw(notif)
+}
+
 func (s *abciService) SubmitOrder(order *types.Order) error {
 	s.stats.addTotalCreateOrder(1)
 	if s.log.GetLevel() == logging.DebugLevel {
 		s.log.Debug("Blockchain service received a SUBMIT ORDER request", logging.Order(*order))
 	}
 
-	order.Id = fmt.Sprintf("V%010d-%010d", s.totalBatches, s.totalOrders)
 	order.CreatedAt = s.currentTimestamp.UnixNano()
 
 	// Submit the create order request to the execution engine

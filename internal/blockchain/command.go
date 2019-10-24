@@ -10,6 +10,8 @@ const (
 	AmendOrderCommand Command = 0x42
 	// NotifyTraderAccountCommand ...
 	NotifyTraderAccountCommand Command = 0x43
+	// WithdrawCommant ...
+	WithdrawCommand = 0x44
 )
 
 // Command ...
@@ -20,6 +22,7 @@ var commandName = map[Command]string{
 	CancelOrderCommand:         "Cancel Order",
 	AmendOrderCommand:          "Amend Order",
 	NotifyTraderAccountCommand: "Notify Trader Account",
+	WithdrawCommand:            "Withdraw",
 }
 
 // String return the

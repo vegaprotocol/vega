@@ -48,3 +48,18 @@ func (mr *MockAccountServiceMockRecorder) NotifyTraderAccount(arg0, arg1 interfa
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyTraderAccount", reflect.TypeOf((*MockAccountService)(nil).NotifyTraderAccount), arg0, arg1)
 }
+
+// Withdraw mocks base method
+func (m *MockAccountService) Withdraw(arg0 context.Context, arg1 *proto.Withdraw) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Withdraw indicates an expected call of Withdraw
+func (mr *MockAccountServiceMockRecorder) Withdraw(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdraw", reflect.TypeOf((*MockAccountService)(nil).Withdraw), arg0, arg1)
+}
