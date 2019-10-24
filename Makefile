@@ -3,25 +3,39 @@ PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
 TAG := $(shell git describe --tags 2>/dev/null)
 
-# See https://docs.gitlab.com/ce/ci/variables/README.html for CI vars.
 ifeq ($(CI),)
 	# Not in CI
-	ifeq ($(TAG),)
-		# No tag, so make one
-		VERSION := dev-$(USER)
-	else
-		VERSION := dev-$(TAG)
-	endif
+	VERSION := dev-$(USER)
 	VERSION_HASH := $(shell git rev-parse HEAD | cut -b1-8)
 else
 	# In CI
-	ifeq ($(TAG),)
-		# No tag, so make one
-		VERSION := interim-$(CI_COMMIT_REF_SLUG)
+	ifneq ($(GITLAB_CI),)
+		# In Gitlab: https://docs.gitlab.com/ce/ci/variables/predefined_variables.html
+
+		ifneq ($(TAG),)
+			VERSION := $(TAG)
+		else
+			# No tag, so make one
+			VERSION := interim-$(CI_COMMIT_REF_SLUG)
+		endif
+		VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
+
+	else ifneq ($(DRONE),)
+		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
+
+		ifneq ($(TAG),)
+			VERSION := $(TAG)
+		else
+			# No tag, so make one
+			VERSION := interim-$(CI_COMMIT_BRANCH)
+		endif
+		VERSION_HASH := $(shell echo "$(CI_COMMIT_SHA)" | cut -b1-8)
+
 	else
-		VERSION := $(TAG)
+		# In an unknown CI
+		VERSION := unknown-CI
+		VERSION_HASH := unknown-CI
 	endif
-	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
 .PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check rest_check
@@ -35,7 +49,7 @@ lint: ## Lint the files
 bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
 
-test: deps ## Run unit tests
+test: ## Run unit tests
 	@go test ./...
 
 race: ## Run data race detector
@@ -94,7 +108,7 @@ install: ## install the binaries in GOPATH/bin
 		env CGO_ENABLED=0 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
 	done
 
-gqlgen: deps ## run gqlgen
+gqlgen: ## run gqlgen
 	@cd ./internal/gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
 
 gqlgen_check: ## GraphQL: Check committed files match just-generated files
@@ -134,7 +148,7 @@ proto/api/trading.pb.gw.go: proto/api/trading.proto internal/gateway/rest/grpc-r
 proto/api/trading.swagger.json: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
 	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
-proto_check: deps ## proto: Check committed files match just-generated files
+proto_check: ## proto: Check committed files match just-generated files
 	@find proto -name '*.proto' -exec touch '{}' ';' ; \
 	find internal/gateway/rest/ -name '*.yml' -exec touch '{}' ';' ; \
 	make proto 1>/dev/null || exit 1 ; \
