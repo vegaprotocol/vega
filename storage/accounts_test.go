@@ -198,7 +198,7 @@ func getTestAccounts() []*types.Account {
 func createAccountStore(t *testing.T, dir string) *storage.Account {
 	config := storage.Config{
 		Level:           encoding.LogLevel{Level: logging.DebugLevel},
-		Accounts:        storage.DefaultAccountStoreOptions(),
+		Accounts:        storage.DefaultStoreOptions(),
 		AccountsDirPath: dir,
 	}
 	accountStore, err := storage.NewAccounts(logging.NewTestLogger(), config)
