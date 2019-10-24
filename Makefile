@@ -56,7 +56,7 @@ race: ## Run data race detector
 	@env CGO_ENABLED=1 go test -race ./...
 
 mocks: ## Make mocks
-	@go generate ./internal/...
+	@go generate ./...
 
 msan: ## Run memory sanitizer
 	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi
@@ -109,15 +109,15 @@ install: ## install the binaries in GOPATH/bin
 	done
 
 gqlgen: ## run gqlgen
-	@cd ./internal/gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
+	@cd ./gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
 
 gqlgen_check: ## GraphQL: Check committed files match just-generated files
-	@find internal/gateway/graphql -name '*.graphql' -o -name '*.yml' -exec touch '{}' ';' ; \
+	@find gateway/graphql -name '*.graphql' -o -name '*.yml' -exec touch '{}' ';' ; \
 	make gqlgen 1>/dev/null || exit 1 ; \
-	files="$$(git diff --name-only internal/gateway/graphql/)" ; \
+	files="$$(git diff --name-only gateway/graphql/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files:" $$files ; \
-		test -n "$(CI)" && git diff internal/gateway/graphql/ ; \
+		test -n "$(CI)" && git diff gateway/graphql/ ; \
 		exit 1 ; \
 	fi
 
@@ -137,20 +137,20 @@ proto/api/trading.pb.go: proto/api/trading.proto
 	sed -i -re 's/this\.Size_/this.Size/' "$@" && \
 	./script/fix_imports.sh "$@"
 
-GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/gateway/rest/grpc-rest-bindings.yml,paths=source_relative:.
-SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/gateway/rest/grpc-rest-bindings.yml:.
+GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml,paths=source_relative:.
+SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml:.
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
-proto/api/trading.pb.gw.go: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
+proto/api/trading.pb.gw.go: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
 	@protoc -Ivendor -I. -Iproto/api/ -Ivendor/github.com/google/protobuf/src --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
 
 # Generate Swagger documentation
-proto/api/trading.swagger.json: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
+proto/api/trading.swagger.json: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
+	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iapi/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
 proto_check: ## proto: Check committed files match just-generated files
 	@find proto -name '*.proto' -exec touch '{}' ';' ; \
-	find internal/gateway/rest/ -name '*.yml' -exec touch '{}' ';' ; \
+	find gateway/rest/ -name '*.yml' -exec touch '{}' ';' ; \
 	make proto 1>/dev/null || exit 1 ; \
 	files="$$(git diff --name-only proto/)" ; \
 	if test -n "$$files" ; then \
@@ -159,9 +159,9 @@ proto_check: ## proto: Check committed files match just-generated files
 		exit 1 ; \
 	fi
 
-rest_check: internal/gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
+rest_check: gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
 	@python3 script/check_rest_endpoints.py \
-		--bindings internal/gateway/rest/grpc-rest-bindings.yml \
+		--bindings gateway/rest/grpc-rest-bindings.yml \
 		--swagger proto/api/trading.swagger.json
 
 # Misc Targets

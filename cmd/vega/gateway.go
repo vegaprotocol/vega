@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/internal/config"
-	"code.vegaprotocol.io/vega/internal/fsutil"
-	"code.vegaprotocol.io/vega/internal/gateway"
-	gql "code.vegaprotocol.io/vega/internal/gateway/graphql"
-	"code.vegaprotocol.io/vega/internal/gateway/rest"
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/gateway"
+	gql "code.vegaprotocol.io/vega/gateway/graphql"
+	"code.vegaprotocol.io/vega/gateway/rest"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/spf13/cobra"
 )
