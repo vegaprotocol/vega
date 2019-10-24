@@ -2540,7 +2540,7 @@ func (ec *executionContext) field_Market_accounts_args(ctx context.Context, rawA
 	args := map[string]interface{}{}
 	var arg0 *AccountType
 	if tmp, ok := rawArgs["type"]; ok {
-		arg0, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+		arg0, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2562,7 +2562,7 @@ func (ec *executionContext) field_Market_candles_args(ctx context.Context, rawAr
 	args["since"] = arg0
 	var arg1 Interval
 	if tmp, ok := rawArgs["interval"]; ok {
-		arg1, err = ec.unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInterval(ctx, tmp)
+		arg1, err = ec.unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInterval(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2766,7 +2766,7 @@ func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context,
 	args["size"] = arg3
 	var arg4 Side
 	if tmp, ok := rawArgs["side"]; ok {
-		arg4, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
+		arg4, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2774,7 +2774,7 @@ func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context,
 	args["side"] = arg4
 	var arg5 OrderTimeInForce
 	if tmp, ok := rawArgs["timeInForce"]; ok {
-		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
+		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2790,7 +2790,7 @@ func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context,
 	args["expiration"] = arg6
 	var arg7 OrderType
 	if tmp, ok := rawArgs["type"]; ok {
-		arg7, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
+		arg7, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2842,7 +2842,7 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 	args["asset"] = arg1
 	var arg2 *AccountType
 	if tmp, ok := rawArgs["type"]; ok {
-		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+		arg2, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3048,7 +3048,7 @@ func (ec *executionContext) field_Subscription_accounts_args(ctx context.Context
 	args["asset"] = arg2
 	var arg3 *AccountType
 	if tmp, ok := rawArgs["type"]; ok {
-		arg3, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
+		arg3, err = ec.unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3070,7 +3070,7 @@ func (ec *executionContext) field_Subscription_candles_args(ctx context.Context,
 	args["marketId"] = arg0
 	var arg1 Interval
 	if tmp, ok := rawArgs["interval"]; ok {
-		arg1, err = ec.unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInterval(ctx, tmp)
+		arg1, err = ec.unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInterval(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3295,7 +3295,7 @@ func (ec *executionContext) _Account_type(ctx context.Context, field graphql.Col
 	res := resTmp.(AccountType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, field.Selections, res)
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Account_market(ctx context.Context, field graphql.CollectedField, obj *proto.Account) (ret graphql.Marshaler) {
@@ -3329,7 +3329,7 @@ func (ec *executionContext) _Account_market(ctx context.Context, field graphql.C
 	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Candle) (ret graphql.Marshaler) {
@@ -3625,7 +3625,7 @@ func (ec *executionContext) _Candle_interval(ctx context.Context, field graphql.
 	res := resTmp.(Interval)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInterval(ctx, field.Selections, res)
+	return ec.marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInterval(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CheckTokenResponse_ok(ctx context.Context, field graphql.CollectedField, obj *CheckTokenResponse) (ret graphql.Marshaler) {
@@ -3915,7 +3915,7 @@ func (ec *executionContext) _Forward_params(ctx context.Context, field graphql.C
 	res := resTmp.(*ModelParamsBs)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNModelParamsBS2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐModelParamsBs(ctx, field.Selections, res)
+	return ec.marshalNModelParamsBS2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐModelParamsBs(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Future_maturity(ctx context.Context, field graphql.CollectedField, obj *Future) (ret graphql.Marshaler) {
@@ -4026,7 +4026,7 @@ func (ec *executionContext) _Future_oracle(ctx context.Context, field graphql.Co
 	res := resTmp.(Oracle)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOracle2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOracle(ctx, field.Selections, res)
+	return ec.marshalNOracle2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.CollectedField, obj *Instrument) (ret graphql.Marshaler) {
@@ -4248,7 +4248,7 @@ func (ec *executionContext) _Instrument_metadata(ctx context.Context, field grap
 	res := resTmp.(*InstrumentMetadata)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInstrumentMetadata2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInstrumentMetadata(ctx, field.Selections, res)
+	return ec.marshalNInstrumentMetadata2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentMetadata(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_product(ctx context.Context, field graphql.CollectedField, obj *Instrument) (ret graphql.Marshaler) {
@@ -4285,7 +4285,7 @@ func (ec *executionContext) _Instrument_product(ctx context.Context, field graph
 	res := resTmp.(Product)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐProduct(ctx, field.Selections, res)
+	return ec.marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProduct(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field graphql.CollectedField, obj *InstrumentMetadata) (ret graphql.Marshaler) {
@@ -4433,7 +4433,7 @@ func (ec *executionContext) _Market_tradableInstrument(ctx context.Context, fiel
 	res := resTmp.(*TradableInstrument)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradableInstrument(ctx, field.Selections, res)
+	return ec.marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradableInstrument(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_tradingMode(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
@@ -4470,7 +4470,7 @@ func (ec *executionContext) _Market_tradingMode(ctx context.Context, field graph
 	res := resTmp.(TradingMode)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradingMode(ctx, field.Selections, res)
+	return ec.marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_decimalPlaces(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
@@ -4789,7 +4789,7 @@ func (ec *executionContext) _MarketDepth_market(ctx context.Context, field graph
 	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepth_buy(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) (ret graphql.Marshaler) {
@@ -5289,7 +5289,7 @@ func (ec *executionContext) _Order_timeInForce(ctx context.Context, field graphq
 	res := resTmp.(OrderTimeInForce)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
+	return ec.marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_side(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -5326,7 +5326,7 @@ func (ec *executionContext) _Order_side(ctx context.Context, field graphql.Colle
 	res := resTmp.(Side)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx, field.Selections, res)
+	return ec.marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_market(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -5363,7 +5363,7 @@ func (ec *executionContext) _Order_market(ctx context.Context, field graphql.Col
 	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_size(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -5474,7 +5474,7 @@ func (ec *executionContext) _Order_party(ctx context.Context, field graphql.Coll
 	res := resTmp.(*Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -5656,7 +5656,7 @@ func (ec *executionContext) _Order_status(ctx context.Context, field graphql.Col
 	res := resTmp.(OrderStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx, field.Selections, res)
+	return ec.marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_reference(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -5761,7 +5761,7 @@ func (ec *executionContext) _Order_type(ctx context.Context, field graphql.Colle
 	res := resTmp.(*OrderType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *Party) (ret graphql.Marshaler) {
@@ -6094,7 +6094,7 @@ func (ec *executionContext) _PendingOrder_timeInForce(ctx context.Context, field
 	res := resTmp.(*OrderTimeInForce)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
+	return ec.marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PendingOrder_side(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
@@ -6128,7 +6128,7 @@ func (ec *executionContext) _PendingOrder_side(ctx context.Context, field graphq
 	res := resTmp.(*Side)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx, field.Selections, res)
+	return ec.marshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PendingOrder_market(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
@@ -6162,7 +6162,7 @@ func (ec *executionContext) _PendingOrder_market(ctx context.Context, field grap
 	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PendingOrder_size(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
@@ -6230,7 +6230,7 @@ func (ec *executionContext) _PendingOrder_party(ctx context.Context, field graph
 	res := resTmp.(*Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
+	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PendingOrder_status(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
@@ -6264,7 +6264,7 @@ func (ec *executionContext) _PendingOrder_status(ctx context.Context, field grap
 	res := resTmp.(*OrderStatus)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx, field.Selections, res)
+	return ec.marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PendingOrder_type(ctx context.Context, field graphql.CollectedField, obj *proto.PendingOrder) (ret graphql.Marshaler) {
@@ -6298,7 +6298,7 @@ func (ec *executionContext) _PendingOrder_type(ctx context.Context, field graphq
 	res := resTmp.(*OrderType)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketPosition) (ret graphql.Marshaler) {
@@ -6335,7 +6335,7 @@ func (ec *executionContext) _Position_market(ctx context.Context, field graphql.
 	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_realisedVolume(ctx context.Context, field graphql.CollectedField, obj *proto.MarketPosition) (ret graphql.Marshaler) {
@@ -6446,7 +6446,7 @@ func (ec *executionContext) _Position_realisedProfitDirection(ctx context.Contex
 	res := resTmp.(ValueDirection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐValueDirection(ctx, field.Selections, res)
+	return ec.marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐValueDirection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_unrealisedVolume(ctx context.Context, field graphql.CollectedField, obj *proto.MarketPosition) (ret graphql.Marshaler) {
@@ -6557,7 +6557,7 @@ func (ec *executionContext) _Position_unrealisedProfitDirection(ctx context.Cont
 	res := resTmp.(ValueDirection)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐValueDirection(ctx, field.Selections, res)
+	return ec.marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐValueDirection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_averageEntryPrice(ctx context.Context, field graphql.CollectedField, obj *proto.MarketPosition) (ret graphql.Marshaler) {
@@ -6820,7 +6820,7 @@ func (ec *executionContext) _Query_markets(ctx context.Context, field graphql.Co
 	res := resTmp.([]*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_market(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6861,7 +6861,7 @@ func (ec *executionContext) _Query_market(ctx context.Context, field graphql.Col
 	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_parties(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6902,7 +6902,7 @@ func (ec *executionContext) _Query_parties(ctx context.Context, field graphql.Co
 	res := resTmp.([]*Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
+	return ec.marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_party(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6943,7 +6943,7 @@ func (ec *executionContext) _Query_party(ctx context.Context, field graphql.Coll
 	res := resTmp.(*Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
+	return ec.marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7024,7 +7024,7 @@ func (ec *executionContext) _Query_checkToken(ctx context.Context, field graphql
 	res := resTmp.(*CheckTokenResponse)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCheckTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx, field.Selections, res)
+	return ec.marshalNCheckTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7136,7 +7136,7 @@ func (ec *executionContext) _SimpleRiskModel_params(ctx context.Context, field g
 	res := resTmp.(*SimpleRiskModelParams)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx, field.Selections, res)
+	return ec.marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SimpleRiskModelParams_factorLong(ctx context.Context, field graphql.CollectedField, obj *SimpleRiskModelParams) (ret graphql.Marshaler) {
@@ -8632,7 +8632,7 @@ func (ec *executionContext) _TradableInstrument_instrument(ctx context.Context, 
 	res := resTmp.(*Instrument)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInstrument(ctx, field.Selections, res)
+	return ec.marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrument(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TradableInstrument_riskModel(ctx context.Context, field graphql.CollectedField, obj *TradableInstrument) (ret graphql.Marshaler) {
@@ -8669,7 +8669,7 @@ func (ec *executionContext) _TradableInstrument_riskModel(ctx context.Context, f
 	res := resTmp.(RiskModel)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐRiskModel(ctx, field.Selections, res)
+	return ec.marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskModel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_id(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
@@ -8743,7 +8743,7 @@ func (ec *executionContext) _Trade_market(ctx context.Context, field graphql.Col
 	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_buyer(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
@@ -8854,7 +8854,7 @@ func (ec *executionContext) _Trade_aggressor(ctx context.Context, field graphql.
 	res := resTmp.(Side)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx, field.Selections, res)
+	return ec.marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Trade_price(ctx context.Context, field graphql.CollectedField, obj *proto.Trade) (ret graphql.Marshaler) {
@@ -12540,12 +12540,12 @@ func (ec *executionContext) marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ec._Account(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, v interface{}) (AccountType, error) {
+func (ec *executionContext) unmarshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, v interface{}) (AccountType, error) {
 	var res AccountType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, sel ast.SelectionSet, v AccountType) graphql.Marshaler {
+func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, sel ast.SelectionSet, v AccountType) graphql.Marshaler {
 	return v
 }
 
@@ -12577,11 +12577,11 @@ func (ec *executionContext) marshalNCandle2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._Candle(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNCheckTokenResponse2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx context.Context, sel ast.SelectionSet, v CheckTokenResponse) graphql.Marshaler {
+func (ec *executionContext) marshalNCheckTokenResponse2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx context.Context, sel ast.SelectionSet, v CheckTokenResponse) graphql.Marshaler {
 	return ec._CheckTokenResponse(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCheckTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx context.Context, sel ast.SelectionSet, v *CheckTokenResponse) graphql.Marshaler {
+func (ec *executionContext) marshalNCheckTokenResponse2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐCheckTokenResponse(ctx context.Context, sel ast.SelectionSet, v *CheckTokenResponse) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12619,11 +12619,11 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) marshalNInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInstrument(ctx context.Context, sel ast.SelectionSet, v Instrument) graphql.Marshaler {
+func (ec *executionContext) marshalNInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrument(ctx context.Context, sel ast.SelectionSet, v Instrument) graphql.Marshaler {
 	return ec._Instrument(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInstrument(ctx context.Context, sel ast.SelectionSet, v *Instrument) graphql.Marshaler {
+func (ec *executionContext) marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrument(ctx context.Context, sel ast.SelectionSet, v *Instrument) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12633,11 +12633,11 @@ func (ec *executionContext) marshalNInstrument2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._Instrument(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNInstrumentMetadata2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v InstrumentMetadata) graphql.Marshaler {
+func (ec *executionContext) marshalNInstrumentMetadata2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v InstrumentMetadata) graphql.Marshaler {
 	return ec._InstrumentMetadata(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNInstrumentMetadata2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v *InstrumentMetadata) graphql.Marshaler {
+func (ec *executionContext) marshalNInstrumentMetadata2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v *InstrumentMetadata) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12675,20 +12675,20 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInterval(ctx context.Context, v interface{}) (Interval, error) {
+func (ec *executionContext) unmarshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInterval(ctx context.Context, v interface{}) (Interval, error) {
 	var res Interval
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐInterval(ctx context.Context, sel ast.SelectionSet, v Interval) graphql.Marshaler {
+func (ec *executionContext) marshalNInterval2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInterval(ctx context.Context, sel ast.SelectionSet, v Interval) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNMarket2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v Market) graphql.Marshaler {
+func (ec *executionContext) marshalNMarket2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v Market) graphql.Marshaler {
 	return ec._Market(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v *Market) graphql.Marshaler {
+func (ec *executionContext) marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v *Market) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12712,11 +12712,11 @@ func (ec *executionContext) marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return ec._MarketDepth(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNModelParamsBS2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐModelParamsBs(ctx context.Context, sel ast.SelectionSet, v ModelParamsBs) graphql.Marshaler {
+func (ec *executionContext) marshalNModelParamsBS2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐModelParamsBs(ctx context.Context, sel ast.SelectionSet, v ModelParamsBs) graphql.Marshaler {
 	return ec._ModelParamsBS(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNModelParamsBS2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐModelParamsBs(ctx context.Context, sel ast.SelectionSet, v *ModelParamsBs) graphql.Marshaler {
+func (ec *executionContext) marshalNModelParamsBS2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐModelParamsBs(ctx context.Context, sel ast.SelectionSet, v *ModelParamsBs) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12726,7 +12726,7 @@ func (ec *executionContext) marshalNModelParamsBS2ᚖcodeᚗvegaprotocolᚗioᚋ
 	return ec._ModelParamsBS(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOracle2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOracle(ctx context.Context, sel ast.SelectionSet, v Oracle) graphql.Marshaler {
+func (ec *executionContext) marshalNOracle2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracle(ctx context.Context, sel ast.SelectionSet, v Oracle) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12750,38 +12750,38 @@ func (ec *executionContext) marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 	return ec._Order(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {
+func (ec *executionContext) unmarshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {
 	var res OrderStatus
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v OrderStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v OrderStatus) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (OrderTimeInForce, error) {
+func (ec *executionContext) unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (OrderTimeInForce, error) {
 	var res OrderTimeInForce
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v OrderTimeInForce) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v OrderTimeInForce) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
+func (ec *executionContext) unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
 	var res OrderType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v OrderType) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v OrderType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNParty2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v Party) graphql.Marshaler {
+func (ec *executionContext) marshalNParty2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v Party) graphql.Marshaler {
 	return ec._Party(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v *Party) graphql.Marshaler {
+func (ec *executionContext) marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v *Party) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12833,7 +12833,7 @@ func (ec *executionContext) marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._PriceLevel(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐProduct(ctx context.Context, sel ast.SelectionSet, v Product) graphql.Marshaler {
+func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProduct(ctx context.Context, sel ast.SelectionSet, v Product) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12843,7 +12843,7 @@ func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋin
 	return ec._Product(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐRiskModel(ctx context.Context, sel ast.SelectionSet, v RiskModel) graphql.Marshaler {
+func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskModel(ctx context.Context, sel ast.SelectionSet, v RiskModel) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12853,20 +12853,20 @@ func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return ec._RiskModel(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
+func (ec *executionContext) unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
 	var res Side
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx context.Context, sel ast.SelectionSet, v Side) graphql.Marshaler {
+func (ec *executionContext) marshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, sel ast.SelectionSet, v Side) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNSimpleRiskModelParams2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx context.Context, sel ast.SelectionSet, v SimpleRiskModelParams) graphql.Marshaler {
+func (ec *executionContext) marshalNSimpleRiskModelParams2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx context.Context, sel ast.SelectionSet, v SimpleRiskModelParams) graphql.Marshaler {
 	return ec._SimpleRiskModelParams(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx context.Context, sel ast.SelectionSet, v *SimpleRiskModelParams) graphql.Marshaler {
+func (ec *executionContext) marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParams(ctx context.Context, sel ast.SelectionSet, v *SimpleRiskModelParams) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12962,11 +12962,11 @@ func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel
 	return ret
 }
 
-func (ec *executionContext) marshalNTradableInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v TradableInstrument) graphql.Marshaler {
+func (ec *executionContext) marshalNTradableInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v TradableInstrument) graphql.Marshaler {
 	return ec._TradableInstrument(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v *TradableInstrument) graphql.Marshaler {
+func (ec *executionContext) marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v *TradableInstrument) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12990,7 +12990,7 @@ func (ec *executionContext) marshalNTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 	return ec._Trade(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐTradingMode(ctx context.Context, sel ast.SelectionSet, v TradingMode) graphql.Marshaler {
+func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingMode(ctx context.Context, sel ast.SelectionSet, v TradingMode) graphql.Marshaler {
 	if v == nil {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -13000,12 +13000,12 @@ func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvega�
 	return ec._TradingMode(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐValueDirection(ctx context.Context, v interface{}) (ValueDirection, error) {
+func (ec *executionContext) unmarshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐValueDirection(ctx context.Context, v interface{}) (ValueDirection, error) {
 	var res ValueDirection
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐValueDirection(ctx context.Context, sel ast.SelectionSet, v ValueDirection) graphql.Marshaler {
+func (ec *executionContext) marshalNValueDirection2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐValueDirection(ctx context.Context, sel ast.SelectionSet, v ValueDirection) graphql.Marshaler {
 	return v
 }
 
@@ -13275,24 +13275,24 @@ func (ec *executionContext) marshalOAccount2ᚕᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ret
 }
 
-func (ec *executionContext) unmarshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, v interface{}) (AccountType, error) {
+func (ec *executionContext) unmarshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, v interface{}) (AccountType, error) {
 	var res AccountType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, sel ast.SelectionSet, v AccountType) graphql.Marshaler {
+func (ec *executionContext) marshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, sel ast.SelectionSet, v AccountType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, v interface{}) (*AccountType, error) {
+func (ec *executionContext) unmarshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, v interface{}) (*AccountType, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx, v)
+	res, err := ec.unmarshalOAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, sel ast.SelectionSet, v *AccountType) graphql.Marshaler {
+func (ec *executionContext) marshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAccountType(ctx context.Context, sel ast.SelectionSet, v *AccountType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13396,11 +13396,11 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
-func (ec *executionContext) marshalOMarket2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v Market) graphql.Marshaler {
+func (ec *executionContext) marshalOMarket2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v Market) graphql.Marshaler {
 	return ec._Market(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v []*Market) graphql.Marshaler {
+func (ec *executionContext) marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v []*Market) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13427,7 +13427,7 @@ func (ec *executionContext) marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx, sel, v[i])
+			ret[i] = ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -13440,7 +13440,7 @@ func (ec *executionContext) marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega
 	return ret
 }
 
-func (ec *executionContext) marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v *Market) graphql.Marshaler {
+func (ec *executionContext) marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx context.Context, sel ast.SelectionSet, v *Market) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13487,83 +13487,83 @@ func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {
+func (ec *executionContext) unmarshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {
 	var res OrderStatus
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v OrderStatus) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v OrderStatus) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (*OrderStatus, error) {
+func (ec *executionContext) unmarshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (*OrderStatus, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx, v)
+	res, err := ec.unmarshalOOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v *OrderStatus) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderStatus2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v *OrderStatus) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (OrderTimeInForce, error) {
+func (ec *executionContext) unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (OrderTimeInForce, error) {
 	var res OrderTimeInForce
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v OrderTimeInForce) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v OrderTimeInForce) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (*OrderTimeInForce, error) {
+func (ec *executionContext) unmarshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, v interface{}) (*OrderTimeInForce, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, v)
+	res, err := ec.unmarshalOOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v *OrderTimeInForce) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderTimeInForce2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx context.Context, sel ast.SelectionSet, v *OrderTimeInForce) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
+func (ec *executionContext) unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (OrderType, error) {
 	var res OrderType
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v OrderType) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v OrderType) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (*OrderType, error) {
+func (ec *executionContext) unmarshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, v interface{}) (*OrderType, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx, v)
+	res, err := ec.unmarshalOOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v *OrderType) graphql.Marshaler {
+func (ec *executionContext) marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx context.Context, sel ast.SelectionSet, v *OrderType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalOParty2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v Party) graphql.Marshaler {
+func (ec *executionContext) marshalOParty2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v Party) graphql.Marshaler {
 	return ec._Party(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v []*Party) graphql.Marshaler {
+func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v []*Party) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13590,7 +13590,7 @@ func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx, sel, v[i])
+			ret[i] = ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -13603,7 +13603,7 @@ func (ec *executionContext) marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ret
 }
 
-func (ec *executionContext) marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v *Party) graphql.Marshaler {
+func (ec *executionContext) marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx context.Context, sel ast.SelectionSet, v *Party) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13690,24 +13690,24 @@ func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) unmarshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
+func (ec *executionContext) unmarshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
 	var res Side
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx context.Context, sel ast.SelectionSet, v Side) graphql.Marshaler {
+func (ec *executionContext) marshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, sel ast.SelectionSet, v Side) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (*Side, error) {
+func (ec *executionContext) unmarshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (*Side, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx, v)
+	res, err := ec.unmarshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋinternalᚋgatewayᚋgraphqlᚐSide(ctx context.Context, sel ast.SelectionSet, v *Side) graphql.Marshaler {
+func (ec *executionContext) marshalOSide2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, sel ast.SelectionSet, v *Side) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
