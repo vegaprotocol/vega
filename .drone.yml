@@ -53,6 +53,8 @@ steps:
       GOOS: linux
       GITLAB_API_TOKEN:
         from_secret: GITLAB_API_TOKEN
+      SLACK_HOOK_URL:
+        from_secret: SLACK_HOOK_URL
     commands:
       - make test
       # More small checks. Run all, instead of exitng after first failure.
@@ -96,7 +98,15 @@ steps:
     volumes:
       - name: gopkg
         path: /go/pkg
-    environment: {}
+    environment:
+      DEVNET_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: DEVNET_DEPLOY_SSH_PRIVATE_KEY
+      DEVNET_DEPLOY_HOSTS:
+        from_secret: DEVNET_DEPLOY_HOSTS
+      DEVNET_DEPLOY_SSH_KNOWN_HOSTS:
+        from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
+      SLACK_HOOK_URL:
+        from_secret: SLACK_HOOK_URL
     commands:
       - ./script/deploy.sh devnet vega "/go/bin/vega:/home/vega/current/:0755"
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
