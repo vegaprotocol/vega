@@ -103,6 +103,9 @@ func (b *Blockchain) ReloadConf(cfg Config) {
 	}
 	b.processor.ReloadConf(cfg)
 	b.service.ReloadConf(cfg)
+	if chain, ok := b.chain.(*tm.TMChain); ok {
+		chain.ReloadConf(cfg.Tendermint)
+	}
 }
 
 func (b *Blockchain) Stop() error {
