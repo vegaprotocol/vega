@@ -347,16 +347,3 @@ func (a *Account) Unsubscribe(id uint64) error {
 
 	return errors.New(fmt.Sprintf("Account store subscriber does not exist with id: %d", id))
 }
-
-// DefaultAccountStoreOptions supplies default options we use for account stores.
-// Vega has custom settings to aid with valueLogGC
-func DefaultAccountStoreOptions() ConfigOptions {
-	opts := DefaultStoreOptions()
-	opts.TableLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
-	opts.ValueLogLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
-	// The following params optimise account store for valueLogGC
-	opts.LevelSizeMultiplier = 2
-	opts.NumLevelZeroTables = 1
-	opts.NumLevelZeroTablesStall = 2
-	return opts
-}
