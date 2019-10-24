@@ -42,8 +42,11 @@ steps:
 
   - name: docker
     image: docker:dind
+    volumes:
+      - name: dockersock
+        path: /dockersock
     privileged: true
-    command: ['-H', 'unix:///drone/docker.sock']
+    command: ['-H', 'unix:///dockersock/docker.sock']
     depends_on: []
     detach: true
     when:
@@ -136,9 +139,11 @@ steps:
 
   - name: publish_docker
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline-docker:stable
-    volumes: []
+    volumes:
+      - name: dockersock
+        path: /dockersock
     environment:
-      DOCKER_HOST: unix:///drone/docker.sock
+      DOCKER_HOST: unix:///dockersock/docker.sock
     commands:
       - apps="$$(find cmd -maxdepth 1 -and -not -name cmd | awk -F/ '{print $$2}')"
       - 'for app in $$apps ; do
@@ -163,6 +168,9 @@ steps:
         - 491-implement-drone-ci-config
 
 volumes:
+  - name: dockersock
+    host:
+      path: /var/lib/drone/volumes/dockersock
   - name: gopkg
     host:
       path: /var/lib/drone/volumes/gopkg
