@@ -124,6 +124,8 @@ steps:
         from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
+      VEGANET_USERS:
+        from_secret: VEGANET_USERS
     commands:
       - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
