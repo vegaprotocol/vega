@@ -114,8 +114,8 @@ func TestModelConverters(t *testing.T) {
 				},
 			},
 			RiskModel: &gql.Forward{
-				Lambd: 0.01,
-				Tau:   1.0 / 365.25 / 24,
+				RiskAversionParameter: 0.01,
+				Tau:                   1.0 / 365.25 / 24,
 				Params: &gql.ModelParamsBs{
 					Mu:    0,
 					R:     0.016,
@@ -143,8 +143,8 @@ func TestModelConverters(t *testing.T) {
 					},
 				},
 				RiskModel: &gql.Forward{
-					Lambd: 0.01,
-					Tau:   1.0 / 365.25 / 24,
+					RiskAversionParameter: 0.01,
+					Tau:                   1.0 / 365.25 / 24,
 					Params: &gql.ModelParamsBs{
 						Mu:    0,
 						R:     0.016,
@@ -344,8 +344,8 @@ func TestModelConverters(t *testing.T) {
 	t.Run("RiskModelFromProto", func(t *testing.T) {
 		prm := &proto.TradableInstrument_Forward{
 			Forward: &proto.Forward{
-				Lambd: 0.01,
-				Tau:   1.0 / 365.25 / 24,
+				RiskAversionParameter: 0.01,
+				Tau:                   1.0 / 365.25 / 24,
 				Params: &proto.ModelParamsBS{
 					Mu:    0,
 					R:     0.016,
@@ -381,8 +381,8 @@ func TestModelConverters(t *testing.T) {
 			},
 			RiskModel: &proto.TradableInstrument_Forward{
 				Forward: &proto.Forward{
-					Lambd: 0.01,
-					Tau:   1.0 / 365.25 / 24,
+					RiskAversionParameter: 0.01,
+					Tau:                   1.0 / 365.25 / 24,
 					Params: &proto.ModelParamsBS{
 						Mu:    0,
 						R:     0.016,
@@ -419,8 +419,8 @@ func TestModelConverters(t *testing.T) {
 				},
 				RiskModel: &proto.TradableInstrument_Forward{
 					Forward: &proto.Forward{
-						Lambd: 0.01,
-						Tau:   1.0 / 365.25 / 24,
+						RiskAversionParameter: 0.01,
+						Tau:                   1.0 / 365.25 / 24,
 						Params: &proto.ModelParamsBS{
 							Mu:    0,
 							R:     0.016,

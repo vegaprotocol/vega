@@ -62,7 +62,7 @@ message ModelParamsBS {
 }
 
 message Forward {
-  double lambd = 1;
+  double riskAversionParameter = 1;
   double tau = 2;
   ModelParamsBS params = 3;
 }

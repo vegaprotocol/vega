@@ -1269,7 +1269,7 @@
     "vegaForward": {
       "type": "object",
       "properties": {
-        "lambd": {
+        "riskAversionParameter": {
           "type": "number",
           "format": "double"
         },

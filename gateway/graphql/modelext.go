@@ -182,8 +182,8 @@ func (i *Instrument) IntoProto() (*proto.Instrument, error) {
 func (f *Forward) IntoProto() (*proto.TradableInstrument_Forward, error) {
 	return &proto.TradableInstrument_Forward{
 		Forward: &proto.Forward{
-			Lambd: f.Lambd,
-			Tau:   f.Tau,
+			RiskAversionParameter: f.RiskAversionParameter,
+			Tau:                   f.Tau,
 			Params: &proto.ModelParamsBS{
 				Mu:    f.Params.Mu,
 				R:     f.Params.R,
@@ -378,8 +378,8 @@ func InstrumentFromProto(pi *proto.Instrument) (*Instrument, error) {
 // ForwardFromProto ...
 func ForwardFromProto(f *proto.Forward) (*Forward, error) {
 	return &Forward{
-		Lambd: f.Lambd,
-		Tau:   f.Tau,
+		RiskAversionParameter: f.RiskAversionParameter,
+		Tau:                   f.Tau,
 		Params: &ModelParamsBs{
 			Mu:    f.Params.Mu,
 			R:     f.Params.R,
