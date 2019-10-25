@@ -39,7 +39,7 @@ if test -n "$branch1" ; then
 		5726034 \
 		"$branch1" \
 		"$branch2" \
-		"internal/gateway/graphql/schema.graphql" \
+		"gateway/graphql/schema.graphql" \
 		|| code=1
 	popd 1>/dev/null || exit 1
 fi
