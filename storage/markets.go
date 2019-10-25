@@ -173,11 +173,11 @@ func (m *Market) Close() error {
 }
 
 // DefaultMarketStoreOptions supplies default options we use for market stores
-// currently we want to load market value log and LSM tree into RAM.
+// currently we want to load market value log and LSM tree via a MemoryMap.
 // Note: markets total likely to be less than 1000 on a shard, short term.
 func DefaultMarketStoreOptions() ConfigOptions {
 	opts := DefaultStoreOptions()
-	opts.TableLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.LoadToRAM}
+	opts.TableLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.MemoryMap}
 	opts.ValueLogLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.MemoryMap}
 	return opts
 }

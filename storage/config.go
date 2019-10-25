@@ -64,7 +64,7 @@ type Config struct {
 // where all storage directories are to be read from and written to.
 func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
-		Accounts:              DefaultAccountStoreOptions(),
+		Accounts:              DefaultStoreOptions(),
 		Candles:               DefaultStoreOptions(),
 		Markets:               DefaultMarketStoreOptions(),
 		Orders:                DefaultStoreOptions(),

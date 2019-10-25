@@ -120,20 +120,22 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 					logging.Error(err))
 				return err
 			}
-			p.log.Info("party-id account topup",
-				logging.String("asset", asset),
-				logging.String("party-id", notif.TraderID),
-				logging.Int64("topup-amount", amount),
-				logging.Int64("new-balance", acc.Balance))
+			if p.log.GetLevel() == logging.DebugLevel {
+				p.log.Debug("party account top-up",
+					logging.String("asset", asset),
+					logging.String("party-id", notif.TraderID),
+					logging.Int64("top-up-amount", amount),
+					logging.Int64("new-balance", acc.Balance))
+			}
 		}
 
 		// now add the trader to the given market (move monies is margin account)
 		err = p.collateral.AddTraderToMarket(mkt.Id, notif.TraderID, asset)
 		if err != nil {
-			p.log.Error("unable to add trader to market",
+			p.log.Error("unable to add party to market",
 				logging.String("party-id", notif.TraderID),
 				logging.String("asset", asset),
-				logging.String("marketID", mkt.Id),
+				logging.String("market-id", mkt.Id),
 				logging.Error(err))
 		}
 	}
