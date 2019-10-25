@@ -3,7 +3,8 @@ package tm
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/pkg/errors"
 )
 

@@ -3,8 +3,8 @@ package noop
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/config/encoding"
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const namedLogger = "noop"

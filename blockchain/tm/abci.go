@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"sync"
 
-	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/metrics"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tendermint/tendermint/abci/types"

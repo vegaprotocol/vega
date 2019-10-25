@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/tendermint/tendermint/p2p"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )

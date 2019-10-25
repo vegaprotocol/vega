@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"

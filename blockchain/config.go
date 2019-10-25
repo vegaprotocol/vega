@@ -1,10 +1,10 @@
 package blockchain
 
 import (
+	"code.vegaprotocol.io/vega/blockchain/noop"
+	"code.vegaprotocol.io/vega/blockchain/tm"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vegablockchain/noop"
-	"code.vegaprotocol.io/vegablockchain/tm"
 )
 
 // namedLogger is the identifier for package and should ideally match the package name

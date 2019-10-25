@@ -3,7 +3,7 @@ package tm
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/tendermint/tendermint/abci/server"
 	cmn "github.com/tendermint/tendermint/libs/common"

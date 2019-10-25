@@ -1,13 +1,18 @@
 package blockchain
 
 import (
+	"errors"
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/blockchain/noop"
-	"code.vegaprotocol.io/vega/internal/blockchain/tm"
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/blockchain/noop"
+	"code.vegaprotocol.io/vega/blockchain/tm"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+)
+
+var (
+	ErrInvalidChainProvider = errors.New("invalid chain provider")
 )
 
 type ExecutionEngine interface {
@@ -15,6 +20,7 @@ type ExecutionEngine interface {
 	CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	NotifyTraderAccount(notif *types.NotifyTraderAccount) error
+	Withdraw(w *types.Withdraw) error
 	Generate() error
 }
 

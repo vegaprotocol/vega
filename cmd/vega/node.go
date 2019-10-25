@@ -65,6 +65,7 @@ type NodeCommand struct {
 	conf         config.Config
 	stats        *stats.Stats
 	withPPROF    bool
+	noChain      bool
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
@@ -96,6 +97,7 @@ func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
 	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
+	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
 }
 
 // runNode is the entry of node command.

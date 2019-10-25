@@ -14,10 +14,6 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-var (
-	ErrInvalidChainProvider = errors.New("invalid chain provider")
-)
-
 type chainClientImpl interface {
 	GetGenesisTime(context.Context) (time.Time, error)
 	GetStatus(context.Context) (*tmctypes.ResultStatus, error)
@@ -161,7 +157,7 @@ func (c *Client) sendWithdrawCommand(
 		return false, errors.New("withdraw message empty after marshal")
 	}
 
-	return b.sendCommand(ctx, bytes, cmd)
+	return c.sendCommand(ctx, bytes, cmd)
 }
 
 func (c *Client) sendCommand(ctx context.Context, bytes []byte, cmd Command) (success bool, err error) {

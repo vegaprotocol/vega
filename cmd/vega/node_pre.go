@@ -63,6 +63,10 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	conf := cfgwatchr.Get()
 	l.cfgwatchr = cfgwatchr
 
+	if flagProvided("--no-chain") {
+		conf.Blockchain.ChainProvider = "noop"
+	}
+
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
