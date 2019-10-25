@@ -12,7 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-const badgerNamedLogger = "badger"
+const (
+	// Total number of batches to save/process before we try
+	// and garbage collect the BadgerDB value log files.
+	maxBatchesUntilValueLogGC = 300
+	// The identifier/name for BadgerDB logging.
+	badgerNamedLogger = "badger"
+)
 
 var (
 	// ErrTimeoutReached signals that at timeout occurs while processing
@@ -66,15 +72,15 @@ func DefaultStoreOptions() ConfigOptions {
 		ValueLogLoadingMode:     fileio,    // options.FileLoadingMode, default options.MemoryMap
 		NumVersionsToKeep:       1,         // int
 		MaxTableSize:            64 << 20,  // int64, default 64<<20 (64MB)
-		LevelSizeMultiplier:     10,        // int
+		LevelSizeMultiplier:     2,         // int, default 10
 		MaxLevels:               7,         // int
 		ValueThreshold:          32,        // int, default 32
-		NumMemtables:            5,         // int, default 5
-		NumLevelZeroTables:      5,         // int, default 5
-		NumLevelZeroTablesStall: 10,        // int, default 10
+		NumMemtables:            1,         // int, default 5
+		NumLevelZeroTables:      1,         // int, default 5
+		NumLevelZeroTablesStall: 2,         // int, default 10
 		LevelOneSize:            256 << 20, // int64, default 256<<20
 		ValueLogFileSize:        1<<30 - 1, // int64, default 1<<30-1 (almost 1GB)
-		ValueLogMaxEntries:      1000000,   // uint32
+		ValueLogMaxEntries:      5000000,   // uint32, default 1000000
 		NumCompactors:           2,         // int, default 2
 		CompactL0OnClose:        true,      // bool
 		ReadOnly:                false,     // bool
@@ -84,6 +90,20 @@ func DefaultStoreOptions() ConfigOptions {
 	}
 	return opts
 }
+
+/*
+
+	opts.MaxTableSize = 64 << 20
+	opts.NumMemtables = 1
+	opts.NumLevelZeroTables = 1
+	opts.NumLevelZeroTablesStall = 2
+	opts.NumCompactors = 2
+
+	opts.LevelSizeMultiplier = 2
+	opts.NumLevelZeroTables = 1
+	opts.NumLevelZeroTablesStall = 2
+
+*/
 
 // GarbageCollectValueLog triggers a value log garbage collection.
 //We ignore errors reported when no rewrites are triggered, and if GC is already running.
