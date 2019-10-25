@@ -402,8 +402,9 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 // e.g. removing expired orders from matching engine.
 func (e *Engine) removeExpiredOrders(t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
-	e.log.Debug("Removing expiring orders from matching engine")
-
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Removing expiring orders from matching engine")
+	}
 	expiringOrders := []types.Order{}
 	tnano := t.UnixNano()
 	for _, mkt := range e.markets {
@@ -417,8 +418,10 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 			expiringOrders, ordrs...)
 	}
 
-	e.log.Debug("Removed expired orders from matching engine",
-		logging.Int("orders-removed", len(expiringOrders)))
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("Removed expired orders from matching engine",
+			logging.Int("orders-removed", len(expiringOrders)))
+	}
 
 	for _, order := range expiringOrders {
 		order := order
