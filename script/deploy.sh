@@ -187,11 +187,16 @@ failure() {
 
 success() {
 	gitlab_ci="${GITLAB_CI:-false}"
+	drone_ci="${DRONE:-false}"
 	if test "$gitlab_ci" == "true" ; then
-		commit_hash="${CI_COMMIT_SHORT_SHA:-[failed to get commit hash]}"
-		commit_msg="${CI_COMMIT_TITLE:-[failed to get commit message]}"
-		pipeline_url="${CI_PIPELINE_URL:-[failed to get pipeline URL]}"
+		commit_hash="${CI_COMMIT_SHORT_SHA:-?}"
+		commit_msg="${CI_COMMIT_TITLE:-?}"
+		pipeline_url="${CI_PIPELINE_URL:-?}"
 		msg="\`$net\` has been deployed at \`$commit_hash\` \"$commit_msg\" (see $pipeline_url for details)."
+	elif test "$drone_ci" == "true" ; then
+		commit_hash="$(echo "${DRONE_COMMIT_SHA:-?}" | cut -b1-8)"
+		commit_msg="${DRONE_COMMIT_MESSAGE:-?}"
+		msg="\`$net\` has been deployed at \`$commit_hash\` \"$commit_msg\"."
 	else
 		msg="\`$net\` has been deployed."
 	fi
