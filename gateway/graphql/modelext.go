@@ -179,9 +179,9 @@ func (i *Instrument) IntoProto() (*proto.Instrument, error) {
 }
 
 // IntoProto ...
-func (f *Forward) IntoProto() (*proto.TradableInstrument_Forward, error) {
-	return &proto.TradableInstrument_Forward{
-		Forward: &proto.Forward{
+func (f *ForwardRiskModel) IntoProto() (*proto.TradableInstrument_ForwardRiskModel, error) {
+	return &proto.TradableInstrument_ForwardRiskModel{
+		ForwardRiskModel: &proto.ForwardRiskModel{
 			RiskAversionParameter: f.RiskAversionParameter,
 			Tau:                   f.Tau,
 			Params: &proto.ModelParamsBS{
@@ -199,7 +199,7 @@ func (ti *TradableInstrument) riskModelIntoProto(
 		return ErrNilRiskModel
 	}
 	switch rm := ti.RiskModel.(type) {
-	case *Forward:
+	case *ForwardRiskModel:
 		pti.RiskModel, err = rm.IntoProto()
 	default:
 		err = ErrUnimplementedRiskModel
@@ -376,8 +376,8 @@ func InstrumentFromProto(pi *proto.Instrument) (*Instrument, error) {
 }
 
 // ForwardFromProto ...
-func ForwardFromProto(f *proto.Forward) (*Forward, error) {
-	return &Forward{
+func ForwardFromProto(f *proto.ForwardRiskModel) (*ForwardRiskModel, error) {
+	return &ForwardRiskModel{
 		RiskAversionParameter: f.RiskAversionParameter,
 		Tau:                   f.Tau,
 		Params: &ModelParamsBs{
@@ -404,8 +404,8 @@ func RiskModelFromProto(rm interface{}) (RiskModel, error) {
 		return nil, ErrNilRiskModel
 	}
 	switch rmimpl := rm.(type) {
-	case *proto.TradableInstrument_Forward:
-		return ForwardFromProto(rmimpl.Forward)
+	case *proto.TradableInstrument_ForwardRiskModel:
+		return ForwardFromProto(rmimpl.ForwardRiskModel)
 	case *proto.TradableInstrument_SimpleRiskModel:
 		return SimpleRiskModelFromProto(rmimpl.SimpleRiskModel)
 	default:

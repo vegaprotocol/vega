@@ -61,7 +61,7 @@ message ModelParamsBS {
   double sigma = 3;
 }
 
-message Forward {
+message ForwardRiskModel {
   double riskAversionParameter = 1;
   double tau = 2;
   ModelParamsBS params = 3;
@@ -98,7 +98,7 @@ message TradableInstrument {
   Instrument instrument = 1;
   MarginCalculator marginCalculator = 2;
   oneof riskModel {
-    Forward forward = 100;
+    ForwardRiskModel forwardRiskModel = 100;
     ExternalRiskModel externalRiskModel = 101;
     SimpleRiskModel simpleRiskModel = 102;
   }

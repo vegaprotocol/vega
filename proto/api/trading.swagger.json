@@ -1266,7 +1266,7 @@
         }
       }
     },
-    "vegaForward": {
+    "vegaForwardRiskModel": {
       "type": "object",
       "properties": {
         "riskAversionParameter": {
@@ -1867,8 +1867,8 @@
         "marginCalculator": {
           "$ref": "#/definitions/vegaMarginCalculator"
         },
-        "forward": {
-          "$ref": "#/definitions/vegaForward"
+        "forwardRiskModel": {
+          "$ref": "#/definitions/vegaForwardRiskModel"
         },
         "externalRiskModel": {
           "$ref": "#/definitions/vegaExternalRiskModel"
