@@ -80,7 +80,7 @@ func DefaultStoreOptions() ConfigOptions {
 		NumLevelZeroTablesStall: 2,         // int, default 10
 		LevelOneSize:            256 << 20, // int64, default 256<<20
 		ValueLogFileSize:        1<<30 - 1, // int64, default 1<<30-1 (almost 1GB)
-		ValueLogMaxEntries:      5000000,   // uint32, default 1000000
+		ValueLogMaxEntries:      2500000,   // uint32, default 1000000
 		NumCompactors:           2,         // int, default 2
 		CompactL0OnClose:        true,      // bool
 		ReadOnly:                false,     // bool
