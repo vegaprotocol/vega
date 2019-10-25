@@ -125,10 +125,10 @@ steps:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      - ./script/deploy.sh devnet vega "/go/bin/vega:/home/vega/current/:0755"
+      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
       - 'for u in $$VEGANET_USERS ; do
-          /go/bin/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
+          cmd/vegaccount/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
           curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $$VEGA_AUTH_MASTERTOKEN"
             -d "{\"id\": \"$$u\", \"password\": \"123\"}" https://auth.d.vega.xyz 1>/dev/null ;
           echo ;
