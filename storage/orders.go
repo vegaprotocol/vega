@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -22,6 +23,7 @@ type Order struct {
 	cfgMu           sync.Mutex
 	log             *logging.Logger
 	badger          *badgerStore
+	batchCountForGC int32
 	subscribers     map[uint64]chan<- []types.Order
 	subscriberID    uint64
 	buffer          []types.Order
@@ -156,6 +158,29 @@ func (os *Order) Commit() (err error) {
 	} else {
 		err = os.notify(items)
 	}
+
+	if logging.DebugLevel == os.log.GetLevel() {
+		os.log.Debug("Orders store updated", logging.Int("batch-size", len(items)))
+	}
+
+	// Using a batch counter ties the clean up to the average
+	// expected size of a batch of account updates, not just time.
+	atomic.AddInt32(&os.batchCountForGC, 1)
+	if atomic.LoadInt32(&os.batchCountForGC) >= maxBatchesUntilValueLogGC {
+		go func() {
+			os.log.Info("Orders store value log garbage collection",
+				logging.Int32("attempt", atomic.LoadInt32(&os.batchCountForGC)-maxBatchesUntilValueLogGC))
+
+			err := os.badger.GarbageCollectValueLog()
+			if err != nil {
+				os.log.Error("Unexpected problem running valueLogGC on orders store",
+					logging.Error(err))
+			} else {
+				atomic.StoreInt32(&os.batchCountForGC, 0)
+			}
+		}()
+	}
+
 	timer.EngineTimeCounterAdd()
 	return
 }
