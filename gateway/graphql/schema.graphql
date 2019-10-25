@@ -321,7 +321,7 @@ type SimpleRiskModelParams {
 
 
 # A type of risk model for futures trading
-type Forward {
+type ForwardRiskModel {
   # Lambda parameter of the risk model
   riskAversionParameter: Float!
   # Tau parameter of the risk model
@@ -336,7 +336,7 @@ type SimpleRiskModel {
   params: SimpleRiskModelParams!
 }
 
-union RiskModel = Forward | SimpleRiskModel
+union RiskModel = ForwardRiskModel | SimpleRiskModel
 
 # A set of metadata to associate to an instruments
 type InstrumentMetadata {

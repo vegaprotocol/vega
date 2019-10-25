@@ -94,8 +94,8 @@ func getTestMarket() *types.Market {
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_Forward{
-				Forward: &proto.Forward{
+			RiskModel: &proto.TradableInstrument_ForwardRiskModel{
+				ForwardRiskModel: &proto.ForwardRiskModel{
 					RiskAversionParameter: 0.01,
 					Tau:                   1.0 / 365.25 / 24,
 					Params: &proto.ModelParamsBS{

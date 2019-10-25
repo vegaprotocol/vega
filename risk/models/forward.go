@@ -15,7 +15,7 @@ type Forward struct {
 }
 
 // NewBuiltinFutures instantiate a new builtin future
-func NewBuiltinFutures(pf *types.Forward, asset string) (*Forward, error) {
+func NewBuiltinFutures(pf *types.ForwardRiskModel, asset string) (*Forward, error) {
 	return &Forward{
 		riskAversionParameter: pf.RiskAversionParameter,
 		tau:                   pf.Tau,

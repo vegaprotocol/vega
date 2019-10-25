@@ -92,7 +92,7 @@ type ComplexityRoot struct {
 		Event      func(childComplexity int) int
 	}
 
-	Forward struct {
+	ForwardRiskModel struct {
 		Params                func(childComplexity int) int
 		RiskAversionParameter func(childComplexity int) int
 		Tau                   func(childComplexity int) int
@@ -557,26 +557,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EthereumEvent.Event(childComplexity), true
 
-	case "Forward.params":
-		if e.complexity.Forward.Params == nil {
+	case "ForwardRiskModel.params":
+		if e.complexity.ForwardRiskModel.Params == nil {
 			break
 		}
 
-		return e.complexity.Forward.Params(childComplexity), true
+		return e.complexity.ForwardRiskModel.Params(childComplexity), true
 
-	case "Forward.riskAversionParameter":
-		if e.complexity.Forward.RiskAversionParameter == nil {
+	case "ForwardRiskModel.riskAversionParameter":
+		if e.complexity.ForwardRiskModel.RiskAversionParameter == nil {
 			break
 		}
 
-		return e.complexity.Forward.RiskAversionParameter(childComplexity), true
+		return e.complexity.ForwardRiskModel.RiskAversionParameter(childComplexity), true
 
-	case "Forward.tau":
-		if e.complexity.Forward.Tau == nil {
+	case "ForwardRiskModel.tau":
+		if e.complexity.ForwardRiskModel.Tau == nil {
 			break
 		}
 
-		return e.complexity.Forward.Tau(childComplexity), true
+		return e.complexity.ForwardRiskModel.Tau(childComplexity), true
 
 	case "Future.asset":
 		if e.complexity.Future.Asset == nil {
@@ -2038,7 +2038,7 @@ type SimpleRiskModelParams {
 
 
 # A type of risk model for futures trading
-type Forward {
+type ForwardRiskModel {
   # Lambda parameter of the risk model
   riskAversionParameter: Float!
   # Tau parameter of the risk model
@@ -2053,7 +2053,7 @@ type SimpleRiskModel {
   params: SimpleRiskModelParams!
 }
 
-union RiskModel = Forward | SimpleRiskModel
+union RiskModel = ForwardRiskModel | SimpleRiskModel
 
 # A set of metadata to associate to an instruments
 type InstrumentMetadata {
@@ -3807,7 +3807,7 @@ func (ec *executionContext) _EthereumEvent_event(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Forward_riskAversionParameter(ctx context.Context, field graphql.CollectedField, obj *Forward) (ret graphql.Marshaler) {
+func (ec *executionContext) _ForwardRiskModel_riskAversionParameter(ctx context.Context, field graphql.CollectedField, obj *ForwardRiskModel) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -3817,7 +3817,7 @@ func (ec *executionContext) _Forward_riskAversionParameter(ctx context.Context, 
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "Forward",
+		Object:   "ForwardRiskModel",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -3844,7 +3844,7 @@ func (ec *executionContext) _Forward_riskAversionParameter(ctx context.Context, 
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Forward_tau(ctx context.Context, field graphql.CollectedField, obj *Forward) (ret graphql.Marshaler) {
+func (ec *executionContext) _ForwardRiskModel_tau(ctx context.Context, field graphql.CollectedField, obj *ForwardRiskModel) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -3854,7 +3854,7 @@ func (ec *executionContext) _Forward_tau(ctx context.Context, field graphql.Coll
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "Forward",
+		Object:   "ForwardRiskModel",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -3881,7 +3881,7 @@ func (ec *executionContext) _Forward_tau(ctx context.Context, field graphql.Coll
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Forward_params(ctx context.Context, field graphql.CollectedField, obj *Forward) (ret graphql.Marshaler) {
+func (ec *executionContext) _ForwardRiskModel_params(ctx context.Context, field graphql.CollectedField, obj *ForwardRiskModel) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -3891,7 +3891,7 @@ func (ec *executionContext) _Forward_params(ctx context.Context, field graphql.C
 		ec.Tracer.EndFieldExecution(ctx)
 	}()
 	rctx := &graphql.ResolverContext{
-		Object:   "Forward",
+		Object:   "ForwardRiskModel",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -10227,10 +10227,10 @@ func (ec *executionContext) _RiskModel(ctx context.Context, sel ast.SelectionSet
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case Forward:
-		return ec._Forward(ctx, sel, &obj)
-	case *Forward:
-		return ec._Forward(ctx, sel, obj)
+	case ForwardRiskModel:
+		return ec._ForwardRiskModel(ctx, sel, &obj)
+	case *ForwardRiskModel:
+		return ec._ForwardRiskModel(ctx, sel, obj)
 	case SimpleRiskModel:
 		return ec._SimpleRiskModel(ctx, sel, &obj)
 	case *SimpleRiskModel:
@@ -10559,29 +10559,29 @@ func (ec *executionContext) _EthereumEvent(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var forwardImplementors = []string{"Forward", "RiskModel"}
+var forwardRiskModelImplementors = []string{"ForwardRiskModel", "RiskModel"}
 
-func (ec *executionContext) _Forward(ctx context.Context, sel ast.SelectionSet, obj *Forward) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, forwardImplementors)
+func (ec *executionContext) _ForwardRiskModel(ctx context.Context, sel ast.SelectionSet, obj *ForwardRiskModel) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, forwardRiskModelImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Forward")
+			out.Values[i] = graphql.MarshalString("ForwardRiskModel")
 		case "riskAversionParameter":
-			out.Values[i] = ec._Forward_riskAversionParameter(ctx, field, obj)
+			out.Values[i] = ec._ForwardRiskModel_riskAversionParameter(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "tau":
-			out.Values[i] = ec._Forward_tau(ctx, field, obj)
+			out.Values[i] = ec._ForwardRiskModel_tau(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "params":
-			out.Values[i] = ec._Forward_params(ctx, field, obj)
+			out.Values[i] = ec._ForwardRiskModel_params(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

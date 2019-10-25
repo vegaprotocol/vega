@@ -49,13 +49,13 @@ type EthereumEvent struct {
 
 func (EthereumEvent) IsOracle() {}
 
-type Forward struct {
+type ForwardRiskModel struct {
 	RiskAversionParameter float64        `json:"riskAversionParameter"`
 	Tau                   float64        `json:"tau"`
 	Params                *ModelParamsBs `json:"params"`
 }
 
-func (Forward) IsRiskModel() {}
+func (ForwardRiskModel) IsRiskModel() {}
 
 type Future struct {
 	Maturity string `json:"maturity"`
