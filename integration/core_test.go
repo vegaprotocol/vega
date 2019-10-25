@@ -154,8 +154,8 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	sigma, _ := strconv.ParseFloat(row.Cells[7].Value, 64)
 	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_Forward{
 		Forward: &proto.Forward{
-			Lambd: lambdShort,
-			Tau:   tauLong,
+			RiskAversionParameter: lambdShort,
+			Tau:                   tauLong,
 			Params: &proto.ModelParamsBS{
 				Mu:    mu,
 				R:     r,

@@ -323,9 +323,9 @@ type SimpleRiskModelParams {
 # A type of risk model for futures trading
 type Forward {
   # Lambda parameter of the risk model
-  lambd: Float!
+  riskAversionParameter: Float!
   # Tau parameter of the risk model
-  Tau: Float!
+  tau: Float!
   # Params for the forward risk model
   params: ModelParamsBS!
 }
