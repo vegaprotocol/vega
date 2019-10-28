@@ -71,15 +71,14 @@ type Market struct {
 	partyEngine *Party
 
 	// stores
-	candles           CandleStore
-	orderBuf          OrderBuf
-	partyBuf          PartyBuf
-	tradeBuf          TradeBuf
-	transferResponses TransferResponseStore
+	candles CandleStore
 
 	// buffers
-	candlesBuf           *buffer.Candle
-	transferResponsesBuf *buffer.TransferResponse
+	candlesBuf  *buffer.Candle
+	orderBuf    OrderBuf
+	partyBuf    PartyBuf
+	tradeBuf    TradeBuf
+	transferBuf TransferBuf
 
 	closed bool
 }
@@ -122,7 +121,7 @@ func NewMarket(
 	orderBuf OrderBuf,
 	partyBuf PartyBuf,
 	tradeBuf TradeBuf,
-	transferResponseStore TransferResponseStore,
+	transferBuf TransferBuf,
 	now time.Time,
 	idgen *IDgenerator,
 ) (*Market, error) {
@@ -148,30 +147,29 @@ func NewMarket(
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book)
-	transferResponsesBuf := buffer.NewTransferResponse(transferResponseStore)
 	positionEngine := positions.New(log, positionConfig)
 	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
 
 	market := &Market{
-		log:                  log,
-		idgen:                idgen,
-		mkt:                  mkt,
-		closingAt:            closingAt,
-		currentTime:          now,
-		markPrice:            tradableInstrument.Instrument.InitialMarkPrice,
-		matching:             book,
-		tradableInstrument:   tradableInstrument,
-		risk:                 riskEngine,
-		position:             positionEngine,
-		settlement:           settleEngine,
-		collateral:           collateralEngine,
-		partyEngine:          partyEngine,
-		candles:              candles,
-		orderBuf:             orderBuf,
-		partyBuf:             partyBuf,
-		tradeBuf:             tradeBuf,
-		candlesBuf:           candlesBuf,
-		transferResponsesBuf: transferResponsesBuf,
+		log:                log,
+		idgen:              idgen,
+		mkt:                mkt,
+		closingAt:          closingAt,
+		currentTime:        now,
+		markPrice:          tradableInstrument.Instrument.InitialMarkPrice,
+		matching:           book,
+		tradableInstrument: tradableInstrument,
+		risk:               riskEngine,
+		position:           positionEngine,
+		settlement:         settleEngine,
+		collateral:         collateralEngine,
+		partyEngine:        partyEngine,
+		candles:            candles,
+		orderBuf:           orderBuf,
+		partyBuf:           partyBuf,
+		tradeBuf:           tradeBuf,
+		candlesBuf:         candlesBuf,
+		transferBuf:        transferBuf,
 	}
 
 	return market, nil
@@ -256,7 +254,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 					logging.Error(err),
 				)
 			} else {
-				m.transferResponsesBuf.Add(transfers)
+				m.transferBuf.Add(transfers)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
 					for _, v := range transfers {
@@ -276,7 +274,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
-					m.transferResponsesBuf.Add(clearMarketTransfers)
+					m.transferBuf.Add(clearMarketTransfers)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
@@ -293,8 +291,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 		}
 	}
 
-	// flush the transfer response buf
-	m.transferResponsesBuf.Flush()
 	timer.EngineTimeCounterAdd()
 	return
 }
@@ -452,7 +448,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				}
 			}
 			if err != nil && 0 != len(transfers) {
-				m.transferResponsesBuf.Add(transfers)
+				m.transferBuf.Add(transfers)
 			}
 			err = m.resolveClosedOutTraders(closed, order)
 			if err != nil {
@@ -773,7 +769,7 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		m.transferResponsesBuf.Add(transferResps)
+		m.transferBuf.Add(transferResps)
 
 		if 0 != len(closePositions) {
 

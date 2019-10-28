@@ -64,10 +64,11 @@ type TimeService interface {
 	NotifyOnTick(f func(time.Time))
 }
 
-// TransferResponseStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/vega/execution TransferResponseStore
-type TransferResponseStore interface {
-	SaveBatch([]*types.TransferResponse) error
+// TransferBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TransferBuf
+type TransferBuf interface {
+	Add([]*types.TransferResponse)
+	Flush() error
 }
 
 // Engine is the execution engine
@@ -75,19 +76,19 @@ type Engine struct {
 	log *logging.Logger
 	Config
 
-	markets               map[string]*Market
-	party                 *Party
-	orderBuf              OrderBuf
-	tradeBuf              TradeBuf
-	candleStore           CandleStore
-	marketStore           MarketStore
-	partyBuf              PartyBuf
-	time                  TimeService
-	collateral            *collateral.Engine
-	accountBuf            *buffer.Account
-	accountStore          *storage.Account
-	transferResponseStore TransferResponseStore
-	idgen                 *IDgenerator
+	markets      map[string]*Market
+	party        *Party
+	orderBuf     OrderBuf
+	tradeBuf     TradeBuf
+	candleStore  CandleStore
+	marketStore  MarketStore
+	partyBuf     PartyBuf
+	time         TimeService
+	collateral   *collateral.Engine
+	accountBuf   *buffer.Account
+	accountStore *storage.Account
+	transferBuf  TransferBuf
+	idgen        *IDgenerator
 }
 
 // NewEngine takes stores and engines and returns
@@ -102,7 +103,7 @@ func NewEngine(
 	marketStore MarketStore,
 	partyBuf PartyBuf,
 	accountStore *storage.Account,
-	transferResponseStore TransferResponseStore,
+	transferBuf TransferBuf,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -148,21 +149,21 @@ func NewEngine(
 	}
 
 	e := &Engine{
-		log:                   log,
-		Config:                executionConfig,
-		markets:               map[string]*Market{},
-		candleStore:           candleStore,
-		orderBuf:              orderBuf,
-		tradeBuf:              tradeBuf,
-		marketStore:           marketStore,
-		partyBuf:              partyBuf,
-		time:                  time,
-		collateral:            cengine,
-		party:                 NewParty(log, cengine, pmkts, partyBuf),
-		accountStore:          accountStore,
-		accountBuf:            accountBuf,
-		transferResponseStore: transferResponseStore,
-		idgen:                 NewIDGen(),
+		log:          log,
+		Config:       executionConfig,
+		markets:      map[string]*Market{},
+		candleStore:  candleStore,
+		orderBuf:     orderBuf,
+		tradeBuf:     tradeBuf,
+		marketStore:  marketStore,
+		partyBuf:     partyBuf,
+		time:         time,
+		collateral:   cengine,
+		party:        NewParty(log, cengine, pmkts, partyBuf),
+		accountStore: accountStore,
+		accountBuf:   accountBuf,
+		transferBuf:  transferBuf,
+		idgen:        NewIDGen(),
 	}
 
 	for _, mkt := range pmkts {
@@ -241,7 +242,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.orderBuf,
 		e.partyBuf,
 		e.tradeBuf,
-		e.transferResponseStore,
+		e.transferBuf,
 		now,
 		e.idgen,
 	)
@@ -438,6 +439,11 @@ func (e *Engine) Generate() error {
 	// do not check errors here as they only happend when a party is created
 	// twice, which should not be a problem
 	_ = e.partyBuf.Flush()
+
+	err = e.transferBuf.Flush()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to commit transfers"))
+	}
 
 	return nil
 }

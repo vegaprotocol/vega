@@ -38,7 +38,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyBuf(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
-	transferResponse := mocks.NewMockTransferResponseStore(ctrl)
+	transferResponse := mocks.NewMockTransferBuf(ctrl)
 	executionConfig := execution.NewDefaultConfig("")
 
 	engine := execution.NewEngine(

@@ -48,9 +48,10 @@ type NodeCommand struct {
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
 
-	orderBuf *buffer.Order
-	tradeBuf *buffer.Trade
-	partyBuf *buffer.Party
+	orderBuf    *buffer.Order
+	tradeBuf    *buffer.Trade
+	partyBuf    *buffer.Party
+	transferBuf *buffer.TransferResponse
 
 	candleService    *candles.Svc
 	tradeService     *trades.Svc

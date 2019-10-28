@@ -46,7 +46,7 @@ type tstSetup struct {
 	orders   *orderStub
 	trades   *tradeStub
 	parties  *mocks.MockPartyBuf
-	transfer *mocks.MockTransferResponseStore
+	transfer *mocks.MockTransferBuf
 	accounts *accStub
 	// accounts   *cmocks.MockAccountBuffer
 	accountIDs map[string]struct{}
@@ -78,7 +78,7 @@ func getMock(market *proto.Market) *tstSetup {
 	parties := mocks.NewMockPartyBuf(ctrl)
 	accounts := NewAccountStub()
 	// accounts := cmocks.NewMockAccountBuffer(ctrl)
-	transfer := mocks.NewMockTransferResponseStore(ctrl)
+	transfer := mocks.NewMockTransferBuf(ctrl)
 	colE, _ := collateral.New(
 		logging.NewTestLogger(),
 		collateral.NewDefaultConfig(),
