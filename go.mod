@@ -17,6 +17,7 @@ require (
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.3.2
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
+	github.com/google/protobuf v3.7.0+incompatible // indirect
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
