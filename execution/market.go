@@ -73,7 +73,7 @@ type Market struct {
 	// stores
 	candles           CandleStore
 	orderBuf          OrderBuf
-	parties           PartyStore
+	partyBuf          PartyBuf
 	tradeBuf          TradeBuf
 	transferResponses TransferResponseStore
 
@@ -120,7 +120,7 @@ func NewMarket(
 	mkt *types.Market,
 	candles CandleStore,
 	orderBuf OrderBuf,
-	parties PartyStore,
+	partyBuf PartyBuf,
 	tradeBuf TradeBuf,
 	transferResponseStore TransferResponseStore,
 	now time.Time,
@@ -168,7 +168,7 @@ func NewMarket(
 		partyEngine:          partyEngine,
 		candles:              candles,
 		orderBuf:             orderBuf,
-		parties:              parties,
+		partyBuf:             partyBuf,
 		tradeBuf:             tradeBuf,
 		candlesBuf:           candlesBuf,
 		transferResponsesBuf: transferResponsesBuf,
@@ -322,7 +322,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Verify and add new parties
-	party, _ := m.parties.GetByID(order.PartyID)
+	// party, _ := m.parties.GetByID(order.PartyID)
+	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
 	if party == nil {
 		// trader should be created before even trying to post order
 		return nil, ErrTraderDoNotExists

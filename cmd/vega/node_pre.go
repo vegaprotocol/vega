@@ -110,6 +110,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 func (l *NodeCommand) setupBuffers() {
 	l.orderBuf = buffer.NewOrder(l.orderStore)
 	l.tradeBuf = buffer.NewTrade(l.tradeStore)
+	l.partyBuf = buffer.NewParty(l.partyStore)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {

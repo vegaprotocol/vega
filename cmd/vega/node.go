@@ -50,6 +50,7 @@ type NodeCommand struct {
 
 	orderBuf *buffer.Order
 	tradeBuf *buffer.Trade
+	partyBuf *buffer.Party
 
 	candleService    *candles.Svc
 	tradeService     *trades.Svc
