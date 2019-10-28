@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
@@ -46,6 +47,8 @@ type NodeCommand struct {
 	partyStore            *storage.Party
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
+
+	orderBuf *buffer.Order
 
 	candleService    *candles.Svc
 	tradeService     *trades.Svc

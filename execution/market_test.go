@@ -31,7 +31,7 @@ type testMarket struct {
 	collateraEngine       *collateral.Engine
 	partyEngine           *execution.Party
 	candleStore           *mocks.MockCandleStore
-	orderStore            *mocks.MockOrderStore
+	orderStore            *mocks.MockOrderBuf
 	partyStore            *mocks.MockPartyStore
 	tradeStore            *mocks.MockTradeStore
 	transferResponseStore *mocks.MockTransferResponseStore
@@ -49,7 +49,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 
 	candleStore := mocks.NewMockCandleStore(ctrl)
 	candleStore.EXPECT().FetchLastCandle(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).AnyTimes()
-	orderStore := mocks.NewMockOrderStore(ctrl)
+	orderStore := mocks.NewMockOrderBuf(ctrl)
 	partyStore := mocks.NewMockPartyStore(ctrl)
 	tradeStore := mocks.NewMockTradeStore(ctrl)
 	transferResponseStore := mocks.NewMockTransferResponseStore(ctrl)
@@ -230,8 +230,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		return &types.Party{Id: id}, nil
 	})
 	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 	tm.transferResponseStore.EXPECT().SaveBatch(gomock.Any()).Times(1).Return(nil)
 
@@ -316,8 +316,8 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 		return &types.Party{Id: id}, nil
 	})
 	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
@@ -376,8 +376,8 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 		return &types.Party{Id: id}, nil
 	})
 	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
@@ -434,8 +434,8 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		return &types.Party{Id: id}, nil
 	})
 	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
-	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(2).DoAndReturn(func(acc types.Account) {
@@ -482,7 +482,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		}
 	})
 
-	_, err = tm.market.AmendOrder(amendedOrder, orderBuy)
+	_, err = tm.market.AmendOrder(amendedOrder)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()

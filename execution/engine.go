@@ -1,7 +1,6 @@
 package execution
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -24,13 +23,11 @@ var (
 	ErrMarketAlreadyExist = errors.New("market already exist")
 )
 
-// OrderStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/execution OrderStore
-type OrderStore interface {
-	GetByPartyAndID(ctx context.Context, party string, id string) (*types.Order, error)
-	Post(order types.Order) error
-	Put(order types.Order) error
-	Commit() error
+// OrderBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution OrderBuf
+type OrderBuf interface {
+	Add(types.Order)
+	Flush() error
 }
 
 // TradeStore ...
@@ -80,7 +77,7 @@ type Engine struct {
 
 	markets               map[string]*Market
 	party                 *Party
-	orderStore            OrderStore
+	orderBuf              OrderBuf
 	tradeStore            TradeStore
 	candleStore           CandleStore
 	marketStore           MarketStore
@@ -99,7 +96,7 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	time TimeService,
-	orderStore OrderStore,
+	orderBuf OrderBuf,
 	tradeStore TradeStore,
 	candleStore CandleStore,
 	marketStore MarketStore,
@@ -155,7 +152,7 @@ func NewEngine(
 		Config:                executionConfig,
 		markets:               map[string]*Market{},
 		candleStore:           candleStore,
-		orderStore:            orderStore,
+		orderBuf:              orderBuf,
 		tradeStore:            tradeStore,
 		marketStore:           marketStore,
 		partyStore:            partyStore,
@@ -244,7 +241,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.party,
 		mktconfig,
 		e.candleStore,
-		e.orderStore,
+		e.orderBuf,
 		e.partyStore,
 		e.tradeStore,
 		e.transferResponseStore,
@@ -316,36 +313,21 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // if it exists and is in a state to be edited.
 func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
-	// try to get the order first
-	order, err := e.orderStore.GetByPartyAndID(
-		context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
-	if err != nil {
-		e.log.Error("Invalid order reference",
-			logging.String("id", order.Id),
-			logging.String("party", order.PartyID),
-			logging.Error(err))
 
-		return nil, types.ErrInvalidOrderReference
-	}
-	wasActive := order.Status == types.Order_Active
-	if e.log.Check(logging.DebugLevel) {
-		e.log.Debug("Existing order found", logging.Order(*order))
-	}
-
-	mkt, ok := e.markets[order.MarketID]
+	mkt, ok := e.markets[orderAmendment.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(orderAmendment, order)
+	conf, err := mkt.AmendOrder(orderAmendment)
 	if err != nil {
 		return nil, err
 	}
 	// order was active, not anymore -> decrement gauge
-	if wasActive && conf.Order.Status != types.Order_Active {
-		metrics.OrderGaugeAdd(-1, order.MarketID)
+	if conf.Order.Status != types.Order_Active {
+		metrics.OrderGaugeAdd(-1, orderAmendment.MarketID)
 	}
 	return conf, nil
 }
@@ -425,12 +407,13 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 
 	for _, order := range expiringOrders {
 		order := order
-		err := e.orderStore.Put(order)
-		if err != nil {
-			e.log.Error("error updating store for remove expiring order",
-				logging.Order(order),
-				logging.Error(err))
-		}
+		e.orderBuf.Add(order)
+		// err := e.orderBuf.Add(order)
+		// if err != nil {
+		// 	e.log.Error("error updating store for remove expiring order",
+		// 		logging.Order(order),
+		// 		logging.Error(err))
+		// }
 		// order expired, decrement gauge
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
@@ -448,7 +431,7 @@ func (e *Engine) Generate() error {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit accounts"))
 	}
 
-	err = e.orderStore.Commit()
+	err = e.orderBuf.Flush()
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit orders"))
 	}

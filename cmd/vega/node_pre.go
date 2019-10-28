@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
@@ -96,7 +97,21 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	l.stats = stats.New(l.Log, l.cli.version, l.cli.versionHash)
+
 	// set up storage, this should be persistent
+	if err := l.setupStorages(); err != nil {
+		return err
+	}
+	l.setupBuffers()
+
+	return nil
+}
+
+func (l *NodeCommand) setupBuffers() {
+	l.orderBuf = buffer.NewOrder(l.orderStore)
+}
+
+func (l *NodeCommand) setupStorages() (err error) {
 	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
 		return
 	}
@@ -137,7 +152,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
 
-	return nil
+	return
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node

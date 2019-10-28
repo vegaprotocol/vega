@@ -72,7 +72,7 @@ type Market struct {
 
 	// stores
 	candles           CandleStore
-	orders            OrderStore
+	orderBuf          OrderBuf
 	parties           PartyStore
 	trades            TradeStore
 	transferResponses TransferResponseStore
@@ -119,7 +119,7 @@ func NewMarket(
 	partyEngine *Party,
 	mkt *types.Market,
 	candles CandleStore,
-	orders OrderStore,
+	orderBuf OrderBuf,
 	parties PartyStore,
 	trades TradeStore,
 	transferResponseStore TransferResponseStore,
@@ -167,7 +167,7 @@ func NewMarket(
 		collateral:           collateralEngine,
 		partyEngine:          partyEngine,
 		candles:              candles,
-		orders:               orders,
+		orderBuf:             orderBuf,
 		parties:              parties,
 		trades:               trades,
 		candlesBuf:           candlesBuf,
@@ -371,20 +371,22 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Insert aggressive remaining order
-	err = m.orders.Post(*order)
-	if err != nil {
-		m.log.Error("Failure storing new order in submit order", logging.Error(err))
-	}
+	m.orderBuf.Add(*order)
+	// err = m.orderBuf.Add(*order)
+	// if err != nil {
+	// 	m.log.Error("Failure storing new order in submit order", logging.Error(err))
+	// }
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			err := m.orders.Put(*order)
-			if err != nil {
-				m.log.Fatal("Failure storing order update in submit order",
-					logging.Order(*order),
-					logging.Error(err))
-			}
+			m.orderBuf.Add(*order)
+			// err := m.orders.Put(*order)
+			// if err != nil {
+			// 	m.log.Fatal("Failure storing order update in submit order",
+			// 		logging.Order(*order),
+			// 		logging.Error(err))
+			// }
 		}
 	}
 
@@ -585,19 +587,21 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	}
 	// @NOTE: At this point, the network order was updated by the orderbook
 	// the price field now contains the average trade price at which the order was fulfilled
-	if err := m.orders.Post(no); err != nil {
-		m.log.Error("Failure storing new order in submit order", logging.Error(err))
-	}
+	m.orderBuf.Add(no)
+	// if err := m.orders.Post(no); err != nil {
+	// 	m.log.Error("Failure storing new order in submit order", logging.Error(err))
+	// }
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			err := m.orders.Put(*order)
-			if err != nil {
-				m.log.Fatal("Failure storing order update in submit order",
-					logging.Order(*order),
-					logging.Error(err))
-			}
+			m.orderBuf.Add(*order)
+			// err := m.orders.Put(*order)
+			// if err != nil {
+			// 	m.log.Fatal("Failure storing order update in submit order",
+			// 		logging.Order(*order),
+			// 		logging.Error(err))
+			// }
 		}
 	}
 
@@ -697,9 +701,10 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 	if _, err := tmpOrderBook.SubmitOrder(&order); err != nil {
 		return err
 	}
-	if err := m.orders.Post(order); err != nil {
-		return err
-	}
+	m.orderBuf.Add(order)
+	// if err := m.orders.Post(order); err != nil {
+	// 	return err
+	// }
 	// traders need to take the opposing side
 	side = settleOrder.Side
 	// @TODO get trader positions, submit orders for each
@@ -719,9 +724,10 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		to.Size = to.Remaining
 		m.idgen.SetID(&to)
 		// store the trader order, too
-		if err := m.orders.Post(to); err != nil {
-			return err
-		}
+		m.orderBuf.Add(to)
+		// if err := m.orders.Post(to); err != nil {
+		// 	return err
+		// }
 		res, err := tmpOrderBook.SubmitOrder(&to)
 		if err != nil {
 			return err
@@ -894,12 +900,13 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 
 	// Update the order in our stores (will be marked as cancelled)
-	err = m.orders.Put(*order)
-	if err != nil {
-		m.log.Error("Failure storing order update in execution engine (cancel)",
-			logging.Order(*order),
-			logging.Error(err))
-	}
+	m.orderBuf.Add(*order)
+	// err = m.orders.Put(*order)
+	// if err != nil {
+	// 	m.log.Error("Failure storing order update in execution engine (cancel)",
+	// 		logging.Order(*order),
+	// 		logging.Error(err))
+	// }
 	_, err = m.position.UnregisterOrder(order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",
@@ -929,16 +936,33 @@ func (m *Market) DeleteOrder(order *types.Order) (err error) {
 }
 
 // AmendOrder amend an existing order from the order book
-func (m *Market) AmendOrder(
-	orderAmendment *types.OrderAmendment,
-	existingOrder *types.Order,
-) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	if m.closed {
 		return nil, ErrMarketClosed
 	}
+
+	// try to get the order first
+	// order, err := e.order.GetByPartyAndID(
+	// context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
+	existingOrder, err := m.matching.GetOrderByPartyAndID(
+		orderAmendment.PartyID, orderAmendment.OrderID, orderAmendment.Side)
+	if err != nil {
+		m.log.Error("Invalid order reference",
+			logging.String("id", existingOrder.Id),
+			logging.String("party", existingOrder.PartyID),
+			logging.String("market", existingOrder.MarketID),
+			logging.Error(err))
+
+		return nil, types.ErrInvalidOrderReference
+	}
+
+	// wasActive := existingOrder.Status == types.Order_Active
+	// if e.log.GetLevel() == logging.DebugLevel {
+	// 	e.log.Debug("Existing order found", logging.Order(*existingOrder))
+	// }
 
 	// Validate Market
 	if existingOrder.MarketID != m.mkt.Id {
@@ -1047,13 +1071,14 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 			logging.Error(err))
 		return &types.OrderConfirmation{}, err
 	}
-	err = m.orders.Put(*newOrder)
-	if err != nil {
-		m.log.Error("Failure storing order update in orders store (amend-in-place)",
-			logging.Order(*newOrder),
-			logging.Error(err))
-		// todo: txn or other strategy (https://gitlab.com/vega-prxotocol/trading-core/issues/160)
-	}
+	m.orderBuf.Add(*newOrder)
+	// err = m.orders.Put(*newOrder)
+	// if err != nil {
+	// 	m.log.Error("Failure storing order update in orders store (amend-in-place)",
+	// 		logging.Order(*newOrder),
+	// 		logging.Error(err))
+	// 	// todo: txn or other strategy (https://gitlab.com/vega-prxotocol/trading-core/issues/160)
+	// }
 	return &types.OrderConfirmation{}, nil
 }
 
