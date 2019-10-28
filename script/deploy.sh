@@ -195,7 +195,7 @@ success() {
 		msg="\`$net\` has been deployed at \`$commit_hash\` \"$commit_msg\" (see $pipeline_url for details)."
 	elif test "$drone_ci" == "true" ; then
 		commit_hash="$(echo "${DRONE_COMMIT_SHA:-?}" | cut -b1-8)"
-		commit_msg="${DRONE_COMMIT_MESSAGE:-?}"
+		commit_msg="$(echo "${DRONE_COMMIT_MESSAGE:-?}" | tr -d '\n')"
 		msg="\`$net\` has been deployed at \`$commit_hash\` \"$commit_msg\"."
 	else
 		msg="\`$net\` has been deployed."
