@@ -512,6 +512,10 @@ func (ts *Trade) writeBatch(batch []types.Trade) error {
 	return nil
 }
 
+func (ts *Trade) SaveBatch(batch []types.Trade) error {
+	return ts.writeBatch(batch)
+}
+
 func (ts *Trade) getTradeMarketFilter(market *string) ([]byte, int) {
 	if market == nil {
 		return nil, 0
