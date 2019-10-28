@@ -26,7 +26,7 @@ type execEngine struct {
 	trade  *mocks.MockTradeBuf
 	candle *mocks.MockCandleStore
 	market *mocks.MockMarketStore
-	party  *mocks.MockPartyStore
+	party  *mocks.MockPartyBuf
 }
 
 func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
@@ -36,7 +36,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	trade := mocks.NewMockTradeBuf(ctrl)
 	candle := mocks.NewMockCandleStore(ctrl)
 	market := mocks.NewMockMarketStore(ctrl)
-	party := mocks.NewMockPartyStore(ctrl)
+	party := mocks.NewMockPartyBuf(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
 	transferResponse := mocks.NewMockTransferResponseStore(ctrl)
 	executionConfig := execution.NewDefaultConfig("")

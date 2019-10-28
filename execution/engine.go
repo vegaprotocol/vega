@@ -50,11 +50,11 @@ type MarketStore interface {
 	Post(party *types.Market) error
 }
 
-// PartyStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/execution PartyStore
-type PartyStore interface {
-	GetByID(id string) (*types.Party, error)
-	Post(party *types.Party) error
+// PartyBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution PartyBuf
+type PartyBuf interface {
+	Add(party types.Party)
+	Flush() error
 }
 
 // TimeService ...
@@ -81,7 +81,7 @@ type Engine struct {
 	tradeBuf              TradeBuf
 	candleStore           CandleStore
 	marketStore           MarketStore
-	partyStore            PartyStore
+	partyBuf              PartyBuf
 	time                  TimeService
 	collateral            *collateral.Engine
 	accountBuf            *buffer.Account
@@ -100,7 +100,7 @@ func NewEngine(
 	tradeBuf TradeBuf,
 	candleStore CandleStore,
 	marketStore MarketStore,
-	partyStore PartyStore,
+	partyBuf PartyBuf,
 	accountStore *storage.Account,
 	transferResponseStore TransferResponseStore,
 ) *Engine {
@@ -155,10 +155,10 @@ func NewEngine(
 		orderBuf:              orderBuf,
 		tradeBuf:              tradeBuf,
 		marketStore:           marketStore,
-		partyStore:            partyStore,
+		partyBuf:              partyBuf,
 		time:                  time,
 		collateral:            cengine,
-		party:                 NewParty(log, cengine, pmkts, partyStore),
+		party:                 NewParty(log, cengine, pmkts, partyBuf),
 		accountStore:          accountStore,
 		accountBuf:            accountBuf,
 		transferResponseStore: transferResponseStore,
@@ -175,7 +175,7 @@ func NewEngine(
 	}
 
 	// create the party engine
-	e.party = NewParty(log, e.collateral, pmkts, e.partyStore)
+	e.party = NewParty(log, e.collateral, pmkts, e.partyBuf)
 
 	// Add time change event handler
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
@@ -242,7 +242,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		mktconfig,
 		e.candleStore,
 		e.orderBuf,
-		e.partyStore,
+		e.partyBuf,
 		e.tradeBuf,
 		e.transferResponseStore,
 		now,
@@ -430,7 +430,6 @@ func (e *Engine) Generate() error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit accounts"))
 	}
-
 	err = e.orderBuf.Flush()
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit orders"))
@@ -438,6 +437,10 @@ func (e *Engine) Generate() error {
 	err = e.tradeBuf.Flush()
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit trades"))
+	}
+	err = e.partyBuf.Flush()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to commit parties"))
 	}
 
 	return nil

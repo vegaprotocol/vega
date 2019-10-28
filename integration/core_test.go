@@ -45,7 +45,7 @@ type tstSetup struct {
 	candles  *mocks.MockCandleStore
 	orders   *orderStub
 	trades   *tradeStub
-	parties  *mocks.MockPartyStore
+	parties  *mocks.MockPartyBuf
 	transfer *mocks.MockTransferResponseStore
 	accounts *accStub
 	// accounts   *cmocks.MockAccountBuffer
@@ -75,7 +75,7 @@ func getMock(market *proto.Market) *tstSetup {
 	orders := NewOrderStub()
 	// trades := mocks.NewMockTradeStore(ctrl)
 	trades := NewTradeStub()
-	parties := mocks.NewMockPartyStore(ctrl)
+	parties := mocks.NewMockPartyBuf(ctrl)
 	accounts := NewAccountStub()
 	// accounts := cmocks.NewMockAccountBuffer(ctrl)
 	transfer := mocks.NewMockTransferResponseStore(ctrl)
@@ -350,12 +350,12 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 			continue
 		}
 		// else expect call to get party
-		setup.parties.EXPECT().GetByID(row.Cells[0].Value).Times(1).Return(
-			&proto.Party{
-				Id: row.Cells[0].Value,
-			},
-			nil,
-		)
+		// setup.parties.EXPECT().GetByID(row.Cells[0].Value).Times(1).Return(
+		// 	&proto.Party{
+		// 		Id: row.Cells[0].Value,
+		// 	},
+		// 	nil,
+		// )
 
 		side := proto.Side_Buy
 		if row.Cells[1].Value == "sell" {
