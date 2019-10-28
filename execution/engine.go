@@ -30,11 +30,11 @@ type OrderBuf interface {
 	Flush() error
 }
 
-// TradeStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeStore
-type TradeStore interface {
-	Commit() error
-	Post(trade *types.Trade) error
+// TradeBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeBuf
+type TradeBuf interface {
+	Add(trade types.Trade)
+	Flush() error
 }
 
 // CandleStore ...
@@ -78,7 +78,7 @@ type Engine struct {
 	markets               map[string]*Market
 	party                 *Party
 	orderBuf              OrderBuf
-	tradeStore            TradeStore
+	tradeBuf              TradeBuf
 	candleStore           CandleStore
 	marketStore           MarketStore
 	partyStore            PartyStore
@@ -97,7 +97,7 @@ func NewEngine(
 	executionConfig Config,
 	time TimeService,
 	orderBuf OrderBuf,
-	tradeStore TradeStore,
+	tradeBuf TradeBuf,
 	candleStore CandleStore,
 	marketStore MarketStore,
 	partyStore PartyStore,
@@ -153,7 +153,7 @@ func NewEngine(
 		markets:               map[string]*Market{},
 		candleStore:           candleStore,
 		orderBuf:              orderBuf,
-		tradeStore:            tradeStore,
+		tradeBuf:              tradeBuf,
 		marketStore:           marketStore,
 		partyStore:            partyStore,
 		time:                  time,
@@ -243,7 +243,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.candleStore,
 		e.orderBuf,
 		e.partyStore,
-		e.tradeStore,
+		e.tradeBuf,
 		e.transferResponseStore,
 		now,
 		e.idgen,
@@ -435,7 +435,7 @@ func (e *Engine) Generate() error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit orders"))
 	}
-	err = e.tradeStore.Commit()
+	err = e.tradeBuf.Flush()
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit trades"))
 	}

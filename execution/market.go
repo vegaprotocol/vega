@@ -74,7 +74,7 @@ type Market struct {
 	candles           CandleStore
 	orderBuf          OrderBuf
 	parties           PartyStore
-	trades            TradeStore
+	tradeBuf          TradeBuf
 	transferResponses TransferResponseStore
 
 	// buffers
@@ -121,7 +121,7 @@ func NewMarket(
 	candles CandleStore,
 	orderBuf OrderBuf,
 	parties PartyStore,
-	trades TradeStore,
+	tradeBuf TradeBuf,
 	transferResponseStore TransferResponseStore,
 	now time.Time,
 	idgen *IDgenerator,
@@ -169,7 +169,7 @@ func NewMarket(
 		candles:              candles,
 		orderBuf:             orderBuf,
 		parties:              parties,
-		trades:               trades,
+		tradeBuf:             tradeBuf,
 		candlesBuf:           candlesBuf,
 		transferResponsesBuf: transferResponsesBuf,
 	}
@@ -406,11 +406,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			if err := m.trades.Post(trade); err != nil {
-				m.log.Error("Failure storing new trade in submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
+			m.tradeBuf.Add(*trade)
+			// if err := m.trades.Post(trade); err != nil {
+			// 	m.log.Error("Failure storing new trade in submit order",
+			// 		logging.Trade(*trade),
+			// 		logging.Error(err))
+			// }
 
 			// Save to trade buffer for generating candles etc
 			err := m.candlesBuf.AddTrade(*trade)
@@ -617,11 +618,12 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			if err := m.trades.Post(trade); err != nil {
-				m.log.Error("Failure storing new trade in submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
+			m.tradeBuf.Add(*trade)
+			// if err := m.trades.Post(trade); err != nil {
+			// 	m.log.Error("Failure storing new trade in submit order",
+			// 		logging.Trade(*trade),
+			// 		logging.Error(err))
+			// }
 
 			// Save to trade buffer for generating candles etc
 			err := m.candlesBuf.AddTrade(*trade)
@@ -734,9 +736,10 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		}
 		// now store the resulting trades:
 		for _, trade := range res.Trades {
-			if err := m.trades.Post(trade); err != nil {
-				return err
-			}
+			m.tradeBuf.Add(*trade)
+			// if err := m.trades.Post(trade); err != nil {
+			// 	return err
+			// }
 		}
 	}
 	return nil
