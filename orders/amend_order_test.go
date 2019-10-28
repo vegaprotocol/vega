@@ -15,10 +15,11 @@ import (
 
 var (
 	amend = proto.OrderAmendment{
-		OrderID: "order_id",
-		PartyID: "party",
-		Price:   10000,
-		Size:    1,
+		OrderID:  "order_id",
+		PartyID:  "party",
+		Price:    10000,
+		Size:     1,
+		MarketID: "market",
 	}
 )
 

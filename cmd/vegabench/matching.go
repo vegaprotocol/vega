@@ -22,7 +22,7 @@ type execEngine struct {
 	*execution.Engine
 	ctrl   *gomock.Controller
 	time   *mocks.MockTimeService
-	order  *mocks.MockOrderStore
+	order  *mocks.MockOrderBuf
 	trade  *mocks.MockTradeStore
 	candle *mocks.MockCandleStore
 	market *mocks.MockMarketStore
@@ -32,7 +32,7 @@ type execEngine struct {
 func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	ctrl := gomock.NewController(b)
 	time := mocks.NewMockTimeService(ctrl)
-	order := mocks.NewMockOrderStore(ctrl)
+	order := mocks.NewMockOrderBuf(ctrl)
 	trade := mocks.NewMockTradeStore(ctrl)
 	candle := mocks.NewMockCandleStore(ctrl)
 	market := mocks.NewMockMarketStore(ctrl)
@@ -95,8 +95,7 @@ func benchmarkMatching(
 
 		// Execution engine (broker operation of markets at runtime etc)
 		executionEngine := getExecEngine(b, logger)
-		executionEngine.order.EXPECT().Post(gomock.Any()).Return(nil)
-		executionEngine.order.EXPECT().Put(gomock.Any()).Return(nil)
+		executionEngine.order.EXPECT().Add(gomock.Any()).AnyTimes()
 		executionEngine.trade.EXPECT().Post(gomock.Any()).Return(nil)
 		executionEngine.market.EXPECT().Post(gomock.Any()).Return(nil)
 

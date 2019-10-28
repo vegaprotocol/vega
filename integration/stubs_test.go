@@ -38,8 +38,7 @@ func (d *accStub) Get(id string) *proto.Account {
 type orderStub struct {
 	data map[string]proto.Order
 	mu   *sync.Mutex
-	// not sure if we want to run integration tests against hypothetical failures...
-	err error
+	err  error
 }
 
 func NewOrderStub() *orderStub {
@@ -49,19 +48,13 @@ func NewOrderStub() *orderStub {
 	}
 }
 
-func (o *orderStub) Post(order proto.Order) error {
+func (o *orderStub) Add(order proto.Order) {
 	o.mu.Lock()
 	o.data[order.Id] = order
-	err := o.err
 	o.mu.Unlock()
-	return err
 }
 
-func (o *orderStub) Put(order proto.Order) error {
-	return o.Post(order)
-}
-
-func (o *orderStub) Commit() error {
+func (o *orderStub) Flush() error {
 	o.mu.Lock()
 	err := o.err
 	o.mu.Unlock()
