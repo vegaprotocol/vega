@@ -174,9 +174,6 @@ func NewEngine(
 		}
 	}
 
-	// create the party engine
-	e.party = NewParty(log, e.collateral, pmkts, e.partyBuf)
-
 	// Add time change event handler
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
 
@@ -438,10 +435,9 @@ func (e *Engine) Generate() error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit trades"))
 	}
-	err = e.partyBuf.Flush()
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Failed to commit parties"))
-	}
+	// do not check errors here as they only happend when a party is created
+	// twice, which should not be a problem
+	_ = e.partyBuf.Flush()
 
 	return nil
 }
