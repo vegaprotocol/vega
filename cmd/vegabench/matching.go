@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
@@ -25,7 +26,7 @@ type execEngine struct {
 	order  *mocks.MockOrderBuf
 	trade  *mocks.MockTradeBuf
 	candle *mocks.MockCandleStore
-	market *mocks.MockMarketStore
+	market *mocks.MockMarketBuf
 	party  *mocks.MockPartyBuf
 }
 
@@ -35,9 +36,10 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	order := mocks.NewMockOrderBuf(ctrl)
 	trade := mocks.NewMockTradeBuf(ctrl)
 	candle := mocks.NewMockCandleStore(ctrl)
-	market := mocks.NewMockMarketStore(ctrl)
+	market := mocks.NewMockMarketBuf(ctrl)
 	party := mocks.NewMockPartyBuf(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
+	accountBuf := buffer.NewAccount(accounts)
 	transferResponse := mocks.NewMockTransferBuf(ctrl)
 	executionConfig := execution.NewDefaultConfig("")
 
@@ -50,7 +52,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 		candle,
 		market,
 		party,
-		accounts,
+		accountBuf,
 		transferResponse,
 	)
 	return &execEngine{
@@ -97,7 +99,7 @@ func benchmarkMatching(
 		executionEngine := getExecEngine(b, logger)
 		executionEngine.order.EXPECT().Add(gomock.Any()).AnyTimes()
 		executionEngine.trade.EXPECT().Add(gomock.Any())
-		executionEngine.market.EXPECT().Post(gomock.Any()).Return(nil)
+		executionEngine.market.EXPECT().Add(gomock.Any())
 
 		var timestamp int64
 		for o := 0; o < numberOfOrders; o++ {

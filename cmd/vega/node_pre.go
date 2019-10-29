@@ -112,6 +112,8 @@ func (l *NodeCommand) setupBuffers() {
 	l.tradeBuf = buffer.NewTrade(l.tradeStore)
 	l.partyBuf = buffer.NewParty(l.partyStore)
 	l.transferBuf = buffer.NewTransferResponse(l.transferResponseStore)
+	l.marketBuf = buffer.NewMarket(l.marketStore)
+	l.accountBuf = buffer.NewAccount(l.accounts)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
