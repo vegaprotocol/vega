@@ -42,6 +42,7 @@ type tstSetup struct {
 	market   *proto.Market
 	ctrl     *gomock.Controller
 	core     *execution.Market
+	party    *execution.Party
 	candles  *mocks.MockCandleStore
 	orders   *orderStub
 	trades   *tradeStub
@@ -76,9 +77,15 @@ func getMock(market *proto.Market) *tstSetup {
 	// trades := mocks.NewMockTradeStore(ctrl)
 	trades := NewTradeStub()
 	parties := mocks.NewMockPartyBuf(ctrl)
+	// this can happen any number of times, just set the mock up to accept all of them
+	// Over time, these mocks will be replaced with stubs that store all elements to a map
+	parties.EXPECT().Add(gomock.Any()).AnyTimes()
 	accounts := NewAccountStub()
 	// accounts := cmocks.NewMockAccountBuffer(ctrl)
 	transfer := mocks.NewMockTransferBuf(ctrl)
+	// again: allow all calls, replace with stub over time
+	transfer.EXPECT().Add(gomock.Any()).AnyTimes()
+	transfer.EXPECT().Flush().AnyTimes()
 	colE, _ := collateral.New(
 		logging.NewTestLogger(),
 		collateral.NewDefaultConfig(),
@@ -204,7 +211,9 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	log := logging.NewTestLogger()
 	// the controller needs the reporter to report on errors or clunk out with fatal
 	setup = getMock(mkt)
-	party := execution.NewParty(log, setup.colE, []proto.Market{*mkt}, setup.parties)
+	// create the party engine, and add to the test setup
+	// so we can register parties and their account balances
+	setup.party = execution.NewParty(log, setup.colE, []proto.Market{*mkt}, setup.parties)
 	m, err := execution.NewMarket(
 		log,
 		risk.NewDefaultConfig(),
@@ -212,7 +221,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		settlement.NewDefaultConfig(),
 		matching.NewDefaultConfig(),
 		setup.colE,
-		party, // party-engine here!
+		setup.party, // party-engine here!
 		mkt,
 		setup.candles,
 		setup.orders,
@@ -247,10 +256,6 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 	// damn... positions engine is not open here, let's just ram through the trades, and update the balances after the fact
 	market := core.GetID()
 	maxPos := 100 // ensure we can move 100 positions either long or short, doesn't really matter which way
-	// traderStates := map[string]traderState{}
-	// tomorrow := time.Now().Add(time.Hour * 24)
-	// each position will be put down as an order
-	// orders := make([]*proto.Order, 0, len(traders.Rows))
 	for _, row := range traders.Rows {
 		// skip first row
 		if row.Cells[0].Value == "trader" {
@@ -261,10 +266,6 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		if err != nil {
 			return err
 		}
-		// mark, err := strconv.Atoi(row.Cells[5].Value)
-		// if err != nil {
-		// return err
-		// }
 		marginBal, err := strconv.ParseInt(row.Cells[2].Value, 10, 64)
 		if err != nil {
 			return err
@@ -278,9 +279,10 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 			maxPos = pos
 		}
 		asset, _ := setup.market.GetAsset()
+		// get the account balance, ensure we can set the margin balance in this step if we want to
+		// and get the account ID's so we can keep track of the state correctly
 		margin, general := setup.colE.CreateTraderAccount(row.Cells[0].Value, market, asset)
 		_ = setup.colE.IncrementBalance(margin, marginBal)
-		_ = setup.colE.IncrementBalance(general, generalBal)
 		// add trader accounts to map - this is the state they should have now
 		setup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{
 			proto.AccountType_MARGIN: &proto.Account{
@@ -294,44 +296,13 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 				Balance: generalBal,
 			},
 		}
-		// this is creating the positions and setting mark price... we can't do that just yet here
-		// make sure there's ample margin balance to get to the positions we need
-		// 	// add to states
-		// 	side := proto.Side_Buy
-		// 	vol := ts.pos
-		// 	if pos < 0 {
-		// 		side = proto.Side_Sell
-		// 		// absolute value for volume
-		// 		vol *= -1
-		// 	}
-		// 	traderStates[row.Cells[0].Value] = ts
-		// 	order := proto.Order{
-		// 		Id:        uuid.NewV4().String(),
-		// 		MarketID:  market,
-		// 		PartyID:   row.Cells[0].Value,
-		// 		Side:      side,
-		// 		Price:     1,
-		// 		Size:      uint64(vol),
-		// 		ExpiresAt: tomorrow.Unix(),
-		// 	}
-		// get order ready to submit
-		// orders = append(orders, &order)
+		notif := &proto.NotifyTraderAccount{
+			TraderID: row.Cells[0].Value,
+			Amount:   uint64(generalBal),
+		}
+		// we should be able to safely ignore the error, if this fails, the tests will
+		_ = setup.party.NotifyTraderAccountWithTopUpAmount(notif, generalBal)
 	}
-	// ok, submit some 'fake' orders, ensuring that the traders' positions all match up
-	// for _, o := range orders {
-	// 	if _, err := core.SubmitOrder(o); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// update their account balances, so we have established the traders' states
-	// for _, ts := range traderStates {
-	// if err := accounts.UpdateBalance(ts.gAcc.Id, ts.general); err != nil {
-	// return err
-	// }
-	// if err := accounts.UpdateBalance(ts.mAcc.Id, ts.margin); err != nil {
-	// return err
-	// }
-	// }
 	return nil
 }
 
