@@ -7,12 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
@@ -33,7 +31,7 @@ type OrderBuf interface {
 // TradeBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeBuf
 type TradeBuf interface {
-	Add(trade types.Trade)
+	Add(types.Trade)
 	Flush() error
 }
 
@@ -44,16 +42,17 @@ type CandleStore interface {
 	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
 }
 
-// MarketStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketStore
-type MarketStore interface {
-	Post(party *types.Market) error
+// MarketBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketBuf
+type MarketBuf interface {
+	Add(types.Market)
+	Flush() error
 }
 
 // PartyBuf ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/party_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution PartyBuf
 type PartyBuf interface {
-	Add(party types.Party)
+	Add(types.Party)
 	Flush() error
 }
 
@@ -71,24 +70,30 @@ type TransferBuf interface {
 	Flush() error
 }
 
+// AccountBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution AccountBuf
+type AccountBuf interface {
+	Add(types.Account)
+	Flush() error
+}
+
 // Engine is the execution engine
 type Engine struct {
 	log *logging.Logger
 	Config
 
-	markets      map[string]*Market
-	party        *Party
-	orderBuf     OrderBuf
-	tradeBuf     TradeBuf
-	candleStore  CandleStore
-	marketStore  MarketStore
-	partyBuf     PartyBuf
-	time         TimeService
-	collateral   *collateral.Engine
-	accountBuf   *buffer.Account
-	accountStore *storage.Account
-	transferBuf  TransferBuf
-	idgen        *IDgenerator
+	markets     map[string]*Market
+	party       *Party
+	orderBuf    OrderBuf
+	tradeBuf    TradeBuf
+	candleStore CandleStore
+	marketBuf   MarketBuf
+	partyBuf    PartyBuf
+	time        TimeService
+	collateral  *collateral.Engine
+	accountBuf  AccountBuf
+	transferBuf TransferBuf
+	idgen       *IDgenerator
 }
 
 // NewEngine takes stores and engines and returns
@@ -100,9 +105,9 @@ func NewEngine(
 	orderBuf OrderBuf,
 	tradeBuf TradeBuf,
 	candleStore CandleStore,
-	marketStore MarketStore,
+	marketBuf MarketBuf,
 	partyBuf PartyBuf,
-	accountStore *storage.Account,
+	accountBuf AccountBuf,
 	transferBuf TransferBuf,
 ) *Engine {
 	// setup logger
@@ -134,8 +139,6 @@ func NewEngine(
 		pmkts = append(pmkts, mkt)
 	}
 
-	accountBuf := buffer.NewAccount(accountStore)
-
 	now, err := time.GetTimeNow()
 	if err != nil {
 		log.Error("unable to get the time now", logging.Error(err))
@@ -149,21 +152,20 @@ func NewEngine(
 	}
 
 	e := &Engine{
-		log:          log,
-		Config:       executionConfig,
-		markets:      map[string]*Market{},
-		candleStore:  candleStore,
-		orderBuf:     orderBuf,
-		tradeBuf:     tradeBuf,
-		marketStore:  marketStore,
-		partyBuf:     partyBuf,
-		time:         time,
-		collateral:   cengine,
-		party:        NewParty(log, cengine, pmkts, partyBuf),
-		accountStore: accountStore,
-		accountBuf:   accountBuf,
-		transferBuf:  transferBuf,
-		idgen:        NewIDGen(),
+		log:         log,
+		Config:      executionConfig,
+		markets:     map[string]*Market{},
+		candleStore: candleStore,
+		orderBuf:    orderBuf,
+		tradeBuf:    tradeBuf,
+		marketBuf:   marketBuf,
+		partyBuf:    partyBuf,
+		time:        time,
+		collateral:  cengine,
+		party:       NewParty(log, cengine, pmkts, partyBuf),
+		accountBuf:  accountBuf,
+		transferBuf: transferBuf,
+		idgen:       NewIDGen(),
 	}
 
 	for _, mkt := range pmkts {
@@ -173,6 +175,12 @@ func NewEngine(
 			e.log.Panic("Unable to submit market",
 				logging.Error(err))
 		}
+	}
+
+	// just flush a first time the markets
+	if err := e.marketBuf.Flush(); err != nil {
+		e.log.Error("unable to flush markets", logging.Error(err))
+		return nil
 	}
 
 	// Add time change event handler
@@ -253,13 +261,14 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		)
 	}
 
-	err = e.marketStore.Post(mktconfig)
-	if err != nil {
-		e.log.Error("Failed to add default market to market store",
-			logging.String("market-name", mktconfig.Name),
-			logging.Error(err),
-		)
-	}
+	e.marketBuf.Add(*mktconfig)
+	// err = e.marketStore.Post(mktconfig)
+	// if err != nil {
+	// 	e.log.Error("Failed to add default market to market store",
+	// 		logging.String("market-name", mktconfig.Name),
+	// 		logging.Error(err),
+	// 	)
+	// }
 
 	e.markets[mktconfig.Id] = mkt
 
@@ -443,6 +452,10 @@ func (e *Engine) Generate() error {
 	err = e.transferBuf.Flush()
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit transfers"))
+	}
+	err = e.marketBuf.Flush()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to commit markets"))
 	}
 
 	return nil
