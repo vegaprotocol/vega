@@ -64,7 +64,7 @@ type abciService struct {
 	totalTrades          uint64
 }
 
-// NewService instanciate a new blockchain service
+// newService instanciate a new blockchain service
 func newService(log *logging.Logger, conf Config, stats *Stats, ex ServiceExecutionEngine, timeService ServiceTime) *abciService {
 	// setup logger
 	log = log.Named(namedLogger)

@@ -32,7 +32,6 @@ type TimeService interface {
 
 type chainImpl interface {
 	Stop() error
-	// ReloadConf(*Config)
 }
 
 type Blockchain struct {

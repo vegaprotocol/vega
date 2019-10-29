@@ -235,7 +235,7 @@ func (p *Processor) payloadExists(payloadHash *string) (bool, error) {
 	return false, nil
 }
 
-// resetSeenPayloads is used to reset the map containing the list of keys for payloads
+// ResetSeenPayloads is used to reset the map containing the list of keys for payloads
 // seen in the current batch, seenPayloads is a safety check for dupes per batch.
 func (p *Processor) ResetSeenPayloads() {
 	p.seenPayloads = map[string]byte{}
