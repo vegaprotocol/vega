@@ -194,9 +194,8 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 			logging.Int("batch-size", len(accs)))
 
 		return err
-	} else {
-		a.notify(accs)
 	}
+	a.notify(accs)
 
 	if logging.DebugLevel == a.log.GetLevel() {
 		a.log.Debug("Accounts store updated", logging.Int("batch-size", len(accs)))

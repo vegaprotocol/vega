@@ -233,7 +233,7 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 			// assign new timestamp
 			currentTimestamp = order.CreatedAt
 			// increase the volumeAtTimestamp index
-			tsIdx += 1
+			tsIdx++
 			// assign new volume at timestamp
 			totalVolumeAtTimestamp = l.volumeAtTimestamp[tsIdx].vol
 			volumeToShare = agg.Remaining

@@ -228,7 +228,7 @@ func (ts *Trade) GetByMarketAndID(ctx context.Context, market string, id string)
 // refine the data set further (if required), any errors will be returned immediately.
 func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error) {
 	var err error
-	tmk, kLen := ts.getTradeMarketFilter(market)
+	tmk, tmkLen := ts.getTradeMarketFilter(market)
 	result := make([]*types.Trade, 0, int(limit))
 
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
@@ -258,7 +258,7 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 				return nil, err
 			}
 			// we are filtering by market, but the market key doesn't match, stop here, don't waste time reading and unmarshalling the full trade item
-			if kLen != 0 && string(marketKey[:kLen]) != string(tmk) {
+			if tmkLen != 0 && string(marketKey[:tmkLen]) != string(tmk) {
 				continue
 			}
 			tradeItem, err := txn.Get(marketKey)
@@ -338,7 +338,7 @@ func (ts *Trade) GetByPartyAndID(ctx context.Context, party string, id string) (
 // Provide optional query filters to refine the data set further (if required), any errors will be returned immediately.
 func (ts *Trade) GetByOrderID(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error) {
 	var err error
-	tmk, kLen := ts.getTradeMarketFilter(market)
+	tmk, tmkLen := ts.getTradeMarketFilter(market)
 	result := make([]*types.Trade, 0, int(limit))
 
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)
@@ -365,7 +365,7 @@ func (ts *Trade) GetByOrderID(ctx context.Context, orderID string, skip, limit u
 				return nil, err
 			}
 			// apply market filter here, avoid getting the trade item + unmarshalling
-			if kLen != 0 && string(marketKey[:kLen]) != string(tmk) {
+			if tmkLen != 0 && string(marketKey[:tmkLen]) != string(tmk) {
 				continue
 			}
 			tradeItem, err := txn.Get(marketKey)

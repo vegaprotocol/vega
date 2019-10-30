@@ -1,7 +1,6 @@
 APPS := dummyriskmodel vega vegabench vegaccount vegastream
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
-TAG := $(shell git describe --tags 2>/dev/null)
 
 ifeq ($(CI),)
 	# Not in CI
@@ -12,22 +11,22 @@ else
 	ifneq ($(GITLAB_CI),)
 		# In Gitlab: https://docs.gitlab.com/ce/ci/variables/predefined_variables.html
 
-		ifneq ($(TAG),)
-			VERSION := $(TAG)
+		ifneq ($(CI_COMMIT_TAG),)
+			VERSION := $(CI_COMMIT_TAG)
 		else
 			# No tag, so make one
-			VERSION := interim-$(CI_COMMIT_REF_SLUG)
+			VERSION := $(shell git describe --tags 2>/dev/null)
 		endif
 		VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 
 	else ifneq ($(DRONE),)
 		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
 
-		ifneq ($(TAG),)
-			VERSION := $(TAG)
+		ifneq ($(DRONE_TAG),)
+			VERSION := $(DRONE_TAG)
 		else
 			# No tag, so make one
-			VERSION := interim-$(CI_COMMIT_BRANCH)
+			VERSION := $(shell git describe --tags 2>/dev/null)
 		endif
 		VERSION_HASH := $(shell echo "$(CI_COMMIT_SHA)" | cut -b1-8)
 
