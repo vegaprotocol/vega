@@ -42,7 +42,6 @@ steps:
       - echo "$${GITLAB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - echo "$${GITLAB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
       - unset GITLAB_DEPLOY_SSH_KNOWN_HOSTS GITLAB_DEPLOY_SSH_PRIVATE_KEY
-      - git fetch --tags
       - make deps
       - make build
       - sleep 3600 || true  # DEBUG
