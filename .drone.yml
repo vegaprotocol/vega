@@ -14,7 +14,7 @@ steps:
   - name: fetch
     image: alpine/git
     commands:
-      - git fetch --tags  # necessary for generation VERSION
+      - git fetch --tags  # necessary for generation of VERSION var
 
   - name: build
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
