@@ -45,7 +45,8 @@ steps:
       - make deps
       - make build
       - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
-    depends_on: []
+    depends_on:
+      - fetch
 
   - name: docker
     image: docker:dind
@@ -62,7 +63,6 @@ steps:
       ref:
         - refs/heads/master
         - refs/heads/develop
-        - refs/heads/507-fix-ci-tag-and-docker-image-creation
         - refs/tags/*
 
   # Tests to be run on *all* branches.
@@ -181,7 +181,6 @@ steps:
       ref:
         - refs/heads/master
         - refs/heads/develop
-        - refs/heads/507-fix-ci-tag-and-docker-image-creation
         - refs/tags/*
 
 volumes:
