@@ -45,6 +45,8 @@ steps:
     volumes:
       - name: dockersock
         path: /dockersock
+      - name: dind
+        path: /var/lib/docker
     privileged: true
     command: ['-H', 'unix:///dockersock/docker.sock']
     depends_on: []
@@ -53,7 +55,7 @@ steps:
       ref:
         - refs/heads/master
         - refs/heads/develop
-        - refs/heads/491-implement-drone-ci-config
+        - refs/heads/507-fix-ci-tag-and-docker-image-creation
         - refs/tags/*
 
   # Tests to be run on *all* branches.
@@ -107,7 +109,7 @@ steps:
         - refs/heads/master
         - refs/heads/develop
         - refs/heads/release/*
-        - refs/heads/491-implement-drone-ci-config
+        - refs/heads/507-fix-ci-tag-and-docker-image-creation
         - refs/tags/*
 
   - name: push_to_devnet
@@ -172,10 +174,13 @@ steps:
       ref:
         - refs/heads/master
         - refs/heads/develop
-        - refs/heads/491-implement-drone-ci-config
+        - refs/heads/507-fix-ci-tag-and-docker-image-creation
         - refs/tags/*
 
 volumes:
+  - name: dind
+    host:
+      path: /var/lib/drone/volumes/dind
   - name: dockersock
     host:
       path: /var/lib/drone/volumes/dockersock
