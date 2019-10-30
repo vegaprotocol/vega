@@ -44,7 +44,6 @@ steps:
       - unset GITLAB_DEPLOY_SSH_KNOWN_HOSTS GITLAB_DEPLOY_SSH_PRIVATE_KEY
       - make deps
       - make build
-      - sleep 3600 || true  # DEBUG
       - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
     depends_on: []
 
@@ -56,7 +55,7 @@ steps:
       - name: dind
         path: /var/lib/docker
     privileged: true
-    command: ['-H', 'unix:///dockersock/docker.sock']
+    command: ['-H', 'unix:///dockersock/docker.sock', '-s', 'overlay2']
     depends_on: []
     detach: true
     when:
@@ -117,7 +116,6 @@ steps:
         - refs/heads/master
         - refs/heads/develop
         - refs/heads/release/*
-        - refs/heads/507-fix-ci-tag-and-docker-image-creation
         - refs/tags/*
 
   - name: push_to_devnet
@@ -137,7 +135,7 @@ steps:
       VEGANET_USERS:
         from_secret: VEGANET_USERS
     commands:
-      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
+      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"  # requires GITLAB_API_TOKEN and 3 DEVNET_* vars
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
       - 'for u in $$VEGANET_USERS ; do
           cmd/vegaccount/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
