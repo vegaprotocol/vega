@@ -102,11 +102,6 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 
 	// ignore erros as they can only happen when the party already exists
 	p.partyBuf.Add(types.Party{Id: notif.TraderID})
-	// err := p.store.Post(&types.Party{Id: notif.TraderID})
-	// if err == nil {
-	// 	p.log.Info("New party created",
-	// 		logging.String("party-id", notif.TraderID))
-	// }
 
 	for _, mkt := range p.markets {
 		p.addParty(notif.TraderID, mkt.Id)

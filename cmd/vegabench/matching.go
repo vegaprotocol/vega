@@ -25,7 +25,7 @@ type execEngine struct {
 	time   *mocks.MockTimeService
 	order  *mocks.MockOrderBuf
 	trade  *mocks.MockTradeBuf
-	candle *mocks.MockCandleStore
+	candle *mocks.MockCandleBuf
 	market *mocks.MockMarketBuf
 	party  *mocks.MockPartyBuf
 }
@@ -35,7 +35,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	time := mocks.NewMockTimeService(ctrl)
 	order := mocks.NewMockOrderBuf(ctrl)
 	trade := mocks.NewMockTradeBuf(ctrl)
-	candle := mocks.NewMockCandleStore(ctrl)
+	candle := mocks.NewMockCandleBuf(ctrl)
 	market := mocks.NewMockMarketBuf(ctrl)
 	party := mocks.NewMockPartyBuf(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))

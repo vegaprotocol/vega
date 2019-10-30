@@ -35,11 +35,12 @@ type TradeBuf interface {
 	Flush() error
 }
 
-// CandleStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleStore
-type CandleStore interface {
-	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
-	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
+// CandleBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleBuf
+type CandleBuf interface {
+	AddTrade(types.Trade) error
+	Flush(marketID string, t time.Time) error
+	Start(marketID string, t time.Time) (map[string]types.Candle, error)
 }
 
 // MarketBuf ...
@@ -86,7 +87,7 @@ type Engine struct {
 	party       *Party
 	orderBuf    OrderBuf
 	tradeBuf    TradeBuf
-	candleStore CandleStore
+	candleBuf   CandleBuf
 	marketBuf   MarketBuf
 	partyBuf    PartyBuf
 	time        TimeService
@@ -104,7 +105,7 @@ func NewEngine(
 	time TimeService,
 	orderBuf OrderBuf,
 	tradeBuf TradeBuf,
-	candleStore CandleStore,
+	candleBuf CandleBuf,
 	marketBuf MarketBuf,
 	partyBuf PartyBuf,
 	accountBuf AccountBuf,
@@ -155,7 +156,7 @@ func NewEngine(
 		log:         log,
 		Config:      executionConfig,
 		markets:     map[string]*Market{},
-		candleStore: candleStore,
+		candleBuf:   candleBuf,
 		orderBuf:    orderBuf,
 		tradeBuf:    tradeBuf,
 		marketBuf:   marketBuf,
@@ -246,7 +247,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.collateral,
 		e.party,
 		mktconfig,
-		e.candleStore,
+		e.candleBuf,
 		e.orderBuf,
 		e.partyBuf,
 		e.tradeBuf,
@@ -262,13 +263,6 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	}
 
 	e.marketBuf.Add(*mktconfig)
-	// err = e.marketStore.Post(mktconfig)
-	// if err != nil {
-	// 	e.log.Error("Failed to add default market to market store",
-	// 		logging.String("market-name", mktconfig.Name),
-	// 		logging.Error(err),
-	// 	)
-	// }
 
 	e.markets[mktconfig.Id] = mkt
 
@@ -415,12 +409,6 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 	for _, order := range expiringOrders {
 		order := order
 		e.orderBuf.Add(order)
-		// err := e.orderBuf.Add(order)
-		// if err != nil {
-		// 	e.log.Error("error updating store for remove expiring order",
-		// 		logging.Order(order),
-		// 		logging.Error(err))
-		// }
 		// order expired, decrement gauge
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
