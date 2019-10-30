@@ -35,6 +35,7 @@ steps:
       - echo "$${GITLAB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - echo "$${GITLAB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
       - unset GITLAB_DEPLOY_SSH_KNOWN_HOSTS GITLAB_DEPLOY_SSH_PRIVATE_KEY
+      - env |sort
       - make deps
       - make build
       - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
@@ -163,6 +164,7 @@ steps:
       - imgtag="$${DRONE_BRANCH}"
       - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
       - if test -z "$$imgtag" ; then exit 1 ; fi
+      - while ! docker ps ; do sleep 1 ; done # wait for dind
       - docker build -t "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" -f Dockerfile.quick . || exit 0
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
       - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
