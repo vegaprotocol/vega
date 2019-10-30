@@ -18,7 +18,6 @@ import (
 	"code.vegaprotocol.io/vega/settlement"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +29,7 @@ type testMarket struct {
 
 	collateraEngine       *collateral.Engine
 	partyEngine           *execution.Party
-	candleStore           *mocks.MockCandleStore
+	candleStore           *mocks.MockCandleBuf
 	orderStore            *mocks.MockOrderBuf
 	partyStore            *mocks.MockPartyBuf
 	tradeStore            *mocks.MockTradeBuf
@@ -47,8 +46,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	settlementConfig := settlement.NewDefaultConfig()
 	matchingConfig := matching.NewDefaultConfig()
 
-	candleStore := mocks.NewMockCandleStore(ctrl)
-	candleStore.EXPECT().FetchLastCandle(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).AnyTimes()
+	candleStore := mocks.NewMockCandleBuf(ctrl)
 	orderStore := mocks.NewMockOrderBuf(ctrl)
 	partyStore := mocks.NewMockPartyBuf(ctrl)
 	tradeStore := mocks.NewMockTradeBuf(ctrl)
@@ -60,6 +58,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, partyStore)
 
+	candleStore.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore, orderStore,
@@ -159,7 +158,7 @@ func TestMarketClosing(t *testing.T) {
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
 	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	tm.candleStore.EXPECT().GenerateCandlesFromBuffer(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	// check account gets updated
 	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(2).DoAndReturn(func(acc types.Account) {
 		// if Margin -> 0
@@ -234,6 +233,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
+	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
 	// close the market nowks
 	// check account gets updated
@@ -252,7 +253,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		t.Fail()
 	}
 
-	tm.candleStore.EXPECT().GenerateCandlesFromBuffer(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(9).DoAndReturn(func(acc types.Account) {
 
@@ -292,6 +293,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	})
 	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
+	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	// submit orders
 	// party1 buys

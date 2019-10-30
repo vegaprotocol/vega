@@ -43,7 +43,7 @@ type tstSetup struct {
 	ctrl     *gomock.Controller
 	core     *execution.Market
 	party    *execution.Party
-	candles  *mocks.MockCandleStore
+	candles  *mocks.MockCandleBuf
 	orders   *orderStub
 	trades   *tradeStub
 	parties  *mocks.MockPartyBuf
@@ -71,7 +71,7 @@ func getMock(market *proto.Market) *tstSetup {
 	}
 	// the controller needs the reporter to report on errors or clunk out with fatal
 	ctrl := gomock.NewController(&reporter)
-	candles := mocks.NewMockCandleStore(ctrl)
+	candles := mocks.NewMockCandleBuf(ctrl)
 	// orders := mocks.NewMockOrderStore(ctrl)
 	orders := NewOrderStub()
 	// trades := mocks.NewMockTradeStore(ctrl)
@@ -93,7 +93,9 @@ func getMock(market *proto.Market) *tstSetup {
 		time.Now(),
 	)
 	// mock call to get the last candle
-	candles.EXPECT().FetchLastCandle(gomock.Any(), gomock.Any()).MinTimes(1).Return(&proto.Candle{}, nil)
+	// candles.EXPECT().FetchLastCandle(gomock.Any(), gomock.Any()).MinTimes(1).Return(&proto.Candle{}, nil)
+	candles.EXPECT().Start(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil, nil)
+	candles.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	setup := &tstSetup{
 		market:     market,

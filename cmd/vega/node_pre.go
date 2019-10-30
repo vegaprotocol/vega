@@ -114,6 +114,7 @@ func (l *NodeCommand) setupBuffers() {
 	l.transferBuf = buffer.NewTransferResponse(l.transferResponseStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
 	l.accountBuf = buffer.NewAccount(l.accounts)
+	l.candleBuf = buffer.NewCandle(l.candleStore)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
