@@ -14,7 +14,7 @@ type Stats struct {
 	chainVersion string
 }
 
-// NewStats instanciates a new Stats
+// New instantiates a new Stats
 func New(logger *logging.Logger, version string, versionHash string) *Stats {
 	return &Stats{
 		log:         logger,

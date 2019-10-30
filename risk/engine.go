@@ -230,7 +230,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	return ret
 }
 
-// ExpectMargin is used in the case some traders are in a distressed positions
+// ExpectMargins is used in the case some traders are in a distressed positions
 // in this situation we will only check if the trader margin is > to the maintenance margin
 func (e *Engine) ExpectMargins(
 	evts []events.Margin, markPrice uint64,
