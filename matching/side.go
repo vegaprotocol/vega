@@ -126,7 +126,7 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 			finaloidx = oidx
 			break
 		}
-		oidx += 1
+		oidx++
 	}
 
 	// remove the order from the

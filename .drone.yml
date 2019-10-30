@@ -9,6 +9,13 @@ platform:
   os: linux
 
 steps:
+
+  # https://docker-runner.docs.drone.io/configuration/cloning/
+  - name: fetch
+    image: alpine/git
+    commands:
+      - git fetch --tags  # necessary for generation of VERSION var
+
   - name: build
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     pull: always
@@ -38,22 +45,24 @@ steps:
       - make deps
       - make build
       - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
-    depends_on: []
+    depends_on:
+      - fetch
 
   - name: docker
     image: docker:dind
     volumes:
       - name: dockersock
         path: /dockersock
+      - name: dind
+        path: /var/lib/docker
     privileged: true
-    command: ['-H', 'unix:///dockersock/docker.sock']
+    command: ['-H', 'unix:///dockersock/docker.sock', '-s', 'overlay2']
     depends_on: []
     detach: true
     when:
       ref:
         - refs/heads/master
         - refs/heads/develop
-        - refs/heads/491-implement-drone-ci-config
         - refs/tags/*
 
   # Tests to be run on *all* branches.
@@ -107,7 +116,6 @@ steps:
         - refs/heads/master
         - refs/heads/develop
         - refs/heads/release/*
-        - refs/heads/491-implement-drone-ci-config
         - refs/tags/*
 
   - name: push_to_devnet
@@ -127,7 +135,7 @@ steps:
       VEGANET_USERS:
         from_secret: VEGANET_USERS
     commands:
-      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
+      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"  # requires GITLAB_API_TOKEN and 3 DEVNET_* vars
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
       - 'for u in $$VEGANET_USERS ; do
           cmd/vegaccount/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
@@ -161,6 +169,7 @@ steps:
       - imgtag="$${DRONE_BRANCH}"
       - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
       - if test -z "$$imgtag" ; then exit 1 ; fi
+      - while ! docker ps ; do sleep 1 ; done  # wait for dind
       - docker build -t "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" -f Dockerfile.quick . || exit 0
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
       - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
@@ -172,10 +181,12 @@ steps:
       ref:
         - refs/heads/master
         - refs/heads/develop
-        - refs/heads/491-implement-drone-ci-config
         - refs/tags/*
 
 volumes:
+  - name: dind
+    host:
+      path: /var/lib/drone/volumes/dind
   - name: dockersock
     host:
       path: /var/lib/drone/volumes/dockersock

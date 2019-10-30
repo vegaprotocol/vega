@@ -12,18 +12,17 @@ type IDgenerator struct {
 	orders  uint64
 }
 
-// we don't really need this func, but we want to abstract/obscure
-// this type as much as possible
+// NewIDGen returns an IDgenerator, and is used to abstract this type.
 func NewIDGen() *IDgenerator {
 	return &IDgenerator{}
 }
 
-// NewBlock ...
+// NewBatch ...
 func (i *IDgenerator) NewBatch() {
 	i.batches++
 }
 
-// setID - sets id on an order, and increments total order count
+// SetID sets the ID on an order, and increments total order count
 func (i *IDgenerator) SetID(o *types.Order) {
 	i.orders++
 	o.Id = fmt.Sprintf("V%010d-%010d", i.batches, i.orders)
