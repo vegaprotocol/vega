@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 func main() {

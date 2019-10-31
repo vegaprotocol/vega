@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"code.vegaprotocol.io/vega/internal/fsutil"
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const (

@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/config"
-	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/fsutil"
-	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/spf13/cobra"
@@ -205,10 +205,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 						},
 					},
 				},
-				RiskModel: &proto.TradableInstrument_Forward{
-					Forward: &proto.Forward{
-						Lambd: 0.01,
-						Tau:   1.0 / 365.25 / 24,
+				RiskModel: &proto.TradableInstrument_ForwardRiskModel{
+					ForwardRiskModel: &proto.ForwardRiskModel{
+						RiskAversionParameter: 0.01,
+						Tau:                   1.0 / 365.25 / 24,
 						Params: &proto.ModelParamsBS{
 							Mu:    0,
 							R:     0.016,

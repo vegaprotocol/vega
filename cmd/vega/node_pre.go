@@ -5,21 +5,21 @@ import (
 	"os"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/accounts"
-	"code.vegaprotocol.io/vega/internal/blockchain"
-	"code.vegaprotocol.io/vega/internal/candles"
-	"code.vegaprotocol.io/vega/internal/config"
-	"code.vegaprotocol.io/vega/internal/fsutil"
-	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/orders"
-	"code.vegaprotocol.io/vega/internal/parties"
-	"code.vegaprotocol.io/vega/internal/pprof"
-	"code.vegaprotocol.io/vega/internal/storage"
-	"code.vegaprotocol.io/vega/internal/trades"
-	"code.vegaprotocol.io/vega/internal/transfers"
-	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/orders"
+	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/trades"
+	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/spf13/cobra"
 )
@@ -89,7 +89,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	l.stats = internal.NewStats(l.Log, l.cli.version, l.cli.versionHash)
+	l.stats = stats.New(l.Log, l.cli.version, l.cli.versionHash)
 	// set up storage, this should be persistent
 	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
 		return
