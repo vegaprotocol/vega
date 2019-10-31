@@ -53,11 +53,11 @@ func commands() {
 				}
 				fmt.Println(dir)
 				if c.NArg() > 0 {
-					instructions, err := ProcessFiles(c.Args())
+					_, err := ProcessFiles(c.Args())
 					if err != nil {
 						return err
 					}
-					sr = sr
+					return ErrNotImplemented
 
 					if optionalOutputFile != "" {
 						return ErrNotImplemented
