@@ -3,6 +3,7 @@ package scenariorunner
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/golang/protobuf/ptypes/empty"
 )
 
 // NewInstruction returns a new instruction from the request and proto message.
@@ -22,6 +23,10 @@ func (instr Instruction) NewResult(response proto.Message, err error) (*Instruct
 	errText := ""
 	if err != nil {
 		errText = err.Error()
+	}
+
+	if response == nil {
+		response = &empty.Empty{}
 	}
 
 	any, err := marshalAny(response)

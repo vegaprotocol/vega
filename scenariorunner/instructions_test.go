@@ -5,10 +5,10 @@ import (
 	"log"
 	"testing"
 
-	sr "code.vegaprotocol.io/vega/scenariorunner"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
-	
+	sr "code.vegaprotocol.io/vega/scenariorunner"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 )
@@ -59,8 +59,26 @@ func TestNewResult(t *testing.T) {
 	var responseReconstructed api.NotifyTraderAccountResponse
 	err = proto.Unmarshal(res.Response.Value, &responseReconstructed)
 	if err != nil {
-		log.Fatalln("Failed to unmarshal response message: ", err)
+		t.Fatalf("Failed to unmarshal response message: %s", err.Error())
 	}
 	assert.EqualValues(t, response.Submitted, responseReconstructed.Submitted)
 
+}
+
+func TestNewResultWithEmptyReposnse(t *testing.T) {
+	request := "testRequest"
+	trader := "testTrader"
+	message := api.NotifyTraderAccountRequest{
+		Notif: &types.NotifyTraderAccount{
+			TraderID: trader,
+		},
+	}
+	instruction, err := sr.NewInstruction(request, &message)
+	if err != nil {
+		t.Fatalf("Failed to create a new instruction: %s", err.Error())
+	}
+
+	result, err := instruction.NewResult(nil, nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
 }
