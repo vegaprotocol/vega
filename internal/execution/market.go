@@ -1025,6 +1025,17 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) (orderList []types.Order, 
 		err = ErrMarketClosed
 	} else {
 		orderList = m.matching.RemoveExpiredOrders(timestamp)
+		// need to remove the expired orders from the potentials positions
+		for _, order := range orderList {
+			order := order
+			_, err = m.position.UnregisterOrder(&order)
+			if err != nil {
+				m.log.Error("Failure unregistering order in positions engine (cancel)",
+					logging.Order(order),
+					logging.Error(err))
+			}
+		}
+
 	}
 
 	timer.EngineTimeCounterAdd()
