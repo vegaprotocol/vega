@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/vegatime"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
 
 	"github.com/golang/protobuf/proto"
 	//"github.com/golang/protobuf/ptypes"
@@ -124,34 +124,23 @@ func (sr ScenarioRunner) processInstruction(instr *Instruction) (*InstructionRes
 	var err error
 	var responseErr error
 	var response proto.Message
-	switch instr.Request {
-	case "trading.NotifyTraderAccount":
-		req := &api.NotifyTraderAccountRequest{}
+	switch strings.ToLower(instr.Request) {
+	case "notifytraderaccount":
+		req := &types.NotifyTraderAccount{}
 		err = proto.Unmarshal(instr.Message.Value, req)
 		if err != nil {
 			break
 		}
-		responseErr = sr.executionEngine.NotifyTraderAccount(req.Notif)
+		responseErr = sr.executionEngine.NotifyTraderAccount(req)
 		response = nil
-	case "trading.SubmitOrder":
-		req := &api.SubmitOrderRequest{}
+	case "submitorder":
+		req := &types.Order{}
 		//err = ptypes.UnmarshalAny(instr.Message, req)
 		err = proto.Unmarshal(instr.Message.Value, req)
 		if err != nil {
 			break
 		}
-		order := &types.Order{
-			Id:          req.Submission.Id,
-			MarketID:    req.Submission.MarketID,
-			PartyID:     req.Submission.PartyID,
-			Side:        req.Submission.Side,
-			Price:       req.Submission.Price,
-			Size:        req.Submission.Size,
-			TimeInForce: req.Submission.TimeInForce,
-			Type:        req.Submission.Type,
-			ExpiresAt:   req.Submission.ExpiresAt,
-		}
-		response, responseErr = sr.executionEngine.SubmitOrder(order)
+		response, responseErr = sr.executionEngine.SubmitOrder(req)
 	default:
 		return nil, fmt.Errorf("Unsupported request: %v", instr.Request)
 	}
