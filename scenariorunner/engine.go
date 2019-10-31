@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
@@ -74,10 +75,13 @@ func NewScenarionRunner() (*ScenarioRunner, error) {
 		return nil, err
 	}
 
+	timeService := vegatime.New(config.Time)
+	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
+	timeService.SetTimeNow(now)
 	executionEngine := execution.NewEngine(
 		log,
 		config.Execution,
-		vegatime.New(config.Time),
+		timeService,
 		orderStore,
 		tradeStore,
 		candleStore,
