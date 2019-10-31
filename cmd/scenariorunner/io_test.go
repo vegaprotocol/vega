@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	sr "code.vegaprotocol.io/vega/internal/scenariorunner"
+	sr "code.vegaprotocol.io/vega/scenariorunner"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
 

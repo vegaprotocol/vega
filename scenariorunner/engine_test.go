@@ -4,14 +4,15 @@ import (
 	"log"
 	"testing"
 
-	sr "code.vegaprotocol.io/vega/internal/scenariorunner"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
+	sr "code.vegaprotocol.io/vega/scenariorunner"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessInstructions(t *testing.T) {
+	t.Skip("WIP")
 	runner, err := sr.NewScenarionRunner()
 	assert.NoError(t, err)
 

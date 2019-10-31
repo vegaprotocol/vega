@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	sr "code.vegaprotocol.io/vega/internal/scenariorunner"
+	sr "code.vegaprotocol.io/vega/scenariorunner"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/hashicorp/go-multierror"
