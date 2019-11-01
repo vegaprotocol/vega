@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/execution/mocks"
-	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage"
-	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/execution/mocks"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/mock/gomock"
 )
@@ -38,6 +38,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	market := mocks.NewMockMarketStore(ctrl)
 	party := mocks.NewMockPartyStore(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
+	transferResponse := mocks.NewMockTransferResponseStore(ctrl)
 	executionConfig := execution.NewDefaultConfig("")
 
 	engine := execution.NewEngine(
@@ -50,6 +51,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 		market,
 		party,
 		accounts,
+		transferResponse,
 	)
 	return &execEngine{
 		Engine: engine,
@@ -63,7 +65,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	}
 }
 
-func BenchmarkMatching(
+func benchmarkMatching(
 	numberOfOrders int,
 	b *testing.B,
 	quiet bool,

@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	main "code.vegaprotocol.io/vega/cmd/vega"
-	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/storage"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/stretchr/testify/assert"
 )

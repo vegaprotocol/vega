@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/internal/config"
-	"code.vegaprotocol.io/vega/internal/fsutil"
-	"code.vegaprotocol.io/vega/internal/gateway"
-	gql "code.vegaprotocol.io/vega/internal/gateway/graphql"
-	"code.vegaprotocol.io/vega/internal/gateway/rest"
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/gateway"
+	gql "code.vegaprotocol.io/vega/gateway/graphql"
+	"code.vegaprotocol.io/vega/gateway/rest"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/spf13/cobra"
 )
@@ -69,11 +69,12 @@ func (g *gatewayCommand) runGateway(args []string) error {
 	}
 
 	waitSig(ctx, g.Log)
-	gty.Stop()
+	gty.stop()
 
 	return nil
 }
 
+// Gateway contains all the gateway objects, currently GraphQL and REST.
 type Gateway struct {
 	gqlSrv  gatewaySrv
 	restSrv gatewaySrv
@@ -85,7 +86,7 @@ func startGateway(log *logging.Logger, cfg gateway.Config) (*Gateway, error) {
 		err             error
 	)
 	if cfg.REST.Enabled {
-		restSrv = rest.NewRestProxyServer(log, cfg)
+		restSrv = rest.NewProxyServer(log, cfg)
 	}
 
 	if cfg.GraphQL.Enabled {
@@ -109,7 +110,7 @@ func startGateway(log *logging.Logger, cfg gateway.Config) (*Gateway, error) {
 
 }
 
-func (g *Gateway) Stop() {
+func (g *Gateway) stop() {
 	if g.restSrv != nil {
 		g.restSrv.Stop()
 	}

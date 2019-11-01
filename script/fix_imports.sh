@@ -13,13 +13,13 @@ cat >"$awkscript" <<EOF
 BEGIN {
 	IMP=0
 }
-IMP==1 && /^\)$/ {
+IMP==1 && /^\\)$/ {
 	IMP=0
 }
 (IMP==1 && !/^$/) || IMP==0 {
 	print
 }
-IMP==0 && /^import \($/ {
+IMP==0 && /^import \\($/ {
 	IMP=1
 }
 EOF

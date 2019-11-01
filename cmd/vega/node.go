@@ -7,24 +7,25 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/accounts"
-	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/auth"
-	"code.vegaprotocol.io/vega/internal/blockchain"
-	"code.vegaprotocol.io/vega/internal/candles"
-	"code.vegaprotocol.io/vega/internal/config"
-	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/metrics"
-	"code.vegaprotocol.io/vega/internal/monitoring"
-	"code.vegaprotocol.io/vega/internal/orders"
-	"code.vegaprotocol.io/vega/internal/parties"
-	"code.vegaprotocol.io/vega/internal/pprof"
-	"code.vegaprotocol.io/vega/internal/storage"
-	"code.vegaprotocol.io/vega/internal/trades"
-	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/auth"
+	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/orders"
+	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/trades"
+	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -37,29 +38,31 @@ type NodeCommand struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	accounts    *storage.Account
-	candleStore *storage.Candle
-	orderStore  *storage.Order
-	marketStore *storage.Market
-	tradeStore  *storage.Trade
-	partyStore  *storage.Party
-	riskStore   *storage.Risk
+	accounts              *storage.Account
+	candleStore           *storage.Candle
+	orderStore            *storage.Order
+	marketStore           *storage.Market
+	tradeStore            *storage.Trade
+	partyStore            *storage.Party
+	riskStore             *storage.Risk
+	transferResponseStore *storage.TransferResponse
 
-	candleService   *candles.Svc
-	tradeService    *trades.Svc
-	marketService   *markets.Svc
-	orderService    *orders.Svc
-	partyService    *parties.Svc
-	timeService     *vegatime.Svc
-	auth            *auth.Svc
-	accountsService *accounts.Svc
+	candleService    *candles.Svc
+	tradeService     *trades.Svc
+	marketService    *markets.Svc
+	orderService     *orders.Svc
+	partyService     *parties.Svc
+	timeService      *vegatime.Svc
+	auth             *auth.Svc
+	accountsService  *accounts.Svc
+	transfersService *transfers.Svc
 
 	blockchainClient *blockchain.Client
 
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
 	conf         config.Config
-	stats        *internal.Stats
+	stats        *stats.Stats
 	withPPROF    bool
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
@@ -95,8 +98,7 @@ func (l *NodeCommand) addFlags() {
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
-	// check node_pre.go, that's where everything gets bootstrapped
-	// Execution engine (broker operation at runtime etc)
+	// See node_pre.go, that's where everything gets bootstrapped for the node
 	executionEngine := execution.NewEngine(
 		l.Log,
 		l.conf.Execution,
@@ -107,6 +109,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.marketStore,
 		l.partyStore,
 		l.accounts,
+		l.transferResponseStore,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { executionEngine.ReloadConf(cfg.Execution) })
 
@@ -163,6 +166,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.tradeService,
 		l.candleService,
 		l.accountsService,
+		l.transfersService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
@@ -194,7 +198,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	// cleanup gateway
 	if l.conf.GatewayEnabled {
 		if gty != nil {
-			gty.Stop()
+			gty.stop()
 		}
 	}
 

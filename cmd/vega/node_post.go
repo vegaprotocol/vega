@@ -1,10 +1,9 @@
-// This file will contain all hooks WRT "shutdown"
 package main
 
 import (
 	"strings"
 
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -41,6 +40,11 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 	if l.accounts != nil {
 		if err := l.accounts.Close(); err != nil {
 			werr = append(werr, errors.Wrap(err, "error closing account store in command."))
+		}
+	}
+	if l.transferResponseStore != nil {
+		if err := l.transferResponseStore.Close(); err != nil {
+			werr = append(werr, errors.Wrap(err, "error closing transfer response store in command."))
 		}
 	}
 	if l.pproffhandlr != nil {

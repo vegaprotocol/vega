@@ -6,14 +6,16 @@ import (
 	"log"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/internal/risk/models"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/risk/models"
 )
 
+// RiskModel specifies a risk model handler which can be used as a http.Server.Handler.
 type RiskModel struct {
 	*http.ServeMux
 }
 
+// NewRiskModel returns a new RiskModel object.
 func NewRiskModel() *RiskModel {
 	rm := &RiskModel{http.NewServeMux()}
 	rm.HandleFunc("/setup", rm.setup)
@@ -22,7 +24,7 @@ func NewRiskModel() *RiskModel {
 	return rm
 }
 
-func (r *RiskModel) setup(w http.ResponseWriter, req *http.Request) {
+func (rm *RiskModel) setup(w http.ResponseWriter, req *http.Request) {
 	log.Printf("/setup called")
 	w.WriteHeader(http.StatusNoContent)
 }

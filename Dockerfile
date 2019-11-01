@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.5 \
+FROM registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13 \
 	AS builder
 RUN \
 	git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/" && \

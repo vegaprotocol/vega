@@ -20,11 +20,11 @@ syntax() {
 	echo "gitlab_project_id: Numeric Gitlab project ID"
 	echo "branch1:           A branch name"
 	echo "branch2:           Another branch name"
-	echo "filename:          The file to diff, e.g. internal/gateway/graphql/schema.graphql"
+	echo "filename:          The file to diff, e.g. gateway/graphql/schema.graphql"
 }
 
 for app in base64 curl diff jq python3 ; do
-	if ! which "$app" 1>/dev/null ; then
+	if ! command -v "$app" 1>/dev/null ; then
 		echo "Error: Need program: $app"
 		exit 1
 	fi
@@ -60,14 +60,14 @@ get_file_for_branch() {
 	# Sample response:
 	# {
 	#   "file_name": "schema.graphql",
-	#   "file_path": "internal/gateway/graphql/schema.graphql",
+	#   "file_path": "gateway/graphql/schema.graphql",
 	#   "size": 21215,
 	#   "encoding": "base64",
 	#   "content_sha256": "8e06...07ec",
 	#   "ref": "develop",
 	#   "blob_id": "d099...1f0a",
 	#   "commit_id": "06c3...28e7",
-	#   "last_commit_id": "06b1...84f1", 
+	#   "last_commit_id": "06b1...84f1",
 	#   "content": "IyMgVkVHQSAtIE...mVyYWwKfQo="
 	# }
 
@@ -102,11 +102,11 @@ file1tmpname="$(mktemp)"
 file2tmpname="$(mktemp)"
 
 echo "$file1data" | jq -r .content | base64 --decode >"$file1tmpname"
-echo "$file2data" | jq -r .content | base64 --decode >"$file2tmpname" 
+echo "$file2data" | jq -r .content | base64 --decode >"$file2tmpname"
 
 echo "Files differ between branch $branch1 and $branch2:"
-diff -u --label "$filename $branch1" --label "$filename $branch2" "$file1tmpname" "$file2tmpname"
-rm -f "$file1tmpname" "$file2tmpname"
+diffname="$(mktemp)"
+diff -u --label "$filename $branch1" --label "$filename $branch2" "$file1tmpname" "$file2tmpname" | tee "$diffname"
 
 echo
 echo "Latest commit: $(echo "$file1data" | jq .commit_id) (repo $branch1)"
@@ -119,5 +119,6 @@ gitlab_ci="${GITLAB_CI:-false}"
 if test "$gitlab_ci" == "true" ; then
 	echo "Sending slack notification"
 	pipeline_url="${CI_PIPELINE_URL:-[failed to get pipeline URL]}"
-	slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\` (see $pipeline_url for details)"
+	slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\` (see \`autogen_checks\` from $pipeline_url for details)\\n\`\`\`\\n$(cat "$diffname")\`\`\`"
 fi
+rm -f "$file1tmpname" "$file2tmpname" "$diffname"

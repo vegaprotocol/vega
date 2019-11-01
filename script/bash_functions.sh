@@ -3,7 +3,7 @@
 # This file should be sourced, not run.
 
 json_escape() {
-	echo -n "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+	echo -en "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
 
 slack_notify() {
@@ -11,7 +11,7 @@ slack_notify() {
 	if test -z "$slack_hook_url" ; then
 		return
 	fi
-	if ! which curl 1>/dev/null ; then
+	if ! command -v curl 1>/dev/null ; then
 		return
 	fi
 	channel="${1:-tradingcore-notify}"
