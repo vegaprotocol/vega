@@ -137,26 +137,39 @@ func (sr ScenarioRunner) preProcess(instr *Instruction) (*preProcessedInstructio
 	switch strings.ToLower(instr.Request) {
 	case "notifytraderaccount":
 		req := &types.NotifyTraderAccount{}
-		err := proto.Unmarshal(instr.Message.Value, req)
-		if err != nil {
+		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, ErrInstructionInvalid
 		}
-		return &preProcessedInstruction{
-			instruction: instr,
-			payload:     req,
-			deliver:     func() (proto.Message, error) { return nil, sr.executionEngine.NotifyTraderAccount(req) },
-		}, nil
+		return instr.preProcess(
+			req, func() (proto.Message, error) { return nil, sr.executionEngine.NotifyTraderAccount(req) })
 	case "submitorder":
 		req := &types.Order{}
-		err := proto.Unmarshal(instr.Message.Value, req)
-		if err != nil {
+		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, ErrInstructionInvalid
 		}
-		return &preProcessedInstruction{
-			instruction: instr,
-			payload:     req,
-			deliver:     func() (proto.Message, error) { return sr.executionEngine.SubmitOrder(req) },
-		}, nil
+		return instr.preProcess(
+			req, func() (proto.Message, error) { return sr.executionEngine.SubmitOrder(req) })
+	case "cancelorder":
+		req := &types.Order{}
+		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
+			return nil, ErrInstructionInvalid
+		}
+		return instr.preProcess(
+			req, func() (proto.Message, error) { return sr.executionEngine.CancelOrder(req) })
+	case "amendorder":
+		req := &types.OrderAmendment{}
+		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
+			return nil, ErrInstructionInvalid
+		}
+		return instr.preProcess(
+			req, func() (proto.Message, error) { return sr.executionEngine.AmendOrder(req) })
+	case "withdraw":
+		req := &types.Withdraw{}
+		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
+			return nil, ErrInstructionInvalid
+		}
+		return instr.preProcess(
+			req, func() (proto.Message, error) { return nil, sr.executionEngine.Withdraw(req) })
 	default:
 		return nil, fmt.Errorf("Unsupported request: %v", instr.Request)
 	}
@@ -170,4 +183,12 @@ type preProcessedInstruction struct {
 
 func (p *preProcessedInstruction) result() (*InstructionResult, error) {
 	return p.instruction.NewResult(p.deliver())
+}
+
+func (instr *Instruction) preProcess(payload proto.Message, deliver func() (proto.Message, error)) (*preProcessedInstruction, error) {
+	return &preProcessedInstruction{
+		instruction: instr,
+		payload:     payload,
+		deliver:     deliver,
+	}, nil
 }
