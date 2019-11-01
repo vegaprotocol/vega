@@ -8,7 +8,7 @@ import "vega/proto/vega.proto";
 
 message Instruction {
     string description = 1;
-    string request = 2;
+    string request = 2; //TODO (WG 31/10/2019): Perhaps use a custom type here
     google.protobuf.Any message = 3;
 
 }

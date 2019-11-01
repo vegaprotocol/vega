@@ -20,8 +20,11 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-//ErrNotImplemented throws an error with "NotImplemented" text
-var ErrNotImplemented error = errors.New("NotImplemented")
+var (
+	ErrNotImplemented          error = errors.New("Not implemented")
+	ErrInstructionNotSupported error = errors.New("Instruction not supported")
+	ErrInstructionInvalid      error = errors.New("Instruction invalid")
+)
 
 type ScenarioRunner struct {
 	executionEngine *execution.Engine
@@ -37,6 +40,7 @@ func NewScenarionRunner() (*ScenarioRunner, error) {
 	cfgwatchr, err := config.NewFromFile(ctx, log, configPath, configPath)
 	if err != nil {
 		log.Error("unable to start config watcher", logging.Error(err))
+		cancel()
 		return nil, err
 	}
 	config := cfgwatchr.Get()
@@ -102,7 +106,13 @@ func (sr ScenarioRunner) ProcessInstructions(instrSet InstructionSet) (ResultSet
 	var errors *multierror.Error
 
 	for i, instr := range instrSet.Instructions {
-		res, err := sr.processInstruction(instr)
+		p, err := sr.preProcess(instr)
+		if err != nil {
+			errors = multierror.Append(errors, err)
+			omitted++
+			continue
+		}
+		res, err := p.result()
 		if err != nil {
 			errors = multierror.Append(errors, err)
 			omitted++
@@ -123,31 +133,41 @@ func (sr ScenarioRunner) ProcessInstructions(instrSet InstructionSet) (ResultSet
 	}, errors.ErrorOrNil()
 }
 
-func (sr ScenarioRunner) processInstruction(instr *Instruction) (*InstructionResult, error) {
-
-	var err error
-	var responseErr error
-	var response proto.Message
+func (sr ScenarioRunner) preProcess(instr *Instruction) (*preProcessedInstruction, error) {
 	switch strings.ToLower(instr.Request) {
 	case "notifytraderaccount":
 		req := &types.NotifyTraderAccount{}
-		err = proto.Unmarshal(instr.Message.Value, req)
+		err := proto.Unmarshal(instr.Message.Value, req)
 		if err != nil {
-			break
+			return nil, ErrInstructionInvalid
 		}
-		responseErr = sr.executionEngine.NotifyTraderAccount(req)
-		response = nil
+		return &preProcessedInstruction{
+			instruction: instr,
+			payload:     req,
+			deliver:     func() (proto.Message, error) { return nil, sr.executionEngine.NotifyTraderAccount(req) },
+		}, nil
 	case "submitorder":
 		req := &types.Order{}
-		//err = ptypes.UnmarshalAny(instr.Message, req)
-		err = proto.Unmarshal(instr.Message.Value, req)
+		err := proto.Unmarshal(instr.Message.Value, req)
 		if err != nil {
-			break
+			return nil, ErrInstructionInvalid
 		}
-		response, responseErr = sr.executionEngine.SubmitOrder(req)
+		return &preProcessedInstruction{
+			instruction: instr,
+			payload:     req,
+			deliver:     func() (proto.Message, error) { return sr.executionEngine.SubmitOrder(req) },
+		}, nil
 	default:
 		return nil, fmt.Errorf("Unsupported request: %v", instr.Request)
 	}
-	return instr.NewResult(response, responseErr)
+}
 
+type preProcessedInstruction struct {
+	instruction *Instruction
+	payload     proto.Message
+	deliver     func() (proto.Message, error)
+}
+
+func (p *preProcessedInstruction) result() (*InstructionResult, error) {
+	return p.instruction.NewResult(p.deliver())
 }
