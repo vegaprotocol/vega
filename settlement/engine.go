@@ -75,21 +75,21 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // Update - takes market positions, keeps track of things
-func (e *Engine) Update(positions []MarketPosition) {
-	e.posMu.Lock()
-	for _, p := range positions {
-		party := p.Party()
-		ps, ok := e.pos[party]
-		if !ok {
-			ps = newPos(party)
-			e.pos[party] = ps
-		}
-		// price can come from either position, or trade (Update vs SettleMTM)
-		ps.price = p.Price()
-		ps.size = p.Size()
-	}
-	e.posMu.Unlock()
-}
+//func (e *Engine) Update(positions []MarketPosition) {
+//	e.posMu.Lock()
+//	for _, p := range positions {
+//		party := p.Party()
+//		ps, ok := e.pos[party]
+//		if !ok {
+//			ps = newPos(party)
+//			e.pos[party] = ps
+//		}
+//		// price can come from either position, or trade (Update vs SettleMTM)
+//		ps.price = p.Price()
+//		ps.size = p.Size()
+//	}
+//	e.posMu.Unlock()
+//}
 
 func (e *Engine) getCurrentPosition(party string) *pos {
 	e.posMu.Lock()
@@ -132,47 +132,47 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 
 // ListenClosed listen to all positions for distressed trader
 // needing to be closed
-func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
-	// lock before we can start
-	e.closedMu.Lock()
-	go func() {
-		// wipe closed map
-		e.closed = map[string][]*pos{}
-		for ps := range ch {
-			trader := ps.Party()
-			size := ps.Size()
-			price := ps.Price()
-			updatePrice := price
-			// check current position to see if trade closed out some position
-			current := e.getCurrentPosition(trader)
-			// if trader is long, and trade closed out (part of) long position, or trader was short, and is now "less short"
-			if (current.size > 0 && size < current.size) || (current.size < 0 && size > current.size) {
-				closed := current.size
-				// trader was long, and still is || trader was short && still is
-				if (current.size > 0 && size > 0) || (current.size < 0 && size < 0) {
-					// trader was +10, now +5 -> +10 - +5 == MTM on +5 closed positions --> good
-					// trader was -10, now -5 -> -10 - -5 == MTM on -5 closed positions --> good
-					closed -= size
-					updatePrice = current.price
-				}
-				// let's add this change to the traders' closed positions to be added to the MTM settlement later on
-				trades, ok := e.closed[trader]
-				if !ok {
-					trades = []*pos{}
-				}
-				pos := newPos(trader)
-				pos.size = closed
-				pos.price = current.price // we closed out at the old price vs mark price
-				e.closed[trader] = append(trades, pos)
-			}
-			// we've taken the closed out stuff into account, so we can freely update the size here
-			current.size = size
-			// the position price is possibly updated (e.g. if there was no open position prior to this, or trader went from long to short or vice-versa)
-			current.price = updatePrice
-		}
-		e.closedMu.Unlock()
-	}()
-}
+//func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
+//	// lock before we can start
+//	e.closedMu.Lock()
+//	go func() {
+//		// wipe closed map
+//		e.closed = map[string][]*pos{}
+//		for ps := range ch {
+//			trader := ps.Party()
+//			size := ps.Size()
+//			price := ps.Price()
+//			updatePrice := price
+//			// check current position to see if trade closed out some position
+//			current := e.getCurrentPosition(trader)
+//			// if trader is long, and trade closed out (part of) long position, or trader was short, and is now "less short"
+//			if (current.size > 0 && size < current.size) || (current.size < 0 && size > current.size) {
+//				closed := current.size
+//				// trader was long, and still is || trader was short && still is
+//				if (current.size > 0 && size > 0) || (current.size < 0 && size < 0) {
+//					// trader was +10, now +5 -> +10 - +5 == MTM on +5 closed positions --> good
+//					// trader was -10, now -5 -> -10 - -5 == MTM on -5 closed positions --> good
+//					closed -= size
+//					updatePrice = current.price
+//				}
+//				// let's add this change to the traders' closed positions to be added to the MTM settlement later on
+//				trades, ok := e.closed[trader]
+//				if !ok {
+//					trades = []*pos{}
+//				}
+//				pos := newPos(trader)
+//				pos.size = closed
+//				pos.price = current.price // we closed out at the old price vs mark price
+//				e.closed[trader] = append(trades, pos)
+//			}
+//			// we've taken the closed out stuff into account, so we can freely update the size here
+//			current.size = size
+//			// the position price is possibly updated (e.g. if there was no open position prior to this, or trader went from long to short or vice-versa)
+//			current.price = updatePrice
+//		}
+//		e.closedMu.Unlock()
+//	}()
+//}
 
 // SettleOrder - settlements based on order-level, can take several update positions, and marks all to market
 // if party size and price were both updated (ie party was a trader), we're combining both MTM's (old + new position)
