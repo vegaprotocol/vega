@@ -15,12 +15,11 @@ var (
 )
 
 type ScenarioRunner struct {
-	//executionEngine *execution.Engine
 	providers []core.PreProcessorProvider
 }
 
-// NewScearioRunner returns a pointer to new instance of scenario runner
-func NewScenarionRunner() (*ScenarioRunner, error) {
+// NewScenarioRunner returns a pointer to new instance of scenario runner
+func NewScenarioRunner() (*ScenarioRunner, error) {
 
 	executionPreprocessor, err := preprocessors.NewExecution()
 	if err != nil {
