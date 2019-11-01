@@ -1,4 +1,4 @@
-package scenariorunner_test
+package core_test
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
-	sr "code.vegaprotocol.io/vega/scenariorunner"
+	"code.vegaprotocol.io/vega/scenariorunner/core"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +22,7 @@ func TestNewInstruction(t *testing.T) {
 		},
 	}
 
-	instruction, err := sr.NewInstruction(request, &message)
+	instruction, err := core.NewInstruction(request, &message)
 	assert.NoError(t, err)
 	assert.Equal(t, request, instruction.Request)
 	assert.Equal(t, "", instruction.Description)
@@ -43,7 +43,7 @@ func TestNewResult(t *testing.T) {
 			TraderID: trader,
 		},
 	}
-	instruction, err := sr.NewInstruction(request, &message)
+	instruction, err := core.NewInstruction(request, &message)
 	assert.NoError(t, err)
 
 	response := api.NotifyTraderAccountResponse{
@@ -73,7 +73,7 @@ func TestNewResultWithNilReposnse(t *testing.T) {
 			TraderID: trader,
 		},
 	}
-	instruction, err := sr.NewInstruction(request, &message)
+	instruction, err := core.NewInstruction(request, &message)
 	if err != nil {
 		t.Fatalf("Failed to create a new instruction: %s", err.Error())
 	}
@@ -91,7 +91,7 @@ func TestNewResultWithNilPointerReposnse(t *testing.T) {
 			TraderID: trader,
 		},
 	}
-	instruction, err := sr.NewInstruction(request, &message)
+	instruction, err := core.NewInstruction(request, &message)
 	if err != nil {
 		t.Fatalf("Failed to create a new instruction: %s", err.Error())
 	}

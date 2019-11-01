@@ -6,6 +6,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	sr "code.vegaprotocol.io/vega/scenariorunner"
+	"code.vegaprotocol.io/vega/scenariorunner/core"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +19,7 @@ func TestProcessInstructions(t *testing.T) {
 	}
 
 	trader1 := "trader1"
-	instr1, err := sr.NewInstruction(
+	instr1, err := core.NewInstruction(
 		"NotifyTraderAccount",
 		&types.NotifyTraderAccount{
 			TraderID: trader1,
@@ -32,7 +33,7 @@ func TestProcessInstructions(t *testing.T) {
 	sellOrderId := "myId1"
 	marketId := "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ"
 	sell := types.Side_Sell
-	instr2, err := sr.NewInstruction(
+	instr2, err := core.NewInstruction(
 		"SubmitOrder",
 		&types.Order{
 			Id:          sellOrderId,
@@ -50,7 +51,7 @@ func TestProcessInstructions(t *testing.T) {
 	}
 	instr2.Description = "Submit a sell order"
 
-	instr3, err := sr.NewInstruction(
+	instr3, err := core.NewInstruction(
 		"CancelOrder",
 		&types.Order{
 			Id:       sellOrderId,
@@ -65,7 +66,7 @@ func TestProcessInstructions(t *testing.T) {
 	buy := types.Side_Buy
 	buyOrderID := "myId2"
 	trader2 := "trader2"
-	instr4, err := sr.NewInstruction(
+	instr4, err := core.NewInstruction(
 		"SubmitOrder",
 		&types.Order{
 			Id:          buyOrderID,
@@ -82,7 +83,7 @@ func TestProcessInstructions(t *testing.T) {
 		log.Fatalln("Failed to create a new instruction: ", err)
 	}
 
-	instr5, err := sr.NewInstruction(
+	instr5, err := core.NewInstruction(
 		"AmendOrder",
 		&types.OrderAmendment{
 			OrderID:   buyOrderID,
@@ -96,7 +97,7 @@ func TestProcessInstructions(t *testing.T) {
 		log.Fatalln("Failed to create a new instruction: ", err)
 	}
 
-	instr6, err := sr.NewInstruction(
+	instr6, err := core.NewInstruction(
 		"Withdraw",
 		&types.Withdraw{
 			PartyID: trader2,
@@ -107,8 +108,8 @@ func TestProcessInstructions(t *testing.T) {
 		log.Fatalln("Failed to create a new instruction: ", err)
 	}
 
-	instructionSet := &sr.InstructionSet{
-		Instructions: []*sr.Instruction{
+	instructionSet := &core.InstructionSet{
+		Instructions: []*core.Instruction{
 			instr1,
 			instr2,
 			instr3,

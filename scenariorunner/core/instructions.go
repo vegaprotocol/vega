@@ -1,9 +1,16 @@
-package scenariorunner
+package core
 
 import (
+	"errors"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
+)
+
+var (
+	ErrInstructionNotSupported error = errors.New("Instruction not supported")
+	ErrInstructionInvalid      error = errors.New("Instruction invalid")
 )
 
 // NewInstruction returns a new instruction from the request and proto message.
@@ -49,4 +56,20 @@ func marshalAny(pb proto.Message) (*any.Any, error) {
 		return nil, err
 	}
 	return &any.Any{TypeUrl: proto.MessageName(pb), Value: value}, nil
+}
+
+func (instr *Instruction) PreProcess(deliver func() (proto.Message, error)) (*PreProcessedInstruction, error) {
+	return &PreProcessedInstruction{
+		instruction: instr,
+		deliver:     deliver,
+	}, nil
+}
+
+type PreProcessedInstruction struct {
+	instruction *Instruction
+	deliver     func() (proto.Message, error)
+}
+
+func (p *PreProcessedInstruction) Result() (*InstructionResult, error) {
+	return p.instruction.NewResult(p.deliver())
 }
