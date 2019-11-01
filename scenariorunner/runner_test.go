@@ -13,7 +13,7 @@ import (
 
 func TestProcessInstructions(t *testing.T) {
 
-	runner, err := sr.NewScenarionRunner()
+	runner, err := sr.NewScenarioRunner()
 	if err != nil {
 		t.Fatal(err)
 	}
