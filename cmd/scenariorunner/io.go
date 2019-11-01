@@ -4,21 +4,21 @@ import (
 	"io"
 	"os"
 
-	sr "code.vegaprotocol.io/vega/scenariorunner"
+	"code.vegaprotocol.io/vega/scenariorunner/core"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/hashicorp/go-multierror"
 )
 
 // ProcessFiles takes an array of paths to files, reads them in and returns their contents as an array of instruction sets (set per file)
-func ProcessFiles(filesWithPath []string) ([]*sr.InstructionSet, error) {
+func ProcessFiles(filesWithPath []string) ([]*core.InstructionSet, error) {
 	contents, err := readFiles(filesWithPath)
 	if err != nil {
 		return nil, err
 	}
 
 	var errors *multierror.Error
-	instructionSets := make([]*sr.InstructionSet, len(contents))
+	instructionSets := make([]*core.InstructionSet, len(contents))
 
 	for i, fileContents := range contents {
 		instructionSets[i], err = unmarshall(fileContents)
@@ -45,8 +45,8 @@ func readFiles(filesWithPath []string) ([]*os.File, error) {
 	return readers, errors.ErrorOrNil()
 }
 
-func unmarshall(r io.Reader) (*sr.InstructionSet, error) {
-	var instrSet = &sr.InstructionSet{}
+func unmarshall(r io.Reader) (*core.InstructionSet, error) {
+	var instrSet = &core.InstructionSet{}
 	err := jsonpb.Unmarshal(r, instrSet)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func unmarshall(r io.Reader) (*sr.InstructionSet, error) {
 	return instrSet, nil
 }
 
-func marshall(result *sr.ResultSet, out io.Writer) error {
+func marshall(result *core.ResultSet, out io.Writer) error {
 	m := jsonpb.Marshaler{Indent: "  ", EmitDefaults: true}
 	return m.Marshal(out, result)
 }

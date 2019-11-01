@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	sr "code.vegaprotocol.io/vega/scenariorunner"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/scenariorunner/core"
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +35,7 @@ func TestReadFiles(t *testing.T) {
 
 func TestUnmarshall(t *testing.T) {
 
-	instr1, err := sr.NewInstruction(
+	instr1, err := core.NewInstruction(
 		"trading.NotifyTraderAccount",
 		&api.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
@@ -46,7 +46,7 @@ func TestUnmarshall(t *testing.T) {
 	if err != nil {
 		log.Fatalln("Failed to create a new instruction: ", err)
 	}
-	instr2, err := sr.NewInstruction(
+	instr2, err := core.NewInstruction(
 		"trading.SubmitOrder",
 		&api.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
@@ -63,8 +63,8 @@ func TestUnmarshall(t *testing.T) {
 		log.Fatalln("Failed to create a new instruction: ", err)
 	}
 	instr2.Description = "Submit a sell order"
-	expected := &sr.InstructionSet{
-		Instructions: []*sr.Instruction{
+	expected := &core.InstructionSet{
+		Instructions: []*core.Instruction{
 			instr1,
 			instr2,
 		},
@@ -208,7 +208,7 @@ func TestMarshal(t *testing.T) {
   ]
 }`)
 
-	instr1, err := sr.NewInstruction(
+	instr1, err := core.NewInstruction(
 		"trading.SubmitOrder",
 		&api.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
@@ -225,7 +225,7 @@ func TestMarshal(t *testing.T) {
 		log.Fatalln("Failed to create a new instruction: ", err)
 	}
 
-	instr2, err := sr.NewInstruction(
+	instr2, err := core.NewInstruction(
 		"trading.SubmitOrder",
 		&api.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
@@ -275,8 +275,8 @@ func TestMarshal(t *testing.T) {
 		log.Fatalln("Failed to create a new instruction result: ", err)
 	}
 
-	resultSet := sr.ResultSet{
-		Summary: &sr.Metadata{
+	resultSet := core.ResultSet{
+		Summary: &core.Metadata{
 			InstructionsProcessed: 2,
 			InstructionsOmitted:   0,
 			TradesGenerated:       1,
@@ -303,7 +303,7 @@ func TestMarshal(t *testing.T) {
 				},
 			},
 		},
-		Results: []*sr.InstructionResult{
+		Results: []*core.InstructionResult{
 			result1,
 			result2,
 		},
