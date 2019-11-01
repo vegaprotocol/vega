@@ -25,7 +25,9 @@ func (instr Instruction) NewResult(response proto.Message, err error) (*Instruct
 		errText = err.Error()
 	}
 
-	if response == nil {
+	//TODO (WG 01/11/2019): A bit of a hack, but probably better than reflection or additional code returning typless nil when processing instructions.
+	//Still, there might be a better way around it, I just don't know it yet.
+	if response == nil || response.String() == "<nil>" {
 		response = &empty.Empty{}
 	}
 

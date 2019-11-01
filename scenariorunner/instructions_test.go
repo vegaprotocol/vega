@@ -65,7 +65,7 @@ func TestNewResult(t *testing.T) {
 
 }
 
-func TestNewResultWithEmptyReposnse(t *testing.T) {
+func TestNewResultWithNilReposnse(t *testing.T) {
 	request := "testRequest"
 	trader := "testTrader"
 	message := api.NotifyTraderAccountRequest{
@@ -79,6 +79,25 @@ func TestNewResultWithEmptyReposnse(t *testing.T) {
 	}
 
 	result, err := instruction.NewResult(nil, nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestNewResultWithNilPointerReposnse(t *testing.T) {
+	request := "testRequest"
+	trader := "testTrader"
+	message := api.NotifyTraderAccountRequest{
+		Notif: &types.NotifyTraderAccount{
+			TraderID: trader,
+		},
+	}
+	instruction, err := sr.NewInstruction(request, &message)
+	if err != nil {
+		t.Fatalf("Failed to create a new instruction: %s", err.Error())
+	}
+	var reponse *types.OrderConfirmation
+	reponse = nil
+	result, err := instruction.NewResult(reponse, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 }
