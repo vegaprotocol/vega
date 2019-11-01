@@ -321,8 +321,8 @@ func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderC
 		context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
 	if err != nil {
 		e.log.Error("Invalid order reference",
-			logging.String("id", order.Id),
-			logging.String("party", order.PartyID),
+			logging.String("id", orderAmendment.OrderID),
+			logging.String("party", orderAmendment.PartyID),
 			logging.Error(err))
 
 		return nil, types.ErrInvalidOrderReference
