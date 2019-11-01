@@ -31,7 +31,7 @@ type Product interface {
 	GetAsset() string
 }
 
-// Engine - the main type (of course)
+// Engine holds the data and implementation of the settlement engine.
 type Engine struct {
 	log *logging.Logger
 
@@ -44,9 +44,8 @@ type Engine struct {
 	market   string
 }
 
-// New instanciate a new instance of the settlement engine
+// New creates and returns a reference to a new instance of the settlement engine.
 func New(log *logging.Logger, conf Config, product Product, market string) *Engine {
-	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
@@ -56,11 +55,11 @@ func New(log *logging.Logger, conf Config, product Product, market string) *Engi
 		product: product,
 		pos:     map[string]*pos{},
 		market:  market,
-		// no need to initialised `closed` map
+		// no need to initialise `closed` map
 	}
 }
 
-// ReloadConf update the internal configuration of the settlement engined
+// ReloadConf update the internal configuration of the settlement engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -103,7 +102,7 @@ func (e *Engine) getCurrentPosition(party string) *pos {
 }
 
 // RemoveDistressed - remove whatever settlement data we have for distressed traders
-// they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
+// they are being closed out, and shouldn't be part of any MTM settlement or closing settlement.
 func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
 	e.posMu.Lock()
 	e.closedMu.Lock()

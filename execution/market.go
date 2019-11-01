@@ -240,28 +240,24 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	}
 
 	if closed {
-		// call settlement and stuff
-		positions, err := m.settlement.Settle(t)
+		// Market has closed, begin settlement
+		pos, err := m.settlement.Settle(t)
 		if err != nil {
-			m.log.Error(
-				"Failed to get settle positions on market close",
+			m.log.Error("Failed to get settle positions on market close",
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.Transfer(m.GetID(), positions)
+			transfers, err := m.collateral.Transfer(m.GetID(), pos)
 			if err != nil {
-				m.log.Error(
-					"Failed to get ledger movements after settling closed market",
+				m.log.Error("Failed to get ledger movements after settling closed market",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err),
 				)
 			} else {
 				m.transferResponsesBuf.Add(transfers)
 				if m.log.GetLevel() == logging.DebugLevel {
-					// use transfers, unused var thingy
 					for _, v := range transfers {
-						m.log.Debug(
-							"Got transfers on market close",
+						m.log.Debug("Transfer on market close:",
 							logging.String("transfer", fmt.Sprintf("%v", *v)),
 							logging.String("market-id", m.GetID()),
 						)
@@ -278,7 +274,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				} else {
 					m.transferResponsesBuf.Add(clearMarketTransfers)
 					if m.log.GetLevel() == logging.DebugLevel {
-						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
 							m.log.Debug(
 								"Market cleared with success",
