@@ -140,7 +140,7 @@ type TransferResponseService interface {
 	ObserveTransferResponses(ctx context.Context, retries int) (<-chan []*types.TransferResponse, uint64)
 }
 
-type TradingDataService struct {
+type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
 	Client                  BlockchainClient
@@ -162,7 +162,7 @@ type TradingDataService struct {
 const defaultLimit = uint64(1000)
 
 // OrdersByMarket provides a list of orders for a given market. Optional limits can be provided. Most recent first.
-func (h *TradingDataService) OrdersByMarket(ctx context.Context,
+func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersByMarketResponse, error) {
 
 	if request.MarketID == "" {
@@ -188,7 +188,7 @@ func (h *TradingDataService) OrdersByMarket(ctx context.Context,
 }
 
 // OrdersByParty provides a list of orders for a given party. Optional limits can be provided. Most recent first.
-func (h *TradingDataService) OrdersByParty(ctx context.Context,
+func (h *tradingDataService) OrdersByParty(ctx context.Context,
 	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
 
 	if request.PartyID == "" {
@@ -214,7 +214,7 @@ func (h *TradingDataService) OrdersByParty(ctx context.Context,
 }
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
-func (h *TradingDataService) Markets(ctx context.Context, request *google_proto.Empty) (*protoapi.MarketsResponse, error) {
+func (h *tradingDataService) Markets(ctx context.Context, request *google_proto.Empty) (*protoapi.MarketsResponse, error) {
 	mkts, err := h.MarketService.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -227,7 +227,7 @@ func (h *TradingDataService) Markets(ctx context.Context, request *google_proto.
 
 // OrdersByMarketAndID searches for the given order by Id and Market. If found it will return
 // an Order types otherwise it will return an error.
-func (h *TradingDataService) OrderByMarketAndId(ctx context.Context,
+func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
 
 	if request.MarketID == "" {
@@ -246,7 +246,7 @@ func (h *TradingDataService) OrderByMarketAndId(ctx context.Context,
 	}, nil
 }
 
-func (h *TradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
+func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
 	if req.Reference == "" {
 		return nil, ErrEmptyMissingOrderReference
 	}
@@ -261,7 +261,7 @@ func (h *TradingDataService) OrderByReference(ctx context.Context, req *protoapi
 
 // Candles returns trade open/close/volume data for the given time period and interval.
 // It will fill in any trade-less intervals with zero based candles. Since time period must be in RFC3339 string format.
-func (h *TradingDataService) Candles(ctx context.Context,
+func (h *tradingDataService) Candles(ctx context.Context,
 	request *protoapi.CandlesRequest) (*protoapi.CandlesResponse, error) {
 
 	marketID := request.MarketID
@@ -284,7 +284,7 @@ func (h *TradingDataService) Candles(ctx context.Context,
 
 }
 
-func (h *TradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
+func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
 	if req.MarketID == "" {
 		return nil, ErrEmptyMissingMarketID
 	}
@@ -311,7 +311,7 @@ func (h *TradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 	return resp, nil
 }
 
-func (h *TradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
+func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
 	if request.MarketID == "" {
 		return nil, ErrEmptyMissingMarketID
 	}
@@ -330,7 +330,7 @@ func (h *TradingDataService) TradesByMarket(ctx context.Context, request *protoa
 	}, nil
 }
 
-func (h *TradingDataService) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
+func (h *tradingDataService) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
 	if request.PartyID == "" {
 		return nil, ErrEmptyMissingPartyID
 	}
@@ -343,7 +343,7 @@ func (h *TradingDataService) PositionsByParty(ctx context.Context, request *prot
 	return response, nil
 }
 
-func (h *TradingDataService) Statistics(ctx context.Context, request *google_proto.Empty) (*types.Statistics, error) {
+func (h *tradingDataService) Statistics(ctx context.Context, request *google_proto.Empty) (*types.Statistics, error) {
 	// Call out to tendermint and related services to get related information for statistics
 	// We load read-only internal statistics through each package level statistics structs
 	epochTime, err := h.TimeService.GetTimeNow()
@@ -421,7 +421,7 @@ func (h *TradingDataService) Statistics(ctx context.Context, request *google_pro
 	}, nil
 }
 
-func (h *TradingDataService) GetVegaTime(ctx context.Context, request *google_proto.Empty) (*protoapi.VegaTimeResponse, error) {
+func (h *tradingDataService) GetVegaTime(ctx context.Context, request *google_proto.Empty) (*protoapi.VegaTimeResponse, error) {
 	ts, err := h.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, err
@@ -432,7 +432,7 @@ func (h *TradingDataService) GetVegaTime(ctx context.Context, request *google_pr
 
 }
 
-func (h *TradingDataService) TransferResponsesSubscribe(
+func (h *tradingDataService) TransferResponsesSubscribe(
 	req *empty.Empty, srv protoapi.TradingData_TransferResponsesSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
@@ -485,7 +485,7 @@ func (h *TradingDataService) TransferResponsesSubscribe(
 	}
 }
 
-func (h *TradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest, srv protoapi.TradingData_AccountsSubscribeServer) error {
+func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest, srv protoapi.TradingData_AccountsSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
@@ -538,7 +538,7 @@ func (h *TradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 	}
 }
 
-func (h *TradingDataService) OrdersSubscribe(
+func (h *tradingDataService) OrdersSubscribe(
 	req *protoapi.OrdersSubscribeRequest, srv protoapi.TradingData_OrdersSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
@@ -604,7 +604,7 @@ func (h *TradingDataService) OrdersSubscribe(
 	}
 }
 
-func (h *TradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeRequest, srv protoapi.TradingData_TradesSubscribeServer) error {
+func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeRequest, srv protoapi.TradingData_TradesSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
@@ -669,7 +669,7 @@ func (h *TradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 	}
 }
 
-func (h *TradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest, srv protoapi.TradingData_CandlesSubscribeServer) error {
+func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest, srv protoapi.TradingData_CandlesSubscribeServer) error {
 	// wrap context from the request into cancellable. we can closed internal chan in error
 	ctx, cfunc := context.WithCancel(srv.Context())
 	defer cfunc()
@@ -728,7 +728,7 @@ func (h *TradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 	}
 }
 
-func (h *TradingDataService) MarketDepthSubscribe(
+func (h *tradingDataService) MarketDepthSubscribe(
 	req *protoapi.MarketDepthSubscribeRequest,
 	srv protoapi.TradingData_MarketDepthSubscribeServer,
 ) error {
@@ -786,7 +786,7 @@ func (h *TradingDataService) MarketDepthSubscribe(
 	}
 }
 
-func (h *TradingDataService) PositionsSubscribe(
+func (h *tradingDataService) PositionsSubscribe(
 	req *protoapi.PositionsSubscribeRequest,
 	srv protoapi.TradingData_PositionsSubscribeServer,
 ) error {
@@ -837,7 +837,7 @@ func (h *TradingDataService) PositionsSubscribe(
 	}
 }
 
-func (h *TradingDataService) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
+func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
 	mkt, err := validateMarket(ctx, req.MarketID, h.MarketService)
 	if err != nil {
 		return nil, err
@@ -847,7 +847,7 @@ func (h *TradingDataService) MarketByID(ctx context.Context, req *protoapi.Marke
 		Market: mkt,
 	}, nil
 }
-func (h *TradingDataService) Parties(ctx context.Context, req *google_proto.Empty) (*protoapi.PartiesResponse, error) {
+func (h *tradingDataService) Parties(ctx context.Context, req *google_proto.Empty) (*protoapi.PartiesResponse, error) {
 	pties, err := h.PartyService.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -856,7 +856,7 @@ func (h *TradingDataService) Parties(ctx context.Context, req *google_proto.Empt
 		Parties: pties,
 	}, nil
 }
-func (h *TradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
+func (h *tradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyByIDRequest) (*protoapi.PartyByIDResponse, error) {
 	pty, err := validateParty(ctx, req.PartyID, h.PartyService)
 	if err != nil {
 		return nil, err
@@ -865,7 +865,7 @@ func (h *TradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyB
 		Party: pty,
 	}, nil
 }
-func (h *TradingDataService) TradesByParty(
+func (h *tradingDataService) TradesByParty(
 	ctx context.Context, req *protoapi.TradesByPartyRequest,
 ) (*protoapi.TradesByPartyResponse, error) {
 
@@ -883,7 +883,7 @@ func (h *TradingDataService) TradesByParty(
 		Trades: trades,
 	}, nil
 }
-func (h *TradingDataService) TradesByOrder(
+func (h *tradingDataService) TradesByOrder(
 	ctx context.Context, req *protoapi.TradesByOrderRequest,
 ) (*protoapi.TradesByOrderResponse, error) {
 	trades, err := h.TradeService.GetByOrderID(ctx, req.OrderID)
@@ -895,7 +895,7 @@ func (h *TradingDataService) TradesByOrder(
 	}, nil
 }
 
-func (h *TradingDataService) LastTrade(
+func (h *tradingDataService) LastTrade(
 	ctx context.Context, req *protoapi.LastTradeRequest,
 ) (*protoapi.LastTradeResponse, error) {
 	if len(req.MarketID) <= 0 {
@@ -913,7 +913,7 @@ func (h *TradingDataService) LastTrade(
 	return &protoapi.LastTradeResponse{}, nil
 }
 
-func (h *TradingDataService) AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest) (*protoapi.AccountsByPartyResponse, error) {
+func (h *tradingDataService) AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest) (*protoapi.AccountsByPartyResponse, error) {
 	accs, err := h.AccountsService.GetByParty(req.PartyID)
 	if err != nil {
 		return nil, err
@@ -923,7 +923,7 @@ func (h *TradingDataService) AccountsByParty(ctx context.Context, req *protoapi.
 	}, nil
 }
 
-func (h *TradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsByPartyAndMarketResponse, error) {
+func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsByPartyAndMarketResponse, error) {
 	accs, err := h.AccountsService.GetByPartyAndMarket(req.PartyID, req.MarketID)
 	if err != nil {
 		return nil, err
@@ -933,7 +933,7 @@ func (h *TradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *
 	}, nil
 }
 
-func (h *TradingDataService) AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest) (*protoapi.AccountsByPartyAndTypeResponse, error) {
+func (h *tradingDataService) AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest) (*protoapi.AccountsByPartyAndTypeResponse, error) {
 	accs, err := h.AccountsService.GetByPartyAndType(req.PartyID, req.Type)
 	if err != nil {
 		return nil, err
@@ -943,7 +943,7 @@ func (h *TradingDataService) AccountsByPartyAndType(ctx context.Context, req *pr
 	}, nil
 }
 
-func (h *TradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsByPartyAndAssetResponse, error) {
+func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsByPartyAndAssetResponse, error) {
 	accs, err := h.AccountsService.GetByPartyAndAsset(req.PartyID, req.Asset)
 	if err != nil {
 		return nil, err
@@ -980,7 +980,7 @@ func validateParty(ctx context.Context, partyID string, partyService PartyServic
 	return pty, err
 }
 
-func (h *TradingDataService) getTendermintStats(ctx context.Context) (backlogLength int,
+func (h *tradingDataService) getTendermintStats(ctx context.Context) (backlogLength int,
 	numPeers int, genesis *time.Time, err error) {
 
 	refused := "connection refused"
