@@ -2,13 +2,15 @@ package scenariorunner_test
 
 import (
 	"testing"
+	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	sr "code.vegaprotocol.io/vega/scenariorunner"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
-	"github.com/golang/protobuf/ptypes/empty"
 
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +32,11 @@ func TestProcessInstructionsAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	instructions := append(instructions1, instructions2...)
+	instructions3, err := getTimeInstructions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	instructions := append(append(instructions1, instructions2...), instructions3...)
 
 	instructionSet := &core.InstructionSet{
 		Instructions: instructions,
@@ -76,6 +82,30 @@ func TestProcessInstructionsTradingData(t *testing.T) {
 	}
 
 	instructions, err := getTradingDataInstructions("ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ", "party1", "order1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	instructionSet := &core.InstructionSet{
+		Instructions: instructions,
+		Description:  "Test instructions",
+	}
+
+	result, err := runner.ProcessInstructions(*instructionSet)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
+	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
+}
+
+func TestProcessInstructionsTime(t *testing.T) {
+
+	runner, err := sr.NewScenarioRunner()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	instructions, err := getTimeInstructions()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -315,6 +345,51 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 		instr9,
 		instr10,
 		instr11,
+	}
+
+	return instructions, nil
+}
+
+func getTimeInstructions() ([]*core.Instruction, error) {
+	ts, err := ptypes.TimestampProto(time.Date(2019, 1, 1, 9, 0, 0, 0, time.UTC))
+	if err != nil {
+		return nil, err
+	}
+
+	instr1, err := core.NewInstruction(
+		"SetTime",
+		&core.SetTimeRequest{
+			Time: ts,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr2, err := core.NewInstruction(
+		"AdvanceTime",
+		&core.AdvanceTimeRequest{
+			TimeDelta: ptypes.DurationProto(time.Nanosecond),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr3, err := core.NewInstruction(
+		"AdvanceTime",
+		&core.AdvanceTimeRequest{
+			TimeDelta: ptypes.DurationProto(time.Hour),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instructions := []*core.Instruction{
+		instr1,
+		instr2,
+		instr3,
 	}
 
 	return instructions, nil

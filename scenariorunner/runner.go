@@ -26,7 +26,8 @@ var (
 )
 
 type ScenarioRunner struct {
-	providers []core.PreProcessorProvider
+	timeProvider *preprocessors.Time
+	providers    []core.PreProcessorProvider
 }
 
 // NewScenarioRunner returns a pointer to new instance of scenario runner
@@ -42,7 +43,10 @@ func NewScenarioRunner() (*ScenarioRunner, error) {
 	orders := preprocessors.NewOrders(d.ctx, d.order)
 	trades := preprocessors.NewTrades(d.ctx, d.trade)
 
+	time := preprocessors.NewTime(d.vegaTime)
+
 	return &ScenarioRunner{
+		timeProvider: time,
 		providers: []core.PreProcessorProvider{
 			execution,
 			marketDepth,
@@ -55,7 +59,7 @@ func NewScenarioRunner() (*ScenarioRunner, error) {
 
 func (sr ScenarioRunner) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
 	maps := make(map[string]*core.PreProcessor)
-	for _, provider := range sr.providers {
+	for _, provider := range append(sr.providers, sr.timeProvider) {
 		m := provider.PreProcessors()
 		for k, v := range m {
 			if _, ok := maps[k]; ok {
@@ -191,6 +195,7 @@ func getDependencies() (*dependencies, error) {
 
 	return &dependencies{
 		ctx:       ctx,
+		vegaTime:  timeService,
 		execution: engine,
 		order:     orderStore,
 		trade:     tradeService,
@@ -200,6 +205,7 @@ func getDependencies() (*dependencies, error) {
 
 type dependencies struct {
 	ctx       context.Context
+	vegaTime  *vegatime.Svc
 	execution *execution.Engine
 	order     *storage.Order
 	trade     *trades.Svc
