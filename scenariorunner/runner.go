@@ -26,9 +26,9 @@ var (
 )
 
 type ScenarioRunner struct {
-	Config       Config
-	timeProvider *preprocessors.Time
-	providers    []core.PreProcessorProvider
+	Config           Config
+	internalProvider *internalProvider
+	providers        []core.PreProcessorProvider
 }
 
 // NewScenarioRunner returns a pointer to new instance of scenario runner
@@ -44,11 +44,11 @@ func NewScenarioRunner() (*ScenarioRunner, error) {
 	orders := preprocessors.NewOrders(d.ctx, d.order)
 	trades := preprocessors.NewTrades(d.ctx, d.trade)
 
-	time := preprocessors.NewTime(d.vegaTime)
+	internal := newInternalProvider(d.vegaTime)
 
 	return &ScenarioRunner{
-		Config:       NewDefaultConfig(),
-		timeProvider: time,
+		Config:           NewDefaultConfig(),
+		internalProvider: internal,
 		providers: []core.PreProcessorProvider{
 			execution,
 			marketDepth,
@@ -61,7 +61,7 @@ func NewScenarioRunner() (*ScenarioRunner, error) {
 
 func (sr ScenarioRunner) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
 	maps := make(map[string]*core.PreProcessor)
-	for _, provider := range append(sr.providers, sr.timeProvider) {
+	for _, provider := range append(sr.providers, sr.internalProvider) {
 		m := provider.PreProcessors()
 		for k, v := range m {
 			if _, ok := maps[k]; ok {
@@ -117,7 +117,7 @@ func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (*cor
 		results[i] = res
 		processed++
 		if sr.Config.AdvanceTimeAfterInstruction {
-			err := sr.timeProvider.AdvanceTime(sr.Config.AdvanceDuration)
+			err := sr.internalProvider.AdvanceTime(sr.Config.AdvanceDuration)
 			if err != nil {
 				return nil, err
 			}

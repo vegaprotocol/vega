@@ -1,4 +1,4 @@
-package preprocessors
+package scenariorunner
 
 import (
 	"time"
@@ -10,22 +10,22 @@ import (
 	"github.com/golang/protobuf/ptypes"
 )
 
-type Time struct {
+type internalProvider struct {
 	vegaTime *vegatime.Svc
 }
 
-func NewTime(vegaTime *vegatime.Svc) *Time {
-	return &Time{vegaTime}
+func newInternalProvider(vegaTime *vegatime.Svc) *internalProvider {
+	return &internalProvider{vegaTime}
 }
 
-func (t *Time) PreProcessors() map[string]*core.PreProcessor {
+func (p *internalProvider) PreProcessors() map[string]*core.PreProcessor {
 	return map[string]*core.PreProcessor{
-		"settime":     t.set(),
-		"advancetime": t.advance(),
+		"settime":     p.set(),
+		"advancetime": p.advance(),
 	}
 }
 
-func (t *Time) set() *core.PreProcessor {
+func (p *internalProvider) set() *core.PreProcessor {
 	req := &core.SetTimeRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
@@ -36,7 +36,7 @@ func (t *Time) set() *core.PreProcessor {
 			return nil, err
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { t.SetTime(time); return nil, nil })
+			func() (proto.Message, error) { p.SetTime(time); return nil, nil })
 	}
 	return &core.PreProcessor{
 		MessageShape: req,
@@ -44,7 +44,7 @@ func (t *Time) set() *core.PreProcessor {
 	}
 }
 
-func (t *Time) advance() *core.PreProcessor {
+func (p *internalProvider) advance() *core.PreProcessor {
 	req := &core.AdvanceTimeRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
@@ -55,7 +55,7 @@ func (t *Time) advance() *core.PreProcessor {
 			return nil, err
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return nil, t.AdvanceTime(duration) })
+			func() (proto.Message, error) { return nil, p.AdvanceTime(duration) })
 	}
 	return &core.PreProcessor{
 		MessageShape: req,
@@ -64,17 +64,17 @@ func (t *Time) advance() *core.PreProcessor {
 }
 
 // SetTime sets protocol time to the provided value
-func (t *Time) SetTime(time time.Time) {
-	t.vegaTime.SetTimeNow(time)
+func (p *internalProvider) SetTime(time time.Time) {
+	p.vegaTime.SetTimeNow(time)
 }
 
 // AdvanceTime advances protocol time by a specified duration
-func (t *Time) AdvanceTime(duration time.Duration) error {
-	currentTime, err := t.vegaTime.GetTimeNow()
+func (p *internalProvider) AdvanceTime(duration time.Duration) error {
+	currentTime, err := p.vegaTime.GetTimeNow()
 	if err != nil {
 		return err
 	}
 	advancedTime := currentTime.Add(duration)
-	t.SetTime(advancedTime)
+	p.SetTime(advancedTime)
 	return nil
 }
