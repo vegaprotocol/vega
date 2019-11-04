@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/config"
+	cfg "code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
@@ -26,6 +26,7 @@ var (
 )
 
 type ScenarioRunner struct {
+	Config       Config
 	timeProvider *preprocessors.Time
 	providers    []core.PreProcessorProvider
 }
@@ -46,6 +47,7 @@ func NewScenarioRunner() (*ScenarioRunner, error) {
 	time := preprocessors.NewTime(d.vegaTime)
 
 	return &ScenarioRunner{
+		Config:       NewDefaultConfig(),
 		timeProvider: time,
 		providers: []core.PreProcessorProvider{
 			execution,
@@ -87,24 +89,40 @@ func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (*cor
 		// TODO (WG 01/11/2019) matching by lower case by convention only, enforce with a custom type
 		preProcessor, ok := preProcessors[strings.ToLower(instr.Request)]
 		if !ok {
+			if !sr.Config.OmitUnsupportedInstructions {
+				return nil, errors.ErrorOrNil()
+			}
 			errors = multierror.Append(errors, core.ErrInstructionNotSupported)
 			omitted++
 			continue
 		}
 		p, err := preProcessor.PreProcess(instr)
 		if err != nil {
+			if !sr.Config.OmitInvalidInstructions {
+				return nil, errors.ErrorOrNil()
+			}
 			errors = multierror.Append(errors, err)
 			omitted++
 			continue
 		}
 		res, err := p.Result()
 		if err != nil {
+			if !sr.Config.OmitInvalidInstructions {
+				return nil, errors.ErrorOrNil()
+			}
 			errors = multierror.Append(errors, err)
 			omitted++
 			continue
 		}
 		results[i] = res
 		processed++
+		if sr.Config.AdvanceTimeAfterInstruction {
+			err := sr.timeProvider.AdvanceTime(sr.Config.AdvanceDuration)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 	}
 
 	md := &core.Metadata{
@@ -124,7 +142,7 @@ func getDependencies() (*dependencies, error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	configPath := fsutil.DefaultVegaDir()
-	cfgwatchr, err := config.NewFromFile(ctx, log, configPath, configPath)
+	cfgwatchr, err := cfg.NewFromFile(ctx, log, configPath, configPath)
 	if err != nil {
 		log.Error("unable to start config watcher", logging.Error(err))
 		cancel()
