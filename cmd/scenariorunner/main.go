@@ -6,16 +6,19 @@ import (
 	"log"
 	"os"
 
+	sr "code.vegaprotocol.io/vega/scenariorunner"
+
 	"github.com/urfave/cli"
 )
 
 var app = cli.NewApp()
 var ErrNotImplemented = errors.New("NotImplemented")
+var engine *sr.ScenarioRunner
 
 func main() {
 	info()
 	commands()
-
+	initializeEngine()
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
@@ -34,6 +37,7 @@ func commands() {
 
 	var submit = "submit"
 	var extract = "extract"
+	var reset = "reset"
 	app.Commands = []cli.Command{
 		{
 			Name:    submit,
@@ -53,15 +57,25 @@ func commands() {
 				}
 				fmt.Println(dir)
 				if c.NArg() > 0 {
-					_, err := ProcessFiles(c.Args())
+					instrSet, err := ProcessFiles(c.Args())
 					if err != nil {
 						return err
 					}
-					return ErrNotImplemented
-
-					if optionalOutputFile != "" {
-						return ErrNotImplemented
+					n := len(instrSet)
+					for _, instr := range instrSet {
+						res, err := engine.ProcessInstructions(*instr)
+						if err != nil {
+							return err
+						}
+						if optionalOutputFile != "" {
+							fileName := optionalOutputFile
+							if n != 1 {
+								return ErrNotImplemented
+							}
+							ProcessResults(res, fileName)
+						}
 					}
+
 				} else {
 					cli.ShowCommandHelp(c, submit)
 				}
@@ -81,5 +95,22 @@ func commands() {
 				return nil
 			},
 		},
+		{
+			Name:    reset,
+			Aliases: []string{reset[:1]},
+			Usage:   "Reset scenario runner - a fresh instance will be used.",
+			Action: func(c *cli.Context) error {
+				initializeEngine()
+				return nil
+			},
+		},
+	}
+}
+
+func initializeEngine() {
+	var err error
+	engine, err = sr.NewScenarioRunner()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
