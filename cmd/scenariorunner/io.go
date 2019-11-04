@@ -30,6 +30,15 @@ func ProcessFiles(filesWithPath []string) ([]*core.InstructionSet, error) {
 	return instructionSets, errors.ErrorOrNil()
 }
 
+// ProcessResults writes results to the specified file.
+func ProcessResults(result *core.ResultSet, outputFileWithPath string) error {
+	f, err := os.Create(outputFileWithPath)
+	if err != nil {
+		return err
+	}
+	return marshall(result, f)
+}
+
 func readFiles(filesWithPath []string) ([]*os.File, error) {
 	var n = len(filesWithPath)
 	readers := make([]*os.File, n)
