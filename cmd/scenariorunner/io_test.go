@@ -114,25 +114,27 @@ func TestMarshal(t *testing.T) {
     "instructionsOmitted": "0",
     "tradesGenerated": "1",
     "processingTime": "3s",
-    "finalOrderBook": {
-      "marketID": "Market1",
-      "buy": [
-        {
-          "price": "100",
-          "numberOfOrders": "1",
-          "volume": "3",
-          "cumulativeVolume": "3"
-        }
-      ],
-      "sell": [
-        {
-          "price": "100",
-          "numberOfOrders": "1",
-          "volume": "3",
-          "cumulativeVolume": "3"
-        }
-      ]
-    }
+    "finalOrderBook": [
+      {
+        "marketID": "Market1",
+        "buy": [
+          {
+            "price": "100",
+            "numberOfOrders": "1",
+            "volume": "3",
+            "cumulativeVolume": "3"
+          }
+        ],
+        "sell": [
+          {
+            "price": "100",
+            "numberOfOrders": "1",
+            "volume": "3",
+            "cumulativeVolume": "3"
+          }
+        ]
+      }
+    ]
   },
   "results": [
     {
@@ -283,22 +285,24 @@ func TestMarshal(t *testing.T) {
 			ProcessingTime: &duration.Duration{
 				Seconds: 3,
 			},
-			FinalOrderBook: &types.MarketDepth{
-				MarketID: "Market1",
-				Buy: []*types.PriceLevel{
-					&types.PriceLevel{
-						Price:            100,
-						NumberOfOrders:   1,
-						Volume:           3,
-						CumulativeVolume: 3,
+			FinalOrderBook: []*types.MarketDepth{
+				{
+					MarketID: "Market1",
+					Buy: []*types.PriceLevel{
+						&types.PriceLevel{
+							Price:            100,
+							NumberOfOrders:   1,
+							Volume:           3,
+							CumulativeVolume: 3,
+						},
 					},
-				},
-				Sell: []*types.PriceLevel{
-					&types.PriceLevel{
-						Price:            100,
-						NumberOfOrders:   1,
-						Volume:           3,
-						CumulativeVolume: 3,
+					Sell: []*types.PriceLevel{
+						&types.PriceLevel{
+							Price:            100,
+							NumberOfOrders:   1,
+							Volume:           3,
+							CumulativeVolume: 3,
+						},
 					},
 				},
 			},
