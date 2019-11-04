@@ -90,7 +90,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	}
 	oraclePrice := uint64(1100)
 	settleF := func(price uint64, size int64) (*types.FinancialAmount, error) {
-		sp := int64((oraclePrice - price)) * size
+		sp := int64(oraclePrice-price) * size
 		return &types.FinancialAmount{
 			Amount: sp,
 		}, nil
@@ -150,11 +150,6 @@ func testMarkToMarketEmpty(t *testing.T) {
 	pos.EXPECT().Size().MaxTimes(2).Return(data.size)
 	pos.EXPECT().Price().MaxTimes(2).Return(markPrice)
 
-	//ch := make(chan events.MarketPosition, 1)
-	//engine.ListenClosed(ch)
-	//ch <- pos
-	//close(ch)
-
 	result := engine.SettleOrder(markPrice, []events.MarketPosition{pos})
 	assert.Empty(t, result)
 }
@@ -180,51 +175,54 @@ func testMarkToMarketOrdered(t *testing.T) {
 	init := make([]settlement.MarketPosition, 0, 3)
 	long := make([]events.MarketPosition, 0, 3)
 	short := make([]events.MarketPosition, 0, 3)
+
 	neutral := mocks.NewMockMarketPosition(engine.ctrl)
 	neutral.EXPECT().Price().MinTimes(2).Return(uint64(10000))
 	neutral.EXPECT().Party().MinTimes(2).Return("neutral")
 	neutral.EXPECT().Size().MinTimes(2).Return(int64(5))
+
 	init = append(init, neutral)
+
 	for _, p := range positions {
+
 		m := mocks.NewMockMarketPosition(engine.ctrl)
 		m.EXPECT().Size().MinTimes(2).Return(p.size)
 		m.EXPECT().Party().MinTimes(2).Return(p.trader)
 		m.EXPECT().Price().MinTimes(2).Return(p.price)
+
 		init = append(init, m)
+
 		l := mocks.NewMockMarketPosition(engine.ctrl)
 		l.EXPECT().Size().MinTimes(2).Return(p.size * 2)
 		l.EXPECT().Price().MinTimes(2).Return(markPrice)
 		l.EXPECT().Party().MinTimes(2).Return(p.trader)
+
 		long = append(long, l)
+
 		s := mocks.NewMockMarketPosition(engine.ctrl)
 		s.EXPECT().Size().MinTimes(2).Return(p.size * -2) // long trader is going short, short trader is going long
 		s.EXPECT().Price().MinTimes(2).Return(markPrice)
 		s.EXPECT().Party().MinTimes(2).Return(p.trader)
+
 		short = append(short, s)
 	}
-	engine.Update(init) // setup the initial state
 
-	//ch := make(chan events.MarketPosition, len(long))
-	//engine.ListenClosed(ch)
-	//for _, l := range long {
-	//	ch <- l
-	//}
-	//close(ch)
+	// setup the initial state
+	engine.Update(init)
+
+	// close out long
+	engine.UpdateClosed(long)
 
 	// add neutral to position, this hasn't changed, but we need it processed anyway
 	long = append(long, neutral)
 	longTransfer := engine.SettleOrder(markPrice, long)
 	assert.NotEmpty(t, longTransfer)
-	//t.Logf("%#v\n", longTransfer)
+
 	// now, let's update the state again as if the settlement hasn't happened
 	engine.Update(init)
 
-	//ch = make(chan events.MarketPosition, len(short))
-	//engine.ListenClosed(ch)
-	//for _, s := range short {
-	//	ch <- s
-	//}
-	//close(ch)
+	// close out short
+	engine.UpdateClosed(short)
 
 	short = append(short, neutral)
 	shortTransfer := engine.SettleOrder(markPrice, short)
@@ -257,18 +255,18 @@ func testMTMSwitchPosition(t *testing.T) {
 			price:  10000,
 		},
 	}
-	//update := []posValue{
-	//	{
-	//		trader: "trader1",
-	//		size:   -1,
-	//		price:  11000,
-	//	},
-	//	{
-	//		trader: "trader2",
-	//		size:   1,
-	//		price:  11000,
-	//	},
-	//}
+	update := []posValue{
+		{
+			trader: "trader1",
+			size:   -1,
+			price:  11000,
+		},
+		{
+			trader: "trader2",
+			size:   1,
+			price:  11000,
+		},
+	}
 	final := []posValue{
 		{
 			trader: "trader1",
@@ -292,18 +290,13 @@ func testMTMSwitchPosition(t *testing.T) {
 		},
 	}
 	init, _ := engine.getMockMarketPositions(start)
-	//_, change := engine.getMockMarketPositions(update)
+	_, change := engine.getMockMarketPositions(update)
 	_, positions := engine.getMockMarketPositions(final)
 
 	// set the initial state
+	// update the closed positions
 	engine.Update(init)
-
-	//ch := make(chan events.MarketPosition, len(update))
-	//engine.ListenClosed(ch)
-	//for _, c := range change {
-	//	ch <- c
-	//}
-	//close(ch)
+	engine.UpdateClosed(change)
 
 	result := engine.SettleOrder(final[0].price, positions)
 	assert.NotEmpty(t, result)
