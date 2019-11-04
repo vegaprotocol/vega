@@ -1,17 +1,28 @@
 package scenariorunner
 
 import (
+	"context"
 	"errors"
 	"strings"
+	"time"
 
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/scenariorunner/preprocessors"
+	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/trades"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/hashicorp/go-multierror"
 )
 
 var (
-	ErrNotImplemented error = errors.New("Not implemented")
+	ErrNotImplemented       error = errors.New("Not implemented")
+	ErrDuplicateInstruction error = errors.New("Duplicate instruction")
 )
 
 type ScenarioRunner struct {
@@ -21,25 +32,52 @@ type ScenarioRunner struct {
 // NewScenarioRunner returns a pointer to new instance of scenario runner
 func NewScenarioRunner() (*ScenarioRunner, error) {
 
-	executionPreprocessor, err := preprocessors.NewExecution()
+	d, err := getDependencies()
 	if err != nil {
 		return nil, err
 	}
+	execution := preprocessors.NewExecution(d.execution)
+	marketDepth := preprocessors.NewMarketDepth(d.ctx, d.market, d.trade)
+	markets := preprocessors.NewMarkets(d.ctx, d.market)
+	orders := preprocessors.NewOrders(d.ctx, d.order)
+	trades := preprocessors.NewTrades(d.ctx, d.trade)
+
 	return &ScenarioRunner{
 		providers: []core.PreProcessorProvider{
-			executionPreprocessor,
+			execution,
+			marketDepth,
+			markets,
+			orders,
+			trades,
 		},
 	}, nil
 }
 
+func (sr ScenarioRunner) flattenPreProcessors() (map[string]*core.PreProcessor, nil) {
+	maps := make(map[string]*core.PreProcessor)
+	for _, provider := range sr.providers {
+		m := provider.PreProcessors()
+		for k, v := range m {
+			if _, ok := maps[k]; ok {
+				return nil, ErrDuplicateInstruction
+			}
+			maps[k] = v
+		}
+	}
+	return maps, nil
+}
+
 // ProcessInstructions takes a set of instructions and submits them to the protocol
-func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (core.ResultSet, error) {
+func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
 	var processed, omitted uint64
 	n := len(instrSet.Instructions)
 	results := make([]*core.InstructionResult, n)
 	var errors *multierror.Error
 
-	preProcessors := sr.providers[0].PreProcessors()
+	preProcessors, err := sr.flattenPreProcessors()
+	if err != nil {
+		return nil, err
+	}
 
 	for i, instr := range instrSet.Instructions {
 		// TODO (WG 01/11/2019) matching by lower case by convention only, enforce with a custom type
@@ -70,8 +108,100 @@ func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (core
 		InstructionsOmitted:   omitted,
 	}
 
-	return core.ResultSet{
+	return &core.ResultSet{
 		Summary: md,
 		Results: results,
 	}, errors.ErrorOrNil()
+}
+
+func getDependencies() (*dependencies, error) {
+	log := logging.NewDevLogger()
+	log.SetLevel(logging.InfoLevel)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	configPath := fsutil.DefaultVegaDir()
+	cfgwatchr, err := config.NewFromFile(ctx, log, configPath, configPath)
+	if err != nil {
+		log.Error("unable to start config watcher", logging.Error(err))
+		cancel()
+		return nil, err
+	}
+	config := cfgwatchr.Get()
+	log = logging.NewLoggerFromConfig(config.Logging)
+
+	orderStore, err := storage.NewOrders(log, config.Storage, cancel)
+	if err != nil {
+		return nil, err
+	}
+	tradeStore, err := storage.NewTrades(log, config.Storage, cancel)
+	if err != nil {
+		return nil, err
+	}
+	riskStore, err := storage.NewRisks(config.Storage)
+	if err != nil {
+		return nil, err
+	}
+	candleStore, err := storage.NewCandles(log, config.Storage)
+	if err != nil {
+		return nil, err
+	}
+
+	marketStore, err := storage.NewMarkets(log, config.Storage)
+	if err != nil {
+		return nil, err
+	}
+
+	partyStore, err := storage.NewParties(config.Storage)
+	if err != nil {
+		return nil, err
+	}
+
+	accounts, err := storage.NewAccounts(log, config.Storage)
+	if err != nil {
+		return nil, err
+	}
+
+	transferResponseStore, err := storage.NewTransferResponses(log, config.Storage)
+	if err != nil {
+		return nil, err
+	}
+
+	marketService, err := markets.NewService(log, config.Markets, marketStore, orderStore)
+	if err != nil {
+		return nil, err
+	}
+
+	timeService := vegatime.New(config.Time)
+	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
+	timeService.SetTimeNow(now)
+	engine := execution.NewEngine(
+		log,
+		config.Execution,
+		timeService,
+		orderStore,
+		tradeStore,
+		candleStore,
+		marketStore,
+		partyStore,
+		accounts,
+		transferResponseStore,
+	)
+
+	tradeService, err := trades.NewService(log, config.Trades, tradeStore, riskStore)
+
+	return &dependencies{
+		ctx:       ctx,
+		execution: engine,
+		order:     orderStore,
+		trade:     tradeService,
+		market:    marketService,
+	}, nil
+}
+
+type dependencies struct {
+	ctx       context.Context
+	execution *execution.Engine
+	order     *storage.Order
+	trade     *trades.Svc
+	market    *markets.Svc
 }
