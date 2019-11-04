@@ -2,9 +2,6 @@ package execution
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
@@ -12,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 )
 
@@ -110,35 +106,11 @@ func NewEngine(
 	partyBuf PartyBuf,
 	accountBuf AccountBuf,
 	transferBuf TransferBuf,
+	pmkts []types.Market,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
-
-	pmkts := []types.Market{}
-	// loads markets from configuration
-	for _, v := range executionConfig.Markets.Configs {
-		path := filepath.Join(executionConfig.Markets.Path, v)
-		buf, err := ioutil.ReadFile(path)
-		if err != nil {
-			log.Panic("Unable to read market configuration",
-				logging.Error(err),
-				logging.String("config-path", path))
-		}
-
-		mkt := types.Market{}
-		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
-		if err != nil {
-			log.Panic("Unable to unmarshal market configuration",
-				logging.Error(err),
-				logging.String("config-path", path))
-		}
-
-		log.Info("New market loaded from configuation",
-			logging.String("market-config", path),
-			logging.String("market-id", mkt.Id))
-		pmkts = append(pmkts, mkt)
-	}
 
 	now, err := time.GetTimeNow()
 	if err != nil {
