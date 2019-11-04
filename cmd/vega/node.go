@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
@@ -79,6 +80,7 @@ type NodeCommand struct {
 	cfgwatchr    *config.Watcher
 
 	executionEngine *execution.Engine
+	mktscfg         []proto.Market
 }
 
 // Init initialises the node command.

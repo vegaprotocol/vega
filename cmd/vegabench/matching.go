@@ -54,6 +54,7 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 		party,
 		accountBuf,
 		transferResponse,
+		[]types.Market{},
 	)
 	return &execEngine{
 		Engine: engine,

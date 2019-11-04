@@ -442,6 +442,15 @@ func FeatureContext(s *godog.Suite) {
 			reporter.Fatalf("some mock assertion failed: %v", reporter.err)
 		}
 	})
+
+	s.Step(`^The "([^"]*)" withdraw "([^"]*)" from the "([^"]*)" account$`, theWithdrawFromTheAccount)
+	s.Step(`^The "([^"]*)" makes a deposit of "([^"]*)" into the "([^"]*)" account$`, theMakesADepositOfIntoTheAccount)
+	s.Step(`^"([^"]*)" general account for asset "([^"]*)" balance is "([^"]*)"$`, generalAccountForAssetBalanceIs)
+	s.Step(`^"([^"]*)" have only one account per asset$`, haveOnlyOneAccountPerAsset)
+	s.Step(`^theExecutonEngineHaveTheseMarkets:$`, theExecutonEngineHaveTheseMarkets)
+	s.Step(`^the following traders:$`, theFollowingTraders)
+	s.Step(`^I Expect the traders to have new general account:$`, iExpectTheTradersToHaveNewGeneralAccount)
+	s.Step(`^"([^"]*)" general accounts balance is "([^"]*)"$`, generalAccountsBalanceIs)
 	s.Step(`^the market:$`, theMarket)
 	s.Step(`^the system accounts:$`, theSystemAccounts)
 	s.Step(`^traders have the following state:$`, tradersHaveTheFollowingState)

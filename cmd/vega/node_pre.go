@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
@@ -17,12 +21,14 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
 
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -87,6 +93,10 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	// assign config vars
 	l.configPath, l.conf = configPath, conf
 
+	if err = l.loadMarketsConfig(); err != nil {
+		return err
+	}
+
 	// Set ulimits
 	if err = l.SetUlimits(); err != nil {
 		l.Log.Warn("Unable to set ulimits",
@@ -103,6 +113,32 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		return err
 	}
 	l.setupBuffers()
+
+	return nil
+}
+
+func (l *NodeCommand) loadMarketsConfig() error {
+	pmkts := []proto.Market{}
+	mktsCfg := l.conf.Execution.Markets
+	// loads markets from configuration
+	for _, v := range mktsCfg.Configs {
+		path := filepath.Join(mktsCfg.Path, v)
+		buf, err := ioutil.ReadFile(path)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("unable to read market configuration at %s", path))
+		}
+
+		mkt := proto.Market{}
+		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("unable to unmarshal market configuration at %s", path))
+		}
+
+		l.Log.Info("New market loaded from configuation",
+			logging.String("market-config", path),
+			logging.String("market-id", mkt.Id))
+		pmkts = append(pmkts, mkt)
+	}
 
 	return nil
 }
@@ -177,13 +213,14 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.orderStore,
-		l.tradeStore,
-		l.candleStore,
-		l.marketStore,
-		l.partyStore,
-		l.accounts,
-		l.transferResponseStore,
+		l.orderBuf,
+		l.tradeBuf,
+		l.candleBuf,
+		l.marketBuf,
+		l.partyBuf,
+		l.accountBuf,
+		l.transferBuf,
+		l.mktscfg,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
