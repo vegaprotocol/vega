@@ -53,7 +53,7 @@ func NewScenarioRunner() (*ScenarioRunner, error) {
 	}, nil
 }
 
-func (sr ScenarioRunner) flattenPreProcessors() (map[string]*core.PreProcessor, nil) {
+func (sr ScenarioRunner) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
 	maps := make(map[string]*core.PreProcessor)
 	for _, provider := range sr.providers {
 		m := provider.PreProcessors()

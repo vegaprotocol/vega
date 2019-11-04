@@ -1,7 +1,6 @@
 package scenariorunner_test
 
 import (
-	"log"
 	"testing"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -11,13 +10,56 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProcessInstructions(t *testing.T) {
+func TestProcessInstructionsExecution(t *testing.T) {
 
 	runner, err := sr.NewScenarioRunner()
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	instructions, err := getExecutionEngineInstructions()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	instructionSet := &core.InstructionSet{
+		Instructions: instructions,
+		Description:  "Test instructions",
+	}
+
+	result, err := runner.ProcessInstructions(*instructionSet)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
+	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
+
+	// marketdepth
+	/*instr7, err := core.NewInstruction(
+		"MarketDepth",
+		&protoapi.MarketDepthRequest{
+			MarketID: marketId,
+		},
+	)
+	if err != nil {
+		t.Fatalf("Failed to create a new instruction: %s", err)
+	}
+
+	instructions = append(instructions, instr7)
+
+	instructionSet2 := &core.InstructionSet{
+		Instructions: instructions,
+		Description:  "Test instructions - extended",
+	}
+
+	result, err = runner.ProcessInstructions(*instructionSet2)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
+	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)*/
+
+}
+
+func getExecutionEngineInstructions() ([]*core.Instruction, error) {
 	trader1 := "trader1"
 	instr1, err := core.NewInstruction(
 		"NotifyTraderAccount",
@@ -27,7 +69,7 @@ func TestProcessInstructions(t *testing.T) {
 	)
 
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		return nil, err
 	}
 
 	sellOrderId := "myId1"
@@ -47,7 +89,7 @@ func TestProcessInstructions(t *testing.T) {
 		},
 	)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		return nil, err
 	}
 	instr2.Description = "Submit a sell order"
 
@@ -60,7 +102,7 @@ func TestProcessInstructions(t *testing.T) {
 		},
 	)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		return nil, err
 	}
 
 	buy := types.Side_Buy
@@ -80,7 +122,7 @@ func TestProcessInstructions(t *testing.T) {
 		},
 	)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		return nil, err
 	}
 
 	instr5, err := core.NewInstruction(
@@ -94,7 +136,7 @@ func TestProcessInstructions(t *testing.T) {
 		},
 	)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		return nil, err
 	}
 
 	instr6, err := core.NewInstruction(
@@ -105,25 +147,17 @@ func TestProcessInstructions(t *testing.T) {
 		},
 	)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		return nil, err
 	}
 
-	instructionSet := &core.InstructionSet{
-		Instructions: []*core.Instruction{
-			instr1,
-			instr2,
-			instr3,
-			instr4,
-			instr5,
-			instr6,
-		},
-		Description: "Test instructions",
+	instructions := []*core.Instruction{
+		instr1,
+		instr2,
+		instr3,
+		instr4,
+		instr5,
+		instr6,
 	}
 
-	result, err := runner.ProcessInstructions(*instructionSet)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.EqualValues(t, len(instructionSet.Instructions), result.Summary.InstructionsProcessed)
-	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
-
+	return instructions, nil
 }
