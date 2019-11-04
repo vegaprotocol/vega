@@ -10,8 +10,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 
-	"github.com/dgraph-io/badger"
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -24,9 +22,9 @@ var minSinceTime = vegatime.UnixNano(minSinceTimestamp)
 type Candle struct {
 	Config
 
-	cfgMu        sync.Mutex
-	log          *logging.Logger
-	badger       *badgerStore
+	cfgMu sync.Mutex
+	log   *logging.Logger
+	// badger       *badgerStore
 	subscribers  map[uint64]*InternalTransport
 	subscriberID uint64
 	queue        []marketCandle
@@ -53,19 +51,19 @@ func NewCandles(log *logging.Logger, c Config) (*Candle, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.CandlesDirPath)
-	if err != nil {
-		return nil, errors.Wrap(err, "error on init badger database for candles storage")
-	}
-	db, err := badger.Open(getOptionsFromConfig(c.Candles, c.CandlesDirPath, log))
-	if err != nil {
-		return nil, errors.Wrap(err, "error opening badger database for candles storage")
-	}
-	bs := badgerStore{db: db}
+	// err := InitStoreDirectory(c.CandlesDirPath)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "error on init badger database for candles storage")
+	// }
+	// db, err := badger.Open(getOptionsFromConfig(c.Candles, c.CandlesDirPath, log))
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "error opening badger database for candles storage")
+	// }
+	// bs := badgerStore{db: db}
 	return &Candle{
-		log:         log,
-		Config:      c,
-		badger:      &bs,
+		log:    log,
+		Config: c,
+		// badger:      &bs,
 		subscribers: make(map[uint64]*InternalTransport),
 		queue:       make([]marketCandle, 0),
 	}, nil
@@ -133,191 +131,192 @@ func (c *Candle) Unsubscribe(id uint64) error {
 // Close can be called to clean up and close any storage
 // connections held by the underlying storage mechanism.
 func (c *Candle) Close() error {
-	return c.badger.db.Close()
+	return nil // return c.badger.db.Close()
 }
 
 // GenerateCandlesFromBuffer will generate all candles for a given market.
 func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types.Candle) error {
 
-	fetchCandle := func(txn *badger.Txn, badgerKey []byte) (*types.Candle, error) {
-		item, err := txn.Get(badgerKey)
-		if err != nil {
-			return nil, err
-		}
-		// unmarshal fetched candle
-		var candleFromDb types.Candle
-		itemCopy, _ := item.ValueCopy(nil)
-		err = proto.Unmarshal(itemCopy, &candleFromDb)
-		if err != nil {
-			c.log.Error("Failed to unmarshal candle value from badger in candle store (fetchCandle)",
-				logging.Error(err),
-				logging.String("badger-key", string(item.Key())),
-				logging.String("raw-bytes", string(itemCopy)))
+	// fetchCandle := func(txn *badger.Txn, badgerKey []byte) (*types.Candle, error) {
+	// 	item, err := txn.Get(badgerKey)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	// unmarshal fetched candle
+	// 	var candleFromDb types.Candle
+	// 	itemCopy, _ := item.ValueCopy(nil)
+	// 	err = proto.Unmarshal(itemCopy, &candleFromDb)
+	// 	if err != nil {
+	// 		c.log.Error("Failed to unmarshal candle value from badger in candle store (fetchCandle)",
+	// 			logging.Error(err),
+	// 			logging.String("badger-key", string(item.Key())),
+	// 			logging.String("raw-bytes", string(itemCopy)))
 
-			return nil, errors.Wrap(err, "failed to unmarshal from badger (fetchCandle)")
-		}
-		return &candleFromDb, nil
-	}
+	// 		return nil, errors.Wrap(err, "failed to unmarshal from badger (fetchCandle)")
+	// 	}
+	// 	return &candleFromDb, nil
+	// }
 
-	insertNewCandle := func(wb *badger.WriteBatch, badgerKey []byte, candle types.Candle) error {
-		candleBuf, err := proto.Marshal(&candle)
-		if err != nil {
-			return err
-		}
-		if err = wb.Set(badgerKey, candleBuf); err != nil {
-			return err
-		}
-		return nil
-	}
+	// insertNewCandle := func(wb *badger.WriteBatch, badgerKey []byte, candle types.Candle) error {
+	// 	candleBuf, err := proto.Marshal(&candle)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if err = wb.Set(badgerKey, candleBuf); err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// }
 
-	updateLastCandle := func(wb *badger.WriteBatch, key []byte, candleKey []byte) error {
-		if err := wb.Set(key, candleKey); err != nil {
-			return err
-		}
-		return nil
-	}
+	// updateLastCandle := func(wb *badger.WriteBatch, key []byte, candleKey []byte) error {
+	// 	if err := wb.Set(key, candleKey); err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// }
 
-	updateCandle := func(wb *badger.WriteBatch, badgerKey []byte, candleDb *types.Candle) error {
-		candleBuf, err := proto.Marshal(candleDb)
-		if err != nil {
-			return err
-		}
-		if err = wb.Set(badgerKey, candleBuf); err != nil {
-			return err
-		}
-		return nil
-	}
+	// updateCandle := func(wb *badger.WriteBatch, badgerKey []byte, candleDb *types.Candle) error {
+	// 	candleBuf, err := proto.Marshal(candleDb)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if err = wb.Set(badgerKey, candleBuf); err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// }
 
-	readTxn := c.badger.readTransaction()
-	defer readTxn.Discard()
+	// readTxn := c.badger.readTransaction()
+	// defer readTxn.Discard()
 
-	writeBatch := c.badger.db.NewWriteBatch()
-	defer writeBatch.Cancel()
+	// writeBatch := c.badger.db.NewWriteBatch()
+	// defer writeBatch.Cancel()
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	// c.mu.Lock()
+	// defer c.mu.Unlock()
 
-	for _, candle := range buf {
-		badgerKey := c.badger.candleKey(marketID, candle.Interval, candle.Timestamp)
-		candleDb, err := fetchCandle(readTxn, badgerKey)
-		if err == badger.ErrKeyNotFound {
-			err := insertNewCandle(writeBatch, badgerKey, candle)
-			if err != nil {
-				c.log.Error("Failed to insert new candle in candle store",
-					logging.Candle(candle),
-					logging.Error(err))
-			} else {
-				if c.log.GetLevel() == logging.DebugLevel {
-					c.log.Debug("New candle inserted in candle store",
-						logging.Candle(candle),
-						logging.String("badger-key", string(badgerKey)))
-				}
-			}
-			c.queueEvent(marketID, candle)
-		}
+	// for _, candle := range buf {
+	// 	badgerKey := c.badger.candleKey(marketID, candle.Interval, candle.Timestamp)
+	// 	candleDb, err := fetchCandle(readTxn, badgerKey)
+	// 	if err == badger.ErrKeyNotFound {
+	// 		err := insertNewCandle(writeBatch, badgerKey, candle)
+	// 		if err != nil {
+	// 			c.log.Error("Failed to insert new candle in candle store",
+	// 				logging.Candle(candle),
+	// 				logging.Error(err))
+	// 		} else {
+	// 			if c.log.GetLevel() == logging.DebugLevel {
+	// 				c.log.Debug("New candle inserted in candle store",
+	// 					logging.Candle(candle),
+	// 					logging.String("badger-key", string(badgerKey)))
+	// 			}
+	// 		}
+	// 		c.queueEvent(marketID, candle)
+	// 	}
 
-		if err == nil && candle.Volume != uint64(0) {
-			// update fetched candle with new trade
-			mergeCandles(candleDb, candle)
-			err = updateCandle(writeBatch, badgerKey, candleDb)
-			if err != nil {
-				c.log.Error("Failed to update candle in candle store",
-					logging.Candle(candle),
-					logging.CandleWithTag(*candleDb, "existing-candle"),
-					logging.Error(err))
-			} else {
-				if c.log.GetLevel() == logging.DebugLevel {
-					c.log.Debug("Candle updated in candle store",
-						logging.Candle(candle),
-						logging.CandleWithTag(*candleDb, "existing-candle"),
-						logging.String("badger-key", string(badgerKey)))
-				}
-			}
+	// 	if err == nil && candle.Volume != uint64(0) {
+	// 		// update fetched candle with new trade
+	// 		mergeCandles(candleDb, candle)
+	// 		err = updateCandle(writeBatch, badgerKey, candleDb)
+	// 		if err != nil {
+	// 			c.log.Error("Failed to update candle in candle store",
+	// 				logging.Candle(candle),
+	// 				logging.CandleWithTag(*candleDb, "existing-candle"),
+	// 				logging.Error(err))
+	// 		} else {
+	// 			if c.log.GetLevel() == logging.DebugLevel {
+	// 				c.log.Debug("Candle updated in candle store",
+	// 					logging.Candle(candle),
+	// 					logging.CandleWithTag(*candleDb, "existing-candle"),
+	// 					logging.String("badger-key", string(badgerKey)))
+	// 			}
+	// 		}
 
-			c.queueEvent(marketID, *candleDb)
-		}
+	// 		c.queueEvent(marketID, *candleDb)
+	// 	}
 
-		// add the lastCandle index
-		lastCandleKey := c.badger.lastCandleKey(marketID, candle.Interval)
-		err = updateLastCandle(writeBatch, lastCandleKey, badgerKey)
-		if err != nil {
-			c.log.Error("failed to store last candle",
-				logging.Error(err),
-				logging.String("market-id", marketID),
-				logging.String("interval", candle.Interval.String()),
-			)
-		} else {
-			c.log.Debug("last candle updated",
-				logging.String("market-id", marketID),
-				logging.String("interval", candle.Interval.String()),
-			)
-		}
-	}
+	// 	// add the lastCandle index
+	// 	lastCandleKey := c.badger.lastCandleKey(marketID, candle.Interval)
+	// 	err = updateLastCandle(writeBatch, lastCandleKey, badgerKey)
+	// 	if err != nil {
+	// 		c.log.Error("failed to store last candle",
+	// 			logging.Error(err),
+	// 			logging.String("market-id", marketID),
+	// 			logging.String("interval", candle.Interval.String()),
+	// 		)
+	// 	} else {
+	// 		c.log.Debug("last candle updated",
+	// 			logging.String("market-id", marketID),
+	// 			logging.String("interval", candle.Interval.String()),
+	// 		)
+	// 	}
+	// }
 
-	if err := writeBatch.Flush(); err != nil {
-		return err
-	}
+	// if err := writeBatch.Flush(); err != nil {
+	// 	return err
+	// }
 
-	// now push new updates to any observers
-	err := c.notify()
-	if err != nil {
-		return err
-	}
+	// // now push new updates to any observers
+	// err := c.notify()
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
 
 // GetCandles returns all candles at interval since timestamp for a market.
 func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) ([]*types.Candle, error) {
-	if since.Before(minSinceTime) {
-		return nil, errors.New("invalid sinceTimestamp, ensure format is epoch+nanoseconds timestamp")
-	}
+	return nil, ErrNotImplemented
+	// if since.Before(minSinceTime) {
+	// 	return nil, errors.New("invalid sinceTimestamp, ensure format is epoch+nanoseconds timestamp")
+	// }
 
-	// generate fetch key for the candles
-	fetchKey := c.generateFetchKey(market, interval, since)
-	prefix, _ := c.badger.candlePrefix(market, interval, false)
+	// // generate fetch key for the candles
+	// fetchKey := c.generateFetchKey(market, interval, since)
+	// prefix, _ := c.badger.candlePrefix(market, interval, false)
 
-	ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
-	defer cancel()
-	deadline, _ := ctx.Deadline()
+	// ctx, cancel := context.WithTimeout(ctx, c.Config.Timeout.Duration)
+	// defer cancel()
+	// deadline, _ := ctx.Deadline()
 
-	txn := c.badger.readTransaction()
-	defer txn.Discard()
+	// txn := c.badger.readTransaction()
+	// defer txn.Discard()
 
-	it := c.badger.getIterator(txn, false)
-	defer it.Close()
+	// it := c.badger.getIterator(txn, false)
+	// defer it.Close()
 
-	var candles []*types.Candle
-	for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {
-		select {
-		case <-ctx.Done():
-			if deadline.Before(time.Now()) {
-				return nil, ErrTimeoutReached
-			}
-			return nil, nil
-		default:
-			item := it.Item()
-			value, err := item.ValueCopy(nil)
-			if err != nil {
-				c.log.Error("Failure loading candle value from candle store (GetCandles)",
-					logging.String("badger-key", string(item.Key())),
-					logging.Error(err))
-				continue
-			}
+	// var candles []*types.Candle
+	// for it.Seek(fetchKey); it.ValidForPrefix(prefix); it.Next() {
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		if deadline.Before(time.Now()) {
+	// 			return nil, ErrTimeoutReached
+	// 		}
+	// 		return nil, nil
+	// 	default:
+	// 		item := it.Item()
+	// 		value, err := item.ValueCopy(nil)
+	// 		if err != nil {
+	// 			c.log.Error("Failure loading candle value from candle store (GetCandles)",
+	// 				logging.String("badger-key", string(item.Key())),
+	// 				logging.Error(err))
+	// 			continue
+	// 		}
 
-			var newCandle types.Candle
-			if err := proto.Unmarshal(value, &newCandle); err != nil {
-				c.log.Error("Failed to unmarshal candle value from badger in candle store (GetCandles)",
-					logging.Error(err),
-					logging.String("badger-key", string(item.Key())),
-					logging.String("raw-bytes", string(value)))
-				continue
-			}
-			candles = append(candles, &newCandle)
-		}
-	}
+	// 		var newCandle types.Candle
+	// 		if err := proto.Unmarshal(value, &newCandle); err != nil {
+	// 			c.log.Error("Failed to unmarshal candle value from badger in candle store (GetCandles)",
+	// 				logging.Error(err),
+	// 				logging.String("badger-key", string(item.Key())),
+	// 				logging.String("raw-bytes", string(value)))
+	// 			continue
+	// 		}
+	// 		candles = append(candles, &newCandle)
+	// 	}
+	// }
 
-	return candles, nil
+	// return candles, nil
 }
 
 // generateFetchKey calculates the correct badger key for the given market, interval and timestamp.
@@ -325,18 +324,18 @@ func (c *Candle) generateFetchKey(market string, interval types.Interval, since 
 	// returns valid key for Market, interval and timestamp
 	// round floor by integer division
 	switch interval {
-	case types.Interval_I1M:
-		fallthrough
-	case types.Interval_I5M:
-		fallthrough
-	case types.Interval_I15M:
-		fallthrough
-	case types.Interval_I1H:
-		fallthrough
-	case types.Interval_I6H:
-		fallthrough
-	case types.Interval_I1D:
-		return c.badger.candleKey(market, interval, vegatime.RoundToNearest(since, interval).UnixNano())
+	// case types.Interval_I1M:
+	// 	fallthrough
+	// case types.Interval_I5M:
+	// 	fallthrough
+	// case types.Interval_I15M:
+	// 	fallthrough
+	// case types.Interval_I1H:
+	// 	fallthrough
+	// case types.Interval_I6H:
+	// 	fallthrough
+	// case types.Interval_I1D:
+	// 	return c.badger.candleKey(market, interval, vegatime.RoundToNearest(since, interval).UnixNano())
 	default:
 		return nil
 	}
@@ -345,40 +344,41 @@ func (c *Candle) generateFetchKey(market string, interval types.Interval, since 
 
 // FetchLastCandle return the last candle store for a given market and interval
 func (c *Candle) FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error) {
-	var candle types.Candle
-	key := c.badger.lastCandleKey(marketID, interval)
-	err := c.badger.db.View(func(txn *badger.Txn) error {
-		lastCandleItem, err := txn.Get(key)
-		if err != nil {
-			return err
-		}
-		candleKey, err := lastCandleItem.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
-		candleItem, err := txn.Get(candleKey)
-		if err != nil {
-			return err
-		}
-		candleBuf, err := candleItem.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
-		if err := proto.Unmarshal(candleBuf, &candle); err != nil {
-			c.log.Error("Failed to unmarshal candle value from badger in candle store (FetchLastCandle)",
-				logging.Error(err),
-				logging.String("badger-key", string(key)),
-				logging.String("raw-bytes", string(candleBuf)))
-			return err
-		}
-		return nil
-	})
+	return nil, ErrNotImplemented
+	// var candle types.Candle
+	// key := c.badger.lastCandleKey(marketID, interval)
+	// err := c.badger.db.View(func(txn *badger.Txn) error {
+	// 	lastCandleItem, err := txn.Get(key)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	candleKey, err := lastCandleItem.ValueCopy(nil)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	candleItem, err := txn.Get(candleKey)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	candleBuf, err := candleItem.ValueCopy(nil)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if err := proto.Unmarshal(candleBuf, &candle); err != nil {
+	// 		c.log.Error("Failed to unmarshal candle value from badger in candle store (FetchLastCandle)",
+	// 			logging.Error(err),
+	// 			logging.String("badger-key", string(key)),
+	// 			logging.String("raw-bytes", string(candleBuf)))
+	// 		return err
+	// 	}
+	// 	return nil
+	// })
 
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	return &candle, nil
+	// return &candle, nil
 }
 
 // queueEvent appends a candle onto a queue for a market.
