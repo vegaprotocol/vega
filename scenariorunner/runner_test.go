@@ -4,11 +4,45 @@ import (
 	"testing"
 
 	types "code.vegaprotocol.io/vega/proto"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
 	sr "code.vegaprotocol.io/vega/scenariorunner"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
+	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestProcessInstructionsAll(t *testing.T) {
+
+	runner, err := sr.NewScenarioRunner()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	marketId := "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ"
+	partyId := "party1"
+	orderId := "order1"
+	instructions1, err := getExecutionEngineInstructions(marketId, partyId, orderId)
+	if err != nil {
+		t.Fatal(err)
+	}
+	instructions2, err := getTradingDataInstructions(marketId, partyId, orderId)
+	if err != nil {
+		t.Fatal(err)
+	}
+	instructions := append(instructions1, instructions2...)
+
+	instructionSet := &core.InstructionSet{
+		Instructions: instructions,
+		Description:  "Test instructions",
+	}
+
+	result, err := runner.ProcessInstructions(*instructionSet)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
+	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
+}
 
 func TestProcessInstructionsExecution(t *testing.T) {
 
@@ -17,7 +51,7 @@ func TestProcessInstructionsExecution(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	instructions, err := getExecutionEngineInstructions()
+	instructions, err := getExecutionEngineInstructions("ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ", "party1", "order1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,39 +66,37 @@ func TestProcessInstructionsExecution(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
 	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
+}
 
-	// marketdepth
-	/*instr7, err := core.NewInstruction(
-		"MarketDepth",
-		&protoapi.MarketDepthRequest{
-			MarketID: marketId,
-		},
-	)
+func TestProcessInstructionsTradingData(t *testing.T) {
+
+	runner, err := sr.NewScenarioRunner()
 	if err != nil {
-		t.Fatalf("Failed to create a new instruction: %s", err)
+		t.Fatal(err)
 	}
 
-	instructions = append(instructions, instr7)
+	instructions, err := getTradingDataInstructions("ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ", "party1", "order1")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	instructionSet2 := &core.InstructionSet{
+	instructionSet := &core.InstructionSet{
 		Instructions: instructions,
-		Description:  "Test instructions - extended",
+		Description:  "Test instructions",
 	}
 
-	result, err = runner.ProcessInstructions(*instructionSet2)
+	result, err := runner.ProcessInstructions(*instructionSet)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
-	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)*/
-
+	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
 }
 
-func getExecutionEngineInstructions() ([]*core.Instruction, error) {
-	trader1 := "trader1"
+func getExecutionEngineInstructions(marketId string, trader1Id string, order1Id string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		"NotifyTraderAccount",
 		&types.NotifyTraderAccount{
-			TraderID: trader1,
+			TraderID: trader1Id,
 		},
 	)
 
@@ -72,15 +104,13 @@ func getExecutionEngineInstructions() ([]*core.Instruction, error) {
 		return nil, err
 	}
 
-	sellOrderId := "myId1"
-	marketId := "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ"
 	sell := types.Side_Sell
 	instr2, err := core.NewInstruction(
 		"SubmitOrder",
 		&types.Order{
-			Id:          sellOrderId,
+			Id:          order1Id,
 			MarketID:    marketId,
-			PartyID:     trader1,
+			PartyID:     trader1Id,
 			Price:       100,
 			Size:        3,
 			Side:        sell,
@@ -96,8 +126,8 @@ func getExecutionEngineInstructions() ([]*core.Instruction, error) {
 	instr3, err := core.NewInstruction(
 		"CancelOrder",
 		&types.Order{
-			Id:       sellOrderId,
-			MarketID: "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ",
+			Id:       order1Id,
+			MarketID: marketId,
 			Side:     sell,
 		},
 	)
@@ -157,6 +187,134 @@ func getExecutionEngineInstructions() ([]*core.Instruction, error) {
 		instr4,
 		instr5,
 		instr6,
+	}
+
+	return instructions, nil
+}
+
+func getTradingDataInstructions(marketId string, partyId string, orderId string) ([]*core.Instruction, error) {
+	instr1, err := core.NewInstruction(
+		"MarketDepth",
+		&protoapi.MarketDepthRequest{
+			MarketID: marketId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr2, err := core.NewInstruction(
+		"MarketById",
+		&protoapi.MarketByIDRequest{
+			MarketID: marketId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr3, err := core.NewInstruction(
+		"Markets",
+		&empty.Empty{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr4, err := core.NewInstruction(
+		"OrdersByMarket",
+		&protoapi.OrdersByMarketRequest{
+			MarketID: marketId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr5, err := core.NewInstruction(
+		"OrdersByParty",
+		&protoapi.OrdersByPartyRequest{
+			PartyID: partyId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr6, err := core.NewInstruction(
+		"OrderByMarketAndId",
+		&protoapi.OrderByMarketAndIdRequest{
+			MarketID: marketId,
+			OrderID:  orderId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr7, err := core.NewInstruction(
+		"OrderByReference",
+		&protoapi.OrderByReferenceRequest{
+			Reference: "testReference",
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr8, err := core.NewInstruction(
+		"TradesByMarket",
+		&protoapi.TradesByMarketRequest{
+			MarketID: marketId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr9, err := core.NewInstruction(
+		"TradesByParty",
+		&protoapi.TradesByPartyRequest{
+			PartyID:  partyId,
+			MarketID: marketId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr10, err := core.NewInstruction(
+		"TradesByOrder",
+		&protoapi.TradesByOrderRequest{
+			OrderID: orderId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr11, err := core.NewInstruction(
+		"LastTrade",
+		&protoapi.LastTradeRequest{
+			MarketID: marketId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instructions := []*core.Instruction{
+		instr1,
+		instr2,
+		instr3,
+		instr4,
+		instr5,
+		instr6,
+		instr7,
+		instr8,
+		instr9,
+		instr10,
+		instr11,
 	}
 
 	return instructions, nil
