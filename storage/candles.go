@@ -267,7 +267,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 
 // GetCandles returns all candles at interval since timestamp for a market.
 func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time, interval types.Interval) ([]*types.Candle, error) {
-	return nil, ErrNotImplemented
+	return []*types.Candle{}, nil
 	// if since.Before(minSinceTime) {
 	// 	return nil, errors.New("invalid sinceTimestamp, ensure format is epoch+nanoseconds timestamp")
 	// }
@@ -320,32 +320,30 @@ func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time,
 }
 
 // generateFetchKey calculates the correct badger key for the given market, interval and timestamp.
-func (c *Candle) generateFetchKey(market string, interval types.Interval, since time.Time) []byte {
-	// returns valid key for Market, interval and timestamp
-	// round floor by integer division
-	switch interval {
-	// case types.Interval_I1M:
-	// 	fallthrough
-	// case types.Interval_I5M:
-	// 	fallthrough
-	// case types.Interval_I15M:
-	// 	fallthrough
-	// case types.Interval_I1H:
-	// 	fallthrough
-	// case types.Interval_I6H:
-	// 	fallthrough
-	// case types.Interval_I1D:
-	// 	return c.badger.candleKey(market, interval, vegatime.RoundToNearest(since, interval).UnixNano())
-	default:
-		return nil
-	}
-
-}
+// func (c *Candle) generateFetchKey(market string, interval types.Interval, since time.Time) []byte {
+// 	// returns valid key for Market, interval and timestamp
+// 	// round floor by integer division
+// 	switch interval {
+// 	case types.Interval_I1M:
+// 		fallthrough
+// 	case types.Interval_I5M:
+// 		fallthrough
+// 	case types.Interval_I15M:
+// 		fallthrough
+// 	case types.Interval_I1H:
+// 		fallthrough
+// 	case types.Interval_I6H:
+// 		fallthrough
+// 	case types.Interval_I1D:
+// 		return c.badger.candleKey(market, interval, vegatime.RoundToNearest(since, interval).UnixNano())
+// 	default:
+// 		return nil
+// 	}
+// }
 
 // FetchLastCandle return the last candle store for a given market and interval
 func (c *Candle) FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error) {
-	return nil, ErrNotImplemented
-	// var candle types.Candle
+	var candle types.Candle
 	// key := c.badger.lastCandleKey(marketID, interval)
 	// err := c.badger.db.View(func(txn *badger.Txn) error {
 	// 	lastCandleItem, err := txn.Get(key)
@@ -378,7 +376,7 @@ func (c *Candle) FetchLastCandle(marketID string, interval types.Interval) (*typ
 	// 	return nil, err
 	// }
 
-	// return &candle, nil
+	return &candle, nil
 }
 
 // queueEvent appends a candle onto a queue for a market.
