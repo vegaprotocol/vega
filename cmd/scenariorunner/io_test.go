@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -176,107 +179,108 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 }
 
 func TestMarshal(t *testing.T) {
-	expected := string(`{
-  "summary": {
-    "instructionsProcessed": "2",
-    "instructionsOmitted": "0",
-    "tradesGenerated": "1",
-    "processingTime": "3s",
-    "finalOrderBook": [
-      {
-        "marketID": "Market1",
-        "buy": [
-          {
-            "price": "100",
-            "numberOfOrders": "1",
-            "volume": "3",
-            "cumulativeVolume": "3"
-          }
-        ],
-        "sell": [
-          {
-            "price": "100",
-            "numberOfOrders": "1",
-            "volume": "3",
-            "cumulativeVolume": "3"
-          }
-        ]
-      }
-    ]
-  },
-  "results": [
-    {
-      "response": {
-        "@type": "vega.PendingOrder",
-        "reference": "",
-        "price": "100",
-        "TimeInForce": "GTC",
-        "side": "Sell",
-        "marketID": "Market1",
-        "size": "3",
-        "partyID": "trader1",
-        "status": "Active",
-        "id": "order1",
-        "type": "LIMIT"
-      },
-      "error": "",
-      "instruction": {
-        "description": "",
-        "request": "trading.SubmitOrder",
-        "message": {
-          "@type": "api.SubmitOrderRequest",
-          "submission": {
-            "id": "",
-            "marketID": "Market1",
-            "partyID": "trader1",
-            "price": "100",
-            "size": "3",
-            "side": "Sell",
-            "TimeInForce": "GTC",
-            "expiresAt": "1924991999000000000",
-            "type": "LIMIT"
-          },
-          "token": ""
-        }
-      }
-    },
-    {
-      "response": {
-        "@type": "vega.PendingOrder",
-        "reference": "",
-        "price": "100",
-        "TimeInForce": "GTC",
-        "side": "Buy",
-        "marketID": "Market1",
-        "size": "3",
-        "partyID": "trader2",
-        "status": "Active",
-        "id": "order2",
-        "type": "LIMIT"
-      },
-      "error": "",
-      "instruction": {
-        "description": "",
-        "request": "trading.SubmitOrder",
-        "message": {
-          "@type": "api.SubmitOrderRequest",
-          "submission": {
-            "id": "",
-            "marketID": "Market1",
-            "partyID": "trader2",
-            "price": "100",
-            "size": "3",
-            "side": "Buy",
-            "TimeInForce": "GTC",
-            "expiresAt": "1924991999000000000",
-            "type": "LIMIT"
-          },
-          "token": ""
-        }
-      }
-    }
-  ]
-}`)
+	expected := string(
+		`{
+		"summary": {
+		  "instructionsProcessed": "2",
+		  "instructionsOmitted": "0",
+		  "tradesGenerated": "1",
+		  "processingTime": "3s",
+		  "finalOrderBook": [
+			{
+			  "marketID": "Market1",
+			  "buy": [
+				{
+				  "price": "100",
+				  "numberOfOrders": "1",
+				  "volume": "3",
+				  "cumulativeVolume": "3"
+				}
+			  ],
+			  "sell": [
+				{
+				  "price": "100",
+				  "numberOfOrders": "1",
+				  "volume": "3",
+				  "cumulativeVolume": "3"
+				}
+			  ]
+			}
+		  ]
+		},
+		"results": [
+		  {
+			"instruction": {
+			  "description": "",
+			  "request": "trading.SubmitOrder",
+			  "message": {
+				"@type": "api.SubmitOrderRequest",
+				"submission": {
+				  "id": "",
+				  "marketID": "Market1",
+				  "partyID": "trader1",
+				  "price": "100",
+				  "size": "3",
+				  "side": "Sell",
+				  "TimeInForce": "GTC",
+				  "expiresAt": "1924991999000000000",
+				  "type": "LIMIT"
+				},
+				"token": ""
+			  }
+			},
+			"error": "",
+			"response": {
+			  "@type": "vega.PendingOrder",
+			  "reference": "",
+			  "price": "100",
+			  "TimeInForce": "GTC",
+			  "side": "Sell",
+			  "marketID": "Market1",
+			  "size": "3",
+			  "partyID": "trader1",
+			  "status": "Active",
+			  "id": "order1",
+			  "type": "LIMIT"
+			}
+		  },
+		  {
+			"instruction": {
+			  "description": "",
+			  "request": "trading.SubmitOrder",
+			  "message": {
+				"@type": "api.SubmitOrderRequest",
+				"submission": {
+				  "id": "",
+				  "marketID": "Market1",
+				  "partyID": "trader2",
+				  "price": "100",
+				  "size": "3",
+				  "side": "Buy",
+				  "TimeInForce": "GTC",
+				  "expiresAt": "1924991999000000000",
+				  "type": "LIMIT"
+				},
+				"token": ""
+			  }
+			},
+			"error": "",
+			"response": {
+			  "@type": "vega.PendingOrder",
+			  "reference": "",
+			  "price": "100",
+			  "TimeInForce": "GTC",
+			  "side": "Buy",
+			  "marketID": "Market1",
+			  "size": "3",
+			  "partyID": "trader2",
+			  "status": "Active",
+			  "id": "order2",
+			  "type": "LIMIT"
+			}
+		  }
+		]
+	  }`)
 
 	instr1, err := core.NewInstruction(
 		"trading.SubmitOrder",
@@ -385,5 +389,24 @@ func TestMarshal(t *testing.T) {
 	assert.NoError(t, err)
 
 	actual := out.String()
-	assert.EqualValues(t, expected, actual)
+	equal, err := areEqualJSON(expected, actual)
+	assert.NoError(t, err)
+	assert.True(t, equal)
+}
+
+func areEqualJSON(s1, s2 string) (bool, error) {
+	var o1 interface{}
+	var o2 interface{}
+
+	var err error
+	err = json.Unmarshal([]byte(s1), &o1)
+	if err != nil {
+		return false, fmt.Errorf("Error mashalling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(s2), &o2)
+	if err != nil {
+		return false, fmt.Errorf("Error mashalling string 2 :: %s", err.Error())
+	}
+
+	return reflect.DeepEqual(o1, o2), nil
 }
