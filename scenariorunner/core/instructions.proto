@@ -5,6 +5,7 @@ package core;
 import "google/protobuf/duration.proto";
 import "google/protobuf/any.proto";
 import "vega/proto/vega.proto";
+import "vega/proto/markets.proto";
 
 message Instruction {
     string description = 1;
@@ -34,4 +35,16 @@ message Metadata {
 message ResultSet {
     Metadata summary = 1;
     repeated InstructionResult results = 2;
+}
+
+message ProtocolSummary {
+    repeated MarketSummary Markets = 1;
+}
+
+message MarketSummary {
+    vega.Market market = 1;
+    repeated vega.Account accounts = 2;
+    repeated vega.Trade trades = 3;
+    repeated vega.Order orders = 4;
+    vega.MarketDepth orderBook = 5;
 }
