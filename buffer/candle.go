@@ -27,6 +27,10 @@ type CandleStore interface {
 
 // Candle is a buffer for the candles produces by vega
 type Candle struct {
+	// map of market id to map of bufferkey to candle
+	// basically this buffer is in charle of all candle per markets
+	// each market get candles generated for a bufferkey which is a key
+	// composed of a timestamp and interval
 	buf       map[string]map[string]types.Candle
 	store     CandleStore
 	mu        sync.Mutex
