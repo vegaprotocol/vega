@@ -2,58 +2,50 @@
   "description": "Example set of instructions with two parties submiting matching orders on the same market followed by query retrieving trades from that market - expecting one trade",
   "instructions": [
     {
-      "request": "trading.NotifyTraderAccount",
+      "request": "NotifyTraderAccount",
       "message": {
-        "@type": "api.NotifyTraderAccountRequest",
-        "notif": {
-          "traderID": "trader1"
-        }
+        "@type": "vega.NotifyTraderAccount",
+        "traderID": "trader1"
       }
     },
     {
-      "request": "trading.SubmitOrder",
+      "request": "SubmitOrder",
       "message": {
-        "@type": "api.SubmitOrderRequest",
-        "submission": {
-          "marketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
-          "partyID": "trader1",
-          "price": 100,
-          "size": 3,
-          "side": "Sell",
-          "TimeInForce": "GTC",
-          "expiresAt": 1924991999000000000
-        }
+        "@type": "vega.Order",
+        "marketID": "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ",
+        "partyID": "trader1",
+        "price": 100,
+        "size": 3,
+        "side": "Sell",
+        "timeInForce": "GTC",
+        "expiresAt": 1924991999000000000
       }
     },
     {
-      "request": "trading.NotifyTraderAccount",
+      "request": "NotifyTraderAccount",
       "message": {
-        "@type": "api.NotifyTraderAccountRequest",
-        "notif": {
-          "traderID": "trader2"
-        }
+        "@type": "vega.NotifyTraderAccount",
+        "traderID": "trader2"
       }
     },
     {
-      "request": "trading.SubmitOrder",
+      "request": "SubmitOrder",
       "message": {
-        "@type": "api.SubmitOrderRequest",
-        "submission": {
-          "marketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL",
-          "partyID": "trader2",
-          "price": 100,
-          "size": 3,
-          "side": "Buy",
-          "TimeInForce": "GTC",
-          "expiresAt": 1924991999000000000
-        }
+        "@type": "vega.Order",
+        "marketID": "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ",
+        "partyID": "trader2",
+        "price": 100,
+        "size": 3,
+        "side": "Buy",
+        "timeInForce": "GTC",
+        "expiresAt": 1924991999000000000
       }
     },
     {
-      "request": "trading_data.TradesByMarket",
+      "request": "TradesByMarket",
       "message": {
         "@type": "api.TradesByMarketRequest",
-        "marketID": "SM5FP5KTOKZHBPP5Q7U7WJ7BWH2J4IUL"
+        "marketID": "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ"
       }
     }
   ]
