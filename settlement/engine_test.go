@@ -187,31 +187,28 @@ func testMarkToMarketOrdered(t *testing.T) {
 
 		m := mocks.NewMockMarketPosition(engine.ctrl)
 		m.EXPECT().Size().MinTimes(2).Return(p.size)
-		m.EXPECT().Party().MinTimes(2).Return(p.trader)
+		m.EXPECT().Party().MinTimes(1).Return(p.trader)
 		m.EXPECT().Price().MinTimes(2).Return(p.price)
 
 		init = append(init, m)
 
 		l := mocks.NewMockMarketPosition(engine.ctrl)
-		l.EXPECT().Size().MinTimes(2).Return(p.size * 2)
-		l.EXPECT().Price().MinTimes(2).Return(markPrice)
-		l.EXPECT().Party().MinTimes(2).Return(p.trader)
+		l.EXPECT().Size().MinTimes(1).Return(p.size * 2)
+		l.EXPECT().Price().MinTimes(1).Return(markPrice)
+		l.EXPECT().Party().MinTimes(1).Return(p.trader)
 
 		long = append(long, l)
 
 		s := mocks.NewMockMarketPosition(engine.ctrl)
-		s.EXPECT().Size().MinTimes(2).Return(p.size * -2) // long trader is going short, short trader is going long
-		s.EXPECT().Price().MinTimes(2).Return(markPrice)
-		s.EXPECT().Party().MinTimes(2).Return(p.trader)
+		s.EXPECT().Size().MinTimes(1).Return(p.size * -2) // long trader is going short, short trader is going long
+		s.EXPECT().Price().MinTimes(1).Return(markPrice)
+		s.EXPECT().Party().MinTimes(1).Return(p.trader)
 
 		short = append(short, s)
 	}
 
 	// setup the initial state
 	engine.Update(init)
-
-	// close out long
-	engine.UpdateClosed(long)
 
 	// add neutral to position, this hasn't changed, but we need it processed anyway
 	long = append(long, neutral)
@@ -220,9 +217,6 @@ func testMarkToMarketOrdered(t *testing.T) {
 
 	// now, let's update the state again as if the settlement hasn't happened
 	engine.Update(init)
-
-	// close out short
-	engine.UpdateClosed(short)
 
 	short = append(short, neutral)
 	shortTransfer := engine.SettleOrder(markPrice, short)
@@ -255,18 +249,6 @@ func testMTMSwitchPosition(t *testing.T) {
 			price:  10000,
 		},
 	}
-	update := []posValue{
-		{
-			trader: "trader1",
-			size:   -1,
-			price:  11000,
-		},
-		{
-			trader: "trader2",
-			size:   1,
-			price:  11000,
-		},
-	}
 	final := []posValue{
 		{
 			trader: "trader1",
@@ -290,13 +272,11 @@ func testMTMSwitchPosition(t *testing.T) {
 		},
 	}
 	init, _ := engine.getMockMarketPositions(start)
-	_, change := engine.getMockMarketPositions(update)
 	_, positions := engine.getMockMarketPositions(final)
 
 	// set the initial state
 	// update the closed positions
 	engine.Update(init)
-	engine.UpdateClosed(change)
 
 	result := engine.SettleOrder(final[0].price, positions)
 	assert.NotEmpty(t, result)
