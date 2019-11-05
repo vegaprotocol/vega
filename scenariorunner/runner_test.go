@@ -46,8 +46,8 @@ func TestProcessInstructionsAll(t *testing.T) {
 	result, err := runner.ProcessInstructions(*instructionSet)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
-	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
+	assert.EqualValues(t, len(instructions), result.Metadata.InstructionsProcessed)
+	assert.EqualValues(t, 0, result.Metadata.InstructionsOmitted)
 }
 
 func TestProcessInstructionsExecution(t *testing.T) {
@@ -70,8 +70,8 @@ func TestProcessInstructionsExecution(t *testing.T) {
 	result, err := runner.ProcessInstructions(*instructionSet)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
-	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
+	assert.EqualValues(t, len(instructions), result.Metadata.InstructionsProcessed)
+	assert.EqualValues(t, 0, result.Metadata.InstructionsOmitted)
 }
 
 func TestProcessInstructionsTradingData(t *testing.T) {
@@ -94,8 +94,8 @@ func TestProcessInstructionsTradingData(t *testing.T) {
 	result, err := runner.ProcessInstructions(*instructionSet)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
-	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
+	assert.EqualValues(t, len(instructions), result.Metadata.InstructionsProcessed)
+	assert.EqualValues(t, 0, result.Metadata.InstructionsOmitted)
 }
 
 func TestProcessInstructionsTime(t *testing.T) {
@@ -118,8 +118,8 @@ func TestProcessInstructionsTime(t *testing.T) {
 	result, err := runner.ProcessInstructions(*instructionSet)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.EqualValues(t, len(instructions), result.Summary.InstructionsProcessed)
-	assert.EqualValues(t, 0, result.Summary.InstructionsOmitted)
+	assert.EqualValues(t, len(instructions), result.Metadata.InstructionsProcessed)
+	assert.EqualValues(t, 0, result.Metadata.InstructionsOmitted)
 }
 
 func getExecutionEngineInstructions(marketId string, trader1Id string, order1Id string) ([]*core.Instruction, error) {

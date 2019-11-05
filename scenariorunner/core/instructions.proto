@@ -6,6 +6,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/any.proto";
 import "vega/proto/vega.proto";
 import "vega/proto/markets.proto";
+import "vega/proto/api/trading.proto";
 
 message Instruction {
     string description = 1;
@@ -29,22 +30,34 @@ message Metadata {
     uint64 instructionsOmitted = 2;
     uint64 tradesGenerated = 3;
     google.protobuf.Duration processingTime = 5;
-    repeated vega.MarketDepth finalOrderBook = 6;
+    repeated vega.MarketDepth finalMarketDepth = 6;
 }
 
 message ResultSet {
-    Metadata summary = 1;
+    Metadata metadata = 1;
     repeated InstructionResult results = 2;
 }
 
-message ProtocolSummary {
-    repeated MarketSummary Markets = 1;
+message ProtocolSummaryResponse {
+    repeated MarketSummary markets = 1;
+    repeated vega.Party parties = 2;
+}
+
+message MarketSummaryResponse {
+    MarketSummary summary = 1;
+}
+
+message ProtocolSummaryRequest {
+    api.Pagination pagination = 1;
+}
+message MarketSummaryRequest {
+    string marketID = 1;
+    api.Pagination pagination = 2;
 }
 
 message MarketSummary {
     vega.Market market = 1;
-    repeated vega.Account accounts = 2;
     repeated vega.Trade trades = 3;
     repeated vega.Order orders = 4;
-    vega.MarketDepth orderBook = 5;
+    vega.MarketDepth marketDepth = 5;
 }

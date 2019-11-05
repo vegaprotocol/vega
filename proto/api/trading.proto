@@ -2,8 +2,8 @@ syntax = "proto3";
 
 option go_package = "code.vegaprotocol.io/vega/proto/api";
 
-import "proto/vega.proto";
-import "proto/markets.proto";
+import "vega/proto/vega.proto";
+import "vega/proto/markets.proto";
 
 package api;
 
@@ -153,7 +153,7 @@ message TradesByOrderRequest {
 }
 
 message TradesByOrderResponse {
-  repeated vega.Trade trades = 1;
+  repeated  vega.Trade trades = 1;
 }
 
 message AccountsSubscribeRequest {

@@ -1,21 +1,12 @@
 package scenariorunner
 
 import (
-	"context"
 	"errors"
 	"strings"
-	"time"
 
-	cfg "code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/fsutil"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/scenariorunner/preprocessors"
-	"code.vegaprotocol.io/vega/storage"
-	"code.vegaprotocol.io/vega/trades"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/hashicorp/go-multierror"
 )
@@ -27,8 +18,10 @@ var (
 
 type ScenarioRunner struct {
 	Config           Config
+	summaryGenerator *core.SummaryGenerator
 	internalProvider *internalProvider
 	providers        []core.PreProcessorProvider
+	tradesGenerated  uint64
 }
 
 // NewScenarioRunner returns a pointer to new instance of scenario runner
@@ -39,15 +32,18 @@ func NewScenarioRunner() (*ScenarioRunner, error) {
 		return nil, err
 	}
 	execution := preprocessors.NewExecution(d.execution)
-	marketDepth := preprocessors.NewMarketDepth(d.ctx, d.market, d.trade)
-	markets := preprocessors.NewMarkets(d.ctx, d.market)
-	orders := preprocessors.NewOrders(d.ctx, d.order)
-	trades := preprocessors.NewTrades(d.ctx, d.trade)
+	marketDepth := preprocessors.NewMarketDepth(d.ctx, d.marketService, d.tradeService)
+	markets := preprocessors.NewMarkets(d.ctx, d.marketService)
+	orders := preprocessors.NewOrders(d.ctx, d.orderStore)
+	trades := preprocessors.NewTrades(d.ctx, d.tradeService)
 
-	internal := newInternalProvider(d.vegaTime)
+	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.marketService, d.tradeStore, d.orderStore, d.partyStore)
+
+	internal := newInternalProvider(d.vegaTime, summaryGenerator)
 
 	return &ScenarioRunner{
 		Config:           NewDefaultConfig(),
+		summaryGenerator: summaryGenerator,
 		internalProvider: internal,
 		providers: []core.PreProcessorProvider{
 			execution,
@@ -125,107 +121,44 @@ func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (*cor
 
 	}
 
+	summary, err := sr.summaryGenerator.ProtocolSummary(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	s := *summary
+	trades := sumTrades(s) - sr.tradesGenerated
+
 	md := &core.Metadata{
 		InstructionsProcessed: processed,
 		InstructionsOmitted:   omitted,
+		TradesGenerated:       trades,
+		FinalMarketDepth:      marketDepths(*summary),
 	}
 
+	sr.tradesGenerated = trades
+
 	return &core.ResultSet{
-		Summary: md,
-		Results: results,
+		Metadata: md,
+		Results:  results,
 	}, errors.ErrorOrNil()
 }
 
-func getDependencies() (*dependencies, error) {
-	log := logging.NewDevLogger()
-	log.SetLevel(logging.InfoLevel)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	configPath := fsutil.DefaultVegaDir()
-	cfgwatchr, err := cfg.NewFromFile(ctx, log, configPath, configPath)
-	if err != nil {
-		log.Error("unable to start config watcher", logging.Error(err))
-		cancel()
-		return nil, err
-	}
-	config := cfgwatchr.Get()
-	log = logging.NewLoggerFromConfig(config.Logging)
-
-	orderStore, err := storage.NewOrders(log, config.Storage, cancel)
-	if err != nil {
-		return nil, err
-	}
-	tradeStore, err := storage.NewTrades(log, config.Storage, cancel)
-	if err != nil {
-		return nil, err
-	}
-	riskStore, err := storage.NewRisks(config.Storage)
-	if err != nil {
-		return nil, err
-	}
-	candleStore, err := storage.NewCandles(log, config.Storage)
-	if err != nil {
-		return nil, err
+func sumTrades(summary core.ProtocolSummaryResponse) uint64 {
+	var trades int
+	for _, mkt := range summary.Markets {
+		n := len(mkt.Trades)
+		trades = trades + n
 	}
 
-	marketStore, err := storage.NewMarkets(log, config.Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	partyStore, err := storage.NewParties(config.Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	accounts, err := storage.NewAccounts(log, config.Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	transferResponseStore, err := storage.NewTransferResponses(log, config.Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	marketService, err := markets.NewService(log, config.Markets, marketStore, orderStore)
-	if err != nil {
-		return nil, err
-	}
-
-	timeService := vegatime.New(config.Time)
-	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
-	timeService.SetTimeNow(now)
-	engine := execution.NewEngine(
-		log,
-		config.Execution,
-		timeService,
-		orderStore,
-		tradeStore,
-		candleStore,
-		marketStore,
-		partyStore,
-		accounts,
-		transferResponseStore,
-	)
-
-	tradeService, err := trades.NewService(log, config.Trades, tradeStore, riskStore)
-
-	return &dependencies{
-		ctx:       ctx,
-		vegaTime:  timeService,
-		execution: engine,
-		order:     orderStore,
-		trade:     tradeService,
-		market:    marketService,
-	}, nil
+	return uint64(trades)
 }
 
-type dependencies struct {
-	ctx       context.Context
-	vegaTime  *vegatime.Svc
-	execution *execution.Engine
-	order     *storage.Order
-	trade     *trades.Svc
-	market    *markets.Svc
+func marketDepths(summary core.ProtocolSummaryResponse) []*proto.MarketDepth {
+	d := make([]*proto.MarketDepth, len(summary.Markets))
+	for _, mkt := range summary.Markets {
+		d = append(d, mkt.MarketDepth)
+	}
+
+	return d
 }
