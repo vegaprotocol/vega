@@ -31,7 +31,7 @@ func NewDefaultConfig() Config {
 		Level:               encoding.LogLevel{Level: logging.InfoLevel},
 		LogOrderSubmitDebug: true,
 		LogTimeDebug:        true,
-		ChainProvider:       "noop",
+		ChainProvider:       "tendermint",
 		Tendermint:          tm.NewDefaultConfig(),
 		Noop:                noop.NewDefaultConfig(),
 	}
