@@ -443,6 +443,7 @@ func FeatureContext(s *godog.Suite) {
 		}
 	})
 
+	s.Step(`^"([^"]*)" have only on margin account per market$`, haveOnlyOnMarginAccountPerMarket)
 	s.Step(`^The "([^"]*)" withdraw "([^"]*)" from the "([^"]*)" account$`, theWithdrawFromTheAccount)
 	s.Step(`^The "([^"]*)" makes a deposit of "([^"]*)" into the "([^"]*)" account$`, theMakesADepositOfIntoTheAccount)
 	s.Step(`^"([^"]*)" general account for asset "([^"]*)" balance is "([^"]*)"$`, generalAccountForAssetBalanceIs)

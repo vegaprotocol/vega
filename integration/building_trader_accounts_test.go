@@ -224,6 +224,21 @@ func haveOnlyOneAccountPerAsset(arg1 string) error {
 	return nil
 }
 
+func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
+	assets := map[string]struct{}{}
+
+	for _, acc := range execsetup.accounts.data {
+		fmt.Printf("acc: %v\n", acc)
+		if acc.Owner == arg1 && acc.Type == proto.AccountType_MARGIN {
+			if _, ok := assets[acc.MarketID]; ok {
+				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketID)
+			}
+			assets[acc.MarketID] = struct{}{}
+		}
+	}
+	return nil
+}
+
 func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
@@ -275,6 +290,7 @@ func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
 func baseMarket(name, baseName, quoteName, asset string) proto.Market {
 	maturity := time.Now().Add(365 * 24 * time.Hour)
 	return proto.Market{
+		Id:            fmt.Sprintf("%s", name),
 		Name:          fmt.Sprintf("%s", name),
 		DecimalPlaces: 2,
 		TradableInstrument: &proto.TradableInstrument{
