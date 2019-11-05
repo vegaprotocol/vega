@@ -10,19 +10,17 @@ message Instruction {
     string description = 1;
     string request = 2; //TODO (WG 31/10/2019): Perhaps use a custom type here
     google.protobuf.Any message = 3;
-
 }
 
 message InstructionSet {
     string description = 1;
     repeated Instruction instructions = 2;
-
 }
 
 message InstructionResult {
-    google.protobuf.Any response = 1;
+    Instruction instruction = 1;
     string error = 2;
-    Instruction instruction = 3;
+    google.protobuf.Any response = 3;
 }
 
 message Metadata {
