@@ -11,7 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// MarketPosition reprensent the position of a party inside a market
+// MarketPosition represents the position of a party inside a market
 type MarketPosition struct {
 	// Actual volume
 	size int64
@@ -75,7 +75,7 @@ type Engine struct {
 	positions map[string]*MarketPosition
 }
 
-// New instanciate a new positions engine
+// New instantiates a new positions engine
 func New(log *logging.Logger, config Config) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
