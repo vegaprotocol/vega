@@ -33,7 +33,7 @@ func TestReadFiles(t *testing.T) {
 	assert.EqualValues(t, instrSet[0], instrSet[1])
 }
 
-func TestUnmarshall(t *testing.T) {
+func TestUnmarshallApiTypes(t *testing.T) {
 
 	instr1, err := core.NewInstruction(
 		"trading.NotifyTraderAccount",
@@ -100,6 +100,74 @@ func TestUnmarshall(t *testing.T) {
 	}
 	]
 	}`)
+
+	actual, err := unmarshall(data)
+
+	assert.NoError(t, err)
+	assert.EqualValues(t, expected, actual)
+}
+
+func TestUnmarshallInternalTypes(t *testing.T) {
+
+	instr1, err := core.NewInstruction(
+		"NotifyTraderAccount",
+		&types.NotifyTraderAccount{
+			TraderID: "trader1",
+		})
+
+	if err != nil {
+		log.Fatalln("Failed to create a new instruction: ", err)
+	}
+	instr2, err := core.NewInstruction(
+		"SubmitOrder",
+		&types.Order{
+			MarketID:    "Market1",
+			PartyID:     "trader1",
+			Price:       100,
+			Size:        3,
+			Side:        types.Side_Sell,
+			TimeInForce: types.Order_GTC,
+			ExpiresAt:   1924991999000000000,
+		},
+	)
+	if err != nil {
+		log.Fatalln("Failed to create a new instruction: ", err)
+	}
+	instr2.Description = "Submit a sell order"
+	expected := &core.InstructionSet{
+		Instructions: []*core.Instruction{
+			instr1,
+			instr2,
+		},
+		Description: "Test instructions",
+	}
+	data := strings.NewReader(`{
+		"description": "Test instructions",
+		"instructions": [
+		  {
+			"description": "",
+			"request": "NotifyTraderAccount",
+			"message": {
+			  "@type": "vega.NotifyTraderAccount",
+			  "traderID": "trader1"
+			}
+		  },
+		  {
+			"description": "Submit a sell order",
+			"request": "SubmitOrder",
+			"message": {
+			  "@type": "vega.Order",
+			  "marketID": "Market1",
+			  "partyID": "trader1",
+			  "side": "Sell",
+			  "price": "100",
+			  "size": "3",
+			  "timeInForce": "GTC",
+			  "expiresAt": "1924991999000000000"
+			}
+		  }
+		]
+	  }`)
 
 	actual, err := unmarshall(data)
 
