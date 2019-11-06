@@ -76,21 +76,23 @@ type AccountBuf interface {
 
 // Engine is the execution engine
 type Engine struct {
-	log *logging.Logger
 	Config
+	log *logging.Logger
 
-	markets     map[string]*Market
-	party       *Party
+	markets    map[string]*Market
+	party      *Party
+	collateral *collateral.Engine
+	idgen      *IDgenerator
+
 	orderBuf    OrderBuf
 	tradeBuf    TradeBuf
 	candleBuf   CandleBuf
 	marketBuf   MarketBuf
 	partyBuf    PartyBuf
-	time        TimeService
-	collateral  *collateral.Engine
 	accountBuf  AccountBuf
 	transferBuf TransferBuf
-	idgen       *IDgenerator
+
+	time TimeService
 }
 
 // NewEngine takes stores and engines and returns

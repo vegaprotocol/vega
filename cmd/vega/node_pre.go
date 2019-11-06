@@ -139,6 +139,7 @@ func (l *NodeCommand) loadMarketsConfig() error {
 			logging.String("market-id", mkt.Id))
 		pmkts = append(pmkts, mkt)
 	}
+	l.mktscfg = pmkts
 
 	return nil
 }
