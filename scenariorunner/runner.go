@@ -3,11 +3,13 @@ package scenariorunner
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/scenariorunner/preprocessors"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -71,6 +73,7 @@ func (sr ScenarioRunner) flattenPreProcessors() (map[string]*core.PreProcessor, 
 
 // ProcessInstructions takes a set of instructions and submits them to the protocol
 func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
+	start := time.Now()
 	var processed, omitted uint64
 	n := len(instrSet.Instructions)
 	results := make([]*core.InstructionResult, n)
@@ -126,17 +129,17 @@ func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (*cor
 		return nil, err
 	}
 
-	s := *summary
-	trades := sumTrades(s) - sr.tradesGenerated
+	totalTrades := sumTrades(*summary)
 
 	md := &core.Metadata{
 		InstructionsProcessed: processed,
 		InstructionsOmitted:   omitted,
-		TradesGenerated:       trades,
+		TradesGenerated:       totalTrades - sr.tradesGenerated,
 		FinalMarketDepth:      marketDepths(*summary),
+		ProcessingTime:        ptypes.DurationProto(time.Since(start)),
 	}
 
-	sr.tradesGenerated = trades
+	sr.tradesGenerated = totalTrades
 
 	return &core.ResultSet{
 		Metadata: md,
