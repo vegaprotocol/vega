@@ -48,12 +48,12 @@ func (s *SummaryGenerator) ProtocolSummary(pagination *protoapi.Pagination) (*Pr
 		return nil, err
 	}
 	marketSummaries := make([]*MarketSummary, len(mkts))
-	for _, mkt := range mkts {
+	for i, mkt := range mkts {
 		summary, err := s.marketSummary(mkt.Id, p)
 		if err != nil {
 			return nil, err
 		}
-		marketSummaries = append(marketSummaries, summary)
+		marketSummaries[i] = summary
 	}
 
 	return &ProtocolSummaryResponse{

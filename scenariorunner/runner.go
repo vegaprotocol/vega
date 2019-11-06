@@ -147,8 +147,10 @@ func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (*cor
 func sumTrades(summary core.ProtocolSummaryResponse) uint64 {
 	var trades int
 	for _, mkt := range summary.Markets {
-		n := len(mkt.Trades)
-		trades = trades + n
+		if mkt != nil {
+			trades += +len(mkt.Trades)
+		}
+
 	}
 
 	return uint64(trades)
@@ -156,9 +158,10 @@ func sumTrades(summary core.ProtocolSummaryResponse) uint64 {
 
 func marketDepths(summary core.ProtocolSummaryResponse) []*proto.MarketDepth {
 	d := make([]*proto.MarketDepth, len(summary.Markets))
-	for _, mkt := range summary.Markets {
-		d = append(d, mkt.MarketDepth)
+	for i, mkt := range summary.Markets {
+		if mkt != nil {
+			d[i] = mkt.MarketDepth
+		}
 	}
-
 	return d
 }
