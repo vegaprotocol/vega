@@ -23,8 +23,8 @@ func (p *internalProvider) PreProcessors() map[string]*core.PreProcessor {
 	return map[string]*core.PreProcessor{
 		"settime":         p.set(),
 		"advancetime":     p.advance(),
-		"protocolsummary": p.marketSummary(),
-		"marketsummary":   p.protocolSummary(),
+		"marketsummary":   p.marketSummary(),
+		"protocolsummary": p.protocolSummary(),
 	}
 }
 
