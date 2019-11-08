@@ -10,7 +10,7 @@ import "proto/api/trading.proto";
 
 message Instruction {
     string description = 1;
-    string request = 2; //TODO (WG 31/10/2019): Perhaps use a custom type here
+    string request = 2; //TODO (WG 31/10/2019): Look into using proto enum instead.
     google.protobuf.Any message = 3;
 }
 
