@@ -19,9 +19,9 @@ else
 		fi
 	elif test -n "${DRONE:-}" ; then
 		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
-		branch2="${CI_COMMIT_BRANCH:}"
+		branch2="${CI_COMMIT_BRANCH:-}"
 		if test -z "$branch2" ; then
-			branch2="${DRONE_TAG}"
+			branch2="${DRONE_TAG:-}"
 		fi
 
 		if test -z "$branch2" ; then
