@@ -37,7 +37,6 @@ func commands() {
 
 	var submit = "submit"
 	var extract = "extract"
-	var reset = "reset"
 	app.Commands = []cli.Command{
 		{
 			Name:    submit,
@@ -50,7 +49,7 @@ func commands() {
 					Destination: &optionalOutputFile,
 				},
 			},
-			Action: func(c *cli.Context) error {
+			Action: func(c *cli.Context) {
 				dir, err := os.Getwd()
 				if err != nil {
 					log.Fatal(err)
@@ -59,18 +58,18 @@ func commands() {
 				if c.NArg() > 0 {
 					instrSet, err := ProcessFiles(c.Args())
 					if err != nil {
-						return err
+						log.Fatal(err)
 					}
 					n := len(instrSet)
 					for _, instr := range instrSet {
 						res, err := engine.ProcessInstructions(*instr)
 						if err != nil {
-							return err
+							log.Fatal(err)
 						}
 						if optionalOutputFile != "" {
 							fileName := optionalOutputFile
 							if n != 1 {
-								return ErrNotImplemented
+								log.Fatal(ErrNotImplemented)
 							}
 							ProcessResults(res, fileName)
 						}
@@ -79,29 +78,18 @@ func commands() {
 				} else {
 					cli.ShowCommandHelp(c, submit)
 				}
-				return nil
 			},
 		},
 		{
 			Name:    extract,
 			Aliases: []string{extract[:1]},
 			Usage:   "Save instrution results to a JSON file",
-			Action: func(c *cli.Context) error {
+			Action: func(c *cli.Context) {
 				if c.NArg() > 0 {
 					fmt.Println("Extractdata", c.Args())
 				} else {
 					cli.ShowCommandHelp(c, extract)
 				}
-				return nil
-			},
-		},
-		{
-			Name:    reset,
-			Aliases: []string{reset[:1]},
-			Usage:   "Reset scenario runner - a fresh instance will be used.",
-			Action: func(c *cli.Context) error {
-				initializeEngine()
-				return nil
 			},
 		},
 	}
