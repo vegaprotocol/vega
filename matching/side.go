@@ -35,11 +35,11 @@ func (s *OrderBookSide) getHighestOrderPrice(side types.Side) (uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, ErrNoOrder
 	}
-	// buy order descending
-	if side == types.Side_Buy {
+	// sell order descending
+	if side == types.Side_Sell {
 		return s.levels[0].price, nil
 	}
-	// sell order ascending
+	// buy order ascending
 	return s.levels[len(s.levels)-1].price, nil
 }
 
@@ -47,11 +47,11 @@ func (s *OrderBookSide) getLowestOrderPrice(side types.Side) (uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, ErrNoOrder
 	}
-	// buy order descending
-	if side == types.Side_Buy {
+	// sell order descending
+	if side == types.Side_Sell {
 		return s.levels[len(s.levels)-1].price, nil
 	}
-	// sell order ascending
+	// buy order ascending
 	return s.levels[0].price, nil
 }
 
@@ -99,10 +99,10 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) error {
 	// first  we try to find the pricelevel of the order
 	var i int
 	if o.Side == types.Side_Buy {
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= o.Price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= o.Price })
 	} else {
 		// sell side levels should be ordered in ascending
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= o.Price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= o.Price })
 	}
 	// we did not found the level
 	// then the order do not exists in the price level
@@ -145,10 +145,10 @@ func (s *OrderBookSide) getPriceLevel(price uint64, side types.Side) *PriceLevel
 	var i int
 	if side == types.Side_Buy {
 		// buy side levels should be ordered in descending
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
 	} else {
 		// sell side levels should be ordered in ascending
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
 	}
 
 	// we found the level just return it.
@@ -230,35 +230,78 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		}
 	}
 
+	var (
+		idx     = len(s.levels) - 1
+		filled  bool
+		ntrades []*types.Trade
+		nimpact []*types.Order
+	)
+
 	if agg.Side == types.Side_Sell {
-		for _, level := range s.levels {
-			// buy side levels are ordered descending
-			if level.price >= agg.Price {
-				filled, nTrades, nImpact := level.uncross(agg)
-				trades = append(trades, nTrades...)
-				impactedOrders = append(impactedOrders, nImpact...)
-				if filled {
-					break
+		// in here we iterate from the end, as it's easier to remove the
+		// price levels from the back of the slice instead of from the front
+		// also it will allow us to reduce allocations
+		for !filled && idx >= 0 {
+			if s.levels[idx].price >= agg.Price {
+				filled, ntrades, nimpact = s.levels[idx].uncross(agg)
+				trades = append(trades, ntrades...)
+				impactedOrders = append(impactedOrders, nimpact...)
+				if len(s.levels[idx].orders) <= 0 {
+					idx--
 				}
 			} else {
 				break
 			}
+
 		}
+
+		// now we nil the price levels that have been completely emptied out
+		// then we resize the slice
+		if idx < 0 || len(s.levels[idx].orders) > 0 {
+			// do not remove this one as it's not emptied already
+			idx++
+		}
+		if idx < len(s.levels) {
+			// nil out the pricelevels so they get collected at some point
+			for i := idx; i < len(s.levels); i++ {
+				s.levels[i] = nil
+			}
+			s.levels = s.levels[:idx]
+		}
+
 	}
 
 	if agg.Side == types.Side_Buy {
-		for _, level := range s.levels {
-			// sell side levels are ordered ascending
-			if level.price <= agg.Price {
-				filled, nTrades, nImpact := level.uncross(agg)
-				trades = append(trades, nTrades...)
-				impactedOrders = append(impactedOrders, nImpact...)
-				if filled {
-					break
+		// in here we iterate from the end, as it's easier to remove the
+		// price levels from the back of the slice instead of from the front
+		// also it will allow us to reduce allocations
+		for !filled && idx >= 0 {
+			if s.levels[idx].price <= agg.Price {
+				filled, ntrades, nimpact = s.levels[idx].uncross(agg)
+				trades = append(trades, ntrades...)
+				impactedOrders = append(impactedOrders, nimpact...)
+				if len(s.levels[idx].orders) <= 0 {
+					idx--
 				}
 			} else {
 				break
 			}
+
+		}
+
+		// now we nil the price levels that have been completely emptied out
+		// then we resize the slice
+		// idx can be < to 0 if we went through all price levels
+		if idx < 0 || len(s.levels[idx].orders) > 0 {
+			// do not remove this one as it's not emptied already
+			idx++
+		}
+		if idx < len(s.levels) {
+			// nil out the pricelevels so they get collected at some point
+			for i := idx; i < len(s.levels); i++ {
+				s.levels[i] = nil
+			}
+			s.levels = s.levels[:idx]
 		}
 	}
 
