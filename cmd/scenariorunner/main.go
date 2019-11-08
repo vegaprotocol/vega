@@ -12,8 +12,10 @@ import (
 	"github.com/urfave/cli"
 )
 
-var app = cli.NewApp()
-var engine *sr.Engine
+var (
+	app    = cli.NewApp()
+	engine *sr.Engine
+)
 
 func main() {
 	info()
