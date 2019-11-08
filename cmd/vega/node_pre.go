@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -21,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -60,6 +62,10 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 	conf := cfgwatchr.Get()
 	l.cfgwatchr = cfgwatchr
+
+	if flagProvided("--no-chain") {
+		conf.Blockchain.ChainProvider = "noop"
+	}
 
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
@@ -144,10 +150,32 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}()
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
-	if l.blockchainClient, err = blockchain.NewClient(&l.conf.Blockchain); err != nil {
-		return
+
+	// instanciate the execution engine
+	l.executionEngine = execution.NewEngine(
+		l.Log,
+		l.conf.Execution,
+		l.timeService,
+		l.orderStore,
+		l.tradeStore,
+		l.candleStore,
+		l.marketStore,
+		l.partyStore,
+		l.accounts,
+		l.transferResponseStore,
+	)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
+
+	// now instanciate the blockchain layer
+	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.executionEngine, l.timeService, l.stats.Blockchain, l.cancel)
+	if err != nil {
+		return errors.Wrap(err, "unable to start the blockchain")
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.timeService.ReloadConf(cfg.Time) })
+
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.blockchain.ReloadConf(cfg.Blockchain) })
+
+	// get the chain client as well.
+	l.blockchainClient = l.blockchain.Client()
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
