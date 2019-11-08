@@ -4,9 +4,9 @@ package core;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/any.proto";
-import "vega/proto/vega.proto";
-import "vega/proto/markets.proto";
-import "vega/proto/api/trading.proto";
+import "proto/vega.proto";
+import "proto/markets.proto";
+import "proto/api/trading.proto";
 
 message Instruction {
     string description = 1;

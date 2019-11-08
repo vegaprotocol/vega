@@ -2,8 +2,8 @@ syntax = "proto3";
 
 option go_package = "code.vegaprotocol.io/vega/proto/api";
 
-import "vega/proto/vega.proto";
-import "vega/proto/markets.proto";
+import "proto/vega.proto";
+import "proto/markets.proto";
 
 package api;
 
