@@ -88,7 +88,7 @@ func (e *Engine) accountID(marketID, partyID, asset string, ty types.AccountType
 	return string(e.idbuf[:ln+1])
 }
 
-// New instanciate a new collateral engine
+// New instantiates a new collateral engine
 func New(log *logging.Logger, conf Config, buf AccountBuffer, now time.Time) (*Engine, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -109,7 +109,7 @@ func (e *Engine) OnChainTimeUpdate(t time.Time) {
 	e.currentTime = t.UnixNano()
 }
 
-// ReloadConf upadte the internal configuration of the collateral engine
+// ReloadConf updates the internal configuration of the collateral engine
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -231,7 +231,7 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 		e.log.Error(
 			"Party doesn't have a margin account somehow?",
 			logging.String("party-id", pos.Party()),
-			logging.String("marke-id", marketID))
+			logging.String("market-id", marketID))
 		return nil, ErrTraderAccountsMissing
 	}
 
@@ -264,7 +264,7 @@ func (e *Engine) MarginUpdate(marketID string, updates []events.Risk,
 		if err != nil {
 			return nil, nil, err
 		}
-		// we didn't manage to top up to even the minimum required system margen, close out trader
+		// we didn't manage to top up to even the minimum required system margin, close out trader
 		// we need to be careful with this, only apply this to transfer for low margin
 		// the MinAmount in the transfer is always set to 0 but in 2 case:
 		// - first when a new order is created, the MinAmount is the same than Amount, which is
@@ -312,7 +312,7 @@ func (e *Engine) collect(marketID string, positions []*types.Transfer) ([]*types
 		return nil, err
 	}
 	// this way we know if we need to check loss response
-	haveLoss := (positions[0].Type == types.TransferType_LOSS || positions[0].Type == types.TransferType_MTM_LOSS)
+	haveLoss := positions[0].Type == types.TransferType_LOSS || positions[0].Type == types.TransferType_MTM_LOSS
 	// tracks delta, wins & losses and determines how to distribute losses amongst wins if needed
 	distr := distributor{}
 	lossResp, winResp := getTransferResponses(positions, settle, insurance)
@@ -686,7 +686,7 @@ func (e *Engine) getLedgerEntries(req *types.TransferRequest) (*types.TransferRe
 // ClearMarket will remove all monies or accounts for parties allocated for a market (margin accounts)
 // when the market reach end of life (maturity)
 func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.TransferResponse, error) {
-	// creatre a transfer request that we will reuse all the time in order to make allocations smallers
+	// create a transfer request that we will reuse all the time in order to make allocations smaller
 	req := &types.TransferRequest{
 		FromAccount: make([]*types.Account, 1),
 		ToAccount:   make([]*types.Account, 1),

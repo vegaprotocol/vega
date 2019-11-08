@@ -1,9 +1,8 @@
-package blockchain
+package tm
 
 import (
 	"encoding/binary"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
@@ -22,19 +21,6 @@ const (
 	statsSampleSize = 5000
 )
 
-// ApplicationService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_service_mock.go -package mocks code.vegaprotocol.io/vega/blockchain ApplicationService
-type ApplicationService interface {
-	Begin() error
-	Commit() error
-}
-
-// ApplicationTime ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/application_time_mock.go -package mocks code.vegaprotocol.io/vega/blockchain ApplicationTime
-type ApplicationTime interface {
-	SetTimeNow(epochTimeNano time.Time)
-}
-
 // AbciApplication represent the application connection to the chain through the abci api
 type AbciApplication struct {
 	types.BaseApplication
@@ -42,8 +28,8 @@ type AbciApplication struct {
 
 	cfgMu     sync.Mutex
 	log       *logging.Logger
-	stats     *Stats
-	processor *Processor
+	stats     Stats
+	processor Processor
 	service   ApplicationService
 	appHash   []byte
 	size      int64
@@ -59,7 +45,7 @@ type AbciApplication struct {
 
 // NewApplication returns a new instance of the Abci application
 func NewApplication(log *logging.Logger,
-	config Config, stats *Stats, proc *Processor, svc ApplicationService,
+	config Config, stats Stats, proc Processor, svc ApplicationService,
 	time ApplicationTime, onCriticalError func()) *AbciApplication {
 
 	// setup logger
@@ -258,7 +244,7 @@ func (a *AbciApplication) Commit() types.ResponseCommit {
 	appHash := make([]byte, 8)
 	binary.PutVarint(appHash, a.size)
 	a.appHash = appHash
-	a.stats.height++
+	a.stats.IncHeight()
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has completed
 	if err := a.service.Commit(); err != nil {
@@ -268,7 +254,7 @@ func (a *AbciApplication) Commit() types.ResponseCommit {
 	// todo: when an error happens on service commit should we return a different response to ABCI? (gitlab.com/vega-protocol/trading-core/issues/179)
 
 	a.setBatchStats()
-	a.processor.resetSeenPayloads()
+	a.processor.ResetSeenPayloads()
 	return types.ResponseCommit{Data: appHash}
 }
 
@@ -279,7 +265,7 @@ func (a *AbciApplication) setBatchStats() {
 	if a.txTotals == nil {
 		a.txTotals = make([]int, 0)
 	}
-	a.txTotals = append(a.txTotals, a.stats.totalTxLastBatch)
+	a.txTotals = append(a.txTotals, a.stats.TotalTxLastBatch())
 	totalTx := 0
 	for _, itx := range a.txTotals {
 		totalTx += itx
@@ -287,12 +273,12 @@ func (a *AbciApplication) setBatchStats() {
 	averageTxTotal := totalTx / len(a.txTotals)
 
 	a.log.Debug("Batch stats for height",
-		logging.Uint64("height", a.stats.height),
+		logging.Uint64("height", a.stats.Height()),
 		logging.Int("average-tx-total", averageTxTotal))
 
-	a.stats.averageTxPerBatch = averageTxTotal
-	a.stats.totalTxLastBatch = a.stats.totalTxCurrentBatch
-	a.stats.totalTxCurrentBatch = 0
+	a.stats.SetAverageTxPerBatch(averageTxTotal)
+	a.stats.SetTotalTxLastBatch(a.stats.TotalTxCurrentBatch())
+	a.stats.SetTotalTxCurrentBatch(0)
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(a.txTotals) == statsSampleSize {
@@ -303,7 +289,7 @@ func (a *AbciApplication) setBatchStats() {
 // setTxStats is used to calculate any statistics that should be
 // recorded once per transaction delivery.
 func (a *AbciApplication) setTxStats(txLength int) {
-	a.stats.totalTxCurrentBatch++
+	a.stats.IncTotalTxCurrentBatch()
 	if a.txSizes == nil {
 		a.txSizes = make([]int, 0)
 	}
@@ -315,18 +301,13 @@ func (a *AbciApplication) setTxStats(txLength int) {
 	averageTxBytes := totalTx / len(a.txSizes)
 
 	a.log.Debug("Transaction stats for height",
-		logging.Uint64("height", a.stats.height),
+		logging.Uint64("height", a.stats.Height()),
 		logging.Int("average-tx-bytes", averageTxBytes))
 
-	a.stats.averageTxSizeBytes = averageTxBytes
+	a.stats.SetAverageTxSizeBytes(averageTxBytes)
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(a.txSizes) == statsSampleSize {
 		a.txSizes = nil
 	}
-}
-
-// Stats - expose unexported stats field, temp fix for testing
-func (a *AbciApplication) Stats() *Stats {
-	return a.stats
 }

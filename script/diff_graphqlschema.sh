@@ -1,16 +1,41 @@
 #!/bin/bash
 
-# Use var provided by GitLab.
-branch2="${CI_COMMIT_REF_NAME:-}"
-if test -z "$branch2" ; then
-	# Use var provided by Drone.
-	branch2="${CI_COMMIT_BRANCH:-giveup}"
-fi
-case "$branch2" in
-	giveup)
-		echo "Need env var CI_COMMIT_REF_NAME or CI_COMMIT_BRANCH"
+if test -z "${CI:-}" ; then
+	# Not in CI
+	branch2="${1:-}"
+	if test -z "$branch2" ; then
+		echo "Syntax: $0 ref"
+		echo "where 'ref' is a branch or tag name known to git."
 		exit 1
-		;;
+	fi
+else
+	if test -n "${GITLAB_CI:-}" ; then
+		# In Gitlab: https://docs.gitlab.com/ce/ci/variables/predefined_variables.html
+		branch2="${CI_COMMIT_REF_NAME:-}"
+
+		if test -z "$branch2" ; then
+			echo "Failed to detect GitLab branch or tag."
+			exit 1
+		fi
+	elif test -n "${DRONE:-}" ; then
+		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
+		branch2="${CI_COMMIT_BRANCH:-}"
+		if test -z "$branch2" ; then
+			branch2="${DRONE_TAG:-}"
+		fi
+
+		if test -z "$branch2" ; then
+			echo "Failed to detect Drone branch or tag."
+			exit 1
+		fi
+	else
+		# In an unknown CI
+		echo "Unknown CI"
+		exit 1
+	fi
+fi
+
+case "$branch2" in
 	develop)
 		branch1="" # don't diff against master, it gets noisy on Slack#uidev.
 		;;

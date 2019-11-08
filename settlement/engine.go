@@ -11,8 +11,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// We should really use a type from the proto package for this, although, these mocks are kind of easy to set up :)
-
 // MarketPosition ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_position_mock.go -package mocks code.vegaprotocol.io/vega/settlement MarketPosition
 type MarketPosition interface {
@@ -31,7 +29,7 @@ type Product interface {
 	GetAsset() string
 }
 
-// Engine - the main type (of course)
+// Engine holds the data and implementation of the settlement engine.
 type Engine struct {
 	log *logging.Logger
 
@@ -44,9 +42,8 @@ type Engine struct {
 	market   string
 }
 
-// New instanciate a new instance of the settlement engine
+// New creates and returns a reference to a new instance of the settlement engine.
 func New(log *logging.Logger, conf Config, product Product, market string) *Engine {
-	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
@@ -56,11 +53,11 @@ func New(log *logging.Logger, conf Config, product Product, market string) *Engi
 		product: product,
 		pos:     map[string]*pos{},
 		market:  market,
-		// no need to initialised `closed` map
+		// no need to initialise `closed` map
 	}
 }
 
-// ReloadConf update the internal configuration of the settlement engined
+// ReloadConf update the internal configuration of the settlement engine.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -74,7 +71,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.Config = cfg
 }
 
-// Update - takes market positions, keeps track of things
+// Update takes market positions and stores the internal settlement engine positions state.
 func (e *Engine) Update(positions []MarketPosition) {
 	e.posMu.Lock()
 	for _, p := range positions {
@@ -91,6 +88,7 @@ func (e *Engine) Update(positions []MarketPosition) {
 	e.posMu.Unlock()
 }
 
+// getCurrentPosition looks up the internal position state for the given party.
 func (e *Engine) getCurrentPosition(party string) *pos {
 	e.posMu.Lock()
 	p, ok := e.pos[party]
@@ -102,8 +100,8 @@ func (e *Engine) getCurrentPosition(party string) *pos {
 	return p
 }
 
-// RemoveDistressed - remove whatever settlement data we have for distressed traders
-// they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
+// RemoveDistressed removes whatever settlement data we have for distressed traders, they
+// are being closed out and shouldn't be part of any MTM settlement or closing settlement.
 func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
 	e.posMu.Lock()
 	e.closedMu.Lock()
@@ -116,66 +114,23 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
 	e.posMu.Unlock()
 }
 
-// Settle run settlement over all the positions
+// Settle runs settlement over all the positions
 func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
-	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debugf("Settling market",
+			logging.String("market-id", e.market),
+			logging.String("settle-at", t.Format(time.RFC3339)))
+	}
 	positions, err := e.settleAll()
 	if err != nil {
-		e.log.Error(
-			"Something went wrong trying to settle positions",
-			logging.Error(err),
-		)
+		e.log.Error("Something went wrong trying to settle positions", logging.Error(err))
 		return nil, err
 	}
 	return positions, nil
 }
 
-// ListenClosed listen to all positions for distressed trader
-// needing to be closed
-func (e *Engine) ListenClosed(ch <-chan events.MarketPosition) {
-	// lock before we can start
-	e.closedMu.Lock()
-	go func() {
-		// wipe closed map
-		e.closed = map[string][]*pos{}
-		for ps := range ch {
-			trader := ps.Party()
-			size := ps.Size()
-			price := ps.Price()
-			updatePrice := price
-			// check current position to see if trade closed out some position
-			current := e.getCurrentPosition(trader)
-			// if trader is long, and trade closed out (part of) long position, or trader was short, and is now "less short"
-			if (current.size > 0 && size < current.size) || (current.size < 0 && size > current.size) {
-				closed := current.size
-				// trader was long, and still is || trader was short && still is
-				if (current.size > 0 && size > 0) || (current.size < 0 && size < 0) {
-					// trader was +10, now +5 -> +10 - +5 == MTM on +5 closed positions --> good
-					// trader was -10, now -5 -> -10 - -5 == MTM on -5 closed positions --> good
-					closed -= size
-					updatePrice = current.price
-				}
-				// let's add this change to the traders' closed positions to be added to the MTM settlement later on
-				trades, ok := e.closed[trader]
-				if !ok {
-					trades = []*pos{}
-				}
-				pos := newPos(trader)
-				pos.size = closed
-				pos.price = current.price // we closed out at the old price vs mark price
-				e.closed[trader] = append(trades, pos)
-			}
-			// we've taken the closed out stuff into account, so we can freely update the size here
-			current.size = size
-			// the position price is possibly updated (e.g. if there was no open position prior to this, or trader went from long to short or vice-versa)
-			current.price = updatePrice
-		}
-		e.closedMu.Unlock()
-	}()
-}
-
-// SettleOrder - settlements based on order-level, can take several update positions, and marks all to market
-// if party size and price were both updated (ie party was a trader), we're combining both MTM's (old + new position)
+// SettleOrder performs settlements based on order-level, can take several update positions, and marks all to market
+// if party size and price were both updated (ie party was a trader), we're combining both MTMs (old + new position)
 // and creating a single transfer from that
 func (e *Engine) SettleOrder(markPrice uint64, positions []events.MarketPosition) []events.Transfer {
 	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
@@ -288,11 +243,14 @@ func (e *Engine) settleAll() ([]*types.Transfer, error) {
 			Size:   1,
 			Amount: amt,
 		}
-		e.log.Debug(
-			"Settled position for trader",
-			logging.String("trader-id", party),
-			logging.Int64("amount", amt.Amount),
-		)
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug(
+				"Settled position for party",
+				logging.String("party-id", party),
+				logging.Int64("amount", amt.Amount),
+				logging.String("market-id", e.market),
+			)
+		}
 		if amt.Amount < 0 {
 			// trader is winning...
 			settlePos.Type = types.TransferType_LOSS
