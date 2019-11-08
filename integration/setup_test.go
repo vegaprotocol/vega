@@ -108,10 +108,10 @@ type executionTestSetup struct {
 	ctrl      *gomock.Controller
 	accounts  *accStub
 	candles   *mocks.MockCandleBuf
-	orders    *mocks.MockOrderBuf
-	trades    *mocks.MockTradeBuf
+	orders    *orderStub
+	trades    *tradeStub
 	parties   *mocks.MockPartyBuf
-	transfers *mocks.MockTransferBuf
+	transfers *transferStub
 	markets   *mocks.MockMarketBuf
 	timesvc   *mocks.MockTimeService
 
@@ -133,10 +133,10 @@ func getExecutionTestSetup(mkts []proto.Market) *executionTestSetup {
 		log:       logging.NewTestLogger(),
 		accounts:  NewAccountStub(),
 		candles:   mocks.NewMockCandleBuf(ctrl),
-		orders:    mocks.NewMockOrderBuf(ctrl),
-		trades:    mocks.NewMockTradeBuf(ctrl),
+		orders:    NewOrderStub(),
+		trades:    NewTradeStub(),
 		parties:   mocks.NewMockPartyBuf(ctrl),
-		transfers: mocks.NewMockTransferBuf(ctrl),
+		transfers: NewTransferStub(),
 		markets:   mocks.NewMockMarketBuf(ctrl),
 		timesvc:   mocks.NewMockTimeService(ctrl),
 		accs:      map[string][]account{},
@@ -148,6 +148,7 @@ func getExecutionTestSetup(mkts []proto.Market) *executionTestSetup {
 	setup.candles.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	setup.markets.EXPECT().Add(gomock.Any()).AnyTimes()
 	setup.parties.EXPECT().Add(gomock.Any()).AnyTimes()
+	setup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	setup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
 	setup.engine = execution.NewEngine(setup.log, setup.cfg, setup.timesvc, setup.orders, setup.trades, setup.candles, setup.markets, setup.parties, setup.accounts, setup.transfers, mkts)
