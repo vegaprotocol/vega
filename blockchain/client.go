@@ -3,7 +3,6 @@ package blockchain
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -59,7 +58,7 @@ func (b *Client) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) 
 
 // CreateOrder will send a submit order transaction to the blockchain
 func (c *Client) CreateOrder(ctx context.Context, order *types.Order) (*types.PendingOrder, error) {
-	order.Reference = fmt.Sprintf("%s", uuid.NewV4())
+	order.Reference = uuid.NewV4().String()
 	_, err := c.sendOrderCommand(ctx, order, SubmitOrderCommand)
 
 	if err != nil {

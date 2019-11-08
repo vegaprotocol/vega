@@ -81,8 +81,8 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		err   error
 	)
 	vol := volume
-	if side == types.Side_Buy {
-		levels := b.buy.getLevels()
+	if side == types.Side_Sell {
+		levels := b.sell.getLevels()
 		for i := len(levels) - 1; i >= 0; i-- {
 			lvl := levels[i]
 			if lvl.volume >= vol {
@@ -105,7 +105,8 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		}
 		return price / (volume - vol), err
 	}
-	for _, lvl := range b.sell.getLevels() {
+
+	for _, lvl := range b.buy.getLevels() {
 		if lvl.volume >= vol {
 			price += lvl.price * vol
 			return price / volume, err
