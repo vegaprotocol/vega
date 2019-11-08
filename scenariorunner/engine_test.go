@@ -105,7 +105,7 @@ func TestProcessInstructionsInternal(t *testing.T) {
 }
 
 func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
-	runner, err := sr.NewScenarioRunner()
+	runner, err := sr.NewEngine()
 	if err != nil {
 		t.Fatal(err)
 	}

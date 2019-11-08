@@ -18,7 +18,7 @@ var (
 	ErrDuplicateInstruction error = errors.New("Duplicate instruction")
 )
 
-type ScenarioRunner struct {
+type Engine struct {
 	Config           Config
 	summaryGenerator *core.SummaryGenerator
 	internalProvider *internalProvider
@@ -26,8 +26,8 @@ type ScenarioRunner struct {
 	tradesGenerated  uint64
 }
 
-// NewScenarioRunner returns a pointer to new instance of scenario runner
-func NewScenarioRunner() (*ScenarioRunner, error) {
+// NewEngine returns a pointer to new instance of scenario runner
+func NewEngine() (*Engine, error) {
 
 	d, err := getDependencies()
 	if err != nil {
@@ -43,7 +43,7 @@ func NewScenarioRunner() (*ScenarioRunner, error) {
 
 	internal := newInternalProvider(d.vegaTime, summaryGenerator)
 
-	return &ScenarioRunner{
+	return &Engine{
 		Config:           NewDefaultConfig(),
 		summaryGenerator: summaryGenerator,
 		internalProvider: internal,
@@ -57,7 +57,7 @@ func NewScenarioRunner() (*ScenarioRunner, error) {
 	}, nil
 }
 
-func (sr ScenarioRunner) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
+func (sr Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
 	maps := make(map[string]*core.PreProcessor)
 	for _, provider := range append(sr.providers, sr.internalProvider) {
 		m := provider.PreProcessors()
@@ -72,7 +72,7 @@ func (sr ScenarioRunner) flattenPreProcessors() (map[string]*core.PreProcessor, 
 }
 
 // ProcessInstructions takes a set of instructions and submits them to the protocol
-func (sr ScenarioRunner) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
+func (sr Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
 	start := time.Now()
 	var processed, omitted uint64
 	n := len(instrSet.Instructions)

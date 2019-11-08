@@ -15,7 +15,7 @@ import (
 
 var app = cli.NewApp()
 var ErrNotImplemented = errors.New("NotImplemented")
-var engine *sr.ScenarioRunner
+var engine *sr.Engine
 
 func main() {
 	info()
@@ -101,7 +101,7 @@ func commands() {
 
 func initializeEngine() {
 	var err error
-	engine, err = sr.NewScenarioRunner()
+	engine, err = sr.NewEngine()
 	if err != nil {
 		log.Fatal(err)
 	}
