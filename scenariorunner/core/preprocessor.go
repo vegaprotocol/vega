@@ -5,7 +5,7 @@ import (
 )
 
 type PreProcessor struct {
-	MessageShape proto.Message
+	MessageShape proto.Message // TODO (WG 08/11/2019): This isn't currently used for anything, but I indend to make us of it for generation of help text.
 	PreProcess   func(instr *Instruction) (*PreProcessedInstruction, error)
 }
 
