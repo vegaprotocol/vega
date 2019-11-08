@@ -291,7 +291,5 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 	}
 
 	side.uncross(aggressiveOrder)
-	// we do not remove the pricelevels for now so we should
-	// still have 2 prices levels in here
-	assert.Len(t, side.levels, 2)
+	assert.Len(t, side.levels, 1)
 }
