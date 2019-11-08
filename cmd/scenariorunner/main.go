@@ -35,10 +35,10 @@ func info() {
 }
 
 func commands() {
-	var optionalOutputFile string
+	var optionalResultSetFile string
+	var optionalProtocolSummaryFile string
 
 	var submit = "submit"
-	var extract = "extract"
 	app.Commands = []cli.Command{
 		{
 			Name:    submit,
@@ -48,7 +48,12 @@ func commands() {
 				cli.StringFlag{
 					Name:        "result, r",
 					Usage:       "Save instrution results set to a `FILE`. Files will be suffixed with a number when multiple instruction sets get submitted",
-					Destination: &optionalOutputFile,
+					Destination: &optionalResultSetFile,
+				},
+				cli.StringFlag{
+					Name:        "extract, e",
+					Usage:       "Save protocol summary after successful execution of all instruction sets",
+					Destination: &optionalProtocolSummaryFile,
 				},
 			},
 			Action: func(c *cli.Context) {
@@ -68,31 +73,26 @@ func commands() {
 						if err != nil {
 							log.Fatal(err)
 						}
-						if optionalOutputFile != "" {
-							fileName := optionalOutputFile
+						if optionalResultSetFile != "" {
+							fileName := optionalResultSetFile
 							if n > 1 {
-								dir, file := filepath.Split(optionalOutputFile)
+								dir, file := filepath.Split(optionalResultSetFile)
 								ext := filepath.Ext(file)
 								fileName = fmt.Sprintf("%s%s_%vof%v%s", dir, strings.TrimSuffix(file, ext), i+1, n, ext)
 							}
 							Output(res, fileName)
 						}
 					}
+					if optionalProtocolSummaryFile != "" {
+						summary, err := engine.ExtractData()
+						if err != nil {
+							log.Fatal(err)
+						}
+						Output(summary, optionalProtocolSummaryFile)
+					}
 
 				} else {
 					cli.ShowCommandHelp(c, submit)
-				}
-			},
-		},
-		{
-			Name:    extract,
-			Aliases: []string{extract[:1]},
-			Usage:   "Save instrution results to a JSON file",
-			Action: func(c *cli.Context) {
-				if c.NArg() > 0 {
-					fmt.Println("Extractdata", c.Args())
-				} else {
-					cli.ShowCommandHelp(c, extract)
 				}
 			},
 		},
