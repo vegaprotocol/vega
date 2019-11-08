@@ -8,7 +8,6 @@ import (
 
 	"code.vegaprotocol.io/vega/proto"
 
-	"github.com/DATA-DOG/godog"
 	"github.com/DATA-DOG/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 )
@@ -213,7 +212,27 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 }
 
 func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
-	return godog.ErrPending
+	for _, row := range arg1.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		account, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		if err != nil {
+			return err
+		}
+		if account.GetBalance() != i64val(row, 4) {
+			return fmt.Errorf("expected general balance  %d, instead saw %d (trader: %v)", i64val(row, 4), account.GetBalance(), val(row, 0))
+		}
+		account, err = execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
+		if err != nil {
+			return err
+		}
+		if account.GetBalance() != i64val(row, 3) {
+			return fmt.Errorf("expected margin balance  %d, instead saw %d (trader: %v)", i64val(row, 3), account.GetBalance(), val(row, 0))
+		}
+	}
+	return nil
 }
 
 func baseMarket(row *gherkin.TableRow) proto.Market {

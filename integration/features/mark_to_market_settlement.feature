@@ -24,6 +24,28 @@ Feature: Test mark to market settlement
       | trader1 |  ETH/DEC19 | sell |     1  |  1000 |                0 |
       | trader2 |  ETH/DEC19 | buy  |     1  |  1000 |                1 |
     Then I expect the trader to have a margin:
-      | trader  | margin | general |
-      | trader1 |   1100 |    8900 |
-      | trader2 |   1100 |    8900 |
+      | trader  | asset |        id | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |    120 |    9880 |
+      | trader2 | ETH   | ETH/DEC19 |    132 |    9868 |
+    Then traders place following orders:
+      | trader  | id         | type | volume | price | resulting trades |
+      | trader1 |  ETH/DEC19 | sell |     1  |  2000 |                0 |
+    Then I expect the trader to have a margin:
+      | trader  | asset |        id | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |    240 |    9760 |
+    Then traders place following orders:
+      | trader  | id         | type | volume | price | resulting trades |
+      | trader3 |  ETH/DEC19 | buy  |     1  |  2000 |                1 |
+    Then I expect the trader to have a margin:
+      | trader  | asset |        id | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |    480 |    9280 |
+      | trader3 | ETH   | ETH/DEC19 |    132 |    9868 |
+    Then traders place following orders:
+      | trader  | id         | type | volume | price | resulting trades |
+      | trader1 |  ETH/DEC19 | sell |     1  |  2000 |                0 |
+      | trader2 |  ETH/DEC19 | buy  |     1  |  2000 |                1 |
+    Then I expect the trader to have a margin:
+      | trader  | asset |        id | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |    720 |    9040 |
+      | trader2 | ETH   | ETH/DEC19 |    528 |    9712 |
+      | trader3 | ETH   | ETH/DEC19 |    132 |    9868 |
