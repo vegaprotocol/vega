@@ -27,7 +27,7 @@ type Engine struct {
 }
 
 // NewEngine returns a pointer to new instance of scenario runner
-func NewEngine() (*Engine, error) {
+func NewEngine(config Config) (*Engine, error) {
 
 	d, err := getDependencies()
 	if err != nil {
@@ -44,7 +44,7 @@ func NewEngine() (*Engine, error) {
 	internal := newInternalProvider(d.vegaTime, summaryGenerator)
 
 	return &Engine{
-		Config:           NewDefaultConfig(),
+		Config:           config,
 		summaryGenerator: summaryGenerator,
 		internalProvider: internal,
 		providers: []core.PreProcessorProvider{
