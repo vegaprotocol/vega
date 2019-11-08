@@ -20,7 +20,7 @@ func TestProcessInstructionsAll(t *testing.T) {
 
 	partyId := "party1"
 	orderId := "order1"
-	instructions1, err := getExecutionEngineInstructions(marketId, partyId, orderId)
+	instructions1, err := getExecutionEngineInstructions(marketId, partyId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestProcessInstructionsAll(t *testing.T) {
 }
 
 func TestProcessInstructionsExecution(t *testing.T) {
-	instructions, err := getExecutionEngineInstructions(marketId, "party1", "order1")
+	instructions, err := getExecutionEngineInstructions(marketId, "party1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,14 +122,13 @@ func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
 	assert.EqualValues(t, len(instructionSet.Instructions), len(result.Results))
 }
 
-func getExecutionEngineInstructions(marketId string, trader1Id string, order1Id string) ([]*core.Instruction, error) {
+func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		"NotifyTraderAccount",
 		&types.NotifyTraderAccount{
 			TraderID: trader1Id,
 		},
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +137,6 @@ func getExecutionEngineInstructions(marketId string, trader1Id string, order1Id 
 	instr2, err := core.NewInstruction(
 		"SubmitOrder",
 		&types.Order{
-			Id:          order1Id,
 			MarketID:    marketId,
 			PartyID:     trader1Id,
 			Price:       100,
@@ -157,7 +155,6 @@ func getExecutionEngineInstructions(marketId string, trader1Id string, order1Id 
 	instr3, err := core.NewInstruction(
 		"CancelOrder",
 		&types.Order{
-			Id:       order1Id,
 			MarketID: marketId,
 			Side:     sell,
 		},
@@ -165,14 +162,21 @@ func getExecutionEngineInstructions(marketId string, trader1Id string, order1Id 
 	if err != nil {
 		return nil, err
 	}
-
-	buy := types.Side_Buy
-	buyOrderID := "myId2"
 	trader2 := "trader2"
 	instr4, err := core.NewInstruction(
+		"NotifyTraderAccount",
+		&types.NotifyTraderAccount{
+			TraderID: trader2,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	buy := types.Side_Buy
+	instr5, err := core.NewInstruction(
 		"SubmitOrder",
 		&types.Order{
-			Id:          buyOrderID,
 			MarketID:    marketId,
 			PartyID:     trader2,
 			Price:       100,
@@ -187,10 +191,9 @@ func getExecutionEngineInstructions(marketId string, trader1Id string, order1Id 
 		return nil, err
 	}
 
-	instr5, err := core.NewInstruction(
+	instr6, err := core.NewInstruction(
 		"AmendOrder",
 		&types.OrderAmendment{
-			OrderID:   buyOrderID,
 			PartyID:   trader2,
 			Price:     100,
 			Size:      30,
@@ -201,11 +204,62 @@ func getExecutionEngineInstructions(marketId string, trader1Id string, order1Id 
 		return nil, err
 	}
 
-	instr6, err := core.NewInstruction(
+	instr7, err := core.NewInstruction(
 		"Withdraw",
 		&types.Withdraw{
 			PartyID: trader2,
 			Amount:  1000,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr8, err := core.NewInstruction(
+		"NotifyTraderAccount",
+		&types.NotifyTraderAccount{
+			TraderID: "trader3",
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	instr9, err := core.NewInstruction(
+		"SubmitOrder",
+		&types.Order{
+			MarketID:    marketId,
+			PartyID:     "trader3",
+			Price:       100,
+			Size:        3,
+			Remaining:   3,
+			Side:        types.Side_Sell,
+			TimeInForce: types.Order_GTC,
+			ExpiresAt:   1924991999000000000,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	instr10, err := core.NewInstruction(
+		"NotifyTraderAccount",
+		&types.NotifyTraderAccount{
+			TraderID: "trader4",
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	instr11, err := core.NewInstruction(
+		"SubmitOrder",
+		&types.Order{
+			MarketID:    marketId,
+			PartyID:     "trader4",
+			Price:       100,
+			Size:        3,
+			Remaining:   3,
+			Side:        types.Side_Buy,
+			TimeInForce: types.Order_GTC,
+			ExpiresAt:   1924991999000000000,
 		},
 	)
 	if err != nil {
@@ -219,6 +273,11 @@ func getExecutionEngineInstructions(marketId string, trader1Id string, order1Id 
 		instr4,
 		instr5,
 		instr6,
+		instr7,
+		instr8,
+		instr9,
+		instr10,
+		instr11,
 	}
 
 	return instructions, nil

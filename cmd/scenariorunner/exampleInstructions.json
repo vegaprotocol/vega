@@ -51,6 +51,28 @@
         "@type": "api.TradesByMarketRequest",
         "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
       }
+    },
+    {
+      "request": "NotifyTraderAccount",
+      "message": {
+        "@type": "vega.NotifyTraderAccount",
+        "traderID": "trader3",
+        "amount": 1000
+      }
+    },
+    {
+      "request": "SubmitOrder",
+      "message": {
+        "@type": "vega.Order",
+        "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
+        "partyID": "trader3",
+        "price": 100,
+        "size": 3,
+        "remaining": 3,
+        "side": "Buy",
+        "timeInForce": "GTC",
+        "expiresAt": 1924991999000000000
+      }
     }
   ]
 }

@@ -153,7 +153,7 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 	var (
 		err error
 	)
-	//TODO: (WG 05/11/2019): Bug: Setting limit to maximum value of uint64 causes int(limit) to fail
+	//TODO: (WG 05/11/2019): Bug: Setting limit to maximum value of uint64 causes results in l=-1
 	l := int(limit)
 	result := make([]*types.Trade, 0, l)
 
