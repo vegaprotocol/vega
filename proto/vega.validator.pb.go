@@ -122,6 +122,9 @@ func (this *PendingOrder) Validate() error {
 func (this *NotifyTraderAccount) Validate() error {
 	return nil
 }
+func (this *Withdraw) Validate() error {
+	return nil
+}
 func (this *OrderAmendment) Validate() error {
 	if this.OrderID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("OrderID", fmt.Errorf(`value '%v' must not be an empty string`, this.OrderID))

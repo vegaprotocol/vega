@@ -1,27 +1,40 @@
 APPS := dummyriskmodel vega vegabench vegaccount vegastream
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
-TAG := $(shell git describe --tags 2>/dev/null)
 
-# See https://docs.gitlab.com/ce/ci/variables/README.html for CI vars.
 ifeq ($(CI),)
 	# Not in CI
-	ifeq ($(TAG),)
-		# No tag, so make one
-		VERSION := dev-$(USER)
-	else
-		VERSION := dev-$(TAG)
-	endif
+	VERSION := dev-$(USER)
 	VERSION_HASH := $(shell git rev-parse HEAD | cut -b1-8)
 else
 	# In CI
-	ifeq ($(TAG),)
-		# No tag, so make one
-		VERSION := interim-$(CI_COMMIT_REF_SLUG)
+	ifneq ($(GITLAB_CI),)
+		# In Gitlab: https://docs.gitlab.com/ce/ci/variables/predefined_variables.html
+
+		ifneq ($(CI_COMMIT_TAG),)
+			VERSION := $(CI_COMMIT_TAG)
+		else
+			# No tag, so make one
+			VERSION := $(shell git describe --tags 2>/dev/null)
+		endif
+		VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
+
+	else ifneq ($(DRONE),)
+		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
+
+		ifneq ($(DRONE_TAG),)
+			VERSION := $(DRONE_TAG)
+		else
+			# No tag, so make one
+			VERSION := $(shell git describe --tags 2>/dev/null)
+		endif
+		VERSION_HASH := $(shell echo "$(CI_COMMIT_SHA)" | cut -b1-8)
+
 	else
-		VERSION := $(TAG)
+		# In an unknown CI
+		VERSION := unknown-CI
+		VERSION_HASH := unknown-CI
 	endif
-	VERSION_HASH := $(CI_COMMIT_SHORT_SHA)
 endif
 
 .PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check rest_check
@@ -35,14 +48,14 @@ lint: ## Lint the files
 bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
 
-test: deps ## Run unit tests
+test: ## Run unit tests
 	@go test ./...
 
 race: ## Run data race detector
 	@env CGO_ENABLED=1 go test -race ./...
 
 mocks: ## Make mocks
-	@go generate ./internal/...
+	@go generate ./...
 
 msan: ## Run memory sanitizer
 	@if ! which clang 1>/dev/null ; then echo "Need clang" ; exit 1 ; fi
@@ -94,16 +107,16 @@ install: ## install the binaries in GOPATH/bin
 		env CGO_ENABLED=0 go install -v -ldflags "-X main.Version=${VERSION} -X main.VersionHash=${VERSION_HASH}" "./cmd/$$app" || exit 1 ; \
 	done
 
-gqlgen: deps ## run gqlgen
-	@cd ./internal/gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
+gqlgen: ## run gqlgen
+	@cd ./gateway/graphql/ && go run github.com/99designs/gqlgen -c gqlgen.yml
 
 gqlgen_check: ## GraphQL: Check committed files match just-generated files
-	@find internal/gateway/graphql -name '*.graphql' -o -name '*.yml' -exec touch '{}' ';' ; \
+	@find gateway/graphql -name '*.graphql' -o -name '*.yml' -exec touch '{}' ';' ; \
 	make gqlgen 1>/dev/null || exit 1 ; \
-	files="$$(git diff --name-only internal/gateway/graphql/)" ; \
+	files="$$(git diff --name-only gateway/graphql/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files:" $$files ; \
-		test -n "$(CI)" && git diff internal/gateway/graphql/ ; \
+		test -n "$(CI)" && git diff gateway/graphql/ ; \
 		exit 1 ; \
 	fi
 
@@ -123,20 +136,20 @@ proto/api/trading.pb.go: proto/api/trading.proto
 	sed -i -re 's/this\.Size_/this.Size/' "$@" && \
 	./script/fix_imports.sh "$@"
 
-GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/gateway/rest/grpc-rest-bindings.yml,paths=source_relative:.
-SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=internal/gateway/rest/grpc-rest-bindings.yml:.
+GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml,paths=source_relative:.
+SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml:.
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
-proto/api/trading.pb.gw.go: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
+proto/api/trading.pb.gw.go: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
 	@protoc -Ivendor -I. -Iproto/api/ -Ivendor/github.com/google/protobuf/src --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
 
 # Generate Swagger documentation
-proto/api/trading.swagger.json: proto/api/trading.proto internal/gateway/rest/grpc-rest-bindings.yml
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iinternal/api/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
+proto/api/trading.swagger.json: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
+	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iapi/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
-proto_check: deps ## proto: Check committed files match just-generated files
+proto_check: ## proto: Check committed files match just-generated files
 	@find proto -name '*.proto' -exec touch '{}' ';' ; \
-	find internal/gateway/rest/ -name '*.yml' -exec touch '{}' ';' ; \
+	find gateway/rest/ -name '*.yml' -exec touch '{}' ';' ; \
 	make proto 1>/dev/null || exit 1 ; \
 	files="$$(git diff --name-only proto/)" ; \
 	if test -n "$$files" ; then \
@@ -145,9 +158,9 @@ proto_check: deps ## proto: Check committed files match just-generated files
 		exit 1 ; \
 	fi
 
-rest_check: internal/gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
+rest_check: gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
 	@python3 script/check_rest_endpoints.py \
-		--bindings internal/gateway/rest/grpc-rest-bindings.yml \
+		--bindings gateway/rest/grpc-rest-bindings.yml \
 		--swagger proto/api/trading.swagger.json
 
 # Misc Targets

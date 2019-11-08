@@ -1,9 +1,14 @@
 #!/bin/bash
 
-branch2="${CI_COMMIT_REF_NAME:-notset}"
+# Use var provided by GitLab.
+branch2="${CI_COMMIT_REF_NAME:-}"
+if test -z "$branch2" ; then
+	# Use var provided by Drone.
+	branch2="${CI_COMMIT_BRANCH:-giveup}"
+fi
 case "$branch2" in
-	notset)
-		echo "Need env var CI_COMMIT_REF_NAME"
+	giveup)
+		echo "Need env var CI_COMMIT_REF_NAME or CI_COMMIT_BRANCH"
 		exit 1
 		;;
 	develop)
@@ -34,7 +39,7 @@ if test -n "$branch1" ; then
 		5726034 \
 		"$branch1" \
 		"$branch2" \
-		"internal/gateway/graphql/schema.graphql" \
+		"gateway/graphql/schema.graphql" \
 		|| code=1
 	popd 1>/dev/null || exit 1
 fi
