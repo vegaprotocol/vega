@@ -42,7 +42,9 @@ func NewEngine(config Config) (*Engine, error) {
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.marketService, d.tradeStore, d.orderStore, d.partyStore)
 
 	internal := newInternalProvider(d.vegaTime, summaryGenerator)
-
+	
+	internal.SetTime(config.ProtocolTime)
+	
 	return &Engine{
 		Config:           config,
 		summaryGenerator: summaryGenerator,
