@@ -459,7 +459,7 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 		// orders with the same expiry found, now we need to iterate over the result to find
 		// an order with the same expiry and may the order ID
 		for i <= len(b.expiringOrders) && b.expiringOrders[i].ExpiresAt == order.ExpiresAt {
-			if b.expiringOrders[i].ExpiresAt == order.ExpiresAt {
+			if b.expiringOrders[i].Id == order.Id {
 				// we found our order, let's remove it
 				b.expiringOrders = b.expiringOrders[:i+copy(b.expiringOrders[i:], b.expiringOrders[i+1:])]
 				return true
