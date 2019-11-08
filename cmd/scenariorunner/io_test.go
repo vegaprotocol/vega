@@ -18,7 +18,7 @@ import (
 
 func TestReadFilesFailsWithFakePaths(t *testing.T) {
 	fakePaths := []string{"madeUp1", "madeUp2.txt", "abc/madeUp3.json"}
-	readFiles, err := readFiles(fakePaths)
+	readFiles, err := openFiles(fakePaths)
 
 	assert.Error(t, err, "Expected an error when reading files from paths that don't exist")
 	for i := 0; i < len(fakePaths); i++ {

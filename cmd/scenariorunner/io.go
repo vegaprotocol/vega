@@ -59,11 +59,7 @@ func openFiles(filesWithPath []string) ([]*os.File, error) {
 
 func unmarshall(r io.Reader) (*core.InstructionSet, error) {
 	var instrSet = &core.InstructionSet{}
-	err := jsonpb.Unmarshal(r, instrSet)
-	if err != nil {
-		return nil, err
-	}
-	return instrSet, nil
+	return instrSet, jsonpb.Unmarshal(r, instrSet)
 }
 
 func marshall(result proto.Message, out io.Writer) error {
