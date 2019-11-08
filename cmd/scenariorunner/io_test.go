@@ -181,12 +181,12 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 func TestMarshal(t *testing.T) {
 	expected := string(
 		`{
-		"summary": {
+		"metadata": {
 		  "instructionsProcessed": "2",
 		  "instructionsOmitted": "0",
 		  "tradesGenerated": "1",
 		  "processingTime": "3s",
-		  "finalOrderBook": [
+		  "finalMarketDepth": [
 			{
 			  "marketID": "Market1",
 			  "buy": [
@@ -350,14 +350,14 @@ func TestMarshal(t *testing.T) {
 	}
 
 	resultSet := core.ResultSet{
-		Summary: &core.Metadata{
+		Metadata: &core.Metadata{
 			InstructionsProcessed: 2,
 			InstructionsOmitted:   0,
 			TradesGenerated:       1,
 			ProcessingTime: &duration.Duration{
 				Seconds: 3,
 			},
-			FinalOrderBook: []*types.MarketDepth{
+			FinalMarketDepth: []*types.MarketDepth{
 				{
 					MarketID: "Market1",
 					Buy: []*types.PriceLevel{
