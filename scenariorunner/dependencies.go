@@ -1,6 +1,5 @@
 package scenariorunner
 
-
 import (
 	"context"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/vegatime"
 
+	"github.com/hashicorp/go-multierror"
 )
 
 //TODO (WG 05/11/2019): instantiating dependencies internally while WIP, the final dependencies will get incjeted from outside the package.
@@ -32,44 +32,46 @@ func getDependencies() (*dependencies, error) {
 	config := cfgwatchr.Get()
 	log = logging.NewLoggerFromConfig(config.Logging)
 
+	var errors *multierror.Error
+
 	orderStore, err := storage.NewOrders(log, config.Storage, cancel)
 	if err != nil {
-		return nil, err
+		errors = multierror.Append(errors, err)
 	}
 	tradeStore, err := storage.NewTrades(log, config.Storage, cancel)
 	if err != nil {
-		return nil, err
+		errors = multierror.Append(errors, err)
 	}
 	riskStore, err := storage.NewRisks(config.Storage)
 	if err != nil {
-		return nil, err
+		errors = multierror.Append(errors, err)
 	}
 	candleStore, err := storage.NewCandles(log, config.Storage)
 	if err != nil {
-		return nil, err
+		errors = multierror.Append(errors, err)
 	}
 
 	marketStore, err := storage.NewMarkets(log, config.Storage)
 	if err != nil {
-		return nil, err
+		errors = multierror.Append(errors, err)
 	}
 
 	partyStore, err := storage.NewParties(config.Storage)
 	if err != nil {
-		return nil, err
+		errors = multierror.Append(errors, err)
 	}
 
 	accounts, err := storage.NewAccounts(log, config.Storage)
 	if err != nil {
-		return nil, err
+		errors = multierror.Append(errors, err)
 	}
 
 	transferResponseStore, err := storage.NewTransferResponses(log, config.Storage)
 	if err != nil {
-		return nil, err
+		errors = multierror.Append(errors, err)
 	}
 
-	marketService, err := markets.NewService(log, config.Markets, marketStore, orderStore)
+	err = errors.ErrorOrNil()
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +93,18 @@ func getDependencies() (*dependencies, error) {
 	)
 
 	tradeService, err := trades.NewService(log, config.Trades, tradeStore, riskStore)
+	if err != nil {
+		errors = multierror.Append(errors, err)
+	}
+	marketService, err := markets.NewService(log, config.Markets, marketStore, orderStore)
+	if err != nil {
+		errors = multierror.Append(errors, err)
+	}
+
+	err = errors.ErrorOrNil()
+	if err != nil {
+		return nil, err
+	}
 
 	return &dependencies{
 		ctx:           ctx,

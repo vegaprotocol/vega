@@ -11,9 +11,11 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+const indent string = "  "
+
 // ProcessFiles takes an array of paths to files, reads them in and returns their contents as an array of instruction sets (set per file)
 func ProcessFiles(filesWithPath []string) ([]*core.InstructionSet, error) {
-	contents, err := readFiles(filesWithPath)
+	contents, err := openFiles(filesWithPath)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +42,7 @@ func Output(result proto.Message, outputFileWithPath string) error {
 	return marshall(result, f)
 }
 
-func readFiles(filesWithPath []string) ([]*os.File, error) {
+func openFiles(filesWithPath []string) ([]*os.File, error) {
 	var n = len(filesWithPath)
 	readers := make([]*os.File, n)
 	var errors *multierror.Error
@@ -65,6 +67,6 @@ func unmarshall(r io.Reader) (*core.InstructionSet, error) {
 }
 
 func marshall(result proto.Message, out io.Writer) error {
-	m := jsonpb.Marshaler{Indent: "  ", EmitDefaults: true}
+	m := jsonpb.Marshaler{Indent: indent, EmitDefaults: true}
 	return m.Marshal(out, result)
 }

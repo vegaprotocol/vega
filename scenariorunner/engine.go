@@ -14,8 +14,7 @@ import (
 )
 
 var (
-	ErrNotImplemented       error = errors.New("Not implemented")
-	ErrDuplicateInstruction error = errors.New("Duplicate instruction")
+	ErrDuplicateInstruction error = errors.New("duplicate instruction")
 )
 
 type Engine struct {
@@ -77,8 +76,7 @@ func (e Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
 func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
 	start := time.Now()
 	var processed, omitted uint64
-	n := len(instrSet.Instructions)
-	results := make([]*core.InstructionResult, n)
+	results := make([]*core.InstructionResult, len(instrSet.Instructions))
 	var errors *multierror.Error
 
 	preProcessors, err := e.flattenPreProcessors()

@@ -14,7 +14,6 @@ import (
 )
 
 var app = cli.NewApp()
-var ErrNotImplemented = errors.New("NotImplemented")
 var engine *sr.Engine
 
 func main() {
