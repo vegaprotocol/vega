@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -30,8 +31,8 @@ func ProcessFiles(filesWithPath []string) ([]*core.InstructionSet, error) {
 	return instructionSets, errors.ErrorOrNil()
 }
 
-// ProcessResults writes results to the specified file.
-func ProcessResults(result *core.ResultSet, outputFileWithPath string) error {
+// Output writes results to the specified file.
+func Output(result proto.Message, outputFileWithPath string) error {
 	f, err := os.Create(outputFileWithPath)
 	if err != nil {
 		return err
@@ -63,7 +64,7 @@ func unmarshall(r io.Reader) (*core.InstructionSet, error) {
 	return instrSet, nil
 }
 
-func marshall(result *core.ResultSet, out io.Writer) error {
+func marshall(result proto.Message, out io.Writer) error {
 	m := jsonpb.Marshaler{Indent: "  ", EmitDefaults: true}
 	return m.Marshal(out, result)
 }
