@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -481,7 +482,7 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 // this should be use only in debug / non production environment as it
 // rely a lot on logging
 func (b *OrderBook) PrintState(types string) {
-	b.log.Debug(types)
+	b.log.Debug(fmt.Sprintf("%s", types))
 	b.log.Debug("------------------------------------------------------------")
 	b.log.Debug("                        BUY SIDE                            ")
 	for _, priceLevel := range b.buy.getLevels() {
