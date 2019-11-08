@@ -20,17 +20,17 @@ func ProcessFiles(filesWithPath []string) ([]*core.InstructionSet, error) {
 		return nil, err
 	}
 
-	var errors *multierror.Error
+	var errs *multierror.Error
 	instructionSets := make([]*core.InstructionSet, len(contents))
 
 	for i, fileContents := range contents {
 		instructionSets[i], err = unmarshall(fileContents)
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			errs = multierror.Append(errs, err)
 		}
 	}
 
-	return instructionSets, errors.ErrorOrNil()
+	return instructionSets, errs.ErrorOrNil()
 }
 
 // Output writes results to the specified file.
@@ -45,16 +45,16 @@ func Output(result proto.Message, outputFileWithPath string) error {
 func openFiles(filesWithPath []string) ([]*os.File, error) {
 	var n = len(filesWithPath)
 	readers := make([]*os.File, n)
-	var errors *multierror.Error
+	var errs *multierror.Error
 	var err error
 
 	for i := 0; i < n; i++ {
 		readers[i], err = os.Open(filesWithPath[i])
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			errs = multierror.Append(errs, err)
 		}
 	}
-	return readers, errors.ErrorOrNil()
+	return readers, errs.ErrorOrNil()
 }
 
 func unmarshall(r io.Reader) (*core.InstructionSet, error) {

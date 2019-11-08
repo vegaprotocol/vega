@@ -77,7 +77,7 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 	start := time.Now()
 	var processed, omitted uint64
 	results := make([]*core.InstructionResult, len(instrSet.Instructions))
-	var errors *multierror.Error
+	var errs *multierror.Error
 
 	preProcessors, err := e.flattenPreProcessors()
 	if err != nil {
@@ -90,27 +90,27 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 		preProcessor, ok := preProcessors[strings.ToLower(instr.Request)]
 		if !ok {
 			if !e.Config.OmitUnsupportedInstructions {
-				return nil, errors.ErrorOrNil()
+				return nil, errs.ErrorOrNil()
 			}
-			errors = multierror.Append(errors, core.ErrInstructionNotSupported)
+			errs = multierror.Append(errs, core.ErrInstructionNotSupported)
 			omitted++
 			continue
 		}
 		p, err := preProcessor.PreProcess(instr)
 		if err != nil {
 			if !e.Config.OmitInvalidInstructions {
-				return nil, errors.ErrorOrNil()
+				return nil, errs.ErrorOrNil()
 			}
-			errors = multierror.Append(errors, err)
+			errs = multierror.Append(errs, err)
 			omitted++
 			continue
 		}
 		res, err := p.Result()
 		if err != nil {
 			if !e.Config.OmitInvalidInstructions {
-				return nil, errors.ErrorOrNil()
+				return nil, errs.ErrorOrNil()
 			}
-			errors = multierror.Append(errors, err)
+			errs = multierror.Append(errs, err)
 			omitted++
 			continue
 		}
@@ -145,7 +145,7 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 	return &core.ResultSet{
 		Metadata: md,
 		Results:  results,
-	}, errors.ErrorOrNil()
+	}, errs.ErrorOrNil()
 }
 
 func (e Engine) ExtractData() (*core.ProtocolSummaryResponse, error) {

@@ -32,46 +32,46 @@ func getDependencies() (*dependencies, error) {
 	config := cfgwatchr.Get()
 	log = logging.NewLoggerFromConfig(config.Logging)
 
-	var errors *multierror.Error
+	var errs *multierror.Error
 
 	orderStore, err := storage.NewOrders(log, config.Storage, cancel)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 	tradeStore, err := storage.NewTrades(log, config.Storage, cancel)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 	riskStore, err := storage.NewRisks(config.Storage)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 	candleStore, err := storage.NewCandles(log, config.Storage)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 
 	marketStore, err := storage.NewMarkets(log, config.Storage)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 
 	partyStore, err := storage.NewParties(config.Storage)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 
 	accounts, err := storage.NewAccounts(log, config.Storage)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 
 	transferResponseStore, err := storage.NewTransferResponses(log, config.Storage)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 
-	err = errors.ErrorOrNil()
+	err = errs.ErrorOrNil()
 	if err != nil {
 		return nil, err
 	}
@@ -94,14 +94,14 @@ func getDependencies() (*dependencies, error) {
 
 	tradeService, err := trades.NewService(log, config.Trades, tradeStore, riskStore)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 	marketService, err := markets.NewService(log, config.Markets, marketStore, orderStore)
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 
-	err = errors.ErrorOrNil()
+	err = errs.ErrorOrNil()
 	if err != nil {
 		return nil, err
 	}
