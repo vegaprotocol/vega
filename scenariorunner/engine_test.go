@@ -16,6 +16,41 @@ import (
 
 const marketId string = "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ"
 
+func TestExtractData(t *testing.T) {
+
+	instructions, err := getExecutionEngineInstructions("party1", "order1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	instructionSet := core.InstructionSet{
+		Instructions: instructions,
+		Description:  "Epending a trade",
+	}
+	runner, err := sr.NewEngine(sr.NewDefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = runner.ProcessInstructions(instructionSet)
+
+	result, err := runner.ExtractData()
+	assert.NoError(t, err)
+	assert.True(t, len(result.Parties) > 0)
+
+	anyOrders := false
+	anyTrades := false
+	for _, mkt := range result.Markets {
+		if len(mkt.Orders) > 0 {
+			anyOrders = true
+		}
+		if len(mkt.Trades) > 0 {
+			anyTrades = true
+		}
+	}
+	assert.True(t, anyOrders)
+	assert.True(t, anyTrades)
+
+}
+
 func TestProcessInstructionsAll(t *testing.T) {
 
 	partyId := "party1"

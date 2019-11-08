@@ -42,9 +42,9 @@ func NewEngine(config Config) (*Engine, error) {
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.marketService, d.tradeStore, d.orderStore, d.partyStore)
 
 	internal := newInternalProvider(d.vegaTime, summaryGenerator)
-	
+
 	internal.SetTime(config.ProtocolTime)
-	
+
 	return &Engine{
 		Config:           config,
 		summaryGenerator: summaryGenerator,
@@ -59,9 +59,9 @@ func NewEngine(config Config) (*Engine, error) {
 	}, nil
 }
 
-func (sr Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
+func (e Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
 	maps := make(map[string]*core.PreProcessor)
-	for _, provider := range append(sr.providers, sr.internalProvider) {
+	for _, provider := range append(e.providers, e.internalProvider) {
 		m := provider.PreProcessors()
 		for k, v := range m {
 			if _, ok := maps[k]; ok {
@@ -74,14 +74,14 @@ func (sr Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
 }
 
 // ProcessInstructions takes a set of instructions and submits them to the protocol
-func (sr Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
+func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
 	start := time.Now()
 	var processed, omitted uint64
 	n := len(instrSet.Instructions)
 	results := make([]*core.InstructionResult, n)
 	var errors *multierror.Error
 
-	preProcessors, err := sr.flattenPreProcessors()
+	preProcessors, err := e.flattenPreProcessors()
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (sr Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 		// TODO (WG 01/11/2019) matching by lower case by convention only, enforce with a custom type
 		preProcessor, ok := preProcessors[strings.ToLower(instr.Request)]
 		if !ok {
-			if !sr.Config.OmitUnsupportedInstructions {
+			if !e.Config.OmitUnsupportedInstructions {
 				return nil, errors.ErrorOrNil()
 			}
 			errors = multierror.Append(errors, core.ErrInstructionNotSupported)
@@ -99,7 +99,7 @@ func (sr Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 		}
 		p, err := preProcessor.PreProcess(instr)
 		if err != nil {
-			if !sr.Config.OmitInvalidInstructions {
+			if !e.Config.OmitInvalidInstructions {
 				return nil, errors.ErrorOrNil()
 			}
 			errors = multierror.Append(errors, err)
@@ -108,7 +108,7 @@ func (sr Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 		}
 		res, err := p.Result()
 		if err != nil {
-			if !sr.Config.OmitInvalidInstructions {
+			if !e.Config.OmitInvalidInstructions {
 				return nil, errors.ErrorOrNil()
 			}
 			errors = multierror.Append(errors, err)
@@ -117,8 +117,8 @@ func (sr Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 		}
 		results[i] = res
 		processed++
-		if sr.Config.AdvanceTimeAfterInstruction {
-			err := sr.internalProvider.AdvanceTime(sr.Config.AdvanceDuration)
+		if e.Config.AdvanceTimeAfterInstruction {
+			err := e.internalProvider.AdvanceTime(e.Config.AdvanceDuration)
 			if err != nil {
 				return nil, err
 			}
@@ -126,7 +126,7 @@ func (sr Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 
 	}
 
-	summary, err := sr.summaryGenerator.ProtocolSummary(nil)
+	summary, err := e.ExtractData()
 	if err != nil {
 		return nil, err
 	}
@@ -136,17 +136,21 @@ func (sr Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 	md := &core.Metadata{
 		InstructionsProcessed: processed,
 		InstructionsOmitted:   omitted,
-		TradesGenerated:       totalTrades - sr.tradesGenerated,
+		TradesGenerated:       totalTrades - e.tradesGenerated,
 		FinalMarketDepth:      marketDepths(*summary),
 		ProcessingTime:        ptypes.DurationProto(time.Since(start)),
 	}
 
-	sr.tradesGenerated = totalTrades
+	e.tradesGenerated = totalTrades
 
 	return &core.ResultSet{
 		Metadata: md,
 		Results:  results,
 	}, errors.ErrorOrNil()
+}
+
+func (e Engine) ExtractData() (*core.ProtocolSummaryResponse, error) {
+	return e.summaryGenerator.ProtocolSummary(nil)
 }
 
 func sumTrades(summary core.ProtocolSummaryResponse) uint64 {
