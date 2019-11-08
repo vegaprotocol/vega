@@ -122,12 +122,14 @@ func NewTransferStub() *transferStub {
 	}
 }
 
-func (t *transferStub) SaveBatch(b []*proto.TransferResponse) error {
+func (t *transferStub) Flush() error {
+	return nil
+}
+
+func (t *transferStub) Add(b []*proto.TransferResponse) {
 	t.mu.Lock()
 	t.data = append(t.data, b...)
-	err := t.err
 	t.mu.Unlock()
-	return err
 }
 
 func (t *transferStub) GetBatch() []*proto.TransferResponse {
