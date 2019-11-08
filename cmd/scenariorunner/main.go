@@ -101,7 +101,9 @@ func commands() {
 
 func initializeEngine() {
 	var err error
-	engine, err = sr.NewEngine(sr.NewDefaultConfig())
+	// TODO (WG 08/11/2019): Read from file
+	config := sr.NewDefaultConfig()
+	engine, err = sr.NewEngine(config)
 	if err != nil {
 		log.Fatal(err)
 	}

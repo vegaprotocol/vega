@@ -86,6 +86,7 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 		return nil, err
 	}
 
+	//TODO (WG 08/11/2019): Split into 3 separate loops (check if instruction supported, check if instructions valid, check if instruction processed w/o errors) to fail early
 	for i, instr := range instrSet.Instructions {
 		// TODO (WG 01/11/2019) matching by lower case by convention only, enforce with a custom type
 		preProcessor, ok := preProcessors[strings.ToLower(instr.Request)]

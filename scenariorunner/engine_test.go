@@ -51,6 +51,7 @@ func TestExtractData(t *testing.T) {
 
 }
 
+// TODO (WG 08/11/2019) The tests below are integration tests used during development. They should be moved to where we keep integration tests and executed with dependencies injected from outside.
 func TestProcessInstructionsAll(t *testing.T) {
 
 	partyId := "party1"
