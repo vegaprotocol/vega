@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	sr "code.vegaprotocol.io/vega/scenariorunner"
 
@@ -44,8 +46,8 @@ func commands() {
 			Usage:   "Submits a batch of node instructions read from a JSON file - subcommands available, see 'help'",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:        "extract, e",
-					Usage:       "Save instrution results to a `FILE` (if all get submitted without errors)",
+					Name:        "result, r",
+					Usage:       "Save instrution results set to a `FILE`. Files will be suffixed with a number when multiple instruction sets get submitted",
 					Destination: &optionalOutputFile,
 				},
 			},
@@ -61,17 +63,19 @@ func commands() {
 						log.Fatal(err)
 					}
 					n := len(instrSet)
-					for _, instr := range instrSet {
+					for i, instr := range instrSet {
 						res, err := engine.ProcessInstructions(*instr)
 						if err != nil {
 							log.Fatal(err)
 						}
 						if optionalOutputFile != "" {
 							fileName := optionalOutputFile
-							if n != 1 {
-								log.Fatal(ErrNotImplemented)
+							if n > 1 {
+								dir, file := filepath.Split(optionalOutputFile)
+								ext := filepath.Ext(file)
+								fileName = fmt.Sprintf("%s%s_%vof%v%s", dir, strings.TrimSuffix(file, ext), i+1, n, ext)
 							}
-							ProcessResults(res, fileName)
+							Output(res, fileName)
 						}
 					}
 
