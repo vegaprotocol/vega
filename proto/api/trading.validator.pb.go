@@ -19,6 +19,17 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *WithdrawRequest) Validate() error {
+	if this.Withdraw != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Withdraw); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Withdraw", err)
+		}
+	}
+	return nil
+}
+func (this *WithdrawResponse) Validate() error {
+	return nil
+}
 func (this *NotifyTraderAccountRequest) Validate() error {
 	if this.Notif != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Notif); err != nil {

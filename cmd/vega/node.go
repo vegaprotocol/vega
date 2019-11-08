@@ -7,25 +7,25 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/internal"
-	"code.vegaprotocol.io/vega/internal/accounts"
-	"code.vegaprotocol.io/vega/internal/api"
-	"code.vegaprotocol.io/vega/internal/auth"
-	"code.vegaprotocol.io/vega/internal/blockchain"
-	"code.vegaprotocol.io/vega/internal/candles"
-	"code.vegaprotocol.io/vega/internal/config"
-	"code.vegaprotocol.io/vega/internal/execution"
-	"code.vegaprotocol.io/vega/internal/logging"
-	"code.vegaprotocol.io/vega/internal/markets"
-	"code.vegaprotocol.io/vega/internal/metrics"
-	"code.vegaprotocol.io/vega/internal/monitoring"
-	"code.vegaprotocol.io/vega/internal/orders"
-	"code.vegaprotocol.io/vega/internal/parties"
-	"code.vegaprotocol.io/vega/internal/pprof"
-	"code.vegaprotocol.io/vega/internal/storage"
-	"code.vegaprotocol.io/vega/internal/trades"
-	"code.vegaprotocol.io/vega/internal/transfers"
-	"code.vegaprotocol.io/vega/internal/vegatime"
+	"code.vegaprotocol.io/vega/accounts"
+	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/auth"
+	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/orders"
+	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/trades"
+	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -57,15 +57,19 @@ type NodeCommand struct {
 	accountsService  *accounts.Svc
 	transfersService *transfers.Svc
 
+	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
 
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
 	conf         config.Config
-	stats        *internal.Stats
+	stats        *stats.Stats
 	withPPROF    bool
+	noChain      bool
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
+
+	executionEngine *execution.Engine
 }
 
 // Init initialises the node command.
@@ -93,49 +97,12 @@ func (l *NodeCommand) addFlags() {
 	flagSet := l.cmd.Flags()
 	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
+	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
 }
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
-	// See node_pre.go, that's where everything gets bootstrapped for the node
-	executionEngine := execution.NewEngine(
-		l.Log,
-		l.conf.Execution,
-		l.timeService,
-		l.orderStore,
-		l.tradeStore,
-		l.candleStore,
-		l.marketStore,
-		l.partyStore,
-		l.accounts,
-		l.transferResponseStore,
-	)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { executionEngine.ReloadConf(cfg.Execution) })
-
-	// ABCI<>blockchain server
-	bcService := blockchain.NewService(l.Log, l.conf.Blockchain, l.stats.Blockchain, executionEngine, l.timeService)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcService.ReloadConf(cfg.Blockchain) })
-
-	bcProcessor := blockchain.NewProcessor(l.Log, l.conf.Blockchain, bcService)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcProcessor.ReloadConf(cfg.Blockchain) })
-
-	bcApp := blockchain.NewApplication(
-		l.Log,
-		l.conf.Blockchain,
-		l.stats.Blockchain,
-		bcProcessor,
-		bcService,
-		l.timeService,
-		l.cancel,
-	)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { bcApp.ReloadConf(cfg.Blockchain) })
-
-	socketServer := blockchain.NewServer(l.Log, l.conf.Blockchain, l.stats.Blockchain, bcApp)
-	if err := socketServer.Start(); err != nil {
-		return errors.Wrap(err, "ABCI socket server error")
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { socketServer.ReloadConf(cfg.Blockchain) })
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
@@ -192,7 +159,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	// Clean up and close resources
 	grpcServer.Stop()
-	socketServer.Stop()
+	l.blockchain.Stop()
 	statusChecker.Stop()
 
 	// cleanup gateway

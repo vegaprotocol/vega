@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"code.vegaprotocol.io/vega/internal/auth/handler"
-	"code.vegaprotocol.io/vega/internal/logging"
+	"code.vegaprotocol.io/vega/auth/handler"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/gorilla/handlers"
 	"github.com/rs/cors"

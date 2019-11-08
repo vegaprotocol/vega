@@ -56,7 +56,7 @@ func (this *Instrument) Validate() error {
 func (this *ModelParamsBS) Validate() error {
 	return nil
 }
-func (this *Forward) Validate() error {
+func (this *ForwardRiskModel) Validate() error {
 	if this.Params != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Params); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Params", err)
@@ -101,10 +101,10 @@ func (this *TradableInstrument) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("MarginCalculator", err)
 		}
 	}
-	if oneOfNester, ok := this.GetRiskModel().(*TradableInstrument_Forward); ok {
-		if oneOfNester.Forward != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Forward); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Forward", err)
+	if oneOfNester, ok := this.GetRiskModel().(*TradableInstrument_ForwardRiskModel); ok {
+		if oneOfNester.ForwardRiskModel != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.ForwardRiskModel); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("ForwardRiskModel", err)
 			}
 		}
 	}

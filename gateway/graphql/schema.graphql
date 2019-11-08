@@ -1,0 +1,813 @@
+## VEGA - GraphQL schema
+
+schema {
+    query: Query
+    subscription: Subscription
+    mutation: Mutation
+}
+
+# Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data.
+type Mutation {
+
+  # Send a submit order request into VEGA network, this does not immediately create the order.
+  # It validates and sends the request out for consensus. Price, expiration and size will be converted to uint64 internally.
+  orderSubmit(
+    # ID of the market to place the order
+    marketId: String!
+    # ID of the party placing the order
+    partyId: String!
+    # Price of the asset
+    price: String!
+    # Size ofthe order
+    size: String!
+    # Side of the order (Buy or Sell)
+    side: Side!
+    # TimeInForce of the order
+    timeInForce: OrderTimeInForce!
+    # exiration of the the order
+    expiration: String
+    # type of the order
+    type: OrderType!
+  ): PendingOrder!
+
+  # Send a cancel order request into VEGA network, this does not immediately cancel an order.
+  # It validates and sends the request out for consensus.
+  orderCancel(
+    # ID of the order to cancel
+    id: ID!
+    # ID of the party placing the order
+    partyId: String!
+    # ID of the market where to find the order
+    marketId: String!
+  ): PendingOrder!
+
+  # Send a amend order request into VEGA network, this does not immediately amend an order.
+  # It validates and sends the request out for consensus.
+  orderAmend(
+    # ID of the order to amend
+    id: ID!
+    # ID of the party which created the order
+    partyId: String!
+    # New price for this order
+    price: Int!
+    # New size for this order
+    size: Int!
+    # New expiration time
+    expiration: String
+  ): PendingOrder!
+
+
+  # sign a party in using an username and password, then return a token
+  signin(
+    # ID of the party to get logged in
+    id: String!
+    # Password of the party
+    password: String!): String!
+}
+
+# Subscriptions allow a caller to receive new information as it is available from the VEGA platform.
+type Subscription {
+  # Subscribe to the candles updates
+  candles(
+    # ID of the market we want to listen candles for
+    marketId: String!
+    # Interval of the candles we want to listen for
+    interval: Interval!
+  ): Candle!
+
+  # Subscribe to orders updates
+  orders(
+    # ID of the market from which we want orders updates
+    marketId: String
+    # ID of the party from which we want orders updates
+    partyId: String
+  ): [Order!]
+
+  # Subscribe to the trades updates
+  trades(
+    # ID of the market from which we want trades updates
+    marketId: String
+    # ID of the party from which we want trades updates
+    partyId: String
+  ): [Trade!]
+
+  # Subscribe to the positions updates
+  positions(
+    # ID of the party from we want updates for
+    partyId: String!
+  ): Position!
+
+  # Subscribe to the market depths update
+  marketDepth(
+    # ID of the market we want to receive market depth updates for
+    marketId: String!
+  ): MarketDepth!
+
+  # Subscribe to the accounts updates
+  accounts(
+    # ID of the market from which we want accounts updates
+    marketId: String
+    # ID of the party from which we want accounts updates
+    partyId: String,
+    # Asset code
+    asset: String,
+    # Type of the account
+    type: AccountType
+  ): Account!
+
+}
+
+# An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
+type PendingOrder {
+
+  # The id of the Order, can be null if the request was SubmitOrder
+  id: String
+
+  # A UUID reference for the caller to aid in tracking operations on VEGA
+  reference: String!
+
+  # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+  price: String
+
+  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  timeInForce: OrderTimeInForce
+
+  # Whether the order is to buy or sell
+  side: Side
+
+  # The market the order is trading on (probably stored internally as a hash of the market details)
+  # could be nil if the submit order failed an no order is getting created
+  market: Market
+
+  # Total number of contracts that may be bought or sold (immutable) (uint64)
+  size: String
+
+  # The trader who place the order (probably stored internally as the trader's public key)
+  party: Party
+
+  # The status of an order, for example 'Active'
+  status: OrderStatus
+
+  # The type of the order
+  type: OrderType
+}
+
+# Queries allow a caller to read data and filter data via GraphQL.
+type Query {
+
+  # One or more instruments that are trading on the VEGA network
+  markets(
+    # ID of the market
+    id: String
+  ): [Market!]
+
+  # An instrument that is trading on the VEGA network
+  market(
+    # Optional ID of a market
+    id: String!
+  ): Market
+
+  # One or more entities that are trading on the VEGA network
+  parties(
+    # Optional ID of a party
+    id: String
+  ): [Party!]
+
+  # An entity that is trading on the VEGA network
+  party(
+    # ID of a party
+    id: String!
+  ): Party
+
+  # a bunch of statistics about the node
+  statistics: Statistics!
+
+  # Check a partyID+Token combination
+  checkToken(
+    # Party ID
+    partyId: String!
+    # Token
+    token: String!
+  ): CheckTokenResponse!
+}
+
+type CheckTokenResponse {
+  ok: Boolean!
+}
+
+# A bunch of statistics about the node
+type Statistics {
+  # Current block number
+  blockHeight: Int!
+
+  # Number of items in the backlog
+  backlogLength: Int!
+
+  # Total number of peers on the vega network
+  totalPeers: Int!
+
+  # Genesis time of the chain
+  genesisTime: String!
+
+  # Current time (real)
+  currentTime: String!
+
+  # Current time of the chain (decided through consensus)
+  vegaTime: String!
+
+  # Status of the vega application connection with the chain
+  status: String!
+
+  # Number of transaction processed per block
+  txPerBlock: Int!
+
+  # Average size of the transactions
+  averageTxBytes: Int!
+
+  # Average number of orders added per blocks
+  averageOrdersPerBlock: Int!
+
+  # Number of the trades per seconds
+  tradesPerSecond: Int!
+
+  # Number of orders per seconds
+  ordersPerSecond: Int!
+
+  # Total number of markets
+  totalMarkets: Int!
+
+  # Total number of parties
+  totalParties: Int!
+
+  # Traders on the vega network
+  parties: [String]!
+
+  # Total number of amended orders
+  totalAmendOrder: Int!
+
+  # Total number of cancelled orders
+  totalCancelOrder: Int!
+
+  # Total number of orders created
+  totalCreateOrder: Int!
+
+  # Total number of orders
+  totalOrders: Int!
+
+  # Total number of trades
+  totalTrades: Int!
+
+  # Version commit hash of the vega node
+  appVersionHash: String!
+
+  # Version of the vega node (semver)
+  appVersion: String!
+
+  # Version of the chain (semver)
+  chainVersion: String!
+
+  # Duration of the last block, in nanoseconds
+  blockDuration: Int!
+
+  # Number of orders subscriptions
+  orderSubscriptions: Int!
+
+  # Number of trades subscriptions
+  tradeSubscriptions: Int!
+
+  # Number of candles subscriptions
+  candleSubscriptions: Int!
+
+  # Number of market depth subscriptions
+  marketDepthSubscriptions: Int!
+
+  # Number of positions subscriptions
+  positionsSubscriptions: Int!
+}
+
+# A mode where Vega try to execute order as soon as they are received
+type ContinuousTrading {
+  # Size of an increment in price in terms of the quote currency (uint64)
+  tickSize: Int
+}
+
+# Some non continuous trading mode
+type DiscreteTrading {
+  # Duration of the trading (uint64)
+  duration: Int
+}
+
+union TradingMode =
+ContinuousTrading
+| DiscreteTrading
+
+# Parameters to be forwards to the risk model
+type ModelParamsBS {
+  # mu parameter
+  mu: Float!
+  # r parameter
+  r: Float!
+  # sigma parameter
+  sigma: Float!
+}
+
+# Parameters for the simple risk model
+type SimpleRiskModelParams {
+  # Risk factor for long
+  factorLong: Float!
+  # Risk factor for short
+  factorShort: Float!
+}
+
+
+# A type of risk model for futures trading
+type ForwardRiskModel {
+  # Lambda parameter of the risk model
+  riskAversionParameter: Float!
+  # Tau parameter of the risk model
+  tau: Float!
+  # Params for the forward risk model
+  params: ModelParamsBS!
+}
+
+# A type of simple/dummy risk model where we can specify the risk factor long and short in params
+type SimpleRiskModel {
+  # Params for the simple risk model
+  params: SimpleRiskModelParams!
+}
+
+union RiskModel = ForwardRiskModel | SimpleRiskModel
+
+# A set of metadata to associate to an instruments
+type InstrumentMetadata {
+
+  # An arbitrary list of tags to associated to associate to the Instrument (string list)
+  tags: [String]!
+}
+
+# An Ethereum oracle
+type EthereumEvent {
+
+  # The ID of the ethereum contract to use (string)
+  contractId: String!
+
+  # Name of the Ethereum event to listen to. (string)
+  event: String!
+}
+
+union Oracle = EthereumEvent
+
+# A Future product
+type Future {
+
+  # The maturity date of the product (string)
+  maturity: String!
+
+  # The name of the asset (string)
+  asset: String!
+
+  # The oracle used for this product (Oracle union)
+  oracle: Oracle!
+}
+
+union Product = Future
+
+# Describe something that can be traded on Vega
+type Instrument {
+
+  # Uniquely identify an instrument accrods all instruments available on Vega (string)
+  id: String!
+
+  # A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)
+  code: String!
+
+  # Full and fairly descriptive name for the instrument
+  name: String!
+
+  # String representing the base (e.g. BTCUSD -> BTC is base)
+  baseName: String!
+
+  # String representing the quote (e.g. BTCUSD -> USD is quote)
+  quoteName: String!
+
+  # Metadata for this instrument
+  metadata: InstrumentMetadata!
+
+  # A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
+  product: Product!
+}
+
+# A tradable instrument is a combination of an instrument and a risk model
+type TradableInstrument {
+  # An instance of or reference to a fully specified instrument.
+  instrument: Instrument!
+
+  # A reference to a risk model that is valid for the instrument
+  riskModel: RiskModel!
+}
+
+# Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
+type Market {
+
+  # Market ID
+  id: String!
+
+	# Market full name
+  name: String!
+
+  # An instance of or reference to a tradable instrument.
+  tradableInstrument: TradableInstrument!
+
+  # Definitions and required configuration for the trading mode
+  tradingMode: TradingMode!
+
+  # decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct number denominated in the currency of the Market. (uint64)
+  # Examples:
+  #   Currency     Balance  decimalPlaces  Real Balance
+  #   GBP              100              0       GBP 100
+  #   GBP              100              2       GBP   1.00
+  #   GBP              100              4       GBP   0.01
+  #   GBP                1              4       GBP   0.0001   (  0.01p  )
+  #
+  #   GBX (pence)      100              0       GBP   1.00     (100p     )
+  #   GBX (pence)      100              2       GBP   0.01     (  1p     )
+  #   GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
+  #   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
+  decimalPlaces: Int!
+
+  # Orders on a market
+  orders (
+    # Filter open orders only
+    open: Boolean
+    # Pagination skip
+    skip: Int
+    # Pagination first element
+    first: Int
+    # Pagination last element
+    last: Int
+  ): [Order!]
+
+  # Get accounts for a party or market
+  accounts(
+    # Specify the account type to get a specific account
+    type: AccountType
+  ): [Account!]
+
+  # Trades on a market
+  trades (
+    # Pagination skip
+    skip: Int
+    # Pagination first element
+    first: Int
+    # Pagination last element
+    last: Int): [Trade!]
+
+  # Current depth on the orderbook for this market
+  depth: MarketDepth!
+
+  # Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
+  candles (
+    # RFC3339Nano encoded time from when to get candles
+    since: String!
+    # Interval of the candles
+    interval: Interval!
+  ): [Candle]
+
+  # Query an order by reference for the given market
+  orderByReference (
+    # reference of the order
+    reference: String!
+  ): Order!
+}
+
+# Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.
+# The depth of market measure provides an indication of the liquidity and depth for the instrument.
+type MarketDepth {
+
+    # Market id
+    market: Market!
+
+    # Buy side price levels (if available)
+    buy: [PriceLevel!]
+
+    # Sell side price levels (if available)
+    sell: [PriceLevel!]
+
+    # Last trade for the given market (if availabe)
+    lastTrade: Trade
+}
+
+# Represents a price on either the buy or sell side and all the orders at that price
+type PriceLevel {
+
+    # The price of all the orders at this level (uint64)
+    price: String!
+
+    # The total remaining size of all orders at this level (uint64)
+    volume: String!
+
+    # The number of orders at this price level (uint64)
+    numberOfOrders: String!
+
+    # The cumulative total volume to this price level (uint64)
+    cumulativeVolume: String!
+}
+
+# Candle stick representation of trading
+type Candle {
+
+    # Unix epoch+nanoseconds for when the candle ocurred
+    timestamp: String!
+
+    # ISO-8601 RFC3339+Nano formatted data and time for the candle
+    datetime: String!
+
+    # High price (uint64)
+    high: String!
+
+    # Low price (uint64)
+    low: String!
+
+    # Open price (uint64)
+    open: String!
+
+    # Close price (uint64)
+    close: String!
+
+    # Volume price (uint64)
+    volume: String!
+
+    # Interval price (string)
+    interval: Interval!
+}
+
+# Represents a party on Vega, could be an ethereum wallet address in the future
+type Party {
+  # Party identifier
+  id: String!
+
+  # Orders relating to a party
+  orders(
+    # Is the order still open or not
+    open: Boolean
+    # Pagination skip
+    skip: Int
+    # Pagination first element
+    first: Int
+    # Pagination last element
+    last: Int): [Order!]
+
+  # Trades relating to a party (specifically where party is either buyer OR seller)
+  trades(
+    # ID of the market we want to get trades for
+    marketId: String
+    # Pagination skip
+    skip: Int
+    # Pagination first element
+    first: Int
+    # Pagination last element
+    last: Int): [Trade!]
+
+  # Collateral accounts relating to a party
+  accounts(
+    # Market ID - specify what market accounts for the party to return
+    marketId: String
+    # Asset (USD, EUR etc)
+    asset: String,
+    # Filter accounts by type (General account, margin account, etc...)
+    type: AccountType
+  ): [Account!]
+
+  # Trading positions relating to a party
+  positions: [Position!]
+}
+
+# An individual trader at any point in time is considered net long or net short.
+# This refers to their Open Volume, calculated using FIFO. This volume should now be signed as either
+# negative for LONG positions and positive for SHORT positions. A single trade may end up "splitting" with some
+# of its volume matched into closed volume and some of its volume remaining as open volume. This is why we don't
+# refer to positions being comprised of trades, rather of volume.
+type Position {
+
+    # Market relating to this position
+    market: Market!
+
+    # Realised volume (uint64)
+    realisedVolume: String!
+
+    # Realised Profit and Loss (int64, will be converted to uint64 with +ve/-ve indicator in future)
+    realisedProfitValue: String!
+
+    # Realised Profit or Loss direction
+    realisedProfitDirection: ValueDirection!
+
+    # Unrealised volume (uint64)
+    unrealisedVolume: String!
+
+    # Unrealised Profit and Loss  (int64, will be converted to uint64 with +ve/-ve indicator in future)
+    unrealisedProfitValue: String!
+
+    # Unrealised Profit or Loss direction
+    unrealisedProfitDirection: ValueDirection!
+
+    # Average entry price for this position
+    averageEntryPrice: String!
+
+    # Minimum margin for this position
+    minimumMargin: String!
+}
+
+# An order in Vega, if active it will be on the OrderBoook for the market
+type Order {
+
+  # Hash of the order data
+  id: ID!
+
+  # The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)
+  price: String!
+
+  # The timeInForce of order (determines how and if it executes, and whether it persists on the book)
+  timeInForce: OrderTimeInForce!
+
+  # Whether the order is to buy or sell
+  side: Side!
+
+  # The market the order is trading on (probably stored internally as a hash of the market details)
+  market: Market!
+
+  # Total number of contracts that may be bought or sold (immutable) (uint64)
+  size: String!
+
+  # Number of contracts remaining of the total that have not yet been bought or sold (uint64)
+  remaining: String!
+
+  # The trader who place the order (probably stored internally as the trader's public key)
+  party: Party!
+
+  # Unix epoch+nanoseconds for when the order was created
+  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
+
+  # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
+  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
+
+  # ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)
+  createdAt: String!
+
+  # Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)
+  expiresAt: String
+
+  # The status of an order, for example 'Active'
+  status: OrderStatus!
+
+  # The external reference (if available) for the order
+  reference: String!
+
+  # Trades relating to this order
+  trades: [Trade!]
+
+  # Type the order type (defaults to TRADER)
+  type: OrderType
+}
+
+# A trade on Vega, the result of two orders being "matched" in the market
+type Trade {
+
+  # The hash of the trade data
+  id: ID!
+
+  # The market the trade occurred on
+  market: Market!
+
+  # The order that bought
+  buyer: String!
+
+  # The order that sold
+  seller: String!
+
+  # The aggressor indicates whether this trade was related to a BUY or SELL
+  aggressor: Side!
+
+  # The price of the trade (probably initially the passive order price, other determination algorithms are possible though) (uint64)
+  price: String!
+
+  # The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)
+  size: String!
+
+  # Unix epoch+nanoseconds for when the trade occured
+  timestamp: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
+
+  # ISO-8601 RFC3339+Nano formatted data and time for when the trade occured (timestamp)
+  datetime: String! @deprecated(reason: "This field is being replaced by createdAt in the near future")
+
+  # RFC3339Nano for when th trade occured
+  createdAt: String!
+}
+
+# An account record
+type Account {
+  # Balance as string - current account balance (approx. as balances can be updated several times per second)
+  balance: String!
+  # Asset, the "currency"
+  asset: String!
+  # Account type (General, Margin, etc)
+  type: AccountType!
+  # Market (only relevant to margin accounts)
+  market: Market
+}
+
+# Valid order types, these determine what happens when an order is added to the book
+enum OrderTimeInForce {
+
+    # The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade
+    FOK
+
+    # The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)
+    IOC
+
+    # This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled
+    GTC
+
+    # This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+    # NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
+    GTT
+}
+
+# Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order.
+enum OrderStatus {
+
+    # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
+    # Active does not necessarily mean it's still on the order book.
+    Active
+
+    # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
+    Cancelled
+
+    # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
+    Expired
+
+    # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
+    Stopped
+
+    # This order is fully filled with remaining equals zero.
+    Filled
+}
+
+enum OrderType {
+  ## MARKET - the default order type
+  MARKET
+
+  ## LIMIT - mentioned in ticket, but as yet unused order type
+  LIMIT
+
+  ## NETWORK - used for distressed traders, an order placed by the network to close out distressed traders
+  ## similar to MARKET order, only no party is attached to the order as such
+  NETWORK
+}
+
+# Whether the placer of an order is aiming to buy or sell on the market
+enum Side {
+  # The Placer of the order is aiming to buy
+  Buy
+
+  # The placer of the order is aiming to sell
+  Sell
+}
+
+# Whether the position etc value is in profit (positive) or loss (negative).
+enum ValueDirection {
+  Positive
+  Negative
+}
+
+# The interval for trade candles when subscribing via VEGA graphql, default is I15M
+enum Interval {
+  # 1 minute interval
+  I1M
+
+  # 5 minute interval
+  I5M
+
+  # 15 minute interval (default)
+  I15M
+
+  # 1 hour interval
+  I1H
+
+  # 6 hour interval
+  I6H
+
+  # 1 day interval
+  I1D
+}
+
+# The various account types we have (used by collateral)
+enum AccountType {
+  # Insurance pool account - only for "system" party
+  Insurance
+  # Settlement - only for "system" party
+  Settlement
+  # Margin - The leverage account for traders
+  Margin
+  # General account - the account containing "unused" collateral for traders
+  General
+}
