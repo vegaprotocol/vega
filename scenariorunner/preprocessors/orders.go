@@ -29,8 +29,8 @@ func (o *Orders) PreProcessors() map[string]*core.PreProcessor {
 }
 
 func ordersByMarket(ctx context.Context, odp api.OrderDataProvider) *core.PreProcessor {
-	req := &protoapi.OrdersByMarketRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.OrdersByMarketRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -38,14 +38,14 @@ func ordersByMarket(ctx context.Context, odp api.OrderDataProvider) *core.PrePro
 			func() (proto.Message, error) { return api.ProcessOrdersByMarket(ctx, req, odp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.OrdersByMarketRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func ordersByParty(ctx context.Context, odp api.OrderDataProvider) *core.PreProcessor {
-	req := &protoapi.OrdersByPartyRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.OrdersByPartyRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -53,14 +53,14 @@ func ordersByParty(ctx context.Context, odp api.OrderDataProvider) *core.PreProc
 			func() (proto.Message, error) { return api.ProcessOrdersByParty(ctx, req, odp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.OrdersByPartyRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func orderByMarketAndID(ctx context.Context, odp api.OrderDataProvider) *core.PreProcessor {
-	req := &protoapi.OrderByMarketAndIdRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.OrderByMarketAndIdRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -68,14 +68,14 @@ func orderByMarketAndID(ctx context.Context, odp api.OrderDataProvider) *core.Pr
 			func() (proto.Message, error) { return api.ProcessOrderByMarketAndId(ctx, req, odp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.OrderByMarketAndIdRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func orderByReference(ctx context.Context, odp api.OrderDataProvider) *core.PreProcessor {
-	req := &protoapi.OrderByReferenceRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.OrderByReferenceRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -83,7 +83,7 @@ func orderByReference(ctx context.Context, odp api.OrderDataProvider) *core.PreP
 			func() (proto.Message, error) { return api.ProcessOrderByReference(ctx, req, odp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.OrderByReferenceRequest{},
 		PreProcess:   preProcessor,
 	}
 }

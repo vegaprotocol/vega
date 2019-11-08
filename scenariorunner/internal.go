@@ -29,8 +29,8 @@ func (p *internalProvider) PreProcessors() map[string]*core.PreProcessor {
 }
 
 func (p *internalProvider) set() *core.PreProcessor {
-	req := &core.SetTimeRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &core.SetTimeRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -42,14 +42,14 @@ func (p *internalProvider) set() *core.PreProcessor {
 			func() (proto.Message, error) { p.SetTime(time); return nil, nil })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &core.SetTimeRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func (p *internalProvider) advance() *core.PreProcessor {
-	req := &core.AdvanceTimeRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &core.AdvanceTimeRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -61,14 +61,14 @@ func (p *internalProvider) advance() *core.PreProcessor {
 			func() (proto.Message, error) { return nil, p.AdvanceTime(duration) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &core.AdvanceTimeRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func (p *internalProvider) protocolSummary() *core.PreProcessor {
-	req := &core.ProtocolSummaryRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &core.ProtocolSummaryRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -77,14 +77,14 @@ func (p *internalProvider) protocolSummary() *core.PreProcessor {
 			func() (proto.Message, error) { return p.summaryGenerator.ProtocolSummary(req.GetPagination()) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &core.ProtocolSummaryRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func (p *internalProvider) marketSummary() *core.PreProcessor {
-	req := &core.MarketSummaryRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &core.MarketSummaryRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -95,7 +95,7 @@ func (p *internalProvider) marketSummary() *core.PreProcessor {
 			})
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &core.MarketSummaryRequest{},
 		PreProcess:   preProcessor,
 	}
 }

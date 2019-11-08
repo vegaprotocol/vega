@@ -30,8 +30,8 @@ func (m *Markets) PreProcessors() map[string]*core.PreProcessor {
 }
 
 func marketByID(ctx context.Context, mdp api.MarketDataProvider) *core.PreProcessor {
-	req := &protoapi.MarketByIDRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.MarketByIDRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -39,14 +39,14 @@ func marketByID(ctx context.Context, mdp api.MarketDataProvider) *core.PreProces
 			func() (proto.Message, error) { return api.ProcessMarketByID(ctx, req, mdp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.MarketByIDRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func markets(ctx context.Context, mdp api.MarketDataProvider) *core.PreProcessor {
-	req := &empty.Empty{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &empty.Empty{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -54,7 +54,7 @@ func markets(ctx context.Context, mdp api.MarketDataProvider) *core.PreProcessor
 			func() (proto.Message, error) { return api.ProcessMarkets(ctx, req, mdp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &empty.Empty{},
 		PreProcess:   preProcessor,
 	}
 }

@@ -29,8 +29,8 @@ func (e *Execution) PreProcessors() map[string]*core.PreProcessor {
 }
 
 func notifyTraderAccount(e *execution.Engine) *core.PreProcessor {
-	req := &types.NotifyTraderAccount{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &types.NotifyTraderAccount{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -38,14 +38,14 @@ func notifyTraderAccount(e *execution.Engine) *core.PreProcessor {
 			func() (proto.Message, error) { return nil, e.NotifyTraderAccount(req) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &types.NotifyTraderAccount{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func submitOrder(e *execution.Engine) *core.PreProcessor {
-	req := &types.Order{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &types.Order{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -54,14 +54,14 @@ func submitOrder(e *execution.Engine) *core.PreProcessor {
 			func() (proto.Message, error) { return e.SubmitOrder(req) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &types.Order{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func cancelOrder(e *execution.Engine) *core.PreProcessor {
-	req := &types.Order{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &types.Order{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -69,14 +69,14 @@ func cancelOrder(e *execution.Engine) *core.PreProcessor {
 			func() (proto.Message, error) { return e.CancelOrder(req) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &types.Order{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func amendOrder(e *execution.Engine) *core.PreProcessor {
-	req := &types.OrderAmendment{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &types.OrderAmendment{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -84,14 +84,14 @@ func amendOrder(e *execution.Engine) *core.PreProcessor {
 			func() (proto.Message, error) { return e.AmendOrder(req) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &types.OrderAmendment{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func withdraw(e *execution.Engine) *core.PreProcessor {
-	req := &types.Withdraw{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &types.Withdraw{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -99,7 +99,7 @@ func withdraw(e *execution.Engine) *core.PreProcessor {
 			func() (proto.Message, error) { return nil, e.Withdraw(req) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &types.Withdraw{},
 		PreProcess:   preProcessor,
 	}
 }

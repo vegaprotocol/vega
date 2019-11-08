@@ -15,7 +15,6 @@ type MarketDepth struct {
 }
 
 func NewMarketDepth(ctx context.Context, mdp api.MarketDataProvider, tdp api.TradeDataProvider) *MarketDepth {
-
 	m := map[string]*core.PreProcessor{
 		"marketdepth": marketDepth(ctx, mdp, tdp),
 	}
@@ -28,8 +27,8 @@ func (m *MarketDepth) PreProcessors() map[string]*core.PreProcessor {
 }
 
 func marketDepth(ctx context.Context, mdp api.MarketDataProvider, tdp api.TradeDataProvider) *core.PreProcessor {
-	req := &protoapi.MarketDepthRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.MarketDepthRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -37,7 +36,7 @@ func marketDepth(ctx context.Context, mdp api.MarketDataProvider, tdp api.TradeD
 			func() (proto.Message, error) { return api.ProcessMarketDepth(ctx, req, mdp, tdp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.MarketDepthRequest{},
 		PreProcess:   preProcessor,
 	}
 }

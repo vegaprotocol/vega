@@ -31,8 +31,8 @@ func (t *Trades) PreProcessors() map[string]*core.PreProcessor {
 }
 
 func tradesByMarket(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
-	req := &protoapi.TradesByMarketRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.TradesByMarketRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -40,14 +40,14 @@ func tradesByMarket(ctx context.Context, tdp api.TradeDataProvider) *core.PrePro
 			func() (proto.Message, error) { return api.ProcessTradesByMarket(ctx, req, tdp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.TradesByMarketRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func tradesByParty(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
-	req := &protoapi.TradesByPartyRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.TradesByPartyRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -55,14 +55,14 @@ func tradesByParty(ctx context.Context, tdp api.TradeDataProvider) *core.PreProc
 			func() (proto.Message, error) { return api.ProcessTradesByParty(ctx, req, tdp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.TradesByPartyRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func tradesByOrder(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
-	req := &protoapi.TradesByOrderRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.TradesByOrderRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -70,14 +70,14 @@ func tradesByOrder(ctx context.Context, tdp api.TradeDataProvider) *core.PreProc
 			func() (proto.Message, error) { return api.ProcessTradesByOrder(ctx, req, tdp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.TradesByOrderRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
 func lastTrade(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
-	req := &protoapi.LastTradeRequest{}
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.LastTradeRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
@@ -85,7 +85,7 @@ func lastTrade(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcesso
 			func() (proto.Message, error) { return api.ProcessLastTrade(ctx, req, tdp) })
 	}
 	return &core.PreProcessor{
-		MessageShape: req,
+		MessageShape: &protoapi.LastTradeRequest{},
 		PreProcess:   preProcessor,
 	}
 }
