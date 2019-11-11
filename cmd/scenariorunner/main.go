@@ -38,7 +38,7 @@ func info(app *cli.App) {
 	app.Name = "scenario-runner-cli"
 	app.Usage = "Interact with a Vega node running without the consensus layer via command line."
 	app.Description = "Command line tool interacting with a Vega node running without the consensus layer. It allows submission of instructions in bulk and persistence of respones along with the accompanying metadata."
-	app.Version = fmt.Sprintf("%v (%v) / %n", Version, VersionHash, Revision)
+	app.Version = fmt.Sprintf("%v (%v) / %d", Version, VersionHash, Revision)
 }
 
 func commands(app *cli.App) {
