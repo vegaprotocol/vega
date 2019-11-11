@@ -105,7 +105,6 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		}
 		return price / (volume - vol), err
 	}
-
 	for _, lvl := range b.buy.getLevels() {
 		if lvl.volume >= vol {
 			price += lvl.price * vol
@@ -459,8 +458,8 @@ func (b OrderBook) removePendingGttOrder(order types.Order) bool {
 	if i < len(b.expiringOrders) {
 		// orders with the same expiry found, now we need to iterate over the result to find
 		// an order with the same expiry and may the order ID
-		for i <= len(b.expiringOrders) && b.expiringOrders[i].ExpiresAt == order.ExpiresAt {
-			if b.expiringOrders[i].ExpiresAt == order.ExpiresAt {
+		for ; i <= len(b.expiringOrders) && b.expiringOrders[i].ExpiresAt == order.ExpiresAt; i++ {
+			if b.expiringOrders[i].Id == order.Id {
 				// we found our order, let's remove it
 				b.expiringOrders = b.expiringOrders[:i+copy(b.expiringOrders[i:], b.expiringOrders[i+1:])]
 				return true
