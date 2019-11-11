@@ -13,13 +13,20 @@ import (
 )
 
 var (
-	app    = cli.NewApp()
 	engine *sr.Engine
+
+	// VersionHash specifies the git commit used to build the application. Passed in via ldflags
+	VersionHash = "unknown"
+	// Version specifies the version used to build the application. Passed in via ldflags
+	Version = "unknown"
+	// Revision specifies app variation that was built to work with the VEGA version above
+	Revision = 0
 )
 
 func main() {
-	info()
-	commands()
+	app := cli.NewApp()
+	info(app)
+	commands(app)
 	initializeEngine()
 	err := app.Run(os.Args)
 	if err != nil {
@@ -27,14 +34,14 @@ func main() {
 	}
 }
 
-func info() {
+func info(app *cli.App) {
 	app.Name = "scenario-runner-cli"
 	app.Usage = "Interact with a Vega node running without the consensus layer via command line."
 	app.Description = "Command line tool interacting with a Vega node running without the consensus layer. It allows submission of instructions in bulk and persistence of respones along with the accompanying metadata."
-	app.Version = "0.0.0"
+	app.Version = fmt.Sprintf("%v (%v) / %n", Version, VersionHash, Revision)
 }
 
-func commands() {
+func commands(app *cli.App) {
 	var optionalResultSetFile string
 	var optionalProtocolSummaryFile string
 
