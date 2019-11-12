@@ -1,4 +1,4 @@
-We use `mockgen`, from [golang/mock](https://github.com/golang/mock).
+We use `mockgen`, from [`golang/mock`](https://github.com/golang/mock).
 
 ## Generating/updating mock files
 
@@ -48,6 +48,6 @@ go test ./internal/somedir/
 
 To force a re-run of previously successful tests, add `-count 1`.
 
-## Reasons for moving from mockery to mockgen
+## Reasons for moving from `mockery` to `mockgen`
 
 TBD (#230)
