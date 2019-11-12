@@ -13,34 +13,33 @@ import (
 )
 
 type Markets struct {
+	ctx         context.Context
 	marketStore *storage.Market
 	orderStore  *storage.Order
-	mappings    map[string]*core.PreProcessor
+	mdp         api.MarketDataProvider
+	tdp         api.TradeDataProvider
 }
 
 func NewMarkets(ctx context.Context, marketStore *storage.Market, orderStore *storage.Order, mdp api.MarketDataProvider, tdp api.TradeDataProvider) *Markets {
-
-	m := map[string]*core.PreProcessor{
-		"marketbyid":  marketByID(ctx, mdp),
-		"markets":     markets(ctx, mdp),
-		"marketdepth": marketDepth(ctx, mdp, tdp),
-	}
-
-	return &Markets{marketStore, orderStore, m}
+	return &Markets{ctx, marketStore, orderStore, mdp, tdp}
 }
 
 func (m *Markets) PreProcessors() map[string]*core.PreProcessor {
-	return m.mappings
+	return map[string]*core.PreProcessor{
+		"marketbyid":  m.marketByID(),
+		"markets":     m.markets(),
+		"marketdepth": m.marketDepth(),
+	}
 }
 
-func marketByID(ctx context.Context, mdp api.MarketDataProvider) *core.PreProcessor {
+func (m *Markets) marketByID() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.MarketByIDRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessMarketByID(ctx, req, mdp) })
+			func() (proto.Message, error) { return api.ProcessMarketByID(m.ctx, req, m.mdp) })
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.MarketByIDRequest{},
@@ -48,14 +47,14 @@ func marketByID(ctx context.Context, mdp api.MarketDataProvider) *core.PreProces
 	}
 }
 
-func markets(ctx context.Context, mdp api.MarketDataProvider) *core.PreProcessor {
+func (m *Markets) markets() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &empty.Empty{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessMarkets(ctx, req, mdp) })
+			func() (proto.Message, error) { return api.ProcessMarkets(m.ctx, req, m.mdp) })
 	}
 	return &core.PreProcessor{
 		MessageShape: &empty.Empty{},
@@ -63,14 +62,14 @@ func markets(ctx context.Context, mdp api.MarketDataProvider) *core.PreProcessor
 	}
 }
 
-func marketDepth(ctx context.Context, mdp api.MarketDataProvider, tdp api.TradeDataProvider) *core.PreProcessor {
+func (m *Markets) marketDepth() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.MarketDepthRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessMarketDepth(ctx, req, mdp, tdp) })
+			func() (proto.Message, error) { return api.ProcessMarketDepth(m.ctx, req, m.mdp, m.tdp) })
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.MarketDepthRequest{},
