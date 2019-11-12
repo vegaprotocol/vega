@@ -18,7 +18,7 @@ const marketId string = "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ"
 
 func TestExtractData(t *testing.T) {
 
-	instructions, err := getExecutionEngineInstructions("party1", "order1")
+	instructions, err := getExecutionEngineInstructions(marketId, "trader1")
 	if err != nil {
 		t.Fatal(err)
 	}
