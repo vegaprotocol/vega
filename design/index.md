@@ -10,7 +10,7 @@ The following diagram shows how the various components of this implementation in
 
 ## Modelling the domain
 
-Much of the application lives in the /internal directory. Each sub-directory is a package and these packages represent a discrete domain or concept from the whitepaper.
+Much of the application lives in the root directory of the trading-core repo. Sub-directories are typically packages and these represent a discrete domain or concept from the whitepaper.
 
 ### Design documentation
 
