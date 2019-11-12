@@ -20,6 +20,7 @@ type SummaryGenerator struct {
 	tradeStore         *storage.Trade
 	orderStore         *storage.Order
 	partyStore         *storage.Party
+	marketStore        *storage.Market
 }
 
 func NewSummaryGenerator(
@@ -27,13 +28,15 @@ func NewSummaryGenerator(
 	marketDataProvider api.MarketDataProvider,
 	tradeStore *storage.Trade,
 	orderStore *storage.Order,
-	partyStore *storage.Party) *SummaryGenerator {
+	partyStore *storage.Party,
+	marketStore *storage.Market) *SummaryGenerator {
 	return &SummaryGenerator{
 		context,
 		marketDataProvider,
 		tradeStore,
 		orderStore,
-		partyStore}
+		partyStore,
+		marketStore}
 }
 
 func (s *SummaryGenerator) ProtocolSummary(pagination *protoapi.Pagination) (*ProtocolSummaryResponse, error) {
@@ -74,6 +77,7 @@ func (s *SummaryGenerator) MarketSummary(marketId string, pagination *protoapi.P
 }
 
 func (s *SummaryGenerator) marketSummary(marketId string, pagination protoapi.Pagination) (*MarketSummary, error) {
+
 	market, err := s.marketDataProvider.GetByID(s.context, marketId)
 	if err != nil {
 		return nil, err

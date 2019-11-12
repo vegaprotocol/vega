@@ -38,7 +38,7 @@ func NewEngine(config Config) (*Engine, error) {
 	orders := preprocessors.NewOrders(d.ctx, d.orderStore)
 	trades := preprocessors.NewTrades(d.ctx, d.tradeService)
 
-	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.marketService, d.tradeStore, d.orderStore, d.partyStore)
+	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.marketService, d.tradeStore, d.orderStore, d.partyStore, d.marketStore)
 
 	internal := newInternalProvider(d.vegaTime, summaryGenerator)
 

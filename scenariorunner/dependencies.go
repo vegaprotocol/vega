@@ -113,6 +113,7 @@ func getDependencies() (*dependencies, error) {
 		partyStore:    partyStore,
 		orderStore:    orderStore,
 		tradeStore:    tradeStore,
+		marketStore:   marketStore,
 		tradeService:  tradeService,
 		marketService: marketService,
 	}, nil
@@ -125,6 +126,7 @@ type dependencies struct {
 	partyStore    *storage.Party
 	orderStore    *storage.Order
 	tradeStore    *storage.Trade
+	marketStore   *storage.Market
 	tradeService  *trades.Svc
 	marketService *markets.Svc
 }
