@@ -58,7 +58,7 @@ func NewEngine(config Config) (*Engine, error) {
 	}, nil
 }
 
-func (e Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
+func (e *Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
 	maps := make(map[string]*core.PreProcessor)
 	for _, provider := range append(e.providers, e.internalProvider) {
 		m := provider.PreProcessors()
@@ -73,7 +73,7 @@ func (e Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
 }
 
 // ProcessInstructions takes a set of instructions and submits them to the protocol
-func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
+func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
 	start := time.Now()
 	var processed, omitted uint64
 	results := make([]*core.InstructionResult, len(instrSet.Instructions))
@@ -148,7 +148,7 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 	}, errs.ErrorOrNil()
 }
 
-func (e Engine) ExtractData() (*core.ProtocolSummaryResponse, error) {
+func (e *Engine) ExtractData() (*core.ProtocolSummaryResponse, error) {
 	return e.summaryGenerator.ProtocolSummary(nil)
 }
 
