@@ -37,7 +37,10 @@ func (t *Trades) tradesByMarket() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessTradesByMarket(t.ctx, req, t.tdp) })
+			func() (proto.Message, error) {
+				t.commitStore()
+				return api.ProcessTradesByMarket(t.ctx, req, t.tdp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.TradesByMarketRequest{},
@@ -52,7 +55,10 @@ func (t *Trades) tradesByParty() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessTradesByParty(t.ctx, req, t.tdp) })
+			func() (proto.Message, error) {
+				t.commitStore()
+				return api.ProcessTradesByParty(t.ctx, req, t.tdp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.TradesByPartyRequest{},
@@ -67,7 +73,10 @@ func (t *Trades) tradesByOrder() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessTradesByOrder(t.ctx, req, t.tdp) })
+			func() (proto.Message, error) {
+				t.commitStore()
+				return api.ProcessTradesByOrder(t.ctx, req, t.tdp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.TradesByOrderRequest{},
@@ -88,4 +97,8 @@ func (t *Trades) lastTrade() *core.PreProcessor {
 		MessageShape: &protoapi.LastTradeRequest{},
 		PreProcess:   preProcessor,
 	}
+}
+
+func (t *Trades) commitStore() {
+	t.tradeStore.Commit()
 }

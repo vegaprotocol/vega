@@ -37,7 +37,10 @@ func (o *Orders) ordersByMarket() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessOrdersByMarket(o.ctx, req, o.odp) })
+			func() (proto.Message, error) {
+				o.commitStore()
+				return api.ProcessOrdersByMarket(o.ctx, req, o.odp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.OrdersByMarketRequest{},
@@ -52,7 +55,10 @@ func (o *Orders) ordersByParty() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessOrdersByParty(o.ctx, req, o.odp) })
+			func() (proto.Message, error) {
+				o.commitStore()
+				return api.ProcessOrdersByParty(o.ctx, req, o.odp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.OrdersByPartyRequest{},
@@ -67,7 +73,10 @@ func (o *Orders) orderByMarketAndID() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessOrderByMarketAndId(o.ctx, req, o.odp) })
+			func() (proto.Message, error) {
+				o.commitStore()
+				return api.ProcessOrderByMarketAndId(o.ctx, req, o.odp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.OrderByMarketAndIdRequest{},
@@ -82,10 +91,17 @@ func (o *Orders) orderByReference() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessOrderByReference(o.ctx, req, o.odp) })
+			func() (proto.Message, error) {
+				o.commitStore()
+				return api.ProcessOrderByReference(o.ctx, req, o.odp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.OrderByReferenceRequest{},
 		PreProcess:   preProcessor,
 	}
+}
+
+func (o *Orders) commitStore() {
+	o.orderStore.Commit()
 }

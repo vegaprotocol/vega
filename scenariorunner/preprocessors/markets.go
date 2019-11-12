@@ -39,7 +39,10 @@ func (m *Markets) marketByID() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessMarketByID(m.ctx, req, m.mdp) })
+			func() (proto.Message, error) {
+				m.commitStores()
+				return api.ProcessMarketByID(m.ctx, req, m.mdp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.MarketByIDRequest{},
@@ -54,7 +57,10 @@ func (m *Markets) markets() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessMarkets(m.ctx, req, m.mdp) })
+			func() (proto.Message, error) {
+				m.commitStores()
+				return api.ProcessMarkets(m.ctx, req, m.mdp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &empty.Empty{},
@@ -69,10 +75,18 @@ func (m *Markets) marketDepth() *core.PreProcessor {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessMarketDepth(m.ctx, req, m.mdp, m.tdp) })
+			func() (proto.Message, error) {
+				m.commitStores()
+				return api.ProcessMarketDepth(m.ctx, req, m.mdp, m.tdp)
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.MarketDepthRequest{},
 		PreProcess:   preProcessor,
 	}
+}
+
+func (m *Markets) commitStores() {
+	m.marketStore.Commit()
+	m.orderStore.Commit()
 }
