@@ -54,6 +54,7 @@ steps:
     environment: {}
     commands:
       - find . -name '*.md' |sort
+      # Make sure the mdspell command matches the one in Makefile.
       - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'design/**/*.md'
     depends_on:
       - fetch
