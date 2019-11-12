@@ -48,6 +48,16 @@ steps:
     depends_on:
       - fetch
 
+  - name: markdownspellcheck
+    image: registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest
+    pull: always
+    environment: {}
+    commands:
+      - find . -name '*.md' |sort
+      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'design/**/*.md'
+    depends_on:
+      - fetch
+
   - name: docker
     image: docker:dind
     volumes:
