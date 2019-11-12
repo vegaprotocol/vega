@@ -196,13 +196,13 @@ steps:
 volumes:
   - name: dind
     host:
-      path: /var/lib/drone/volumes/dind
+      path: /var/lib/drone/volumes/trading-core/dind
   - name: dockersock
     host:
-      path: /var/lib/drone/volumes/dockersock
+      path: /var/lib/drone/volumes/trading-core/dockersock
   - name: gopkg
     host:
-      path: /var/lib/drone/volumes/gopkg
+      path: /var/lib/drone/volumes/trading-core/gopkg
 
 image_pull_secrets:
   - dockerconfig
