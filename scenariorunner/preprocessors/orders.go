@@ -6,22 +6,24 @@ import (
 	"code.vegaprotocol.io/vega/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/proto"
 )
 
 type Orders struct {
-	mappings map[string]*core.PreProcessor
+	orderStore *storage.Order
+	mappings   map[string]*core.PreProcessor
 }
 
-func NewOrders(ctx context.Context, odp api.OrderDataProvider) *Orders {
+func NewOrders(ctx context.Context, orderStore *storage.Order, odp api.OrderDataProvider) *Orders {
 	m := map[string]*core.PreProcessor{
 		"ordersbymarket":     ordersByMarket(ctx, odp),
 		"ordersbyparty":      ordersByParty(ctx, odp),
 		"orderbymarketandid": orderByMarketAndID(ctx, odp),
 		"orderbyreference":   orderByReference(ctx, odp),
 	}
-	return &Orders{m}
+	return &Orders{orderStore, m}
 }
 
 func (o *Orders) PreProcessors() map[string]*core.PreProcessor {

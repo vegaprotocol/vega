@@ -6,38 +6,38 @@ import (
 	"code.vegaprotocol.io/vega/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/proto"
 )
 
 type Trades struct {
-	mappings map[string]*core.PreProcessor
+	ctx        context.Context
+	tradeStore *storage.Trade
+	tdp        api.TradeDataProvider
 }
 
-func NewTrades(ctx context.Context, tdp api.TradeDataProvider) *Trades {
-
-	m := map[string]*core.PreProcessor{
-		"tradesbymarket": tradesByMarket(ctx, tdp),
-		"tradesbyparty":  tradesByParty(ctx, tdp),
-		"tradesbyorder":  tradesByOrder(ctx, tdp),
-		"lasttrade":      lastTrade(ctx, tdp),
-	}
-
-	return &Trades{m}
+func NewTrades(ctx context.Context, tradeStore *storage.Trade, tdp api.TradeDataProvider) *Trades {
+	return &Trades{ctx, tradeStore, tdp}
 }
 
 func (t *Trades) PreProcessors() map[string]*core.PreProcessor {
-	return t.mappings
+	return map[string]*core.PreProcessor{
+		"tradesbymarket": t.tradesByMarket(),
+		"tradesbyparty":  t.tradesByParty(),
+		"tradesbyorder":  t.tradesByOrder(),
+		"lasttrade":      t.lastTrade(),
+	}
 }
 
-func tradesByMarket(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
+func (t *Trades) tradesByMarket() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.TradesByMarketRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessTradesByMarket(ctx, req, tdp) })
+			func() (proto.Message, error) { return api.ProcessTradesByMarket(t.ctx, req, t.tdp) })
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.TradesByMarketRequest{},
@@ -45,14 +45,14 @@ func tradesByMarket(ctx context.Context, tdp api.TradeDataProvider) *core.PrePro
 	}
 }
 
-func tradesByParty(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
+func (t *Trades) tradesByParty() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.TradesByPartyRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessTradesByParty(ctx, req, tdp) })
+			func() (proto.Message, error) { return api.ProcessTradesByParty(t.ctx, req, t.tdp) })
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.TradesByPartyRequest{},
@@ -60,14 +60,14 @@ func tradesByParty(ctx context.Context, tdp api.TradeDataProvider) *core.PreProc
 	}
 }
 
-func tradesByOrder(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
+func (t *Trades) tradesByOrder() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.TradesByOrderRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessTradesByOrder(ctx, req, tdp) })
+			func() (proto.Message, error) { return api.ProcessTradesByOrder(t.ctx, req, t.tdp) })
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.TradesByOrderRequest{},
@@ -75,14 +75,14 @@ func tradesByOrder(ctx context.Context, tdp api.TradeDataProvider) *core.PreProc
 	}
 }
 
-func lastTrade(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
+func (t *Trades) lastTrade() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.LastTradeRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessLastTrade(ctx, req, tdp) })
+			func() (proto.Message, error) { return api.ProcessLastTrade(t.ctx, req, t.tdp) })
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.LastTradeRequest{},

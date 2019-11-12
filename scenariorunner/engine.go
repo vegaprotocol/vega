@@ -33,10 +33,9 @@ func NewEngine(config Config) (*Engine, error) {
 		return nil, err
 	}
 	execution := preprocessors.NewExecution(d.execution)
-	marketDepth := preprocessors.NewMarketDepth(d.ctx, d.marketService, d.tradeService)
-	markets := preprocessors.NewMarkets(d.ctx, d.marketService)
-	orders := preprocessors.NewOrders(d.ctx, d.orderStore)
-	trades := preprocessors.NewTrades(d.ctx, d.tradeService)
+	markets := preprocessors.NewMarkets(d.ctx, d.marketStore, d.orderStore, d.marketService, d.tradeService)
+	orders := preprocessors.NewOrders(d.ctx, d.orderStore, d.orderStore)
+	trades := preprocessors.NewTrades(d.ctx, d.tradeStore, d.tradeService)
 
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.marketService, d.tradeStore, d.orderStore, d.partyStore, d.marketStore)
 
@@ -50,7 +49,6 @@ func NewEngine(config Config) (*Engine, error) {
 		internalProvider: internal,
 		providers: []core.PreProcessorProvider{
 			execution,
-			marketDepth,
 			markets,
 			orders,
 			trades,
