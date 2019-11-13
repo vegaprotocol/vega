@@ -156,6 +156,8 @@ steps:
     when:
       branch:
         - develop
+      event:
+        - push
 
   - name: publish_docker
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline-docker:stable
