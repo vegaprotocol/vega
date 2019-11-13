@@ -209,6 +209,20 @@ gettools_build:
 gettools_develop:
 	@./script/gettools.sh develop
 
+# Make sure the mdspell command matches the one in .drone.yml.
+spellcheck: ## Run markdown spellcheck container
+	@docker run --rm -ti \
+		--entrypoint mdspell \
+		-v "$(PWD):/src" \
+		registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest \
+			--en-gb \
+			--ignore-acronyms \
+			--ignore-numbers \
+			--no-suggestions \
+			--report \
+			'*.md' \
+			'design/**/*.md'
+
 clean: ## Remove previous build
 	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app-dbg" ; done
 
