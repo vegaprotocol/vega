@@ -48,6 +48,17 @@ steps:
     depends_on:
       - fetch
 
+  - name: markdownspellcheck
+    image: registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest
+    pull: always
+    environment: {}
+    commands:
+      - find . -name '*.md' |sort
+      # Make sure the mdspell command matches the one in Makefile.
+      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'design/**/*.md'
+    depends_on:
+      - fetch
+
   - name: docker
     image: docker:dind
     volumes:
@@ -186,13 +197,13 @@ steps:
 volumes:
   - name: dind
     host:
-      path: /var/lib/drone/volumes/dind
+      path: /var/lib/drone/volumes/trading-core/dind
   - name: dockersock
     host:
-      path: /var/lib/drone/volumes/dockersock
+      path: /var/lib/drone/volumes/trading-core/dockersock
   - name: gopkg
     host:
-      path: /var/lib/drone/volumes/gopkg
+      path: /var/lib/drone/volumes/trading-core/gopkg
 
 image_pull_secrets:
   - dockerconfig

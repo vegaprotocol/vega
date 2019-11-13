@@ -5,9 +5,9 @@ This document is a guide for new Go developers.
 It starts with a vanilla Linux or MacOSX installation, and runs through all the
 steps needed to get a working single-node Vega system.
 
-A Vega system backend requires Vega (from the `trading-core` repo) and
+A Vega system back end requires Vega (from the `trading-core` repo) and
 `tendermint` (third party open source software providing Byzantine Fault
-Tolerant (BFT) state machine replication, ie Blockchain).
+Tolerant (BFT) state machine replication, i.e. blockchain).
 
 ## System packages
 
@@ -16,7 +16,7 @@ The following OS packages are required:
 * `bash` (or a shell of your choice, but this document assumes `bash`)
 * `make`
 
-## Installing golang
+## Installing Golang
 
 **Required version: 1.11.13**
 
@@ -70,9 +70,9 @@ export PATH="$PATH:$GOPATH/bin"
 export GO111MODULE=on # or auto
 ```
 
-## Gitlab Auth
+## GitLab Authentication
 
-Either use your existing Gitlab account, or create a Vega-specific one.
+Either use your existing GitLab account, or create a Vega-specific one.
 
 If not already present (in `$HOME/.ssh`), create an RSA keypair:
 
@@ -80,13 +80,13 @@ If not already present (in `$HOME/.ssh`), create an RSA keypair:
 ssh-keygen -t rsa -b 4096
 ```
 
-Add the public key (found in `$HOME/.ssh/id_rsa.pub`) to Gitlab:
+Add the public key (found in `$HOME/.ssh/id_rsa.pub`) to GitLab:
 https://gitlab.com/profile/keys
 
 ## Get trading-core
 
 The `trading-core` repo uses Vega's `quant` repo. Ensure Go knows to use `ssh`
-instead of `https` when accessing repositories stored at Gitlab:
+instead of `https` when accessing repositories stored at GitLab:
 
 ```bash
 git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
@@ -110,7 +110,7 @@ vega --version
 # hashes should match.
 ```
 
-## Get tendermint
+## Get Tendermint
 
 **Required version: 0.31.5**
 
@@ -122,25 +122,25 @@ communicate.
 It is quicker and easier to download a pre-built binary, rather than compiling
 from source.
 
-Download tendermint from https://github.com/tendermint/tendermint/releases/.
+Download Tendermint from https://github.com/tendermint/tendermint/releases/.
 Install the binary somewhere on `$PATH`. If needed, see also the
 [Tendermint installation guide](https://tendermint.com/docs/introduction/install.html).
 
-## Running vega
+## Running Vega
 
-* To create a new config file, use:
+* To create a new configuration file, use:
 
   ```bash
   vega init -f
   ```
-* To remove vega store content then run a vega node, use:
+* To remove Vega store content then run a Vega node, use:
 
   ```bash
   rm -rf "$HOME/.vega/"*store
   vega node
   ```
 
-## Running tendermint
+## Running Tendermint
 
 * The version must match the required version (above). To check the version,
   use:
@@ -148,18 +148,18 @@ Install the binary somewhere on `$PATH`. If needed, see also the
   tendermint version
   ```
 
-* To create a new config file, use:
+* To create a new configuration file, use:
   ```bash
   tendermint init
   ```
-* To remove chain data (go back to genesis) then run a tendermint node, use:
+* To remove chain data (go back to genesis) then run a Tendermint node, use:
 
   ```bash
   tendermint unsafe_reset_all
   tendermint node
   ```
 * Optional: To run a multi-node network, use `tendermint testnet` to generate
-  config files for nodes.
+  configuration files for nodes.
 
 ## Developing trading-core
 
@@ -171,9 +171,9 @@ make gqlgen_check # warning: This may take a minute, with no output.
 make proto_check
 ```
 
-## Running traderbot
+## Running Traderbot
 
-Clone traderbot from https://gitlab.com/vega-protocol/traderbot/ into
+Clone Traderbot from https://gitlab.com/vega-protocol/traderbot/ into
 `$GOPATH/src`.
 
 Build: `make install`
