@@ -180,106 +180,109 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 func TestMarshal(t *testing.T) {
 	expected := string(
 		`{
-		"metadata": {
-		  "instructionsProcessed": "2",
-		  "instructionsOmitted": "0",
-		  "tradesGenerated": "1",
-		  "processingTime": "3s",
-		  "finalMarketDepth": [
-			{
-			  "marketID": "Market1",
-			  "buy": [
+			"metadata": {
+			  "instructionsProcessed": "2",
+			  "instructionsOmitted": "0",
+			  "tradesGenerated": "1",
+			  "processingTime": "3s",
+			  "finalMarketDepth": [
 				{
-				  "price": "100",
-				  "numberOfOrders": "1",
-				  "volume": "3",
-				  "cumulativeVolume": "3"
-				}
-			  ],
-			  "sell": [
-				{
-				  "price": "100",
-				  "numberOfOrders": "1",
-				  "volume": "3",
-				  "cumulativeVolume": "3"
+				  "marketID": "Market1",
+				  "buy": [
+					{
+					  "price": "100",
+					  "numberOfOrders": "1",
+					  "volume": "3",
+					  "cumulativeVolume": "3"
+					}
+				  ],
+				  "sell": [
+					{
+					  "price": "100",
+					  "numberOfOrders": "1",
+					  "volume": "3",
+					  "cumulativeVolume": "3"
+					}
+				  ]
 				}
 			  ]
-			}
-		  ]
-		},
-		"results": [
-		  {
-			"instruction": {
-			  "description": "",
-			  "request": "SUBMIT_ORDER",
-			  "message": {
-				"@type": "api.SubmitOrderRequest",
-				"submission": {
-				  "id": "",
-				  "marketID": "Market1",
-				  "partyID": "trader1",
+			},
+			"results": [
+			  {
+				"instruction": {
+				  "description": "",
+				  "request": "SUBMIT_ORDER",
+				  "message": {
+					"@type": "api.SubmitOrderRequest",
+					"submission": {
+					  "id": "",
+					  "marketID": "Market1",
+					  "partyID": "trader1",
+					  "price": "100",
+					  "size": "3",
+					  "side": "Sell",
+					  "TimeInForce": "GTC",
+					  "expiresAt": "1924991999000000000",
+					  "type": "LIMIT"
+					},
+					"token": ""
+				  }
+				},
+				"error": "",
+				"response": {
+				  "@type": "vega.PendingOrder",
+				  "reference": "",
 				  "price": "100",
-				  "size": "3",
+				  "TimeInForce": "GTC",
 				  "side": "Sell",
-				  "TimeInForce": "GTC",
-				  "expiresAt": "1924991999000000000",
-				  "type": "LIMIT"
-				},
-				"token": ""
-			  }
-			},
-			"error": "",
-			"response": {
-			  "@type": "vega.PendingOrder",
-			  "reference": "",
-			  "price": "100",
-			  "TimeInForce": "GTC",
-			  "side": "Sell",
-			  "marketID": "Market1",
-			  "size": "3",
-			  "partyID": "trader1",
-			  "status": "Active",
-			  "id": "order1",
-			  "type": "LIMIT"
-			}
-		  },
-		  {
-			"instruction": {
-			  "description": "",
-			  "request": "SUBMIT_ORDER",
-			  "message": {
-				"@type": "api.SubmitOrderRequest",
-				"submission": {
-				  "id": "",
 				  "marketID": "Market1",
-				  "partyID": "trader2",
-				  "price": "100",
 				  "size": "3",
-				  "side": "Buy",
-				  "TimeInForce": "GTC",
-				  "expiresAt": "1924991999000000000",
+				  "partyID": "trader1",
+				  "status": "Active",
+				  "id": "order1",
 				  "type": "LIMIT"
+				}
+			  },
+			  {
+				"instruction": {
+				  "description": "",
+				  "request": "SUBMIT_ORDER",
+				  "message": {
+					"@type": "api.SubmitOrderRequest",
+					"submission": {
+					  "id": "",
+					  "marketID": "Market1",
+					  "partyID": "trader2",
+					  "price": "100",
+					  "size": "3",
+					  "side": "Buy",
+					  "TimeInForce": "GTC",
+					  "expiresAt": "1924991999000000000",
+					  "type": "LIMIT"
+					},
+					"token": ""
+				  }
 				},
-				"token": ""
+				"error": "",
+				"response": {
+				  "@type": "vega.PendingOrder",
+				  "reference": "",
+				  "price": "100",
+				  "TimeInForce": "GTC",
+				  "side": "Buy",
+				  "marketID": "Market1",
+				  "size": "3",
+				  "partyID": "trader2",
+				  "status": "Active",
+				  "id": "order2",
+				  "type": "LIMIT"
+				}
 			  }
-			},
-			"error": "",
-			"response": {
-			  "@type": "vega.PendingOrder",
-			  "reference": "",
-			  "price": "100",
-			  "TimeInForce": "GTC",
-			  "side": "Buy",
-			  "marketID": "Market1",
-			  "size": "3",
-			  "partyID": "trader2",
-			  "status": "Active",
-			  "id": "order2",
-			  "type": "LIMIT"
-			}
-		  }
-		]
-	  }`)
+			],
+			"initialState": null,
+			"finalState": null,
+			"config": null
+		  }`)
 
 	instr1, err := core.NewInstruction(
 		core.RequestType_SUBMIT_ORDER,

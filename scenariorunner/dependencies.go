@@ -8,9 +8,12 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/vegatime"
 
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -105,4 +108,14 @@ type dependencies struct {
 	orderStore  *storage.Order
 	tradeStore  *storage.Trade
 	marketStore *storage.Market
+}
+
+func NewDefaultConfig() core.Config {
+	return core.Config{
+		ProtocolTime:                &timestamp.Timestamp{Seconds: 1546416000, Nanos: 0}, //Corresponds to 2/1/2019 8:00am UTC
+		AdvanceTimeAfterInstruction: true,
+		TimeDelta:                   ptypes.DurationProto(time.Nanosecond),
+		OmitUnsupportedInstructions: true,
+		OmitInvalidInstructions:     true,
+	}
 }

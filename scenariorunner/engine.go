@@ -17,7 +17,7 @@ var (
 )
 
 type Engine struct {
-	Config           Config
+	Config           core.Config
 	summaryGenerator *core.SummaryGenerator
 	internalProvider *internalProvider
 	providers        []core.PreProcessorProvider
@@ -25,7 +25,7 @@ type Engine struct {
 }
 
 // NewEngine returns a pointer to new instance of scenario runner
-func NewEngine(config Config) (*Engine, error) {
+func NewEngine(config core.Config) (*Engine, error) {
 
 	d, err := getDependencies()
 	if err != nil {
@@ -39,8 +39,12 @@ func NewEngine(config Config) (*Engine, error) {
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore)
 
 	internal := newInternalProvider(d.vegaTime, summaryGenerator)
+	time, err := ptypes.Timestamp(config.ProtocolTime)
+	if err != nil {
+		return nil, err
+	}
 
-	internal.SetTime(config.ProtocolTime)
+	internal.SetTime(time)
 
 	return &Engine{
 		Config:           config,
@@ -81,6 +85,15 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 		return nil, err
 	}
 
+	initialState, err := e.summaryGenerator.ProtocolSummary(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	duration, err := ptypes.Duration(e.Config.TimeDelta)
+	if err != nil {
+		return nil, err
+	}
 	//TODO (WG 08/11/2019): Split into 3 separate loops (check if instruction supported, check if instructions valid, check if instruction processed w/o errors) to fail early
 	for i, instr := range instrSet.Instructions {
 		preProcessor, ok := preProcessors[instr.Request]
@@ -113,14 +126,17 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 		results[i] = res
 		processed++
 		if e.Config.AdvanceTimeAfterInstruction {
-			err := e.internalProvider.AdvanceTime(e.Config.AdvanceDuration)
+			err := e.internalProvider.AdvanceTime(duration)
 			if err != nil {
 				return nil, err
 			}
 		}
 
 	}
-
+	finalState, err := e.summaryGenerator.ProtocolSummary(nil)
+	if err != nil {
+		return nil, err
+	}
 	summary, err := e.ExtractData()
 	if err != nil {
 		return nil, err
@@ -139,8 +155,10 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 	e.tradesGenerated = totalTrades
 
 	return &core.ResultSet{
-		Metadata: md,
-		Results:  results,
+		Metadata:     md,
+		Results:      results,
+		InitialState: initialState.Summary,
+		FinalState:   finalState.Summary,
 	}, errs.ErrorOrNil()
 }
 

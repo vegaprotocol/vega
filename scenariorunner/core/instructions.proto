@@ -37,6 +37,9 @@ message Metadata {
 message ResultSet {
     Metadata metadata = 1;
     repeated InstructionResult results = 2;
+    ProtocolSummary initialState = 3;
+    ProtocolSummary finalState = 4;
+    Config config = 5;
     
 }
 
@@ -47,15 +50,12 @@ message ProtocolSummaryResponse {
 message ProtocolSummary {
     repeated MarketSummary markets = 1;
     repeated vega.Party parties = 2;
-    ProtocolSummary initialState = 3;
-    ProtocolSummary finalState = 4;
-    Config config = 5;
 }
 
 message Config {
     google.protobuf.Timestamp protocolTime = 1;
 	bool advanceTimeAfterInstruction = 2;
-	google.protobuf.Duration advanceDuration = 3;            
+	google.protobuf.Duration timeDelta = 3;            
 	bool omitUnsupportedInstructions = 4; 
 	bool omitInvalidInstructions = 5;
 }
