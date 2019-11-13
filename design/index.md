@@ -16,5 +16,5 @@ Much of the application lives in the /internal directory. Each sub-directory is 
 
 In order to document the design, each package should have a single markdown file in the /design directory
 
-1. Matching package (matching.md)
-2. Position package (positions.md)
+1. [Matching package](matching.md)
+2. [Position package](positions.md)
