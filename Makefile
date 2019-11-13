@@ -223,6 +223,9 @@ spellcheck: ## Run markdown spellcheck container
 			'*.md' \
 			'design/**/*.md'
 
+staticcheck: ## Run statick analysis checks
+	@staticcheck ./...
+
 clean: ## Remove previous build
 	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app-dbg" ; done
 

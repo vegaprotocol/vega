@@ -82,28 +82,39 @@ steps:
     volumes:
       - name: gopkg
         path: /go/pkg
+    environment: {}
+    commands:
+      - make test
+    depends_on:
+      - build
+
+  # Tests to be run on merge requests.
+  - name: mergerequest
+    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
+    volumes:
+      - name: gopkg
+        path: /go/pkg
     environment:
-      CGO_ENABLED: "0"
-      GO111MODULE: "on"
-      GOARCH: amd64
-      GOOS: linux
       GITLAB_API_TOKEN:
         from_secret: GITLAB_API_TOKEN
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      - make test
       # More small checks. Run all, instead of exitng after first failure.
       - code=0
       - make print_check || code=1
       - make rest_check || code=1
       - make proto_check || code=1
-      - bash script/diff_graphqlschema.sh || code=1  # requires GITLAB_API_TOKEN
+      - bash script/diff_graphqlschema.sh || code=1  # requires GITLAB_API_TOKEN and SLACK_HOOK_URL
       - /usr/local/bin/multilint || code=1
       - make lint || true  # Ignore lint failure for now (see #196)
+      - make staticcheck || true  # Ignore failures until they're all fixed.
       - exit "$code"
     depends_on:
-      - build
+      - test
+    when:
+      event:
+        - pull_request
 
   # Tests to be run only on *main* branches.
   - name: test_heavy
@@ -111,17 +122,13 @@ steps:
     volumes:
       - name: gopkg
         path: /go/pkg
-    environment:
-      CGO_ENABLED: "0"
-      GO111MODULE: "on"
-      GOARCH: amd64
-      GOOS: linux
+    environment: {}
     commands:
       - make vet
       - make race
       - make msan
     depends_on:
-      - build
+      - test
     when:
       ref:
         - refs/heads/master
@@ -160,6 +167,8 @@ steps:
     when:
       branch:
         - develop
+      event:
+        - push
 
   - name: publish_docker
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline-docker:stable
