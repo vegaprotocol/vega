@@ -20,7 +20,7 @@ var (
 	// Version specifies the version used to build the application. Passed in via ldflags
 	Version = "unknown"
 	// Revision specifies app variation that was built to work with the VEGA version above
-	Revision = 0
+	Revision = "unknown"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func info(app *cli.App) {
 	app.Name = "scenario-runner-cli"
 	app.Usage = "Interact with a Vega node running without the consensus layer via command line."
 	app.Description = "Command line tool interacting with a Vega node running without the consensus layer. It allows submission of instructions in bulk and persistence of respones along with the accompanying metadata."
-	app.Version = fmt.Sprintf("%v (%v) / %d", Version, VersionHash, Revision)
+	app.Version = fmt.Sprintf("%v for VEGA v.%v (%v)", Revision, Version, VersionHash)
 }
 
 func commands(app *cli.App) {
