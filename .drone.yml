@@ -117,7 +117,7 @@ steps:
       - make race
       - make msan
     depends_on:
-      - mergerequest
+      - test
     when:
       ref:
         - refs/heads/master
@@ -151,6 +151,7 @@ steps:
           echo ;
         done'
     depends_on:
+      - test
       - test_heavy
     when:
       branch:
@@ -181,6 +182,7 @@ steps:
       - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
       - for app in $$apps ; do rm -f "./$app"; done
     depends_on:
+      - test
       - test_heavy
     when:
       ref:
