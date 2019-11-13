@@ -20,10 +20,10 @@ func NewMarkets(ctx context.Context, marketStore *storage.Market) *Markets {
 	return &Markets{ctx, marketStore}
 }
 
-func (m *Markets) PreProcessors() map[string]*core.PreProcessor {
-	return map[string]*core.PreProcessor{
-		"marketbyid": m.marketByID(),
-		"markets":    m.markets(),
+func (m *Markets) PreProcessors() map[core.RequestType]*core.PreProcessor {
+	return map[core.RequestType]*core.PreProcessor{
+		core.RequestType_MARKET_BY_ID: m.marketByID(),
+		core.RequestType_MARKETS:      m.markets(),
 	}
 }
 

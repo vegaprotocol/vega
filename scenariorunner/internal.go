@@ -19,12 +19,12 @@ func newInternalProvider(vegaTime *vegatime.Svc, summaryGenerator *core.SummaryG
 	return &internalProvider{vegaTime, summaryGenerator}
 }
 
-func (p *internalProvider) PreProcessors() map[string]*core.PreProcessor {
-	return map[string]*core.PreProcessor{
-		"settime":         p.set(),
-		"advancetime":     p.advance(),
-		"marketsummary":   p.marketSummary(),
-		"protocolsummary": p.protocolSummary(),
+func (p *internalProvider) PreProcessors() map[core.RequestType]*core.PreProcessor {
+	return map[core.RequestType]*core.PreProcessor{
+		core.RequestType_SET_TIME:         p.set(),
+		core.RequestType_ADVANCE_TIME:     p.advance(),
+		core.RequestType_MARKET_SUMMARY:   p.marketSummary(),
+		core.RequestType_PROTOCOL_SUMMARY: p.protocolSummary(),
 	}
 }
 

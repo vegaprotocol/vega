@@ -9,22 +9,22 @@ import (
 )
 
 type Execution struct {
-	mappings map[string]*core.PreProcessor
+	mappings map[core.RequestType]*core.PreProcessor
 }
 
 func NewExecution(e *execution.Engine) *Execution {
-	m := map[string]*core.PreProcessor{
-		"notifytraderaccount": notifyTraderAccount(e),
-		"submitorder":         submitOrder(e),
-		"cancelorder":         cancelOrder(e),
-		"amendorder":          amendOrder(e),
-		"withdraw":            withdraw(e),
+	m := map[core.RequestType]*core.PreProcessor{
+		core.RequestType_NOTIFY_TRADER_ACCOUNT: notifyTraderAccount(e),
+		core.RequestType_SUBMIT_ORDER:          submitOrder(e),
+		core.RequestType_CANCEL_ORDER:          cancelOrder(e),
+		core.RequestType_AMEND_ORDER:           amendOrder(e),
+		core.RequestType_WITHDRAW:              withdraw(e),
 	}
 
 	return &Execution{m}
 }
 
-func (e *Execution) PreProcessors() map[string]*core.PreProcessor {
+func (e *Execution) PreProcessors() map[core.RequestType]*core.PreProcessor {
 	return e.mappings
 }
 

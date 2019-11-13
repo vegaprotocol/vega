@@ -2,7 +2,7 @@
   "description": "Example set of instructions with two parties submiting matching orders on the same market followed by query retrieving trades from that market - expecting one trade",
   "instructions": [
     {
-      "request": "NotifyTraderAccount",
+      "request": "NOTIFY_TRADER_ACCOUNT",
       "message": {
         "@type": "vega.NotifyTraderAccount",
         "traderID": "trader1",
@@ -10,7 +10,7 @@
       }
     },
     {
-      "request": "SubmitOrder",
+      "request": "SUBMIT_ORDER",
       "message": {
         "@type": "vega.Order",
         "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
@@ -24,7 +24,7 @@
       }
     },
     {
-      "request": "NotifyTraderAccount",
+      "request": "NOTIFY_TRADER_ACCOUNT",
       "message": {
         "@type": "vega.NotifyTraderAccount",
         "traderID": "trader2",
@@ -32,7 +32,7 @@
       }
     },
     {
-      "request": "SubmitOrder",
+      "request": "SUBMIT_ORDER",
       "message": {
         "@type": "vega.Order",
         "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
@@ -46,14 +46,14 @@
       }
     },
     {
-      "request": "TradesByMarket",
+      "request": "TRADES_BY_MARKET",
       "message": {
         "@type": "api.TradesByMarketRequest",
         "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
       }
     },
     {
-      "request": "NotifyTraderAccount",
+      "request": "NOTIFY_TRADER_ACCOUNT",
       "message": {
         "@type": "vega.NotifyTraderAccount",
         "traderID": "trader3",
@@ -61,7 +61,7 @@
       }
     },
     {
-      "request": "SubmitOrder",
+      "request": "SUBMIT_ORDER",
       "message": {
         "@type": "vega.Order",
         "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",

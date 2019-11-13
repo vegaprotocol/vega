@@ -37,9 +37,8 @@ func TestReadFiles(t *testing.T) {
 }
 
 func TestUnmarshallApiTypes(t *testing.T) {
-
 	instr1, err := core.NewInstruction(
-		"trading.NotifyTraderAccount",
+		core.RequestType_NOTIFY_TRADER_ACCOUNT,
 		&api.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
 				TraderID: "trader1",
@@ -50,7 +49,7 @@ func TestUnmarshallApiTypes(t *testing.T) {
 		log.Fatalln("Failed to create a new instruction: ", err)
 	}
 	instr2, err := core.NewInstruction(
-		"trading.SubmitOrder",
+		core.RequestType_SUBMIT_ORDER,
 		&api.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
 				MarketID:    "Market1",
@@ -77,7 +76,7 @@ func TestUnmarshallApiTypes(t *testing.T) {
 	"description": "Test instructions",
 	"instructions": [
 	{
-	"request": "trading.NotifyTraderAccount",
+	"request": "NOTIFY_TRADER_ACCOUNT",
 	"message": {
 		"@type": "api.NotifyTraderAccountRequest",
 		"notif": {
@@ -87,7 +86,7 @@ func TestUnmarshallApiTypes(t *testing.T) {
 	},
 	{
 	"description": "Submit a sell order",
-	"request": "trading.SubmitOrder",
+	"request": "SUBMIT_ORDER",
 	"message": {
 		"@type": "api.SubmitOrderRequest",
 		"submission": {
@@ -113,7 +112,7 @@ func TestUnmarshallApiTypes(t *testing.T) {
 func TestUnmarshallInternalTypes(t *testing.T) {
 
 	instr1, err := core.NewInstruction(
-		"NotifyTraderAccount",
+		core.RequestType_NOTIFY_TRADER_ACCOUNT,
 		&types.NotifyTraderAccount{
 			TraderID: "trader1",
 		})
@@ -122,7 +121,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		log.Fatalln("Failed to create a new instruction: ", err)
 	}
 	instr2, err := core.NewInstruction(
-		"SubmitOrder",
+		core.RequestType_SUBMIT_ORDER,
 		&types.Order{
 			MarketID:    "Market1",
 			PartyID:     "trader1",
@@ -149,7 +148,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		"instructions": [
 		  {
 			"description": "",
-			"request": "NotifyTraderAccount",
+			"request": "NOTIFY_TRADER_ACCOUNT",
 			"message": {
 			  "@type": "vega.NotifyTraderAccount",
 			  "traderID": "trader1"
@@ -157,7 +156,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		  },
 		  {
 			"description": "Submit a sell order",
-			"request": "SubmitOrder",
+			"request": "SUBMIT_ORDER",
 			"message": {
 			  "@type": "vega.Order",
 			  "marketID": "Market1",
@@ -212,7 +211,7 @@ func TestMarshal(t *testing.T) {
 		  {
 			"instruction": {
 			  "description": "",
-			  "request": "trading.SubmitOrder",
+			  "request": "SUBMIT_ORDER",
 			  "message": {
 				"@type": "api.SubmitOrderRequest",
 				"submission": {
@@ -247,7 +246,7 @@ func TestMarshal(t *testing.T) {
 		  {
 			"instruction": {
 			  "description": "",
-			  "request": "trading.SubmitOrder",
+			  "request": "SUBMIT_ORDER",
 			  "message": {
 				"@type": "api.SubmitOrderRequest",
 				"submission": {
@@ -283,7 +282,7 @@ func TestMarshal(t *testing.T) {
 	  }`)
 
 	instr1, err := core.NewInstruction(
-		"trading.SubmitOrder",
+		core.RequestType_SUBMIT_ORDER,
 		&api.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
 				MarketID:    "Market1",
@@ -300,7 +299,7 @@ func TestMarshal(t *testing.T) {
 	}
 
 	instr2, err := core.NewInstruction(
-		"trading.SubmitOrder",
+		core.RequestType_SUBMIT_ORDER,
 		&api.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
 				MarketID:    "Market1",

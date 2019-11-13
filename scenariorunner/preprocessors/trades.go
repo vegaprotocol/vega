@@ -19,12 +19,12 @@ func NewTrades(ctx context.Context, tradeStore *storage.Trade) *Trades {
 	return &Trades{ctx, tradeStore}
 }
 
-func (t *Trades) PreProcessors() map[string]*core.PreProcessor {
-	return map[string]*core.PreProcessor{
-		"tradesbymarket": t.tradesByMarket(),
-		"tradesbyparty":  t.tradesByParty(),
-		"tradesbyorder":  t.tradesByOrder(),
-		"lasttrade":      t.lastTrade(),
+func (t *Trades) PreProcessors() map[core.RequestType]*core.PreProcessor {
+	return map[core.RequestType]*core.PreProcessor{
+		core.RequestType_TRADES_BY_MARKET: t.tradesByMarket(),
+		core.RequestType_TRADES_BY_PARTY:  t.tradesByParty(),
+		core.RequestType_TRADES_BY_ORDER:  t.tradesByOrder(),
+		core.RequestType_LAST_TRADE:       t.lastTrade(),
 	}
 }
 

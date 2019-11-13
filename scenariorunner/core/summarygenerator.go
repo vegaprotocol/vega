@@ -63,8 +63,10 @@ func (s *SummaryGenerator) ProtocolSummary(pagination *protoapi.Pagination) (*Pr
 	}
 
 	return &ProtocolSummaryResponse{
-		Markets: marketSummaries,
-		Parties: parties,
+		Summary: &ProtocolSummary{
+			Markets: marketSummaries,
+			Parties: parties,
+		},
 	}, nil
 }
 

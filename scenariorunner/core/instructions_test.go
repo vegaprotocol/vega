@@ -14,7 +14,7 @@ import (
 )
 
 func TestNewInstruction(t *testing.T) {
-	request := "testRequest"
+	request := core.RequestType_NOTIFY_TRADER_ACCOUNT
 	trader := "testTrader"
 	message := api.NotifyTraderAccountRequest{
 		Notif: &types.NotifyTraderAccount{
@@ -36,7 +36,7 @@ func TestNewInstruction(t *testing.T) {
 }
 
 func TestNewResult(t *testing.T) {
-	request := "testRequest"
+	request := core.RequestType_NOTIFY_TRADER_ACCOUNT
 	trader := "testTrader"
 	message := api.NotifyTraderAccountRequest{
 		Notif: &types.NotifyTraderAccount{
@@ -66,7 +66,7 @@ func TestNewResult(t *testing.T) {
 }
 
 func TestNewResultWithNilReposnse(t *testing.T) {
-	request := "testRequest"
+	request := core.RequestType_NOTIFY_TRADER_ACCOUNT
 	trader := "testTrader"
 	message := api.NotifyTraderAccountRequest{
 		Notif: &types.NotifyTraderAccount{
@@ -84,7 +84,7 @@ func TestNewResultWithNilReposnse(t *testing.T) {
 }
 
 func TestNewResultWithNilPointerReposnse(t *testing.T) {
-	request := "testRequest"
+	request := core.RequestType_NOTIFY_TRADER_ACCOUNT
 	trader := "testTrader"
 	message := api.NotifyTraderAccountRequest{
 		Notif: &types.NotifyTraderAccount{

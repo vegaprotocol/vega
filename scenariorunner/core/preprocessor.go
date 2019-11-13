@@ -10,5 +10,5 @@ type PreProcessor struct {
 }
 
 type PreProcessorProvider interface {
-	PreProcessors() map[string]*PreProcessor
+	PreProcessors() map[RequestType]*PreProcessor
 }

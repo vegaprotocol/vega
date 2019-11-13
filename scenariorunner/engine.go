@@ -2,7 +2,6 @@ package scenariorunner
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/proto"
@@ -56,8 +55,8 @@ func NewEngine(config Config) (*Engine, error) {
 	}, nil
 }
 
-func (e Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
-	maps := make(map[string]*core.PreProcessor)
+func (e Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
+	maps := make(map[core.RequestType]*core.PreProcessor)
 	for _, provider := range append(e.providers, e.internalProvider) {
 		m := provider.PreProcessors()
 		for k, v := range m {
@@ -84,8 +83,7 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 
 	//TODO (WG 08/11/2019): Split into 3 separate loops (check if instruction supported, check if instructions valid, check if instruction processed w/o errors) to fail early
 	for i, instr := range instrSet.Instructions {
-		// TODO (WG 01/11/2019) matching by lower case by convention only, enforce with a custom type
-		preProcessor, ok := preProcessors[strings.ToLower(instr.Request)]
+		preProcessor, ok := preProcessors[instr.Request]
 		if !ok {
 			if !e.Config.OmitUnsupportedInstructions {
 				return nil, errs.ErrorOrNil()
@@ -150,9 +148,9 @@ func (e Engine) ExtractData() (*core.ProtocolSummaryResponse, error) {
 	return e.summaryGenerator.ProtocolSummary(nil)
 }
 
-func sumTrades(summary core.ProtocolSummaryResponse) uint64 {
+func sumTrades(response core.ProtocolSummaryResponse) uint64 {
 	var trades int
-	for _, mkt := range summary.Markets {
+	for _, mkt := range response.Summary.Markets {
 		if mkt != nil {
 			trades += +len(mkt.Trades)
 		}
@@ -162,9 +160,9 @@ func sumTrades(summary core.ProtocolSummaryResponse) uint64 {
 	return uint64(trades)
 }
 
-func marketDepths(summary core.ProtocolSummaryResponse) []*proto.MarketDepth {
-	d := make([]*proto.MarketDepth, len(summary.Markets))
-	for i, mkt := range summary.Markets {
+func marketDepths(response core.ProtocolSummaryResponse) []*proto.MarketDepth {
+	d := make([]*proto.MarketDepth, len(response.Summary.Markets))
+	for i, mkt := range response.Summary.Markets {
 		if mkt != nil {
 			d[i] = mkt.MarketDepth
 		}

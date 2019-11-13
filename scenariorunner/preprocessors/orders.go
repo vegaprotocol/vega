@@ -19,13 +19,13 @@ func NewOrders(ctx context.Context, orderStore *storage.Order) *Orders {
 	return &Orders{ctx, orderStore}
 }
 
-func (o *Orders) PreProcessors() map[string]*core.PreProcessor {
-	return map[string]*core.PreProcessor{
-		"ordersbymarket":     o.ordersByMarket(),
-		"ordersbyparty":      o.ordersByParty(),
-		"orderbymarketandid": o.orderByMarketAndID(),
-		"orderbyreference":   o.orderByReference(),
-		"marketdepth":        o.marketDepth(),
+func (o *Orders) PreProcessors() map[core.RequestType]*core.PreProcessor {
+	return map[core.RequestType]*core.PreProcessor{
+		core.RequestType_ORDERS_BY_MARKET:       o.ordersByMarket(),
+		core.RequestType_ORDERS_BY_PARTY:        o.ordersByParty(),
+		core.RequestType_ORDER_BY_MARKET_AND_ID: o.orderByMarketAndID(),
+		core.RequestType_ORDER_BY_REFERENCE:     o.orderByReference(),
+		core.RequestType_MARKET_DEPTH:           o.marketDepth(),
 	}
 }
 
