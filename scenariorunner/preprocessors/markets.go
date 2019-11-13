@@ -3,7 +3,6 @@ package preprocessors
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
@@ -15,20 +14,16 @@ import (
 type Markets struct {
 	ctx         context.Context
 	marketStore *storage.Market
-	orderStore  *storage.Order
-	mdp         api.MarketDataProvider
-	tdp         api.TradeDataProvider
 }
 
-func NewMarkets(ctx context.Context, marketStore *storage.Market, orderStore *storage.Order, mdp api.MarketDataProvider, tdp api.TradeDataProvider) *Markets {
-	return &Markets{ctx, marketStore, orderStore, mdp, tdp}
+func NewMarkets(ctx context.Context, marketStore *storage.Market) *Markets {
+	return &Markets{ctx, marketStore}
 }
 
 func (m *Markets) PreProcessors() map[string]*core.PreProcessor {
 	return map[string]*core.PreProcessor{
-		"marketbyid":  m.marketByID(),
-		"markets":     m.markets(),
-		"marketdepth": m.marketDepth(),
+		"marketbyid": m.marketByID(),
+		"markets":    m.markets(),
 	}
 }
 
@@ -40,8 +35,8 @@ func (m *Markets) marketByID() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				m.commitStores()
-				return api.ProcessMarketByID(m.ctx, req, m.mdp)
+				m.commitStore()
+				return m.marketStore.GetByID(req.MarketID)
 			})
 	}
 	return &core.PreProcessor{
@@ -58,8 +53,9 @@ func (m *Markets) markets() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				m.commitStores()
-				return api.ProcessMarkets(m.ctx, req, m.mdp)
+				m.commitStore()
+				resp, err := m.marketStore.GetAll()
+				return &protoapi.MarketsResponse{Markets: resp}, err
 			})
 	}
 	return &core.PreProcessor{
@@ -68,25 +64,6 @@ func (m *Markets) markets() *core.PreProcessor {
 	}
 }
 
-func (m *Markets) marketDepth() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
-		req := &protoapi.MarketDepthRequest{}
-		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
-		}
-		return instr.PreProcess(
-			func() (proto.Message, error) {
-				m.commitStores()
-				return api.ProcessMarketDepth(m.ctx, req, m.mdp, m.tdp)
-			})
-	}
-	return &core.PreProcessor{
-		MessageShape: &protoapi.MarketDepthRequest{},
-		PreProcess:   preProcessor,
-	}
-}
-
-func (m *Markets) commitStores() {
+func (m *Markets) commitStore() {
 	m.marketStore.Commit()
-	m.orderStore.Commit()
 }

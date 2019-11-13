@@ -8,9 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/storage"
-	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/hashicorp/go-multierror"
@@ -39,10 +37,6 @@ func getDependencies() (*dependencies, error) {
 		errs = multierror.Append(errs, err)
 	}
 	tradeStore, err := storage.NewTrades(log, config.Storage, cancel)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
-	riskStore, err := storage.NewRisks(config.Storage)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
@@ -92,41 +86,23 @@ func getDependencies() (*dependencies, error) {
 		transferResponseStore,
 	)
 
-	tradeService, err := trades.NewService(log, config.Trades, tradeStore, riskStore)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
-	marketService, err := markets.NewService(log, config.Markets, marketStore, orderStore)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
-
-	err = errs.ErrorOrNil()
-	if err != nil {
-		return nil, err
-	}
-
 	return &dependencies{
-		ctx:           ctx,
-		vegaTime:      timeService,
-		execution:     engine,
-		partyStore:    partyStore,
-		orderStore:    orderStore,
-		tradeStore:    tradeStore,
-		marketStore:   marketStore,
-		tradeService:  tradeService,
-		marketService: marketService,
+		ctx:         ctx,
+		vegaTime:    timeService,
+		execution:   engine,
+		partyStore:  partyStore,
+		orderStore:  orderStore,
+		tradeStore:  tradeStore,
+		marketStore: marketStore,
 	}, nil
 }
 
 type dependencies struct {
-	ctx           context.Context
-	vegaTime      *vegatime.Svc
-	execution     *execution.Engine
-	partyStore    *storage.Party
-	orderStore    *storage.Order
-	tradeStore    *storage.Trade
-	marketStore   *storage.Market
-	tradeService  *trades.Svc
-	marketService *markets.Svc
+	ctx         context.Context
+	vegaTime    *vegatime.Svc
+	execution   *execution.Engine
+	partyStore  *storage.Party
+	orderStore  *storage.Order
+	tradeStore  *storage.Trade
+	marketStore *storage.Market
 }
