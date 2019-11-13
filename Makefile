@@ -210,12 +210,7 @@ gettools_develop:
 	@./script/gettools.sh develop
 
 staticcheck: ## Run statick analysis checks
-	@failed="" ; go list ./... | while read -r pkg ; do \
-		echo "staticcheck $$pkg" ; \
-		env GO111MODULE=auto staticcheck "$$pkg" || failed="$$failed $$pkg" ; \
-		test -n "$$failed" && echo "Failed so far: $$failed" ; \
-	done ; \
-	test -n "$$failed"
+	@staticcheck ./...
 
 clean: ## Remove previous build
 	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app-dbg" ; done
