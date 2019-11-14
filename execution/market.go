@@ -426,7 +426,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		// now let's get the transfers for MTM settlement
 		events := m.position.UpdateMarkPrice(m.markPrice)
-		settle := m.settlement.SettleOrder(m.markPrice, events)
+		settle := m.settlement.SettleMTM(m.markPrice, events)
 
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
@@ -665,7 +665,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// get the updated positions
 	evt := m.position.Positions()
 	// settle MTM, the positions have changed
-	settle := m.settlement.SettleOrder(m.markPrice, evt)
+	settle := m.settlement.SettleMTM(m.markPrice, evt)
 	// we're not interested in the events here, they're used for margin updates
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
