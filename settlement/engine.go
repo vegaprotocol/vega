@@ -105,7 +105,6 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 // each change in position has to be calculated using the exact price of the trade
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
-	defer e.mu.Unlock()
 	var (
 		buyerSize, sellerSize int64
 	)
@@ -140,11 +139,11 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		size:    -size,
 		newSize: sellerSize - size,
 	})
+	e.mu.Unlock()
 }
 
 func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) []events.Transfer {
 	e.mu.Lock()
-	defer e.mu.Unlock() // there is no additional cost to the defers anymore
 	tCap := e.transferCap(positions)
 	transfers := make([]events.Transfer, 0, tCap)
 	// roughly half of the transfers should be wins, half losses
@@ -206,6 +205,7 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
+	e.mu.Unlock()
 	return transfers
 }
 
@@ -224,7 +224,6 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
 // simplified settle call
 func (e *Engine) settleAll() ([]*types.Transfer, error) {
 	e.mu.Lock()
-	defer e.mu.Unlock()
 	// there should be as many positions as there are traders (obviously)
 	aggregated := make([]*types.Transfer, 0, len(e.pos))
 	// traders who are in the black should be appended (collect first).
@@ -247,6 +246,7 @@ func (e *Engine) settleAll() ([]*types.Transfer, error) {
 				logging.String("trader-id", party),
 				logging.Error(err),
 			)
+			e.mu.Unlock()
 			return nil, err
 		}
 		settlePos := &types.Transfer{
@@ -271,6 +271,7 @@ func (e *Engine) settleAll() ([]*types.Transfer, error) {
 	}
 	// append the traders in the black to the end
 	aggregated = append(aggregated, owed...)
+	e.mu.Unlock()
 	return aggregated, nil
 }
 
