@@ -420,6 +420,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
+			// add trade to settlement engine for correct MTM settlement of individual trades
+			m.settlement.AddTrade(trade)
 		}
 
 		// now let's get the transfers for MTM settlement
