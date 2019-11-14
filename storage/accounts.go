@@ -5,12 +5,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	cfgencoding "code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger"
-	"github.com/dgraph-io/badger/options"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
@@ -24,20 +22,16 @@ var (
 	ErrOwnerNotFound = errors.New("no accounts found for party")
 )
 
-// Total number of batches to save/process before we try
-// and garbage collect the BadgerDB value log files.
-const maxBatchesUntilValueLogGC = 300
-
 // Account represents a collateral account store
 type Account struct {
 	Config
 
 	log             *logging.Logger
 	badger          *badgerStore
+	batchCountForGC int32
 	subscribers     map[uint64]chan []*types.Account
 	subscriberID    uint64
 	mu              sync.Mutex
-	batchCountForGC int32
 }
 
 // NewAccounts creates a new account store with the logger and configuration specified.
@@ -177,7 +171,6 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 		return nil
 	}
 
-	atomic.AddInt32(&a.batchCountForGC, 1)
 	batch, err := a.parseBatch(accs...)
 	if err != nil {
 		a.log.Error(
@@ -199,8 +192,10 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 			"Unable to write accounts batch",
 			logging.Error(err),
 			logging.Int("batch-size", len(accs)))
+
 		return err
 	}
+	a.notify(accs)
 
 	if logging.DebugLevel == a.log.GetLevel() {
 		a.log.Debug("Accounts store updated", logging.Int("batch-size", len(accs)))
@@ -208,6 +203,7 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 
 	// Using a batch counter ties the clean up to the average
 	// expected size of a batch of account updates, not just time.
+	atomic.AddInt32(&a.batchCountForGC, 1)
 	if atomic.LoadInt32(&a.batchCountForGC) >= maxBatchesUntilValueLogGC {
 		go func() {
 			a.log.Info("Account store value log garbage collection",
@@ -215,15 +211,13 @@ func (a *Account) SaveBatch(accs []*types.Account) error {
 
 			err := a.badger.GarbageCollectValueLog()
 			if err != nil {
-				a.log.Error("Unexpected problem running valueLogGC on accounts-store",
+				a.log.Error("Unexpected problem running valueLogGC on accounts store",
 					logging.Error(err))
 			} else {
 				atomic.StoreInt32(&a.batchCountForGC, 0)
 			}
 		}()
 	}
-
-	a.notify(accs)
 
 	return nil
 }
@@ -346,17 +340,4 @@ func (a *Account) Unsubscribe(id uint64) error {
 		logging.Uint64("subscriber-id", id))
 
 	return errors.New(fmt.Sprintf("Account store subscriber does not exist with id: %d", id))
-}
-
-// DefaultAccountStoreOptions supplies default options we use for account stores.
-// Vega has custom settings to aid with valueLogGC
-func DefaultAccountStoreOptions() ConfigOptions {
-	opts := DefaultStoreOptions()
-	opts.TableLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
-	opts.ValueLogLoadingMode = cfgencoding.FileLoadingMode{FileLoadingMode: options.FileIO}
-	// The following params optimise account store for valueLogGC
-	opts.LevelSizeMultiplier = 2
-	opts.NumLevelZeroTables = 1
-	opts.NumLevelZeroTablesStall = 2
-	return opts
 }

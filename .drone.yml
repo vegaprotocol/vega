@@ -9,6 +9,13 @@ platform:
   os: linux
 
 steps:
+
+  # https://docker-runner.docs.drone.io/configuration/cloning/
+  - name: fetch
+    image: alpine/git
+    commands:
+      - git fetch --tags  # necessary for generation of VERSION var
+
   - name: build
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
     pull: always
@@ -38,22 +45,35 @@ steps:
       - make deps
       - make build
       - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
-    depends_on: []
+    depends_on:
+      - fetch
+
+  - name: markdownspellcheck
+    image: registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest
+    pull: always
+    environment: {}
+    commands:
+      - find . -name '*.md' |sort
+      # Make sure the mdspell command matches the one in Makefile.
+      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'design/**/*.md'
+    depends_on:
+      - fetch
 
   - name: docker
     image: docker:dind
     volumes:
       - name: dockersock
         path: /dockersock
+      - name: dind
+        path: /var/lib/docker
     privileged: true
-    command: ['-H', 'unix:///dockersock/docker.sock']
+    command: ['-H', 'unix:///dockersock/docker.sock', '-s', 'overlay2']
     depends_on: []
     detach: true
     when:
       ref:
         - refs/heads/master
         - refs/heads/develop
-        - refs/heads/491-implement-drone-ci-config
         - refs/tags/*
 
   # Tests to be run on *all* branches.
@@ -62,28 +82,39 @@ steps:
     volumes:
       - name: gopkg
         path: /go/pkg
+    environment: {}
+    commands:
+      - make test
+    depends_on:
+      - build
+
+  # Tests to be run on merge requests.
+  - name: mergerequest
+    image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline:1.11.13
+    volumes:
+      - name: gopkg
+        path: /go/pkg
     environment:
-      CGO_ENABLED: "0"
-      GO111MODULE: "on"
-      GOARCH: amd64
-      GOOS: linux
       GITLAB_API_TOKEN:
         from_secret: GITLAB_API_TOKEN
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      - make test
       # More small checks. Run all, instead of exitng after first failure.
       - code=0
       - make print_check || code=1
       - make rest_check || code=1
       - make proto_check || code=1
-      - bash script/diff_graphqlschema.sh || code=1  # requires GITLAB_API_TOKEN
+      - bash script/diff_graphqlschema.sh || code=1  # requires GITLAB_API_TOKEN and SLACK_HOOK_URL
       - /usr/local/bin/multilint || code=1
       - make lint || true  # Ignore lint failure for now (see #196)
+      - make staticcheck || true  # Ignore failures until they're all fixed.
       - exit "$code"
     depends_on:
-      - build
+      - test
+    when:
+      event:
+        - pull_request
 
   # Tests to be run only on *main* branches.
   - name: test_heavy
@@ -91,23 +122,18 @@ steps:
     volumes:
       - name: gopkg
         path: /go/pkg
-    environment:
-      CGO_ENABLED: "0"
-      GO111MODULE: "on"
-      GOARCH: amd64
-      GOOS: linux
+    environment: {}
     commands:
       - make vet
       - make race
       - make msan
     depends_on:
-      - build
+      - test
     when:
       ref:
         - refs/heads/master
         - refs/heads/develop
         - refs/heads/release/*
-        - refs/heads/491-implement-drone-ci-config
         - refs/tags/*
 
   - name: push_to_devnet
@@ -127,7 +153,7 @@ steps:
       VEGANET_USERS:
         from_secret: VEGANET_USERS
     commands:
-      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
+      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"  # requires GITLAB_API_TOKEN and 3 DEVNET_* vars
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
       - 'for u in $$VEGANET_USERS ; do
           cmd/vegaccount/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
@@ -141,6 +167,8 @@ steps:
     when:
       branch:
         - develop
+      event:
+        - push
 
   - name: publish_docker
     image: registry.gitlab.com/vega-protocol/devops-infra/cipipeline-docker:stable
@@ -161,6 +189,7 @@ steps:
       - imgtag="$${DRONE_BRANCH}"
       - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
       - if test -z "$$imgtag" ; then exit 1 ; fi
+      - while ! docker ps ; do sleep 1 ; done  # wait for dind
       - docker build -t "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" -f Dockerfile.quick . || exit 0
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
       - docker push "registry.gitlab.com/vega-protocol/trading-core:$$imgtag" || exit 0
@@ -172,16 +201,18 @@ steps:
       ref:
         - refs/heads/master
         - refs/heads/develop
-        - refs/heads/491-implement-drone-ci-config
         - refs/tags/*
 
 volumes:
+  - name: dind
+    host:
+      path: /var/lib/drone/volumes/trading-core/dind
   - name: dockersock
     host:
-      path: /var/lib/drone/volumes/dockersock
+      path: /var/lib/drone/volumes/trading-core/dockersock
   - name: gopkg
     host:
-      path: /var/lib/drone/volumes/gopkg
+      path: /var/lib/drone/volumes/trading-core/gopkg
 
 image_pull_secrets:
   - dockerconfig

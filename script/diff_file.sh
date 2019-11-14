@@ -78,17 +78,29 @@ get_file_for_branch() {
 	response_line="$(head -n1 <"$response_headers_file")"
 	rm -f "$response_headers_file"
 	if ! echo -n "$response_line" | grep -q '^HTTP/[0-9][.0-9]* 200 OK' ; then
-		echo "Error: Failed to get file for branch $branch: $filename"
-		echo "Response code was: $response_line"
-		exit 1
+		echo '{'
+		echo '  "error":    "Failed to get file",'
+		echo '  "branch":   "'"$branch"'",'
+		echo '  "file":     "'"$filename"'",'
+		echo '  "response": '"$(json_escape "$response_line")"
+		echo '}'
+		return
 	fi
 	echo "$file_json"
 }
 
 echo "Getting $filename on $branch1"
 file1data="$(get_file_for_branch "$branch1")"
+if test "$(echo "$file1data" | jq -r .error)" '!=' null ; then
+	echo "$file1data"
+	exit 1
+fi
 echo "Getting $filename on $branch2"
 file2data="$(get_file_for_branch "$branch2")"
+if test "$(echo "$file2data" | jq -r .error)" '!=' null ; then
+	echo "$file2data"
+	exit 1
+fi
 
 file1sha="$(echo "$file1data" | jq -r .content_sha256)"
 file2sha="$(echo "$file2data" | jq -r .content_sha256)"

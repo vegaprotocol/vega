@@ -1,6 +1,6 @@
 # Contributing
 
-Create a Gitlab Issue for the feature, bugfix or enhancement. Start a
+Create a GitLab Issue for the feature, bugfix or enhancement. Start a
 discussion, pull in relevant people, build a technical design.
 
 If possible, Issues should be linked back to a feature in the Product repo.
@@ -11,7 +11,7 @@ the Issue or in the WIP MR.
 
 Pairing and early review is encouraged.
 
-Add tests! Aim for overall test coverage to go _up_. At a bare minimum, the
+Add tests! Aim for overall test coverage to go *up*. At a bare minimum, the
 main/longest code path of each function should be tested.
 
 When ready, create a merge request (or remove the WIP from the existing one), ask

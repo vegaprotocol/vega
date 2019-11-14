@@ -95,7 +95,7 @@ func testGetMarketOrderPriceBuy(t *testing.T) {
 	}
 
 	price := book.MarketOrderPrice(types.Side_Buy)
-	assert.Equal(t, uint64(300), price)
+	assert.Equal(t, int(300), int(price))
 }
 
 func testGetMarketOrderPriceSell(t *testing.T) {
@@ -298,7 +298,7 @@ func getClosePNLBuy(t *testing.T) {
 	// this calculates the actual volume
 	for vol, exp := range callExp {
 		price, err := book.GetCloseoutPrice(vol, types.Side_Buy)
-		assert.Equal(t, exp, price)
+		assert.Equal(t, int(exp), int(price))
 		assert.NoError(t, err)
 	}
 }
@@ -519,9 +519,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Len(t, expired, 5)
 	assert.Equal(t, "8", expired[0].Id)
 	assert.Equal(t, "10", expired[1].Id)
-	assert.Equal(t, "5", expired[2].Id)
+	assert.Equal(t, "1", expired[2].Id)
 	assert.Equal(t, "3", expired[3].Id)
-	assert.Equal(t, "1", expired[4].Id)
+	assert.Equal(t, "5", expired[4].Id)
 }
 
 //test for order validation

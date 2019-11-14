@@ -2,7 +2,6 @@ package matching
 
 import (
 	"fmt"
-	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
@@ -30,7 +29,7 @@ type OrderBook struct {
 	sell            *OrderBookSide
 	lastTradedPrice uint64
 	latestTimestamp int64
-	expiringOrders  []types.Order // keep a list of all expiring trades, these will be in timestamp ascending order.
+	expiringOrders  *ExpiringOrders
 }
 
 // NewOrderBook create an order book with a given name
@@ -51,7 +50,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		buy:             &OrderBookSide{log: log, proRataMode: proRataMode},
 		sell:            &OrderBookSide{log: log, proRataMode: proRataMode},
 		Config:          config,
-		expiringOrders:  make([]types.Order, 0),
+		expiringOrders:  NewExpiringOrders(),
 		lastTradedPrice: initialMarkPrice,
 	}
 }
@@ -81,8 +80,8 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		err   error
 	)
 	vol := volume
-	if side == types.Side_Buy {
-		levels := b.buy.getLevels()
+	if side == types.Side_Sell {
+		levels := b.sell.getLevels()
 		for i := len(levels) - 1; i >= 0; i-- {
 			lvl := levels[i]
 			if lvl.volume >= vol {
@@ -105,7 +104,7 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		}
 		return price / (volume - vol), err
 	}
-	for _, lvl := range b.sell.getLevels() {
+	for _, lvl := range b.buy.getLevels() {
 		if lvl.volume >= vol {
 			price += lvl.price * vol
 			return price / volume, err
@@ -314,28 +313,10 @@ func (b *OrderBook) DeleteOrder(order *types.Order) error {
 // RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
 // matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
 func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order {
-	// expiringOrders are ordered, so it the first one ExpiresAt is bigger then the
-	// expirationtimestamp, this means than no order is expired
-	if len(b.expiringOrders) > 0 && b.expiringOrders[0].ExpiresAt > expirationTimestamp {
-		return []types.Order{}
+	expiredOrders := b.expiringOrders.Expire(expirationTimestamp)
+	if len(expiredOrders) <= 0 {
+		return nil
 	}
-
-	// expiring orders are ordered by expiration time.
-	// so we'll search for the position where the expirationTimestamp would be in the slice
-	// e.g: if our timestamp is 4
-	// []int{1, 2, 3, 4, 4, 4, 4, 6, 7, 8}
-	// ~~~~~~~~~~~~~~~~~~~~~~~~^
-	// Also we add + 1 to the timestamp so it would find the last in the list,
-	// if not the previous example would return
-	// []int{1, 2, 3, 4, 4, 4, 4, 6, 7, 8}
-	// ~~~~~~~~~~~~~~~^
-	// by adding + 1 we actuall get everything which is stricly before the expirationTimestamp
-	i := sort.Search(len(b.expiringOrders), func(i int) bool { return b.expiringOrders[i].ExpiresAt >= expirationTimestamp+1 })
-
-	// make slice with the right size for the expired orders
-	// then copy them
-	expiredOrders := make([]types.Order, i)
-	copy(expiredOrders, b.expiringOrders[:i])
 
 	// delete the orders now
 	for at := range expiredOrders {
@@ -343,15 +324,10 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 		expiredOrders[at].Status = types.Order_Expired
 	}
 
-	// mem move all orders to be expired at the beginning of the slice, so
-	// we do not need to reallocate in the future and we'll just reuse the actual slice.
-	b.expiringOrders = b.expiringOrders[:copy(b.expiringOrders[0:], b.expiringOrders[i:])]
-
 	if b.LogRemovedOrdersDebug {
 		b.log.Debug("Removed expired orders from order book",
 			logging.String("order-book", b.marketID),
-			logging.Int("expired-orders", len(expiredOrders)),
-			logging.Int("remaining-orders", len(b.expiringOrders)))
+			logging.Int("expired-orders", len(expiredOrders)))
 	}
 
 	return expiredOrders
@@ -431,42 +407,12 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 
 func (b *OrderBook) insertExpiringOrder(ord types.Order) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "insertExpiringOrder")
-	if len(b.expiringOrders) <= 0 {
-		b.expiringOrders = append(b.expiringOrders, ord)
-		timer.EngineTimeCounterAdd()
-		return
-	}
-
-	// first find the position where this should be inserted
-	i := sort.Search(len(b.expiringOrders), func(i int) bool { return b.expiringOrders[i].ExpiresAt >= ord.ExpiresAt })
-
-	// append new elem first to make sure we have enough place
-	// this would reallocate sufficiently then
-	// no risk of this being a empty order, as it's overwritten just next with
-	// the slice insert
-	b.expiringOrders = append(b.expiringOrders, types.Order{})
-	copy(b.expiringOrders[i+1:], b.expiringOrders[i:])
-	b.expiringOrders[i] = ord
+	b.expiringOrders.Insert(ord)
 	timer.EngineTimeCounterAdd()
 }
 
 func (b OrderBook) removePendingGttOrder(order types.Order) bool {
-	// this will return the index of the first order with an expiry matching the order expiry
-	// e.g: []int{1, 2, 3, 4, 4, 4, 5, 6, 7, 8, 9}
-	//                     ^ this will return index 3
-	i := sort.Search(len(b.expiringOrders), func(i int) bool { return b.expiringOrders[i].ExpiresAt >= order.ExpiresAt })
-	if i < len(b.expiringOrders) {
-		// orders with the same expiry found, now we need to iterate over the result to find
-		// an order with the same expiry and may the order ID
-		for i <= len(b.expiringOrders) && b.expiringOrders[i].ExpiresAt == order.ExpiresAt {
-			if b.expiringOrders[i].ExpiresAt == order.ExpiresAt {
-				// we found our order, let's remove it
-				b.expiringOrders = b.expiringOrders[:i+copy(b.expiringOrders[i:], b.expiringOrders[i+1:])]
-				return true
-			}
-		}
-	}
-	return false
+	return b.expiringOrders.RemoveOrder(order)
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
