@@ -30,15 +30,15 @@ type posValue struct {
 	size   int64
 }
 
-func TestMarkToMarket(t *testing.T) {
+func TestMarketExpiry(t *testing.T) {
 	t.Run("Settle at market expiry - success", testSettleExpiredSuccess)
 	t.Run("Settle at market expiry - error", testSettleExpiryFail)
+}
+
+func TestMarkToMarket(t *testing.T) {
 	t.Run("No settle positions if none were on channel", testMarkToMarketEmpty)
-	// t.Run("Settle positions are pushed onto the slice channel in order", testMarkToMarketOrdered)
-	// -- MTM -> special case for traders getting MTM before changing positions, and trade introducing new trader
-	// TODO Add a test for long <-> short trades, for now we've covered the basics
-	// t.Run("Settle MTM on a market with long trader going short and short trader going long", testMTMSwitchPosition)
-	// t.Run("Settle MTM with new and existing trader position combo", testMTMPrefixTradePositions)
+	t.Run("Settle positions are pushed onto the slice channel in order", testMarkToMarketOrdered)
+	t.Run("Trade adds new trader to market, no MTM settlement becasue markPrice is the same", testAddNewTrader)
 }
 
 func testSettleExpiredSuccess(t *testing.T) {
@@ -154,7 +154,51 @@ func testMarkToMarketEmpty(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-// @TODO this test needs to be rewritten, it's rubbish
+func testAddNewTrader(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	markPrice := uint64(1000)
+	t1 := testPos{
+		price: markPrice,
+		party: "trader1",
+		size:  5,
+	}
+	init := []events.MarketPosition{
+		t1,
+		testPos{
+			price: markPrice,
+			party: "trader2",
+			size:  -5,
+		},
+	}
+	// let's not change the markPrice
+	// just add a trader to the market, buying from an existing trader
+	trade := &types.Trade{
+		Buyer:  "trader3",
+		Seller: t1.party,
+		Price:  markPrice,
+		Size:   1,
+	}
+	// the first trader is the seller
+	// so these are the new positions after the trade
+	t1.size -= 1
+	positions := []events.MarketPosition{
+		t1,
+		init[1],
+		testPos{
+			party: "trader3",
+			size:  1,
+			price: markPrice,
+		},
+	}
+	engine.Update(init)
+	engine.AddTrade(trade)
+	noTransfers := engine.SettleMTM(markPrice, positions)
+	assert.Empty(t, noTransfers)
+}
+
+// This tests MTM results put losses first, trades tested are Long going longer, short going shorter
+// and long going short, short going long, and a third trader who's not trading at all
 func testMarkToMarketOrdered(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
@@ -171,116 +215,94 @@ func testMarkToMarketOrdered(t *testing.T) {
 		},
 	}
 	markPrice := uint64(10000 + 1000)
-	init := make([]events.MarketPosition, 0, 3)
-	long := make([]events.MarketPosition, 0, 3)
-	short := make([]events.MarketPosition, 0, 3)
-	neutral := mocks.NewMockMarketPosition(engine.ctrl)
-	neutral.EXPECT().Price().AnyTimes().Return(uint64(10000))
-	neutral.EXPECT().Party().AnyTimes().Return("neutral")
-	neutral.EXPECT().Size().AnyTimes().Return(int64(5))
-	init = append(init, neutral)
-	for _, p := range positions {
-		m := mocks.NewMockMarketPosition(engine.ctrl)
-		m.EXPECT().Size().AnyTimes().Return(p.size)
-		m.EXPECT().Party().AnyTimes().Return(p.trader)
-		m.EXPECT().Price().AnyTimes().Return(p.price)
-		init = append(init, m)
-		l := mocks.NewMockMarketPosition(engine.ctrl)
-		l.EXPECT().Size().AnyTimes().Return(p.size * 2)
-		l.EXPECT().Price().AnyTimes().Return(markPrice)
-		l.EXPECT().Party().AnyTimes().Return(p.trader)
-		long = append(long, l)
-		s := mocks.NewMockMarketPosition(engine.ctrl)
-		s.EXPECT().Size().AnyTimes().Return(p.size * -2) // long trader is going short, short trader is going long
-		s.EXPECT().Price().AnyTimes().Return(markPrice)
-		s.EXPECT().Party().AnyTimes().Return(p.trader)
-		short = append(short, s)
+	neutral := testPos{
+		party: "neutral",
+		size:  5,
+		price: 10000,
 	}
-	engine.Update(init) // setup the initial state
-	engine.Update(long)
-	// add neutral to position, this hasn't changed, but we need it processed anyway
-	long = append(long, neutral)
-	longTransfer := engine.SettleMTM(markPrice, long)
-	assert.NotEmpty(t, longTransfer)
-	t.Logf("%#v\n", longTransfer)
-	// now, let's update the state again as if the settlement hasn't happened
-	engine.Update(init)
-	engine.Update(short)
+	init := []events.MarketPosition{
+		neutral,
+		testPos{
+			price: neutral.price,
+			party: "trader1",
+			size:  1,
+		},
+		testPos{
+			price: neutral.price,
+			party: "trader2",
+			size:  -1,
+		},
+	}
+	short, long := make([]events.MarketPosition, 0, 3), make([]events.MarketPosition, 0, 3)
+	// the SettleMTM data must contain the new mark price already
+	neutral.price = markPrice
 	short = append(short, neutral)
-	shortTransfer := engine.SettleMTM(markPrice, short)
-	assert.NotEmpty(t, shortTransfer)
-	assert.Equal(t, 3, len(shortTransfer)) // all 3 traders should get updated
-}
-
-// @TODO this test makes no sense, rewrite needed (update through trade)
-func testMTMSwitchPosition(t *testing.T) {
-	engine := getTestEngine(t)
-	defer engine.Finish()
-	start := []posValue{
-		{
-			trader: "trader1",
-			size:   5,
-			price:  10000,
+	long = append(long, neutral)
+	// we have a long and short trade example
+	trades := map[string]*types.Trade{
+		"long": &types.Trade{
+			Price: markPrice,
+			Size:  1,
 		},
-		{
-			trader: "trader2",
-			size:   -5,
-			price:  10000,
-		},
-		{
-			trader: "neutral",
-			size:   3,
-			price:  10000,
-		},
-		{
-			trader: "closed",
-			size:   0,
-			price:  10000,
+		// to go short, the trade has to be 2
+		"short": &types.Trade{
+			Price: markPrice,
+			Size:  2,
 		},
 	}
-	update := []posValue{
-		{
-			trader: "trader1",
-			size:   -1,
-			price:  11000,
-		},
-		{
-			trader: "trader2",
-			size:   1,
-			price:  11000,
-		},
+	// creates trades and event slices we'll be needing later on
+	for _, p := range positions {
+		if p.size > 0 {
+			trades["long"].Buyer = p.trader
+			trades["short"].Seller = p.trader
+			long = append(long, testPos{
+				party: p.trader,
+				price: markPrice,
+				size:  p.size + int64(trades["long"].Size),
+			})
+			short = append(short, testPos{
+				party: p.trader,
+				price: markPrice,
+				size:  p.size - int64(trades["short"].Size),
+			})
+		} else {
+			trades["long"].Seller = p.trader
+			trades["short"].Buyer = p.trader
+			long = append(long, testPos{
+				party: p.trader,
+				price: markPrice,
+				size:  p.size - int64(trades["long"].Size),
+			})
+			short = append(short, testPos{
+				party: p.trader,
+				price: markPrice,
+				size:  p.size + int64(trades["short"].Size),
+			})
+		}
 	}
-	final := []posValue{
-		{
-			trader: "trader1",
-			size:   -1,
-			price:  11000,
-		},
-		{
-			trader: "trader2",
-			size:   1,
-			price:  11000,
-		},
-		{
-			trader: "neutral",
-			size:   3,
-			price:  11000,
-		},
-		{
-			trader: "closed",
-			size:   0,
-			price:  11000,
-		},
+	updates := map[string][]events.MarketPosition{
+		"long":  long,
+		"short": short,
 	}
-	_, init := engine.getMockMarketPositions(start)
-	_, change := engine.getMockMarketPositions(update)
-	_, positions := engine.getMockMarketPositions(final)
-	// set the initial state
-	engine.Update(init)
-	engine.Update(change)
-	result := engine.SettleMTM(final[0].price, positions)
-	assert.NotEmpty(t, result)
-	assert.Equal(t, 3, len(result)) // one for each trader with an open position
+	// set up the engine, ready to run the scenario's
+	// for each data-set we reset the state in the engine, then we check the MTM is performed
+	// correctly
+	for k, trade := range trades {
+		engine.Update(init)
+		engine.AddTrade(trade)
+		update := updates[k]
+		transfers := engine.SettleMTM(markPrice, update)
+		assert.NotEmpty(t, transfers)
+		assert.Equal(t, 3, len(transfers))
+		// start with losses, end with wins
+		assert.Equal(t, types.TransferType_MTM_LOSS, transfers[0].Transfer().Type)
+		assert.Equal(t, types.TransferType_MTM_WIN, transfers[len(transfers)-1].Transfer().Type)
+		if k == "long" {
+			assert.Equal(t, "trader2", transfers[0].Party()) // we expect trader2 to have a loss
+		} else {
+			assert.Equal(t, "trader1", transfers[0].Party()) // we expect trader1 to go short => loss
+		}
+	}
 }
 
 // {{{
@@ -372,6 +394,35 @@ func (te *testEngine) Finish() {
 	te.ctrl.Finish()
 	te.positions = nil
 }
+
+// Quick mock implementation of the events.MarketPosition interface
+type testPos struct {
+	party           string
+	size, buy, sell int64
+	price           uint64
+}
+
+func (t testPos) Party() string {
+	return t.party
+}
+
+func (t testPos) Size() int64 {
+	return t.size
+}
+
+func (t testPos) Buy() int64 {
+	return t.buy
+}
+
+func (t testPos) Sell() int64 {
+	return t.sell
+}
+
+func (t testPos) Price() uint64 {
+	return t.price
+}
+
+func (t testPos) ClearPotentials() {}
 
 func getTestEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)

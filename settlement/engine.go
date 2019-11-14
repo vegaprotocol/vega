@@ -177,6 +177,10 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 			// broke this up into its own func for symmetry
 			e.rmPosition(party)
 		}
+		// we don't need to create a transfer if there's no changes to the balance...
+		if mtmShare == 0 {
+			continue
+		}
 		settle := &types.Transfer{
 			Owner: party,
 			Size:  1, // this is an absolute delta based on volume, so size is always 1
