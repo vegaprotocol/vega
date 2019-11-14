@@ -83,6 +83,11 @@ func (s *SummaryGenerator) MarketSummary(marketId string, pagination *protoapi.P
 
 func (s *SummaryGenerator) marketSummary(marketId string, pagination protoapi.Pagination) (*MarketSummary, error) {
 	s.commitAllStores()
+	market, err := s.marketStore.GetByID(marketId)
+	if err != nil {
+		return nil, err
+	}
+
 	depth, err := s.orderStore.GetMarketDepth(s.context, marketId)
 	if err != nil {
 		return nil, err
@@ -97,6 +102,7 @@ func (s *SummaryGenerator) marketSummary(marketId string, pagination protoapi.Pa
 	}
 
 	return &MarketSummary{
+		Market:      market,
 		Trades:      trades,
 		Orders:      orders,
 		MarketDepth: depth,
