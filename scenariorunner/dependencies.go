@@ -98,6 +98,7 @@ func getDependencies() (*dependencies, error) {
 		tradeStore:   tradeStore,
 		marketStore:  marketStore,
 		accountStore: accountStore,
+		candleStore:  candleStore,
 	}, nil
 }
 
@@ -110,6 +111,7 @@ type dependencies struct {
 	tradeStore   *storage.Trade
 	marketStore  *storage.Market
 	accountStore *storage.Account
+	candleStore  *storage.Candle
 }
 
 func NewDefaultConfig() core.Config {
