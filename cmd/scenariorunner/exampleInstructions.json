@@ -32,7 +32,7 @@
       }
     },
     {
-      "description": "Submitting a matching trade, hoping for a trade.",
+      "description": "Submitting a matching order, hoping for a trade.",
       "request": "SUBMIT_ORDER",
       "message": {
         "@type": "vega.Order",
