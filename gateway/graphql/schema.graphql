@@ -17,7 +17,7 @@ type Mutation {
     # ID of the party placing the order
     partyId: String!
     # Price of the asset
-    price: String!
+    price: String
     # Size ofthe order
     size: String!
     # Side of the order (Buy or Sell)
