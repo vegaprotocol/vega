@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	sr "code.vegaprotocol.io/vega/scenariorunner"
 
@@ -14,13 +15,12 @@ import (
 
 var (
 	app    = cli.NewApp()
-	engine *sr.Engine
+	runner = scenariorunner{}
 )
 
 func main() {
 	info()
 	commands()
-	initializeEngine()
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
@@ -68,8 +68,9 @@ func commands() {
 						log.Fatal(err)
 					}
 					n := len(instrSet)
+					runner.lazyInit()
 					for i, instr := range instrSet {
-						res, err := engine.ProcessInstructions(*instr)
+						res, err := runner.engine.ProcessInstructions(*instr)
 						if err != nil {
 							log.Fatal(err)
 						}
@@ -84,7 +85,7 @@ func commands() {
 						}
 					}
 					if optionalProtocolSummaryFile != "" {
-						summary, err := engine.ExtractData()
+						summary, err := runner.engine.ExtractData()
 						if err != nil {
 							log.Fatal(err)
 						}
@@ -99,12 +100,18 @@ func commands() {
 	}
 }
 
-func initializeEngine() {
-	var err error
-	// TODO (WG 08/11/2019): Read from file
-	config := sr.NewDefaultConfig()
-	engine, err = sr.NewEngine(config)
-	if err != nil {
-		log.Fatal(err)
-	}
+type scenariorunner struct {
+	engineOnce sync.Once
+	engine     *sr.Engine
+}
+
+func (s *scenariorunner) lazyInit() {
+	s.engineOnce.Do(func() {
+		config := sr.NewDefaultConfig()
+		engine, err := sr.NewEngine(config)
+		if err != nil {
+			log.Fatal(err)
+		}
+		s.engine = engine
+	})
 }
