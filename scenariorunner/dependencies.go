@@ -58,7 +58,7 @@ func getDependencies() (*dependencies, error) {
 		errs = multierror.Append(errs, err)
 	}
 
-	accounts, err := storage.NewAccounts(log, config.Storage)
+	accountStore, err := storage.NewAccounts(log, config.Storage)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
@@ -85,29 +85,31 @@ func getDependencies() (*dependencies, error) {
 		candleStore,
 		marketStore,
 		partyStore,
-		accounts,
+		accountStore,
 		transferResponseStore,
 	)
 
 	return &dependencies{
-		ctx:         ctx,
-		vegaTime:    timeService,
-		execution:   engine,
-		partyStore:  partyStore,
-		orderStore:  orderStore,
-		tradeStore:  tradeStore,
-		marketStore: marketStore,
+		ctx:          ctx,
+		vegaTime:     timeService,
+		execution:    engine,
+		partyStore:   partyStore,
+		orderStore:   orderStore,
+		tradeStore:   tradeStore,
+		marketStore:  marketStore,
+		accountStore: accountStore,
 	}, nil
 }
 
 type dependencies struct {
-	ctx         context.Context
-	vegaTime    *vegatime.Svc
-	execution   *execution.Engine
-	partyStore  *storage.Party
-	orderStore  *storage.Order
-	tradeStore  *storage.Trade
-	marketStore *storage.Market
+	ctx          context.Context
+	vegaTime     *vegatime.Svc
+	execution    *execution.Engine
+	partyStore   *storage.Party
+	orderStore   *storage.Order
+	tradeStore   *storage.Trade
+	marketStore  *storage.Market
+	accountStore *storage.Account
 }
 
 func NewDefaultConfig() core.Config {

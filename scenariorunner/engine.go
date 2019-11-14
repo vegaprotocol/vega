@@ -35,6 +35,7 @@ func NewEngine(config core.Config) (*Engine, error) {
 	markets := preprocessors.NewMarkets(d.ctx, d.marketStore)
 	orders := preprocessors.NewOrders(d.ctx, d.orderStore)
 	trades := preprocessors.NewTrades(d.ctx, d.tradeStore)
+	accounts := preprocessors.NewAccounts(d.ctx, d.accountStore)
 
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore)
 
@@ -55,6 +56,7 @@ func NewEngine(config core.Config) (*Engine, error) {
 			markets,
 			orders,
 			trades,
+			accounts,
 		},
 	}, nil
 }

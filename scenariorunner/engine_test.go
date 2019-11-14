@@ -68,8 +68,12 @@ func TestProcessInstructionsAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	instructions4, err := getAccountInstructions(marketId, partyId)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	instructions := append(append(instructions1, instructions2...), instructions3...)
+	instructions := append(append(append(instructions1, instructions2...), instructions3...), instructions4...)
 
 	instructionSet := core.InstructionSet{
 		Instructions: instructions,
@@ -505,6 +509,60 @@ func getInternalInstructions(marketId string) ([]*core.Instruction, error) {
 		instr3,
 		instr4,
 		instr5,
+	}
+
+	return instructions, nil
+}
+
+func getAccountInstructions(marketId string, partyId string) ([]*core.Instruction, error) {
+	instr1, err := core.NewInstruction(
+		core.RequestType_ACCOUNTS_BY_PARTY,
+		&protoapi.AccountsByPartyRequest{
+			PartyID: partyId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr2, err := core.NewInstruction(
+		core.RequestType_ACCOUNTS_BY_PARTY_AND_ASSET,
+		&protoapi.AccountsByPartyAndAssetRequest{
+			PartyID: partyId,
+			Asset:   "",
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr3, err := core.NewInstruction(
+		core.RequestType_ACCOUNTS_BY_PARTY_AND_MARKET,
+		&protoapi.AccountsByPartyAndMarketRequest{
+			PartyID:  partyId,
+			MarketID: marketId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instr4, err := core.NewInstruction(
+		core.RequestType_ACCOUNTS_BY_PARTY_AND_TYPE,
+		&protoapi.AccountsByPartyAndTypeRequest{
+			PartyID: partyId,
+			Type:    types.AccountType_GENERAL,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instructions := []*core.Instruction{
+		instr1,
+		instr2,
+		instr3,
+		instr4,
 	}
 
 	return instructions, nil
