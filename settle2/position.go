@@ -16,9 +16,10 @@ type pos struct {
 	// embed the type, we will copy the three main fields because those should be immutable
 	// which we can't guarantee through an embedded interface
 	events.MarketPosition
-	party string
-	size  int64
-	price uint64
+	party   string
+	size    int64
+	price   uint64
+	newSize int64 // track this so we can determine when a trader switches between long <> short
 }
 
 type mtmTransfer struct {

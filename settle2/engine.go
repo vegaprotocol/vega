@@ -32,12 +32,11 @@ type Engine struct {
 	Config
 	log *logging.Logger
 
-	market   string
-	product  Product
-	pos      map[string]*pos
-	mu       *sync.Mutex
-	closed   map[string][]*pos
-	closedMu *sync.Mutex
+	market  string
+	product Product
+	pos     map[string]*pos
+	mu      *sync.Mutex
+	trades  map[string][]*pos
 }
 
 // New instanciate a new instance of the settlement engine
@@ -53,9 +52,7 @@ func New(log *logging.Logger, conf Config, product Product, market string) *Engi
 		product: product,
 		pos:     map[string]*pos{},
 		mu:      &sync.Mutex{},
-		// no need to initialised `closed` map
-		closed:   map[string][]*pos{},
-		closedMu: &sync.Mutex{},
+		trades:  map[string][]*pos{},
 	}
 }
 
@@ -107,23 +104,41 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 // AddTrade - this call is required to get the correct MTM settlement values
 // each change in position has to be calculated using the exact price of the trade
 func (e *Engine) AddTrade(trade *types.Trade) {
-	e.closedMu.Lock()
-	defer e.closedMu.Unlock()
-	if _, ok := e.closed[trade.Buyer]; !ok {
-		e.closed[trade.Buyer] = []*pos{}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	var (
+		buyerSize, sellerSize int64
+	)
+	if cd, ok := e.trades[trade.Buyer]; !ok {
+		e.trades[trade.Buyer] = []*pos{}
+		// check if the buyer already has a known position
+		if pos, ok := e.pos[trade.Buyer]; ok {
+			buyerSize = pos.size
+		}
+	} else {
+		buyerSize = cd[len(cd)-1].newSize
 	}
-	if _, ok := e.closed[trade.Seller]; !ok {
-		e.closed[trade.Seller] = []*pos{}
+	if cd, ok := e.trades[trade.Seller]; !ok {
+		e.trades[trade.Seller] = []*pos{}
+		// check if seller has a known position
+		if pos, ok := e.pos[trade.Seller]; ok {
+			sellerSize = pos.size
+		}
+	} else {
+		sellerSize = cd[len(cd)-1].newSize
 	}
+	size := int64(trade.Size)
 	// the traders both need to get a MTM settlement on the traded volume
 	// and this MTM part has to be based on the _actual_ trade value
-	e.closed[trade.Buyer] = append(e.closed[trade.Buyer], &pos{
-		price: trade.Price,
-		size:  int64(trade.Size),
+	e.trades[trade.Buyer] = append(e.trades[trade.Buyer], &pos{
+		price:   trade.Price,
+		size:    size,
+		newSize: buyerSize + size,
 	})
-	e.closed[trade.Seller] = append(e.closed[trade.Seller], &pos{
-		price: trade.Price,
-		size:  int64(trade.Size),
+	e.trades[trade.Seller] = append(e.trades[trade.Seller], &pos{
+		price:   trade.Price,
+		size:    -size,
+		newSize: sellerSize - size,
 	})
 }
 
@@ -134,26 +149,25 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 	transfers := make([]events.Transfer, 0, tCap)
 	// roughly half of the transfers should be wins, half losses
 	wins := make([]events.Transfer, 0, tCap/2)
-	e.closedMu.Lock()
-	closed := e.closed
-	e.closed = map[string][]*pos{} // remove here, once we've processed it all here, we're done
-	e.closedMu.Unlock()
+	trades := e.trades
+	e.trades = map[string][]*pos{} // remove here, once we've processed it all here, we're done
 	mpSigned := int64(markPrice)
 	for _, evt := range positions {
 		party := evt.Party()
-		// get the current position, and all (if any) positions closed as a result of a trade
+		// get the current position, and all (if any) position changes because of trades
 		current := e.getCurrentPosition(party, evt)
 		// we don't care if this is a nil value
-		trades, hasTraded := closed[party]
+		traded, hasTraded := trades[party]
+		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
 		if !hasTraded && current.price == markPrice {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
 			continue
 		}
 		// calculate MTM value, we need the signed mark-price, the NEW open position/volume
 		// and the old mark price at which the trader held the position
-		// the trades slice contains all closed positions (position changes for the trader)
+		// the trades slice contains all trade positions (position changes for the trader)
 		// at their exact trade price, so we can MTM that volume correctly, too
-		mtmShare := calcMTM(mpSigned, evt.Size(), int64(current.price), trades)
+		mtmShare := calcMTM(mpSigned, evt.Size(), int64(current.price), traded)
 		// we've marked this trader to market, their position can now reflect this
 		current.update(evt)
 		current.price = markPrice
@@ -195,13 +209,11 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 // they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
 func (e *Engine) RemoveDistressed(traders []events.MarketPosition) {
 	e.mu.Lock()
-	e.closedMu.Lock()
 	for _, trader := range traders {
 		key := trader.Party()
 		delete(e.pos, key)
-		delete(e.closed, key)
+		delete(e.trades, key)
 	}
-	e.closedMu.Unlock()
 	e.mu.Unlock()
 }
 
@@ -289,10 +301,10 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // amount =  prev_vol * (current_price - prev_mark_price) + SUM(new_trade := range trades)( new_trade(i).volume(party)*(current_price - new_trade(i).price )
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
-func calcMTM(markPrice, size, price int64, closed []*pos) (mtmShare int64) {
+func calcMTM(markPrice, size, price int64, trades []*pos) (mtmShare int64) {
 	mtmShare = (markPrice - price) * size
-	for _, c := range closed {
-		// add MTM compared to trade price for the positions that were closed out
+	for _, c := range trades {
+		// add MTM compared to trade price for the positions changes for trades
 		mtmShare += (markPrice - int64(c.price)) * c.size
 	}
 	return
