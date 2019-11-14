@@ -109,7 +109,9 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	var (
 		buyerSize, sellerSize int64
 	)
-	if cd, ok := e.trades[trade.Buyer]; !ok {
+	// checking the len of cd shouldn't be required here, but it is needed in the second if
+	// in case the buyer and seller are one and the same...
+	if cd, ok := e.trades[trade.Buyer]; !ok || len(cd) == 0 {
 		e.trades[trade.Buyer] = []*pos{}
 		// check if the buyer already has a known position
 		if pos, ok := e.pos[trade.Buyer]; ok {
@@ -118,7 +120,7 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	} else {
 		buyerSize = cd[len(cd)-1].newSize
 	}
-	if cd, ok := e.trades[trade.Seller]; !ok {
+	if cd, ok := e.trades[trade.Seller]; !ok || len(cd) == 0 {
 		e.trades[trade.Seller] = []*pos{}
 		// check if seller has a known position
 		if pos, ok := e.pos[trade.Seller]; ok {

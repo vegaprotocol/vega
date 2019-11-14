@@ -39,6 +39,8 @@ func TestMarkToMarket(t *testing.T) {
 	t.Run("No settle positions if none were on channel", testMarkToMarketEmpty)
 	t.Run("Settle positions are pushed onto the slice channel in order", testMarkToMarketOrdered)
 	t.Run("Trade adds new trader to market, no MTM settlement becasue markPrice is the same", testAddNewTrader)
+	// add this test case because we had a runtime panic on the trades map earlier
+	t.Run("Trade adds new trader, immediately closing out with themselves", testAddNewTraderSelfTrade)
 }
 
 func testSettleExpiredSuccess(t *testing.T) {
@@ -152,6 +154,49 @@ func testMarkToMarketEmpty(t *testing.T) {
 	engine.Update([]events.MarketPosition{pos})
 	result := engine.SettleMTM(markPrice, []events.MarketPosition{pos})
 	assert.Empty(t, result)
+}
+
+func testAddNewTraderSelfTrade(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	markPrice := uint64(1000)
+	t1 := testPos{
+		price: markPrice,
+		party: "trader1",
+		size:  5,
+	}
+	init := []events.MarketPosition{
+		t1,
+		testPos{
+			price: markPrice,
+			party: "trader2",
+			size:  -5,
+		},
+	}
+	// let's not change the markPrice
+	// just add a trader to the market, buying from an existing trader
+	trade := &types.Trade{
+		Buyer:  "trader3",
+		Seller: "trader3",
+		Price:  markPrice,
+		Size:   1,
+	}
+	// the first trader is the seller
+	// so these are the new positions after the trade
+	t1.size -= 1
+	positions := []events.MarketPosition{
+		t1,
+		init[1],
+		testPos{
+			party: "trader3",
+			size:  0,
+			price: markPrice,
+		},
+	}
+	engine.Update(init)
+	engine.AddTrade(trade)
+	noTransfers := engine.SettleMTM(markPrice, positions)
+	assert.Empty(t, noTransfers)
 }
 
 func testAddNewTrader(t *testing.T) {
