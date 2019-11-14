@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -143,6 +144,7 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 }
 
 func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) []events.Transfer {
+	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
 	e.mu.Lock()
 	tCap := e.transferCap(positions)
 	transfers := make([]events.Transfer, 0, tCap)
@@ -206,6 +208,7 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
 	e.mu.Unlock()
+	timer.EngineTimeCounterAdd()
 	return transfers
 }
 
