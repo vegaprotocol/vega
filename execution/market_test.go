@@ -152,7 +152,7 @@ func TestMarketClosing(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(8)
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	tm.partyStore.EXPECT().Add(gomock.Any()).Times(2)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})

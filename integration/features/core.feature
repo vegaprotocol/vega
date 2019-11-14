@@ -56,5 +56,4 @@ Feature: Test trading-core flow with future risk model
       | trader1 |       -2 |   0 |    0 |    268 |   99652 |
       | trader2 |        1 |   0 |    0 |    142 |   99898 |
       | trader3 |        1 |   0 |    0 |    117 |   99883 |
-      |         |          |     |      |        |         |
     And the mark price is "1020"
