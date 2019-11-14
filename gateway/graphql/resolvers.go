@@ -828,17 +828,24 @@ func (r *myPositionResolver) direction(val int64) ValueDirection {
 type myMutationResolver VegaResolverRoot
 
 func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, party string,
-	price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string,
+	price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string,
 	ty OrderType) (*types.PendingOrder, error) {
 
 	order := &types.OrderSubmission{}
 
 	tkn := gateway.TokenFromContext(ctx)
 
+	var (
+		p   uint64 = 0
+		err error
+	)
+
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
-	p, err := safeStringUint64(price)
-	if err != nil {
-		return nil, err
+	if price != nil {
+		p, err = safeStringUint64(*price)
+		if err != nil {
+			return nil, err
+		}
 	}
 	order.Price = p
 	s, err := safeStringUint64(size)
