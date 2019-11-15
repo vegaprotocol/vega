@@ -79,12 +79,12 @@ func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
-		ctx, cfunc := context.WithCancel(ctx)
+		ctx2, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		for {
 			select {
-			case <-ctx.Done():
+			case <-ctx2.Done():
 				s.log.Debug(
 					"Candles subscriber closed connection",
 					logging.Uint64("id", ref),

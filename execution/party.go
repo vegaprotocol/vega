@@ -112,7 +112,8 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 					logging.Error(err))
 				return err
 			}
-			acc, err := p.collateral.GetAccountByID(generalID)
+			var acc *types.Account
+			acc, err = p.collateral.GetAccountByID(generalID)
 			if err != nil {
 				p.log.Error("unable to get trader account",
 					logging.String("party-id", notif.TraderID),

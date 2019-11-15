@@ -63,7 +63,7 @@ var (
 	reporter tstReporter
 )
 
-func getMock(market *proto.Market) *tstSetup {
+func setupMock(market *proto.Market) {
 	if setup != nil {
 		setup.ctrl.Finish()
 		setup = nil // ready for GC
@@ -88,7 +88,7 @@ func getMock(market *proto.Market) *tstSetup {
 	// mock call to get the last candle
 	candles.EXPECT().FetchLastCandle(gomock.Any(), gomock.Any()).MinTimes(1).Return(&proto.Candle{}, nil)
 
-	setup := &tstSetup{
+	setup = &tstSetup{
 		market:     market,
 		ctrl:       ctrl,
 		candles:    candles,
@@ -101,8 +101,6 @@ func getMock(market *proto.Market) *tstSetup {
 		traderAccs: map[string]map[proto.AccountType]*proto.Account{},
 		colE:       colE,
 	}
-
-	return setup
 }
 
 func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
@@ -203,7 +201,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	}
 	log := logging.NewTestLogger()
 	// the controller needs the reporter to report on errors or clunk out with fatal
-	setup = getMock(mkt)
+	setupMock(mkt)
 	party := execution.NewParty(log, setup.colE, []proto.Market{*mkt}, setup.parties)
 	m, err := execution.NewMarket(
 		log,

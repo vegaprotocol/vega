@@ -138,11 +138,11 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx, cancel := context.WithCancel(ctx)
+		ctx2, cancel := context.WithCancel(ctx)
 		defer cancel()
 		for {
 			select {
-			case <-ctx.Done():
+			case <-ctx2.Done():
 				s.log.Debug(
 					"Accounts subscriber closed connection",
 					logging.Uint64("id", ref),

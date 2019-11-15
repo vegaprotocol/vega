@@ -201,7 +201,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 		badgerKey := c.badger.candleKey(marketID, candle.Interval, candle.Timestamp)
 		candleDb, err := fetchCandle(readTxn, badgerKey)
 		if err == badger.ErrKeyNotFound {
-			err := insertNewCandle(writeBatch, badgerKey, candle)
+			err = insertNewCandle(writeBatch, badgerKey, candle)
 			if err != nil {
 				c.log.Error("Failed to insert new candle in candle store",
 					logging.Candle(candle),

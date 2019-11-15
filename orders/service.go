@@ -299,11 +299,11 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx, cfunc := context.WithCancel(ctx)
+		ctx2, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {
 			select {
-			case <-ctx.Done():
+			case <-ctx2.Done():
 				s.log.Debug(
 					"Orders subscriber closed connection",
 					logging.Uint64("id", ref),

@@ -106,11 +106,11 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 		atomic.AddInt32(&s.subscribersCnt, 1)
 		defer atomic.AddInt32(&s.subscribersCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx, cfunc := context.WithCancel(ctx)
+		ctx2, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {
 			select {
-			case <-ctx.Done():
+			case <-ctx2.Done():
 				s.log.Debug(
 					"Market depth subscriber closed connection",
 					logging.Uint64("id", ref),
@@ -128,7 +128,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 				close(depth)
 				return
 			case <-internal: // we don't need the orders, we just need to know there was a change
-				d, err := s.orderStore.GetMarketDepth(ctx, market)
+				d, err := s.orderStore.GetMarketDepth(ctx2, market)
 				if err != nil {
 					s.log.Debug(
 						"Failure calculating market depth for subscriber",

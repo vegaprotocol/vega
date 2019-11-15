@@ -343,7 +343,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Perform check and allocate margin
-	if err := m.checkMarginForOrder(pos, order); err != nil {
+	if err = m.checkMarginForOrder(pos, order); err != nil {
 		_, err1 := m.position.UnregisterOrder(order)
 		if err1 != nil {
 			m.log.Error("Unable to unregister potential trader positions",
@@ -538,7 +538,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		closed = m.position.RemoveDistressed(closed)
 		asset, _ := m.mkt.GetAsset()
 		// finally remove from collateral (moving funds where needed)
-		movements, err := m.collateral.RemoveDistressed(closed, m.GetID(), asset)
+		var movements *types.TransferResponse
+		movements, err = m.collateral.RemoveDistressed(closed, m.GetID(), asset)
 		if err != nil {
 			m.log.Error(
 				"Failed to remove distressed accounts cleanly",
@@ -587,14 +588,14 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	}
 	// @NOTE: At this point, the network order was updated by the orderbook
 	// the price field now contains the average trade price at which the order was fulfilled
-	if err := m.orders.Post(no); err != nil {
+	if err = m.orders.Post(no); err != nil {
 		m.log.Error("Failure storing new order in submit order", logging.Error(err))
 	}
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			err := m.orders.Put(*order)
+			err = m.orders.Put(*order)
 			if err != nil {
 				m.log.Fatal("Failure storing order update in submit order",
 					logging.Order(*order),
@@ -615,14 +616,14 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			if err := m.trades.Post(trade); err != nil {
+			if err = m.trades.Post(trade); err != nil {
 				m.log.Error("Failure storing new trade in submit order",
 					logging.Trade(*trade),
 					logging.Error(err))
 			}
 
 			// Save to trade buffer for generating candles etc
-			err := m.candlesBuf.AddTrade(*trade)
+			err = m.candlesBuf.AddTrade(*trade)
 			if err != nil {
 				m.log.Error("Failure adding trade to candle buffer after submit order",
 					logging.Trade(*trade),
@@ -635,7 +636,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		}
 	}
 
-	if err := m.zeroOutNetwork(size, closed, &no, o); err != nil {
+	if err = m.zeroOutNetwork(size, closed, &no, o); err != nil {
 		m.log.Error(
 			"Failed to create closing order with distressed traders",
 			logging.Error(err),

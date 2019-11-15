@@ -156,11 +156,11 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 		atomic.AddInt32(&s.tradeSubscribersCnt, 1)
 		defer atomic.AddInt32(&s.tradeSubscribersCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx, cfunc := context.WithCancel(ctx)
+		ctx2, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {
 			select {
-			case <-ctx.Done():
+			case <-ctx2.Done():
 				s.log.Debug(
 					"Trades subscriber closed connection",
 					logging.Uint64("id", ref),
@@ -246,11 +246,11 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 		atomic.AddInt32(&s.positionsSubscribersCnt, 1)
 		defer atomic.AddInt32(&s.positionsSubscribersCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx, cfunc := context.WithCancel(ctx)
+		ctx2, cfunc := context.WithCancel(ctx)
 		defer cfunc()
 		for {
 			select {
-			case <-ctx.Done():
+			case <-ctx2.Done():
 				s.log.Debug(
 					"Positions subscriber closed connection",
 					logging.Uint64("id", ref),
@@ -268,7 +268,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 				close(positions)
 				return
 			case <-internal: // again, we're using this channel to detect state changes, the data itself isn't relevant
-				mapOfMarketPositions, err := s.GetPositionsByParty(ctx, party)
+				mapOfMarketPositions, err := s.GetPositionsByParty(ctx2, party)
 				if err != nil {
 					s.log.Error(
 						"Failed to get positions for subscriber (getPositionsByParty)",
