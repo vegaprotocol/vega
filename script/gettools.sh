@@ -27,7 +27,8 @@ github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.8.5
 github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.8.5
 github.com/mwitkow/go-proto-validators/protoc-gen-govalidators@v0.2.0
 golang.org/x/lint/golint
-golang.org/x/tools/cmd/goimports@v0.0.0-20190329200012-0ec5c269d481"
+golang.org/x/tools/cmd/goimports@v0.0.0-20190329200012-0ec5c269d481
+honnef.co/go/tools/cmd/staticcheck@2019.2.3"
 	# Note: Make sure the above tools and versions match the ones in devops-infra/docker/cipipeline/Dockerfile
 	echo "$tools" | while read -r toolurl ; do
 		go get "$toolurl"

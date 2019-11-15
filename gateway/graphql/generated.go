@@ -148,7 +148,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		OrderAmend  func(childComplexity int, id string, partyID string, price int, size int, expiration *string) int
 		OrderCancel func(childComplexity int, id string, partyID string, marketID string) int
-		OrderSubmit func(childComplexity int, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		OrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
 		Signin      func(childComplexity int, id string, password string) int
 	}
 
@@ -319,7 +319,7 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	OrderSubmit(ctx context.Context, marketID string, partyID string, price string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*proto.PendingOrder, error)
+	OrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
 	OrderAmend(ctx context.Context, id string, partyID string, price int, size int, expiration *string) (*proto.PendingOrder, error)
 	Signin(ctx context.Context, id string, password string) (string, error)
@@ -840,7 +840,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
+		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
 
 	case "Mutation.signin":
 		if e.complexity.Mutation.Signin == nil {
@@ -1734,7 +1734,7 @@ type Mutation {
     # ID of the party placing the order
     partyId: String!
     # Price of the asset
-    price: String!
+    price: String
     # Size ofthe order
     size: String!
     # Side of the order (Buy or Sell)
@@ -2748,9 +2748,9 @@ func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context,
 		}
 	}
 	args["partyId"] = arg1
-	var arg2 string
+	var arg2 *string
 	if tmp, ok := rawArgs["price"]; ok {
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5031,7 +5031,7 @@ func (ec *executionContext) _Mutation_orderSubmit(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType))
+		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
