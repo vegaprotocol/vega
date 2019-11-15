@@ -211,6 +211,7 @@ func (ts *Trade) GetByMarketAndID(ctx context.Context, market string, id string)
 		return
 	}
 	tradeBuf, _ := item.ValueCopy(nil)
+	trade = &types.Trade{}
 	if err = proto.Unmarshal(tradeBuf, trade); err != nil {
 		trade = nil
 		ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarketAndId)",
