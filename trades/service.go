@@ -152,15 +152,16 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 	internal := make(chan []types.Trade)
 	ref := s.tradeStore.Subscribe(internal)
 
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
 	go func() {
 		atomic.AddInt32(&s.tradeSubscribersCnt, 1)
 		defer atomic.AddInt32(&s.tradeSubscribersCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx2, cfunc := context.WithCancel(ctx)
-		defer cfunc()
+		defer cancel()
 		for {
 			select {
-			case <-ctx2.Done():
+			case <-ctx.Done():
 				s.log.Debug(
 					"Trades subscriber closed connection",
 					logging.Uint64("id", ref),
@@ -219,7 +220,7 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries),
 					)
-					cfunc()
+					cancel()
 					break
 				}
 
@@ -242,15 +243,16 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 	internal := make(chan []types.Trade)
 	ref := s.tradeStore.Subscribe(internal)
 
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
 	go func() {
 		atomic.AddInt32(&s.positionsSubscribersCnt, 1)
 		defer atomic.AddInt32(&s.positionsSubscribersCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx2, cfunc := context.WithCancel(ctx)
-		defer cfunc()
+		defer cancel()
 		for {
 			select {
-			case <-ctx2.Done():
+			case <-ctx.Done():
 				s.log.Debug(
 					"Positions subscriber closed connection",
 					logging.Uint64("id", ref),
@@ -268,7 +270,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 				close(positions)
 				return
 			case <-internal: // again, we're using this channel to detect state changes, the data itself isn't relevant
-				mapOfMarketPositions, err := s.GetPositionsByParty(ctx2, party)
+				mapOfMarketPositions, err := s.GetPositionsByParty(ctx, party)
 				if err != nil {
 					s.log.Error(
 						"Failed to get positions for subscriber (getPositionsByParty)",
@@ -310,7 +312,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 							logging.String("ip-address", ip),
 							logging.Int("retries", retries),
 						)
-						cfunc()
+						cancel()
 						break
 					}
 
