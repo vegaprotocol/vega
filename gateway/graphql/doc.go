@@ -2,7 +2,7 @@
 //
 // In order to add a new GraphQL endpoint, add an entry to either the
 // `Mutation`, `Query` or `Subscription` sections of
-// `internal/gateway/graphql/schema.graphql`. Example:
+// `gateway/graphql/schema.graphql`. Example:
 //
 //     # SomeNewEndpoint does something
 //     somenewendpoint(
@@ -19,7 +19,7 @@
 //
 // Then run `make gqlgen`.
 //
-// Next, in `internal/gateway/resolvers.go`, add the endpoint to the
+// Next, in `gateway/graphql/resolvers.go`, add the endpoint to the
 // `TradingClient` interface, and add a function implementation, using the
 // function definition from `generated.go`. Example:
 //

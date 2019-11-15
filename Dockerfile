@@ -6,16 +6,13 @@ RUN \
 	ssh-keyscan gitlab.com 1>~/.ssh/known_hosts 2>&1
 # The SSH key is needed to pull things from gitlab.com (e.g. vega/quant)
 ARG SSH_KEY
+# This sensitive data is being saved to the builder container, not the end product.
 RUN echo "$SSH_KEY" >~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa
 
 WORKDIR /go/src/project/
 COPY go.mod go.sum /go/src/project/
 RUN go mod download
-COPY .git /go/src/project/.git
-COPY cmd /go/src/project/cmd
-COPY internal /go/src/project/internal
-COPY proto /go/src/project/proto
-COPY .asciiart.txt Makefile /go/src/project/
+COPY . /go/src/project/
 RUN make deps
 RUN make gqlgen proto
 RUN make install
