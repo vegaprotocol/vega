@@ -24,7 +24,7 @@ func TestExtractData(t *testing.T) {
 	}
 	instructionSet := core.InstructionSet{
 		Instructions: instructions,
-		Description:  "Epending a trade",
+		Description:  "Execting a trade",
 	}
 	runner, err := sr.NewEngine(sr.NewDefaultConfig())
 	if err != nil {
@@ -72,18 +72,25 @@ func TestProcessInstructionsAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	instructions5, err := getCandleInstructions(marketId)
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	instructions6, err := getPositionInstructions(marketId)
 	if err != nil {
 		t.Fatal(err)
 	}
+	instructions7, err := getPositionInstructions(marketId)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	instructions := append(append(append(append(append(instructions1, instructions2...), instructions3...), instructions4...), instructions5...), instructions6...)
+	instructions := append(instructions1, instructions2...)
+	instructions = append(instructions, instructions3...)
+	instructions = append(instructions, instructions4...)
+	instructions = append(instructions, instructions5...)
+	instructions = append(instructions, instructions6...)
+	instructions = append(instructions, instructions7...)
 
 	instructionSet := core.InstructionSet{
 		Instructions: instructions,
@@ -609,6 +616,32 @@ func getPositionInstructions(partyId string) ([]*core.Instruction, error) {
 
 	instructions := []*core.Instruction{
 		instr1,
+	}
+
+	return instructions, nil
+}
+
+func getPartyInstructions(partyId string) ([]*core.Instruction, error) {
+	instr1, err := core.NewInstruction(
+		core.RequestType_PARTY_BY_ID,
+		&protoapi.PartyByIDRequest{
+			PartyID: partyId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	instr2, err := core.NewInstruction(
+		core.RequestType_PARTIES,
+		&empty.Empty{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instructions := []*core.Instruction{
+		instr1,
+		instr2,
 	}
 
 	return instructions, nil

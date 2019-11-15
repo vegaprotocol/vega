@@ -38,6 +38,7 @@ func NewEngine(config core.Config) (*Engine, error) {
 	accounts := preprocessors.NewAccounts(d.ctx, d.accountStore)
 	candles := preprocessors.NewCandles(d.ctx, d.candleStore)
 	positions := preprocessors.NewPositions(d.ctx, d.tradeService)
+	parties := preprocessors.NewParties(d.ctx, d.partyStore)
 
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore)
 
@@ -61,22 +62,9 @@ func NewEngine(config core.Config) (*Engine, error) {
 			accounts,
 			candles,
 			positions,
+			parties,
 		},
 	}, nil
-}
-
-func (e Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
-	maps := make(map[core.RequestType]*core.PreProcessor)
-	for _, provider := range append(e.providers, e.internalProvider) {
-		m := provider.PreProcessors()
-		for k, v := range m {
-			if _, ok := maps[k]; ok {
-				return nil, ErrDuplicateInstruction
-			}
-			maps[k] = v
-		}
-	}
-	return maps, nil
 }
 
 // ProcessInstructions takes a set of instructions and submits them to the protocol
@@ -192,4 +180,18 @@ func marketDepths(response core.ProtocolSummaryResponse) []*proto.MarketDepth {
 		}
 	}
 	return d
+}
+
+func (e Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
+	maps := make(map[core.RequestType]*core.PreProcessor)
+	for _, provider := range append(e.providers, e.internalProvider) {
+		m := provider.PreProcessors()
+		for k, v := range m {
+			if _, ok := maps[k]; ok {
+				return nil, ErrDuplicateInstruction
+			}
+			maps[k] = v
+		}
+	}
+	return maps, nil
 }
