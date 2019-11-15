@@ -78,7 +78,12 @@ func TestProcessInstructionsAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	instructions := append(append(append(append(instructions1, instructions2...), instructions3...), instructions4...), instructions5...)
+	instructions6, err := getPositionInstructions(marketId)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	instructions := append(append(append(append(append(instructions1, instructions2...), instructions3...), instructions4...), instructions5...), instructions6...)
 
 	instructionSet := core.InstructionSet{
 		Instructions: instructions,
@@ -578,6 +583,24 @@ func getCandleInstructions(marketId string) ([]*core.Instruction, error) {
 		core.RequestType_CANDLES,
 		&protoapi.CandlesRequest{
 			MarketID: marketId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	instructions := []*core.Instruction{
+		instr1,
+	}
+
+	return instructions, nil
+}
+
+func getPositionInstructions(partyId string) ([]*core.Instruction, error) {
+	instr1, err := core.NewInstruction(
+		core.RequestType_POSITIONS_BY_PARTY,
+		&protoapi.PositionsByPartyRequest{
+			PartyID: partyId,
 		},
 	)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes"
@@ -68,6 +69,16 @@ func getDependencies() (*dependencies, error) {
 		errs = multierror.Append(errs, err)
 	}
 
+	riskStore, err := storage.NewRisks(config.Storage)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	tradeService, err := trades.NewService(log, config.Trades, tradeStore, riskStore)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
 	err = errs.ErrorOrNil()
 	if err != nil {
 		return nil, err
@@ -99,6 +110,7 @@ func getDependencies() (*dependencies, error) {
 		marketStore:  marketStore,
 		accountStore: accountStore,
 		candleStore:  candleStore,
+		tradeService: tradeService,
 	}, nil
 }
 
@@ -112,6 +124,7 @@ type dependencies struct {
 	marketStore  *storage.Market
 	accountStore *storage.Account
 	candleStore  *storage.Candle
+	tradeService *trades.Svc
 }
 
 func NewDefaultConfig() core.Config {
