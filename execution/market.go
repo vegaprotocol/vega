@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -70,16 +69,12 @@ type Market struct {
 	collateral  *collateral.Engine
 	partyEngine *Party
 
-	// stores
-	candles           CandleStore
-	orders            OrderStore
-	parties           PartyStore
-	trades            TradeStore
-	transferResponses TransferResponseStore
-
 	// buffers
-	candlesBuf           *buffer.Candle
-	transferResponsesBuf *buffer.TransferResponse
+	orderBuf    OrderBuf
+	partyBuf    PartyBuf
+	tradeBuf    TradeBuf
+	transferBuf TransferBuf
+	candleBuf   CandleBuf
 
 	closed bool
 }
@@ -118,11 +113,11 @@ func NewMarket(
 	collateralEngine *collateral.Engine,
 	partyEngine *Party,
 	mkt *types.Market,
-	candles CandleStore,
-	orders OrderStore,
-	parties PartyStore,
-	trades TradeStore,
-	transferResponseStore TransferResponseStore,
+	candleBuf CandleBuf,
+	orderBuf OrderBuf,
+	partyBuf PartyBuf,
+	tradeBuf TradeBuf,
+	transferBuf TransferBuf,
 	now time.Time,
 	idgen *IDgenerator,
 ) (*Market, error) {
@@ -144,34 +139,34 @@ func NewMarket(
 	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
 		tradableInstrument.Instrument.InitialMarkPrice, false)
 
-	candlesBuf := buffer.NewCandle(mkt.Id, candles, now)
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book)
-	transferResponsesBuf := buffer.NewTransferResponse(transferResponseStore)
 	positionEngine := positions.New(log, positionConfig)
 	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
 
+	// start first candle
+	candleBuf.Start(mkt.Id, now)
+
 	market := &Market{
-		log:                  log,
-		idgen:                idgen,
-		mkt:                  mkt,
-		closingAt:            closingAt,
-		currentTime:          now,
-		markPrice:            tradableInstrument.Instrument.InitialMarkPrice,
-		matching:             book,
-		tradableInstrument:   tradableInstrument,
-		risk:                 riskEngine,
-		position:             positionEngine,
-		settlement:           settleEngine,
-		collateral:           collateralEngine,
-		partyEngine:          partyEngine,
-		candles:              candles,
-		orders:               orders,
-		parties:              parties,
-		trades:               trades,
-		candlesBuf:           candlesBuf,
-		transferResponsesBuf: transferResponsesBuf,
+		log:                log,
+		idgen:              idgen,
+		mkt:                mkt,
+		closingAt:          closingAt,
+		currentTime:        now,
+		markPrice:          tradableInstrument.Instrument.InitialMarkPrice,
+		matching:           book,
+		tradableInstrument: tradableInstrument,
+		risk:               riskEngine,
+		position:           positionEngine,
+		settlement:         settleEngine,
+		collateral:         collateralEngine,
+		partyEngine:        partyEngine,
+		orderBuf:           orderBuf,
+		partyBuf:           partyBuf,
+		tradeBuf:           tradeBuf,
+		candleBuf:          candleBuf,
+		transferBuf:        transferBuf,
 	}
 
 	return market, nil
@@ -227,16 +222,12 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.log.Debug("Calculated risk factors and updated positions (maybe)",
 		logging.String("market-id", m.mkt.Id))
 
-	// generated / store the buffered candles
-	previousCandlesBuf, err := m.candlesBuf.Start(t)
+	err := m.candleBuf.Flush(m.mkt.Id, t)
 	if err != nil {
-		m.log.Error("unable to get candles buf", logging.Error(err))
-	}
-
-	// get the buffered candles from the buffer
-	err = m.candles.GenerateCandlesFromBuffer(m.GetID(), previousCandlesBuf)
-	if err != nil {
-		m.log.Error("Failed to generate candles from buffer for market", logging.String("market-id", m.GetID()))
+		m.log.Error("Failed to flush candles from buffer for market",
+			logging.String("market-id", m.mkt.Id),
+			logging.Error(err),
+		)
 	}
 
 	if closed {
@@ -256,7 +247,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 					logging.Error(err),
 				)
 			} else {
-				m.transferResponsesBuf.Add(transfers)
+				m.transferBuf.Add(transfers)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
 					for _, v := range transfers {
@@ -276,7 +267,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				} else {
-					m.transferResponsesBuf.Add(clearMarketTransfers)
+					m.transferBuf.Add(clearMarketTransfers)
 					if m.log.GetLevel() == logging.DebugLevel {
 						// use transfers, unused var thingy
 						for _, v := range clearMarketTransfers {
@@ -293,8 +284,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 		}
 	}
 
-	// flush the transfer response buf
-	m.transferResponsesBuf.Flush()
 	timer.EngineTimeCounterAdd()
 	return
 }
@@ -322,7 +311,8 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Verify and add new parties
-	party, _ := m.parties.GetByID(order.PartyID)
+	// party, _ := m.parties.GetByID(order.PartyID)
+	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
 	if party == nil {
 		// trader should be created before even trying to post order
 		return nil, ErrTraderDoNotExists
@@ -371,20 +361,12 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	}
 
 	// Insert aggressive remaining order
-	err = m.orders.Post(*order)
-	if err != nil {
-		m.log.Error("Failure storing new order in submit order", logging.Error(err))
-	}
+	m.orderBuf.Add(*order)
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			err := m.orders.Put(*order)
-			if err != nil {
-				m.log.Fatal("Failure storing order update in submit order",
-					logging.Order(*order),
-					logging.Error(err))
-			}
+			m.orderBuf.Add(*order)
 		}
 	}
 
@@ -404,14 +386,10 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			if err := m.trades.Post(trade); err != nil {
-				m.log.Error("Failure storing new trade in submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
+			m.tradeBuf.Add(*trade)
 
 			// Save to trade buffer for generating candles etc
-			err := m.candlesBuf.AddTrade(*trade)
+			err := m.candleBuf.AddTrade(*trade)
 			if err != nil {
 				m.log.Error("Failure adding trade to candle buffer after submit order",
 					logging.Trade(*trade),
@@ -450,7 +428,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				}
 			}
 			if err != nil && 0 != len(transfers) {
-				m.transferResponsesBuf.Add(transfers)
+				m.transferBuf.Add(transfers)
 			}
 			err = m.resolveClosedOutTraders(closed, order)
 			if err != nil {
@@ -587,19 +565,15 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	}
 	// @NOTE: At this point, the network order was updated by the orderbook
 	// the price field now contains the average trade price at which the order was fulfilled
-	if err := m.orders.Post(no); err != nil {
-		m.log.Error("Failure storing new order in submit order", logging.Error(err))
-	}
+	m.orderBuf.Add(no)
+	// if err := m.orders.Post(no); err != nil {
+	// 	m.log.Error("Failure storing new order in submit order", logging.Error(err))
+	// }
 
 	if confirmation.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
 		for _, order := range confirmation.PassiveOrdersAffected {
-			err := m.orders.Put(*order)
-			if err != nil {
-				m.log.Fatal("Failure storing order update in submit order",
-					logging.Order(*order),
-					logging.Error(err))
-			}
+			m.orderBuf.Add(*order)
 		}
 	}
 
@@ -615,14 +589,10 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
 			}
 
-			if err := m.trades.Post(trade); err != nil {
-				m.log.Error("Failure storing new trade in submit order",
-					logging.Trade(*trade),
-					logging.Error(err))
-			}
+			m.tradeBuf.Add(*trade)
 
 			// Save to trade buffer for generating candles etc
-			err := m.candlesBuf.AddTrade(*trade)
+			err := m.candleBuf.AddTrade(*trade)
 			if err != nil {
 				m.log.Error("Failure adding trade to candle buffer after submit order",
 					logging.Trade(*trade),
@@ -699,9 +669,7 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 	if _, err := tmpOrderBook.SubmitOrder(&order); err != nil {
 		return err
 	}
-	if err := m.orders.Post(order); err != nil {
-		return err
-	}
+	m.orderBuf.Add(order)
 	// traders need to take the opposing side
 	side = settleOrder.Side
 	// @TODO get trader positions, submit orders for each
@@ -721,18 +689,14 @@ func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, se
 		to.Size = to.Remaining
 		m.idgen.SetID(&to)
 		// store the trader order, too
-		if err := m.orders.Post(to); err != nil {
-			return err
-		}
+		m.orderBuf.Add(to)
 		res, err := tmpOrderBook.SubmitOrder(&to)
 		if err != nil {
 			return err
 		}
 		// now store the resulting trades:
 		for _, trade := range res.Trades {
-			if err := m.trades.Post(trade); err != nil {
-				return err
-			}
+			m.tradeBuf.Add(*trade)
 		}
 	}
 	return nil
@@ -765,7 +729,7 @@ func (m *Market) checkMarginForOrder(pos *positions.MarketPosition, order *types
 		if err != nil {
 			return errors.Wrap(err, "unable to get risk updates")
 		}
-		m.transferResponsesBuf.Add(transferResps)
+		m.transferBuf.Add(transferResps)
 
 		if 0 != len(closePositions) {
 
@@ -896,12 +860,7 @@ func (m *Market) CancelOrder(order *types.Order) (*types.OrderCancellationConfir
 	}
 
 	// Update the order in our stores (will be marked as cancelled)
-	err = m.orders.Put(*order)
-	if err != nil {
-		m.log.Error("Failure storing order update in execution engine (cancel)",
-			logging.Order(*order),
-			logging.Error(err))
-	}
+	m.orderBuf.Add(*order)
 	_, err = m.position.UnregisterOrder(order)
 	if err != nil {
 		m.log.Error("Failure unregistering order in positions engine (cancel)",
@@ -931,15 +890,27 @@ func (m *Market) DeleteOrder(order *types.Order) (err error) {
 }
 
 // AmendOrder amend an existing order from the order book
-func (m *Market) AmendOrder(
-	orderAmendment *types.OrderAmendment,
-	existingOrder *types.Order,
-) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	if m.closed {
 		return nil, ErrMarketClosed
+	}
+
+	// try to get the order first
+	// order, err := e.order.GetByPartyAndID(
+	// context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
+	existingOrder, err := m.matching.GetOrderByPartyAndID(
+		orderAmendment.PartyID, orderAmendment.OrderID, orderAmendment.Side)
+	if err != nil {
+		m.log.Error("Invalid order reference",
+			logging.String("id", existingOrder.Id),
+			logging.String("party", existingOrder.PartyID),
+			logging.String("market", existingOrder.MarketID),
+			logging.Error(err))
+
+		return nil, types.ErrInvalidOrderReference
 	}
 
 	// Validate Market
@@ -1049,13 +1020,7 @@ func (m *Market) orderAmendInPlace(newOrder *types.Order) (*types.OrderConfirmat
 			logging.Error(err))
 		return &types.OrderConfirmation{}, err
 	}
-	err = m.orders.Put(*newOrder)
-	if err != nil {
-		m.log.Error("Failure storing order update in orders store (amend-in-place)",
-			logging.Order(*newOrder),
-			logging.Error(err))
-		// todo: txn or other strategy (https://gitlab.com/vega-prxotocol/trading-core/issues/160)
-	}
+	m.orderBuf.Add(*newOrder)
 	return &types.OrderConfirmation{}, nil
 }
 

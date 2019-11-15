@@ -37,9 +37,6 @@ func TestMarkets(t *testing.T) {
 	}
 	defer marketStore.Close()
 
-	err = marketStore.Commit() // no-op for in-memory store
-	assert.NoError(t, err)
-
 	config.Level.Level = logging.InfoLevel
 	marketStore.ReloadConf(config)
 

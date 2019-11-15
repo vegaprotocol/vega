@@ -2,11 +2,16 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
@@ -16,12 +21,14 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -86,6 +93,10 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	// assign config vars
 	l.configPath, l.conf = configPath, conf
 
+	if err = l.loadMarketsConfig(); err != nil {
+		return err
+	}
+
 	// Set ulimits
 	if err = l.SetUlimits(); err != nil {
 		l.Log.Warn("Unable to set ulimits",
@@ -96,7 +107,54 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	l.stats = stats.New(l.Log, l.cli.version, l.cli.versionHash)
+
 	// set up storage, this should be persistent
+	if err := l.setupStorages(); err != nil {
+		return err
+	}
+	l.setupBuffers()
+
+	return nil
+}
+
+func (l *NodeCommand) loadMarketsConfig() error {
+	pmkts := []proto.Market{}
+	mktsCfg := l.conf.Execution.Markets
+	// loads markets from configuration
+	for _, v := range mktsCfg.Configs {
+		path := filepath.Join(mktsCfg.Path, v)
+		buf, err := ioutil.ReadFile(path)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("unable to read market configuration at %s", path))
+		}
+
+		mkt := proto.Market{}
+		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("unable to unmarshal market configuration at %s", path))
+		}
+
+		l.Log.Info("New market loaded from configuation",
+			logging.String("market-config", path),
+			logging.String("market-id", mkt.Id))
+		pmkts = append(pmkts, mkt)
+	}
+	l.mktscfg = pmkts
+
+	return nil
+}
+
+func (l *NodeCommand) setupBuffers() {
+	l.orderBuf = buffer.NewOrder(l.orderStore)
+	l.tradeBuf = buffer.NewTrade(l.tradeStore)
+	l.partyBuf = buffer.NewParty(l.partyStore)
+	l.transferBuf = buffer.NewTransferResponse(l.transferResponseStore)
+	l.marketBuf = buffer.NewMarket(l.marketStore)
+	l.accountBuf = buffer.NewAccount(l.accounts)
+	l.candleBuf = buffer.NewCandle(l.candleStore)
+}
+
+func (l *NodeCommand) setupStorages() (err error) {
 	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
 		return
 	}
@@ -137,7 +195,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
 
-	return nil
+	return
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node
@@ -156,13 +214,14 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.orderStore,
-		l.tradeStore,
-		l.candleStore,
-		l.marketStore,
-		l.partyStore,
-		l.accounts,
-		l.transferResponseStore,
+		l.orderBuf,
+		l.tradeBuf,
+		l.candleBuf,
+		l.marketBuf,
+		l.partyBuf,
+		l.accountBuf,
+		l.transferBuf,
+		l.mktscfg,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 

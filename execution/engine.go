@@ -1,21 +1,14 @@
 package execution
 
 import (
-	"context"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/storage"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 )
 
@@ -24,40 +17,40 @@ var (
 	ErrMarketAlreadyExist = errors.New("market already exist")
 )
 
-// OrderStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/execution OrderStore
-type OrderStore interface {
-	GetByPartyAndID(ctx context.Context, party string, id string) (*types.Order, error)
-	Post(order types.Order) error
-	Put(order types.Order) error
-	Commit() error
+// OrderBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution OrderBuf
+type OrderBuf interface {
+	Add(types.Order)
+	Flush() error
 }
 
-// TradeStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeStore
-type TradeStore interface {
-	Commit() error
-	Post(trade *types.Trade) error
+// TradeBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TradeBuf
+type TradeBuf interface {
+	Add(types.Trade)
+	Flush() error
 }
 
-// CandleStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleStore
-type CandleStore interface {
-	GenerateCandlesFromBuffer(market string, buf map[string]types.Candle) error
-	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
+// CandleBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution CandleBuf
+type CandleBuf interface {
+	AddTrade(types.Trade) error
+	Flush(marketID string, t time.Time) error
+	Start(marketID string, t time.Time) (map[string]types.Candle, error)
 }
 
-// MarketStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketStore
-type MarketStore interface {
-	Post(party *types.Market) error
+// MarketBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketBuf
+type MarketBuf interface {
+	Add(types.Market)
+	Flush() error
 }
 
-// PartyStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_store_mock.go -package mocks code.vegaprotocol.io/vega/execution PartyStore
-type PartyStore interface {
-	GetByID(id string) (*types.Party, error)
-	Post(party *types.Party) error
+// PartyBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/party_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution PartyBuf
+type PartyBuf interface {
+	Add(types.Party)
+	Flush() error
 }
 
 // TimeService ...
@@ -67,30 +60,39 @@ type TimeService interface {
 	NotifyOnTick(f func(time.Time))
 }
 
-// TransferResponseStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/vega/execution TransferResponseStore
-type TransferResponseStore interface {
-	SaveBatch([]*types.TransferResponse) error
+// TransferBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution TransferBuf
+type TransferBuf interface {
+	Add([]*types.TransferResponse)
+	Flush() error
+}
+
+// AccountBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution AccountBuf
+type AccountBuf interface {
+	Add(types.Account)
+	Flush() error
 }
 
 // Engine is the execution engine
 type Engine struct {
-	log *logging.Logger
 	Config
+	log *logging.Logger
 
-	markets               map[string]*Market
-	party                 *Party
-	orderStore            OrderStore
-	tradeStore            TradeStore
-	candleStore           CandleStore
-	marketStore           MarketStore
-	partyStore            PartyStore
-	time                  TimeService
-	collateral            *collateral.Engine
-	accountBuf            *buffer.Account
-	accountStore          *storage.Account
-	transferResponseStore TransferResponseStore
-	idgen                 *IDgenerator
+	markets    map[string]*Market
+	party      *Party
+	collateral *collateral.Engine
+	idgen      *IDgenerator
+
+	orderBuf    OrderBuf
+	tradeBuf    TradeBuf
+	candleBuf   CandleBuf
+	marketBuf   MarketBuf
+	partyBuf    PartyBuf
+	accountBuf  AccountBuf
+	transferBuf TransferBuf
+
+	time TimeService
 }
 
 // NewEngine takes stores and engines and returns
@@ -99,44 +101,18 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	time TimeService,
-	orderStore OrderStore,
-	tradeStore TradeStore,
-	candleStore CandleStore,
-	marketStore MarketStore,
-	partyStore PartyStore,
-	accountStore *storage.Account,
-	transferResponseStore TransferResponseStore,
+	orderBuf OrderBuf,
+	tradeBuf TradeBuf,
+	candleBuf CandleBuf,
+	marketBuf MarketBuf,
+	partyBuf PartyBuf,
+	accountBuf AccountBuf,
+	transferBuf TransferBuf,
+	pmkts []types.Market,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
-
-	pmkts := []types.Market{}
-	// loads markets from configuration
-	for _, v := range executionConfig.Markets.Configs {
-		path := filepath.Join(executionConfig.Markets.Path, v)
-		buf, err := ioutil.ReadFile(path)
-		if err != nil {
-			log.Panic("Unable to read market configuration",
-				logging.Error(err),
-				logging.String("config-path", path))
-		}
-
-		mkt := types.Market{}
-		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
-		if err != nil {
-			log.Panic("Unable to unmarshal market configuration",
-				logging.Error(err),
-				logging.String("config-path", path))
-		}
-
-		log.Info("New market loaded from configuation",
-			logging.String("market-config", path),
-			logging.String("market-id", mkt.Id))
-		pmkts = append(pmkts, mkt)
-	}
-
-	accountBuf := buffer.NewAccount(accountStore)
 
 	now, err := time.GetTimeNow()
 	if err != nil {
@@ -151,21 +127,20 @@ func NewEngine(
 	}
 
 	e := &Engine{
-		log:                   log,
-		Config:                executionConfig,
-		markets:               map[string]*Market{},
-		candleStore:           candleStore,
-		orderStore:            orderStore,
-		tradeStore:            tradeStore,
-		marketStore:           marketStore,
-		partyStore:            partyStore,
-		time:                  time,
-		collateral:            cengine,
-		party:                 NewParty(log, cengine, pmkts, partyStore),
-		accountStore:          accountStore,
-		accountBuf:            accountBuf,
-		transferResponseStore: transferResponseStore,
-		idgen:                 NewIDGen(),
+		log:         log,
+		Config:      executionConfig,
+		markets:     map[string]*Market{},
+		candleBuf:   candleBuf,
+		orderBuf:    orderBuf,
+		tradeBuf:    tradeBuf,
+		marketBuf:   marketBuf,
+		partyBuf:    partyBuf,
+		time:        time,
+		collateral:  cengine,
+		party:       NewParty(log, cengine, pmkts, partyBuf),
+		accountBuf:  accountBuf,
+		transferBuf: transferBuf,
+		idgen:       NewIDGen(),
 	}
 
 	for _, mkt := range pmkts {
@@ -177,8 +152,11 @@ func NewEngine(
 		}
 	}
 
-	// create the party engine
-	e.party = NewParty(log, e.collateral, pmkts, e.partyStore)
+	// just flush a first time the markets
+	if err := e.marketBuf.Flush(); err != nil {
+		e.log.Error("unable to flush markets", logging.Error(err))
+		return nil
+	}
 
 	// Add time change event handler
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
@@ -243,11 +221,11 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.collateral,
 		e.party,
 		mktconfig,
-		e.candleStore,
-		e.orderStore,
-		e.partyStore,
-		e.tradeStore,
-		e.transferResponseStore,
+		e.candleBuf,
+		e.orderBuf,
+		e.partyBuf,
+		e.tradeBuf,
+		e.transferBuf,
 		now,
 		e.idgen,
 	)
@@ -258,13 +236,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		)
 	}
 
-	err = e.marketStore.Post(mktconfig)
-	if err != nil {
-		e.log.Error("Failed to add default market to market store",
-			logging.String("market-name", mktconfig.Name),
-			logging.Error(err),
-		)
-	}
+	e.marketBuf.Add(*mktconfig)
 
 	e.markets[mktconfig.Id] = mkt
 
@@ -316,36 +288,21 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 // if it exists and is in a state to be edited.
 func (e *Engine) AmendOrder(orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	e.log.Debug("Amend order")
-	// try to get the order first
-	order, err := e.orderStore.GetByPartyAndID(
-		context.Background(), orderAmendment.PartyID, orderAmendment.OrderID)
-	if err != nil {
-		e.log.Error("Invalid order reference",
-			logging.String("id", order.Id),
-			logging.String("party", order.PartyID),
-			logging.Error(err))
 
-		return nil, types.ErrInvalidOrderReference
-	}
-	wasActive := order.Status == types.Order_Active
-	if e.log.Check(logging.DebugLevel) {
-		e.log.Debug("Existing order found", logging.Order(*order))
-	}
-
-	mkt, ok := e.markets[order.MarketID]
+	mkt, ok := e.markets[orderAmendment.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(orderAmendment, order)
+	conf, err := mkt.AmendOrder(orderAmendment)
 	if err != nil {
 		return nil, err
 	}
 	// order was active, not anymore -> decrement gauge
-	if wasActive && conf.Order.Status != types.Order_Active {
-		metrics.OrderGaugeAdd(-1, order.MarketID)
+	if conf.Order.Status != types.Order_Active {
+		metrics.OrderGaugeAdd(-1, orderAmendment.MarketID)
 	}
 	return conf, nil
 }
@@ -425,12 +382,7 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 
 	for _, order := range expiringOrders {
 		order := order
-		err := e.orderStore.Put(order)
-		if err != nil {
-			e.log.Error("error updating store for remove expiring order",
-				logging.Order(order),
-				logging.Error(err))
-		}
+		e.orderBuf.Add(order)
 		// order expired, decrement gauge
 		metrics.OrderGaugeAdd(-1, order.MarketID)
 	}
@@ -447,14 +399,25 @@ func (e *Engine) Generate() error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit accounts"))
 	}
-
-	err = e.orderStore.Commit()
+	err = e.orderBuf.Flush()
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit orders"))
 	}
-	err = e.tradeStore.Commit()
+	err = e.tradeBuf.Flush()
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit trades"))
+	}
+	// do not check errors here as they only happend when a party is created
+	// twice, which should not be a problem
+	_ = e.partyBuf.Flush()
+
+	err = e.transferBuf.Flush()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to commit transfers"))
+	}
+	err = e.marketBuf.Flush()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Failed to commit markets"))
 	}
 
 	return nil
