@@ -10,7 +10,7 @@ The following diagram shows how the various components of this implementation in
 
 ## Modelling the domain
 
-Some subdirectories contain golang packages which represent a discrete domain or concept from the whitepaper.
+Some subdirectories contain Golang packages which represent a discrete domain or concept from the whitepaper.
 
 ### Design documentation
 
