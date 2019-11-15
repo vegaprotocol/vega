@@ -182,8 +182,10 @@ func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
 func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
-		&types.NotifyTraderAccount{
-			TraderID: trader1Id,
+		&protoapi.NotifyTraderAccountRequest{
+			Notif: &types.NotifyTraderAccount{
+				TraderID: trader1Id,
+			},
 		},
 	)
 	if err != nil {
@@ -193,15 +195,16 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	sell := types.Side_Sell
 	instr2, err := core.NewInstruction(
 		core.RequestType_SUBMIT_ORDER,
-		&types.Order{
-			MarketID:    marketId,
-			PartyID:     trader1Id,
-			Price:       100,
-			Size:        3,
-			Remaining:   3,
-			Side:        sell,
-			TimeInForce: types.Order_GTC,
-			ExpiresAt:   1924991999000000000,
+		&protoapi.SubmitOrderRequest{
+			Submission: &types.OrderSubmission{
+				MarketID:    marketId,
+				PartyID:     trader1Id,
+				Price:       100,
+				Size:        3,
+				Side:        sell,
+				TimeInForce: types.Order_GTC,
+				ExpiresAt:   1924991999000000000,
+			},
 		},
 	)
 	if err != nil {
@@ -211,9 +214,12 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 
 	instr3, err := core.NewInstruction(
 		core.RequestType_CANCEL_ORDER,
-		&types.Order{
-			MarketID: marketId,
-			Side:     sell,
+		&protoapi.CancelOrderRequest{
+			Cancellation: &types.OrderCancellation{
+				OrderID:  "",
+				MarketID: marketId,
+				PartyID:  trader1Id,
+			},
 		},
 	)
 	if err != nil {
@@ -222,8 +228,10 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	trader2 := "trader2"
 	instr4, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
-		&types.NotifyTraderAccount{
-			TraderID: trader2,
+		&protoapi.NotifyTraderAccountRequest{
+			Notif: &types.NotifyTraderAccount{
+				TraderID: trader2,
+			},
 		},
 	)
 	if err != nil {
@@ -233,28 +241,32 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	buy := types.Side_Buy
 	instr5, err := core.NewInstruction(
 		core.RequestType_SUBMIT_ORDER,
-		&types.Order{
-			MarketID:    marketId,
-			PartyID:     trader2,
-			Price:       100,
-			Size:        3,
-			Remaining:   3,
-			Side:        buy,
-			TimeInForce: types.Order_GTC,
-			ExpiresAt:   1924991999000000000,
+		&protoapi.SubmitOrderRequest{
+			Submission: &types.OrderSubmission{
+				MarketID:    marketId,
+				PartyID:     trader2,
+				Price:       100,
+				Size:        3,
+				Side:        buy,
+				TimeInForce: types.Order_GTC,
+				ExpiresAt:   1924991999000000000,
+			},
 		},
 	)
+
 	if err != nil {
 		return nil, err
 	}
 
 	instr6, err := core.NewInstruction(
 		core.RequestType_AMEND_ORDER,
-		&types.OrderAmendment{
-			PartyID:   trader2,
-			Price:     100,
-			Size:      30,
-			ExpiresAt: 1924991999000000000,
+		&protoapi.AmendOrderRequest{
+			Amendment: &types.OrderAmendment{
+				PartyID:   trader2,
+				Price:     100,
+				Size:      30,
+				ExpiresAt: 1924991999000000000,
+			},
 		},
 	)
 	if err != nil {
@@ -263,9 +275,11 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 
 	instr7, err := core.NewInstruction(
 		core.RequestType_WITHDRAW,
-		&types.Withdraw{
-			PartyID: trader2,
-			Amount:  1000,
+		&protoapi.WithdrawRequest{
+			Withdraw: &types.Withdraw{
+				PartyID: trader2,
+				Amount:  1000,
+			},
 		},
 	)
 	if err != nil {
@@ -274,8 +288,10 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 
 	instr8, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
-		&types.NotifyTraderAccount{
-			TraderID: "trader3",
+		&protoapi.NotifyTraderAccountRequest{
+			Notif: &types.NotifyTraderAccount{
+				TraderID: "trader3",
+			},
 		},
 	)
 	if err != nil {
@@ -283,24 +299,28 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	}
 	instr9, err := core.NewInstruction(
 		core.RequestType_SUBMIT_ORDER,
-		&types.Order{
-			MarketID:    marketId,
-			PartyID:     "trader3",
-			Price:       100,
-			Size:        3,
-			Remaining:   3,
-			Side:        types.Side_Sell,
-			TimeInForce: types.Order_GTC,
-			ExpiresAt:   1924991999000000000,
+		&protoapi.SubmitOrderRequest{
+			Submission: &types.OrderSubmission{
+				MarketID:    marketId,
+				PartyID:     "trader3",
+				Price:       100,
+				Size:        3,
+				Side:        types.Side_Sell,
+				TimeInForce: types.Order_GTC,
+				ExpiresAt:   1924991999000000000,
+			},
 		},
 	)
+
 	if err != nil {
 		return nil, err
 	}
 	instr10, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
-		&types.NotifyTraderAccount{
-			TraderID: "trader4",
+		&protoapi.NotifyTraderAccountRequest{
+			Notif: &types.NotifyTraderAccount{
+				TraderID: "trader4",
+			},
 		},
 	)
 	if err != nil {
@@ -308,17 +328,19 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	}
 	instr11, err := core.NewInstruction(
 		core.RequestType_SUBMIT_ORDER,
-		&types.Order{
-			MarketID:    marketId,
-			PartyID:     "trader4",
-			Price:       100,
-			Size:        3,
-			Remaining:   3,
-			Side:        types.Side_Buy,
-			TimeInForce: types.Order_GTC,
-			ExpiresAt:   1924991999000000000,
+		&protoapi.SubmitOrderRequest{
+			Submission: &types.OrderSubmission{
+				MarketID:    marketId,
+				PartyID:     "trader4",
+				Price:       100,
+				Size:        3,
+				Side:        types.Side_Buy,
+				TimeInForce: types.Order_GTC,
+				ExpiresAt:   1924991999000000000,
+			},
 		},
 	)
+
 	if err != nil {
 		return nil, err
 	}
