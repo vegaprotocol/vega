@@ -2,7 +2,7 @@
 //
 // In order to add a new gRPC endpoint, add proto content (rpc call, request
 // and response messages), then add the endpoint function implementation in
-// `internal/api/somefile.go`. Example:
+// `api/somefile.go`. Example:
 //
 //     func (s *tradingService) SomeNewEndpoint(
 //         ctx context.Context, req *protoapi.SomeNewEndpointRequest,
@@ -11,5 +11,5 @@
 //         return &protoapi.SomeNewEndpointResponse{/* ... */}, nil
 //     }
 //
-// Add a test for the newly created endpoint in `internal/api/trading_test.go`.
+// Add a test for the newly created endpoint in `api/trading_test.go`.
 package api
