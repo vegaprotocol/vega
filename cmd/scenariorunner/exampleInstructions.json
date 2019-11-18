@@ -4,46 +4,52 @@
     {
       "request": "NOTIFY_TRADER_ACCOUNT",
       "message": {
-        "@type": "vega.NotifyTraderAccount",
-        "traderID": "trader1",
-        "amount": 1000
+        "@type": "api.NotifyTraderAccountRequest",
+        "notif": {
+          "traderID": "trader1",
+          "amount": 1000
+        }
       }
     },
     {
       "request": "SUBMIT_ORDER",
       "message": {
-        "@type": "vega.Order",
-        "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
-        "partyID": "trader1",
-        "price": 90,
-        "size": 3,
-        "remaining": 3,
-        "side": "Sell",
-        "timeInForce": "GTC",
-        "expiresAt": 1924991999000000000
+        "@type": "api.SubmitOrderRequest",
+        "submission": {
+          "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
+          "partyID": "trader1",
+          "price": 100,
+          "size": 3,
+          "side": "Sell",
+          "TimeInForce": "GTC",
+          "expiresAt": 1924991999000000000
+        }
       }
     },
     {
       "request": "NOTIFY_TRADER_ACCOUNT",
       "message": {
-        "@type": "vega.NotifyTraderAccount",
-        "traderID": "trader2",
-        "amount": 1000
+        "@type": "api.NotifyTraderAccountRequest",
+        "notif": {
+          "traderID": "trader2",
+          "amount": 1000
+        }
       }
     },
     {
-      "description": "Submitting a matching order, hoping for a trade.",
+      "description": "Submitting a matching order, expecting a trade.",
       "request": "SUBMIT_ORDER",
       "message": {
-        "@type": "vega.Order",
-        "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
-        "partyID": "trader2",
-        "price": 100,
-        "size": 3,
-        "remaining": 3,
-        "side": "Buy",
-        "timeInForce": "GTC",
-        "expiresAt": 1924991999000000000
+        "@type": "api.SubmitOrderRequest",
+        "submission": {
+          "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
+          "partyID": "trader2",
+          "price": 100,
+          "size": 3,
+          "side": "Buy",
+          "TimeInForce": "GTC",
+          "expiresAt": 1924991999000000000
+        }
       }
     },
     {
@@ -56,23 +62,26 @@
     {
       "request": "NOTIFY_TRADER_ACCOUNT",
       "message": {
-        "@type": "vega.NotifyTraderAccount",
-        "traderID": "trader3",
-        "amount": 1000
+        "@type": "api.NotifyTraderAccountRequest",
+        "notif": {
+          "traderID": "trader3",
+          "amount": 1000
+        }
       }
     },
     {
       "request": "SUBMIT_ORDER",
       "message": {
-        "@type": "vega.Order",
-        "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
-        "partyID": "trader3",
-        "price": 100,
-        "size": 3,
-        "remaining": 3,
-        "side": "Buy",
-        "timeInForce": "GTC",
-        "expiresAt": 1924991999000000000
+        "@type": "api.SubmitOrderRequest",
+        "submission": {
+          "marketID": "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
+          "partyID": "trader3",
+          "price": 100,
+          "size": 3,
+          "side": "Buy",
+          "TimeInForce": "GTC",
+          "expiresAt": 1924991999000000000
+        }
       }
     }
   ]
