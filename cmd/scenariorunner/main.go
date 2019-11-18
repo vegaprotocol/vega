@@ -52,21 +52,21 @@ func commands() {
 		{
 			Name:    submit,
 			Aliases: []string{submit[:1]},
-			Usage:   "Submits a batch of node instructions read from a JSON file - subcommands available, see 'help'",
+			Usage:   "Submits a batch of node instructions read from a JSON file - subcommands available, see 'help'.",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:        "result, r",
-					Usage:       "Save instrution results set to a `FILE`. Files will be suffixed with a number when multiple instruction sets get submitted",
+					Usage:       "Save instrution results set to a `FILE`. Files will be suffixed with a number when multiple instruction sets get submitted.",
 					Destination: &optionalResultSetFile,
 				},
 				cli.StringFlag{
 					Name:        "extract, e",
-					Usage:       "Save protocol summary after successful execution of all instruction sets",
+					Usage:       "Save protocol summary after successful execution of all instruction sets.",
 					Destination: &optionalProtocolSummaryFile,
 				},
 				cli.StringFlag{
 					Name:        "config, c",
-					Usage:       "Use config file",
+					Usage:       "Specify config file. Default config used if omitted.",
 					Destination: &configFile,
 				},
 			},
