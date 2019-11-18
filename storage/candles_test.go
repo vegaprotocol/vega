@@ -44,7 +44,7 @@ func TestStorage_GenerateCandles(t *testing.T) {
 	buf.Start(testMarket, t0)
 
 	for idx := range trades {
-		err := buf.AddTrade(*trades[idx])
+		err = buf.AddTrade(*trades[idx])
 		assert.Nil(t, err)
 	}
 
@@ -267,7 +267,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 	buf := buffer.NewCandle(candleStore)
 	buf.Start(testMarket, t0)
 	for idx := range trades1 {
-		err := buf.AddTrade(*trades1[idx])
+		err = buf.AddTrade(*trades1[idx])
 		assert.Nil(t, err)
 	}
 	previousBuf, _ := buf.Start(testMarket, t0.Add(2*time.Minute))
@@ -336,7 +336,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 
 	assert.Nil(t, err)
 	for idx := range trades2 {
-		err := buf.AddTrade(*trades2[idx])
+		err = buf.AddTrade(*trades2[idx])
 		assert.Nil(t, err)
 	}
 	previousBuf, _ = buf.Start(testMarket, t0.Add(4*time.Minute))
@@ -389,7 +389,7 @@ func TestStorage_PreviousCandleDerivedValues(t *testing.T) {
 
 	assert.Nil(t, err)
 	for idx := range trades3 {
-		err := buf.AddTrade(*trades3[idx])
+		err = buf.AddTrade(*trades3[idx])
 		assert.Nil(t, err)
 	}
 	previousBuf, _ = buf.Start(testMarket, t0.Add(10*time.Minute))

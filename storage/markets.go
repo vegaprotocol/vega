@@ -71,16 +71,14 @@ func (m *Market) Post(market *types.Market) error {
 	}
 	marketKey := m.badger.marketKey(market.Id)
 	err = m.badger.db.Update(func(txn *badger.Txn) error {
-		err := txn.Set(marketKey, buf)
-		if err != nil {
-			m.log.Error("unable to save market in badger",
-				logging.Error(err),
-				logging.String("market-id", market.Id),
-			)
-			return err
-		}
-		return nil
+		return txn.Set(marketKey, buf)
 	})
+	if err != nil {
+		m.log.Error("unable to save market in badger",
+			logging.Error(err),
+			logging.String("market-id", market.Id),
+		)
+	}
 
 	return err
 }
