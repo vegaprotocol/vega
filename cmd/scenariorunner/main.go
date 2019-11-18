@@ -18,6 +18,14 @@ var (
 	runner = scenariorunner{}
 )
 
+var (
+	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
+	VersionHash = ""
+
+	// Version specifies the version used to build the application. See VERSION in Makefile for details.
+	Version = ""
+)
+
 func main() {
 	info()
 	commands()
@@ -31,12 +39,13 @@ func info() {
 	app.Name = "scenario-runner-cli"
 	app.Usage = "Interact with a Vega node running without the consensus layer via command line."
 	app.Description = "Command line tool interacting with a Vega node running without the consensus layer. It allows submission of instructions in bulk and persistence of respones along with the accompanying metadata."
-	app.Version = "0.0.0"
+	app.Version = Version
 }
 
 func commands() {
 	var optionalResultSetFile string
 	var optionalProtocolSummaryFile string
+	var configFile string
 
 	var submit = "submit"
 	app.Commands = []cli.Command{
@@ -55,6 +64,11 @@ func commands() {
 					Usage:       "Save protocol summary after successful execution of all instruction sets",
 					Destination: &optionalProtocolSummaryFile,
 				},
+				cli.StringFlag{
+					Name:        "config, c",
+					Usage:       "Use config file",
+					Destination: &configFile,
+				},
 			},
 			Action: func(c *cli.Context) {
 				dir, err := os.Getwd()
@@ -68,7 +82,7 @@ func commands() {
 						log.Fatal(err)
 					}
 					n := len(instrSet)
-					runner.lazyInit()
+					runner.lazyInit(configFile)
 					for i, instr := range instrSet {
 						res, err := runner.engine.ProcessInstructions(*instr)
 						if err != nil {
@@ -105,9 +119,16 @@ type scenariorunner struct {
 	engine     *sr.Engine
 }
 
-func (s *scenariorunner) lazyInit() {
+func (s *scenariorunner) lazyInit(configFileWithPath string) {
 	s.engineOnce.Do(func() {
 		config := sr.NewDefaultConfig()
+		if configFileWithPath != "" {
+			f, err := os.Open(configFileWithPath)
+			if err != nil {
+				log.Fatal(err)
+			}
+			unmarshall(f, &config)
+		}
 		engine, err := sr.NewEngine(config)
 		if err != nil {
 			log.Fatal(err)
