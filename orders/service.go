@@ -295,12 +295,13 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		ctx, cfunc := context.WithCancel(ctx)
-		defer cfunc()
+		defer cancel()
 		for {
 			select {
 			case <-ctx.Done():
@@ -364,7 +365,7 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries),
 					)
-					cfunc()
+					cancel()
 					break
 				}
 			}

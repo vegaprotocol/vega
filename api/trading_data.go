@@ -778,7 +778,7 @@ func (h *tradingDataService) MarketDepthSubscribe(
 				return err
 			}
 
-			err := srv.Send(depth)
+			err = srv.Send(depth)
 			if err != nil {
 				h.log.Error("Depth subscriber - rpc stream error",
 					logging.Error(err),
