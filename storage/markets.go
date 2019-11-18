@@ -157,10 +157,12 @@ func (m *Market) GetAll() ([]*types.Market, error) {
 	return markets, nil
 }
 
-// Commit typically saves any operations that are queued to underlying storage,
-// if supported by underlying storage implementation.
-func (m *Market) Commit() error {
-	// Not required with a mem-store implementation.
+func (m *Market) SaveBatch(batch []types.Market) error {
+	for _, v := range batch {
+		if err := m.Post(&v); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

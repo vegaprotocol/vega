@@ -333,6 +333,62 @@ func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order
 	return expiredOrders
 }
 
+func (b *OrderBook) GetOrderByPartyAndID(
+	partyID, orderID string, side types.Side,
+) (*types.Order, error) {
+	// Validate Order ID must be present
+	if len(orderID) <= 0 {
+		b.log.Error("Order ID missing or invalid",
+			logging.String("order-id", orderID),
+			logging.String("order-book", b.marketID))
+		return nil, types.ErrInvalidOrderID
+	}
+	if len(partyID) <= 0 {
+		b.log.Error("Party ID missing or invalid",
+			logging.String("party-id", partyID),
+			logging.String("order-book", b.marketID))
+		return nil, types.ErrInvalidOrderID
+	}
+
+	var order *types.Order
+
+	if side == types.Side_Buy {
+		for _, l := range b.buy.levels {
+			orders := l.getOrdersByTrader(partyID)
+			for _, v := range orders {
+				if v.Id == orderID {
+					order = v
+					break
+				}
+			}
+			if order != nil {
+				break
+			}
+		}
+	}
+
+	if side == types.Side_Sell {
+		for _, l := range b.sell.levels {
+			orders := l.getOrdersByTrader(partyID)
+			for _, v := range orders {
+				if v.Id == orderID {
+					order = v
+					break
+				}
+			}
+			if order != nil {
+				break
+			}
+		}
+	}
+
+	var err error
+	if order == nil {
+		err = errors.New("order does not exist")
+	}
+	return order, err
+}
+
 // RemoveDistressedOrders remove from the book all order holding distressed positions
 func (b *OrderBook) RemoveDistressedOrders(
 	traders []events.MarketPosition) ([]*types.Order, error) {

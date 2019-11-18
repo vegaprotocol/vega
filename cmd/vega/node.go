@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/auth"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
@@ -21,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
@@ -47,6 +49,14 @@ type NodeCommand struct {
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
 
+	orderBuf    *buffer.Order
+	tradeBuf    *buffer.Trade
+	partyBuf    *buffer.Party
+	transferBuf *buffer.TransferResponse
+	marketBuf   *buffer.Market
+	accountBuf  *buffer.Account
+	candleBuf   *buffer.Candle
+
 	candleService    *candles.Svc
 	tradeService     *trades.Svc
 	marketService    *markets.Svc
@@ -70,6 +80,7 @@ type NodeCommand struct {
 	cfgwatchr    *config.Watcher
 
 	executionEngine *execution.Engine
+	mktscfg         []proto.Market
 }
 
 // Init initialises the node command.
