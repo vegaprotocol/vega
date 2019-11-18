@@ -102,8 +102,8 @@ func TestUnmarshallApiTypes(t *testing.T) {
 	}
 	]
 	}`)
-
-	actual, err := unmarshall(data)
+	actual := &core.InstructionSet{}
+	err = unmarshall(data, actual)
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, expected, actual)
@@ -171,7 +171,8 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		]
 	  }`)
 
-	actual, err := unmarshall(data)
+	actual := &core.InstructionSet{}
+	err = unmarshall(data, actual)
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, expected, actual)

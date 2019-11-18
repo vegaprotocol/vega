@@ -122,12 +122,16 @@ type scenariorunner struct {
 func (s *scenariorunner) lazyInit(configFileWithPath string) {
 	s.engineOnce.Do(func() {
 		config := sr.NewDefaultConfig()
+
 		if configFileWithPath != "" {
 			f, err := os.Open(configFileWithPath)
 			if err != nil {
 				log.Fatal(err)
 			}
-			unmarshall(f, &config)
+			err = unmarshall(f, &config)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		engine, err := sr.NewEngine(config)
 		if err != nil {
