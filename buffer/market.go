@@ -18,12 +18,12 @@ func NewMarket(store MarketStore) *Market {
 	}
 }
 
-func (o *Market) Add(ord types.Market) {
-	o.buf = append(o.buf, ord)
+func (m *Market) Add(ord types.Market) {
+	m.buf = append(m.buf, ord)
 }
 
-func (o *Market) Flush() error {
-	copyBuf := o.buf
-	o.buf = make([]types.Market, 0, len(copyBuf))
-	return o.store.SaveBatch(copyBuf)
+func (m *Market) Flush() error {
+	copyBuf := m.buf
+	m.buf = make([]types.Market, 0, len(copyBuf))
+	return m.store.SaveBatch(copyBuf)
 }
