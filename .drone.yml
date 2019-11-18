@@ -107,6 +107,8 @@ steps:
       - make proto_check || code=1
       - bash script/diff_graphqlschema.sh || code=1  # requires GITLAB_API_TOKEN and SLACK_HOOK_URL
       - /usr/local/bin/multilint || code=1
+      - make vet || code=1
+      - make vetshadow || code=1
       - make lint || true  # Ignore lint failure for now (see #196)
       - make staticcheck || true  # Ignore failures until they're all fixed.
       - exit "$code"
@@ -124,7 +126,6 @@ steps:
         path: /go/pkg
     environment: {}
     commands:
-      - make vet
       - make race
       - make msan
     depends_on:

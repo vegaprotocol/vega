@@ -186,7 +186,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 		assert.Nil(t, err)
 
 		for _, order := range tt.inOrders {
-			err := orderStore.Post(*order)
+			err = orderStore.Post(*order)
 			assert.Nil(t, err)
 		}
 
