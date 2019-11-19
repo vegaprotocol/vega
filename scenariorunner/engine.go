@@ -188,7 +188,7 @@ func marketDepths(response core.ProtocolSummaryResponse) []*proto.MarketDepth {
 	return d
 }
 
-func (e Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
+func (e *Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
 	maps := make(map[core.RequestType]*core.PreProcessor)
 	for _, provider := range e.providers {
 		m := provider.PreProcessors()
