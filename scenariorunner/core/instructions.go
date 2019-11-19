@@ -14,7 +14,7 @@ var (
 )
 
 // NewInstruction returns a new instruction from the request and proto message.
-func NewInstruction(request string, message proto.Message) (*Instruction, error) {
+func NewInstruction(request RequestType, message proto.Message) (*Instruction, error) {
 	any, err := marshalAny(message)
 	if err != nil {
 		return nil, err

@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
-	"log"
+	//"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
+	"code.vegaprotocol.io/vega/logging"
 	sr "code.vegaprotocol.io/vega/scenariorunner"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/urfave/cli"
 )
@@ -28,6 +31,22 @@ func main() {
 	info(app)
 	commands(app)
 	initializeEngine()
+	app    = cli.NewApp()
+	log    = logging.NewProdLogger()
+	runner = scenariorunner{}
+)
+
+var (
+	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
+	VersionHash = ""
+
+	// Version specifies the version used to build the application. See VERSION in Makefile for details.
+	Version = ""
+)
+
+func main() {
+	info()
+	commands()
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
@@ -44,41 +63,49 @@ func info(app *cli.App) {
 func commands(app *cli.App) {
 	var optionalResultSetFile string
 	var optionalProtocolSummaryFile string
+	var configFile string
 
 	var submit = "submit"
 	app.Commands = []cli.Command{
 		{
 			Name:    submit,
 			Aliases: []string{submit[:1]},
-			Usage:   "Submits a batch of node instructions read from a JSON file - subcommands available, see 'help'",
+			Usage:   "Submits a batch of node instructions read from a JSON file - subcommands available, see 'help'.",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:        "result, r",
-					Usage:       "Save instrution results set to a `FILE`. Files will be suffixed with a number when multiple instruction sets get submitted",
+					Usage:       "Save instrution results set to a `FILE`. Files will be suffixed with a number when multiple instruction sets get submitted.",
 					Destination: &optionalResultSetFile,
 				},
 				cli.StringFlag{
 					Name:        "extract, e",
-					Usage:       "Save protocol summary after successful execution of all instruction sets",
+					Usage:       "Save protocol summary after successful execution of all instruction sets.",
 					Destination: &optionalProtocolSummaryFile,
+				},
+				cli.StringFlag{
+					Name:        "config, c",
+					Usage:       "Specify config file. Default config used if omitted.",
+					Destination: &configFile,
 				},
 			},
 			Action: func(c *cli.Context) {
 				dir, err := os.Getwd()
 				if err != nil {
-					log.Fatal(err)
+					log.Fatal(err.Error())
 				}
 				fmt.Println(dir)
 				if c.NArg() > 0 {
 					instrSet, err := ProcessFiles(c.Args())
 					if err != nil {
-						log.Fatal(err)
+						log.Fatal(err.Error())
 					}
 					n := len(instrSet)
+					runner.lazyInit(configFile)
+					defer runner.cleanUp()
 					for i, instr := range instrSet {
-						res, err := engine.ProcessInstructions(*instr)
+						res, err := runner.engine.ProcessInstructions(*instr)
 						if err != nil {
-							log.Fatal(err)
+							log.Fatal(err.Error())
 						}
 						if optionalResultSetFile != "" {
 							fileName := optionalResultSetFile
@@ -91,9 +118,9 @@ func commands(app *cli.App) {
 						}
 					}
 					if optionalProtocolSummaryFile != "" {
-						summary, err := engine.ExtractData()
+						summary, err := runner.engine.ExtractData()
 						if err != nil {
-							log.Fatal(err)
+							log.Fatal(err.Error())
 						}
 						Output(summary, optionalProtocolSummaryFile)
 					}
@@ -106,12 +133,39 @@ func commands(app *cli.App) {
 	}
 }
 
-func initializeEngine() {
-	var err error
-	// TODO (WG 08/11/2019): Read from file
-	config := sr.NewDefaultConfig()
-	engine, err = sr.NewEngine(config)
-	if err != nil {
-		log.Fatal(err)
-	}
+type scenariorunner struct {
+	engineOnce    sync.Once
+	engine        *sr.Engine
+	storageConfig storage.Config
+}
+
+func (s *scenariorunner) lazyInit(configFileWithPath string) {
+	s.engineOnce.Do(func() {
+		config := sr.NewDefaultConfig()
+
+		storageConfig, err := storage.NewTestConfig()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		s.storageConfig = storageConfig
+		if configFileWithPath != "" {
+			f, err := os.Open(configFileWithPath)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			err = unmarshall(f, &config)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+		}
+		engine, err := sr.NewEngine(log, config, s.storageConfig)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		s.engine = engine
+	})
+}
+
+func (s *scenariorunner) cleanUp() {
+	storage.FlushStores(log, s.storageConfig)
 }

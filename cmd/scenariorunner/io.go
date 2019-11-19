@@ -24,10 +24,12 @@ func ProcessFiles(filesWithPath []string) ([]*core.InstructionSet, error) {
 	instructionSets := make([]*core.InstructionSet, len(contents))
 
 	for i, fileContents := range contents {
-		instructionSets[i], err = unmarshall(fileContents)
+		instrSet := &core.InstructionSet{}
+		unmarshall(fileContents, instrSet)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 		}
+		instructionSets[i] = instrSet
 	}
 
 	return instructionSets, errs.ErrorOrNil()
@@ -57,9 +59,8 @@ func openFiles(filesWithPath []string) ([]*os.File, error) {
 	return readers, errs.ErrorOrNil()
 }
 
-func unmarshall(r io.Reader) (*core.InstructionSet, error) {
-	var instrSet = &core.InstructionSet{}
-	return instrSet, jsonpb.Unmarshal(r, instrSet)
+func unmarshall(r io.Reader, msg proto.Message) error {
+	return jsonpb.Unmarshal(r, msg)
 }
 
 func marshall(result proto.Message, out io.Writer) error {

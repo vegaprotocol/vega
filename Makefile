@@ -1,4 +1,4 @@
-APPS := dummyriskmodel vega vegabench vegaccount vegastream
+APPS := dummyriskmodel scenariorunner vega vegabench vegaccount vegastream
 PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
 PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
 
@@ -208,6 +208,23 @@ gettools_build:
 .PHONY: gettools_develop
 gettools_develop:
 	@./script/gettools.sh develop
+
+# Make sure the mdspell command matches the one in .drone.yml.
+spellcheck: ## Run markdown spellcheck container
+	@docker run --rm -ti \
+		--entrypoint mdspell \
+		-v "$(PWD):/src" \
+		registry.gitlab.com/vega-protocol/devops-infra/markdownspellcheck:latest \
+			--en-gb \
+			--ignore-acronyms \
+			--ignore-numbers \
+			--no-suggestions \
+			--report \
+			'*.md' \
+			'design/**/*.md'
+
+staticcheck: ## Run statick analysis checks
+	@staticcheck ./...
 
 clean: ## Remove previous build
 	@for app in $(APPS) ; do rm -f "$$app" "cmd/$$app/$$app" "cmd/$$app/$$app-dbg" ; done

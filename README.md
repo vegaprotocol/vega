@@ -1,6 +1,6 @@
 # Vega
 
-Version 0.11.0.
+Version 0.12.0.
 
 A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
 
@@ -17,11 +17,11 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 ## Links
 
-- For **new starters**, see [GETTING_STARTED.md](GETTING_STARTED.md).
-- For **updates**, see [CHANGELOG.md](CHANGELOG.md) for major updates, and
+- For **new starters**, see [Getting Started](GETTING_STARTED.md).
+- For **updates**, see the [Change log](CHANGELOG.md) for major updates, and
   [releases](https://gitlab.com/vega-protocol/trading-core/wikis/Release-notes) for a detailed version history.
-- For **architecture**, please read the [design documentation](ARCHITECTURE.md) to learn about the design for the system and its architecture.
-- For **agile process**, please read the [engineering documentation](AGILE.md) or ask on Slack channel `#Engineering` if you need further clarification.
+- For **architecture**, please read the [design documentation](design/index.md) to learn about the design for the system and its architecture.
+- For **agile process**, please read the [engineering documentation](AGILE.md) or ask on Slack channel `#engineering` if you need further clarification.
 - Please [open an issue](https://gitlab.com/vegaprotocol/trading-core/issues/new) if anything is missing or unclear in this documentation.
 
 <details>
@@ -43,7 +43,7 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 
 ## Installation
 
-To install `trading-core` and `tendermint`, see [GETTING_STARTED.md](GETTING_STARTED.md).
+To install `trading-core` and `tendermint`, see [Getting Started](GETTING_STARTED.md).
 
 ## Configuration
 
@@ -67,7 +67,7 @@ There are currently three protocols to communicate with the Vega APIs:
 
 [GraphQL](https://graphql.org/) is an open-source data query and manipulation language for APIs, and a runtime for fulfilling queries with existing data, originally developed at Facebook. The [Client UI](https://gitlab.com/vega-protocol/client) uses the GraphQL API to retrieve data including streaming of events.
 
-The GraphQL [schema](./internal/api/endpoints/gql/schema.graphql) defines the interop with Vega. External clients will use this schema to communicate with Vega.
+The GraphQL API is defined by a [schema](gateway/graphql/schema.graphql). External clients will use this schema to communicate with Vega.
 
 Queries can be tested using the GraphQL playground app which is bundled with a node. The default port (configurable) for the playground app is `3004` accessing this in a web browser will show a web app for testing custom queries, mutations and subscriptions.
 
@@ -75,7 +75,7 @@ Queries can be tested using the GraphQL playground app which is bundled with a n
 
 gRPC is an open source remote procedure call (RPC) system initially developed at Google. In Vega the gRPC API features streaming of events in addition to standard procedure calls.
 
-The default port (configurable) for the gRPC API is `3005` and matches the [gRPC proto definition](./internal/api/grpc.proto).
+The default port (configurable) for the gRPC API is 3002 and matches the [gRPC protobuf definition](proto/api/trading.proto).
 
 ### REST
 
@@ -252,10 +252,10 @@ Output components:
 
 ## Troubleshooting & debugging
 
-The application has structured logging capability, the first port of call for a crash is probably the vega and tendermint logs which are available on the console if running locally or by `multilog` if running on test networks. Default testnet location for log files:
+The application has structured logging capability, the first port of call for a crash is probably the Vega and Tendermint logs which are available on the console if running locally or by journal plus syslog if running on test networks. Default location for log files:
 
-* `/home/vega/log/vega/`
-* `/home/vega/log/tendermint/`
+* `/var/log/vega.log`
+* `/var/log/tendermint.log`
 
 Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `-1` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
 

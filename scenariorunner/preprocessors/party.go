@@ -11,41 +11,44 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 )
 
-type Markets struct {
-	ctx         context.Context
-	marketStore *storage.Market
+type Parties struct {
+	ctx        context.Context
+	partyStore *storage.Party
 }
 
-func NewMarkets(ctx context.Context, marketStore *storage.Market) *Markets {
-	return &Markets{ctx, marketStore}
+func NewParties(ctx context.Context, partyStore *storage.Party) *Parties {
+	return &Parties{ctx, partyStore}
 }
 
-func (m *Markets) PreProcessors() map[core.RequestType]*core.PreProcessor {
+func (p *Parties) PreProcessors() map[core.RequestType]*core.PreProcessor {
 	return map[core.RequestType]*core.PreProcessor{
-		core.RequestType_MARKET_BY_ID: m.marketByID(),
-		core.RequestType_MARKETS:      m.markets(),
+		core.RequestType_PARTY_BY_ID: p.partyById(),
+		core.RequestType_PARTIES:     nil,
 	}
 }
 
-func (m *Markets) marketByID() *core.PreProcessor {
+func (p *Parties) partyById() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
-		req := &protoapi.MarketByIDRequest{}
+		req := &protoapi.PartyByIDRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				m.commitStore()
-				return m.marketStore.GetByID(req.MarketID)
+				resp, err := p.partyStore.GetByID(req.PartyID)
+				if err != nil {
+					return nil, err
+				}
+				return &protoapi.PartyByIDResponse{Party: resp}, nil
 			})
 	}
 	return &core.PreProcessor{
-		MessageShape: &protoapi.MarketByIDRequest{},
+		MessageShape: &protoapi.PartyByIDRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (m *Markets) markets() *core.PreProcessor {
+func (p *Parties) parties() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &empty.Empty{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
@@ -53,17 +56,15 @@ func (m *Markets) markets() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				m.commitStore()
-				resp, err := m.marketStore.GetAll()
-				return &protoapi.MarketsResponse{Markets: resp}, err
+				resp, err := p.partyStore.GetAll()
+				if err != nil {
+					return nil, err
+				}
+				return &protoapi.PartiesResponse{Parties: resp}, nil
 			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &empty.Empty{},
 		PreProcess:   preProcessor,
 	}
-}
-
-func (m *Markets) commitStore() {
-	m.marketStore.Commit()
 }

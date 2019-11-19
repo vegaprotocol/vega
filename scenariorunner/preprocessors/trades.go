@@ -3,41 +3,48 @@ package preprocessors
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/api"
+	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/proto"
 )
 
 type Trades struct {
-	mappings map[string]*core.PreProcessor
+	ctx        context.Context
+	tradeStore *storage.Trade
 }
 
-func NewTrades(ctx context.Context, tdp api.TradeDataProvider) *Trades {
+func NewTrades(ctx context.Context, tradeStore *storage.Trade) *Trades {
+	return &Trades{ctx, tradeStore}
+}
 
-	m := map[string]*core.PreProcessor{
-		"tradesbymarket": tradesByMarket(ctx, tdp),
-		"tradesbyparty":  tradesByParty(ctx, tdp),
-		"tradesbyorder":  tradesByOrder(ctx, tdp),
-		"lasttrade":      lastTrade(ctx, tdp),
+func (t *Trades) PreProcessors() map[core.RequestType]*core.PreProcessor {
+	return map[core.RequestType]*core.PreProcessor{
+		core.RequestType_TRADES_BY_MARKET: t.tradesByMarket(),
+		core.RequestType_TRADES_BY_PARTY:  t.tradesByParty(),
+		core.RequestType_TRADES_BY_ORDER:  t.tradesByOrder(),
+		core.RequestType_LAST_TRADE:       t.lastTrade(),
 	}
-
-	return &Trades{m}
 }
 
-func (t *Trades) PreProcessors() map[string]*core.PreProcessor {
-	return t.mappings
-}
-
-func tradesByMarket(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
+func (t *Trades) tradesByMarket() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.TradesByMarketRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
+		pagination := core.GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessTradesByMarket(ctx, req, tdp) })
+			func() (proto.Message, error) {
+				t.commitStore()
+				resp, err := t.tradeStore.GetByMarket(t.ctx, req.MarketID, pagination.Skip, pagination.Limit, pagination.Descending)
+				if err != nil {
+					return nil, err
+				}
+				return &protoapi.TradesByMarketResponse{Trades: resp}, nil
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.TradesByMarketRequest{},
@@ -45,14 +52,22 @@ func tradesByMarket(ctx context.Context, tdp api.TradeDataProvider) *core.PrePro
 	}
 }
 
-func tradesByParty(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
+func (t *Trades) tradesByParty() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.TradesByPartyRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
+		pagination := core.GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessTradesByParty(ctx, req, tdp) })
+			func() (proto.Message, error) {
+				t.commitStore()
+				resp, err := t.tradeStore.GetByParty(t.ctx, req.PartyID, pagination.Skip, pagination.Limit, pagination.Descending, &req.MarketID)
+				if err != nil {
+					return nil, err
+				}
+				return &protoapi.TradesByPartyResponse{Trades: resp}, nil
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.TradesByPartyRequest{},
@@ -60,14 +75,22 @@ func tradesByParty(ctx context.Context, tdp api.TradeDataProvider) *core.PreProc
 	}
 }
 
-func tradesByOrder(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
+func (t *Trades) tradesByOrder() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.TradesByOrderRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessTradesByOrder(ctx, req, tdp) })
+			func() (proto.Message, error) {
+				t.commitStore()
+				resp, err := t.tradeStore.GetByOrderID(t.ctx, req.OrderID, 0, 0, false, nil)
+				if err != nil {
+					return nil, err
+				}
+				return &protoapi.TradesByOrderResponse{Trades: resp}, nil
+
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.TradesByOrderRequest{},
@@ -75,17 +98,33 @@ func tradesByOrder(ctx context.Context, tdp api.TradeDataProvider) *core.PreProc
 	}
 }
 
-func lastTrade(ctx context.Context, tdp api.TradeDataProvider) *core.PreProcessor {
+func (t *Trades) lastTrade() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
 		req := &protoapi.LastTradeRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return api.ProcessLastTrade(ctx, req, tdp) })
+			func() (proto.Message, error) {
+				t.commitStore()
+				resp, err := t.tradeStore.GetByMarket(t.ctx, req.MarketID, 0, 1, true)
+				if err != nil {
+					return nil, err
+				}
+				trade := &types.Trade{}
+				if len(resp) > 0 {
+					trade = resp[0]
+				}
+				return &protoapi.LastTradeResponse{Trade: trade}, nil
+
+			})
 	}
 	return &core.PreProcessor{
 		MessageShape: &protoapi.LastTradeRequest{},
 		PreProcess:   preProcessor,
 	}
+}
+
+func (t *Trades) commitStore() {
+	t.tradeStore.Commit()
 }

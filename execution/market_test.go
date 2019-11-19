@@ -68,7 +68,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	asset, err := mkts[0].GetAsset()
 	assert.Nil(t, err)
 
-	accountBuf.EXPECT().Add(gomock.Any()).Times(2)
+	accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
 	// ignore response ids here + this cannot fail
 	_, _ = collateralEngine.CreateMarketAccounts(mktEngine.GetID(), asset, 0)
 
@@ -153,7 +153,7 @@ func TestMarketClosing(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(8)
+	// tm.accountBuf.EXPECT().Add(gomock.Any()).Times(8)
 	tm.partyStore.EXPECT().Post(gomock.Any()).Times(2).Return(nil)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
@@ -161,7 +161,7 @@ func TestMarketClosing(t *testing.T) {
 
 	tm.candleStore.EXPECT().GenerateCandlesFromBuffer(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	// check account gets updated
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(2).DoAndReturn(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// if Margin -> 0
 		if acc.Type == types.AccountType_MARGIN {
 			assert.Equal(t, acc.Balance, int64(0))
@@ -186,7 +186,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(6).Do(func(acc types.Account) {
+	// this will also output the close accounts
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
 	tm.partyStore.EXPECT().Post(gomock.Any()).Times(2).Return(nil)
@@ -235,12 +236,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 	tm.transferResponseStore.EXPECT().SaveBatch(gomock.Any()).Times(1).Return(nil)
 
-	// close the market nowks
-	// check account gets updated
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(4).DoAndReturn(func(acc types.Account) {
-		fmt.Printf("ACCOUNT1: %v\n", acc)
-	})
-
 	_, err := tm.market.SubmitOrder(orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
@@ -254,7 +249,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 	tm.candleStore.EXPECT().GenerateCandlesFromBuffer(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(9).DoAndReturn(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 
 		fmt.Printf("ACCOUNT: %v\n", acc)
 		// if general, is should be back to the original topup as no
@@ -287,7 +282,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(3).Do(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
 	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
@@ -347,7 +342,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(3).Do(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
 	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
@@ -405,7 +400,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(3).Do(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
 	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
@@ -438,7 +433,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
 	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 
-	tm.accountBuf.EXPECT().Add(gomock.Any()).Times(2).DoAndReturn(func(acc types.Account) {
+	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("ACCOUNT: %v\n", acc)
 		// general account should have less monies as some is use for collateral
 		if acc.Type == types.AccountType_GENERAL && party1 == acc.Owner {

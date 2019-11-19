@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"testing"
@@ -37,9 +36,8 @@ func TestReadFiles(t *testing.T) {
 }
 
 func TestUnmarshallApiTypes(t *testing.T) {
-
 	instr1, err := core.NewInstruction(
-		"trading.NotifyTraderAccount",
+		core.RequestType_NOTIFY_TRADER_ACCOUNT,
 		&api.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
 				TraderID: "trader1",
@@ -47,10 +45,10 @@ func TestUnmarshallApiTypes(t *testing.T) {
 		})
 
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 	instr2, err := core.NewInstruction(
-		"trading.SubmitOrder",
+		core.RequestType_SUBMIT_ORDER,
 		&api.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
 				MarketID:    "Market1",
@@ -63,7 +61,7 @@ func TestUnmarshallApiTypes(t *testing.T) {
 			},
 		})
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 	instr2.Description = "Submit a sell order"
 	expected := &core.InstructionSet{
@@ -77,7 +75,7 @@ func TestUnmarshallApiTypes(t *testing.T) {
 	"description": "Test instructions",
 	"instructions": [
 	{
-	"request": "trading.NotifyTraderAccount",
+	"request": "NOTIFY_TRADER_ACCOUNT",
 	"message": {
 		"@type": "api.NotifyTraderAccountRequest",
 		"notif": {
@@ -87,7 +85,7 @@ func TestUnmarshallApiTypes(t *testing.T) {
 	},
 	{
 	"description": "Submit a sell order",
-	"request": "trading.SubmitOrder",
+	"request": "SUBMIT_ORDER",
 	"message": {
 		"@type": "api.SubmitOrderRequest",
 		"submission": {
@@ -103,8 +101,8 @@ func TestUnmarshallApiTypes(t *testing.T) {
 	}
 	]
 	}`)
-
-	actual, err := unmarshall(data)
+	actual := &core.InstructionSet{}
+	err = unmarshall(data, actual)
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, expected, actual)
@@ -113,16 +111,16 @@ func TestUnmarshallApiTypes(t *testing.T) {
 func TestUnmarshallInternalTypes(t *testing.T) {
 
 	instr1, err := core.NewInstruction(
-		"NotifyTraderAccount",
+		core.RequestType_NOTIFY_TRADER_ACCOUNT,
 		&types.NotifyTraderAccount{
 			TraderID: "trader1",
 		})
 
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 	instr2, err := core.NewInstruction(
-		"SubmitOrder",
+		core.RequestType_SUBMIT_ORDER,
 		&types.Order{
 			MarketID:    "Market1",
 			PartyID:     "trader1",
@@ -134,7 +132,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		},
 	)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 	instr2.Description = "Submit a sell order"
 	expected := &core.InstructionSet{
@@ -149,7 +147,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		"instructions": [
 		  {
 			"description": "",
-			"request": "NotifyTraderAccount",
+			"request": "NOTIFY_TRADER_ACCOUNT",
 			"message": {
 			  "@type": "vega.NotifyTraderAccount",
 			  "traderID": "trader1"
@@ -157,7 +155,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		  },
 		  {
 			"description": "Submit a sell order",
-			"request": "SubmitOrder",
+			"request": "SUBMIT_ORDER",
 			"message": {
 			  "@type": "vega.Order",
 			  "marketID": "Market1",
@@ -172,7 +170,8 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		]
 	  }`)
 
-	actual, err := unmarshall(data)
+	actual := &core.InstructionSet{}
+	err = unmarshall(data, actual)
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, expected, actual)
@@ -181,109 +180,112 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 func TestMarshal(t *testing.T) {
 	expected := string(
 		`{
-		"metadata": {
-		  "instructionsProcessed": "2",
-		  "instructionsOmitted": "0",
-		  "tradesGenerated": "1",
-		  "processingTime": "3s",
-		  "finalMarketDepth": [
-			{
-			  "marketID": "Market1",
-			  "buy": [
+			"metadata": {
+			  "instructionsProcessed": "2",
+			  "instructionsOmitted": "0",
+			  "tradesGenerated": "1",
+			  "processingTime": "3s",
+			  "finalMarketDepth": [
 				{
-				  "price": "100",
-				  "numberOfOrders": "1",
-				  "volume": "3",
-				  "cumulativeVolume": "3"
-				}
-			  ],
-			  "sell": [
-				{
-				  "price": "100",
-				  "numberOfOrders": "1",
-				  "volume": "3",
-				  "cumulativeVolume": "3"
+				  "marketID": "Market1",
+				  "buy": [
+					{
+					  "price": "100",
+					  "numberOfOrders": "1",
+					  "volume": "3",
+					  "cumulativeVolume": "3"
+					}
+				  ],
+				  "sell": [
+					{
+					  "price": "100",
+					  "numberOfOrders": "1",
+					  "volume": "3",
+					  "cumulativeVolume": "3"
+					}
+				  ]
 				}
 			  ]
-			}
-		  ]
-		},
-		"results": [
-		  {
-			"instruction": {
-			  "description": "",
-			  "request": "trading.SubmitOrder",
-			  "message": {
-				"@type": "api.SubmitOrderRequest",
-				"submission": {
-				  "id": "",
-				  "marketID": "Market1",
-				  "partyID": "trader1",
+			},
+			"results": [
+			  {
+				"instruction": {
+				  "description": "",
+				  "request": "SUBMIT_ORDER",
+				  "message": {
+					"@type": "api.SubmitOrderRequest",
+					"submission": {
+					  "id": "",
+					  "marketID": "Market1",
+					  "partyID": "trader1",
+					  "price": "100",
+					  "size": "3",
+					  "side": "Sell",
+					  "TimeInForce": "GTC",
+					  "expiresAt": "1924991999000000000",
+					  "type": "LIMIT"
+					},
+					"token": ""
+				  }
+				},
+				"error": "",
+				"response": {
+				  "@type": "vega.PendingOrder",
+				  "reference": "",
 				  "price": "100",
-				  "size": "3",
+				  "TimeInForce": "GTC",
 				  "side": "Sell",
-				  "TimeInForce": "GTC",
-				  "expiresAt": "1924991999000000000",
-				  "type": "LIMIT"
-				},
-				"token": ""
-			  }
-			},
-			"error": "",
-			"response": {
-			  "@type": "vega.PendingOrder",
-			  "reference": "",
-			  "price": "100",
-			  "TimeInForce": "GTC",
-			  "side": "Sell",
-			  "marketID": "Market1",
-			  "size": "3",
-			  "partyID": "trader1",
-			  "status": "Active",
-			  "id": "order1",
-			  "type": "LIMIT"
-			}
-		  },
-		  {
-			"instruction": {
-			  "description": "",
-			  "request": "trading.SubmitOrder",
-			  "message": {
-				"@type": "api.SubmitOrderRequest",
-				"submission": {
-				  "id": "",
 				  "marketID": "Market1",
-				  "partyID": "trader2",
-				  "price": "100",
 				  "size": "3",
-				  "side": "Buy",
-				  "TimeInForce": "GTC",
-				  "expiresAt": "1924991999000000000",
+				  "partyID": "trader1",
+				  "status": "Active",
+				  "id": "order1",
 				  "type": "LIMIT"
+				}
+			  },
+			  {
+				"instruction": {
+				  "description": "",
+				  "request": "SUBMIT_ORDER",
+				  "message": {
+					"@type": "api.SubmitOrderRequest",
+					"submission": {
+					  "id": "",
+					  "marketID": "Market1",
+					  "partyID": "trader2",
+					  "price": "100",
+					  "size": "3",
+					  "side": "Buy",
+					  "TimeInForce": "GTC",
+					  "expiresAt": "1924991999000000000",
+					  "type": "LIMIT"
+					},
+					"token": ""
+				  }
 				},
-				"token": ""
+				"error": "",
+				"response": {
+				  "@type": "vega.PendingOrder",
+				  "reference": "",
+				  "price": "100",
+				  "TimeInForce": "GTC",
+				  "side": "Buy",
+				  "marketID": "Market1",
+				  "size": "3",
+				  "partyID": "trader2",
+				  "status": "Active",
+				  "id": "order2",
+				  "type": "LIMIT"
+				}
 			  }
-			},
-			"error": "",
-			"response": {
-			  "@type": "vega.PendingOrder",
-			  "reference": "",
-			  "price": "100",
-			  "TimeInForce": "GTC",
-			  "side": "Buy",
-			  "marketID": "Market1",
-			  "size": "3",
-			  "partyID": "trader2",
-			  "status": "Active",
-			  "id": "order2",
-			  "type": "LIMIT"
-			}
-		  }
-		]
-	  }`)
+			],
+			"initialState": null,
+			"finalState": null,
+			"config": null
+		  }`)
 
 	instr1, err := core.NewInstruction(
-		"trading.SubmitOrder",
+		core.RequestType_SUBMIT_ORDER,
 		&api.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
 				MarketID:    "Market1",
@@ -296,11 +298,11 @@ func TestMarshal(t *testing.T) {
 			},
 		})
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 
 	instr2, err := core.NewInstruction(
-		"trading.SubmitOrder",
+		core.RequestType_SUBMIT_ORDER,
 		&api.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
 				MarketID:    "Market1",
@@ -313,7 +315,7 @@ func TestMarshal(t *testing.T) {
 			},
 		})
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 
 	resp1 := types.PendingOrder{
@@ -342,11 +344,11 @@ func TestMarshal(t *testing.T) {
 
 	result1, err := instr1.NewResult(&resp1, nil)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction result: ", err)
+		t.Fatal("Failed to create a new instruction result: ", err)
 	}
 	result2, err := instr2.NewResult(&resp2, nil)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction result: ", err)
+		t.Fatal("Failed to create a new instruction result: ", err)
 	}
 
 	resultSet := core.ResultSet{

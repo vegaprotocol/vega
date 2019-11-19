@@ -3,55 +3,76 @@ package preprocessors
 import (
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
+	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 
 	"github.com/golang/protobuf/proto"
 )
 
 type Execution struct {
-	mappings map[string]*core.PreProcessor
+	engine *execution.Engine
 }
 
 func NewExecution(e *execution.Engine) *Execution {
-	m := map[string]*core.PreProcessor{
-		"notifytraderaccount": notifyTraderAccount(e),
-		"submitorder":         submitOrder(e),
-		"cancelorder":         cancelOrder(e),
-		"amendorder":          amendOrder(e),
-		"withdraw":            withdraw(e),
+	return &Execution{e}
+}
+
+func (e *Execution) PreProcessors() map[core.RequestType]*core.PreProcessor {
+	return map[core.RequestType]*core.PreProcessor{
+		core.RequestType_NOTIFY_TRADER_ACCOUNT: e.notifyTraderAccount(),
+		core.RequestType_SUBMIT_ORDER:          e.submitOrder(),
+		core.RequestType_CANCEL_ORDER:          e.cancelOrder(),
+		core.RequestType_AMEND_ORDER:           e.amendOrder(),
+		core.RequestType_WITHDRAW:              e.withdraw(),
 	}
-
-	return &Execution{m}
 }
 
-func (e *Execution) PreProcessors() map[string]*core.PreProcessor {
-	return e.mappings
-}
-
-func notifyTraderAccount(e *execution.Engine) *core.PreProcessor {
+func (e *Execution) notifyTraderAccount() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
-		req := &types.NotifyTraderAccount{}
+		req := &protoapi.NotifyTraderAccountRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return nil, e.NotifyTraderAccount(req) })
+			func() (proto.Message, error) {
+				err := e.engine.NotifyTraderAccount(req.Notif)
+				if err != nil {
+					return nil, err
+				}
+				return &protoapi.NotifyTraderAccountResponse{Submitted: true}, nil
+			})
 	}
 	return &core.PreProcessor{
-		MessageShape: &types.NotifyTraderAccount{},
+		MessageShape: &protoapi.NotifyTraderAccountRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func submitOrder(e *execution.Engine) *core.PreProcessor {
+func (e *Execution) submitOrder() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
-		req := &types.Order{}
+		req := &protoapi.SubmitOrderRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
+			func() (proto.Message, error) {
+				return e.engine.SubmitOrder(getOrderFromSubmission(req.Submission))
+			})
+	}
+	return &core.PreProcessor{
+		MessageShape: &protoapi.SubmitOrderRequest{},
+		PreProcess:   preProcessor,
+	}
+}
 
-			func() (proto.Message, error) { return e.SubmitOrder(req) })
+func (e *Execution) cancelOrder() *core.PreProcessor {
+	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+		req := &protoapi.CancelOrderRequest{}
+		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
+			return nil, core.ErrInstructionInvalid
+		}
+		return instr.PreProcess(
+			func() (proto.Message, error) { return e.engine.CancelOrder(getOrderFromCancellation(req.Cancellation)) })
 	}
 	return &core.PreProcessor{
 		MessageShape: &types.Order{},
@@ -59,29 +80,14 @@ func submitOrder(e *execution.Engine) *core.PreProcessor {
 	}
 }
 
-func cancelOrder(e *execution.Engine) *core.PreProcessor {
+func (e *Execution) amendOrder() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
-		req := &types.Order{}
+		req := &protoapi.AmendOrderRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return e.CancelOrder(req) })
-	}
-	return &core.PreProcessor{
-		MessageShape: &types.Order{},
-		PreProcess:   preProcessor,
-	}
-}
-
-func amendOrder(e *execution.Engine) *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
-		req := &types.OrderAmendment{}
-		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
-		}
-		return instr.PreProcess(
-			func() (proto.Message, error) { return e.AmendOrder(req) })
+			func() (proto.Message, error) { return e.engine.AmendOrder(req.Amendment) })
 	}
 	return &core.PreProcessor{
 		MessageShape: &types.OrderAmendment{},
@@ -89,17 +95,48 @@ func amendOrder(e *execution.Engine) *core.PreProcessor {
 	}
 }
 
-func withdraw(e *execution.Engine) *core.PreProcessor {
+func (e *Execution) withdraw() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
-		req := &types.Withdraw{}
+		req := &protoapi.WithdrawRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 		return instr.PreProcess(
-			func() (proto.Message, error) { return nil, e.Withdraw(req) })
+			func() (proto.Message, error) {
+				err := e.engine.Withdraw(req.Withdraw)
+				if err != nil {
+					return nil, err
+				}
+				return &protoapi.WithdrawResponse{Success: true}, nil
+			},
+		)
 	}
 	return &core.PreProcessor{
-		MessageShape: &types.Withdraw{},
+		MessageShape: &protoapi.WithdrawRequest{},
 		PreProcess:   preProcessor,
 	}
+}
+
+func getOrderFromSubmission(sub *types.OrderSubmission) *types.Order {
+	order := &types.Order{
+		Id:          sub.Id,
+		MarketID:    sub.MarketID,
+		PartyID:     sub.PartyID,
+		Side:        sub.Side,
+		Price:       sub.Price,
+		Size:        sub.Size,
+		Remaining:   sub.Size,
+		TimeInForce: sub.TimeInForce,
+		Type:        sub.Type,
+		ExpiresAt:   sub.ExpiresAt}
+	return order
+}
+
+func getOrderFromCancellation(sub *types.OrderCancellation) *types.Order {
+	order := &types.Order{
+		Id:       sub.OrderID,
+		MarketID: sub.MarketID,
+		PartyID:  sub.PartyID,
+	}
+	return order
 }

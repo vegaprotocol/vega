@@ -63,35 +63,25 @@ type VegaTime interface {
 // OrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/api OrderService
 type OrderService interface {
-	OrderDataProvider
-	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
-	GetOrderSubscribersCount() int32
-}
-
-// OrderDataProvider exposes order get requests.
-type OrderDataProvider interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open *bool) (orders []*types.Order, err error)
 	GetByMarketAndID(ctx context.Context, market string, id string) (order *types.Order, err error)
 	GetByReference(ctx context.Context, ref string) (order *types.Order, err error)
+	ObserveOrders(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Order, ref uint64)
+	GetOrderSubscribersCount() int32
 }
 
 // TradeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_service_mock.go -package mocks code.vegaprotocol.io/vega/api TradeService
 type TradeService interface {
-	TradeDataProvider
-	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
-	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
-	GetTradeSubscribersCount() int32
-	GetPositionsSubscribersCount() int32
-}
-
-// TradeDataProvider exposes trade get requests.
-type TradeDataProvider interface {
 	GetByOrderID(ctx context.Context, orderID string) ([]*types.Trade, error)
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error)
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party string) (positions []*types.MarketPosition, err error)
+	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
+	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.MarketPosition, ref uint64)
+	GetTradeSubscribersCount() int32
+	GetPositionsSubscribersCount() int32
 }
 
 // CandleService ...
@@ -105,16 +95,11 @@ type CandleService interface {
 // MarketService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/vega/api MarketService
 type MarketService interface {
-	MarketDataProvider
-	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
-	GetMarketDepthSubscribersCount() int32
-}
-
-// MarketDataProvider exposes market get requests.
-type MarketDataProvider interface {
 	GetByID(ctx context.Context, name string) (*types.Market, error)
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
+	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
+	GetMarketDepthSubscribersCount() int32
 }
 
 // PartyService ...
@@ -183,13 +168,6 @@ const defaultLimit = uint64(1000)
 func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersByMarketResponse, error) {
 
-	return ProcessOrdersByMarket(ctx, request, h.OrderService)
-}
-
-// ProcessOrdersByMarket encapsulates order request - response logic
-func ProcessOrdersByMarket(ctx context.Context,
-	request *protoapi.OrdersByMarketRequest, orderDataProvider OrderDataProvider) (*protoapi.OrdersByMarketResponse, error) {
-
 	if request.MarketID == "" {
 		return nil, ErrEmptyMissingMarketID
 	}
@@ -199,7 +177,7 @@ func ProcessOrdersByMarket(ctx context.Context,
 		p = *request.Pagination
 	}
 
-	o, err := orderDataProvider.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending, &request.Open)
+	o, err := h.OrderService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending, &request.Open)
 	if err != nil {
 		return nil, err
 	}
@@ -218,13 +196,6 @@ func ProcessOrdersByMarket(ctx context.Context,
 func (h *tradingDataService) OrdersByParty(ctx context.Context,
 	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
 
-	return ProcessOrdersByParty(ctx, request, h.OrderService)
-}
-
-// ProcessOrdersByParty encapsulates order request - response logic.
-func ProcessOrdersByParty(ctx context.Context,
-	request *protoapi.OrdersByPartyRequest, orderDataProvider OrderDataProvider) (*protoapi.OrdersByPartyResponse, error) {
-
 	if request.PartyID == "" {
 		return nil, ErrEmptyMissingPartyID
 	}
@@ -234,7 +205,7 @@ func ProcessOrdersByParty(ctx context.Context,
 		p = *request.Pagination
 	}
 
-	o, err := orderDataProvider.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending, &request.Open)
+	o, err := h.OrderService.GetByParty(ctx, request.PartyID, p.Skip, p.Limit, p.Descending, &request.Open)
 	if err != nil {
 		return nil, err
 	}
@@ -249,12 +220,7 @@ func ProcessOrdersByParty(ctx context.Context,
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
 func (h *tradingDataService) Markets(ctx context.Context, request *google_proto.Empty) (*protoapi.MarketsResponse, error) {
-	return ProcessMarkets(ctx, request, h.MarketService)
-}
-
-// ProcessMarkets encapsulates market request - response logic
-func ProcessMarkets(ctx context.Context, request *google_proto.Empty, marketDataProvider MarketDataProvider) (*protoapi.MarketsResponse, error) {
-	mkts, err := marketDataProvider.GetAll(ctx)
+	mkts, err := h.MarketService.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -267,12 +233,6 @@ func ProcessMarkets(ctx context.Context, request *google_proto.Empty, marketData
 // OrdersByMarketAndId provides the given order, searching by Market and (Order)Id.
 func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
-	return ProcessOrderByMarketAndId(ctx, request, h.OrderService)
-}
-
-// ProcessOrderByMarketAndId encapsulates order request - response logic.
-func ProcessOrderByMarketAndId(ctx context.Context,
-	request *protoapi.OrderByMarketAndIdRequest, orderDataProvider OrderDataProvider) (*protoapi.OrderByMarketAndIdResponse, error) {
 
 	if request.MarketID == "" {
 		return nil, ErrEmptyMissingMarketID
@@ -280,7 +240,7 @@ func ProcessOrderByMarketAndId(ctx context.Context,
 	if request.OrderID == "" {
 		return nil, ErrEmptyMissingOrderID
 	}
-	order, err := orderDataProvider.GetByMarketAndID(ctx, request.MarketID, request.OrderID)
+	order, err := h.OrderService.GetByMarketAndID(ctx, request.MarketID, request.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -292,15 +252,10 @@ func ProcessOrderByMarketAndId(ctx context.Context,
 
 // OrderByReference provides the (possibly not yet accepted/rejected) order.
 func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
-	return ProcessOrderByReference(ctx, req, h.OrderService)
-}
-
-// ProcessOrderByReference encapsulates order request - response logic.
-func ProcessOrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest, orderDataProvider OrderDataProvider) (*protoapi.OrderByReferenceResponse, error) {
 	if req.Reference == "" {
 		return nil, ErrEmptyMissingOrderReference
 	}
-	order, err := orderDataProvider.GetByReference(ctx, req.Reference)
+	order, err := h.OrderService.GetByReference(ctx, req.Reference)
 	if err != nil {
 		return nil, err
 	}
@@ -337,21 +292,16 @@ func (h *tradingDataService) Candles(ctx context.Context,
 // MarketDepth provides the order book for a given market, and also returns the most recent trade
 // for the given market.
 func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
-	return ProcessMarketDepth(ctx, req, h.MarketService, h.TradeService)
-}
-
-// ProcessMarketDepth encapsulates market depth request - response logic
-func ProcessMarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest, marketDataProvider MarketDataProvider, tradeDataProvider TradeDataProvider) (*protoapi.MarketDepthResponse, error) {
 	if req.MarketID == "" {
 		return nil, ErrEmptyMissingMarketID
 	}
 
 	// Query market depth statistics
-	depth, err := marketDataProvider.GetDepth(ctx, req.MarketID)
+	depth, err := h.MarketService.GetDepth(ctx, req.MarketID)
 	if err != nil {
 		return nil, err
 	}
-	t, err := tradeDataProvider.GetByMarket(ctx, req.MarketID, 0, 1, true)
+	t, err := h.TradeService.GetByMarket(ctx, req.MarketID, 0, 1, true)
 	if err != nil {
 		return nil, err
 	}
@@ -371,11 +321,6 @@ func ProcessMarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest, m
 // TradesByMarket provides a list of trades for a given market.
 // Pagination: Optional. If not provided, defaults are used.
 func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
-	return ProcessTradesByMarket(ctx, request, h.TradeService)
-}
-
-// ProcessTradesByMarket encapsulates trade request - response logic
-func ProcessTradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest, tradeDataProvider TradeDataProvider) (*protoapi.TradesByMarketResponse, error) {
 	if request.MarketID == "" {
 		return nil, ErrEmptyMissingMarketID
 	}
@@ -385,7 +330,7 @@ func ProcessTradesByMarket(ctx context.Context, request *protoapi.TradesByMarket
 		p = *request.Pagination
 	}
 
-	t, err := tradeDataProvider.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending)
+	t, err := h.TradeService.GetByMarket(ctx, request.MarketID, p.Skip, p.Limit, p.Descending)
 	if err != nil {
 		return nil, err
 	}
@@ -916,12 +861,7 @@ func (h *tradingDataService) PositionsSubscribe(
 
 // MarketByID provides the given market.
 func (h *tradingDataService) MarketByID(ctx context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
-	return ProcessMarketByID(ctx, req, h.MarketService)
-}
-
-// ProcessMarketByID encapsulates market request - response logic
-func ProcessMarketByID(ctx context.Context, req *protoapi.MarketByIDRequest, marketDataProvider MarketDataProvider) (*protoapi.MarketByIDResponse, error) {
-	mkt, err := validateMarket(ctx, req.MarketID, marketDataProvider)
+	mkt, err := validateMarket(ctx, req.MarketID, h.MarketService)
 	if err != nil {
 		return nil, err
 	}
@@ -959,19 +899,12 @@ func (h *tradingDataService) TradesByParty(
 	ctx context.Context, req *protoapi.TradesByPartyRequest,
 ) (*protoapi.TradesByPartyResponse, error) {
 
-	return ProcessTradesByParty(ctx, req, h.TradeService)
-}
-
-// ProcessTradesByParty encapsulates trade request - response logic
-func ProcessTradesByParty(
-	ctx context.Context, req *protoapi.TradesByPartyRequest, tradeDataProvider TradeDataProvider) (*protoapi.TradesByPartyResponse, error) {
-
 	p := defaultPagination
 	if req.Pagination != nil {
 		p = *req.Pagination
 	}
 
-	trades, err := tradeDataProvider.GetByParty(ctx, req.PartyID, p.Skip, p.Limit, p.Descending, &req.MarketID)
+	trades, err := h.TradeService.GetByParty(ctx, req.PartyID, p.Skip, p.Limit, p.Descending, &req.MarketID)
 	if err != nil {
 		return nil, err
 	}
@@ -983,14 +916,9 @@ func ProcessTradesByParty(
 
 // TradesByOrder provides a list of the trades that correspond to a given order.
 func (h *tradingDataService) TradesByOrder(
-	ctx context.Context, req *protoapi.TradesByOrderRequest) (*protoapi.TradesByOrderResponse, error) {
-	return ProcessTradesByOrder(ctx, req, h.TradeService)
-}
-
-// ProcessTradesByOrder encapsulates trade request - response logic
-func ProcessTradesByOrder(
-	ctx context.Context, req *protoapi.TradesByOrderRequest, tradeDataProvider TradeDataProvider) (*protoapi.TradesByOrderResponse, error) {
-	trades, err := tradeDataProvider.GetByOrderID(ctx, req.OrderID)
+	ctx context.Context, req *protoapi.TradesByOrderRequest,
+) (*protoapi.TradesByOrderResponse, error) {
+	trades, err := h.TradeService.GetByOrderID(ctx, req.OrderID)
 	if err != nil {
 		return nil, err
 	}
@@ -1003,16 +931,10 @@ func ProcessTradesByOrder(
 func (h *tradingDataService) LastTrade(
 	ctx context.Context, req *protoapi.LastTradeRequest,
 ) (*protoapi.LastTradeResponse, error) {
-	return ProcessLastTrade(ctx, req, h.TradeService)
-}
-
-// ProcessLastTrade encapsulates trade request - response logic
-func ProcessLastTrade(
-	ctx context.Context, req *protoapi.LastTradeRequest, tradeDataProvider TradeDataProvider) (*protoapi.LastTradeResponse, error) {
 	if len(req.MarketID) <= 0 {
 		return nil, ErrEmptyMissingMarketID
 	}
-	t, err := tradeDataProvider.GetByMarket(ctx, req.MarketID, 0, 1, true)
+	t, err := h.TradeService.GetByMarket(ctx, req.MarketID, 0, 1, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1068,13 +990,13 @@ func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *p
 	}, nil
 }
 
-func validateMarket(ctx context.Context, marketID string, marketDataProvider MarketDataProvider) (*types.Market, error) {
+func validateMarket(ctx context.Context, marketID string, marketService MarketService) (*types.Market, error) {
 	var mkt *types.Market
 	var err error
 	if len(marketID) == 0 {
 		return nil, ErrEmptyMissingMarketID
 	}
-	mkt, err = marketDataProvider.GetByID(ctx, marketID)
+	mkt, err = marketService.GetByID(ctx, marketID)
 	if err != nil {
 		return nil, err
 	}

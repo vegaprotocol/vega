@@ -2,12 +2,13 @@ package scenariorunner
 
 import (
 	"errors"
-	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/scenariorunner/preprocessors"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/hashicorp/go-multierror"
@@ -18,58 +19,58 @@ var (
 )
 
 type Engine struct {
-	Config           Config
+	Config           core.Config
 	summaryGenerator *core.SummaryGenerator
-	internalProvider *internalProvider
+	timeControl      *core.TimeControl
 	providers        []core.PreProcessorProvider
 	tradesGenerated  uint64
 }
 
 // NewEngine returns a pointer to new instance of scenario runner
-func NewEngine(config Config) (*Engine, error) {
+func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig storage.Config) (*Engine, error) {
 
-	d, err := getDependencies()
+	d, err := getDependencies(log, storageConfig)
 	if err != nil {
 		return nil, err
 	}
 	execution := preprocessors.NewExecution(d.execution)
-	marketDepth := preprocessors.NewMarketDepth(d.ctx, d.marketService, d.tradeService)
-	markets := preprocessors.NewMarkets(d.ctx, d.marketService)
+	markets := preprocessors.NewMarkets(d.ctx, d.marketStore)
 	orders := preprocessors.NewOrders(d.ctx, d.orderStore)
-	trades := preprocessors.NewTrades(d.ctx, d.tradeService)
+	trades := preprocessors.NewTrades(d.ctx, d.tradeStore)
+	accounts := preprocessors.NewAccounts(d.ctx, d.accountStore)
+	candles := preprocessors.NewCandles(d.ctx, d.candleStore)
+	positions := preprocessors.NewPositions(d.ctx, d.tradeService)
+	parties := preprocessors.NewParties(d.ctx, d.partyStore)
 
-	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.marketService, d.tradeStore, d.orderStore, d.partyStore)
+	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore)
+	timeControl := core.NewTimeControl(d.vegaTime)
 
-	internal := newInternalProvider(d.vegaTime, summaryGenerator)
+	summary := preprocessors.NewSummary(summaryGenerator)
+	time := preprocessors.NewTime(timeControl)
+	protocolTime, err := ptypes.Timestamp(engineConfig.ProtocolTime)
+	if err != nil {
+		return nil, err
+	}
 
-	internal.SetTime(config.ProtocolTime)
+	timeControl.SetTime(protocolTime)
 
 	return &Engine{
-		Config:           config,
+		Config:           engineConfig,
 		summaryGenerator: summaryGenerator,
-		internalProvider: internal,
+		timeControl:      timeControl,
 		providers: []core.PreProcessorProvider{
 			execution,
-			marketDepth,
 			markets,
 			orders,
 			trades,
+			accounts,
+			candles,
+			positions,
+			parties,
+			summary,
+			time,
 		},
 	}, nil
-}
-
-func (e *Engine) flattenPreProcessors() (map[string]*core.PreProcessor, error) {
-	maps := make(map[string]*core.PreProcessor)
-	for _, provider := range append(e.providers, e.internalProvider) {
-		m := provider.PreProcessors()
-		for k, v := range m {
-			if _, ok := maps[k]; ok {
-				return nil, ErrDuplicateInstruction
-			}
-			maps[k] = v
-		}
-	}
-	return maps, nil
 }
 
 // ProcessInstructions takes a set of instructions and submits them to the protocol
@@ -84,10 +85,18 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 		return nil, err
 	}
 
+	initialState, err := e.summaryGenerator.ProtocolSummary(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	duration, err := ptypes.Duration(e.Config.TimeDelta)
+	if err != nil {
+		return nil, err
+	}
 	//TODO (WG 08/11/2019): Split into 3 separate loops (check if instruction supported, check if instructions valid, check if instruction processed w/o errors) to fail early
 	for i, instr := range instrSet.Instructions {
-		// TODO (WG 01/11/2019) matching by lower case by convention only, enforce with a custom type
-		preProcessor, ok := preProcessors[strings.ToLower(instr.Request)]
+		preProcessor, ok := preProcessors[instr.Request]
 		if !ok {
 			if !e.Config.OmitUnsupportedInstructions {
 				return nil, errs.ErrorOrNil()
@@ -117,14 +126,17 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 		results[i] = res
 		processed++
 		if e.Config.AdvanceTimeAfterInstruction {
-			err := e.internalProvider.AdvanceTime(e.Config.AdvanceDuration)
+			err := e.timeControl.AdvanceTime(duration)
 			if err != nil {
 				return nil, err
 			}
 		}
 
 	}
-
+	finalState, err := e.summaryGenerator.ProtocolSummary(nil)
+	if err != nil {
+		return nil, err
+	}
 	summary, err := e.ExtractData()
 	if err != nil {
 		return nil, err
@@ -143,8 +155,10 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 	e.tradesGenerated = totalTrades
 
 	return &core.ResultSet{
-		Metadata: md,
-		Results:  results,
+		Metadata:     md,
+		Results:      results,
+		InitialState: initialState.Summary,
+		FinalState:   finalState.Summary,
 	}, errs.ErrorOrNil()
 }
 
@@ -152,9 +166,9 @@ func (e *Engine) ExtractData() (*core.ProtocolSummaryResponse, error) {
 	return e.summaryGenerator.ProtocolSummary(nil)
 }
 
-func sumTrades(summary core.ProtocolSummaryResponse) uint64 {
+func sumTrades(response core.ProtocolSummaryResponse) uint64 {
 	var trades int
-	for _, mkt := range summary.Markets {
+	for _, mkt := range response.Summary.Markets {
 		if mkt != nil {
 			trades += +len(mkt.Trades)
 		}
@@ -164,12 +178,26 @@ func sumTrades(summary core.ProtocolSummaryResponse) uint64 {
 	return uint64(trades)
 }
 
-func marketDepths(summary core.ProtocolSummaryResponse) []*proto.MarketDepth {
-	d := make([]*proto.MarketDepth, len(summary.Markets))
-	for i, mkt := range summary.Markets {
+func marketDepths(response core.ProtocolSummaryResponse) []*proto.MarketDepth {
+	d := make([]*proto.MarketDepth, len(response.Summary.Markets))
+	for i, mkt := range response.Summary.Markets {
 		if mkt != nil {
 			d[i] = mkt.MarketDepth
 		}
 	}
 	return d
+}
+
+func (e Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
+	maps := make(map[core.RequestType]*core.PreProcessor)
+	for _, provider := range e.providers {
+		m := provider.PreProcessors()
+		for k, v := range m {
+			if _, ok := maps[k]; ok {
+				return nil, ErrDuplicateInstruction
+			}
+			maps[k] = v
+		}
+	}
+	return maps, nil
 }
