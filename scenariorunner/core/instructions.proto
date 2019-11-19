@@ -37,23 +37,23 @@ message Metadata {
 message ResultSet {
     Metadata metadata = 1;
     repeated InstructionResult results = 2;
-    ProtocolSummary initialState = 3;
-    ProtocolSummary finalState = 4;
+    Summary initialState = 3;
+    Summary finalState = 4;
     Config config = 5;
     
 }
 
-message ProtocolSummaryResponse {
-    ProtocolSummary summary = 1;
+message SummaryResponse {
+    Summary summary = 1;
 }
 
-message ProtocolSummary {
+message Summary {
     repeated MarketSummary markets = 1;
-    repeated vega.Party parties = 2;
+    repeated PartySummary parties = 2;
 }
 
 message Config {
-    google.protobuf.Timestamp protocolTime = 1;
+    google.protobuf.Timestamp initialTime = 1;
 	bool advanceTimeAfterInstruction = 2;
 	google.protobuf.Duration timeDelta = 3;            
 	bool omitUnsupportedInstructions = 4; 
@@ -64,7 +64,7 @@ message MarketSummaryResponse {
     MarketSummary summary = 1;
 }
 
-message ProtocolSummaryRequest {
+message SummaryRequest {
     api.Pagination pagination = 1;
 }
 message MarketSummaryRequest {
@@ -79,11 +79,16 @@ message MarketSummary {
     vega.MarketDepth marketDepth = 5;
 }
 
+message PartySummary {
+    vega.Party party = 1;
+    repeated vega.Account accounts = 2;
+}
+
 enum RequestType {
     SET_TIME = 0;
     ADVANCE_TIME = 1;
     MARKET_SUMMARY = 2;
-    PROTOCOL_SUMMARY = 3;
+    SUMMARY = 3;
     SUBMIT_ORDER = 100;
     CANCEL_ORDER = 101;
     AMEND_ORDER = 102;

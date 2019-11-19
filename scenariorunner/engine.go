@@ -42,17 +42,17 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 	positions := preprocessors.NewPositions(d.ctx, d.tradeService)
 	parties := preprocessors.NewParties(d.ctx, d.partyStore)
 
-	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore)
+	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore)
 	timeControl := core.NewTimeControl(d.vegaTime)
 
 	summary := preprocessors.NewSummary(summaryGenerator)
 	time := preprocessors.NewTime(timeControl)
-	protocolTime, err := ptypes.Timestamp(engineConfig.ProtocolTime)
+	initialTime, err := ptypes.Timestamp(engineConfig.InitialTime)
 	if err != nil {
 		return nil, err
 	}
 
-	timeControl.SetTime(protocolTime)
+	timeControl.SetTime(initialTime)
 
 	return &Engine{
 		Config:           engineConfig,
@@ -85,7 +85,7 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 		return nil, err
 	}
 
-	initialState, err := e.summaryGenerator.ProtocolSummary(nil)
+	initialState, err := e.summaryGenerator.Summary(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 		}
 
 	}
-	finalState, err := e.summaryGenerator.ProtocolSummary(nil)
+	finalState, err := e.summaryGenerator.Summary(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -162,11 +162,11 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 	}, errs.ErrorOrNil()
 }
 
-func (e Engine) ExtractData() (*core.ProtocolSummaryResponse, error) {
-	return e.summaryGenerator.ProtocolSummary(nil)
+func (e Engine) ExtractData() (*core.SummaryResponse, error) {
+	return e.summaryGenerator.Summary(nil)
 }
 
-func sumTrades(response core.ProtocolSummaryResponse) uint64 {
+func sumTrades(response core.SummaryResponse) uint64 {
 	var trades int
 	for _, mkt := range response.Summary.Markets {
 		if mkt != nil {
@@ -178,7 +178,7 @@ func sumTrades(response core.ProtocolSummaryResponse) uint64 {
 	return uint64(trades)
 }
 
-func marketDepths(response core.ProtocolSummaryResponse) []*proto.MarketDepth {
+func marketDepths(response core.SummaryResponse) []*proto.MarketDepth {
 	d := make([]*proto.MarketDepth, len(response.Summary.Markets))
 	for i, mkt := range response.Summary.Markets {
 		if mkt != nil {

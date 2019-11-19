@@ -552,8 +552,8 @@ func getInternalInstructions(marketId string) ([]*core.Instruction, error) {
 		return nil, err
 	}
 	instr5, err := core.NewInstruction(
-		core.RequestType_PROTOCOL_SUMMARY,
-		&core.ProtocolSummaryRequest{},
+		core.RequestType_SUMMARY,
+		&core.SummaryRequest{},
 	)
 	if err != nil {
 		return nil, err

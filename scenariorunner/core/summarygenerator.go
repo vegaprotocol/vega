@@ -20,11 +20,12 @@ var defaultPagination = protoapi.Pagination{
 }
 
 type SummaryGenerator struct {
-	context     context.Context
-	tradeStore  *storage.Trade
-	orderStore  *storage.Order
-	partyStore  *storage.Party
-	marketStore *storage.Market
+	context      context.Context
+	tradeStore   *storage.Trade
+	orderStore   *storage.Order
+	partyStore   *storage.Party
+	marketStore  *storage.Market
+	accountStore *storage.Account
 }
 
 func NewSummaryGenerator(
@@ -32,21 +33,35 @@ func NewSummaryGenerator(
 	tradeStore *storage.Trade,
 	orderStore *storage.Order,
 	partyStore *storage.Party,
-	marketStore *storage.Market) *SummaryGenerator {
+	marketStore *storage.Market,
+	accountStore *storage.Account) *SummaryGenerator {
 	return &SummaryGenerator{
 		context,
 		tradeStore,
 		orderStore,
 		partyStore,
-		marketStore}
+		marketStore,
+		accountStore}
 }
 
-func (s *SummaryGenerator) ProtocolSummary(pagination *protoapi.Pagination) (*ProtocolSummaryResponse, error) {
+func (s *SummaryGenerator) Summary(pagination *protoapi.Pagination) (*SummaryResponse, error) {
 	p := getMaxPagination(pagination)
 	s.commitAllStores()
 	parties, err := s.partyStore.GetAll()
 	if err != nil {
 		return nil, err
+	}
+
+	partySummaries := make([]*PartySummary, len(parties))
+	for i, party := range parties {
+		accounts, err := s.accountStore.GetByParty(party.Id)
+		if err != nil {
+			return nil, err
+		}
+		partySummaries[i] = &PartySummary{
+			Party:    party,
+			Accounts: accounts,
+		}
 	}
 
 	mkts, err := s.marketStore.GetAll()
@@ -62,10 +77,10 @@ func (s *SummaryGenerator) ProtocolSummary(pagination *protoapi.Pagination) (*Pr
 		marketSummaries[i] = summary
 	}
 
-	return &ProtocolSummaryResponse{
-		Summary: &ProtocolSummary{
+	return &SummaryResponse{
+		Summary: &Summary{
 			Markets: marketSummaries,
-			Parties: parties,
+			Parties: partySummaries,
 		},
 	}, nil
 }

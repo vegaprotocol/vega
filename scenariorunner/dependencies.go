@@ -125,7 +125,7 @@ type dependencies struct {
 
 func NewDefaultConfig() core.Config {
 	return core.Config{
-		ProtocolTime:                &timestamp.Timestamp{Seconds: 1546416000, Nanos: 0}, //Corresponds to 2/1/2019 8:00am UTC
+		InitialTime:                 &timestamp.Timestamp{Seconds: 1546416000, Nanos: 0}, //Corresponds to 2/1/2019 8:00am UTC
 		AdvanceTimeAfterInstruction: true,
 		TimeDelta:                   ptypes.DurationProto(time.Nanosecond),
 		OmitUnsupportedInstructions: true,

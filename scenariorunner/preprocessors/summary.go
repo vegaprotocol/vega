@@ -16,23 +16,23 @@ func NewSummary(summaryGenerator *core.SummaryGenerator) *Summary {
 
 func (s *Summary) PreProcessors() map[core.RequestType]*core.PreProcessor {
 	return map[core.RequestType]*core.PreProcessor{
-		core.RequestType_MARKET_SUMMARY:   s.marketSummary(),
-		core.RequestType_PROTOCOL_SUMMARY: s.protocolSummary(),
+		core.RequestType_MARKET_SUMMARY: s.marketSummary(),
+		core.RequestType_SUMMARY:        s.protocolSummary(),
 	}
 }
 
 func (s *Summary) protocolSummary() *core.PreProcessor {
 	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
-		req := &core.ProtocolSummaryRequest{}
+		req := &core.SummaryRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
 			return nil, core.ErrInstructionInvalid
 		}
 
 		return instr.PreProcess(
-			func() (proto.Message, error) { return s.summaryGenerator.ProtocolSummary(req.GetPagination()) })
+			func() (proto.Message, error) { return s.summaryGenerator.Summary(req.GetPagination()) })
 	}
 	return &core.PreProcessor{
-		MessageShape: &core.ProtocolSummaryRequest{},
+		MessageShape: &core.SummaryRequest{},
 		PreProcess:   preProcessor,
 	}
 }
