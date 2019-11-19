@@ -17,11 +17,11 @@ import (
 )
 
 var (
-	// VersionHash specifies the git commit used to build the application. Passed in via ldflags
+	// VersionHash specifies the git commit used to build the application. Passed in via ldflags. See VERSION_HASH in Makefile for details.
 	VersionHash = "unknown"
-	// Version specifies the version used to build the application. Passed in via ldflags. See VERSION_HASH in Makefile for details.
+	// Version specifies the version used to build the application. Passed in via ldflags. See VERSION in Makefile for details.
 	Version = "unknown"
-	// Revision specifies app variation that was built to work with the VEGA version above. See VERSION in Makefile for details.
+	// Revision specifies app variation that was built to work with the VEGA version above.
 	Revision = "0.0.1"
 )
 
