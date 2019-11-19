@@ -4,10 +4,12 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	sr "code.vegaprotocol.io/vega/scenariorunner"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -26,7 +28,13 @@ func TestExtractData(t *testing.T) {
 		Instructions: instructions,
 		Description:  "Execting a trade",
 	}
-	runner, err := sr.NewEngine(sr.NewDefaultConfig())
+	log := logging.NewTestLogger()
+	storageConfig, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer storage.FlushStores(log, storageConfig)
+	runner, err := sr.NewEngine(log, sr.NewDefaultConfig(), storageConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +170,13 @@ func TestProcessInstructionsInternal(t *testing.T) {
 }
 
 func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
-	runner, err := sr.NewEngine(sr.NewDefaultConfig())
+	log := logging.NewTestLogger()
+	storageConfig, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer storage.FlushStores(log, storageConfig)
+	runner, err := sr.NewEngine(log, sr.NewDefaultConfig(), storageConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,6 +199,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		&protoapi.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
 				TraderID: trader1Id,
+				Amount:   1000,
 			},
 		},
 	)
@@ -291,6 +306,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		&protoapi.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
 				TraderID: "trader3",
+				Amount:   1000,
 			},
 		},
 	)
@@ -320,6 +336,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		&protoapi.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
 				TraderID: "trader4",
+				Amount:   1000,
 			},
 		},
 	)

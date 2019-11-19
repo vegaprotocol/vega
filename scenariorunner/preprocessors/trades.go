@@ -3,6 +3,7 @@ package preprocessors
 import (
 	"context"
 
+	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
@@ -110,7 +111,11 @@ func (t *Trades) lastTrade() *core.PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.LastTradeResponse{Trade: resp[0]}, nil
+				trade := &types.Trade{}
+				if len(resp) > 0 {
+					trade = resp[0]
+				}
+				return &protoapi.LastTradeResponse{Trade: trade}, nil
 
 			})
 	}

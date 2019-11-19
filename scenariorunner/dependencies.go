@@ -19,11 +19,11 @@ import (
 )
 
 //TODO (WG 05/11/2019): instantiating dependencies internally while WIP, the final dependencies will get incjeted from outside the package.
-func getDependencies() (*dependencies, error) {
-	log := logging.NewDevLogger()
-	log.SetLevel(logging.InfoLevel)
+func getDependencies(log *logging.Logger, config storage.Config) (*dependencies, error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
+	var errs *multierror.Error
+
 	configPath := fsutil.DefaultVegaDir()
 	cfgwatchr, err := cfg.NewFromFile(ctx, log, configPath, configPath)
 	if err != nil {
@@ -31,50 +31,46 @@ func getDependencies() (*dependencies, error) {
 		cancel()
 		return nil, err
 	}
-	config := cfgwatchr.Get()
-	log = logging.NewLoggerFromConfig(config.Logging)
-
-	var errs *multierror.Error
-
-	orderStore, err := storage.NewOrders(log, config.Storage, cancel)
+	cfg := cfgwatchr.Get()
+	orderStore, err := storage.NewOrders(log, config, cancel)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
-	tradeStore, err := storage.NewTrades(log, config.Storage, cancel)
+	tradeStore, err := storage.NewTrades(log, config, cancel)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
-	candleStore, err := storage.NewCandles(log, config.Storage)
+	candleStore, err := storage.NewCandles(log, config)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
 
-	marketStore, err := storage.NewMarkets(log, config.Storage)
+	marketStore, err := storage.NewMarkets(log, config)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
 
-	partyStore, err := storage.NewParties(config.Storage)
+	partyStore, err := storage.NewParties(config)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
 
-	accountStore, err := storage.NewAccounts(log, config.Storage)
+	accountStore, err := storage.NewAccounts(log, config)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
 
-	transferResponseStore, err := storage.NewTransferResponses(log, config.Storage)
+	transferResponseStore, err := storage.NewTransferResponses(log, config)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
 
-	riskStore, err := storage.NewRisks(config.Storage)
+	riskStore, err := storage.NewRisks(config)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
 
-	tradeService, err := trades.NewService(log, config.Trades, tradeStore, riskStore)
+	tradeService, err := trades.NewService(log, trades.NewDefaultConfig(), tradeStore, riskStore)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
@@ -84,12 +80,12 @@ func getDependencies() (*dependencies, error) {
 		return nil, err
 	}
 
-	timeService := vegatime.New(config.Time)
+	timeService := vegatime.New(vegatime.NewDefaultConfig())
 	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 	timeService.SetTimeNow(now)
 	engine := execution.NewEngine(
 		log,
-		config.Execution,
+		cfg.Execution,
 		timeService,
 		orderStore,
 		tradeStore,

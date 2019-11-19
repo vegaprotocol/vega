@@ -2,19 +2,22 @@ package main
 
 import (
 	"fmt"
-	"log"
+	//"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
+	"code.vegaprotocol.io/vega/logging"
 	sr "code.vegaprotocol.io/vega/scenariorunner"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/urfave/cli"
 )
 
 var (
 	app    = cli.NewApp()
+	log    = logging.NewProdLogger()
 	runner = scenariorunner{}
 )
 
@@ -31,7 +34,7 @@ func main() {
 	commands()
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 }
 
@@ -73,20 +76,21 @@ func commands() {
 			Action: func(c *cli.Context) {
 				dir, err := os.Getwd()
 				if err != nil {
-					log.Fatal(err)
+					log.Fatal(err.Error())
 				}
 				fmt.Println(dir)
 				if c.NArg() > 0 {
 					instrSet, err := ProcessFiles(c.Args())
 					if err != nil {
-						log.Fatal(err)
+						log.Fatal(err.Error())
 					}
 					n := len(instrSet)
 					runner.lazyInit(configFile)
+					defer runner.cleanUp()
 					for i, instr := range instrSet {
 						res, err := runner.engine.ProcessInstructions(*instr)
 						if err != nil {
-							log.Fatal(err)
+							log.Fatal(err.Error())
 						}
 						if optionalResultSetFile != "" {
 							fileName := optionalResultSetFile
@@ -101,7 +105,7 @@ func commands() {
 					if optionalProtocolSummaryFile != "" {
 						summary, err := runner.engine.ExtractData()
 						if err != nil {
-							log.Fatal(err)
+							log.Fatal(err.Error())
 						}
 						Output(summary, optionalProtocolSummaryFile)
 					}
@@ -115,28 +119,38 @@ func commands() {
 }
 
 type scenariorunner struct {
-	engineOnce sync.Once
-	engine     *sr.Engine
+	engineOnce    sync.Once
+	engine        *sr.Engine
+	storageConfig storage.Config
 }
 
 func (s *scenariorunner) lazyInit(configFileWithPath string) {
 	s.engineOnce.Do(func() {
 		config := sr.NewDefaultConfig()
 
+		storageConfig, err := storage.NewTestConfig()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		s.storageConfig = storageConfig
 		if configFileWithPath != "" {
 			f, err := os.Open(configFileWithPath)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal(err.Error())
 			}
 			err = unmarshall(f, &config)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal(err.Error())
 			}
 		}
-		engine, err := sr.NewEngine(config)
+		engine, err := sr.NewEngine(log, config, s.storageConfig)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(err.Error())
 		}
 		s.engine = engine
 	})
+}
+
+func (s *scenariorunner) cleanUp() {
+	storage.FlushStores(log, s.storageConfig)
 }

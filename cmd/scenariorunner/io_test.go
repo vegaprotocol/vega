@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"testing"
@@ -46,7 +45,7 @@ func TestUnmarshallApiTypes(t *testing.T) {
 		})
 
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 	instr2, err := core.NewInstruction(
 		core.RequestType_SUBMIT_ORDER,
@@ -62,7 +61,7 @@ func TestUnmarshallApiTypes(t *testing.T) {
 			},
 		})
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 	instr2.Description = "Submit a sell order"
 	expected := &core.InstructionSet{
@@ -118,7 +117,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		})
 
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 	instr2, err := core.NewInstruction(
 		core.RequestType_SUBMIT_ORDER,
@@ -133,7 +132,7 @@ func TestUnmarshallInternalTypes(t *testing.T) {
 		},
 	)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 	instr2.Description = "Submit a sell order"
 	expected := &core.InstructionSet{
@@ -299,7 +298,7 @@ func TestMarshal(t *testing.T) {
 			},
 		})
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 
 	instr2, err := core.NewInstruction(
@@ -316,7 +315,7 @@ func TestMarshal(t *testing.T) {
 			},
 		})
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction: ", err)
+		t.Fatal("Failed to create a new instruction: ", err)
 	}
 
 	resp1 := types.PendingOrder{
@@ -345,11 +344,11 @@ func TestMarshal(t *testing.T) {
 
 	result1, err := instr1.NewResult(&resp1, nil)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction result: ", err)
+		t.Fatal("Failed to create a new instruction result: ", err)
 	}
 	result2, err := instr2.NewResult(&resp2, nil)
 	if err != nil {
-		log.Fatalln("Failed to create a new instruction result: ", err)
+		t.Fatal("Failed to create a new instruction result: ", err)
 	}
 
 	resultSet := core.ResultSet{

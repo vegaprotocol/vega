@@ -4,9 +4,11 @@ import (
 	"errors"
 	"time"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/scenariorunner/preprocessors"
+	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/hashicorp/go-multierror"
@@ -25,9 +27,9 @@ type Engine struct {
 }
 
 // NewEngine returns a pointer to new instance of scenario runner
-func NewEngine(config core.Config) (*Engine, error) {
+func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig storage.Config) (*Engine, error) {
 
-	d, err := getDependencies()
+	d, err := getDependencies(log, storageConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +45,7 @@ func NewEngine(config core.Config) (*Engine, error) {
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore)
 
 	internal := newInternalProvider(d.vegaTime, summaryGenerator)
-	time, err := ptypes.Timestamp(config.ProtocolTime)
+	time, err := ptypes.Timestamp(engineConfig.ProtocolTime)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +53,7 @@ func NewEngine(config core.Config) (*Engine, error) {
 	internal.SetTime(time)
 
 	return &Engine{
-		Config:           config,
+		Config:           engineConfig,
 		summaryGenerator: summaryGenerator,
 		internalProvider: internal,
 		providers: []core.PreProcessorProvider{
