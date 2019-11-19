@@ -281,7 +281,8 @@ func TestMarshal(t *testing.T) {
 			],
 			"initialState": null,
 			"finalState": null,
-			"config": null
+			"config": null,
+			"version": ""
 		  }`)
 
 	instr1, err := core.NewInstruction(

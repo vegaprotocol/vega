@@ -143,7 +143,7 @@ func (s *scenariorunner) lazyInit(configFileWithPath string) {
 				log.Fatal(err.Error())
 			}
 		}
-		engine, err := sr.NewEngine(log, config, s.storageConfig)
+		engine, err := sr.NewEngine(log, config, s.storageConfig, Version)
 		if err != nil {
 			log.Fatal(err.Error())
 		}

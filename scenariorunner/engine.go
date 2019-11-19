@@ -20,6 +20,7 @@ var (
 
 type Engine struct {
 	Config           core.Config
+	Version          string
 	summaryGenerator *core.SummaryGenerator
 	timeControl      *core.TimeControl
 	providers        []core.PreProcessorProvider
@@ -27,7 +28,7 @@ type Engine struct {
 }
 
 // NewEngine returns a pointer to new instance of scenario runner
-func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig storage.Config) (*Engine, error) {
+func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig storage.Config, version string) (*Engine, error) {
 
 	d, err := getDependencies(log, storageConfig)
 	if err != nil {
@@ -56,6 +57,7 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 
 	return &Engine{
 		Config:           engineConfig,
+		Version:          version,
 		summaryGenerator: summaryGenerator,
 		timeControl:      timeControl,
 		providers: []core.PreProcessorProvider{
@@ -159,6 +161,8 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 		Results:      results,
 		InitialState: initialState.Summary,
 		FinalState:   finalState.Summary,
+		Config:       &e.Config,
+		Version:      e.Version,
 	}, errs.ErrorOrNil()
 }
 

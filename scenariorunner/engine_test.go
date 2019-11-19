@@ -34,7 +34,7 @@ func TestExtractData(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer storage.FlushStores(log, storageConfig)
-	runner, err := sr.NewEngine(log, sr.NewDefaultConfig(), storageConfig)
+	runner, err := sr.NewEngine(log, sr.NewDefaultConfig(), storageConfig, "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
 		t.Fatal(err)
 	}
 	defer storage.FlushStores(log, storageConfig)
-	runner, err := sr.NewEngine(log, sr.NewDefaultConfig(), storageConfig)
+	runner, err := sr.NewEngine(log, sr.NewDefaultConfig(), storageConfig, "test")
 	if err != nil {
 		t.Fatal(err)
 	}
