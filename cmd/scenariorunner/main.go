@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	//"log"
 	"os"
 	"path/filepath"
@@ -16,39 +17,22 @@ import (
 )
 
 var (
-	engine *sr.Engine
-
 	// VersionHash specifies the git commit used to build the application. Passed in via ldflags
 	VersionHash = "unknown"
-	// Version specifies the version used to build the application. Passed in via ldflags
+	// Version specifies the version used to build the application. Passed in via ldflags. See VERSION_HASH in Makefile for details.
 	Version = "unknown"
-	// Revision specifies app variation that was built to work with the VEGA version above
+	// Revision specifies app variation that was built to work with the VEGA version above. See VERSION in Makefile for details.
 	Revision = "unknown"
 )
 
+var log = logging.NewProdLogger()
+
 func main() {
 	app := cli.NewApp()
+	runner := scenariorunner{}
 	info(app)
-	commands(app)
-	initializeEngine()
-	app    = cli.NewApp()
-	log    = logging.NewProdLogger()
-	runner = scenariorunner{}
-)
-
-var (
-	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
-	VersionHash = ""
-
-	// Version specifies the version used to build the application. See VERSION in Makefile for details.
-	Version = ""
-)
-
-func main() {
-	info()
-	commands()
-	err := app.Run(os.Args)
-	if err != nil {
+	commands(app, &runner)
+	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err.Error())
 	}
 }
@@ -60,7 +44,7 @@ func info(app *cli.App) {
 	app.Version = fmt.Sprintf("%v for VEGA v.%v (%v)", Revision, Version, VersionHash)
 }
 
-func commands(app *cli.App) {
+func commands(app *cli.App, runner *scenariorunner) {
 	var optionalResultSetFile string
 	var optionalProtocolSummaryFile string
 	var configFile string
