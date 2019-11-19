@@ -21,7 +21,7 @@ var (
 type Engine struct {
 	Config           core.Config
 	summaryGenerator *core.SummaryGenerator
-	internalProvider *internalProvider
+	timeControl      *core.TimeControl
 	providers        []core.PreProcessorProvider
 	tradesGenerated  uint64
 }
@@ -43,19 +43,21 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 	parties := preprocessors.NewParties(d.ctx, d.partyStore)
 
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore)
+	timeControl := core.NewTimeControl(d.vegaTime)
 
-	internal := newInternalProvider(d.vegaTime, summaryGenerator)
-	time, err := ptypes.Timestamp(engineConfig.ProtocolTime)
+	summary := preprocessors.NewSummary(summaryGenerator)
+	time := preprocessors.NewTime(timeControl)
+	protocolTime, err := ptypes.Timestamp(engineConfig.ProtocolTime)
 	if err != nil {
 		return nil, err
 	}
 
-	internal.SetTime(time)
+	timeControl.SetTime(protocolTime)
 
 	return &Engine{
 		Config:           engineConfig,
 		summaryGenerator: summaryGenerator,
-		internalProvider: internal,
+		timeControl:      timeControl,
 		providers: []core.PreProcessorProvider{
 			execution,
 			markets,
@@ -65,6 +67,8 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 			candles,
 			positions,
 			parties,
+			summary,
+			time,
 		},
 	}, nil
 }
@@ -122,7 +126,7 @@ func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultS
 		results[i] = res
 		processed++
 		if e.Config.AdvanceTimeAfterInstruction {
-			err := e.internalProvider.AdvanceTime(duration)
+			err := e.timeControl.AdvanceTime(duration)
 			if err != nil {
 				return nil, err
 			}
@@ -186,7 +190,7 @@ func marketDepths(response core.ProtocolSummaryResponse) []*proto.MarketDepth {
 
 func (e Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
 	maps := make(map[core.RequestType]*core.PreProcessor)
-	for _, provider := range append(e.providers, e.internalProvider) {
+	for _, provider := range e.providers {
 		m := provider.PreProcessors()
 		for k, v := range m {
 			if _, ok := maps[k]; ok {
