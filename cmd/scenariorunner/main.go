@@ -16,36 +16,34 @@ import (
 )
 
 var (
-	app    = cli.NewApp()
-	log    = logging.NewProdLogger()
-	runner = scenariorunner{}
+	// VersionHash specifies the git commit used to build the application. Passed in via ldflags. See VERSION_HASH in Makefile for details.
+	VersionHash = "unknown"
+	// Version specifies the version used to build the application. Passed in via ldflags. See VERSION in Makefile for details.
+	Version = "unknown"
+	// Revision specifies app variation that was built to work with the VEGA version above.
+	Revision = "0.0.1"
 )
 
-var (
-	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
-	VersionHash = ""
-
-	// Version specifies the version used to build the application. See VERSION in Makefile for details.
-	Version = ""
-)
+var log = logging.NewProdLogger()
 
 func main() {
-	info()
-	commands()
-	err := app.Run(os.Args)
-	if err != nil {
+	app := cli.NewApp()
+	runner := scenariorunner{}
+	info(app)
+	commands(app, &runner)
+	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err.Error())
 	}
 }
 
-func info() {
+func info(app *cli.App) {
 	app.Name = "scenario-runner-cli"
 	app.Usage = "Interact with a Vega node running without the consensus layer via command line."
 	app.Description = "Command line tool interacting with a Vega node running without the consensus layer. It allows submission of instructions in bulk and persistence of respones along with the accompanying metadata."
-	app.Version = Version
+	app.Version = fmt.Sprintf("%v for VEGA v.%v (%v)", Revision, Version, VersionHash)
 }
 
-func commands() {
+func commands(app *cli.App, runner *scenariorunner) {
 	var optionalResultSetFile string
 	var optionalProtocolSummaryFile string
 	var configFile string

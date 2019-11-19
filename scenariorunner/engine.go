@@ -76,7 +76,7 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 }
 
 // ProcessInstructions takes a set of instructions and submits them to the protocol
-func (e Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
+func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.ResultSet, error) {
 	start := time.Now()
 	var processed, omitted uint64
 	results := make([]*core.InstructionResult, len(instrSet.Instructions))
@@ -192,7 +192,7 @@ func marketDepths(response core.SummaryResponse) []*proto.MarketDepth {
 	return d
 }
 
-func (e Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
+func (e *Engine) flattenPreProcessors() (map[core.RequestType]*core.PreProcessor, error) {
 	maps := make(map[core.RequestType]*core.PreProcessor)
 	for _, provider := range e.providers {
 		m := provider.PreProcessors()
