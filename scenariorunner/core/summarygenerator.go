@@ -5,6 +5,7 @@ import (
 
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/trades"
 )
 
 var maxPagination = protoapi.Pagination{
@@ -26,6 +27,7 @@ type SummaryGenerator struct {
 	partyStore   *storage.Party
 	marketStore  *storage.Market
 	accountStore *storage.Account
+	tradeService *trades.Svc
 }
 
 func NewSummaryGenerator(
@@ -34,14 +36,16 @@ func NewSummaryGenerator(
 	orderStore *storage.Order,
 	partyStore *storage.Party,
 	marketStore *storage.Market,
-	accountStore *storage.Account) *SummaryGenerator {
+	accountStore *storage.Account,
+	tradeService *trades.Svc) *SummaryGenerator {
 	return &SummaryGenerator{
 		context,
 		tradeStore,
 		orderStore,
 		partyStore,
 		marketStore,
-		accountStore}
+		accountStore,
+		tradeService}
 }
 
 func (s *SummaryGenerator) Summary(pagination *protoapi.Pagination) (*SummaryResponse, error) {
@@ -54,10 +58,15 @@ func (s *SummaryGenerator) Summary(pagination *protoapi.Pagination) (*SummaryRes
 
 	partySummaries := make([]*PartySummary, len(parties))
 	for i, party := range parties {
+		positions, err := s.tradeService.GetPositionsByParty(s.context, party.Id)
+		if err != nil {
+			return nil, err
+		}
 		accounts, err := s.accountStore.GetByParty(party.Id)
 		if err != nil {
 			return nil, err
 		}
+		party.Positions = positions
 		partySummaries[i] = &PartySummary{
 			Party:    party,
 			Accounts: accounts,

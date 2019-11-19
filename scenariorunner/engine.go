@@ -43,7 +43,7 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 	positions := preprocessors.NewPositions(d.ctx, d.tradeService)
 	parties := preprocessors.NewParties(d.ctx, d.partyStore)
 
-	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore)
+	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore, d.tradeService)
 	timeControl := core.NewTimeControl(d.vegaTime)
 
 	summary := preprocessors.NewSummary(summaryGenerator)
