@@ -126,7 +126,7 @@ func testTransferLoss(t *testing.T) {
 	}
 
 	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes()
-	responses, err := eng.Transfer(testMarketID, pos)
+	responses, err := eng.FinalSettlement(testMarketID, pos)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
@@ -164,7 +164,7 @@ func testTransferComplexLoss(t *testing.T) {
 		},
 	}
 	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
-	responses, err := eng.Transfer(testMarketID, pos)
+	responses, err := eng.FinalSettlement(testMarketID, pos)
 	assert.Equal(t, 1, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
@@ -193,7 +193,7 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 			Type: types.TransferType_LOSS,
 		},
 	}
-	resp, err := eng.Transfer(testMarketID, pos)
+	resp, err := eng.FinalSettlement(testMarketID, pos)
 	assert.Nil(t, resp)
 	assert.Error(t, err)
 	assert.Equal(t, collat.ErrAccountDoesNotExist, err)
@@ -262,7 +262,7 @@ func testDistributeWin(t *testing.T) {
 	// 		assert.Equal(t, 7*price, acc.Balance)
 	// 	}
 	// })
-	responses, err := eng.Transfer(testMarketID, pos)
+	responses, err := eng.FinalSettlement(testMarketID, pos)
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
@@ -341,7 +341,7 @@ func testProcessBoth(t *testing.T) {
 			assert.Equal(t, int64(2000), acc.Balance)
 		}
 	})
-	responses, err := eng.Transfer(testMarketID, pos)
+	responses, err := eng.FinalSettlement(testMarketID, pos)
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
 	resp := responses[0]
@@ -411,7 +411,7 @@ func testProcessBothProRated(t *testing.T) {
 	}
 
 	eng.buf.EXPECT().Add(gomock.Any()).Times(6)
-	responses, err := eng.Transfer(testMarketID, pos)
+	responses, err := eng.FinalSettlement(testMarketID, pos)
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
 	resp := responses[0]

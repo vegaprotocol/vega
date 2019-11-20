@@ -148,10 +148,10 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 	return nil
 }
 
-// Transfer will process the list of transfer instructed by other engines
-// @TODO this func currently only expects TransferType_{LOSS,WIN} transfers
+// FinalSettlement will process the list of transfer instructed by other engines
+// This func currently only expects TransferType_{LOSS,WIN} transfers
 // other transfer types have dedicated funcs (MartToMarket, MarginUpdate)
-func (e *Engine) Transfer(marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
+func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
 		return nil, nil
