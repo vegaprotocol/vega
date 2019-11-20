@@ -404,7 +404,9 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		// now let's get the transfers for MTM settlement
 		events := m.position.UpdateMarkPrice(m.markPrice)
+		fmt.Printf("LEN: %v\n", len(events))
 		settle := m.settlement.SettleMTM(m.markPrice, events)
+		fmt.Printf("LEN: %v\n", len(settle))
 
 		// Only process collateral and risk once per order, not for every trade
 		margins := m.collateralAndRisk(settle)
@@ -427,7 +429,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 					}
 				}
 			}
-			if err != nil && 0 != len(transfers) {
+			if err != nil && len(transfers) > 0 {
 				m.transferBuf.Add(transfers)
 			}
 			err = m.resolveClosedOutTraders(closed, order)

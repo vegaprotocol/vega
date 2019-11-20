@@ -58,7 +58,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^The "([^"]*)" makes a deposit of "([^"]*)" into the "([^"]*)" account$`, theMakesADepositOfIntoTheAccount)
 	s.Step(`^"([^"]*)" general account for asset "([^"]*)" balance is "([^"]*)"$`, generalAccountForAssetBalanceIs)
 	s.Step(`^"([^"]*)" have only one account per asset$`, haveOnlyOneAccountPerAsset)
-	s.Step(`^theExecutonEngineHaveTheseMarkets:$`, theExecutonEngineHaveTheseMarkets)
 	s.Step(`^the following traders:$`, theFollowingTraders)
 	s.Step(`^I Expect the traders to have new general account:$`, iExpectTheTradersToHaveNewGeneralAccount)
 	s.Step(`^"([^"]*)" general accounts balance is "([^"]*)"$`, generalAccountsBalanceIs)
@@ -71,4 +70,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I expect the trader to have a margin liability:$`, tradersLiability)
 	s.Step(`^"([^"]*)" has not been added to the market$`, hasNotBeenAddedToTheMarket)
 	s.Step(`^the mark price is "([^"]+)"$`, theMarkPriceIs)
+	s.Step(`^the executon engine have these markets:$`, theExecutonEngineHaveTheseMarkets)
+	s.Step(`^traders place following orders:$`, tradersPlaceFollowingOrders)
+	s.Step(`^I expect the trader to have a margin:$`, iExpectTheTraderToHaveAMargin)
+	s.Step(`^a transfer of "([^"]*)" is made to the settlement account$`, aTransferOfIsMadeToTheSettlementAccount)
 }

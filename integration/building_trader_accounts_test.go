@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/DATA-DOG/godog/gherkin"
+	uuid "github.com/satori/go.uuid"
 )
 
 func theExecutonEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
@@ -17,7 +18,7 @@ func theExecutonEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
 		if val(row, 0) == "name" {
 			continue
 		}
-		mkt := baseMarket(val(row, 0), val(row, 1), val(row, 2), val(row, 3))
+		mkt := baseMarket(row)
 		mkts = append(mkts, mkt)
 	}
 
@@ -180,26 +181,85 @@ func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
 
 }
 
-func baseMarket(name, baseName, quoteName, asset string) proto.Market {
+func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
+	for _, row := range orders.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		order := proto.Order{
+			Id:          uuid.NewV4().String(),
+			MarketID:    val(row, 1),
+			PartyID:     val(row, 0),
+			Side:        sideval(row, 2),
+			Price:       u64val(row, 4),
+			Size:        u64val(row, 3),
+			Remaining:   u64val(row, 3),
+			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			Type:        proto.Order_LIMIT,
+			TimeInForce: proto.Order_GTT,
+			CreatedAt:   time.Now().UnixNano(),
+		}
+		result, err := execsetup.engine.SubmitOrder(&order)
+		if err != nil {
+			return err
+		}
+		if int64(len(result.Trades)) != i64val(row, 5) {
+			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
+		}
+	}
+	return nil
+}
+
+func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
+	for _, row := range arg1.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		account, err := execsetup.accounts.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		if err != nil {
+			return err
+		}
+		if account.GetBalance() != i64val(row, 4) {
+			return fmt.Errorf("expected general balance  %d, instead saw %d (trader: %v)", i64val(row, 4), account.GetBalance(), val(row, 0))
+		}
+		account, err = execsetup.accounts.getTraderMarginAccount(val(row, 0), val(row, 2))
+		if err != nil {
+			return err
+		}
+		if account.GetBalance() != i64val(row, 3) {
+			return fmt.Errorf("expected margin balance  %d, instead saw %d (trader: %v)", i64val(row, 3), account.GetBalance(), val(row, 0))
+		}
+	}
+	return nil
+}
+
+func aTransferOfIsMadeToTheSettlementAccount(amountstr string) error {
+	amount, _ := strconv.ParseUint(amountstr, 10, 0)
+
+}
+
+func baseMarket(row *gherkin.TableRow) proto.Market {
 	maturity := time.Now().Add(365 * 24 * time.Hour)
 	return proto.Market{
-		Id:            fmt.Sprintf("%s", name),
-		Name:          fmt.Sprintf("%s", name),
+		Id:            fmt.Sprintf("%s", val(row, 0)),
+		Name:          fmt.Sprintf("%s", val(row, 0)),
 		DecimalPlaces: 2,
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
-				Id:        fmt.Sprintf("Crypto/%s/Futures", name),
-				Code:      fmt.Sprintf("CRYPTO/%v", name),
-				Name:      fmt.Sprintf("%s future", name),
-				BaseName:  baseName,
-				QuoteName: quoteName,
+				Id:        fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),
+				Code:      fmt.Sprintf("CRYPTO/%v", val(row, 0)),
+				Name:      fmt.Sprintf("%s future", val(row, 0)),
+				BaseName:  val(row, 1),
+				QuoteName: val(row, 2),
 				Metadata: &proto.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
 						"product:futures",
 					},
 				},
-				InitialMarkPrice: 1000,
+				InitialMarkPrice: u64val(row, 4),
 				Product: &proto.Instrument_Future{
 					Future: &proto.Future{
 						Maturity: maturity.Format("2006-01-02T15:04:05Z"),
@@ -209,26 +269,23 @@ func baseMarket(name, baseName, quoteName, asset string) proto.Market {
 								Event:      "price_changed",
 							},
 						},
-						Asset: asset,
+						Asset: val(row, 3),
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_ForwardRiskModel{
-				ForwardRiskModel: &proto.ForwardRiskModel{
-					RiskAversionParameter: 0.01,
-					Tau:                   1.0 / 365.25 / 24,
-					Params: &proto.ModelParamsBS{
-						Mu:    0,
-						R:     0.016,
-						Sigma: 0.09,
+			RiskModel: &proto.TradableInstrument_SimpleRiskModel{
+				SimpleRiskModel: &proto.SimpleRiskModel{
+					Params: &proto.SimpleModelParams{
+						FactorLong:  f64val(row, 6),
+						FactorShort: f64val(row, 7),
 					},
 				},
 			},
 			MarginCalculator: &proto.MarginCalculator{
 				ScalingFactors: &proto.ScalingFactors{
-					SearchLevel:       1.1,
-					InitialMargin:     1.2,
-					CollateralRelease: 1.4,
+					SearchLevel:       f64val(row, 13),
+					InitialMargin:     f64val(row, 12),
+					CollateralRelease: f64val(row, 11),
 				},
 			},
 		},

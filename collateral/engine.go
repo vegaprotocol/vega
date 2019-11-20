@@ -386,6 +386,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		)
 		return nil, err
 	}
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
 	mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountType_GENERAL))
 	if err != nil {
 		e.log.Error(
