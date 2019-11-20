@@ -51,7 +51,7 @@ Feature: Test trading-core flow with simple risk model
         Then I expect the trader to have a margin liability:
             | trader  | position | buy | sell | margin | general |
             | trader1 | -2       | 0   | 0    | 268    | 99692   |
-            | trader2 | 1        | 0   | 0    | 142    | 99898   |
+            | trader2 | 1        | 0   | 0    | 22     | 99898   |
             | trader3 | 1        | 0   | 0    | 117    | 99883   |
         And the mark price is "1020"
 
