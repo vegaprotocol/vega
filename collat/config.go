@@ -13,7 +13,6 @@ const namedLogger = "collateral"
 type Config struct {
 	Level encoding.LogLevel
 	// Auto-create trader accounts if needed?
-	CreateTraderAccounts        bool
 	TraderGeneralAccountBalance int64
 }
 
@@ -22,7 +21,6 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level:                       encoding.LogLevel{Level: logging.InfoLevel},
-		CreateTraderAccounts:        true,
 		TraderGeneralAccountBalance: 100000000,
 	}
 }
