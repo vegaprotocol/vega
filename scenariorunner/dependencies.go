@@ -82,10 +82,7 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 	}
 
 	executionConfig := execution.NewDefaultConfig("")
-
 	timeService := vegatime.New(vegatime.NewDefaultConfig())
-	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
-	timeService.SetTimeNow(now)
 	engine := execution.NewEngine(
 		log,
 		executionConfig,
@@ -98,8 +95,6 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		accountStore,
 		transferResponseStore,
 	)
-
-	engine.SubmitMarket()
 
 	return &dependencies{
 		ctx:          ctx,
