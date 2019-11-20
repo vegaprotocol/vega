@@ -149,16 +149,65 @@ func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 }
 
 // Transfer will process the list of transfer instructed by other engines
+// @TODO this func currently only expects TransferType_{LOSS,WIN} transfers
+// other transfer types have dedicated funcs (MartToMarket, MarginUpdate)
 func (e *Engine) Transfer(marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
+	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
 		return nil, nil
 	}
-	return nil, nil
-	// if isSettle(transfers[0]) {
-	// 	return e.collect(marketID, transfers)
-	// }
-	// // this is a balance top-up or some other thing we haven't implemented yet
-	// return nil, nil
+	responses := make([]*types.TransferResponse, 0, len(transfers))
+	asset := transfers[0].Amount.Asset
+	// This is where we'll implement everything
+	settle, insurance, err := e.getSystemAccounts(marketID, asset)
+	if err != nil {
+		e.log.Error(
+			"Failed to get system accounts required for MTM settlement",
+			logging.Error(err),
+		)
+		return nil, err
+	}
+	// create this event, we're not using it, but it's required in getTransferRequests
+	mevt := &marginUpdate{}
+	// get the component that calculates the loss socialisation etc... if needed
+	for _, transfer := range transfers {
+		loss := isLoss(transfer)
+		req, err := e.getTransferRequest(transfer, settle, insurance, mevt)
+		if err != nil {
+			e.log.Error(
+				"Failed to build transfer request for event",
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		// set the amount (this can change the req.Amount value if we entered loss socialisation
+		res, err := e.getLedgerEntries(req)
+		if err != nil {
+			e.log.Error(
+				"Failed to transfer funds",
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		// if this is a loss, we want to update the delta, too
+		if !loss {
+			// getLedgerEntries updates the from accounts, so losses are handled fine there
+			// but the to account isn't updated (losses are deposited in temporary settlement account)
+			// but wins are paid out to trader accounts, so we need to update the balance there
+			for _, bal := range res.Balances {
+				if err := e.UpdateBalance(bal.Account.Id, bal.Balance); err != nil {
+					e.log.Error(
+						"Could not update the target account in transfer",
+						logging.String("account-id", bal.Account.Id),
+						logging.Error(err),
+					)
+					return nil, err
+				}
+			}
+		}
+		responses = append(responses, res)
+	}
+	return responses, nil
 }
 
 // MarkToMarket will run the mark to market settlement over a given set of positions
@@ -230,6 +279,94 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer) ([]e
 		marginEvts = append(marginEvts, marginEvt)
 	}
 	return marginEvts, responses, nil
+}
+
+// GetPartyMargin will return the current margin for a given party
+func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
+	genID := e.accountID("", pos.Party(), asset, types.AccountType_GENERAL)
+	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountType_MARGIN)
+	genAcc, err := e.GetAccountByID(genID)
+	if err != nil {
+		e.log.Error(
+			"Party doesn't have a general account somehow?",
+			logging.String("party-id", pos.Party()))
+		return nil, ErrTraderAccountsMissing
+	}
+	marAcc, err := e.GetAccountByID(marginID)
+	if err != nil {
+		e.log.Error(
+			"Party doesn't have a margin account somehow?",
+			logging.String("party-id", pos.Party()),
+			logging.String("market-id", marketID))
+		return nil, ErrTraderAccountsMissing
+	}
+
+	return marginUpdate{
+		pos,
+		marAcc,
+		genAcc,
+		asset,
+		marketID,
+	}, nil
+}
+
+// MarginUpdate will run the margin updates over a set of risk events (margin updates)
+func (e *Engine) MarginUpdate(marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.Margin, error) {
+	response := make([]*types.TransferResponse, 0, len(updates))
+	closed := make([]events.Margin, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
+	// create "fake" settle account for market ID
+	settle := &types.Account{
+		MarketID: marketID,
+	}
+	for _, update := range updates {
+		transfer := update.Transfer()
+		// although this is mainly a duplicate event, we need to pass it to getTransferRequest
+		mevt := &marginUpdate{
+			MarketPosition: update,
+			asset:          update.Asset(),
+			marketID:       update.MarketID(),
+		}
+		req, err := e.getTransferRequest(transfer, settle, nil, mevt)
+		if err != nil {
+			// log this
+			return nil, nil, err
+		}
+		res, err := e.getLedgerEntries(req)
+		if err != nil {
+			return nil, nil, err
+		}
+		// we didn't manage to top up to even the minimum required system margin, close out trader
+		// we need to be careful with this, only apply this to transfer for low margin
+		// the MinAmount in the transfer is always set to 0 but in 2 case:
+		// - first when a new order is created, the MinAmount is the same than Amount, which is
+		//   what's required to reach the InitialMargin level
+		// - second when a trader margin is under the MaintenanceLevel, the MinAmount is supposed
+		//   to be at least to get back to the search level, and the amount will be enough to reach
+		//   InitialMargin
+		// In both case either the order will not be accepted, or the trader will be closed
+		if transfer.Type == types.TransferType_MARGIN_LOW &&
+			res.Balances[0].Account.Balance < (int64(update.MarginBalance())+transfer.Amount.MinAmount) {
+			// mevt embeds update, which in turn embeds events.MarketPosition
+			closed = append(closed, mevt)
+		} else {
+			response = append(response, res)
+			for _, v := range res.GetTransfers() {
+				// increment the to account
+				if err := e.IncrementBalance(v.ToAccount, v.Amount); err != nil {
+					e.log.Error(
+						"Failed to increment balance for account",
+						logging.String("account-id", v.ToAccount),
+						logging.Int64("amount", v.Amount),
+						logging.Error(err),
+					)
+					continue
+				}
+			}
+
+		}
+	}
+
+	return response, closed, nil
 }
 
 func isLoss(t *types.Transfer) bool {
