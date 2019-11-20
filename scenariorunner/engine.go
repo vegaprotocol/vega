@@ -34,6 +34,21 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 	if err != nil {
 		return nil, err
 	}
+	timeControl := core.NewTimeControl(d.vegaTime)
+	time := preprocessors.NewTime(timeControl)
+	initialTime, err := ptypes.Timestamp(engineConfig.InitialTime)
+	if err != nil {
+		return nil, err
+	}
+	timeControl.SetTime(initialTime)
+
+	for _, mkt := range engineConfig.Markets {
+		err = d.execution.SubmitMarket(mkt)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	execution := preprocessors.NewExecution(d.execution)
 	markets := preprocessors.NewMarkets(d.ctx, d.marketStore)
 	orders := preprocessors.NewOrders(d.ctx, d.orderStore)
@@ -44,16 +59,7 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 	parties := preprocessors.NewParties(d.ctx, d.partyStore)
 
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore, d.tradeService)
-	timeControl := core.NewTimeControl(d.vegaTime)
-
 	summary := preprocessors.NewSummary(summaryGenerator)
-	time := preprocessors.NewTime(timeControl)
-	initialTime, err := ptypes.Timestamp(engineConfig.InitialTime)
-	if err != nil {
-		return nil, err
-	}
-
-	timeControl.SetTime(initialTime)
 
 	return &Engine{
 		Config:           engineConfig,
