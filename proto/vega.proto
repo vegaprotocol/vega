@@ -220,11 +220,9 @@ message Withdraw {
 message OrderAmendment {
   string orderID = 1 [(validator.field) = {string_not_empty : true}];
   string partyID = 2 [(validator.field) = {string_not_empty: true}];
-  string marketID = 3 [(validator.field) = {string_not_empty: true}];
-  uint64 price = 4 [(validator.field) = {int_gt: 0}];
-  uint64 size = 5 [(validator.field) = {int_gt: 0}];
-  int64 expiresAt = 6;
-  Side side = 7;
+  uint64 price = 3 [(validator.field) = {int_gt: 0}];
+  uint64 size = 4 [(validator.field) = {int_gt: 0}];
+  int64 expiresAt = 5;
 }
 
 message OrderSubmission {

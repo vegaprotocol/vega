@@ -65,7 +65,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	}
 
 	// create the root
-	if err = fsutil.EnsureDir(rootPath); err != nil {
+	if err := fsutil.EnsureDir(rootPath); err != nil {
 		return err
 	}
 
@@ -75,16 +75,16 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	fullMarketStorePath := filepath.Join(rootPath, storage.MarketsDataPath)
 
 	// create sub-folders
-	if err = fsutil.EnsureDir(fullCandleStorePath); err != nil {
+	if err := fsutil.EnsureDir(fullCandleStorePath); err != nil {
 		return err
 	}
-	if err = fsutil.EnsureDir(fullOrderStorePath); err != nil {
+	if err := fsutil.EnsureDir(fullOrderStorePath); err != nil {
 		return err
 	}
-	if err = fsutil.EnsureDir(fullTradeStorePath); err != nil {
+	if err := fsutil.EnsureDir(fullTradeStorePath); err != nil {
 		return err
 	}
-	if err = fsutil.EnsureDir(fullMarketStorePath); err != nil {
+	if err := fsutil.EnsureDir(fullMarketStorePath); err != nil {
 		return err
 	}
 
@@ -92,7 +92,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 	fullDefaultMarketConfigPath :=
 		filepath.Join(rootPath, execution.MarketConfigPath)
 
-	if err = fsutil.EnsureDir(fullDefaultMarketConfigPath); err != nil {
+	if err := fsutil.EnsureDir(fullDefaultMarketConfigPath); err != nil {
 		return err
 	}
 
@@ -110,7 +110,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 
 	// write configuration to toml
 	buf := new(bytes.Buffer)
-	if err = toml.NewEncoder(buf).Encode(cfg); err != nil {
+	if err := toml.NewEncoder(buf).Encode(cfg); err != nil {
 		return err
 	}
 
@@ -120,7 +120,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger) error {
 		return err
 	}
 
-	if _, err = f.WriteString(buf.String()); err != nil {
+	if _, err := f.WriteString(buf.String()); err != nil {
 		return err
 	}
 

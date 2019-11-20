@@ -102,13 +102,12 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 	internal := make(chan []types.Order)
 	ref := s.orderStore.Subscribe(internal)
 
-	var cancel func()
-	ctx, cancel = context.WithCancel(ctx)
 	go func() {
 		atomic.AddInt32(&s.subscribersCnt, 1)
 		defer atomic.AddInt32(&s.subscribersCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		defer cancel()
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
 		for {
 			select {
 			case <-ctx.Done():
@@ -169,7 +168,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries),
 					)
-					cancel()
+					cfunc()
 					break
 				}
 			}

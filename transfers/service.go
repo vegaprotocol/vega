@@ -61,13 +61,12 @@ func (s *Svc) ObserveTransferResponses(
 	internal := make(chan []*types.TransferResponse)
 	ref := s.store.Subscribe(internal)
 
-	var cancel func()
-	ctx, cancel = context.WithCancel(ctx)
 	retryCount := retries
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		for {
 			select {

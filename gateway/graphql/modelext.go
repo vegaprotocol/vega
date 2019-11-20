@@ -230,7 +230,7 @@ func (m *Market) IntoProto() (*proto.Market, error) {
 	var err error
 	pmkt := &proto.Market{}
 	pmkt.Id = m.ID
-	if err = m.tradingModeIntoProto(pmkt); err != nil {
+	if err := m.tradingModeIntoProto(pmkt); err != nil {
 		return nil, err
 	}
 

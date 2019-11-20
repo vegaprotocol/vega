@@ -76,12 +76,11 @@ func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 	}
 	ref := s.candleStore.Subscribe(&iT)
 
-	var cancel func()
-	ctx, cancel = context.WithCancel(ctx)
 	go func() {
 		atomic.AddInt32(&s.subscriberCnt, 1)
 		defer atomic.AddInt32(&s.subscriberCnt, -1)
-		defer cancel()
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		for {
 			select {
@@ -133,7 +132,7 @@ func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries),
 					)
-					cancel()
+					cfunc()
 					break
 				}
 			}

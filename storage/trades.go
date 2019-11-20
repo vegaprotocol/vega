@@ -202,25 +202,27 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 }
 
 // GetByMarketAndID retrieves a trade for a given market and id, any errors will be returned immediately.
-func (ts *Trade) GetByMarketAndID(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
+func (ts *Trade) GetByMarketAndID(ctx context.Context, market string, id string) (*types.Trade, error) {
+	var trade types.Trade
+
 	txn := ts.badger.readTransaction()
 	defer txn.Discard()
 
 	marketKey := ts.badger.tradeMarketKey(market, id)
 	item, err := txn.Get(marketKey)
 	if err != nil {
-		return
+		return nil, err
 	}
 	tradeBuf, _ := item.ValueCopy(nil)
-	trade = &types.Trade{}
-	if err = proto.Unmarshal(tradeBuf, trade); err != nil {
-		trade = nil
+	if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
 		ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarketAndId)",
 			logging.Error(err),
 			logging.String("badger-key", string(item.Key())),
 			logging.String("raw-bytes", string(tradeBuf)))
+
+		return nil, err
 	}
-	return
+	return &trade, err
 }
 
 // GetByParty retrieves trades for a given party. Provide optional query filters to
@@ -509,10 +511,6 @@ func (ts *Trade) writeBatch(batch []types.Trade) error {
 	}
 
 	return nil
-}
-
-func (ts *Trade) SaveBatch(batch []types.Trade) error {
-	return ts.writeBatch(batch)
 }
 
 func (ts *Trade) getTradeMarketFilter(market *string) ([]byte, int) {

@@ -69,26 +69,3 @@ func (p *Party) GetAll() ([]*types.Party, error) {
 	}
 	return res, nil
 }
-
-type SaveBatchError struct {
-	parties []string
-}
-
-func (s SaveBatchError) Error() string {
-	return fmt.Sprintf("parties already exists: %v", s.parties)
-}
-
-func (p *Party) SaveBatch(batch []types.Party) error {
-	var sberr SaveBatchError
-	for _, v := range batch {
-		err := p.Post(&v)
-		if err != nil {
-			sberr.parties = append(sberr.parties, v.Id)
-		}
-	}
-	if len(sberr.parties) > 0 {
-		return sberr
-	}
-
-	return nil
-}

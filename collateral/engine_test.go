@@ -23,6 +23,7 @@ type testEngine struct {
 	*collateral.Engine
 	ctrl               *gomock.Controller
 	buf                *mocks.MockAccountBuffer
+	accounts           *mocks.MockAccounts
 	systemAccs         []*types.Account
 	marketInsuranceID  string
 	marketSettlementID string

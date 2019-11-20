@@ -152,13 +152,12 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 	internal := make(chan []types.Trade)
 	ref := s.tradeStore.Subscribe(internal)
 
-	var cancel func()
-	ctx, cancel = context.WithCancel(ctx)
 	go func() {
 		atomic.AddInt32(&s.tradeSubscribersCnt, 1)
 		defer atomic.AddInt32(&s.tradeSubscribersCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		defer cancel()
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
 		for {
 			select {
 			case <-ctx.Done():
@@ -220,7 +219,7 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 						logging.String("ip-address", ip),
 						logging.Int("retries", retries),
 					)
-					cancel()
+					cfunc()
 					break
 				}
 
@@ -243,13 +242,12 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 	internal := make(chan []types.Trade)
 	ref := s.tradeStore.Subscribe(internal)
 
-	var cancel func()
-	ctx, cancel = context.WithCancel(ctx)
 	go func() {
 		atomic.AddInt32(&s.positionsSubscribersCnt, 1)
 		defer atomic.AddInt32(&s.positionsSubscribersCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
-		defer cancel()
+		ctx, cfunc := context.WithCancel(ctx)
+		defer cfunc()
 		for {
 			select {
 			case <-ctx.Done():
@@ -312,7 +310,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 							logging.String("ip-address", ip),
 							logging.Int("retries", retries),
 						)
-						cancel()
+						cfunc()
 						break
 					}
 

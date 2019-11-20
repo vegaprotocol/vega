@@ -41,14 +41,12 @@ type NOOPChain struct {
 	log         *logging.Logger
 	ticker      *time.Ticker
 	stats       Stats
+	blockHeight uint64
 	time        ApplicationTime
 	proc        Processor
 	service     ApplicationService
 	genesisTime time.Time
 	txs         chan []byte
-
-	totalTxLastBatch int
-	blockHeight      uint64
 }
 
 func New(
@@ -88,7 +86,6 @@ func (n *NOOPChain) startTicker() {
 		for {
 			select {
 			case tx := <-n.txs:
-				n.totalTxLastBatch++
 				n.proc.Process(tx)
 			case _ = <-n.ticker.C:
 				n.log.Info("committing block",
@@ -98,8 +95,6 @@ func (n *NOOPChain) startTicker() {
 				n.service.Commit()
 				n.blockHeight++
 				n.stats.IncHeight()
-				n.stats.SetTotalTxLastBatch(n.totalTxLastBatch)
-				n.totalTxLastBatch = 0
 				n.time.SetTimeNow(time.Now())
 				n.log.Info("starting new block",
 					logging.String("chain-provider", "noop"),
@@ -136,11 +131,7 @@ func (n *NOOPChain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
 }
 
 func (n *NOOPChain) GetNetworkInfo(context.Context) (*tmctypes.ResultNetInfo, error) {
-	return &tmctypes.ResultNetInfo{
-		Listening: true,
-		Listeners: []string{},
-		NPeers:    0,
-	}, nil
+	return nil, nil
 }
 
 func (n *NOOPChain) GetUnconfirmedTxCount(context.Context) (int, error) {

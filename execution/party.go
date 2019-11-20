@@ -1,8 +1,6 @@
 package execution
 
 import (
-	"errors"
-
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
@@ -10,10 +8,6 @@ import (
 
 const (
 	topUpAmount = 1000000000000
-)
-
-var (
-	ErrPartyDoNotExist = errors.New("party do not exist")
 )
 
 // Collateral ...
@@ -33,35 +27,35 @@ type accountKey struct {
 
 // Party holds the list of parties in the system
 type Party struct {
-	log           *logging.Logger
-	collateral    Collateral
-	markets       []proto.Market
-	partyBuf      PartyBuf
-	partyByMarket map[string]map[string]struct{}
+	log        *logging.Logger
+	collateral Collateral
+	markets    []proto.Market
+	store      PartyStore
+	parties    map[string]map[string]struct{}
 }
 
 // NewParty instanciate a new party
 func NewParty(
-	log *logging.Logger, col Collateral, markets []proto.Market, partyBuf PartyBuf,
+	log *logging.Logger, col Collateral, markets []proto.Market, store PartyStore,
 ) *Party {
-	partyByMarket := map[string]map[string]struct{}{}
+	parties := map[string]map[string]struct{}{}
 
 	for _, v := range markets {
-		partyByMarket[v.Id] = map[string]struct{}{}
+		parties[v.Id] = map[string]struct{}{}
 	}
 
 	return &Party{
-		log:           log,
-		collateral:    col,
-		markets:       markets,
-		partyBuf:      partyBuf,
-		partyByMarket: partyByMarket,
+		log:        log,
+		collateral: col,
+		markets:    markets,
+		store:      store,
+		parties:    parties,
 	}
 }
 
 // GetForMarket returns the list of all the parties in a given market
 func (p *Party) GetForMarket(mktID string) []string {
-	parties := p.partyByMarket[mktID]
+	parties := p.parties[mktID]
 	out := make([]string, 0, len(parties))
 	for k := range parties {
 		out = append(out, k)
@@ -69,16 +63,8 @@ func (p *Party) GetForMarket(mktID string) []string {
 	return out
 }
 
-func (p *Party) GetByMarketAndID(marketID, partyID string) (*types.Party, error) {
-	if _, ok := p.partyByMarket[marketID][partyID]; ok {
-		return &types.Party{Id: partyID}, nil
-	}
-
-	return nil, ErrPartyDoNotExist
-}
-
 func (p *Party) addParty(ptyID, mktID string) {
-	p.partyByMarket[mktID][ptyID] = struct{}{}
+	p.parties[mktID][ptyID] = struct{}{}
 }
 
 // NotifyTraderAccountWithTopUpAmount will create a new party in the system
@@ -101,7 +87,11 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 	alreadyTopUp := map[string]struct{}{}
 
 	// ignore erros as they can only happen when the party already exists
-	p.partyBuf.Add(types.Party{Id: notif.TraderID})
+	err := p.store.Post(&types.Party{Id: notif.TraderID})
+	if err == nil {
+		p.log.Info("New party created",
+			logging.String("party-id", notif.TraderID))
+	}
 
 	for _, mkt := range p.markets {
 		p.addParty(notif.TraderID, mkt.Id)
@@ -122,8 +112,7 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 					logging.Error(err))
 				return err
 			}
-			var acc *types.Account
-			acc, err = p.collateral.GetAccountByID(generalID)
+			acc, err := p.collateral.GetAccountByID(generalID)
 			if err != nil {
 				p.log.Error("unable to get trader account",
 					logging.String("party-id", notif.TraderID),

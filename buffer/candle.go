@@ -22,41 +22,39 @@ var supportedIntervals = [6]types.Interval{
 // CandleStore ...
 type CandleStore interface {
 	FetchLastCandle(marketID string, interval types.Interval) (*types.Candle, error)
-	GenerateCandlesFromBuffer(marketID string, previousCandlesBuf map[string]types.Candle) error
 }
 
 // Candle is a buffer for the candles produces by vega
 type Candle struct {
-	// map of market id to map of bufferkey to candle
-	// basically this buffer is in charle of all candle per markets
-	// each market get candles generated for a bufferkey which is a key
-	// composed of a timestamp and interval
-	buf       map[string]map[string]types.Candle
+	buf       map[string]types.Candle
+	marketID  string
 	store     CandleStore
 	mu        sync.Mutex
 	lastTrade types.Trade
 }
 
 // NewCandle instanciate a new candles buffer
-func NewCandle(store CandleStore) *Candle {
+func NewCandle(marketID string, store CandleStore, now time.Time) *Candle {
 	candl := &Candle{
-		buf:   map[string]map[string]types.Candle{},
-		store: store,
+		buf:      map[string]types.Candle{},
+		marketID: marketID,
+		store:    store,
 	}
 
+	candl.Start(now)
 	return candl
 }
 
-func (c *Candle) reset(marketID string) {
-	c.buf[marketID] = map[string]types.Candle{}
+func (c *Candle) reset() {
+	c.buf = map[string]types.Candle{}
 }
 
 // Start will start producing candles at the given time
-func (c *Candle) Start(marketID string, timestamp time.Time) (map[string]types.Candle, error) {
+func (c *Candle) Start(timestamp time.Time) (map[string]types.Candle, error) {
 	c.mu.Lock()
 	roundedTimestamps := GetMapOfIntervalsToRoundedTimestamps(timestamp)
-	previous := c.buf[marketID]
-	c.reset(marketID)
+	previous := c.buf
+	c.reset()
 
 	for _, interval := range supportedIntervals {
 		bufkey := bufferKey(roundedTimestamps[interval], interval)
@@ -66,7 +64,7 @@ func (c *Candle) Start(marketID string, timestamp time.Time) (map[string]types.C
 		}
 
 		if lastClose == 0 {
-			previousCandle, err := c.store.FetchLastCandle(marketID, interval)
+			previousCandle, err := c.store.FetchLastCandle(c.marketID, interval)
 			if err == nil {
 				lastClose = previousCandle.Close
 			}
@@ -76,7 +74,7 @@ func (c *Candle) Start(marketID string, timestamp time.Time) (map[string]types.C
 			lastClose = c.lastTrade.Price
 		}
 
-		c.buf[marketID][bufkey] = newCandle(roundedTimestamps[interval], lastClose, 0, interval)
+		c.buf[bufkey] = newCandle(roundedTimestamps[interval], lastClose, 0, interval)
 	}
 
 	c.mu.Unlock()
@@ -85,7 +83,6 @@ func (c *Candle) Start(marketID string, timestamp time.Time) (map[string]types.C
 
 // AddTrade adds a trade to the trades buffer for the given market.
 func (c *Candle) AddTrade(trade types.Trade) error {
-	mktBuf := c.buf[trade.MarketID]
 	for _, interval := range supportedIntervals {
 		roundedTradeTime := vegatime.RoundToNearest(vegatime.UnixNano(trade.Timestamp), interval)
 
@@ -93,27 +90,19 @@ func (c *Candle) AddTrade(trade types.Trade) error {
 
 		c.mu.Lock()
 		// check if bufferKey is present in buffer
-		if candl, ok := mktBuf[bufkey]; ok {
+		if candl, ok := c.buf[bufkey]; ok {
 			// if exists update the value of the candle under bufferKey with trade data
 			updateCandle(&candl, &trade)
-			mktBuf[bufkey] = candl
+			c.buf[bufkey] = candl
 		} else {
 			// if doesn't exist create new candle under this buffer key
-			mktBuf[bufkey] = newCandle(roundedTradeTime, trade.Price, trade.Size, candl.Interval)
+			c.buf[bufkey] = newCandle(roundedTradeTime, trade.Price, trade.Size, candl.Interval)
 		}
 		c.lastTrade = trade
 		c.mu.Unlock()
 	}
 
 	return nil
-}
-
-func (c *Candle) Flush(marketID string, t time.Time) error {
-	previousCandlesBuf, err := c.Start(marketID, t)
-	if err != nil {
-		return err
-	}
-	return c.store.GenerateCandlesFromBuffer(marketID, previousCandlesBuf)
 }
 
 // GetMapOfIntervalsToRoundedTimestamps rounds timestamp to nearest minute, 5minute,

@@ -2,16 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
-	"strings"
 	"syscall"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
@@ -21,14 +16,12 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/pprof"
-	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -74,10 +67,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		conf.Blockchain.ChainProvider = "noop"
 	}
 
-	if flagProvided("--no-stores") {
-		conf.StoresEnabled = false
-	}
-
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
@@ -97,10 +86,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	// assign config vars
 	l.configPath, l.conf = configPath, conf
 
-	if err = l.loadMarketsConfig(); err != nil {
-		return err
-	}
-
 	// Set ulimits
 	if err = l.SetUlimits(); err != nil {
 		l.Log.Warn("Unable to set ulimits",
@@ -111,88 +96,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	l.stats = stats.New(l.Log, l.cli.version, l.cli.versionHash)
-
 	// set up storage, this should be persistent
-	if err := l.setupStorages(); err != nil {
-		return err
-	}
-	l.setupBuffers()
-
-	if !l.conf.StoresEnabled {
-		l.Log.Info("node setted up without badger store support")
-	} else {
-		l.Log.Info("node setted up with badger store support")
-	}
-
-	return nil
-}
-
-func (l *NodeCommand) loadMarketsConfig() error {
-	pmkts := []proto.Market{}
-	mktsCfg := l.conf.Execution.Markets
-	// loads markets from configuration
-	for _, v := range mktsCfg.Configs {
-		path := filepath.Join(mktsCfg.Path, v)
-		buf, err := ioutil.ReadFile(path)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to read market configuration at %s", path))
-		}
-
-		mkt := proto.Market{}
-		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to unmarshal market configuration at %s", path))
-		}
-
-		l.Log.Info("New market loaded from configuation",
-			logging.String("market-config", path),
-			logging.String("market-id", mkt.Id))
-		pmkts = append(pmkts, mkt)
-	}
-	l.mktscfg = pmkts
-
-	return nil
-}
-
-func (l *NodeCommand) setupBuffers() {
-	l.orderBuf = buffer.NewOrder(l.orderStore)
-	l.tradeBuf = buffer.NewTrade(l.tradeStore)
-	l.partyBuf = buffer.NewParty(l.partyStore)
-	l.transferBuf = buffer.NewTransferResponse(l.transferResponseStore)
-	l.accountBuf = buffer.NewAccount(l.accounts)
-	l.candleBuf = buffer.NewCandle(l.candleStore)
-	l.marketBuf = buffer.NewMarket(l.marketStore)
-}
-
-func (l *NodeCommand) setupStorages() (err error) {
-	// always enbled market,parties etc stores as they are in memory or boths use them
-	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage); err != nil {
-		return
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
-	if l.riskStore, err = storage.NewRisks(l.conf.Storage); err != nil {
-		return
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) })
-
-	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
-		return
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) })
-	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
-		return
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
-
-	// if stores are not enbled, initialize the noop stores and do nothing else
-	if !l.conf.StoresEnabled {
-		l.orderStore = storage.NewNoopOrders(l.Log, l.conf.Storage)
-		l.tradeStore = storage.NewNoopTrades(l.Log, l.conf.Storage)
-		l.accounts = storage.NewNoopAccounts(l.Log, l.conf.Storage)
-		l.candleStore = storage.NewNoopCandles(l.Log, l.conf.Storage)
-		return
-	}
-
 	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
 		return
 	}
@@ -208,12 +112,32 @@ func (l *NodeCommand) setupStorages() (err error) {
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) })
 
+	if l.riskStore, err = storage.NewRisks(l.conf.Storage); err != nil {
+		return
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) })
+
+	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage); err != nil {
+		return
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
+
+	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
+		return
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) })
+
 	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage); err != nil {
 		return
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) })
 
-	return
+	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
+		return
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
+
+	return nil
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node
@@ -232,14 +156,13 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.orderBuf,
-		l.tradeBuf,
-		l.candleBuf,
-		l.marketBuf,
-		l.partyBuf,
-		l.accountBuf,
-		l.transferBuf,
-		l.mktscfg,
+		l.orderStore,
+		l.tradeStore,
+		l.candleStore,
+		l.marketStore,
+		l.partyStore,
+		l.accounts,
+		l.transferResponseStore,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 

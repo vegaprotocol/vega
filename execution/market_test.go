@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/settlement"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,11 +30,11 @@ type testMarket struct {
 
 	collateraEngine       *collateral.Engine
 	partyEngine           *execution.Party
-	candleStore           *mocks.MockCandleBuf
-	orderStore            *mocks.MockOrderBuf
-	partyStore            *mocks.MockPartyBuf
-	tradeStore            *mocks.MockTradeBuf
-	transferResponseStore *mocks.MockTransferBuf
+	candleStore           *mocks.MockCandleStore
+	orderStore            *mocks.MockOrderStore
+	partyStore            *mocks.MockPartyStore
+	tradeStore            *mocks.MockTradeStore
+	transferResponseStore *mocks.MockTransferResponseStore
 
 	now time.Time
 }
@@ -46,11 +47,12 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	settlementConfig := settlement.NewDefaultConfig()
 	matchingConfig := matching.NewDefaultConfig()
 
-	candleStore := mocks.NewMockCandleBuf(ctrl)
-	orderStore := mocks.NewMockOrderBuf(ctrl)
-	partyStore := mocks.NewMockPartyBuf(ctrl)
-	tradeStore := mocks.NewMockTradeBuf(ctrl)
-	transferResponseStore := mocks.NewMockTransferBuf(ctrl)
+	candleStore := mocks.NewMockCandleStore(ctrl)
+	candleStore.EXPECT().FetchLastCandle(gomock.Any(), gomock.Any()).Return(nil, errors.New("some error")).AnyTimes()
+	orderStore := mocks.NewMockOrderStore(ctrl)
+	partyStore := mocks.NewMockPartyStore(ctrl)
+	tradeStore := mocks.NewMockTradeStore(ctrl)
+	transferResponseStore := mocks.NewMockTransferResponseStore(ctrl)
 
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
@@ -58,7 +60,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mkts := getMarkets(closingAt)
 	partyEngine := execution.NewParty(log, collateralEngine, mkts, partyStore)
 
-	candleStore.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore, orderStore,
@@ -152,13 +153,13 @@ func TestMarketClosing(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.partyStore.EXPECT().Add(gomock.Any()).Times(2)
+	// tm.accountBuf.EXPECT().Add(gomock.Any()).Times(8)
+	tm.partyStore.EXPECT().Post(gomock.Any()).Times(2).Return(nil)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.transferResponseStore.EXPECT().SaveBatch(gomock.Any()).Times(1).Return(nil)
 
-	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	tm.candleStore.EXPECT().GenerateCandlesFromBuffer(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	// check account gets updated
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// if Margin -> 0
@@ -189,7 +190,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
-	tm.partyStore.EXPECT().Add(gomock.Any()).Times(2)
+	tm.partyStore.EXPECT().Post(gomock.Any()).Times(2).Return(nil)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party2})
 
@@ -226,16 +227,14 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	}
 
 	// submit orders
-	// tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
-	// 	return &types.Party{Id: id}, nil
-	// })
-	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
-	tm.candleStore.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
+		return &types.Party{Id: id}, nil
+	})
+	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
+	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.transferResponseStore.EXPECT().SaveBatch(gomock.Any()).Times(1).Return(nil)
 
 	_, err := tm.market.SubmitOrder(orderBuy)
 	assert.Nil(t, err)
@@ -248,7 +247,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		t.Fail()
 	}
 
-	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
+	tm.candleStore.EXPECT().GenerateCandlesFromBuffer(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 
@@ -286,9 +285,8 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
-	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
+	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
-	tm.candleStore.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	// submit orders
 	// party1 buys
@@ -309,14 +307,13 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	}
 
 	// submit orders
-	// tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
-	// 	return &types.Party{Id: id}, nil
-	// })
-	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
+		return &types.Party{Id: id}, nil
+	})
+	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
+	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// general account should have less monies as some is use for collateral
@@ -348,7 +345,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
-	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
+	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
 	tm.partyEngine.NotifyTraderAccountWithTopUpAmount(&types.NotifyTraderAccount{TraderID: party1}, 0)
 
 	// submit orders
@@ -370,14 +367,13 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	}
 
 	// submit orders
-	// tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
-	// 	return &types.Party{Id: id}, nil
-	// })
-	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
+		return &types.Party{Id: id}, nil
+	})
+	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
+	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().DoAndReturn(func(acc types.Account) {
 		// general account should have less monies as some is use for collateral
@@ -407,7 +403,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("Account: %v\n", acc)
 	})
-	tm.partyStore.EXPECT().Add(gomock.Any()).Times(1)
+	tm.partyStore.EXPECT().Post(gomock.Any()).Times(1).Return(nil)
 	tm.partyEngine.NotifyTraderAccount(&types.NotifyTraderAccount{TraderID: party1})
 
 	// submit orders
@@ -429,14 +425,13 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	}
 
 	// submit orders
-	// tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
-	// 	return &types.Party{Id: id}, nil
-	// })
-	tm.partyStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.orderStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.tradeStore.EXPECT().Add(gomock.Any()).AnyTimes()
-	tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	tm.partyStore.EXPECT().GetByID(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*types.Party, error) {
+		return &types.Party{Id: id}, nil
+	})
+	tm.partyStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
+	tm.orderStore.EXPECT().Put(gomock.Any()).AnyTimes().Return(nil)
+	tm.tradeStore.EXPECT().Post(gomock.Any()).AnyTimes().Return(nil)
 
 	tm.accountBuf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
 		fmt.Printf("ACCOUNT: %v\n", acc)
@@ -482,7 +477,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		}
 	})
 
-	_, err = tm.market.AmendOrder(amendedOrder)
+	_, err = tm.market.AmendOrder(amendedOrder, orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()

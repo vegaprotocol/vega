@@ -1545,9 +1545,6 @@
         "partyID": {
           "type": "string"
         },
-        "marketID": {
-          "type": "string"
-        },
         "price": {
           "type": "string",
           "format": "uint64"
@@ -1559,9 +1556,6 @@
         "expiresAt": {
           "type": "string",
           "format": "int64"
-        },
-        "side": {
-          "$ref": "#/definitions/vegaSide"
         }
       }
     },

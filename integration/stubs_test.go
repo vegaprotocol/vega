@@ -2,7 +2,6 @@ package core_test
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	"code.vegaprotocol.io/vega/proto"
@@ -26,25 +25,6 @@ func (d *accStub) Add(acc proto.Account) {
 	d.mu.Unlock()
 }
 
-func (s *accStub) getTraderMarginAccount(trader, market string) (proto.Account, error) {
-	for _, v := range s.data {
-		if v.Owner == trader && v.Type == proto.AccountType_MARGIN && v.MarketID == market {
-			return v, nil
-		}
-	}
-	return proto.Account{}, errors.New("account does not exist")
-}
-
-func (s *accStub) getTraderGeneralAccount(trader, asset string) (proto.Account, error) {
-	for _, v := range s.data {
-		if v.Owner == trader && v.Type == proto.AccountType_GENERAL && v.Asset == asset {
-			return v, nil
-		}
-	}
-
-	return proto.Account{}, errors.New("account does not exist")
-}
-
 func (d *accStub) Get(id string) *proto.Account {
 	var ret *proto.Account
 	d.mu.Lock()
@@ -55,14 +35,11 @@ func (d *accStub) Get(id string) *proto.Account {
 	return ret
 }
 
-func (a *accStub) Flush() error {
-	return nil
-}
-
 type orderStub struct {
 	data map[string]proto.Order
 	mu   *sync.Mutex
-	err  error
+	// not sure if we want to run integration tests against hypothetical failures...
+	err error
 }
 
 func NewOrderStub() *orderStub {
@@ -72,13 +49,19 @@ func NewOrderStub() *orderStub {
 	}
 }
 
-func (o *orderStub) Add(order proto.Order) {
+func (o *orderStub) Post(order proto.Order) error {
 	o.mu.Lock()
 	o.data[order.Id] = order
+	err := o.err
 	o.mu.Unlock()
+	return err
 }
 
-func (o *orderStub) Flush() error {
+func (o *orderStub) Put(order proto.Order) error {
+	return o.Post(order)
+}
+
+func (o *orderStub) Commit() error {
 	o.mu.Lock()
 	err := o.err
 	o.mu.Unlock()
@@ -144,33 +127,35 @@ func (t *transferStub) Reset() {
 }
 
 type tradeStub struct {
-	data map[string]proto.Trade
+	data map[string]*proto.Trade
 	err  error
 	mu   *sync.Mutex
 }
 
 func NewTradeStub() *tradeStub {
 	return &tradeStub{
-		data: map[string]proto.Trade{},
+		data: map[string]*proto.Trade{},
 		mu:   &sync.Mutex{},
 	}
 }
 
-func (t *tradeStub) Flush() error {
+func (t *tradeStub) Commit() error {
 	t.mu.Lock()
 	err := t.err
-	t.data = map[string]proto.Trade{}
+	t.data = map[string]*proto.Trade{}
 	t.mu.Unlock()
 	return err
 }
 
-func (t *tradeStub) Add(v proto.Trade) {
+func (t *tradeStub) Post(v *proto.Trade) error {
 	t.mu.Lock()
+	err := t.err
 	t.data[v.Id] = v
 	t.mu.Unlock()
+	return err
 }
 
-func (t *tradeStub) Get(id string) proto.Trade {
+func (t *tradeStub) Get(id string) *proto.Trade {
 	t.mu.Lock()
 	v := t.data[id]
 	t.mu.Unlock()

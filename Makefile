@@ -64,10 +64,6 @@ msan: ## Run memory sanitizer
 vet: ## Run go vet
 	@go vet -all ./...
 
-vetshadow: # Run go vet with shadow detection
-	@go vet -shadow ./... 2>&1 | grep -vE '^(#|gateway/graphql/generated.go|proto/.*\.pb\.(gw\.)?go)' ; \
-	code="$$?" ; test "$$code" -ne 0
-
 .PHONY: .testCoverage.txt
 .testCoverage.txt:
 	@go test -covermode=count -coverprofile="$@" ./...
