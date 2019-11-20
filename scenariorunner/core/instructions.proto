@@ -58,7 +58,8 @@ message Config {
 	bool advanceTimeAfterInstruction = 2;
 	google.protobuf.Duration timeDelta = 3;            
 	bool omitUnsupportedInstructions = 4; 
-	bool omitInvalidInstructions = 5;
+    bool omitInvalidInstructions = 5;
+    repeated vega.Market markets = 6;
 }
 
 message MarketSummaryResponse {
