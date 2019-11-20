@@ -642,6 +642,7 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// we're not interested in the events here, they're used for margin updates
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
+
 	_, responses, err := m.collateral.MarkToMarket(m.GetID(), settle)
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug(
@@ -650,6 +651,8 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 			logging.String("raw", fmt.Sprintf("%#v", responses)),
 		)
 	}
+	// send transfer to buffer
+	m.transferBuf.Add(responses)
 	return err
 }
 
@@ -822,6 +825,8 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 			logging.String("raw-dump", fmt.Sprintf("%#v", response)),
 		)
 	}
+	// sending response to buffer
+	m.transferBuf.Add(response)
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts

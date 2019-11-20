@@ -73,5 +73,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the executon engine have these markets:$`, theExecutonEngineHaveTheseMarkets)
 	s.Step(`^traders place following orders:$`, tradersPlaceFollowingOrders)
 	s.Step(`^I expect the trader to have a margin:$`, iExpectTheTraderToHaveAMargin)
-	s.Step(`^a transfer of "([^"]*)" is made to the settlement account$`, aTransferOfIsMadeToTheSettlementAccount)
+	s.Step(`^All balances cumulated are worth "([^"]*)"$`, allBalancesCumulatedAreWorth)
+	s.Step(`^the following transfers happend:$`, theFollowingTransfersHappend)
+	s.Step(`^the settlement account balance is "([^"]*)" for the market "([^"]*)" before MTM$`, theSettlementAccountBalanceIsForTheMarketBeforeMTM)
 }

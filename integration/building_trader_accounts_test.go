@@ -235,9 +235,91 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 	return nil
 }
 
-func aTransferOfIsMadeToTheSettlementAccount(amountstr string) error {
+func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
+	var cumul uint64
+	for _, v := range execsetup.accounts.data {
+		cumul += uint64(v.Balance)
+	}
 
+	if amount != cumul {
+		return fmt.Errorf("expected cumul balances to be %v but found %v", amount, cumul)
+	}
+	return nil
+}
+
+func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
+	for _, row := range arg1.Rows {
+		if val(row, 0) == "from" {
+			continue
+		}
+
+		fromAccountID := accountID(val(row, 4), val(row, 0), val(row, 6), proto.AccountType_value[val(row, 2)])
+		toAccountID := accountID(val(row, 4), val(row, 1), val(row, 6), proto.AccountType_value[val(row, 3)])
+
+		var ledgerEntry *proto.LedgerEntry
+		for _, v := range execsetup.transfers.data {
+			for _, _v := range v.GetTransfers() {
+				if _v.FromAccount == fromAccountID && _v.ToAccount == toAccountID {
+					ledgerEntry = _v
+				}
+			}
+		}
+
+		if ledgerEntry == nil {
+			return fmt.Errorf("missing transfers between %v and %v", fromAccountID, toAccountID)
+		}
+		if ledgerEntry.Amount != i64val(row, 5) {
+			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
+		}
+	}
+
+	execsetup.transfers.Flush()
+	return nil
+}
+
+func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string) error {
+	amount, _ := strconv.ParseInt(amountstr, 10, 0)
+	acc, err := execsetup.accounts.getMarketSettlementAccount(market)
+	if err != nil {
+		return err
+	}
+	if amount != acc.Balance {
+		return fmt.Errorf("invalid balance for market settlement account, expected %v, got %v", amount, acc.Balance)
+	}
+	return nil
+}
+
+func accountID(marketID, partyID, asset string, _ty int32) string {
+	ty := proto.AccountType(_ty)
+	idbuf := make([]byte, 256)
+	if ty == proto.AccountType_GENERAL {
+		marketID = ""
+	}
+	if partyID == "market" {
+		partyID = ""
+	}
+	const (
+		systemOwner = "*"
+		noMarket    = "!"
+	)
+	if len(marketID) <= 0 {
+		marketID = noMarket
+	}
+
+	// market account
+	if len(partyID) <= 0 {
+		partyID = systemOwner
+	}
+
+	copy(idbuf, marketID)
+	ln := len(marketID)
+	copy(idbuf[ln:], partyID)
+	ln += len(partyID)
+	copy(idbuf[ln:], asset)
+	ln += len(asset)
+	idbuf[ln] = byte(ty + 48)
+	return string(idbuf[:ln+1])
 }
 
 func baseMarket(row *gherkin.TableRow) proto.Market {

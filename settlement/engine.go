@@ -1,7 +1,6 @@
 package settlement
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -165,7 +164,7 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
 		if !hasTraded && current.price == markPrice {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
-			// continue
+			continue
 		}
 		// calculate MTM value, we need the signed mark-price, the OLD open position/volume
 		// the new position is either the same, or accounted for by the traded var (added trades)
@@ -184,7 +183,7 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 		}
 		// we don't need to create a transfer if there's no changes to the balance...
 		if mtmShare == 0 {
-			// continue
+			continue
 		}
 		settle := &types.Transfer{
 			Owner: party,
@@ -195,7 +194,7 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 			},
 		}
 
-		fmt.Printf("----------> MTM %v | %v\n", party, mtmShare)
+		// fmt.Printf("----------> MTM %v | %v\n", party, mtmShare)
 
 		if mtmShare > 0 {
 			settle.Type = types.TransferType_MTM_WIN
