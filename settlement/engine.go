@@ -166,11 +166,12 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
 			continue
 		}
-		// calculate MTM value, we need the signed mark-price, the NEW open position/volume
+		// calculate MTM value, we need the signed mark-price, the OLD open position/volume
+		// the new position is either the same, or accounted for by the traded var (added trades)
 		// and the old mark price at which the trader held the position
 		// the trades slice contains all trade positions (position changes for the trader)
 		// at their exact trade price, so we can MTM that volume correctly, too
-		mtmShare := calcMTM(mpSigned, evt.Size(), int64(current.price), traded)
+		mtmShare := calcMTM(mpSigned, current.size, int64(current.price), traded)
 		// we've marked this trader to market, their position can now reflect this
 		current.update(evt)
 		current.price = markPrice
