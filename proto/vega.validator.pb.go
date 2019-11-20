@@ -8,6 +8,7 @@ import (
 	math "math"
 
 	proto "github.com/golang/protobuf/proto"
+	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/options"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )

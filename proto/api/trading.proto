@@ -9,17 +9,80 @@ package api;
 
 import "google/protobuf/empty.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+  info: {
+    title: "Vega Trading API";
+    version: "0.0.1";
+    contact: {
+      name: "Vega";
+      url: "https://vega.xyz/";
+      email: "hi@vega.xyz";
+    };
+    license: {
+      name: "TBD";
+      url: "https://vega.xyz/tbd";
+    };
+  };
+  schemes: HTTPS;
+  consumes: "application/json";
+  produces: "application/json";
+  responses: {
+    key: "200";
+    value: {
+      description: "Request successful";
+    }
+  }
+};
 
 service trading {
-  // unary calls - writes
-  rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder);
-  rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder);
+  rpc SignIn(SignInRequest) returns (SignInResponse) {
+    option (google.api.http) = {
+      post: "/auth/token"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Sign In";
+      description: "Sign in to the system.\nSubmit a party ID and password, receive a token.";
+      responses: {
+        key: "500";
+        value: {
+          description: "Invalid credentials";
+          schema: { json_schema: { ref: ".api.ErrorResponse"; } }
+        }
+      }
+    };
+  };
+
+  rpc CheckToken(CheckTokenRequest) returns (CheckTokenResponse) {
+    option (google.api.http) = {
+      get: "/auth/token"
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Check an API token";
+      description: "Check the validity of an API token\n- Does it match the given partyID?\n- Has it expired?";
+      responses: {
+        key: "200";
+        value: {
+          description: "Token may or may not be ok. Check response body.";
+          schema: { json_schema: { ref: ".api.CheckTokenResponse"; } }
+        }
+      }
+    };
+  };
+
   rpc AmendOrder(AmendOrderRequest) returns (vega.PendingOrder);
-  rpc SignIn(SignInRequest) returns (SignInResponse);
+
+  rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder);
+  
+  rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder);
+
   rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
+
   rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
-  // unary calls - read
-  rpc CheckToken(CheckTokenRequest) returns (CheckTokenResponse);
+
 }
 
 message WithdrawRequest {
@@ -327,4 +390,10 @@ message CheckTokenRequest {
 
 message CheckTokenResponse {
   bool ok = 1;
+}
+
+message ErrorResponse {
+  int64 code = 1;
+  string message = 2;
+  repeated string details = 3;
 }

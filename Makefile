@@ -84,7 +84,10 @@ coveragehtml: .testCoverage.html ## Generate global code coverage report in HTML
 deps: ## Get the dependencies
 	@go mod download
 	@go mod vendor
-	@grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' >> vendor/modules.txt
+	@( \
+		grep 'google/protobuf' go.mod | awk '{print "# " $$1 " " $$2 "\n"$$1"/src";}' ; \
+		grep 'github.com/grpc-ecosystem/grpc-gateway' go.mod | awk '{print "# " $$1 " " $$2 "\n" $$1 "/protoc-gen-swagger\n" $$1 "/third_party";}' \
+	) >>vendor/modules.txt
 	@modvendor -copy="**/*.proto"
 
 build: ## install the binaries in cmd/{progname}/
@@ -126,17 +129,24 @@ gqlgen_check: ## GraphQL: Check committed files match just-generated files
 
 proto: | deps ${PROTOFILES} ${PROTOVALFILES} proto/api/trading.pb.gw.go proto/api/trading.swagger.json ## build proto definitions
 
+PROTOINCLUDE := -I. \
+		-Iproto \
+		-Ivendor \
+		-Ivendor/github.com/google/protobuf/src \
+		-Ivendor/github.com/grpc-ecosystem/grpc-gateway \
+		-Ivendor/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
+
 # This target is similar to the following one, but also with "plugins=grpc"
 proto/api/trading.pb.go: proto/api/trading.proto
-	@protoc -I. -Iproto -Ivendor -Ivendor/github.com/google/protobuf/src --go_out=plugins=grpc,paths=source_relative:. "$<"
+	@protoc $(PROTOINCLUDE) --go_out=plugins=grpc,paths=source_relative:. "$<"
 
 .PRECIOUS: proto/%.pb.go
 %.pb.go: %.proto
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. --go_out=paths=source_relative:. "$<"
+	@protoc $(PROTOINCLUDE) --go_out=paths=source_relative:. "$<"
 
 .PRECIOUS: %.validator.pb.go
 %.validator.pb.go: %.proto
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. --govalidators_out=paths=source_relative:. "$<" && \
+	@protoc $(PROTOINCLUDE) --govalidators_out=paths=source_relative:. "$<" && \
 	sed -i -re 's/this\.Size_/this.Size/' "$@" && \
 	./script/fix_imports.sh "$@"
 
@@ -145,11 +155,11 @@ SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-re
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
 proto/api/trading.pb.gw.go: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
-	@protoc -Ivendor -I. -Iproto/api/ -Ivendor/github.com/google/protobuf/src --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
+	@protoc $(PROTOINCLUDE) --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
 
 # Generate Swagger documentation
-proto/api/trading.swagger.json: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iapi/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
+proto/api/trading.swagger.json: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml proto/vega.proto
+	@protoc $(PROTOINCLUDE) --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
 proto_check: ## proto: Check committed files match just-generated files
 	@find proto -name '*.proto' -exec touch '{}' ';' ; \

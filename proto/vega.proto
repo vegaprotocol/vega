@@ -4,6 +4,7 @@ package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "protoc-gen-swagger/options/annotations.proto";
 
 enum Side { Buy = 0; Sell = 1; }
 
@@ -194,7 +195,9 @@ enum ChainStatus {
 }
 
 message PendingOrder {
-  string reference = 1;
+  string reference = 1 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+    pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}", min_length: 1
+  }];
   uint64 price = 2;
   Order.TimeInForce TimeInForce = 3;
   Side side = 4;

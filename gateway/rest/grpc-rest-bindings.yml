@@ -10,13 +10,6 @@ apis:
 
 http:
   rules:
-    # Auth
-    - selector: api.trading.SignIn
-      post: '/auth/token'
-      body: "*"
-    - selector: api.trading.CheckToken
-      get: '/auth/token'
-
     # Markets
     - selector: api.trading_data.Markets
       get: '/markets'
