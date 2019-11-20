@@ -4,15 +4,13 @@ import (
 	"context"
 	"time"
 
-	cfg "code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/vegatime"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -25,14 +23,6 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 	ctx, cancel := context.WithCancel(context.Background())
 	var errs *multierror.Error
 
-	configPath := fsutil.DefaultVegaDir()
-	cfgwatchr, err := cfg.NewFromFile(ctx, log, configPath, configPath)
-	if err != nil {
-		log.Error("unable to start config watcher", logging.Error(err))
-		cancel()
-		return nil, err
-	}
-	cfg := cfgwatchr.Get()
 	orderStore, err := storage.NewOrders(log, config, cancel)
 	if err != nil {
 		errs = multierror.Append(errs, err)
@@ -132,55 +122,55 @@ func NewDefaultConfig() core.Config {
 		OmitInvalidInstructions:     true,
 		Markets: []*types.Market{
 			&types.Market{
-				Id: "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
+				Id:   "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
 				Name: "ETHBTC/DEC19",
 				TradableInstrument: &types.TradableInstrument{
 					Instrument: &types.Instrument{
-						Id: "Crypto/ETHBTC/Futures/Dec19",
-						Code: "CRYPTO:ETHBTC/DEC19",
-     					Name: "December 2019 ETH vs BTC future",
-      					BaseName: "ETH",
-						  QuoteName: "BTC",
-						  Metadata: &types.InstrumentMetadata{
-							  Tags: []string{"asset_class:fx/crypto",
-							  "product:futures"},
-						  },
-						  InitialMarkPrice: "5",
-						  Product: &types.Instrument_Future{
-							  Future: &types.Future{
-								  Maturity: "2019-12-31T23:59:59Z",
-								  Asset: "BTC",
-								  Oracle: &types.Future_EthereumEvent{
-										EthereumEvent: &types.EthereumEvent{
-											ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-											Event: "price_changed",
-										},
-								  },
-							  },
-						  },
+						Id:        "Crypto/ETHBTC/Futures/Dec19",
+						Code:      "CRYPTO:ETHBTC/DEC19",
+						Name:      "December 2019 ETH vs BTC future",
+						BaseName:  "ETH",
+						QuoteName: "BTC",
+						Metadata: &types.InstrumentMetadata{
+							Tags: []string{"asset_class:fx/crypto",
+								"product:futures"},
+						},
+						InitialMarkPrice: 5,
+						Product: &types.Instrument_Future{
+							Future: &types.Future{
+								Maturity: "2019-12-31T23:59:59Z",
+								Asset:    "BTC",
+								Oracle: &types.Future_EthereumEvent{
+									EthereumEvent: &types.EthereumEvent{
+										ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+										Event:      "price_changed",
+									},
+								},
+							},
+						},
 					},
 					MarginCalculator: &types.MarginCalculator{
 						ScalingFactors: &types.ScalingFactors{
-							SearchLevel: 1.1,
-							InitialMargin: 1.2,
+							SearchLevel:       1.1,
+							InitialMargin:     1.2,
 							CollateralRelease: 1.4,
 						},
 					},
 					RiskModel: &types.TradableInstrument_ForwardRiskModel{
 						ForwardRiskModel: &types.ForwardRiskModel{
 							RiskAversionParameter: 0.01,
-							Tau: 0.00011407711613050422,
+							Tau:                   0.00011407711613050422,
 							Params: &types.ModelParamsBS{
-								r: 0.016,
-								sigma: 0.09,
-							}
-							  
-							}
+								R:     0.016,
+								Sigma: 0.09,
+							},
 						},
-					}
+					},
 				},
 				DecimalPlaces: 5,
-				TradingMode: &types.Market_Continuous{},
+				TradingMode: &types.Market_Continuous{
+					Continuous: &types.ContinuousTrading{},
+				},
 			},
 		},
 	}

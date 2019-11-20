@@ -277,6 +277,9 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	// ignore response ids here + this cannot fail
 	_, _ = e.collateral.CreateMarketAccounts(mktconfig.Id, asset, 0)
 
+	updatedMarkets := append(e.party.markets, *mkt.mkt)
+	e.party = NewParty(e.log, e.collateral, updatedMarkets, e.partyStore)
+
 	return nil
 }
 

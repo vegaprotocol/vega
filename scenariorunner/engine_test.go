@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const marketId string = "ONLKZ6XIXYKWFDNHBWKZUAM7DFLQ42DZ"
+const marketId string = "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
 
 func TestExtractData(t *testing.T) {
 
