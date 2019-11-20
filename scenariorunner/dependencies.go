@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/vegatime"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -80,12 +81,14 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		return nil, err
 	}
 
+	executionConfig := execution.NewDefaultConfig("")
+
 	timeService := vegatime.New(vegatime.NewDefaultConfig())
 	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 	timeService.SetTimeNow(now)
 	engine := execution.NewEngine(
 		log,
-		cfg.Execution,
+		executionConfig,
 		timeService,
 		orderStore,
 		tradeStore,
@@ -95,6 +98,8 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		accountStore,
 		transferResponseStore,
 	)
+
+	engine.SubmitMarket()
 
 	return &dependencies{
 		ctx:          ctx,
@@ -130,5 +135,58 @@ func NewDefaultConfig() core.Config {
 		TimeDelta:                   ptypes.DurationProto(time.Nanosecond),
 		OmitUnsupportedInstructions: true,
 		OmitInvalidInstructions:     true,
+		Markets: []*types.Market{
+			&types.Market{
+				Id: "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI",
+				Name: "ETHBTC/DEC19",
+				TradableInstrument: &types.TradableInstrument{
+					Instrument: &types.Instrument{
+						Id: "Crypto/ETHBTC/Futures/Dec19",
+						Code: "CRYPTO:ETHBTC/DEC19",
+     					Name: "December 2019 ETH vs BTC future",
+      					BaseName: "ETH",
+						  QuoteName: "BTC",
+						  Metadata: &types.InstrumentMetadata{
+							  Tags: []string{"asset_class:fx/crypto",
+							  "product:futures"},
+						  },
+						  InitialMarkPrice: "5",
+						  Product: &types.Instrument_Future{
+							  Future: &types.Future{
+								  Maturity: "2019-12-31T23:59:59Z",
+								  Asset: "BTC",
+								  Oracle: &types.Future_EthereumEvent{
+										EthereumEvent: &types.EthereumEvent{
+											ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+											Event: "price_changed",
+										},
+								  },
+							  },
+						  },
+					},
+					MarginCalculator: &types.MarginCalculator{
+						ScalingFactors: &types.ScalingFactors{
+							SearchLevel: 1.1,
+							InitialMargin: 1.2,
+							CollateralRelease: 1.4,
+						},
+					},
+					RiskModel: &types.TradableInstrument_ForwardRiskModel{
+						ForwardRiskModel: &types.ForwardRiskModel{
+							RiskAversionParameter: 0.01,
+							Tau: 0.00011407711613050422,
+							Params: &types.ModelParamsBS{
+								r: 0.016,
+								sigma: 0.09,
+							}
+							  
+							}
+						},
+					}
+				},
+				DecimalPlaces: 5,
+				TradingMode: &types.Market_Continuous{},
+			},
+		},
 	}
 }
