@@ -53,6 +53,7 @@ type Config struct {
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
+	StoresEnabled  bool
 	UlimitNOFile   uint64 `tomlcp:"Set the max number of open files (see: ulimit -n)"`
 }
 
@@ -84,6 +85,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Metrics:        metrics.NewDefaultConfig(),
 		Transfers:      transfers.NewDefaultConfig(),
 		GatewayEnabled: true,
+		StoresEnabled:  true,
 		UlimitNOFile:   8192,
 	}
 }

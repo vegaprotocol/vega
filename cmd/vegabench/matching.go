@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
@@ -22,23 +23,24 @@ type execEngine struct {
 	*execution.Engine
 	ctrl   *gomock.Controller
 	time   *mocks.MockTimeService
-	order  *mocks.MockOrderStore
-	trade  *mocks.MockTradeStore
-	candle *mocks.MockCandleStore
-	market *mocks.MockMarketStore
-	party  *mocks.MockPartyStore
+	order  *mocks.MockOrderBuf
+	trade  *mocks.MockTradeBuf
+	candle *mocks.MockCandleBuf
+	market *mocks.MockMarketBuf
+	party  *mocks.MockPartyBuf
 }
 
 func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 	ctrl := gomock.NewController(b)
 	time := mocks.NewMockTimeService(ctrl)
-	order := mocks.NewMockOrderStore(ctrl)
-	trade := mocks.NewMockTradeStore(ctrl)
-	candle := mocks.NewMockCandleStore(ctrl)
-	market := mocks.NewMockMarketStore(ctrl)
-	party := mocks.NewMockPartyStore(ctrl)
+	order := mocks.NewMockOrderBuf(ctrl)
+	trade := mocks.NewMockTradeBuf(ctrl)
+	candle := mocks.NewMockCandleBuf(ctrl)
+	market := mocks.NewMockMarketBuf(ctrl)
+	party := mocks.NewMockPartyBuf(ctrl)
 	accounts, _ := storage.NewAccounts(log, storage.NewDefaultConfig(""))
-	transferResponse := mocks.NewMockTransferResponseStore(ctrl)
+	accountBuf := buffer.NewAccount(accounts)
+	transferResponse := mocks.NewMockTransferBuf(ctrl)
 	executionConfig := execution.NewDefaultConfig("")
 
 	engine := execution.NewEngine(
@@ -50,8 +52,9 @@ func getExecEngine(b *testing.B, log *logging.Logger) *execEngine {
 		candle,
 		market,
 		party,
-		accounts,
+		accountBuf,
 		transferResponse,
+		[]types.Market{},
 	)
 	return &execEngine{
 		Engine: engine,
@@ -95,10 +98,9 @@ func benchmarkMatching(
 
 		// Execution engine (broker operation of markets at runtime etc)
 		executionEngine := getExecEngine(b, logger)
-		executionEngine.order.EXPECT().Post(gomock.Any()).Return(nil)
-		executionEngine.order.EXPECT().Put(gomock.Any()).Return(nil)
-		executionEngine.trade.EXPECT().Post(gomock.Any()).Return(nil)
-		executionEngine.market.EXPECT().Post(gomock.Any()).Return(nil)
+		executionEngine.order.EXPECT().Add(gomock.Any()).AnyTimes()
+		executionEngine.trade.EXPECT().Add(gomock.Any())
+		executionEngine.market.EXPECT().Add(gomock.Any())
 
 		var timestamp int64
 		for o := 0; o < numberOfOrders; o++ {
