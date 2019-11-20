@@ -377,36 +377,36 @@ func isLoss(t *types.Transfer) bool {
 func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
 	asset := p.Amount.Asset
 
+	var err error
 	// the accounts for the trader we need
-	traderAccs := map[types.AccountType]*types.Account{
-		types.AccountType_MARGIN:  nil,
-		types.AccountType_GENERAL: nil,
+	mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_MARGIN))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin trader account",
+			logging.String("owner-id", p.Owner),
+			logging.String("market-id", settle.MarketID),
+			logging.Error(err),
+		)
+		return nil, err
 	}
-	for t := range traderAccs {
-		acc, err := e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, t))
-		if err != nil {
-			e.log.Error(
-				"Failed to get the required trader accounts",
-				logging.String("owner-id", p.Owner),
-				logging.String("market-id", settle.MarketID),
-				logging.String("account-type", t.String()),
-				logging.Error(err),
-			)
-			return nil, err
-		}
-		traderAccs[t] = acc
+	mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountType_GENERAL))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general trader account",
+			logging.String("owner-id", p.Owner),
+			logging.String("market-id", settle.MarketID),
+			logging.Error(err),
+		)
+		return nil, err
 	}
-	// the return event should contain these accounts
-	mEvt.margin = traderAccs[types.AccountType_MARGIN]
-	mEvt.general = traderAccs[types.AccountType_GENERAL]
 	// final settle, or MTM settle, makes no difference, it's win/loss still
 	if p.Type == types.TransferType_LOSS || p.Type == types.TransferType_MTM_LOSS {
 		// losses are collected first from the margin account, then the general account, and finally
 		// taken out of the insurance pool
 		req := types.TransferRequest{
 			FromAccount: []*types.Account{
-				traderAccs[types.AccountType_MARGIN],
-				traderAccs[types.AccountType_GENERAL],
+				mEvt.margin,
+				mEvt.general,
 				insurance,
 			},
 			ToAccount: []*types.Account{
@@ -428,7 +428,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 				insurance,
 			},
 			ToAccount: []*types.Account{
-				traderAccs[types.AccountType_MARGIN],
+				mEvt.margin,
 			},
 			Amount:    uint64(p.Amount.Amount) * p.Size,
 			MinAmount: 0,     // default value, but keep it here explicitly
@@ -444,10 +444,10 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 	if p.Type == types.TransferType_MARGIN_LOW {
 		return &types.TransferRequest{
 			FromAccount: []*types.Account{
-				traderAccs[types.AccountType_GENERAL],
+				mEvt.general,
 			},
 			ToAccount: []*types.Account{
-				traderAccs[types.AccountType_MARGIN],
+				mEvt.margin,
 			},
 			Amount:    uint64(p.Amount.Amount) * p.Size,
 			MinAmount: uint64(p.Amount.MinAmount),
@@ -457,10 +457,10 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 	}
 	return &types.TransferRequest{
 		FromAccount: []*types.Account{
-			traderAccs[types.AccountType_MARGIN],
+			mEvt.margin,
 		},
 		ToAccount: []*types.Account{
-			traderAccs[types.AccountType_GENERAL],
+			mEvt.general,
 		},
 		Amount:    uint64(p.Amount.Amount) * p.Size,
 		MinAmount: uint64(p.Amount.MinAmount),
@@ -645,9 +645,8 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID, generalID string) {
 	// first margin account
 	marginID = e.accountID(marketID, traderID, asset, types.AccountType_MARGIN)
-	_, ok := e.accs[marginID]
-	if !ok {
-		acc := &types.Account{
+	if _, ok := e.accs[marginID]; !ok {
+		acc := types.Account{
 			Id:       marginID,
 			Asset:    asset,
 			MarketID: marketID,
@@ -655,14 +654,13 @@ func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID
 			Owner:    traderID,
 			Type:     types.AccountType_MARGIN,
 		}
-		e.accs[marginID] = acc
-		e.buf.Add(*acc)
+		e.accs[marginID] = &acc
+		e.buf.Add(acc)
 	}
 
 	generalID = e.accountID(noMarket, traderID, asset, types.AccountType_GENERAL)
-	_, ok = e.accs[generalID]
-	if !ok {
-		acc := &types.Account{
+	if _, ok := e.accs[generalID]; !ok {
+		acc := types.Account{
 			Id:       generalID,
 			Asset:    asset,
 			MarketID: noMarket,
@@ -670,8 +668,8 @@ func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID
 			Owner:    traderID,
 			Type:     types.AccountType_GENERAL,
 		}
-		e.accs[generalID] = acc
-		e.buf.Add(*acc)
+		e.accs[generalID] = &acc
+		e.buf.Add(acc)
 	}
 
 	return

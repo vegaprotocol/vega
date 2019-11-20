@@ -1,7 +1,6 @@
 package collat_test
 
 import (
-	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestTransferChannel(t *testing.T) {
-	// t.Run("Test channel flow success", testTransferChannelSuccess)
+	t.Run("Test channel flow success", testTransferChannelSuccess)
 }
 
 // most of this function is copied from the MarkToMarket test - we're using channels, sure
@@ -88,14 +87,8 @@ func testTransferChannelSuccess(t *testing.T) {
 	})
 	transfers := eng.getTestMTMTransfer(pos)
 	evts, raw, err := eng.MarkToMarket(testMarketID, transfers)
-	fmt.Printf("err: %+v\n", err)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%d (%#v)\n", len(raw), raw)
-	fmt.Printf("%d (%#v)\n", len(evts), evts)
 	assert.NoError(t, err)
-	// assert.Equal(t, 4, len(raw))
+	assert.Equal(t, 4, len(raw))
 	assert.NotEmpty(t, evts)
 }
 
