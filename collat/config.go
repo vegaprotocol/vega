@@ -15,7 +15,6 @@ type Config struct {
 	// Auto-create trader accounts if needed?
 	CreateTraderAccounts        bool
 	TraderGeneralAccountBalance int64
-	TraderMarginPercent         int64 // 1 for 1%, will take TraderGeneralAccountBalance/100 * TraderMarginPercent
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -25,6 +24,5 @@ func NewDefaultConfig() Config {
 		Level:                       encoding.LogLevel{Level: logging.InfoLevel},
 		CreateTraderAccounts:        true,
 		TraderGeneralAccountBalance: 100000000,
-		TraderMarginPercent:         1,
 	}
 }

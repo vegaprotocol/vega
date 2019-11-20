@@ -40,6 +40,7 @@ func TestCollateralTransfer(t *testing.T) {
 
 func TestCollateralMarkToMarket(t *testing.T) {
 	t.Run("Mark to Market distribution, insufficient funcs - complex scenario", testProcessBothProRatedMTM)
+	t.Run("Mark to Market successful", testMTMSuccess)
 }
 
 func TestAddTraderToMarket(t *testing.T) {
@@ -567,6 +568,94 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 	_, err = eng.GetAccountByID(marginID)
 	assert.Error(t, err)
 	assert.Equal(t, collat.ErrAccountDoesNotExist, err)
+}
+
+// most of this function is copied from the MarkToMarket test - we're using channels, sure
+// but the flow should remain the same regardless
+func testMTMSuccess(t *testing.T) {
+	trader := "test-trader"
+	moneyTrader := "money-trader"
+	price := int64(1000)
+
+	eng := getTestEngine(t, testMarketID, price/2)
+	defer eng.Finish()
+
+	// create trader accounts
+	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
+	mID, gID := eng.Engine.CreateTraderAccount(trader, testMarketID, testMarketAsset)
+	assert.NotEmpty(t, mID)
+	assert.NotEmpty(t, gID)
+
+	// create + add balance
+	eng.buf.EXPECT().Add(gomock.Any()).Times(3)
+	marginMoneyTrader, _ := eng.Engine.CreateTraderAccount(moneyTrader, testMarketID, testMarketAsset)
+	err := eng.Engine.UpdateBalance(marginMoneyTrader, 5*price)
+	assert.Nil(t, err)
+
+	pos := []*types.Transfer{
+		{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: -price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_MTM_LOSS,
+		},
+		{
+			Owner: moneyTrader,
+			Size:  2,
+			Amount: &types.FinancialAmount{
+				Amount: -price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_MTM_LOSS,
+		},
+		{
+			Owner: trader,
+			Size:  1,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_MTM_WIN,
+		},
+		{
+			Owner: moneyTrader,
+			Size:  2,
+			Amount: &types.FinancialAmount{
+				Amount: price,
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_MTM_WIN,
+		},
+	}
+
+	eng.buf.EXPECT().Add(gomock.Any()).AnyTimes().Do(func(acc types.Account) {
+		if acc.Owner == trader && acc.Type == types.AccountType_GENERAL {
+			assert.Equal(t, acc.Balance, int64(833))
+		}
+		if acc.Owner == moneyTrader && acc.Type == types.AccountType_GENERAL {
+			assert.Equal(t, acc.Balance, int64(1666))
+		}
+	})
+	transfers := eng.getTestMTMTransfer(pos)
+	evts, raw, err := eng.MarkToMarket(testMarketID, transfers)
+	assert.NoError(t, err)
+	assert.Equal(t, 4, len(raw))
+	assert.NotEmpty(t, evts)
+}
+
+func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Transfer {
+	tt := make([]events.Transfer, 0, len(transfers))
+	for _, t := range transfers {
+
+		mt := mtmFake{
+			t: t,
+		}
+		tt = append(tt, mt)
+	}
+	return tt
 }
 
 func getTestEngine(t *testing.T, market string, insuranceBalance int64) *testEngine {
