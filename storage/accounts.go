@@ -137,7 +137,8 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, byReference bool
 			if keyBuf, err = it.Item().ValueCopy(keyBuf); err != nil {
 				return nil, err
 			}
-			item, err := txn.Get(keyBuf)
+			var item *badger.Item
+			item, err = txn.Get(keyBuf)
 			if err != nil {
 				return nil, err
 			}
@@ -150,7 +151,7 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, byReference bool
 			}
 		}
 		var acc types.Account
-		if err := proto.Unmarshal(accountBuf, &acc); err != nil {
+		if err = proto.Unmarshal(accountBuf, &acc); err != nil {
 			a.log.Error("Failed to unmarshal account value from badger in account store",
 				logging.Error(err),
 				logging.String("badger-key", string(it.Item().Key())),

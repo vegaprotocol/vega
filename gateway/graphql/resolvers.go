@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
@@ -836,7 +837,7 @@ func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, par
 	tkn := gateway.TokenFromContext(ctx)
 
 	var (
-		p   uint64 = 0
+		p   uint64
 		err error
 	)
 
@@ -876,7 +877,8 @@ func (r *myMutationResolver) OrderSubmit(ctx context.Context, market string, par
 
 	// GTT must have an expiration value
 	if order.TimeInForce == types.Order_GTT && expiration != nil {
-		expiresAt, err := vegatime.Parse(*expiration)
+		var expiresAt time.Time
+		expiresAt, err = vegatime.Parse(*expiration)
 		if err != nil {
 			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
 		}
