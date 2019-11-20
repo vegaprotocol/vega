@@ -18,12 +18,12 @@ func NewParty(store PartyStore) *Party {
 	}
 }
 
-func (o *Party) Add(ord types.Party) {
-	o.buf = append(o.buf, ord)
+func (p *Party) Add(ord types.Party) {
+	p.buf = append(p.buf, ord)
 }
 
-func (o *Party) Flush() error {
-	copyBuf := o.buf
-	o.buf = make([]types.Party, 0, len(copyBuf))
-	return o.store.SaveBatch(copyBuf)
+func (p *Party) Flush() error {
+	copyBuf := p.buf
+	p.buf = make([]types.Party, 0, len(copyBuf))
+	return p.store.SaveBatch(copyBuf)
 }

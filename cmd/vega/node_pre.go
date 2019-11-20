@@ -74,6 +74,10 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		conf.Blockchain.ChainProvider = "noop"
 	}
 
+	if flagProvided("--no-stores") {
+		conf.StoresEnabled = false
+	}
+
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
@@ -114,6 +118,12 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 	l.setupBuffers()
 
+	if !l.conf.StoresEnabled {
+		l.Log.Info("node setted up without badger store support")
+	} else {
+		l.Log.Info("node setted up with badger store support")
+	}
+
 	return nil
 }
 
@@ -149,12 +159,40 @@ func (l *NodeCommand) setupBuffers() {
 	l.tradeBuf = buffer.NewTrade(l.tradeStore)
 	l.partyBuf = buffer.NewParty(l.partyStore)
 	l.transferBuf = buffer.NewTransferResponse(l.transferResponseStore)
-	l.marketBuf = buffer.NewMarket(l.marketStore)
 	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
+	l.marketBuf = buffer.NewMarket(l.marketStore)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
+	// always enbled market,parties etc stores as they are in memory or boths use them
+	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage); err != nil {
+		return
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
+	if l.riskStore, err = storage.NewRisks(l.conf.Storage); err != nil {
+		return
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) })
+
+	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
+		return
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) })
+	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
+		return
+	}
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
+
+	// if stores are not enbled, initialize the noop stores and do nothing else
+	if !l.conf.StoresEnabled {
+		l.orderStore = storage.NewNoopOrders(l.Log, l.conf.Storage)
+		l.tradeStore = storage.NewNoopTrades(l.Log, l.conf.Storage)
+		l.accounts = storage.NewNoopAccounts(l.Log, l.conf.Storage)
+		l.candleStore = storage.NewNoopCandles(l.Log, l.conf.Storage)
+		return
+	}
+
 	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage); err != nil {
 		return
 	}
@@ -170,30 +208,10 @@ func (l *NodeCommand) setupStorages() (err error) {
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) })
 
-	if l.riskStore, err = storage.NewRisks(l.conf.Storage); err != nil {
-		return
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) })
-
-	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage); err != nil {
-		return
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
-
-	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
-		return
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) })
-
 	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage); err != nil {
 		return
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) })
-
-	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
-		return
-	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
 
 	return
 }

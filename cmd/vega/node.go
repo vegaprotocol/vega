@@ -33,6 +33,35 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type AccountStore interface {
+	buffer.AccountStore
+	accounts.AccountStore
+	Close() error
+	ReloadConf(storage.Config)
+}
+
+type CandleStore interface {
+	buffer.CandleStore
+	candles.CandleStore
+	Close() error
+	ReloadConf(storage.Config)
+}
+
+type OrderStore interface {
+	buffer.OrderStore
+	orders.OrderStore
+	GetMarketDepth(context.Context, string) (*proto.MarketDepth, error)
+	Close() error
+	ReloadConf(storage.Config)
+}
+
+type TradeStore interface {
+	buffer.TradeStore
+	trades.TradeStore
+	Close() error
+	ReloadConf(storage.Config)
+}
+
 // NodeCommand use to implement 'node' command.
 type NodeCommand struct {
 	command
@@ -40,11 +69,11 @@ type NodeCommand struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	accounts              *storage.Account
-	candleStore           *storage.Candle
-	orderStore            *storage.Order
+	accounts              AccountStore
+	candleStore           CandleStore
+	orderStore            OrderStore
 	marketStore           *storage.Market
-	tradeStore            *storage.Trade
+	tradeStore            TradeStore
 	partyStore            *storage.Party
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
@@ -76,6 +105,7 @@ type NodeCommand struct {
 	stats        *stats.Stats
 	withPPROF    bool
 	noChain      bool
+	noStores     bool
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
@@ -109,6 +139,7 @@ func (l *NodeCommand) addFlags() {
 	flagSet.StringVarP(&l.configPath, "config", "C", "", "file path to search for vega config file(s)")
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
+	flagSet.BoolVarP(&l.noStores, "no-stores", "", false, "start the node without stores support")
 }
 
 // runNode is the entry of node command.
