@@ -42,13 +42,9 @@ type Engine struct {
 	log   *logging.Logger
 	cfgMu sync.Mutex
 
-	// map of trader ID's to map of account types + account ID's
-	// traderAccounts map[string]map[types.AccountType]map[string]string // by trader, type, and asset
-	// marketAccounts map[types.AccountType]map[string]string            // by type and asset
-
 	accs map[string]*types.Account
 	buf  AccountBuffer
-	// cool be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
+	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
 	currentTime int64
 
 	idbuf []byte
@@ -125,6 +121,7 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 }
 
 // AddTraderToMarket - when a new trader enters a market, ensure general + margin accounts both exist
+// @TODO this function is dead code, but used in unit tests, so that's why it's still kicking around
 func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
 	// accountID(marketID, traderID, asset string, ty types.AccountType) accountIDT
 	genID := e.accountID("", traderID, asset, types.AccountType_GENERAL)
@@ -162,7 +159,7 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 	settle, insurance, err := e.getSystemAccounts(marketID, asset)
 	if err != nil {
 		e.log.Error(
-			"Failed to get system accounts required for MTM settlement",
+			"Failed to get system accounts required for final settlement",
 			logging.Error(err),
 		)
 		return nil, err
