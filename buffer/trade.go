@@ -18,12 +18,12 @@ func NewTrade(store TradeStore) *Trade {
 	}
 }
 
-func (o *Trade) Add(ord types.Trade) {
-	o.buf = append(o.buf, ord)
+func (t *Trade) Add(ord types.Trade) {
+	t.buf = append(t.buf, ord)
 }
 
-func (o *Trade) Flush() error {
-	copyBuf := o.buf
-	o.buf = make([]types.Trade, 0, len(copyBuf))
-	return o.store.SaveBatch(copyBuf)
+func (t *Trade) Flush() error {
+	copyBuf := t.buf
+	t.buf = make([]types.Trade, 0, len(copyBuf))
+	return t.store.SaveBatch(copyBuf)
 }
