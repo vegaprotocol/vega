@@ -194,8 +194,6 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 			},
 		}
 
-		// fmt.Printf("----------> MTM %v | %v\n", party, mtmShare)
-
 		if mtmShare > 0 {
 			settle.Type = types.TransferType_MTM_WIN
 			wins = append(wins, &mtmTransfer{
