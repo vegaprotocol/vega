@@ -342,11 +342,7 @@ func testMarkToMarketOrdered(t *testing.T) {
 		// start with losses, end with wins
 		assert.Equal(t, types.TransferType_MTM_LOSS, transfers[0].Transfer().Type)
 		assert.Equal(t, types.TransferType_MTM_WIN, transfers[len(transfers)-1].Transfer().Type)
-		if k == "long" {
-			assert.Equal(t, "trader2", transfers[0].Party()) // we expect trader2 to have a loss
-		} else {
-			assert.Equal(t, "trader1", transfers[0].Party()) // we expect trader1 to go short => loss
-		}
+		assert.Equal(t, "trader2", transfers[0].Party()) // we expect trader2 to have a loss
 	}
 }
 
