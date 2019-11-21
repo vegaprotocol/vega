@@ -44,6 +44,15 @@ func (s *accStub) getMarketSettlementAccount(market string) (proto.Account, erro
 	return proto.Account{}, errors.New("account does not exist")
 }
 
+func (s *accStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {
+	for _, v := range s.data {
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_INSURANCE {
+			return v, nil
+		}
+	}
+	return proto.Account{}, errors.New("account does not exist")
+}
+
 func (s *accStub) getTraderGeneralAccount(trader, asset string) (proto.Account, error) {
 	for _, v := range s.data {
 		if v.Owner == trader && v.Type == proto.AccountType_GENERAL && v.Asset == asset {

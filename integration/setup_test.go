@@ -118,42 +118,53 @@ type executionTestSetup struct {
 	// save trader accounts state
 	accs map[string][]account
 	mkts []proto.Market
+
+	InsurancePoolInitialBalance uint64
+}
+
+func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTestSetup {
+	if execsetup == nil {
+		execsetup = &executionTestSetup{}
+	}
+	execsetup.InsurancePoolInitialBalance = balance
+	return execsetup
 }
 
 func getExecutionTestSetup(mkts []proto.Market) *executionTestSetup {
-	if execsetup != nil {
+	if execsetup != nil && execsetup.ctrl != nil {
 		execsetup.ctrl.Finish()
-		execsetup = nil
+		// execsetup = nil
+	} else if execsetup == nil {
+		execsetup = &executionTestSetup{}
 	}
 
 	ctrl := gomock.NewController(&reporter)
-	setup := executionTestSetup{
-		ctrl:      ctrl,
-		cfg:       execution.NewDefaultConfig(""),
-		log:       logging.NewTestLogger(),
-		accounts:  NewAccountStub(),
-		candles:   mocks.NewMockCandleBuf(ctrl),
-		orders:    NewOrderStub(),
-		trades:    NewTradeStub(),
-		parties:   mocks.NewMockPartyBuf(ctrl),
-		transfers: NewTransferStub(),
-		markets:   mocks.NewMockMarketBuf(ctrl),
-		timesvc:   mocks.NewMockTimeService(ctrl),
-		accs:      map[string][]account{},
-		mkts:      mkts,
-	}
+	execsetup.ctrl = ctrl
+	execsetup.cfg = execution.NewDefaultConfig("")
+	execsetup.cfg.InsurancePoolInitialBalance = execsetup.InsurancePoolInitialBalance
+	execsetup.log = logging.NewTestLogger()
+	execsetup.accounts = NewAccountStub()
+	execsetup.candles = mocks.NewMockCandleBuf(ctrl)
+	execsetup.orders = NewOrderStub()
+	execsetup.trades = NewTradeStub()
+	execsetup.parties = mocks.NewMockPartyBuf(ctrl)
+	execsetup.transfers = NewTransferStub()
+	execsetup.markets = mocks.NewMockMarketBuf(ctrl)
+	execsetup.timesvc = mocks.NewMockTimeService(ctrl)
+	execsetup.accs = map[string][]account{}
+	execsetup.mkts = mkts
 
-	setup.timesvc.EXPECT().GetTimeNow().AnyTimes().Return(time.Now(), nil)
-	setup.timesvc.EXPECT().NotifyOnTick(gomock.Any()).AnyTimes()
-	setup.candles.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	setup.markets.EXPECT().Add(gomock.Any()).AnyTimes()
-	setup.parties.EXPECT().Add(gomock.Any()).AnyTimes()
-	setup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
-	setup.markets.EXPECT().Flush().AnyTimes().Return(nil)
+	execsetup.timesvc.EXPECT().GetTimeNow().AnyTimes().Return(time.Now(), nil)
+	execsetup.timesvc.EXPECT().NotifyOnTick(gomock.Any()).AnyTimes()
+	execsetup.candles.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	execsetup.markets.EXPECT().Add(gomock.Any()).AnyTimes()
+	execsetup.parties.EXPECT().Add(gomock.Any()).AnyTimes()
+	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
+	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	setup.engine = execution.NewEngine(setup.log, setup.cfg, setup.timesvc, setup.orders, setup.trades, setup.candles, setup.markets, setup.parties, setup.accounts, setup.transfers, mkts)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, mkts)
 
-	return &setup
+	return execsetup
 }
 
 type account struct {

@@ -12,6 +12,12 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
+	amount, _ := strconv.ParseUint(amountstr, 10, 0)
+	execsetup = getExecutionSetupEmptyWithInsurancePoolBalance(amount)
+	return nil
+}
+
 func theExecutonEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
 	mkts := []proto.Market{}
 	for _, row := range arg1.Rows {
@@ -239,6 +245,7 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	var cumul uint64
 	for _, v := range execsetup.accounts.data {
+		fmt.Printf("ACCOUNT: %v\n", v)
 		cumul += uint64(v.Balance)
 	}
 
@@ -286,6 +293,18 @@ func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string
 	}
 	if amount != acc.Balance {
 		return fmt.Errorf("invalid balance for market settlement account, expected %v, got %v", amount, acc.Balance)
+	}
+	return nil
+}
+
+func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
+	amount, _ := strconv.ParseInt(amountstr, 10, 0)
+	acc, err := execsetup.accounts.getMarketInsurancePoolAccount(market)
+	if err != nil {
+		return err
+	}
+	if amount != acc.Balance {
+		return fmt.Errorf("invalid balance for market insurance pool, expected %v, got %v", amount, acc.Balance)
 	}
 	return nil
 }
