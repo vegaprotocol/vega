@@ -258,9 +258,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer) ([]e
 		if loss {
 			distr.registerTransfer(res)
 		}
-		// getLedgerEntries updates the from accounts, so losses are handled fine there
-		// but the to account isn't updated (losses are deposited in temporary settlement account)
-		// but wins are paid out to trader accounts, so we need to update the balance there
+		// update the to accounts now
 		for _, bal := range res.Balances {
 			if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error(

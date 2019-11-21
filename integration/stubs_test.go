@@ -3,7 +3,6 @@ package core_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/proto"
@@ -148,11 +147,6 @@ func (t *transferStub) Flush() error {
 
 func (t *transferStub) Add(b []*proto.TransferResponse) {
 	t.mu.Lock()
-	for _, v := range b {
-		for _, _v := range v.GetTransfers() {
-			fmt.Printf("TRANSFER: %#v\n", *_v)
-		}
-	}
 	t.data = append(t.data, b...)
 	t.mu.Unlock()
 }

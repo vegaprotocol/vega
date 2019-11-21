@@ -268,8 +268,15 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		for _, v := range execsetup.transfers.data {
 			for _, _v := range v.GetTransfers() {
 				if _v.FromAccount == fromAccountID && _v.ToAccount == toAccountID {
+					if _v.Amount != i64val(row, 5) {
+						continue
+					}
 					ledgerEntry = _v
+					break
 				}
+			}
+			if ledgerEntry != nil {
+				break
 			}
 		}
 

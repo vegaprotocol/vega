@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/proto"
+
 	"github.com/DATA-DOG/godog/gherkin"
 )
 
