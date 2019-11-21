@@ -514,6 +514,7 @@ func (os *Order) writeBatch(batch []types.Order) error {
 	return nil
 }
 
+// SaveBatch writes the given batch of orders to the underlying badger store and notifies any observers.
 func (os *Order) SaveBatch(batch []types.Order) error {
 	if len(batch) == 0 {
 		// Sanity check, no need to do any processing on an empty batch.

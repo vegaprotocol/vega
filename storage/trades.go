@@ -464,6 +464,7 @@ func (ts *Trade) writeBatch(batch []types.Trade) error {
 	return nil
 }
 
+// SaveBatch writes the given batch of trades to the underlying badger store and notifies any observers.
 func (ts *Trade) SaveBatch(batch []types.Trade) error {
 	if len(batch) == 0 {
 		// Sanity check, no need to do any processing on an empty batch.
