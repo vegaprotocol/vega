@@ -20,14 +20,13 @@ import (
 type Order struct {
 	Config
 
-	cfgMu           sync.Mutex
+	mu              sync.Mutex
 	log             *logging.Logger
 	badger          *badgerStore
 	batchCountForGC int32
 	subscribers     map[uint64]chan<- []types.Order
 	subscriberID    uint64
 	depth           map[string]*Depth
-	mu              sync.Mutex
 	onCriticalError func()
 }
 
@@ -68,9 +67,9 @@ func (os *Order) ReloadConf(cfg Config) {
 		os.log.SetLevel(cfg.Level.Get())
 	}
 
-	os.cfgMu.Lock()
+	os.mu.Lock()
 	os.Config = cfg
-	os.cfgMu.Unlock()
+	os.mu.Unlock()
 }
 
 // Subscribe to a channel of new or updated orders. The subscriber id will be returned as a uint64 value
@@ -516,21 +515,22 @@ func (os *Order) writeBatch(batch []types.Order) error {
 }
 
 func (os *Order) SaveBatch(batch []types.Order) error {
+	if len(batch) == 0 {
+		// Sanity check, no need to do any processing on an empty batch.
+		return nil
+	}
 	timer := metrics.NewTimeCounter("-", "orderstore", "SaveBatch")
 
+	// write the batch down to the badger kv store, notify observers if successful
 	err := os.writeBatch(batch)
 	if err != nil {
 		os.log.Error(
-			"unable to write batch in order badger store",
+			"unable to write orders batch to badger store",
 			logging.Error(err),
 		)
 		os.onCriticalError()
 	} else {
 		err = os.notify(batch)
-	}
-
-	if logging.DebugLevel == os.log.GetLevel() {
-		os.log.Debug("Orders store updated", logging.Int("batch-size", len(batch)))
 	}
 
 	// Using a batch counter ties the clean up to the average

@@ -26,12 +26,12 @@ var (
 type Account struct {
 	Config
 
+	mu              sync.Mutex
 	log             *logging.Logger
 	badger          *badgerStore
 	batchCountForGC int32
 	subscribers     map[uint64]chan []*types.Account
 	subscriberID    uint64
-	mu              sync.Mutex
 }
 
 // NewAccounts creates a new account store with the logger and configuration specified.
