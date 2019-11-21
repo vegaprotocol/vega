@@ -247,7 +247,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	}
 
 	// ignore response ids here + this cannot fail
-	_, _ = e.collateral.CreateMarketAccounts(mktconfig.Id, asset, 0)
+	_, _ = e.collateral.CreateMarketAccounts(mktconfig.Id, asset, int64(e.Config.InsurancePoolInitialBalance))
 
 	return nil
 }

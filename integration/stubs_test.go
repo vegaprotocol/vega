@@ -35,6 +35,24 @@ func (s *accStub) getTraderMarginAccount(trader, market string) (proto.Account, 
 	return proto.Account{}, errors.New("account does not exist")
 }
 
+func (s *accStub) getMarketSettlementAccount(market string) (proto.Account, error) {
+	for _, v := range s.data {
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_SETTLEMENT {
+			return v, nil
+		}
+	}
+	return proto.Account{}, errors.New("account does not exist")
+}
+
+func (s *accStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {
+	for _, v := range s.data {
+		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_INSURANCE {
+			return v, nil
+		}
+	}
+	return proto.Account{}, errors.New("account does not exist")
+}
+
 func (s *accStub) getTraderGeneralAccount(trader, asset string) (proto.Account, error) {
 	for _, v := range s.data {
 		if v.Owner == trader && v.Type == proto.AccountType_GENERAL && v.Asset == asset {
@@ -122,12 +140,15 @@ func NewTransferStub() *transferStub {
 	}
 }
 
-func (t *transferStub) SaveBatch(b []*proto.TransferResponse) error {
+func (t *transferStub) Flush() error {
+	t.data = []*proto.TransferResponse{}
+	return nil
+}
+
+func (t *transferStub) Add(b []*proto.TransferResponse) {
 	t.mu.Lock()
 	t.data = append(t.data, b...)
-	err := t.err
 	t.mu.Unlock()
-	return err
 }
 
 func (t *transferStub) GetBatch() []*proto.TransferResponse {

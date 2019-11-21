@@ -257,19 +257,16 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer) ([]e
 		// if this is a loss, we want to update the delta, too
 		if loss {
 			distr.registerTransfer(res)
-		} else {
-			// getLedgerEntries updates the from accounts, so losses are handled fine there
-			// but the to account isn't updated (losses are deposited in temporary settlement account)
-			// but wins are paid out to trader accounts, so we need to update the balance there
-			for _, bal := range res.Balances {
-				if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
-					e.log.Error(
-						"Could not update the target account in transfer",
-						logging.String("account-id", bal.Account.Id),
-						logging.Error(err),
-					)
-					return nil, nil, err
-				}
+		}
+		// update the to accounts now
+		for _, bal := range res.Balances {
+			if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
+				e.log.Error(
+					"Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.Id),
+					logging.Error(err),
+				)
+				return nil, nil, err
 			}
 		}
 		responses = append(responses, res)
@@ -386,6 +383,7 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 		)
 		return nil, err
 	}
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
 	mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountType_GENERAL))
 	if err != nil {
 		e.log.Error(
