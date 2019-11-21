@@ -239,7 +239,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.Transfer(m.GetID(), positions)
+			transfers, err := m.collateral.FinalSettlement(m.GetID(), positions)
 			if err != nil {
 				m.log.Error(
 					"Failed to get ledger movements after settling closed market",
@@ -640,9 +640,15 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 	// we're not interested in the events here, they're used for margin updates
 	// we know the margin requirements will be met, and come the next block
 	// margins will automatically be checked anyway
-	_, errCh := m.collateral.TransferCh(m.GetID(), settle)
-	// return an error if an error was pushed onto the channel
-	return <-errCh
+	_, responses, err := m.collateral.MarkToMarket(m.GetID(), settle)
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug(
+			"ledger movements after MTM on traders who closed out distressed",
+			logging.Int("response-count", len(responses)),
+			logging.String("raw", fmt.Sprintf("%#v", responses)),
+		)
+	}
+	return err
 }
 
 func (m *Market) zeroOutNetwork(size uint64, traders []events.MarketPosition, settleOrder, initial *types.Order) error {
@@ -767,9 +773,6 @@ func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) events
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
 	defer timer.EngineTimeCounterAdd()
 
-	// transferCh, _ := m.collateral.TransferCh(m.GetID(), settle)
-	// e := <-transferCh
-
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
 	riskUpdate := m.risk.UpdateMarginOnNewOrder(e, price)
@@ -801,29 +804,26 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	transferCh, errCh := m.collateral.TransferCh(m.GetID(), settle)
-	go func() {
-		err := <-errCh
-		if err != nil {
-			m.log.Error(
-				"Some error in collateral when processing settle MTM transfers",
-				logging.Error(err),
-			)
-			cancel()
-		}
-	}()
-
-	evts := []events.Margin{}
-	// iterate over all events until channel close
-	for e := range transferCh {
-		evts = append(evts, e)
+	evts, response, err := m.collateral.MarkToMarket(m.GetID(), settle)
+	if err != nil {
+		m.log.Error(
+			"Failed to process mark to market settlement (collateral)",
+			logging.Error(err),
+		)
+		return nil
+	}
+	if m.log.GetLevel() == logging.DebugLevel {
+		// @TODO stream the ledger movements here
+		m.log.Debug(
+			"transfer responses after MTM settlement",
+			logging.Int("transfer-count", len(response)),
+			logging.String("raw-dump", fmt.Sprintf("%#v", response)),
+		)
 	}
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.markPrice)
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(context.Background(), evts, m.markPrice)
 	if len(riskUpdates) == 0 {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
