@@ -26,7 +26,7 @@ func TestExtractData(t *testing.T) {
 	}
 	instructionSet := core.InstructionSet{
 		Instructions: instructions,
-		Description:  "Execting a trade",
+		Description:  "Executing a trade",
 	}
 	log := logging.NewTestLogger()
 	storageConfig, err := storage.NewTestConfig()

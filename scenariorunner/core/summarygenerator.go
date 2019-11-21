@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/execution"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
@@ -28,6 +29,7 @@ type SummaryGenerator struct {
 	marketStore  *storage.Market
 	accountStore *storage.Account
 	tradeService *trades.Svc
+	execution    *execution.Engine
 }
 
 func NewSummaryGenerator(
@@ -37,7 +39,8 @@ func NewSummaryGenerator(
 	partyStore *storage.Party,
 	marketStore *storage.Market,
 	accountStore *storage.Account,
-	tradeService *trades.Svc) *SummaryGenerator {
+	tradeService *trades.Svc,
+	executionEngine *execution.Engine) *SummaryGenerator {
 	return &SummaryGenerator{
 		context,
 		tradeStore,
@@ -45,11 +48,18 @@ func NewSummaryGenerator(
 		partyStore,
 		marketStore,
 		accountStore,
-		tradeService}
+		tradeService,
+		executionEngine,
+	}
 }
 
 func (s *SummaryGenerator) Summary(pagination *protoapi.Pagination) (*SummaryResponse, error) {
 	p := getMaxPagination(pagination)
+	err := s.execution.Generate()
+	if err != nil {
+		return nil, err
+	}
+
 	s.commitAllStores()
 	parties, err := s.partyStore.GetAll()
 	if err != nil {

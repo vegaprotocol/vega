@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/scenariorunner/core"
@@ -25,6 +26,7 @@ type Engine struct {
 	timeControl      *core.TimeControl
 	providers        []core.PreProcessorProvider
 	tradesGenerated  uint64
+	Execution        *execution.Engine
 }
 
 // NewEngine returns a pointer to new instance of scenario runner
@@ -59,10 +61,13 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 	positions := preprocessors.NewPositions(d.ctx, d.tradeService)
 	parties := preprocessors.NewParties(d.ctx, d.partyStore)
 
-	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore, d.tradeService)
+	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore, d.tradeService, d.execution)
 	summary := preprocessors.NewSummary(summaryGenerator)
 
-	d.execution.Generate()
+	err = d.execution.Generate()
+	if err != nil {
+		return nil, err
+	}
 
 	return &Engine{
 		Config:           engineConfig,
@@ -81,6 +86,7 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 			summary,
 			time,
 		},
+		Execution: d.execution,
 	}, nil
 }
 
