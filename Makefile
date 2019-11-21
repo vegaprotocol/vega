@@ -37,7 +37,7 @@ else
 	endif
 endif
 
-.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check rest_check
+.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check
 
 all: build
 
@@ -140,7 +140,7 @@ PROTOINCLUDE := -I. \
 proto/api/trading.pb.go: proto/api/trading.proto
 	@protoc $(PROTOINCLUDE) --go_out=plugins=grpc,paths=source_relative:. "$<"
 
-.PRECIOUS: proto/%.pb.go
+.PRECIOUS: %.pb.go
 %.pb.go: %.proto
 	@protoc $(PROTOINCLUDE) --go_out=paths=source_relative:. "$<"
 
@@ -150,15 +150,15 @@ proto/api/trading.pb.go: proto/api/trading.proto
 	sed -i -re 's/this\.Size_/this.Size/' "$@" && \
 	./script/fix_imports.sh "$@"
 
-GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml,paths=source_relative:.
-SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml:.
+GRPC_CONF_OPT := logtostderr=true,paths=source_relative:.
+SWAGGER_CONF_OPT := logtostderr=true:.
 
 # This creates a reverse proxy to forward HTTP requests into gRPC requests
-proto/api/trading.pb.gw.go: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
+proto/api/trading.pb.gw.go: proto/api/trading.proto
 	@protoc $(PROTOINCLUDE) --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
 
 # Generate Swagger documentation
-proto/api/trading.swagger.json: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml proto/vega.proto
+proto/api/trading.swagger.json: proto/api/trading.proto proto/vega.proto
 	@protoc $(PROTOINCLUDE) --swagger_out=$(SWAGGER_CONF_OPT) "$<"
 
 proto_check: ## proto: Check committed files match just-generated files
@@ -176,11 +176,6 @@ proto_check: ## proto: Check committed files match just-generated files
 proto_clean:
 	@find proto -name '*.pb.go' -o -name '*.pb.gw.go' -o -name '*.validator.pb.go' -o -name '*.swagger.json' \
 		| xargs -r rm
-
-rest_check: gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
-	@python3 script/check_rest_endpoints.py \
-		--bindings gateway/rest/grpc-rest-bindings.yml \
-		--swagger proto/api/trading.swagger.json
 
 # Misc Targets
 
