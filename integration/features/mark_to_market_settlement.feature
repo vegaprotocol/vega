@@ -43,9 +43,9 @@ Feature: Test mark to market settlement
       | trader3 |  ETH/DEC19 | buy  |     1  |  2000 |                1 |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |    480 |    9280 |
+      | trader1 | ETH   | ETH/DEC19 |    480 |    8520 |
       | trader3 | ETH   | ETH/DEC19 |    132 |    9868 |
-      | trader2 | ETH   | ETH/DEC19 |    308 |    9932 |
+      | trader2 | ETH   | ETH/DEC19 |    308 |   10692 |
     Then the following transfers happend:
       | from    | to     | fromType | toType     | id        | amount | asset |
       | trader1 | market | MARGIN   | SETTLEMENT | ETH/DEC19 |    240 | ETH   |
@@ -89,9 +89,9 @@ Feature: Test mark to market settlement
       | trader3 | ETH/DEC19 | buy  |      1 |  5000 |                1 |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   1200 |    8560 |
+      | trader1 | ETH   | ETH/DEC19 |   1200 |    4800 |
       | trader3 | ETH   | ETH/DEC19 |    132 |    9868 |
-      | trader2 | ETH   | ETH/DEC19 |    660 |    9580 |
+      | trader2 | ETH   | ETH/DEC19 |    770 |   13230 |
     Then the following transfers happend:
       | from    | to     | fromType | toType     | id        | amount | asset |
       | trader1 | market | MARGIN   | SETTLEMENT | ETH/DEC19 |    240 | ETH   |
@@ -106,9 +106,9 @@ Feature: Test mark to market settlement
       | trader1 | ETH/DEC19 | sell |      1 |    50 |                1 |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |     21 |   11719 |
-      | trader3 | ETH   | ETH/DEC19 |     13 |    8667 |
-      | trader2 | ETH   | ETH/DEC19 |      6 |    9574 |
+      | trader1 | ETH   | ETH/DEC19 |     21 |   15879 |
+      | trader3 | ETH   | ETH/DEC19 |     13 |    5037 |
+      | trader2 | ETH   | ETH/DEC19 |      6 |    9044 |
     Then the following transfers happend:
       | from    | to      | fromType | toType     | id        | amount | asset |
       | trader3 | trader3 | GENERAL  | MARGIN     | ETH/DEC19 |   1188 | ETH   |
