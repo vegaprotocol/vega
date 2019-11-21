@@ -101,17 +101,15 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       # More small checks. Run all, instead of exitng after first failure.
-      - code=0
-      - make print_check || code=1
-      - make rest_check || code=1
-      - make proto_check || code=1
-      - bash script/diff_graphqlschema.sh || code=1  # requires GITLAB_API_TOKEN and SLACK_HOOK_URL
-      - /usr/local/bin/multilint || code=1
-      - make vet || code=1
-      - make vetshadow || code=1
+      - failed=""
+      - for target in print_check proto_check rest_check vet vetshadow ; do
+          make "$$target" || failed="$$failed $$target" ; done
+      # diff_graphqlschema.sh requires GITLAB_API_TOKEN and SLACK_HOOK_URL
+      - bash script/diff_graphqlschema.sh || failed="$$failed diff_graphqlschema"
+      - /usr/local/bin/multilint || failed="$$failed multilint"
       - make lint || true  # Ignore lint failure for now (see #196)
       - make staticcheck || true  # Ignore failures until they're all fixed.
-      - exit "$code"
+      - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi
     depends_on:
       - test
     when:
