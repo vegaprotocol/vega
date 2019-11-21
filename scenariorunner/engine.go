@@ -50,6 +50,7 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 	}
 
 	execution := preprocessors.NewExecution(d.execution)
+
 	markets := preprocessors.NewMarkets(d.ctx, d.marketStore)
 	orders := preprocessors.NewOrders(d.ctx, d.orderStore)
 	trades := preprocessors.NewTrades(d.ctx, d.tradeStore)
@@ -60,6 +61,8 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore, d.tradeService)
 	summary := preprocessors.NewSummary(summaryGenerator)
+
+	d.execution.Generate()
 
 	return &Engine{
 		Config:           engineConfig,

@@ -100,6 +100,12 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		ctx:          ctx,
 		vegaTime:     timeService,
 		execution:    engine,
+		orderBuf:     orderBuffer,
+		tradeBuf:     tradeBuffer,
+		partyBuf:     partyBuffer,
+		marketBuf:    marketBuffer,
+		accountBuf:   accountBuffer,
+		candleBuf:    candleBuffer,
 		partyStore:   partyStore,
 		orderStore:   orderStore,
 		tradeStore:   tradeStore,
@@ -111,9 +117,17 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 }
 
 type dependencies struct {
-	ctx          context.Context
-	vegaTime     *vegatime.Svc
-	execution    *execution.Engine
+	ctx       context.Context
+	vegaTime  *vegatime.Svc
+	execution *execution.Engine
+
+	orderBuf   *buffer.Order
+	tradeBuf   *buffer.Trade
+	partyBuf   *buffer.Party
+	marketBuf  *buffer.Market
+	accountBuf *buffer.Account
+	candleBuf  *buffer.Candle
+
 	partyStore   *storage.Party
 	orderStore   *storage.Order
 	tradeStore   *storage.Trade
