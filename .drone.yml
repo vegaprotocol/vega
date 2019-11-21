@@ -103,13 +103,13 @@ steps:
       # More small checks. Run all, instead of exitng after first failure.
       - failed=""
       - for target in print_check proto_check rest_check vet vetshadow ; do
-          make "$$target" || failed="$$failed $$target" ; done
+          echo -e '\033[36;1m'"$$target"'\033[0m' ; make "$$target" || failed="$$failed $$target" ; done
       # diff_graphqlschema.sh requires GITLAB_API_TOKEN and SLACK_HOOK_URL
       - bash script/diff_graphqlschema.sh || failed="$$failed diff_graphqlschema"
       - /usr/local/bin/multilint || failed="$$failed multilint"
       - make lint || true  # Ignore lint failure for now (see #196)
       - make staticcheck || true  # Ignore failures until they're all fixed.
-      - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi
+      - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo -e '\033[32;1mOK\033[0m'
     depends_on:
       - test
     when:
