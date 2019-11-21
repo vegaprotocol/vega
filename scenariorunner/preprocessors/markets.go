@@ -35,7 +35,6 @@ func (m *Markets) marketByID() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				m.commitStore()
 				return m.marketStore.GetByID(req.MarketID)
 			})
 	}
@@ -53,7 +52,6 @@ func (m *Markets) markets() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				m.commitStore()
 				resp, err := m.marketStore.GetAll()
 				return &protoapi.MarketsResponse{Markets: resp}, err
 			})
@@ -62,8 +60,4 @@ func (m *Markets) markets() *core.PreProcessor {
 		MessageShape: &empty.Empty{},
 		PreProcess:   preProcessor,
 	}
-}
-
-func (m *Markets) commitStore() {
-	m.marketStore.Commit()
 }
