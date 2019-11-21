@@ -193,6 +193,7 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 				Asset:  e.product.GetAsset(),
 			},
 		}
+
 		if mtmShare > 0 {
 			settle.Type = types.TransferType_MTM_WIN
 			wins = append(wins, &mtmTransfer{

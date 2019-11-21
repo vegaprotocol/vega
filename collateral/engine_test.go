@@ -482,7 +482,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 		},
 	}
 
-	eng.buf.EXPECT().Add(gomock.Any()).Times(6)
+	eng.buf.EXPECT().Add(gomock.Any()).Times(8)
 	// quickly get the interface mocked for this test
 	transfers := getMTMTransfer(pos)
 	responses, raw, err := eng.MarkToMarket(testMarketID, transfers)
