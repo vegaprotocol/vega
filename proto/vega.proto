@@ -234,15 +234,13 @@ message OrderSubmission {
   string id = 1 [(validator.field) = {string_not_empty: false}];
   string marketID = 2 [(validator.field) = {string_not_empty: true}];
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
-  // do not enforce that price, as Market Order will not have price specified
-  uint64 price = 4;
+  uint64 price = 4 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+    description: "mandatory, except for Market orders"
+  }];
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
-  // make sur for both that they are non nil and the value is part of the respective enums.
   Side side = 6 [(validator.field) = {is_in_enum: true}];
   Order.TimeInForce TimeInForce = 7 [(validator.field) = {is_in_enum: true}];
-  // do not enforce as not always required
-  // altho at least check it's not a negative integer, would be not that very handy to create a time.Time with it
-  int64 expiresAt = 8;
+  int64 expiresAt = 8 [(validator.field) = {int_gt: -1}];
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
 }
 

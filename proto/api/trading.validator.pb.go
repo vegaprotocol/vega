@@ -124,27 +124,7 @@ func (this *TradesByPartyRequest) Validate() error {
 	}
 	return nil
 }
-func (this *TradesByPartyResponse) Validate() error {
-	for _, item := range this.Trades {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Trades", err)
-			}
-		}
-	}
-	return nil
-}
 func (this *TradesByOrderRequest) Validate() error {
-	return nil
-}
-func (this *TradesByOrderResponse) Validate() error {
-	for _, item := range this.Trades {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Trades", err)
-			}
-		}
-	}
 	return nil
 }
 func (this *AccountsSubscribeRequest) Validate() error {
@@ -173,7 +153,7 @@ func (this *OrdersByMarketRequest) Validate() error {
 	}
 	return nil
 }
-func (this *OrdersByMarketResponse) Validate() error {
+func (this *OrdersResponse) Validate() error {
 	for _, item := range this.Orders {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
@@ -191,20 +171,10 @@ func (this *OrdersByPartyRequest) Validate() error {
 	}
 	return nil
 }
-func (this *OrdersByPartyResponse) Validate() error {
-	for _, item := range this.Orders {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Orders", err)
-			}
-		}
-	}
-	return nil
-}
 func (this *OrderByMarketAndIdRequest) Validate() error {
 	return nil
 }
-func (this *OrderByMarketAndIdResponse) Validate() error {
+func (this *OrderResponse) Validate() error {
 	if this.Order != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Order); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
@@ -213,14 +183,6 @@ func (this *OrderByMarketAndIdResponse) Validate() error {
 	return nil
 }
 func (this *OrderByReferenceRequest) Validate() error {
-	return nil
-}
-func (this *OrderByReferenceResponse) Validate() error {
-	if this.Order != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Order); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
-		}
-	}
 	return nil
 }
 func (this *MarketsResponse) Validate() error {
@@ -282,7 +244,7 @@ func (this *TradesByMarketRequest) Validate() error {
 	}
 	return nil
 }
-func (this *TradesByMarketResponse) Validate() error {
+func (this *TradesResponse) Validate() error {
 	for _, item := range this.Trades {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
@@ -334,7 +296,7 @@ func (this *TradesStream) Validate() error {
 func (this *AccountsByPartyRequest) Validate() error {
 	return nil
 }
-func (this *AccountsByPartyResponse) Validate() error {
+func (this *AccountsResponse) Validate() error {
 	for _, item := range this.Accounts {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
@@ -347,40 +309,10 @@ func (this *AccountsByPartyResponse) Validate() error {
 func (this *AccountsByPartyAndMarketRequest) Validate() error {
 	return nil
 }
-func (this *AccountsByPartyAndMarketResponse) Validate() error {
-	for _, item := range this.Accounts {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Accounts", err)
-			}
-		}
-	}
-	return nil
-}
 func (this *AccountsByPartyAndTypeRequest) Validate() error {
 	return nil
 }
-func (this *AccountsByPartyAndTypeResponse) Validate() error {
-	for _, item := range this.Accounts {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Accounts", err)
-			}
-		}
-	}
-	return nil
-}
 func (this *AccountsByPartyAndAssetRequest) Validate() error {
-	return nil
-}
-func (this *AccountsByPartyAndAssetResponse) Validate() error {
-	for _, item := range this.Accounts {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Accounts", err)
-			}
-		}
-	}
 	return nil
 }
 func (this *CheckTokenRequest) Validate() error {

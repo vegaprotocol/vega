@@ -89,6 +89,7 @@
     },
     "/fountain": {
       "post": {
+        "summary": "Request free money",
         "operationId": "NotifyTraderAccount",
         "responses": {
           "200": {
@@ -115,6 +116,7 @@
     },
     "/markets": {
       "get": {
+        "summary": "Get a list of Markets",
         "operationId": "Markets",
         "responses": {
           "200": {
@@ -131,7 +133,7 @@
     },
     "/markets/{marketID}": {
       "get": {
-        "summary": "markets",
+        "summary": "Get a Market by ID",
         "operationId": "MarketByID",
         "responses": {
           "200": {
@@ -156,7 +158,7 @@
     },
     "/markets/{marketID}/candles": {
       "get": {
-        "summary": "candles",
+        "summary": "Get a list of Candles by Market",
         "operationId": "Candles",
         "responses": {
           "200": {
@@ -203,6 +205,7 @@
     },
     "/markets/{marketID}/depth": {
       "get": {
+        "summary": "Get Market Depth for a given Market",
         "operationId": "MarketDepth",
         "responses": {
           "200": {
@@ -227,13 +230,13 @@
     },
     "/markets/{marketID}/orders": {
       "get": {
-        "summary": "orders",
+        "summary": "Get a list of Orders for a Market",
         "operationId": "OrdersByMarket",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrdersByMarketResponse"
+              "$ref": "#/definitions/apiOrdersResponse"
             }
           }
         },
@@ -280,12 +283,13 @@
     },
     "/markets/{marketID}/orders/{orderID}": {
       "get": {
+        "summary": "Get an Order for a Market and given OrderID",
         "operationId": "OrderByMarketAndId",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrderByMarketAndIdResponse"
+              "$ref": "#/definitions/apiOrderResponse"
             }
           }
         },
@@ -310,13 +314,13 @@
     },
     "/markets/{marketID}/trades": {
       "get": {
-        "summary": "trades",
+        "summary": "Get a list of Trades by Market",
         "operationId": "TradesByMarket",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiTradesByMarketResponse"
+              "$ref": "#/definitions/apiTradesResponse"
             }
           }
         },
@@ -356,6 +360,7 @@
     },
     "/markets/{marketID}/trades/latest": {
       "get": {
+        "summary": "Get the latest Trade for a given Market",
         "operationId": "LastTrade",
         "responses": {
           "200": {
@@ -380,6 +385,7 @@
     },
     "/orders": {
       "post": {
+        "summary": "Submit an Order",
         "operationId": "SubmitOrder",
         "responses": {
           "200": {
@@ -406,6 +412,7 @@
     },
     "/orders/{amendment.orderID}": {
       "put": {
+        "summary": "Amend an Order",
         "operationId": "AmendOrder",
         "responses": {
           "200": {
@@ -438,6 +445,7 @@
     },
     "/orders/{cancellation.orderID}": {
       "delete": {
+        "summary": "Cancel an Order",
         "operationId": "CancelOrder",
         "responses": {
           "200": {
@@ -480,12 +488,13 @@
     },
     "/orders/{orderID}/trades": {
       "get": {
+        "summary": "Get a list of Trades by Order",
         "operationId": "TradesByOrder",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiTradesByOrderResponse"
+              "$ref": "#/definitions/apiTradesResponse"
             }
           }
         },
@@ -504,12 +513,13 @@
     },
     "/orders/{reference}": {
       "get": {
+        "summary": "Get an Order by reference",
         "operationId": "OrderByReference",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrderByReferenceResponse"
+              "$ref": "#/definitions/apiOrderResponse"
             }
           }
         },
@@ -528,6 +538,7 @@
     },
     "/parties": {
       "get": {
+        "summary": "Get a list of Parties",
         "operationId": "Parties",
         "responses": {
           "200": {
@@ -544,7 +555,7 @@
     },
     "/parties/{partyID}": {
       "get": {
-        "summary": "parties",
+        "summary": "Get a Party by ID",
         "operationId": "PartyByID",
         "responses": {
           "200": {
@@ -569,13 +580,13 @@
     },
     "/parties/{partyID}/accounts": {
       "get": {
-        "summary": "accounts",
+        "summary": "Get a list of Accounts by Party",
         "operationId": "AccountsByParty",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiAccountsByPartyResponse"
+              "$ref": "#/definitions/apiAccountsResponse"
             }
           }
         },
@@ -608,12 +619,13 @@
     },
     "/parties/{partyID}/orders": {
       "get": {
+        "summary": "Get a list of Orders for a Party",
         "operationId": "OrdersByParty",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrdersByPartyResponse"
+              "$ref": "#/definitions/apiOrdersResponse"
             }
           }
         },
@@ -660,7 +672,7 @@
     },
     "/parties/{partyID}/positions": {
       "get": {
-        "summary": "positions",
+        "summary": "Get a list of Positions by Party",
         "operationId": "PositionsByParty",
         "responses": {
           "200": {
@@ -685,12 +697,13 @@
     },
     "/parties/{partyID}/trades": {
       "get": {
+        "summary": "Get a list of Trades by Party",
         "operationId": "TradesByParty",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiTradesByPartyResponse"
+              "$ref": "#/definitions/apiTradesResponse"
             }
           }
         },
@@ -734,9 +747,42 @@
         ]
       }
     },
+    "/parties/{withdraw.partyID}/withdrawal": {
+      "post": {
+        "summary": "Request withdrawal",
+        "operationId": "Withdraw",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "withdraw.partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/statistics": {
       "get": {
-        "summary": "metrics",
+        "summary": "Get system Statistics",
         "operationId": "Statistics",
         "responses": {
           "200": {
@@ -753,6 +799,7 @@
     },
     "/time": {
       "get": {
+        "summary": "Get the current blockchain time",
         "operationId": "GetVegaTime",
         "responses": {
           "200": {
@@ -790,40 +837,7 @@
       ],
       "default": "GTC"
     },
-    "apiAccountsByPartyAndAssetResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
-    "apiAccountsByPartyAndMarketResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
-    "apiAccountsByPartyAndTypeResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          }
-        }
-      }
-    },
-    "apiAccountsByPartyResponse": {
+    "apiAccountsResponse": {
       "type": "object",
       "properties": {
         "accounts": {
@@ -950,7 +964,7 @@
         }
       }
     },
-    "apiOrderByMarketAndIdResponse": {
+    "apiOrderResponse": {
       "type": "object",
       "properties": {
         "order": {
@@ -958,26 +972,7 @@
         }
       }
     },
-    "apiOrderByReferenceResponse": {
-      "type": "object",
-      "properties": {
-        "order": {
-          "$ref": "#/definitions/vegaOrder"
-        }
-      }
-    },
-    "apiOrdersByMarketResponse": {
-      "type": "object",
-      "properties": {
-        "orders": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaOrder"
-          }
-        }
-      }
-    },
-    "apiOrdersByPartyResponse": {
+    "apiOrdersResponse": {
       "type": "object",
       "properties": {
         "orders": {
@@ -1076,29 +1071,7 @@
         }
       }
     },
-    "apiTradesByMarketResponse": {
-      "type": "object",
-      "properties": {
-        "trades": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaTrade"
-          }
-        }
-      }
-    },
-    "apiTradesByOrderResponse": {
-      "type": "object",
-      "properties": {
-        "trades": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaTrade"
-          }
-        }
-      }
-    },
-    "apiTradesByPartyResponse": {
+    "apiTradesResponse": {
       "type": "object",
       "properties": {
         "trades": {
@@ -1126,6 +1099,14 @@
         "timestamp": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "apiWithdrawRequest": {
+      "type": "object",
+      "properties": {
+        "withdraw": {
+          "$ref": "#/definitions/vegaWithdraw"
         }
       }
     },
@@ -1631,23 +1612,21 @@
         "price": {
           "type": "string",
           "format": "uint64",
-          "title": "do not enforce that price, as Market Order will not have price specified"
+          "description": "mandatory, except for Market orders"
         },
         "size": {
           "type": "string",
           "format": "uint64"
         },
         "side": {
-          "$ref": "#/definitions/vegaSide",
-          "description": "make sur for both that they are non nil and the value is part of the respective enums."
+          "$ref": "#/definitions/vegaSide"
         },
         "TimeInForce": {
           "$ref": "#/definitions/OrderTimeInForce"
         },
         "expiresAt": {
           "type": "string",
-          "format": "int64",
-          "title": "do not enforce as not always required\naltho at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
+          "format": "int64"
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"

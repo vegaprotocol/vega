@@ -32,7 +32,7 @@ option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
   responses: {
     key: "200";
     value: {
-      description: "Request successful";
+      description: "The request was successful";
     }
   }
 };
@@ -73,15 +73,59 @@ service trading {
     };
   };
 
-  rpc AmendOrder(AmendOrderRequest) returns (vega.PendingOrder);
+  rpc AmendOrder(AmendOrderRequest) returns (vega.PendingOrder) {
+    option (google.api.http) = {
+      put: '/orders/{amendment.orderID}'
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Amend an Order";
+      description: "";
+    };
+  };
 
-  rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder);
+  rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder) {
+    option (google.api.http) = {
+      delete: '/orders/{cancellation.orderID}'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Cancel an Order";
+      description: "";
+    };
+  };
   
-  rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder);
+  rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder) {
+    option (google.api.http) = {
+      post: '/orders'
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Submit an Order";
+      description: "";
+    };
+  };
 
-  rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
+  rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse) {
+    option (google.api.http) = {
+      post: '/fountain'
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Request free money";
+      description: "";
+    };
+  };
 
-  rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
+  rpc Withdraw(WithdrawRequest) returns (WithdrawResponse) {
+    option (google.api.http) = {
+      post: '/parties/{withdraw.partyID}/withdrawal'
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Request withdrawal";
+      description: "";
+    };
+  };
 
 }
 
@@ -126,38 +170,192 @@ message AmendOrderRequest {
 }
 
 service trading_data {
-  // orders
-  rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
-  rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
-  rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
-  rpc OrderByReference(OrderByReferenceRequest) returns (OrderByReferenceResponse);
+  // Orders
 
-  // markets
-  rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
-  rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
-  rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
-  rpc LastTrade(LastTradeRequest) returns (LastTradeResponse);
+  rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersResponse) {
+    option (google.api.http) = {
+      get: '/markets/{marketID}/orders'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Orders for a Market";
+      description: "";
+    };
+  };
 
-  // parties
-  rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
-  rpc Parties(google.protobuf.Empty) returns (PartiesResponse);
+  rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersResponse) {
+    option (google.api.http) = {
+      get: '/parties/{partyID}/orders'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Orders for a Party";
+      description: "";
+    };
+  };
 
-  // trades
-  rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
-  rpc TradesByParty(TradesByPartyRequest) returns (TradesByPartyResponse);
-  rpc TradesByOrder(TradesByOrderRequest) returns (TradesByOrderResponse);
+  rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderResponse) {
+    option (google.api.http) = {
+      get: '/markets/{marketID}/orders/{orderID}'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get an Order for a Market and given OrderID";
+      description: "";
+    };
+  };
 
-  // positions
-  rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
+  rpc OrderByReference(OrderByReferenceRequest) returns (OrderResponse) {
+    option (google.api.http) = {
+      get: '/orders/{reference}'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get an Order by reference";
+      description: "";
+    };
+  };
 
-  // candles
-  rpc Candles(CandlesRequest) returns (CandlesResponse);
+  // Markets
 
-  // metrics
-  rpc Statistics(google.protobuf.Empty) returns (vega.Statistics);
-  rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
+  rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse) {
+    option (google.api.http) = {
+      get: '/markets/{marketID}'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a Market by ID";
+      description: "";
+    };
+  };
 
-  // streams
+  rpc Markets(google.protobuf.Empty) returns (MarketsResponse) {
+    option (google.api.http) = {
+      get: '/markets'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Markets";
+      description: "";
+    };
+  };
+
+  rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse) {
+    option (google.api.http) = {
+      get: '/markets/{marketID}/depth'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get Market Depth for a given Market";
+      description: "";
+    };
+  };
+
+  rpc LastTrade(LastTradeRequest) returns (LastTradeResponse) {
+    option (google.api.http) = {
+      get: '/markets/{marketID}/trades/latest'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get the latest Trade for a given Market";
+      description: "";
+    };
+  };
+
+  // Parties
+
+  rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse) {
+    option (google.api.http) = {
+      get: '/parties/{partyID}'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a Party by ID";
+      description: "";
+    };
+  };
+
+  rpc Parties(google.protobuf.Empty) returns (PartiesResponse) {
+    option (google.api.http) = {
+      get: '/parties'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Parties";
+      description: "";
+    };
+  };
+
+  // Trades
+
+  rpc TradesByMarket(TradesByMarketRequest) returns (TradesResponse) {
+    option (google.api.http) = {
+      get: '/markets/{marketID}/trades'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Trades by Market";
+      description: "";
+    };
+  };
+
+  rpc TradesByParty(TradesByPartyRequest) returns (TradesResponse) {
+    option (google.api.http) = {
+      get: '/parties/{partyID}/trades'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Trades by Party";
+      description: "";
+    };
+  };
+
+  rpc TradesByOrder(TradesByOrderRequest) returns (TradesResponse) {
+    option (google.api.http) = {
+      get: '/orders/{orderID}/trades'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Trades by Order";
+      description: "";
+    };
+  };
+
+  // Positions
+
+  rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse) {
+    option (google.api.http) = {
+      get: '/parties/{partyID}/positions'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Positions by Party";
+      description: "";
+    };
+  };
+
+  // Candles
+
+  rpc Candles(CandlesRequest) returns (CandlesResponse) {
+    option (google.api.http) = {
+      get: '/markets/{marketID}/candles'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Candles by Market";
+      description: "";
+    };
+  };
+
+  // Metrics
+
+  rpc Statistics(google.protobuf.Empty) returns (vega.Statistics) {
+    option (google.api.http) = {
+      get: '/statistics'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get system Statistics";
+      description: "";
+    };
+  };
+
+  rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse) {
+    option (google.api.http) = {
+      get: '/time'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get the current blockchain time";
+      description: "";
+    };
+  };
+
+  // Streams
+
   rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
   rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesStream);
   rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
@@ -166,11 +364,47 @@ service trading_data {
   rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
 
-  // accounts
-  rpc AccountsByParty(AccountsByPartyRequest) returns (AccountsByPartyResponse);
-  rpc AccountsByPartyAndMarket(AccountsByPartyAndMarketRequest) returns (AccountsByPartyAndMarketResponse);
-  rpc AccountsByPartyAndType(AccountsByPartyAndTypeRequest) returns (AccountsByPartyAndTypeResponse);
-  rpc AccountsByPartyAndAsset(AccountsByPartyAndAssetRequest) returns (AccountsByPartyAndAssetResponse);
+  // Accounts
+
+  rpc AccountsByParty(AccountsByPartyRequest) returns (AccountsResponse) {
+    option (google.api.http) = {
+      get: '/parties/{partyID}/accounts'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get a list of Accounts by Party";
+      description: "";
+    };
+  };
+
+  rpc AccountsByPartyAndMarket(AccountsByPartyAndMarketRequest) returns (AccountsResponse) /* {
+    option (google.api.http) = {
+      // TODO
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "TODO";
+      description: "";
+    };
+  } */ ;
+
+  rpc AccountsByPartyAndType(AccountsByPartyAndTypeRequest) returns (AccountsResponse) /* {
+    option (google.api.http) = {
+      // TODO
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "TODO";
+      description: "";
+    };
+  } */ ;
+
+  rpc AccountsByPartyAndAsset(AccountsByPartyAndAssetRequest) returns (AccountsResponse) /* {
+    option (google.api.http) = {
+      // TODO
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "TODO";
+      description: "";
+    };
+  } */ ;
 }
 
 message LastTradeRequest {
@@ -207,16 +441,8 @@ message TradesByPartyRequest {
   Pagination pagination = 3;
 }
 
-message TradesByPartyResponse {
-  repeated vega.Trade trades = 1;
-}
-
 message TradesByOrderRequest {
   string orderID = 1;
-}
-
-message TradesByOrderResponse {
-  repeated vega.Trade trades = 1;
 }
 
 message AccountsSubscribeRequest {
@@ -255,7 +481,7 @@ message OrdersByMarketRequest {
   bool open = 3;
 }
 
-message OrdersByMarketResponse {
+message OrdersResponse {
   repeated vega.Order orders = 1;
 }
 
@@ -265,25 +491,19 @@ message OrdersByPartyRequest {
   bool open = 3;
 }
 
-message OrdersByPartyResponse {
-  repeated vega.Order orders = 1;
-}
-
 message OrderByMarketAndIdRequest {
   string marketID = 1 [(validator.field) = {msg_exists : true }];
   string orderID = 2 [(validator.field) = {msg_exists : true}];
 }
 
-message OrderByMarketAndIdResponse {
+message OrderResponse {
   vega.Order order = 1;
 }
 
 message OrderByReferenceRequest {
-  string reference = 1;
-}
-
-message OrderByReferenceResponse {
-  vega.Order order = 1;
+  string reference = 1 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+    pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}", min_length: 1
+  }];
 }
 
 message MarketsResponse {
@@ -316,7 +536,7 @@ message TradesByMarketRequest {
   Pagination pagination = 2;
 }
 
-message TradesByMarketResponse {
+message TradesResponse {
   repeated vega.Trade trades = 1;
 }
 
@@ -351,7 +571,7 @@ message AccountsByPartyRequest {
   vega.AccountType type = 2;
 }
 
-message AccountsByPartyResponse {
+message AccountsResponse {
   repeated vega.Account accounts = 1;
 }
 
@@ -361,26 +581,14 @@ message AccountsByPartyAndMarketRequest {
   vega.AccountType type = 3;
 }
 
-message AccountsByPartyAndMarketResponse {
-  repeated vega.Account accounts = 1;
-}
-
 message AccountsByPartyAndTypeRequest {
   string partyID = 1 [(validator.field) = {msg_exists : true}];
   vega.AccountType type = 2;
 }
 
-message AccountsByPartyAndTypeResponse {
-  repeated vega.Account accounts = 1;
-}
-
 message AccountsByPartyAndAssetRequest {
   string partyID = 1 [(validator.field) = {msg_exists : true}];
   string asset = 2;
-}
-
-message AccountsByPartyAndAssetResponse {
-  repeated vega.Account accounts = 1;
 }
 
 message CheckTokenRequest {

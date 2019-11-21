@@ -38,14 +38,14 @@ func (m *MockTradingDataClient) EXPECT() *MockTradingDataClientMockRecorder {
 }
 
 // AccountsByParty mocks base method
-func (m *MockTradingDataClient) AccountsByParty(arg0 context.Context, arg1 *api.AccountsByPartyRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyResponse, error) {
+func (m *MockTradingDataClient) AccountsByParty(arg0 context.Context, arg1 *api.AccountsByPartyRequest, arg2 ...grpc.CallOption) (*api.AccountsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "AccountsByParty", varargs...)
-	ret0, _ := ret[0].(*api.AccountsByPartyResponse)
+	ret0, _ := ret[0].(*api.AccountsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -58,14 +58,14 @@ func (mr *MockTradingDataClientMockRecorder) AccountsByParty(arg0, arg1 interfac
 }
 
 // AccountsByPartyAndAsset mocks base method
-func (m *MockTradingDataClient) AccountsByPartyAndAsset(arg0 context.Context, arg1 *api.AccountsByPartyAndAssetRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyAndAssetResponse, error) {
+func (m *MockTradingDataClient) AccountsByPartyAndAsset(arg0 context.Context, arg1 *api.AccountsByPartyAndAssetRequest, arg2 ...grpc.CallOption) (*api.AccountsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "AccountsByPartyAndAsset", varargs...)
-	ret0, _ := ret[0].(*api.AccountsByPartyAndAssetResponse)
+	ret0, _ := ret[0].(*api.AccountsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -78,14 +78,14 @@ func (mr *MockTradingDataClientMockRecorder) AccountsByPartyAndAsset(arg0, arg1 
 }
 
 // AccountsByPartyAndMarket mocks base method
-func (m *MockTradingDataClient) AccountsByPartyAndMarket(arg0 context.Context, arg1 *api.AccountsByPartyAndMarketRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyAndMarketResponse, error) {
+func (m *MockTradingDataClient) AccountsByPartyAndMarket(arg0 context.Context, arg1 *api.AccountsByPartyAndMarketRequest, arg2 ...grpc.CallOption) (*api.AccountsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "AccountsByPartyAndMarket", varargs...)
-	ret0, _ := ret[0].(*api.AccountsByPartyAndMarketResponse)
+	ret0, _ := ret[0].(*api.AccountsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -98,14 +98,14 @@ func (mr *MockTradingDataClientMockRecorder) AccountsByPartyAndMarket(arg0, arg1
 }
 
 // AccountsByPartyAndType mocks base method
-func (m *MockTradingDataClient) AccountsByPartyAndType(arg0 context.Context, arg1 *api.AccountsByPartyAndTypeRequest, arg2 ...grpc.CallOption) (*api.AccountsByPartyAndTypeResponse, error) {
+func (m *MockTradingDataClient) AccountsByPartyAndType(arg0 context.Context, arg1 *api.AccountsByPartyAndTypeRequest, arg2 ...grpc.CallOption) (*api.AccountsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "AccountsByPartyAndType", varargs...)
-	ret0, _ := ret[0].(*api.AccountsByPartyAndTypeResponse)
+	ret0, _ := ret[0].(*api.AccountsResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -298,14 +298,14 @@ func (mr *MockTradingDataClientMockRecorder) Markets(arg0, arg1 interface{}, arg
 }
 
 // OrderByMarketAndId mocks base method
-func (m *MockTradingDataClient) OrderByMarketAndId(arg0 context.Context, arg1 *api.OrderByMarketAndIdRequest, arg2 ...grpc.CallOption) (*api.OrderByMarketAndIdResponse, error) {
+func (m *MockTradingDataClient) OrderByMarketAndId(arg0 context.Context, arg1 *api.OrderByMarketAndIdRequest, arg2 ...grpc.CallOption) (*api.OrderResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "OrderByMarketAndId", varargs...)
-	ret0, _ := ret[0].(*api.OrderByMarketAndIdResponse)
+	ret0, _ := ret[0].(*api.OrderResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -318,14 +318,14 @@ func (mr *MockTradingDataClientMockRecorder) OrderByMarketAndId(arg0, arg1 inter
 }
 
 // OrderByReference mocks base method
-func (m *MockTradingDataClient) OrderByReference(arg0 context.Context, arg1 *api.OrderByReferenceRequest, arg2 ...grpc.CallOption) (*api.OrderByReferenceResponse, error) {
+func (m *MockTradingDataClient) OrderByReference(arg0 context.Context, arg1 *api.OrderByReferenceRequest, arg2 ...grpc.CallOption) (*api.OrderResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "OrderByReference", varargs...)
-	ret0, _ := ret[0].(*api.OrderByReferenceResponse)
+	ret0, _ := ret[0].(*api.OrderResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -338,14 +338,14 @@ func (mr *MockTradingDataClientMockRecorder) OrderByReference(arg0, arg1 interfa
 }
 
 // OrdersByMarket mocks base method
-func (m *MockTradingDataClient) OrdersByMarket(arg0 context.Context, arg1 *api.OrdersByMarketRequest, arg2 ...grpc.CallOption) (*api.OrdersByMarketResponse, error) {
+func (m *MockTradingDataClient) OrdersByMarket(arg0 context.Context, arg1 *api.OrdersByMarketRequest, arg2 ...grpc.CallOption) (*api.OrdersResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "OrdersByMarket", varargs...)
-	ret0, _ := ret[0].(*api.OrdersByMarketResponse)
+	ret0, _ := ret[0].(*api.OrdersResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -358,14 +358,14 @@ func (mr *MockTradingDataClientMockRecorder) OrdersByMarket(arg0, arg1 interface
 }
 
 // OrdersByParty mocks base method
-func (m *MockTradingDataClient) OrdersByParty(arg0 context.Context, arg1 *api.OrdersByPartyRequest, arg2 ...grpc.CallOption) (*api.OrdersByPartyResponse, error) {
+func (m *MockTradingDataClient) OrdersByParty(arg0 context.Context, arg1 *api.OrdersByPartyRequest, arg2 ...grpc.CallOption) (*api.OrdersResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "OrdersByParty", varargs...)
-	ret0, _ := ret[0].(*api.OrdersByPartyResponse)
+	ret0, _ := ret[0].(*api.OrdersResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -498,14 +498,14 @@ func (mr *MockTradingDataClientMockRecorder) Statistics(arg0, arg1 interface{}, 
 }
 
 // TradesByMarket mocks base method
-func (m *MockTradingDataClient) TradesByMarket(arg0 context.Context, arg1 *api.TradesByMarketRequest, arg2 ...grpc.CallOption) (*api.TradesByMarketResponse, error) {
+func (m *MockTradingDataClient) TradesByMarket(arg0 context.Context, arg1 *api.TradesByMarketRequest, arg2 ...grpc.CallOption) (*api.TradesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TradesByMarket", varargs...)
-	ret0, _ := ret[0].(*api.TradesByMarketResponse)
+	ret0, _ := ret[0].(*api.TradesResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -518,14 +518,14 @@ func (mr *MockTradingDataClientMockRecorder) TradesByMarket(arg0, arg1 interface
 }
 
 // TradesByOrder mocks base method
-func (m *MockTradingDataClient) TradesByOrder(arg0 context.Context, arg1 *api.TradesByOrderRequest, arg2 ...grpc.CallOption) (*api.TradesByOrderResponse, error) {
+func (m *MockTradingDataClient) TradesByOrder(arg0 context.Context, arg1 *api.TradesByOrderRequest, arg2 ...grpc.CallOption) (*api.TradesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TradesByOrder", varargs...)
-	ret0, _ := ret[0].(*api.TradesByOrderResponse)
+	ret0, _ := ret[0].(*api.TradesResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -538,14 +538,14 @@ func (mr *MockTradingDataClientMockRecorder) TradesByOrder(arg0, arg1 interface{
 }
 
 // TradesByParty mocks base method
-func (m *MockTradingDataClient) TradesByParty(arg0 context.Context, arg1 *api.TradesByPartyRequest, arg2 ...grpc.CallOption) (*api.TradesByPartyResponse, error) {
+func (m *MockTradingDataClient) TradesByParty(arg0 context.Context, arg1 *api.TradesByPartyRequest, arg2 ...grpc.CallOption) (*api.TradesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "TradesByParty", varargs...)
-	ret0, _ := ret[0].(*api.TradesByPartyResponse)
+	ret0, _ := ret[0].(*api.TradesResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

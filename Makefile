@@ -172,6 +172,11 @@ proto_check: ## proto: Check committed files match just-generated files
 		exit 1 ; \
 	fi
 
+.PHONY: proto_clean
+proto_clean:
+	@find proto -name '*.pb.go' -o -name '*.pb.gw.go' -o -name '*.validator.pb.go' -o -name '*.swagger.json' \
+		| xargs -r rm
+
 rest_check: gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
 	@python3 script/check_rest_endpoints.py \
 		--bindings gateway/rest/grpc-rest-bindings.yml \
