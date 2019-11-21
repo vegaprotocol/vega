@@ -285,10 +285,8 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	}
 
 	// Add orders
-	err := orderStore.Post(*orderA)
-	assert.Nil(t, err)
-	err = orderStore.Post(*orderB)
-	assert.Nil(t, err)
+	err := orderStore.SaveBatch([]types.Order{*orderA, *orderB})
+	assert.NoError(t, err)
 
 	// Add trades
 	err = tradeStore.Post(trade1)
@@ -304,6 +302,5 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	err = tradeStore.Post(trade6)
 	assert.Nil(t, err)
 
-	orderStore.Commit()
 	tradeStore.Commit()
 }

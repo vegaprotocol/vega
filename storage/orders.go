@@ -26,7 +26,6 @@ type Order struct {
 	batchCountForGC int32
 	subscribers     map[uint64]chan<- []types.Order
 	subscriberID    uint64
-	buffer          []types.Order
 	depth           map[string]*Depth
 	mu              sync.Mutex
 	onCriticalError func()
@@ -54,7 +53,6 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 		badger:          &bs,
 		depth:           map[string]*Depth{},
 		subscribers:     map[uint64]chan<- []types.Order{},
-		buffer:          []types.Order{},
 		onCriticalError: onCriticalError,
 	}, nil
 }
@@ -109,80 +107,6 @@ func (os *Order) Unsubscribe(id uint64) error {
 	}
 
 	return errors.New(fmt.Sprintf("Orders subscriber does not exist with id: %d", id))
-}
-
-// Post adds an order to the badger store, adds
-// to queue the operation to be committed later.
-func (os *Order) Post(order types.Order) error {
-	timer := metrics.NewTimeCounter("-", "orderstore", "Post")
-	// validate an order book (depth of market) exists for order market
-	if exists := os.depth[order.MarketID]; exists == nil {
-		os.depth[order.MarketID] = NewMarketDepth(order.MarketID)
-	}
-	// with badger we always buffer for future batch insert via Commit()
-	os.addToBuffer(order)
-	timer.EngineTimeCounterAdd()
-	return nil
-}
-
-// Put updates an order in the badger store, adds
-// to queue the operation to be committed later.
-func (os *Order) Put(order types.Order) error {
-	timer := metrics.NewTimeCounter("-", "orderstore", "Put")
-	os.addToBuffer(order)
-	timer.EngineTimeCounterAdd()
-	return nil
-}
-
-// Commit saves any operations that are queued to badger store, and includes all updates.
-// It will also call notify() to push updated data to any subscribers.
-func (os *Order) Commit() (err error) {
-	timer := metrics.NewTimeCounter("-", "orderstore", "Commit")
-	os.mu.Lock()
-	if len(os.buffer) == 0 {
-		os.mu.Unlock()
-		timer.EngineTimeCounterAdd()
-		return
-	}
-	items := os.buffer
-	os.buffer = make([]types.Order, 0)
-	os.mu.Unlock()
-
-	err = os.writeBatch(items)
-	if err != nil {
-		os.log.Error(
-			"unable to write batch in order badger store",
-			logging.Error(err),
-		)
-		os.onCriticalError()
-	} else {
-		err = os.notify(items)
-	}
-
-	if logging.DebugLevel == os.log.GetLevel() {
-		os.log.Debug("Orders store updated", logging.Int("batch-size", len(items)))
-	}
-
-	// Using a batch counter ties the clean up to the average
-	// expected size of a batch of account updates, not just time.
-	atomic.AddInt32(&os.batchCountForGC, 1)
-	if atomic.LoadInt32(&os.batchCountForGC) >= maxBatchesUntilValueLogGC {
-		go func() {
-			os.log.Info("Orders store value log garbage collection",
-				logging.Int32("attempt", atomic.LoadInt32(&os.batchCountForGC)-maxBatchesUntilValueLogGC))
-
-			err := os.badger.GarbageCollectValueLog()
-			if err != nil {
-				os.log.Error("Unexpected problem running valueLogGC on orders store",
-					logging.Error(err))
-			} else {
-				atomic.StoreInt32(&os.batchCountForGC, 0)
-			}
-		}()
-	}
-
-	timer.EngineTimeCounterAdd()
-	return
 }
 
 // Close our connection to the badger database
@@ -500,13 +424,6 @@ func (os *Order) GetMarketDepth(ctx context.Context, market string) (*types.Mark
 	}, nil
 }
 
-// add an order to the write-batch/notify buffer.
-func (os *Order) addToBuffer(o types.Order) {
-	os.mu.Lock()
-	os.buffer = append(os.buffer, o)
-	os.mu.Unlock()
-}
-
 // notify sends order updates to all subscribers.
 func (os *Order) notify(items []types.Order) error {
 	if len(items) == 0 {
@@ -599,5 +516,41 @@ func (os *Order) writeBatch(batch []types.Order) error {
 }
 
 func (os *Order) SaveBatch(batch []types.Order) error {
-	return os.writeBatch(batch)
+	timer := metrics.NewTimeCounter("-", "orderstore", "SaveBatch")
+
+	err := os.writeBatch(batch)
+	if err != nil {
+		os.log.Error(
+			"unable to write batch in order badger store",
+			logging.Error(err),
+		)
+		os.onCriticalError()
+	} else {
+		err = os.notify(batch)
+	}
+
+	if logging.DebugLevel == os.log.GetLevel() {
+		os.log.Debug("Orders store updated", logging.Int("batch-size", len(batch)))
+	}
+
+	// Using a batch counter ties the clean up to the average
+	// expected size of a batch of account updates, not just time.
+	atomic.AddInt32(&os.batchCountForGC, 1)
+	if atomic.LoadInt32(&os.batchCountForGC) >= maxBatchesUntilValueLogGC {
+		go func() {
+			os.log.Info("Orders store value log garbage collection",
+				logging.Int32("attempt", atomic.LoadInt32(&os.batchCountForGC)-maxBatchesUntilValueLogGC))
+
+			err := os.badger.GarbageCollectValueLog()
+			if err != nil {
+				os.log.Error("Unexpected problem running valueLogGC on orders store",
+					logging.Error(err))
+			} else {
+				atomic.StoreInt32(&os.batchCountForGC, 0)
+			}
+		}()
+	}
+
+	timer.EngineTimeCounterAdd()
+	return err
 }
