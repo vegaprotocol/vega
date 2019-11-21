@@ -35,6 +35,20 @@ option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
       description: "The request was successful";
     }
   }
+  responses: {
+    key: "400";
+    value: {
+      description: "Invalid request - see response body";
+      schema: { json_schema: { ref: ".api.ErrorResponse"; } }
+    }
+  }
+  responses: {
+    key: "500";
+    value: {
+      description: "Server error - see response body";
+      schema: { json_schema: { ref: ".api.ErrorResponse"; } }
+    }
+  }
 };
 
 service trading {
@@ -80,7 +94,7 @@ service trading {
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
       summary: "Amend an Order";
-      description: "";
+      description: "Amend an existing Order.";
     };
   };
 
@@ -90,7 +104,7 @@ service trading {
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
       summary: "Cancel an Order";
-      description: "";
+      description: "Cancel an existing Order";
     };
   };
   
@@ -101,7 +115,7 @@ service trading {
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
       summary: "Submit an Order";
-      description: "";
+      description: "Submit a new Order";
     };
   };
 
@@ -111,8 +125,8 @@ service trading {
       body: "*"
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Request free money";
-      description: "";
+      summary: "Request balance increase";
+      description: "Request balance increase in order to participate in pre-production environment (c.f. Ethereum Ropsten Faucet)";
     };
   };
 
@@ -123,7 +137,7 @@ service trading {
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
       summary: "Request withdrawal";
-      description: "";
+      description: "TBD";
     };
   };
 
@@ -177,8 +191,8 @@ service trading_data {
       get: '/markets/{marketID}/orders'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Orders for a Market";
-      description: "";
+      summary: "Get Market Orders";
+      description: "Get a list of Orders for a given Market";
     };
   };
 
@@ -187,8 +201,8 @@ service trading_data {
       get: '/parties/{partyID}/orders'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Orders for a Party";
-      description: "";
+      summary: "Get Party Orders";
+      description: "Get a list of Orders for a given Party";
     };
   };
 
@@ -197,8 +211,8 @@ service trading_data {
       get: '/markets/{marketID}/orders/{orderID}'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get an Order for a Market and given OrderID";
-      description: "";
+      summary: "Get Market Order by OrderID";
+      description: "Get an Order for a given Market and OrderID";
     };
   };
 
@@ -207,8 +221,8 @@ service trading_data {
       get: '/orders/{reference}'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get an Order by reference";
-      description: "";
+      summary: "Get Order by reference";
+      description: "Get an Order by Pending Order reference (UUID)";
     };
   };
 
@@ -219,8 +233,8 @@ service trading_data {
       get: '/markets/{marketID}'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a Market by ID";
-      description: "";
+      summary: "Get Market by ID";
+      description: "Get a Market by ID";
     };
   };
 
@@ -229,8 +243,8 @@ service trading_data {
       get: '/markets'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Markets";
-      description: "";
+      summary: "Get Markets list";
+      description: "Get a list of Markets";
     };
   };
 
@@ -239,8 +253,8 @@ service trading_data {
       get: '/markets/{marketID}/depth'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get Market Depth for a given Market";
-      description: "";
+      summary: "Get Market Depth";
+      description: "Get Market Depth for a given Market";
     };
   };
 
@@ -249,8 +263,8 @@ service trading_data {
       get: '/markets/{marketID}/trades/latest'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get the latest Trade for a given Market";
-      description: "";
+      summary: "Get latest Market Trade";
+      description: "Get the most recent Trade for a given Market";
     };
   };
 
@@ -261,8 +275,8 @@ service trading_data {
       get: '/parties/{partyID}'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a Party by ID";
-      description: "";
+      summary: "Get Party by ID";
+      description: "Get a Party by ID";
     };
   };
 
@@ -271,8 +285,8 @@ service trading_data {
       get: '/parties'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Parties";
-      description: "";
+      summary: "Get Parties list";
+      description: "Get a list of Parties";
     };
   };
 
@@ -283,8 +297,8 @@ service trading_data {
       get: '/markets/{marketID}/trades'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Trades by Market";
-      description: "";
+      summary: "Get Market Trades";
+      description: "Get a list of Trades for a given Market";
     };
   };
 
@@ -293,8 +307,8 @@ service trading_data {
       get: '/parties/{partyID}/trades'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Trades by Party";
-      description: "";
+      summary: "Get Party Trades";
+      description: "Get a list of Trades for a given Party";
     };
   };
 
@@ -303,8 +317,8 @@ service trading_data {
       get: '/orders/{orderID}/trades'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Trades by Order";
-      description: "";
+      summary: "Get Order Trades";
+      description: "Get a list of Trades for a given Order";
     };
   };
 
@@ -315,8 +329,8 @@ service trading_data {
       get: '/parties/{partyID}/positions'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Positions by Party";
-      description: "";
+      summary: "Get Party Positions";
+      description: "Get a list of Positions for a given Party";
     };
   };
 
@@ -327,8 +341,8 @@ service trading_data {
       get: '/markets/{marketID}/candles'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Candles by Market";
-      description: "";
+      summary: "Get Market Candles";
+      description: "Get a list of Candles for a given Market.\nUse a `sinceTimestamp` to limit the size of the response.";
     };
   };
 
@@ -339,8 +353,8 @@ service trading_data {
       get: '/statistics'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get system Statistics";
-      description: "";
+      summary: "Get Statistics";
+      description: "Get a variety of internal statistics about Vega and the blockchain";
     };
   };
 
@@ -349,8 +363,8 @@ service trading_data {
       get: '/time'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get the current blockchain time";
-      description: "";
+      summary: "Get Time";
+      description: "Get the current blockchain time";
     };
   };
 
@@ -371,14 +385,16 @@ service trading_data {
       get: '/parties/{partyID}/accounts'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "Get a list of Accounts by Party";
-      description: "";
+      summary: "Get Party Accounts";
+      description: "Get a list of Accounts by Party";
     };
   };
 
   rpc AccountsByPartyAndMarket(AccountsByPartyAndMarketRequest) returns (AccountsResponse) /* {
     option (google.api.http) = {
       // TODO
+      get: '/markets/{marketID}/parties/{partyID}/accounts'
+      // or '/parties/{partyID}/markets/{marketID}/accounts'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
       summary: "TODO";
@@ -386,25 +402,15 @@ service trading_data {
     };
   } */ ;
 
-  rpc AccountsByPartyAndType(AccountsByPartyAndTypeRequest) returns (AccountsResponse) /* {
+  rpc AccountsByPartyAndAsset(AccountsByPartyAndAssetRequest) returns (AccountsResponse) {
     option (google.api.http) = {
-      // TODO
+      get: '/parties/{partyID}/accounts/assets/{asset}'
     };
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "TODO";
-      description: "";
+      summary: "Get Party Accounts by Asset";
+      description: "Get a list of Accounts for a given Party and Asset";
     };
-  } */ ;
-
-  rpc AccountsByPartyAndAsset(AccountsByPartyAndAssetRequest) returns (AccountsResponse) /* {
-    option (google.api.http) = {
-      // TODO
-    };
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
-      summary: "TODO";
-      description: "";
-    };
-  } */ ;
+  };
 }
 
 message LastTradeRequest {
@@ -579,11 +585,6 @@ message AccountsByPartyAndMarketRequest {
   string partyID = 1 [(validator.field) = {msg_exists : true}];
   string marketID = 2;
   vega.AccountType type = 3;
-}
-
-message AccountsByPartyAndTypeRequest {
-  string partyID = 1 [(validator.field) = {msg_exists : true}];
-  vega.AccountType type = 2;
 }
 
 message AccountsByPartyAndAssetRequest {

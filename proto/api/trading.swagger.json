@@ -34,6 +34,18 @@
             "schema": {
               "$ref": "#/definitions/apiCheckTokenResponse"
             }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
           }
         },
         "parameters": [
@@ -65,6 +77,12 @@
               "$ref": "#/definitions/apiSignInResponse"
             }
           },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
           "500": {
             "description": "Invalid credentials",
             "schema": {
@@ -89,13 +107,26 @@
     },
     "/fountain": {
       "post": {
-        "summary": "Request free money",
+        "summary": "Request balance increase",
+        "description": "Request balance increase in order to participate in pre-production environment (c.f. Ethereum Ropsten Faucet)",
         "operationId": "NotifyTraderAccount",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiNotifyTraderAccountResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -116,13 +147,26 @@
     },
     "/markets": {
       "get": {
-        "summary": "Get a list of Markets",
+        "summary": "Get Markets list",
+        "description": "Get a list of Markets",
         "operationId": "Markets",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiMarketsResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -133,13 +177,26 @@
     },
     "/markets/{marketID}": {
       "get": {
-        "summary": "Get a Market by ID",
+        "summary": "Get Market by ID",
+        "description": "Get a Market by ID",
         "operationId": "MarketByID",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiMarketByIDResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -158,13 +215,26 @@
     },
     "/markets/{marketID}/candles": {
       "get": {
-        "summary": "Get a list of Candles by Market",
+        "summary": "Get Market Candles",
+        "description": "Get a list of Candles for a given Market.\nUse a `sinceTimestamp` to limit the size of the response.",
         "operationId": "Candles",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiCandlesResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -205,13 +275,26 @@
     },
     "/markets/{marketID}/depth": {
       "get": {
-        "summary": "Get Market Depth for a given Market",
+        "summary": "Get Market Depth",
+        "description": "Get Market Depth for a given Market",
         "operationId": "MarketDepth",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiMarketDepthResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -230,13 +313,26 @@
     },
     "/markets/{marketID}/orders": {
       "get": {
-        "summary": "Get a list of Orders for a Market",
+        "summary": "Get Market Orders",
+        "description": "Get a list of Orders for a given Market",
         "operationId": "OrdersByMarket",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiOrdersResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -283,13 +379,26 @@
     },
     "/markets/{marketID}/orders/{orderID}": {
       "get": {
-        "summary": "Get an Order for a Market and given OrderID",
+        "summary": "Get Market Order by OrderID",
+        "description": "Get an Order for a given Market and OrderID",
         "operationId": "OrderByMarketAndId",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiOrderResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -314,13 +423,26 @@
     },
     "/markets/{marketID}/trades": {
       "get": {
-        "summary": "Get a list of Trades by Market",
+        "summary": "Get Market Trades",
+        "description": "Get a list of Trades for a given Market",
         "operationId": "TradesByMarket",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiTradesResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -360,13 +482,26 @@
     },
     "/markets/{marketID}/trades/latest": {
       "get": {
-        "summary": "Get the latest Trade for a given Market",
+        "summary": "Get latest Market Trade",
+        "description": "Get the most recent Trade for a given Market",
         "operationId": "LastTrade",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiLastTradeResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -386,12 +521,25 @@
     "/orders": {
       "post": {
         "summary": "Submit an Order",
+        "description": "Submit a new Order",
         "operationId": "SubmitOrder",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/vegaPendingOrder"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -413,12 +561,25 @@
     "/orders/{amendment.orderID}": {
       "put": {
         "summary": "Amend an Order",
+        "description": "Amend an existing Order.",
         "operationId": "AmendOrder",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/vegaPendingOrder"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -446,12 +607,25 @@
     "/orders/{cancellation.orderID}": {
       "delete": {
         "summary": "Cancel an Order",
+        "description": "Cancel an existing Order",
         "operationId": "CancelOrder",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/vegaPendingOrder"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -488,13 +662,26 @@
     },
     "/orders/{orderID}/trades": {
       "get": {
-        "summary": "Get a list of Trades by Order",
+        "summary": "Get Order Trades",
+        "description": "Get a list of Trades for a given Order",
         "operationId": "TradesByOrder",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiTradesResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -513,13 +700,26 @@
     },
     "/orders/{reference}": {
       "get": {
-        "summary": "Get an Order by reference",
+        "summary": "Get Order by reference",
+        "description": "Get an Order by Pending Order reference (UUID)",
         "operationId": "OrderByReference",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiOrderResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -538,13 +738,26 @@
     },
     "/parties": {
       "get": {
-        "summary": "Get a list of Parties",
+        "summary": "Get Parties list",
+        "description": "Get a list of Parties",
         "operationId": "Parties",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiPartiesResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -555,13 +768,26 @@
     },
     "/parties/{partyID}": {
       "get": {
-        "summary": "Get a Party by ID",
+        "summary": "Get Party by ID",
+        "description": "Get a Party by ID",
         "operationId": "PartyByID",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiPartyByIDResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -580,13 +806,26 @@
     },
     "/parties/{partyID}/accounts": {
       "get": {
-        "summary": "Get a list of Accounts by Party",
+        "summary": "Get Party Accounts",
+        "description": "Get a list of Accounts by Party",
         "operationId": "AccountsByParty",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiAccountsResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -617,15 +856,123 @@
         ]
       }
     },
+    "/parties/{partyID}/accounts/assets/{asset}": {
+      "get": {
+        "summary": "Get Party Accounts by Asset",
+        "description": "Get a list of Accounts for a given Party and Asset",
+        "operationId": "AccountsByPartyAndAsset",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAccountsResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "asset",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/parties/{partyID}/accounts/types/{type}": {
+      "get": {
+        "summary": "Get Party Accounts by Type",
+        "description": "Get a list of Accounts for a given Party and Account Type",
+        "operationId": "AccountsByPartyAndType",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAccountsResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "NO_ACC",
+              "INSURANCE",
+              "SETTLEMENT",
+              "MARGIN",
+              "GENERAL"
+            ]
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/parties/{partyID}/orders": {
       "get": {
-        "summary": "Get a list of Orders for a Party",
+        "summary": "Get Party Orders",
+        "description": "Get a list of Orders for a given Party",
         "operationId": "OrdersByParty",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiOrdersResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -672,13 +1019,26 @@
     },
     "/parties/{partyID}/positions": {
       "get": {
-        "summary": "Get a list of Positions by Party",
+        "summary": "Get Party Positions",
+        "description": "Get a list of Positions for a given Party",
         "operationId": "PositionsByParty",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiPositionsByPartyResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -697,13 +1057,26 @@
     },
     "/parties/{partyID}/trades": {
       "get": {
-        "summary": "Get a list of Trades by Party",
+        "summary": "Get Party Trades",
+        "description": "Get a list of Trades for a given Party",
         "operationId": "TradesByParty",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiTradesResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -750,12 +1123,25 @@
     "/parties/{withdraw.partyID}/withdrawal": {
       "post": {
         "summary": "Request withdrawal",
+        "description": "TBD",
         "operationId": "Withdraw",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiWithdrawResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -782,13 +1168,26 @@
     },
     "/statistics": {
       "get": {
-        "summary": "Get system Statistics",
+        "summary": "Get Statistics",
+        "description": "Get a variety of internal statistics about Vega and the blockchain",
         "operationId": "Statistics",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/vegaStatistics"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
@@ -799,13 +1198,26 @@
     },
     "/time": {
       "get": {
-        "summary": "Get the current blockchain time",
+        "summary": "Get Time",
+        "description": "Get the current blockchain time",
         "operationId": "GetVegaTime",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiVegaTimeResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid request - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Server error - see response body",
+            "schema": {
+              "$ref": "#/definitions/apiErrorResponse"
             }
           }
         },
