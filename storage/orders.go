@@ -542,10 +542,10 @@ func (os *Order) SaveBatch(batch []types.Order) error {
 			os.log.Info("Orders store value log garbage collection",
 				logging.Int32("attempt", atomic.LoadInt32(&os.batchCountForGC)-maxBatchesUntilValueLogGC))
 
-			err := os.badger.GarbageCollectValueLog()
-			if err != nil {
+			gcErr := os.badger.GarbageCollectValueLog()
+			if gcErr != nil {
 				os.log.Error("Unexpected problem running valueLogGC on orders store",
-					logging.Error(err))
+					logging.Error(gcErr))
 			} else {
 				atomic.StoreInt32(&os.batchCountForGC, 0)
 			}
