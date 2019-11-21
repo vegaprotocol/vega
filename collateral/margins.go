@@ -7,6 +7,22 @@ import (
 )
 
 type marginUpdate struct {
+	events.Transfer
+	margin  *types.Account
+	general *types.Account
+}
+
+// MarginBalance - returns current balance of margin account
+func (m marginUpdate) MarginBalance() uint64 {
+	return uint64(m.margin.Balance)
+}
+
+// GeneralBalance - returns current balance of general account
+func (m marginUpdate) GeneralBalance() uint64 {
+	return uint64(m.general.Balance)
+}
+
+type newOrderMarginUpdate struct {
 	events.MarketPosition
 	margin   *types.Account
 	general  *types.Account
@@ -14,22 +30,22 @@ type marginUpdate struct {
 	marketID string
 }
 
-func (n marginUpdate) Transfer() *types.Transfer {
+func (n newOrderMarginUpdate) Transfer() *types.Transfer {
 	return nil
 }
 
-func (n marginUpdate) Asset() string {
+func (n newOrderMarginUpdate) Asset() string {
 	return n.asset
 }
 
-func (n marginUpdate) MarketID() string {
+func (n newOrderMarginUpdate) MarketID() string {
 	return n.marketID
 }
 
-func (n marginUpdate) MarginBalance() uint64 {
+func (n newOrderMarginUpdate) MarginBalance() uint64 {
 	return uint64(n.margin.Balance)
 }
 
-func (n marginUpdate) GeneralBalance() uint64 {
+func (n newOrderMarginUpdate) GeneralBalance() uint64 {
 	return uint64(n.general.Balance)
 }
