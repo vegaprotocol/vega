@@ -262,7 +262,7 @@ func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer) ([]e
 			// but the to account isn't updated (losses are deposited in temporary settlement account)
 			// but wins are paid out to trader accounts, so we need to update the balance there
 			for _, bal := range res.Balances {
-				if err := e.UpdateBalance(bal.Account.Id, bal.Balance); err != nil {
+				if err := e.IncrementBalance(bal.Account.Id, bal.Balance); err != nil {
 					e.log.Error(
 						"Could not update the target account in transfer",
 						logging.String("account-id", bal.Account.Id),
