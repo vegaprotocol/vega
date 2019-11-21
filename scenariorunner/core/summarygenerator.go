@@ -134,7 +134,6 @@ func (s *SummaryGenerator) marketSummary(marketId string, pagination protoapi.Pa
 }
 
 func (s *SummaryGenerator) commitAllStores() {
-	s.marketStore.Commit()
 	s.orderStore.Commit()
 	s.tradeStore.Commit()
 }

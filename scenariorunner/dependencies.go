@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -71,19 +72,28 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		return nil, err
 	}
 
+	orderBuffer := buffer.NewOrder(orderStore)
+	tradeBuffer := buffer.NewTrade(tradeStore)
+	candleBuffer := buffer.NewCandle(candleStore)
+	marketBuffer := buffer.NewMarket(marketStore)
+	partyBuffer := buffer.NewParty(partyStore)
+	accountBuffer := buffer.NewAccount(accountStore)
+	transferResponseBuffer := buffer.NewTransferResponse(transferResponseStore)
+
 	executionConfig := execution.NewDefaultConfig("")
 	timeService := vegatime.New(vegatime.NewDefaultConfig())
 	engine := execution.NewEngine(
 		log,
 		executionConfig,
 		timeService,
-		orderStore,
-		tradeStore,
-		candleStore,
-		marketStore,
-		partyStore,
-		accountStore,
-		transferResponseStore,
+		orderBuffer,
+		tradeBuffer,
+		candleBuffer,
+		marketBuffer,
+		partyBuffer,
+		accountBuffer,
+		transferResponseBuffer,
+		[]types.Market{}, // WG (21/11/2019): Please note these get added from config in scenariorunner/engine.go/NewEngine just now, but can definitely be moved here.
 	)
 
 	return &dependencies{
