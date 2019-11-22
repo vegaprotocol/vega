@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package core;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+message SetTimeRequest {
+    google.protobuf.Timestamp Time = 1;
+}
+
+message AdvanceTimeRequest {
+    google.protobuf.Duration TimeDelta = 1;
+}
