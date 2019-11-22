@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package core;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/any.proto";
+import "proto/vega.proto";
+import "proto/markets.proto";
+import "proto/api/trading.proto";
+import "google/protobuf/timestamp.proto";
+
+message Instruction {
+    string description = 1;
+    RequestType request = 2;
+    google.protobuf.Any message = 3;
+}
+
+message InstructionSet {
+    string description = 1;
+    repeated Instruction instructions = 2;
+}
+
+message InstructionResult {
+    Instruction instruction = 1;
+    string error = 2;
+    google.protobuf.Any response = 3;
+}
+
+message Metadata {
+    uint64 instructionsProcessed = 1;
+    uint64 instructionsOmitted = 2;
+    uint64 tradesGenerated = 3;
+    google.protobuf.Duration processingTime = 5;
+    repeated vega.MarketDepth finalMarketDepth = 6;
+}
+
+message ResultSet {
+    Metadata metadata = 1;
+    repeated InstructionResult results = 2;
+    Summary initialState = 3;
+    Summary finalState = 4;
+    Config config = 5;
+    string version = 6;
+    
+}
+
+message SummaryResponse {
+    Summary summary = 1;
+}
+
+message Summary {
+    repeated MarketSummary markets = 1;
+    repeated PartySummary parties = 2;
+}
+
+message Config {
+    google.protobuf.Timestamp initialTime = 1;
+	bool advanceTimeAfterInstruction = 2;
+	google.protobuf.Duration timeDelta = 3;            
+	bool omitUnsupportedInstructions = 4; 
+    bool omitInvalidInstructions = 5;
+    repeated vega.Market markets = 6;
+}
+
+message MarketSummaryResponse {
+    MarketSummary summary = 1;
+}
+
+message SummaryRequest {
+    api.Pagination pagination = 1;
+}
+message MarketSummaryRequest {
+    string marketID = 1;
+    api.Pagination pagination = 2;
+}
+
+message MarketSummary {
+    vega.Market market = 1;
+    repeated vega.Trade trades = 3;
+    repeated vega.Order orders = 4;
+    vega.MarketDepth marketDepth = 5;
+}
+
+message PartySummary {
+    vega.Party party = 1;
+    repeated vega.Account accounts = 2;
+}
+
+enum RequestType {
+    SET_TIME = 0;
+    ADVANCE_TIME = 1;
+    MARKET_SUMMARY = 2;
+    SUMMARY = 3;
+    SUBMIT_ORDER = 100;
+    CANCEL_ORDER = 101;
+    AMEND_ORDER = 102;
+    NOTIFY_TRADER_ACCOUNT = 103;
+    WITHDRAW  = 104;
+    // orders
+    ORDERS_BY_MARKET = 200;
+    ORDERS_BY_PARTY = 201;
+    ORDER_BY_MARKET_AND_ID = 202;
+    ORDER_BY_REFERENCE = 203;
+    // markets
+    MARKET_BY_ID = 210;
+    MARKETS = 211;
+    MARKET_DEPTH = 212;
+    LAST_TRADE = 213;
+    // parties
+    PARTY_BY_ID = 220;
+    PARTIES = 221;
+    // trades
+    TRADES_BY_MARKET = 230;
+    TRADES_BY_PARTY = 231;
+    TRADES_BY_ORDER = 232;
+    // positions
+    POSITIONS_BY_PARTY = 240;
+    // candles
+    CANDLES = 250;
+      // accounts
+    ACCOUNTS_BY_PARTY = 260;
+    ACCOUNTS_BY_PARTY_AND_MARKET = 261;
+    ACCOUNTS_BY_PARTY_AND_TYPE = 262;
+    ACCOUNTS_BY_PARTY_AND_ASSET = 263;
+}

@@ -22,6 +22,7 @@ require (
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
+	github.com/hashicorp/go-multierror v1.0.0
 	github.com/jmhodges/levigo v0.0.0-20161115193449-c42d9e0ca023 // indirect
 	github.com/mwitkow/go-proto-validators v0.2.0
 	github.com/pkg/errors v0.8.1
@@ -36,6 +37,8 @@ require (
 	github.com/syndtr/goleveldb v0.0.0-20190203031304-2f17a3356c66 // indirect
 	github.com/tendermint/go-amino v0.14.1 // indirect
 	github.com/tendermint/tendermint v0.31.5
+	github.com/urfave/cli v1.20.0
+	github.com/vegaprotocol/modvendor v0.0.2 // indirect
 	github.com/vektah/gqlparser v1.1.2
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.5.0
@@ -43,6 +46,7 @@ require (
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
 	google.golang.org/grpc v1.19.0
 )
 
