@@ -38,7 +38,7 @@ func (o *Orders) ordersByMarket() *core.PreProcessor {
 		pagination := core.GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				o.commitStore()
+				//o.commitStore()
 				resp, err := o.orderStore.GetByMarket(o.ctx, req.MarketID, pagination.Skip, pagination.Limit, pagination.Descending, &req.Open)
 				if err != nil {
 					return nil, err
@@ -61,7 +61,7 @@ func (o *Orders) ordersByParty() *core.PreProcessor {
 		pagination := core.GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				o.commitStore()
+				//o.commitStore()
 				resp, err := o.orderStore.GetByParty(o.ctx, req.PartyID, pagination.Skip, pagination.Limit, pagination.Descending, &req.Open)
 				if err != nil {
 					return nil, err
@@ -83,7 +83,7 @@ func (o *Orders) orderByMarketAndID() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				o.commitStore()
+				//o.commitStore()
 				resp, err := o.orderStore.GetByMarketAndID(o.ctx, req.MarketID, req.OrderID)
 				if err != nil {
 					return nil, err
@@ -105,7 +105,7 @@ func (o *Orders) orderByReference() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				o.commitStore()
+				//o.commitStore()
 				resp, err := o.orderStore.GetByReference(o.ctx, req.Reference)
 				if err != nil {
 					return nil, err
@@ -127,7 +127,7 @@ func (o *Orders) marketDepth() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				o.commitStore()
+				//o.commitStore()
 				resp, err := o.orderStore.GetMarketDepth(o.ctx, req.MarketID)
 				return &protoapi.MarketDepthResponse{MarketID: resp.MarketID, Buy: resp.Buy, Sell: resp.Sell}, err
 			})
@@ -136,8 +136,4 @@ func (o *Orders) marketDepth() *core.PreProcessor {
 		MessageShape: &protoapi.MarketDepthRequest{},
 		PreProcess:   preProcessor,
 	}
-}
-
-func (o *Orders) commitStore() {
-	o.orderStore.Commit()
 }

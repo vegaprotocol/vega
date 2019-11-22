@@ -38,7 +38,7 @@ func (t *Trades) tradesByMarket() *core.PreProcessor {
 		pagination := core.GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				t.commitStore()
+				//t.commitStore()
 				resp, err := t.tradeStore.GetByMarket(t.ctx, req.MarketID, pagination.Skip, pagination.Limit, pagination.Descending)
 				if err != nil {
 					return nil, err
@@ -61,7 +61,7 @@ func (t *Trades) tradesByParty() *core.PreProcessor {
 		pagination := core.GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				t.commitStore()
+				//t.commitStore()
 				resp, err := t.tradeStore.GetByParty(t.ctx, req.PartyID, pagination.Skip, pagination.Limit, pagination.Descending, &req.MarketID)
 				if err != nil {
 					return nil, err
@@ -83,7 +83,7 @@ func (t *Trades) tradesByOrder() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				t.commitStore()
+				//t.commitStore()
 				resp, err := t.tradeStore.GetByOrderID(t.ctx, req.OrderID, 0, 0, false, nil)
 				if err != nil {
 					return nil, err
@@ -106,7 +106,7 @@ func (t *Trades) lastTrade() *core.PreProcessor {
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
-				t.commitStore()
+				//t.commitStore()
 				resp, err := t.tradeStore.GetByMarket(t.ctx, req.MarketID, 0, 1, true)
 				if err != nil {
 					return nil, err
@@ -123,8 +123,4 @@ func (t *Trades) lastTrade() *core.PreProcessor {
 		MessageShape: &protoapi.LastTradeRequest{},
 		PreProcess:   preProcessor,
 	}
-}
-
-func (t *Trades) commitStore() {
-	t.tradeStore.Commit()
 }

@@ -55,12 +55,12 @@ func NewSummaryGenerator(
 
 func (s *SummaryGenerator) Summary(pagination *protoapi.Pagination) (*SummaryResponse, error) {
 	p := getMaxPagination(pagination)
+
 	err := s.execution.Generate()
 	if err != nil {
 		return nil, err
 	}
 
-	s.commitAllStores()
 	parties, err := s.partyStore.GetAll()
 	if err != nil {
 		return nil, err
@@ -116,7 +116,12 @@ func (s *SummaryGenerator) MarketSummary(marketId string, pagination *protoapi.P
 }
 
 func (s *SummaryGenerator) marketSummary(marketId string, pagination protoapi.Pagination) (*MarketSummary, error) {
-	s.commitAllStores()
+
+	err := s.execution.Generate()
+	if err != nil {
+		return nil, err
+	}
+
 	market, err := s.marketStore.GetByID(marketId)
 	if err != nil {
 		return nil, err
@@ -141,11 +146,6 @@ func (s *SummaryGenerator) marketSummary(marketId string, pagination protoapi.Pa
 		Orders:      orders,
 		MarketDepth: depth,
 	}, nil
-}
-
-func (s *SummaryGenerator) commitAllStores() {
-	s.orderStore.Commit()
-	s.tradeStore.Commit()
 }
 
 func getMaxPagination(pagination *protoapi.Pagination) protoapi.Pagination {
