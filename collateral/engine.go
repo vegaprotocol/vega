@@ -168,7 +168,7 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 	mevt := &marginUpdate{}
 	// get the component that calculates the loss socialisation etc... if needed
 	for _, transfer := range transfers {
-		loss := isLoss(transfer)
+		// loss := isLoss(transfer)
 		req, err := e.getTransferRequest(transfer, settle, insurance, mevt)
 		if err != nil {
 			e.log.Error(
@@ -186,20 +186,14 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 			)
 			return nil, err
 		}
-		// if this is a loss, we want to update the delta, too
-		if !loss {
-			// getLedgerEntries updates the from accounts, so losses are handled fine there
-			// but the to account isn't updated (losses are deposited in temporary settlement account)
-			// but wins are paid out to trader accounts, so we need to update the balance there
-			for _, bal := range res.Balances {
-				if err := e.UpdateBalance(bal.Account.Id, bal.Balance); err != nil {
-					e.log.Error(
-						"Could not update the target account in transfer",
-						logging.String("account-id", bal.Account.Id),
-						logging.Error(err),
-					)
-					return nil, err
-				}
+		for _, bal := range res.Balances {
+			if err := e.UpdateBalance(bal.Account.Id, bal.Balance); err != nil {
+				e.log.Error(
+					"Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.Id),
+					logging.Error(err),
+				)
+				return nil, err
 			}
 		}
 		responses = append(responses, res)
