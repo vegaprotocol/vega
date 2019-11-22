@@ -131,6 +131,7 @@ func NewTestConfig() (Config, error) {
 		Markets:               DefaultStoreOptions(),
 		Orders:                DefaultStoreOptions(),
 		Trades:                DefaultStoreOptions(),
+		AccountsDirPath:       fmt.Sprintf("/tmp/vegatests/accountstore-%v", randSeq(5)),
 		OrdersDirPath:         fmt.Sprintf("/tmp/vegatests/orderstore-%v", randSeq(5)),
 		TradesDirPath:         fmt.Sprintf("/tmp/vegatests/tradestore-%v", randSeq(5)),
 		CandlesDirPath:        fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
