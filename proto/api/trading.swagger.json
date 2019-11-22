@@ -900,57 +900,6 @@
         ]
       }
     },
-    "/parties/{partyID}/accounts/types/{type}": {
-      "get": {
-        "summary": "Get Party Accounts by Type",
-        "description": "Get a list of Accounts for a given Party and Account Type",
-        "operationId": "AccountsByPartyAndType",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiAccountsResponse"
-            }
-          },
-          "400": {
-            "description": "Invalid request - see response body",
-            "schema": {
-              "$ref": "#/definitions/apiErrorResponse"
-            }
-          },
-          "500": {
-            "description": "Server error - see response body",
-            "schema": {
-              "$ref": "#/definitions/apiErrorResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "partyID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "type",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "enum": [
-              "NO_ACC",
-              "INSURANCE",
-              "SETTLEMENT",
-              "MARGIN",
-              "GENERAL"
-            ]
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
     "/parties/{partyID}/orders": {
       "get": {
         "summary": "Get Party Orders",

@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 
-	proto_0 "code.vegaprotocol.io/vega/proto"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -676,47 +675,6 @@ func request_TradingData_AccountsByParty_0(ctx context.Context, marshaler runtim
 
 }
 
-func request_TradingData_AccountsByPartyAndType_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AccountsByPartyAndTypeRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		e   int32
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["partyID"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
-	}
-
-	protoReq.PartyID, err = runtime.String(val)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
-	}
-
-	val, ok = pathParams["type"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "type")
-	}
-
-	e, err = runtime.Enum(val, proto_0.AccountType_value)
-
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "type", err)
-	}
-
-	protoReq.Type = proto_0.AccountType(e)
-
-	msg, err := client.AccountsByPartyAndType(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
 func request_TradingData_AccountsByPartyAndAsset_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq AccountsByPartyAndAssetRequest
 	var metadata runtime.ServerMetadata
@@ -1366,26 +1324,6 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_AccountsByPartyAndType_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_TradingData_AccountsByPartyAndType_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_TradingData_AccountsByPartyAndType_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
 	mux.Handle("GET", pattern_TradingData_AccountsByPartyAndAsset_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1446,8 +1384,6 @@ var (
 
 	pattern_TradingData_AccountsByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "accounts"}, ""))
 
-	pattern_TradingData_AccountsByPartyAndType_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"parties", "partyID", "accounts", "types", "type"}, ""))
-
 	pattern_TradingData_AccountsByPartyAndAsset_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"parties", "partyID", "accounts", "assets", "asset"}, ""))
 )
 
@@ -1487,8 +1423,6 @@ var (
 	forward_TradingData_GetVegaTime_0 = runtime.ForwardResponseMessage
 
 	forward_TradingData_AccountsByParty_0 = runtime.ForwardResponseMessage
-
-	forward_TradingData_AccountsByPartyAndType_0 = runtime.ForwardResponseMessage
 
 	forward_TradingData_AccountsByPartyAndAsset_0 = runtime.ForwardResponseMessage
 )

@@ -309,9 +309,6 @@ func (this *AccountsResponse) Validate() error {
 func (this *AccountsByPartyAndMarketRequest) Validate() error {
 	return nil
 }
-func (this *AccountsByPartyAndTypeRequest) Validate() error {
-	return nil
-}
 func (this *AccountsByPartyAndAssetRequest) Validate() error {
 	return nil
 }
