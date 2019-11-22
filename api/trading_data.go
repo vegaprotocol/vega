@@ -968,17 +968,6 @@ func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *
 	}, nil
 }
 
-// AccountsByPartyAndType provides a list of accounts of the given type for the given party.
-func (h *tradingDataService) AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest) (*protoapi.AccountsResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndType(req.PartyID, req.Type)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsResponse{
-		Accounts: accs,
-	}, nil
-}
-
 // AccountsByPartyAndAsset provides a list of accounts for the given party.
 func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsResponse, error) {
 	accs, err := h.AccountsService.GetByPartyAndAsset(req.PartyID, req.Asset)
