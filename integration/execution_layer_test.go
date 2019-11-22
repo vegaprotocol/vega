@@ -433,6 +433,7 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 							EthereumEvent: &proto.EthereumEvent{
 								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
+								Value:      u64val(row, 14),
 							},
 						},
 						Asset: val(row, 3),
