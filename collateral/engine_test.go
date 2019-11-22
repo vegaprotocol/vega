@@ -163,7 +163,7 @@ func testTransferComplexLoss(t *testing.T) {
 			Type: types.TransferType_LOSS,
 		},
 	}
-	eng.buf.EXPECT().Add(gomock.Any()).Times(2)
+	eng.buf.EXPECT().Add(gomock.Any()).Times(3)
 	responses, err := eng.FinalSettlement(testMarketID, pos)
 	assert.Equal(t, 1, len(responses))
 	resp := responses[0]
@@ -333,7 +333,7 @@ func testProcessBoth(t *testing.T) {
 	}
 
 	// next up, updating the balance of the traders' general accounts
-	eng.buf.EXPECT().Add(gomock.Any()).Times(7).Do(func(acc types.Account) {
+	eng.buf.EXPECT().Add(gomock.Any()).Times(8).Do(func(acc types.Account) {
 		if acc.Owner == moneyTrader && acc.Type == types.AccountType_MARGIN {
 			// assert.Equal(t, int64(3000), acc.Balance)
 		}
@@ -410,7 +410,7 @@ func testProcessBothProRated(t *testing.T) {
 		},
 	}
 
-	eng.buf.EXPECT().Add(gomock.Any()).Times(6)
+	eng.buf.EXPECT().Add(gomock.Any()).Times(7)
 	responses, err := eng.FinalSettlement(testMarketID, pos)
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
