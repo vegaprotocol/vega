@@ -127,6 +127,10 @@ gqlgen_check: ## GraphQL: Check committed files match just-generated files
 		exit 1 ; \
 	fi
 
+ineffectassign: ## Check for ineffectual assignments
+	@ia="$$(env GO111MODULE=auto ineffassign . | grep -v '_test\.go:')" ; \
+	if test "$$(echo "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" | sed -e "s#^$$GOPATH/src/##" ; exit 1 ; fi
+
 proto: | deps ${PROTOFILES} ${PROTOVALFILES} proto/api/trading.pb.gw.go proto/api/trading.swagger.json ## build proto definitions
 
 PROTOINCLUDE := -I. \
