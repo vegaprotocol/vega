@@ -56,14 +56,14 @@ func NewSummaryGenerator(
 func (s *SummaryGenerator) Summary(pagination *protoapi.Pagination) (*SummaryResponse, error) {
 	p := getMaxPagination(pagination)
 
-	err := s.execution.Generate()
-	if err != nil {
-		return nil, err
+	genErr := s.execution.Generate()
+	if genErr != nil {
+		return nil, genErr
 	}
 
-	parties, err := s.partyStore.GetAll()
-	if err != nil {
-		return nil, err
+	parties, pErr := s.partyStore.GetAll()
+	if pErr != nil {
+		return nil, pErr
 	}
 
 	partySummaries := make([]*PartySummary, len(parties))

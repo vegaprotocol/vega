@@ -125,9 +125,9 @@ func (s *scenariorunner) lazyInit(configFileWithPath string) {
 	s.engineOnce.Do(func() {
 		config := NewDefaultConfig()
 
-		storageConfig, err := storage.NewTestConfig()
-		if err != nil {
-			log.Fatal(err.Error())
+		storageConfig, storeErr := storage.NewTestConfig()
+		if storeErr != nil {
+			log.Fatal(storeErr.Error())
 		}
 		s.storageConfig = storageConfig
 		if configFileWithPath != "" {
@@ -140,9 +140,9 @@ func (s *scenariorunner) lazyInit(configFileWithPath string) {
 				log.Fatal(err.Error())
 			}
 		}
-		engine, err := NewEngine(log, config, s.storageConfig, Version)
-		if err != nil {
-			log.Fatal(err.Error())
+		engine, engErr := NewEngine(log, config, s.storageConfig, Version)
+		if engErr != nil {
+			log.Fatal(engErr.Error())
 		}
 		s.engine = engine
 	})

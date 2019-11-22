@@ -97,19 +97,19 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 	results := make([]*core.InstructionResult, len(instrSet.Instructions))
 	var errs *multierror.Error
 
-	preProcessors, err := e.flattenPreProcessors()
-	if err != nil {
-		return nil, err
+	preProcessors, preProcessorsErr := e.flattenPreProcessors()
+	if preProcessorsErr != nil {
+		return nil, preProcessorsErr
 	}
 
-	initialState, err := e.summaryGenerator.Summary(nil)
-	if err != nil {
-		return nil, err
+	initialState, initErr := e.summaryGenerator.Summary(nil)
+	if initErr != nil {
+		return nil, initErr
 	}
 
-	duration, err := ptypes.Duration(e.Config.TimeDelta)
-	if err != nil {
-		return nil, err
+	duration, durErr := ptypes.Duration(e.Config.TimeDelta)
+	if durErr != nil {
+		return nil, durErr
 	}
 	//TODO (WG 08/11/2019): Split into 3 separate loops (check if instruction supported, check if instructions valid, check if instruction processed w/o errors) to fail early
 	for i, instr := range instrSet.Instructions {
@@ -122,21 +122,21 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 			omitted++
 			continue
 		}
-		p, err := preProcessor.PreProcess(instr)
-		if err != nil {
+		p, preProcessErr := preProcessor.PreProcess(instr)
+		if preProcessErr != nil {
 			if !e.Config.OmitInvalidInstructions {
 				return nil, errs.ErrorOrNil()
 			}
-			errs = multierror.Append(errs, err)
+			errs = multierror.Append(errs, preProcessErr)
 			omitted++
 			continue
 		}
-		res, err := p.Result()
-		if err != nil {
+		res, resErr := p.Result()
+		if resErr != nil {
 			if !e.Config.OmitInvalidInstructions {
 				return nil, errs.ErrorOrNil()
 			}
-			errs = multierror.Append(errs, err)
+			errs = multierror.Append(errs, resErr)
 			omitted++
 			continue
 		}
@@ -146,14 +146,14 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 		results[i] = res
 		processed++
 		if e.Config.AdvanceTimeAfterInstruction {
-			err := e.timeControl.AdvanceTime(duration)
-			if err != nil {
-				return nil, err
+			timeErr := e.timeControl.AdvanceTime(duration)
+			if timeErr != nil {
+				return nil, timeErr
 			}
 		}
-		err = e.Execution.Generate()
-		if err != nil {
-			return nil, err
+		generateErr := e.Execution.Generate()
+		if generateErr != nil {
+			return nil, generateErr
 		}
 	}
 	finalState, err := e.summaryGenerator.Summary(nil)

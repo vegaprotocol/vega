@@ -248,7 +248,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	// ignore response ids here + this cannot fail
 	_, _ = e.collateral.CreateMarketAccounts(mktconfig.Id, asset, int64(e.Config.InsurancePoolInitialBalance))
 
-	// Wire up party engine to new market
+	// wire up party engine to new market
 	e.party.addMarket(*mkt.mkt)
 	e.markets[mkt.mkt.Id].partyEngine = e.party
 
@@ -412,7 +412,7 @@ func (e *Engine) Generate() error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit trades"))
 	}
-	// do not check errors here as they only happend when a party is created
+	// do not check errors here as they only happened when a party is created
 	// twice, which should not be a problem
 	_ = e.partyBuf.Flush()
 
