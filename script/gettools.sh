@@ -23,6 +23,7 @@ gettools_develop() {
 	# tools = "golocation@version"
 	tools="github.com/golang/protobuf@v$PROTOBUF_VER
 github.com/golang/protobuf/protoc-gen-go@v$PROTOBUF_VER
+github.com/gordonklaus/ineffassign@v0.0.0-20190601041439-ed7b1b5ee0f8
 github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway@v1.8.5
 github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@v1.8.5
 github.com/mwitkow/go-proto-validators/protoc-gen-govalidators@v0.2.0

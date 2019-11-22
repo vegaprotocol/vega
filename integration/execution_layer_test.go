@@ -1,7 +1,6 @@
 package core_test
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -11,6 +10,21 @@ import (
 	"github.com/DATA-DOG/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 )
+
+func theMarketsStartsOnAndExpiresOn(start, expires string) error {
+	_, err := time.Parse("2006-01-02T15:04:05Z", start)
+	if err != nil {
+		return fmt.Errorf("invalid start date %v", err)
+	}
+	_, err = time.Parse("2006-01-02T15:04:05Z", expires)
+	if err != nil {
+		return fmt.Errorf("invalid expiry date %v", err)
+	}
+	marketStart = start
+	marketExpiry = expires
+
+	return nil
+}
 
 func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
@@ -28,7 +42,12 @@ func theExecutonEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
 		mkts = append(mkts, mkt)
 	}
 
-	execsetup = getExecutionTestSetup(mkts)
+	t, _ := time.Parse("2006-01-02T15:04:05Z", marketStart)
+	execsetup = getExecutionTestSetup(t, mkts)
+
+	// reset market startime and expiry for next run
+	marketExpiry = defaultMarketExpiry
+	marketStart = defaultMarketStart
 
 	return nil
 }
@@ -104,7 +123,7 @@ func generalAccountsBalanceIs(arg1, arg2 string) error {
 			return err
 		}
 		if uint64(acc.Balance) != balance {
-			return errors.New("invalid general account balance")
+			return fmt.Errorf("invalid general account balance, expected %v got %v", arg2, acc.Balance)
 		}
 	}
 	return nil
@@ -316,6 +335,46 @@ func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
 	return nil
 }
 
+func theTimeIsUpdatedTo(newTime string) error {
+	t, err := time.Parse("2006-01-02T15:04:05Z", newTime)
+	if err != nil {
+		return fmt.Errorf("invalid start date %v", err)
+	}
+
+	execsetup.timesvc.SetTime(t)
+	return nil
+}
+
+func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) error {
+	for _, row := range orders.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		order := proto.Order{
+			Id:          uuid.NewV4().String(),
+			MarketID:    val(row, 1),
+			PartyID:     val(row, 0),
+			Side:        sideval(row, 2),
+			Price:       u64val(row, 4),
+			Size:        u64val(row, 3),
+			Remaining:   u64val(row, 3),
+			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			Type:        proto.Order_LIMIT,
+			TimeInForce: proto.Order_GTT,
+			CreatedAt:   time.Now().UnixNano(),
+		}
+		_, err := execsetup.engine.SubmitOrder(&order)
+		if err == nil {
+			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 6), err)
+		}
+		if err.Error() != val(row, 6) {
+			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 6), err)
+		}
+	}
+	return nil
+}
+
 func accountID(marketID, partyID, asset string, _ty int32) string {
 	ty := proto.AccountType(_ty)
 	idbuf := make([]byte, 256)
@@ -349,7 +408,6 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 }
 
 func baseMarket(row *gherkin.TableRow) proto.Market {
-	maturity := time.Now().Add(365 * 24 * time.Hour)
 	return proto.Market{
 		Id:            fmt.Sprintf("%s", val(row, 0)),
 		Name:          fmt.Sprintf("%s", val(row, 0)),
@@ -370,11 +428,12 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 				InitialMarkPrice: u64val(row, 4),
 				Product: &proto.Instrument_Future{
 					Future: &proto.Future{
-						Maturity: maturity.Format("2006-01-02T15:04:05Z"),
+						Maturity: marketExpiry,
 						Oracle: &proto.Future_EthereumEvent{
 							EthereumEvent: &proto.EthereumEvent{
 								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
+								Value:      u64val(row, 14),
 							},
 						},
 						Asset: val(row, 3),

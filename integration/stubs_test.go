@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/proto"
 )
@@ -196,4 +197,22 @@ func (t *tradeStub) Get(id string) proto.Trade {
 	v := t.data[id]
 	t.mu.Unlock()
 	return v
+}
+
+type timeStub struct {
+	now    time.Time
+	notify func(time.Time)
+}
+
+func (t *timeStub) GetTimeNow() (time.Time, error) {
+	return t.now, nil
+}
+
+func (t *timeStub) SetTime(newNow time.Time) {
+	t.now = newNow
+	t.notify(t.now)
+}
+
+func (t *timeStub) NotifyOnTick(f func(time.Time)) {
+	t.notify = f
 }
