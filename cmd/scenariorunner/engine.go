@@ -1,14 +1,14 @@
-package scenariorunner
+package main
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/cmd/scenariorunner/core"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
-	"code.vegaprotocol.io/vega/scenariorunner/preprocessors"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/ptypes"
@@ -37,7 +37,7 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 		return nil, err
 	}
 	timeControl := core.NewTimeControl(d.vegaTime)
-	time := preprocessors.NewTime(timeControl)
+	time := core.NewTime(timeControl)
 	initialTime, err := ptypes.Timestamp(engineConfig.InitialTime)
 	if err != nil {
 		return nil, err
@@ -51,18 +51,18 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 		}
 	}
 
-	execution := preprocessors.NewExecution(d.execution)
+	execution := core.NewExecution(d.execution)
 
-	markets := preprocessors.NewMarkets(d.ctx, d.marketStore)
-	orders := preprocessors.NewOrders(d.ctx, d.orderStore)
-	trades := preprocessors.NewTrades(d.ctx, d.tradeStore)
-	accounts := preprocessors.NewAccounts(d.ctx, d.accountStore)
-	candles := preprocessors.NewCandles(d.ctx, d.candleStore)
-	positions := preprocessors.NewPositions(d.ctx, d.tradeService)
-	parties := preprocessors.NewParties(d.ctx, d.partyStore)
+	markets := core.NewMarkets(d.ctx, d.marketStore)
+	orders := core.NewOrders(d.ctx, d.orderStore)
+	trades := core.NewTrades(d.ctx, d.tradeStore)
+	accounts := core.NewAccounts(d.ctx, d.accountStore)
+	candles := core.NewCandles(d.ctx, d.candleStore)
+	positions := core.NewPositions(d.ctx, d.tradeService)
+	parties := core.NewParties(d.ctx, d.partyStore)
 
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore, d.tradeService, d.execution)
-	summary := preprocessors.NewSummary(summaryGenerator)
+	summary := core.NewSummary(summaryGenerator)
 
 	err = d.execution.Generate()
 	if err != nil {
@@ -140,6 +140,9 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 			omitted++
 			continue
 		}
+		if len(res.Error) > 0 {
+			fmt.Println("ERROR: " + res.Error)
+		}
 		results[i] = res
 		processed++
 		if e.Config.AdvanceTimeAfterInstruction {
@@ -148,7 +151,10 @@ func (e *Engine) ProcessInstructions(instrSet core.InstructionSet) (*core.Result
 				return nil, err
 			}
 		}
-
+		err = e.Execution.Generate()
+		if err != nil {
+			return nil, err
+		}
 	}
 	finalState, err := e.summaryGenerator.Summary(nil)
 	if err != nil {

@@ -143,19 +143,20 @@ func NewEngine(
 		idgen:       NewIDGen(),
 	}
 
-	for _, mkt := range pmkts {
-		mkt := mkt
-		err = e.SubmitMarket(&mkt)
-		if err != nil {
-			e.log.Panic("Unable to submit market",
-				logging.Error(err))
+	// Add initial markets and flush to stores (if they're configured)
+	if len(pmkts) > 0 {
+		for _, mkt := range pmkts {
+			mkt := mkt
+			err = e.SubmitMarket(&mkt)
+			if err != nil {
+				e.log.Panic("Unable to submit market",
+					logging.Error(err))
+			}
 		}
-	}
-
-	// just flush a first time the markets
-	if err := e.marketBuf.Flush(); err != nil {
-		e.log.Error("unable to flush markets", logging.Error(err))
-		return nil
+		if err := e.marketBuf.Flush(); err != nil {
+			e.log.Error("unable to flush markets", logging.Error(err))
+			return nil
+		}
 	}
 
 	// Add time change event handler
@@ -230,13 +231,11 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.idgen,
 	)
 	if err != nil {
-		e.log.Error("Failed to instanciate market",
+		e.log.Error("Failed to instantiate market",
 			logging.String("market-name", mktconfig.Name),
 			logging.Error(err),
 		)
 	}
-
-	e.marketBuf.Add(*mktconfig)
 
 	e.markets[mktconfig.Id] = mkt
 
@@ -249,9 +248,12 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 	// ignore response ids here + this cannot fail
 	_, _ = e.collateral.CreateMarketAccounts(mktconfig.Id, asset, int64(e.Config.InsurancePoolInitialBalance))
 
-	updatedMarkets := append(e.party.markets, *mkt.mkt)
-	e.party = NewParty(e.log, e.collateral, updatedMarkets, e.partyBuf)
+	// Wire up party engine to new market
+	e.party.addMarket(*mkt.mkt)
+	e.markets[mkt.mkt.Id].partyEngine = e.party
 
+	// Save to market proto to buffer
+	e.marketBuf.Add(*mktconfig)
 	return nil
 }
 

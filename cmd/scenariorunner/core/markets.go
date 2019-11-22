@@ -1,10 +1,9 @@
-package preprocessors
+package core
 
 import (
 	"context"
 
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/proto"
@@ -20,35 +19,35 @@ func NewMarkets(ctx context.Context, marketStore *storage.Market) *Markets {
 	return &Markets{ctx, marketStore}
 }
 
-func (m *Markets) PreProcessors() map[core.RequestType]*core.PreProcessor {
-	return map[core.RequestType]*core.PreProcessor{
-		core.RequestType_MARKET_BY_ID: m.marketByID(),
-		core.RequestType_MARKETS:      m.markets(),
+func (m *Markets) PreProcessors() map[RequestType]*PreProcessor {
+	return map[RequestType]*PreProcessor{
+		RequestType_MARKET_BY_ID: m.marketByID(),
+		RequestType_MARKETS:      m.markets(),
 	}
 }
 
-func (m *Markets) marketByID() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (m *Markets) marketByID() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.MarketByIDRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
 				return m.marketStore.GetByID(req.MarketID)
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.MarketByIDRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (m *Markets) markets() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (m *Markets) markets() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &empty.Empty{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -56,7 +55,7 @@ func (m *Markets) markets() *core.PreProcessor {
 				return &protoapi.MarketsResponse{Markets: resp}, err
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &empty.Empty{},
 		PreProcess:   preProcessor,
 	}

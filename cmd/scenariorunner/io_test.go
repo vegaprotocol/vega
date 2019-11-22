@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"code.vegaprotocol.io/vega/cmd/scenariorunner/core"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/stretchr/testify/assert"

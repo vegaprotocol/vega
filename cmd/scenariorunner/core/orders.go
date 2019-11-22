@@ -1,10 +1,9 @@
-package preprocessors
+package core
 
 import (
 	"context"
 
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/proto"
@@ -19,23 +18,23 @@ func NewOrders(ctx context.Context, orderStore *storage.Order) *Orders {
 	return &Orders{ctx, orderStore}
 }
 
-func (o *Orders) PreProcessors() map[core.RequestType]*core.PreProcessor {
-	return map[core.RequestType]*core.PreProcessor{
-		core.RequestType_ORDERS_BY_MARKET:       o.ordersByMarket(),
-		core.RequestType_ORDERS_BY_PARTY:        o.ordersByParty(),
-		core.RequestType_ORDER_BY_MARKET_AND_ID: o.orderByMarketAndID(),
-		core.RequestType_ORDER_BY_REFERENCE:     o.orderByReference(),
-		core.RequestType_MARKET_DEPTH:           o.marketDepth(),
+func (o *Orders) PreProcessors() map[RequestType]*PreProcessor {
+	return map[RequestType]*PreProcessor{
+		RequestType_ORDERS_BY_MARKET:       o.ordersByMarket(),
+		RequestType_ORDERS_BY_PARTY:        o.ordersByParty(),
+		RequestType_ORDER_BY_MARKET_AND_ID: o.orderByMarketAndID(),
+		RequestType_ORDER_BY_REFERENCE:     o.orderByReference(),
+		RequestType_MARKET_DEPTH:           o.marketDepth(),
 	}
 }
 
-func (o *Orders) ordersByMarket() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (o *Orders) ordersByMarket() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.OrdersByMarketRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
-		pagination := core.GetDefaultPagination(req.Pagination)
+		pagination := GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
 			func() (proto.Message, error) {
 				//o.commitStore()
@@ -46,19 +45,19 @@ func (o *Orders) ordersByMarket() *core.PreProcessor {
 				return &protoapi.OrdersByMarketResponse{Orders: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.OrdersByMarketRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (o *Orders) ordersByParty() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (o *Orders) ordersByParty() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.OrdersByPartyRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
-		pagination := core.GetDefaultPagination(req.Pagination)
+		pagination := GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
 			func() (proto.Message, error) {
 				//o.commitStore()
@@ -69,17 +68,17 @@ func (o *Orders) ordersByParty() *core.PreProcessor {
 				return &protoapi.OrdersByPartyResponse{Orders: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.OrdersByPartyRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (o *Orders) orderByMarketAndID() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (o *Orders) orderByMarketAndID() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.OrderByMarketAndIdRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -91,17 +90,17 @@ func (o *Orders) orderByMarketAndID() *core.PreProcessor {
 				return &protoapi.OrderByMarketAndIdResponse{Order: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.OrderByMarketAndIdRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (o *Orders) orderByReference() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (o *Orders) orderByReference() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.OrderByReferenceRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -113,17 +112,17 @@ func (o *Orders) orderByReference() *core.PreProcessor {
 				return &protoapi.OrderByMarketAndIdResponse{Order: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.OrderByReferenceRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (o *Orders) marketDepth() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (o *Orders) marketDepth() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.MarketDepthRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -132,7 +131,7 @@ func (o *Orders) marketDepth() *core.PreProcessor {
 				return &protoapi.MarketDepthResponse{MarketID: resp.MarketID, Buy: resp.Buy, Sell: resp.Sell}, err
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.MarketDepthRequest{},
 		PreProcess:   preProcessor,
 	}

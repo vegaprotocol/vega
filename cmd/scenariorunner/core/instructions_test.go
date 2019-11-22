@@ -1,20 +1,19 @@
-package core_test
+package core
 
 import (
 	"errors"
 	"log"
 	"testing"
 
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+
+	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/api"
 )
 
 func TestNewInstruction(t *testing.T) {
-	request := core.RequestType_NOTIFY_TRADER_ACCOUNT
+	request := RequestType_NOTIFY_TRADER_ACCOUNT
 	trader := "testTrader"
 	message := api.NotifyTraderAccountRequest{
 		Notif: &types.NotifyTraderAccount{
@@ -22,7 +21,7 @@ func TestNewInstruction(t *testing.T) {
 		},
 	}
 
-	instruction, err := core.NewInstruction(request, &message)
+	instruction, err := NewInstruction(request, &message)
 	assert.NoError(t, err)
 	assert.Equal(t, request, instruction.Request)
 	assert.Equal(t, "", instruction.Description)
@@ -36,14 +35,14 @@ func TestNewInstruction(t *testing.T) {
 }
 
 func TestNewResult(t *testing.T) {
-	request := core.RequestType_NOTIFY_TRADER_ACCOUNT
+	request := RequestType_NOTIFY_TRADER_ACCOUNT
 	trader := "testTrader"
 	message := api.NotifyTraderAccountRequest{
 		Notif: &types.NotifyTraderAccount{
 			TraderID: trader,
 		},
 	}
-	instruction, err := core.NewInstruction(request, &message)
+	instruction, err := NewInstruction(request, &message)
 	assert.NoError(t, err)
 
 	response := api.NotifyTraderAccountResponse{
@@ -66,14 +65,14 @@ func TestNewResult(t *testing.T) {
 }
 
 func TestNewResultWithNilReposnse(t *testing.T) {
-	request := core.RequestType_NOTIFY_TRADER_ACCOUNT
+	request := RequestType_NOTIFY_TRADER_ACCOUNT
 	trader := "testTrader"
 	message := api.NotifyTraderAccountRequest{
 		Notif: &types.NotifyTraderAccount{
 			TraderID: trader,
 		},
 	}
-	instruction, err := core.NewInstruction(request, &message)
+	instruction, err := NewInstruction(request, &message)
 	if err != nil {
 		t.Fatalf("Failed to create a new instruction: %s", err.Error())
 	}
@@ -84,14 +83,14 @@ func TestNewResultWithNilReposnse(t *testing.T) {
 }
 
 func TestNewResultWithNilPointerReposnse(t *testing.T) {
-	request := core.RequestType_NOTIFY_TRADER_ACCOUNT
+	request := RequestType_NOTIFY_TRADER_ACCOUNT
 	trader := "testTrader"
 	message := api.NotifyTraderAccountRequest{
 		Notif: &types.NotifyTraderAccount{
 			TraderID: trader,
 		},
 	}
-	instruction, err := core.NewInstruction(request, &message)
+	instruction, err := NewInstruction(request, &message)
 	if err != nil {
 		t.Fatalf("Failed to create a new instruction: %s", err.Error())
 	}

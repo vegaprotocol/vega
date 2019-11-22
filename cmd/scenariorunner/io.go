@@ -4,11 +4,11 @@ import (
 	"io"
 	"os"
 
-	"code.vegaprotocol.io/vega/scenariorunner/core"
-
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
+
+	"code.vegaprotocol.io/vega/cmd/scenariorunner/core"
 )
 
 const indent string = "  "

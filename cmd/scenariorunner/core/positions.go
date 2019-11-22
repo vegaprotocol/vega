@@ -1,10 +1,9 @@
-package preprocessors
+package core
 
 import (
 	"context"
 
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/trades"
 
 	"github.com/golang/protobuf/proto"
@@ -19,17 +18,17 @@ func NewPositions(ctx context.Context, tradeService *trades.Svc) *Positions {
 	return &Positions{ctx, tradeService}
 }
 
-func (p *Positions) PreProcessors() map[core.RequestType]*core.PreProcessor {
-	return map[core.RequestType]*core.PreProcessor{
-		core.RequestType_POSITIONS_BY_PARTY: p.positionsByParty(),
+func (p *Positions) PreProcessors() map[RequestType]*PreProcessor {
+	return map[RequestType]*PreProcessor{
+		RequestType_POSITIONS_BY_PARTY: p.positionsByParty(),
 	}
 }
 
-func (p *Positions) positionsByParty() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (p *Positions) positionsByParty() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.PositionsByPartyRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -40,7 +39,7 @@ func (p *Positions) positionsByParty() *core.PreProcessor {
 				return &protoapi.PositionsByPartyResponse{Positions: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.PositionsByPartyRequest{},
 		PreProcess:   preProcessor,
 	}

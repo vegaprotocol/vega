@@ -4,14 +4,15 @@
 package core
 
 import (
+	fmt "fmt"
+	math "math"
+
 	proto1 "code.vegaprotocol.io/vega/proto"
 	api "code.vegaprotocol.io/vega/proto/api"
-	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	any "github.com/golang/protobuf/ptypes/any"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

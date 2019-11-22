@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
-	sr "code.vegaprotocol.io/vega/scenariorunner"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/urfave/cli"
@@ -57,7 +56,7 @@ func commands(app *cli.App, runner *scenariorunner) {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:        "result, r",
-					Usage:       "Save instrution results set to a `FILE`. Files will be suffixed with a number when multiple instruction sets get submitted.",
+					Usage:       "Save instruction results set to a `FILE`. Files will be suffixed with a number when multiple instruction sets get submitted.",
 					Destination: &optionalResultSetFile,
 				},
 				cli.StringFlag{
@@ -118,13 +117,13 @@ func commands(app *cli.App, runner *scenariorunner) {
 
 type scenariorunner struct {
 	engineOnce    sync.Once
-	engine        *sr.Engine
+	engine        *Engine
 	storageConfig storage.Config
 }
 
 func (s *scenariorunner) lazyInit(configFileWithPath string) {
 	s.engineOnce.Do(func() {
-		config := sr.NewDefaultConfig()
+		config := NewDefaultConfig()
 
 		storageConfig, err := storage.NewTestConfig()
 		if err != nil {
@@ -141,7 +140,7 @@ func (s *scenariorunner) lazyInit(configFileWithPath string) {
 				log.Fatal(err.Error())
 			}
 		}
-		engine, err := sr.NewEngine(log, config, s.storageConfig, Version)
+		engine, err := NewEngine(log, config, s.storageConfig, Version)
 		if err != nil {
 			log.Fatal(err.Error())
 		}

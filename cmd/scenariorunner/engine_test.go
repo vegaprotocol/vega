@@ -1,14 +1,13 @@
-package scenariorunner_test
+package main
 
 import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/cmd/scenariorunner/core"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	sr "code.vegaprotocol.io/vega/scenariorunner"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/ptypes"
@@ -17,6 +16,101 @@ import (
 )
 
 const marketId string = "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
+
+func TestSubmitOrderAndReadStores(t *testing.T) {
+
+	party1 := "V@d3r"
+	party2 := "Luk39"
+
+	notifyParty1, err := core.NewInstruction(
+		core.RequestType_NOTIFY_TRADER_ACCOUNT,
+		&protoapi.NotifyTraderAccountRequest{
+			Notif: &types.NotifyTraderAccount{
+				TraderID: party1,
+				Amount:   10,
+			},
+		},
+	)
+	assert.NoError(t, err)
+
+	notifyParty2, err := core.NewInstruction(
+		core.RequestType_NOTIFY_TRADER_ACCOUNT,
+		&protoapi.NotifyTraderAccountRequest{
+			Notif: &types.NotifyTraderAccount{
+				TraderID: party2,
+				Amount:   10,
+			},
+		},
+	)
+	assert.NoError(t, err)
+
+	sellOrderParty1, err := core.NewInstruction(
+		core.RequestType_SUBMIT_ORDER,
+		&protoapi.SubmitOrderRequest{
+			Submission: &types.OrderSubmission{
+				MarketID:    marketId,
+				PartyID:     party1,
+				Price:       100,
+				Size:        3,
+				Type:        types.Order_LIMIT,
+				Side:        types.Side_Sell,
+				TimeInForce: types.Order_GTC,
+			},
+		},
+	)
+	assert.NoError(t, err)
+
+	buyOrderParty2, err := core.NewInstruction(
+		core.RequestType_SUBMIT_ORDER,
+		&protoapi.SubmitOrderRequest{
+			Submission: &types.OrderSubmission{
+				MarketID:    marketId,
+				PartyID:     party1,
+				Price:       100,
+				Size:        2,
+				Type:        types.Order_LIMIT,
+				Side:        types.Side_Buy,
+				TimeInForce: types.Order_GTC,
+			},
+		},
+	)
+	assert.NoError(t, err)
+
+	instructionSet := core.InstructionSet{
+		Instructions: []*core.Instruction{
+			notifyParty1, notifyParty2, sellOrderParty1, buyOrderParty2,
+		},
+		Description: "Submit two orders, expect one trade and stores updated",
+	}
+	log := logging.NewTestLogger()
+	storageConfig, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer storage.FlushStores(log, storageConfig)
+	runner, err := NewEngine(log, NewDefaultConfig(), storageConfig, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = runner.ProcessInstructions(instructionSet)
+
+	result, err := runner.ExtractData()
+	assert.NoError(t, err)
+	assert.True(t, len(result.Summary.Parties) > 0)
+
+	anyOrders := false
+	anyTrades := false
+	for _, mkt := range result.Summary.Markets {
+		if len(mkt.Orders) > 0 {
+			anyOrders = true
+		}
+		if len(mkt.Trades) > 0 {
+			anyTrades = true
+		}
+	}
+	assert.True(t, anyOrders)
+	assert.True(t, anyTrades)
+}
 
 func TestExtractData(t *testing.T) {
 
@@ -34,7 +128,7 @@ func TestExtractData(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer storage.FlushStores(log, storageConfig)
-	runner, err := sr.NewEngine(log, sr.NewDefaultConfig(), storageConfig, "test")
+	runner, err := NewEngine(log, NewDefaultConfig(), storageConfig, "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +270,7 @@ func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
 		t.Fatal(err)
 	}
 	defer storage.FlushStores(log, storageConfig)
-	runner, err := sr.NewEngine(log, sr.NewDefaultConfig(), storageConfig, "test")
+	runner, err := NewEngine(log, NewDefaultConfig(), storageConfig, "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,25 +321,27 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	}
 	instr2.Description = "Submit a sell order"
 
-	instr3, err := core.NewInstruction(
-		core.RequestType_CANCEL_ORDER,
-		&protoapi.CancelOrderRequest{
-			Cancellation: &types.OrderCancellation{
-				OrderID:  "",
-				MarketID: marketId,
-				PartyID:  trader1Id,
-			},
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
+	//instr3, err := core.NewInstruction(
+	//	core.RequestType_CANCEL_ORDER,
+	//	&protoapi.CancelOrderRequest{
+	//		Cancellation: &types.OrderCancellation{
+	//			OrderID:  "",
+	//			MarketID: marketId,
+	//			PartyID:  trader1Id,
+	//		},
+	//	},
+	//)
+	//if err != nil {
+	//	return nil, err
+	//}
+
 	trader2 := "trader2"
 	instr4, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
 		&protoapi.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
 				TraderID: trader2,
+				Amount:   1000,
 			},
 		},
 	)
@@ -294,6 +390,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 			Withdraw: &types.Withdraw{
 				PartyID: trader2,
 				Amount:  1000,
+				Asset:   "BTC",
 			},
 		},
 	)
@@ -365,7 +462,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	instructions := []*core.Instruction{
 		instr1,
 		instr2,
-		instr3,
+		//instr3,
 		instr4,
 		instr5,
 		instr6,

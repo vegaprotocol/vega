@@ -1,10 +1,9 @@
-package preprocessors
+package core
 
 import (
 	"context"
 
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/proto"
@@ -19,20 +18,20 @@ func NewAccounts(ctx context.Context, accountStore *storage.Account) *Accounts {
 	return &Accounts{ctx, accountStore}
 }
 
-func (a *Accounts) PreProcessors() map[core.RequestType]*core.PreProcessor {
-	return map[core.RequestType]*core.PreProcessor{
-		core.RequestType_ACCOUNTS_BY_PARTY:            a.accountsByParty(),
-		core.RequestType_ACCOUNTS_BY_PARTY_AND_ASSET:  a.accountsByPartyAndAsset(),
-		core.RequestType_ACCOUNTS_BY_PARTY_AND_MARKET: a.accountsByPartyAndMarket(),
-		core.RequestType_ACCOUNTS_BY_PARTY_AND_TYPE:   a.accountsByPartyAndType(),
+func (a *Accounts) PreProcessors() map[RequestType]*PreProcessor {
+	return map[RequestType]*PreProcessor{
+		RequestType_ACCOUNTS_BY_PARTY:            a.accountsByParty(),
+		RequestType_ACCOUNTS_BY_PARTY_AND_ASSET:  a.accountsByPartyAndAsset(),
+		RequestType_ACCOUNTS_BY_PARTY_AND_MARKET: a.accountsByPartyAndMarket(),
+		RequestType_ACCOUNTS_BY_PARTY_AND_TYPE:   a.accountsByPartyAndType(),
 	}
 }
 
-func (a *Accounts) accountsByParty() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (a *Accounts) accountsByParty() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.AccountsByPartyRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -43,17 +42,17 @@ func (a *Accounts) accountsByParty() *core.PreProcessor {
 				return &protoapi.AccountsByPartyResponse{Accounts: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.AccountsByPartyRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (a *Accounts) accountsByPartyAndAsset() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (a *Accounts) accountsByPartyAndAsset() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.AccountsByPartyAndAssetRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -64,17 +63,17 @@ func (a *Accounts) accountsByPartyAndAsset() *core.PreProcessor {
 				return &protoapi.AccountsByPartyAndAssetResponse{Accounts: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.AccountsByPartyAndAssetRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (a *Accounts) accountsByPartyAndMarket() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (a *Accounts) accountsByPartyAndMarket() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.AccountsByPartyAndMarketRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -85,17 +84,17 @@ func (a *Accounts) accountsByPartyAndMarket() *core.PreProcessor {
 				return &protoapi.AccountsByPartyAndMarketResponse{Accounts: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.AccountsByPartyAndMarketRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (a *Accounts) accountsByPartyAndType() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (a *Accounts) accountsByPartyAndType() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.AccountsByPartyAndTypeRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -106,7 +105,7 @@ func (a *Accounts) accountsByPartyAndType() *core.PreProcessor {
 				return &protoapi.AccountsByPartyAndTypeResponse{Accounts: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.AccountsByPartyAndTypeRequest{},
 		PreProcess:   preProcessor,
 	}

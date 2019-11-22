@@ -1,14 +1,14 @@
-package preprocessors
+package core
 
 import (
 	"context"
 
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
 
-	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/golang/protobuf/proto"
+
+	"code.vegaprotocol.io/vega/vegatime"
 )
 
 type Candles struct {
@@ -20,17 +20,17 @@ func NewCandles(ctx context.Context, candleStore *storage.Candle) *Candles {
 	return &Candles{ctx, candleStore}
 }
 
-func (c *Candles) PreProcessors() map[core.RequestType]*core.PreProcessor {
-	return map[core.RequestType]*core.PreProcessor{
-		core.RequestType_CANDLES: c.candles(),
+func (c *Candles) PreProcessors() map[RequestType]*PreProcessor {
+	return map[RequestType]*PreProcessor{
+		RequestType_CANDLES: c.candles(),
 	}
 }
 
-func (c *Candles) candles() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (c *Candles) candles() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.CandlesRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -41,7 +41,7 @@ func (c *Candles) candles() *core.PreProcessor {
 				return &protoapi.CandlesResponse{Candles: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.CandlesRequest{},
 		PreProcess:   preProcessor,
 	}

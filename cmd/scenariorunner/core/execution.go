@@ -1,10 +1,9 @@
-package preprocessors
+package core
 
 import (
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -17,21 +16,21 @@ func NewExecution(e *execution.Engine) *Execution {
 	return &Execution{e}
 }
 
-func (e *Execution) PreProcessors() map[core.RequestType]*core.PreProcessor {
-	return map[core.RequestType]*core.PreProcessor{
-		core.RequestType_NOTIFY_TRADER_ACCOUNT: e.notifyTraderAccount(),
-		core.RequestType_SUBMIT_ORDER:          e.submitOrder(),
-		core.RequestType_CANCEL_ORDER:          e.cancelOrder(),
-		core.RequestType_AMEND_ORDER:           e.amendOrder(),
-		core.RequestType_WITHDRAW:              e.withdraw(),
+func (e *Execution) PreProcessors() map[RequestType]*PreProcessor {
+	return map[RequestType]*PreProcessor{
+		RequestType_NOTIFY_TRADER_ACCOUNT: e.notifyTraderAccount(),
+		RequestType_SUBMIT_ORDER:          e.submitOrder(),
+		RequestType_CANCEL_ORDER:          e.cancelOrder(),
+		RequestType_AMEND_ORDER:           e.amendOrder(),
+		RequestType_WITHDRAW:              e.withdraw(),
 	}
 }
 
-func (e *Execution) notifyTraderAccount() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (e *Execution) notifyTraderAccount() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.NotifyTraderAccountRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -42,64 +41,64 @@ func (e *Execution) notifyTraderAccount() *core.PreProcessor {
 				return &protoapi.NotifyTraderAccountResponse{Submitted: true}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.NotifyTraderAccountRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (e *Execution) submitOrder() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (e *Execution) submitOrder() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.SubmitOrderRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
 				return e.engine.SubmitOrder(getOrderFromSubmission(req.Submission))
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.SubmitOrderRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (e *Execution) cancelOrder() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (e *Execution) cancelOrder() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.CancelOrderRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) { return e.engine.CancelOrder(getOrderFromCancellation(req.Cancellation)) })
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &types.Order{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (e *Execution) amendOrder() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (e *Execution) amendOrder() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.AmendOrderRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) { return e.engine.AmendOrder(req.Amendment) })
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &types.OrderAmendment{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (e *Execution) withdraw() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (e *Execution) withdraw() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.WithdrawRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -111,7 +110,7 @@ func (e *Execution) withdraw() *core.PreProcessor {
 			},
 		)
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.WithdrawRequest{},
 		PreProcess:   preProcessor,
 	}

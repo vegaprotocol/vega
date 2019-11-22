@@ -1,11 +1,10 @@
-package preprocessors
+package core
 
 import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/scenariorunner/core"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/proto"
@@ -20,22 +19,22 @@ func NewTrades(ctx context.Context, tradeStore *storage.Trade) *Trades {
 	return &Trades{ctx, tradeStore}
 }
 
-func (t *Trades) PreProcessors() map[core.RequestType]*core.PreProcessor {
-	return map[core.RequestType]*core.PreProcessor{
-		core.RequestType_TRADES_BY_MARKET: t.tradesByMarket(),
-		core.RequestType_TRADES_BY_PARTY:  t.tradesByParty(),
-		core.RequestType_TRADES_BY_ORDER:  t.tradesByOrder(),
-		core.RequestType_LAST_TRADE:       t.lastTrade(),
+func (t *Trades) PreProcessors() map[RequestType]*PreProcessor {
+	return map[RequestType]*PreProcessor{
+		RequestType_TRADES_BY_MARKET: t.tradesByMarket(),
+		RequestType_TRADES_BY_PARTY:  t.tradesByParty(),
+		RequestType_TRADES_BY_ORDER:  t.tradesByOrder(),
+		RequestType_LAST_TRADE:       t.lastTrade(),
 	}
 }
 
-func (t *Trades) tradesByMarket() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (t *Trades) tradesByMarket() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.TradesByMarketRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
-		pagination := core.GetDefaultPagination(req.Pagination)
+		pagination := GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
 			func() (proto.Message, error) {
 				//t.commitStore()
@@ -46,19 +45,19 @@ func (t *Trades) tradesByMarket() *core.PreProcessor {
 				return &protoapi.TradesByMarketResponse{Trades: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.TradesByMarketRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (t *Trades) tradesByParty() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (t *Trades) tradesByParty() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.TradesByPartyRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
-		pagination := core.GetDefaultPagination(req.Pagination)
+		pagination := GetDefaultPagination(req.Pagination)
 		return instr.PreProcess(
 			func() (proto.Message, error) {
 				//t.commitStore()
@@ -69,17 +68,17 @@ func (t *Trades) tradesByParty() *core.PreProcessor {
 				return &protoapi.TradesByPartyResponse{Trades: resp}, nil
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.TradesByPartyRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (t *Trades) tradesByOrder() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (t *Trades) tradesByOrder() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.TradesByOrderRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -92,17 +91,17 @@ func (t *Trades) tradesByOrder() *core.PreProcessor {
 
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.TradesByOrderRequest{},
 		PreProcess:   preProcessor,
 	}
 }
 
-func (t *Trades) lastTrade() *core.PreProcessor {
-	preProcessor := func(instr *core.Instruction) (*core.PreProcessedInstruction, error) {
+func (t *Trades) lastTrade() *PreProcessor {
+	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.LastTradeRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, core.ErrInstructionInvalid
+			return nil, ErrInstructionInvalid
 		}
 		return instr.PreProcess(
 			func() (proto.Message, error) {
@@ -119,7 +118,7 @@ func (t *Trades) lastTrade() *core.PreProcessor {
 
 			})
 	}
-	return &core.PreProcessor{
+	return &PreProcessor{
 		MessageShape: &protoapi.LastTradeRequest{},
 		PreProcess:   preProcessor,
 	}
