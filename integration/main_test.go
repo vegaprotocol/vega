@@ -78,4 +78,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the settlement account balance is "([^"]*)" for the market "([^"]*)" before MTM$`, theSettlementAccountBalanceIsForTheMarketBeforeMTM)
 	s.Step(`^the insurance pool initial balance for the markets is "([^"]*)":$`, theInsurancePoolInitialBalanceForTheMarketsIs)
 	s.Step(`^the insurance pool balance is "([^"]*)" for the market "([^"]*)"$`, theInsurancePoolBalanceIsForTheMarket)
+	s.Step(`^the markets starts on "([^"]*)" and expires on "([^"]*)"$`, theMarketsStartsOnAndExpiresOn)
+	s.Step(`^the time is updated to "([^"]*)"$`, theTimeIsUpdatedTo)
+	s.Step(`^traders cannot place the following orders anymore:$`, tradersCannotPlaceTheFollowingOrdersAnymore)
 }

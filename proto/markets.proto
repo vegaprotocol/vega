@@ -32,6 +32,7 @@ message Future {
 message EthereumEvent {
   string contractID = 1;
   string event = 2;
+  uint64 value = 3;
 }
 
 // here ends oracles
