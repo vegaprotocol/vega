@@ -42,33 +42,14 @@ $ go version
 go version go1.11.13 linux/amd64
 ```
 
-## Set up Go source paths and Go Modules
+## Setup Go source path
 
-At present (June 2019), Go Modules are in the process of being introduced to the
-Go ecosystem, so things are a little clunky. There are several ways of getting
-things working. The main options are:
+We use go-mod, so we will be checking the code out, outside the go path. 
 
-* Either: Set `GO111MODULE` to `auto`. Install source that **uses** Go Modules
-  **outside** `$GOPATH` and source that **does not use** Go Modules **inside**
-  `$GOPATH`.
-* Or: Set `GO111MODULE` to `on`. Install all source **inside** `$GOPATH`.
-  Remember that source that does not use Go Modules will have to be treated
-  differently.
-
-This document works with the second option (`GO111MODULE=on`).
+* e.g. git clone git@gitlab.com:vega-protocol/trading-core.git ~/Code/Vega
 
 All Vega Golang repositories have been set up to use Go Modules (check for files
 `go.mod` and `go.sum` in the top-level directory).
-
-Create directories `$HOME/go/bin`, `$HOME/go/pkg`, and `$HOME/go/src`, then
-point `$GOPATH` at this location:
-
-```bash
-# Add to $HOME/.bashrc
-export GOPATH="$HOME/go"
-export PATH="$PATH:$GOPATH/bin"
-export GO111MODULE=on # or auto
-```
 
 ## GitLab Authentication
 
