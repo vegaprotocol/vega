@@ -14,6 +14,12 @@ import (
 )
 
 func TestUpdatePosition(t *testing.T) {
+	t.Run("Update position regular", testUpdatePositionRegular)
+	t.Run("Update position network trade as buyer", testUpdatePositionNetworkBuy)
+	t.Run("Update position network trade as seller", testUpdatePositionNetworkSell)
+}
+
+func testUpdatePositionRegular(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
 	buyer := "buyer_id"
@@ -41,6 +47,56 @@ func TestUpdatePosition(t *testing.T) {
 			assert.Equal(t, -size, p.Size())
 		}
 	}
+}
+
+func testUpdatePositionNetworkBuy(t *testing.T) {
+	engine := getTestEngine(t)
+	assert.Empty(t, engine.Positions())
+	buyer := "network"
+	seller := "seller_id"
+	size := int64(10)
+	trade := proto.Trade{
+		Id:        "trade_id",
+		MarketID:  "market_id",
+		Price:     10000,
+		Size:      uint64(size),
+		Buyer:     buyer,
+		Seller:    seller,
+		BuyOrder:  "buy_order_id",
+		SellOrder: "sell_order_id",
+		Timestamp: time.Now().Unix(),
+	}
+	positions := engine.UpdateNetwork(&trade)
+	pos := engine.Positions()
+	assert.Equal(t, 1, len(pos))
+	assert.Equal(t, 1, len(positions))
+	assert.Equal(t, seller, pos[0].Party())
+	assert.Equal(t, -size, pos[0].Size())
+}
+
+func testUpdatePositionNetworkSell(t *testing.T) {
+	engine := getTestEngine(t)
+	assert.Empty(t, engine.Positions())
+	buyer := "buyer_id"
+	seller := "network"
+	size := int64(10)
+	trade := proto.Trade{
+		Id:        "trade_id",
+		MarketID:  "market_id",
+		Price:     10000,
+		Size:      uint64(size),
+		Buyer:     buyer,
+		Seller:    seller,
+		BuyOrder:  "buy_order_id",
+		SellOrder: "sell_order_id",
+		Timestamp: time.Now().Unix(),
+	}
+	positions := engine.UpdateNetwork(&trade)
+	pos := engine.Positions()
+	assert.Equal(t, 1, len(pos))
+	assert.Equal(t, 1, len(positions))
+	assert.Equal(t, buyer, pos[0].Party())
+	assert.Equal(t, size, pos[0].Size())
 }
 
 func TestRemoveDistressedEmpty(t *testing.T) {
