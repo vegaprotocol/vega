@@ -1,6 +1,8 @@
 package buffer
 
-import types "code.vegaprotocol.io/vega/proto"
+import (
+	types "code.vegaprotocol.io/vega/proto"
+)
 
 type OrderStore interface {
 	SaveBatch(order []types.Order) error

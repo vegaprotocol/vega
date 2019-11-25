@@ -1625,6 +1625,10 @@
         },
         "event": {
           "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

@@ -142,6 +142,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		quoteName        string
 		maturity         time.Time
 		initialMarkPrice uint64
+		settlementValue  uint64
 	}{
 		{
 			decimalPlaces:    5,
@@ -150,6 +151,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			settlementAsset:  "VUSD",
 			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice: 200,
+			settlementValue:  200,
 		},
 		{
 			decimalPlaces:    5,
@@ -158,6 +160,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			settlementAsset:  "VUSD",
 			maturity:         time.Date(2020, 6, 30, 22, 59, 59, 0, time.UTC),
 			initialMarkPrice: 10,
+			settlementValue:  10,
 		},
 		{
 			decimalPlaces:    5,
@@ -166,6 +169,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			settlementAsset:  "BTC",
 			maturity:         time.Date(2019, 12, 31, 23, 59, 59, 0, time.UTC),
 			initialMarkPrice: 5,
+			settlementValue:  5,
 		},
 	}
 
@@ -199,6 +203,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 								EthereumEvent: &proto.EthereumEvent{
 									ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 									Event:      "price_changed",
+									Value:      skel.settlementValue,
 								},
 							},
 							Asset: skel.settlementAsset,

@@ -15,10 +15,18 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
+const (
+	defaultMarketStart  = "2019-11-30T00:00:00Z"
+	defaultMarketExpiry = "2019-12-31T23:59:59Z"
+)
+
 var (
 	mktsetup  *marketTestSetup
 	execsetup *executionTestSetup
 	reporter  tstReporter
+
+	marketStart  string = defaultMarketStart
+	marketExpiry string = defaultMarketExpiry
 )
 
 type tstReporter struct {
@@ -113,7 +121,7 @@ type executionTestSetup struct {
 	parties   *mocks.MockPartyBuf
 	transfers *transferStub
 	markets   *mocks.MockMarketBuf
-	timesvc   *mocks.MockTimeService
+	timesvc   *timeStub
 
 	// save trader accounts state
 	accs map[string][]account
@@ -130,7 +138,7 @@ func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTe
 	return execsetup
 }
 
-func getExecutionTestSetup(mkts []proto.Market) *executionTestSetup {
+func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionTestSetup {
 	if execsetup != nil && execsetup.ctrl != nil {
 		execsetup.ctrl.Finish()
 		// execsetup = nil
@@ -150,13 +158,12 @@ func getExecutionTestSetup(mkts []proto.Market) *executionTestSetup {
 	execsetup.parties = mocks.NewMockPartyBuf(ctrl)
 	execsetup.transfers = NewTransferStub()
 	execsetup.markets = mocks.NewMockMarketBuf(ctrl)
-	execsetup.timesvc = mocks.NewMockTimeService(ctrl)
 	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
+	execsetup.timesvc = &timeStub{now: startTime}
 
-	execsetup.timesvc.EXPECT().GetTimeNow().AnyTimes().Return(time.Now(), nil)
-	execsetup.timesvc.EXPECT().NotifyOnTick(gomock.Any()).AnyTimes()
 	execsetup.candles.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	execsetup.candles.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	execsetup.markets.EXPECT().Add(gomock.Any()).AnyTimes()
 	execsetup.parties.EXPECT().Add(gomock.Any()).AnyTimes()
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()

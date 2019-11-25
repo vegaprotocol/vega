@@ -2,19 +2,14 @@ package execution
 
 import (
 	"errors"
+	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-const (
-	topUpAmount = 1000000000000
-)
-
-var (
-	ErrPartyDoNotExist = errors.New("party do not exist")
-)
+var ErrPartyDoesNotExist = errors.New("party does not exist in party engine")
 
 // Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
@@ -25,12 +20,6 @@ type Collateral interface {
 	AddTraderToMarket(mkt, trader, asset string) error
 }
 
-type accountKey struct {
-	marketID string
-	partyID  string
-	asset    string
-}
-
 // Party holds the list of parties in the system
 type Party struct {
 	log           *logging.Logger
@@ -38,18 +27,15 @@ type Party struct {
 	markets       []proto.Market
 	partyBuf      PartyBuf
 	partyByMarket map[string]map[string]struct{}
+	mu            sync.Mutex
 }
 
-// NewParty instanciate a new party
-func NewParty(
-	log *logging.Logger, col Collateral, markets []proto.Market, partyBuf PartyBuf,
-) *Party {
+// NewParty instantiate a new party
+func NewParty(log *logging.Logger, col Collateral, markets []proto.Market, partyBuf PartyBuf) *Party {
 	partyByMarket := map[string]map[string]struct{}{}
-
 	for _, v := range markets {
 		partyByMarket[v.Id] = map[string]struct{}{}
 	}
-
 	return &Party{
 		log:           log,
 		collateral:    col,
@@ -73,8 +59,16 @@ func (p *Party) GetByMarketAndID(marketID, partyID string) (*types.Party, error)
 	if _, ok := p.partyByMarket[marketID][partyID]; ok {
 		return &types.Party{Id: partyID}, nil
 	}
+	return nil, ErrPartyDoesNotExist
+}
 
-	return nil, ErrPartyDoNotExist
+func (p *Party) addMarket(market proto.Market) {
+	if _, found := p.partyByMarket[market.Id]; !found {
+		p.mu.Lock()
+		p.markets = append(p.markets, market)
+		p.partyByMarket[market.Id] = map[string]struct{}{}
+		p.mu.Unlock()
+	}
 }
 
 func (p *Party) addParty(ptyID, mktID string) {
@@ -82,17 +76,17 @@ func (p *Party) addParty(ptyID, mktID string) {
 }
 
 // NotifyTraderAccountWithTopUpAmount will create a new party in the system
-// and topup it general account with the given amount
+// and top-up it general account with the given amount
 func (p *Party) NotifyTraderAccountWithTopUpAmount(
 	notif *proto.NotifyTraderAccount, amount int64) error {
 	return p.notifyTraderAccount(notif, amount)
 }
 
 // NotifyTraderAccount will create a new party in the system
-// and topup it general account with the default amount
+// and top-up it general account with the default amount
 func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 	if notif.Amount == 0 {
-		return p.notifyTraderAccount(notif, topUpAmount)
+		return p.notifyTraderAccount(notif, 1000000000000)
 	}
 	return p.notifyTraderAccount(notif, int64(notif.Amount))
 }
@@ -100,7 +94,7 @@ func (p *Party) NotifyTraderAccount(notif *proto.NotifyTraderAccount) error {
 func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int64) error {
 	alreadyTopUp := map[string]struct{}{}
 
-	// ignore erros as they can only happen when the party already exists
+	// ignore errors as they can only happen when the party already exists
 	p.partyBuf.Add(types.Party{Id: notif.TraderID})
 
 	for _, mkt := range p.markets {
@@ -111,6 +105,7 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 				logging.Error(err))
 			return err
 		}
+
 		// create account
 		_, generalID := p.collateral.CreateTraderAccount(notif.TraderID, mkt.Id, asset)
 		if _, ok := alreadyTopUp[generalID]; !ok {
