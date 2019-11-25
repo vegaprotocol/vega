@@ -94,6 +94,8 @@ service trading_data {
   rpc Statistics(google.protobuf.Empty) returns (vega.Statistics);
   rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
 
+  // marketdata
+
   // streams
   rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
   rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesStream);

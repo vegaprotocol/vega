@@ -73,18 +73,20 @@ type NodeCommand struct {
 	candleStore           CandleStore
 	orderStore            OrderStore
 	marketStore           *storage.Market
+	marketDataStore       *storage.MarketData
 	tradeStore            TradeStore
 	partyStore            *storage.Party
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
 
-	orderBuf    *buffer.Order
-	tradeBuf    *buffer.Trade
-	partyBuf    *buffer.Party
-	transferBuf *buffer.TransferResponse
-	marketBuf   *buffer.Market
-	accountBuf  *buffer.Account
-	candleBuf   *buffer.Candle
+	orderBuf      *buffer.Order
+	tradeBuf      *buffer.Trade
+	partyBuf      *buffer.Party
+	transferBuf   *buffer.TransferResponse
+	marketBuf     *buffer.Market
+	accountBuf    *buffer.Account
+	candleBuf     *buffer.Candle
+	marketDataBuf *buffer.MarketData
 
 	candleService    *candles.Svc
 	tradeService     *trades.Svc

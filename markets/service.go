@@ -18,6 +18,15 @@ type MarketStore interface {
 	GetAll() ([]*types.Market, error)
 }
 
+// MarketDataStore ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/vega/markets MarketDataStore
+type MarketDataStore interface {
+	GetByID(string) (types.MarketData, error)
+	GetAll() []types.MarketData
+	Subscribe(chan<- []types.MarketData) uint64
+	Unsubscribe(uint64) error
+}
+
 // OrderStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/markets OrderStore
 type OrderStore interface {
@@ -29,23 +38,33 @@ type OrderStore interface {
 // Svc represent the market service
 type Svc struct {
 	Config
-	log            *logging.Logger
-	marketStore    MarketStore
-	orderStore     OrderStore
-	subscribersCnt int32
+	log             *logging.Logger
+	marketStore     MarketStore
+	orderStore      OrderStore
+	marketDataStore MarketDataStore
+
+	subscribersCnt           int32
+	marketDataSubscribersCnt int32
 }
 
 // NewService creates an market service with the necessary dependencies
-func NewService(log *logging.Logger, config Config, marketStore MarketStore, orderStore OrderStore) (*Svc, error) {
+func NewService(
+	log *logging.Logger,
+	config Config,
+	marketStore MarketStore,
+	orderStore OrderStore,
+	marketDataStore MarketDataStore,
+) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	return &Svc{
-		log:         log,
-		Config:      config,
-		marketStore: marketStore,
-		orderStore:  orderStore,
+		log:             log,
+		Config:          config,
+		marketStore:     marketStore,
+		orderStore:      orderStore,
+		marketDataStore: marketDataStore,
 	}, nil
 }
 
@@ -88,6 +107,16 @@ func (s *Svc) GetDepth(ctx context.Context, marketID string) (marketDepth *types
 	}
 
 	return s.orderStore.GetMarketDepth(ctx, m.Id)
+}
+
+// GetMarketDataByID return the market data for a given market
+func (s *Svc) GetMarketDataByID(marketID string) (types.MarketData, error) {
+	return s.marketDataStore.GetByID(marketID)
+}
+
+// GetMarketDataByID return the market data for a given market
+func (s *Svc) GetMarketsData(marketID string) []types.MarketData {
+	return s.marketDataStore.GetAll()
 }
 
 // GetMarketDepthSubscribersCount return the number of subscribers to the
@@ -177,6 +206,94 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 	}()
 
 	return depth, ref
+}
+
+func (s *Svc) ObserveMarketsData(
+	ctx context.Context, retries int, marketID string,
+) (<-chan []types.MarketData, uint64) {
+
+	marketsDataCh := make(chan []types.MarketData)
+	internal := make(chan []types.MarketData)
+	ref := s.marketDataStore.Subscribe(internal)
+
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
+	go func() {
+		atomic.AddInt32(&s.marketDataSubscribersCnt, 1)
+		defer atomic.AddInt32(&s.marketDataSubscribersCnt, -1)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
+		defer cancel()
+		for {
+			select {
+			case <-ctx.Done():
+				s.log.Debug(
+					"MarketData subscriber closed connection",
+					logging.Uint64("id", ref),
+					logging.String("ip-address", ip),
+				)
+				// this error only happens when the subscriber reference doesn't exist
+				// so we can still safely close the channels
+				if err := s.marketDataStore.Unsubscribe(ref); err != nil {
+					s.log.Error(
+						"Failure un-subscribing market data subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(internal)
+				close(marketsDataCh)
+				return
+			case mds := <-internal:
+				filtered := make([]types.MarketData, 0, len(mds))
+				for _, md := range mds {
+					if len(marketID) <= 0 || marketID == md.Market {
+						filtered = append(filtered, md)
+					}
+				}
+				retryCount := retries
+				success := false
+				for !success && retryCount >= 0 {
+					select {
+					case marketsDataCh <- filtered:
+						retryCount = retries
+						s.log.Debug(
+							"MarketsData for subscriber sent successfully",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+						)
+						success = true
+					default:
+						retryCount--
+						if retryCount > 0 {
+							s.log.Debug(
+								"MarketsData for subscriber not sent",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip))
+						}
+						time.Sleep(time.Duration(10) * time.Millisecond)
+					}
+				}
+				if !success && retryCount <= 0 {
+					s.log.Warn(
+						"MarketsData subscriber has hit the retry limit",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+						logging.Int("retries", retries))
+					cancel()
+					break
+				}
+
+			}
+		}
+	}()
+	return marketsDataCh, ref
+}
+
+// GetMarketDataSubscribersCount return the number of subscribers to the
+// market depths updates
+func (s *Svc) GetMarketDataSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.marketDataSubscribersCnt)
 }
 
 // ObserveMarkets ...

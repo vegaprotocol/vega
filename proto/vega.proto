@@ -114,12 +114,6 @@ message TradeSet {
     repeated Trade trades = 1;
 }
 
-message MarketData {
-    uint64 bestBid = 1;
-    uint64 bestOffer = 2;
-    uint64 lastTradedPrice = 3;
-}
-
 message Candle {
     int64 timestamp = 1;
     string datetime = 2;
@@ -322,4 +316,18 @@ message MarginLevels {
   int64 searchLevel = 2;
   int64 initialMargin = 3;
   int64 collateralReleaseLevel = 4;
+  string partyID = 5;
+  string marketID = 6;
+  int64 ts = 7;
+}
+
+message MarketData {
+  uint64 markPrice = 1;
+  uint64 bestBidPrice = 2;
+  uint64 bestBidVolume = 3;
+  uint64 bestOfferPrice = 4;
+  uint64 bestOfferVolume = 5;
+  uint64 midPrice = 6;
+  string market = 7;
+  int64 ts = 8;
 }
