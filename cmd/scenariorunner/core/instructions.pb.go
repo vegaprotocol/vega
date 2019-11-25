@@ -62,7 +62,6 @@ const (
 	// accounts
 	RequestType_ACCOUNTS_BY_PARTY            RequestType = 260
 	RequestType_ACCOUNTS_BY_PARTY_AND_MARKET RequestType = 261
-	RequestType_ACCOUNTS_BY_PARTY_AND_TYPE   RequestType = 262
 	RequestType_ACCOUNTS_BY_PARTY_AND_ASSET  RequestType = 263
 )
 
