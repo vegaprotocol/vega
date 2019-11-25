@@ -148,6 +148,49 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 	return
 }
 
+// UpdateNetwork - functionally the same as the Update func, except for ignoring the network
+// party in the trade (whether it be buyer or seller). This could be incorporated into the Update
+// function, but we know when we're adding network trades, and having this check every time is
+// wasteful, and would only serve to add complexity to the Update func, and slow it down
+func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
+	e.mu.Lock()
+	// there's only 1 position
+	var pos *MarketPosition
+	size := int64(trade.Size)
+	// there will only be 1 event
+	ret := make([]events.MarketPosition, 0, 1)
+	if trade.Buyer != "network" {
+		if b, ok := e.positions[trade.Buyer]; !ok {
+			pos = &MarketPosition{
+				partyID: trade.Buyer,
+			}
+			e.positions[trade.Buyer] = pos
+		} else {
+			pos = b
+		}
+		// potential buy pos is smaller now
+		pos.buy -= int64(trade.Size)
+	} else {
+		if s, ok := e.positions[trade.Seller]; !ok {
+			pos = &MarketPosition{
+				partyID: trade.Seller,
+			}
+			e.positions[trade.Seller] = pos
+		} else {
+			pos = s
+		}
+		// potential sell pos is smaller now
+		pos.sell -= int64(trade.Size)
+		// size is negative in case of a sale
+		size = -size
+	}
+	pos.size += size
+	// updated pos should be appended to event slice
+	ret = append(ret, *pos)
+	e.mu.Unlock()
+	return ret
+}
+
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
 func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	// Not using defer e.mu.Unlock(), because defer calls add some overhead
