@@ -74,8 +74,8 @@ type AccountBuf interface {
 	Flush() error
 }
 
-// AccountBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution AccountBuf
+// MarketDataBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketDataBuf
 type MarketDataBuf interface {
 	Add(types.MarketData)
 	Flush()

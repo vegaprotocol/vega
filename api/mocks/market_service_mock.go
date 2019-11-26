@@ -79,6 +79,35 @@ func (mr *MockMarketServiceMockRecorder) GetDepth(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDepth", reflect.TypeOf((*MockMarketService)(nil).GetDepth), arg0, arg1)
 }
 
+// GetMarketDataByID mocks base method
+func (m *MockMarketService) GetMarketDataByID(arg0 string) (proto.MarketData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMarketDataByID", arg0)
+	ret0, _ := ret[0].(proto.MarketData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMarketDataByID indicates an expected call of GetMarketDataByID
+func (mr *MockMarketServiceMockRecorder) GetMarketDataByID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDataByID", reflect.TypeOf((*MockMarketService)(nil).GetMarketDataByID), arg0)
+}
+
+// GetMarketDataSubscribersCount mocks base method
+func (m *MockMarketService) GetMarketDataSubscribersCount() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMarketDataSubscribersCount")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetMarketDataSubscribersCount indicates an expected call of GetMarketDataSubscribersCount
+func (mr *MockMarketServiceMockRecorder) GetMarketDataSubscribersCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDataSubscribersCount", reflect.TypeOf((*MockMarketService)(nil).GetMarketDataSubscribersCount))
+}
+
 // GetMarketDepthSubscribersCount mocks base method
 func (m *MockMarketService) GetMarketDepthSubscribersCount() int32 {
 	m.ctrl.T.Helper()
@@ -91,6 +120,20 @@ func (m *MockMarketService) GetMarketDepthSubscribersCount() int32 {
 func (mr *MockMarketServiceMockRecorder) GetMarketDepthSubscribersCount() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDepthSubscribersCount", reflect.TypeOf((*MockMarketService)(nil).GetMarketDepthSubscribersCount))
+}
+
+// GetMarketsData mocks base method
+func (m *MockMarketService) GetMarketsData() []proto.MarketData {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMarketsData")
+	ret0, _ := ret[0].([]proto.MarketData)
+	return ret0
+}
+
+// GetMarketsData indicates an expected call of GetMarketsData
+func (mr *MockMarketServiceMockRecorder) GetMarketsData() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketsData", reflect.TypeOf((*MockMarketService)(nil).GetMarketsData))
 }
 
 // ObserveDepth mocks base method
@@ -106,4 +149,19 @@ func (m *MockMarketService) ObserveDepth(arg0 context.Context, arg1 int, arg2 st
 func (mr *MockMarketServiceMockRecorder) ObserveDepth(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveDepth", reflect.TypeOf((*MockMarketService)(nil).ObserveDepth), arg0, arg1, arg2)
+}
+
+// ObserveMarketsData mocks base method
+func (m *MockMarketService) ObserveMarketsData(arg0 context.Context, arg1 int, arg2 string) (<-chan []proto.MarketData, uint64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObserveMarketsData", arg0, arg1, arg2)
+	ret0, _ := ret[0].(<-chan []proto.MarketData)
+	ret1, _ := ret[1].(uint64)
+	return ret0, ret1
+}
+
+// ObserveMarketsData indicates an expected call of ObserveMarketsData
+func (mr *MockMarketServiceMockRecorder) ObserveMarketsData(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveMarketsData", reflect.TypeOf((*MockMarketService)(nil).ObserveMarketsData), arg0, arg1, arg2)
 }
