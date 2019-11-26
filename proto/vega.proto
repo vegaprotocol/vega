@@ -115,12 +115,6 @@ message TradeSet {
     repeated Trade trades = 1;
 }
 
-message MarketData {
-    uint64 bestBid = 1;
-    uint64 bestOffer = 2;
-    uint64 lastTradedPrice = 3;
-}
-
 message Candle {
     int64 timestamp = 1;
     string datetime = 2;
@@ -182,10 +176,11 @@ message Statistics {
   int32 marketDepthSubscriptions = 24;
   int32 positionsSubscriptions = 25;
   int32 accountSubscriptions = 26;
-  string appVersionHash = 27;
-  string appVersion = 28;
-  string chainVersion = 29;
-  uint64 blockDuration = 30; // nanoseconds
+  int32 marketDataSubscriptions = 27;
+  string appVersionHash = 28;
+  string appVersion = 29;
+  string chainVersion = 30;
+  uint64 blockDuration = 31; // nanoseconds
 }
 
 enum ChainStatus {
@@ -323,4 +318,18 @@ message MarginLevels {
   int64 searchLevel = 2;
   int64 initialMargin = 3;
   int64 collateralReleaseLevel = 4;
+  string partyID = 5;
+  string marketID = 6;
+  int64 timestamp = 7;
+}
+
+message MarketData {
+  uint64 markPrice = 1;
+  uint64 bestBidPrice = 2;
+  uint64 bestBidVolume = 3;
+  uint64 bestOfferPrice = 4;
+  uint64 bestOfferVolume = 5;
+  uint64 midPrice = 6;
+  string market = 7;
+  int64 timestamp = 8;
 }

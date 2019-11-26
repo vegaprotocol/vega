@@ -85,9 +85,6 @@ func (this *TradeSet) Validate() error {
 	}
 	return nil
 }
-func (this *MarketData) Validate() error {
-	return nil
-}
 func (this *Candle) Validate() error {
 	return nil
 }
@@ -240,5 +237,8 @@ func (this *TransferResponse) Validate() error {
 	return nil
 }
 func (this *MarginLevels) Validate() error {
+	return nil
+}
+func (this *MarketData) Validate() error {
 	return nil
 }

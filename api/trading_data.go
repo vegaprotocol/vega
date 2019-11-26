@@ -100,6 +100,12 @@ type MarketService interface {
 	GetDepth(ctx context.Context, market string) (marketDepth *types.MarketDepth, err error)
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
 	GetMarketDepthSubscribersCount() int32
+	ObserveMarketsData(
+		ctx context.Context, retries int, marketID string,
+	) (<-chan []types.MarketData, uint64)
+	GetMarketDataSubscribersCount() int32
+	GetMarketDataByID(marketID string) (types.MarketData, error)
+	GetMarketsData() []types.MarketData
 }
 
 // PartyService ...
@@ -353,6 +359,30 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	return response, nil
 }
 
+func (h *tradingDataService) MarketDataByID(_ context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
+	if len(req.MarketID) <= 0 {
+		return nil, ErrEmptyMissingMarketID
+	}
+	md, err := h.MarketService.GetMarketDataByID(req.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.MarketDataByIDResponse{
+		MarketData: &md,
+	}, nil
+}
+
+func (h *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*protoapi.MarketsDataResponse, error) {
+	mds := h.MarketService.GetMarketsData()
+	mdptrs := make([]*types.MarketData, 0, len(mds))
+	for _, v := range mds {
+		mdptrs = append(mdptrs, &v)
+	}
+	return &protoapi.MarketsDataResponse{
+		MarketsData: mdptrs,
+	}, nil
+}
+
 // Statistics provides various blockchain and Vega statistics, including:
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
 // Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
@@ -431,6 +461,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 		MarketDepthSubscriptions: h.MarketService.GetMarketDepthSubscribersCount(),
 		CandleSubscriptions:      h.CandleService.GetCandleSubscribersCount(),
 		AccountSubscriptions:     h.AccountsService.GetAccountSubscribersCount(),
+		MarketDataSubscriptions:  h.MarketService.GetMarketDataSubscribersCount(),
 	}, nil
 }
 
@@ -493,6 +524,58 @@ func (h *tradingDataService) TransferResponsesSubscribe(
 
 		if transferResponseschan == nil {
 			h.log.Debug("TransferResponses subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return ErrStreamClosed
+		}
+	}
+}
+
+func (h *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubscribeRequest, srv protoapi.TradingData_MarketsDataSubscribeServer) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	marketdatachan, ref := h.MarketService.ObserveMarketsData(
+		ctx, h.Config.StreamRetries, req.MarketID)
+	h.log.Debug("Accounts subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	var err error
+
+	for {
+		select {
+		case mds := <-marketdatachan:
+			if mds == nil {
+				err = ErrChannelClosed
+				h.log.Error("markets data subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+			for _, md := range mds {
+				err = srv.Send(&md)
+				if err != nil {
+					h.log.Error("markets data subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+					return err
+				}
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			h.log.Debug("Markets data subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return ErrServerShutdown
+		}
+
+		if marketdatachan == nil {
+			h.log.Debug("Markets data subscriber - rpc stream closed",
 				logging.Uint64("ref", ref),
 			)
 			return ErrStreamClosed

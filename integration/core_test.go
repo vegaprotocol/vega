@@ -338,8 +338,10 @@ func hasNotBeenAddedToTheMarket(trader string) error {
 
 func theMarkPriceIs(markPrice string) error {
 	price, _ := strconv.ParseUint(markPrice, 10, 64)
-	if mktsetup.core.GetMarkPrice() != price {
-		return fmt.Errorf("expected mark price of %d instead saw %d", price, mktsetup.core.GetMarkPrice())
+	marketMarkPrice := mktsetup.core.GetMarketData().MarkPrice
+	if marketMarkPrice != price {
+		return fmt.Errorf("expected mark price of %d instead saw %d", price, marketMarkPrice)
 	}
+
 	return nil
 }

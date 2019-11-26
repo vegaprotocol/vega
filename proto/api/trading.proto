@@ -184,6 +184,7 @@ message AmendOrderRequest {
 }
 
 service trading_data {
+
   // Orders
 
   rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersResponse) {
@@ -377,6 +378,7 @@ service trading_data {
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
   rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
+  rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
 
   // Accounts
 
@@ -411,6 +413,45 @@ service trading_data {
       description: "Get a list of Accounts for a given Party and Asset";
     };
   };
+
+  // Market Data
+
+  rpc MarketDataByID(MarketDataByIDRequest) returns (MarketDataByIDResponse) {
+    option (google.api.http) = {
+      get: '/markets/{marketID}/data'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get Market Data";
+      description: "Get Data for a given Market";
+    };
+  };
+
+  rpc MarketsData(google.protobuf.Empty) returns (MarketsDataResponse) {
+    option (google.api.http) = {
+      get: '/markets/data'
+    };
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
+      summary: "Get Markets Data";
+      description: "Get Data for all Market";
+    };
+  };
+
+}
+
+message MarketsDataSubscribeRequest {
+  string marketID = 1;
+}
+
+message MarketDataByIDRequest {
+  string marketID = 1;
+}
+
+message MarketDataByIDResponse {
+  vega.MarketData marketData = 1;
+}
+
+message MarketsDataResponse {
+  repeated vega.MarketData marketsData = 1;
 }
 
 message LastTradeRequest {

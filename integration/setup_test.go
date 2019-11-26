@@ -111,17 +111,18 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 type executionTestSetup struct {
 	engine *execution.Engine
 
-	cfg       execution.Config
-	log       *logging.Logger
-	ctrl      *gomock.Controller
-	accounts  *accStub
-	candles   *mocks.MockCandleBuf
-	orders    *orderStub
-	trades    *tradeStub
-	parties   *mocks.MockPartyBuf
-	transfers *transferStub
-	markets   *mocks.MockMarketBuf
-	timesvc   *timeStub
+	cfg        execution.Config
+	log        *logging.Logger
+	ctrl       *gomock.Controller
+	accounts   *accStub
+	candles    *mocks.MockCandleBuf
+	orders     *orderStub
+	trades     *tradeStub
+	parties    *mocks.MockPartyBuf
+	transfers  *transferStub
+	markets    *mocks.MockMarketBuf
+	timesvc    *timeStub
+	marketdata *mocks.MockMarketDataBuf
 
 	// save trader accounts state
 	accs map[string][]account
@@ -161,7 +162,10 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
 	execsetup.timesvc = &timeStub{now: startTime}
+	execsetup.marketdata = mocks.NewMockMarketDataBuf(ctrl)
 
+	execsetup.marketdata.EXPECT().Flush().AnyTimes()
+	execsetup.marketdata.EXPECT().Add(gomock.Any()).AnyTimes()
 	execsetup.candles.EXPECT().Start(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	execsetup.candles.EXPECT().Flush(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	execsetup.markets.EXPECT().Add(gomock.Any()).AnyTimes()
@@ -169,7 +173,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, mkts)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, execsetup.marketdata, mkts)
 
 	return execsetup
 }

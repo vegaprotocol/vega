@@ -55,6 +55,13 @@ func (s *OrderBookSide) getLowestOrderPrice(side types.Side) (uint64, error) {
 	return s.levels[0].price, nil
 }
 
+func (s OrderBookSide) BestPriceAndVolume(side types.Side) (uint64, uint64) {
+	if len(s.levels) <= 0 {
+		return 0, 0
+	}
+	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume
+}
+
 func (s *OrderBookSide) amendOrder(orderAmended *types.Order) error {
 	priceLevelIndex := -1
 	orderIndex := -1

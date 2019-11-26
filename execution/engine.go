@@ -74,6 +74,13 @@ type AccountBuf interface {
 	Flush() error
 }
 
+// MarketDataBuf ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarketDataBuf
+type MarketDataBuf interface {
+	Add(types.MarketData)
+	Flush()
+}
+
 // Engine is the execution engine
 type Engine struct {
 	Config
@@ -84,13 +91,14 @@ type Engine struct {
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
-	orderBuf    OrderBuf
-	tradeBuf    TradeBuf
-	candleBuf   CandleBuf
-	marketBuf   MarketBuf
-	partyBuf    PartyBuf
-	accountBuf  AccountBuf
-	transferBuf TransferBuf
+	orderBuf      OrderBuf
+	tradeBuf      TradeBuf
+	candleBuf     CandleBuf
+	marketBuf     MarketBuf
+	partyBuf      PartyBuf
+	accountBuf    AccountBuf
+	transferBuf   TransferBuf
+	marketDataBuf MarketDataBuf
 
 	time TimeService
 }
@@ -108,6 +116,7 @@ func NewEngine(
 	partyBuf PartyBuf,
 	accountBuf AccountBuf,
 	transferBuf TransferBuf,
+	marketDataBuf MarketDataBuf,
 	pmkts []types.Market,
 ) *Engine {
 	// setup logger
@@ -127,20 +136,21 @@ func NewEngine(
 	}
 
 	e := &Engine{
-		log:         log,
-		Config:      executionConfig,
-		markets:     map[string]*Market{},
-		candleBuf:   candleBuf,
-		orderBuf:    orderBuf,
-		tradeBuf:    tradeBuf,
-		marketBuf:   marketBuf,
-		partyBuf:    partyBuf,
-		time:        time,
-		collateral:  cengine,
-		party:       NewParty(log, cengine, pmkts, partyBuf),
-		accountBuf:  accountBuf,
-		transferBuf: transferBuf,
-		idgen:       NewIDGen(),
+		log:           log,
+		Config:        executionConfig,
+		markets:       map[string]*Market{},
+		candleBuf:     candleBuf,
+		orderBuf:      orderBuf,
+		tradeBuf:      tradeBuf,
+		marketBuf:     marketBuf,
+		partyBuf:      partyBuf,
+		time:          time,
+		collateral:    cengine,
+		party:         NewParty(log, cengine, pmkts, partyBuf),
+		accountBuf:    accountBuf,
+		transferBuf:   transferBuf,
+		marketDataBuf: marketDataBuf,
+		idgen:         NewIDGen(),
 	}
 
 	// Add initial markets and flush to stores (if they're configured)
@@ -424,6 +434,12 @@ func (e *Engine) Generate() error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit markets"))
 	}
+
+	// get mark prices
+	for _, v := range e.markets {
+		e.marketDataBuf.Add(v.GetMarketData())
+	}
+	e.marketDataBuf.Flush()
 
 	return nil
 }
