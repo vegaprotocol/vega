@@ -95,6 +95,8 @@ service trading_data {
   rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
 
   // marketdata
+  rpc MarketDataByID(MarketDataByIDRequest) returns (MarketDataByIDResponse);
+  rpc MarketsData(google.protobuf.Empty) returns (MarketsDataResponse);
 
   // streams
   rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
@@ -104,12 +106,29 @@ service trading_data {
   rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.MarketPosition);
   rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
+  rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
 
   // accounts
   rpc AccountsByParty(AccountsByPartyRequest) returns (AccountsByPartyResponse);
   rpc AccountsByPartyAndMarket(AccountsByPartyAndMarketRequest) returns (AccountsByPartyAndMarketResponse);
   rpc AccountsByPartyAndType(AccountsByPartyAndTypeRequest) returns (AccountsByPartyAndTypeResponse);
   rpc AccountsByPartyAndAsset(AccountsByPartyAndAssetRequest) returns (AccountsByPartyAndAssetResponse);
+}
+
+message MarketsDataSubscribeRequest {
+  string marketID = 1;
+}
+
+message MarketDataByIDRequest {
+  string marketID = 1;
+}
+
+message MarketDataByIDResponse {
+  vega.MarketData marketData = 1;
+}
+
+message MarketsDataResponse {
+  repeated vega.MarketData marketsData = 1;
 }
 
 message LastTradeRequest {

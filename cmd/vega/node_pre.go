@@ -163,6 +163,7 @@ func (l *NodeCommand) setupBuffers() {
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
 
+	l.marketDataBuf = buffer.NewMarketData()
 	l.marketDataBuf.Register(l.marketDataStore)
 }
 

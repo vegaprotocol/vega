@@ -1,6 +1,8 @@
 package buffer
 
-import "code.vegaprotocol.io/vega/proto"
+import (
+	"code.vegaprotocol.io/vega/proto"
+)
 
 type MarketDataPlugin interface {
 	SaveBatch([]proto.MarketData)

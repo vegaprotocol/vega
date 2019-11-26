@@ -45,9 +45,10 @@ func NewMarketData(log *logging.Logger, c Config) *MarketData {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 	return &MarketData{
-		Config: c,
-		log:    log,
-		store:  map[string]proto.MarketData{},
+		Config:      c,
+		log:         log,
+		store:       map[string]proto.MarketData{},
+		subscribers: map[uint64]chan<- []proto.MarketData{},
 	}
 }
 

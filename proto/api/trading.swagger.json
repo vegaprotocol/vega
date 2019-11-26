@@ -361,6 +361,47 @@
         ]
       }
     },
+    "/marketsdata": {
+      "get": {
+        "operationId": "MarketsData",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketsDataResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/marketsdata/{marketID}": {
+      "get": {
+        "summary": "marketdata",
+        "operationId": "MarketDataByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketDataByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/orders": {
       "post": {
         "summary": "unary calls - writes",
@@ -865,6 +906,14 @@
         }
       }
     },
+    "apiMarketDataByIDResponse": {
+      "type": "object",
+      "properties": {
+        "marketData": {
+          "$ref": "#/definitions/vegaMarketData"
+        }
+      }
+    },
     "apiMarketDepthResponse": {
       "type": "object",
       "properties": {
@@ -885,6 +934,17 @@
         },
         "lastTrade": {
           "$ref": "#/definitions/vegaTrade"
+        }
+      }
+    },
+    "apiMarketsDataResponse": {
+      "type": "object",
+      "properties": {
+        "marketsData": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaMarketData"
+          }
         }
       }
     },
@@ -1410,6 +1470,42 @@
         }
       }
     },
+    "vegaMarketData": {
+      "type": "object",
+      "properties": {
+        "markPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "bestBidPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "bestBidVolume": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "bestOfferPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "bestOfferVolume": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "midPrice": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "market": {
+          "type": "string"
+        },
+        "ts": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "vegaMarketDepth": {
       "type": "object",
       "properties": {
@@ -1853,6 +1949,10 @@
           "type": "integer",
           "format": "int32"
         },
+        "marketDataSubscriptions": {
+          "type": "integer",
+          "format": "int32"
+        },
         "appVersionHash": {
           "type": "string"
         },
@@ -2019,6 +2119,18 @@
         }
       },
       "title": "Stream result of vegaCandle"
+    },
+    "vegaMarketData": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarketData"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarketData"
     },
     "vegaMarketDepth": {
       "type": "object",

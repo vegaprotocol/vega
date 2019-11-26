@@ -175,10 +175,11 @@ message Statistics {
   int32 marketDepthSubscriptions = 24;
   int32 positionsSubscriptions = 25;
   int32 accountSubscriptions = 26;
-  string appVersionHash = 27;
-  string appVersion = 28;
-  string chainVersion = 29;
-  uint64 blockDuration = 30; // nanoseconds
+  int32 marketDataSubscriptions = 27;
+  string appVersionHash = 28;
+  string appVersion = 29;
+  string chainVersion = 30;
+  uint64 blockDuration = 31; // nanoseconds
 }
 
 enum ChainStatus {
