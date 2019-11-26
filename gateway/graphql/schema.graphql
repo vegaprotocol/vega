@@ -115,6 +115,31 @@ type Subscription {
     type: AccountType
   ): Account!
 
+  # subscribe to the mark price changes
+  marketData(
+    # id of the market we want to subscribe to the market data changes
+    marketId: String
+  ): MarketData!
+}
+
+# Live data of a Market
+type MarketData {
+  # market id of the associated mark price
+  marketID: String!
+  # the mark price (actually an unsgined int)
+  markPrice: String!
+  # the highest price level on an order book for buy orders.
+  bestBidPrice: String!
+  # the aggregated volume being bid at the best bid price.
+  bestBidVolume: String!
+  # the lowest price level on an order book for offer orders.
+  bestOfferPrice: String!
+  # the aggregated volume being offered at the best offer price.
+  bestOfferVolume: String!
+  # the arithmetic average of the best bid price and best offer price.
+  midPrice: String!
+  # time at which this mark price was relevant
+  timestamp: String!
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -478,6 +503,9 @@ type Market {
     # reference of the order
     reference: String!
   ): Order!
+
+  # marketData for the given market
+  data: MarketData!
 }
 
 # Market Depth is a measure of the number of open buy and sell orders for a security or currency at different prices.

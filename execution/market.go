@@ -173,8 +173,19 @@ func NewMarket(
 }
 
 // GetMarkPrice - quick fix add this here to ensure the mark price has indeed updated
-func (m *Market) GetMarkPrice() uint64 {
-	return m.markPrice
+func (m *Market) GetMarketData() types.MarketData {
+	bestBidPrice, bestBidVolume := m.matching.BestBidPriceAndVolume()
+	bestOfferPrice, bestOfferVolume := m.matching.BestOfferPriceAndVolume()
+	return types.MarketData{
+		Market:          m.GetID(),
+		BestBidPrice:    bestBidPrice,
+		BestBidVolume:   bestBidVolume,
+		BestOfferPrice:  bestOfferPrice,
+		BestOfferVolume: bestOfferVolume,
+		MidPrice:        (bestBidPrice + bestOfferPrice) / 2,
+		MarkPrice:       m.markPrice,
+		Timestamp:       m.currentTime.UnixNano(),
+	}
 }
 
 // ReloadConf will trigger a reload of all the config settings in the market and all underlying engines

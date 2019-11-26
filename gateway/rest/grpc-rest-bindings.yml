@@ -35,6 +35,12 @@ http:
     - selector: api.trading_data.LastTrade
       get: '/markets/{marketID}/trades/latest'
 
+    # MarketData
+    - selector: api.trading_data.MarketsData
+      get: '/markets/data'
+    - selector: api.trading_data.MarketDataByID
+      get: '/markets/{marketID}/data'
+
     # Orders
     - selector: api.trading.SubmitOrder
       post: '/orders'

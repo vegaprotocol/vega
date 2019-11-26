@@ -162,6 +162,9 @@ func (l *NodeCommand) setupBuffers() {
 	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
+
+	l.marketDataBuf = buffer.NewMarketData()
+	l.marketDataBuf.Register(l.marketDataStore)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -170,6 +173,10 @@ func (l *NodeCommand) setupStorages() (err error) {
 		return
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
+
+	l.marketDataStore = storage.NewMarketData(l.Log, l.conf.Storage)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) })
+
 	if l.riskStore, err = storage.NewRisks(l.conf.Storage); err != nil {
 		return
 	}
@@ -239,6 +246,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.partyBuf,
 		l.accountBuf,
 		l.transferBuf,
+		l.marketDataBuf,
 		l.mktscfg,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
@@ -269,9 +277,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) })
 
-	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore); err != nil {
+	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore); err != nil {
 		return
 	}
+
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
