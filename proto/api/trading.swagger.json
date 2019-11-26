@@ -112,6 +112,22 @@
         ]
       }
     },
+    "/markets/data": {
+      "get": {
+        "operationId": "MarketsData",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketsDataResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/markets/{marketID}": {
       "get": {
         "summary": "markets",
@@ -177,6 +193,31 @@
               "I1D"
             ],
             "default": "I1M"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/markets/{marketID}/data": {
+      "get": {
+        "summary": "marketdata",
+        "operationId": "MarketDataByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarketDataByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -345,47 +386,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiLastTradeResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "marketID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/marketsdata": {
-      "get": {
-        "operationId": "MarketsData",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiMarketsDataResponse"
-            }
-          }
-        },
-        "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/marketsdata/{marketID}": {
-      "get": {
-        "summary": "marketdata",
-        "operationId": "MarketDataByID",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiMarketDataByIDResponse"
             }
           }
         },
@@ -1500,7 +1500,7 @@
         "market": {
           "type": "string"
         },
-        "ts": {
+        "timestamp": {
           "type": "string",
           "format": "int64"
         }

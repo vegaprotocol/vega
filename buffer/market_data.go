@@ -30,7 +30,7 @@ func (m *MarketData) Add(mp proto.MarketData) {
 
 func (m *MarketData) Flush() {
 	mds := m.mds
-	m.mds = make([]proto.MarketData, 0, len(mds))
+	m.mds = m.mds[:0]
 	for _, v := range m.plugins {
 		v.SaveBatch(mds)
 	}

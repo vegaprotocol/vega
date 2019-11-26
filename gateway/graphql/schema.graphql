@@ -139,7 +139,7 @@ type MarketData {
   # the arithmetic average of the best bid price and best offer price.
   midPrice: String!
   # time at which this mark price was relevant
-  ts: String!
+  timestamp: String!
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.

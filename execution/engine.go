@@ -357,11 +357,6 @@ func (e *Engine) onChainTimeUpdate(t time.Time) {
 	// when call with the new time (see the next for loop)
 	e.removeExpiredOrders(t)
 
-	// get mark prices
-	for _, v := range e.markets {
-		e.marketDataBuf.Add(v.GetMarketData())
-	}
-
 	// notify markets of the time expiration
 	for mktID, mkt := range e.markets {
 		mkt := mkt
@@ -440,6 +435,10 @@ func (e *Engine) Generate() error {
 		return errors.Wrap(err, fmt.Sprintf("Failed to commit markets"))
 	}
 
+	// get mark prices
+	for _, v := range e.markets {
+		e.marketDataBuf.Add(v.GetMarketData())
+	}
 	e.marketDataBuf.Flush()
 
 	return nil

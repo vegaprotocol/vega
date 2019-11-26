@@ -142,7 +142,7 @@ type ComplexityRoot struct {
 		MarkPrice       func(childComplexity int) int
 		MarketID        func(childComplexity int) int
 		MidPrice        func(childComplexity int) int
-		Ts              func(childComplexity int) int
+		Timestamp       func(childComplexity int) int
 	}
 
 	MarketDepth struct {
@@ -336,7 +336,7 @@ type MarketDataResolver interface {
 	BestOfferPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	BestOfferVolume(ctx context.Context, obj *proto.MarketData) (string, error)
 	MidPrice(ctx context.Context, obj *proto.MarketData) (string, error)
-	Ts(ctx context.Context, obj *proto.MarketData) (string, error)
+	Timestamp(ctx context.Context, obj *proto.MarketData) (string, error)
 }
 type MarketDepthResolver interface {
 	Market(ctx context.Context, obj *proto.MarketDepth) (*Market, error)
@@ -839,12 +839,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketData.MidPrice(childComplexity), true
 
-	case "MarketData.ts":
-		if e.complexity.MarketData.Ts == nil {
+	case "MarketData.timestamp":
+		if e.complexity.MarketData.Timestamp == nil {
 			break
 		}
 
-		return e.complexity.MarketData.Ts(childComplexity), true
+		return e.complexity.MarketData.Timestamp(childComplexity), true
 
 	case "MarketDepth.buy":
 		if e.complexity.MarketDepth.Buy == nil {
@@ -1957,7 +1957,7 @@ type MarketData {
   # the arithmetic average of the best bid price and best offer price.
   midPrice: String!
   # time at which this mark price was relevant
-  ts: String!
+  timestamp: String!
 }
 
 # An operation that is run before passing on to consensus, e.g. cancelling an order, will report whether it was accepted.
@@ -5194,7 +5194,7 @@ func (ec *executionContext) _MarketData_midPrice(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketData_ts(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketData_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -5213,7 +5213,7 @@ func (ec *executionContext) _MarketData_ts(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketData().Ts(rctx, obj)
+		return ec.resolvers.MarketData().Timestamp(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11488,7 +11488,7 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
-		case "ts":
+		case "timestamp":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -11496,7 +11496,7 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._MarketData_ts(ctx, field, obj)
+				res = ec._MarketData_timestamp(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

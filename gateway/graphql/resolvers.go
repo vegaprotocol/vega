@@ -577,8 +577,8 @@ func (r *myMarketDataResolver) MarkPrice(_ context.Context, m *types.MarketData)
 func (r *myMarketDataResolver) MarketID(_ context.Context, m *types.MarketData) (string, error) {
 	return m.Market, nil
 }
-func (r *myMarketDataResolver) Ts(_ context.Context, m *types.MarketData) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(m.Ts)), nil
+func (r *myMarketDataResolver) Timestamp(_ context.Context, m *types.MarketData) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
 }
 
 // END: MarketData resolver
