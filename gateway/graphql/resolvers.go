@@ -78,6 +78,8 @@ type TradingDataClient interface {
 	AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndMarketResponse, error)
 	AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndTypeResponse, error)
 	AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndAssetResponse, error)
+	MarketDataByID(ctx context.Context, in *protoapi.MarketDataByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketDataByIDResponse, error)
+	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketsDataSubscribeClient, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -123,6 +125,11 @@ func (r *VegaResolverRoot) Candle() CandleResolver {
 // MarketDepth returns the market depth resolver
 func (r *VegaResolverRoot) MarketDepth() MarketDepthResolver {
 	return (*myMarketDepthResolver)(r)
+}
+
+// MarketData returns the market depth resolver
+func (r *VegaResolverRoot) MarketData() MarketDataResolver {
+	return (*myMarketDataResolver)(r)
 }
 
 // PriceLevel returns the price levels resolver
@@ -275,6 +282,20 @@ func (r *myQueryResolver) CheckToken(ctx context.Context, partyID string, token 
 // BEGIN: Market Resolver
 
 type myMarketResolver VegaResolverRoot
+
+func (r *myMarketResolver) Data(
+	ctx context.Context, market *Market,
+) (*types.MarketData, error) {
+	req := protoapi.MarketDataByIDRequest{
+		MarketID: market.ID,
+	}
+	res, err := r.tradingDataClient.MarketDataByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	return res.MarketData, nil
+}
 
 func (r *myMarketResolver) Orders(
 	ctx context.Context, market *Market, open *bool, skip *int, first *int, last *int,
@@ -529,6 +550,38 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 }
 
 // END: Party Resolver
+
+// BEGIN: MarketData resolver
+
+type myMarketDataResolver VegaResolverRoot
+
+func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestBidPrice, 10), nil
+}
+
+func (r *myMarketDataResolver) BestBidVolume(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestBidVolume, 10), nil
+}
+func (r *myMarketDataResolver) BestOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestOfferPrice, 10), nil
+}
+func (r *myMarketDataResolver) BestOfferVolume(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestOfferVolume, 10), nil
+}
+func (r *myMarketDataResolver) MidPrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.MidPrice, 10), nil
+}
+func (r *myMarketDataResolver) MarkPrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.MarkPrice, 10), nil
+}
+func (r *myMarketDataResolver) MarketID(_ context.Context, m *types.MarketData) (string, error) {
+	return m.Market, nil
+}
+func (r *myMarketDataResolver) Timestamp(_ context.Context, m *types.MarketData) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
+}
+
+// END: MarketData resolver
 
 // BEGIN: Market Depth Resolver
 
@@ -1000,6 +1053,42 @@ func (r *myMutationResolver) Signin(ctx context.Context, id string, password str
 // BEGIN: Subscription Resolver
 
 type mySubscriptionResolver VegaResolverRoot
+
+func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *string) (<-chan *types.MarketData, error) {
+	var mktid string
+	if marketID != nil {
+		mktid = *marketID
+	}
+	req := &protoapi.MarketsDataSubscribeRequest{
+		MarketID: mktid,
+	}
+	stream, err := r.tradingDataClient.MarketsDataSubscribe(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan *types.MarketData)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(ch)
+		}()
+		for {
+			m, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("marketdata: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("marketdata: stream closed", logging.Error(err))
+				break
+			}
+			ch <- m
+		}
+	}()
+
+	return ch, nil
+}
 
 func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error) {
 	var (

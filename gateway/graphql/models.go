@@ -91,6 +91,7 @@ type Market struct {
 	Depth              *proto.MarketDepth  `json:"depth"`
 	Candles            []*proto.Candle     `json:"candles"`
 	OrderByReference   *proto.Order        `json:"orderByReference"`
+	Data               *proto.MarketData   `json:"data"`
 }
 
 type ModelParamsBs struct {

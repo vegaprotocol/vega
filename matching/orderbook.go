@@ -149,6 +149,14 @@ func (b *OrderBook) MarketOrderPrice(s types.Side) uint64 {
 	return p
 }
 
+func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64) {
+	return b.buy.BestPriceAndVolume(types.Side_Buy)
+}
+
+func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64) {
+	return b.sell.BestPriceAndVolume(types.Side_Sell)
+}
+
 // CancelOrder cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
