@@ -434,3 +434,44 @@ func (e *ValueDirection) UnmarshalGQL(v interface{}) error {
 func (e ValueDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
+
+type ExtraEnumToTestIssue552DoNotMerge string
+
+const (
+	ExtraEnumToTestIssue552DoNotMergeAaa ExtraEnumToTestIssue552DoNotMerge = "Aaa"
+	ExtraEnumToTestIssue552DoNotMergeBbb ExtraEnumToTestIssue552DoNotMerge = "Bbb"
+)
+
+var AllExtraEnumToTestIssue552DoNotMerge = []ExtraEnumToTestIssue552DoNotMerge{
+	ExtraEnumToTestIssue552DoNotMergeAaa,
+	ExtraEnumToTestIssue552DoNotMergeBbb,
+}
+
+func (e ExtraEnumToTestIssue552DoNotMerge) IsValid() bool {
+	switch e {
+	case ExtraEnumToTestIssue552DoNotMergeAaa, ExtraEnumToTestIssue552DoNotMergeBbb:
+		return true
+	}
+	return false
+}
+
+func (e ExtraEnumToTestIssue552DoNotMerge) String() string {
+	return string(e)
+}
+
+func (e *ExtraEnumToTestIssue552DoNotMerge) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ExtraEnumToTestIssue552DoNotMerge(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid extraEnumToTestIssue552__DO_NOT_MERGE__", str)
+	}
+	return nil
+}
+
+func (e ExtraEnumToTestIssue552DoNotMerge) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
