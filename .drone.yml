@@ -42,9 +42,9 @@ steps:
       - echo "$${GITLAB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - echo "$${GITLAB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
       - unset GITLAB_DEPLOY_SSH_KNOWN_HOSTS GITLAB_DEPLOY_SSH_PRIVATE_KEY
-      - echo make deps
-      - echo make build
-      - echo make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
+      - make deps
+      - make build
+      - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
     depends_on:
       - fetch
 
@@ -84,7 +84,7 @@ steps:
         path: /go/pkg
     environment: {}
     commands:
-      - echo make test
+      - make test
     depends_on:
       - build
 
@@ -105,13 +105,13 @@ steps:
     commands:
       # More small checks. Run all, instead of exitng after first failure.
       - failed=""
-      # - for target in print_check proto_check rest_check vet vetshadow ; do
-      #     echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
+      - for target in print_check proto_check rest_check vet vetshadow ; do
+          echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
       # diff_graphqlschema.sh requires GITLAB_API_TOKEN and SLACK_HOOK_URL
       - bash script/diff_graphqlschema.sh || failed="$$failed diff_graphqlschema"
-      # - /usr/local/bin/multilint || failed="$$failed multilint"
-      # - make lint || true  # Ignore lint failure for now (see #196)
-      # - make staticcheck || true  # Ignore failures until they're all fixed.
+      - /usr/local/bin/multilint || failed="$$failed multilint"
+      - make lint || true  # Ignore lint failure for now (see #196)
+      - make staticcheck || true  # Ignore failures until they're all fixed.
       - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
     depends_on:
       - test
