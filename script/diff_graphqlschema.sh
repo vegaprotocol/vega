@@ -19,9 +19,16 @@ else
 		fi
 	elif test -n "${DRONE:-}" ; then
 		# In Drone: https://docker-runner.docs.drone.io/configuration/environment/variables/
-		branch2="${CI_COMMIT_BRANCH:-}"
-		if test -z "$branch2" ; then
-			branch2="${DRONE_TAG:-}"
+		if test -n "${DRONE_PULL_REQUEST}" ; then
+			# This is a merge request.
+			branch1="${DRONE_TARGET_BRANCH}"
+			branch2="${DRONE_SOURCE_BRANCH}"
+		else
+			# Commit
+			branch2="${CI_COMMIT_BRANCH:-}"
+			if test -z "$branch2" ; then
+				branch2="${DRONE_TAG:-}"
+			fi
 		fi
 
 		if test -z "$branch2" ; then
@@ -35,23 +42,25 @@ else
 	fi
 fi
 
-case "$branch2" in
-	develop)
-		branch1="" # don't diff against master, it gets noisy on Slack#uidev.
-		;;
-	master)
-		branch1=""
-		;;
-	release/v*)
-		branch1=master
-		;;
-	*)
-		branch1=develop
-		;;
-esac
+if test -z "$branch1" ; then
+	# Deduce target branch
+	case "$branch2" in
+		develop)
+			branch1="" # don't diff against master, it gets noisy on Slack#uidev.
+			;;
+		master)
+			branch1=""
+			;;
+		release/v*)
+			branch1=master
+			;;
+		*)
+			branch1=develop
+			;;
+	esac
+fi
 
-echo "branch1: $branch1"
-echo "branch2: $branch2"
+echo "Diffing $branch1...$branch2"
 
 code=0
 if test -n "$branch1" ; then
