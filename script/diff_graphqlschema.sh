@@ -60,8 +60,6 @@ if test -z "$branch1" ; then
 	esac
 fi
 
-echo "Diffing $branch1...$branch2"
-
 code=0
 if test -n "$branch1" ; then
 	token="${GITLAB_API_TOKEN:-}"
