@@ -53,14 +53,6 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 
 	execution := core.NewExecution(d.execution)
 
-	markets := core.NewMarkets(d.ctx, d.marketStore)
-	orders := core.NewOrders(d.ctx, d.orderStore)
-	trades := core.NewTrades(d.ctx, d.tradeStore)
-	accounts := core.NewAccounts(d.ctx, d.accountStore)
-	candles := core.NewCandles(d.ctx, d.candleStore)
-	positions := core.NewPositions(d.ctx, d.tradeService)
-	parties := core.NewParties(d.ctx, d.partyStore)
-
 	summaryGenerator := core.NewSummaryGenerator(d.ctx, d.tradeStore, d.orderStore, d.partyStore, d.marketStore, d.accountStore, d.tradeService, d.execution)
 	summary := core.NewSummary(summaryGenerator)
 
@@ -76,13 +68,6 @@ func NewEngine(log *logging.Logger, engineConfig core.Config, storageConfig stor
 		timeControl:      timeControl,
 		providers: []core.PreProcessorProvider{
 			execution,
-			markets,
-			orders,
-			trades,
-			accounts,
-			candles,
-			positions,
-			parties,
 			summary,
 			time,
 		},
