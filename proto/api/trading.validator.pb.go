@@ -71,6 +71,22 @@ func (this *AmendOrderRequest) Validate() error {
 	}
 	return nil
 }
+func (this *MarginLevelsSubscribeRequest) Validate() error {
+	return nil
+}
+func (this *MarginLevelsRequest) Validate() error {
+	return nil
+}
+func (this *MarginLevelsResponse) Validate() error {
+	for _, item := range this.MarginLevels {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("MarginLevels", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *MarketsDataSubscribeRequest) Validate() error {
 	return nil
 }

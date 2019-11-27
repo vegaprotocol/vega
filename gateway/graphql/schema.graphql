@@ -120,6 +120,35 @@ type Subscription {
     # id of the market we want to subscribe to the market data changes
     marketId: String
   ): MarketData!
+
+  # Subscribe to the margin changes
+  margins(
+    # id of the trader we want to subscribe for margin updates
+    traderId: String!
+    # market we want to listen to margin updates (nil if we want updates for all markets)
+    marketID: String
+  ): MarginLevels!
+}
+
+# Margins for a given a trader
+type MarginLevels {
+  # market in which the margin is required for this trader
+  marketID: String!
+  # asset for the current margins
+  asset: String!
+  # id of the trader for this margin
+  partyID: String!
+  # minimal margin for the position to be maintained in the network (unsigned int actually)
+  maintenanceLevel: String!
+  # if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)
+  searchLevel: String!
+  # this is the minimal margin required for a trader to place a new order on the network (unsigned int actually)
+  initialLevel: String!
+  # if the margin of the trader is > to this level, then collateral will be release from the margin
+  # account into the general account of the trader for the given asset
+  collateralReleaseLevel: String!
+  # time at which these margin level were relevant
+  timestamp: String!
 }
 
 # Live data of a Market
@@ -608,6 +637,12 @@ type Party {
 
   # Trading positions relating to a party
   positions: [Position!]
+
+  # marginLevels
+  margins(
+    # market id off the margin to get, nil if all markets
+    marketId: String,
+  ): [MarginLevels!]
 }
 
 # An individual trader at any point in time is considered net long or net short.

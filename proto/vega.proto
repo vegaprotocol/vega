@@ -319,7 +319,8 @@ message MarginLevels {
   int64 collateralReleaseLevel = 4;
   string partyID = 5;
   string marketID = 6;
-  int64 timestamp = 7;
+  string asset = 7;
+  int64 timestamp = 8;
 }
 
 message MarketData {

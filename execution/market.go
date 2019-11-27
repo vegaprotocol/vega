@@ -70,11 +70,12 @@ type Market struct {
 	partyEngine *Party
 
 	// buffers
-	orderBuf    OrderBuf
-	partyBuf    PartyBuf
-	tradeBuf    TradeBuf
-	transferBuf TransferBuf
-	candleBuf   CandleBuf
+	orderBuf        OrderBuf
+	partyBuf        PartyBuf
+	tradeBuf        TradeBuf
+	transferBuf     TransferBuf
+	candleBuf       CandleBuf
+	marginLevelsBuf MarginLevelsBuf
 
 	closed bool
 }
@@ -118,6 +119,7 @@ func NewMarket(
 	partyBuf PartyBuf,
 	tradeBuf TradeBuf,
 	transferBuf TransferBuf,
+	marginLevelsBuf MarginLevelsBuf,
 	now time.Time,
 	idgen *IDgenerator,
 ) (*Market, error) {
@@ -167,6 +169,7 @@ func NewMarket(
 		tradeBuf:           tradeBuf,
 		candleBuf:          candleBuf,
 		transferBuf:        transferBuf,
+		marginLevelsBuf:    marginLevelsBuf,
 	}
 
 	return market, nil
@@ -795,6 +798,13 @@ func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) events
 		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil
 	}
+
+	// push margins into the buffer
+	margins := riskUpdate.MarginLevels()
+	margins.Timestamp = m.currentTime.UnixNano()
+	margins.MarketID = m.GetID()
+	m.marginLevelsBuf.Add(*margins)
+
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Got margins transfer on new order")
 		transfer := riskUpdate.Transfer()
@@ -847,6 +857,17 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 		}
 		return nil
 	}
+
+	// push margins into the buffer
+	t := m.currentTime.UnixNano()
+	mktid := m.GetID()
+	for _, riskUpdate := range riskUpdates {
+		margins := riskUpdate.MarginLevels()
+		margins.Timestamp = t
+		margins.MarketID = mktid
+		m.marginLevelsBuf.Add(*margins)
+	}
+
 	timer.EngineTimeCounterAdd()
 	return riskUpdates
 }

@@ -98,6 +98,9 @@ service trading_data {
   rpc MarketDataByID(MarketDataByIDRequest) returns (MarketDataByIDResponse);
   rpc MarketsData(google.protobuf.Empty) returns (MarketsDataResponse);
 
+  // marginlevels
+  rpc MarginLevels(MarginLevelsRequest) returns (MarginLevelsResponse);
+
   // streams
   rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
   rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesStream);
@@ -107,12 +110,27 @@ service trading_data {
   rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
   rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
   rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
+  rpc MarginLevelsSubscribe(MarginLevelsSubscribeRequest) returns (stream vega.MarginLevels);
 
   // accounts
   rpc AccountsByParty(AccountsByPartyRequest) returns (AccountsByPartyResponse);
   rpc AccountsByPartyAndMarket(AccountsByPartyAndMarketRequest) returns (AccountsByPartyAndMarketResponse);
   rpc AccountsByPartyAndType(AccountsByPartyAndTypeRequest) returns (AccountsByPartyAndTypeResponse);
   rpc AccountsByPartyAndAsset(AccountsByPartyAndAssetRequest) returns (AccountsByPartyAndAssetResponse);
+}
+
+message MarginLevelsSubscribeRequest {
+  string partyID = 1;
+  string marketID = 2;
+}
+
+message MarginLevelsRequest {
+  string partyID = 1;
+  string marketID = 2;
+}
+
+message MarginLevelsResponse {
+  repeated vega.MarginLevels marginLevels = 1;
 }
 
 message MarketsDataSubscribeRequest {

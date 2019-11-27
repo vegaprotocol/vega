@@ -898,6 +898,17 @@
         }
       }
     },
+    "apiMarginLevelsResponse": {
+      "type": "object",
+      "properties": {
+        "marginLevels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaMarginLevels"
+          }
+        }
+      }
+    },
     "apiMarketByIDResponse": {
       "type": "object",
       "properties": {
@@ -1443,6 +1454,37 @@
       "properties": {
         "scalingFactors": {
           "$ref": "#/definitions/vegaScalingFactors"
+        }
+      }
+    },
+    "vegaMarginLevels": {
+      "type": "object",
+      "properties": {
+        "maintenanceMargin": {
+          "type": "string",
+          "format": "int64"
+        },
+        "searchLevel": {
+          "type": "string",
+          "format": "int64"
+        },
+        "initialMargin": {
+          "type": "string",
+          "format": "int64"
+        },
+        "collateralReleaseLevel": {
+          "type": "string",
+          "format": "int64"
+        },
+        "partyID": {
+          "type": "string"
+        },
+        "marketID": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -2119,6 +2161,18 @@
         }
       },
       "title": "Stream result of vegaCandle"
+    },
+    "vegaMarginLevels": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarginLevels"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarginLevels"
     },
     "vegaMarketData": {
       "type": "object",
