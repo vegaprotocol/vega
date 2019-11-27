@@ -79,7 +79,7 @@ if test -n "$branch1" ; then
 		1>"$outputfile" 2>&1
 	code="$?"
 	if test "$code" == 0 ; then
-		if grep -q '^Files differ' "$outputfile" ; then
+		if grep -q '^---' "$outputfile" ; then
 			code=1
 			if test "${CI:-}" == "true" ; then
 				echo "Sending slack notification"
