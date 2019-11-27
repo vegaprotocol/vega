@@ -57,22 +57,7 @@ filename_urlquoted="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.qu
 get_file_for_branch() {
 	# Api endpoint: GET /projects/:id/repository/files/:file_path
 	# Doc: https://docs.gitlab.com/ee/api/repository_files.html#get-file-from-repository
-	# Sample response:
-	# {
-	#   "file_name": "schema.graphql",
-	#   "file_path": "gateway/graphql/schema.graphql",
-	#   "size": 21215,
-	#   "encoding": "base64",
-	#   "content_sha256": "8e06...07ec",
-	#   "ref": "develop",
-	#   "blob_id": "d099...1f0a",
-	#   "commit_id": "06c3...28e7",
-	#   "last_commit_id": "06b1...84f1",
-	#   "content": "IyMgVkVHQSAtIE...mVyYWwKfQo="
-	# }
-
 	branch="$1"
-
 	response_headers_file="$(mktemp)"
 	file_json="$(curl --silent -D "$response_headers_file" --header "$auth_header" "$gitlab_api/projects/$project_id/repository/files/$filename_urlquoted?ref=$branch")"
 	response_line="$(head -n1 <"$response_headers_file")"
@@ -89,13 +74,12 @@ get_file_for_branch() {
 	echo "$file_json"
 }
 
-echo "Getting $filename on $branch1"
 file1data="$(get_file_for_branch "$branch1")"
 if test "$(echo "$file1data" | jq -r .error)" '!=' null ; then
 	echo "$file1data"
 	exit 1
 fi
-echo "Getting $filename on $branch2"
+
 file2data="$(get_file_for_branch "$branch2")"
 if test "$(echo "$file2data" | jq -r .error)" '!=' null ; then
 	echo "$file2data"
@@ -116,21 +100,5 @@ file2tmpname="$(mktemp)"
 echo "$file1data" | jq -r .content | base64 --decode >"$file1tmpname"
 echo "$file2data" | jq -r .content | base64 --decode >"$file2tmpname"
 
-echo "Files differ between branch $branch1 and $branch2:"
-diffname="$(mktemp)"
-diff -u --label "$filename $branch1" --label "$filename $branch2" "$file1tmpname" "$file2tmpname" | tee "$diffname"
-
-echo
-echo "Latest commit: $(echo "$file1data" | jq .commit_id) (repo $branch1)"
-echo "Latest commit: $(echo "$file2data" | jq .commit_id) (repo $branch2)"
-echo
-echo "Latest commit: $(echo "$file1data" | jq .last_commit_id) ($filename $branch1)"
-echo "Latest commit: $(echo "$file2data" | jq .last_commit_id) ($filename $branch2)"
-
-gitlab_ci="${GITLAB_CI:-false}"
-if test "$gitlab_ci" == "true" ; then
-	echo "Sending slack notification"
-	pipeline_url="${CI_PIPELINE_URL:-[failed to get pipeline URL]}"
-	slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\` (see \`autogen_checks\` from $pipeline_url for details)\\n\`\`\`\\n$(cat "$diffname")\`\`\`"
-fi
-rm -f "$file1tmpname" "$file2tmpname" "$diffname"
+diff -u --label "$filename $branch1" --label "$filename $branch2" "$file1tmpname" "$file2tmpname"
+rm -f "$file1tmpname" "$file2tmpname"

@@ -68,6 +68,7 @@ if test -n "$branch1" ; then
 		exit 1
 	fi
 	pushd "$(realpath "$(dirname "$0")/..")" 1>/dev/null || exit 1
+	outputfile="$(mktemp)"
 	bash script/diff_file.sh \
 		"https://gitlab.com/api/v4" \
 		"$token" \
@@ -75,7 +76,21 @@ if test -n "$branch1" ; then
 		"$branch1" \
 		"$branch2" \
 		"gateway/graphql/schema.graphql" \
-		|| code=1
+		1>"$outputfile" 2>&1
+	code="$?"
+	if test "$code" == 0 ; then
+		if grep -q '^Files differ' "$outputfile" ; then
+			code=1
+			if test "${CI:-}" == "true" ; then
+				echo "Sending slack notification"
+				pipeline_url="${CI_PIPELINE_URL:-[failed to get pipeline URL]}"
+				slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\` (see \`autogen_checks\` from $pipeline_url for details)\\n\`\`\`\\n$(cat "$outputfile")\`\`\`"
+			fi
+		fi
+	else
+		cat "$outputfile"
+	fi
+	rm -f "$outputfile"
 	popd 1>/dev/null || exit 1
 fi
 exit "$code"
