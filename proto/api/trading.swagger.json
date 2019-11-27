@@ -1482,6 +1482,9 @@
         "marketID": {
           "type": "string"
         },
+        "asset": {
+          "type": "string"
+        },
         "timestamp": {
           "type": "string",
           "format": "int64"
