@@ -50,6 +50,9 @@ case "$branch2" in
 		;;
 esac
 
+echo "branch1: $branch1"
+echo "branch2: $branch2"
+
 code=0
 if test -n "$branch1" ; then
 	token="${GITLAB_API_TOKEN:-}"

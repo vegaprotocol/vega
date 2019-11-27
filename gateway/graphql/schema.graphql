@@ -28,6 +28,9 @@ type Mutation {
     expiration: String
     # type of the order
     type: OrderType!
+
+    extraThingToTestIssue552__DO_NOT_MERGE__: String!
+
   ): PendingOrder!
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
