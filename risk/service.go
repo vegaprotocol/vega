@@ -12,7 +12,7 @@ import (
 )
 
 // RiskStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/vega/risks RiskStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/vega/risk RiskStore
 type RiskStore interface {
 	GetMarginLevelsByID(partyID string, marketID string) ([]proto.MarginLevels, error)
 	Subscribe(c chan []proto.MarginLevels) uint64

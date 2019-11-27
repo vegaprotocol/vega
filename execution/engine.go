@@ -82,7 +82,7 @@ type MarketDataBuf interface {
 }
 
 // MarginLevelsBuf ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_levels_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarginLevelsBuf
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/margin_levels_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution MarginLevelsBuf
 type MarginLevelsBuf interface {
 	Add(types.MarginLevels)
 	Flush()
