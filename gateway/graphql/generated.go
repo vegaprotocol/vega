@@ -2657,6 +2657,11 @@ enum AccountType {
   # General account - the account containing "unused" collateral for traders
   General
 }
+
+enum extraEnumToTestIssue552__DO_NOT_MERGE__ {
+  Aaa
+  Bbb
+}
 `},
 )
 
