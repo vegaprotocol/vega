@@ -161,7 +161,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		OrderAmend  func(childComplexity int, id string, partyID string, price int, size int, expiration *string) int
 		OrderCancel func(childComplexity int, id string, partyID string, marketID string) int
-		OrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		OrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, extraThingToTestIssue552DoNotMerge string) int
 		Signin      func(childComplexity int, id string, password string) int
 	}
 
@@ -344,7 +344,7 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 }
 type MutationResolver interface {
-	OrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*proto.PendingOrder, error)
+	OrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, extraThingToTestIssue552DoNotMerge string) (*proto.PendingOrder, error)
 	OrderCancel(ctx context.Context, id string, partyID string, marketID string) (*proto.PendingOrder, error)
 	OrderAmend(ctx context.Context, id string, partyID string, price int, size int, expiration *string) (*proto.PendingOrder, error)
 	Signin(ctx context.Context, id string, password string) (string, error)
@@ -929,7 +929,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
+		return e.complexity.Mutation.OrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["extraThingToTestIssue552__DO_NOT_MERGE__"].(string)), true
 
 	case "Mutation.signin":
 		if e.complexity.Mutation.Signin == nil {
@@ -1846,6 +1846,9 @@ type Mutation {
     expiration: String
     # type of the order
     type: OrderType!
+
+    extraThingToTestIssue552__DO_NOT_MERGE__: String!
+
   ): PendingOrder!
 
   # Send a cancel order request into VEGA network, this does not immediately cancel an order.
@@ -2925,6 +2928,14 @@ func (ec *executionContext) field_Mutation_orderSubmit_args(ctx context.Context,
 		}
 	}
 	args["type"] = arg7
+	var arg8 string
+	if tmp, ok := rawArgs["extraThingToTestIssue552__DO_NOT_MERGE__"]; ok {
+		arg8, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["extraThingToTestIssue552__DO_NOT_MERGE__"] = arg8
 	return args, nil
 }
 
@@ -5507,7 +5518,7 @@ func (ec *executionContext) _Mutation_orderSubmit(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType))
+		return ec.resolvers.Mutation().OrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["extraThingToTestIssue552__DO_NOT_MERGE__"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
