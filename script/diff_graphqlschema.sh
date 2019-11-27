@@ -83,8 +83,9 @@ if test -n "$branch1" ; then
 			code=1
 			if test "${CI:-}" == "true" ; then
 				echo "Sending slack notification"
-				pipeline_url="${CI_PIPELINE_URL:-[failed to get pipeline URL]}"
-				slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\` (see \`autogen_checks\` from $pipeline_url for details)\\n\`\`\`\\n$(cat "$outputfile")\`\`\`"
+				# shellcheck disable=SC1091
+				source "$(realpath "$(dirname "$0")")/bash_functions.sh"
+				slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\`\\n\`\`\`\\n$(cat "$outputfile")\`\`\`"
 			fi
 		fi
 	else
