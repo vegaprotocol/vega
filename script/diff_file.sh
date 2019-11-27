@@ -2,11 +2,6 @@
 
 # Diff a file between one branch and another.
 
-pushd "$(realpath "$(dirname "$0")")" 1>/dev/null || exit 1
-# shellcheck disable=SC1091
-source bash_functions.sh
-popd 1>/dev/null || exit 1
-
 syntax() {
 	extra="${1:-}"
 	if test -n "$extra" ; then
@@ -63,25 +58,21 @@ get_file_for_branch() {
 	response_line="$(head -n1 <"$response_headers_file")"
 	rm -f "$response_headers_file"
 	if ! echo -n "$response_line" | grep -q '^HTTP/[0-9][.0-9]* 200 OK' ; then
-		echo '{'
-		echo '  "error":    "Failed to get file",'
-		echo '  "branch":   "'"$branch"'",'
-		echo '  "file":     "'"$filename"'",'
-		echo '  "response": '"$(json_escape "$response_line")"
-		echo '}'
+		echo "Error: Failed to get file"
+		echo "Response: $response_line"
 		return
 	fi
 	echo "$file_json"
 }
 
 file1data="$(get_file_for_branch "$branch1")"
-if test "$(echo "$file1data" | jq -r .error)" '!=' null ; then
+if echo "$file1data" | grep -q '^Error' ; then
 	echo "$file1data"
 	exit 1
 fi
 
 file2data="$(get_file_for_branch "$branch2")"
-if test "$(echo "$file2data" | jq -r .error)" '!=' null ; then
+if echo "$file2data" | grep -q '^Error' ; then
 	echo "$file2data"
 	exit 1
 fi

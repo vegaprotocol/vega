@@ -83,8 +83,6 @@ if test -n "$branch1" ; then
 			code=1
 			if test "${CI:-}" == "true" ; then
 				echo "Sending slack notification"
-				# shellcheck disable=SC1091
-				source "$(realpath "$(dirname "$0")")/bash_functions.sh"
 				slack_notify "#uidev" ":thinking-face:" "Heads up: GraphQL schema differs between \`$branch1\` and \`$branch2\`\\n\`\`\`\\n$(cat "$outputfile")\`\`\`"
 			fi
 		fi
