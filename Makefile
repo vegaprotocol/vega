@@ -130,6 +130,9 @@ ineffectassign: ## Check for ineffectual assignments
 
 proto: | deps ${PROTOFILES} ${PROTOVALFILES} proto/api/trading.pb.gw.go proto/api/trading.swagger.json ## build proto definitions
 
+cmd/scenariorunner/core/instructions.pb.go: cmd/scenariorunner/core/instructions.proto
+	@protoc -I. -Iproto -Ivendor -Ivendor/github.com/google/protobuf/src --go_out=plugins=grpc,paths=source_relative:. "$<"
+
 # This target is similar to the following one, but also with "plugins=grpc"
 proto/api/trading.pb.go: proto/api/trading.proto
 	@protoc -I. -Iproto -Ivendor -Ivendor/github.com/google/protobuf/src --go_out=plugins=grpc,paths=source_relative:. "$<"
