@@ -78,3 +78,25 @@ func (p *Positions) consume(ctx context.Context) {
 		}
 	}
 }
+
+func (p *Positions) updateData(update map[string]map[string]types.Position) {
+	for mID, traderMap := range update {
+		if _, ok := p.data[mID]; !ok {
+			// this market is new to the plugin, so the update is actually
+			// the initial data
+			p.data[mID] = traderMap
+			continue
+		}
+		// marketID is known, let's go over the traders
+		for trader, data := range traderMap {
+			current, ok := p.data[mID][trader]
+			if !ok {
+				// trader previously not known to the market, we can just add the data here
+				p.data[mID][trader] = data
+				continue
+			}
+			// update data
+			// 1. Append to FIFO queue
+			current.FifoQueue = append(current.FifoQueue, data.FifoQueue...)
+			// @TODO calculations to get avergage entry price etc... are all found in the buffer/positions.go file
+			// further work that needs to be done needs to match the python notebook
