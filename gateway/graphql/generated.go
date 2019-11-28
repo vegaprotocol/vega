@@ -284,6 +284,7 @@ type ComplexityRoot struct {
 		TradeSubscriptions       func(childComplexity int) int
 		TradesPerSecond          func(childComplexity int) int
 		TxPerBlock               func(childComplexity int) int
+		Uptime                   func(childComplexity int) int
 		VegaTime                 func(childComplexity int) int
 	}
 
@@ -1644,6 +1645,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Statistics.TxPerBlock(childComplexity), true
 
+	case "Statistics.upTime":
+		if e.complexity.Statistics.Uptime == nil {
+			break
+		}
+
+		return e.complexity.Statistics.Uptime(childComplexity), true
+
 	case "Statistics.vegaTime":
 		if e.complexity.Statistics.VegaTime == nil {
 			break
@@ -2189,6 +2197,9 @@ type Statistics {
 
   # Current time (real)
   currentTime: String!
+
+  # Uptime of the node
+  upTime: String!
 
   # Current time of the chain (decided through consensus)
   vegaTime: String!
@@ -8388,6 +8399,43 @@ func (ec *executionContext) _Statistics_currentTime(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Statistics_upTime(ctx context.Context, field graphql.CollectedField, obj *proto.Statistics) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Statistics",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Uptime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Statistics_vegaTime(ctx context.Context, field graphql.CollectedField, obj *proto.Statistics) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -13204,6 +13252,11 @@ func (ec *executionContext) _Statistics(ctx context.Context, sel ast.SelectionSe
 			}
 		case "currentTime":
 			out.Values[i] = ec._Statistics_currentTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "upTime":
+			out.Values[i] = ec._Statistics_upTime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

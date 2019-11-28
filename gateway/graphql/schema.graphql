@@ -266,6 +266,9 @@ type Statistics {
   # Current time (real)
   currentTime: String!
 
+  # Uptime of the node
+  upTime: String!
+
   # Current time of the chain (decided through consensus)
   vegaTime: String!
 
