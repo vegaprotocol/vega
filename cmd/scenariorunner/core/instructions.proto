@@ -87,10 +87,11 @@ message PartySummary {
 }
 
 enum RequestType {
-    SET_TIME = 0;
-    ADVANCE_TIME = 1;
-    MARKET_SUMMARY = 2;
-    SUMMARY = 3;
+    UNSPECIFIED = 0;
+    SET_TIME = 1;
+    ADVANCE_TIME = 2;
+    MARKET_SUMMARY = 3;
+    SUMMARY = 4;
     SUBMIT_ORDER = 100;
     CANCEL_ORDER = 101;
     AMEND_ORDER = 102;
