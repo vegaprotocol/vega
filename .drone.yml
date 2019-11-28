@@ -157,8 +157,6 @@ steps:
         from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
       GITLAB_API_TOKEN:
         from_secret: GITLAB_API_TOKEN
-      SLACK_HOOK_URL:
-        from_secret: SLACK_HOOK_URL
       VEGANET_USERS:
         from_secret: VEGANET_USERS
     commands:
@@ -166,8 +164,7 @@ steps:
           --token "$$GITLAB_API_TOKEN"
           --project1 5531219 --projectname1 client --branch1 develop --file1 'packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql'
           --project2 5726034 --projectname2 trading-core --branch2 develop --file2 'gateway/graphql/schema.graphql'
-          --slack-hookurl "$${SLACK_HOOK_URL}"
-          print_diff slack_notify create_mr
+          print_diff create_mr
       # The deploy script requires 3 DEVNET_* vars.
       ###- ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
