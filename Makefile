@@ -51,6 +51,9 @@ bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 test: ## Run unit tests
 	@go test ./...
 
+integrationtest:
+	@go test -v ./integration/... -godog.format=pretty
+
 race: ## Run data race detector
 	@env CGO_ENABLED=1 go test -race ./...
 

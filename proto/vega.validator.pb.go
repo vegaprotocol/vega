@@ -113,6 +113,19 @@ func (this *MarketDepth) Validate() error {
 func (this *MarketPosition) Validate() error {
 	return nil
 }
+func (this *Position) Validate() error {
+	for _, item := range this.FifoQueue {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("FifoQueue", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *PositionTrade) Validate() error {
+	return nil
+}
 func (this *Statistics) Validate() error {
 	return nil
 }
@@ -156,11 +169,11 @@ func (this *OrderSubmission) Validate() error {
 	if _, ok := Side_name[int32(this.Side)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("Side", fmt.Errorf(`value '%v' must be a valid Side field`, this.Side))
 	}
-	if _, ok := Order_TimeInForce_name[int32(this.TimeInForce)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("TimeInForce", fmt.Errorf(`value '%v' must be a valid Order_TimeInForce field`, this.TimeInForce))
+	if _, ok := TimeInForce_name[int32(this.TimeInForce)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("TimeInForce", fmt.Errorf(`value '%v' must be a valid TimeInForce field`, this.TimeInForce))
 	}
-	if _, ok := Order_Type_name[int32(this.Type)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("Type", fmt.Errorf(`value '%v' must be a valid Order_Type field`, this.Type))
+	if _, ok := Type_name[int32(this.Type)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("Type", fmt.Errorf(`value '%v' must be a valid Type field`, this.Type))
 	}
 	return nil
 }
