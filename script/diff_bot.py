@@ -216,7 +216,7 @@ def create_mr(
         exit(1)
 
     rr = r.json()
-    print("Created merge request {}: {}".format(rr["reference"], rr["web_url"]))
+    print("Created {}".format(rr["web_url"]))
     return rr
 
 
