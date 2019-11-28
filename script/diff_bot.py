@@ -214,7 +214,10 @@ def create_mr(
     if r.status_code >= 400:
         print("Error: Failed to create merge request: {}".format(r.text))
         exit(1)
-    return r.json()
+
+    rr = r.json()
+    print("Created merge request {}: {}".format(rr["reference"], rr["web_url"]))
+    return rr
 
 
 def main() -> None:
