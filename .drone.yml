@@ -42,9 +42,9 @@ steps:
       - echo "$${GITLAB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - echo "$${GITLAB_DEPLOY_SSH_KNOWN_HOSTS}" >~/.ssh/known_hosts ; chmod 0644 ~/.ssh/known_hosts
       - unset GITLAB_DEPLOY_SSH_KNOWN_HOSTS GITLAB_DEPLOY_SSH_PRIVATE_KEY
-      - echo make deps  # DO NOT MERGE
-      - echo make build  # DO NOT MERGE
-      - echo make gqlgen_check  # DO NOT MERGE  # This deletes then recreates files, so cannot be run in parallel.
+      - make deps
+      - make build
+      - make gqlgen_check  # This deletes then recreates files, so cannot be run in parallel.
     depends_on:
       - fetch
 
@@ -84,7 +84,7 @@ steps:
         path: /go/pkg
     environment: {}
     commands:
-      - echo make test  # DO NOT MERGE
+      - make test
     depends_on:
       - build
 
@@ -104,9 +104,9 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       # More small checks. Run all, instead of exitng after first failure.
-      ###- failed=""
-      ###- for target in print_check proto_check rest_check vet vetshadow ; do
-      ###    echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
+      - failed=""
+      - for target in print_check proto_check rest_check vet vetshadow ; do
+          echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
       - python3 script/diff_bot.py
           --token "$$GITLAB_API_TOKEN"
           --project1 5726034 --projectname1 trading-core --branch1 "$${DRONE_TARGET_BRANCH}" --file1 'gateway/graphql/schema.graphql'
@@ -114,9 +114,9 @@ steps:
           --slack-hookurl "$${SLACK_HOOK_URL}"
           --slack-recipient "#uidev"
           print_diff slack_notify || failed="$$failed diff_bot"
-      ###- /usr/local/bin/multilint || failed="$$failed multilint"
-      ###- make lint || true  # Ignore lint failure for now (see #196)
-      ###- make staticcheck || true  # Ignore failures until they're all fixed.
+      - /usr/local/bin/multilint || failed="$$failed multilint"
+      - make lint || true  # Ignore lint failure for now (see #196)
+      - make staticcheck || true  # Ignore failures until they're all fixed.
       - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
     depends_on:
       - test
@@ -132,8 +132,8 @@ steps:
         path: /go/pkg
     environment: {}
     commands:
-      - echo make race  # DO NOT MERGE
-      - echo make msan  # DO NOT MERGE
+      - make race
+      - make msan
     depends_on:
       - test
     when:
@@ -164,23 +164,22 @@ steps:
           --token "$$GITLAB_API_TOKEN"
           --project1 5531219 --projectname1 client --branch1 develop --file1 'packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql'
           --project2 5726034 --projectname2 trading-core --branch2 develop --file2 'gateway/graphql/schema.graphql'
-          print_diff create_mr
+          create_mr
       # The deploy script requires 3 DEVNET_* vars.
-      ###- ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
+      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
-      ###- 'for u in $$VEGANET_USERS ; do
-      ###    cmd/vegaccount/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
-      ###    curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $$VEGA_AUTH_MASTERTOKEN"
-      ###      -d "{\"id\": \"$$u\", \"password\": \"123\"}" https://auth.d.vega.xyz 1>/dev/null ;
-      ###    echo ;
-      ###  done'
+      - 'for u in $$VEGANET_USERS ; do
+          cmd/vegaccount/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
+          curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Bearer $$VEGA_AUTH_MASTERTOKEN"
+            -d "{\"id\": \"$$u\", \"password\": \"123\"}" https://auth.d.vega.xyz 1>/dev/null ;
+          echo ;
+        done'
     depends_on:
       - test
       - test_heavy
     when:
       branch:
         - develop
-        - 555-create-graphql-bot  # DO NOT MERGE
       event:
         - push
 
