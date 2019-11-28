@@ -173,6 +173,11 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		if margins == nil {
 			continue
 		}
+
+		// update other fields for the margins
+		margins.PartyID = evt.Party()
+		margins.Asset = evt.Asset()
+
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("margins calculated on settlement",
 				logging.String("party-id", evt.Party()),
