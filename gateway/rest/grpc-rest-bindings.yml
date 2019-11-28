@@ -41,6 +41,7 @@ http:
     - selector: api.trading_data.MarketDataByID
       get: '/markets/{marketID}/data'
 
+
     # Orders
     - selector: api.trading.SubmitOrder
       post: '/orders'

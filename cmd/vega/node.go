@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/trades"
@@ -79,14 +80,15 @@ type NodeCommand struct {
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
 
-	orderBuf      *buffer.Order
-	tradeBuf      *buffer.Trade
-	partyBuf      *buffer.Party
-	transferBuf   *buffer.TransferResponse
-	marketBuf     *buffer.Market
-	accountBuf    *buffer.Account
-	candleBuf     *buffer.Candle
-	marketDataBuf *buffer.MarketData
+	orderBuf        *buffer.Order
+	tradeBuf        *buffer.Trade
+	partyBuf        *buffer.Party
+	transferBuf     *buffer.TransferResponse
+	marketBuf       *buffer.Market
+	accountBuf      *buffer.Account
+	candleBuf       *buffer.Candle
+	marketDataBuf   *buffer.MarketData
+	marginLevelsBuf *buffer.MarginLevels
 
 	candleService    *candles.Svc
 	tradeService     *trades.Svc
@@ -97,6 +99,7 @@ type NodeCommand struct {
 	auth             *auth.Svc
 	accountsService  *accounts.Svc
 	transfersService *transfers.Svc
+	riskService      *risk.Svc
 
 	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
@@ -178,6 +181,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.candleService,
 		l.accountsService,
 		l.transfersService,
+		l.riskService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

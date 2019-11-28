@@ -3,11 +3,46 @@ package core_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/proto"
 )
+
+type marginsStub struct {
+	data map[string]map[string]proto.MarginLevels
+	mu   sync.Mutex
+}
+
+func NewMarginsStub() *marginsStub {
+	return &marginsStub{
+		data: map[string]map[string]proto.MarginLevels{},
+	}
+}
+
+func (m *marginsStub) Add(ml proto.MarginLevels) {
+	m.mu.Lock()
+	if _, ok := m.data[ml.PartyID]; !ok {
+		m.data[ml.PartyID] = map[string]proto.MarginLevels{}
+	}
+	m.data[ml.PartyID][ml.MarketID] = ml
+	m.mu.Unlock()
+}
+
+func (m *marginsStub) getMarginByPartyAndMarket(partyID, marketID string) (proto.MarginLevels, error) {
+	mkts, ok := m.data[partyID]
+	if !ok {
+		return proto.MarginLevels{}, fmt.Errorf("no margin levels for party (%v)", partyID)
+	}
+	ml, ok := mkts[marketID]
+	if !ok {
+		return proto.MarginLevels{}, fmt.Errorf("party (%v) have no margin levels for market (%v)", partyID, marketID)
+	}
+	return ml, nil
+}
+
+func (m *marginsStub) Flush() {}
 
 type accStub struct {
 	data map[string]proto.Account
