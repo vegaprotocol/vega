@@ -80,7 +80,6 @@ if test -n "$branch1" ; then
 	code="$?"
 	if test "$code" == 0 ; then
 		if grep -q '^---' "$outputfile" ; then
-			code=1
 			if test "${CI:-}" == "true" ; then
 				cat "$outputfile"
 				echo "Sending slack notification"
