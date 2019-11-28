@@ -35,9 +35,10 @@ func NewRisks(log *logging.Logger, c Config) *Risk {
 	log.SetLevel(c.Level.Get())
 
 	return &Risk{
-		Config:  c,
-		log:     log,
-		margins: map[string]map[string]proto.MarginLevels{},
+		Config:      c,
+		log:         log,
+		margins:     map[string]map[string]proto.MarginLevels{},
+		subscribers: map[uint64]chan []proto.MarginLevels{},
 	}
 }
 

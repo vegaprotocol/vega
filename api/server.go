@@ -200,6 +200,7 @@ func (g *GRPCServer) Start() {
 		TimeService:             g.timeService,
 		AccountsService:         g.accountsService,
 		TransferResponseService: g.transferResponseService,
+		RiskService:             g.riskService,
 		statusChecker:           g.statusChecker,
 		ctx:                     g.ctx,
 	}

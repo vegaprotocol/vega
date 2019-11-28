@@ -27,9 +27,12 @@ type Svc struct {
 	subscriberCnt int32
 }
 
-func NewService(log *logging.Logger, config Config, store RiskStore) *Svc {
+func NewService(log *logging.Logger, c Config, store RiskStore) *Svc {
+	log = log.Named(namedLogger)
+	log.SetLevel(c.Level.Get())
+
 	return &Svc{
-		Config: config,
+		Config: c,
 		log:    log,
 		store:  store,
 	}
