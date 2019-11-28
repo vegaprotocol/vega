@@ -124,7 +124,7 @@ type Subscription {
   # Subscribe to the margin changes
   margins(
     # id of the trader we want to subscribe for margin updates
-    traderId: String!
+    partyId: String!
     # market we want to listen to margin updates (nil if we want updates for all markets)
     marketID: String
   ): MarginLevels!
@@ -133,11 +133,11 @@ type Subscription {
 # Margins for a given a trader
 type MarginLevels {
   # market in which the margin is required for this trader
-  marketID: String!
+  market: Market!
   # asset for the current margins
   asset: String!
   # id of the trader for this margin
-  partyID: String!
+  party: Party!
   # minimal margin for the position to be maintained in the network (unsigned int actually)
   maintenanceLevel: String!
   # if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)
@@ -154,7 +154,7 @@ type MarginLevels {
 # Live data of a Market
 type MarketData {
   # market id of the associated mark price
-  marketID: String!
+  market: Market!
   # the mark price (actually an unsgined int)
   markPrice: String!
   # the highest price level on an order book for buy orders.
