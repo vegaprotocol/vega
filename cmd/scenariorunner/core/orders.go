@@ -42,7 +42,7 @@ func (o *Orders) ordersByMarket() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.OrdersByMarketResponse{Orders: resp}, nil
+				return &protoapi.OrdersResponse{Orders: resp}, nil
 			})
 	}
 	return &PreProcessor{
@@ -65,7 +65,7 @@ func (o *Orders) ordersByParty() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.OrdersByPartyResponse{Orders: resp}, nil
+				return &protoapi.OrdersResponse{Orders: resp}, nil
 			})
 	}
 	return &PreProcessor{
@@ -87,7 +87,7 @@ func (o *Orders) orderByMarketAndID() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.OrderByMarketAndIdResponse{Order: resp}, nil
+				return &protoapi.OrderResponse{Order: resp}, nil
 			})
 	}
 	return &PreProcessor{
@@ -109,7 +109,7 @@ func (o *Orders) orderByReference() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.OrderByMarketAndIdResponse{Order: resp}, nil
+				return &protoapi.OrderResponse{Order: resp}, nil
 			})
 	}
 	return &PreProcessor{

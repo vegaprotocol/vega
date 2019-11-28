@@ -23,7 +23,6 @@ func (a *Accounts) PreProcessors() map[RequestType]*PreProcessor {
 		RequestType_ACCOUNTS_BY_PARTY:            a.accountsByParty(),
 		RequestType_ACCOUNTS_BY_PARTY_AND_ASSET:  a.accountsByPartyAndAsset(),
 		RequestType_ACCOUNTS_BY_PARTY_AND_MARKET: a.accountsByPartyAndMarket(),
-		RequestType_ACCOUNTS_BY_PARTY_AND_TYPE:   a.accountsByPartyAndType(),
 	}
 }
 
@@ -39,7 +38,7 @@ func (a *Accounts) accountsByParty() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.AccountsByPartyResponse{Accounts: resp}, nil
+				return &protoapi.AccountsResponse{Accounts: resp}, nil
 			})
 	}
 	return &PreProcessor{
@@ -60,7 +59,7 @@ func (a *Accounts) accountsByPartyAndAsset() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.AccountsByPartyAndAssetResponse{Accounts: resp}, nil
+				return &protoapi.AccountsResponse{Accounts: resp}, nil
 			})
 	}
 	return &PreProcessor{
@@ -81,32 +80,11 @@ func (a *Accounts) accountsByPartyAndMarket() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.AccountsByPartyAndMarketResponse{Accounts: resp}, nil
+				return &protoapi.AccountsResponse{Accounts: resp}, nil
 			})
 	}
 	return &PreProcessor{
 		MessageShape: &protoapi.AccountsByPartyAndMarketRequest{},
-		PreProcess:   preProcessor,
-	}
-}
-
-func (a *Accounts) accountsByPartyAndType() *PreProcessor {
-	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
-		req := &protoapi.AccountsByPartyAndTypeRequest{}
-		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, ErrInstructionInvalid
-		}
-		return instr.PreProcess(
-			func() (proto.Message, error) {
-				resp, err := a.acccountStore.GetByPartyAndType(req.PartyID, req.Type)
-				if err != nil {
-					return nil, err
-				}
-				return &protoapi.AccountsByPartyAndTypeResponse{Accounts: resp}, nil
-			})
-	}
-	return &PreProcessor{
-		MessageShape: &protoapi.AccountsByPartyAndTypeRequest{},
 		PreProcess:   preProcessor,
 	}
 }

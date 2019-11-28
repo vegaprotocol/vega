@@ -172,7 +172,7 @@ const defaultLimit = uint64(1000)
 // Pagination: Optional. If not provided, defaults are used.
 // Returns a list of orders sorted by timestamp descending (most recent first).
 func (h *tradingDataService) OrdersByMarket(ctx context.Context,
-	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersByMarketResponse, error) {
+	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersResponse, error) {
 
 	if request.MarketID == "" {
 		return nil, ErrEmptyMissingMarketID
@@ -188,7 +188,7 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 		return nil, err
 	}
 
-	var response = &protoapi.OrdersByMarketResponse{}
+	var response = &protoapi.OrdersResponse{}
 	if len(o) > 0 {
 		response.Orders = o
 	}
@@ -200,7 +200,7 @@ func (h *tradingDataService) OrdersByMarket(ctx context.Context,
 // Pagination: Optional. If not provided, defaults are used.
 // Returns a list of orders sorted by timestamp descending (most recent first).
 func (h *tradingDataService) OrdersByParty(ctx context.Context,
-	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
+	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersResponse, error) {
 
 	if request.PartyID == "" {
 		return nil, ErrEmptyMissingPartyID
@@ -216,7 +216,7 @@ func (h *tradingDataService) OrdersByParty(ctx context.Context,
 		return nil, err
 	}
 
-	var response = &protoapi.OrdersByPartyResponse{}
+	var response = &protoapi.OrdersResponse{}
 	if len(o) > 0 {
 		response.Orders = o
 	}
@@ -238,7 +238,7 @@ func (h *tradingDataService) Markets(ctx context.Context, request *google_proto.
 
 // OrdersByMarketAndId provides the given order, searching by Market and (Order)Id.
 func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
-	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
+	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderResponse, error) {
 
 	if request.MarketID == "" {
 		return nil, ErrEmptyMissingMarketID
@@ -251,13 +251,13 @@ func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
 		return nil, err
 	}
 
-	return &protoapi.OrderByMarketAndIdResponse{
+	return &protoapi.OrderResponse{
 		Order: order,
 	}, nil
 }
 
 // OrderByReference provides the (possibly not yet accepted/rejected) order.
-func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
+func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderResponse, error) {
 	if req.Reference == "" {
 		return nil, ErrEmptyMissingOrderReference
 	}
@@ -265,7 +265,7 @@ func (h *tradingDataService) OrderByReference(ctx context.Context, req *protoapi
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.OrderByReferenceResponse{
+	return &protoapi.OrderResponse{
 		Order: order,
 	}, nil
 }
@@ -326,7 +326,7 @@ func (h *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 
 // TradesByMarket provides a list of trades for a given market.
 // Pagination: Optional. If not provided, defaults are used.
-func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
+func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesResponse, error) {
 	if request.MarketID == "" {
 		return nil, ErrEmptyMissingMarketID
 	}
@@ -340,7 +340,7 @@ func (h *tradingDataService) TradesByMarket(ctx context.Context, request *protoa
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.TradesByMarketResponse{
+	return &protoapi.TradesResponse{
 		Trades: t,
 	}, nil
 }
@@ -980,7 +980,7 @@ func (h *tradingDataService) PartyByID(ctx context.Context, req *protoapi.PartyB
 // Pagination: Optional. If not provided, defaults are used.
 func (h *tradingDataService) TradesByParty(
 	ctx context.Context, req *protoapi.TradesByPartyRequest,
-) (*protoapi.TradesByPartyResponse, error) {
+) (*protoapi.TradesResponse, error) {
 
 	p := defaultPagination
 	if req.Pagination != nil {
@@ -992,7 +992,7 @@ func (h *tradingDataService) TradesByParty(
 		return nil, err
 	}
 
-	return &protoapi.TradesByPartyResponse{
+	return &protoapi.TradesResponse{
 		Trades: trades,
 	}, nil
 }
@@ -1000,12 +1000,12 @@ func (h *tradingDataService) TradesByParty(
 // TradesByOrder provides a list of the trades that correspond to a given order.
 func (h *tradingDataService) TradesByOrder(
 	ctx context.Context, req *protoapi.TradesByOrderRequest,
-) (*protoapi.TradesByOrderResponse, error) {
+) (*protoapi.TradesResponse, error) {
 	trades, err := h.TradeService.GetByOrderID(ctx, req.OrderID)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.TradesByOrderResponse{
+	return &protoapi.TradesResponse{
 		Trades: trades,
 	}, nil
 }
@@ -1030,45 +1030,34 @@ func (h *tradingDataService) LastTrade(
 }
 
 // AccountsByParty provides a list of accounts for the given party.
-func (h *tradingDataService) AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest) (*protoapi.AccountsByPartyResponse, error) {
+func (h *tradingDataService) AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest) (*protoapi.AccountsResponse, error) {
 	accs, err := h.AccountsService.GetByParty(req.PartyID)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.AccountsByPartyResponse{
+	return &protoapi.AccountsResponse{
 		Accounts: accs,
 	}, nil
 }
 
 // AccountsByPartyAndMarket provides a list of accounts for the given party and market.
-func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsByPartyAndMarketResponse, error) {
+func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsResponse, error) {
 	accs, err := h.AccountsService.GetByPartyAndMarket(req.PartyID, req.MarketID)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.AccountsByPartyAndMarketResponse{
-		Accounts: accs,
-	}, nil
-}
-
-// AccountsByPartyAndType provides a list of accounts of the given type for the given party.
-func (h *tradingDataService) AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest) (*protoapi.AccountsByPartyAndTypeResponse, error) {
-	accs, err := h.AccountsService.GetByPartyAndType(req.PartyID, req.Type)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsByPartyAndTypeResponse{
+	return &protoapi.AccountsResponse{
 		Accounts: accs,
 	}, nil
 }
 
 // AccountsByPartyAndAsset provides a list of accounts for the given party.
-func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsByPartyAndAssetResponse, error) {
+func (h *tradingDataService) AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest) (*protoapi.AccountsResponse, error) {
 	accs, err := h.AccountsService.GetByPartyAndAsset(req.PartyID, req.Asset)
 	if err != nil {
 		return nil, err
 	}
-	return &protoapi.AccountsByPartyAndAssetResponse{
+	return &protoapi.AccountsResponse{
 		Accounts: accs,
 	}, nil
 }

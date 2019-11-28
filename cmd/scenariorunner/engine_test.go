@@ -700,22 +700,10 @@ func getAccountInstructions(marketId string, partyId string) ([]*core.Instructio
 		return nil, err
 	}
 
-	instr4, err := core.NewInstruction(
-		core.RequestType_ACCOUNTS_BY_PARTY_AND_TYPE,
-		&protoapi.AccountsByPartyAndTypeRequest{
-			PartyID: partyId,
-			Type:    types.AccountType_GENERAL,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	instructions := []*core.Instruction{
 		instr1,
 		instr2,
 		instr3,
-		instr4,
 	}
 
 	return instructions, nil

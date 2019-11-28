@@ -42,7 +42,7 @@ func (t *Trades) tradesByMarket() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.TradesByMarketResponse{Trades: resp}, nil
+				return &protoapi.TradesResponse{Trades: resp}, nil
 			})
 	}
 	return &PreProcessor{
@@ -65,7 +65,7 @@ func (t *Trades) tradesByParty() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.TradesByPartyResponse{Trades: resp}, nil
+				return &protoapi.TradesResponse{Trades: resp}, nil
 			})
 	}
 	return &PreProcessor{
@@ -87,7 +87,7 @@ func (t *Trades) tradesByOrder() *PreProcessor {
 				if err != nil {
 					return nil, err
 				}
-				return &protoapi.TradesByOrderResponse{Trades: resp}, nil
+				return &protoapi.TradesResponse{Trades: resp}, nil
 
 			})
 	}
