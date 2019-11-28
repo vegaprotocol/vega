@@ -45,6 +45,14 @@ func (err OrderError) Error() string {
 		return "OrderError: Order Amend Failure"
 	case OrderError_ORDER_NOT_FOUND:
 		return "OrderError: Order Not Found"
+	case OrderError_INVALID_PARTY_ID:
+		return "OrderError: Invalid Party ID"
+	case OrderError_MARKET_CLOSED:
+		return "OrderError: Market Closed"
+	case OrderError_MARGIN_CHECK_FAILED:
+		return "OrderError: Margin Check Failed"
+	case OrderError_VEGA_INTERNAL_ERROR:
+		return "OrderError: Vega Internal Error"
 	default:
 		return "invalid OrderError"
 	}
