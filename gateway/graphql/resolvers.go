@@ -584,8 +584,29 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 
 type myMarginLevelsResolver VegaResolverRoot
 
-func (r *myMarginLevelsResolver) PartyID(_ context.Context, m *types.MarginLevels) (string, error) {
-	return m.PartyID, nil
+func (r *myMarginLevelsResolver) Market(ctx context.Context, m *types.MarginLevels) (*Market, error) {
+	req := protoapi.MarketByIDRequest{MarketID: m.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	market, err := MarketFromProto(res.Market)
+	if err != nil {
+		r.log.Error("unable to convert market from proto", logging.Error(err))
+		return nil, err
+	}
+	return market, nil
+}
+
+func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevels) (*Party, error) {
+	if m == nil {
+		return nil, errors.New("nil order")
+	}
+	return &Party{
+		ID: m.PartyID,
+	}, nil
 }
 
 func (r *myMarginLevelsResolver) Asset(_ context.Context, m *types.MarginLevels) (string, error) {
@@ -625,23 +646,41 @@ func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketDa
 func (r *myMarketDataResolver) BestBidVolume(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestBidVolume, 10), nil
 }
+
 func (r *myMarketDataResolver) BestOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestOfferPrice, 10), nil
 }
+
 func (r *myMarketDataResolver) BestOfferVolume(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestOfferVolume, 10), nil
 }
+
 func (r *myMarketDataResolver) MidPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.MidPrice, 10), nil
 }
+
 func (r *myMarketDataResolver) MarkPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.MarkPrice, 10), nil
 }
-func (r *myMarketDataResolver) MarketID(_ context.Context, m *types.MarketData) (string, error) {
-	return m.Market, nil
-}
+
 func (r *myMarketDataResolver) Timestamp(_ context.Context, m *types.MarketData) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
+}
+
+func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) (*Market, error) {
+	req := protoapi.MarketByIDRequest{MarketID: m.Market}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	market, err := MarketFromProto(res.Market)
+	if err != nil {
+		r.log.Error("unable to convert market from proto", logging.Error(err))
+		return nil, err
+	}
+	return market, nil
 }
 
 // END: MarketData resolver

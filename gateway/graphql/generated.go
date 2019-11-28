@@ -125,8 +125,8 @@ type ComplexityRoot struct {
 		CollateralReleaseLevel func(childComplexity int) int
 		InitialLevel           func(childComplexity int) int
 		MaintenanceLevel       func(childComplexity int) int
-		MarketID               func(childComplexity int) int
-		PartyID                func(childComplexity int) int
+		Market                 func(childComplexity int) int
+		Party                  func(childComplexity int) int
 		SearchLevel            func(childComplexity int) int
 		Timestamp              func(childComplexity int) int
 	}
@@ -152,7 +152,7 @@ type ComplexityRoot struct {
 		BestOfferPrice  func(childComplexity int) int
 		BestOfferVolume func(childComplexity int) int
 		MarkPrice       func(childComplexity int) int
-		MarketID        func(childComplexity int) int
+		Market          func(childComplexity int) int
 		MidPrice        func(childComplexity int) int
 		Timestamp       func(childComplexity int) int
 	}
@@ -290,7 +290,7 @@ type ComplexityRoot struct {
 	Subscription struct {
 		Accounts    func(childComplexity int, marketID *string, partyID *string, asset *string, typeArg *AccountType) int
 		Candles     func(childComplexity int, marketID string, interval Interval) int
-		Margins     func(childComplexity int, traderID string, marketID *string) int
+		Margins     func(childComplexity int, partyID string, marketID *string) int
 		MarketData  func(childComplexity int, marketID *string) int
 		MarketDepth func(childComplexity int, marketID string) int
 		Orders      func(childComplexity int, marketID *string, partyID *string) int
@@ -334,6 +334,9 @@ type CandleResolver interface {
 	Interval(ctx context.Context, obj *proto.Candle) (Interval, error)
 }
 type MarginLevelsResolver interface {
+	Market(ctx context.Context, obj *proto.MarginLevels) (*Market, error)
+
+	Party(ctx context.Context, obj *proto.MarginLevels) (*Party, error)
 	MaintenanceLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
 	SearchLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
 	InitialLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
@@ -350,7 +353,7 @@ type MarketResolver interface {
 	Data(ctx context.Context, obj *Market) (*proto.MarketData, error)
 }
 type MarketDataResolver interface {
-	MarketID(ctx context.Context, obj *proto.MarketData) (string, error)
+	Market(ctx context.Context, obj *proto.MarketData) (*Market, error)
 	MarkPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	BestBidPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	BestBidVolume(ctx context.Context, obj *proto.MarketData) (string, error)
@@ -459,7 +462,7 @@ type SubscriptionResolver interface {
 	MarketDepth(ctx context.Context, marketID string) (<-chan *proto.MarketDepth, error)
 	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *proto.MarketData, error)
-	Margins(ctx context.Context, traderID string, marketID *string) (<-chan *proto.MarginLevels, error)
+	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *proto.MarginLevels, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *proto.Trade) (*Market, error)
@@ -732,19 +735,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarginLevels.MaintenanceLevel(childComplexity), true
 
-	case "MarginLevels.marketID":
-		if e.complexity.MarginLevels.MarketID == nil {
+	case "MarginLevels.market":
+		if e.complexity.MarginLevels.Market == nil {
 			break
 		}
 
-		return e.complexity.MarginLevels.MarketID(childComplexity), true
+		return e.complexity.MarginLevels.Market(childComplexity), true
 
-	case "MarginLevels.partyID":
-		if e.complexity.MarginLevels.PartyID == nil {
+	case "MarginLevels.party":
+		if e.complexity.MarginLevels.Party == nil {
 			break
 		}
 
-		return e.complexity.MarginLevels.PartyID(childComplexity), true
+		return e.complexity.MarginLevels.Party(childComplexity), true
 
 	case "MarginLevels.searchLevel":
 		if e.complexity.MarginLevels.SearchLevel == nil {
@@ -904,12 +907,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketData.MarkPrice(childComplexity), true
 
-	case "MarketData.marketID":
-		if e.complexity.MarketData.MarketID == nil {
+	case "MarketData.market":
+		if e.complexity.MarketData.Market == nil {
 			break
 		}
 
-		return e.complexity.MarketData.MarketID(childComplexity), true
+		return e.complexity.MarketData.Market(childComplexity), true
 
 	case "MarketData.midPrice":
 		if e.complexity.MarketData.MidPrice == nil {
@@ -1682,7 +1685,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Margins(childComplexity, args["traderId"].(string), args["marketID"].(*string)), true
+		return e.complexity.Subscription.Margins(childComplexity, args["partyId"].(string), args["marketID"].(*string)), true
 
 	case "Subscription.marketData":
 		if e.complexity.Subscription.MarketData == nil {
@@ -2045,7 +2048,7 @@ type Subscription {
   # Subscribe to the margin changes
   margins(
     # id of the trader we want to subscribe for margin updates
-    traderId: String!
+    partyId: String!
     # market we want to listen to margin updates (nil if we want updates for all markets)
     marketID: String
   ): MarginLevels!
@@ -2054,11 +2057,11 @@ type Subscription {
 # Margins for a given a trader
 type MarginLevels {
   # market in which the margin is required for this trader
-  marketID: String!
+  market: Market!
   # asset for the current margins
   asset: String!
   # id of the trader for this margin
-  partyID: String!
+  party: Party!
   # minimal margin for the position to be maintained in the network (unsigned int actually)
   maintenanceLevel: String!
   # if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)
@@ -2075,7 +2078,7 @@ type MarginLevels {
 # Live data of a Market
 type MarketData {
   # market id of the associated mark price
-  marketID: String!
+  market: Market!
   # the mark price (actually an unsgined int)
   markPrice: String!
   # the highest price level on an order book for buy orders.
@@ -3364,13 +3367,13 @@ func (ec *executionContext) field_Subscription_margins_args(ctx context.Context,
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["traderId"]; ok {
+	if tmp, ok := rawArgs["partyId"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["traderId"] = arg0
+	args["partyId"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["marketID"]; ok {
 		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
@@ -4642,7 +4645,7 @@ func (ec *executionContext) _InstrumentMetadata_tags(ctx context.Context, field 
 	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarginLevels_marketID(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarginLevels_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -4655,13 +4658,13 @@ func (ec *executionContext) _MarginLevels_marketID(ctx context.Context, field gr
 		Object:   "MarginLevels",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MarketID, nil
+		return ec.resolvers.MarginLevels().Market(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4673,10 +4676,10 @@ func (ec *executionContext) _MarginLevels_marketID(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_asset(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
@@ -4716,7 +4719,7 @@ func (ec *executionContext) _MarginLevels_asset(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarginLevels_partyID(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarginLevels_party(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -4729,13 +4732,13 @@ func (ec *executionContext) _MarginLevels_partyID(ctx context.Context, field gra
 		Object:   "MarginLevels",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PartyID, nil
+		return ec.resolvers.MarginLevels().Party(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4747,10 +4750,10 @@ func (ec *executionContext) _MarginLevels_partyID(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Party)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_maintenanceLevel(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
@@ -5405,7 +5408,7 @@ func (ec *executionContext) _Market_data(ctx context.Context, field graphql.Coll
 	return ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketData(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketData_marketID(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketData_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -5424,7 +5427,7 @@ func (ec *executionContext) _MarketData_marketID(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketData().MarketID(rctx, obj)
+		return ec.resolvers.MarketData().Market(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5436,10 +5439,10 @@ func (ec *executionContext) _MarketData_marketID(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Market)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_markPrice(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
@@ -9664,7 +9667,7 @@ func (ec *executionContext) _Subscription_margins(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Margins(rctx, args["traderId"].(string), args["marketID"].(*string))
+		return ec.resolvers.Subscription().Margins(rctx, args["partyId"].(string), args["marketID"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11821,21 +11824,39 @@ func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarginLevels")
-		case "marketID":
-			out.Values[i] = ec._MarginLevels_marketID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+		case "market":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarginLevels_market(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "asset":
 			out.Values[i] = ec._MarginLevels_asset(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "partyID":
-			out.Values[i] = ec._MarginLevels_partyID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+		case "party":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarginLevels_party(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "maintenanceLevel":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -12061,7 +12082,7 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketData")
-		case "marketID":
+		case "market":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -12069,7 +12090,7 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._MarketData_marketID(ctx, field, obj)
+				res = ec._MarketData_market(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
