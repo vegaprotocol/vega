@@ -311,12 +311,25 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
 	}()
 
+	// set those at the begining as even rejected order get through the buffers
+	m.idgen.SetID(order)
+	order.CreatedAt = m.currentTime.UnixNano()
+
 	if m.closed {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Error = types.OrderError_MARKET_CLOSED
+		m.orderBuf.Add(*order)
 		return nil, ErrMarketClosed
 	}
 
 	// Validate market
 	if order.MarketID != m.mkt.Id {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Error = types.OrderError_INVALID_MARKET_ID
+		m.orderBuf.Add(*order)
+
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
 			logging.String("market", m.mkt.Id))
@@ -328,6 +341,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// party, _ := m.parties.GetByID(order.PartyID)
 	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
 	if party == nil {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Error = types.OrderError_INVALID_PARTY_ID
+		m.orderBuf.Add(*order)
+
 		// trader should be created before even trying to post order
 		return nil, ErrTraderDoNotExists
 	}
@@ -340,6 +358,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Error = types.OrderError_VEGA_INTERNAL_ERROR
+		m.orderBuf.Add(*order)
+
 		m.log.Error("Unable to register potential trader position",
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
@@ -354,19 +377,29 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				logging.String("market-id", m.GetID()),
 				logging.Error(err1))
 		}
+
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Error = types.OrderError_MARGIN_CHECK_FAILED
+		m.orderBuf.Add(*order)
+
 		m.log.Error("Unable to check/add margin for trader",
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
 	}
 
-	// set order ID
-	m.idgen.SetID(order)
-	order.CreatedAt = m.currentTime.UnixNano()
-
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
+		order.Status = types.Order_Rejected
+		if oerr, ok := types.IsOrderError(err); ok {
+			order.Error = oerr
+		} else {
+			// should not happend but still...
+			order.Error = types.OrderError_VEGA_INTERNAL_ERROR
+		}
+		m.orderBuf.Add(*order)
 		m.log.Error("Failure after submitting order to matching engine",
 			logging.Order(*order),
 			logging.Error(err))

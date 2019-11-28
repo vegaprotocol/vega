@@ -289,6 +289,17 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 	mkt, ok := e.markets[order.MarketID]
 	if !ok {
+		t, err := e.time.GetTimeNow()
+		if err != nil {
+			order.CreatedAt = t.UnixNano()
+		}
+		e.idgen.SetID(order)
+
+		// adding rejected order to the buf
+		order.Status = types.Order_Rejected
+		order.Error = types.OrderError_INVALID_MARKET_ID
+		e.orderBuf.Add(*order)
+
 		timer.EngineTimeCounterAdd()
 		return nil, types.ErrInvalidMarketID
 	}

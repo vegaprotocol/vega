@@ -14,6 +14,11 @@ var (
 	ErrOrderNotFound             = OrderError_ORDER_NOT_FOUND
 )
 
+func IsOrderError(err error) (OrderError, bool) {
+	oerr, ok := err.(OrderError)
+	return oerr, ok
+}
+
 func (err OrderError) Error() string {
 	switch err {
 	case OrderError_NONE:
