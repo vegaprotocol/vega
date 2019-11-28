@@ -44,16 +44,17 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 }
 
 type marketTestSetup struct {
-	market   *proto.Market
-	ctrl     *gomock.Controller
-	core     *execution.Market
-	party    *execution.Party
-	candles  *mocks.MockCandleBuf
-	orders   *orderStub
-	trades   *tradeStub
-	parties  *mocks.MockPartyBuf
-	transfer *mocks.MockTransferBuf
-	accounts *accStub
+	market          *proto.Market
+	ctrl            *gomock.Controller
+	core            *execution.Market
+	party           *execution.Party
+	candles         *mocks.MockCandleBuf
+	orders          *orderStub
+	trades          *tradeStub
+	parties         *mocks.MockPartyBuf
+	transfer        *mocks.MockTransferBuf
+	accounts        *accStub
+	marginLevelsBuf *marginsStub
 	// accounts   *cmocks.MockAccountBuffer
 	accountIDs map[string]struct{}
 	traderAccs map[string]map[proto.AccountType]*proto.Account
@@ -87,22 +88,24 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		accounts,
 		time.Now(),
 	)
+	marginLevelsBuf := NewMarginsStub()
 	// mock call to get the last candle
 	candles.EXPECT().Start(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil, nil)
 	candles.EXPECT().AddTrade(gomock.Any()).AnyTimes().Return(nil)
 
 	setup := &marketTestSetup{
-		market:     market,
-		ctrl:       ctrl,
-		candles:    candles,
-		orders:     orders,
-		trades:     trades,
-		parties:    parties,
-		transfer:   transfer,
-		accounts:   accounts,
-		accountIDs: map[string]struct{}{},
-		traderAccs: map[string]map[proto.AccountType]*proto.Account{},
-		colE:       colE,
+		market:          market,
+		ctrl:            ctrl,
+		candles:         candles,
+		orders:          orders,
+		trades:          trades,
+		parties:         parties,
+		transfer:        transfer,
+		accounts:        accounts,
+		marginLevelsBuf: marginLevelsBuf,
+		accountIDs:      map[string]struct{}{},
+		traderAccs:      map[string]map[proto.AccountType]*proto.Account{},
+		colE:            colE,
 	}
 
 	return setup
@@ -111,18 +114,19 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 type executionTestSetup struct {
 	engine *execution.Engine
 
-	cfg        execution.Config
-	log        *logging.Logger
-	ctrl       *gomock.Controller
-	accounts   *accStub
-	candles    *mocks.MockCandleBuf
-	orders     *orderStub
-	trades     *tradeStub
-	parties    *mocks.MockPartyBuf
-	transfers  *transferStub
-	markets    *mocks.MockMarketBuf
-	timesvc    *timeStub
-	marketdata *mocks.MockMarketDataBuf
+	cfg             execution.Config
+	log             *logging.Logger
+	ctrl            *gomock.Controller
+	accounts        *accStub
+	candles         *mocks.MockCandleBuf
+	orders          *orderStub
+	trades          *tradeStub
+	parties         *mocks.MockPartyBuf
+	transfers       *transferStub
+	markets         *mocks.MockMarketBuf
+	timesvc         *timeStub
+	marketdata      *mocks.MockMarketDataBuf
+	marginLevelsBuf *marginsStub
 
 	// save trader accounts state
 	accs map[string][]account
@@ -163,6 +167,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.mkts = mkts
 	execsetup.timesvc = &timeStub{now: startTime}
 	execsetup.marketdata = mocks.NewMockMarketDataBuf(ctrl)
+	execsetup.marginLevelsBuf = NewMarginsStub()
 
 	execsetup.marketdata.EXPECT().Flush().AnyTimes()
 	execsetup.marketdata.EXPECT().Add(gomock.Any()).AnyTimes()
@@ -173,8 +178,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, execsetup.marketdata, mkts)
-
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, execsetup.marketdata, execsetup.marginLevelsBuf, mkts)
 	return execsetup
 }
 

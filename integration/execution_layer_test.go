@@ -375,6 +375,35 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 	return nil
 }
 
+func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
+	for _, row := range traders.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		partyID, marketID := val(row, 0), val(row, 1)
+		ml, err := execsetup.marginLevelsBuf.getMarginByPartyAndMarket(partyID, marketID)
+		if err != nil {
+			return err
+		}
+
+		if ml.MaintenanceMargin != i64val(row, 2) {
+			return fmt.Errorf("invalid maintenance margin, expected %v but got %v", i64val(row, 2), ml.MaintenanceMargin)
+		}
+		if ml.SearchLevel != i64val(row, 3) {
+			return fmt.Errorf("invalid search margin, expected %v but got %v", i64val(row, 3), ml.SearchLevel)
+		}
+		if ml.InitialMargin != i64val(row, 4) {
+			return fmt.Errorf("invalid initial margin, expected %v but got %v", i64val(row, 4), ml.InitialMargin)
+		}
+		if ml.CollateralReleaseLevel != i64val(row, 5) {
+			return fmt.Errorf("invalid collateral release margin, expected %v but got %v", i64val(row, 5), ml.CollateralReleaseLevel)
+		}
+
+	}
+	return nil
+}
+
 func accountID(marketID, partyID, asset string, _ty int32) string {
 	ty := proto.AccountType(_ty)
 	idbuf := make([]byte, 256)

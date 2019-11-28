@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/buffer"
 	"code.vegaprotocol.io/vega/collateral"
 	collateralmocks "code.vegaprotocol.io/vega/collateral/mocks"
 	"code.vegaprotocol.io/vega/execution"
@@ -51,6 +52,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	partyStore := mocks.NewMockPartyBuf(ctrl)
 	tradeStore := mocks.NewMockTradeBuf(ctrl)
 	transferResponseStore := mocks.NewMockTransferBuf(ctrl)
+	marginLevelsBuf := buffer.NewMarginLevels()
 
 	accountBuf := collateralmocks.NewMockAccountBuffer(ctrl)
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), accountBuf, now)
@@ -62,7 +64,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		collateralEngine, partyEngine, &mkts[0], candleStore, orderStore,
-		partyStore, tradeStore, transferResponseStore, now, execution.NewIDGen())
+		partyStore, tradeStore, transferResponseStore, marginLevelsBuf, now, execution.NewIDGen())
 
 	asset, err := mkts[0].GetAsset()
 	assert.Nil(t, err)

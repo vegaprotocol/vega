@@ -147,6 +147,15 @@ type TransferResponseService interface {
 	ObserveTransferResponses(ctx context.Context, retries int) (<-chan []*types.TransferResponse, uint64)
 }
 
+// RiskService
+type RiskService interface {
+	ObserveMarginLevels(
+		ctx context.Context, retries int, partyID, marketID string,
+	) (<-chan []types.MarginLevels, uint64)
+	GetMarginLevelsSubscribersCount() int32
+	GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error)
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -159,6 +168,7 @@ type tradingDataService struct {
 	MarketService           MarketService
 	PartyService            PartyService
 	AccountsService         AccountsService
+	RiskService             RiskService
 	TransferResponseService TransferResponseService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
@@ -357,6 +367,24 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	var response = &protoapi.PositionsByPartyResponse{}
 	response.Positions = positions
 	return response, nil
+}
+
+func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.MarginLevelsRequest) (*protoapi.MarginLevelsResponse, error) {
+	if len(req.PartyID) <= 0 {
+		return nil, ErrEmptyMissingPartyID
+	}
+	mls, err := h.RiskService.GetMarginLevelsByID(req.PartyID, req.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	mlptrs := make([]*types.MarginLevels, 0, len(mls))
+	for _, v := range mls {
+		mlptrs = append(mlptrs, &v)
+	}
+
+	return &protoapi.MarginLevelsResponse{
+		MarginLevels: mlptrs,
+	}, nil
 }
 
 func (h *tradingDataService) MarketDataByID(_ context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
@@ -576,6 +604,62 @@ func (h *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubsc
 
 		if marketdatachan == nil {
 			h.log.Debug("Markets data subscriber - rpc stream closed",
+				logging.Uint64("ref", ref),
+			)
+			return ErrStreamClosed
+		}
+	}
+}
+
+func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSubscribeRequest, srv protoapi.TradingData_MarginLevelsSubscribeServer) error {
+	// wrap context from the request into cancellable. we can closed internal chan in error
+	ctx, cfunc := context.WithCancel(srv.Context())
+	defer cfunc()
+
+	if len(req.PartyID) <= 0 {
+		return ErrEmptyMissingPartyID
+	}
+
+	marginlevelschan, ref := h.RiskService.ObserveMarginLevels(
+		ctx, h.Config.StreamRetries, req.PartyID, req.MarketID)
+	h.log.Debug("Margin levels subscriber - new rpc stream", logging.Uint64("ref", ref))
+
+	var err error
+
+	for {
+		select {
+		case mls := <-marginlevelschan:
+			if mls == nil {
+				err = ErrChannelClosed
+				h.log.Error("margin levels subscriber",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+				return err
+			}
+			for _, ml := range mls {
+				err = srv.Send(&ml)
+				if err != nil {
+					h.log.Error("magin levels data subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+					return err
+				}
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			h.log.Debug("Margin levels data subscriber - rpc stream ctx error",
+				logging.Error(err),
+				logging.Uint64("ref", ref),
+			)
+			return err
+		case <-h.ctx.Done():
+			return ErrServerShutdown
+		}
+
+		if marginlevelschan == nil {
+			h.log.Debug("Margin levels data subscriber - rpc stream closed",
 				logging.Uint64("ref", ref),
 			)
 			return ErrStreamClosed

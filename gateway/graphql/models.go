@@ -106,6 +106,7 @@ type Party struct {
 	Trades    []*proto.Trade          `json:"trades"`
 	Accounts  []*proto.Account        `json:"accounts"`
 	Positions []*proto.MarketPosition `json:"positions"`
+	Margins   []*proto.MarginLevels   `json:"margins"`
 }
 
 type SimpleRiskModel struct {

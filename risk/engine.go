@@ -138,6 +138,10 @@ func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) eve
 		},
 	}
 
+	// update other fields for the margins
+	margins.PartyID = evt.Party()
+	margins.Asset = evt.Asset()
+
 	return &marginChange{
 		Margin:   evt,
 		amount:   trnsfr.Amount.Amount,
