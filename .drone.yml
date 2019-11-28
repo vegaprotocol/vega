@@ -109,8 +109,8 @@ steps:
       ###    echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
       - python3 script/diff_bot.py
           --token "$$GITLAB_API_TOKEN"
-          --project1 5726034:trading-core --branch1 "$${DRONE_TARGET_BRANCH}" --file1 'gateway/graphql/schema.graphql'
-          --project2 5726034:trading-core --branch2 "$${DRONE_SOURCE_BRANCH}" --file2 'gateway/graphql/schema.graphql'
+          --project1 5726034 --projectname1 trading-core --branch1 "$${DRONE_TARGET_BRANCH}" --file1 'gateway/graphql/schema.graphql'
+          --project2 5726034 --projectname2 trading-core --branch2 "$${DRONE_SOURCE_BRANCH}" --file2 'gateway/graphql/schema.graphql'
           --slack-hookurl "$${SLACK_HOOK_URL}"
           --slack-recipient "#uidev"
           print_diff slack_notify || failed="$$failed diff_bot"
@@ -164,9 +164,9 @@ steps:
     commands:
       - python3 script/diff_bot.py
           --token "$$GITLAB_API_TOKEN"
-          --project1 5531219:client --branch1 develop --file1 'packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql'
-          --project2 5726034:trading-core --branch2 develop --file2 'gateway/graphql/schema.graphql'
-          print_diff  # create_mr
+          --project1 5531219 --projectname1 client --branch1 develop --file1 'packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql'
+          --project2 5726034 --projectname2 trading-core --branch2 develop --file2 'gateway/graphql/schema.graphql'
+          print_diff slack_notify create_mr
       # The deploy script requires 3 DEVNET_* vars.
       ###- ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.

@@ -1,31 +1,21 @@
 #!/usr/bin/python3
 
-# This script is to be run on commit to trading-core develop branch.
-#
-# The script:
-# 1. diffs the schema in trading-core against the one in client.
-# 2. if there are no differences, the process stops, otherwise ...
-# 3. create a branch in client with the schema.graphql from trading-core
-# 4. create a merge request in client for that branch to develop
-
 import argparse
 import binascii
+import datetime
 import difflib
 import json
 import requests
 import urllib.parse
 from collections import namedtuple
-from typing import Any, Dict
-
-MAX_DIFF_LEN = 3500
+from typing import Any, Dict, Tuple
 
 API_URL = "https://gitlab.com/api/v4"
 
-# Doc: https://docs.gitlab.com/ee/api/
-#        repository_files.html#get-file-from-repository
-GET_FILE = "/projects/{id}/repository/files/{file_path}"
+MAX_MR_DIFF_LEN = 1000
+MAX_SLACK_DIFF_LEN = 3500
 
-GitFile = namedtuple("GitFile", "project_id branch file_path")
+GitFile = namedtuple("GitFile", "project_id project_name branch file_path")
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,12 +32,17 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument(
         "--project1", type=str, required=True,
-        help="File1: GitLab numeric project ID and optional colon-separated "
-        "project name")
+        help="File1: GitLab numeric project ID")
     parser.add_argument(
         "--project2", type=str, required=True,
-        help="File2: GitLab numeric project ID and optional colon-separated "
-        "project name")
+        help="File2: GitLab numeric project ID")
+
+    parser.add_argument(
+        "--projectname1", type=str, required=False,
+        help="File1: GitLab project name")
+    parser.add_argument(
+        "--projectname2", type=str, required=True,
+        help="File2: GitLab project name")
 
     parser.add_argument(
         "--branch1", type=str, required=True,
@@ -79,24 +74,26 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument(
         "action", nargs="+", type=str,
-        choices=["print_diff", "slack_notify"],
+        choices=["print_diff", "slack_notify", "create_mr"],
         help="Action")
 
     return parser.parse_args()
 
 
+def headers(token: str) -> Dict[str, Any]:
+    return {
+        "PRIVATE-TOKEN": token
+    }
+
+
 def get_file_for_branch(
-        token: str, project_id: str, branch: str, filename: str
+    token: str, project_id: str, branch: str, filename: str
 ) -> Dict[str, Any]:
-    if ":" in project_id:
-        pid = project_id.split(":")[0]
-    else:
-        pid = project_id
 
     r = requests.get(
-        API_URL + GET_FILE.format(
-            id=pid, file_path=urllib.parse.quote_plus(filename)),
-        headers={"PRIVATE-TOKEN": token},
+        API_URL + "/projects/{id}/repository/files/{file_path}".format(
+            id=project_id, file_path=urllib.parse.quote_plus(filename)),
+        headers=headers(token),
         params={"ref": branch}
     )
     if r.status_code != 200:
@@ -108,22 +105,24 @@ def get_file_for_branch(
     return r.json()
 
 
-def diff_files(token: str, f1: GitFile, f2: GitFile) -> str:
+def diff_files(token: str, f1: GitFile, f2: GitFile) -> Tuple[str, str, str]:
     r1 = get_file_for_branch(token, f1.project_id, f1.branch, f1.file_path)
     r2 = get_file_for_branch(token, f2.project_id, f2.branch, f2.file_path)
 
     if r1["content_sha256"] == r2["content_sha256"]:
-        return ""
+        return ("", None, None)
 
     d = difflib.unified_diff(
         binascii.a2b_base64(r1["content"]).decode().splitlines(keepends=True),
         binascii.a2b_base64(r2["content"]).decode().splitlines(keepends=True),
-        fromfile="{}:{}:{}".format(f1.project_id, f1.branch, f1.file_path),
-        tofile="{}:{}:{}".format(f2.project_id, f2.branch, f2.file_path),
+        fromfile="{}:{}:{}:{}".format(
+            f1.project_id, f1.project_name, f1.branch, f1.file_path),
+        tofile="{}:{}:{}:{}".format(
+            f2.project_id, f2.project_name, f2.branch, f2.file_path),
         fromfiledate="{}:{}".format(r1["commit_id"], r1["last_commit_id"]),
         tofiledate="{}:{}".format(r2["commit_id"], r2["last_commit_id"]),
         n=3, lineterm="\n")
-    return "".join(d)
+    return ("".join(d), r1["content"], r2["content"])
 
 
 def slack_notify(hookurl: str, recipient: str, icon: str, text: str) -> None:
@@ -141,21 +140,97 @@ def slack_notify(hookurl: str, recipient: str, icon: str, text: str) -> None:
         exit(1)
 
 
+def basename(fn: str) -> str:
+    return fn.split("/")[-1] if "/" in fn else fn
+
+
+def update_file_on_new_branch(
+    token: str, f: GitFile, newbranch: str, content64: str
+) -> Dict[str, Any]:
+
+    req = {
+        "id": f.project_id,
+        "branch": newbranch,
+        "commit_message": "Update file",
+        "start_branch": f.branch,
+        "actions": [
+            {
+                "action": "update",
+                "file_path": f.file_path,
+                "content": content64,
+                "encoding": "base64"
+            }
+        ]
+    }
+    r = requests.post(
+        API_URL + "/projects/{id}/repository/commits".format(id=f.project_id),
+        headers=headers(token),
+        json=req
+    )
+    if r.status_code >= 400:
+        print("Error: Failed to update file: {}".format(r.text))
+        exit(1)
+    return r.json()
+
+
+def create_mr(
+    token: str, f1: GitFile, f2: GitFile, newcontent64: str, diff: str
+) -> Dict[str, Any]:
+
+    dt = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S")
+    newbranch = "diffbot/{}/{}".format(basename(f1.file_path), dt)
+
+    update_file_on_new_branch(token, f1, newbranch, newcontent64)
+
+    if len(diff) > MAX_MR_DIFF_LEN:
+        d2 = (
+            "```diff\n{}\n```\n\n"
+            "**Diff truncated**\n\n"
+            "<details>\n"
+            "<summary>Full diff</summary>\n\n"
+            "```diff\n{}```\n"
+            "</details>"
+        ).format(diff[:MAX_MR_DIFF_LEN], diff)
+    else:
+        d2 = "```diff\n{}```".format(diff)
+
+    req = {
+        "id": f1.project_id,
+        "source_branch": newbranch,
+        "target_branch": f1.branch,
+        "title": "Update {} from {} at {}".format(
+            basename(f1.file_path),
+            f2.project_name, dt),
+        "description": "This MR updates `{}`.\n\n{}".format(f1.file_path, d2),
+        "labels": "diffbot",
+        "remove_source_branch": True,
+        "allow_collaboration": True
+    }
+    r = requests.post(
+        API_URL + "/projects/{id}/merge_requests".format(id=f1.project_id),
+        headers=headers(token),
+        json=req
+    )
+    if r.status_code >= 400:
+        print("Error: Failed to create merge request: {}".format(r.text))
+        exit(1)
+    return r.json()
+
+
 def main() -> None:
     args = parse_args()
 
     if (
-            args.project1 == args.project2 and
-            args.branch1 == args.branch2 and
-            args.file1 == args.file2
+        args.project1 == args.project2 and
+        args.branch1 == args.branch2 and
+        args.file1 == args.file2
     ):
         print("No point diffing a file against itself.")
         exit(1)
 
-    diff = diff_files(
-        args.token,
-        GitFile(args.project1, args.branch1, args.file1),
-        GitFile(args.project2, args.branch2, args.file2))
+    f1 = GitFile(args.project1, args.projectname1, args.branch1, args.file1)
+    f2 = GitFile(args.project2, args.projectname2, args.branch2, args.file2)
+    (diff, content1, content2) = diff_files(args.token, f1, f2)
     if diff == "":
         return
 
@@ -163,8 +238,8 @@ def main() -> None:
         if action == "print_diff":
             print(diff)
         elif action == "slack_notify":
-            if len(diff) > MAX_DIFF_LEN:
-                d2 = diff[:MAX_DIFF_LEN]
+            if len(diff) > MAX_SLACK_DIFF_LEN:
+                d2 = diff[:MAX_SLACK_DIFF_LEN]
                 tr = "*diff truncated*"
             else:
                 d2 = diff
@@ -179,6 +254,8 @@ def main() -> None:
                 args.project2, args.branch2, args.file2, d2, tr)
             slack_notify(
                 args.slack_hookurl, args.slack_recipient, args.slack_icon, t)
+        elif action == "create_mr":
+            create_mr(args.token, f1, f2, content2, diff)
 
 
 if __name__ == "__main__":
