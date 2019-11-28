@@ -2010,6 +2010,9 @@
         "blockDuration": {
           "type": "string",
           "format": "uint64"
+        },
+        "uptime": {
+          "type": "string"
         }
       }
     },

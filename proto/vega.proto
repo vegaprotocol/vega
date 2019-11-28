@@ -180,6 +180,7 @@ message Statistics {
   string appVersion = 29;
   string chainVersion = 30;
   uint64 blockDuration = 31; // nanoseconds
+  string uptime = 32;
 }
 
 enum ChainStatus {

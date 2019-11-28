@@ -465,6 +465,7 @@ func (h *tradingDataService) Statistics(ctx context.Context, request *google_pro
 		GenesisTime:              genesisTime,
 		CurrentTime:              vegatime.Format(vegatime.Now()),
 		VegaTime:                 vegatime.Format(epochTime),
+		Uptime:                   vegatime.Format(h.Stats.GetUptime()),
 		TxPerBlock:               uint64(h.Stats.Blockchain.TotalTxLastBatch()),
 		AverageTxBytes:           uint64(h.Stats.Blockchain.AverageTxSizeBytes()),
 		AverageOrdersPerBlock:    uint64(h.Stats.Blockchain.AverageOrdersPerBatch()),
