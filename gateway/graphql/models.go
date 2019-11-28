@@ -227,6 +227,7 @@ const (
 	OrderStatusExpired   OrderStatus = "Expired"
 	OrderStatusStopped   OrderStatus = "Stopped"
 	OrderStatusFilled    OrderStatus = "Filled"
+	OrderStatusRejected  OrderStatus = "Rejected"
 )
 
 var AllOrderStatus = []OrderStatus{
@@ -235,11 +236,12 @@ var AllOrderStatus = []OrderStatus{
 	OrderStatusExpired,
 	OrderStatusStopped,
 	OrderStatusFilled,
+	OrderStatusRejected,
 }
 
 func (e OrderStatus) IsValid() bool {
 	switch e {
-	case OrderStatusActive, OrderStatusCancelled, OrderStatusExpired, OrderStatusStopped, OrderStatusFilled:
+	case OrderStatusActive, OrderStatusCancelled, OrderStatusExpired, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected:
 		return true
 	}
 	return false
@@ -351,6 +353,73 @@ func (e *OrderType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OrderType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type RejectionReason string
+
+const (
+	RejectionReasonInvalidMarketID       RejectionReason = "InvalidMarketId"
+	RejectionReasonInvalidOrderID        RejectionReason = "InvalidOrderId"
+	RejectionReasonOrderOutOfSequence    RejectionReason = "OrderOutOfSequence"
+	RejectionReasonInvalidRemainingSize  RejectionReason = "InvalidRemainingSize"
+	RejectionReasonTimeFailure           RejectionReason = "TimeFailure"
+	RejectionReasonOrderRemovalFailure   RejectionReason = "OrderRemovalFailure"
+	RejectionReasonInvalidExpirationTime RejectionReason = "InvalidExpirationTime"
+	RejectionReasonInvalidOrderReference RejectionReason = "InvalidOrderReference"
+	RejectionReasonEditNotAllowed        RejectionReason = "EditNotAllowed"
+	RejectionReasonOrderAmendFailure     RejectionReason = "OrderAmendFailure"
+	RejectionReasonOrderNotFound         RejectionReason = "OrderNotFound"
+	RejectionReasonInvalidPartyID        RejectionReason = "InvalidPartyId"
+	RejectionReasonMarketClosed          RejectionReason = "MarketClosed"
+	RejectionReasonMarginCheckFailed     RejectionReason = "MarginCheckFailed"
+	RejectionReasonVegaInternalError     RejectionReason = "VegaInternalError"
+)
+
+var AllRejectionReason = []RejectionReason{
+	RejectionReasonInvalidMarketID,
+	RejectionReasonInvalidOrderID,
+	RejectionReasonOrderOutOfSequence,
+	RejectionReasonInvalidRemainingSize,
+	RejectionReasonTimeFailure,
+	RejectionReasonOrderRemovalFailure,
+	RejectionReasonInvalidExpirationTime,
+	RejectionReasonInvalidOrderReference,
+	RejectionReasonEditNotAllowed,
+	RejectionReasonOrderAmendFailure,
+	RejectionReasonOrderNotFound,
+	RejectionReasonInvalidPartyID,
+	RejectionReasonMarketClosed,
+	RejectionReasonMarginCheckFailed,
+	RejectionReasonVegaInternalError,
+}
+
+func (e RejectionReason) IsValid() bool {
+	switch e {
+	case RejectionReasonInvalidMarketID, RejectionReasonInvalidOrderID, RejectionReasonOrderOutOfSequence, RejectionReasonInvalidRemainingSize, RejectionReasonTimeFailure, RejectionReasonOrderRemovalFailure, RejectionReasonInvalidExpirationTime, RejectionReasonInvalidOrderReference, RejectionReasonEditNotAllowed, RejectionReasonOrderAmendFailure, RejectionReasonOrderNotFound, RejectionReasonInvalidPartyID, RejectionReasonMarketClosed, RejectionReasonMarginCheckFailed, RejectionReasonVegaInternalError:
+		return true
+	}
+	return false
+}
+
+func (e RejectionReason) String() string {
+	return string(e)
+}
+
+func (e *RejectionReason) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RejectionReason(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RejectionReason", str)
+	}
+	return nil
+}
+
+func (e RejectionReason) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

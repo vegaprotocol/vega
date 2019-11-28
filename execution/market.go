@@ -318,7 +318,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if m.closed {
 		// adding order to the buffer first
 		order.Status = types.Order_Rejected
-		order.Error = types.OrderError_MARKET_CLOSED
+		order.Reason = types.OrderError_MARKET_CLOSED
 		m.orderBuf.Add(*order)
 		return nil, ErrMarketClosed
 	}
@@ -327,7 +327,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if order.MarketID != m.mkt.Id {
 		// adding order to the buffer first
 		order.Status = types.Order_Rejected
-		order.Error = types.OrderError_INVALID_MARKET_ID
+		order.Reason = types.OrderError_INVALID_MARKET_ID
 		m.orderBuf.Add(*order)
 
 		m.log.Error("Market ID mismatch",
@@ -343,7 +343,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if party == nil {
 		// adding order to the buffer first
 		order.Status = types.Order_Rejected
-		order.Error = types.OrderError_INVALID_PARTY_ID
+		order.Reason = types.OrderError_INVALID_PARTY_ID
 		m.orderBuf.Add(*order)
 
 		// trader should be created before even trying to post order
@@ -360,7 +360,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if err != nil {
 		// adding order to the buffer first
 		order.Status = types.Order_Rejected
-		order.Error = types.OrderError_VEGA_INTERNAL_ERROR
+		order.Reason = types.OrderError_VEGA_INTERNAL_ERROR
 		m.orderBuf.Add(*order)
 
 		m.log.Error("Unable to register potential trader position",
@@ -380,7 +380,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		// adding order to the buffer first
 		order.Status = types.Order_Rejected
-		order.Error = types.OrderError_MARGIN_CHECK_FAILED
+		order.Reason = types.OrderError_MARGIN_CHECK_FAILED
 		m.orderBuf.Add(*order)
 
 		m.log.Error("Unable to check/add margin for trader",
@@ -394,10 +394,10 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if confirmation == nil || err != nil {
 		order.Status = types.Order_Rejected
 		if oerr, ok := types.IsOrderError(err); ok {
-			order.Error = oerr
+			order.Reason = oerr
 		} else {
 			// should not happend but still...
-			order.Error = types.OrderError_VEGA_INTERNAL_ERROR
+			order.Reason = types.OrderError_VEGA_INTERNAL_ERROR
 		}
 		m.orderBuf.Add(*order)
 		m.log.Error("Failure after submitting order to matching engine",

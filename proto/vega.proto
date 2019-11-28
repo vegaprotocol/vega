@@ -71,7 +71,7 @@ message Order {
   Status status = 11;
   int64 expiresAt = 12;
   string reference = 13;
-  OrderError error = 14;
+  OrderError reason = 14;
 }
 
 message OrderCancellationConfirmation {

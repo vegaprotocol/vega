@@ -297,7 +297,7 @@ func (e *Engine) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		// adding rejected order to the buf
 		order.Status = types.Order_Rejected
-		order.Error = types.OrderError_INVALID_MARKET_ID
+		order.Reason = types.OrderError_INVALID_MARKET_ID
 		e.orderBuf.Add(*order)
 
 		timer.EngineTimeCounterAdd()

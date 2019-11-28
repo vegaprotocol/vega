@@ -733,6 +733,9 @@ type Order {
 
   # Type the order type (defaults to TRADER)
   type: OrderType
+
+  # Reason for the order to be rejected
+  rejectionReason: RejectionReason
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
@@ -801,21 +804,58 @@ enum OrderTimeInForce {
 # Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order.
 enum OrderStatus {
 
-    # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
-    # Active does not necessarily mean it's still on the order book.
-    Active
+  # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
+  # Active does not necessarily mean it's still on the order book.
+  Active
 
-    # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
-    Cancelled
+  # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
+  Cancelled
 
-    # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
-    Expired
+  # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
+  Expired
 
-    # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
-    Stopped
+  # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
+  Stopped
 
-    # This order is fully filled with remaining equals zero.
-    Filled
+  # This order is fully filled with remaining equals zero.
+  Filled
+
+  # This order was rejected while beeing processed in the core.
+  Rejected
+}
+
+# Reason for the order beeing rejected by the core node
+enum RejectionReason {
+  # Market id is invalid
+  InvalidMarketId
+  # Order id is invalid
+  InvalidOrderId
+  # Order is out of sequence
+  OrderOutOfSequence
+  # Remaining size in the order is invalid
+  InvalidRemainingSize
+  # Time has failed us
+  TimeFailure
+  # Unable to remove the order
+  OrderRemovalFailure
+  # Expiration time is invalid
+  InvalidExpirationTime
+  # Order reference is invalid
+  InvalidOrderReference
+  # Edit is not allowed
+  EditNotAllowed
+  # Order amend fail
+  OrderAmendFailure
+  # Order does not exist
+  OrderNotFound
+  # Party id is invalid
+  InvalidPartyId
+  # Market is closed
+  MarketClosed
+  # Margin check failed
+  MarginCheckFailed
+  # An internal error happend
+  VegaInternalError
 }
 
 enum OrderType {

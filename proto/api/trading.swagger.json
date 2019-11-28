@@ -801,7 +801,8 @@
         "Expired",
         "Cancelled",
         "Stopped",
-        "Filled"
+        "Filled",
+        "Rejected"
       ],
       "default": "Active"
     },
@@ -1678,6 +1679,9 @@
         },
         "reference": {
           "type": "string"
+        },
+        "reason": {
+          "$ref": "#/definitions/vegaOrderError"
         }
       }
     },
@@ -1723,6 +1727,28 @@
           "type": "string"
         }
       }
+    },
+    "vegaOrderError": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "INVALID_MARKET_ID",
+        "INVALID_ORDER_ID",
+        "ORDER_OUT_OF_SEQUENCE",
+        "INVALID_REMAINING_SIZE",
+        "TIME_FAILURE",
+        "ORDER_REMOVAL_FAILURE",
+        "INVALID_EXPIRATION_DATETIME",
+        "INVALID_ORDER_REFERENCE",
+        "EDIT_NOT_ALLOWED",
+        "ORDER_AMEND_FAILURE",
+        "ORDER_NOT_FOUND",
+        "INVALID_PARTY_ID",
+        "MARKET_CLOSED",
+        "MARGIN_CHECK_FAILED",
+        "VEGA_INTERNAL_ERROR"
+      ],
+      "default": "NONE"
     },
     "vegaOrderSubmission": {
       "type": "object",
