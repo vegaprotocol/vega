@@ -739,6 +739,54 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 
 type myOrderResolver VegaResolverRoot
 
+func RejectionReasonFromProtoOrderError(o proto.OrderError) (RejectionReason, error) {
+	switch o {
+	case proto.OrderError_INVALID_MARKET_ID:
+		return RejectionReasonInvalidMarketID, nil
+	case proto.OrderError_INVALID_ORDER_ID:
+		return RejectionReasonInvalidOrderID, nil
+	case proto.OrderError_ORDER_OUT_OF_SEQUENCE:
+		return RejectionReasonOrderOutOfSequence, nil
+	case proto.OrderError_INVALID_REMAINING_SIZE:
+		return RejectionReasonInvalidRemainingSize, nil
+	case proto.OrderError_TIME_FAILURE:
+		return RejectionReasonTimeFailure, nil
+	case proto.OrderError_ORDER_REMOVAL_FAILURE:
+		return RejectionReasonOrderRemovalFailure, nil
+	case proto.OrderError_INVALID_EXPIRATION_DATETIME:
+		return RejectionReasonInvalidExpirationTime, nil
+	case proto.OrderError_INVALID_ORDER_REFERENCE:
+		return RejectionReasonInvalidOrderReference, nil
+	case proto.OrderError_EDIT_NOT_ALLOWED:
+		return RejectionReasonEditNotAllowed, nil
+	case proto.OrderError_ORDER_AMEND_FAILURE:
+		return RejectionReasonOrderAmendFailure, nil
+	case proto.OrderError_ORDER_NOT_FOUND:
+		return RejectionReasonOrderNotFound, nil
+	case proto.OrderError_INVALID_PARTY_ID:
+		return RejectionReasonInvalidPartyID, nil
+	case proto.OrderError_MARKET_CLOSED:
+		return RejectionReasonMarketClosed, nil
+	case proto.OrderError_MARGIN_CHECK_FAILED:
+		return RejectionReasonMarginCheckFailed, nil
+	case proto.OrderError_INTERNAL_ERROR:
+		return RejectionReasonInternalError, nil
+	default:
+		return RejectionReason(""), fmt.Errorf("Invalid RejectionReason: %v", o)
+	}
+}
+
+func (r *myOrderResolver) RejectionReason(_ context.Context, o *proto.Order) (*RejectionReason, error) {
+	if o.Reason == proto.OrderError_NONE {
+		return nil, nil
+	}
+	reason, err := RejectionReasonFromProtoOrderError(o.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return &reason, nil
+}
+
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Price, 10), nil
 }
