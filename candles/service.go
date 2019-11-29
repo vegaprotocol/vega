@@ -30,7 +30,7 @@ type Svc struct {
 	subscriberCnt int32
 }
 
-// NewService instanciate a new candles service
+// NewService instantiate a new candles service
 func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*Svc, error) {
 	if candleStore == nil {
 		return nil, errors.New("candleStore instance is nil when creating candle service instance")

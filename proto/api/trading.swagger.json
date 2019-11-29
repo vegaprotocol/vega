@@ -1755,7 +1755,7 @@
         "expiresAt": {
           "type": "string",
           "format": "int64",
-          "title": "do not enforce as not always required\naltho at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
+          "title": "do not enforce as not always required\nalthouth at least check it's not a negative integer, would be not that very handy to create a time.Time with it"
         },
         "type": {
           "$ref": "#/definitions/vegaOrderType"

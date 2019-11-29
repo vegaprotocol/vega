@@ -94,7 +94,7 @@ type VegaResolverRoot struct {
 	tradingDataClient TradingDataClient
 }
 
-// NewResolverRoot instanciate a graphql root resolver
+// NewResolverRoot instantiate a graphql root resolver
 func NewResolverRoot(
 	log *logging.Logger,
 	config gateway.Config,

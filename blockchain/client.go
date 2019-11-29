@@ -28,7 +28,7 @@ type Client struct {
 	clt chainClientImpl
 }
 
-// NewClient instanciate a new blockchain client
+// NewClient instantiate a new blockchain client
 func newClient(clt chainClientImpl) *Client {
 	return &Client{
 		clt: clt,

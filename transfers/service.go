@@ -81,7 +81,7 @@ func (s *Svc) ObserveTransferResponses(
 				// so we can still safely close the channels
 				if err := s.store.Unsubscribe(ref); err != nil {
 					s.log.Error(
-						"Failure un-subscribing transfer reponses subscriber when context.Done()",
+						"Failure un-subscribing transfer responses subscriber when context.Done()",
 						logging.Uint64("id", ref),
 						logging.String("ip-address", ip),
 						logging.Error(err),

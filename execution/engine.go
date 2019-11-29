@@ -140,7 +140,7 @@ func NewEngine(
 	//  create collateral
 	cengine, err := collateral.New(log, executionConfig.Collateral, accountBuf, now)
 	if err != nil {
-		log.Error("unable to initialize collateral", logging.Error(err))
+		log.Error("unable to initialise collateral", logging.Error(err))
 		return nil
 	}
 
@@ -212,7 +212,7 @@ func (e *Engine) NotifyTraderAccount(notif *types.NotifyTraderAccount) error {
 func (e *Engine) Withdraw(w *types.Withdraw) error {
 	err := e.collateral.Withdraw(w.PartyID, w.Asset, w.Amount)
 	if err != nil {
-		e.log.Error("something happend durinmg withdrawal",
+		e.log.Error("something happened durinmg withdrawal",
 			logging.String("party-id", w.PartyID),
 			logging.Uint64("amount", w.Amount),
 			logging.Error(err),

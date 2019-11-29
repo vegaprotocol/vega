@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Order is a package internal data struct that implements the OrderStore interface.
+// NoopOrder is a package internal data struct that implements the OrderStore interface.
 type NoopOrder struct {
 	Config
 

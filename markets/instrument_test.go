@@ -71,7 +71,7 @@ func TestInstrument(t *testing.T) {
 		inst, err := markets.NewInstrument(pinst)
 		assert.Nil(t, inst)
 		assert.NotNil(t, err)
-		assert.Equal(t, err.Error(), "unable to instanciate product from instrument configuration: nil product")
+		assert.Equal(t, err.Error(), "unable to instantiate product from instrument configuration: nil product")
 	})
 
 	t.Run("nil oracle", func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestInstrument(t *testing.T) {
 		inst, err := markets.NewInstrument(pinst)
 		assert.Nil(t, inst)
 		assert.NotNil(t, err)
-		assert.Equal(t, err.Error(), "unable to instanciate product from instrument configuration: nil oracle")
+		assert.Equal(t, err.Error(), "unable to instantiate product from instrument configuration: nil oracle")
 	})
 
 }

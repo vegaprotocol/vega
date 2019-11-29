@@ -94,9 +94,9 @@ func TestNewResultWithNilPointerReposnse(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create a new instruction: %s", err.Error())
 	}
-	var reponse *types.OrderConfirmation
-	reponse = nil
-	result, err := instruction.NewResult(reponse, nil)
+	var response *types.OrderConfirmation
+	response = nil
+	result, err := instruction.NewResult(response, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 }

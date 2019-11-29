@@ -22,7 +22,7 @@ const (
 
 var (
 	// ErrSystemAccountsMissing signals that a system account is missing, which may means that the
-	// collateral engine have not been initialized properly
+	// collateral engine have not been initialised properly
 	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
 	// ErrTraderAccountsMissing signals that the accounts for this trader do not exists
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
@@ -202,7 +202,7 @@ func (e *Engine) FinalSettlement(marketID string, transfers []*types.Transfer) (
 }
 
 // MarkToMarket will run the mark to market settlement over a given set of positions
-// return ledger move stuff here, too (seperate return value, because we need to stream those)
+// return ledger move stuff here, too (separate return value, because we need to stream those)
 func (e *Engine) MarkToMarket(marketID string, transfers []events.Transfer) ([]events.Margin, []*types.TransferResponse, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {

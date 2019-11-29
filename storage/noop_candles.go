@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Candle is a package internal data struct that implements the CandleStore interface.
+// NoopCandle is a package internal data struct that implements the CandleStore interface.
 type NoopCandle struct {
 	Config
 

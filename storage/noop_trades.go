@@ -127,7 +127,7 @@ func (ts *NoopTrade) GetMarkPrice(ctx context.Context, market string) (uint64, e
 }
 
 func (ts *NoopTrade) Close() error {
-	return nil // return ts.badger.db.Close()
+	return nil
 }
 
 func (ts *NoopTrade) notify(items []types.Trade) error {

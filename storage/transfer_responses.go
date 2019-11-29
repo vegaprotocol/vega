@@ -18,7 +18,7 @@ type TransferResponse struct {
 	mu           sync.Mutex
 }
 
-// NewTransferResponses instanciate a new TransferResponse
+// NewTransferResponses instantiate a new TransferResponse
 func NewTransferResponses(log *logging.Logger, cfg Config) (*TransferResponse, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())

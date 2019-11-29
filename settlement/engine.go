@@ -40,7 +40,7 @@ type Engine struct {
 	trades  map[string][]*pos
 }
 
-// New instanciate a new instance of the settlement engine
+// New instantiate a new instance of the settlement engine
 func New(log *logging.Logger, conf Config, product Product, market string) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)

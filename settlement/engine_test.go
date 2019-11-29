@@ -38,7 +38,7 @@ func TestMarketExpiry(t *testing.T) {
 func TestMarkToMarket(t *testing.T) {
 	t.Run("No settle positions if none were on channel", testMarkToMarketEmpty)
 	t.Run("Settle positions are pushed onto the slice channel in order", testMarkToMarketOrdered)
-	t.Run("Trade adds new trader to market, no MTM settlement becasue markPrice is the same", testAddNewTrader)
+	t.Run("Trade adds new trader to market, no MTM settlement because markPrice is the same", testAddNewTrader)
 	// add this test case because we had a runtime panic on the trades map earlier
 	t.Run("Trade adds new trader, immediately closing out with themselves", testAddNewTraderSelfTrade)
 }

@@ -27,7 +27,7 @@ type Watcher struct {
 	mu                 sync.Mutex
 }
 
-// NewFromFile instanciate a new watcher from the vega config files
+// NewFromFile instantiate a new watcher from the vega config files
 func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath string, path string) (*Watcher, error) {
 	watcherlog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
