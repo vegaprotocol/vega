@@ -20,31 +20,9 @@ func NewAccounts(ctx context.Context, accountStore *storage.Account) *Accounts {
 
 func (a *Accounts) PreProcessors() map[RequestType]*PreProcessor {
 	return map[RequestType]*PreProcessor{
-		RequestType_ACCOUNTS_BY_PARTY:            a.accountsByParty(),
 		RequestType_ACCOUNTS_BY_PARTY_AND_ASSET:  a.accountsByPartyAndAsset(),
 		RequestType_ACCOUNTS_BY_PARTY_AND_MARKET: a.accountsByPartyAndMarket(),
 		RequestType_ACCOUNTS_BY_PARTY_AND_TYPE:   a.accountsByPartyAndType(),
-	}
-}
-
-func (a *Accounts) accountsByParty() *PreProcessor {
-	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
-		req := &protoapi.AccountsByPartyRequest{}
-		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {
-			return nil, ErrInstructionInvalid
-		}
-		return instr.PreProcess(
-			func() (proto.Message, error) {
-				resp, err := a.acccountStore.GetByParty(req.PartyID)
-				if err != nil {
-					return nil, err
-				}
-				return &protoapi.AccountsByPartyResponse{Accounts: resp}, nil
-			})
-	}
-	return &PreProcessor{
-		MessageShape: &protoapi.AccountsByPartyRequest{},
-		PreProcess:   preProcessor,
 	}
 }
 

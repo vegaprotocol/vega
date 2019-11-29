@@ -1114,17 +1114,6 @@ func (h *tradingDataService) LastTrade(
 	return &protoapi.LastTradeResponse{}, nil
 }
 
-// AccountsByParty provides a list of accounts for the given party.
-func (h *tradingDataService) AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest) (*protoapi.AccountsByPartyResponse, error) {
-	accs, err := h.AccountsService.GetByParty(req.PartyID)
-	if err != nil {
-		return nil, err
-	}
-	return &protoapi.AccountsByPartyResponse{
-		Accounts: accs,
-	}, nil
-}
-
 // AccountsByPartyAndMarket provides a list of accounts for the given party and market.
 func (h *tradingDataService) AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest) (*protoapi.AccountsByPartyAndMarketResponse, error) {
 	accs, err := h.AccountsService.GetByPartyAndMarket(req.PartyID, req.MarketID)

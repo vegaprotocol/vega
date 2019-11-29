@@ -77,7 +77,6 @@ type TradingDataClient interface {
 	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketsDataSubscribeClient, error)
 	MarginLevelsSubscribe(ctx context.Context, in *protoapi.MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarginLevelsSubscribeClient, error)
 	// accounts
-	AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyResponse, error)
 	AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndMarketResponse, error)
 	AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndTypeResponse, error)
 	AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndAssetResponse, error)
@@ -555,11 +554,11 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 		}
 		return accounts, nil
 	case AccountTypeGeneral:
-		req := protoapi.AccountsByPartyRequest{
+		req := protoapi.AccountsByPartyAndTypeRequest{
 			PartyID: pty.ID,
 			Type:    types.AccountType_GENERAL,
 		}
-		resp, err := r.tradingDataClient.AccountsByParty(ctx, &req)
+		resp, err := r.tradingDataClient.AccountsByPartyAndType(ctx, &req)
 		if err != nil {
 			return nil, err
 		}
