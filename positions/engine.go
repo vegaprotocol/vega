@@ -73,6 +73,13 @@ type Engine struct {
 	mu    *sync.RWMutex
 	// partyID -> MarketPosition
 	positions map[string]*MarketPosition
+
+	// this is basically tracking all position to
+	// not perform a copy when positions a retrieved by other engines
+	// the pointer is hidden behing the interface, and do not expose
+	// any function to mutate them, so we can consider it safe to return
+	// this slice
+	positionsCpy []events.MarketPosition
 }
 
 // New instantiates a new positions engine
@@ -82,10 +89,11 @@ func New(log *logging.Logger, config Config) *Engine {
 	log.SetLevel(config.Level.Get())
 
 	return &Engine{
-		Config:    config,
-		log:       log,
-		mu:        &sync.RWMutex{},
-		positions: map[string]*MarketPosition{},
+		Config:       config,
+		log:          log,
+		mu:           &sync.RWMutex{},
+		positions:    map[string]*MarketPosition{},
+		positionsCpy: []events.MarketPosition{},
 	}
 }
 
@@ -117,6 +125,8 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 	if !found {
 		pos = &MarketPosition{partyID: order.PartyID}
 		e.positions[order.PartyID] = pos
+		// append the pointer to the slice as well
+		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 	if order.Side == types.Side_Buy {
 		pos.buy += int64(order.Size)
@@ -165,6 +175,7 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 				partyID: trade.Buyer,
 			}
 			e.positions[trade.Buyer] = pos
+			e.positionsCpy = append(e.positionsCpy, pos)
 		} else {
 			pos = b
 		}
@@ -176,6 +187,7 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 				partyID: trade.Seller,
 			}
 			e.positions[trade.Seller] = pos
+			e.positionsCpy = append(e.positionsCpy, pos)
 		} else {
 			pos = s
 		}
@@ -206,6 +218,7 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 			partyID: trade.Buyer,
 		}
 		e.positions[trade.Buyer] = buyer
+		e.positionsCpy = append(e.positionsCpy, buyer)
 	}
 
 	seller, ok := e.positions[trade.Seller]
@@ -214,6 +227,7 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 			partyID: trade.Seller,
 		}
 		e.positions[trade.Seller] = seller
+		e.positionsCpy = append(e.positionsCpy, seller)
 	}
 	// Update long/short actual position for buyer and seller.
 	// The buyer's position increases and the seller's position decreases.
@@ -251,7 +265,15 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 		if current, ok := e.positions[party]; ok {
 			ret = append(ret, current)
 		}
+		// remove from the map
 		delete(e.positions, party)
+		// remove from the slice
+		for i, v := range e.positionsCpy {
+			if v.Party() == trader.Party() {
+				e.positionsCpy = append(e.positionsCpy[:i], e.positionsCpy[i+1:]...)
+				break
+			}
+		}
 	}
 	e.mu.Unlock()
 	return ret
@@ -261,13 +283,11 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 // of the updated positions
 func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
 	e.mu.RLock()
-	out := make([]events.MarketPosition, 0, len(e.positions))
 	for _, pos := range e.positions {
 		pos.price = markPrice
-		out = append(out, *pos)
 	}
 	e.mu.RUnlock()
-	return out
+	return e.positionsCpy
 }
 
 // iterate over all open positions, for mark to market based on new market price
@@ -281,16 +301,16 @@ func (e *Engine) updatePositions(trade *types.Trade) {
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push
 func (e *Engine) Positions() []events.MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "Positions")
-	e.mu.RLock()
-	out := make([]events.MarketPosition, 0, len(e.positions))
-	for _, value := range e.positions {
-		if value.size != 0 || value.buy != 0 || value.sell != 0 {
-			out = append(out, *value)
-		}
-	}
-	e.mu.RUnlock()
+	// e.mu.RLock()
+	// out := make([]events.MarketPosition, 0, len(e.positions))
+	// for _, value := range e.positions {
+	// 	if value.size != 0 || value.buy != 0 || value.sell != 0 {
+	// 		out = append(out, *value)
+	// 	}
+	// }
+	// e.mu.RUnlock()
 	timer.EngineTimeCounterAdd()
-	return out
+	return e.positionsCpy
 }
 
 // Parties returns a list of all the parties in the position engine
