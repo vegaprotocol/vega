@@ -498,11 +498,6 @@ func (m *Market) resolveClosedOutTraders(distressedMarginEvts []events.Margin, o
 		}
 	}
 
-	// then remove potentials buys/sell in all the distressed, and recalculate risks
-	for _, v := range distressedMarginEvts {
-		v.ClearPotentials()
-	}
-
 	// now that we closed orders, let's run the risk engine again
 	// so it'll separate the positions still in distress from the
 	// which have acceptable margins

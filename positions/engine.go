@@ -59,11 +59,6 @@ func (m MarketPosition) Price() uint64 {
 	return m.price
 }
 
-func (m MarketPosition) ClearPotentials() {
-	m.buy = 0
-	m.sell = 0
-}
-
 // Engine represents the positions engine
 type Engine struct {
 	log *logging.Logger
