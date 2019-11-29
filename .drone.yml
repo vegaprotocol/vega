@@ -107,8 +107,13 @@ steps:
       - failed=""
       - for target in print_check proto_check rest_check vet vetshadow ; do
           echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
-      # diff_graphqlschema.sh requires GITLAB_API_TOKEN and SLACK_HOOK_URL
-      - bash script/diff_graphqlschema.sh || failed="$$failed diff_graphqlschema"
+      - python3 script/diff_bot.py
+          --token "$$GITLAB_API_TOKEN"
+          --project1 5726034 --projectname1 trading-core --branch1 "$${DRONE_TARGET_BRANCH}" --file1 'gateway/graphql/schema.graphql'
+          --project2 5726034 --projectname2 trading-core --branch2 "$${DRONE_SOURCE_BRANCH}" --file2 'gateway/graphql/schema.graphql'
+          --slack-hookurl "$${SLACK_HOOK_URL}"
+          --slack-recipient "#uidev"
+          print_diff slack_notify || failed="$$failed diff_bot"
       - /usr/local/bin/multilint || failed="$$failed multilint"
       - make lint || true  # Ignore lint failure for now (see #196)
       - make staticcheck || true  # Ignore failures until they're all fixed.
@@ -150,12 +155,18 @@ steps:
         from_secret: DEVNET_DEPLOY_HOSTS
       DEVNET_DEPLOY_SSH_KNOWN_HOSTS:
         from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
-      SLACK_HOOK_URL:
-        from_secret: SLACK_HOOK_URL
+      GITLAB_API_TOKEN:
+        from_secret: GITLAB_API_TOKEN
       VEGANET_USERS:
         from_secret: VEGANET_USERS
     commands:
-      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"  # requires GITLAB_API_TOKEN and 3 DEVNET_* vars
+      - python3 script/diff_bot.py
+          --token "$$GITLAB_API_TOKEN"
+          --project1 5531219 --projectname1 client --branch1 develop --file1 'packages/vega-client/src/api/vega-graphql/vega-schema/schema.graphql'
+          --project2 5726034 --projectname2 trading-core --branch2 develop --file2 'gateway/graphql/schema.graphql'
+          create_mr
+      # The deploy script requires 3 DEVNET_* vars.
+      - ./script/deploy.sh devnet vega "cmd/vega/vega:/home/vega/current/:0755"
       # Nasty auth hack. Single quotes to avoid yaml k:v pair.
       - 'for u in $$VEGANET_USERS ; do
           cmd/vegaccount/vegaccount -addr geo.d.vega.xyz:3002 -traderid "$$u" ;
