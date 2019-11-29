@@ -104,6 +104,10 @@ build: ## install the binaries in cmd/{progname}/
 			|| exit 1 ; \
 	done
 
+.PHONY: gofmtsimplify
+gofmtsimplify:
+	@find . -path vendor -prune -o \( -name '*.go' -and -not -name '*_test.go' -and -not -name '*_mock.go' \) -print0 | xargs -0r gofmt -s -w
+
 install: ## install the binaries in GOPATH/bin
 	@cat .asciiart.txt
 	@echo "Version: ${VERSION} (${VERSION_HASH})"

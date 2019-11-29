@@ -247,7 +247,7 @@ func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*Party, 
 		return nil, err
 	}
 	return []*Party{
-		&Party{ID: pty.ID},
+		{ID: pty.ID},
 	}, nil
 }
 

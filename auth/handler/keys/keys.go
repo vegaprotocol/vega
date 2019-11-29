@@ -215,9 +215,9 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"keys": &bintree{nil, map[string]*bintree{
-		"jwt.priv": &bintree{keysJwtPriv, map[string]*bintree{}},
-		"jwt.pub":  &bintree{keysJwtPub, map[string]*bintree{}},
+	"keys": {nil, map[string]*bintree{
+		"jwt.priv": {keysJwtPriv, map[string]*bintree{}},
+		"jwt.pub":  {keysJwtPub, map[string]*bintree{}},
 	}},
 }}
 
