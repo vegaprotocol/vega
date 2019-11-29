@@ -69,6 +69,8 @@ http:
       get: '/parties/{partyID}/trades'
     - selector: api.trading_data.AccountsByParty
       get: '/parties/{partyID}/accounts'
+    - selector: api.trading_data.MarginLevels
+      get: '/parties/{partyID}/markets/{marketID}/margin'
 
     # Miscellaneous
     - selector: api.trading.NotifyTraderAccount

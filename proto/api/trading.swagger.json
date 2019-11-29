@@ -643,6 +643,37 @@
         ]
       }
     },
+    "/parties/{partyID}/markets/{marketID}/margin": {
+      "get": {
+        "summary": "Get Party Margin Levels",
+        "operationId": "MarginLevels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarginLevelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/parties/{partyID}/orders": {
       "get": {
         "summary": "Get Party Orders",
