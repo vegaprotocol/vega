@@ -68,7 +68,7 @@ func (os *NoopOrder) Subscribe(orders chan<- []types.Order) uint64 {
 	return os.subscriberID
 }
 
-func (a *NoopOrder) SaveBatch(accs []types.Order) error {
+func (os *NoopOrder) SaveBatch(accs []types.Order) error {
 	return nil
 }
 

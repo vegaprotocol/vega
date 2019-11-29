@@ -119,7 +119,6 @@ func (n *NOOPChain) Stop() error {
 	return nil
 }
 
-// implementation of the client stuff
 func (n *NOOPChain) GetGenesisTime(context.Context) (time.Time, error) {
 	return n.genesisTime, nil
 }

@@ -175,7 +175,6 @@ func NewMarket(
 	return market, nil
 }
 
-// GetMarkPrice - quick fix add this here to ensure the mark price has indeed updated
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume := m.matching.BestOfferPriceAndVolume()

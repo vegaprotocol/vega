@@ -52,8 +52,8 @@ func (c *Client) NotifyTraderAccount(
 }
 
 // Withdraw will send a Withdraw transaction to the blockchain
-func (b *Client) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
-	return b.sendWithdrawCommand(ctx, w, WithdrawCommand)
+func (c *Client) Withdraw(ctx context.Context, w *types.Withdraw) (bool, error) {
+	return c.sendWithdrawCommand(ctx, w, WithdrawCommand)
 }
 
 // CreateOrder will send a submit order transaction to the blockchain

@@ -21,12 +21,12 @@ func NewParties(ctx context.Context, partyStore *storage.Party) *Parties {
 
 func (p *Parties) PreProcessors() map[RequestType]*PreProcessor {
 	return map[RequestType]*PreProcessor{
-		RequestType_PARTY_BY_ID: p.partyById(),
+		RequestType_PARTY_BY_ID: p.partyByID(),
 		RequestType_PARTIES:     nil,
 	}
 }
 
-func (p *Parties) partyById() *PreProcessor {
+func (p *Parties) partyByID() *PreProcessor {
 	preProcessor := func(instr *Instruction) (*PreProcessedInstruction, error) {
 		req := &protoapi.PartyByIDRequest{}
 		if err := proto.Unmarshal(instr.Message.Value, req); err != nil {

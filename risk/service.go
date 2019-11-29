@@ -52,9 +52,9 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-// GetMarginLevels returns the margin levels for a given party
-func (r *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error) {
-	return r.store.GetMarginLevelsByID(partyID, marketID)
+// GetMarginLevelsByID returns the margin levels for a given party
+func (s *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error) {
+	return s.store.GetMarginLevelsByID(partyID, marketID)
 }
 
 func (s *Svc) ObserveMarginLevels(

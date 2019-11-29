@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const marketId string = "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
+const marketID string = "JXGQYDVQAP5DJUAQBCB4PACVJPFJR4XI"
 
 func TestSubmitOrderAndReadStores(t *testing.T) {
 
@@ -48,7 +48,7 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    marketID,
 				PartyID:     party1,
 				Price:       100,
 				Size:        3,
@@ -64,7 +64,7 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    marketID,
 				PartyID:     party1,
 				Price:       100,
 				Size:        2,
@@ -114,7 +114,7 @@ func TestSubmitOrderAndReadStores(t *testing.T) {
 
 func TestExtractData(t *testing.T) {
 
-	instructions, err := getExecutionEngineInstructions(marketId, "trader1")
+	instructions, err := getExecutionEngineInstructions(marketID, "trader1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,33 +156,33 @@ func TestExtractData(t *testing.T) {
 // TODO (WG 08/11/2019) The tests below are integration tests used during development. They should be moved to where we keep integration tests and executed with dependencies injected from outside.
 func TestProcessInstructionsAll(t *testing.T) {
 
-	partyId := "party1"
-	orderId := "order1"
-	instructions1, err := getExecutionEngineInstructions(marketId, partyId)
+	partyID := "party1"
+	orderID := "order1"
+	instructions1, err := getExecutionEngineInstructions(marketID, partyID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	instructions2, err := getTradingDataInstructions(marketId, partyId, orderId)
+	instructions2, err := getTradingDataInstructions(marketID, partyID, orderID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	instructions3, err := getInternalInstructions(marketId)
+	instructions3, err := getInternalInstructions(marketID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	instructions4, err := getAccountInstructions(marketId, partyId)
+	instructions4, err := getAccountInstructions(marketID, partyID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	instructions5, err := getCandleInstructions(marketId)
+	instructions5, err := getCandleInstructions(marketID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	instructions6, err := getPositionInstructions(marketId)
+	instructions6, err := getPositionInstructions(marketID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	instructions7, err := getPositionInstructions(marketId)
+	instructions7, err := getPositionInstructions(marketID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +203,7 @@ func TestProcessInstructionsAll(t *testing.T) {
 }
 
 func TestProcessInstructionsExecution(t *testing.T) {
-	instructions, err := getExecutionEngineInstructions(marketId, "party1")
+	instructions, err := getExecutionEngineInstructions(marketID, "party1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,7 +218,7 @@ func TestProcessInstructionsExecution(t *testing.T) {
 
 func TestProcessInstructionsTradingData(t *testing.T) {
 
-	instructions, err := getTradingDataInstructions(marketId, "party1", "order1")
+	instructions, err := getTradingDataInstructions(marketID, "party1", "order1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +233,7 @@ func TestProcessInstructionsTradingData(t *testing.T) {
 
 func TestProcessInstructionsTime(t *testing.T) {
 
-	instructions, err := getInternalInstructions(marketId)
+	instructions, err := getInternalInstructions(marketID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +249,7 @@ func TestProcessInstructionsTime(t *testing.T) {
 
 func TestProcessInstructionsInternal(t *testing.T) {
 
-	instructions, err := getInternalInstructions(marketId)
+	instructions, err := getInternalInstructions(marketID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,12 +287,12 @@ func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
 	assert.EqualValues(t, len(instructionSet.Instructions), len(result.Results))
 }
 
-func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.Instruction, error) {
+func getExecutionEngineInstructions(marketID string, trader1ID string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_NOTIFY_TRADER_ACCOUNT,
 		&protoapi.NotifyTraderAccountRequest{
 			Notif: &types.NotifyTraderAccount{
-				TraderID: trader1Id,
+				TraderID: trader1ID,
 				Amount:   1000,
 			},
 		},
@@ -306,8 +306,8 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
-				PartyID:     trader1Id,
+				MarketID:    marketID,
+				PartyID:     trader1ID,
 				Price:       100,
 				Size:        3,
 				Side:        sell,
@@ -326,8 +326,8 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	//	&protoapi.CancelOrderRequest{
 	//		Cancellation: &types.OrderCancellation{
 	//			OrderID:  "",
-	//			MarketID: marketId,
-	//			PartyID:  trader1Id,
+	//			MarketID: marketID,
+	//			PartyID:  trader1ID,
 	//		},
 	//	},
 	//)
@@ -354,7 +354,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    marketID,
 				PartyID:     trader2,
 				Price:       100,
 				Size:        3,
@@ -414,7 +414,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    marketID,
 				PartyID:     "trader3",
 				Price:       100,
 				Size:        3,
@@ -444,7 +444,7 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 		core.RequestType_SUBMIT_ORDER,
 		&protoapi.SubmitOrderRequest{
 			Submission: &types.OrderSubmission{
-				MarketID:    marketId,
+				MarketID:    marketID,
 				PartyID:     "trader4",
 				Price:       100,
 				Size:        3,
@@ -476,11 +476,11 @@ func getExecutionEngineInstructions(marketId string, trader1Id string) ([]*core.
 	return instructions, nil
 }
 
-func getTradingDataInstructions(marketId string, partyId string, orderId string) ([]*core.Instruction, error) {
+func getTradingDataInstructions(marketID string, partyID string, orderID string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_MARKET_DEPTH,
 		&protoapi.MarketDepthRequest{
-			MarketID: marketId,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {
@@ -490,7 +490,7 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 	instr2, err := core.NewInstruction(
 		core.RequestType_MARKET_BY_ID,
 		&protoapi.MarketByIDRequest{
-			MarketID: marketId,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {
@@ -508,7 +508,7 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 	instr4, err := core.NewInstruction(
 		core.RequestType_ORDERS_BY_MARKET,
 		&protoapi.OrdersByMarketRequest{
-			MarketID: marketId,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {
@@ -518,7 +518,7 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 	instr5, err := core.NewInstruction(
 		core.RequestType_ORDERS_BY_PARTY,
 		&protoapi.OrdersByPartyRequest{
-			PartyID: partyId,
+			PartyID: partyID,
 		},
 	)
 	if err != nil {
@@ -528,8 +528,8 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 	instr6, err := core.NewInstruction(
 		core.RequestType_ORDER_BY_MARKET_AND_ID,
 		&protoapi.OrderByMarketAndIdRequest{
-			MarketID: marketId,
-			OrderID:  orderId,
+			MarketID: marketID,
+			OrderID:  orderID,
 		},
 	)
 	if err != nil {
@@ -549,7 +549,7 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 	instr8, err := core.NewInstruction(
 		core.RequestType_TRADES_BY_MARKET,
 		&protoapi.TradesByMarketRequest{
-			MarketID: marketId,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {
@@ -559,8 +559,8 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 	instr9, err := core.NewInstruction(
 		core.RequestType_TRADES_BY_PARTY,
 		&protoapi.TradesByPartyRequest{
-			PartyID:  partyId,
-			MarketID: marketId,
+			PartyID:  partyID,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {
@@ -570,7 +570,7 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 	instr10, err := core.NewInstruction(
 		core.RequestType_TRADES_BY_ORDER,
 		&protoapi.TradesByOrderRequest{
-			OrderID: orderId,
+			OrderID: orderID,
 		},
 	)
 	if err != nil {
@@ -580,7 +580,7 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 	instr11, err := core.NewInstruction(
 		core.RequestType_LAST_TRADE,
 		&protoapi.LastTradeRequest{
-			MarketID: marketId,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {
@@ -604,7 +604,7 @@ func getTradingDataInstructions(marketId string, partyId string, orderId string)
 	return instructions, nil
 }
 
-func getInternalInstructions(marketId string) ([]*core.Instruction, error) {
+func getInternalInstructions(marketID string) ([]*core.Instruction, error) {
 	ts, err := ptypes.TimestampProto(time.Date(2019, 1, 1, 9, 0, 0, 0, time.UTC))
 	if err != nil {
 		return nil, err
@@ -642,7 +642,7 @@ func getInternalInstructions(marketId string) ([]*core.Instruction, error) {
 	instr4, err := core.NewInstruction(
 		core.RequestType_MARKET_SUMMARY,
 		&core.MarketSummaryRequest{
-			MarketID: marketId,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {
@@ -667,11 +667,11 @@ func getInternalInstructions(marketId string) ([]*core.Instruction, error) {
 	return instructions, nil
 }
 
-func getAccountInstructions(marketId string, partyId string) ([]*core.Instruction, error) {
+func getAccountInstructions(marketID string, partyID string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_ACCOUNTS_BY_PARTY,
 		&protoapi.AccountsByPartyRequest{
-			PartyID: partyId,
+			PartyID: partyID,
 		},
 	)
 	if err != nil {
@@ -681,7 +681,7 @@ func getAccountInstructions(marketId string, partyId string) ([]*core.Instructio
 	instr2, err := core.NewInstruction(
 		core.RequestType_ACCOUNTS_BY_PARTY_AND_ASSET,
 		&protoapi.AccountsByPartyAndAssetRequest{
-			PartyID: partyId,
+			PartyID: partyID,
 			Asset:   "",
 		},
 	)
@@ -692,8 +692,8 @@ func getAccountInstructions(marketId string, partyId string) ([]*core.Instructio
 	instr3, err := core.NewInstruction(
 		core.RequestType_ACCOUNTS_BY_PARTY_AND_MARKET,
 		&protoapi.AccountsByPartyAndMarketRequest{
-			PartyID:  partyId,
-			MarketID: marketId,
+			PartyID:  partyID,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {
@@ -703,7 +703,7 @@ func getAccountInstructions(marketId string, partyId string) ([]*core.Instructio
 	instr4, err := core.NewInstruction(
 		core.RequestType_ACCOUNTS_BY_PARTY_AND_TYPE,
 		&protoapi.AccountsByPartyAndTypeRequest{
-			PartyID: partyId,
+			PartyID: partyID,
 			Type:    types.AccountType_GENERAL,
 		},
 	)
@@ -721,11 +721,11 @@ func getAccountInstructions(marketId string, partyId string) ([]*core.Instructio
 	return instructions, nil
 }
 
-func getCandleInstructions(marketId string) ([]*core.Instruction, error) {
+func getCandleInstructions(marketID string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_CANDLES,
 		&protoapi.CandlesRequest{
-			MarketID: marketId,
+			MarketID: marketID,
 		},
 	)
 	if err != nil {
@@ -739,11 +739,11 @@ func getCandleInstructions(marketId string) ([]*core.Instruction, error) {
 	return instructions, nil
 }
 
-func getPositionInstructions(partyId string) ([]*core.Instruction, error) {
+func getPositionInstructions(partyID string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_POSITIONS_BY_PARTY,
 		&protoapi.PositionsByPartyRequest{
-			PartyID: partyId,
+			PartyID: partyID,
 		},
 	)
 	if err != nil {
@@ -757,11 +757,11 @@ func getPositionInstructions(partyId string) ([]*core.Instruction, error) {
 	return instructions, nil
 }
 
-func getPartyInstructions(partyId string) ([]*core.Instruction, error) {
+func getPartyInstructions(partyID string) ([]*core.Instruction, error) {
 	instr1, err := core.NewInstruction(
 		core.RequestType_PARTY_BY_ID,
 		&protoapi.PartyByIDRequest{
-			PartyID: partyId,
+			PartyID: partyID,
 		},
 	)
 	if err != nil {

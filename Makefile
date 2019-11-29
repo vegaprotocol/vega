@@ -42,8 +42,11 @@ endif
 all: build
 
 lint: ## Lint the files
-	@go install golang.org/x/lint/golint
-	@go list ./... | xargs -r golint -set_exit_status | sed -e "s#^$$GOPATH/src/##"
+	@t="$$(mktemp)" ; \
+	go list ./... | xargs -r golint | grep -vE '(and that stutters|blank import should be|should have comment|which can be annoying to use)' | tee "$$t" ; \
+	code=0 ; test "$$(wc -l <"$$t" | awk '{print $$1}')" -gt 0 && code=1 ; \
+	rm -f "$$t" ; \
+	exit "$$code"
 
 bench: ## Build benchmarking binary (in "$GOPATH/bin"); Run benchmarking
 	@go test -run=XXX -bench=. -benchmem -benchtime=1s ./cmd/vegabench
@@ -130,7 +133,7 @@ gqlgen_check: ## GraphQL: Check committed files match just-generated files
 
 ineffectassign: ## Check for ineffectual assignments
 	@ia="$$(env GO111MODULE=auto ineffassign . | grep -v '_test\.go:')" ; \
-	if test "$$(echo "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" | sed -e "s#^$$GOPATH/src/##" ; exit 1 ; fi
+	if test "$$(echo -n "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" ; exit 1 ; fi
 
 proto: | deps ${PROTOFILES} ${PROTOVALFILES} proto/api/trading.pb.gw.go proto/api/trading.swagger.json ## build proto definitions
 

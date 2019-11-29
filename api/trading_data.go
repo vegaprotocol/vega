@@ -147,7 +147,7 @@ type TransferResponseService interface {
 	ObserveTransferResponses(ctx context.Context, retries int) (<-chan []*types.TransferResponse, uint64)
 }
 
-// RiskService
+// RiskService ...
 type RiskService interface {
 	ObserveMarginLevels(
 		ctx context.Context, retries int, partyID, marketID string,
@@ -246,8 +246,8 @@ func (h *tradingDataService) Markets(ctx context.Context, request *google_proto.
 	}, nil
 }
 
-// OrdersByMarketAndId provides the given order, searching by Market and (Order)Id.
-func (h *tradingDataService) OrderByMarketAndId(ctx context.Context,
+// OrdersByMarketAndID provides the given order, searching by Market and (Order)Id.
+func (h *tradingDataService) OrderByMarketAndID(ctx context.Context,
 	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
 
 	if request.MarketID == "" {

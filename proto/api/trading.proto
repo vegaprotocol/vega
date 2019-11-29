@@ -66,7 +66,7 @@ service trading_data {
   // orders
   rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
-  rpc OrderByMarketAndId(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
+  rpc OrderByMarketAndID(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
   rpc OrderByReference(OrderByReferenceRequest) returns (OrderByReferenceResponse);
 
   // markets
