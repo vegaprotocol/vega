@@ -302,6 +302,36 @@
         ]
       }
     },
+    "/markets/{marketID}/orders/{orderID}": {
+      "get": {
+        "operationId": "OrderByMarketAndID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiOrderByMarketAndIdResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "orderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/markets/{marketID}/trades": {
       "get": {
         "summary": "trades",
