@@ -373,7 +373,7 @@ const (
 	RejectionReasonInvalidPartyID        RejectionReason = "InvalidPartyId"
 	RejectionReasonMarketClosed          RejectionReason = "MarketClosed"
 	RejectionReasonMarginCheckFailed     RejectionReason = "MarginCheckFailed"
-	RejectionReasonVegaInternalError     RejectionReason = "VegaInternalError"
+	RejectionReasonInternalError         RejectionReason = "InternalError"
 )
 
 var AllRejectionReason = []RejectionReason{
@@ -391,12 +391,12 @@ var AllRejectionReason = []RejectionReason{
 	RejectionReasonInvalidPartyID,
 	RejectionReasonMarketClosed,
 	RejectionReasonMarginCheckFailed,
-	RejectionReasonVegaInternalError,
+	RejectionReasonInternalError,
 }
 
 func (e RejectionReason) IsValid() bool {
 	switch e {
-	case RejectionReasonInvalidMarketID, RejectionReasonInvalidOrderID, RejectionReasonOrderOutOfSequence, RejectionReasonInvalidRemainingSize, RejectionReasonTimeFailure, RejectionReasonOrderRemovalFailure, RejectionReasonInvalidExpirationTime, RejectionReasonInvalidOrderReference, RejectionReasonEditNotAllowed, RejectionReasonOrderAmendFailure, RejectionReasonOrderNotFound, RejectionReasonInvalidPartyID, RejectionReasonMarketClosed, RejectionReasonMarginCheckFailed, RejectionReasonVegaInternalError:
+	case RejectionReasonInvalidMarketID, RejectionReasonInvalidOrderID, RejectionReasonOrderOutOfSequence, RejectionReasonInvalidRemainingSize, RejectionReasonTimeFailure, RejectionReasonOrderRemovalFailure, RejectionReasonInvalidExpirationTime, RejectionReasonInvalidOrderReference, RejectionReasonEditNotAllowed, RejectionReasonOrderAmendFailure, RejectionReasonOrderNotFound, RejectionReasonInvalidPartyID, RejectionReasonMarketClosed, RejectionReasonMarginCheckFailed, RejectionReasonInternalError:
 		return true
 	}
 	return false

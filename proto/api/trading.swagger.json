@@ -1746,7 +1746,7 @@
         "INVALID_PARTY_ID",
         "MARKET_CLOSED",
         "MARGIN_CHECK_FAILED",
-        "VEGA_INTERNAL_ERROR"
+        "INTERNAL_ERROR"
       ],
       "default": "NONE"
     },

@@ -2796,7 +2796,7 @@ enum RejectionReason {
   # Margin check failed
   MarginCheckFailed
   # An internal error happend
-  VegaInternalError
+  InternalError
 }
 
 enum OrderType {

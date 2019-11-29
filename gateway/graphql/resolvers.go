@@ -769,8 +769,8 @@ func RejectionReasonFromProtoOrderError(o proto.OrderError) (RejectionReason, er
 		return RejectionReasonMarketClosed, nil
 	case proto.OrderError_MARGIN_CHECK_FAILED:
 		return RejectionReasonMarginCheckFailed, nil
-	case proto.OrderError_VEGA_INTERNAL_ERROR:
-		return RejectionReasonVegaInternalError, nil
+	case proto.OrderError_INTERNAL_ERROR:
+		return RejectionReasonInternalError, nil
 	default:
 		return RejectionReason(""), fmt.Errorf("Invalid RejectionReason: %v", o)
 	}

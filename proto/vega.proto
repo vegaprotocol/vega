@@ -100,7 +100,7 @@ enum OrderError {
   INVALID_PARTY_ID = 12;
   MARKET_CLOSED = 13;
   MARGIN_CHECK_FAILED = 14;
-  VEGA_INTERNAL_ERROR = 15;
+  INTERNAL_ERROR = 15;
 }
 
 message Trade {

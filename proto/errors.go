@@ -51,8 +51,8 @@ func (err OrderError) Error() string {
 		return "OrderError: Market Closed"
 	case OrderError_MARGIN_CHECK_FAILED:
 		return "OrderError: Margin Check Failed"
-	case OrderError_VEGA_INTERNAL_ERROR:
-		return "OrderError: Vega Internal Error"
+	case OrderError_INTERNAL_ERROR:
+		return "OrderError: Internal Error"
 	default:
 		return "invalid OrderError"
 	}

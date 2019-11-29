@@ -360,7 +360,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	if err != nil {
 		// adding order to the buffer first
 		order.Status = types.Order_Rejected
-		order.Reason = types.OrderError_VEGA_INTERNAL_ERROR
+		order.Reason = types.OrderError_INTERNAL_ERROR
 		m.orderBuf.Add(*order)
 
 		m.log.Error("Unable to register potential trader position",
@@ -397,7 +397,7 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 			order.Reason = oerr
 		} else {
 			// should not happend but still...
-			order.Reason = types.OrderError_VEGA_INTERNAL_ERROR
+			order.Reason = types.OrderError_INTERNAL_ERROR
 		}
 		m.orderBuf.Add(*order)
 		m.log.Error("Failure after submitting order to matching engine",
