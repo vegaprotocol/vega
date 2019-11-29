@@ -804,6 +804,39 @@
         ]
       }
     },
+    "/parties/{withdraw.partyID}/withdrawals": {
+      "post": {
+        "summary": "Request withdrawal",
+        "operationId": "Withdraw",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "withdraw.partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/statistics": {
       "get": {
         "summary": "Get Statistics",
@@ -1199,6 +1232,14 @@
         "timestamp": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "apiWithdrawRequest": {
+      "type": "object",
+      "properties": {
+        "withdraw": {
+          "$ref": "#/definitions/vegaWithdraw"
         }
       }
     },

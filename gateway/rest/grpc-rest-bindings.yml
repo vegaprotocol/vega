@@ -71,6 +71,9 @@ http:
       get: '/parties/{partyID}/accounts'
     - selector: api.trading_data.MarginLevels
       get: '/parties/{partyID}/markets/{marketID}/margin'
+    - selector: api.trading.Withdraw
+      post: '/parties/{withdraw.partyID}/withdrawals'
+      body: '*'
 
     # Miscellaneous
     - selector: api.trading.NotifyTraderAccount
