@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -400,6 +401,58 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 			return fmt.Errorf("invalid collateral release margin, expected %v but got %v", i64val(row, 5), ml.CollateralReleaseLevel)
 		}
 
+	}
+	return nil
+}
+
+func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
+	for _, row := range orders.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		order := proto.Order{
+			Id:          uuid.NewV4().String(),
+			MarketID:    val(row, 1),
+			PartyID:     val(row, 0),
+			Side:        sideval(row, 2),
+			Price:       u64val(row, 4),
+			Size:        u64val(row, 3),
+			Remaining:   u64val(row, 3),
+			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			Type:        proto.Order_LIMIT,
+			TimeInForce: proto.Order_GTT,
+			CreatedAt:   time.Now().UnixNano(),
+		}
+		_, err := execsetup.engine.SubmitOrder(&order)
+		if err == nil {
+			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
+		}
+		if err.Error() != val(row, 5) {
+			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
+		}
+	}
+	return nil
+
+}
+
+func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
+	ordCnt := len(orders.Rows) - 1
+	for _, row := range orders.Rows {
+		if val(row, 0) == "trader" {
+			continue
+		}
+
+		for _, v := range execsetup.orders.data {
+			if v.PartyID == val(row, 0) && v.MarketID == val(row, 1) &&
+				v.Status == proto.Order_Rejected && v.Reason.String() == val(row, 2) {
+				ordCnt -= 1
+			}
+		}
+	}
+
+	if ordCnt > 0 {
+		return errors.New("some orders were not rejected")
 	}
 	return nil
 }

@@ -20,3 +20,18 @@ Feature: Test trader accounts
     Then the margins levels for the traders are:
       | trader  | id        | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 |         100 |    110 |     120 |     140 |
+
+  Scenario: an order is rejected if a trader have insufficient margin
+    Given the following traders:
+      | name    | amount |
+      | trader1 |      1 |
+    Then I Expect the traders to have new general account:
+      | name    | asset |
+      | trader1 | ETH   |
+    And "trader1" general accounts balance is "1"
+    Then traders place following failing orders:
+      | trader  | id        | type | volume | price | error               |
+      | trader1 | ETH/DEC19 | sell |      1 |  1000 | margin check failed |
+    Then the following orders are rejected:
+      | trader  | id        | reason              |
+      | trader1 | ETH/DEC19 | MARGIN_CHECK_FAILED |
