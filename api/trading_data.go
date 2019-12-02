@@ -363,6 +363,7 @@ func (h *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	return response, nil
 }
 
+// MarginLevels returns the current margin levels for a given party and market.
 func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.MarginLevelsRequest) (*protoapi.MarginLevelsResponse, error) {
 	if len(req.PartyID) <= 0 {
 		return nil, ErrEmptyMissingPartyID
@@ -371,13 +372,12 @@ func (h *tradingDataService) MarginLevels(_ context.Context, req *protoapi.Margi
 	if err != nil {
 		return nil, err
 	}
-	mlptrs := make([]*types.MarginLevels, 0, len(mls))
+	levels := make([]*types.MarginLevels, 0, len(mls))
 	for _, v := range mls {
-		mlptrs = append(mlptrs, &v)
+		levels = append(levels, &v)
 	}
-
 	return &protoapi.MarginLevelsResponse{
-		MarginLevels: mlptrs,
+		MarginLevels: levels,
 	}, nil
 }
 
@@ -503,6 +503,7 @@ func (h *tradingDataService) GetVegaTime(ctx context.Context, request *google_pr
 
 }
 
+// TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
 func (h *tradingDataService) TransferResponsesSubscribe(
 	req *empty.Empty, srv protoapi.TradingData_TransferResponsesSubscribeServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan in error.
@@ -514,8 +515,8 @@ func (h *tradingDataService) TransferResponsesSubscribe(
 	if h.log.GetLevel() == logging.DebugLevel {
 		h.log.Debug("TransferResponses subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
-	var err error
 
+	var err error
 	for {
 		select {
 		case transferResponses := <-transferResponsesChan:
@@ -562,9 +563,10 @@ func (h *tradingDataService) TransferResponsesSubscribe(
 	}
 }
 
+// MarketsDataSubscribe opens a subscription to market data provided by the markets service.
 func (h *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubscribeRequest,
 	srv protoapi.TradingData_MarketsDataSubscribeServer) error {
-	// Wrap context from the request into cancellable. We can close internal chan in error.
+	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
@@ -618,27 +620,29 @@ func (h *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubsc
 	}
 }
 
+// AccountsSubscribe opens a subscription to the Margin Levels provided by the risk service.
 func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSubscribeRequest, srv protoapi.TradingData_MarginLevelsSubscribeServer) error {
-	// wrap context from the request into cancellable. we can closed internal chan in error
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
 
-	if len(req.PartyID) <= 0 {
+	if len(req.GetPartyID()) <= 0 {
 		return ErrEmptyMissingPartyID
 	}
 
-	marginlevelschan, ref := h.RiskService.ObserveMarginLevels(
-		ctx, h.Config.StreamRetries, req.PartyID, req.MarketID)
-	h.log.Debug("Margin levels subscriber - new rpc stream", logging.Uint64("ref", ref))
+	marginLevelsChan, ref := h.RiskService.ObserveMarginLevels(ctx, h.Config.StreamRetries, req.PartyID, req.MarketID)
+
+	if h.log.GetLevel() == logging.DebugLevel {
+		h.log.Debug("Margin levels subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
 
 	var err error
-
 	for {
 		select {
-		case mls := <-marginlevelschan:
+		case mls := <-marginLevelsChan:
 			if mls == nil {
 				err = ErrChannelClosed
-				h.log.Error("margin levels subscriber",
+				h.log.Error("Margin levels subscriber",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
 				)
@@ -647,7 +651,7 @@ func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 			for _, ml := range mls {
 				err = srv.Send(&ml)
 				if err != nil {
-					h.log.Error("magin levels data subscriber - rpc stream error",
+					h.log.Error("Margin levels data subscriber - rpc stream error",
 						logging.Error(err),
 						logging.Uint64("ref", ref),
 					)
@@ -656,19 +660,23 @@ func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 			}
 		case <-ctx.Done():
 			err = ctx.Err()
-			h.log.Debug("Margin levels data subscriber - rpc stream ctx error",
-				logging.Error(err),
-				logging.Uint64("ref", ref),
-			)
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Margin levels data subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
 			return err
 		case <-h.ctx.Done():
 			return ErrServerShutdown
 		}
 
-		if marginlevelschan == nil {
-			h.log.Debug("Margin levels data subscriber - rpc stream closed",
-				logging.Uint64("ref", ref),
-			)
+		if marginLevelsChan == nil {
+			if h.log.GetLevel() == logging.DebugLevel {
+				h.log.Debug("Margin levels data subscriber - rpc stream closed",
+					logging.Uint64("ref", ref),
+				)
+			}
 			return ErrStreamClosed
 		}
 	}
@@ -677,7 +685,7 @@ func (h *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 // AccountsSubscribe opens a subscription to the Accounts service.
 func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest,
 	srv protoapi.TradingData_AccountsSubscribeServer) error {
-	// Wrap context from the request into cancellable. We can close internal chan in error.
+	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
@@ -740,7 +748,7 @@ func (h *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 // PartyID: Optional.
 func (h *tradingDataService) OrdersSubscribe(
 	req *protoapi.OrdersSubscribeRequest, srv protoapi.TradingData_OrdersSubscribeServer) error {
-	// Wrap context from the request into cancellable. We can close internal chan in error.
+	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
@@ -812,7 +820,7 @@ func (h *tradingDataService) OrdersSubscribe(
 // TradesSubscribe opens a subscription to the Trades service.
 func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeRequest,
 	srv protoapi.TradingData_TradesSubscribeServer) error {
-	// Wrap context from the request into cancellable. We can close internal chan in error.
+	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
@@ -882,7 +890,7 @@ func (h *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 // CandlesSubscribe opens a subscription to the Candles service.
 func (h *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest,
 	srv protoapi.TradingData_CandlesSubscribeServer) error {
-	// Wrap context from the request into cancellable. We can close internal chan in error.
+	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
@@ -948,7 +956,7 @@ func (h *tradingDataService) MarketDepthSubscribe(
 	req *protoapi.MarketDepthSubscribeRequest,
 	srv protoapi.TradingData_MarketDepthSubscribeServer,
 ) error {
-	// Wrap context from the request into cancellable. We can close internal chan in error.
+	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
@@ -1012,7 +1020,7 @@ func (h *tradingDataService) PositionsSubscribe(
 	req *protoapi.PositionsSubscribeRequest,
 	srv protoapi.TradingData_PositionsSubscribeServer,
 ) error {
-	// Wrap context from the request into cancellable. We can close internal chan in error.
+	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
