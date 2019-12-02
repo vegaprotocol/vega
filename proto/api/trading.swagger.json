@@ -606,13 +606,13 @@
     },
     "/parties/{partyID}/accounts": {
       "get": {
-        "summary": "Get Party Accounts",
-        "operationId": "AccountsByPartyAndType",
+        "summary": "Get Party Accounts by Account Type",
+        "operationId": "AccountsByParty",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiAccountsByPartyAndTypeResponse"
+              "$ref": "#/definitions/apiAccountsByPartyResponse"
             }
           }
         },
@@ -918,6 +918,17 @@
       }
     },
     "apiAccountsByPartyAndTypeResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          }
+        }
+      }
+    },
+    "apiAccountsByPartyResponse": {
       "type": "object",
       "properties": {
         "accounts": {

@@ -145,10 +145,13 @@ service trading_data {
   rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
   rpc MarginLevelsSubscribe(MarginLevelsSubscribeRequest) returns (stream vega.MarginLevels);
 
+  // Get Party Accounts by Account Type
+  rpc AccountsByParty(AccountsByPartyRequest) returns (AccountsByPartyResponse);
+
   // Get Party Accounts by Market
   rpc AccountsByPartyAndMarket(AccountsByPartyAndMarketRequest) returns (AccountsByPartyAndMarketResponse);
 
-  // Get Party Accounts
+  // Get Party Accounts by Account Type (dup)
   rpc AccountsByPartyAndType(AccountsByPartyAndTypeRequest) returns (AccountsByPartyAndTypeResponse);
 
   // Get Party Accounts by Asset
@@ -356,6 +359,15 @@ message OrdersStream {
 
 message TradesStream {
   repeated vega.Trade trades = 1;
+}
+
+message AccountsByPartyRequest {
+  string partyID = 1 [(validator.field) = {msg_exists : true}];
+  vega.AccountType type = 2;
+}
+
+message AccountsByPartyResponse {
+  repeated vega.Account accounts = 1;
 }
 
 message AccountsByPartyAndMarketRequest {

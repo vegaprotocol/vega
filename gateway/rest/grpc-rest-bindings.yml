@@ -67,7 +67,7 @@ http:
       get: '/parties/{partyID}/positions'
     - selector: api.trading_data.TradesByParty
       get: '/parties/{partyID}/trades'
-    - selector: api.trading_data.AccountsByPartyAndType
+    - selector: api.trading_data.AccountsByParty
       get: '/parties/{partyID}/accounts'
     - selector: api.trading_data.MarginLevels
       get: '/parties/{partyID}/markets/{marketID}/margin'

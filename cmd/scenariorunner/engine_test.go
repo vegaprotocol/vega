@@ -668,6 +668,16 @@ func getInternalInstructions(marketId string) ([]*core.Instruction, error) {
 }
 
 func getAccountInstructions(marketId string, partyId string) ([]*core.Instruction, error) {
+	instr1, err := core.NewInstruction(
+		core.RequestType_ACCOUNTS_BY_PARTY,
+		&protoapi.AccountsByPartyRequest{
+			PartyID: partyId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	instr2, err := core.NewInstruction(
 		core.RequestType_ACCOUNTS_BY_PARTY_AND_ASSET,
 		&protoapi.AccountsByPartyAndAssetRequest{
@@ -702,6 +712,7 @@ func getAccountInstructions(marketId string, partyId string) ([]*core.Instructio
 	}
 
 	instructions := []*core.Instruction{
+		instr1,
 		instr2,
 		instr3,
 		instr4,
