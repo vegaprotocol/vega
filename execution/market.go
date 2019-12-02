@@ -36,6 +36,8 @@ var (
 	ErrMarginCheckInsufficient = errors.New("insufficient margin")
 	// ErrInvalidInitialMarkPrice signals that the initial mark price for a market is invalid
 	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
+	// ErrMissingGeneralAccountForParty ...
+	ErrMissingGeneralAccountForParty = errors.New("missing general account for party")
 
 	networkPartyID = "network"
 )
@@ -348,6 +350,22 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 
 		// trader should be created before even trying to post order
 		return nil, ErrTraderDoNotExists
+	}
+
+	// ensure party have a general account, and margin account is / can be created
+	asset, _ := m.mkt.GetAsset()
+	_, err := m.collateral.CreatePartyMarginAccount(order.PartyID, order.MarketID, asset)
+	if err != nil {
+		m.log.Error("Margin account verification failed",
+			logging.String("party-id", order.PartyID),
+			logging.String("market-id", m.GetID()),
+			logging.String("asset", asset),
+		)
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_MISSING_GENERAL_ACCOUNT
+		m.orderBuf.Add(*order)
+		return nil, ErrMissingGeneralAccountForParty
 	}
 
 	// if this is a market order, let's set the price to it now.

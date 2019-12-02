@@ -14,10 +14,9 @@ var ErrPartyDoesNotExist = errors.New("party does not exist in party engine")
 // Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
 type Collateral interface {
-	CreateTraderAccount(partyID, marketID, asset string) (string, string)
+	CreatePartyGeneralAccount(partyID, asset string) string
 	IncrementBalance(id string, amount int64) error
 	GetAccountByID(id string) (*proto.Account, error)
-	AddTraderToMarket(mkt, trader, asset string) error
 }
 
 // Party holds the list of parties in the system
@@ -107,7 +106,7 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 		}
 
 		// create account
-		_, generalID := p.collateral.CreateTraderAccount(notif.TraderID, mkt.Id, asset)
+		generalID := p.collateral.CreatePartyGeneralAccount(notif.TraderID, asset)
 		if _, ok := alreadyTopUp[generalID]; !ok {
 			alreadyTopUp[generalID] = struct{}{}
 			// then credit the general account
@@ -133,16 +132,6 @@ func (p *Party) notifyTraderAccount(notif *proto.NotifyTraderAccount, amount int
 					logging.Int64("top-up-amount", amount),
 					logging.Int64("new-balance", acc.Balance))
 			}
-		}
-
-		// now add the trader to the given market (move monies is margin account)
-		err = p.collateral.AddTraderToMarket(mkt.Id, notif.TraderID, asset)
-		if err != nil {
-			p.log.Error("unable to add party to market",
-				logging.String("party-id", notif.TraderID),
-				logging.String("asset", asset),
-				logging.String("market-id", mkt.Id),
-				logging.Error(err))
 		}
 	}
 
