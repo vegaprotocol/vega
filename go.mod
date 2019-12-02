@@ -4,6 +4,9 @@ require (
 	code.vegaprotocol.io/quant v0.1.0
 	github.com/99designs/gqlgen v0.10.1
 	github.com/DATA-DOG/godog v0.7.13
+	github.com/Masterminds/goutils v1.1.0 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
@@ -19,14 +22,21 @@ require (
 	github.com/google/btree v1.0.0
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/google/protobuf v3.7.0+incompatible // indirect
+	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
 	github.com/hashicorp/go-multierror v1.0.0
+	github.com/huandu/xstrings v1.2.1 // indirect
+	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/jmhodges/levigo v0.0.0-20161115193449-c42d9e0ca023 // indirect
+	github.com/lyft/protoc-gen-validate v0.1.0 // indirect
+	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mwitkow/go-proto-validators v0.2.0
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.2
+	github.com/pseudomuto/protoc-gen-doc v1.3.0 // indirect
+	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
