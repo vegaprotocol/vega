@@ -113,7 +113,7 @@ func (p *Party) notifyTraderAccount(notify *proto.NotifyTraderAccount, amount in
 			// then credit the general account
 			err = p.collateral.IncrementBalance(generalID, amount)
 			if err != nil {
-				p.log.Error("unable to topup trader account",
+				p.log.Error("unable to top-up trader account",
 					logging.Error(err))
 				return err
 			}
