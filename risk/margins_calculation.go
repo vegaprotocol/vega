@@ -17,15 +17,21 @@ func newMarginLevels(maintenance int64, scalingFactors *types.ScalingFactors) *t
 
 // Implementation of the margin calculator per specs:
 // https://gitlab.com/vega-protocol/product/blob/master/specs/0019-margin-calculator.md
-func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor) *types.MarginLevels {
+func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell bool) *types.MarginLevels {
 	var (
 		marginMaintenanceLng int64
 		marginMaintenanceSht int64
 	)
 	openVolume := e.Size()
-	// calculate both long and short riskiest positions
-	riskiestLng := openVolume + e.Buy()
-	riskiestSht := openVolume - e.Sell()
+	var (
+		riskiestLng = openVolume
+		riskiestSht = openVolume
+	)
+	if withPotentialBuyAndSell {
+		// calculate both long and short riskiest positions
+		riskiestLng += e.Buy()
+		riskiestSht -= e.Sell()
+	}
 
 	// calculate margin maintenance long only if riskiest is > 0
 	// marginMaintenanceLng will be 0 by default
