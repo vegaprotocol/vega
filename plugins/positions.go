@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -16,7 +17,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/pos_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins PosBuffer
 type PosBuffer interface {
-	Subscribe() (<-chan []types.Position, int)
+	Subscribe() (<-chan []events.SettlePosition, int)
 	Unsubscribe(int)
 }
 
@@ -25,7 +26,7 @@ type Positions struct {
 	mu   *sync.RWMutex
 	buf  PosBuffer
 	ref  int
-	ch   <-chan []types.Position
+	ch   <-chan []events.SettlePosition
 	data map[string]map[string]types.Position
 }
 
@@ -85,18 +86,20 @@ func (p *Positions) consume(ctx context.Context) {
 	}
 }
 
-func (p *Positions) updateData(raw []types.Position) {
-	// build the map from the updated data
-	p.data = map[string]map[string]types.Position{}
-	for _, pos := range raw {
-		if _, ok := p.data[pos.MarketID]; !ok {
-			p.data[pos.MarketID] = map[string]types.Position{}
+func (p *Positions) updateData(raw []events.SettlePosition) {
+	for _, sp := range raw {
+		mID, tID := sp.MarketID(), sp.Party()
+		if _, ok := p.data[mID]; !ok {
+			p.data[mID] = map[string]types.Position{}
 		}
-		// there can only be 1 position for a trader in a market
-		if pos.OpenVolume == 0 {
-			delete(p.data[pos.MarketID], pos.PartyID)
-		} else {
-			p.data[pos.MarketID][pos.PartyID] = pos
+		calc, ok := p.data[mID][tID]
+		if !ok {
+			calc = evtToProto(sp)
+		}
+		updatePosition(&calc, sp)
+		p.data[mID][tID] = calc
+		if calc.OpenVolume == 0 {
+			delete(p.data[mID], tID)
 		}
 	}
 }
@@ -149,4 +152,58 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 	}
 	p.mu.RUnlock()
 	return s, nil
+}
+
+func updatePosition(p *types.Position, e events.SettlePosition) {
+	totPrice, totVolume := p.AverageEntryPrice, p.OpenVolume
+	totPrice *= absUint64(totVolume)
+	for _, t := range e.Trades() {
+		price, size := t.Price(), t.Size()
+		if size == 0 {
+			continue
+		}
+		app := true
+		for i, pt := range p.FifoQueue {
+			if pt.Price == price {
+				pt.Volume += size
+				app = false
+				if pt.Volume == 0 {
+					p.FifoQueue = p.FifoQueue[:i+copy(p.FifoQueue[i:], p.FifoQueue[i+1:])]
+				}
+				break
+			}
+		}
+		totPrice += price * absUint64(size)
+		totVolume += size
+		if app {
+			p.FifoQueue = append(p.FifoQueue, &types.PositionTrade{
+				Volume: size,
+				Price:  price,
+			})
+		}
+	}
+	p.AverageEntryPrice = totPrice / absUint64(totVolume)
+	// MTM price * open volume == total value of current pos - the entry price/cost of said position
+	p.UnrealisedPNL = int64(e.Price())*p.OpenVolume - p.OpenVolume*int64(p.AverageEntryPrice)
+}
+
+func evtToProto(e events.SettlePosition) types.Position {
+	trades := e.Trades()
+	p := types.Position{
+		MarketID:   e.MarketID(),
+		PartyID:    e.Party(),
+		OpenVolume: e.Size(),
+		FifoQueue:  make([]*types.PositionTrade, 0, len(trades)),
+	}
+	// NOTE: We don't call this here because the call is made in updateEvt for all positions
+	// we don't want to add the same data twice!
+	// updatePosition(&p, e)
+	return p
+}
+
+func absUint64(v int64) uint64 {
+	if v < 0 {
+		v *= -1
+	}
+	return uint64(v)
 }
