@@ -3,74 +3,6 @@
 
 ## Table of Contents
 
-- [proto/markets.proto](#proto/markets.proto)
-    - [ContinuousTrading](#vega.ContinuousTrading)
-    - [DiscreteTrading](#vega.DiscreteTrading)
-    - [EthereumEvent](#vega.EthereumEvent)
-    - [ExternalRiskModel](#vega.ExternalRiskModel)
-    - [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry)
-    - [ForwardRiskModel](#vega.ForwardRiskModel)
-    - [Future](#vega.Future)
-    - [Instrument](#vega.Instrument)
-    - [InstrumentMetadata](#vega.InstrumentMetadata)
-    - [MarginCalculator](#vega.MarginCalculator)
-    - [Market](#vega.Market)
-    - [ModelParamsBS](#vega.ModelParamsBS)
-    - [ScalingFactors](#vega.ScalingFactors)
-    - [SimpleModelParams](#vega.SimpleModelParams)
-    - [SimpleRiskModel](#vega.SimpleRiskModel)
-    - [TradableInstrument](#vega.TradableInstrument)
-  
-  
-  
-  
-
-- [proto/vega.proto](#proto/vega.proto)
-    - [Account](#vega.Account)
-    - [Amount](#vega.Amount)
-    - [Candle](#vega.Candle)
-    - [FinancialAmount](#vega.FinancialAmount)
-    - [LedgerEntry](#vega.LedgerEntry)
-    - [MarginLevels](#vega.MarginLevels)
-    - [MarketData](#vega.MarketData)
-    - [MarketDepth](#vega.MarketDepth)
-    - [MarketPosition](#vega.MarketPosition)
-    - [NotifyTraderAccount](#vega.NotifyTraderAccount)
-    - [Order](#vega.Order)
-    - [OrderAmendment](#vega.OrderAmendment)
-    - [OrderCancellation](#vega.OrderCancellation)
-    - [OrderCancellationConfirmation](#vega.OrderCancellationConfirmation)
-    - [OrderConfirmation](#vega.OrderConfirmation)
-    - [OrderSubmission](#vega.OrderSubmission)
-    - [Party](#vega.Party)
-    - [PendingOrder](#vega.PendingOrder)
-    - [PriceLevel](#vega.PriceLevel)
-    - [RiskFactor](#vega.RiskFactor)
-    - [RiskResult](#vega.RiskResult)
-    - [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry)
-    - [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry)
-    - [Statistics](#vega.Statistics)
-    - [Trade](#vega.Trade)
-    - [TradeSet](#vega.TradeSet)
-    - [Transfer](#vega.Transfer)
-    - [TransferBalance](#vega.TransferBalance)
-    - [TransferRequest](#vega.TransferRequest)
-    - [TransferResponse](#vega.TransferResponse)
-    - [Withdraw](#vega.Withdraw)
-  
-    - [AccountType](#vega.AccountType)
-    - [ChainStatus](#vega.ChainStatus)
-    - [Interval](#vega.Interval)
-    - [Order.Status](#vega.Order.Status)
-    - [Order.TimeInForce](#vega.Order.TimeInForce)
-    - [Order.Type](#vega.Order.Type)
-    - [OrderError](#vega.OrderError)
-    - [Side](#vega.Side)
-    - [TransferType](#vega.TransferType)
-  
-  
-  
-
 - [proto/api/trading.proto](#proto/api/trading.proto)
     - [AccountsByPartyAndAssetRequest](#api.AccountsByPartyAndAssetRequest)
     - [AccountsByPartyAndAssetResponse](#api.AccountsByPartyAndAssetResponse)
@@ -136,1069 +68,82 @@
     - [VegaTimeResponse](#api.VegaTimeResponse)
     - [WithdrawRequest](#api.WithdrawRequest)
     - [WithdrawResponse](#api.WithdrawResponse)
-  
-  
-  
+
+
+
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
-  
+
+
+- [proto/markets.proto](#proto/markets.proto)
+    - [ContinuousTrading](#vega.ContinuousTrading)
+    - [DiscreteTrading](#vega.DiscreteTrading)
+    - [EthereumEvent](#vega.EthereumEvent)
+    - [ExternalRiskModel](#vega.ExternalRiskModel)
+    - [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry)
+    - [ForwardRiskModel](#vega.ForwardRiskModel)
+    - [Future](#vega.Future)
+    - [Instrument](#vega.Instrument)
+    - [InstrumentMetadata](#vega.InstrumentMetadata)
+    - [MarginCalculator](#vega.MarginCalculator)
+    - [Market](#vega.Market)
+    - [ModelParamsBS](#vega.ModelParamsBS)
+    - [ScalingFactors](#vega.ScalingFactors)
+    - [SimpleModelParams](#vega.SimpleModelParams)
+    - [SimpleRiskModel](#vega.SimpleRiskModel)
+    - [TradableInstrument](#vega.TradableInstrument)
+
+
+
+
+
+- [proto/vega.proto](#proto/vega.proto)
+    - [Account](#vega.Account)
+    - [Amount](#vega.Amount)
+    - [Candle](#vega.Candle)
+    - [FinancialAmount](#vega.FinancialAmount)
+    - [LedgerEntry](#vega.LedgerEntry)
+    - [MarginLevels](#vega.MarginLevels)
+    - [MarketData](#vega.MarketData)
+    - [MarketDepth](#vega.MarketDepth)
+    - [MarketPosition](#vega.MarketPosition)
+    - [NotifyTraderAccount](#vega.NotifyTraderAccount)
+    - [Order](#vega.Order)
+    - [OrderAmendment](#vega.OrderAmendment)
+    - [OrderCancellation](#vega.OrderCancellation)
+    - [OrderCancellationConfirmation](#vega.OrderCancellationConfirmation)
+    - [OrderConfirmation](#vega.OrderConfirmation)
+    - [OrderSubmission](#vega.OrderSubmission)
+    - [Party](#vega.Party)
+    - [PendingOrder](#vega.PendingOrder)
+    - [PriceLevel](#vega.PriceLevel)
+    - [RiskFactor](#vega.RiskFactor)
+    - [RiskResult](#vega.RiskResult)
+    - [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry)
+    - [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry)
+    - [Statistics](#vega.Statistics)
+    - [Trade](#vega.Trade)
+    - [TradeSet](#vega.TradeSet)
+    - [Transfer](#vega.Transfer)
+    - [TransferBalance](#vega.TransferBalance)
+    - [TransferRequest](#vega.TransferRequest)
+    - [TransferResponse](#vega.TransferResponse)
+    - [Withdraw](#vega.Withdraw)
+
+    - [AccountType](#vega.AccountType)
+    - [ChainStatus](#vega.ChainStatus)
+    - [Interval](#vega.Interval)
+    - [Order.Status](#vega.Order.Status)
+    - [Order.TimeInForce](#vega.Order.TimeInForce)
+    - [Order.Type](#vega.Order.Type)
+    - [OrderError](#vega.OrderError)
+    - [Side](#vega.Side)
+    - [TransferType](#vega.TransferType)
+
+
+
 
 - [Scalar Value Types](#scalar-value-types)
-
-
-
-<a name="proto/markets.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## proto/markets.proto
-
-
-
-<a name="vega.ContinuousTrading"></a>
-
-### ContinuousTrading
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| tickSize | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="vega.DiscreteTrading"></a>
-
-### DiscreteTrading
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| duration | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="vega.EthereumEvent"></a>
-
-### EthereumEvent
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| contractID | [string](#string) |  |  |
-| event | [string](#string) |  |  |
-| value | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="vega.ExternalRiskModel"></a>
-
-### ExternalRiskModel
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| socket | [string](#string) |  |  |
-| config | [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry) | repeated |  |
-
-
-
-
-
-
-<a name="vega.ExternalRiskModel.ConfigEntry"></a>
-
-### ExternalRiskModel.ConfigEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="vega.ForwardRiskModel"></a>
-
-### ForwardRiskModel
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| riskAversionParameter | [double](#double) |  |  |
-| tau | [double](#double) |  |  |
-| params | [ModelParamsBS](#vega.ModelParamsBS) |  |  |
-
-
-
-
-
-
-<a name="vega.Future"></a>
-
-### Future
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| maturity | [string](#string) |  |  |
-| asset | [string](#string) |  |  |
-| ethereumEvent | [EthereumEvent](#vega.EthereumEvent) |  |  |
-
-
-
-
-
-
-<a name="vega.Instrument"></a>
-
-### Instrument
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| code | [string](#string) |  |  |
-| name | [string](#string) |  |  |
-| baseName | [string](#string) |  |  |
-| quoteName | [string](#string) |  |  |
-| metadata | [InstrumentMetadata](#vega.InstrumentMetadata) |  |  |
-| initialMarkPrice | [uint64](#uint64) |  |  |
-| future | [Future](#vega.Future) |  |  |
-
-
-
-
-
-
-<a name="vega.InstrumentMetadata"></a>
-
-### InstrumentMetadata
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| tags | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="vega.MarginCalculator"></a>
-
-### MarginCalculator
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| scalingFactors | [ScalingFactors](#vega.ScalingFactors) |  |  |
-
-
-
-
-
-
-<a name="vega.Market"></a>
-
-### Market
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| name | [string](#string) |  |  |
-| tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
-| decimalPlaces | [uint64](#uint64) |  |  |
-| continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
-| discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
-
-
-
-
-
-
-<a name="vega.ModelParamsBS"></a>
-
-### ModelParamsBS
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| mu | [double](#double) |  |  |
-| r | [double](#double) |  |  |
-| sigma | [double](#double) |  |  |
-
-
-
-
-
-
-<a name="vega.ScalingFactors"></a>
-
-### ScalingFactors
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| searchLevel | [double](#double) |  |  |
-| initialMargin | [double](#double) |  |  |
-| collateralRelease | [double](#double) |  |  |
-
-
-
-
-
-
-<a name="vega.SimpleModelParams"></a>
-
-### SimpleModelParams
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| factorLong | [double](#double) |  |  |
-| factorShort | [double](#double) |  |  |
-
-
-
-
-
-
-<a name="vega.SimpleRiskModel"></a>
-
-### SimpleRiskModel
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| params | [SimpleModelParams](#vega.SimpleModelParams) |  |  |
-
-
-
-
-
-
-<a name="vega.TradableInstrument"></a>
-
-### TradableInstrument
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| instrument | [Instrument](#vega.Instrument) |  |  |
-| marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  |  |
-| forwardRiskModel | [ForwardRiskModel](#vega.ForwardRiskModel) |  |  |
-| externalRiskModel | [ExternalRiskModel](#vega.ExternalRiskModel) |  |  |
-| simpleRiskModel | [SimpleRiskModel](#vega.SimpleRiskModel) |  |  |
-
-
-
-
-
- 
-
- 
-
- 
-
- 
-
-
-
-<a name="proto/vega.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## proto/vega.proto
-
-
-
-<a name="vega.Account"></a>
-
-### Account
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| owner | [string](#string) |  |  |
-| balance | [int64](#int64) |  |  |
-| asset | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| type | [AccountType](#vega.AccountType) |  |  |
-
-
-
-
-
-
-<a name="vega.Amount"></a>
-
-### Amount
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| value | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="vega.Candle"></a>
-
-### Candle
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  |  |
-| datetime | [string](#string) |  |  |
-| high | [uint64](#uint64) |  |  |
-| low | [uint64](#uint64) |  |  |
-| open | [uint64](#uint64) |  |  |
-| close | [uint64](#uint64) |  |  |
-| volume | [uint64](#uint64) |  |  |
-| interval | [Interval](#vega.Interval) |  |  |
-
-
-
-
-
-
-<a name="vega.FinancialAmount"></a>
-
-### FinancialAmount
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| amount | [int64](#int64) |  |  |
-| asset | [string](#string) |  |  |
-| minAmount | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="vega.LedgerEntry"></a>
-
-### LedgerEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| fromAccount | [string](#string) |  |  |
-| toAccount | [string](#string) |  |  |
-| amount | [int64](#int64) |  |  |
-| reference | [string](#string) |  |  |
-| type | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="vega.MarginLevels"></a>
-
-### MarginLevels
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| maintenanceMargin | [int64](#int64) |  |  |
-| searchLevel | [int64](#int64) |  |  |
-| initialMargin | [int64](#int64) |  |  |
-| collateralReleaseLevel | [int64](#int64) |  |  |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| asset | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="vega.MarketData"></a>
-
-### MarketData
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| markPrice | [uint64](#uint64) |  |  |
-| bestBidPrice | [uint64](#uint64) |  |  |
-| bestBidVolume | [uint64](#uint64) |  |  |
-| bestOfferPrice | [uint64](#uint64) |  |  |
-| bestOfferVolume | [uint64](#uint64) |  |  |
-| midPrice | [uint64](#uint64) |  |  |
-| market | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="vega.MarketDepth"></a>
-
-### MarketDepth
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| buy | [PriceLevel](#vega.PriceLevel) | repeated |  |
-| sell | [PriceLevel](#vega.PriceLevel) | repeated |  |
-
-
-
-
-
-
-<a name="vega.MarketPosition"></a>
-
-### MarketPosition
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| realisedVolume | [int64](#int64) |  |  |
-| realisedPNL | [int64](#int64) |  |  |
-| unrealisedVolume | [int64](#int64) |  |  |
-| unrealisedPNL | [int64](#int64) |  |  |
-| averageEntryPrice | [uint64](#uint64) |  |  |
-| minimumMargin | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="vega.NotifyTraderAccount"></a>
-
-### NotifyTraderAccount
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| traderID | [string](#string) |  |  |
-| amount | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="vega.Order"></a>
-
-### Order
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| side | [Side](#vega.Side) |  |  |
-| price | [uint64](#uint64) |  |  |
-| size | [uint64](#uint64) |  |  |
-| remaining | [uint64](#uint64) |  |  |
-| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| type | [Order.Type](#vega.Order.Type) |  |  |
-| createdAt | [int64](#int64) |  |  |
-| status | [Order.Status](#vega.Order.Status) |  |  |
-| expiresAt | [int64](#int64) |  |  |
-| reference | [string](#string) |  |  |
-| reason | [OrderError](#vega.OrderError) |  |  |
-
-
-
-
-
-
-<a name="vega.OrderAmendment"></a>
-
-### OrderAmendment
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| size | [uint64](#uint64) |  |  |
-| expiresAt | [int64](#int64) |  |  |
-| side | [Side](#vega.Side) |  |  |
-
-
-
-
-
-
-<a name="vega.OrderCancellation"></a>
-
-### OrderCancellation
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="vega.OrderCancellationConfirmation"></a>
-
-### OrderCancellationConfirmation
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| order | [Order](#vega.Order) |  |  |
-
-
-
-
-
-
-<a name="vega.OrderConfirmation"></a>
-
-### OrderConfirmation
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| order | [Order](#vega.Order) |  |  |
-| trades | [Trade](#vega.Trade) | repeated |  |
-| passiveOrdersAffected | [Order](#vega.Order) | repeated |  |
-
-
-
-
-
-
-<a name="vega.OrderSubmission"></a>
-
-### OrderSubmission
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  | do not enforce that price, as Market Order will not have price specified |
-| size | [uint64](#uint64) |  |  |
-| side | [Side](#vega.Side) |  | make sur for both that they are non nil and the value is part of the respective enums. |
-| TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| expiresAt | [int64](#int64) |  | do not enforce as not always required altho at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it |
-| type | [Order.Type](#vega.Order.Type) |  |  |
-
-
-
-
-
-
-<a name="vega.Party"></a>
-
-### Party
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| positions | [MarketPosition](#vega.MarketPosition) | repeated |  |
-
-
-
-
-
-
-<a name="vega.PendingOrder"></a>
-
-### PendingOrder
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| reference | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
-| side | [Side](#vega.Side) |  |  |
-| marketID | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
-| partyID | [string](#string) |  |  |
-| status | [Order.Status](#vega.Order.Status) |  |  |
-| id | [string](#string) |  |  |
-| type | [Order.Type](#vega.Order.Type) |  |  |
-
-
-
-
-
-
-<a name="vega.PriceLevel"></a>
-
-### PriceLevel
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| price | [uint64](#uint64) |  |  |
-| numberOfOrders | [uint64](#uint64) |  |  |
-| volume | [uint64](#uint64) |  |  |
-| cumulativeVolume | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="vega.RiskFactor"></a>
-
-### RiskFactor
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| market | [string](#string) |  |  |
-| short | [double](#double) |  |  |
-| long | [double](#double) |  |  |
-
-
-
-
-
-
-<a name="vega.RiskResult"></a>
-
-### RiskResult
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| updatedTimestamp | [int64](#int64) |  | timestamp when these risk factors were generated |
-| riskFactors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market |
-| nextUpdateTimestamp | [int64](#int64) |  | time when risk factors are expected to change (or empty if risk factors are continually updated) |
-| predictedNextRiskFactors | [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry) | repeated | predicted risk factors at next change (what they&#39;d be if the change occurred now) |
-
-
-
-
-
-
-<a name="vega.RiskResult.PredictedNextRiskFactorsEntry"></a>
-
-### RiskResult.PredictedNextRiskFactorsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [RiskFactor](#vega.RiskFactor) |  |  |
-
-
-
-
-
-
-<a name="vega.RiskResult.RiskFactorsEntry"></a>
-
-### RiskResult.RiskFactorsEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [RiskFactor](#vega.RiskFactor) |  |  |
-
-
-
-
-
-
-<a name="vega.Statistics"></a>
-
-### Statistics
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| blockHeight | [uint64](#uint64) |  |  |
-| backlogLength | [uint64](#uint64) |  |  |
-| totalPeers | [uint64](#uint64) |  |  |
-| genesisTime | [string](#string) |  |  |
-| currentTime | [string](#string) |  |  |
-| vegaTime | [string](#string) |  |  |
-| status | [ChainStatus](#vega.ChainStatus) |  |  |
-| txPerBlock | [uint64](#uint64) |  |  |
-| averageTxBytes | [uint64](#uint64) |  |  |
-| averageOrdersPerBlock | [uint64](#uint64) |  |  |
-| tradesPerSecond | [uint64](#uint64) |  |  |
-| ordersPerSecond | [uint64](#uint64) |  |  |
-| totalMarkets | [uint64](#uint64) |  |  |
-| totalParties | [uint64](#uint64) |  |  |
-| parties | [string](#string) | repeated |  |
-| totalAmendOrder | [uint64](#uint64) |  |  |
-| totalCancelOrder | [uint64](#uint64) |  |  |
-| totalCreateOrder | [uint64](#uint64) |  |  |
-| totalOrders | [uint64](#uint64) |  |  |
-| totalTrades | [uint64](#uint64) |  |  |
-| orderSubscriptions | [int32](#int32) |  |  |
-| tradeSubscriptions | [int32](#int32) |  |  |
-| candleSubscriptions | [int32](#int32) |  |  |
-| marketDepthSubscriptions | [int32](#int32) |  |  |
-| positionsSubscriptions | [int32](#int32) |  |  |
-| accountSubscriptions | [int32](#int32) |  |  |
-| marketDataSubscriptions | [int32](#int32) |  |  |
-| appVersionHash | [string](#string) |  |  |
-| appVersion | [string](#string) |  |  |
-| chainVersion | [string](#string) |  |  |
-| blockDuration | [uint64](#uint64) |  | nanoseconds |
-| uptime | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="vega.Trade"></a>
-
-### Trade
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| marketID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| size | [uint64](#uint64) |  |  |
-| buyer | [string](#string) |  |  |
-| seller | [string](#string) |  |  |
-| aggressor | [Side](#vega.Side) |  |  |
-| buyOrder | [string](#string) |  |  |
-| sellOrder | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="vega.TradeSet"></a>
-
-### TradeSet
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| trades | [Trade](#vega.Trade) | repeated |  |
-
-
-
-
-
-
-<a name="vega.Transfer"></a>
-
-### Transfer
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| owner | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
-| amount | [FinancialAmount](#vega.FinancialAmount) |  |  |
-| type | [TransferType](#vega.TransferType) |  |  |
-
-
-
-
-
-
-<a name="vega.TransferBalance"></a>
-
-### TransferBalance
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| account | [Account](#vega.Account) |  |  |
-| balance | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="vega.TransferRequest"></a>
-
-### TransferRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| fromAccount | [Account](#vega.Account) | repeated |  |
-| toAccount | [Account](#vega.Account) | repeated |  |
-| amount | [uint64](#uint64) |  |  |
-| minAmount | [uint64](#uint64) |  |  |
-| asset | [string](#string) |  |  |
-| reference | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="vega.TransferResponse"></a>
-
-### TransferResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| transfers | [LedgerEntry](#vega.LedgerEntry) | repeated |  |
-| balances | [TransferBalance](#vega.TransferBalance) | repeated |  |
-
-
-
-
-
-
-<a name="vega.Withdraw"></a>
-
-### Withdraw
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  |  |
-| amount | [uint64](#uint64) |  |  |
-| asset | [string](#string) |  |  |
-
-
-
-
-
- 
-
-
-<a name="vega.AccountType"></a>
-
-### AccountType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NO_ACC | 0 |  |
-| INSURANCE | 1 |  |
-| SETTLEMENT | 2 |  |
-| MARGIN | 3 |  |
-| GENERAL | 4 |  |
-
-
-
-<a name="vega.ChainStatus"></a>
-
-### ChainStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| DISCONNECTED | 0 |  |
-| REPLAYING | 1 |  |
-| CONNECTED | 2 |  |
-
-
-
-<a name="vega.Interval"></a>
-
-### Interval
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| I1M | 0 |  |
-| I5M | 1 |  |
-| I15M | 2 |  |
-| I1H | 3 |  |
-| I6H | 4 |  |
-| I1D | 5 |  |
-
-
-
-<a name="vega.Order.Status"></a>
-
-### Order.Status
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| Active | 0 |  |
-| Expired | 1 |  |
-| Cancelled | 2 |  |
-| Stopped | 3 |  |
-| Filled | 4 |  |
-| Rejected | 5 |  |
-
-
-
-<a name="vega.Order.TimeInForce"></a>
-
-### Order.TimeInForce
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| GTC | 0 |  |
-| GTT | 1 |  |
-| IOC | 2 |  |
-| FOK | 3 |  |
-
-
-
-<a name="vega.Order.Type"></a>
-
-### Order.Type
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| LIMIT | 0 | Limit order |
-| MARKET | 1 | Market order type |
-| NETWORK | 2 | order where the initiating party is the network (used for distressed traders) |
-
-
-
-<a name="vega.OrderError"></a>
-
-### OrderError
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NONE | 0 |  |
-| INVALID_MARKET_ID | 1 |  |
-| INVALID_ORDER_ID | 2 |  |
-| ORDER_OUT_OF_SEQUENCE | 3 |  |
-| INVALID_REMAINING_SIZE | 4 |  |
-| TIME_FAILURE | 5 |  |
-| ORDER_REMOVAL_FAILURE | 6 |  |
-| INVALID_EXPIRATION_DATETIME | 7 |  |
-| INVALID_ORDER_REFERENCE | 8 |  |
-| EDIT_NOT_ALLOWED | 9 |  |
-| ORDER_AMEND_FAILURE | 10 |  |
-| ORDER_NOT_FOUND | 11 |  |
-| INVALID_PARTY_ID | 12 |  |
-| MARKET_CLOSED | 13 |  |
-| MARGIN_CHECK_FAILED | 14 |  |
-| MISSING_GENERAL_ACCOUNT | 15 |  |
-| INTERNAL_ERROR | 16 |  |
-
-
-
-<a name="vega.Side"></a>
-
-### Side
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| Buy | 0 |  |
-| Sell | 1 |  |
-
-
-
-<a name="vega.TransferType"></a>
-
-### TransferType
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| LOSS | 0 |  |
-| WIN | 1 |  |
-| CLOSE | 2 |  |
-| MTM_LOSS | 3 |  |
-| MTM_WIN | 4 |  |
-| MARGIN_LOW | 5 |  |
-| MARGIN_HIGH | 6 |  |
-
-
- 
-
- 
-
- 
 
 
 
@@ -2201,11 +1146,11 @@
 
 
 
- 
 
- 
 
- 
+
+
+
 
 
 <a name="api.trading"></a>
@@ -2265,7 +1210,1062 @@
 | AccountsByPartyAndType | [AccountsByPartyAndTypeRequest](#api.AccountsByPartyAndTypeRequest) | [AccountsByPartyAndTypeResponse](#api.AccountsByPartyAndTypeResponse) | Get Party Accounts by Account Type (dup) |
 | AccountsByPartyAndAsset | [AccountsByPartyAndAssetRequest](#api.AccountsByPartyAndAssetRequest) | [AccountsByPartyAndAssetResponse](#api.AccountsByPartyAndAssetResponse) | Get Party Accounts by Asset |
 
- 
+
+
+
+
+<a name="proto/markets.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/markets.proto
+
+
+
+<a name="vega.ContinuousTrading"></a>
+
+### ContinuousTrading
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tickSize | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.DiscreteTrading"></a>
+
+### DiscreteTrading
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| duration | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.EthereumEvent"></a>
+
+### EthereumEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| contractID | [string](#string) |  |  |
+| event | [string](#string) |  |  |
+| value | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.ExternalRiskModel"></a>
+
+### ExternalRiskModel
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| socket | [string](#string) |  |  |
+| config | [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry) | repeated |  |
+
+
+
+
+
+
+<a name="vega.ExternalRiskModel.ConfigEntry"></a>
+
+### ExternalRiskModel.ConfigEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.ForwardRiskModel"></a>
+
+### ForwardRiskModel
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| riskAversionParameter | [double](#double) |  |  |
+| tau | [double](#double) |  |  |
+| params | [ModelParamsBS](#vega.ModelParamsBS) |  |  |
+
+
+
+
+
+
+<a name="vega.Future"></a>
+
+### Future
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maturity | [string](#string) |  |  |
+| asset | [string](#string) |  |  |
+| ethereumEvent | [EthereumEvent](#vega.EthereumEvent) |  |  |
+
+
+
+
+
+
+<a name="vega.Instrument"></a>
+
+### Instrument
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| code | [string](#string) |  |  |
+| name | [string](#string) |  |  |
+| baseName | [string](#string) |  |  |
+| quoteName | [string](#string) |  |  |
+| metadata | [InstrumentMetadata](#vega.InstrumentMetadata) |  |  |
+| initialMarkPrice | [uint64](#uint64) |  |  |
+| future | [Future](#vega.Future) |  |  |
+
+
+
+
+
+
+<a name="vega.InstrumentMetadata"></a>
+
+### InstrumentMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tags | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="vega.MarginCalculator"></a>
+
+### MarginCalculator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| scalingFactors | [ScalingFactors](#vega.ScalingFactors) |  |  |
+
+
+
+
+
+
+<a name="vega.Market"></a>
+
+### Market
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| name | [string](#string) |  |  |
+| tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
+| decimalPlaces | [uint64](#uint64) |  |  |
+| continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
+| discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
+
+
+
+
+
+
+<a name="vega.ModelParamsBS"></a>
+
+### ModelParamsBS
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| mu | [double](#double) |  |  |
+| r | [double](#double) |  |  |
+| sigma | [double](#double) |  |  |
+
+
+
+
+
+
+<a name="vega.ScalingFactors"></a>
+
+### ScalingFactors
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| searchLevel | [double](#double) |  |  |
+| initialMargin | [double](#double) |  |  |
+| collateralRelease | [double](#double) |  |  |
+
+
+
+
+
+
+<a name="vega.SimpleModelParams"></a>
+
+### SimpleModelParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| factorLong | [double](#double) |  |  |
+| factorShort | [double](#double) |  |  |
+
+
+
+
+
+
+<a name="vega.SimpleRiskModel"></a>
+
+### SimpleRiskModel
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| params | [SimpleModelParams](#vega.SimpleModelParams) |  |  |
+
+
+
+
+
+
+<a name="vega.TradableInstrument"></a>
+
+### TradableInstrument
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instrument | [Instrument](#vega.Instrument) |  |  |
+| marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  |  |
+| forwardRiskModel | [ForwardRiskModel](#vega.ForwardRiskModel) |  |  |
+| externalRiskModel | [ExternalRiskModel](#vega.ExternalRiskModel) |  |  |
+| simpleRiskModel | [SimpleRiskModel](#vega.SimpleRiskModel) |  |  |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="proto/vega.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/vega.proto
+
+
+
+<a name="vega.Account"></a>
+
+### Account
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| owner | [string](#string) |  |  |
+| balance | [int64](#int64) |  |  |
+| asset | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
+| type | [AccountType](#vega.AccountType) |  |  |
+
+
+
+
+
+
+<a name="vega.Amount"></a>
+
+### Amount
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.Candle"></a>
+
+### Candle
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| timestamp | [int64](#int64) |  |  |
+| datetime | [string](#string) |  |  |
+| high | [uint64](#uint64) |  |  |
+| low | [uint64](#uint64) |  |  |
+| open | [uint64](#uint64) |  |  |
+| close | [uint64](#uint64) |  |  |
+| volume | [uint64](#uint64) |  |  |
+| interval | [Interval](#vega.Interval) |  |  |
+
+
+
+
+
+
+<a name="vega.FinancialAmount"></a>
+
+### FinancialAmount
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| amount | [int64](#int64) |  |  |
+| asset | [string](#string) |  |  |
+| minAmount | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.LedgerEntry"></a>
+
+### LedgerEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| fromAccount | [string](#string) |  |  |
+| toAccount | [string](#string) |  |  |
+| amount | [int64](#int64) |  |  |
+| reference | [string](#string) |  |  |
+| type | [string](#string) |  |  |
+| timestamp | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.MarginLevels"></a>
+
+### MarginLevels
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maintenanceMargin | [int64](#int64) |  |  |
+| searchLevel | [int64](#int64) |  |  |
+| initialMargin | [int64](#int64) |  |  |
+| collateralReleaseLevel | [int64](#int64) |  |  |
+| partyID | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
+| asset | [string](#string) |  |  |
+| timestamp | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.MarketData"></a>
+
+### MarketData
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| markPrice | [uint64](#uint64) |  |  |
+| bestBidPrice | [uint64](#uint64) |  |  |
+| bestBidVolume | [uint64](#uint64) |  |  |
+| bestOfferPrice | [uint64](#uint64) |  |  |
+| bestOfferVolume | [uint64](#uint64) |  |  |
+| midPrice | [uint64](#uint64) |  |  |
+| market | [string](#string) |  |  |
+| timestamp | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.MarketDepth"></a>
+
+### MarketDepth
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| buy | [PriceLevel](#vega.PriceLevel) | repeated |  |
+| sell | [PriceLevel](#vega.PriceLevel) | repeated |  |
+
+
+
+
+
+
+<a name="vega.MarketPosition"></a>
+
+### MarketPosition
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| realisedVolume | [int64](#int64) |  |  |
+| realisedPNL | [int64](#int64) |  |  |
+| unrealisedVolume | [int64](#int64) |  |  |
+| unrealisedPNL | [int64](#int64) |  |  |
+| averageEntryPrice | [uint64](#uint64) |  |  |
+| minimumMargin | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.NotifyTraderAccount"></a>
+
+### NotifyTraderAccount
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| traderID | [string](#string) |  |  |
+| amount | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.Order"></a>
+
+### Order
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| side | [Side](#vega.Side) |  |  |
+| price | [uint64](#uint64) |  |  |
+| size | [uint64](#uint64) |  |  |
+| remaining | [uint64](#uint64) |  |  |
+| timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
+| type | [Order.Type](#vega.Order.Type) |  |  |
+| createdAt | [int64](#int64) |  |  |
+| status | [Order.Status](#vega.Order.Status) |  |  |
+| expiresAt | [int64](#int64) |  |  |
+| reference | [string](#string) |  |  |
+| reason | [OrderError](#vega.OrderError) |  |  |
+
+
+
+
+
+
+<a name="vega.OrderAmendment"></a>
+
+### OrderAmendment
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orderID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
+| price | [uint64](#uint64) |  |  |
+| size | [uint64](#uint64) |  |  |
+| expiresAt | [int64](#int64) |  |  |
+| side | [Side](#vega.Side) |  |  |
+
+
+
+
+
+
+<a name="vega.OrderCancellation"></a>
+
+### OrderCancellation
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orderID | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.OrderCancellationConfirmation"></a>
+
+### OrderCancellationConfirmation
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| order | [Order](#vega.Order) |  |  |
+
+
+
+
+
+
+<a name="vega.OrderConfirmation"></a>
+
+### OrderConfirmation
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| order | [Order](#vega.Order) |  |  |
+| trades | [Trade](#vega.Trade) | repeated |  |
+| passiveOrdersAffected | [Order](#vega.Order) | repeated |  |
+
+
+
+
+
+
+<a name="vega.OrderSubmission"></a>
+
+### OrderSubmission
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| price | [uint64](#uint64) |  | do not enforce that price, as Market Order will not have price specified |
+| size | [uint64](#uint64) |  |  |
+| side | [Side](#vega.Side) |  | make sur for both that they are non nil and the value is part of the respective enums. |
+| TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
+| expiresAt | [int64](#int64) |  | do not enforce as not always required altho at least check it&#39;s not a negative integer, would be not that very handy to create a time.Time with it |
+| type | [Order.Type](#vega.Order.Type) |  |  |
+
+
+
+
+
+
+<a name="vega.Party"></a>
+
+### Party
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| positions | [MarketPosition](#vega.MarketPosition) | repeated |  |
+
+
+
+
+
+
+<a name="vega.PendingOrder"></a>
+
+### PendingOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reference | [string](#string) |  |  |
+| price | [uint64](#uint64) |  |  |
+| TimeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  |  |
+| side | [Side](#vega.Side) |  |  |
+| marketID | [string](#string) |  |  |
+| size | [uint64](#uint64) |  |  |
+| partyID | [string](#string) |  |  |
+| status | [Order.Status](#vega.Order.Status) |  |  |
+| id | [string](#string) |  |  |
+| type | [Order.Type](#vega.Order.Type) |  |  |
+
+
+
+
+
+
+<a name="vega.PriceLevel"></a>
+
+### PriceLevel
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| price | [uint64](#uint64) |  |  |
+| numberOfOrders | [uint64](#uint64) |  |  |
+| volume | [uint64](#uint64) |  |  |
+| cumulativeVolume | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.RiskFactor"></a>
+
+### RiskFactor
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| market | [string](#string) |  |  |
+| short | [double](#double) |  |  |
+| long | [double](#double) |  |  |
+
+
+
+
+
+
+<a name="vega.RiskResult"></a>
+
+### RiskResult
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| updatedTimestamp | [int64](#int64) |  | timestamp when these risk factors were generated |
+| riskFactors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | risk factors (long and short) for each marginable asset/currency (usualy == settlement assets) in the market |
+| nextUpdateTimestamp | [int64](#int64) |  | time when risk factors are expected to change (or empty if risk factors are continually updated) |
+| predictedNextRiskFactors | [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry) | repeated | predicted risk factors at next change (what they&#39;d be if the change occurred now) |
+
+
+
+
+
+
+<a name="vega.RiskResult.PredictedNextRiskFactorsEntry"></a>
+
+### RiskResult.PredictedNextRiskFactorsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [RiskFactor](#vega.RiskFactor) |  |  |
+
+
+
+
+
+
+<a name="vega.RiskResult.RiskFactorsEntry"></a>
+
+### RiskResult.RiskFactorsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [RiskFactor](#vega.RiskFactor) |  |  |
+
+
+
+
+
+
+<a name="vega.Statistics"></a>
+
+### Statistics
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blockHeight | [uint64](#uint64) |  |  |
+| backlogLength | [uint64](#uint64) |  |  |
+| totalPeers | [uint64](#uint64) |  |  |
+| genesisTime | [string](#string) |  |  |
+| currentTime | [string](#string) |  |  |
+| vegaTime | [string](#string) |  |  |
+| status | [ChainStatus](#vega.ChainStatus) |  |  |
+| txPerBlock | [uint64](#uint64) |  |  |
+| averageTxBytes | [uint64](#uint64) |  |  |
+| averageOrdersPerBlock | [uint64](#uint64) |  |  |
+| tradesPerSecond | [uint64](#uint64) |  |  |
+| ordersPerSecond | [uint64](#uint64) |  |  |
+| totalMarkets | [uint64](#uint64) |  |  |
+| totalParties | [uint64](#uint64) |  |  |
+| parties | [string](#string) | repeated |  |
+| totalAmendOrder | [uint64](#uint64) |  |  |
+| totalCancelOrder | [uint64](#uint64) |  |  |
+| totalCreateOrder | [uint64](#uint64) |  |  |
+| totalOrders | [uint64](#uint64) |  |  |
+| totalTrades | [uint64](#uint64) |  |  |
+| orderSubscriptions | [int32](#int32) |  |  |
+| tradeSubscriptions | [int32](#int32) |  |  |
+| candleSubscriptions | [int32](#int32) |  |  |
+| marketDepthSubscriptions | [int32](#int32) |  |  |
+| positionsSubscriptions | [int32](#int32) |  |  |
+| accountSubscriptions | [int32](#int32) |  |  |
+| marketDataSubscriptions | [int32](#int32) |  |  |
+| appVersionHash | [string](#string) |  |  |
+| appVersion | [string](#string) |  |  |
+| chainVersion | [string](#string) |  |  |
+| blockDuration | [uint64](#uint64) |  | nanoseconds |
+| uptime | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.Trade"></a>
+
+### Trade
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| marketID | [string](#string) |  |  |
+| price | [uint64](#uint64) |  |  |
+| size | [uint64](#uint64) |  |  |
+| buyer | [string](#string) |  |  |
+| seller | [string](#string) |  |  |
+| aggressor | [Side](#vega.Side) |  |  |
+| buyOrder | [string](#string) |  |  |
+| sellOrder | [string](#string) |  |  |
+| timestamp | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.TradeSet"></a>
+
+### TradeSet
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| trades | [Trade](#vega.Trade) | repeated |  |
+
+
+
+
+
+
+<a name="vega.Transfer"></a>
+
+### Transfer
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| owner | [string](#string) |  |  |
+| size | [uint64](#uint64) |  |  |
+| amount | [FinancialAmount](#vega.FinancialAmount) |  |  |
+| type | [TransferType](#vega.TransferType) |  |  |
+
+
+
+
+
+
+<a name="vega.TransferBalance"></a>
+
+### TransferBalance
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| account | [Account](#vega.Account) |  |  |
+| balance | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.TransferRequest"></a>
+
+### TransferRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| fromAccount | [Account](#vega.Account) | repeated |  |
+| toAccount | [Account](#vega.Account) | repeated |  |
+| amount | [uint64](#uint64) |  |  |
+| minAmount | [uint64](#uint64) |  |  |
+| asset | [string](#string) |  |  |
+| reference | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.TransferResponse"></a>
+
+### TransferResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| transfers | [LedgerEntry](#vega.LedgerEntry) | repeated |  |
+| balances | [TransferBalance](#vega.TransferBalance) | repeated |  |
+
+
+
+
+
+
+<a name="vega.Withdraw"></a>
+
+### Withdraw
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| amount | [uint64](#uint64) |  |  |
+| asset | [string](#string) |  |  |
+
+
+
+
+
+
+
+
+<a name="vega.AccountType"></a>
+
+### AccountType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NO_ACC | 0 |  |
+| INSURANCE | 1 |  |
+| SETTLEMENT | 2 |  |
+| MARGIN | 3 |  |
+| GENERAL | 4 |  |
+
+
+
+<a name="vega.ChainStatus"></a>
+
+### ChainStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DISCONNECTED | 0 |  |
+| REPLAYING | 1 |  |
+| CONNECTED | 2 |  |
+
+
+
+<a name="vega.Interval"></a>
+
+### Interval
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| I1M | 0 |  |
+| I5M | 1 |  |
+| I15M | 2 |  |
+| I1H | 3 |  |
+| I6H | 4 |  |
+| I1D | 5 |  |
+
+
+
+<a name="vega.Order.Status"></a>
+
+### Order.Status
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| Active | 0 |  |
+| Expired | 1 |  |
+| Cancelled | 2 |  |
+| Stopped | 3 |  |
+| Filled | 4 |  |
+| Rejected | 5 |  |
+
+
+
+<a name="vega.Order.TimeInForce"></a>
+
+### Order.TimeInForce
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| GTC | 0 |  |
+| GTT | 1 |  |
+| IOC | 2 |  |
+| FOK | 3 |  |
+
+
+
+<a name="vega.Order.Type"></a>
+
+### Order.Type
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| LIMIT | 0 | Limit order |
+| MARKET | 1 | Market order type |
+| NETWORK | 2 | order where the initiating party is the network (used for distressed traders) |
+
+
+
+<a name="vega.OrderError"></a>
+
+### OrderError
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NONE | 0 |  |
+| INVALID_MARKET_ID | 1 |  |
+| INVALID_ORDER_ID | 2 |  |
+| ORDER_OUT_OF_SEQUENCE | 3 |  |
+| INVALID_REMAINING_SIZE | 4 |  |
+| TIME_FAILURE | 5 |  |
+| ORDER_REMOVAL_FAILURE | 6 |  |
+| INVALID_EXPIRATION_DATETIME | 7 |  |
+| INVALID_ORDER_REFERENCE | 8 |  |
+| EDIT_NOT_ALLOWED | 9 |  |
+| ORDER_AMEND_FAILURE | 10 |  |
+| ORDER_NOT_FOUND | 11 |  |
+| INVALID_PARTY_ID | 12 |  |
+| MARKET_CLOSED | 13 |  |
+| MARGIN_CHECK_FAILED | 14 |  |
+| MISSING_GENERAL_ACCOUNT | 15 |  |
+| INTERNAL_ERROR | 16 |  |
+
+
+
+<a name="vega.Side"></a>
+
+### Side
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| Buy | 0 |  |
+| Sell | 1 |  |
+
+
+
+<a name="vega.TransferType"></a>
+
+### TransferType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| LOSS | 0 |  |
+| WIN | 1 |  |
+| CLOSE | 2 |  |
+| MTM_LOSS | 3 |  |
+| MTM_WIN | 4 |  |
+| MARGIN_LOW | 5 |  |
+| MARGIN_HIGH | 6 |  |
+
+
+
+
+
+
+
 
 
 

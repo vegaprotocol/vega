@@ -26,6 +26,7 @@ done
 mkdir -p proto/doc
 rm -f proto/doc/index.md
 find ./proto/ -name '*.proto' -print0 \
+	| sort -z \
 	| xargs -0 protoc \
 		-I. \
 		-Iproto \
@@ -33,6 +34,8 @@ find ./proto/ -name '*.proto' -print0 \
 		-Ivendor/github.com/google/protobuf/src \
 		--doc_out=proto/doc \
 		--doc_opt=markdown,index.md
+
+sed --in-place -e 's#[ \t][ \t]*$##' proto/doc/index.md
 
 # Generate *.pb.gw.go and *.swagger.json
 grpc_api_configuration="grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml"
