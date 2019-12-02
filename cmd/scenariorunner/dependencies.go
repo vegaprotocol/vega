@@ -75,6 +75,7 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 	partyBuffer := buffer.NewParty(partyStore)
 	accountBuffer := buffer.NewAccount(accountStore)
 	transferResponseBuffer := buffer.NewTransferResponse(transferResponseStore)
+	settleBuf := buffer.NewSettlement()
 
 	executionConfig := execution.NewDefaultConfig("")
 	timeService := vegatime.New(vegatime.NewDefaultConfig())
@@ -89,6 +90,7 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		partyBuffer,
 		accountBuffer,
 		transferResponseBuffer,
+		settleBuf,
 		[]types.Market{}, // WG (21/11/2019): Please note these get added from config in scenariorunner/engine.go/NewEngine just now, but can definitely be moved here.
 	)
 

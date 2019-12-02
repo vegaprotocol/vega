@@ -162,6 +162,7 @@ func (l *NodeCommand) setupBuffers() {
 	l.accountBuf = buffer.NewAccount(l.accounts)
 	l.candleBuf = buffer.NewCandle(l.candleStore)
 	l.marketBuf = buffer.NewMarket(l.marketStore)
+	l.settleBuf = buffer.NewSettlement()
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -239,6 +240,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.partyBuf,
 		l.accountBuf,
 		l.transferBuf,
+		l.settleBuf,
 		l.mktscfg,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })

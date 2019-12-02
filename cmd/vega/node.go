@@ -85,6 +85,7 @@ type NodeCommand struct {
 	marketBuf   *buffer.Market
 	accountBuf  *buffer.Account
 	candleBuf   *buffer.Candle
+	settleBuf   *buffer.Settlement
 
 	candleService    *candles.Svc
 	tradeService     *trades.Svc
