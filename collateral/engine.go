@@ -28,7 +28,7 @@ var (
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
 	ErrAccountDoesNotExist = errors.New("account do not exists")
-	// ErrNoGeneralAccountWhenCreateMarginAccount
+
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 )
 
@@ -638,8 +638,8 @@ func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (stri
 	return marginID, nil
 }
 
-// CreatePartyMarginAccount will create trader accounts for a given market
-// basically one account per market, per asset for each trader
+// CreatePartyGeneralAccount creates trader accounts for a given market
+// one account per market, per asset for each trader
 func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
 
 	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_GENERAL)
