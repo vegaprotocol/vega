@@ -28,6 +28,8 @@ var (
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
 	ErrAccountDoesNotExist = errors.New("account do not exists")
+	// ErrNoGeneralAccountWhenCreateMarginAccount
+	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 )
 
 // AccountBuffer ...
@@ -118,31 +120,6 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 	}
 
 	return
-}
-
-// AddTraderToMarket - when a new trader enters a market, ensure general + margin accounts both exist
-// @TODO this function is dead code, but used in unit tests, so that's why it's still kicking around
-func (e *Engine) AddTraderToMarket(marketID, traderID, asset string) error {
-	// accountID(marketID, traderID, asset string, ty types.AccountType) accountIDT
-	genID := e.accountID("", traderID, asset, types.AccountType_GENERAL)
-	marginID := e.accountID(marketID, traderID, asset, types.AccountType_MARGIN)
-	_, err := e.GetAccountByID(genID)
-	if err != nil {
-		e.log.Error(
-			"Trader doesn't have a general account somehow?",
-			logging.String("trader-id", traderID))
-		return ErrTraderAccountsMissing
-	}
-	_, err = e.GetAccountByID(marginID)
-	if err != nil {
-		e.log.Error(
-			"Trader doesn't have a margin account somehow?",
-			logging.String("trader-id", traderID),
-			logging.String("Market", marketID))
-		return ErrTraderAccountsMissing
-	}
-
-	return nil
 }
 
 // FinalSettlement will process the list of transfer instructed by other engines
@@ -629,39 +606,55 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 	return resps, nil
 }
 
-// CreateTraderAccount will create trader accounts for a given market
-// basically one account per market, per asset for each trader
-func (e *Engine) CreateTraderAccount(traderID, marketID, asset string) (marginID, generalID string) {
-	// first margin account
-	marginID = e.accountID(marketID, traderID, asset, types.AccountType_MARGIN)
+// CreatePartyMarginAccount creates a margin account if it does not exist, will return an error
+// if no general account exist for the trader for the given asset
+func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (string, error) {
+	// first check if generak account exists
+	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_GENERAL)
+	if _, ok := e.accs[generalID]; !ok {
+		e.log.Error("Tried to create a margin account for a party with no general account",
+			logging.String("party-id", partyID),
+			logging.String("asset", asset),
+			logging.String("market-id", marketID),
+		)
+		return "", ErrNoGeneralAccountWhenCreateMarginAccount
+	}
+
+	marginID := e.accountID(marketID, partyID, asset, types.AccountType_MARGIN)
 	if _, ok := e.accs[marginID]; !ok {
 		acc := types.Account{
 			Id:       marginID,
 			Asset:    asset,
 			MarketID: marketID,
 			Balance:  0,
-			Owner:    traderID,
+			Owner:    partyID,
 			Type:     types.AccountType_MARGIN,
 		}
 		e.accs[marginID] = &acc
 		e.buf.Add(acc)
 	}
+	return marginID, nil
+}
 
-	generalID = e.accountID(noMarket, traderID, asset, types.AccountType_GENERAL)
+// CreatePartyMarginAccount will create trader accounts for a given market
+// basically one account per market, per asset for each trader
+func (e *Engine) CreatePartyGeneralAccount(partyID, asset string) string {
+
+	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_GENERAL)
 	if _, ok := e.accs[generalID]; !ok {
 		acc := types.Account{
 			Id:       generalID,
 			Asset:    asset,
 			MarketID: noMarket,
 			Balance:  0,
-			Owner:    traderID,
+			Owner:    partyID,
 			Type:     types.AccountType_GENERAL,
 		}
 		e.accs[generalID] = &acc
 		e.buf.Add(acc)
 	}
 
-	return
+	return generalID
 }
 
 // RemoveDistressed will remove all distressed trader in the event positions
