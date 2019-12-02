@@ -55,6 +55,7 @@ message Order {
     Cancelled = 2;
     Stopped = 3;
     Filled = 4;
+    Rejected = 5;
   }
 
   string id = 1;
@@ -70,6 +71,7 @@ message Order {
   Status status = 11;
   int64 expiresAt = 12;
   string reference = 13;
+  OrderError reason = 14;
 }
 
 message OrderCancellationConfirmation {
@@ -83,18 +85,22 @@ message OrderConfirmation {
 }
 
 enum OrderError {
-    NONE = 0;
-    INVALID_MARKET_ID = 1;
-    INVALID_ORDER_ID = 2;
-    ORDER_OUT_OF_SEQUENCE = 3;
-    INVALID_REMAINING_SIZE = 4;
-    TIME_FAILURE = 5;
-    ORDER_REMOVAL_FAILURE = 6;
-    INVALID_EXPIRATION_DATETIME = 7;
-    INVALID_ORDER_REFERENCE = 8;
-    EDIT_NOT_ALLOWED = 9;
-    ORDER_AMEND_FAILURE = 10;
-    ORDER_NOT_FOUND = 11;
+  NONE = 0;
+  INVALID_MARKET_ID = 1;
+  INVALID_ORDER_ID = 2;
+  ORDER_OUT_OF_SEQUENCE = 3;
+  INVALID_REMAINING_SIZE = 4;
+  TIME_FAILURE = 5;
+  ORDER_REMOVAL_FAILURE = 6;
+  INVALID_EXPIRATION_DATETIME = 7;
+  INVALID_ORDER_REFERENCE = 8;
+  EDIT_NOT_ALLOWED = 9;
+  ORDER_AMEND_FAILURE = 10;
+  ORDER_NOT_FOUND = 11;
+  INVALID_PARTY_ID = 12;
+  MARKET_CLOSED = 13;
+  MARGIN_CHECK_FAILED = 14;
+  INTERNAL_ERROR = 15;
 }
 
 message Trade {
@@ -180,6 +186,7 @@ message Statistics {
   string appVersion = 29;
   string chainVersion = 30;
   uint64 blockDuration = 31; // nanoseconds
+  string uptime = 32;
 }
 
 enum ChainStatus {
@@ -319,7 +326,8 @@ message MarginLevels {
   int64 collateralReleaseLevel = 4;
   string partyID = 5;
   string marketID = 6;
-  int64 timestamp = 7;
+  string asset = 7;
+  int64 timestamp = 8;
 }
 
 message MarketData {

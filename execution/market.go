@@ -70,11 +70,12 @@ type Market struct {
 	partyEngine *Party
 
 	// buffers
-	orderBuf    OrderBuf
-	partyBuf    PartyBuf
-	tradeBuf    TradeBuf
-	transferBuf TransferBuf
-	candleBuf   CandleBuf
+	orderBuf        OrderBuf
+	partyBuf        PartyBuf
+	tradeBuf        TradeBuf
+	transferBuf     TransferBuf
+	candleBuf       CandleBuf
+	marginLevelsBuf MarginLevelsBuf
 
 	closed bool
 }
@@ -118,6 +119,7 @@ func NewMarket(
 	partyBuf PartyBuf,
 	tradeBuf TradeBuf,
 	transferBuf TransferBuf,
+	marginLevelsBuf MarginLevelsBuf,
 	now time.Time,
 	idgen *IDgenerator,
 ) (*Market, error) {
@@ -167,6 +169,7 @@ func NewMarket(
 		tradeBuf:           tradeBuf,
 		candleBuf:          candleBuf,
 		transferBuf:        transferBuf,
+		marginLevelsBuf:    marginLevelsBuf,
 	}
 
 	return market, nil
@@ -308,12 +311,25 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
 	}()
 
+	// set those at the begining as even rejected order get through the buffers
+	m.idgen.SetID(order)
+	order.CreatedAt = m.currentTime.UnixNano()
+
 	if m.closed {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_MARKET_CLOSED
+		m.orderBuf.Add(*order)
 		return nil, ErrMarketClosed
 	}
 
 	// Validate market
 	if order.MarketID != m.mkt.Id {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_INVALID_MARKET_ID
+		m.orderBuf.Add(*order)
+
 		m.log.Error("Market ID mismatch",
 			logging.Order(*order),
 			logging.String("market", m.mkt.Id))
@@ -325,6 +341,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// party, _ := m.parties.GetByID(order.PartyID)
 	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
 	if party == nil {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_INVALID_PARTY_ID
+		m.orderBuf.Add(*order)
+
 		// trader should be created before even trying to post order
 		return nil, ErrTraderDoNotExists
 	}
@@ -337,6 +358,11 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
 	if err != nil {
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_INTERNAL_ERROR
+		m.orderBuf.Add(*order)
+
 		m.log.Error("Unable to register potential trader position",
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
@@ -351,19 +377,29 @@ func (m *Market) SubmitOrder(order *types.Order) (*types.OrderConfirmation, erro
 				logging.String("market-id", m.GetID()),
 				logging.Error(err1))
 		}
+
+		// adding order to the buffer first
+		order.Status = types.Order_Rejected
+		order.Reason = types.OrderError_MARGIN_CHECK_FAILED
+		m.orderBuf.Add(*order)
+
 		m.log.Error("Unable to check/add margin for trader",
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
 	}
 
-	// set order ID
-	m.idgen.SetID(order)
-	order.CreatedAt = m.currentTime.UnixNano()
-
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
+		order.Status = types.Order_Rejected
+		if oerr, ok := types.IsOrderError(err); ok {
+			order.Reason = oerr
+		} else {
+			// should not happend but still...
+			order.Reason = types.OrderError_INTERNAL_ERROR
+		}
+		m.orderBuf.Add(*order)
 		m.log.Error("Failure after submitting order to matching engine",
 			logging.Order(*order),
 			logging.Error(err))
@@ -795,6 +831,13 @@ func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) events
 		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil
 	}
+
+	// push margins into the buffer
+	margins := riskUpdate.MarginLevels()
+	margins.Timestamp = m.currentTime.UnixNano()
+	margins.MarketID = m.GetID()
+	m.marginLevelsBuf.Add(*margins)
+
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Got margins transfer on new order")
 		transfer := riskUpdate.Transfer()
@@ -847,6 +890,17 @@ func (m *Market) collateralAndRisk(settle []events.Transfer) []events.Risk {
 		}
 		return nil
 	}
+
+	// push margins into the buffer
+	t := m.currentTime.UnixNano()
+	mktid := m.GetID()
+	for _, riskUpdate := range riskUpdates {
+		margins := riskUpdate.MarginLevels()
+		margins.Timestamp = t
+		margins.MarketID = mktid
+		m.marginLevelsBuf.Add(*margins)
+	}
+
 	timer.EngineTimeCounterAdd()
 	return riskUpdates
 }
