@@ -10,6 +10,7 @@ import (
 )
 
 var ErrPartyDoesNotExist = errors.New("party does not exist in party engine")
+var ErrNotifyTraderAccountMissing = errors.New("notify trader account is missing")
 
 // Collateral ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
@@ -64,14 +65,16 @@ func (p *Party) GetByMarketAndID(marketID, partyID string) (*types.Party, error)
 
 // NotifyTraderAccountWithTopUpAmount will create a new party in the system
 // and top-up it general account with the given amount
-func (p *Party) NotifyTraderAccountWithTopUpAmount(
-	notify *proto.NotifyTraderAccount, amount int64) error {
+func (p *Party) NotifyTraderAccountWithTopUpAmount(notify *proto.NotifyTraderAccount, amount int64) error {
 	return p.notifyTraderAccount(notify, amount)
 }
 
 // NotifyTraderAccount will create a new party in the system
 // and top-up it general account with the default amount
 func (p *Party) NotifyTraderAccount(notify *proto.NotifyTraderAccount) error {
+	if notify == nil {
+		return ErrNotifyTraderAccountMissing
+	}
 	if notify.Amount == 0 {
 		return p.notifyTraderAccount(notify, 1000000000000)
 	}
@@ -92,6 +95,10 @@ func (p *Party) addParty(ptyID, mktID string) {
 }
 
 func (p *Party) notifyTraderAccount(notify *proto.NotifyTraderAccount, amount int64) error {
+	if notify == nil {
+		return ErrNotifyTraderAccountMissing
+	}
+
 	alreadyTopUp := map[string]struct{}{}
 
 	// ignore errors as they can only happen when the party already exists

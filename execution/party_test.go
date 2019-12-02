@@ -81,4 +81,8 @@ func TestNewParty(t *testing.T) {
 	notify1.Amount = 0
 	err = party.NotifyTraderAccount(&notify1)
 	assert.NoError(t, err)
+
+	err = party.NotifyTraderAccount(nil)
+	assert.Error(t, err)
+	assert.Equal(t, err, execution.ErrNotifyTraderAccountMissing)
 }
