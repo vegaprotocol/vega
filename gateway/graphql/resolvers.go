@@ -52,6 +52,7 @@ type TradingDataClient interface {
 	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
 	MarketDepth(ctx context.Context, in *protoapi.MarketDepthRequest, opts ...grpc.CallOption) (*protoapi.MarketDepthResponse, error)
 	LastTrade(ctx context.Context, in *protoapi.LastTradeRequest, opts ...grpc.CallOption) (*protoapi.LastTradeResponse, error)
+	MarketDataByID(ctx context.Context, in *protoapi.MarketDataByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketDataByIDResponse, error)
 	// parties
 	PartyByID(ctx context.Context, in *protoapi.PartyByIDRequest, opts ...grpc.CallOption) (*protoapi.PartyByIDResponse, error)
 	Parties(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.PartiesResponse, error)
@@ -73,13 +74,15 @@ type TradingDataClient interface {
 	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
 	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthSubscribeClient, error)
 	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_PositionsSubscribeClient, error)
+	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketsDataSubscribeClient, error)
+	MarginLevelsSubscribe(ctx context.Context, in *protoapi.MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarginLevelsSubscribeClient, error)
 	// accounts
 	AccountsByParty(ctx context.Context, req *protoapi.AccountsByPartyRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyResponse, error)
 	AccountsByPartyAndMarket(ctx context.Context, req *protoapi.AccountsByPartyAndMarketRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndMarketResponse, error)
 	AccountsByPartyAndType(ctx context.Context, req *protoapi.AccountsByPartyAndTypeRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndTypeResponse, error)
 	AccountsByPartyAndAsset(ctx context.Context, req *protoapi.AccountsByPartyAndAssetRequest, opts ...grpc.CallOption) (*protoapi.AccountsByPartyAndAssetResponse, error)
-	MarketDataByID(ctx context.Context, in *protoapi.MarketDataByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketDataByIDResponse, error)
-	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketsDataSubscribeClient, error)
+	// margins
+	MarginLevels(ctx context.Context, in *protoapi.MarginLevelsRequest, opts ...grpc.CallOption) (*protoapi.MarginLevelsResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -130,6 +133,11 @@ func (r *VegaResolverRoot) MarketDepth() MarketDepthResolver {
 // MarketData returns the market depth resolver
 func (r *VegaResolverRoot) MarketData() MarketDataResolver {
 	return (*myMarketDataResolver)(r)
+}
+
+// Margins returns the market depth resolver
+func (r *VegaResolverRoot) MarginLevels() MarginLevelsResolver {
+	return (*myMarginLevelsResolver)(r)
 }
 
 // PriceLevel returns the price levels resolver
@@ -429,6 +437,27 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 	}
 }
 
+func (r *myPartyResolver) Margins(ctx context.Context, party *Party, marketID *string) ([]*types.MarginLevels, error) {
+	var mktid string
+	if marketID != nil {
+		mktid = *marketID
+	}
+	req := protoapi.MarginLevelsRequest{
+		PartyID:  party.ID,
+		MarketID: mktid,
+	}
+	res, err := r.tradingDataClient.MarginLevels(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
+	for _, v := range res.MarginLevels {
+		out = append(out, v)
+	}
+	return out, nil
+}
+
 func (r *myPartyResolver) Orders(ctx context.Context, party *Party,
 	open *bool, skip *int, first *int, last *int) ([]*types.Order, error) {
 
@@ -551,6 +580,61 @@ func (r *myPartyResolver) Accounts(ctx context.Context, pty *Party, marketID *st
 
 // END: Party Resolver
 
+// BEGIN: MarginLevels Resolver
+
+type myMarginLevelsResolver VegaResolverRoot
+
+func (r *myMarginLevelsResolver) Market(ctx context.Context, m *types.MarginLevels) (*Market, error) {
+	req := protoapi.MarketByIDRequest{MarketID: m.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	market, err := MarketFromProto(res.Market)
+	if err != nil {
+		r.log.Error("unable to convert market from proto", logging.Error(err))
+		return nil, err
+	}
+	return market, nil
+}
+
+func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevels) (*Party, error) {
+	if m == nil {
+		return nil, errors.New("nil order")
+	}
+	return &Party{
+		ID: m.PartyID,
+	}, nil
+}
+
+func (r *myMarginLevelsResolver) Asset(_ context.Context, m *types.MarginLevels) (string, error) {
+	return m.Asset, nil
+}
+
+func (r *myMarginLevelsResolver) CollateralReleaseLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return strconv.FormatInt(m.CollateralReleaseLevel, 10), nil
+}
+
+func (r *myMarginLevelsResolver) InitialLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return strconv.FormatInt(m.InitialMargin, 10), nil
+}
+
+func (r *myMarginLevelsResolver) SearchLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return strconv.FormatInt(m.SearchLevel, 10), nil
+}
+
+func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *types.MarginLevels) (string, error) {
+	return strconv.FormatInt(m.MaintenanceMargin, 10), nil
+}
+
+func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLevels) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
+}
+
+// END: MarginLevels Resolver
+
 // BEGIN: MarketData resolver
 
 type myMarketDataResolver VegaResolverRoot
@@ -562,23 +646,41 @@ func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketDa
 func (r *myMarketDataResolver) BestBidVolume(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestBidVolume, 10), nil
 }
+
 func (r *myMarketDataResolver) BestOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestOfferPrice, 10), nil
 }
+
 func (r *myMarketDataResolver) BestOfferVolume(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestOfferVolume, 10), nil
 }
+
 func (r *myMarketDataResolver) MidPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.MidPrice, 10), nil
 }
+
 func (r *myMarketDataResolver) MarkPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.MarkPrice, 10), nil
 }
-func (r *myMarketDataResolver) MarketID(_ context.Context, m *types.MarketData) (string, error) {
-	return m.Market, nil
-}
+
 func (r *myMarketDataResolver) Timestamp(_ context.Context, m *types.MarketData) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
+}
+
+func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) (*Market, error) {
+	req := protoapi.MarketByIDRequest{MarketID: m.Market}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	market, err := MarketFromProto(res.Market)
+	if err != nil {
+		r.log.Error("unable to convert market from proto", logging.Error(err))
+		return nil, err
+	}
+	return market, nil
 }
 
 // END: MarketData resolver
@@ -636,6 +738,54 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 // BEGIN: Order Resolver
 
 type myOrderResolver VegaResolverRoot
+
+func RejectionReasonFromProtoOrderError(o proto.OrderError) (RejectionReason, error) {
+	switch o {
+	case proto.OrderError_INVALID_MARKET_ID:
+		return RejectionReasonInvalidMarketID, nil
+	case proto.OrderError_INVALID_ORDER_ID:
+		return RejectionReasonInvalidOrderID, nil
+	case proto.OrderError_ORDER_OUT_OF_SEQUENCE:
+		return RejectionReasonOrderOutOfSequence, nil
+	case proto.OrderError_INVALID_REMAINING_SIZE:
+		return RejectionReasonInvalidRemainingSize, nil
+	case proto.OrderError_TIME_FAILURE:
+		return RejectionReasonTimeFailure, nil
+	case proto.OrderError_ORDER_REMOVAL_FAILURE:
+		return RejectionReasonOrderRemovalFailure, nil
+	case proto.OrderError_INVALID_EXPIRATION_DATETIME:
+		return RejectionReasonInvalidExpirationTime, nil
+	case proto.OrderError_INVALID_ORDER_REFERENCE:
+		return RejectionReasonInvalidOrderReference, nil
+	case proto.OrderError_EDIT_NOT_ALLOWED:
+		return RejectionReasonEditNotAllowed, nil
+	case proto.OrderError_ORDER_AMEND_FAILURE:
+		return RejectionReasonOrderAmendFailure, nil
+	case proto.OrderError_ORDER_NOT_FOUND:
+		return RejectionReasonOrderNotFound, nil
+	case proto.OrderError_INVALID_PARTY_ID:
+		return RejectionReasonInvalidPartyID, nil
+	case proto.OrderError_MARKET_CLOSED:
+		return RejectionReasonMarketClosed, nil
+	case proto.OrderError_MARGIN_CHECK_FAILED:
+		return RejectionReasonMarginCheckFailed, nil
+	case proto.OrderError_INTERNAL_ERROR:
+		return RejectionReasonInternalError, nil
+	default:
+		return RejectionReason(""), fmt.Errorf("Invalid RejectionReason: %v", o)
+	}
+}
+
+func (r *myOrderResolver) RejectionReason(_ context.Context, o *proto.Order) (*RejectionReason, error) {
+	if o.Reason == proto.OrderError_NONE {
+		return nil, nil
+	}
+	reason, err := RejectionReasonFromProtoOrderError(o.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return &reason, nil
+}
 
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Price, 10), nil
@@ -1053,6 +1203,43 @@ func (r *myMutationResolver) Signin(ctx context.Context, id string, password str
 // BEGIN: Subscription Resolver
 
 type mySubscriptionResolver VegaResolverRoot
+
+func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, marketID *string) (<-chan *types.MarginLevels, error) {
+	var mktid string
+	if marketID != nil {
+		mktid = *marketID
+	}
+	req := &protoapi.MarginLevelsSubscribeRequest{
+		MarketID: mktid,
+		PartyID:  partyID,
+	}
+	stream, err := r.tradingDataClient.MarginLevelsSubscribe(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan *types.MarginLevels)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(ch)
+		}()
+		for {
+			m, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("margin levels: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("margin levls: stream closed", logging.Error(err))
+				break
+			}
+			ch <- m
+		}
+	}()
+
+	return ch, nil
+}
 
 func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *string) (<-chan *types.MarketData, error) {
 	var mktid string

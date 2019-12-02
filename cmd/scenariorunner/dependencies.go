@@ -53,10 +53,7 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		errs = multierror.Append(errs, err)
 	}
 
-	riskStore, err := storage.NewRisks(config)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
+	riskStore := storage.NewRisks(log, config)
 
 	tradeService, err := trades.NewService(log, trades.NewDefaultConfig(), tradeStore, riskStore)
 	if err != nil {
@@ -76,6 +73,7 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 	accountBuffer := buffer.NewAccount(accountStore)
 	transferResponseBuffer := buffer.NewTransferResponse(transferResponseStore)
 	marketDataBuffer := buffer.NewMarketData()
+	marginLevelsBuffer := buffer.NewMarginLevels()
 
 	executionConfig := execution.NewDefaultConfig("")
 	timeService := vegatime.New(vegatime.NewDefaultConfig())
@@ -91,6 +89,7 @@ func getDependencies(log *logging.Logger, config storage.Config) (*dependencies,
 		accountBuffer,
 		transferResponseBuffer,
 		marketDataBuffer,
+		marginLevelsBuffer,
 		[]types.Market{}, // WG (21/11/2019): Please note these get added from config in scenariorunner/engine.go/NewEngine just now, but can definitely be moved here.
 	)
 

@@ -26,6 +26,8 @@ models:
     model: code.vegaprotocol.io/vega/proto.Statistics
   MarketData:
     model: code.vegaprotocol.io/vega/proto.MarketData
+  MarginLevels:
+    model: code.vegaprotocol.io/vega/proto.MarginLevels
   Market:
     fields:
       orders:
@@ -51,4 +53,6 @@ models:
       positions:
         resolver: true
       accounts:
+        resolver: true
+      margins:
         resolver: true
