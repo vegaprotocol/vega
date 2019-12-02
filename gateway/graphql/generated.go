@@ -178,22 +178,23 @@ type ComplexityRoot struct {
 	}
 
 	Order struct {
-		CreatedAt   func(childComplexity int) int
-		Datetime    func(childComplexity int) int
-		ExpiresAt   func(childComplexity int) int
-		Id          func(childComplexity int) int
-		Market      func(childComplexity int) int
-		Party       func(childComplexity int) int
-		Price       func(childComplexity int) int
-		Reference   func(childComplexity int) int
-		Remaining   func(childComplexity int) int
-		Side        func(childComplexity int) int
-		Size        func(childComplexity int) int
-		Status      func(childComplexity int) int
-		TimeInForce func(childComplexity int) int
-		Timestamp   func(childComplexity int) int
-		Trades      func(childComplexity int) int
-		Type        func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		Datetime        func(childComplexity int) int
+		ExpiresAt       func(childComplexity int) int
+		Id              func(childComplexity int) int
+		Market          func(childComplexity int) int
+		Party           func(childComplexity int) int
+		Price           func(childComplexity int) int
+		Reference       func(childComplexity int) int
+		RejectionReason func(childComplexity int) int
+		Remaining       func(childComplexity int) int
+		Side            func(childComplexity int) int
+		Size            func(childComplexity int) int
+		Status          func(childComplexity int) int
+		TimeInForce     func(childComplexity int) int
+		Timestamp       func(childComplexity int) int
+		Trades          func(childComplexity int) int
+		Type            func(childComplexity int) int
 	}
 
 	Party struct {
@@ -390,6 +391,7 @@ type OrderResolver interface {
 
 	Trades(ctx context.Context, obj *proto.Order) ([]*proto.Trade, error)
 	Type(ctx context.Context, obj *proto.Order) (*OrderType, error)
+	RejectionReason(ctx context.Context, obj *proto.Order) (*RejectionReason, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *Party, open *bool, skip *int, first *int, last *int) ([]*proto.Order, error)
@@ -1081,6 +1083,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.Reference(childComplexity), true
+
+	case "Order.rejectionReason":
+		if e.complexity.Order.RejectionReason == nil {
+			break
+		}
+
+		return e.complexity.Order.RejectionReason(childComplexity), true
 
 	case "Order.remaining":
 		if e.complexity.Order.Remaining == nil {
@@ -2665,6 +2674,9 @@ type Order {
 
   # Type the order type (defaults to TRADER)
   type: OrderType
+
+  # Reason for the order to be rejected
+  rejectionReason: RejectionReason
 }
 
 # A trade on Vega, the result of two orders being "matched" in the market
@@ -2733,21 +2745,58 @@ enum OrderTimeInForce {
 # Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order.
 enum OrderStatus {
 
-    # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
-    # Active does not necessarily mean it's still on the order book.
-    Active
+  # The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
+  # Active does not necessarily mean it's still on the order book.
+  Active
 
-    # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
-    Cancelled
+  # The order is cancelled, the order could be partially filled or unfilled before it was cancelled. It is not possible to cancel an order with 0 remaining.
+  Cancelled
 
-    # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
-    Expired
+  # This order trades any amount and as much as possible and remains on the book until it either trades completely or expires.
+  Expired
 
-    # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
-    Stopped
+  # This order was of type IOC or FOK and could not be processed by the matching engine due to lack of liquidity.
+  Stopped
 
-    # This order is fully filled with remaining equals zero.
-    Filled
+  # This order is fully filled with remaining equals zero.
+  Filled
+
+  # This order was rejected while beeing processed in the core.
+  Rejected
+}
+
+# Reason for the order beeing rejected by the core node
+enum RejectionReason {
+  # Market id is invalid
+  InvalidMarketId
+  # Order id is invalid
+  InvalidOrderId
+  # Order is out of sequence
+  OrderOutOfSequence
+  # Remaining size in the order is invalid
+  InvalidRemainingSize
+  # Time has failed us
+  TimeFailure
+  # Unable to remove the order
+  OrderRemovalFailure
+  # Expiration time is invalid
+  InvalidExpirationTime
+  # Order reference is invalid
+  InvalidOrderReference
+  # Edit is not allowed
+  EditNotAllowed
+  # Order amend fail
+  OrderAmendFailure
+  # Order does not exist
+  OrderNotFound
+  # Party id is invalid
+  InvalidPartyId
+  # Market is closed
+  MarketClosed
+  # Margin check failed
+  MarginCheckFailed
+  # An internal error happend
+  InternalError
 }
 
 enum OrderType {
@@ -6722,6 +6771,40 @@ func (ec *executionContext) _Order_type(ctx context.Context, field graphql.Colle
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOOrderType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_rejectionReason(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().RejectionReason(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*RejectionReason)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalORejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *Party) (ret graphql.Marshaler) {
@@ -12595,6 +12678,17 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				res = ec._Order_type(ctx, field, obj)
 				return res
 			})
+		case "rejectionReason":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_rejectionReason(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15193,6 +15287,30 @@ func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) unmarshalORejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, v interface{}) (RejectionReason, error) {
+	var res RejectionReason
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalORejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, sel ast.SelectionSet, v RejectionReason) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalORejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, v interface{}) (*RejectionReason, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalORejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalORejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRejectionReason(ctx context.Context, sel ast.SelectionSet, v *RejectionReason) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx context.Context, v interface{}) (Side, error) {
