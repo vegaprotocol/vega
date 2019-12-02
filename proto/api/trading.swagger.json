@@ -1746,6 +1746,7 @@
         "INVALID_PARTY_ID",
         "MARKET_CLOSED",
         "MARGIN_CHECK_FAILED",
+        "MISSING_GENERAL_ACCOUNT",
         "INTERNAL_ERROR"
       ],
       "default": "NONE"
