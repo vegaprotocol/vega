@@ -10,7 +10,7 @@
 paths="paths=source_relative"
 
 # Generate *.pb.go and *.validator.pb.go
-find proto -maxdepth 1 -name '*.proto' | sort | while read -r protofile
+find proto cmd/scenariorunner/core -maxdepth 1 -name '*.proto' | sort | while read -r protofile
 do
 	protoc \
 		-I. \
