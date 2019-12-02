@@ -41,6 +41,7 @@ http:
     - selector: api.trading_data.MarketDataByID
       get: '/markets/{marketID}/data'
 
+
     # Orders
     - selector: api.trading.SubmitOrder
       post: '/orders'
@@ -68,6 +69,11 @@ http:
       get: '/parties/{partyID}/trades'
     - selector: api.trading_data.AccountsByParty
       get: '/parties/{partyID}/accounts'
+    - selector: api.trading_data.MarginLevels
+      get: '/parties/{partyID}/markets/{marketID}/margin'
+    - selector: api.trading.Withdraw
+      post: '/parties/{withdraw.partyID}/withdrawals'
+      body: '*'
 
     # Miscellaneous
     - selector: api.trading.NotifyTraderAccount

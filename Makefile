@@ -1,6 +1,4 @@
 APPS := dummyriskmodel scenariorunner vega vegabench vegaccount vegastream
-PROTOFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.pb.go/')
-PROTOVALFILES := $(shell find proto -name '*.proto' | sed -e 's/.proto$$/.validator.pb.go/')
 
 ifeq ($(CI),)
 	# Not in CI
@@ -37,7 +35,7 @@ else
 	endif
 endif
 
-.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks proto_check rest_check
+.PHONY: all bench deps build clean docker docker_quick grpc grpc_check help test lint mocks
 
 all: build
 
@@ -128,40 +126,13 @@ ineffectassign: ## Check for ineffectual assignments
 	@ia="$$(env GO111MODULE=auto ineffassign . | grep -v '_test\.go:')" ; \
 	if test "$$(echo "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" | sed -e "s#^$$GOPATH/src/##" ; exit 1 ; fi
 
-proto: | deps ${PROTOFILES} ${PROTOVALFILES} proto/api/trading.pb.gw.go proto/api/trading.swagger.json ## build proto definitions
+.PHONY: proto
+proto: deps ## build proto definitions
+	@./proto/generate.sh
 
-cmd/scenariorunner/core/instructions.pb.go: cmd/scenariorunner/core/instructions.proto
-	@protoc -I. -Iproto -Ivendor -Ivendor/github.com/google/protobuf/src --go_out=plugins=grpc,paths=source_relative:. "$<"
-
-# This target is similar to the following one, but also with "plugins=grpc"
-proto/api/trading.pb.go: proto/api/trading.proto
-	@protoc -I. -Iproto -Ivendor -Ivendor/github.com/google/protobuf/src --go_out=plugins=grpc,paths=source_relative:. "$<"
-
-.PRECIOUS: proto/%.pb.go
-%.pb.go: %.proto
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. --go_out=paths=source_relative:. "$<"
-
-.PRECIOUS: %.validator.pb.go
-%.validator.pb.go: %.proto
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. --govalidators_out=paths=source_relative:. "$<" && \
-	sed -i -re 's/this\.Size_/this.Size/' "$@" && \
-	./script/fix_imports.sh "$@"
-
-GRPC_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml,paths=source_relative:.
-SWAGGER_CONF_OPT := logtostderr=true,grpc_api_configuration=gateway/rest/grpc-rest-bindings.yml:.
-
-# This creates a reverse proxy to forward HTTP requests into gRPC requests
-proto/api/trading.pb.gw.go: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
-	@protoc -Ivendor -I. -Iproto/api/ -Ivendor/github.com/google/protobuf/src --grpc-gateway_out=$(GRPC_CONF_OPT) "$<"
-
-# Generate Swagger documentation
-proto/api/trading.swagger.json: proto/api/trading.proto gateway/rest/grpc-rest-bindings.yml
-	@protoc -Ivendor -Ivendor/github.com/google/protobuf/src -I. -Iapi/ --swagger_out=$(SWAGGER_CONF_OPT) "$<"
-
+.PHONY: proto_check
 proto_check: ## proto: Check committed files match just-generated files
-	@find proto -name '*.proto' -exec touch '{}' ';' ; \
-	find gateway/rest/ -name '*.yml' -exec touch '{}' ';' ; \
-	make proto 1>/dev/null || exit 1 ; \
+	@make proto 1>/dev/null || exit 1 ; \
 	files="$$(git diff --name-only proto/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files:" $$files ; \
@@ -169,6 +140,14 @@ proto_check: ## proto: Check committed files match just-generated files
 		exit 1 ; \
 	fi
 
+.PHONY: proto_clean
+proto_clean:
+	@find proto -name '*.pb.go' -o -name '*.pb.gw.go' -o -name '*.validator.pb.go' -o -name '*.swagger.json' \
+		| xargs -r rm
+	@find proto/doc -name index.md \
+		| xargs -r rm
+
+.PHONY: rest_check
 rest_check: gateway/rest/grpc-rest-bindings.yml proto/api/trading.swagger.json
 	@python3 script/check_rest_endpoints.py \
 		--bindings gateway/rest/grpc-rest-bindings.yml \
