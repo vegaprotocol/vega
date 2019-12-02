@@ -72,7 +72,7 @@ func (p *Party) NotifyTraderAccountWithTopUpAmount(
 // NotifyTraderAccount will create a new party in the system
 // and top-up it general account with the default amount
 func (p *Party) NotifyTraderAccount(notify *proto.NotifyTraderAccount) error {
-	if notify.GetAmount() == 0 {
+	if notify.Amount == 0 {
 		return p.notifyTraderAccount(notify, 1000000000000)
 	}
 	return p.notifyTraderAccount(notify, int64(notify.Amount))
