@@ -282,7 +282,6 @@ func testInstructionSet(t *testing.T, instructionSet core.InstructionSet) {
 	assert.NotNil(t, result.Metadata)
 	assert.EqualValues(t, len(instructionSet.Instructions), result.Metadata.InstructionsProcessed)
 	assert.EqualValues(t, 0, result.Metadata.InstructionsOmitted)
-	assert.NotNil(t, result.Metadata.FinalMarketDepth)
 	assert.True(t, result.Metadata.ProcessingTime.GetNanos() > 0)
 	assert.EqualValues(t, len(instructionSet.Instructions), len(result.Results))
 }

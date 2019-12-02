@@ -31,7 +31,6 @@ message Metadata {
     uint64 instructionsOmitted = 2;
     uint64 tradesGenerated = 3;
     google.protobuf.Duration processingTime = 5;
-    repeated vega.MarketDepth finalMarketDepth = 6;
 }
 
 message ResultSet {
