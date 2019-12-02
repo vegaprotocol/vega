@@ -636,7 +636,6 @@ func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (stri
 		e.buf.Add(acc)
 	}
 	return marginID, nil
-
 }
 
 // CreatePartyMarginAccount will create trader accounts for a given market
