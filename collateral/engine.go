@@ -609,19 +609,21 @@ func (e *Engine) ClearMarket(mktID, asset string, parties []string) ([]*types.Tr
 // CreatePartyMarginAccount creates a margin account if it does not exist, will return an error
 // if no general account exist for the trader for the given asset
 func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (string, error) {
-	// first check if generak account exists
-	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_GENERAL)
-	if _, ok := e.accs[generalID]; !ok {
-		e.log.Error("Tried to create a margin account for a party with no general account",
-			logging.String("party-id", partyID),
-			logging.String("asset", asset),
-			logging.String("market-id", marketID),
-		)
-		return "", ErrNoGeneralAccountWhenCreateMarginAccount
-	}
-
 	marginID := e.accountID(marketID, partyID, asset, types.AccountType_MARGIN)
 	if _, ok := e.accs[marginID]; !ok {
+		// OK no margin ID, so let's try to get the general id then
+		// first check if generak account exists
+		generalID := e.accountID(noMarket, partyID, asset, types.AccountType_GENERAL)
+		if _, ok := e.accs[generalID]; !ok {
+			e.log.Error("Tried to create a margin account for a party with no general account",
+				logging.String("party-id", partyID),
+				logging.String("asset", asset),
+				logging.String("market-id", marketID),
+			)
+			return "", ErrNoGeneralAccountWhenCreateMarginAccount
+		}
+
+		// general account id OK, let's create a margin account
 		acc := types.Account{
 			Id:       marginID,
 			Asset:    asset,
@@ -634,6 +636,7 @@ func (e *Engine) CreatePartyMarginAccount(partyID, marketID, asset string) (stri
 		e.buf.Add(acc)
 	}
 	return marginID, nil
+
 }
 
 // CreatePartyMarginAccount will create trader accounts for a given market
