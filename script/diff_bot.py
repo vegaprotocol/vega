@@ -110,7 +110,7 @@ def diff_files(token: str, f1: GitFile, f2: GitFile) -> Tuple[str, str, str]:
     r2 = get_file_for_branch(token, f2.project_id, f2.branch, f2.file_path)
 
     if r1["content_sha256"] == r2["content_sha256"]:
-        return ("", None, None)
+        return ("", "-", "-")
 
     d = difflib.unified_diff(
         binascii.a2b_base64(r1["content"]).decode().splitlines(keepends=True),

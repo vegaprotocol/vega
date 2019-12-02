@@ -132,9 +132,7 @@ proto: deps ## build proto definitions
 
 .PHONY: proto_check
 proto_check: ## proto: Check committed files match just-generated files
-	@find proto -name '*.proto' -exec touch '{}' ';' ; \
-	find gateway/rest/ -name '*.yml' -exec touch '{}' ';' ; \
-	make proto 1>/dev/null || exit 1 ; \
+	@make proto 1>/dev/null || exit 1 ; \
 	files="$$(git diff --name-only proto/)" ; \
 	if test -n "$$files" ; then \
 		echo "Committed files do not match just-generated files:" $$files ; \
@@ -145,6 +143,8 @@ proto_check: ## proto: Check committed files match just-generated files
 .PHONY: proto_clean
 proto_clean:
 	@find proto -name '*.pb.go' -o -name '*.pb.gw.go' -o -name '*.validator.pb.go' -o -name '*.swagger.json' \
+		| xargs -r rm
+	@find proto/doc -name index.md \
 		| xargs -r rm
 
 .PHONY: rest_check
