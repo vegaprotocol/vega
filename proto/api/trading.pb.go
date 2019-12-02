@@ -3001,14 +3001,19 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TradingClient interface {
-	// unary calls - writes
+	// Submit an Order
 	SubmitOrder(ctx context.Context, in *SubmitOrderRequest, opts ...grpc.CallOption) (*proto1.PendingOrder, error)
+	// Cancel an Order
 	CancelOrder(ctx context.Context, in *CancelOrderRequest, opts ...grpc.CallOption) (*proto1.PendingOrder, error)
+	// Amend an Order
 	AmendOrder(ctx context.Context, in *AmendOrderRequest, opts ...grpc.CallOption) (*proto1.PendingOrder, error)
+	// Sign In
 	SignIn(ctx context.Context, in *SignInRequest, opts ...grpc.CallOption) (*SignInResponse, error)
+	// Request balance increase
 	NotifyTraderAccount(ctx context.Context, in *NotifyTraderAccountRequest, opts ...grpc.CallOption) (*NotifyTraderAccountResponse, error)
+	// Request withdrawal
 	Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawResponse, error)
-	// unary calls - read
+	// Check an API token
 	CheckToken(ctx context.Context, in *CheckTokenRequest, opts ...grpc.CallOption) (*CheckTokenResponse, error)
 }
 
@@ -3085,14 +3090,19 @@ func (c *tradingClient) CheckToken(ctx context.Context, in *CheckTokenRequest, o
 
 // TradingServer is the server API for Trading service.
 type TradingServer interface {
-	// unary calls - writes
+	// Submit an Order
 	SubmitOrder(context.Context, *SubmitOrderRequest) (*proto1.PendingOrder, error)
+	// Cancel an Order
 	CancelOrder(context.Context, *CancelOrderRequest) (*proto1.PendingOrder, error)
+	// Amend an Order
 	AmendOrder(context.Context, *AmendOrderRequest) (*proto1.PendingOrder, error)
+	// Sign In
 	SignIn(context.Context, *SignInRequest) (*SignInResponse, error)
+	// Request balance increase
 	NotifyTraderAccount(context.Context, *NotifyTraderAccountRequest) (*NotifyTraderAccountResponse, error)
+	// Request withdrawal
 	Withdraw(context.Context, *WithdrawRequest) (*WithdrawResponse, error)
-	// unary calls - read
+	// Check an API token
 	CheckToken(context.Context, *CheckTokenRequest) (*CheckTokenResponse, error)
 }
 
@@ -3267,34 +3277,45 @@ var _Trading_serviceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TradingDataClient interface {
-	// orders
+	// Get Market Orders
 	OrdersByMarket(ctx context.Context, in *OrdersByMarketRequest, opts ...grpc.CallOption) (*OrdersByMarketResponse, error)
+	// Get Party Orders
 	OrdersByParty(ctx context.Context, in *OrdersByPartyRequest, opts ...grpc.CallOption) (*OrdersByPartyResponse, error)
+	// Get Market Order by OrderID
 	OrderByMarketAndID(ctx context.Context, in *OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*OrderByMarketAndIdResponse, error)
+	// Get an Order by Pending Order reference (UUID)
 	OrderByReference(ctx context.Context, in *OrderByReferenceRequest, opts ...grpc.CallOption) (*OrderByReferenceResponse, error)
-	// markets
+	// Get Market by ID
 	MarketByID(ctx context.Context, in *MarketByIDRequest, opts ...grpc.CallOption) (*MarketByIDResponse, error)
+	// Get a list of Markets
 	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsResponse, error)
+	// Get Market Depth
 	MarketDepth(ctx context.Context, in *MarketDepthRequest, opts ...grpc.CallOption) (*MarketDepthResponse, error)
+	// Get latest Market Trade
 	LastTrade(ctx context.Context, in *LastTradeRequest, opts ...grpc.CallOption) (*LastTradeResponse, error)
-	// parties
+	// Get Party by ID
 	PartyByID(ctx context.Context, in *PartyByIDRequest, opts ...grpc.CallOption) (*PartyByIDResponse, error)
+	// Get a list of Parties
 	Parties(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*PartiesResponse, error)
-	// trades
+	// Get Market Trades
 	TradesByMarket(ctx context.Context, in *TradesByMarketRequest, opts ...grpc.CallOption) (*TradesByMarketResponse, error)
+	// Get Party Trades
 	TradesByParty(ctx context.Context, in *TradesByPartyRequest, opts ...grpc.CallOption) (*TradesByPartyResponse, error)
+	// Get Order Trades
 	TradesByOrder(ctx context.Context, in *TradesByOrderRequest, opts ...grpc.CallOption) (*TradesByOrderResponse, error)
-	// positions
+	// Get Party Positions
 	PositionsByParty(ctx context.Context, in *PositionsByPartyRequest, opts ...grpc.CallOption) (*PositionsByPartyResponse, error)
-	// candles
+	// Get Market Candles
 	Candles(ctx context.Context, in *CandlesRequest, opts ...grpc.CallOption) (*CandlesResponse, error)
-	// metrics
+	// Get Statistics
 	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto1.Statistics, error)
+	// Get Time
 	GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*VegaTimeResponse, error)
-	// marketdata
+	// Get Market Data by ID
 	MarketDataByID(ctx context.Context, in *MarketDataByIDRequest, opts ...grpc.CallOption) (*MarketDataByIDResponse, error)
+	// Get a list of Market Data
 	MarketsData(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsDataResponse, error)
-	// marginlevels
+	// Get Party Margin Levels
 	MarginLevels(ctx context.Context, in *MarginLevelsRequest, opts ...grpc.CallOption) (*MarginLevelsResponse, error)
 	// streams
 	OrdersSubscribe(ctx context.Context, in *OrdersSubscribeRequest, opts ...grpc.CallOption) (TradingData_OrdersSubscribeClient, error)
@@ -3306,10 +3327,13 @@ type TradingDataClient interface {
 	TransferResponsesSubscribe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_TransferResponsesSubscribeClient, error)
 	MarketsDataSubscribe(ctx context.Context, in *MarketsDataSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketsDataSubscribeClient, error)
 	MarginLevelsSubscribe(ctx context.Context, in *MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarginLevelsSubscribeClient, error)
-	// accounts
+	// Get Party Accounts by Account Type
 	AccountsByParty(ctx context.Context, in *AccountsByPartyRequest, opts ...grpc.CallOption) (*AccountsByPartyResponse, error)
+	// Get Party Accounts by Market
 	AccountsByPartyAndMarket(ctx context.Context, in *AccountsByPartyAndMarketRequest, opts ...grpc.CallOption) (*AccountsByPartyAndMarketResponse, error)
+	// Get Party Accounts by Account Type (dup)
 	AccountsByPartyAndType(ctx context.Context, in *AccountsByPartyAndTypeRequest, opts ...grpc.CallOption) (*AccountsByPartyAndTypeResponse, error)
+	// Get Party Accounts by Asset
 	AccountsByPartyAndAsset(ctx context.Context, in *AccountsByPartyAndAssetRequest, opts ...grpc.CallOption) (*AccountsByPartyAndAssetResponse, error)
 }
 
@@ -3827,34 +3851,45 @@ func (c *tradingDataClient) AccountsByPartyAndAsset(ctx context.Context, in *Acc
 
 // TradingDataServer is the server API for TradingData service.
 type TradingDataServer interface {
-	// orders
+	// Get Market Orders
 	OrdersByMarket(context.Context, *OrdersByMarketRequest) (*OrdersByMarketResponse, error)
+	// Get Party Orders
 	OrdersByParty(context.Context, *OrdersByPartyRequest) (*OrdersByPartyResponse, error)
+	// Get Market Order by OrderID
 	OrderByMarketAndID(context.Context, *OrderByMarketAndIdRequest) (*OrderByMarketAndIdResponse, error)
+	// Get an Order by Pending Order reference (UUID)
 	OrderByReference(context.Context, *OrderByReferenceRequest) (*OrderByReferenceResponse, error)
-	// markets
+	// Get Market by ID
 	MarketByID(context.Context, *MarketByIDRequest) (*MarketByIDResponse, error)
+	// Get a list of Markets
 	Markets(context.Context, *empty.Empty) (*MarketsResponse, error)
+	// Get Market Depth
 	MarketDepth(context.Context, *MarketDepthRequest) (*MarketDepthResponse, error)
+	// Get latest Market Trade
 	LastTrade(context.Context, *LastTradeRequest) (*LastTradeResponse, error)
-	// parties
+	// Get Party by ID
 	PartyByID(context.Context, *PartyByIDRequest) (*PartyByIDResponse, error)
+	// Get a list of Parties
 	Parties(context.Context, *empty.Empty) (*PartiesResponse, error)
-	// trades
+	// Get Market Trades
 	TradesByMarket(context.Context, *TradesByMarketRequest) (*TradesByMarketResponse, error)
+	// Get Party Trades
 	TradesByParty(context.Context, *TradesByPartyRequest) (*TradesByPartyResponse, error)
+	// Get Order Trades
 	TradesByOrder(context.Context, *TradesByOrderRequest) (*TradesByOrderResponse, error)
-	// positions
+	// Get Party Positions
 	PositionsByParty(context.Context, *PositionsByPartyRequest) (*PositionsByPartyResponse, error)
-	// candles
+	// Get Market Candles
 	Candles(context.Context, *CandlesRequest) (*CandlesResponse, error)
-	// metrics
+	// Get Statistics
 	Statistics(context.Context, *empty.Empty) (*proto1.Statistics, error)
+	// Get Time
 	GetVegaTime(context.Context, *empty.Empty) (*VegaTimeResponse, error)
-	// marketdata
+	// Get Market Data by ID
 	MarketDataByID(context.Context, *MarketDataByIDRequest) (*MarketDataByIDResponse, error)
+	// Get a list of Market Data
 	MarketsData(context.Context, *empty.Empty) (*MarketsDataResponse, error)
-	// marginlevels
+	// Get Party Margin Levels
 	MarginLevels(context.Context, *MarginLevelsRequest) (*MarginLevelsResponse, error)
 	// streams
 	OrdersSubscribe(*OrdersSubscribeRequest, TradingData_OrdersSubscribeServer) error
@@ -3866,10 +3901,13 @@ type TradingDataServer interface {
 	TransferResponsesSubscribe(*empty.Empty, TradingData_TransferResponsesSubscribeServer) error
 	MarketsDataSubscribe(*MarketsDataSubscribeRequest, TradingData_MarketsDataSubscribeServer) error
 	MarginLevelsSubscribe(*MarginLevelsSubscribeRequest, TradingData_MarginLevelsSubscribeServer) error
-	// accounts
+	// Get Party Accounts by Account Type
 	AccountsByParty(context.Context, *AccountsByPartyRequest) (*AccountsByPartyResponse, error)
+	// Get Party Accounts by Market
 	AccountsByPartyAndMarket(context.Context, *AccountsByPartyAndMarketRequest) (*AccountsByPartyAndMarketResponse, error)
+	// Get Party Accounts by Account Type (dup)
 	AccountsByPartyAndType(context.Context, *AccountsByPartyAndTypeRequest) (*AccountsByPartyAndTypeResponse, error)
+	// Get Party Accounts by Asset
 	AccountsByPartyAndAsset(context.Context, *AccountsByPartyAndAssetRequest) (*AccountsByPartyAndAssetResponse, error)
 }
 

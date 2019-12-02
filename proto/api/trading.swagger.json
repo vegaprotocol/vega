@@ -17,7 +17,7 @@
   "paths": {
     "/auth/token": {
       "get": {
-        "summary": "unary calls - read",
+        "summary": "Check an API token",
         "operationId": "CheckToken",
         "responses": {
           "200": {
@@ -46,6 +46,7 @@
         ]
       },
       "post": {
+        "summary": "Sign In",
         "operationId": "SignIn",
         "responses": {
           "200": {
@@ -72,6 +73,7 @@
     },
     "/fountain": {
       "post": {
+        "summary": "Request balance increase",
         "operationId": "NotifyTraderAccount",
         "responses": {
           "200": {
@@ -98,6 +100,7 @@
     },
     "/markets": {
       "get": {
+        "summary": "Get a list of Markets",
         "operationId": "Markets",
         "responses": {
           "200": {
@@ -114,6 +117,7 @@
     },
     "/markets/data": {
       "get": {
+        "summary": "Get a list of Market Data",
         "operationId": "MarketsData",
         "responses": {
           "200": {
@@ -130,7 +134,7 @@
     },
     "/markets/{marketID}": {
       "get": {
-        "summary": "markets",
+        "summary": "Get Market by ID",
         "operationId": "MarketByID",
         "responses": {
           "200": {
@@ -155,7 +159,7 @@
     },
     "/markets/{marketID}/candles": {
       "get": {
-        "summary": "candles",
+        "summary": "Get Market Candles",
         "operationId": "Candles",
         "responses": {
           "200": {
@@ -202,7 +206,7 @@
     },
     "/markets/{marketID}/data": {
       "get": {
-        "summary": "marketdata",
+        "summary": "Get Market Data by ID",
         "operationId": "MarketDataByID",
         "responses": {
           "200": {
@@ -227,6 +231,7 @@
     },
     "/markets/{marketID}/depth": {
       "get": {
+        "summary": "Get Market Depth",
         "operationId": "MarketDepth",
         "responses": {
           "200": {
@@ -251,7 +256,7 @@
     },
     "/markets/{marketID}/orders": {
       "get": {
-        "summary": "orders",
+        "summary": "Get Market Orders",
         "operationId": "OrdersByMarket",
         "responses": {
           "200": {
@@ -304,6 +309,7 @@
     },
     "/markets/{marketID}/orders/{orderID}": {
       "get": {
+        "summary": "Get Market Order by OrderID",
         "operationId": "OrderByMarketAndID",
         "responses": {
           "200": {
@@ -334,7 +340,7 @@
     },
     "/markets/{marketID}/trades": {
       "get": {
-        "summary": "trades",
+        "summary": "Get Market Trades",
         "operationId": "TradesByMarket",
         "responses": {
           "200": {
@@ -380,6 +386,7 @@
     },
     "/markets/{marketID}/trades/latest": {
       "get": {
+        "summary": "Get latest Market Trade",
         "operationId": "LastTrade",
         "responses": {
           "200": {
@@ -404,7 +411,7 @@
     },
     "/orders": {
       "post": {
-        "summary": "unary calls - writes",
+        "summary": "Submit an Order",
         "operationId": "SubmitOrder",
         "responses": {
           "200": {
@@ -431,6 +438,7 @@
     },
     "/orders/{amendment.orderID}": {
       "put": {
+        "summary": "Amend an Order",
         "operationId": "AmendOrder",
         "responses": {
           "200": {
@@ -463,6 +471,7 @@
     },
     "/orders/{cancellation.orderID}": {
       "delete": {
+        "summary": "Cancel an Order",
         "operationId": "CancelOrder",
         "responses": {
           "200": {
@@ -505,6 +514,7 @@
     },
     "/orders/{orderID}/trades": {
       "get": {
+        "summary": "Get Order Trades",
         "operationId": "TradesByOrder",
         "responses": {
           "200": {
@@ -529,6 +539,7 @@
     },
     "/orders/{reference}": {
       "get": {
+        "summary": "Get an Order by Pending Order reference (UUID)",
         "operationId": "OrderByReference",
         "responses": {
           "200": {
@@ -553,6 +564,7 @@
     },
     "/parties": {
       "get": {
+        "summary": "Get a list of Parties",
         "operationId": "Parties",
         "responses": {
           "200": {
@@ -569,7 +581,7 @@
     },
     "/parties/{partyID}": {
       "get": {
-        "summary": "parties",
+        "summary": "Get Party by ID",
         "operationId": "PartyByID",
         "responses": {
           "200": {
@@ -594,7 +606,7 @@
     },
     "/parties/{partyID}/accounts": {
       "get": {
-        "summary": "accounts",
+        "summary": "Get Party Accounts by Account Type",
         "operationId": "AccountsByParty",
         "responses": {
           "200": {
@@ -631,8 +643,40 @@
         ]
       }
     },
+    "/parties/{partyID}/markets/{marketID}/margin": {
+      "get": {
+        "summary": "Get Party Margin Levels",
+        "operationId": "MarginLevels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMarginLevelsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "marketID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/parties/{partyID}/orders": {
       "get": {
+        "summary": "Get Party Orders",
         "operationId": "OrdersByParty",
         "responses": {
           "200": {
@@ -685,7 +729,7 @@
     },
     "/parties/{partyID}/positions": {
       "get": {
-        "summary": "positions",
+        "summary": "Get Party Positions",
         "operationId": "PositionsByParty",
         "responses": {
           "200": {
@@ -710,6 +754,7 @@
     },
     "/parties/{partyID}/trades": {
       "get": {
+        "summary": "Get Party Trades",
         "operationId": "TradesByParty",
         "responses": {
           "200": {
@@ -759,9 +804,42 @@
         ]
       }
     },
+    "/parties/{withdraw.partyID}/withdrawals": {
+      "post": {
+        "summary": "Request withdrawal",
+        "operationId": "Withdraw",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "withdraw.partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/statistics": {
       "get": {
-        "summary": "metrics",
+        "summary": "Get Statistics",
         "operationId": "Statistics",
         "responses": {
           "200": {
@@ -778,6 +856,7 @@
     },
     "/time": {
       "get": {
+        "summary": "Get Time",
         "operationId": "GetVegaTime",
         "responses": {
           "200": {
@@ -1164,6 +1243,14 @@
         "timestamp": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "apiWithdrawRequest": {
+      "type": "object",
+      "properties": {
+        "withdraw": {
+          "$ref": "#/definitions/vegaWithdraw"
         }
       }
     },
@@ -1746,6 +1833,7 @@
         "INVALID_PARTY_ID",
         "MARKET_CLOSED",
         "MARGIN_CHECK_FAILED",
+        "MISSING_GENERAL_ACCOUNT",
         "INTERNAL_ERROR"
       ],
       "default": "NONE"

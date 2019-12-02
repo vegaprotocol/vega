@@ -203,7 +203,8 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		asset, _ := mktsetup.market.GetAsset()
 		// get the account balance, ensure we can set the margin balance in this step if we want to
 		// and get the account ID's so we can keep track of the state correctly
-		margin, general := mktsetup.colE.CreateTraderAccount(row.Cells[0].Value, market, asset)
+		general := mktsetup.colE.CreatePartyGeneralAccount(row.Cells[0].Value, asset)
+		margin, _ := mktsetup.colE.CreatePartyMarginAccount(row.Cells[0].Value, market, asset)
 		_ = mktsetup.colE.IncrementBalance(margin, marginBal)
 		// add trader accounts to map - this is the state they should have now
 		mktsetup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{

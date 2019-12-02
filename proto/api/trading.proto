@@ -11,14 +11,25 @@ import "google/protobuf/empty.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 service trading {
-  // unary calls - writes
+  // Submit an Order
   rpc SubmitOrder(SubmitOrderRequest) returns (vega.PendingOrder);
+
+  // Cancel an Order
   rpc CancelOrder(CancelOrderRequest) returns (vega.PendingOrder);
+
+  // Amend an Order
   rpc AmendOrder(AmendOrderRequest) returns (vega.PendingOrder);
+
+  // Sign In
   rpc SignIn(SignInRequest) returns (SignInResponse);
+
+  // Request balance increase
   rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
+
+  // Request withdrawal
   rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
-  // unary calls - read
+
+  // Check an API token
   rpc CheckToken(CheckTokenRequest) returns (CheckTokenResponse);
 }
 
@@ -63,42 +74,64 @@ message AmendOrderRequest {
 }
 
 service trading_data {
-  // orders
+  // Get Market Orders
   rpc OrdersByMarket(OrdersByMarketRequest) returns (OrdersByMarketResponse);
+
+  // Get Party Orders
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
+
+  // Get Market Order by OrderID
   rpc OrderByMarketAndID(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
+
+  // Get an Order by Pending Order reference (UUID)
   rpc OrderByReference(OrderByReferenceRequest) returns (OrderByReferenceResponse);
 
-  // markets
+  // Get Market by ID
   rpc MarketByID(MarketByIDRequest) returns (MarketByIDResponse);
+
+  // Get a list of Markets
   rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
+
+  // Get Market Depth
   rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
+
+  // Get latest Market Trade
   rpc LastTrade(LastTradeRequest) returns (LastTradeResponse);
 
-  // parties
+  // Get Party by ID
   rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
+
+  // Get a list of Parties
   rpc Parties(google.protobuf.Empty) returns (PartiesResponse);
 
-  // trades
+  // Get Market Trades
   rpc TradesByMarket(TradesByMarketRequest) returns (TradesByMarketResponse);
+
+  // Get Party Trades
   rpc TradesByParty(TradesByPartyRequest) returns (TradesByPartyResponse);
+
+  // Get Order Trades
   rpc TradesByOrder(TradesByOrderRequest) returns (TradesByOrderResponse);
 
-  // positions
+  // Get Party Positions
   rpc PositionsByParty(PositionsByPartyRequest) returns (PositionsByPartyResponse);
 
-  // candles
+  // Get Market Candles
   rpc Candles(CandlesRequest) returns (CandlesResponse);
 
-  // metrics
+  // Get Statistics
   rpc Statistics(google.protobuf.Empty) returns (vega.Statistics);
+
+  // Get Time
   rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
 
-  // marketdata
+  // Get Market Data by ID
   rpc MarketDataByID(MarketDataByIDRequest) returns (MarketDataByIDResponse);
+
+  // Get a list of Market Data
   rpc MarketsData(google.protobuf.Empty) returns (MarketsDataResponse);
 
-  // marginlevels
+  // Get Party Margin Levels
   rpc MarginLevels(MarginLevelsRequest) returns (MarginLevelsResponse);
 
   // streams
@@ -112,10 +145,16 @@ service trading_data {
   rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
   rpc MarginLevelsSubscribe(MarginLevelsSubscribeRequest) returns (stream vega.MarginLevels);
 
-  // accounts
+  // Get Party Accounts by Account Type
   rpc AccountsByParty(AccountsByPartyRequest) returns (AccountsByPartyResponse);
+
+  // Get Party Accounts by Market
   rpc AccountsByPartyAndMarket(AccountsByPartyAndMarketRequest) returns (AccountsByPartyAndMarketResponse);
+
+  // Get Party Accounts by Account Type (dup)
   rpc AccountsByPartyAndType(AccountsByPartyAndTypeRequest) returns (AccountsByPartyAndTypeResponse);
+
+  // Get Party Accounts by Asset
   rpc AccountsByPartyAndAsset(AccountsByPartyAndAssetRequest) returns (AccountsByPartyAndAssetResponse);
 }
 
