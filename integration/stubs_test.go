@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 )
 
@@ -216,3 +217,19 @@ func (t *timeStub) SetTime(newNow time.Time) {
 func (t *timeStub) NotifyOnTick(f func(time.Time)) {
 	t.notify = f
 }
+
+type SettleStub struct {
+	data []events.SettlePosition
+}
+
+func NewSettlementStub() *SettleStub {
+	return &SettleStub{
+		data: []events.SettlePosition{},
+	}
+}
+
+func (p *SettleStub) Add(e events.SettlePosition) {
+	p.data = append(p.data, e)
+}
+
+func (p *SettleStub) Flush() {}

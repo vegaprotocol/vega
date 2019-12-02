@@ -24,7 +24,7 @@ func SetChannelBuffer(bufSize int) positionConfig {
 	}
 }
 
-func New(marketID string, opts ...positionConfig) *Position {
+func New__(marketID string, opts ...positionConfig) *Position {
 	p := &Position{
 		market: marketID,
 		chBuf:  1,

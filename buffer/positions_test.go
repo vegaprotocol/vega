@@ -20,7 +20,7 @@ type mpEvt struct {
 
 func TestBufferUpdates(t *testing.T) {
 	// buf := buffer.New(market, buffer.SetChannelBuffer(0))
-	buf := buffer.New(market)
+	buf := buffer.New__(market)
 	data := []mpEvt{
 		{
 			party: "trader-1",
@@ -69,7 +69,7 @@ func TestBufferUpdates(t *testing.T) {
 func TestRegisterMultiple(t *testing.T) {
 	chBuf := 5
 	// just cover the optional channel size, too
-	buf := buffer.New(market, buffer.SetChannelBuffer(chBuf))
+	buf := buffer.New__(market, buffer.SetChannelBuffer(chBuf))
 	ch1, id1 := buf.Register()
 	ch2, id2 := buf.Register()
 	assert.NotEqual(t, id1, id2)

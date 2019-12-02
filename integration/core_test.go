@@ -149,6 +149,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		mktsetup.parties,
 		mktsetup.trades,
 		mktsetup.transfer,
+		NewSettlementStub(),
 		time.Now(),
 		execution.NewIDGen(),
 	)

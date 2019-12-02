@@ -54,6 +54,7 @@ type marketTestSetup struct {
 	parties  *mocks.MockPartyBuf
 	transfer *mocks.MockTransferBuf
 	accounts *accStub
+	settle   *SettleStub
 	// accounts   *cmocks.MockAccountBuffer
 	accountIDs map[string]struct{}
 	traderAccs map[string]map[proto.AccountType]*proto.Account
@@ -100,6 +101,7 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		parties:    parties,
 		transfer:   transfer,
 		accounts:   accounts,
+		settle:     NewSettlementStub(),
 		accountIDs: map[string]struct{}{},
 		traderAccs: map[string]map[proto.AccountType]*proto.Account{},
 		colE:       colE,
@@ -121,6 +123,7 @@ type executionTestSetup struct {
 	parties   *mocks.MockPartyBuf
 	transfers *transferStub
 	markets   *mocks.MockMarketBuf
+	settle    *SettleStub
 	timesvc   *timeStub
 
 	// save trader accounts state
@@ -155,6 +158,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles = mocks.NewMockCandleBuf(ctrl)
 	execsetup.orders = NewOrderStub()
 	execsetup.trades = NewTradeStub()
+	execsetup.settle = NewSettlementStub()
 	execsetup.parties = mocks.NewMockPartyBuf(ctrl)
 	execsetup.transfers = NewTransferStub()
 	execsetup.markets = mocks.NewMockMarketBuf(ctrl)
@@ -169,7 +173,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	execsetup.candles.EXPECT().AddTrade(gomock.Any()).AnyTimes()
 	execsetup.markets.EXPECT().Flush().AnyTimes().Return(nil)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, mkts)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.orders, execsetup.trades, execsetup.candles, execsetup.markets, execsetup.parties, execsetup.accounts, execsetup.transfers, execsetup.settle, mkts)
 
 	return execsetup
 }

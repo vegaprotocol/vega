@@ -75,6 +75,7 @@ type Market struct {
 	tradeBuf    TradeBuf
 	transferBuf TransferBuf
 	candleBuf   CandleBuf
+	settleBuf   SettlementBuf
 
 	closed bool
 }
@@ -118,6 +119,7 @@ func NewMarket(
 	partyBuf PartyBuf,
 	tradeBuf TradeBuf,
 	transferBuf TransferBuf,
+	settlementBuf SettlementBuf,
 	now time.Time,
 	idgen *IDgenerator,
 ) (*Market, error) {
@@ -143,7 +145,7 @@ func NewMarket(
 	riskEngine := risk.NewEngine(log, riskConfig, tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel, getInitialFactors(log, mkt, asset), book)
 	positionEngine := positions.New(log, positionConfig)
-	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id)
+	settleEngine := settlement.New(log, settlementConfig, tradableInstrument.Instrument.Product, mkt.Id, settlementBuf)
 
 	// start first candle
 	candleBuf.Start(mkt.Id, now)
@@ -166,6 +168,7 @@ func NewMarket(
 		partyBuf:           partyBuf,
 		tradeBuf:           tradeBuf,
 		candleBuf:          candleBuf,
+		settleBuf:          settlementBuf,
 		transferBuf:        transferBuf,
 	}
 

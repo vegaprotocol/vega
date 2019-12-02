@@ -5,26 +5,33 @@ import (
 	"sync"
 
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/pkg/errors"
+)
+
+var (
+	MarketNotFoundErr = errors.New("could not find market")
+	PartyNotFoundErr  = errors.New("party not found")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/pos_buffer_mock.go -package mocks code.vegaprotocol.io/vega/plugins PosBuffer
 type PosBuffer interface {
-	Subscribe() (<-chan map[string]map[string]types.Position, int)
+	Subscribe() (<-chan []types.Position, int)
 	Unsubscribe(int)
 }
 
 // Positions - plugin taking settlement data to build positions API data
 type Positions struct {
-	mu   *sync.Mutex
+	mu   *sync.RWMutex
 	buf  PosBuffer
 	ref  int
-	ch   <-chan map[string]map[string]types.Position
+	ch   <-chan []types.Position
 	data map[string]map[string]types.Position
 }
 
 func NewPositions(buf PosBuffer) *Positions {
 	return &Positions{
-		mu:   &sync.Mutex{},
+		mu:   &sync.RWMutex{},
 		data: map[string]map[string]types.Position{},
 	}
 }
@@ -72,31 +79,74 @@ func (p *Positions) consume(ctx context.Context) {
 				return
 			}
 			p.mu.Lock()
-			// @TODO update data intelligently, don't just reassign, this is just a placeholder
-			p.data = update
+			p.updateData(update)
 			p.mu.Unlock()
 		}
 	}
 }
 
-func (p *Positions) updateData(update map[string]map[string]types.Position) {
-	for mID, traderMap := range update {
-		if _, ok := p.data[mID]; !ok {
-			// this market is new to the plugin, so the update is actually
-			// the initial data
-			p.data[mID] = traderMap
-			continue
+func (p *Positions) updateData(raw []types.Position) {
+	// build the map from the updated data
+	p.data = map[string]map[string]types.Position{}
+	for _, pos := range raw {
+		if _, ok := p.data[pos.MarketID]; !ok {
+			p.data[pos.MarketID] = map[string]types.Position{}
 		}
-		// marketID is known, let's go over the traders
-		for trader, data := range traderMap {
-			current, ok := p.data[mID][trader]
-			if !ok {
-				// trader previously not known to the market, we can just add the data here
-				p.data[mID][trader] = data
-				continue
-			}
-			// update data
-			// 1. Append to FIFO queue
-			current.FifoQueue = append(current.FifoQueue, data.FifoQueue...)
-			// @TODO calculations to get avergage entry price etc... are all found in the buffer/positions.go file
-			// further work that needs to be done needs to match the python notebook
+		// there can only be 1 position for a trader in a market
+		if pos.OpenVolume == 0 {
+			delete(p.data[pos.MarketID], pos.PartyID)
+		} else {
+			p.data[pos.MarketID][pos.PartyID] = pos
+		}
+	}
+}
+
+// GetPositionsByMarketAndParty - get the position of a single trader in a given market
+func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
+	p.mu.RLock()
+	mp, ok := p.data[market]
+	if !ok {
+		p.mu.RUnlock()
+		return nil, MarketNotFoundErr
+	}
+	pos, ok := mp[party]
+	if !ok {
+		p.mu.Unlock()
+		return nil, PartyNotFoundErr
+	}
+	p.mu.RUnlock()
+	return &pos, nil
+}
+
+// GetPositionsByParty - get all positions for a given trader
+func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error) {
+	p.mu.RLock()
+	// at most, trader is active in all markets
+	positions := make([]*types.Position, 0, len(p.data))
+	for _, traders := range p.data {
+		if pos, ok := traders[party]; ok {
+			positions = append(positions, &pos)
+		}
+	}
+	p.mu.RUnlock()
+	if len(positions) == 0 {
+		return nil, PartyNotFoundErr
+	}
+	return positions, nil
+}
+
+// GetPositionsByMarket - get all trader positions in a given market
+func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, error) {
+	p.mu.RLock()
+	mp, ok := p.data[market]
+	if !ok {
+		p.mu.RUnlock()
+		return nil, MarketNotFoundErr
+	}
+	s := make([]*types.Position, 0, len(mp))
+	for _, tp := range mp {
+		s = append(s, &tp)
+	}
+	p.mu.RUnlock()
+	return s, nil
+}

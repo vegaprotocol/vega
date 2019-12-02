@@ -28,6 +28,12 @@ type Product interface {
 	GetAsset() string
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buffer_mock.go -package mocks code.vegaprotocol.io/vega/settlement Buffer
+type Buffer interface {
+	Add(events.SettlePosition)
+	Flush() // this call can go here, because this engine knows when its done its job
+}
+
 // Engine - the main type (of course)
 type Engine struct {
 	Config
@@ -38,10 +44,11 @@ type Engine struct {
 	pos     map[string]*pos
 	mu      *sync.Mutex
 	trades  map[string][]*pos
+	buf     Buffer
 }
 
 // New instanciate a new instance of the settlement engine
-func New(log *logging.Logger, conf Config, product Product, market string) *Engine {
+func New(log *logging.Logger, conf Config, product Product, market string, buf Buffer) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -54,6 +61,7 @@ func New(log *logging.Logger, conf Config, product Product, market string) *Engi
 		pos:     map[string]*pos{},
 		mu:      &sync.Mutex{},
 		trades:  map[string][]*pos{},
+		buf:     buf,
 	}
 }
 
@@ -161,6 +169,13 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 		current := e.getCurrentPosition(party, evt)
 		// we don't care if this is a nil value
 		traded, hasTraded := trades[party]
+		// create (and add position to buffer)
+		sp := &settlePos{
+			MarketPosition: evt,
+			marketID:       e.market,
+			trades:         traded,
+		}
+		e.buf.Add(sp) // added to buffer
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
 		if !hasTraded && current.price == markPrice {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
@@ -211,6 +226,8 @@ func (e *Engine) SettleMTM(markPrice uint64, positions []events.MarketPosition) 
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
+	// whatever was added to the buffer is now ready to be flushed
+	e.buf.Flush()
 	e.mu.Unlock()
 	timer.EngineTimeCounterAdd()
 	return transfers

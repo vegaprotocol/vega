@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
@@ -53,6 +54,12 @@ type PartyBuf interface {
 	Flush() error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_buf_mock.go -package mocks code.vegaprotocol.io/vega/execution SettlementBuf
+type SettlementBuf interface {
+	Add(events.SettlePosition)
+	Flush()
+}
+
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
@@ -91,6 +98,7 @@ type Engine struct {
 	partyBuf    PartyBuf
 	accountBuf  AccountBuf
 	transferBuf TransferBuf
+	settleBuf   SettlementBuf
 
 	time TimeService
 }
@@ -108,6 +116,7 @@ func NewEngine(
 	partyBuf PartyBuf,
 	accountBuf AccountBuf,
 	transferBuf TransferBuf,
+	settleBuf SettlementBuf,
 	pmkts []types.Market,
 ) *Engine {
 	// setup logger
@@ -140,6 +149,7 @@ func NewEngine(
 		party:       NewParty(log, cengine, pmkts, partyBuf),
 		accountBuf:  accountBuf,
 		transferBuf: transferBuf,
+		settleBuf:   settleBuf,
 		idgen:       NewIDGen(),
 	}
 
@@ -227,6 +237,7 @@ func (e *Engine) SubmitMarket(mktconfig *types.Market) error {
 		e.partyBuf,
 		e.tradeBuf,
 		e.transferBuf,
+		e.settleBuf,
 		now,
 		e.idgen,
 	)

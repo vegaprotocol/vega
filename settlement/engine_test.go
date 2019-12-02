@@ -21,6 +21,7 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	prod      *mocks.MockProduct
 	positions []*mocks.MockMarketPosition
+	buf       *mocks.MockBuffer
 	market    string
 }
 
@@ -469,12 +470,16 @@ func getTestEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
 	prod := mocks.NewMockProduct(ctrl)
+	buf := mocks.NewMockBuffer(ctrl)
+	buf.EXPECT().Add(gomock.Any()).AnyTimes()
+	buf.EXPECT().Flush().AnyTimes()
 	market := "BTC/DEC19"
 	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })
 	return &testEngine{
-		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market),
+		Engine:    settlement.New(logging.NewTestLogger(), conf, prod, market, buf),
 		ctrl:      ctrl,
 		prod:      prod,
+		buf:       buf,
 		positions: nil,
 		market:    market,
 	}
